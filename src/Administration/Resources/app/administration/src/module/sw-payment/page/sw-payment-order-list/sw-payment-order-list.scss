@@ -1,0 +1,11 @@
+.sw-payment-order-list {
+    &__content {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+    }
+
+    .mt-empty-state {
+        padding-block: var(--scale-size-48);
+    }
+}

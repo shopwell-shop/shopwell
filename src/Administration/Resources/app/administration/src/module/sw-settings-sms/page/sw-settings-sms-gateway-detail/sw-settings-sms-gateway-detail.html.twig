@@ -1,0 +1,211 @@
+{% block sw_settings_sms_gateway_detail %}
+<sw-page class="sw-settings-sms-gateway-detail">
+
+    {% block sw_settings_sms_gateway_detail_smart_bar_header %}
+    <template #smart-bar-header>
+        {% block sw_settings_sms_gateway_detail_smart_bar_header_title %}
+        <h2>
+            {% block sw_settings_sms_gateway_detail_smart_bar_header_title_text %}
+            {{ $t('sw-settings.index.title') }}
+            <mt-icon
+                name="regular-chevron-right-xs"
+                size="12px"
+            />
+            {{ $t('sw-settings-sms.general.mainMenuItemGeneral') }}
+            <mt-icon
+                name="regular-chevron-right-xs"
+                size="12px"
+            />
+            {{ title }}
+            {% endblock %}
+        </h2>
+        {% endblock %}
+    </template>
+    {% endblock %}
+
+    {% block sw_settings_sms_gateway_detail_smart_bar_actions %}
+    <template #smart-bar-actions>
+        {% block sw_settings_sms_gateway_detail_actions_save %}
+        <mt-button
+            class="sw-settings-sms-gateway-detail__save-action"
+            variant="primary"
+            :is-loading="isSaving"
+            :disabled="isLoading || isSaving || !acl.can('sms_gateway.editor') || undefined"
+            @click="onSave"
+        >
+            {{ $t('global.default.save') }}
+        </mt-button>
+        {% endblock %}
+    </template>
+    {% endblock %}
+
+    {% block sw_settings_sms_gateway_detail_content %}
+    <template #content>
+        <sw-card-view>
+            {% block sw_settings_sms_gateway_detail_loading %}
+            <template v-if="isLoading">
+                <sw-skeleton />
+                <sw-skeleton />
+            </template>
+            {% endblock %}
+
+            {% block sw_settings_sms_gateway_detail_loaded %}
+            <template v-else-if="gateway">
+
+                {% block sw_settings_sms_gateway_detail_connection %}
+                <mt-card
+                    position-identifier="sw-settings-sms-gateway-detail-connection"
+                    :title="$t('sw-settings-sms.gateway.cardConnection')"
+                >
+                    <sw-container
+                        class="sw-settings-sms-gateway-detail__connection"
+                        columns="repeat(auto-fit, minmax(250px, 1fr))"
+                        gap="0px 30px"
+                    >
+                        {% block sw_settings_sms_gateway_detail_provider %}
+                        <sw-single-select
+                            v-model:value="gateway.technicalName"
+                            class="sw-settings-sms-gateway-detail__provider"
+                            value-property="value"
+                            label-property="label"
+                            :label="$t('sw-settings-sms.gateway.labelTechnicalName')"
+                            :placeholder="$t('sw-settings-sms.gateway.labelTechnicalNamePlaceholder')"
+                            :options="providerOptions"
+                            :disabled="!acl.can('sms_gateway.editor') || undefined"
+                            required
+                            @update:value="onProviderChange"
+                        />
+                        {% endblock %}
+
+                        {% block sw_settings_sms_gateway_detail_label %}
+                        <mt-text-field
+                            v-model="gateway.label"
+                            class="sw-settings-sms-gateway-detail__label"
+                            :label="$t('sw-settings-sms.gateway.labelLabel')"
+                            :placeholder="$t('sw-settings-sms.gateway.labelLabelPlaceholder')"
+                            :disabled="!acl.can('sms_gateway.editor') || undefined"
+                        />
+                        {% endblock %}
+
+                        {% block sw_settings_sms_gateway_detail_strategy %}
+                        <sw-single-select
+                            v-model:value="gateway.strategy"
+                            class="sw-settings-sms-gateway-detail__strategy"
+                            value-property="value"
+                            label-property="label"
+                            :label="$t('sw-settings-sms.gateway.labelStrategy')"
+                            :options="strategyOptions"
+                            :disabled="!acl.can('sms_gateway.editor') || undefined"
+                        />
+                        {% endblock %}
+
+                        {% block sw_settings_sms_gateway_detail_priority %}
+                        <mt-number-field
+                            v-model="gateway.priority"
+                            class="sw-settings-sms-gateway-detail__priority"
+                            number-type="int"
+                            :label="$t('sw-settings-sms.gateway.labelPriority')"
+                            :help-text="$t('sw-settings-sms.gateway.labelPriorityHelpText')"
+                            :min="0"
+                            :disabled="!acl.can('sms_gateway.editor') || undefined"
+                        />
+                        {% endblock %}
+
+                        {% block sw_settings_sms_gateway_detail_sales_channel %}
+                        <sw-entity-single-select
+                            v-model:value="gateway.salesChannelId"
+                            class="sw-settings-sms-gateway-detail__sales-channel"
+                            entity="sales_channel"
+                            show-clearable-button
+                            :label="$t('sw-settings-sms.gateway.labelSalesChannel')"
+                            :help-text="$t('sw-settings-sms.gateway.labelSalesChannelHelpText')"
+                            :disabled="!acl.can('sms_gateway.editor') || undefined"
+                        />
+                        {% endblock %}
+                    </sw-container>
+
+                    {% block sw_settings_sms_gateway_detail_enabled %}
+                    <mt-switch
+                        v-model="gateway.enabled"
+                        class="sw-settings-sms-gateway-detail__enabled"
+                        bordered
+                        :disabled="!acl.can('sms_gateway.editor') || undefined"
+                        :label="$t('sw-settings-sms.gateway.labelEnabled')"
+                        :help-text="$t('sw-settings-sms.gateway.labelEnabledHelpText')"
+                    />
+                    {% endblock %}
+
+                    {% block sw_settings_sms_gateway_detail_capabilities %}
+                    <div
+                        v-if="provider"
+                        class="sw-settings-sms-gateway-detail__capabilities"
+                    >
+                        <span class="sw-settings-sms-gateway-detail__capability">
+                            {{ $t('sw-settings-sms.gateway.regions') }}: {{ regionsLabel }}
+                        </span>
+                        <span class="sw-settings-sms-gateway-detail__capability">
+                            {{ templateModeLabel }}
+                        </span>
+                    </div>
+                    {% endblock %}
+
+                    {% block sw_settings_sms_gateway_detail_options %}
+                    <mt-textarea
+                        v-model="optionsText"
+                        class="sw-settings-sms-gateway-detail__options"
+                        :label="$t('sw-settings-sms.gateway.labelOptions')"
+                        :help-text="$t('sw-settings-sms.gateway.labelOptionsHelpText')"
+                        :disabled="!acl.can('sms_gateway.editor') || undefined"
+                    />
+                    {% endblock %}
+                </mt-card>
+                {% endblock %}
+
+                {% block sw_settings_sms_gateway_detail_credentials %}
+                <mt-card
+                    position-identifier="sw-settings-sms-gateway-detail-credentials"
+                    :title="$t('sw-settings-sms.gateway.cardCredentials')"
+                    :subtitle="$t('sw-settings-sms.gateway.credentialsHelpText')"
+                >
+                    {% block sw_settings_sms_gateway_detail_credentials_fields %}
+                    <sw-container
+                        v-if="credentialFields.length > 0"
+                        class="sw-settings-sms-gateway-detail__credentials"
+                        columns="repeat(auto-fit, minmax(250px, 1fr))"
+                        gap="0px 30px"
+                    >
+                        {# Which credentials a provider needs is decided by the provider, the page renders them. #}
+                        <sw-form-field-renderer
+                            v-for="field in credentialFields"
+                            :key="field.name"
+                            :class="`sw-settings-sms-gateway-detail__credential-${field.name}`"
+                            :type="formFieldType(field)"
+                            :config="formFieldConfig(field)"
+                            :value="credentialValues[field.name]"
+                            :disabled="!acl.can('sms_gateway.editor') || undefined"
+                            @update:value="setCredentialValue(field, $event)"
+                        />
+                    </sw-container>
+                    {% endblock %}
+
+                    {% block sw_settings_sms_gateway_detail_credentials_empty %}
+                    <p
+                        v-else
+                        class="sw-settings-sms-gateway-detail__credentials-empty"
+                    >
+                        {{ $t('sw-settings-sms.gateway.credentialsEmpty') }}
+                    </p>
+                    {% endblock %}
+                </mt-card>
+                {% endblock %}
+
+                {% block sw_settings_sms_gateway_detail_extension %}
+                <sw-extension-component-section position-identifier="sw-settings-sms-gateway-detail__after-content" />
+                {% endblock %}
+            </template>
+            {% endblock %}
+        </sw-card-view>
+    </template>
+    {% endblock %}
+</sw-page>
+{% endblock %}

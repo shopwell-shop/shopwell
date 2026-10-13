@@ -53,6 +53,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Cache\EntityCacheKeyGenerator;
 use Shopwell\Core\Framework\Event\BeforeSendResponseEvent;
 use Shopwell\Core\Framework\Routing\MaintenanceModeResolver as CoreMaintenanceModeResolver;
 use Shopwell\Core\Framework\Routing\RequestTransformerInterface;
+use Shopwell\Core\Framework\Sso\Service\OAuth2LoginService;
 use Shopwell\Core\Framework\Validation\DataValidator;
 use Shopwell\Core\Maintenance\SalesChannel\Service\SalesChannelCreator;
 use Shopwell\Core\System\Country\SalesChannel\CountryCityRoute;
@@ -125,6 +126,7 @@ use Shopwell\Storefront\Framework\Twig\TwigAppVariable;
 use Shopwell\Storefront\Framework\Twig\TwigDateRequestListener;
 use Shopwell\Storefront\Page\Account\CustomerGroupRegistration\CustomerGroupRegistrationPageLoader;
 use Shopwell\Storefront\Page\Account\Login\AccountLoginPageLoader;
+use Shopwell\Storefront\Page\Account\Login\OAuth2LoginPageSubscriber;
 use Shopwell\Storefront\Page\Account\Order\AccountEditOrderPageLoader;
 use Shopwell\Storefront\Page\Account\Order\AccountOrderDetailPageLoader;
 use Shopwell\Storefront\Page\Account\Order\AccountOrderPageLoader;
@@ -661,6 +663,12 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(AbstractSalutationsSorter::class),
             service(Translator::class),
         ]);
+
+    $services->set(OAuth2LoginPageSubscriber::class)
+        ->args([
+            service(OAuth2LoginService::class),
+        ])
+        ->tag('kernel.event_subscriber');
 
     $services->set(AccountRecoverPasswordPageLoader::class)
         ->args([

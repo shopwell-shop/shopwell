@@ -7,12 +7,16 @@ use League\OAuth2\Server\Grant\GrantTypeInterface;
 use League\OAuth2\Server\Repositories\AuthCodeRepositoryInterface;
 use League\OAuth2\Server\Repositories\UserRepositoryInterface;
 use Psr\Clock\ClockInterface;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Sso\OAuth2LoginGrantType;
+use Shopwell\Core\Framework\Sso\Service\OAuth2LoginCodeService;
 use Shopwell\Core\Framework\Sso\ShopwellGrantType;
 use Shopwell\Core\Framework\Sso\ShopwellPasswordGrantType;
 use Shopwell\Core\Framework\Sso\ShopwellRefreshTokenGrantType;
 use Shopwell\Core\Framework\Sso\TokenService\ExternalTokenService;
 use Shopwell\Core\Framework\Sso\UserService\UserService;
+use Shopwell\Core\System\User\UserCollection;
 
 /**
  * Builds the grant types that are enabled on the Admin API authorization server for each request.
@@ -22,6 +26,9 @@ use Shopwell\Core\Framework\Sso\UserService\UserService;
 #[Package('framework')]
 final class GrantTypeFactory
 {
+    /**
+     * @param EntityRepository<UserCollection> $shopUserRepository
+     */
     public function __construct(
         private readonly UserRepositoryInterface $userRepository,
         private readonly RefreshTokenRepository $refreshTokenRepository,
@@ -29,6 +36,8 @@ final class GrantTypeFactory
         private readonly UserService $userService,
         private readonly ExternalTokenService $tokenService,
         private readonly ClockInterface $clock,
+        private readonly OAuth2LoginCodeService $oAuth2LoginCodeService,
+        private readonly EntityRepository $shopUserRepository,
         private readonly string $refreshTokenTtl = 'P1W',
         private readonly string $authCodeTtl = 'PT5M',
     ) {
@@ -62,12 +71,20 @@ final class GrantTypeFactory
         );
         $authCodeGrant->setRefreshTokenTTL($refreshTokenInterval);
 
+        $oAuth2LoginGrant = new OAuth2LoginGrantType(
+            $this->refreshTokenRepository,
+            $this->oAuth2LoginCodeService,
+            $this->shopUserRepository
+        );
+        $oAuth2LoginGrant->setRefreshTokenTTL($refreshTokenInterval);
+
         return [
             $passwordGrant,
             $refreshTokenGrant,
             new ClientCredentialsGrant(),
             $shopwellGrant,
             $authCodeGrant,
+            $oAuth2LoginGrant,
         ];
     }
 }

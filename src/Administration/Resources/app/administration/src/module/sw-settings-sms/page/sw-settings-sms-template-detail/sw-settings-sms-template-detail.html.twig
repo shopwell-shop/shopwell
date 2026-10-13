@@ -1,0 +1,200 @@
+{% block sw_settings_sms_template_detail %}
+<sw-page class="sw-settings-sms-template-detail">
+
+    {% block sw_settings_sms_template_detail_smart_bar_header %}
+    <template #smart-bar-header>
+        {% block sw_settings_sms_template_detail_smart_bar_header_title %}
+        <h2>
+            {% block sw_settings_sms_template_detail_smart_bar_header_title_text %}
+            {{ $t('sw-settings.index.title') }}
+            <mt-icon
+                name="regular-chevron-right-xs"
+                size="12px"
+            />
+            {{ $t('sw-settings-sms.general.mainMenuItemGeneral') }}
+            <mt-icon
+                name="regular-chevron-right-xs"
+                size="12px"
+            />
+            {{ title }}
+            {% endblock %}
+        </h2>
+        {% endblock %}
+    </template>
+    {% endblock %}
+
+    {% block sw_settings_sms_template_detail_language_switch %}
+    <template #language-switch>
+        <sw-language-switch
+            class="sw-settings-sms-template-detail__language-switch"
+            @on-change="onLanguageChange"
+        />
+    </template>
+    {% endblock %}
+
+    {% block sw_settings_sms_template_detail_smart_bar_actions %}
+    <template #smart-bar-actions>
+        {% block sw_settings_sms_template_detail_actions_save %}
+        <mt-button
+            class="sw-settings-sms-template-detail__save-action"
+            variant="primary"
+            :is-loading="isSaving"
+            :disabled="isLoading || isSaving || !acl.can('sms_template.editor') || undefined"
+            @click="onSave"
+        >
+            {{ $t('global.default.save') }}
+        </mt-button>
+        {% endblock %}
+    </template>
+    {% endblock %}
+
+    {% block sw_settings_sms_template_detail_content %}
+    <template #content>
+        <sw-card-view>
+            {% block sw_settings_sms_template_detail_loading %}
+            <template v-if="isLoading">
+                <sw-skeleton />
+                <sw-skeleton />
+            </template>
+            {% endblock %}
+
+            {% block sw_settings_sms_template_detail_loaded %}
+            <template v-else-if="template">
+
+                {% block sw_settings_sms_template_detail_general %}
+                <mt-card
+                    position-identifier="sw-settings-sms-template-detail-general"
+                    :title="$t('sw-settings-sms.template.cardGeneral')"
+                >
+                    <sw-container
+                        class="sw-settings-sms-template-detail__general"
+                        columns="repeat(auto-fit, minmax(250px, 1fr))"
+                        gap="0px 30px"
+                    >
+                        {% block sw_settings_sms_template_detail_technical_name %}
+                        <mt-text-field
+                            v-model="template.technicalName"
+                            class="sw-settings-sms-template-detail__technical-name"
+                            required
+                            :label="$t('sw-settings-sms.template.labelTechnicalName')"
+                            :placeholder="$t('sw-settings-sms.template.labelTechnicalNamePlaceholder')"
+                            :help-text="$t('sw-settings-sms.template.labelTechnicalNameHelpText')"
+                            :disabled="!acl.can('sms_template.editor') || undefined"
+                        />
+                        {% endblock %}
+
+                        {% block sw_settings_sms_template_detail_scene %}
+                        <sw-single-select
+                            v-model:value="template.scene"
+                            class="sw-settings-sms-template-detail__scene"
+                            value-property="value"
+                            label-property="label"
+                            required
+                            :label="$t('sw-settings-sms.template.labelScene')"
+                            :help-text="$t('sw-settings-sms.template.labelSceneHelpText')"
+                            :options="sceneOptions"
+                            :disabled="!acl.can('sms_template.editor') || undefined"
+                        />
+                        {% endblock %}
+
+                        {% block sw_settings_sms_template_detail_max_length %}
+                        <mt-number-field
+                            v-model="template.maxLength"
+                            class="sw-settings-sms-template-detail__max-length"
+                            number-type="int"
+                            :min="1"
+                            :label="$t('sw-settings-sms.template.labelMaxLength')"
+                            :help-text="$t('sw-settings-sms.template.labelMaxLengthHelpText')"
+                            :disabled="!acl.can('sms_template.editor') || undefined"
+                        />
+                        {% endblock %}
+
+                        {% block sw_settings_sms_template_detail_validity_seconds %}
+                        <mt-number-field
+                            v-model="template.validitySeconds"
+                            class="sw-settings-sms-template-detail__validity-seconds"
+                            number-type="int"
+                            :min="1"
+                            :label="$t('sw-settings-sms.template.labelValiditySeconds')"
+                            :help-text="$t('sw-settings-sms.template.labelValiditySecondsHelpText')"
+                            :disabled="!acl.can('sms_template.editor') || undefined"
+                        />
+                        {% endblock %}
+                    </sw-container>
+
+                    {% block sw_settings_sms_template_detail_enabled %}
+                    <mt-switch
+                        v-model="template.enabled"
+                        class="sw-settings-sms-template-detail__enabled"
+                        bordered
+                        :disabled="!acl.can('sms_template.editor') || undefined"
+                        :label="$t('sw-settings-sms.template.labelEnabled')"
+                    />
+                    {% endblock %}
+
+                    {% block sw_settings_sms_template_detail_params_schema %}
+                    <mt-textarea
+                        v-model="paramsSchemaText"
+                        class="sw-settings-sms-template-detail__params-schema"
+                        :label="$t('sw-settings-sms.template.labelParamsSchema')"
+                        :help-text="$t('sw-settings-sms.template.labelParamsSchemaHelpText')"
+                        :disabled="!acl.can('sms_template.editor') || undefined"
+                    />
+                    {% endblock %}
+                </mt-card>
+                {% endblock %}
+
+                {% block sw_settings_sms_template_detail_content_card %}
+                <mt-card
+                    position-identifier="sw-settings-sms-template-detail-content"
+                    :title="$t('sw-settings-sms.template.cardContent')"
+                    :subtitle="$t('sw-settings-sms.template.labelContentHelpText')"
+                >
+                    {% block sw_settings_sms_template_detail_content_field %}
+                    <mt-textarea
+                        v-model="template.content"
+                        class="sw-settings-sms-template-detail__content"
+                        :label="$t('sw-settings-sms.template.labelContent')"
+                        :help-text="$t('sw-settings-sms.template.labelContentLanguage')"
+                        :disabled="!acl.can('sms_template.editor') || undefined"
+                    />
+                    {% endblock %}
+                </mt-card>
+                {% endblock %}
+
+                {% block sw_settings_sms_template_detail_mapping_card %}
+                <mt-card
+                    position-identifier="sw-settings-sms-template-detail-mapping"
+                    :title="$t('sw-settings-sms.template.cardMapping')"
+                >
+                    {% block sw_settings_sms_template_detail_mapping_grid %}
+                    <sw-settings-sms-template-mapping-grid
+                        v-if="!isNew"
+                        :template="template"
+                        :providers="providers"
+                        :gateways="gateways"
+                        :disabled="!acl.can('sms_template.editor') || undefined"
+                    />
+                    {% endblock %}
+
+                    {% block sw_settings_sms_template_detail_mapping_save_first %}
+                    <p
+                        v-else
+                        class="sw-settings-sms-template-detail__mapping-save-first"
+                    >
+                        {{ $t('sw-settings-sms.template.saveFirst') }}
+                    </p>
+                    {% endblock %}
+                </mt-card>
+                {% endblock %}
+
+                {% block sw_settings_sms_template_detail_extension %}
+                <sw-extension-component-section position-identifier="sw-settings-sms-template-detail__after-content" />
+                {% endblock %}
+            </template>
+            {% endblock %}
+        </sw-card-view>
+    </template>
+    {% endblock %}
+</sw-page>
+{% endblock %}

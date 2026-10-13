@@ -1,0 +1,9 @@
+.sw-payment-config-field {
+    &__input {
+        width: 100%;
+    }
+
+    &__input--switch {
+        margin-block-start: var(--scale-size-32, 32px);
+    }
+}

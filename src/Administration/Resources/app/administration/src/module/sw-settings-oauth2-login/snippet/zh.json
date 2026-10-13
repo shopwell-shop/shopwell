@@ -1,0 +1,41 @@
+{
+  "sw-settings-oauth2-login": {
+    "general": {
+      "mainMenuItemGeneral": "第三方登录",
+      "description": "配置第三方登录渠道，顾客即可使用第三方账号登录商城。",
+      "emptyStateTitle": "暂无第三方登录渠道",
+      "emptyState": "当前没有可配置的第三方登录渠道。"
+    },
+    "channel": {
+      "cardSubtitle": "凭据由第三方平台分配。",
+      "enabled": "启用该渠道",
+      "enabledHelpText": "启用后顾客即可使用该平台的账号登录商城。",
+      "clientId": "Client ID / App ID",
+      "clientSecret": "Client Secret / App Secret",
+      "scopes": "授权范围",
+      "remove": "删除配置",
+      "removeModalTitle": "删除第三方登录配置",
+      "removeModalMessage": "确定要删除「{channel}」的登录配置吗？删除后顾客将无法使用该平台登录。"
+    },
+    "notification": {
+      "saveSuccess": "第三方登录设置已保存。",
+      "removeSuccess": "第三方登录渠道配置已删除。",
+      "missingFields": "「{channel}」已启用，但还有必填项没有填写。"
+    }
+  },
+  "sso": {
+    "oauth2": {
+      "channel": {
+        "google": "Google",
+        "wechat": "微信"
+      }
+    }
+  },
+  "sw-privileges": {
+    "permissions": {
+      "oauth2_client": {
+        "label": "第三方登录"
+      }
+    }
+  }
+}

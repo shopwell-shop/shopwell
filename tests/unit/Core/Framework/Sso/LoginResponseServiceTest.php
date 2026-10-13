@@ -51,6 +51,23 @@ class LoginResponseServiceTest extends TestCase
         static::assertArrayHasKey('expiry', $cookieValue);
     }
 
+    public function testCreateOAuth2ErrorResponse(): void
+    {
+        $urlGenerator = $this->createMock(UrlGeneratorInterface::class);
+        $urlGenerator->expects($this->once())->method('generate')->willReturn('/admin');
+
+        $result = (new LoginResponseService($urlGenerator, new NativeClock()))
+            ->createOAuth2ErrorResponse('SSO_OAUTH2__IDENTITY_NOT_BOUND');
+
+        static::assertSame('/admin/#/login', $result->getTargetUrl());
+
+        $cookie = $result->headers->getCookies()[0];
+        static::assertSame('oauth2LoginError', $cookie->getName());
+        static::assertSame('SSO_OAUTH2__IDENTITY_NOT_BOUND', $cookie->getValue());
+        static::assertSame('/admin', $cookie->getPath());
+        static::assertSame(Cookie::SAMESITE_STRICT, $cookie->getSameSite());
+    }
+
     private function createLoginResponseService(): LoginResponseService
     {
         $urlGenerator = $this->createMock(UrlGeneratorInterface::class);

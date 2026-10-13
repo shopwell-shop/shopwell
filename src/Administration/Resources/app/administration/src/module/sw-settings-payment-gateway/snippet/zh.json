@@ -1,0 +1,79 @@
+{
+  "sw-settings-payment-gateway": {
+    "general": {
+      "mainMenuItemGeneral": "支付应用",
+      "description": "管理接入通用支付网关的外部应用及其可用渠道。"
+    },
+    "list": {
+      "placeholderSearchBar": "搜索支付应用...",
+      "buttonRefresh": "刷新",
+      "buttonCreate": "新建支付应用",
+      "columnTechnicalName": "应用标识",
+      "columnName": "应用名称",
+      "columnProviders": "已授权接口",
+      "columnChannels": "可用渠道",
+      "columnActive": "状态",
+      "labelActive": "已启用",
+      "labelInactive": "未启用",
+      "messageEmpty": "暂无支付应用",
+      "sublineEmpty": "创建支付应用并分配密钥后，外部应用即可通过支付网关发起支付。",
+      "messageNoResult": "没有符合条件的支付应用",
+      "messageNoResultSubline": "请更换搜索词后重试。",
+      "deleteModalTitle": "删除支付应用",
+      "deleteModalMessage": "确定要删除「{app}」吗？已产生的支付订单不会被删除，该应用的密钥将立即失效。"
+    },
+    "detail": {
+      "createTitle": "新建支付应用",
+      "notFound": "找不到该支付应用，它可能已被删除。",
+      "cardGeneralTitle": "基本信息",
+      "cardGeneralSubtitle": "应用标识用于外部应用的身份认证，创建后请谨慎修改。",
+      "labelTechnicalName": "应用标识",
+      "labelTechnicalNameHelpText": "外部应用调用支付接口时传入的 app_id。",
+      "labelName": "应用名称",
+      "labelActive": "启用该应用",
+      "labelActiveHelpText": "停用后该应用无法再发起支付。",
+      "cardEndpointTitle": "回调地址与访问控制",
+      "cardEndpointSubtitle": "留空则使用外部应用请求中携带的地址。",
+      "labelNotifyUrl": "异步通知地址",
+      "labelReturnUrl": "同步跳转地址",
+      "labelRateLimit": "限流阈值",
+      "labelRateLimitHelpText": "每分钟允许的请求数，留空表示不限制。",
+      "labelAllowedIps": "IP 白名单",
+      "placeholderAllowedIps": "每行一个 IP，留空表示不限制",
+      "labelAllowedIpsHelpText": "仅允许列表内的 IP 调用支付接口。",
+      "cardSecretTitle": "应用密钥",
+      "cardSecretSubtitle": "用于校验请求签名的 app_secret，服务端加密存储，保存后不再回显。",
+      "secretConfigured": "已配置",
+      "labelAppSecret": "应用密钥",
+      "labelAppSecretHelpText": "留空表示保持原有密钥不变。",
+      "buttonGenerateSecret": "生成随机密钥",
+      "secretHint": "密钥只在本次保存后显示一次，请立即复制并妥善保管，关闭后将无法再次查看。",
+      "sectionProvidersTitle": "支付接口与渠道",
+      "sectionProvidersSubtitle": "授权该应用可以使用哪些支付接口，并勾选每个接口下开放给它的支付渠道。",
+      "labelProviderEnabled": "授权该接口",
+      "labelProviderEnabledHelpText": "只有授权后，该应用才能使用该接口下的渠道发起支付。",
+      "labelProviderMode": "凭据来源",
+      "labelProviderModeHelpText": "使用平台凭据时直接走平台商户账户收款，使用自有凭据时需要填写该应用的商户凭据。",
+      "providerAuthorized": "已授权",
+      "providerChannelsTitle": "可用渠道",
+      "modePlatform": "平台凭据",
+      "modeOwn": "应用自有凭据",
+      "secretModalTitle": "应用密钥",
+      "secretModalMessage": "请立即复制并保存该密钥，关闭后将无法再次查看。",
+      "secretModalConfirm": "我已保存",
+      "deleteModalTitle": "删除支付应用",
+      "deleteModalMessage": "确定要删除「{app}」吗？已产生的支付订单不会被删除，该应用的密钥将立即失效。"
+    },
+    "notification": {
+      "saveSuccess": "支付应用已保存。",
+      "deleteSuccess": "支付应用已删除。"
+    }
+  },
+  "sw-privileges": {
+    "permissions": {
+      "payment_app": {
+        "label": "支付应用"
+      }
+    }
+  }
+}

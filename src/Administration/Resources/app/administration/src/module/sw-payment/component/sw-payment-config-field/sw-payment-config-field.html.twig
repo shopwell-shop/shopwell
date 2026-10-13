@@ -1,0 +1,82 @@
+{% block sw_payment_config_field %}
+<mt-text-field
+    v-if="field.type === 'text'"
+    v-model="currentValue"
+    class="sw-payment-config-field__input"
+    :name="`sw-field--payment-config-${field.name}`"
+    :label="label"
+    :placeholder="placeholder"
+    :required="field.required"
+    :help-text="helpText"
+    :disabled="disabled || undefined"
+/>
+
+<mt-password-field
+    v-else-if="field.type === 'password'"
+    v-model="currentValue"
+    class="sw-payment-config-field__input"
+    :name="`sw-field--payment-config-${field.name}`"
+    :label="label"
+    :placeholder="placeholder"
+    :required="field.required"
+    :help-text="helpText"
+    :disabled="disabled || undefined"
+/>
+
+<mt-textarea
+    v-else-if="field.type === 'textarea'"
+    v-model="currentValue"
+    class="sw-payment-config-field__input sw-payment-config-field__input--textarea"
+    :name="`sw-field--payment-config-${field.name}`"
+    :label="label"
+    :placeholder="placeholder"
+    :required="field.required"
+    :help-text="helpText"
+    :disabled="disabled || undefined"
+/>
+
+<mt-select
+    v-else-if="field.type === 'select'"
+    v-model="currentValue"
+    class="sw-payment-config-field__input"
+    :name="`sw-field--payment-config-${field.name}`"
+    :label="label"
+    :options="options"
+    :placeholder="placeholder"
+    :help-text="helpText"
+    :disabled="disabled || undefined"
+/>
+
+<mt-switch
+    v-else-if="field.type === 'bool'"
+    v-model="currentBoolean"
+    class="sw-payment-config-field__input sw-payment-config-field__input--switch"
+    bordered
+    :label="label"
+    :help-text="helpText"
+    :disabled="disabled || undefined"
+/>
+
+<mt-number-field
+    v-else-if="field.type === 'number'"
+    v-model="currentNumber"
+    class="sw-payment-config-field__input"
+    :name="`sw-field--payment-config-${field.name}`"
+    :label="label"
+    :placeholder="placeholder"
+    :help-text="helpText"
+    :disabled="disabled || undefined"
+/>
+
+<mt-text-field
+    v-else
+    v-model="currentValue"
+    class="sw-payment-config-field__input"
+    :name="`sw-field--payment-config-${field.name}`"
+    :label="label"
+    :placeholder="placeholder"
+    :required="field.required"
+    :help-text="helpText"
+    :disabled="disabled || undefined"
+/>
+{% endblock %}

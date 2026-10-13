@@ -181,8 +181,8 @@
     "personalTypePlaceholder": "请选择...",
     "personalTypePrivate": "个人",
     "personalTypeBusiness": "企业",
-    "personalSalutationLabel": "称谓",
-    "personalSalutationPlaceholder": "请选择称谓...",
+    "personalSalutationLabel": "称呼",
+    "personalSalutationPlaceholder": "请选择称呼...",
     "personalTitleLabel": "头衔",
     "personalNameLabel": "姓名",
     "personalMailLabel": "邮箱",
@@ -902,6 +902,33 @@
           "title": "植物",
           "alt": "浅蓝背景前白盆中的多肉植物"
         }
+      }
+    }
+  },
+  "sso": {
+    "oauth2": {
+      "channel": {
+        "google": "Google",
+        "wechat": "微信"
+      },
+      "loginHeader": "第三方登录",
+      "loginOr": "或",
+      "loginWith": "使用 %channel% 登录",
+      "loginSucceeded": "登录成功。",
+      "error": {
+        "failed": "第三方登录失败，请重试。",
+        "notAvailable": "该第三方登录方式当前不可用。",
+        "notLinked": "该第三方账号尚未绑定本店账号。请先使用邮箱登录，然后在账户中心完成绑定。"
+      },
+      "account": {
+        "header": "第三方账号",
+        "description": "将第三方账号绑定到本店账号后，即可使用该账号一键登录。",
+        "link": "绑定 %channel%",
+        "unlink": "解除绑定",
+        "linked": "已绑定",
+        "bindSucceeded": "第三方账号绑定成功。",
+        "unbindSucceeded": "已解除第三方账号绑定。",
+        "unbindFailed": "解除绑定失败，未找到对应的绑定关系。"
       }
     }
   },

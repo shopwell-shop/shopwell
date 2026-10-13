@@ -549,7 +549,7 @@
             "newsletterSubmit": "继续",
             "phone": "电话号码*",
             "privacy": "隐私政策*",
-            "salutation": "称谓*",
+            "salutation": "称呼*",
             "salutationUndisclosed": "不愿透露",
             "subject": "主题*",
             "subscribeToNewsletter": "订阅邮件",
@@ -571,7 +571,7 @@
           "newsletter": {
             "label": {
               "name": "姓名",
-              "salutation": "称谓"
+              "salutation": "称呼"
             }
           }
         },

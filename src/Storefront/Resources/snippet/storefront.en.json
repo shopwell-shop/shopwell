@@ -905,6 +905,33 @@
       }
     }
   },
+  "sso": {
+    "oauth2": {
+      "channel": {
+        "google": "Google",
+        "wechat": "WeChat"
+      },
+      "loginHeader": "Third party login",
+      "loginOr": "or",
+      "loginWith": "Log in with %channel%",
+      "loginSucceeded": "You are logged in.",
+      "error": {
+        "failed": "The third party login failed, please try again.",
+        "notAvailable": "This third party login is currently not available.",
+        "notLinked": "This third party account is not linked to an account of this shop yet. Please log in with your email address first and link it in your account."
+      },
+      "account": {
+        "header": "Third party accounts",
+        "description": "Link a third party account to your shop account to log in with a single click.",
+        "link": "Link %channel%",
+        "unlink": "Unlink",
+        "linked": "Linked",
+        "bindSucceeded": "The third party account has been linked.",
+        "unbindSucceeded": "The third party account has been unlinked.",
+        "unbindFailed": "Unlinking failed, no binding was found."
+      }
+    }
+  },
   "theme": {
     "compilation": {
       "async": {

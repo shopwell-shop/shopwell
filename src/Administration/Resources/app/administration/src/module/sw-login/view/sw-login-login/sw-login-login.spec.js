@@ -14,11 +14,13 @@ async function createWrapper(
     ssoUrl = 'https://sso.test',
     loginError = null,
     configFails = false,
+    { oauth2Channels = [], $te = () => true } = {},
 ) {
     const wrapper = mount(await wrapTestComponent('sw-login-login', { sync: true }), {
         global: {
             mocks: {
                 $t: (...args) => JSON.stringify([...args]),
+                $te,
             },
             provide: {
                 loginService: {
@@ -70,6 +72,9 @@ async function createWrapper(
                 },
                 userService: {},
                 licenseViolationService: {},
+                oauth2LoginService: {
+                    listChannels: () => Promise.resolve(oauth2Channels),
+                },
             },
             stubs: {
                 'router-view': true,
@@ -121,6 +126,10 @@ describe('module/sw-login/view/sw-login-login/sw-login-login.spec.js', () => {
 
         useSystem().locales.value = [];
         useSystem().registerAdminLocale('en-GB');
+    });
+
+    afterEach(() => {
+        document.cookie = 'oauth2LoginError=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/';
     });
 
     it('should show a warning if the login is rate limited', async () => {
@@ -312,6 +321,9 @@ describe('module/sw-login/view/sw-login-login/sw-login-login.spec.js', () => {
                     },
                     userService: {},
                     licenseViolationService: {},
+                    oauth2LoginService: {
+                        listChannels: () => Promise.resolve([]),
+                    },
                 },
                 stubs: {
                     'router-view': true,
@@ -336,5 +348,87 @@ describe('module/sw-login/view/sw-login-login/sw-login-login.spec.js', () => {
         await flushPromises();
 
         expect(navigateToSpy).toHaveBeenCalledWith('https://sso.test');
+    });
+
+    it('should render a button for every third party login channel and start its round trip', async () => {
+        const oauth2Channels = [
+            {
+                technicalName: 'google',
+                labelSnippet: 'sso.oauth2.channel.google',
+                icon: null,
+                startUrl: '/api/oauth2-login/admin/google',
+            },
+            {
+                technicalName: 'wechat',
+                labelSnippet: 'sso.oauth2.channel.wechat',
+                icon: null,
+                startUrl: '/api/oauth2-login/admin/wechat',
+            },
+        ];
+
+        const { wrapper } = await createWrapper(true, true, 'https://sso.test', null, false, { oauth2Channels });
+
+        const buttons = wrapper.findAll('.sw-login__oauth2-button');
+
+        expect(buttons).toHaveLength(2);
+        expect(buttons[0].text()).toBe('["sso.oauth2.channel.google"]');
+
+        const navigateToSpy = jest.fn();
+        wrapper.vm._navigateTo = navigateToSpy;
+
+        await buttons[1].trigger('click');
+
+        expect(navigateToSpy).toHaveBeenCalledWith('/api/oauth2-login/admin/wechat');
+    });
+
+    it('should not render the third party login section when the shop offers no channel', async () => {
+        const { wrapper } = await createWrapper(true);
+
+        expect(wrapper.find('.sw-login__oauth2').exists()).toBe(false);
+    });
+
+    it('should fall back to the technical name of a channel without a label', async () => {
+        const channel = {
+            technicalName: 'unknown',
+            labelSnippet: 'sso.oauth2.channel.unknown',
+            icon: null,
+            startUrl: '/api/oauth2-login/admin/unknown',
+        };
+
+        const { wrapper } = await createWrapper(true, true, 'https://sso.test', null, false, {
+            oauth2Channels: [channel],
+            $te: () => false,
+        });
+
+        expect(wrapper.vm.channelLabel(channel)).toBe('["sw-login.index.oauth2LoginWith",{"channel":"unknown"}]');
+    });
+
+    it('should show the reason of a failed third party login and clear it afterwards', async () => {
+        document.cookie = 'oauth2LoginError=SSO_OAUTH2__IDENTITY_NOT_BOUND; path=/';
+
+        const { wrapper } = await createWrapper(true);
+
+        expect(wrapper.get('.sw-login__oauth2-error-banner').text()).toBe('["sw-login.index.oauth2ErrorNotLinked"]');
+        expect(document.cookie).not.toContain('oauth2LoginError');
+    });
+
+    it('should not show a third party login error without the cookie', async () => {
+        const { wrapper } = await createWrapper(true);
+
+        expect(wrapper.find('.sw-login__oauth2-error-banner').exists()).toBe(false);
+    });
+
+    it('should map the error codes of the platform to a login message', async () => {
+        const { wrapper } = await createWrapper(true);
+
+        expect(wrapper.vm.resolveOAuth2ErrorMessageKey('SSO_OAUTH2__MISSING_VERIFIED_EMAIL')).toBe(
+            'sw-login.index.oauth2ErrorNotLinked',
+        );
+        expect(wrapper.vm.resolveOAuth2ErrorMessageKey('SSO_OAUTH2__CHANNEL_DISABLED')).toBe(
+            'sw-login.index.oauth2ErrorNotAvailable',
+        );
+        expect(wrapper.vm.resolveOAuth2ErrorMessageKey('SSO_OAUTH2__AUTHORIZATION_FAILED')).toBe(
+            'sw-login.index.oauth2ErrorFailed',
+        );
     });
 });

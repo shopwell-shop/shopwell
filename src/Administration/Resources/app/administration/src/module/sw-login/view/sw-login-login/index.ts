@@ -8,6 +8,16 @@ import type { LoginConfig } from '../../../../core/service/login.service';
 
 const { Component } = Shopwell;
 
+/**
+ * One third party login channel the server offers, see the channel endpoint of the platform.
+ */
+interface OAuth2LoginChannel {
+    technicalName: string;
+    labelSnippet: string;
+    icon: string | null;
+    startUrl: string;
+}
+
 interface LoginData {
     username: string;
     password: string;
@@ -17,6 +27,8 @@ interface LoginData {
     loginConfig: null | LoginConfig;
     loginConfigLoaded: boolean;
     ssoLoading: boolean;
+    oauth2Channels: OAuth2LoginChannel[];
+    oauth2ErrorMessage: string;
 }
 
 /**
@@ -25,7 +37,12 @@ interface LoginData {
 export default Component.wrapComponentConfig({
     template,
 
-    inject: ['loginService', 'userService', 'licenseViolationService'],
+    inject: [
+        'loginService',
+        'userService',
+        'licenseViolationService',
+        'oauth2LoginService',
+    ],
 
     emits: [
         'is-loading',
@@ -45,6 +62,8 @@ export default Component.wrapComponentConfig({
             loginConfig: null,
             loginConfigLoaded: false,
             ssoLoading: false,
+            oauth2Channels: [],
+            oauth2ErrorMessage: '',
         };
     },
 
@@ -75,6 +94,8 @@ export default Component.wrapComponentConfig({
                 await Shopwell.Store.get('session').setAdminLocale(localeFactory.getLastKnownLocale());
             }
 
+            this.showOAuth2LoginError();
+
             try {
                 this.loginConfig = await this.loginService.getLoginTemplateConfig();
             } catch {
@@ -89,6 +110,93 @@ export default Component.wrapComponentConfig({
             }
 
             this.loginConfigLoaded = true;
+
+            void this.loadOAuth2LoginChannels();
+        },
+
+        /**
+         * The channels are asked for separately from the login config, a shop that only uses the
+         * password login still gets the form when the endpoint is unavailable.
+         */
+        async loadOAuth2LoginChannels() {
+            try {
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+                this.oauth2Channels = (await this.oauth2LoginService.listChannels()) as OAuth2LoginChannel[];
+            } catch {
+                this.oauth2Channels = [];
+            }
+        },
+
+        /**
+         * A failed round trip sends the browser back here with the reason in a short lived cookie,
+         * see `LoginResponseService::createOAuth2ErrorResponse()` of the platform.
+         */
+        showOAuth2LoginError() {
+            const errorCode = this.readOAuth2LoginErrorCookie();
+
+            if (!errorCode) {
+                return;
+            }
+
+            this.oauth2ErrorMessage = this.$t(this.resolveOAuth2ErrorMessageKey(errorCode));
+            this.clearOAuth2LoginErrorCookie();
+        },
+
+        resolveOAuth2ErrorMessageKey(errorCode: string) {
+            switch (errorCode) {
+                case 'SSO_OAUTH2__IDENTITY_NOT_BOUND':
+                case 'SSO_OAUTH2__IDENTITY_ALREADY_BOUND':
+                case 'SSO_OAUTH2__MISSING_VERIFIED_EMAIL':
+                    return 'sw-login.index.oauth2ErrorNotLinked';
+                case 'SSO_OAUTH2__CHANNEL_DISABLED':
+                case 'SSO_OAUTH2__PROVIDER_NOT_AVAILABLE':
+                case 'SSO_OAUTH2__PROVIDER_NOT_CONFIGURED':
+                    return 'sw-login.index.oauth2ErrorNotAvailable';
+                default:
+                    return 'sw-login.index.oauth2ErrorFailed';
+            }
+        },
+
+        readOAuth2LoginErrorCookie() {
+            const match = document.cookie.match(/(?:^|;\s*)oauth2LoginError=([^;]*)/);
+
+            return match === null ? null : decodeURIComponent(match[1]);
+        },
+
+        /**
+         * The cookie is scoped to the login page of the administration, so it has to be removed
+         * with the same path it was written with.
+         */
+        clearOAuth2LoginErrorCookie() {
+            const { basePath, pathInfo } = Shopwell.Context.api;
+            const paths = ['/', `${basePath ?? ''}${pathInfo ?? ''}`].filter(Boolean);
+
+            paths.forEach((path) => {
+                document.cookie = `oauth2LoginError=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=${path}`;
+            });
+        },
+
+        /**
+         * The label of a channel comes from the snippet the platform named, a channel without one
+         * falls back to its name in the login snippet and finally to its technical name.
+         */
+        channelLabel(channel: OAuth2LoginChannel) {
+            if (channel.labelSnippet && this.$te(channel.labelSnippet)) {
+                return this.$t(channel.labelSnippet);
+            }
+
+            const labelSnippet = `sw-login.index.oauth2Channel.${channel.technicalName}`;
+            const channelName = this.$te(labelSnippet) ? this.$t(labelSnippet) : channel.technicalName;
+
+            return this.$t('sw-login.index.oauth2LoginWith', { channel: channelName });
+        },
+
+        loginWithOAuth2(channel: OAuth2LoginChannel) {
+            if (!channel?.startUrl) {
+                return;
+            }
+
+            this._navigateTo(channel.startUrl);
         },
 
         doSsoForwarding() {

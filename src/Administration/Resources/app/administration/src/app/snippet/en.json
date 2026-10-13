@@ -1088,6 +1088,8 @@
       "order_transaction": "Transaction | Transactions",
       "order_transaction_state": "Transaction state | Transaction states",
       "payment_method": "Payment method | Payment methods",
+      "payment_order": "Payment order | Payment orders",
+      "payment_refund": "Refund | Refunds",
       "plugin_manager": "Plugins",
       "privacy": "Privacy",
       "product": "Product | Products",
@@ -1130,7 +1132,10 @@
       "module": "Module",
       "frequently_used": "Frequently used",
       "recently_searched": "Recently searched",
-      "flow_sequence": "Flow"
+      "flow_sequence": "Flow",
+      "sms_gateway": "SMS gateway | SMS gateways",
+      "sms_template": "SMS template | SMS templates",
+      "sms_delivery": "Delivery | Deliveries"
     },
     "day-of-week": {
       "monday": "Monday",

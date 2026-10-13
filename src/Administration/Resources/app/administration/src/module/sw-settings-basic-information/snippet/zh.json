@@ -1,9 +1,9 @@
 {
   "sw-settings-basic-information": {
     "general": {
-      "mainMenuItemGeneral": "主数据",
-      "description": "可在此进行主数据设置。",
-      "textHeadline": "主数据",
+      "mainMenuItemGeneral": "常规信息",
+      "description": "可在此进行常规信息设置。",
+      "textHeadline": "常规信息",
       "messageSaveSuccess": "配置已成功保存。"
     },
     "captcha": {

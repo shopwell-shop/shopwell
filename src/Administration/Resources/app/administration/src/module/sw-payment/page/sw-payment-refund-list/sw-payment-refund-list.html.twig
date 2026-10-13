@@ -1,0 +1,152 @@
+{% block sw_payment_refund_list %}
+<sw-page class="sw-payment-refund-list">
+    {% block sw_payment_refund_list_search_bar %}
+    <template #search-bar>
+        <sw-search-bar
+            initial-search-type="payment_refund"
+            :initial-search="term"
+            @search="onSearch"
+        />
+    </template>
+    {% endblock %}
+
+    {% block sw_payment_refund_list_smart_bar_header %}
+    <template #smart-bar-header>
+        {% block sw_payment_refund_list_smart_bar_header_title %}
+        <h2>
+            {% block sw_payment_refund_list_smart_bar_header_title_text %}
+            {{ $t('sw-payment.refund.list.title') }}
+            {% endblock %}
+
+            {% block sw_payment_refund_list_smart_bar_header_amount %}
+            <span
+                v-if="!isLoading"
+                class="sw-page__smart-bar-amount"
+            >
+                ({{ total }})
+            </span>
+            {% endblock %}
+        </h2>
+        {% endblock %}
+    </template>
+    {% endblock %}
+
+    {% block sw_payment_refund_list_content %}
+    <template #content>
+        {% block sw_payment_refund_list_content %}
+        <div class="sw-payment-refund-list__content">
+
+            {% block sw_payment_refund_list_empty_state %}
+            <mt-empty-state
+                v-if="!isLoading && !total"
+                centered
+                :icon="$route.meta.$module.icon"
+                :headline="hasActiveSearchOrFilter ? $t('sw-empty-state.messageNoResultTitle') : $t('sw-payment.refund.list.messageEmpty')"
+                :description="hasActiveSearchOrFilter ? $t('sw-empty-state.messageNoResultSubline') : $t('sw-payment.refund.list.sublineEmpty')"
+            />
+            {% endblock %}
+
+            {% block sw_payment_refund_list_grid %}
+            <sw-entity-listing
+                v-else-if="isLoading || refunds"
+                ref="listing"
+                class="sw-payment-refund-list__grid"
+                identifier="sw-payment-refund-list"
+                :data-source="refunds"
+                :columns="refundColumns"
+                :repository="refundRepository"
+                :sort-by="sortBy"
+                :sort-direction="sortDirection"
+                :is-loading="isLoading"
+                :full-page="true"
+                :show-selection="false"
+                :show-settings="true"
+                :disable-data-fetching="true"
+                :allow-inline-edit="false"
+                :allow-column-edit="true"
+                :allow-edit="false"
+                :allow-delete="false"
+                :allow-view="acl.can('payment_refund.viewer') || undefined"
+                detail-route="sw.payment.refundDetail"
+                @page-change="onPageChange"
+                @column-sort="onSortColumn"
+            >
+                {% block sw_payment_refund_list_grid_column_payment_order %}
+                <template #column-paymentOrderId="{ item }">
+                    <router-link
+                        v-if="item.paymentOrder"
+                        class="sw-data-grid__cell-value"
+                        :to="{ name: 'sw.payment.orderDetail', params: { id: item.paymentOrder.id } }"
+                    >
+                        {{ paymentOrderLabel(item) }}
+                    </router-link>
+
+                    <span v-else>-</span>
+                </template>
+                {% endblock %}
+
+                {% block sw_payment_refund_list_grid_column_state %}
+                <template #column-stateId="{ item }">
+                    <mt-badge
+                        v-if="item.stateId"
+                        :variant="refundStateVariant(item.stateId)"
+                    >
+                        {{ refundStateLabel(item.stateId) }}
+                    </mt-badge>
+                </template>
+                {% endblock %}
+
+                {% block sw_payment_refund_list_grid_column_amount %}
+                <template #column-amount="{ item }">
+                    {{ formatAmount(item.amount, item.currency) }}
+                </template>
+                {% endblock %}
+
+                {% block sw_payment_refund_list_grid_column_refunded_at %}
+                <template #column-refundedAt="{ item }">
+                    <sw-time-ago
+                        v-if="item.refundedAt"
+                        :date="item.refundedAt"
+                    />
+                    <span v-else>-</span>
+                </template>
+                {% endblock %}
+
+                {% block sw_payment_refund_list_grid_column_created_at %}
+                <template #column-createdAt="{ item }">
+                    <sw-time-ago :date="item.createdAt" />
+                </template>
+                {% endblock %}
+            </sw-entity-listing>
+            {% endblock %}
+        </div>
+        {% endblock %}
+    </template>
+    {% endblock %}
+
+    {% block sw_payment_refund_list_sidebar %}
+    <template #sidebar>
+        <sw-sidebar class="sw-payment-refund-list__sidebar">
+            {% block sw_payment_refund_list_sidebar_refresh %}
+            <sw-sidebar-item
+                icon="regular-undo"
+                :title="$t('sw-payment.refund.list.titleSidebarItemRefresh')"
+                @click="onRefresh"
+            />
+            {% endblock %}
+
+            {% block sw_payment_refund_list_sidebar_filter %}
+            <sw-sidebar-filter-panel
+                entity="payment_refund"
+                :store-key="storeKey"
+                :filters="listFilters"
+                :defaults="defaultFilters"
+                :active-filter-number="activeFilterNumber"
+                @criteria-changed="updateCriteria"
+            />
+            {% endblock %}
+        </sw-sidebar>
+    </template>
+    {% endblock %}
+</sw-page>
+{% endblock %}

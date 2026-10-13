@@ -1,0 +1,133 @@
+{% block sw_settings_sms_delivery_list %}
+<sw-page class="sw-settings-sms-delivery-list">
+
+    {% block sw_settings_sms_delivery_list_search_bar %}
+    <template #search-bar>
+        <sw-search-bar
+            initial-search-type="sms_delivery"
+            :initial-search="term"
+            @search="onSearch"
+        />
+    </template>
+    {% endblock %}
+
+    {% block sw_settings_sms_delivery_list_smart_bar_header %}
+    <template #smart-bar-header>
+        {% block sw_settings_sms_delivery_list_smart_bar_header_title %}
+        <h2>
+            {% block sw_settings_sms_delivery_list_smart_bar_header_title_text %}
+            {{ $t('sw-settings.index.title') }}
+            <mt-icon
+                name="regular-chevron-right-xs"
+                size="12px"
+            />
+            {{ $t('sw-settings-sms.general.mainMenuItemGeneral') }}
+            {% endblock %}
+
+            {% block sw_settings_sms_delivery_list_smart_bar_header_amount %}
+            <span
+                v-if="!isLoading && deliveries && total"
+                class="sw-page__smart-bar-amount"
+            >
+                ({{ total }})
+            </span>
+            {% endblock %}
+        </h2>
+        {% endblock %}
+    </template>
+    {% endblock %}
+
+    {% block sw_settings_sms_delivery_list_content %}
+    <template #content>
+        <sw-card-view>
+            {% block sw_settings_sms_delivery_list_tabs %}
+            <sw-settings-sms-section-tabs active="delivery" />
+            {% endblock %}
+
+            {% block sw_settings_sms_delivery_list_card %}
+            <mt-card position-identifier="sw-settings-sms-delivery-list-content">
+                <template #toolbar>
+                    {% block sw_settings_sms_delivery_list_toolbar %}
+                    <div class="sw-settings-sms-delivery-list__toolbar">
+                        {% block sw_settings_sms_delivery_list_toolbar_status_filter %}
+                        <sw-single-select
+                            class="sw-settings-sms-delivery-list__status-filter"
+                            value-property="value"
+                            label-property="label"
+                            show-clearable-button
+                            size="small"
+                            :placeholder="$t('sw-settings-sms.delivery.filterStatus')"
+                            :options="statusFilterOptions"
+                            :value="statusFilter"
+                            @update:value="onFilterStatus"
+                        />
+                        {% endblock %}
+                    </div>
+                    {% endblock %}
+                </template>
+                {% block sw_settings_sms_delivery_list_grid %}
+                <template #grid>
+                    <sw-entity-listing
+                        class="sw-settings-sms-delivery-list__grid"
+                        :repository="deliveryRepository"
+                        :is-loading="isLoading"
+                        :data-source="deliveries"
+                        :columns="columns"
+                        identifier="sw-settings-sms-delivery-list"
+                        :sort-by="'createdAt'"
+                        :sort-direction="'DESC'"
+                        :full-page="false"
+                        :disable-data-fetching="true"
+                        :show-selection="false"
+                        :allow-edit="false"
+                        :allow-view="false"
+                        :allow-delete="false"
+                        @page-change="onPageChange"
+                    >
+                        {% block sw_settings_sms_delivery_list_grid_columns_created_at %}
+                        <template #column-createdAt="{ item }">
+                            {{ item.createdAt | date({ hour: '2-digit', minute: '2-digit' }) }}
+                        </template>
+                        {% endblock %}
+
+                        {% block sw_settings_sms_delivery_list_grid_columns_technical_name %}
+                        <template #column-technicalName="{ item }">
+                            {{ item.technicalName }}
+                        </template>
+                        {% endblock %}
+
+                        {% block sw_settings_sms_delivery_list_grid_columns_status %}
+                        <template #column-status="{ item }">
+                            <mt-badge
+                                class="sw-settings-sms-delivery-list__status"
+                                size="small"
+                                :variant="statusVariant(item.status)"
+                            >
+                                {{ statusLabel(item.status) }}
+                            </mt-badge>
+                        </template>
+                        {% endblock %}
+                    </sw-entity-listing>
+
+                    {% block sw_settings_sms_delivery_list_empty_state %}
+                    <mt-empty-state
+                        v-if="!isLoading && !total"
+                        centered
+                        :icon="$route.meta.$module.icon"
+                        :headline="$t('sw-settings-sms.delivery.emptyStateTitle')"
+                        :description="$t('sw-settings-sms.delivery.emptyStateDescription')"
+                    />
+                    {% endblock %}
+                </template>
+                {% endblock %}
+            </mt-card>
+            {% endblock %}
+
+            {% block sw_settings_sms_delivery_list_extension %}
+            <sw-extension-component-section position-identifier="sw-settings-sms-delivery-list__after-content" />
+            {% endblock %}
+        </sw-card-view>
+    </template>
+    {% endblock %}
+</sw-page>
+{% endblock %}

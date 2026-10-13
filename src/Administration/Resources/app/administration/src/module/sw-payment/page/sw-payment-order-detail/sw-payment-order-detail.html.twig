@@ -1,0 +1,421 @@
+{% block sw_payment_order_detail %}
+<sw-page class="sw-payment-order-detail">
+
+    {% block sw_payment_order_detail_smart_bar_header %}
+    <template #smart-bar-header>
+        {% block sw_payment_order_detail_smart_bar_header_title %}
+        <h2>
+            {% block sw_payment_order_detail_smart_bar_header_breadcrumb %}
+            <mt-link
+                class="sw-payment-order-detail__breadcrumb"
+                :to="{ name: 'sw.payment.index' }"
+            >
+                {{ $t('sw-payment.order.list.title') }}
+            </mt-link>
+
+            <mt-icon
+                name="regular-chevron-right-xs"
+                size="12px"
+            />
+
+            <span>{{ order ? order.paymentNo : $t('sw-payment.order.detail.title') }}</span>
+            {% endblock %}
+
+            {% block sw_payment_order_detail_smart_bar_header_state %}
+            <mt-badge
+                v-if="order && order.stateId"
+                :variant="orderStateVariant(order.stateId)"
+            >
+                {{ orderStateLabel(order.stateId) }}
+            </mt-badge>
+            {% endblock %}
+        </h2>
+        {% endblock %}
+    </template>
+    {% endblock %}
+
+    {% block sw_payment_order_detail_smart_bar_actions %}
+    <template #smart-bar-actions>
+        {% block sw_payment_order_detail_smart_bar_actions_refresh %}
+        <mt-button
+            v-tooltip.bottom="$t('sw-payment.order.detail.buttonRefresh')"
+            variant="secondary"
+            size="default"
+            :disabled="!order || undefined"
+            @click="onRefresh"
+        >
+            {{ $t('sw-payment.order.detail.buttonRefresh') }}
+        </mt-button>
+        {% endblock %}
+    </template>
+    {% endblock %}
+
+    {% block sw_payment_order_detail_content %}
+    <template #content>
+        <sw-card-view class="sw-payment-order-detail__content">
+            {% block sw_payment_order_detail_tabs %}
+            <mt-tabs
+                v-if="order"
+                position-identifier="sw-payment-order-detail"
+                :default-item="activeTab"
+                :items="tabs"
+                :small="true"
+                @new-item-active="onTabChange"
+            />
+            {% endblock %}
+
+            {% block sw_payment_order_detail_loading %}
+            <mt-card
+                v-if="!order && isLoading"
+                position-identifier="sw-payment-order-detail-loading"
+                :is-loading="true"
+            >
+                <div class="sw-payment-order-detail__loading-placeholder"></div>
+            </mt-card>
+            {% endblock %}
+
+            {% block sw_payment_order_detail_not_found %}
+            <mt-empty-state
+                v-else-if="!order"
+                centered
+                icon="regular-credit-card"
+                :headline="$t('sw-payment.order.list.messageNoResult')"
+                :description="$t('sw-payment.order.list.messageNoResultSubline')"
+            >
+                <template #button>
+                    <mt-button
+                        variant="primary"
+                        @click="$router.push({ name: 'sw.payment.index' })"
+                    >
+                        {{ $t('sw-payment.order.list.title') }}
+                    </mt-button>
+                </template>
+            </mt-empty-state>
+            {% endblock %}
+
+            {% block sw_payment_order_detail_general %}
+            <template v-if="order && activeTab === 'general'">
+                {% block sw_payment_order_detail_general_card %}
+                <mt-card
+                    position-identifier="sw-payment-order-detail-general"
+                    :title="$t('sw-payment.order.detail.cardGeneralTitle')"
+                >
+                    <sw-description-list grid="1fr 2fr">
+                        <dt>{{ $t('sw-payment.order.detail.labelPaymentNo') }}</dt>
+                        <dd>{{ order.paymentNo }}</dd>
+
+                        <dt>{{ $t('sw-payment.order.detail.labelOutTradeNo') }}</dt>
+                        <dd>{{ order.outTradeNo }}</dd>
+
+                        <dt>{{ $t('sw-payment.order.detail.labelOutPaymentNo') }}</dt>
+                        <dd>{{ order.outPaymentNo || '-' }}</dd>
+
+                        <dt>{{ $t('sw-payment.order.detail.labelSubject') }}</dt>
+                        <dd>{{ order.subject }}</dd>
+
+                        <dt>{{ $t('sw-payment.order.detail.labelBody') }}</dt>
+                        <dd>{{ order.body || '-' }}</dd>
+
+                        <dt>{{ $t('sw-payment.order.detail.labelAttach') }}</dt>
+                        <dd>{{ order.attach || '-' }}</dd>
+
+                        <dt>{{ $t('sw-payment.order.detail.labelCreatedAt') }}</dt>
+                        <dd>{{ dateFilter(order.createdAt) }}</dd>
+
+                        <dt>{{ $t('sw-payment.order.detail.labelUpdatedAt') }}</dt>
+                        <dd>{{ dateFilter(order.updatedAt) }}</dd>
+
+                        <dt>{{ $t('sw-payment.order.detail.labelPaidAt') }}</dt>
+                        <dd>{{ order.paidAt ? dateFilter(order.paidAt) : '-' }}</dd>
+
+                        <dt>{{ $t('sw-payment.order.detail.labelExpireAt') }}</dt>
+                        <dd>{{ order.expireAt ? dateFilter(order.expireAt) : '-' }}</dd>
+
+                        <dt>{{ $t('sw-payment.order.detail.labelClosedAt') }}</dt>
+                        <dd>{{ order.closedAt ? dateFilter(order.closedAt) : '-' }}</dd>
+                    </sw-description-list>
+                </mt-card>
+                {% endblock %}
+
+                {% block sw_payment_order_detail_amount_card %}
+                <mt-card
+                    position-identifier="sw-payment-order-detail-amount"
+                    :title="$t('sw-payment.order.detail.cardAmountTitle')"
+                >
+                    <sw-description-list grid="1fr 2fr">
+                        <dt>{{ $t('sw-payment.order.detail.labelAmount') }}</dt>
+                        <dd>{{ formatAmount(order.amount, order.currency) }}</dd>
+
+                        <dt>{{ $t('sw-payment.order.detail.labelPaidAmount') }}</dt>
+                        <dd>{{ formatAmount(order.paidAmount, order.currency) }}</dd>
+
+                        <dt>{{ $t('sw-payment.order.detail.labelRefundedAmount') }}</dt>
+                        <dd>{{ formatAmount(order.refundedAmount, order.currency) }}</dd>
+
+                        <dt>{{ $t('sw-payment.order.detail.labelCurrency') }}</dt>
+                        <dd>{{ order.currency }}</dd>
+                    </sw-description-list>
+                </mt-card>
+                {% endblock %}
+
+                {% block sw_payment_order_detail_channel_card %}
+                <mt-card
+                    position-identifier="sw-payment-order-detail-channel"
+                    :title="$t('sw-payment.order.detail.cardChannelTitle')"
+                >
+                    <sw-description-list grid="1fr 2fr">
+                        <dt>{{ $t('sw-payment.order.detail.labelProvider') }}</dt>
+                        <dd>{{ order.providerTechnicalName }}</dd>
+
+                        <dt>{{ $t('sw-payment.order.detail.labelChannel') }}</dt>
+                        <dd>{{ order.channelTechnicalName }}</dd>
+
+                        <dt>{{ $t('sw-payment.order.detail.labelState') }}</dt>
+                        <dd>{{ orderStateLabel(order.stateId) }}</dd>
+
+                        <dt>{{ $t('sw-payment.order.detail.labelPaymentApp') }}</dt>
+                        <dd>{{ paymentAppLabel() }}</dd>
+                    </sw-description-list>
+                </mt-card>
+                {% endblock %}
+
+                {% block sw_payment_order_detail_payer_card %}
+                <mt-card
+                    position-identifier="sw-payment-order-detail-payer"
+                    :title="$t('sw-payment.order.detail.cardPayerTitle')"
+                >
+                    <sw-description-list grid="1fr 2fr">
+                        <dt>{{ $t('sw-payment.order.detail.labelClientIp') }}</dt>
+                        <dd>{{ order.clientIp || '-' }}</dd>
+
+                        <dt>{{ $t('sw-payment.order.detail.labelDevice') }}</dt>
+                        <dd>{{ order.device || '-' }}</dd>
+
+                        <dt>{{ $t('sw-payment.order.detail.labelNotifyUrl') }}</dt>
+                        <dd>{{ order.notifyUrl || '-' }}</dd>
+
+                        <dt>{{ $t('sw-payment.order.detail.labelReturnUrl') }}</dt>
+                        <dd>{{ order.returnUrl || '-' }}</dd>
+
+                        <dt>{{ $t('sw-payment.order.detail.labelIdempotencyKey') }}</dt>
+                        <dd>{{ order.idempotencyKey || '-' }}</dd>
+                    </sw-description-list>
+                </mt-card>
+                {% endblock %}
+            </template>
+            {% endblock %}
+
+            {% block sw_payment_order_detail_transactions %}
+            <mt-card
+                v-if="order && activeTab === 'transactions'"
+                position-identifier="sw-payment-order-detail-transactions"
+                :title="$t('sw-payment.order.detail.titleTransactions')"
+            >
+                <mt-empty-state
+                    v-if="transactions.length === 0"
+                    centered
+                    icon="regular-credit-card"
+                    :headline="$t('sw-payment.order.detail.messageEmptyTransactions')"
+                    :description="$t('sw-payment.order.detail.sublineTransactions')"
+                />
+
+                <sw-data-grid
+                    v-else
+                    identifier="sw-payment-order-detail-transactions"
+                    :data-source="transactions"
+                    :columns="transactionColumns"
+                    :show-selection="false"
+                    :show-actions="false"
+                    :allow-column-edit="false"
+                >
+                    {% block sw_payment_order_detail_transactions_column_type %}
+                    <template #column-type="{ item }">
+                        {{ transactionTypeLabel(item.type) }}
+                    </template>
+                    {% endblock %}
+
+                    {% block sw_payment_order_detail_transactions_column_status %}
+                    <template #column-status="{ item }">
+                        <mt-badge :variant="statusVariant(item.status)">
+                            {{ transactionStatusLabel(item.status) }}
+                        </mt-badge>
+                    </template>
+                    {% endblock %}
+
+                    {% block sw_payment_order_detail_transactions_column_created_at %}
+                    <template #column-createdAt="{ item }">
+                        {{ dateFilter(item.createdAt) }}
+                    </template>
+                    {% endblock %}
+                </sw-data-grid>
+            </mt-card>
+            {% endblock %}
+
+            {% block sw_payment_order_detail_refunds %}
+            <mt-card
+                v-if="order && activeTab === 'refunds'"
+                position-identifier="sw-payment-order-detail-refunds"
+                :title="$t('sw-payment.order.detail.titleRefunds')"
+            >
+                <mt-empty-state
+                    v-if="refunds.length === 0"
+                    centered
+                    icon="regular-credit-card"
+                    :headline="$t('sw-payment.order.detail.messageEmptyRefunds')"
+                    :description="$t('sw-payment.order.detail.sublineRefunds')"
+                />
+
+                <sw-data-grid
+                    v-else
+                    identifier="sw-payment-order-detail-refunds"
+                    :data-source="refunds"
+                    :columns="refundColumns"
+                    :show-selection="false"
+                    :show-actions="false"
+                    :allow-column-edit="false"
+                >
+                    {% block sw_payment_order_detail_refunds_column_amount %}
+                    <template #column-amount="{ item }">
+                        {{ formatAmount(item.amount, item.currency) }}
+                    </template>
+                    {% endblock %}
+
+                    {% block sw_payment_order_detail_refunds_column_state %}
+                    <template #column-stateId="{ item }">
+                        <mt-badge :variant="refundStateVariant(item.stateId)">
+                            {{ refundStateLabel(item.stateId) }}
+                        </mt-badge>
+                    </template>
+                    {% endblock %}
+
+                    {% block sw_payment_order_detail_refunds_column_refunded_at %}
+                    <template #column-refundedAt="{ item }">
+                        {{ item.refundedAt ? dateFilter(item.refundedAt) : '-' }}
+                    </template>
+                    {% endblock %}
+
+                    {% block sw_payment_order_detail_refunds_column_created_at %}
+                    <template #column-createdAt="{ item }">
+                        {{ dateFilter(item.createdAt) }}
+                    </template>
+                    {% endblock %}
+                </sw-data-grid>
+            </mt-card>
+            {% endblock %}
+
+            {% block sw_payment_order_detail_notifications %}
+            <mt-card
+                v-if="order && activeTab === 'notifications'"
+                position-identifier="sw-payment-order-detail-notifications"
+                :title="$t('sw-payment.order.detail.titleNotifications')"
+            >
+                <mt-empty-state
+                    v-if="notifications.length === 0"
+                    centered
+                    icon="regular-bell"
+                    :headline="$t('sw-payment.order.detail.messageEmptyNotifications')"
+                    :description="$t('sw-payment.order.detail.sublineNotifications')"
+                />
+
+                <sw-data-grid
+                    v-else
+                    identifier="sw-payment-order-detail-notifications"
+                    :data-source="notifications"
+                    :columns="notificationColumns"
+                    :show-selection="false"
+                    :show-actions="false"
+                    :allow-column-edit="false"
+                >
+                    {% block sw_payment_order_detail_notifications_column_signature %}
+                    <template #column-signatureValid="{ item }">
+                        <mt-badge :variant="item.signatureValid ? 'positive' : 'critical'">
+                            {{ item.signatureValid ? $t('sw-payment.order.notification.labelSignatureValid') : $t('sw-payment.order.notification.labelSignatureInvalid') }}
+                        </mt-badge>
+                    </template>
+                    {% endblock %}
+
+                    {% block sw_payment_order_detail_notifications_column_result %}
+                    <template #column-processResult="{ item }">
+                        <mt-badge :variant="statusVariant(item.processResult)">
+                            {{ notificationResultLabel(item.processResult) }}
+                        </mt-badge>
+                    </template>
+                    {% endblock %}
+
+                    {% block sw_payment_order_detail_notifications_column_created_at %}
+                    <template #column-createdAt="{ item }">
+                        {{ dateFilter(item.createdAt) }}
+                    </template>
+                    {% endblock %}
+                </sw-data-grid>
+            </mt-card>
+            {% endblock %}
+
+            {% block sw_payment_order_detail_webhook_deliveries %}
+            <mt-card
+                v-if="order && activeTab === 'webhookDeliveries'"
+                position-identifier="sw-payment-order-detail-webhook-deliveries"
+                :title="$t('sw-payment.order.detail.titleWebhookDeliveries')"
+            >
+                <mt-empty-state
+                    v-if="webhookDeliveries.length === 0"
+                    centered
+                    icon="regular-share"
+                    :headline="$t('sw-payment.order.detail.messageEmptyWebhookDeliveries')"
+                    :description="$t('sw-payment.order.detail.sublineWebhookDeliveries')"
+                />
+
+                <sw-data-grid
+                    v-else
+                    identifier="sw-payment-order-detail-webhook-deliveries"
+                    :data-source="webhookDeliveries"
+                    :columns="webhookColumns"
+                    :show-selection="false"
+                    :show-actions="false"
+                    :allow-column-edit="false"
+                >
+                    {% block sw_payment_order_detail_webhook_column_status %}
+                    <template #column-status="{ item }">
+                        <mt-badge :variant="statusVariant(item.status)">
+                            {{ webhookStatusLabel(item.status) }}
+                        </mt-badge>
+                    </template>
+                    {% endblock %}
+
+                    {% block sw_payment_order_detail_webhook_column_next_retry_at %}
+                    <template #column-nextRetryAt="{ item }">
+                        {{ item.nextRetryAt ? dateFilter(item.nextRetryAt) : '-' }}
+                    </template>
+                    {% endblock %}
+
+                    {% block sw_payment_order_detail_webhook_column_created_at %}
+                    <template #column-createdAt="{ item }">
+                        {{ dateFilter(item.createdAt) }}
+                    </template>
+                    {% endblock %}
+                </sw-data-grid>
+            </mt-card>
+            {% endblock %}
+
+            {% block sw_payment_order_detail_channel_data %}
+            <mt-card
+                v-if="order && activeTab === 'channelData'"
+                position-identifier="sw-payment-order-detail-channel-data"
+                :title="$t('sw-payment.order.detail.cardChannelDataTitle')"
+            >
+                <p v-if="!channelDataJson">
+                    {{ $t('sw-payment.order.detail.messageNoChannelData') }}
+                </p>
+
+                <pre
+                    v-else
+                    class="sw-payment-order-detail__payload"
+                >{{ channelDataJson }}</pre>
+            </mt-card>
+            {% endblock %}
+        </sw-card-view>
+    </template>
+    {% endblock %}
+
+</sw-page>
+{% endblock %}

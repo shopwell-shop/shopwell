@@ -3,8 +3,17 @@
  */
 import './extension/sw-admin-menu';
 import './acl';
+import OAuth2IdentityService from './service/oauth2-identity.api.service';
 
 const { Module } = Shopwell;
+
+// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+Shopwell.Service().register('oauth2IdentityService', () => {
+    return new OAuth2IdentityService(
+        Shopwell.Application.getContainer('init').httpClient,
+        Shopwell.Service().get('loginService'),
+    );
+});
 
 /* eslint-disable sw-deprecation-rules/private-feature-declarations */
 Shopwell.Component.register('sw-profile-index', () => import('./page/sw-profile-index'));
@@ -13,6 +22,7 @@ Shopwell.Component.register(
     'sw-profile-index-search-preferences',
     () => import('./view/sw-profile-index-search-preferences'),
 );
+Shopwell.Component.register('sw-profile-index-oauth2-login', () => import('./view/sw-profile-index-oauth2-login'));
 /* eslint-enable sw-deprecation-rules/private-feature-declarations */
 
 /**
@@ -63,6 +73,14 @@ Module.register('sw-profile', {
                 privacyPreferences: {
                     component: 'sw-profile-index-privacy-preferences',
                     path: 'privacy-preferences',
+                    meta: {
+                        parentPath: 'sw.profile.index',
+                        privilege: 'user.update_profile',
+                    },
+                },
+                oauth2Login: {
+                    component: 'sw-profile-index-oauth2-login',
+                    path: 'oauth2-login',
                     meta: {
                         parentPath: 'sw.profile.index',
                         privilege: 'user.update_profile',

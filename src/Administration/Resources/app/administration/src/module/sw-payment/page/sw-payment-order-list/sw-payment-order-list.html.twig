@@ -1,0 +1,134 @@
+{% block sw_payment_order_list %}
+<sw-page class="sw-payment-order-list">
+    {% block sw_payment_order_list_search_bar %}
+    <template #search-bar>
+        <sw-search-bar
+            initial-search-type="payment_order"
+            :initial-search="term"
+            @search="onSearch"
+        />
+    </template>
+    {% endblock %}
+
+    {% block sw_payment_order_list_smart_bar_header %}
+    <template #smart-bar-header>
+        {% block sw_payment_order_list_smart_bar_header_title %}
+        <h2>
+            {% block sw_payment_order_list_smart_bar_header_title_text %}
+            {{ $t('sw-payment.order.list.title') }}
+            {% endblock %}
+
+            {% block sw_payment_order_list_smart_bar_header_amount %}
+            <span
+                v-if="!isLoading"
+                class="sw-page__smart-bar-amount"
+            >
+                ({{ total }})
+            </span>
+            {% endblock %}
+        </h2>
+        {% endblock %}
+    </template>
+    {% endblock %}
+
+    {% block sw_payment_order_list_content %}
+    <template #content>
+        {% block sw_payment_order_list_content %}
+        <div class="sw-payment-order-list__content">
+
+            {% block sw_payment_order_list_empty_state %}
+            <mt-empty-state
+                v-if="!isLoading && !total"
+                centered
+                :icon="$route.meta.$module.icon"
+                :headline="hasActiveSearchOrFilter ? $t('sw-empty-state.messageNoResultTitle') : $t('sw-payment.order.list.messageEmpty')"
+                :description="hasActiveSearchOrFilter ? $t('sw-empty-state.messageNoResultSubline') : $t('sw-payment.order.list.sublineEmpty')"
+            />
+            {% endblock %}
+
+            {% block sw_payment_order_list_grid %}
+            <sw-entity-listing
+                v-else-if="isLoading || orders"
+                ref="listing"
+                class="sw-payment-order-list__grid"
+                identifier="sw-payment-order-list"
+                :data-source="orders"
+                :columns="orderColumns"
+                :repository="orderRepository"
+                :sort-by="sortBy"
+                :sort-direction="sortDirection"
+                :is-loading="isLoading"
+                :full-page="true"
+                :show-selection="false"
+                :show-settings="true"
+                :disable-data-fetching="true"
+                :allow-inline-edit="false"
+                :allow-column-edit="true"
+                :allow-edit="false"
+                :allow-delete="false"
+                :allow-view="acl.can('payment_order.viewer') || undefined"
+                detail-route="sw.payment.orderDetail"
+                @page-change="onPageChange"
+                @column-sort="onSortColumn"
+            >
+                {% block sw_payment_order_list_grid_column_payment_app %}
+                <template #column-paymentAppId="{ item }">
+                    {{ paymentAppLabel(item) }}
+                </template>
+                {% endblock %}
+
+                {% block sw_payment_order_list_grid_column_state %}
+                <template #column-stateId="{ item }">
+                    <mt-badge
+                        v-if="item.stateId"
+                        :variant="paymentStateVariant(item.stateId)"
+                    >
+                        {{ paymentStateLabel(item.stateId) }}
+                    </mt-badge>
+                </template>
+                {% endblock %}
+
+                {% block sw_payment_order_list_grid_column_amount %}
+                <template #column-amount="{ item }">
+                    {{ formatAmount(item.amount, item.currency) }}
+                </template>
+                {% endblock %}
+
+                {% block sw_payment_order_list_grid_column_created_at %}
+                <template #column-createdAt="{ item }">
+                    <sw-time-ago :date="item.createdAt" />
+                </template>
+                {% endblock %}
+            </sw-entity-listing>
+            {% endblock %}
+        </div>
+        {% endblock %}
+    </template>
+    {% endblock %}
+
+    {% block sw_payment_order_list_sidebar %}
+    <template #sidebar>
+        <sw-sidebar class="sw-payment-order-list__sidebar">
+            {% block sw_payment_order_list_sidebar_refresh %}
+            <sw-sidebar-item
+                icon="regular-undo"
+                :title="$t('sw-payment.order.list.titleSidebarItemRefresh')"
+                @click="onRefresh"
+            />
+            {% endblock %}
+
+            {% block sw_payment_order_list_sidebar_filter %}
+            <sw-sidebar-filter-panel
+                entity="payment_order"
+                :store-key="storeKey"
+                :filters="listFilters"
+                :defaults="defaultFilters"
+                :active-filter-number="activeFilterNumber"
+                @criteria-changed="updateCriteria"
+            />
+            {% endblock %}
+        </sw-sidebar>
+    </template>
+    {% endblock %}
+</sw-page>
+{% endblock %}

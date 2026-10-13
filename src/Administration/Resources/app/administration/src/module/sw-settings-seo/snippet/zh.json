@@ -1,9 +1,9 @@
 {
   "sw-settings-seo": {
     "general": {
-      "mainMenuItemGeneral": "SEO",
+      "mainMenuItemGeneral": "搜索引擎优化",
       "descriptionTextModule": "SEO 设置管理",
-      "textHeadline": "SEO"
+      "textHeadline": "搜索引擎优化"
     }
   },
   "sw-settings-seo-entity-detail": {

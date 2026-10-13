@@ -80,8 +80,15 @@
     }
 
     .sw-login__error-banner,
-    .sw-login__alert-banner {
+    .sw-login__alert-banner,
+    .sw-login__oauth2-error-banner {
         margin-bottom: var(--scale-size-24);
+    }
+
+    .sw-login__oauth2-channels {
+        display: flex;
+        flex-direction: column;
+        gap: var(--scale-size-12);
     }
 
     .sw-login__submit {

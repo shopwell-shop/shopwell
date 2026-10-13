@@ -1,0 +1,182 @@
+{% block sw_settings_oauth2_login_index %}
+<sw-page class="sw-settings-oauth2-login">
+
+    {% block sw_settings_oauth2_login_smart_bar_header %}
+    <template #smart-bar-header>
+        {% block sw_settings_oauth2_login_smart_bar_header_title %}
+        <h2>
+            {% block sw_settings_oauth2_login_smart_bar_header_title_text %}
+            {{ $t('sw-settings.index.title') }}
+            <mt-icon
+                name="regular-chevron-right-xs"
+                size="var(--scale-size-12)"
+            />
+            {{ $t('sw-settings-oauth2-login.general.mainMenuItemGeneral') }}
+            {% endblock %}
+        </h2>
+        {% endblock %}
+    </template>
+    {% endblock %}
+
+    {% block sw_settings_oauth2_login_smart_bar_actions %}
+    <template #smart-bar-actions>
+        {% block sw_settings_oauth2_login_actions_save %}
+        <mt-button
+            class="sw-settings-oauth2-login__save-action"
+            variant="primary"
+            :is-loading="isSaving"
+            :disabled="isLoading || isSaving || !acl.can('oauth2_client.editor') || undefined"
+            @click="onSave"
+        >
+            {{ $t('global.default.save') }}
+        </mt-button>
+        {% endblock %}
+    </template>
+    {% endblock %}
+
+    {% block sw_settings_oauth2_login_content %}
+    <template #content>
+        <sw-card-view>
+            {% block sw_settings_oauth2_login_content_tabs %}
+            <mt-tabs
+                v-if="!isLoading && channels.length > 0"
+                position-identifier="sw-settings-oauth2-login-tabs"
+                :default-item="activeChannel"
+                :items="channelTabs"
+                :small="true"
+                @new-item-active="activeChannel = $event"
+            />
+            {% endblock %}
+
+            {% block sw_settings_oauth2_login_content_loading %}
+            <template v-if="isLoading">
+                <sw-skeleton />
+                <sw-skeleton />
+            </template>
+            {% endblock %}
+
+            {% block sw_settings_oauth2_login_content_empty_state %}
+            <mt-card
+                v-else-if="channels.length === 0"
+                position-identifier="sw-settings-oauth2-login-empty-state"
+            >
+                <mt-empty-state
+                    centered
+                    icon="regular-key"
+                    :headline="$t('sw-settings-oauth2-login.general.emptyStateTitle')"
+                    :description="$t('sw-settings-oauth2-login.general.emptyState')"
+                />
+            </mt-card>
+            {% endblock %}
+
+            {% block sw_settings_oauth2_login_content_channel %}
+            <mt-card
+                v-else
+                position-identifier="sw-settings-oauth2-login-channel"
+                :title="activeChannelState.label"
+                :subtitle="$t('sw-settings-oauth2-login.channel.cardSubtitle')"
+            >
+                <template #headerRight>
+                    {% block sw_settings_oauth2_login_content_channel_reset %}
+                    <mt-button
+                        v-if="activeChannelState.id"
+                        class="sw-settings-oauth2-login__channel-reset"
+                        variant="critical"
+                        ghost
+                        size="small"
+                        :disabled="!acl.can('oauth2_client.deleter') || undefined"
+                        @click="onOpenRemoveModal(activeChannelState)"
+                    >
+                        {{ $t('sw-settings-oauth2-login.channel.remove') }}
+                    </mt-button>
+                    {% endblock %}
+                </template>
+
+                {% block sw_settings_oauth2_login_content_channel_enabled %}
+                <mt-switch
+                    v-model="activeChannelState.enabled"
+                    class="sw-settings-oauth2-login__channel-enabled"
+                    bordered
+                    :disabled="!acl.can('oauth2_client.editor') || undefined"
+                    :label="$t('sw-settings-oauth2-login.channel.enabled')"
+                    :help-text="$t('sw-settings-oauth2-login.channel.enabledHelpText')"
+                />
+                {% endblock %}
+
+                {% block sw_settings_oauth2_login_content_channel_fields %}
+                <sw-container
+                    class="sw-settings-oauth2-login__channel-fields"
+                    columns="repeat(auto-fit, minmax(250px, 1fr))"
+                    gap="0px 30px"
+                >
+                    {% block sw_settings_oauth2_login_content_channel_field %}
+                    {# Which fields a channel has is decided by the channel, the page only renders them. #}
+                    <sw-form-field-renderer
+                        v-for="field in activeChannelState.formFields"
+                        :key="field.name"
+                        :class="`sw-settings-oauth2-login__field-${field.name}`"
+                        :type="field.type"
+                        :config="field.config"
+                        :value="activeChannelState.values[field.name]"
+                        :disabled="!acl.can('oauth2_client.editor') || undefined"
+                        @update:value="setFieldValue(activeChannelState, field, $event)"
+                    />
+                    {% endblock %}
+                </sw-container>
+                {% endblock %}
+            </mt-card>
+            {% endblock %}
+
+            {% block sw_settings_oauth2_login_content_extension %}
+            <sw-extension-component-section position-identifier="sw-settings-oauth2-login__after-content" />
+            {% endblock %}
+        </sw-card-view>
+
+        {% block sw_settings_oauth2_login_remove_modal %}
+        <mt-modal-root
+            v-if="removeTarget"
+            is-open
+            @change="onRemoveModalChange"
+        >
+            <mt-modal
+                width="s"
+                :title="$t('sw-settings-oauth2-login.channel.removeModalTitle')"
+            >
+                {% block sw_settings_oauth2_login_remove_modal_content %}
+                <p class="sw-settings-oauth2-login__remove-modal-content">
+                    {{ $t('sw-settings-oauth2-login.channel.removeModalMessage', { channel: removeTarget.label }) }}
+                </p>
+                {% endblock %}
+
+                {% block sw_settings_oauth2_login_remove_modal_footer %}
+                <template #footer>
+                    {% block sw_settings_oauth2_login_remove_modal_footer_cancel %}
+                    <mt-modal-close
+                        as="mt-button"
+                        variant="secondary"
+                        size="small"
+                    >
+                        {{ $t('global.default.cancel') }}
+                    </mt-modal-close>
+                    {% endblock %}
+
+                    {% block sw_settings_oauth2_login_remove_modal_footer_confirm %}
+                    <mt-modal-action
+                        as="mt-button"
+                        variant="critical"
+                        size="small"
+                        :is-loading="isSaving"
+                        @click="onConfirmRemove"
+                    >
+                        {{ $t('global.default.delete') }}
+                    </mt-modal-action>
+                    {% endblock %}
+                </template>
+                {% endblock %}
+            </mt-modal>
+        </mt-modal-root>
+        {% endblock %}
+    </template>
+    {% endblock %}
+</sw-page>
+{% endblock %}

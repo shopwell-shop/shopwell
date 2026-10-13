@@ -113,6 +113,36 @@ export default function createSearchTypeService() {
             placeholderSnippet: 'sw-flow.general.placeholderSearchBar',
             listingRoute: 'sw.flow.index',
         },
+        payment_order: {
+            entityName: 'payment_order',
+            placeholderSnippet: 'sw-payment.order.list.placeholderSearchBar',
+            listingRoute: 'sw.payment.index',
+            hideOnGlobalSearchBar: true,
+        },
+        payment_refund: {
+            entityName: 'payment_refund',
+            placeholderSnippet: 'sw-payment.refund.list.placeholderSearchBar',
+            listingRoute: 'sw.payment.refund',
+            hideOnGlobalSearchBar: true,
+        },
+        sms_gateway: {
+            entityName: 'sms_gateway',
+            placeholderSnippet: 'sw-settings-sms.gateway.placeholderSearchBar',
+            listingRoute: 'sw.settings.sms.gateway',
+            hideOnGlobalSearchBar: true,
+        },
+        sms_template: {
+            entityName: 'sms_template',
+            placeholderSnippet: 'sw-settings-sms.template.placeholderSearchBar',
+            listingRoute: 'sw.settings.sms.template',
+            hideOnGlobalSearchBar: true,
+        },
+        sms_delivery: {
+            entityName: 'sms_delivery',
+            placeholderSnippet: 'sw-settings-sms.delivery.placeholderSearchBar',
+            listingRoute: 'sw.settings.sms.delivery',
+            hideOnGlobalSearchBar: true,
+        },
     };
 
     let $typeStore = {};

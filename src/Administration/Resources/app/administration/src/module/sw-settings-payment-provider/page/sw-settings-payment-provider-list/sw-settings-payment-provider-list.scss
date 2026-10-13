@@ -1,0 +1,23 @@
+.sw-settings-payment-provider-list {
+    .sw-settings-payment-provider-list__card-content {
+        display: flex;
+        align-items: center;
+        column-gap: var(--scale-size-20, 20px);
+    }
+
+    .sw-settings-payment-provider-list__card-meta {
+        flex-grow: 1;
+        margin-right: var(--scale-size-36, 36px);
+        color: var(--color-text-secondary-default);
+        font-size: var(--font-size-xs, 12px);
+    }
+
+    .sw-settings-payment-provider-list__card-link {
+        flex-shrink: 0;
+        text-decoration: underline;
+    }
+
+    .sw-field--switch {
+        margin: 0;
+    }
+}

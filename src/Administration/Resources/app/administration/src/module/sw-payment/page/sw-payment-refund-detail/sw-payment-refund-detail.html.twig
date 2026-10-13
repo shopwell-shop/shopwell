@@ -1,0 +1,204 @@
+{% block sw_payment_refund_detail %}
+<sw-page class="sw-payment-refund-detail">
+
+    {% block sw_payment_refund_detail_smart_bar_header %}
+    <template #smart-bar-header>
+        {% block sw_payment_refund_detail_smart_bar_header_title %}
+        <h2>
+            {% block sw_payment_refund_detail_smart_bar_header_breadcrumb %}
+            <mt-link
+                class="sw-payment-refund-detail__breadcrumb"
+                :to="{ name: 'sw.payment.refund' }"
+            >
+                {{ $t('sw-payment.refund.list.title') }}
+            </mt-link>
+
+            <mt-icon
+                name="regular-chevron-right-xs"
+                size="12px"
+            />
+
+            <span>{{ refund ? refund.refundNo : $t('sw-payment.refund.detail.title') }}</span>
+            {% endblock %}
+
+            {% block sw_payment_refund_detail_smart_bar_header_state %}
+            <mt-badge
+                v-if="refund && refund.stateId"
+                :variant="refundStateVariant(refund.stateId)"
+            >
+                {{ refundStateLabel(refund.stateId) }}
+            </mt-badge>
+            {% endblock %}
+        </h2>
+        {% endblock %}
+    </template>
+    {% endblock %}
+
+    {% block sw_payment_refund_detail_smart_bar_actions %}
+    <template #smart-bar-actions>
+        {% block sw_payment_refund_detail_smart_bar_actions_refresh %}
+        <mt-button
+            v-tooltip.bottom="$t('sw-payment.refund.detail.buttonRefresh')"
+            variant="secondary"
+            size="default"
+            :disabled="!refund || undefined"
+            @click="onRefresh"
+        >
+            {{ $t('sw-payment.refund.detail.buttonRefresh') }}
+        </mt-button>
+        {% endblock %}
+    </template>
+    {% endblock %}
+
+    {% block sw_payment_refund_detail_content %}
+    <template #content>
+        <sw-card-view class="sw-payment-refund-detail__content">
+            {% block sw_payment_refund_detail_tabs %}
+            <mt-tabs
+                v-if="refund"
+                position-identifier="sw-payment-refund-detail"
+                :default-item="activeTab"
+                :items="tabs"
+                :small="true"
+                @new-item-active="onTabChange"
+            />
+            {% endblock %}
+
+            {% block sw_payment_refund_detail_loading %}
+            <mt-card
+                v-if="!refund && isLoading"
+                position-identifier="sw-payment-refund-detail-loading"
+                :is-loading="true"
+            >
+                <div class="sw-payment-refund-detail__loading-placeholder"></div>
+            </mt-card>
+            {% endblock %}
+
+            {% block sw_payment_refund_detail_not_found %}
+            <mt-empty-state
+                v-else-if="!refund"
+                centered
+                icon="regular-credit-card"
+                :headline="$t('sw-payment.refund.list.messageNoResult')"
+                :description="$t('sw-payment.refund.list.messageNoResultSubline')"
+            >
+                <template #button>
+                    <mt-button
+                        variant="primary"
+                        @click="$router.push({ name: 'sw.payment.refund' })"
+                    >
+                        {{ $t('sw-payment.refund.list.title') }}
+                    </mt-button>
+                </template>
+            </mt-empty-state>
+            {% endblock %}
+
+            {% block sw_payment_refund_detail_general %}
+            <template v-if="refund && activeTab === 'general'">
+                {% block sw_payment_refund_detail_general_card %}
+                <mt-card
+                    position-identifier="sw-payment-refund-detail-general"
+                    :title="$t('sw-payment.refund.detail.cardGeneralTitle')"
+                >
+                    <sw-description-list grid="1fr 2fr">
+                        <dt>{{ $t('sw-payment.refund.detail.labelRefundNo') }}</dt>
+                        <dd>{{ refund.refundNo }}</dd>
+
+                        <dt>{{ $t('sw-payment.refund.detail.labelOutRefundNo') }}</dt>
+                        <dd>{{ refund.outRefundNo }}</dd>
+
+                        <dt>{{ $t('sw-payment.refund.detail.labelOutRefundId') }}</dt>
+                        <dd>{{ refund.outRefundId || '-' }}</dd>
+
+                        <dt>{{ $t('sw-payment.refund.detail.labelState') }}</dt>
+                        <dd>{{ refundStateLabel(refund.stateId) }}</dd>
+
+                        <dt>{{ $t('sw-payment.refund.detail.labelReason') }}</dt>
+                        <dd>{{ refund.reason || '-' }}</dd>
+
+                        <dt>{{ $t('sw-payment.refund.detail.labelRefundedAt') }}</dt>
+                        <dd>{{ refund.refundedAt ? dateFilter(refund.refundedAt) : '-' }}</dd>
+
+                        <dt>{{ $t('sw-payment.refund.detail.labelCreatedAt') }}</dt>
+                        <dd>{{ dateFilter(refund.createdAt) }}</dd>
+
+                        <dt>{{ $t('sw-payment.refund.detail.labelUpdatedAt') }}</dt>
+                        <dd>{{ dateFilter(refund.updatedAt) }}</dd>
+                    </sw-description-list>
+                </mt-card>
+                {% endblock %}
+
+                {% block sw_payment_refund_detail_amount_card %}
+                <mt-card
+                    position-identifier="sw-payment-refund-detail-amount"
+                    :title="$t('sw-payment.refund.detail.cardAmountTitle')"
+                >
+                    <sw-description-list grid="1fr 2fr">
+                        <dt>{{ $t('sw-payment.refund.detail.labelAmount') }}</dt>
+                        <dd>{{ formatAmount(refund.amount, refund.currency) }}</dd>
+
+                        <dt>{{ $t('sw-payment.refund.detail.labelCurrency') }}</dt>
+                        <dd>{{ refund.currency }}</dd>
+                    </sw-description-list>
+                </mt-card>
+                {% endblock %}
+
+                {% block sw_payment_refund_detail_order_card %}
+                <mt-card
+                    position-identifier="sw-payment-refund-detail-order"
+                    :title="$t('sw-payment.refund.detail.cardOrderTitle')"
+                >
+                    <sw-description-list
+                        v-if="order"
+                        grid="1fr 2fr"
+                    >
+                        <dt>{{ $t('sw-payment.refund.detail.labelPaymentOrder') }}</dt>
+                        <dd>
+                            <router-link
+                                class="sw-data-grid__cell-value"
+                                :to="{ name: 'sw.payment.orderDetail', params: { id: order.id } }"
+                            >
+                                {{ order.paymentNo }}
+                            </router-link>
+                        </dd>
+
+                        <dt>{{ $t('sw-payment.order.detail.labelOutTradeNo') }}</dt>
+                        <dd>{{ order.outTradeNo }}</dd>
+
+                        <dt>{{ $t('sw-payment.refund.detail.labelOutPaymentNo') }}</dt>
+                        <dd>{{ order.outPaymentNo || '-' }}</dd>
+
+                        <dt>{{ $t('sw-payment.refund.detail.labelChannel') }}</dt>
+                        <dd>{{ order.channelTechnicalName }}</dd>
+
+                        <dt>{{ $t('sw-payment.refund.detail.labelPaymentApp') }}</dt>
+                        <dd>{{ order.paymentApp ? (order.paymentApp.name || order.paymentApp.technicalName) : '-' }}</dd>
+                    </sw-description-list>
+
+                    <p v-else>
+                        {{ $t('sw-payment.refund.list.messageEmpty') }}
+                    </p>
+                </mt-card>
+                {% endblock %}
+            </template>
+            {% endblock %}
+
+            {% block sw_payment_refund_detail_payload %}
+            <mt-card
+                v-if="refund && activeTab === 'payload'"
+                position-identifier="sw-payment-refund-detail-payload"
+                :title="$t('sw-payment.refund.detail.cardPayloadTitle')"
+            >
+                <h4>{{ $t('sw-payment.refund.detail.labelRequestPayload') }}</h4>
+                <pre class="sw-payment-refund-detail__payload">{{ requestPayloadJson || '-' }}</pre>
+
+                <h4>{{ $t('sw-payment.refund.detail.labelResponsePayload') }}</h4>
+                <pre class="sw-payment-refund-detail__payload">{{ responsePayloadJson || '-' }}</pre>
+            </mt-card>
+            {% endblock %}
+        </sw-card-view>
+    </template>
+    {% endblock %}
+
+</sw-page>
+{% endblock %}

@@ -58,6 +58,7 @@ use Shopwell\Core\Framework\Adapter\Translation\ConstraintViolationTranslator;
 use Shopwell\Core\Framework\App\Api\AppJWTGenerateRoute;
 use Shopwell\Core\Framework\Gateway\Context\SalesChannel\ContextGatewayRoute;
 use Shopwell\Core\Framework\Script\Api\ScriptResponseEncoder;
+use Shopwell\Core\Framework\Sso\Service\OAuth2LoginService;
 use Shopwell\Core\Framework\Util\HtmlSanitizer;
 use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextService;
 use Shopwell\Core\System\SalesChannel\SalesChannel\ContextSwitchRoute;
@@ -85,6 +86,7 @@ use Shopwell\Storefront\Controller\LandingPageController;
 use Shopwell\Storefront\Controller\MaintenanceController;
 use Shopwell\Storefront\Controller\NavigationController;
 use Shopwell\Storefront\Controller\NewsletterController;
+use Shopwell\Storefront\Controller\OAuth2LoginController;
 use Shopwell\Storefront\Controller\ProductController;
 use Shopwell\Storefront\Controller\RegisterController;
 use Shopwell\Storefront\Controller\RobotsController;
@@ -455,6 +457,14 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service('twig'),
             service(StorybookService::class),
+        ])
+        ->call('setContainer', [service('service_container')]);
+
+    $services->set(OAuth2LoginController::class)
+        ->public()
+        ->args([
+            service(OAuth2LoginService::class),
+            service(AccountService::class),
         ])
         ->call('setContainer', [service('service_container')]);
 };

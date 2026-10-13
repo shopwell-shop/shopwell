@@ -1,3 +1,15 @@
+# 6.7.18.0 (upcoming)
+
+## Features
+
+### Payment gateway for external systems
+
+The platform can act as a payment gateway for external systems, independently of the checkout. A merchant configures the credentials of a payment interface (alipay, wechat, paypal, stripe) once, enables the channels of that interface it wants to offer, and authorizes an app per interface and channel; an app either collects with the credentials of the platform or with its own.
+
+External systems call the gateway at `/payment-api/v1/*` (payment orders, refunds, channels) and authenticate with an HMAC signature derived from their app secret. The gateway has a route scope of its own - it never accepts `store-api`, `admin-api` or storefront credentials and is not part of the Store API schema. Its orders, refunds, transactions, incoming notifications and webhook deliveries live in the new `payment_order`, `payment_refund`, `payment_transaction`, `payment_notification` and `payment_webhook_delivery` entities and are readable for extensions through the DAL. The Administration configures interfaces, channels and apps in a new payment section, backed by the `payment_provider_config`, `payment_channel_config`, `payment_app_provider` and `payment_app_channel` entities.
+
+A migration seeds alipay's public sandbox account together with one demo app, so the gateway can be called right after the update. Those are alipay's public sandbox test credentials - replace them with the real merchant credentials and remove the demo app before go-live.
+
 # 6.7.17.0 (upcoming)
 
 ## Features

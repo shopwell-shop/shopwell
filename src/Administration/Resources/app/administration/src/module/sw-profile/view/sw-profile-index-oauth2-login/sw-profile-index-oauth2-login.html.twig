@@ -1,0 +1,123 @@
+{% block sw_profile_index_oauth2_login %}
+<div class="sw-profile-index-oauth2-login">
+    {% block sw_profile_index_oauth2_login_card %}
+    <mt-card
+        position-identifier="sw-profile-index-oauth2-login"
+        :title="$t('sw-profile.oauth2Login.title')"
+        :subtitle="$t('sw-profile.oauth2Login.subtitle')"
+        :is-loading="isLoading"
+    >
+        {% block sw_profile_index_oauth2_login_description %}
+        <p class="sw-profile-index-oauth2-login__description">
+            {{ $t('sw-profile.oauth2Login.description') }}
+        </p>
+        {% endblock %}
+
+        {% block sw_profile_index_oauth2_login_empty_state %}
+        <mt-empty-state
+            v-if="!isLoading && bindings.length === 0"
+            class="sw-profile-index-oauth2-login__empty-state"
+            icon="regular-key"
+            :headline="$t('sw-profile.oauth2Login.emptyStateTitle')"
+            :description="$t('sw-profile.oauth2Login.emptyState')"
+        />
+        {% endblock %}
+
+        {% block sw_profile_index_oauth2_login_bindings %}
+        <div
+            v-if="bindings.length > 0"
+            class="sw-profile-index-oauth2-login__bindings"
+        >
+            {% block sw_profile_index_oauth2_login_binding %}
+            <div
+                v-for="binding in bindings"
+                :key="binding.technicalName"
+                class="sw-profile-index-oauth2-login__binding"
+            >
+                <span class="sw-profile-index-oauth2-login__binding-label">
+                    {{ channelLabel(binding) }}
+                </span>
+
+                {% block sw_profile_index_oauth2_login_binding_state %}
+                <span class="sw-profile-index-oauth2-login__binding-state">
+                    {{ binding.linked ? $t('sw-profile.oauth2Login.linked') : $t('sw-profile.oauth2Login.notLinked') }}
+                </span>
+                {% endblock %}
+
+                {% block sw_profile_index_oauth2_login_binding_unbind %}
+                <mt-button
+                    v-if="binding.linked"
+                    class="sw-profile-index-oauth2-login__binding-unbind"
+                    variant="critical"
+                    ghost
+                    size="small"
+                    @click.prevent="onOpenRemoveModal(binding)"
+                >
+                    {{ $t('sw-profile.oauth2Login.unbind') }}
+                </mt-button>
+                {% endblock %}
+            </div>
+            {% endblock %}
+        </div>
+        {% endblock %}
+
+        {% block sw_profile_index_oauth2_login_hint %}
+        <mt-banner
+            class="sw-profile-index-oauth2-login__hint"
+            variant="info"
+            :show-icon="true"
+            :closable="false"
+        >
+            {{ $t('sw-profile.oauth2Login.hint') }}
+        </mt-banner>
+        {% endblock %}
+    </mt-card>
+    {% endblock %}
+
+    {% block sw_profile_index_oauth2_login_remove_modal %}
+    <mt-modal-root
+        v-if="removeTarget"
+        class="sw-profile-index-oauth2-login__remove-modal"
+        is-open
+        @change="onRemoveModalChange"
+    >
+        <mt-modal
+            width="s"
+            :title="$t('sw-profile.oauth2Login.removeModalTitle')"
+        >
+            {% block sw_profile_index_oauth2_login_remove_modal_content %}
+            <p>
+                {{ $t('sw-profile.oauth2Login.removeModalMessage', { channel: channelLabel(removeTarget) }) }}
+            </p>
+            {% endblock %}
+
+            {% block sw_profile_index_oauth2_login_remove_modal_footer %}
+            <template #footer>
+                {% block sw_profile_index_oauth2_login_remove_modal_footer_cancel %}
+                <mt-modal-close
+                    as="mt-button"
+                    variant="secondary"
+                    size="small"
+                >
+                    {{ $t('global.default.cancel') }}
+                </mt-modal-close>
+                {% endblock %}
+
+                {% block sw_profile_index_oauth2_login_remove_modal_footer_confirm %}
+                <mt-modal-action
+                    as="mt-button"
+                    variant="critical"
+                    size="small"
+                    :is-loading="isUnbinding"
+                    @click="onConfirmRemove"
+                >
+                    {{ $t('sw-profile.oauth2Login.unbind') }}
+                </mt-modal-action>
+                {% endblock %}
+            </template>
+            {% endblock %}
+        </mt-modal>
+    </mt-modal-root>
+    {% endblock %}
+</div>
+{% endblock %}

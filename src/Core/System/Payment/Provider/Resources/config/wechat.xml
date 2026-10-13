@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<provider>
+
+    <name>wechat</name>
+    <label>微信支付</label>
+
+    <!-- 商户号 = 一套凭据，其下所有支付渠道共用；appid 与商户号需在商户平台建立绑定关系，
+         且每个支付渠道用的是不同的 appid，因此 appid 是「渠道参数」而不是凭据。 -->
+    <credentials>
+        <field name="mch_id" type="text" required="true">
+            <label>商户号</label>
+        </field>
+        <field name="mch_serial" type="text" required="true">
+            <label>商户证书序列号</label>
+        </field>
+        <field name="mch_private_key" type="textarea" required="true" secret="true">
+            <label>商户私钥</label>
+        </field>
+        <field name="apiv3_key" type="password" required="true" secret="true">
+            <label>APIv3 密钥</label>
+        </field>
+        <field name="platform_serial" type="text">
+            <label>微信支付平台证书序列号</label>
+        </field>
+        <field name="platform_cert" type="textarea">
+            <label>微信支付平台证书</label>
+        </field>
+    </credentials>
+
+    <channels>
+        <channel name="wechat_h5">
+            <label>微信支付 H5</label>
+            <flow>redirect</flow>
+            <currencies>CNY</currencies>
+            <devices>wap</devices>
+            <params>
+                <field name="appid" type="text" required="true">
+                    <label>公众号 / APP 的 appid</label>
+                </field>
+            </params>
+        </channel>
+
+        <channel name="wechat_native">
+            <label>微信支付 Native（扫码）</label>
+            <flow>qrcode</flow>
+            <currencies>CNY</currencies>
+            <devices>web</devices>
+            <params>
+                <field name="appid" type="text" required="true">
+                    <label>公众号 / APP 的 appid</label>
+                </field>
+            </params>
+        </channel>
+
+        <channel name="wechat_jsapi">
+            <label>微信支付 JSAPI（公众号）</label>
+            <flow>sdk</flow>
+            <currencies>CNY</currencies>
+            <devices>wap</devices>
+            <params>
+                <field name="appid" type="text" required="true">
+                    <label>公众号的 appid</label>
+                </field>
+            </params>
+            <runtime-params>
+                <param name="openid" required="true"/>
+            </runtime-params>
+        </channel>
+
+        <channel name="wechat_mini">
+            <label>微信支付 小程序</label>
+            <flow>sdk</flow>
+            <currencies>CNY</currencies>
+            <devices>mini</devices>
+            <params>
+                <field name="appid" type="text" required="true">
+                    <label>小程序的 appid</label>
+                </field>
+            </params>
+            <runtime-params>
+                <param name="openid" required="true"/>
+            </runtime-params>
+        </channel>
+
+        <channel name="wechat_app">
+            <label>微信支付 APP</label>
+            <flow>sdk</flow>
+            <currencies>CNY</currencies>
+            <devices>app</devices>
+            <params>
+                <field name="appid" type="text" required="true">
+                    <label>APP 的 appid</label>
+                </field>
+            </params>
+        </channel>
+    </channels>
+
+</provider>

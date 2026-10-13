@@ -122,6 +122,7 @@ export default {
                 createRouteTab('sw-profile.tabGeneral.title', 'sw.profile.index.general'),
                 createRouteTab('sw-profile.tabSearchPreferences.title', 'sw.profile.index.searchPreferences'),
                 createRouteTab('sw-profile.tabPrivacyPreferences.title', 'sw.profile.index.privacyPreferences'),
+                createRouteTab('sw-profile.tabOAuth2Login.title', 'sw.profile.index.oauth2Login'),
             ];
         },
     },

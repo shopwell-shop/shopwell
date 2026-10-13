@@ -54,6 +54,31 @@ class LoginResponseService
         return $redirectResponse;
     }
 
+    /**
+     * Sends the browser back to the login page of the administration after a third party login
+     * failed. The reason travels in a short lived cookie, the login page reads and removes it, so
+     * nothing of it stays in the url or in the history of the browser.
+     */
+    public function createOAuth2ErrorResponse(string $errorCode): RedirectResponse
+    {
+        $redirectUrl = $this->urlGenerator->generate(self::ADMIN_ROUTE_NAME);
+
+        $redirectResponse = new RedirectResponse($redirectUrl . '/#/login');
+
+        $cookie = new Cookie(
+            'oauth2LoginError',
+            $errorCode,
+            $this->createTimeStamp(60),
+            $redirectUrl,
+            httpOnly: false,
+            sameSite: Cookie::SAMESITE_STRICT
+        );
+
+        $redirectResponse->headers->setCookie($cookie);
+
+        return $redirectResponse;
+    }
+
     private function createCookie(ResponseInterface $response, string $path): Cookie
     {
         $cookieData = $this->createCookieData($response);

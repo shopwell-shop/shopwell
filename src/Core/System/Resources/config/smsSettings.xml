@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopwell-shop/shopwell/trunk/src/Core/System/SystemConfig/Schema/config.xsd">
+    <card>
+        <title>Sms settings</title>
+        <title lang="zh-CN">短信设置</title>
+
+        <input-field type="bool">
+            <name>enabled</name>
+            <label>Send sms</label>
+            <label lang="zh-CN">启用短信发送</label>
+        </input-field>
+
+        <input-field>
+            <name>defaultGateway</name>
+            <label>Default gateway</label>
+            <label lang="zh-CN">默认短信网关</label>
+            <placeholder>Technical name of a gateway, e.g. aliyun</placeholder>
+            <placeholder lang="zh-CN">网关技术名，例如 aliyun</placeholder>
+        </input-field>
+
+        <input-field>
+            <name>defaultCountry</name>
+            <label>Default country of a phone number</label>
+            <label lang="zh-CN">手机号默认国家</label>
+            <placeholder>ISO code, e.g. CN</placeholder>
+            <placeholder lang="zh-CN">ISO 代码，例如 CN</placeholder>
+        </input-field>
+
+        <input-field type="int">
+            <name>otpResendInterval</name>
+            <label>Minimum interval between two verification codes in seconds</label>
+            <label lang="zh-CN">验证码重发最小间隔（秒）</label>
+        </input-field>
+
+        <input-field type="int">
+            <name>dailyQuotaPerPhone</name>
+            <label>Maximum number of messages per phone number and day</label>
+            <label lang="zh-CN">单号码每日发送上限</label>
+        </input-field>
+    </card>
+</config>

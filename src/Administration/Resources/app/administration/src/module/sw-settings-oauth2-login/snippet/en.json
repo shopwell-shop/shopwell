@@ -1,0 +1,41 @@
+{
+  "sw-settings-oauth2-login": {
+    "general": {
+      "mainMenuItemGeneral": "Third party login",
+      "description": "Configure the third party login channels so customers can sign in with an external account.",
+      "emptyStateTitle": "No third party login channel",
+      "emptyState": "There is no third party login channel to configure."
+    },
+    "channel": {
+      "cardSubtitle": "The credentials are issued by the platform.",
+      "enabled": "Enable this channel",
+      "enabledHelpText": "Once enabled, customers can sign in with an account of this platform.",
+      "clientId": "Client ID / App ID",
+      "clientSecret": "Client Secret / App Secret",
+      "scopes": "Scopes",
+      "remove": "Remove configuration",
+      "removeModalTitle": "Remove third party login configuration",
+      "removeModalMessage": "Remove the login configuration of \"{channel}\"? Customers will no longer be able to sign in with this platform."
+    },
+    "notification": {
+      "saveSuccess": "The third party login settings have been saved.",
+      "removeSuccess": "The third party login channel configuration has been removed.",
+      "missingFields": "\"{channel}\" is enabled, but not every required field is filled in."
+    }
+  },
+  "sso": {
+    "oauth2": {
+      "channel": {
+        "google": "Google",
+        "wechat": "WeChat"
+      }
+    }
+  },
+  "sw-privileges": {
+    "permissions": {
+      "oauth2_client": {
+        "label": "Third party login"
+      }
+    }
+  }
+}

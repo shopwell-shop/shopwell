@@ -47,7 +47,7 @@
       "placeholderPhoneNumber": "手机号",
       "placeholderNewPassword": "输入新密码 ...",
       "placeholderNewPasswordConfirm": "再次输入新密码 ...",
-      "labelSalutation": "称谓",
+      "labelSalutation": "称呼",
       "labelTitle": "头衔",
       "labelCompany": "公司",
       "labelEmail": "邮箱地址",
@@ -92,7 +92,7 @@
       "titleSidebarItemFilterRequestedGroup": "仅显示有客户组申请的客户"
     },
     "baseForm": {
-      "labelSalutation": "称谓",
+      "labelSalutation": "称呼",
       "labelTitle": "头衔",
       "labelEmail": "邮箱地址",
       "labelPhoneNumber": "手机号",
@@ -105,7 +105,7 @@
       "labelPassword": "密码",
       "placeholderPassword": "输入密码 ...",
       "helpTextPassword": "保存客户后，密码只能由客户本人修改。",
-      "placeholderSalutation": "选择称谓…",
+      "placeholderSalutation": "选择称呼…",
       "placeholderTitle": "输入头衔 ...",
       "placeholderEmail": "输入邮箱地址 ...",
       "placeholderPhoneNumber": "输入手机号 ...",
@@ -217,7 +217,7 @@
     "addressForm": {
       "labelCompany": "公司",
       "labelDepartment": "部门",
-      "labelSalutation": "称谓",
+      "labelSalutation": "称呼",
       "labelTitle": "头衔",
       "labelZipcode": "邮编",
       "labelStreet": "街道",
@@ -261,8 +261,8 @@
         "placeholder": "输入客户编号 ..."
       },
       "salutation": {
-        "label": "称谓",
-        "placeholder": "选择称谓…"
+        "label": "称呼",
+        "placeholder": "选择称呼…"
       },
       "status": {
         "label": "状态",

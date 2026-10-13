@@ -19,6 +19,7 @@ return static function (RoutingConfigurator $routes): void {
     $routes->import('../../Script/Api/*Route.php', 'attribute');
     $routes->import('../../Rule/Api/*Controller.php', 'attribute');
     $routes->import('../../Gateway/**/*Route.php', 'attribute');
+    $routes->import('../../Sms/Controller/**/*Controller.php', 'attribute');
     $routes->import('../../Sso/Controller/**/*Controller.php', 'attribute');
     $routes->import('../../Mcp/Controller/*Controller.php', 'attribute');
     $routes->import('../../Validation/Api/*Controller.php', 'attribute');

@@ -1,0 +1,94 @@
+.sw-settings-payment-gateway-detail {
+    &__active,
+    &__allowed-ips,
+    &__secret-hint,
+    &__provider-enabled,
+    &__provider-mode {
+        margin-block-start: var(--scale-size-24);
+    }
+
+    &__secret-generate {
+        margin-block-start: var(--scale-size-8);
+    }
+
+    &__secret-value {
+        margin: var(--scale-size-24) 0 0;
+        padding: var(--scale-size-16);
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: var(--font-size-xs);
+        line-height: var(--font-line-height-s);
+        word-break: break-all;
+        background: var(--color-background-secondary-default);
+        border-radius: var(--border-radius-xs);
+    }
+
+    &__secret-modal-message,
+    &__delete-modal-message {
+        margin: 0;
+    }
+
+    &__provider-authorized,
+    &__provider-credentials {
+        margin-inline-end: var(--scale-size-8, 8px);
+    }
+
+    &__section {
+        margin: var(--scale-size-24, 24px) 0 0;
+    }
+
+    &__section-title {
+        margin: 0;
+        color: var(--color-text-primary-default);
+        font-size: var(--font-size-m, 16px);
+        font-weight: var(--font-weight-semibold, 600);
+    }
+
+    &__section-subtitle {
+        margin: var(--scale-size-4, 4px) 0 0;
+        color: var(--color-text-secondary-default);
+        font-size: var(--font-size-xs, 12px);
+    }
+
+    &__provider {
+        margin-top: var(--scale-size-16, 16px);
+    }
+
+    &__channels {
+        margin-block-start: var(--scale-size-24);
+        padding-block-start: var(--scale-size-16);
+        border-block-start: 1px solid var(--color-border-secondary-default, rgba(0, 0, 0, 8%));
+    }
+
+    &__channels-title {
+        margin: 0 0 var(--scale-size-8);
+        color: var(--color-text-secondary-default);
+        font-size: var(--font-size-xs, 12px);
+        font-weight: var(--font-weight-semibold, 600);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    &__channel {
+        padding-block: var(--scale-size-12, 12px);
+
+        & + & {
+            border-block-start: 1px solid var(--color-border-secondary-default, rgba(0, 0, 0, 8%));
+        }
+    }
+
+    &__channel-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--scale-size-16, 16px);
+        align-items: center;
+        margin-block-start: var(--scale-size-4, 4px);
+        color: var(--color-text-secondary-default);
+        font-size: var(--font-size-xs, 12px);
+    }
+
+    &__channel-meta-item {
+        display: inline-flex;
+        gap: var(--scale-size-4, 4px);
+        align-items: center;
+    }
+}

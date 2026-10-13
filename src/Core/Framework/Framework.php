@@ -40,6 +40,7 @@ use Shopwell\Core\Framework\Feature\FeatureFlagRegistry;
 use Shopwell\Core\Framework\Increment\IncrementerGatewayCompilerPass;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\MessageQueue\MessageHandlerCompilerPass;
+use Shopwell\Core\Framework\Sms\Transport\SmsConfigurationCompilerPass;
 use Shopwell\Core\Framework\Telemetry\Metrics\MeterProvider;
 use Shopwell\Core\Framework\Test\DependencyInjection\CompilerPass\ContainerVisibilityCompilerPass;
 use Shopwell\Core\Framework\Test\RateLimiter\DisableRateLimiterCompilerPass;
@@ -105,6 +106,7 @@ class Framework extends Bundle
         $phpLoader->load('telemetry.php');
         $phpLoader->load('notification.php');
         $phpLoader->load('sso.php');
+        $phpLoader->load('sms.php');
 
         $phpLoader->load('mcp.php');
 
@@ -142,6 +144,7 @@ class Framework extends Bundle
         $container->addCompilerPass(new CreateGeneratorScaffoldingCommandPass());
         $container->addCompilerPass(new RedisConnectionsCompilerPass());
         $container->addCompilerPass(new TelemetrySubscriberCompilerPass());
+        $container->addCompilerPass(new SmsConfigurationCompilerPass());
 
         if ($container->getParameter('kernel.environment') === 'test') {
             $container->addCompilerPass(new DisableRateLimiterCompilerPass());
