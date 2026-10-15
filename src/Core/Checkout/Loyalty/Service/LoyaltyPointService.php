@@ -162,7 +162,7 @@ class LoyaltyPointService
             'balanceAfter' => $balanceAfter,
             'idempotencyKey' => $idempotencyKey,
             'orderId' => $orderId,
-            'expiresAt' => $type === self::TRANSACTION_TYPE_AWARD ? $this->resolveExpiresAt($context) : null,
+            'expiresAt' => $type === self::TRANSACTION_TYPE_AWARD ? $this->resolveExpiresAt() : null,
             'comment' => $comment,
             'administratorId' => $administratorId,
         ]], $context);
@@ -194,7 +194,7 @@ class LoyaltyPointService
         ]], $context);
     }
 
-    private function resolveExpiresAt(Context $context): ?\DateTimeInterface
+    private function resolveExpiresAt(): ?\DateTimeInterface
     {
         $validityDays = $this->systemConfigService->getInt(self::CONFIG_KEY_POINTS_VALIDITY_DAYS);
 
