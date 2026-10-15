@@ -24,6 +24,7 @@
         <mt-button
             class="sw-settings-oauth2-login__save-action"
             variant="primary"
+            size="default"
             :is-loading="isSaving"
             :disabled="isLoading || isSaving || !acl.can('oauth2_client.editor') || undefined"
             @click="onSave"
