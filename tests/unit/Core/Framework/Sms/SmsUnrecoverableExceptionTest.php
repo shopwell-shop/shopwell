@@ -31,7 +31,7 @@ class SmsUnrecoverableExceptionTest extends TestCase
     {
         $exception = SmsUnrecoverableException::providerRejected('aliyun', 'isp.SYSTEM_ERROR', 'busy');
 
-        static::assertInstanceOf(SmsException::class, $exception);
+        static::assertSame(SmsUnrecoverableException::PROVIDER_REJECTED, $exception->getErrorCode());
         static::assertNotSame(SmsException::PROVIDER_UNAVAILABLE, $exception->getErrorCode());
     }
 

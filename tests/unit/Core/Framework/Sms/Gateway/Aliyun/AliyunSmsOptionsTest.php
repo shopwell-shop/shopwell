@@ -6,7 +6,6 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Sms\Gateway\Aliyun\AliyunSmsOptions;
-use Shopwell\Core\Framework\Sms\Struct\TemplateSmsOptionsInterface;
 
 /**
  * @internal
@@ -19,7 +18,6 @@ class AliyunSmsOptionsTest extends TestCase
     {
         $options = new AliyunSmsOptions('SMS_123456789', 'Shopwell', ['code' => '1234'], 'out-1');
 
-        static::assertInstanceOf(TemplateSmsOptionsInterface::class, $options);
         static::assertSame('SMS_123456789', $options->getTemplateCode());
         static::assertSame('Shopwell', $options->getSignName());
         static::assertSame(['code' => '1234'], $options->getParams());

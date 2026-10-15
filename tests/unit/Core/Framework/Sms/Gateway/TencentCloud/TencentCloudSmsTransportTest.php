@@ -199,7 +199,7 @@ class TencentCloudSmsTransportTest extends TestCase
 
     private function clientReturning(SendSmsResponse $response): SmsClient
     {
-        $client = $this->createMock(SmsClient::class);
+        $client = static::createStub(SmsClient::class);
         $client->method('__call')->willReturn($response);
 
         return $client;
@@ -207,7 +207,7 @@ class TencentCloudSmsTransportTest extends TestCase
 
     private function clientThrowing(TencentCloudSDKException $error): SmsClient
     {
-        $client = $this->createMock(SmsClient::class);
+        $client = static::createStub(SmsClient::class);
         $client->method('__call')->willThrowException($error);
 
         return $client;

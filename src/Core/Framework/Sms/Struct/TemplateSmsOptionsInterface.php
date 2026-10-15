@@ -34,7 +34,11 @@ interface TemplateSmsOptionsInterface extends MessageOptionsInterface
     /**
      * The values of the placeholders of the template, keyed by the name the provider knows them by.
      *
-     * @return array<string, string>
+     * The key is a name as the provider writes it, which for a provider that knows its placeholders
+     * by their position is a number - php turns such a key into an integer on the way in, so the
+     * parameters are a map of either kind of key rather than one of strings only.
+     *
+     * @return array<array-key, string>
      */
     public function getParams(): array;
 }

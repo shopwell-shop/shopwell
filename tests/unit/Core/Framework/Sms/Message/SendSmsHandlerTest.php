@@ -46,8 +46,10 @@ class SendSmsHandlerTest extends TestCase
     {
         $message = (new SmsMessage('+8613800000000', 'hello'))->transport('gateway-id');
 
+        $refusal = SmsUnrecoverableException::providerRejected('aliyun', 'isv.SMS_TEMPLATE_ILLEGAL', 'not approved');
+
         $transport = static::createStub(TransportInterface::class);
-        $transport->method('send')->willThrowException(SmsUnrecoverableException::providerRejected('aliyun', 'isv.SMS_TEMPLATE_ILLEGAL', 'not approved'));
+        $transport->method('send')->willThrowException($refusal);
 
         $loader = $this->createMock(SmsTransportLoader::class);
         $loader->expects($this->once())
@@ -55,8 +57,8 @@ class SendSmsHandlerTest extends TestCase
             ->with('gateway-id')
             ->willReturn($transport);
 
-        $this->expectException(UnrecoverableMessageHandlingException::class);
-        $this->expectExceptionMessage('isv.SMS_TEMPLATE_ILLEGAL');
+        // the handler turns the refusal into an unrecoverable failure carrying its message
+        $this->expectExceptionObject(new UnrecoverableMessageHandlingException($refusal->getMessage(), 0, $refusal));
 
         (new SendSmsHandler(new SmsTransports($loader)))->__invoke(new SendSmsMessage($message));
     }

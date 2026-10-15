@@ -21,7 +21,7 @@ use Shopwell\Core\Framework\Sms\Struct\TemplateSmsOptionsInterface;
 final class TencentCloudSmsOptions implements TemplateSmsOptionsInterface
 {
     /**
-     * @param array<string, string> $params keyed by the number the placeholder has in the template
+     * @param array<array-key, string> $params keyed by the number the placeholder has in the template
      * @param string|null $sessionContext echoed back in the delivery receipt of tencent cloud
      */
     public function __construct(
@@ -43,7 +43,9 @@ final class TencentCloudSmsOptions implements TemplateSmsOptionsInterface
     }
 
     /**
-     * @return array<string, string>
+     * The parameters of the template, keyed by the number the placeholder has in it.
+     *
+     * @return array<array-key, string>
      */
     public function getParams(): array
     {

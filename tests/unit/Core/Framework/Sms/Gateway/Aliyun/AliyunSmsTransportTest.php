@@ -115,7 +115,7 @@ class AliyunSmsTransportTest extends TestCase
 
     public function testAStatusThatAsksForAnotherTryIsNotACodeOfTheApi(): void
     {
-        $client = $this->createMock(Dysmsapi::class);
+        $client = static::createStub(Dysmsapi::class);
         $client->method('sendSms')->willThrowException(new ThrottlingException($this->failure('Throttling', 'busy', 429)));
 
         $this->expectExceptionObject(SmsException::providerUnavailable('aliyun', 'Throttling', 'busy'));
@@ -125,7 +125,7 @@ class AliyunSmsTransportTest extends TestCase
 
     public function testAnErrorAtTheSideOfAliyunAsksForAnotherTry(): void
     {
-        $client = $this->createMock(Dysmsapi::class);
+        $client = static::createStub(Dysmsapi::class);
         $client->method('sendSms')->willThrowException(new ServerException($this->failure('InternalError', 'boom', 500)));
 
         $this->expectExceptionObject(SmsException::providerUnavailable('aliyun', 'InternalError', 'boom'));
@@ -135,7 +135,7 @@ class AliyunSmsTransportTest extends TestCase
 
     public function testACredentialAliyunRefusedIsFinal(): void
     {
-        $client = $this->createMock(Dysmsapi::class);
+        $client = static::createStub(Dysmsapi::class);
         $client->method('sendSms')->willThrowException(new ClientException($this->failure('InvalidAccessKeyId.NotFound', 'the key is unknown', 400)));
 
         $this->expectExceptionObject(SmsUnrecoverableException::providerRejected('aliyun', 'InvalidAccessKeyId.NotFound', 'the key is unknown'));
@@ -203,7 +203,7 @@ class AliyunSmsTransportTest extends TestCase
      */
     private function clientReturning(array $body): Dysmsapi
     {
-        $client = $this->createMock(Dysmsapi::class);
+        $client = static::createStub(Dysmsapi::class);
         $client->method('sendSms')->willReturn($this->response($body));
 
         return $client;

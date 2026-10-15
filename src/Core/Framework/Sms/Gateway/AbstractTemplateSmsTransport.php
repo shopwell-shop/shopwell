@@ -60,7 +60,7 @@ abstract class AbstractTemplateSmsTransport extends AbstractTransport
      * @throws SmsException
      * @throws SmsUnrecoverableException
      *
-     * @return array{templateCode: string, signName: string, params: array<string, string>}
+     * @return array{templateCode: string, signName: string, params: array<array-key, string>}
      */
     final protected function templateData(MessageInterface $message): array
     {

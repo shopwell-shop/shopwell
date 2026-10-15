@@ -173,7 +173,7 @@ final class TencentCloudSmsTransport extends AbstractTemplateSmsTransport
      * Tencent cloud knows the placeholders of a template by their number only, so the parameters are
      * submitted in the order of their names rather than as a map - a mapping names them 1, 2, 3.
      *
-     * @param array<string, string> $params
+     * @param array<array-key, string> $params
      *
      * @return list<string>
      */

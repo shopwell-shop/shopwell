@@ -6,7 +6,6 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Sms\Gateway\TencentCloud\TencentCloudSmsOptions;
-use Shopwell\Core\Framework\Sms\Struct\TemplateSmsOptionsInterface;
 
 /**
  * @internal
@@ -19,7 +18,6 @@ class TencentCloudSmsOptionsTest extends TestCase
     {
         $options = new TencentCloudSmsOptions('1234567', 'Shopwell', ['1' => 'code'], 'session');
 
-        static::assertInstanceOf(TemplateSmsOptionsInterface::class, $options);
         static::assertSame('1234567', $options->getTemplateCode());
         static::assertSame('Shopwell', $options->getSignName());
         static::assertSame(['1' => 'code'], $options->getParams());
