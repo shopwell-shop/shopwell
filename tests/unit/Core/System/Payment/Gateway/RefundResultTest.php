@@ -6,7 +6,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Payment\Gateway\RefundResult;
-use Shopwell\Core\System\Payment\PaymentRefundStates;
+use Shopwell\Core\System\Payment\Order\Refund\PaymentRefundStates;
 
 /**
  * @internal

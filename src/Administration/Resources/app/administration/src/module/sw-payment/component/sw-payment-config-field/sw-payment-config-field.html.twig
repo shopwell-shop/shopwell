@@ -1,4 +1,7 @@
 {% block sw_payment_config_field %}
+<!-- The fields hold api secrets, not login credentials: the autocomplete hints keep the browser's
+     password manager from treating the card as a login form and filling a saved user name into an
+     unrelated input, e.g. the search bar of the page. -->
 <mt-text-field
     v-if="field.type === 'text'"
     v-model="currentValue"
@@ -9,6 +12,7 @@
     :required="field.required"
     :help-text="helpText"
     :disabled="disabled || undefined"
+    autocomplete="off"
 />
 
 <mt-password-field
@@ -21,6 +25,7 @@
     :required="field.required"
     :help-text="helpText"
     :disabled="disabled || undefined"
+    autocomplete="new-password"
 />
 
 <mt-textarea
@@ -33,6 +38,7 @@
     :required="field.required"
     :help-text="helpText"
     :disabled="disabled || undefined"
+    autocomplete="off"
 />
 
 <mt-select
@@ -66,6 +72,7 @@
     :placeholder="placeholder"
     :help-text="helpText"
     :disabled="disabled || undefined"
+    autocomplete="off"
 />
 
 <mt-text-field
@@ -78,5 +85,6 @@
     :required="field.required"
     :help-text="helpText"
     :disabled="disabled || undefined"
+    autocomplete="off"
 />
 {% endblock %}

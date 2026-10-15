@@ -3,7 +3,7 @@
 namespace Shopwell\Core\System\Payment\Gateway;
 
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\System\Payment\PaymentRefundStates;
+use Shopwell\Core\System\Payment\Order\Refund\PaymentRefundStates;
 
 /**
  * What a channel answered for a refund.

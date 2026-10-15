@@ -8,8 +8,8 @@ use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Payment\Gateway\AbstractPaymentAction;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
 use Shopwell\Core\System\Payment\Gateway\RefundResult;
+use Shopwell\Core\System\Payment\Order\Refund\PaymentRefundStates;
 use Shopwell\Core\System\Payment\PaymentException;
-use Shopwell\Core\System\Payment\PaymentRefundStates;
 use Stripe\Refund as StripeRefund;
 
 /**

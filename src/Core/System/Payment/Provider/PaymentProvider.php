@@ -2,9 +2,10 @@
 
 namespace Shopwell\Core\System\Payment\Provider;
 
-use Payum\Core\GatewayFactoryInterface;
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\System\Payment\Channel\PaymentChannel;
+use Shopwell\Core\System\Payment\Gateway\PaymentGatewayFactory;
+use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
+use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
 
 /**
  * One payment interface the platform offers to the apps: alipay, wechat pay, paypal or stripe.
@@ -32,32 +33,9 @@ final readonly class PaymentProvider
         public string $label,
         public array $credentials,
         public array $channels,
-        public GatewayFactoryInterface $gatewayFactory,
+        public PaymentGatewayFactory $gatewayFactory,
         public PaymentNotificationExtractorInterface $notificationExtractor,
     ) {
-    }
-
-    /**
-     * Binds the services to the declaration of the interface.
-     */
-    public static function fromDefinition(
-        PaymentProviderDefinition $definition,
-        GatewayFactoryInterface $gatewayFactory,
-        PaymentNotificationExtractorInterface $notificationExtractor
-    ): self {
-        $channels = [];
-        foreach ($definition->channels as $channel) {
-            $channels[$channel->technicalName] = $channel;
-        }
-
-        return new self(
-            technicalName: $definition->technicalName,
-            label: $definition->label,
-            credentials: $definition->credentials,
-            channels: $channels,
-            gatewayFactory: $gatewayFactory,
-            notificationExtractor: $notificationExtractor,
-        );
     }
 
     public function credentialField(string $name): ?PaymentConfigField

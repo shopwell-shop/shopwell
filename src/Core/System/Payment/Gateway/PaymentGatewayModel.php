@@ -2,21 +2,26 @@
 
 namespace Shopwell\Core\System\Payment\Gateway;
 
+use Payum\Core\Model\ArrayObject;
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\System\Payment\DataAbstractionLayer\PaymentOrderEntity;
-use Shopwell\Core\System\Payment\DataAbstractionLayer\PaymentRefundEntity;
+use Shopwell\Core\System\Payment\Order\PaymentOrderEntity;
+use Shopwell\Core\System\Payment\Order\Refund\PaymentRefundEntity;
 use Shopwell\Core\System\Payment\PaymentException;
 
 /**
- * The contract between the services of the payment gateway and the payum actions of the channels.
+ * The model of a payum request: the contract between the services of the payment gateway and the
+ * payum actions of the channels.
  *
- * The services put the payment data into an \ArrayObject - the model of the payum request - and the
- * actions of the channel read it. The outgoing request and the incoming answer are recorded on the
- * model as well, and finally the action stores its typed result in it:
+ * It extends the array object payum itself ships as its model, so the actions address it the payum
+ * way while the typed accessors keep the keys of this platform in one place. The services put the
+ * payment data into the model and the actions of the channel read it; the outgoing request and the
+ * incoming answer are recorded on the model as well, and finally the action stores its typed result
+ * in it:
  *
  *  - a Capture gets a {@see PayResult},
  *  - a Refund gets a {@see RefundResult},
- *  - a Notify gets a {@see NotificationResult}.
+ *  - a Notify gets a {@see NotificationResult},
+ *  - a Query gets a {@see QueryResult}.
  *
  * A failing action records the request/answer as well and throws. That way a transaction keeps both
  * sides even when the channel rejected the call, which is exactly the case support needs most.
@@ -24,7 +29,7 @@ use Shopwell\Core\System\Payment\PaymentException;
  * @internal
  */
 #[Package('framework')]
-final class PaymentGatewayModel
+final class PaymentGatewayModel extends ArrayObject
 {
     /**
      * The typed result of the action.
@@ -65,16 +70,20 @@ final class PaymentGatewayModel
     final public const HEADERS = 'headers';
     final public const REMOTE_IP = 'remote_ip';
 
-    private function __construct()
-    {
-    }
+    // ---- input: query ----
+    final public const LAST_CHANNEL_RESPONSE = 'last_channel_response';
 
     /**
-     * @return \ArrayObject<string, mixed>
+     * @param array<string, mixed> $values
      */
-    public static function forOrder(PaymentOrderEntity $order): \ArrayObject
+    public function __construct(array $values = [])
     {
-        return new \ArrayObject([
+        $this->details = $values;
+    }
+
+    public static function forOrder(PaymentOrderEntity $order): self
+    {
+        return new self([
             self::PAYMENT_NO => $order->paymentNo,
             self::OUT_TRADE_NO => $order->outTradeNo,
             self::AMOUNT => $order->amount,
@@ -88,12 +97,9 @@ final class PaymentGatewayModel
         ]);
     }
 
-    /**
-     * @return \ArrayObject<string, mixed>
-     */
-    public static function forRefund(PaymentOrderEntity $order, PaymentRefundEntity $refund): \ArrayObject
+    public static function forRefund(PaymentOrderEntity $order, PaymentRefundEntity $refund): self
     {
-        return new \ArrayObject([
+        return new self([
             self::PAYMENT_NO => $order->paymentNo,
             self::OUT_TRADE_NO => $order->outTradeNo,
             self::OUT_PAYMENT_NO => $order->outPaymentNo,
@@ -110,12 +116,10 @@ final class PaymentGatewayModel
 
     /**
      * @param array<string, string|list<string>> $headers
-     *
-     * @return \ArrayObject<string, mixed>
      */
-    public static function forNotification(string $rawBody, array $headers, ?string $remoteIp): \ArrayObject
+    public static function forNotification(string $rawBody, array $headers, ?string $remoteIp): self
     {
-        return new \ArrayObject([
+        return new self([
             self::RAW_BODY => $rawBody,
             self::HEADERS => $headers,
             self::REMOTE_IP => $remoteIp,
@@ -123,83 +127,77 @@ final class PaymentGatewayModel
     }
 
     /**
-     * @param \ArrayObject<string, mixed> $model
-     * @param array<string, mixed> $payload
+     * The model of a query: the order data - the interfaces that can be queried by the merchant order
+     * number read it from there - next to the answer of the last capture, which is where the
+     * interfaces that hand out their own ids for a payment are found again, e.g. the order id of
+     * paypal or the checkout session of stripe.
+     *
+     * @param array<string, mixed> $lastChannelResponse
      */
-    public static function recordRequest(\ArrayObject $model, array $payload): void
+    public static function forQuery(PaymentOrderEntity $order, array $lastChannelResponse = []): self
     {
-        $model->offsetSet(self::REQUEST, $payload);
+        $model = self::forOrder($order);
+        $model->offsetSet(self::LAST_CHANNEL_RESPONSE, $lastChannelResponse);
+
+        return $model;
     }
 
     /**
-     * @param \ArrayObject<string, mixed> $model
      * @param array<string, mixed> $payload
      */
-    public static function recordResponse(\ArrayObject $model, array $payload): void
+    public function recordRequest(array $payload): void
     {
-        $model->offsetSet(self::RESPONSE, $payload);
+        $this->offsetSet(self::REQUEST, $payload);
     }
 
     /**
-     * @param \ArrayObject<string, mixed> $model
+     * @param array<string, mixed> $payload
+     */
+    public function recordResponse(array $payload): void
+    {
+        $this->offsetSet(self::RESPONSE, $payload);
+    }
+
+    /**
+     * The payload the action sent to the channel, or an empty array when it threw before it could.
      *
      * @return array<string, mixed>
      */
-    public static function requestOf(\ArrayObject $model): array
+    public function request(): array
     {
-        $request = $model->offsetExists(self::REQUEST) ? $model->offsetGet(self::REQUEST) : null;
+        $request = $this->offsetExists(self::REQUEST) ? $this->offsetGet(self::REQUEST) : null;
 
         return \is_array($request) ? $request : [];
     }
 
     /**
-     * @param \ArrayObject<string, mixed> $model
+     * The payload the channel answered, or an empty array when it never did.
      *
      * @return array<string, mixed>
      */
-    public static function responseOf(\ArrayObject $model): array
+    public function response(): array
     {
-        $response = $model->offsetExists(self::RESPONSE) ? $model->offsetGet(self::RESPONSE) : null;
+        $response = $this->offsetExists(self::RESPONSE) ? $this->offsetGet(self::RESPONSE) : null;
 
         return \is_array($response) ? $response : [];
     }
 
     /**
-     * @param \ArrayObject<string, mixed> $model
+     * The typed result the action stored, e.g. a {@see PayResult} after a capture - the three result
+     * types share one read because they share one storage: whatever the action was, a result that is
+     * missing or of the wrong kind means the action did not finish its work.
+     *
+     * @template TResult of object
+     *
+     * @param class-string<TResult> $resultClass
+     *
+     * @return TResult
      */
-    public static function payResult(\ArrayObject $model, string $channel): PayResult
+    public function result(string $resultClass, string $channel): object
     {
-        $result = $model->offsetExists(self::RESULT) ? $model->offsetGet(self::RESULT) : null;
+        $result = $this->offsetExists(self::RESULT) ? $this->offsetGet(self::RESULT) : null;
 
-        if (!$result instanceof PayResult) {
-            throw PaymentException::gatewayResultMissing($channel);
-        }
-
-        return $result;
-    }
-
-    /**
-     * @param \ArrayObject<string, mixed> $model
-     */
-    public static function refundResult(\ArrayObject $model, string $channel): RefundResult
-    {
-        $result = $model->offsetExists(self::RESULT) ? $model->offsetGet(self::RESULT) : null;
-
-        if (!$result instanceof RefundResult) {
-            throw PaymentException::gatewayResultMissing($channel);
-        }
-
-        return $result;
-    }
-
-    /**
-     * @param \ArrayObject<string, mixed> $model
-     */
-    public static function notificationResult(\ArrayObject $model, string $channel): NotificationResult
-    {
-        $result = $model->offsetExists(self::RESULT) ? $model->offsetGet(self::RESULT) : null;
-
-        if (!$result instanceof NotificationResult) {
+        if (!$result instanceof $resultClass) {
             throw PaymentException::gatewayResultMissing($channel);
         }
 

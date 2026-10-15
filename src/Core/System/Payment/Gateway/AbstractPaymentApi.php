@@ -4,86 +4,54 @@ namespace Shopwell\Core\System\Payment\Gateway;
 
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Payment\PaymentException;
+use Shopwell\Core\System\Payment\Provider\ResolvedPaymentConfig;
 
 /**
- * Base of the api objects of the payment interfaces: it holds the interface, the channel, the
- * credentials, the parameters and the urls the gateway was created with and hands them to the actions.
+ * Base of the api objects of the payment interfaces: it holds the resolved configuration of the very
+ * payment - the interface, the channel, the credentials, the parameters and the urls - and hands it
+ * to the actions.
+ *
+ * The credentials of the merchant account are resolved per payment - either the ones of the app or
+ * the ones of the platform - which is exactly why the gateways are not configured statically and why
+ * every action reaches for the credentials through this api object instead of through the container.
+ * The channel is part of it as well, because the channel is what tells the actions of an interface
+ * which of its products the payment was opened with: an alipay api serves the mobile web payment and
+ * the qr code payment alike, and only the capture of a payment cares which one it is.
  *
  * @internal
  */
 #[Package('framework')]
-abstract class AbstractPaymentApi implements PaymentApiInterface
+abstract class AbstractPaymentApi
 {
-    final public const CONFIG_PROVIDER = 'payment.provider';
-    final public const CONFIG_CHANNEL = 'payment.channel';
-    final public const CONFIG_MODE = 'payment.mode';
-    final public const CONFIG_CREDENTIALS = 'payment.credentials';
-    final public const CONFIG_PARAMS = 'payment.params';
-    final public const CONFIG_RUNTIME_PARAMS = 'payment.runtime_params';
-    final public const CONFIG_SETTINGS = 'payment.settings';
-    final public const CONFIG_NOTIFY_URL = 'payment.notify_url';
-    final public const CONFIG_RETURN_URL = 'payment.return_url';
-
-    /**
-     * @var array<string, mixed>
-     */
-    private array $credentials;
-
-    /**
-     * @var array<string, mixed>
-     */
-    private array $params;
-
-    /**
-     * @var array<string, mixed>
-     */
-    private array $runtimeParams;
-
-    /**
-     * @var array<string, mixed>
-     */
-    private array $settings;
-
-    private string $provider;
-
-    private string $channel;
-
-    private string $mode;
-
-    private string $notifyUrl;
-
-    private string $returnUrl;
-
-    /**
-     * @param array<string, mixed> $config
-     */
-    public function __construct(array $config)
-    {
-        $this->provider = self::stringOf($config, self::CONFIG_PROVIDER);
-        $this->channel = self::stringOf($config, self::CONFIG_CHANNEL);
-        $this->mode = self::stringOf($config, self::CONFIG_MODE);
-        $this->notifyUrl = self::stringOf($config, self::CONFIG_NOTIFY_URL);
-        $this->returnUrl = self::stringOf($config, self::CONFIG_RETURN_URL);
-
-        $this->credentials = self::arrayOf($config, self::CONFIG_CREDENTIALS);
-        $this->params = self::arrayOf($config, self::CONFIG_PARAMS);
-        $this->runtimeParams = self::arrayOf($config, self::CONFIG_RUNTIME_PARAMS);
-        $this->settings = self::arrayOf($config, self::CONFIG_SETTINGS);
+    public function __construct(
+        protected readonly ResolvedPaymentConfig $config,
+        protected readonly string $notifyUrl,
+        protected readonly string $returnUrl,
+    ) {
     }
 
+    /**
+     * The payment interface that is charged, e.g. `alipay`.
+     */
     public function provider(): string
     {
-        return $this->provider;
+        return $this->config->provider->technicalName;
     }
 
+    /**
+     * The channel the payment was opened with, e.g. `alipay_h5`.
+     */
     public function channel(): string
     {
-        return $this->channel;
+        return $this->config->channel->technicalName;
     }
 
+    /**
+     * Whether the payment is processed with the credentials of the merchant (`own`) or of the platform.
+     */
     public function mode(): string
     {
-        return $this->mode;
+        return $this->config->mode;
     }
 
     /**
@@ -91,7 +59,7 @@ abstract class AbstractPaymentApi implements PaymentApiInterface
      */
     public function credentials(): array
     {
-        return $this->credentials;
+        return $this->config->credentials;
     }
 
     /**
@@ -99,7 +67,7 @@ abstract class AbstractPaymentApi implements PaymentApiInterface
      */
     public function params(): array
     {
-        return $this->params;
+        return $this->config->params;
     }
 
     /**
@@ -107,7 +75,7 @@ abstract class AbstractPaymentApi implements PaymentApiInterface
      */
     public function runtimeParams(): array
     {
-        return $this->runtimeParams;
+        return $this->config->runtimeParams;
     }
 
     /**
@@ -115,96 +83,65 @@ abstract class AbstractPaymentApi implements PaymentApiInterface
      */
     public function settings(): array
     {
-        return $this->settings;
+        return $this->config->settings;
     }
 
     public function credential(string $key, ?string $default = null): ?string
     {
-        return self::scalarOf($this->credentials, $key, $default);
+        return $this->config->get($key, $default);
     }
 
     /**
-     * @throws PaymentException
+     * @throws PaymentException when the credential of the merchant account is missing
      */
     public function requireCredential(string $key): string
     {
-        $value = $this->credential($key);
-
-        if ($value === null) {
-            throw PaymentException::missingCredentials($this->provider(), $key);
-        }
-
-        return $value;
-    }
-
-    public function param(string $key, ?string $default = null): ?string
-    {
-        return self::scalarOf($this->params, $key, $default);
+        return $this->config->require($key);
     }
 
     /**
-     * @throws PaymentException
+     * A declared parameter of the channel, e.g. the appid of a wechat channel.
+     */
+    public function param(string $key, ?string $default = null): ?string
+    {
+        return $this->config->param($key, $default);
+    }
+
+    /**
+     * @throws PaymentException when the channel parameter is missing
      */
     public function requireParam(string $key): string
     {
-        $value = $this->param($key);
-
-        if ($value === null) {
-            throw PaymentException::channelNotConfigured($this->channel(), $key);
-        }
-
-        return $value;
+        return $this->config->requireParam($key);
     }
 
+    /**
+     * A parameter the app handed in for this very payment, e.g. the openid of a wechat jsapi payment.
+     */
     public function runtimeParam(string $key, ?string $default = null): ?string
     {
-        return self::scalarOf($this->runtimeParams, $key, $default);
+        return $this->config->runtimeParam($key, $default);
     }
 
     public function setting(string $key, ?string $default = null): ?string
     {
-        return self::scalarOf($this->settings, $key, $default);
+        return $this->config->setting($key, $default);
     }
 
+    /**
+     * Where the interface notifies the platform. It is built per payment and carries the payment number,
+     * which is how an encrypted notification is matched to its app.
+     */
     public function notifyUrl(): string
     {
         return $this->notifyUrl;
     }
 
+    /**
+     * Where the interface sends the payer back to after the payment.
+     */
     public function returnUrl(): string
     {
         return $this->returnUrl;
-    }
-
-    /**
-     * @param array<string, mixed> $config
-     */
-    private static function stringOf(array $config, string $key): string
-    {
-        $value = $config[$key] ?? null;
-
-        return \is_scalar($value) ? (string) $value : '';
-    }
-
-    /**
-     * @param array<string, mixed> $config
-     *
-     * @return array<string, mixed>
-     */
-    private static function arrayOf(array $config, string $key): array
-    {
-        $value = $config[$key] ?? null;
-
-        return \is_array($value) ? $value : [];
-    }
-
-    /**
-     * @param array<string, mixed> $values
-     */
-    private static function scalarOf(array $values, string $key, ?string $default): ?string
-    {
-        $value = $values[$key] ?? null;
-
-        return \is_scalar($value) && (string) $value !== '' ? (string) $value : $default;
     }
 }

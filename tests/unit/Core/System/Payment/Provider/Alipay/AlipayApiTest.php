@@ -5,9 +5,14 @@ namespace Shopwell\Tests\Unit\Core\System\Payment\Provider\Alipay;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\System\Payment\Gateway\AbstractPaymentApi;
+use Shopwell\Core\System\Payment\Gateway\PaymentGatewayFactory;
+use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
 use Shopwell\Core\System\Payment\PaymentException;
 use Shopwell\Core\System\Payment\Provider\Alipay\AlipayApi;
+use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
+use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
+use Shopwell\Core\System\Payment\Provider\PaymentProvider;
+use Shopwell\Core\System\Payment\Provider\ResolvedPaymentConfig;
 
 /**
  * @internal
@@ -18,7 +23,7 @@ class AlipayApiTest extends TestCase
 {
     public function testExposesTheConfigurationOfThePayment(): void
     {
-        $api = new AlipayApi($this->config(credentials: [AlipayApi::APP_ID => '2021000000000000']));
+        $api = $this->api(credentials: [AlipayApi::APP_ID => '2021000000000000']);
 
         static::assertSame('alipay', $api->provider());
         static::assertSame('alipay_h5', $api->channel());
@@ -30,24 +35,24 @@ class AlipayApiTest extends TestCase
 
     public function testGatewayUrlFallsBackToTheProductionGateway(): void
     {
-        $api = new AlipayApi($this->config());
+        $api = $this->api();
 
         static::assertSame(AlipayApi::DEFAULT_GATEWAY_URL, $api->gatewayUrl());
     }
 
     public function testGatewayUrlUsesAndTrimsTheConfiguredGateway(): void
     {
-        $api = new AlipayApi($this->config(credentials: [AlipayApi::GATEWAY_URL => 'https://alipay.example.com/']));
+        $api = $this->api(credentials: [AlipayApi::GATEWAY_URL => 'https://alipay.example.com/']);
 
         static::assertSame('https://alipay.example.com', $api->gatewayUrl());
     }
 
     public function testGatewayUrlUsesTheSandboxGatewayWhenTheSandboxIsOn(): void
     {
-        $api = new AlipayApi($this->config(credentials: [
+        $api = $this->api(credentials: [
             AlipayApi::SANDBOX => '1',
             AlipayApi::GATEWAY_URL => 'https://alipay.example.com',
-        ]));
+        ]);
 
         static::assertTrue($api->isSandbox());
         static::assertSame(AlipayApi::SANDBOX_GATEWAY_URL, $api->gatewayUrl());
@@ -55,38 +60,38 @@ class AlipayApiTest extends TestCase
 
     public function testSandboxIsOffWhenTheCredentialIsMissingEmptyOrZero(): void
     {
-        static::assertFalse((new AlipayApi($this->config()))->isSandbox());
-        static::assertFalse((new AlipayApi($this->config(credentials: [AlipayApi::SANDBOX => ''])))->isSandbox());
-        static::assertFalse((new AlipayApi($this->config(credentials: [AlipayApi::SANDBOX => '0'])))->isSandbox());
-        static::assertTrue((new AlipayApi($this->config(credentials: [AlipayApi::SANDBOX => 'yes'])))->isSandbox());
+        static::assertFalse($this->api()->isSandbox());
+        static::assertFalse($this->api(credentials: [AlipayApi::SANDBOX => ''])->isSandbox());
+        static::assertFalse($this->api(credentials: [AlipayApi::SANDBOX => '0'])->isSandbox());
+        static::assertTrue($this->api(credentials: [AlipayApi::SANDBOX => 'yes'])->isSandbox());
     }
 
     public function testSignTypeDefaultsToRsa2(): void
     {
-        $api = new AlipayApi($this->config());
+        $api = $this->api();
 
         static::assertSame(AlipayApi::DEFAULT_SIGN_TYPE, $api->signType());
     }
 
     public function testSignTypeIsUppercased(): void
     {
-        $api = new AlipayApi($this->config(credentials: [AlipayApi::SIGN_TYPE => 'rsa']));
+        $api = $this->api(credentials: [AlipayApi::SIGN_TYPE => 'rsa']);
 
         static::assertSame('RSA', $api->signType());
     }
 
     public function testPublicKeyStripsThePemEnvelope(): void
     {
-        $api = new AlipayApi($this->config(credentials: [
+        $api = $this->api(credentials: [
             AlipayApi::PUBLIC_KEY => "-----BEGIN PUBLIC KEY-----\nABCDEFG\n-----END PUBLIC KEY-----",
-        ]));
+        ]);
 
         static::assertSame('ABCDEFG', $api->publicKey());
     }
 
     public function testPublicKeyThrowsWhenTheCredentialIsMissing(): void
     {
-        $api = new AlipayApi($this->config());
+        $api = $this->api();
 
         $this->expectExceptionObject(PaymentException::missingCredentials('alipay', AlipayApi::PUBLIC_KEY));
 
@@ -95,7 +100,7 @@ class AlipayApiTest extends TestCase
 
     public function testAmountConvertsTheMinorUnitToTheDecimalStringOfTheCurrency(): void
     {
-        $api = new AlipayApi($this->config());
+        $api = $this->api();
 
         static::assertSame('12.34', $api->amount(1234, 'CNY'));
         static::assertSame('1234', $api->amount(1234, 'JPY'));
@@ -103,13 +108,13 @@ class AlipayApiTest extends TestCase
 
     public function testConfigUtilBuildsAndCachesTheSdkConfiguration(): void
     {
-        $api = new AlipayApi($this->config(credentials: [
+        $api = $this->api(credentials: [
             AlipayApi::APP_ID => '2021000000000000',
             AlipayApi::PRIVATE_KEY => 'RAW-PRIVATE-KEY',
             AlipayApi::PUBLIC_KEY => "-----BEGIN PUBLIC KEY-----\nABCDEFG\n-----END PUBLIC KEY-----",
             AlipayApi::SIGN_TYPE => 'rsa',
             AlipayApi::GATEWAY_URL => 'https://alipay.example.com/',
-        ]));
+        ]);
 
         $configUtil = $api->configUtil();
 
@@ -125,11 +130,11 @@ class AlipayApiTest extends TestCase
 
     public function testConfigUtilKeepsAnAlreadyWrappedPrivateKey(): void
     {
-        $api = new AlipayApi($this->config(credentials: [
+        $api = $this->api(credentials: [
             AlipayApi::APP_ID => '2021000000000000',
             AlipayApi::PRIVATE_KEY => "-----BEGIN PRIVATE KEY-----\nWRAPPED\n-----END PRIVATE KEY-----",
             AlipayApi::PUBLIC_KEY => 'ABCDEFG',
-        ]));
+        ]);
 
         static::assertSame(
             "-----BEGIN PRIVATE KEY-----\nWRAPPED\n-----END PRIVATE KEY-----",
@@ -139,7 +144,7 @@ class AlipayApiTest extends TestCase
 
     public function testConfigurationUsesAndCachesTheGatewayUrl(): void
     {
-        $api = new AlipayApi($this->config(credentials: [AlipayApi::GATEWAY_URL => 'https://alipay.example.com']));
+        $api = $this->api(credentials: [AlipayApi::GATEWAY_URL => 'https://alipay.example.com']);
 
         $configuration = $api->configuration();
 
@@ -149,11 +154,11 @@ class AlipayApiTest extends TestCase
 
     public function testTheSdkApiObjectsAreBuiltOnce(): void
     {
-        $api = new AlipayApi($this->config(credentials: [
+        $api = $this->api(credentials: [
             AlipayApi::APP_ID => '2021000000000000',
             AlipayApi::PRIVATE_KEY => 'RAW-PRIVATE-KEY',
             AlipayApi::PUBLIC_KEY => 'ABCDEFG',
-        ]));
+        ]);
 
         static::assertSame($api->tradeApi(), $api->tradeApi());
         static::assertSame($api->genericApi(), $api->genericApi());
@@ -161,21 +166,30 @@ class AlipayApiTest extends TestCase
 
     /**
      * @param array<string, mixed> $credentials
-     *
-     * @return array<string, mixed>
      */
-    private function config(array $credentials = []): array
+    private function api(array $credentials = []): AlipayApi
     {
-        return [
-            AbstractPaymentApi::CONFIG_PROVIDER => 'alipay',
-            AbstractPaymentApi::CONFIG_CHANNEL => 'alipay_h5',
-            AbstractPaymentApi::CONFIG_MODE => 'own',
-            AbstractPaymentApi::CONFIG_CREDENTIALS => $credentials,
-            AbstractPaymentApi::CONFIG_PARAMS => [],
-            AbstractPaymentApi::CONFIG_RUNTIME_PARAMS => [],
-            AbstractPaymentApi::CONFIG_SETTINGS => [],
-            AbstractPaymentApi::CONFIG_NOTIFY_URL => 'https://example.com/notify',
-            AbstractPaymentApi::CONFIG_RETURN_URL => 'https://example.com/return',
-        ];
+        $channel = new PaymentChannel('alipay_h5', 'alipay', 'alipay_h5', PaymentFlow::REDIRECT);
+
+        return new AlipayApi(
+            new ResolvedPaymentConfig(
+                provider: new PaymentProvider(
+                    'alipay',
+                    'alipay',
+                    [],
+                    ['alipay_h5' => $channel],
+                    new PaymentGatewayFactory('alipay', AlipayApi::class, []),
+                    static::createStub(PaymentNotificationExtractorInterface::class),
+                ),
+                channel: $channel,
+                credentials: $credentials,
+                params: [],
+                runtimeParams: [],
+                settings: [],
+                mode: 'own',
+            ),
+            'https://example.com/notify',
+            'https://example.com/return',
+        );
     }
 }

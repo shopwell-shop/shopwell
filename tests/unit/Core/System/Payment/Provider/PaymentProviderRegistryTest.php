@@ -2,14 +2,13 @@
 
 namespace Shopwell\Tests\Unit\Core\System\Payment\Provider;
 
-use Payum\Core\GatewayFactoryInterface;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Payment\Gateway\PaymentGatewayFactory;
+use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
 use Shopwell\Core\System\Payment\PaymentException;
-use Shopwell\Core\System\Payment\Provider\PaymentNotificationExtractorInterface;
 use Shopwell\Core\System\Payment\Provider\PaymentProvider;
-use Shopwell\Core\System\Payment\Provider\PaymentProviderDefinition;
 use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;
 
 /**
@@ -83,15 +82,13 @@ class PaymentProviderRegistryTest extends TestCase
 
     private function provider(string $technicalName, string $label = 'label'): PaymentProvider
     {
-        return PaymentProvider::fromDefinition(
-            new PaymentProviderDefinition(
-                technicalName: $technicalName,
-                label: $label,
-                credentials: [],
-                channels: [],
-            ),
-            static::createStub(GatewayFactoryInterface::class),
-            static::createStub(PaymentNotificationExtractorInterface::class),
+        return new PaymentProvider(
+            technicalName: $technicalName,
+            label: $label,
+            credentials: [],
+            channels: [],
+            gatewayFactory: static::createStub(PaymentGatewayFactory::class),
+            notificationExtractor: static::createStub(PaymentNotificationExtractorInterface::class),
         );
     }
 }

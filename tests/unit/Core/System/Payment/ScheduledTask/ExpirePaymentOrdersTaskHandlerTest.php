@@ -10,14 +10,15 @@ use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\System\Payment\Channel\PaymentChannelRegistry;
-use Shopwell\Core\System\Payment\DataAbstractionLayer\PaymentOrderCollection;
-use Shopwell\Core\System\Payment\DataAbstractionLayer\PaymentOrderEntity;
+use Shopwell\Core\System\Payment\App\PaymentCredentialCipher;
+use Shopwell\Core\System\Payment\Order\PaymentOrderCollection;
+use Shopwell\Core\System\Payment\Order\PaymentOrderEntity;
+use Shopwell\Core\System\Payment\Order\PaymentOrderService;
+use Shopwell\Core\System\Payment\Order\PaymentOrderStateHandler;
+use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannelRegistry;
+use Shopwell\Core\System\Payment\Provider\PaymentConfigResolver;
 use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;
 use Shopwell\Core\System\Payment\ScheduledTask\ExpirePaymentOrdersTaskHandler;
-use Shopwell\Core\System\Payment\Service\PaymentConfigResolver;
-use Shopwell\Core\System\Payment\Service\PaymentCredentialCipher;
-use Shopwell\Core\System\Payment\Service\PaymentOrderService;
 use Shopwell\Core\System\StateMachine\Loader\InitialStateIdLoader;
 use Shopwell\Core\System\StateMachine\StateMachineRegistry;
 use Symfony\Component\Clock\MockClock;
@@ -110,7 +111,7 @@ class ExpirePaymentOrdersTaskHandlerTest extends TestCase
             $orderRepository,
             $configResolver,
             $initialStateIdLoader,
-            static::createStub(StateMachineRegistry::class),
+            new PaymentOrderStateHandler(static::createStub(StateMachineRegistry::class)),
             new MockClock('2024-01-01T00:00:00+00:00')
         );
     }

@@ -6,12 +6,12 @@ use Payum\Core\Exception\RequestNotSupportedException;
 use Payum\Core\Request\Capture;
 use Psr\Clock\ClockInterface;
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\System\Payment\Channel\PaymentFlow;
+use Shopwell\Core\System\Payment\Api\Struct\PayParams;
 use Shopwell\Core\System\Payment\Gateway\AbstractPaymentAction;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
 use Shopwell\Core\System\Payment\Gateway\PayResult;
 use Shopwell\Core\System\Payment\PaymentException;
-use Shopwell\Core\System\Payment\Struct\PayParams;
+use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
 use Stripe\Checkout\Session;
 use Stripe\PaymentIntent;
 use Symfony\Component\Clock\NativeClock;
@@ -101,12 +101,11 @@ final class StripeCaptureAction extends AbstractPaymentAction
     /**
      * The client side flow: the app approves the payment intent itself.
      *
-     * @param \ArrayObject<string, mixed> $model
      * @param array<string, string> $metadata
      */
     private function captureWithPaymentIntent(
         StripeApi $api,
-        \ArrayObject $model,
+        PaymentGatewayModel $model,
         int $amount,
         string $currency,
         array $metadata
@@ -154,12 +153,11 @@ final class StripeCaptureAction extends AbstractPaymentAction
     /**
      * The redirect flow: stripe hosts the payment page.
      *
-     * @param \ArrayObject<string, mixed> $model
      * @param array<string, string> $metadata
      */
     private function captureWithCheckoutSession(
         StripeApi $api,
-        \ArrayObject $model,
+        PaymentGatewayModel $model,
         int $amount,
         string $currency,
         array $metadata
@@ -245,11 +243,9 @@ final class StripeCaptureAction extends AbstractPaymentAction
      * Everything the platform needs to match a notification of stripe to its payment. Stripe only
      * accepts strings, so both numbers are handed over as such.
      *
-     * @param \ArrayObject<string, mixed> $model
-     *
      * @return array<string, string>
      */
-    private function metadataOf(\ArrayObject $model): array
+    private function metadataOf(PaymentGatewayModel $model): array
     {
         $metadata = [
             StripeNotificationExtractor::METADATA_PAYMENT_NO => $this->stringValue($model, PaymentGatewayModel::PAYMENT_NO),

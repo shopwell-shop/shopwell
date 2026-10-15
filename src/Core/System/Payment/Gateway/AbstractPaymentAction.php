@@ -64,55 +64,41 @@ abstract class AbstractPaymentAction implements ActionInterface, ApiAwareInterfa
     {
         return $request instanceof $requestClass
             && $request instanceof Generic
-            && $request->getModel() instanceof \ArrayObject;
+            && $request->getModel() instanceof PaymentGatewayModel;
     }
 
     /**
      * @throws RequestNotSupportedException
-     *
-     * @return \ArrayObject<string, mixed>
      */
-    protected function modelOf(mixed $request): \ArrayObject
+    protected function modelOf(mixed $request): PaymentGatewayModel
     {
-        if (!$request instanceof Generic || !$request->getModel() instanceof \ArrayObject) {
+        if (!$request instanceof Generic || !$request->getModel() instanceof PaymentGatewayModel) {
             throw RequestNotSupportedException::create($request);
         }
 
         return $request->getModel();
     }
 
-    /**
-     * @param \ArrayObject<string, mixed> $model
-     */
-    protected function value(\ArrayObject $model, string $key): mixed
+    protected function value(PaymentGatewayModel $model, string $key): mixed
     {
         return $model->offsetExists($key) ? $model->offsetGet($key) : null;
     }
 
-    /**
-     * @param \ArrayObject<string, mixed> $model
-     */
-    protected function stringValue(\ArrayObject $model, string $key, string $default = ''): string
+    protected function stringValue(PaymentGatewayModel $model, string $key, string $default = ''): string
     {
         $value = $this->value($model, $key);
 
         return \is_scalar($value) ? (string) $value : $default;
     }
 
-    /**
-     * @param \ArrayObject<string, mixed> $model
-     */
-    protected function intValue(\ArrayObject $model, string $key, int $default = 0): int
+    protected function intValue(PaymentGatewayModel $model, string $key, int $default = 0): int
     {
         $value = $this->value($model, $key);
 
         return \is_int($value) ? $value : $default;
     }
 
-    /**
-     * @param \ArrayObject<string, mixed> $model
-     */
-    protected function boolValue(\ArrayObject $model, string $key, bool $default = false): bool
+    protected function boolValue(PaymentGatewayModel $model, string $key, bool $default = false): bool
     {
         $value = $this->value($model, $key);
 
@@ -120,27 +106,62 @@ abstract class AbstractPaymentAction implements ActionInterface, ApiAwareInterfa
     }
 
     /**
-     * @param \ArrayObject<string, mixed> $model
-     * @param array<string, mixed> $payload
+     * The headers the channel sent with its notification, as `lower case name => first value`.
+     *
+     * Http header names are case insensitive and a channel may send a header more than once, so the
+     * names are folded to lower case and only the first value of a repeated header is kept - which is
+     * the one every interface signs with.
+     *
+     * @return array<string, string>
      */
-    protected function recordRequest(\ArrayObject $model, array $payload): void
+    protected function headersOf(PaymentGatewayModel $model): array
     {
-        PaymentGatewayModel::recordRequest($model, $payload);
+        $headers = $this->value($model, PaymentGatewayModel::HEADERS);
+
+        if (!\is_array($headers)) {
+            return [];
+        }
+
+        $normalized = [];
+
+        foreach ($headers as $name => $value) {
+            if (\is_array($value)) {
+                $value = reset($value);
+            }
+
+            if (\is_scalar($value)) {
+                $normalized[strtolower(str_replace('_', '-', (string) $name))] = (string) $value;
+            }
+        }
+
+        return $normalized;
     }
 
     /**
-     * @param \ArrayObject<string, mixed> $model
-     * @param array<string, mixed> $payload
+     * One header of the notification, or null when the channel did not send it.
      */
-    protected function recordResponse(\ArrayObject $model, array $payload): void
+    protected function headerOf(PaymentGatewayModel $model, string $name): ?string
     {
-        PaymentGatewayModel::recordResponse($model, $payload);
+        return $this->headersOf($model)[strtolower(str_replace('_', '-', $name))] ?? null;
     }
 
     /**
-     * @param \ArrayObject<string, mixed> $model
+     * @param array<string, mixed> $payload
      */
-    protected function setResult(\ArrayObject $model, object $result): void
+    protected function recordRequest(PaymentGatewayModel $model, array $payload): void
+    {
+        $model->recordRequest($payload);
+    }
+
+    /**
+     * @param array<string, mixed> $payload
+     */
+    protected function recordResponse(PaymentGatewayModel $model, array $payload): void
+    {
+        $model->recordResponse($payload);
+    }
+
+    protected function setResult(PaymentGatewayModel $model, object $result): void
     {
         $model->offsetSet(PaymentGatewayModel::RESULT, $result);
     }

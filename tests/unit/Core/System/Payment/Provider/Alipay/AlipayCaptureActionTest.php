@@ -8,13 +8,17 @@ use Payum\Core\Request\Refund;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\System\Payment\Channel\PaymentFlow;
-use Shopwell\Core\System\Payment\Gateway\AbstractPaymentApi;
+use Shopwell\Core\System\Payment\Gateway\PaymentGatewayFactory;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
+use Shopwell\Core\System\Payment\Gateway\PayResult;
+use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
 use Shopwell\Core\System\Payment\PaymentException;
 use Shopwell\Core\System\Payment\Provider\Alipay\AlipayApi;
 use Shopwell\Core\System\Payment\Provider\Alipay\AlipayCaptureAction;
-use Shopwell\Core\System\Payment\Provider\Alipay\AlipayGatewayFactory;
+use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
+use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
+use Shopwell\Core\System\Payment\Provider\PaymentProvider;
+use Shopwell\Core\System\Payment\Provider\ResolvedPaymentConfig;
 use Symfony\Component\Clock\MockClock;
 
 /**
@@ -29,12 +33,12 @@ class AlipayCaptureActionTest extends TestCase
      */
     private static ?array $credentials = null;
 
-    public function testSupportsOnlyCaptureRequestsWithAnArrayObjectModel(): void
+    public function testSupportsOnlyCaptureRequestsWithAPaymentGatewayModel(): void
     {
         $action = new AlipayCaptureAction();
 
-        static::assertTrue($action->supports(new Capture(new \ArrayObject())));
-        static::assertFalse($action->supports(new Refund(new \ArrayObject())));
+        static::assertTrue($action->supports(new Capture(new PaymentGatewayModel())));
+        static::assertFalse($action->supports(new Refund(new PaymentGatewayModel())));
         static::assertFalse($action->supports(new Capture(new \stdClass())));
     }
 
@@ -44,7 +48,7 @@ class AlipayCaptureActionTest extends TestCase
 
         $this->expectException(RequestNotSupportedException::class);
 
-        $action->execute(new Refund(new \ArrayObject()));
+        $action->execute(new Refund(new PaymentGatewayModel()));
     }
 
     public function testExecuteThrowsWithoutAnApi(): void
@@ -53,7 +57,7 @@ class AlipayCaptureActionTest extends TestCase
 
         $this->expectExceptionObject(PaymentException::actionWithoutApi(AlipayCaptureAction::class));
 
-        $action->execute(new Capture(new \ArrayObject()));
+        $action->execute(new Capture(new PaymentGatewayModel()));
     }
 
     public function testSetApiRejectsAnApiItDoesNotWorkWith(): void
@@ -78,12 +82,12 @@ class AlipayCaptureActionTest extends TestCase
     public function testTheMobileWebChannelAnswersARedirectUrl(): void
     {
         $action = new AlipayCaptureAction();
-        $action->setApi($this->api(AlipayGatewayFactory::CHANNEL_H5, self::credentials()));
+        $action->setApi($this->api(AlipayApi::CHANNEL_H5, self::credentials()));
 
         $model = $this->orderModel();
         $action->execute(new Capture($model));
 
-        $result = PaymentGatewayModel::payResult($model, AlipayGatewayFactory::CHANNEL_H5);
+        $result = $model->result(PayResult::class, AlipayApi::CHANNEL_H5);
 
         static::assertSame(PaymentFlow::REDIRECT, $result->params->flow);
         static::assertSame('GET', $result->params->httpMethod);
@@ -92,7 +96,7 @@ class AlipayCaptureActionTest extends TestCase
         static::assertNotNull($result->params->payUrl);
         static::assertStringStartsWith('https://openapi.alipay.com/gateway.do?', $result->params->payUrl);
 
-        $request = PaymentGatewayModel::requestOf($model);
+        $request = $model->request();
         static::assertSame(AlipayCaptureAction::METHOD_WAP_PAY, $request['method']);
 
         $content = $request['content'];
@@ -105,7 +109,7 @@ class AlipayCaptureActionTest extends TestCase
         static::assertSame('attach-1', $content['passback_params']);
         static::assertSame('https://example.com/return', $content['quit_url']);
 
-        $response = PaymentGatewayModel::responseOf($model);
+        $response = $model->response();
         static::assertSame('GET', $response['http_method']);
         static::assertSame($result->params->payUrl, $response['answer']);
     }
@@ -114,7 +118,7 @@ class AlipayCaptureActionTest extends TestCase
     {
         $action = new AlipayCaptureAction();
         $action->setApi($this->api(
-            AlipayGatewayFactory::CHANNEL_WEB,
+            AlipayApi::CHANNEL_WEB,
             self::credentials(),
             [AlipayCaptureAction::SETTING_HTTP_METHOD => 'post']
         ));
@@ -122,7 +126,7 @@ class AlipayCaptureActionTest extends TestCase
         $model = $this->orderModel();
         $action->execute(new Capture($model));
 
-        $result = PaymentGatewayModel::payResult($model, AlipayGatewayFactory::CHANNEL_WEB);
+        $result = $model->result(PayResult::class, AlipayApi::CHANNEL_WEB);
 
         static::assertSame(PaymentFlow::REDIRECT, $result->params->flow);
         static::assertSame('POST', $result->params->httpMethod);
@@ -131,24 +135,24 @@ class AlipayCaptureActionTest extends TestCase
         static::assertStringContainsString(AlipayCaptureAction::METHOD_PAGE_PAY, $result->params->htmlForm);
         static::assertSame(['method' => AlipayCaptureAction::METHOD_PAGE_PAY], $result->params->extra);
 
-        $request = PaymentGatewayModel::requestOf($model);
+        $request = $model->request();
         $content = $request['content'];
         static::assertIsArray($content);
         static::assertSame(AlipayCaptureAction::PRODUCT_CODE_PAGE, $content['product_code']);
 
-        $response = PaymentGatewayModel::responseOf($model);
+        $response = $model->response();
         static::assertSame('POST', $response['http_method']);
     }
 
     public function testTheAppChannelAnswersASignedOrderString(): void
     {
         $action = new AlipayCaptureAction();
-        $action->setApi($this->api(AlipayGatewayFactory::CHANNEL_APP, self::credentials()));
+        $action->setApi($this->api(AlipayApi::CHANNEL_APP, self::credentials()));
 
         $model = $this->orderModel();
         $action->execute(new Capture($model));
 
-        $result = PaymentGatewayModel::payResult($model, AlipayGatewayFactory::CHANNEL_APP);
+        $result = $model->result(PayResult::class, AlipayApi::CHANNEL_APP);
 
         static::assertSame(PaymentFlow::SDK, $result->params->flow);
         static::assertSame(AlipayCaptureAction::METHOD_APP_PAY, $result->params->extra['method']);
@@ -164,14 +168,14 @@ class AlipayCaptureActionTest extends TestCase
         $clock = new MockClock('2024-01-01T00:00:00+00:00');
 
         $action = new AlipayCaptureAction($clock);
-        $action->setApi($this->api(AlipayGatewayFactory::CHANNEL_H5, self::credentials()));
+        $action->setApi($this->api(AlipayApi::CHANNEL_H5, self::credentials()));
 
         $model = $this->orderModel();
         $model->offsetSet(PaymentGatewayModel::EXPIRE_AT, $clock->now()->modify('+5 minutes'));
 
         $action->execute(new Capture($model));
 
-        $content = PaymentGatewayModel::requestOf($model)['content'];
+        $content = $model->request()['content'];
         static::assertIsArray($content);
         static::assertSame('5m', $content['timeout_express']);
     }
@@ -181,14 +185,14 @@ class AlipayCaptureActionTest extends TestCase
         $clock = new MockClock('2024-01-01T00:00:00+00:00');
 
         $action = new AlipayCaptureAction($clock);
-        $action->setApi($this->api(AlipayGatewayFactory::CHANNEL_H5, self::credentials()));
+        $action->setApi($this->api(AlipayApi::CHANNEL_H5, self::credentials()));
 
         $model = $this->orderModel();
         $model->offsetSet(PaymentGatewayModel::EXPIRE_AT, $clock->now()->modify('-5 minutes'));
 
         $action->execute(new Capture($model));
 
-        $content = PaymentGatewayModel::requestOf($model)['content'];
+        $content = $model->request()['content'];
         static::assertIsArray($content);
         static::assertSame('1m', $content['timeout_express']);
     }
@@ -197,7 +201,7 @@ class AlipayCaptureActionTest extends TestCase
     {
         $action = new AlipayCaptureAction();
         // without the app id the sdk fails while it is built, before it would talk to the channel
-        $action->setApi($this->api(AlipayGatewayFactory::CHANNEL_QR));
+        $action->setApi($this->api(AlipayApi::CHANNEL_QR));
 
         $model = $this->orderModel();
 
@@ -208,17 +212,17 @@ class AlipayCaptureActionTest extends TestCase
             static::assertSame(PaymentException::GATEWAY_ERROR, $exception->getErrorCode());
         }
 
-        $request = PaymentGatewayModel::requestOf($model);
+        $request = $model->request();
         static::assertSame('alipay.trade.precreate', $request['method']);
 
-        $response = PaymentGatewayModel::responseOf($model);
+        $response = $model->response();
         static::assertArrayHasKey('error', $response);
     }
 
     public function testTheMiniProgramChannelWrapsAGatewayFailure(): void
     {
         $action = new AlipayCaptureAction();
-        $action->setApi($this->api(AlipayGatewayFactory::CHANNEL_MINI));
+        $action->setApi($this->api(AlipayApi::CHANNEL_MINI));
 
         $model = $this->orderModel();
 
@@ -229,19 +233,16 @@ class AlipayCaptureActionTest extends TestCase
             static::assertSame(PaymentException::GATEWAY_ERROR, $exception->getErrorCode());
         }
 
-        $request = PaymentGatewayModel::requestOf($model);
+        $request = $model->request();
         static::assertSame('alipay.trade.create', $request['method']);
 
-        $response = PaymentGatewayModel::responseOf($model);
+        $response = $model->response();
         static::assertArrayHasKey('error', $response);
     }
 
-    /**
-     * @return \ArrayObject<string, mixed>
-     */
-    private function orderModel(): \ArrayObject
+    private function orderModel(): PaymentGatewayModel
     {
-        return new \ArrayObject([
+        return new PaymentGatewayModel([
             PaymentGatewayModel::PAYMENT_NO => 'P-1',
             PaymentGatewayModel::AMOUNT => 1234,
             PaymentGatewayModel::CURRENCY => 'CNY',
@@ -257,17 +258,28 @@ class AlipayCaptureActionTest extends TestCase
      */
     private function api(string $channel, array $credentials = [], array $settings = []): AlipayApi
     {
-        return new AlipayApi([
-            AbstractPaymentApi::CONFIG_PROVIDER => 'alipay',
-            AbstractPaymentApi::CONFIG_CHANNEL => $channel,
-            AbstractPaymentApi::CONFIG_MODE => 'own',
-            AbstractPaymentApi::CONFIG_CREDENTIALS => $credentials,
-            AbstractPaymentApi::CONFIG_PARAMS => [],
-            AbstractPaymentApi::CONFIG_RUNTIME_PARAMS => [],
-            AbstractPaymentApi::CONFIG_SETTINGS => $settings,
-            AbstractPaymentApi::CONFIG_NOTIFY_URL => 'https://example.com/notify',
-            AbstractPaymentApi::CONFIG_RETURN_URL => 'https://example.com/return',
-        ]);
+        $channelOfPayment = new PaymentChannel($channel, 'alipay', $channel, PaymentFlow::REDIRECT);
+
+        return new AlipayApi(
+            new ResolvedPaymentConfig(
+                provider: new PaymentProvider(
+                    'alipay',
+                    'alipay',
+                    [],
+                    [$channel => $channelOfPayment],
+                    new PaymentGatewayFactory('alipay', AlipayApi::class, []),
+                    static::createStub(PaymentNotificationExtractorInterface::class),
+                ),
+                channel: $channelOfPayment,
+                credentials: $credentials,
+                params: [],
+                runtimeParams: [],
+                settings: $settings,
+                mode: 'own',
+            ),
+            'https://example.com/notify',
+            'https://example.com/return',
+        );
     }
 
     /**

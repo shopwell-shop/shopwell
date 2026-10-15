@@ -7,8 +7,8 @@ use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Migration\MigrationStep;
 use Shopwell\Core\Migration\Traits\StateMachineMigration;
 use Shopwell\Core\Migration\Traits\StateMachineMigrationTrait;
-use Shopwell\Core\System\Payment\PaymentOrderStates;
-use Shopwell\Core\System\Payment\PaymentRefundStates;
+use Shopwell\Core\System\Payment\Order\PaymentOrderStates;
+use Shopwell\Core\System\Payment\Order\Refund\PaymentRefundStates;
 
 /**
  * Adds the state machines of the generic payment gateway.

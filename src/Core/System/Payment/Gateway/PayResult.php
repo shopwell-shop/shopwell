@@ -3,7 +3,7 @@
 namespace Shopwell\Core\System\Payment\Gateway;
 
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\System\Payment\Struct\PayParams;
+use Shopwell\Core\System\Payment\Api\Struct\PayParams;
 
 /**
  * What a channel answered for a capture.

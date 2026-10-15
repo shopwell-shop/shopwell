@@ -131,4 +131,18 @@ describe('module/sw-payment/component/sw-payment-config-field', () => {
         wrapper.vm.currentNumber = 60;
         expect(wrapper.emitted('update:modelValue')[0]).toEqual(['60']);
     });
+
+    it('should keep the browser from treating a secret field as a login password', async () => {
+        const wrapper = await createWrapper({
+            field: { name: 'secret_key', label: 'Secret Key', type: 'password', options: {} },
+        });
+
+        expect(wrapper.find('mt-password-field-stub').attributes('autocomplete')).toBe('new-password');
+    });
+
+    it('should opt the plain fields out of the browser autofill', async () => {
+        const wrapper = await createWrapper();
+
+        expect(wrapper.find('mt-text-field-stub').attributes('autocomplete')).toBe('off');
+    });
 });

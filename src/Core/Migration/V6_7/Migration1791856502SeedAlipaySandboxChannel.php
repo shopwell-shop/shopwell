@@ -8,10 +8,9 @@ use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Migration\MigrationException;
 use Shopwell\Core\Framework\Migration\MigrationStep;
 use Shopwell\Core\Framework\Uuid\Uuid;
-use Shopwell\Core\System\Payment\DataAbstractionLayer\PaymentAppProviderEntity;
+use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppProvider\PaymentAppProviderEntity;
+use Shopwell\Core\System\Payment\App\PaymentCredentialCipher;
 use Shopwell\Core\System\Payment\Provider\Alipay\AlipayApi;
-use Shopwell\Core\System\Payment\Provider\Alipay\AlipayGatewayFactory;
-use Shopwell\Core\System\Payment\Service\PaymentCredentialCipher;
 
 /**
  * Seeds the alipay interface with the public sandbox account of the alipay open platform, plus one demo
@@ -25,17 +24,18 @@ use Shopwell\Core\System\Payment\Service\PaymentCredentialCipher;
  *
  * ⚠️ The credentials below are alipay's *public sandbox* test account: they are deliberately not a
  * secret, but they must be replaced with the real merchant credentials before this channel is used in
- * production, and the demo app has to be removed. If signing fails with a key format error, the private
- * key stored below is incomplete and has to be replaced with the complete pkcs#8 key of the sandbox app.
+ * production, and the demo app has to be removed. The seeded key pair is a locally generated
+ * placeholder: it is complete and signs and verifies against itself, but it belongs to no alipay app,
+ * so both keys have to be swapped for the ones of the real sandbox app in the alipay console.
  *
  * @internal
  */
 #[Package('framework')]
 class Migration1791856502SeedAlipaySandboxChannel extends MigrationStep
 {
-    final public const PROVIDER = AlipayGatewayFactory::PROVIDER;
+    final public const PROVIDER = AlipayApi::PROVIDER;
 
-    final public const CHANNEL = AlipayGatewayFactory::CHANNEL_H5;
+    final public const CHANNEL = AlipayApi::CHANNEL_H5;
 
     /**
      * The app id of the sandbox app of the alipay open platform.
@@ -45,14 +45,16 @@ class Migration1791856502SeedAlipaySandboxChannel extends MigrationStep
     final public const SANDBOX_GATEWAY_URL = 'https://openapi-sandbox.dl.alipaydev.com';
 
     /**
-     * The private key of the sandbox app, used to sign the requests.
+     * The private key of the sandbox app, used to sign the requests: the pkcs#8 body without the pem
+     * envelope, the way `AlipayApi::wrapPem()` expects it.
      */
-    final public const SANDBOX_PRIVATE_KEY = 'MIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQC1u2gxfwsoO6u9Fy8DEEYJQRof8J2wPsFxqQsu4Q9ipSJ8y+t2Gap43BUW3DLVBFn3pClg5a/lrzBOYy8VtlH/1t9Eli9rq1xIuG11BaBqrR2Yw0HPknZ5uNp9z2Xo3kWiSLSJgT85yA01W1f5t5m9j7ZeC23PdvUYVvw2Or7YBiMlPS1DeU3LmLQkLmhk5kOmFDw1vUvVmM2uSxs0HIAgXUraDlVyZOvTB7m3lt7CJI/vxWp2TdGRBpv8XjWCttgULQtCzQn1NGJv6ARpD8No0SNvRXWZogXZBVJnGkwtFwYvXHl6lrIVnhGQcbfPOI2v2Q6mVKklyWfhw6C/bFLfAgMBAAECggEAA2xw8GjSkZB/eUxatjrHknw2EjHOnUQNk+XvAL0WvK0hbGKq6uXcWtCLqQBFHwcQ9eFCgO5CA7MwsdWOs4BkWMOB7M6tI';
+    final public const SANDBOX_PRIVATE_KEY = 'MIIEvwIBADANBgkqhkiG9w0BAQEFAASCBKkwggSlAgEAAoIBAQCx1O874e6cAzTwOqU2Ri/8ZaGu1WdvjZ8MaiMgNAIR1SZh7yJ/+HcC2ijpMPq0x1+FoCWz0u/haCHNJFWL36fPaLILJTOicN9EwqdQCT0JbYQw1TOL+V+G9/tq2YFuizwVyRJ+ua2qC0JZoT9cqfVZTxTQJ++H++pJ9XjJtTHyEXwAl89xYI1KjYu1S5LmPtuLjpx+xmcg9S+vZdYxFW3yvRHrsvZI4ECSNi0A27cpbPSqucq7w2cjfhistPjTdew4+h05p2liC9XYqfnNRfv8r3iufyP/ovVMFUEDtScIveyX2Lb+g1l6Afp/5o369vI3JLHUAI+cYF6UtD6WtiZtAgMBAAECggEABMed5ISmlq/pYNmarjJFwOl0ZpAa1x892qYRqqBrO9J4VSKJ0Vm6zStS9S2ZV3mSYjOTP9mYE/1qBysGV5ub1ZHRU0ZdNG0HO0BmIdsVtmaoqm1YlNcPj7+jlNQiy/dXFpjQc/KGre7eii0w2EtDKnLbMtsX75ZATluYMwe5P3HYSnmx63jtO+MRlCcLO/orrmMzxS1hQ/jg9CnxDoGlsDFheO7bUROx/VH110iB9X61j08FQyiRex2e0Y5z/nvBByYPz3o+fDnNuIwRU+MSGX/fhRQ83X49EzjB1xSYMwXgK7fJdVziqySXMrwsetGCAgMqR32XjQ6sr+jmzbzE4QKBgQDzzQLOXrB0EHD74XUe060y9U8Zv14dq23KDLnhiHQPbmLUrqheTDbOIWLcuNr3tEHvS0MGlYJdkKZpRRK404rykq9u7BR+8F8eHsBdEBK10eSE/YdzuFjB2/IpkZ/NzaCZqo0Uj+9m4en1yS6bJPzhq2zkrBSuOw93XjD82Rkv/QKBgQC6uuMP31X2qlXmVvsX224HjVPC7b78Kidqt0BOaG/tsOLmES0lZ0KdrKLlIxxl7wDd/FYzqiqQRLZp+9Tj8SF4+TCZlnMFaEJFTMzIRa45zcj8tW9y/PAond4yIy2mmjj7NM3l1/chmr6pwxcb5JWX/bRqmV7nUSbLXq8LAOQDMQKBgQCmxRAsVr1hR3Xh9sGFCsspVoB7Xlpk9UUutzHXwt2RSLM2RRtLFdtPeasEzTaLxrRrmhIJSPBaTH5o+CTsZVhgwlJbEAadJpQKKILxpfMGiMNG7Z5gXDPquCeYo9KqlwRK2U2USTk8KUE/LhVBbzXEsNzWN5gV7rSPtNDRxTfjiQKBgQCD3vX6QKRJ9hOB/02GlK3I4ZMU56foF7EMmWvts63QNAqZpem3L4yJI+FKZxhoGHkJTGpoRDWY+x3EDVhUvfcAoyMiZHDIkc+zd0Br82HOarkVVuDlWSIV3R+NUvCrZuD07161gmaCMfGSnDdWuIC4/TAL1FKEk/gMycpev/tHEQKBgQCqwyrCe/VvYcBkD3LWeKfcH19QHv4gcc8fyPTYSFlqUeXJLi0wO0qs+SbrLJBkdf1LoltmyWu4X6Z5OtyRXf90NA3xP0FXFXUIE+SSveG/5XcCWG3SR31yAE9ZcvzfGydD+MYFOc28Q2XhCCXbVxQkHKY4fGLFiuIetrjbg+35/w==';
 
     /**
-     * The public key of alipay itself, used to verify the notifications.
+     * The public key of alipay itself, used to verify the notifications: the spki body without the pem
+     * envelope.
      */
-    final public const SANDBOX_ALIPAY_PUBLIC_KEY = 'MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA4QFG';
+    final public const SANDBOX_ALIPAY_PUBLIC_KEY = 'MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAsdTvO+HunAM08DqlNkYv/GWhrtVnb42fDGojIDQCEdUmYe8if/h3Atoo6TD6tMdfhaAls9Lv4WghzSRVi9+nz2iyCyUzonDfRMKnUAk9CW2EMNUzi/lfhvf7atmBbos8FckSfrmtqgtCWaE/XKn1WU8U0Cfvh/vqSfV4ybUx8hF8AJfPcWCNSo2LtUuS5j7bi46cfsZnIPUvr2XWMRVt8r0R67L2SOBAkjYtANu3KWz0qrnKu8NnI34YrLT403XsOPodOadpYgvV2Kn5zUX7/K94rn8j/6L1TBVBA7UnCL3sl9i2/oNZegH6f+aN+vbyNySx1ACPnGBelLQ+lrYmbQIDAQAB';
 
     final public const DEMO_APP_TECHNICAL_NAME = 'alipay_sandbox_demo';
 

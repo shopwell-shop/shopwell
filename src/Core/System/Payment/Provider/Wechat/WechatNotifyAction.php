@@ -7,6 +7,7 @@ use Payum\Core\Request\Notify;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Payment\Gateway\AbstractPaymentAction;
 use Shopwell\Core\System\Payment\Gateway\NotificationResult;
+use Shopwell\Core\System\Payment\Gateway\Payload;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
 use Shopwell\Core\System\Payment\PaymentException;
 use WeChatPay\Crypto\AesGcm;
@@ -48,24 +49,23 @@ final class WechatNotifyAction extends AbstractPaymentAction
 
         $message = $this->decode($rawBody);
         $resource = $this->decryptResource($api, $message);
-        $outRefundId = \is_string($resource['refund_id'] ?? null) ? $resource['refund_id'] : null;
+        $outRefundId = Payload::string($resource, 'refund_id');
 
         $this->recordResponse($model, $resource);
 
-        $status = \is_string($resource['trade_state'] ?? null)
-            ? $resource['trade_state']
-            : (\is_string($resource['refund_status'] ?? null) ? $resource['refund_status'] : null);
+        $tradeState = Payload::string($resource, 'trade_state');
+        $refundStatus = Payload::string($resource, 'refund_status');
 
         $this->setResult($model, new NotificationResult(
             signatureValid: $signatureValid,
             succeeded: $outRefundId === null
-                ? ($resource['trade_state'] ?? null) === self::TRADE_SUCCESS
-                : ($resource['refund_status'] ?? null) === self::REFUND_SUCCESS,
-            outPaymentNo: \is_string($resource['transaction_id'] ?? null) ? $resource['transaction_id'] : null,
+                ? $tradeState === self::TRADE_SUCCESS
+                : $refundStatus === self::REFUND_SUCCESS,
+            outPaymentNo: Payload::string($resource, 'transaction_id'),
             outRefundId: $outRefundId,
             amount: $this->amountOf($resource, $outRefundId !== null),
-            currency: strtoupper((string) ($resource['amount']['currency'] ?? 'CNY')),
-            status: $status,
+            currency: strtoupper($this->currencyOf($resource)),
+            status: $tradeState ?? $refundStatus,
             raw: $resource,
         ));
     }
@@ -125,7 +125,7 @@ final class WechatNotifyAction extends AbstractPaymentAction
         $message = json_decode($rawBody, true);
 
         if (!\is_array($message)) {
-            throw PaymentException::notificationInvalid(WechatGatewayFactory::PROVIDER, 'the notification is not a json object');
+            throw PaymentException::notificationInvalid(WechatApi::PROVIDER, 'the notification is not a json object');
         }
 
         return $message;
@@ -143,7 +143,7 @@ final class WechatNotifyAction extends AbstractPaymentAction
         $resource = $message['resource'] ?? null;
 
         if (!\is_array($resource) || !\is_string($resource['ciphertext'] ?? null)) {
-            throw PaymentException::notificationInvalid(WechatGatewayFactory::PROVIDER, 'the notification carries no encrypted resource');
+            throw PaymentException::notificationInvalid(WechatApi::PROVIDER, 'the notification carries no encrypted resource');
         }
 
         try {
@@ -154,13 +154,13 @@ final class WechatNotifyAction extends AbstractPaymentAction
                 \is_string($resource['associated_data'] ?? null) ? $resource['associated_data'] : ''
             );
         } catch (\Throwable $exception) {
-            throw PaymentException::notificationInvalid(WechatGatewayFactory::PROVIDER, $exception->getMessage());
+            throw PaymentException::notificationInvalid(WechatApi::PROVIDER, $exception->getMessage());
         }
 
         $decoded = json_decode($plain, true);
 
         if (!\is_array($decoded)) {
-            throw PaymentException::notificationInvalid(WechatGatewayFactory::PROVIDER, 'the decrypted resource is not a json object');
+            throw PaymentException::notificationInvalid(WechatApi::PROVIDER, 'the decrypted resource is not a json object');
         }
 
         return $decoded;
@@ -171,9 +171,9 @@ final class WechatNotifyAction extends AbstractPaymentAction
      */
     private function amountOf(array $resource, bool $isRefund): ?int
     {
-        $amount = $resource['amount'] ?? null;
+        $amount = Payload::map($resource, 'amount');
 
-        if (!\is_array($amount)) {
+        if ($amount === []) {
             return null;
         }
 
@@ -183,29 +183,12 @@ final class WechatNotifyAction extends AbstractPaymentAction
     }
 
     /**
-     * @param \ArrayObject<string, mixed> $model
+     * The currency of the notification, in the upper case form the component records it.
      *
-     * @return array<string, string>
+     * @param array<string, mixed> $resource
      */
-    private function headersOf(\ArrayObject $model): array
+    private function currencyOf(array $resource): string
     {
-        $headers = $model->offsetExists(PaymentGatewayModel::HEADERS) ? $model->offsetGet(PaymentGatewayModel::HEADERS) : null;
-
-        if (!\is_array($headers)) {
-            return [];
-        }
-
-        $normalized = [];
-        foreach ($headers as $name => $value) {
-            if (\is_array($value)) {
-                $value = reset($value);
-            }
-
-            if (\is_scalar($value)) {
-                $normalized[strtolower((string) $name)] = (string) $value;
-            }
-        }
-
-        return $normalized;
+        return Payload::string(Payload::map($resource, 'amount'), 'currency', 'CNY') ?? 'CNY';
     }
 }

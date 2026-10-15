@@ -7,7 +7,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\MessageQueue\ScheduledTask\ScheduledTaskCollection;
 use Shopwell\Core\Framework\MessageQueue\ScheduledTask\ScheduledTaskHandler;
-use Shopwell\Core\System\Payment\Service\PaymentOrderService;
+use Shopwell\Core\System\Payment\Order\PaymentOrderService;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
 /**
@@ -18,8 +18,6 @@ use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 final class ExpirePaymentOrdersTaskHandler extends ScheduledTaskHandler
 {
     /**
-     * @internal
-     *
      * @param EntityRepository<ScheduledTaskCollection> $repository
      */
     public function __construct(

@@ -3,9 +3,9 @@
 namespace Shopwell\Core\System\Payment\Provider\Wechat;
 
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\System\Payment\Provider\PaymentNotificationExtractorInterface;
-use Shopwell\Core\System\Payment\Struct\PaymentNotificationAck;
-use Shopwell\Core\System\Payment\Struct\PaymentNotificationData;
+use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
+use Shopwell\Core\System\Payment\Notification\Struct\PaymentNotificationAck;
+use Shopwell\Core\System\Payment\Notification\Struct\PaymentNotificationData;
 
 /**
  * There is nothing to extract from a wechat pay notification: wechat encrypts its payload with the api

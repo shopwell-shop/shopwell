@@ -8,6 +8,7 @@ use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Payment\Gateway\AbstractPaymentAction;
 use Shopwell\Core\System\Payment\Gateway\Money;
 use Shopwell\Core\System\Payment\Gateway\NotificationResult;
+use Shopwell\Core\System\Payment\Gateway\Payload;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
 use Shopwell\Core\System\Payment\PaymentException;
 
@@ -63,8 +64,8 @@ final class PaypalNotifyAction extends AbstractPaymentAction
         $this->setResult($model, new NotificationResult(
             signatureValid: $signatureValid,
             succeeded: $this->succeeded($eventType),
-            outPaymentNo: $this->stringOf($resource, 'id'),
-            outRefundId: $refund ? $this->stringOf($resource, 'id') : null,
+            outPaymentNo: Payload::string($resource, 'id'),
+            outRefundId: $refund ? Payload::string($resource, 'id') : null,
             amount: $this->amountOf($resource),
             currency: strtoupper($this->currencyOf($resource)),
             status: $eventType,
@@ -95,7 +96,7 @@ final class PaypalNotifyAction extends AbstractPaymentAction
         $decoded = json_decode($rawBody, true);
 
         if (!\is_array($decoded)) {
-            throw PaymentException::notificationInvalid(PaypalGatewayFactory::PROVIDER, 'the notification is not a json object');
+            throw PaymentException::notificationInvalid(PaypalApi::PROVIDER, 'the notification is not a json object');
         }
 
         return $decoded;
@@ -117,15 +118,15 @@ final class PaypalNotifyAction extends AbstractPaymentAction
      */
     private function amountOf(array $resource): ?int
     {
-        $amount = \is_array($resource['amount'] ?? null) ? $resource['amount'] : $resource;
-        $value = $amount['value'] ?? null;
+        $amount = Payload::map($resource, 'amount') ?: $resource;
+        $value = Payload::string($amount, 'value');
 
-        if (!\is_scalar($value) || (string) $value === '') {
+        if ($value === null) {
             return null;
         }
 
         try {
-            return Money::toMinor((string) $value, strtoupper($this->currencyOf($resource)));
+            return Money::toMinor($value, strtoupper($this->currencyOf($resource)));
         } catch (PaymentException) {
             return null;
         }
@@ -136,46 +137,8 @@ final class PaypalNotifyAction extends AbstractPaymentAction
      */
     private function currencyOf(array $resource): string
     {
-        $amount = \is_array($resource['amount'] ?? null) ? $resource['amount'] : [];
-        $currency = $amount['currency_code'] ?? null;
+        $amount = Payload::map($resource, 'amount');
 
-        return \is_scalar($currency) && (string) $currency !== '' ? (string) $currency : 'USD';
-    }
-
-    /**
-     * @param array<string, mixed> $resource
-     */
-    private function stringOf(array $resource, string $key): ?string
-    {
-        $value = $resource[$key] ?? null;
-
-        return \is_scalar($value) && (string) $value !== '' ? (string) $value : null;
-    }
-
-    /**
-     * @param \ArrayObject<string, mixed> $model
-     *
-     * @return array<string, string>
-     */
-    private function headersOf(\ArrayObject $model): array
-    {
-        $headers = $model->offsetExists(PaymentGatewayModel::HEADERS) ? $model->offsetGet(PaymentGatewayModel::HEADERS) : null;
-
-        if (!\is_array($headers)) {
-            return [];
-        }
-
-        $normalized = [];
-        foreach ($headers as $name => $value) {
-            if (\is_array($value)) {
-                $value = reset($value);
-            }
-
-            if (\is_scalar($value)) {
-                $normalized[strtolower((string) $name)] = (string) $value;
-            }
-        }
-
-        return $normalized;
+        return Payload::string($amount, 'currency_code', 'USD') ?? 'USD';
     }
 }

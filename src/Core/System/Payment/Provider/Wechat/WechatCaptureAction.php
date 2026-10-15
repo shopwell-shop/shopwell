@@ -5,12 +5,12 @@ namespace Shopwell\Core\System\Payment\Provider\Wechat;
 use Payum\Core\Exception\RequestNotSupportedException;
 use Payum\Core\Request\Capture;
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\System\Payment\Channel\PaymentFlow;
+use Shopwell\Core\System\Payment\Api\Struct\PayParams;
 use Shopwell\Core\System\Payment\Gateway\AbstractPaymentAction;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
 use Shopwell\Core\System\Payment\Gateway\PayResult;
 use Shopwell\Core\System\Payment\PaymentException;
-use Shopwell\Core\System\Payment\Struct\PayParams;
+use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
 use WeChatPay\Formatter;
 
 /**
@@ -68,20 +68,20 @@ final class WechatCaptureAction extends AbstractPaymentAction
         $payload = $this->payload($model);
 
         switch ($api->channel()) {
-            case WechatGatewayFactory::CHANNEL_H5:
+            case WechatApi::CHANNEL_H5:
                 $this->h5($model, $payload, self::URI_H5);
 
                 return;
-            case WechatGatewayFactory::CHANNEL_NATIVE:
+            case WechatApi::CHANNEL_NATIVE:
                 $this->qrCode($model, $payload);
 
                 return;
-            case WechatGatewayFactory::CHANNEL_JSAPI:
-            case WechatGatewayFactory::CHANNEL_MINI:
+            case WechatApi::CHANNEL_JSAPI:
+            case WechatApi::CHANNEL_MINI:
                 $this->inApp($model, $payload, self::URI_JSAPI);
 
                 return;
-            case WechatGatewayFactory::CHANNEL_APP:
+            case WechatApi::CHANNEL_APP:
                 $this->inApp($model, $payload, self::URI_APP);
 
                 return;
@@ -106,10 +106,9 @@ final class WechatCaptureAction extends AbstractPaymentAction
     /**
      * The h5 product: the payer is sent to wechat on its phone.
      *
-     * @param \ArrayObject<string, mixed> $model
      * @param array<string, mixed> $payload
      */
-    private function h5(\ArrayObject $model, array $payload, string $uri): void
+    private function h5(PaymentGatewayModel $model, array $payload, string $uri): void
     {
         $api = $this->api();
 
@@ -137,10 +136,9 @@ final class WechatCaptureAction extends AbstractPaymentAction
     /**
      * The native product: wechat answers a code url the app renders as a qr code.
      *
-     * @param \ArrayObject<string, mixed> $model
      * @param array<string, mixed> $payload
      */
-    private function qrCode(\ArrayObject $model, array $payload): void
+    private function qrCode(PaymentGatewayModel $model, array $payload): void
     {
         $api = $this->api();
 
@@ -163,14 +161,13 @@ final class WechatCaptureAction extends AbstractPaymentAction
      * parameters the client of the payer consumes. The signature is the one thing these products share
      * with each other and the one thing they do not share with the two browser products.
      *
-     * @param \ArrayObject<string, mixed> $model
      * @param array<string, mixed> $payload
      */
-    private function inApp(\ArrayObject $model, array $payload, string $uri): void
+    private function inApp(PaymentGatewayModel $model, array $payload, string $uri): void
     {
         $api = $this->api();
 
-        $openid = $api->runtimeParam(WechatGatewayFactory::RUNTIME_OPEN_ID);
+        $openid = $api->runtimeParam(WechatApi::RUNTIME_OPEN_ID);
 
         if ($openid !== null) {
             // the payer of this very payment, a runtime parameter and never part of the configuration
@@ -246,11 +243,9 @@ final class WechatCaptureAction extends AbstractPaymentAction
      * The trade every one of the five products starts with. The appid and the merchant id come from
      * different places on purpose - see {@see WechatApi::appId()} and the credentials.
      *
-     * @param \ArrayObject<string, mixed> $model
-     *
      * @return array<string, mixed>
      */
-    private function payload(\ArrayObject $model): array
+    private function payload(PaymentGatewayModel $model): array
     {
         $api = $this->api();
 
@@ -281,12 +276,11 @@ final class WechatCaptureAction extends AbstractPaymentAction
     }
 
     /**
-     * @param \ArrayObject<string, mixed> $model
      * @param array<string, mixed> $payload
      *
      * @return array<string, mixed>
      */
-    private function post(\ArrayObject $model, string $uri, array $payload): array
+    private function post(PaymentGatewayModel $model, string $uri, array $payload): array
     {
         $api = $this->api();
 

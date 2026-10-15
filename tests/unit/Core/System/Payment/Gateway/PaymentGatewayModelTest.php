@@ -5,16 +5,17 @@ namespace Shopwell\Tests\Unit\Core\System\Payment\Gateway;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\System\Payment\Channel\PaymentFlow;
-use Shopwell\Core\System\Payment\DataAbstractionLayer\PaymentOrderEntity;
-use Shopwell\Core\System\Payment\DataAbstractionLayer\PaymentRefundEntity;
+use Shopwell\Core\System\Payment\Api\Struct\PayParams;
 use Shopwell\Core\System\Payment\Gateway\NotificationResult;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
 use Shopwell\Core\System\Payment\Gateway\PayResult;
+use Shopwell\Core\System\Payment\Gateway\QueryResult;
 use Shopwell\Core\System\Payment\Gateway\RefundResult;
+use Shopwell\Core\System\Payment\Order\PaymentOrderEntity;
+use Shopwell\Core\System\Payment\Order\Refund\PaymentRefundEntity;
+use Shopwell\Core\System\Payment\Order\Refund\PaymentRefundStates;
 use Shopwell\Core\System\Payment\PaymentException;
-use Shopwell\Core\System\Payment\PaymentRefundStates;
-use Shopwell\Core\System\Payment\Struct\PayParams;
+use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
 
 /**
  * @internal
@@ -79,6 +80,28 @@ class PaymentGatewayModelTest extends TestCase
         static::assertSame('10.0.0.1', $model->offsetGet(PaymentGatewayModel::REMOTE_IP));
     }
 
+    public function testForQueryCombinesTheOrderDataAndTheLastChannelResponse(): void
+    {
+        $expireAt = new \DateTimeImmutable('2024-05-01 12:00:00');
+        $order = $this->createOrder($expireAt);
+
+        $model = PaymentGatewayModel::forQuery($order, ['id' => 'ORDER-1']);
+
+        static::assertSame('payment-no', $model->offsetGet(PaymentGatewayModel::PAYMENT_NO));
+        static::assertSame('out-trade-no', $model->offsetGet(PaymentGatewayModel::OUT_TRADE_NO));
+        static::assertSame(5000, $model->offsetGet(PaymentGatewayModel::AMOUNT));
+        static::assertSame('CNY', $model->offsetGet(PaymentGatewayModel::CURRENCY));
+        static::assertSame($expireAt, $model->offsetGet(PaymentGatewayModel::EXPIRE_AT));
+        static::assertSame(['id' => 'ORDER-1'], $model->offsetGet(PaymentGatewayModel::LAST_CHANNEL_RESPONSE));
+    }
+
+    public function testForQueryAllowsAnEmptyLastChannelResponse(): void
+    {
+        $model = PaymentGatewayModel::forQuery($this->createOrder());
+
+        static::assertSame([], $model->offsetGet(PaymentGatewayModel::LAST_CHANNEL_RESPONSE));
+    }
+
     public function testForNotificationAllowsAnUnknownRemoteIp(): void
     {
         $model = PaymentGatewayModel::forNotification('{}', [], null);
@@ -89,77 +112,61 @@ class PaymentGatewayModelTest extends TestCase
 
     public function testRecordAndReadTheRequestAndTheResponse(): void
     {
-        $model = new \ArrayObject();
+        $model = new PaymentGatewayModel();
 
-        static::assertSame([], PaymentGatewayModel::requestOf($model));
-        static::assertSame([], PaymentGatewayModel::responseOf($model));
+        static::assertSame([], $model->request());
+        static::assertSame([], $model->response());
 
-        PaymentGatewayModel::recordRequest($model, ['out_trade_no' => 'x']);
-        PaymentGatewayModel::recordResponse($model, ['trade_no' => 'y']);
+        $model->recordRequest(['out_trade_no' => 'x']);
+        $model->recordResponse(['trade_no' => 'y']);
 
-        static::assertSame(['out_trade_no' => 'x'], PaymentGatewayModel::requestOf($model));
-        static::assertSame(['trade_no' => 'y'], PaymentGatewayModel::responseOf($model));
+        static::assertSame(['out_trade_no' => 'x'], $model->request());
+        static::assertSame(['trade_no' => 'y'], $model->response());
     }
 
-    public function testRequestOfIgnoresANonArrayPayload(): void
+    public function testRequestIgnoresANonArrayPayload(): void
     {
-        $model = new \ArrayObject([PaymentGatewayModel::REQUEST => 'not-an-array']);
+        $model = new PaymentGatewayModel([PaymentGatewayModel::REQUEST => 'not-an-array']);
 
-        static::assertSame([], PaymentGatewayModel::requestOf($model));
+        static::assertSame([], $model->request());
     }
 
-    public function testPayResultReturnsTheTypedResult(): void
+    public function testResultReturnsTheStoredResultOfTheRequestedType(): void
     {
-        $result = new PayResult(new PayParams(PaymentFlow::REDIRECT), 'trade-no');
-        $model = new \ArrayObject([PaymentGatewayModel::RESULT => $result]);
+        $payResult = new PayResult(new PayParams(PaymentFlow::REDIRECT), 'trade-no');
+        $refundResult = new RefundResult(PaymentRefundStates::STATE_FINISHED, 'refund-id');
+        $notificationResult = new NotificationResult(true, true);
+        $queryResult = new QueryResult(QueryResult::STATUS_PAID, 'trade-no');
 
-        static::assertSame($result, PaymentGatewayModel::payResult($model, 'alipay'));
+        $model = new PaymentGatewayModel();
+
+        $model->offsetSet(PaymentGatewayModel::RESULT, $payResult);
+        static::assertSame($payResult, $model->result(PayResult::class, 'alipay'));
+
+        $model->offsetSet(PaymentGatewayModel::RESULT, $refundResult);
+        static::assertSame($refundResult, $model->result(RefundResult::class, 'alipay'));
+
+        $model->offsetSet(PaymentGatewayModel::RESULT, $notificationResult);
+        static::assertSame($notificationResult, $model->result(NotificationResult::class, 'wechat'));
+
+        $model->offsetSet(PaymentGatewayModel::RESULT, $queryResult);
+        static::assertSame($queryResult, $model->result(QueryResult::class, 'stripe'));
     }
 
-    public function testPayResultThrowsWhenTheResultIsMissing(): void
-    {
-        $this->expectExceptionObject(PaymentException::gatewayResultMissing('alipay'));
-
-        PaymentGatewayModel::payResult(new \ArrayObject(), 'alipay');
-    }
-
-    public function testPayResultThrowsWhenAnotherResultWasStored(): void
-    {
-        $model = new \ArrayObject([PaymentGatewayModel::RESULT => new RefundResult(PaymentRefundStates::STATE_FINISHED)]);
-
-        $this->expectExceptionObject(PaymentException::gatewayResultMissing('alipay'));
-
-        PaymentGatewayModel::payResult($model, 'alipay');
-    }
-
-    public function testRefundResultReturnsTheTypedResult(): void
-    {
-        $result = new RefundResult(PaymentRefundStates::STATE_FINISHED, 'refund-id');
-        $model = new \ArrayObject([PaymentGatewayModel::RESULT => $result]);
-
-        static::assertSame($result, PaymentGatewayModel::refundResult($model, 'alipay'));
-    }
-
-    public function testRefundResultThrowsWhenTheResultIsMissing(): void
+    public function testResultThrowsWhenTheResultIsMissing(): void
     {
         $this->expectExceptionObject(PaymentException::gatewayResultMissing('alipay'));
 
-        PaymentGatewayModel::refundResult(new \ArrayObject(), 'alipay');
+        (new PaymentGatewayModel())->result(PayResult::class, 'alipay');
     }
 
-    public function testNotificationResultReturnsTheTypedResult(): void
+    public function testResultThrowsWhenAnotherResultWasStored(): void
     {
-        $result = new NotificationResult(true, true);
-        $model = new \ArrayObject([PaymentGatewayModel::RESULT => $result]);
+        $model = new PaymentGatewayModel([PaymentGatewayModel::RESULT => new RefundResult(PaymentRefundStates::STATE_FINISHED)]);
 
-        static::assertSame($result, PaymentGatewayModel::notificationResult($model, 'wechat'));
-    }
+        $this->expectExceptionObject(PaymentException::gatewayResultMissing('alipay'));
 
-    public function testNotificationResultThrowsWhenTheResultIsMissing(): void
-    {
-        $this->expectExceptionObject(PaymentException::gatewayResultMissing('wechat'));
-
-        PaymentGatewayModel::notificationResult(new \ArrayObject(), 'wechat');
+        $model->result(PayResult::class, 'alipay');
     }
 
     private function createOrder(?\DateTimeImmutable $expireAt = null): PaymentOrderEntity

@@ -10,12 +10,12 @@ use Payum\Core\Exception\RequestNotSupportedException;
 use Payum\Core\Request\Capture;
 use Psr\Clock\ClockInterface;
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\System\Payment\Channel\PaymentFlow;
+use Shopwell\Core\System\Payment\Api\Struct\PayParams;
 use Shopwell\Core\System\Payment\Gateway\AbstractPaymentAction;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
 use Shopwell\Core\System\Payment\Gateway\PayResult;
 use Shopwell\Core\System\Payment\PaymentException;
-use Shopwell\Core\System\Payment\Struct\PayParams;
+use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
 use Symfony\Component\Clock\NativeClock;
 
 /**
@@ -78,23 +78,23 @@ final class AlipayCaptureAction extends AbstractPaymentAction
         $api = $this->api();
 
         switch ($api->channel()) {
-            case AlipayGatewayFactory::CHANNEL_H5:
+            case AlipayApi::CHANNEL_H5:
                 $this->redirectFlow($model, self::METHOD_WAP_PAY, self::PRODUCT_CODE_WAP);
 
                 return;
-            case AlipayGatewayFactory::CHANNEL_WEB:
+            case AlipayApi::CHANNEL_WEB:
                 $this->redirectFlow($model, self::METHOD_PAGE_PAY, self::PRODUCT_CODE_PAGE);
 
                 return;
-            case AlipayGatewayFactory::CHANNEL_QR:
+            case AlipayApi::CHANNEL_QR:
                 $this->qrFlow($model, self::PRODUCT_CODE_QR);
 
                 return;
-            case AlipayGatewayFactory::CHANNEL_APP:
+            case AlipayApi::CHANNEL_APP:
                 $this->appFlow($model, self::PRODUCT_CODE_APP);
 
                 return;
-            case AlipayGatewayFactory::CHANNEL_MINI:
+            case AlipayApi::CHANNEL_MINI:
                 $this->miniFlow($model);
 
                 return;
@@ -118,10 +118,8 @@ final class AlipayCaptureAction extends AbstractPaymentAction
 
     /**
      * The two gateway products answer a url (or a form) the app sends the payer to.
-     *
-     * @param \ArrayObject<string, mixed> $model
      */
-    private function redirectFlow(\ArrayObject $model, string $method, string $productCode): void
+    private function redirectFlow(PaymentGatewayModel $model, string $method, string $productCode): void
     {
         $api = $this->api();
 
@@ -162,10 +160,8 @@ final class AlipayCaptureAction extends AbstractPaymentAction
 
     /**
      * The scan flow: alipay answers a qr code the app renders for the payer.
-     *
-     * @param \ArrayObject<string, mixed> $model
      */
-    private function qrFlow(\ArrayObject $model, string $productCode): void
+    private function qrFlow(PaymentGatewayModel $model, string $productCode): void
     {
         $api = $this->api();
 
@@ -219,10 +215,8 @@ final class AlipayCaptureAction extends AbstractPaymentAction
 
     /**
      * The app flow: alipay answers the signed order string the sdk of the app hands to alipay.
-     *
-     * @param \ArrayObject<string, mixed> $model
      */
-    private function appFlow(\ArrayObject $model, string $productCode): void
+    private function appFlow(PaymentGatewayModel $model, string $productCode): void
     {
         $api = $this->api();
 
@@ -251,10 +245,8 @@ final class AlipayCaptureAction extends AbstractPaymentAction
 
     /**
      * The mini program flow: a trade is created for the buyer, the mini program pays the trade no.
-     *
-     * @param \ArrayObject<string, mixed> $model
      */
-    private function miniFlow(\ArrayObject $model): void
+    private function miniFlow(PaymentGatewayModel $model): void
     {
         $api = $this->api();
 
@@ -311,11 +303,9 @@ final class AlipayCaptureAction extends AbstractPaymentAction
     /**
      * The business content of a trade, which is what all five channels have in common.
      *
-     * @param \ArrayObject<string, mixed> $model
-     *
      * @return array<string, mixed>
      */
-    private function bizContent(\ArrayObject $model, string $productCode): array
+    private function bizContent(PaymentGatewayModel $model, string $productCode): array
     {
         $api = $this->api();
         $currency = $this->stringValue($model, PaymentGatewayModel::CURRENCY, 'CNY');

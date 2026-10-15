@@ -218,11 +218,9 @@ final class StripeNotifyAction extends AbstractPaymentAction
     /**
      * The signature header stripe signs the body with, `t=...,v1=...`.
      *
-     * @param \ArrayObject<string, mixed> $model
-     *
      * @throws PaymentException
      */
-    private function signatureOf(\ArrayObject $model): string
+    private function signatureOf(PaymentGatewayModel $model): string
     {
         $headers = $model->offsetExists(PaymentGatewayModel::HEADERS) ? $model->offsetGet(PaymentGatewayModel::HEADERS) : null;
 
@@ -243,7 +241,7 @@ final class StripeNotifyAction extends AbstractPaymentAction
         }
 
         throw PaymentException::notificationInvalid(
-            StripeGatewayFactory::PROVIDER,
+            StripeApi::PROVIDER,
             'the notification carries no stripe signature'
         );
     }

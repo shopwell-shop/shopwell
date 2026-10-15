@@ -3,9 +3,9 @@
 namespace Shopwell\Core\System\Payment\Provider\Stripe;
 
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\System\Payment\Provider\PaymentNotificationExtractorInterface;
-use Shopwell\Core\System\Payment\Struct\PaymentNotificationAck;
-use Shopwell\Core\System\Payment\Struct\PaymentNotificationData;
+use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
+use Shopwell\Core\System\Payment\Notification\Struct\PaymentNotificationAck;
+use Shopwell\Core\System\Payment\Notification\Struct\PaymentNotificationData;
 
 /**
  * Reads the references of a stripe notification.
@@ -22,12 +22,21 @@ use Shopwell\Core\System\Payment\Struct\PaymentNotificationData;
 #[Package('framework')]
 final class StripeNotificationExtractor implements PaymentNotificationExtractorInterface
 {
-    public const HEADER_SIGNATURE = 'stripe-signature';
+    /**
+     * The header stripe signs the raw body with, verified by the notify action of the interface.
+     */
+    final public const HEADER_SIGNATURE = 'stripe-signature';
 
-    public const METADATA_PAYMENT_NO = 'payment_no';
-    public const METADATA_OUT_TRADE_NO = 'out_trade_no';
-    public const METADATA_REFUND_NO = 'refund_no';
-    public const METADATA_REASON = 'reason';
+    /**
+     * The keys of the metadata stripe carries from the creation of an object to its notification.
+     */
+    final public const METADATA_PAYMENT_NO = 'payment_no';
+
+    final public const METADATA_OUT_TRADE_NO = 'out_trade_no';
+
+    final public const METADATA_REFUND_NO = 'refund_no';
+
+    final public const METADATA_REASON = 'reason';
 
     public function extract(string $rawBody, array $headers): PaymentNotificationData
     {

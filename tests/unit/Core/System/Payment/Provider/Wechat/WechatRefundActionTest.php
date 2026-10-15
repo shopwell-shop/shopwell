@@ -8,9 +8,14 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\System\Payment\Gateway\AbstractPaymentApi;
+use Shopwell\Core\System\Payment\Gateway\PaymentGatewayFactory;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
+use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
 use Shopwell\Core\System\Payment\PaymentException;
+use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
+use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
+use Shopwell\Core\System\Payment\Provider\PaymentProvider;
+use Shopwell\Core\System\Payment\Provider\ResolvedPaymentConfig;
 use Shopwell\Core\System\Payment\Provider\Wechat\WechatApi;
 use Shopwell\Core\System\Payment\Provider\Wechat\WechatRefundAction;
 
@@ -21,12 +26,12 @@ use Shopwell\Core\System\Payment\Provider\Wechat\WechatRefundAction;
 #[CoversClass(WechatRefundAction::class)]
 class WechatRefundActionTest extends TestCase
 {
-    public function testSupportsOnlyRefundRequestsWithAnArrayObjectModel(): void
+    public function testSupportsOnlyRefundRequestsWithAPaymentGatewayModel(): void
     {
         $action = new WechatRefundAction();
 
-        static::assertTrue($action->supports(new Refund(new \ArrayObject())));
-        static::assertFalse($action->supports(new Capture(new \ArrayObject())));
+        static::assertTrue($action->supports(new Refund(new PaymentGatewayModel())));
+        static::assertFalse($action->supports(new Capture(new PaymentGatewayModel())));
         static::assertFalse($action->supports(new Refund(new \stdClass())));
     }
 
@@ -36,12 +41,12 @@ class WechatRefundActionTest extends TestCase
 
         $this->expectExceptionObject(PaymentException::actionWithoutApi(WechatRefundAction::class));
 
-        $action->execute(new Refund(new \ArrayObject()));
+        $action->execute(new Refund(new PaymentGatewayModel()));
     }
 
     public function testExecuteWrapsAGatewayFailureAndRecordsTheRefundRequest(): void
     {
-        $model = new \ArrayObject([
+        $model = new PaymentGatewayModel([
             PaymentGatewayModel::PAYMENT_NO => 'ORDER-1',
             PaymentGatewayModel::AMOUNT => 25,
             PaymentGatewayModel::ORDER_AMOUNT => 100,
@@ -61,19 +66,19 @@ class WechatRefundActionTest extends TestCase
             static::assertSame(PaymentException::GATEWAY_ERROR, $exception->getErrorCode());
         }
 
-        $request = PaymentGatewayModel::requestOf($model);
+        $request = $model->request();
         static::assertSame('ORDER-1', $request['out_trade_no']);
         static::assertSame('REFUND-1', $request['out_refund_no']);
         static::assertSame('customer asked', $request['reason']);
         static::assertSame('https://example.com/notify', $request['notify_url']);
         static::assertSame(['refund' => 25, 'total' => 100, 'currency' => 'CNY'], $request['amount']);
 
-        static::assertArrayHasKey('error', PaymentGatewayModel::responseOf($model));
+        static::assertArrayHasKey('error', $model->response());
     }
 
     public function testExecuteLeavesTheReasonOutWhenItIsMissing(): void
     {
-        $model = new \ArrayObject([
+        $model = new PaymentGatewayModel([
             PaymentGatewayModel::PAYMENT_NO => 'ORDER-1',
             PaymentGatewayModel::AMOUNT => 25,
             PaymentGatewayModel::ORDER_AMOUNT => 100,
@@ -91,7 +96,7 @@ class WechatRefundActionTest extends TestCase
             static::assertSame(PaymentException::GATEWAY_ERROR, $exception->getErrorCode());
         }
 
-        static::assertArrayNotHasKey('reason', PaymentGatewayModel::requestOf($model));
+        static::assertArrayNotHasKey('reason', $model->request());
     }
 
     #[DataProvider('refundUris')]
@@ -110,16 +115,27 @@ class WechatRefundActionTest extends TestCase
 
     private function api(): WechatApi
     {
-        return new WechatApi([
-            AbstractPaymentApi::CONFIG_PROVIDER => 'wechat',
-            AbstractPaymentApi::CONFIG_CHANNEL => 'wechat_h5',
-            AbstractPaymentApi::CONFIG_MODE => 'live',
-            AbstractPaymentApi::CONFIG_CREDENTIALS => [WechatApi::MCH_ID => '1900000001'],
-            AbstractPaymentApi::CONFIG_PARAMS => [],
-            AbstractPaymentApi::CONFIG_SETTINGS => [],
-            AbstractPaymentApi::CONFIG_RUNTIME_PARAMS => [],
-            AbstractPaymentApi::CONFIG_NOTIFY_URL => 'https://example.com/notify',
-            AbstractPaymentApi::CONFIG_RETURN_URL => '',
-        ]);
+        $channel = new PaymentChannel(WechatApi::CHANNEL_H5, 'wechat', WechatApi::CHANNEL_H5, PaymentFlow::REDIRECT);
+
+        return new WechatApi(
+            new ResolvedPaymentConfig(
+                provider: new PaymentProvider(
+                    'wechat',
+                    'wechat',
+                    [],
+                    [WechatApi::CHANNEL_H5 => $channel],
+                    new PaymentGatewayFactory('wechat', WechatApi::class, []),
+                    static::createStub(PaymentNotificationExtractorInterface::class),
+                ),
+                channel: $channel,
+                credentials: [WechatApi::MCH_ID => '1900000001'],
+                params: [],
+                runtimeParams: [],
+                settings: [],
+                mode: 'live',
+            ),
+            'https://example.com/notify',
+            '',
+        );
     }
 }

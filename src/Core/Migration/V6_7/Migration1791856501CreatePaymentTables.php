@@ -62,6 +62,8 @@ class Migration1791856501CreatePaymentTables extends MigrationStep
                 `technical_name` VARCHAR(64) NOT NULL,
                 `name` VARCHAR(255) NOT NULL,
                 `app_secret` VARCHAR(255) NOT NULL,
+                `previous_app_secret` VARCHAR(255) NULL,
+                `secret_rotated_at` DATETIME(3) NULL,
                 `active` TINYINT(1) NOT NULL DEFAULT 1,
                 `notify_url` VARCHAR(1024) NULL,
                 `return_url` VARCHAR(1024) NULL,

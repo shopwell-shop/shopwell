@@ -4,13 +4,15 @@ namespace Shopwell\Core\System\Payment\Provider;
 
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Util\XmlReader;
-use Shopwell\Core\System\Payment\Channel\PaymentChannel;
-use Shopwell\Core\System\Payment\Channel\PaymentFlow;
+use Shopwell\Core\System\Payment\Gateway\PaymentGatewayFactory;
+use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
 use Shopwell\Core\System\Payment\PaymentException;
+use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
+use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
 use Symfony\Component\Config\Util\XmlUtils;
 
 /**
- * Reads the `payment-provider.xml` of a payment interface into a {@see PaymentProviderDefinition}.
+ * Reads the `payment-provider.xml` of a payment interface and binds its services to it.
  *
  * It is the counterpart of the `config.xml` of a plugin: the structure of the configuration is declared
  * next to the code of the interface instead of being written into the administration, which is what lets
@@ -29,8 +31,11 @@ final class PaymentProviderSchemaReader extends XmlReader
     /**
      * @throws PaymentException
      */
-    public function readProvider(string $xmlFile): PaymentProviderDefinition
-    {
+    public function readProvider(
+        string $xmlFile,
+        PaymentGatewayFactory $gatewayFactory,
+        PaymentNotificationExtractorInterface $notificationExtractor
+    ): PaymentProvider {
         $parsed = $this->parseProviderFile($xmlFile);
 
         $name = $parsed['name'] ?? null;
@@ -48,11 +53,13 @@ final class PaymentProviderSchemaReader extends XmlReader
         /** @var list<array<string, mixed>> $channels */
         $channels = $parsed['channels'] ?? [];
 
-        return new PaymentProviderDefinition(
+        return new PaymentProvider(
             technicalName: $name,
             label: $label,
             credentials: $this->fieldsOf($credentials, 'The payment interface "' . $name . '"'),
             channels: $this->channelsOf($channels, $name),
+            gatewayFactory: $gatewayFactory,
+            notificationExtractor: $notificationExtractor,
         );
     }
 
@@ -218,25 +225,22 @@ final class PaymentProviderSchemaReader extends XmlReader
      *
      * @throws PaymentException
      *
-     * @return list<PaymentChannel>
+     * @return array<string, PaymentChannel>
      */
-    private function channelsOf(array $channels, string $providerName): array
+    private function channelsOf(array $channels, string $providerTechnicalName): array
     {
         $result = [];
-        $seen = [];
 
         foreach ($channels as $channel) {
             $name = (string) $channel['name'];
 
             if ($name === '') {
-                throw PaymentException::invalidProviderDeclaration(\sprintf('The payment interface "%s" declares a channel without a name.', $providerName));
+                throw PaymentException::invalidProviderDeclaration(\sprintf('The payment interface "%s" declares a channel without a name.', $providerTechnicalName));
             }
 
-            if (isset($seen[$name])) {
+            if (isset($result[$name])) {
                 throw PaymentException::invalidProviderDeclaration(\sprintf('The channel "%s" is declared twice.', $name));
             }
-
-            $seen[$name] = true;
 
             $flow = PaymentFlow::tryFrom((string) $channel['flow']);
 
@@ -251,9 +255,9 @@ final class PaymentProviderSchemaReader extends XmlReader
             /** @var array<string, bool> $runtimeParams */
             $runtimeParams = $channel['runtime-params'];
 
-            $result[] = new PaymentChannel(
+            $result[$name] = new PaymentChannel(
                 technicalName: $name,
-                providerName: $providerName,
+                providerTechnicalName: $providerTechnicalName,
                 label: (string) $channel['label'],
                 flow: $flow,
                 currencies: $currencies,

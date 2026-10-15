@@ -5,8 +5,13 @@ namespace Shopwell\Tests\Unit\Core\System\Payment\Provider\Stripe;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\System\Payment\Gateway\AbstractPaymentApi;
+use Shopwell\Core\System\Payment\Gateway\PaymentGatewayFactory;
+use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
 use Shopwell\Core\System\Payment\PaymentException;
+use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
+use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
+use Shopwell\Core\System\Payment\Provider\PaymentProvider;
+use Shopwell\Core\System\Payment\Provider\ResolvedPaymentConfig;
 use Shopwell\Core\System\Payment\Provider\Stripe\StripeApi;
 
 /**
@@ -18,7 +23,7 @@ class StripeApiTest extends TestCase
 {
     public function testExposesTheConfigurationOfThePayment(): void
     {
-        $api = new StripeApi($this->config(credentials: [StripeApi::SECRET_KEY => 'sk_test_123']));
+        $api = $this->api(credentials: [StripeApi::SECRET_KEY => 'sk_test_123']);
 
         static::assertSame('stripe', $api->provider());
         static::assertSame('stripe_checkout', $api->channel());
@@ -30,14 +35,14 @@ class StripeApiTest extends TestCase
 
     public function testWebhookSecretReturnsTheCredential(): void
     {
-        $api = new StripeApi($this->config(credentials: [StripeApi::WEBHOOK_SECRET => 'whsec_123']));
+        $api = $this->api(credentials: [StripeApi::WEBHOOK_SECRET => 'whsec_123']);
 
         static::assertSame('whsec_123', $api->webhookSecret());
     }
 
     public function testWebhookSecretThrowsWhenTheCredentialIsMissing(): void
     {
-        $api = new StripeApi($this->config());
+        $api = $this->api();
 
         $this->expectExceptionObject(PaymentException::missingCredentials('stripe', StripeApi::WEBHOOK_SECRET));
 
@@ -46,21 +51,21 @@ class StripeApiTest extends TestCase
 
     public function testPublishableKeyReturnsTheCredential(): void
     {
-        $api = new StripeApi($this->config(credentials: [StripeApi::PUBLISHABLE_KEY => 'pk_test_123']));
+        $api = $this->api(credentials: [StripeApi::PUBLISHABLE_KEY => 'pk_test_123']);
 
         static::assertSame('pk_test_123', $api->publishableKey());
     }
 
     public function testPublishableKeyDefaultsToAnEmptyString(): void
     {
-        $api = new StripeApi($this->config());
+        $api = $this->api();
 
         static::assertSame('', $api->publishableKey());
     }
 
     public function testCurrencyIsLowercased(): void
     {
-        $api = new StripeApi($this->config());
+        $api = $this->api();
 
         static::assertSame('cny', $api->currency('CNY'));
         static::assertSame('usd', $api->currency('usd'));
@@ -69,7 +74,7 @@ class StripeApiTest extends TestCase
 
     public function testClientIsBuiltOnceAndCached(): void
     {
-        $api = new StripeApi($this->config(credentials: [StripeApi::SECRET_KEY => 'sk_test_123']));
+        $api = $this->api(credentials: [StripeApi::SECRET_KEY => 'sk_test_123']);
 
         $client = $api->client();
 
@@ -78,17 +83,17 @@ class StripeApiTest extends TestCase
 
     public function testClientIsBuiltWithAnApiVersion(): void
     {
-        $api = new StripeApi($this->config(credentials: [
+        $api = $this->api(credentials: [
             StripeApi::SECRET_KEY => 'sk_test_123',
             StripeApi::API_VERSION => '2024-06-20',
-        ]));
+        ]);
 
         static::assertSame('2024-06-20', $api->client()->getStripeVersion());
     }
 
     public function testClientThrowsWithoutTheSecretKey(): void
     {
-        $api = new StripeApi($this->config());
+        $api = $this->api();
 
         $this->expectExceptionObject(PaymentException::missingCredentials('stripe', StripeApi::SECRET_KEY));
 
@@ -97,21 +102,30 @@ class StripeApiTest extends TestCase
 
     /**
      * @param array<string, mixed> $credentials
-     *
-     * @return array<string, mixed>
      */
-    private function config(array $credentials = []): array
+    private function api(array $credentials = []): StripeApi
     {
-        return [
-            AbstractPaymentApi::CONFIG_PROVIDER => 'stripe',
-            AbstractPaymentApi::CONFIG_CHANNEL => 'stripe_checkout',
-            AbstractPaymentApi::CONFIG_MODE => 'own',
-            AbstractPaymentApi::CONFIG_CREDENTIALS => $credentials,
-            AbstractPaymentApi::CONFIG_PARAMS => [],
-            AbstractPaymentApi::CONFIG_RUNTIME_PARAMS => [],
-            AbstractPaymentApi::CONFIG_SETTINGS => [],
-            AbstractPaymentApi::CONFIG_NOTIFY_URL => 'https://example.com/notify',
-            AbstractPaymentApi::CONFIG_RETURN_URL => 'https://example.com/return',
-        ];
+        $channel = new PaymentChannel('stripe_checkout', 'stripe', 'stripe_checkout', PaymentFlow::REDIRECT);
+
+        return new StripeApi(
+            new ResolvedPaymentConfig(
+                provider: new PaymentProvider(
+                    'stripe',
+                    'stripe',
+                    [],
+                    ['stripe_checkout' => $channel],
+                    new PaymentGatewayFactory('stripe', StripeApi::class, []),
+                    static::createStub(PaymentNotificationExtractorInterface::class),
+                ),
+                channel: $channel,
+                credentials: $credentials,
+                params: [],
+                runtimeParams: [],
+                settings: [],
+                mode: 'own',
+            ),
+            'https://example.com/notify',
+            'https://example.com/return',
+        );
     }
 }

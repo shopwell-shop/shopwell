@@ -5,10 +5,14 @@ namespace Shopwell\Tests\Unit\Core\System\Payment\Provider\Wechat;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\System\Payment\Gateway\AbstractPaymentApi;
+use Shopwell\Core\System\Payment\Gateway\PaymentGatewayFactory;
+use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
 use Shopwell\Core\System\Payment\PaymentException;
+use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
+use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
+use Shopwell\Core\System\Payment\Provider\PaymentProvider;
+use Shopwell\Core\System\Payment\Provider\ResolvedPaymentConfig;
 use Shopwell\Core\System\Payment\Provider\Wechat\WechatApi;
-use Shopwell\Core\System\Payment\Provider\Wechat\WechatGatewayFactory;
 use WeChatPay\Crypto\Rsa;
 
 /**
@@ -20,10 +24,10 @@ class WechatApiTest extends TestCase
 {
     public function testExposesConfigurationAndChannelParameter(): void
     {
-        $api = new WechatApi($this->config(
+        $api = $this->api(
             credentials: [WechatApi::MCH_ID => '1900000001'],
-            params: [WechatGatewayFactory::PARAM_APP_ID => 'wx-app-id'],
-        ));
+            params: [WechatApi::PARAM_APP_ID => 'wx-app-id'],
+        );
 
         static::assertSame('wechat', $api->provider());
         static::assertSame('wechat_h5', $api->channel());
@@ -35,23 +39,23 @@ class WechatApiTest extends TestCase
 
     public function testAppIdThrowsWhenChannelParameterIsMissing(): void
     {
-        $api = new WechatApi($this->config());
+        $api = $this->api();
 
-        $this->expectExceptionObject(PaymentException::channelNotConfigured('wechat_h5', WechatGatewayFactory::PARAM_APP_ID));
+        $this->expectExceptionObject(PaymentException::channelNotConfigured('wechat_h5', WechatApi::PARAM_APP_ID));
 
         $api->appId();
     }
 
     public function testApiV3KeyReturnsCredential(): void
     {
-        $api = new WechatApi($this->config(credentials: [WechatApi::API_V3_KEY => 'a-256-bit-api-v3-key-value-123']));
+        $api = $this->api(credentials: [WechatApi::API_V3_KEY => 'a-256-bit-api-v3-key-value-123']);
 
         static::assertSame('a-256-bit-api-v3-key-value-123', $api->apiV3Key());
     }
 
     public function testApiV3KeyThrowsWhenCredentialIsMissing(): void
     {
-        $api = new WechatApi($this->config());
+        $api = $this->api();
 
         $this->expectExceptionObject(PaymentException::missingCredentials('wechat', WechatApi::API_V3_KEY));
 
@@ -60,10 +64,10 @@ class WechatApiTest extends TestCase
 
     public function testPlatformCertOfReturnsTheSingleCertificateForAnUnknownSerial(): void
     {
-        $api = new WechatApi($this->config(credentials: [
+        $api = $this->api(credentials: [
             WechatApi::PLATFORM_CERT => 'CERT-PEM',
             WechatApi::PLATFORM_SERIAL => 'PLATFORM-SERIAL',
-        ]));
+        ]);
 
         // the channel rotates its certificates, so the one we have is used for any serial
         static::assertSame('CERT-PEM', $api->platformCertOf(null));
@@ -73,9 +77,9 @@ class WechatApiTest extends TestCase
 
     public function testPlatformCertOfReturnsTheCertificateOfTheKnownSerial(): void
     {
-        $api = new WechatApi($this->config(credentials: [
+        $api = $this->api(credentials: [
             WechatApi::PLATFORM_CERTS => json_encode(['SERIAL-A' => 'CERT-A', 'SERIAL-B' => 'CERT-B'], \JSON_THROW_ON_ERROR),
-        ]));
+        ]);
 
         static::assertSame('CERT-A', $api->platformCertOf('SERIAL-A'));
         static::assertSame('CERT-B', $api->platformCertOf('SERIAL-B'));
@@ -83,9 +87,9 @@ class WechatApiTest extends TestCase
 
     public function testPlatformCertOfReturnsNullForAnUnknownSerialWhenSeveralCertificatesAreConfigured(): void
     {
-        $api = new WechatApi($this->config(credentials: [
+        $api = $this->api(credentials: [
             WechatApi::PLATFORM_CERTS => ['SERIAL-A' => 'CERT-A', 'SERIAL-B' => 'CERT-B'],
-        ]));
+        ]);
 
         static::assertNull($api->platformCertOf('UNKNOWN-SERIAL'));
         static::assertNull($api->platformCertOf(null));
@@ -93,11 +97,11 @@ class WechatApiTest extends TestCase
 
     public function testPlatformCertOfNormalizesConfiguredCertificates(): void
     {
-        $api = new WechatApi($this->config(credentials: [
+        $api = $this->api(credentials: [
             // scalars stay, empty and non-scalar entries are dropped
             WechatApi::PLATFORM_CERTS => ['SERIAL-A' => 'CERT-A', 'SERIAL-B' => '', 'SERIAL-C' => null, 'SERIAL-D' => 123],
             WechatApi::PLATFORM_CERT => 'SINGLE-CERT',
-        ]));
+        ]);
 
         static::assertSame('CERT-A', $api->platformCertOf('SERIAL-A'));
         static::assertSame('123', $api->platformCertOf('SERIAL-D'));
@@ -108,7 +112,7 @@ class WechatApiTest extends TestCase
 
     public function testPlatformCertOfThrowsWhenNoCertificateIsConfigured(): void
     {
-        $api = new WechatApi($this->config());
+        $api = $this->api();
 
         $this->expectExceptionObject(PaymentException::missingCredentials('wechat', WechatApi::PLATFORM_CERTS));
 
@@ -119,7 +123,7 @@ class WechatApiTest extends TestCase
     {
         [$privateKey, $publicKey] = $this->keyPair();
 
-        $api = new WechatApi($this->config(credentials: [WechatApi::MCH_PRIVATE_KEY => $privateKey]));
+        $api = $this->api(credentials: [WechatApi::MCH_PRIVATE_KEY => $privateKey]);
 
         $signature = $api->sign('the-message-to-sign');
 
@@ -131,7 +135,7 @@ class WechatApiTest extends TestCase
         [$privateKey] = $this->keyPair();
         $rawBody = preg_replace('/\s+/', '', (string) preg_replace('#-----(BEGIN|END) PRIVATE KEY-----#', '', $privateKey));
 
-        $api = new WechatApi($this->config(credentials: [WechatApi::MCH_PRIVATE_KEY => $rawBody]));
+        $api = $this->api(credentials: [WechatApi::MCH_PRIVATE_KEY => $rawBody]);
 
         // the raw pkcs8 body was wrapped into a pem that can be used to sign
         static::assertNotSame('', $api->sign('the-message-to-sign'));
@@ -141,7 +145,7 @@ class WechatApiTest extends TestCase
     {
         [$privateKey, $publicKey] = $this->keyPair();
 
-        $api = new WechatApi($this->config());
+        $api = $this->api();
 
         openssl_sign('the-message-to-verify', $signature, $privateKey, \OPENSSL_ALGO_SHA256);
 
@@ -153,13 +157,13 @@ class WechatApiTest extends TestCase
     {
         [$privateKey] = $this->keyPair();
 
-        $api = new WechatApi($this->config(credentials: [
+        $api = $this->api(credentials: [
             WechatApi::MCH_ID => '1900000001',
             WechatApi::MCH_SERIAL => 'MCH-SERIAL',
             WechatApi::MCH_PRIVATE_KEY => $privateKey,
             WechatApi::PLATFORM_CERT => 'CERT-PEM',
             WechatApi::PLATFORM_SERIAL => 'PLATFORM-SERIAL',
-        ]));
+        ]);
 
         $builder = $api->builder();
 
@@ -184,21 +188,30 @@ class WechatApiTest extends TestCase
     /**
      * @param array<string, mixed> $credentials
      * @param array<string, mixed> $params
-     *
-     * @return array<string, mixed>
      */
-    private function config(array $credentials = [], array $params = []): array
+    private function api(array $credentials = [], array $params = []): WechatApi
     {
-        return [
-            AbstractPaymentApi::CONFIG_PROVIDER => 'wechat',
-            AbstractPaymentApi::CONFIG_CHANNEL => 'wechat_h5',
-            AbstractPaymentApi::CONFIG_MODE => 'live',
-            AbstractPaymentApi::CONFIG_CREDENTIALS => $credentials,
-            AbstractPaymentApi::CONFIG_PARAMS => $params,
-            AbstractPaymentApi::CONFIG_SETTINGS => [],
-            AbstractPaymentApi::CONFIG_RUNTIME_PARAMS => [],
-            AbstractPaymentApi::CONFIG_NOTIFY_URL => 'https://example.com/notify',
-            AbstractPaymentApi::CONFIG_RETURN_URL => 'https://example.com/return',
-        ];
+        $channel = new PaymentChannel('wechat_h5', 'wechat', 'wechat_h5', PaymentFlow::REDIRECT);
+
+        return new WechatApi(
+            new ResolvedPaymentConfig(
+                provider: new PaymentProvider(
+                    'wechat',
+                    'wechat',
+                    [],
+                    ['wechat_h5' => $channel],
+                    new PaymentGatewayFactory('wechat', WechatApi::class, []),
+                    static::createStub(PaymentNotificationExtractorInterface::class),
+                ),
+                channel: $channel,
+                credentials: $credentials,
+                params: $params,
+                runtimeParams: [],
+                settings: [],
+                mode: 'live',
+            ),
+            'https://example.com/notify',
+            'https://example.com/return',
+        );
     }
 }

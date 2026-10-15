@@ -8,12 +8,16 @@ use Payum\Core\Request\Refund;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\System\Payment\Gateway\AbstractPaymentApi;
+use Shopwell\Core\System\Payment\Gateway\PaymentGatewayFactory;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
+use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
 use Shopwell\Core\System\Payment\PaymentException;
 use Shopwell\Core\System\Payment\Provider\Alipay\AlipayApi;
-use Shopwell\Core\System\Payment\Provider\Alipay\AlipayGatewayFactory;
 use Shopwell\Core\System\Payment\Provider\Alipay\AlipayRefundAction;
+use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
+use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
+use Shopwell\Core\System\Payment\Provider\PaymentProvider;
+use Shopwell\Core\System\Payment\Provider\ResolvedPaymentConfig;
 
 /**
  * @internal
@@ -22,12 +26,12 @@ use Shopwell\Core\System\Payment\Provider\Alipay\AlipayRefundAction;
 #[CoversClass(AlipayRefundAction::class)]
 class AlipayRefundActionTest extends TestCase
 {
-    public function testSupportsOnlyRefundRequestsWithAnArrayObjectModel(): void
+    public function testSupportsOnlyRefundRequestsWithAPaymentGatewayModel(): void
     {
         $action = new AlipayRefundAction();
 
-        static::assertTrue($action->supports(new Refund(new \ArrayObject())));
-        static::assertFalse($action->supports(new Capture(new \ArrayObject())));
+        static::assertTrue($action->supports(new Refund(new PaymentGatewayModel())));
+        static::assertFalse($action->supports(new Capture(new PaymentGatewayModel())));
         static::assertFalse($action->supports(new Refund(new \stdClass())));
     }
 
@@ -37,7 +41,7 @@ class AlipayRefundActionTest extends TestCase
 
         $this->expectException(RequestNotSupportedException::class);
 
-        $action->execute(new Capture(new \ArrayObject()));
+        $action->execute(new Capture(new PaymentGatewayModel()));
     }
 
     public function testExecuteThrowsWithoutAnApi(): void
@@ -46,7 +50,7 @@ class AlipayRefundActionTest extends TestCase
 
         $this->expectExceptionObject(PaymentException::actionWithoutApi(AlipayRefundAction::class));
 
-        $action->execute(new Refund(new \ArrayObject()));
+        $action->execute(new Refund(new PaymentGatewayModel()));
     }
 
     public function testSetApiRejectsAnApiItDoesNotWorkWith(): void
@@ -64,7 +68,7 @@ class AlipayRefundActionTest extends TestCase
         // without the app id the sdk fails while it is built, before it would talk to the channel
         $action->setApi($this->api());
 
-        $model = new \ArrayObject([
+        $model = new PaymentGatewayModel([
             PaymentGatewayModel::PAYMENT_NO => 'P-1',
             PaymentGatewayModel::AMOUNT => 1234,
             PaymentGatewayModel::CURRENCY => 'CNY',
@@ -79,12 +83,12 @@ class AlipayRefundActionTest extends TestCase
             static::assertSame(PaymentException::GATEWAY_ERROR, $exception->getErrorCode());
         }
 
-        $request = PaymentGatewayModel::requestOf($model);
+        $request = $model->request();
         static::assertSame('P-1', $request['out_trade_no']);
         static::assertSame('R-1', $request['out_request_no']);
         static::assertSame('12.34', $request['refund_amount']);
 
-        $response = PaymentGatewayModel::responseOf($model);
+        $response = $model->response();
         static::assertArrayHasKey('error', $response);
     }
 
@@ -93,16 +97,27 @@ class AlipayRefundActionTest extends TestCase
      */
     private function api(array $credentials = []): AlipayApi
     {
-        return new AlipayApi([
-            AbstractPaymentApi::CONFIG_PROVIDER => 'alipay',
-            AbstractPaymentApi::CONFIG_CHANNEL => AlipayGatewayFactory::CHANNEL_H5,
-            AbstractPaymentApi::CONFIG_MODE => 'own',
-            AbstractPaymentApi::CONFIG_CREDENTIALS => $credentials,
-            AbstractPaymentApi::CONFIG_PARAMS => [],
-            AbstractPaymentApi::CONFIG_RUNTIME_PARAMS => [],
-            AbstractPaymentApi::CONFIG_SETTINGS => [],
-            AbstractPaymentApi::CONFIG_NOTIFY_URL => 'https://example.com/notify',
-            AbstractPaymentApi::CONFIG_RETURN_URL => '',
-        ]);
+        $channel = new PaymentChannel(AlipayApi::CHANNEL_H5, 'alipay', AlipayApi::CHANNEL_H5, PaymentFlow::REDIRECT);
+
+        return new AlipayApi(
+            new ResolvedPaymentConfig(
+                provider: new PaymentProvider(
+                    'alipay',
+                    'alipay',
+                    [],
+                    [AlipayApi::CHANNEL_H5 => $channel],
+                    new PaymentGatewayFactory('alipay', AlipayApi::class, []),
+                    static::createStub(PaymentNotificationExtractorInterface::class),
+                ),
+                channel: $channel,
+                credentials: $credentials,
+                params: [],
+                runtimeParams: [],
+                settings: [],
+                mode: 'own',
+            ),
+            'https://example.com/notify',
+            '',
+        );
     }
 }

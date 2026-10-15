@@ -7,11 +7,16 @@ use Payum\Core\Request\Refund;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\System\Payment\Gateway\AbstractPaymentApi;
+use Shopwell\Core\System\Payment\Gateway\PaymentGatewayFactory;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
+use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
 use Shopwell\Core\System\Payment\PaymentException;
+use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
+use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
+use Shopwell\Core\System\Payment\Provider\PaymentProvider;
 use Shopwell\Core\System\Payment\Provider\Paypal\PaypalApi;
 use Shopwell\Core\System\Payment\Provider\Paypal\PaypalRefundAction;
+use Shopwell\Core\System\Payment\Provider\ResolvedPaymentConfig;
 
 /**
  * @internal
@@ -20,12 +25,12 @@ use Shopwell\Core\System\Payment\Provider\Paypal\PaypalRefundAction;
 #[CoversClass(PaypalRefundAction::class)]
 class PaypalRefundActionTest extends TestCase
 {
-    public function testSupportsOnlyRefundRequestsWithAnArrayObjectModel(): void
+    public function testSupportsOnlyRefundRequestsWithAPaymentGatewayModel(): void
     {
         $action = new PaypalRefundAction();
 
-        static::assertTrue($action->supports(new Refund(new \ArrayObject())));
-        static::assertFalse($action->supports(new Capture(new \ArrayObject())));
+        static::assertTrue($action->supports(new Refund(new PaymentGatewayModel())));
+        static::assertFalse($action->supports(new Capture(new PaymentGatewayModel())));
         static::assertFalse($action->supports(new Refund(new \stdClass())));
     }
 
@@ -35,12 +40,12 @@ class PaypalRefundActionTest extends TestCase
 
         $this->expectExceptionObject(PaymentException::actionWithoutApi(PaypalRefundAction::class));
 
-        $action->execute(new Refund(new \ArrayObject()));
+        $action->execute(new Refund(new PaymentGatewayModel()));
     }
 
     public function testExecuteThrowsWhenThePaymentHasNoCaptureYet(): void
     {
-        $model = new \ArrayObject([
+        $model = new PaymentGatewayModel([
             PaymentGatewayModel::PAYMENT_NO => 'ORDER-1',
             PaymentGatewayModel::AMOUNT => 25,
             PaymentGatewayModel::CURRENCY => 'CNY',
@@ -60,7 +65,7 @@ class PaypalRefundActionTest extends TestCase
 
     public function testExecuteWrapsAGatewayFailureAndRecordsTheRefundRequest(): void
     {
-        $model = new \ArrayObject([
+        $model = new PaymentGatewayModel([
             PaymentGatewayModel::PAYMENT_NO => 'ORDER-1',
             PaymentGatewayModel::OUT_PAYMENT_NO => 'CAP-1',
             PaymentGatewayModel::AMOUNT => 25,
@@ -86,21 +91,32 @@ class PaypalRefundActionTest extends TestCase
             'custom_id' => 'REFUND-1',
             'amount' => '0.25',
             'currency' => 'CNY',
-        ], PaymentGatewayModel::requestOf($model));
+        ], $model->request());
     }
 
     private function api(): PaypalApi
     {
-        return new PaypalApi([
-            AbstractPaymentApi::CONFIG_PROVIDER => 'paypal',
-            AbstractPaymentApi::CONFIG_CHANNEL => 'paypal_checkout',
-            AbstractPaymentApi::CONFIG_MODE => 'live',
-            AbstractPaymentApi::CONFIG_CREDENTIALS => [],
-            AbstractPaymentApi::CONFIG_PARAMS => [],
-            AbstractPaymentApi::CONFIG_SETTINGS => [],
-            AbstractPaymentApi::CONFIG_RUNTIME_PARAMS => [],
-            AbstractPaymentApi::CONFIG_NOTIFY_URL => 'https://example.com/notify',
-            AbstractPaymentApi::CONFIG_RETURN_URL => 'https://example.com/return',
-        ]);
+        $channel = new PaymentChannel('paypal_checkout', 'paypal', 'paypal_checkout', PaymentFlow::REDIRECT);
+
+        return new PaypalApi(
+            new ResolvedPaymentConfig(
+                provider: new PaymentProvider(
+                    'paypal',
+                    'paypal',
+                    [],
+                    ['paypal_checkout' => $channel],
+                    new PaymentGatewayFactory('paypal', PaypalApi::class, []),
+                    static::createStub(PaymentNotificationExtractorInterface::class),
+                ),
+                channel: $channel,
+                credentials: [],
+                params: [],
+                runtimeParams: [],
+                settings: [],
+                mode: 'live',
+            ),
+            'https://example.com/notify',
+            'https://example.com/return',
+        );
     }
 }

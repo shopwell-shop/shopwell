@@ -4,11 +4,20 @@ namespace Shopwell\Core\System\Payment\Provider\Paypal;
 
 use PaypalServerSdkLib\Authentication\ClientCredentialsAuthCredentialsBuilder;
 use PaypalServerSdkLib\Environment;
+use PaypalServerSdkLib\Exceptions\ApiException;
+use PaypalServerSdkLib\Models\CapturedPayment;
+use PaypalServerSdkLib\Models\CaptureStatus;
+use PaypalServerSdkLib\Models\Order;
+use PaypalServerSdkLib\Models\OrderStatus;
+use PaypalServerSdkLib\Models\PurchaseUnit;
 use PaypalServerSdkLib\PaypalServerSdkClient;
 use PaypalServerSdkLib\PaypalServerSdkClientBuilder;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Payment\Gateway\AbstractPaymentApi;
 use Shopwell\Core\System\Payment\Gateway\Money;
+use Shopwell\Core\System\Payment\Gateway\QueryResult;
+use Shopwell\Core\System\Payment\PaymentException;
+use Shopwell\Core\System\Payment\Provider\ResolvedPaymentConfig;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 /**
@@ -27,6 +36,8 @@ use Symfony\Contracts\HttpClient\HttpClientInterface;
 #[Package('framework')]
 final class PaypalApi extends AbstractPaymentApi
 {
+    final public const PROVIDER = 'paypal';
+
     final public const CLIENT_ID = 'client_id';
     final public const CLIENT_SECRET = 'client_secret';
 
@@ -62,6 +73,18 @@ final class PaypalApi extends AbstractPaymentApi
         'SHA512WITHRSA' => \OPENSSL_ALGO_SHA512,
     ];
 
+    /**
+     * The capture states of paypal mapped to what the platform does with the order. A (partially)
+     * refunded capture was paid before anything else.
+     */
+    private const QUERY_CAPTURE_STATES = [
+        CaptureStatus::COMPLETED => QueryResult::STATUS_PAID,
+        CaptureStatus::PARTIALLY_REFUNDED => QueryResult::STATUS_PAID,
+        CaptureStatus::REFUNDED => QueryResult::STATUS_PAID,
+        CaptureStatus::DECLINED => QueryResult::STATUS_FAILED,
+        CaptureStatus::FAILED => QueryResult::STATUS_FAILED,
+    ];
+
     private ?PaypalServerSdkClient $client = null;
 
     /**
@@ -69,11 +92,17 @@ final class PaypalApi extends AbstractPaymentApi
      */
     private array $certificates = [];
 
+    /**
+     * @param HttpClientInterface|null $httpClient fetches the certificate a webhook of paypal is signed
+     *                                             with, which is the only reason the api is not stateless
+     */
     public function __construct(
-        array $config,
+        ResolvedPaymentConfig $config,
+        string $notifyUrl,
+        string $returnUrl,
         private readonly ?HttpClientInterface $httpClient = null,
     ) {
-        parent::__construct($config);
+        parent::__construct($config, $notifyUrl, $returnUrl);
     }
 
     public function client(): PaypalServerSdkClient
@@ -116,6 +145,156 @@ final class PaypalApi extends AbstractPaymentApi
     public function amount(int $minor, string $currency): string
     {
         return Money::toDecimal($minor, $currency);
+    }
+
+    /**
+     * Asks paypal what happened to a payment, the capture first and the order behind it second.
+     *
+     * The capture is what the money of a paypal payment sits on, so it is asked for whenever it is
+     * known; the order answers for the payments that were never captured. A resource paypal does not
+     * know answers with a 404, which is an answer of its own - `absent` - instead of an error,
+     * because that is exactly what the reconciliation asked for.
+     *
+     * @throws ApiException when paypal rejects the call for another reason
+     * @throws PaymentException when paypal answers something the sdk cannot deserialize
+     */
+    public function query(?string $captureId, ?string $orderId): QueryResult
+    {
+        if ($captureId !== null && $captureId !== '') {
+            return $this->queryCapture($captureId);
+        }
+
+        if ($orderId !== null && $orderId !== '') {
+            return $this->queryOrder($orderId);
+        }
+
+        // without a capture id and without an order id there is nothing paypal could be asked about
+        return new QueryResult(QueryResult::STATUS_ABSENT);
+    }
+
+    private function queryCapture(string $captureId): QueryResult
+    {
+        try {
+            $response = $this->client()->getPaymentsController()->getCapturedPayment(['captureId' => $captureId]);
+        } catch (ApiException $exception) {
+            if ($exception->getCode() === 404) {
+                return new QueryResult(QueryResult::STATUS_ABSENT, raw: ['error' => $exception->getMessage()]);
+            }
+
+            throw $exception;
+        }
+
+        $capture = $response->getResult();
+
+        if (!$capture instanceof CapturedPayment) {
+            throw PaymentException::gatewayError($this->channel(), 'the interface did not answer a capture');
+        }
+
+        return $this->resultOfCapture($capture);
+    }
+
+    private function queryOrder(string $orderId): QueryResult
+    {
+        try {
+            $response = $this->client()->getOrdersController()->getOrder(['id' => $orderId]);
+        } catch (ApiException $exception) {
+            if ($exception->getCode() === 404) {
+                return new QueryResult(QueryResult::STATUS_ABSENT, raw: ['error' => $exception->getMessage()]);
+            }
+
+            throw $exception;
+        }
+
+        $order = $response->getResult();
+
+        if (!$order instanceof Order) {
+            throw PaymentException::gatewayError($this->channel(), 'the interface did not answer an order');
+        }
+
+        $status = (string) ($order->getStatus() ?? '');
+
+        if ($status === OrderStatus::COMPLETED) {
+            return $this->queryCompletedOrder($order);
+        }
+
+        return new QueryResult(
+            status: $status === OrderStatus::VOIDED ? QueryResult::STATUS_CLOSED : QueryResult::STATUS_PENDING,
+            outPaymentNo: $order->getId(),
+            channelStatus: $status === '' ? null : $status,
+            raw: [
+                'id' => $order->getId(),
+                'status' => $status,
+            ],
+        );
+    }
+
+    /**
+     * A completed order is told by the capture on its purchase units, because a completed order can
+     * mean an authorized, a captured or a declined payment - the intent decides nothing on its own.
+     */
+    private function queryCompletedOrder(Order $order): QueryResult
+    {
+        foreach ($order->getPurchaseUnits() ?? [] as $unit) {
+            if (!$unit instanceof PurchaseUnit) {
+                continue;
+            }
+
+            foreach ($unit->getPayments()?->getCaptures() ?? [] as $capture) {
+                if ($capture instanceof CapturedPayment) {
+                    return $this->resultOfCapture($capture);
+                }
+            }
+
+            // a completed order without a capture booked the money on the purchase unit itself
+            $amount = $unit->getAmount();
+
+            return new QueryResult(
+                status: QueryResult::STATUS_PAID,
+                outPaymentNo: $order->getId(),
+                amount: $this->amountOf($amount?->getValue(), $amount?->getCurrencyCode()),
+                currency: $amount?->getCurrencyCode(),
+                channelStatus: OrderStatus::COMPLETED,
+                raw: [
+                    'id' => $order->getId(),
+                    'status' => OrderStatus::COMPLETED,
+                ],
+            );
+        }
+
+        throw PaymentException::gatewayError($this->channel(), 'the interface answered an order without a purchase unit');
+    }
+
+    private function resultOfCapture(CapturedPayment $capture): QueryResult
+    {
+        $status = (string) ($capture->getStatus() ?? '');
+        $amount = $capture->getAmount();
+
+        return new QueryResult(
+            status: self::QUERY_CAPTURE_STATES[$status] ?? QueryResult::STATUS_PENDING,
+            outPaymentNo: $capture->getId(),
+            amount: $this->amountOf($amount?->getValue(), $amount?->getCurrencyCode()),
+            currency: $amount?->getCurrencyCode(),
+            channelStatus: $status === '' ? null : $status,
+            raw: [
+                'id' => $capture->getId(),
+                'status' => $status,
+                'amount' => $amount?->getValue(),
+                'currency' => $amount?->getCurrencyCode(),
+            ],
+        );
+    }
+
+    private function amountOf(?string $value, ?string $currency): ?int
+    {
+        if ($value === null || $currency === null) {
+            return null;
+        }
+
+        try {
+            return Money::toMinor($value, $currency);
+        } catch (PaymentException) {
+            return null;
+        }
     }
 
     /**

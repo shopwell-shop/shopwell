@@ -3,9 +3,9 @@
 namespace Shopwell\Core\System\Payment\Provider\Alipay;
 
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\System\Payment\Provider\PaymentNotificationExtractorInterface;
-use Shopwell\Core\System\Payment\Struct\PaymentNotificationAck;
-use Shopwell\Core\System\Payment\Struct\PaymentNotificationData;
+use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
+use Shopwell\Core\System\Payment\Notification\Struct\PaymentNotificationAck;
+use Shopwell\Core\System\Payment\Notification\Struct\PaymentNotificationData;
 
 /**
  * Reads the references of an alipay notification.

@@ -8,11 +8,16 @@ use Payum\Core\Request\Notify;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\System\Payment\Gateway\AbstractPaymentApi;
+use Shopwell\Core\System\Payment\Gateway\NotificationResult;
+use Shopwell\Core\System\Payment\Gateway\PaymentGatewayFactory;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
+use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
 use Shopwell\Core\System\Payment\PaymentException;
+use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
+use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
+use Shopwell\Core\System\Payment\Provider\PaymentProvider;
+use Shopwell\Core\System\Payment\Provider\ResolvedPaymentConfig;
 use Shopwell\Core\System\Payment\Provider\Stripe\StripeApi;
-use Shopwell\Core\System\Payment\Provider\Stripe\StripeGatewayFactory;
 use Shopwell\Core\System\Payment\Provider\Stripe\StripeNotifyAction;
 use Symfony\Component\Clock\NativeClock;
 
@@ -25,12 +30,12 @@ class StripeNotifyActionTest extends TestCase
 {
     private const WEBHOOK_SECRET = 'whsec_test_123';
 
-    public function testSupportsOnlyNotifyRequestsWithAnArrayObjectModel(): void
+    public function testSupportsOnlyNotifyRequestsWithAPaymentGatewayModel(): void
     {
         $action = new StripeNotifyAction();
 
-        static::assertTrue($action->supports(new Notify(new \ArrayObject())));
-        static::assertFalse($action->supports(new Capture(new \ArrayObject())));
+        static::assertTrue($action->supports(new Notify(new PaymentGatewayModel())));
+        static::assertFalse($action->supports(new Capture(new PaymentGatewayModel())));
         static::assertFalse($action->supports(new Notify(new \stdClass())));
     }
 
@@ -40,7 +45,7 @@ class StripeNotifyActionTest extends TestCase
 
         $this->expectException(RequestNotSupportedException::class);
 
-        $action->execute(new Capture(new \ArrayObject()));
+        $action->execute(new Capture(new PaymentGatewayModel()));
     }
 
     public function testExecuteThrowsWithoutAnApi(): void
@@ -49,7 +54,7 @@ class StripeNotifyActionTest extends TestCase
 
         $this->expectExceptionObject(PaymentException::actionWithoutApi(StripeNotifyAction::class));
 
-        $action->execute(new Notify(new \ArrayObject()));
+        $action->execute(new Notify(new PaymentGatewayModel()));
     }
 
     public function testSetApiRejectsAnApiItDoesNotWorkWith(): void
@@ -66,7 +71,7 @@ class StripeNotifyActionTest extends TestCase
         $action = new StripeNotifyAction();
         $action->setApi($this->api());
 
-        $model = new \ArrayObject([
+        $model = new PaymentGatewayModel([
             PaymentGatewayModel::RAW_BODY => $this->event(StripeNotifyAction::EVENT_PAYMENT_INTENT_SUCCEEDED, ['id' => 'pi_1']),
             PaymentGatewayModel::HEADERS => [],
         ]);
@@ -112,7 +117,7 @@ class StripeNotifyActionTest extends TestCase
 
         $action->execute(new Notify($model));
 
-        $result = PaymentGatewayModel::notificationResult($model, 'stripe_checkout');
+        $result = $model->result(NotificationResult::class, 'stripe_checkout');
 
         static::assertTrue($result->signatureValid);
         static::assertTrue($result->succeeded);
@@ -122,7 +127,7 @@ class StripeNotifyActionTest extends TestCase
         static::assertSame('CNY', $result->currency);
         static::assertSame(StripeNotifyAction::EVENT_PAYMENT_INTENT_SUCCEEDED, $result->status);
         static::assertSame($object, $result->raw);
-        static::assertSame($object, PaymentGatewayModel::responseOf($model));
+        static::assertSame($object, $model->response());
     }
 
     public function testTheAmountReceivedWinsButFallsBackToTheAmount(): void
@@ -141,7 +146,7 @@ class StripeNotifyActionTest extends TestCase
 
         $action->execute(new Notify($model));
 
-        static::assertSame(900, PaymentGatewayModel::notificationResult($model, 'stripe_checkout')->amount);
+        static::assertSame(900, $model->result(NotificationResult::class, 'stripe_checkout')->amount);
     }
 
     public function testExecuteReadsAPaidCheckoutSession(): void
@@ -160,7 +165,7 @@ class StripeNotifyActionTest extends TestCase
 
         $action->execute(new Notify($model));
 
-        $result = PaymentGatewayModel::notificationResult($model, 'stripe_checkout');
+        $result = $model->result(NotificationResult::class, 'stripe_checkout');
 
         static::assertTrue($result->succeeded);
         static::assertSame('pi_2', $result->outPaymentNo);
@@ -184,7 +189,7 @@ class StripeNotifyActionTest extends TestCase
 
         $action->execute(new Notify($model));
 
-        $result = PaymentGatewayModel::notificationResult($model, 'stripe_checkout');
+        $result = $model->result(NotificationResult::class, 'stripe_checkout');
 
         static::assertTrue($result->signatureValid);
         static::assertFalse($result->succeeded);
@@ -205,7 +210,7 @@ class StripeNotifyActionTest extends TestCase
 
         $action->execute(new Notify($model));
 
-        static::assertSame('pi_3', PaymentGatewayModel::notificationResult($model, 'stripe_checkout')->outPaymentNo);
+        static::assertSame('pi_3', $model->result(NotificationResult::class, 'stripe_checkout')->outPaymentNo);
     }
 
     public function testExecuteReportsAFailedPayment(): void
@@ -223,7 +228,7 @@ class StripeNotifyActionTest extends TestCase
 
         $action->execute(new Notify($model));
 
-        $result = PaymentGatewayModel::notificationResult($model, 'stripe_checkout');
+        $result = $model->result(NotificationResult::class, 'stripe_checkout');
 
         static::assertFalse($result->succeeded);
         static::assertSame('pi_1', $result->outPaymentNo);
@@ -246,7 +251,7 @@ class StripeNotifyActionTest extends TestCase
 
         $action->execute(new Notify($model));
 
-        $result = PaymentGatewayModel::notificationResult($model, 'stripe_checkout');
+        $result = $model->result(NotificationResult::class, 'stripe_checkout');
 
         static::assertTrue($result->succeeded);
         static::assertSame('re_1', $result->outRefundId);
@@ -269,7 +274,7 @@ class StripeNotifyActionTest extends TestCase
 
         $action->execute(new Notify($model));
 
-        $result = PaymentGatewayModel::notificationResult($model, 'stripe_checkout');
+        $result = $model->result(NotificationResult::class, 'stripe_checkout');
 
         static::assertFalse($result->succeeded);
         static::assertSame('re_1', $result->outRefundId);
@@ -288,7 +293,7 @@ class StripeNotifyActionTest extends TestCase
 
         $action->execute(new Notify($model));
 
-        $result = PaymentGatewayModel::notificationResult($model, 'stripe_checkout');
+        $result = $model->result(NotificationResult::class, 'stripe_checkout');
 
         static::assertTrue($result->signatureValid);
         static::assertFalse($result->succeeded);
@@ -304,7 +309,7 @@ class StripeNotifyActionTest extends TestCase
 
         $action->execute(new Notify($model));
 
-        static::assertSame('USD', PaymentGatewayModel::notificationResult($model, 'stripe_checkout')->currency);
+        static::assertSame('USD', $model->result(NotificationResult::class, 'stripe_checkout')->currency);
     }
 
     public function testAWrongSignatureDoesNotConfirmTheNotification(): void
@@ -319,14 +324,14 @@ class StripeNotifyActionTest extends TestCase
             'currency' => 'cny',
         ]);
 
-        $model = new \ArrayObject([
+        $model = new PaymentGatewayModel([
             PaymentGatewayModel::RAW_BODY => $rawBody,
             PaymentGatewayModel::HEADERS => ['stripe-signature' => 't=1700000000,v1=the-wrong-signature'],
         ]);
 
         $action->execute(new Notify($model));
 
-        $result = PaymentGatewayModel::notificationResult($model, 'stripe_checkout');
+        $result = $model->result(NotificationResult::class, 'stripe_checkout');
 
         static::assertFalse($result->signatureValid);
         static::assertFalse($result->succeeded);
@@ -337,14 +342,14 @@ class StripeNotifyActionTest extends TestCase
         $action = new StripeNotifyAction();
         $action->setApi($this->api());
 
-        $model = new \ArrayObject([
+        $model = new PaymentGatewayModel([
             PaymentGatewayModel::RAW_BODY => $this->event(StripeNotifyAction::EVENT_PAYMENT_INTENT_SUCCEEDED, ['id' => 'pi_1']),
             PaymentGatewayModel::HEADERS => ['stripe-signature' => 'v1=whatever'],
         ]);
 
         $action->execute(new Notify($model));
 
-        static::assertFalse(PaymentGatewayModel::notificationResult($model, 'stripe_checkout')->signatureValid);
+        static::assertFalse($model->result(NotificationResult::class, 'stripe_checkout')->signatureValid);
     }
 
     public function testTheSignatureHeaderMayBeWrittenWithUnderscores(): void
@@ -359,14 +364,14 @@ class StripeNotifyActionTest extends TestCase
             'currency' => 'cny',
         ]);
 
-        $model = new \ArrayObject([
+        $model = new PaymentGatewayModel([
             PaymentGatewayModel::RAW_BODY => $rawBody,
             PaymentGatewayModel::HEADERS => ['stripe_signature' => $this->signatureHeader($rawBody)],
         ]);
 
         $action->execute(new Notify($model));
 
-        static::assertTrue(PaymentGatewayModel::notificationResult($model, 'stripe_checkout')->signatureValid);
+        static::assertTrue($model->result(NotificationResult::class, 'stripe_checkout')->signatureValid);
     }
 
     public function testAnUnparseableBodyIsAcknowledgedWithoutConfirming(): void
@@ -378,7 +383,7 @@ class StripeNotifyActionTest extends TestCase
 
         $action->execute(new Notify($model));
 
-        $result = PaymentGatewayModel::notificationResult($model, 'stripe_checkout');
+        $result = $model->result(NotificationResult::class, 'stripe_checkout');
 
         static::assertTrue($result->signatureValid);
         static::assertFalse($result->succeeded);
@@ -394,12 +399,9 @@ class StripeNotifyActionTest extends TestCase
         return (string) json_encode(['type' => $type, 'data' => ['object' => $object]]);
     }
 
-    /**
-     * @return \ArrayObject<string, mixed>
-     */
-    private function signedModel(string $rawBody): \ArrayObject
+    private function signedModel(string $rawBody): PaymentGatewayModel
     {
-        return new \ArrayObject([
+        return new PaymentGatewayModel([
             PaymentGatewayModel::RAW_BODY => $rawBody,
             PaymentGatewayModel::HEADERS => ['stripe-signature' => $this->signatureHeader($rawBody)],
         ]);
@@ -421,16 +423,27 @@ class StripeNotifyActionTest extends TestCase
      */
     private function api(array $credentials = [StripeApi::WEBHOOK_SECRET => self::WEBHOOK_SECRET]): StripeApi
     {
-        return new StripeApi([
-            AbstractPaymentApi::CONFIG_PROVIDER => StripeGatewayFactory::PROVIDER,
-            AbstractPaymentApi::CONFIG_CHANNEL => 'stripe_checkout',
-            AbstractPaymentApi::CONFIG_MODE => 'own',
-            AbstractPaymentApi::CONFIG_CREDENTIALS => $credentials,
-            AbstractPaymentApi::CONFIG_PARAMS => [],
-            AbstractPaymentApi::CONFIG_RUNTIME_PARAMS => [],
-            AbstractPaymentApi::CONFIG_SETTINGS => [],
-            AbstractPaymentApi::CONFIG_NOTIFY_URL => 'https://example.com/notify',
-            AbstractPaymentApi::CONFIG_RETURN_URL => '',
-        ]);
+        $channel = new PaymentChannel('stripe_checkout', 'stripe', 'stripe_checkout', PaymentFlow::REDIRECT);
+
+        return new StripeApi(
+            new ResolvedPaymentConfig(
+                provider: new PaymentProvider(
+                    'stripe',
+                    'stripe',
+                    [],
+                    ['stripe_checkout' => $channel],
+                    new PaymentGatewayFactory('stripe', StripeApi::class, []),
+                    static::createStub(PaymentNotificationExtractorInterface::class),
+                ),
+                channel: $channel,
+                credentials: $credentials,
+                params: [],
+                runtimeParams: [],
+                settings: [],
+                mode: 'own',
+            ),
+            'https://example.com/notify',
+            '',
+        );
     }
 }

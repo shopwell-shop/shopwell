@@ -2,16 +2,15 @@
 
 namespace Shopwell\Tests\Unit\Core\System\Payment\Provider;
 
-use Payum\Core\GatewayFactoryInterface;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\System\Payment\Channel\PaymentChannel;
-use Shopwell\Core\System\Payment\Channel\PaymentFlow;
+use Shopwell\Core\System\Payment\Gateway\PaymentGatewayFactory;
+use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
+use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
+use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
 use Shopwell\Core\System\Payment\Provider\PaymentConfigField;
-use Shopwell\Core\System\Payment\Provider\PaymentNotificationExtractorInterface;
 use Shopwell\Core\System\Payment\Provider\PaymentProvider;
-use Shopwell\Core\System\Payment\Provider\PaymentProviderDefinition;
 
 /**
  * @internal
@@ -20,22 +19,22 @@ use Shopwell\Core\System\Payment\Provider\PaymentProviderDefinition;
 #[CoversClass(PaymentProvider::class)]
 class PaymentProviderTest extends TestCase
 {
-    public function testFromDefinitionBindsServicesAndIndexesChannels(): void
+    public function testBindsServicesAndIndexesChannels(): void
     {
-        $gatewayFactory = static::createStub(GatewayFactoryInterface::class);
+        $gatewayFactory = static::createStub(PaymentGatewayFactory::class);
         $extractor = static::createStub(PaymentNotificationExtractorInterface::class);
 
         $h5 = $this->channel('alipay_h5');
         $qr = $this->channel('alipay_qr');
 
-        $definition = new PaymentProviderDefinition(
+        $provider = new PaymentProvider(
             technicalName: 'alipay',
             label: '支付宝',
             credentials: [new PaymentConfigField(name: 'app_id')],
-            channels: [$h5, $qr],
+            channels: ['alipay_h5' => $h5, 'alipay_qr' => $qr],
+            gatewayFactory: $gatewayFactory,
+            notificationExtractor: $extractor,
         );
-
-        $provider = PaymentProvider::fromDefinition($definition, $gatewayFactory, $extractor);
 
         static::assertSame('alipay', $provider->technicalName);
         static::assertSame('支付宝', $provider->label);
@@ -44,17 +43,15 @@ class PaymentProviderTest extends TestCase
         static::assertSame(['alipay_h5' => $h5, 'alipay_qr' => $qr], $provider->channels);
     }
 
-    public function testFromDefinitionWithNoChannelsYieldsEmptyMap(): void
+    public function testWithoutChannelsYieldsEmptyMap(): void
     {
-        $provider = PaymentProvider::fromDefinition(
-            new PaymentProviderDefinition(
-                technicalName: 'paypal',
-                label: 'PayPal',
-                credentials: [],
-                channels: [],
-            ),
-            static::createStub(GatewayFactoryInterface::class),
-            static::createStub(PaymentNotificationExtractorInterface::class),
+        $provider = new PaymentProvider(
+            technicalName: 'paypal',
+            label: 'PayPal',
+            credentials: [],
+            channels: [],
+            gatewayFactory: static::createStub(PaymentGatewayFactory::class),
+            notificationExtractor: static::createStub(PaymentNotificationExtractorInterface::class),
         );
 
         static::assertSame([], $provider->channels);
@@ -79,7 +76,7 @@ class PaymentProviderTest extends TestCase
 
     public function testHasChannelDistinguishesDeclaredAndUnknownChannels(): void
     {
-        $provider = $this->provider(channels: [$this->channel('alipay_h5')]);
+        $provider = $this->provider(channels: ['alipay_h5' => $this->channel('alipay_h5')]);
 
         static::assertTrue($provider->hasChannel('alipay_h5'));
         static::assertFalse($provider->hasChannel('alipay_qr'));
@@ -98,19 +95,17 @@ class PaymentProviderTest extends TestCase
 
     /**
      * @param list<PaymentConfigField> $credentials
-     * @param list<PaymentChannel> $channels
+     * @param array<string, PaymentChannel> $channels
      */
     private function provider(array $credentials = [], array $channels = []): PaymentProvider
     {
-        return PaymentProvider::fromDefinition(
-            new PaymentProviderDefinition(
-                technicalName: 'alipay',
-                label: '支付宝',
-                credentials: $credentials,
-                channels: $channels,
-            ),
-            static::createStub(GatewayFactoryInterface::class),
-            static::createStub(PaymentNotificationExtractorInterface::class),
+        return new PaymentProvider(
+            technicalName: 'alipay',
+            label: '支付宝',
+            credentials: $credentials,
+            channels: $channels,
+            gatewayFactory: static::createStub(PaymentGatewayFactory::class),
+            notificationExtractor: static::createStub(PaymentNotificationExtractorInterface::class),
         );
     }
 
@@ -118,7 +113,7 @@ class PaymentProviderTest extends TestCase
     {
         return new PaymentChannel(
             technicalName: $technicalName,
-            providerName: 'alipay',
+            providerTechnicalName: 'alipay',
             label: $technicalName,
             flow: PaymentFlow::REDIRECT,
         );

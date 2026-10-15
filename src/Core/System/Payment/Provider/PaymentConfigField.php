@@ -15,6 +15,8 @@ use Shopwell\Core\Framework\Log\Package;
  * A field marked as `secret` is never handed back to the administration: the form always starts empty
  * and only reports whether a value is stored. Every other field is echoed back, so an operator can see
  * which merchant account an interface is configured with.
+ *
+ * @internal
  */
 #[Package('framework')]
 final readonly class PaymentConfigField

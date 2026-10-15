@@ -8,12 +8,17 @@ use Payum\Core\Request\Notify;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\System\Payment\Gateway\AbstractPaymentApi;
+use Shopwell\Core\System\Payment\Gateway\NotificationResult;
+use Shopwell\Core\System\Payment\Gateway\PaymentGatewayFactory;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
+use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
 use Shopwell\Core\System\Payment\PaymentException;
 use Shopwell\Core\System\Payment\Provider\Alipay\AlipayApi;
-use Shopwell\Core\System\Payment\Provider\Alipay\AlipayGatewayFactory;
 use Shopwell\Core\System\Payment\Provider\Alipay\AlipayNotifyAction;
+use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
+use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
+use Shopwell\Core\System\Payment\Provider\PaymentProvider;
+use Shopwell\Core\System\Payment\Provider\ResolvedPaymentConfig;
 
 /**
  * @internal
@@ -22,12 +27,12 @@ use Shopwell\Core\System\Payment\Provider\Alipay\AlipayNotifyAction;
 #[CoversClass(AlipayNotifyAction::class)]
 class AlipayNotifyActionTest extends TestCase
 {
-    public function testSupportsOnlyNotifyRequestsWithAnArrayObjectModel(): void
+    public function testSupportsOnlyNotifyRequestsWithAPaymentGatewayModel(): void
     {
         $action = new AlipayNotifyAction();
 
-        static::assertTrue($action->supports(new Notify(new \ArrayObject())));
-        static::assertFalse($action->supports(new Capture(new \ArrayObject())));
+        static::assertTrue($action->supports(new Notify(new PaymentGatewayModel())));
+        static::assertFalse($action->supports(new Capture(new PaymentGatewayModel())));
         static::assertFalse($action->supports(new Notify(new \stdClass())));
     }
 
@@ -37,7 +42,7 @@ class AlipayNotifyActionTest extends TestCase
 
         $this->expectException(RequestNotSupportedException::class);
 
-        $action->execute(new Capture(new \ArrayObject()));
+        $action->execute(new Capture(new PaymentGatewayModel()));
     }
 
     public function testExecuteThrowsWithoutAnApi(): void
@@ -46,7 +51,7 @@ class AlipayNotifyActionTest extends TestCase
 
         $this->expectExceptionObject(PaymentException::actionWithoutApi(AlipayNotifyAction::class));
 
-        $action->execute(new Notify(new \ArrayObject()));
+        $action->execute(new Notify(new PaymentGatewayModel()));
     }
 
     public function testSetApiRejectsAnApiItDoesNotWorkWith(): void
@@ -67,7 +72,7 @@ class AlipayNotifyActionTest extends TestCase
 
         $action->execute(new Notify($model));
 
-        $result = PaymentGatewayModel::notificationResult($model, AlipayGatewayFactory::CHANNEL_H5);
+        $result = $model->result(NotificationResult::class, AlipayApi::CHANNEL_H5);
 
         static::assertFalse($result->signatureValid);
         static::assertTrue($result->succeeded);
@@ -87,7 +92,7 @@ class AlipayNotifyActionTest extends TestCase
 
         $action->execute(new Notify($model));
 
-        $result = PaymentGatewayModel::notificationResult($model, AlipayGatewayFactory::CHANNEL_H5);
+        $result = $model->result(NotificationResult::class, AlipayApi::CHANNEL_H5);
 
         static::assertTrue($result->succeeded);
         static::assertSame('TRADE_FINISHED', $result->status);
@@ -102,7 +107,7 @@ class AlipayNotifyActionTest extends TestCase
 
         $action->execute(new Notify($model));
 
-        $result = PaymentGatewayModel::notificationResult($model, AlipayGatewayFactory::CHANNEL_H5);
+        $result = $model->result(NotificationResult::class, AlipayApi::CHANNEL_H5);
 
         static::assertFalse($result->succeeded);
         static::assertSame('WAIT_BUYER_PAY', $result->status);
@@ -117,7 +122,7 @@ class AlipayNotifyActionTest extends TestCase
 
         $action->execute(new Notify($model));
 
-        $result = PaymentGatewayModel::notificationResult($model, AlipayGatewayFactory::CHANNEL_H5);
+        $result = $model->result(NotificationResult::class, AlipayApi::CHANNEL_H5);
 
         static::assertSame('USD', $result->currency);
         static::assertSame(150, $result->amount);
@@ -132,7 +137,7 @@ class AlipayNotifyActionTest extends TestCase
 
         $action->execute(new Notify($model));
 
-        $result = PaymentGatewayModel::notificationResult($model, AlipayGatewayFactory::CHANNEL_H5);
+        $result = $model->result(NotificationResult::class, AlipayApi::CHANNEL_H5);
 
         static::assertSame(AlipayNotifyAction::DEFAULT_CURRENCY, $result->currency);
         static::assertSame(500, $result->amount);
@@ -147,7 +152,7 @@ class AlipayNotifyActionTest extends TestCase
 
         $action->execute(new Notify($model));
 
-        $result = PaymentGatewayModel::notificationResult($model, AlipayGatewayFactory::CHANNEL_H5);
+        $result = $model->result(NotificationResult::class, AlipayApi::CHANNEL_H5);
 
         static::assertNull($result->amount);
     }
@@ -161,7 +166,7 @@ class AlipayNotifyActionTest extends TestCase
 
         $action->execute(new Notify($model));
 
-        $result = PaymentGatewayModel::notificationResult($model, AlipayGatewayFactory::CHANNEL_H5);
+        $result = $model->result(NotificationResult::class, AlipayApi::CHANNEL_H5);
 
         static::assertNull($result->outPaymentNo);
         static::assertNull($result->amount);
@@ -176,7 +181,7 @@ class AlipayNotifyActionTest extends TestCase
 
         $action->execute(new Notify($model));
 
-        $result = PaymentGatewayModel::notificationResult($model, AlipayGatewayFactory::CHANNEL_H5);
+        $result = $model->result(NotificationResult::class, AlipayApi::CHANNEL_H5);
 
         static::assertFalse($result->signatureValid);
         static::assertTrue($result->succeeded);
@@ -191,17 +196,14 @@ class AlipayNotifyActionTest extends TestCase
 
         $action->execute(new Notify($model));
 
-        $response = PaymentGatewayModel::responseOf($model);
+        $response = $model->response();
         static::assertSame('P-1', $response['out_trade_no']);
         static::assertSame('TRADE_SUCCESS', $response['trade_status']);
     }
 
-    /**
-     * @return \ArrayObject<string, mixed>
-     */
-    private function model(string $rawBody): \ArrayObject
+    private function model(string $rawBody): PaymentGatewayModel
     {
-        return new \ArrayObject([
+        return new PaymentGatewayModel([
             PaymentGatewayModel::RAW_BODY => $rawBody,
         ]);
     }
@@ -211,16 +213,27 @@ class AlipayNotifyActionTest extends TestCase
      */
     private function api(array $credentials = []): AlipayApi
     {
-        return new AlipayApi([
-            AbstractPaymentApi::CONFIG_PROVIDER => 'alipay',
-            AbstractPaymentApi::CONFIG_CHANNEL => AlipayGatewayFactory::CHANNEL_H5,
-            AbstractPaymentApi::CONFIG_MODE => 'own',
-            AbstractPaymentApi::CONFIG_CREDENTIALS => $credentials,
-            AbstractPaymentApi::CONFIG_PARAMS => [],
-            AbstractPaymentApi::CONFIG_RUNTIME_PARAMS => [],
-            AbstractPaymentApi::CONFIG_SETTINGS => [],
-            AbstractPaymentApi::CONFIG_NOTIFY_URL => 'https://example.com/notify',
-            AbstractPaymentApi::CONFIG_RETURN_URL => '',
-        ]);
+        $channel = new PaymentChannel(AlipayApi::CHANNEL_H5, 'alipay', AlipayApi::CHANNEL_H5, PaymentFlow::REDIRECT);
+
+        return new AlipayApi(
+            new ResolvedPaymentConfig(
+                provider: new PaymentProvider(
+                    'alipay',
+                    'alipay',
+                    [],
+                    [AlipayApi::CHANNEL_H5 => $channel],
+                    new PaymentGatewayFactory('alipay', AlipayApi::class, []),
+                    static::createStub(PaymentNotificationExtractorInterface::class),
+                ),
+                channel: $channel,
+                credentials: $credentials,
+                params: [],
+                runtimeParams: [],
+                settings: [],
+                mode: 'own',
+            ),
+            'https://example.com/notify',
+            '',
+        );
     }
 }

@@ -12,12 +12,12 @@ use PaypalServerSdkLib\Models\PurchaseUnitRequest;
 use Payum\Core\Exception\RequestNotSupportedException;
 use Payum\Core\Request\Capture;
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\System\Payment\Channel\PaymentFlow;
+use Shopwell\Core\System\Payment\Api\Struct\PayParams;
 use Shopwell\Core\System\Payment\Gateway\AbstractPaymentAction;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
 use Shopwell\Core\System\Payment\Gateway\PayResult;
 use Shopwell\Core\System\Payment\PaymentException;
-use Shopwell\Core\System\Payment\Struct\PayParams;
+use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
 
 /**
  * Creates a paypal order and answers the app with what it needs to send the payer to paypal.
@@ -152,7 +152,7 @@ final class PaypalCaptureAction extends AbstractPaymentAction
         $approveUrl = $this->approveUrlOf($order);
 
         if ($approveUrl === null) {
-            throw PaymentException::gatewayError(PaypalGatewayFactory::PROVIDER, 'the channel did not answer an approval url');
+            throw PaymentException::gatewayError(PaypalApi::PROVIDER, 'the channel did not answer an approval url');
         }
 
         return new PayParams(

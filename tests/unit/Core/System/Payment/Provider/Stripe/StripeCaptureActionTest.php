@@ -8,9 +8,14 @@ use Payum\Core\Request\Refund;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\System\Payment\Gateway\AbstractPaymentApi;
+use Shopwell\Core\System\Payment\Gateway\PaymentGatewayFactory;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
+use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
 use Shopwell\Core\System\Payment\PaymentException;
+use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
+use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
+use Shopwell\Core\System\Payment\Provider\PaymentProvider;
+use Shopwell\Core\System\Payment\Provider\ResolvedPaymentConfig;
 use Shopwell\Core\System\Payment\Provider\Stripe\StripeApi;
 use Shopwell\Core\System\Payment\Provider\Stripe\StripeCaptureAction;
 use Shopwell\Core\System\Payment\Provider\Stripe\StripeNotificationExtractor;
@@ -23,12 +28,12 @@ use Symfony\Component\Clock\MockClock;
 #[CoversClass(StripeCaptureAction::class)]
 class StripeCaptureActionTest extends TestCase
 {
-    public function testSupportsOnlyCaptureRequestsWithAnArrayObjectModel(): void
+    public function testSupportsOnlyCaptureRequestsWithAPaymentGatewayModel(): void
     {
         $action = new StripeCaptureAction();
 
-        static::assertTrue($action->supports(new Capture(new \ArrayObject())));
-        static::assertFalse($action->supports(new Refund(new \ArrayObject())));
+        static::assertTrue($action->supports(new Capture(new PaymentGatewayModel())));
+        static::assertFalse($action->supports(new Refund(new PaymentGatewayModel())));
         static::assertFalse($action->supports(new Capture(new \stdClass())));
     }
 
@@ -38,7 +43,7 @@ class StripeCaptureActionTest extends TestCase
 
         $this->expectException(RequestNotSupportedException::class);
 
-        $action->execute(new Refund(new \ArrayObject()));
+        $action->execute(new Refund(new PaymentGatewayModel()));
     }
 
     public function testExecuteThrowsWithoutAnApi(): void
@@ -47,7 +52,7 @@ class StripeCaptureActionTest extends TestCase
 
         $this->expectExceptionObject(PaymentException::actionWithoutApi(StripeCaptureAction::class));
 
-        $action->execute(new Capture(new \ArrayObject()));
+        $action->execute(new Capture(new PaymentGatewayModel()));
     }
 
     public function testSetApiRejectsAnApiItDoesNotWorkWith(): void
@@ -70,13 +75,13 @@ class StripeCaptureActionTest extends TestCase
 
         static::assertStringContainsString('secret_key', $exception->getMessage());
 
-        $request = PaymentGatewayModel::requestOf($model);
+        $request = $model->request();
         static::assertSame('redirect', $request['flow']);
         static::assertSame(1234, $request['amount']);
         static::assertSame('cny', $request['currency']);
         static::assertSame([StripeNotificationExtractor::METADATA_PAYMENT_NO => 'P-1'], $request['metadata']);
 
-        static::assertArrayHasKey('error', PaymentGatewayModel::responseOf($model));
+        static::assertArrayHasKey('error', $model->response());
     }
 
     public function testTheSdkFlowIsSelectedByTheSetting(): void
@@ -88,7 +93,7 @@ class StripeCaptureActionTest extends TestCase
 
         $this->captureExpectingFailure($action, $model);
 
-        static::assertSame('sdk', PaymentGatewayModel::requestOf($model)['flow']);
+        static::assertSame('sdk', $model->request()['flow']);
     }
 
     public function testTheFlowSettingIsTrimmedAndLowercased(): void
@@ -100,7 +105,7 @@ class StripeCaptureActionTest extends TestCase
 
         $this->captureExpectingFailure($action, $model);
 
-        static::assertSame('sdk', PaymentGatewayModel::requestOf($model)['flow']);
+        static::assertSame('sdk', $model->request()['flow']);
     }
 
     public function testAnUnknownFlowOpensTheCheckoutSession(): void
@@ -113,7 +118,7 @@ class StripeCaptureActionTest extends TestCase
         $this->captureExpectingFailure($action, $model);
 
         // the flow is recorded verbatim, but anything but `sdk` falls back to the hosted checkout
-        static::assertSame('unknown', PaymentGatewayModel::requestOf($model)['flow']);
+        static::assertSame('unknown', $model->request()['flow']);
     }
 
     public function testTheOutTradeNoIsAddedToTheMetadata(): void
@@ -131,7 +136,7 @@ class StripeCaptureActionTest extends TestCase
                 StripeNotificationExtractor::METADATA_PAYMENT_NO => 'P-1',
                 StripeNotificationExtractor::METADATA_OUT_TRADE_NO => 'T-1',
             ],
-            PaymentGatewayModel::requestOf($model)['metadata']
+            $model->request()['metadata']
         );
     }
 
@@ -147,13 +152,10 @@ class StripeCaptureActionTest extends TestCase
 
         $this->captureExpectingFailure($action, $model);
 
-        static::assertSame('redirect', PaymentGatewayModel::requestOf($model)['flow']);
+        static::assertSame('redirect', $model->request()['flow']);
     }
 
-    /**
-     * @param \ArrayObject<string, mixed> $model
-     */
-    private function captureExpectingFailure(StripeCaptureAction $action, \ArrayObject $model): PaymentException
+    private function captureExpectingFailure(StripeCaptureAction $action, PaymentGatewayModel $model): PaymentException
     {
         try {
             $action->execute(new Capture($model));
@@ -166,12 +168,9 @@ class StripeCaptureActionTest extends TestCase
         static::fail('The capture was expected to fail without stripe credentials.');
     }
 
-    /**
-     * @return \ArrayObject<string, mixed>
-     */
-    private function orderModel(): \ArrayObject
+    private function orderModel(): PaymentGatewayModel
     {
-        return new \ArrayObject([
+        return new PaymentGatewayModel([
             PaymentGatewayModel::PAYMENT_NO => 'P-1',
             PaymentGatewayModel::AMOUNT => 1234,
             PaymentGatewayModel::CURRENCY => 'CNY',
@@ -185,16 +184,27 @@ class StripeCaptureActionTest extends TestCase
      */
     private function api(array $credentials = [], array $settings = []): StripeApi
     {
-        return new StripeApi([
-            AbstractPaymentApi::CONFIG_PROVIDER => 'stripe',
-            AbstractPaymentApi::CONFIG_CHANNEL => 'stripe_checkout',
-            AbstractPaymentApi::CONFIG_MODE => 'own',
-            AbstractPaymentApi::CONFIG_CREDENTIALS => $credentials,
-            AbstractPaymentApi::CONFIG_PARAMS => [],
-            AbstractPaymentApi::CONFIG_RUNTIME_PARAMS => [],
-            AbstractPaymentApi::CONFIG_SETTINGS => $settings,
-            AbstractPaymentApi::CONFIG_NOTIFY_URL => 'https://example.com/notify',
-            AbstractPaymentApi::CONFIG_RETURN_URL => 'https://example.com/return',
-        ]);
+        $channel = new PaymentChannel('stripe_checkout', 'stripe', 'stripe_checkout', PaymentFlow::REDIRECT);
+
+        return new StripeApi(
+            new ResolvedPaymentConfig(
+                provider: new PaymentProvider(
+                    'stripe',
+                    'stripe',
+                    [],
+                    ['stripe_checkout' => $channel],
+                    new PaymentGatewayFactory('stripe', StripeApi::class, []),
+                    static::createStub(PaymentNotificationExtractorInterface::class),
+                ),
+                channel: $channel,
+                credentials: $credentials,
+                params: [],
+                runtimeParams: [],
+                settings: $settings,
+                mode: 'own',
+            ),
+            'https://example.com/notify',
+            'https://example.com/return',
+        );
     }
 }

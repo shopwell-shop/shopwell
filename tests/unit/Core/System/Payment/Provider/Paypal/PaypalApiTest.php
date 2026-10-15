@@ -6,9 +6,14 @@ use PaypalServerSdkLib\Environment;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\System\Payment\Gateway\AbstractPaymentApi;
+use Shopwell\Core\System\Payment\Gateway\PaymentGatewayFactory;
+use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
 use Shopwell\Core\System\Payment\PaymentException;
+use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
+use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
+use Shopwell\Core\System\Payment\Provider\PaymentProvider;
 use Shopwell\Core\System\Payment\Provider\Paypal\PaypalApi;
+use Shopwell\Core\System\Payment\Provider\ResolvedPaymentConfig;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Symfony\Contracts\HttpClient\ResponseInterface;
 
@@ -21,7 +26,7 @@ class PaypalApiTest extends TestCase
 {
     public function testExposesConfiguration(): void
     {
-        $api = new PaypalApi($this->config(['client_id' => 'client-id']));
+        $api = $this->api(['client_id' => 'client-id']);
 
         static::assertSame('paypal', $api->provider());
         static::assertSame('paypal_checkout', $api->channel());
@@ -30,28 +35,28 @@ class PaypalApiTest extends TestCase
 
     public function testEnvironmentDefaultsToSandbox(): void
     {
-        static::assertSame(Environment::SANDBOX, (new PaypalApi($this->config()))->environment());
+        static::assertSame(Environment::SANDBOX, $this->api()->environment());
     }
 
     public function testEnvironmentIsProductionForTheLiveMode(): void
     {
-        static::assertSame(Environment::PRODUCTION, (new PaypalApi($this->config(['environment' => 'live'])))->environment());
+        static::assertSame(Environment::PRODUCTION, $this->api(['environment' => 'live'])->environment());
 
         // the value is normalized before it is compared
-        static::assertSame(Environment::PRODUCTION, (new PaypalApi($this->config(['environment' => 'LIVE'])))->environment());
-        static::assertSame(Environment::SANDBOX, (new PaypalApi($this->config(['environment' => 'production'])))->environment());
+        static::assertSame(Environment::PRODUCTION, $this->api(['environment' => 'LIVE'])->environment());
+        static::assertSame(Environment::SANDBOX, $this->api(['environment' => 'production'])->environment());
     }
 
     public function testWebhookIdReturnsCredential(): void
     {
-        $api = new PaypalApi($this->config(['webhook_id' => 'WH-1']));
+        $api = $this->api(['webhook_id' => 'WH-1']);
 
         static::assertSame('WH-1', $api->webhookId());
     }
 
     public function testWebhookIdThrowsWhenTheCredentialIsMissing(): void
     {
-        $api = new PaypalApi($this->config());
+        $api = $this->api();
 
         $this->expectExceptionObject(PaymentException::missingCredentials('paypal', PaypalApi::WEBHOOK_ID));
 
@@ -60,13 +65,13 @@ class PaypalApiTest extends TestCase
 
     public function testBrandNameFallsBackToAnEmptyString(): void
     {
-        static::assertSame('', (new PaypalApi($this->config()))->brandName());
-        static::assertSame('Shopwell', (new PaypalApi($this->config(['brand_name' => 'Shopwell'])))->brandName());
+        static::assertSame('', $this->api()->brandName());
+        static::assertSame('Shopwell', $this->api(['brand_name' => 'Shopwell'])->brandName());
     }
 
     public function testAmountFormatsTheMinorUnitAsTheDecimalStringTheChannelExpects(): void
     {
-        $api = new PaypalApi($this->config());
+        $api = $this->api();
 
         static::assertSame('1.00', $api->amount(100, 'CNY'));
         static::assertSame('0.05', $api->amount(5, 'USD'));
@@ -77,7 +82,7 @@ class PaypalApiTest extends TestCase
 
     public function testVerifyWebhookSignatureReturnsFalseWhenHeadersAreMissing(): void
     {
-        $api = new PaypalApi($this->config(['webhook_id' => 'WH-1']));
+        $api = $this->api(['webhook_id' => 'WH-1']);
 
         static::assertFalse($api->verifyWebhookSignature('{}', []));
         static::assertFalse($api->verifyWebhookSignature('{}', [PaypalApi::HEADER_TRANSMISSION_ID => 'transmission']));
@@ -85,7 +90,7 @@ class PaypalApiTest extends TestCase
 
     public function testVerifyWebhookSignatureReturnsFalseForAnUntrustedCertificateUrl(): void
     {
-        $api = new PaypalApi($this->config(['webhook_id' => 'WH-1']), $this->stubHttpClient('a-certificate'));
+        $api = $this->api(['webhook_id' => 'WH-1'], $this->stubHttpClient('a-certificate'));
 
         static::assertFalse($api->verifyWebhookSignature('{}', $this->signatureHeaders('https://evil.example.com/cert.pem')));
         static::assertFalse($api->verifyWebhookSignature('{}', $this->signatureHeaders('http://api.paypal.com/cert.pem')));
@@ -93,14 +98,14 @@ class PaypalApiTest extends TestCase
 
     public function testVerifyWebhookSignatureReturnsFalseWithoutAnHttpClient(): void
     {
-        $api = new PaypalApi($this->config(['webhook_id' => 'WH-1']));
+        $api = $this->api(['webhook_id' => 'WH-1']);
 
         static::assertFalse($api->verifyWebhookSignature('{}', $this->signatureHeaders('https://api.paypal.com/cert.pem')));
     }
 
     public function testVerifyWebhookSignatureReturnsFalseWhenTheSignatureIsBroken(): void
     {
-        $api = new PaypalApi($this->config(['webhook_id' => 'WH-1']), $this->stubHttpClient('a-certificate'));
+        $api = $this->api(['webhook_id' => 'WH-1'], $this->stubHttpClient('a-certificate'));
 
         static::assertFalse($api->verifyWebhookSignature('{}', $this->signatureHeaders('https://api.paypal.com/cert.pem', '###not-base64###')));
     }
@@ -108,7 +113,7 @@ class PaypalApiTest extends TestCase
     public function testVerifyWebhookSignatureVerifiesASignatureOfPaypal(): void
     {
         [$privateKey, $publicKey] = $this->keyPair();
-        $api = new PaypalApi($this->config(['webhook_id' => 'WH-1']), $this->stubHttpClient($publicKey));
+        $api = $this->api(['webhook_id' => 'WH-1'], $this->stubHttpClient($publicKey));
 
         $rawBody = '{"event_type":"PAYMENT.CAPTURE.COMPLETED"}';
         $headers = [
@@ -127,7 +132,7 @@ class PaypalApiTest extends TestCase
     public function testVerifyWebhookSignatureSupportsTheSha512Algorithm(): void
     {
         [$privateKey, $publicKey] = $this->keyPair();
-        $api = new PaypalApi($this->config(['webhook_id' => 'WH-1']), $this->stubHttpClient($publicKey));
+        $api = $this->api(['webhook_id' => 'WH-1'], $this->stubHttpClient($publicKey));
 
         $rawBody = '{}';
         $headers = [
@@ -151,7 +156,7 @@ class PaypalApiTest extends TestCase
         $httpClient = static::createMock(HttpClientInterface::class);
         $httpClient->expects($this->once())->method('request')->willReturn($response);
 
-        $api = new PaypalApi($this->config(['webhook_id' => 'WH-1']), $httpClient);
+        $api = $this->api(['webhook_id' => 'WH-1'], $httpClient);
 
         $rawBody = '{}';
         $headers = [
@@ -168,7 +173,7 @@ class PaypalApiTest extends TestCase
 
     public function testClientBuildsTheSdkClient(): void
     {
-        $api = new PaypalApi($this->config(['client_id' => 'client-id', 'client_secret' => 'client-secret']));
+        $api = $this->api(['client_id' => 'client-id', 'client_secret' => 'client-secret']);
 
         $client = $api->client();
 
@@ -177,7 +182,7 @@ class PaypalApiTest extends TestCase
 
     public function testClientThrowsWhenCredentialsAreMissing(): void
     {
-        $api = new PaypalApi($this->config());
+        $api = $this->api();
 
         $this->expectExceptionObject(PaymentException::missingCredentials('paypal', PaypalApi::CLIENT_ID));
 
@@ -232,21 +237,31 @@ class PaypalApiTest extends TestCase
 
     /**
      * @param array<string, mixed> $credentials
-     *
-     * @return array<string, mixed>
      */
-    private function config(array $credentials = []): array
+    private function api(array $credentials = [], ?HttpClientInterface $httpClient = null): PaypalApi
     {
-        return [
-            AbstractPaymentApi::CONFIG_PROVIDER => 'paypal',
-            AbstractPaymentApi::CONFIG_CHANNEL => 'paypal_checkout',
-            AbstractPaymentApi::CONFIG_MODE => 'live',
-            AbstractPaymentApi::CONFIG_CREDENTIALS => $credentials,
-            AbstractPaymentApi::CONFIG_PARAMS => [],
-            AbstractPaymentApi::CONFIG_SETTINGS => [],
-            AbstractPaymentApi::CONFIG_RUNTIME_PARAMS => [],
-            AbstractPaymentApi::CONFIG_NOTIFY_URL => 'https://example.com/notify',
-            AbstractPaymentApi::CONFIG_RETURN_URL => 'https://example.com/return',
-        ];
+        $channel = new PaymentChannel('paypal_checkout', 'paypal', 'paypal_checkout', PaymentFlow::REDIRECT);
+
+        return new PaypalApi(
+            new ResolvedPaymentConfig(
+                provider: new PaymentProvider(
+                    'paypal',
+                    'paypal',
+                    [],
+                    ['paypal_checkout' => $channel],
+                    new PaymentGatewayFactory('paypal', PaypalApi::class, []),
+                    static::createStub(PaymentNotificationExtractorInterface::class),
+                ),
+                channel: $channel,
+                credentials: $credentials,
+                params: [],
+                runtimeParams: [],
+                settings: [],
+                mode: 'live',
+            ),
+            'https://example.com/notify',
+            'https://example.com/return',
+            $httpClient,
+        );
     }
 }

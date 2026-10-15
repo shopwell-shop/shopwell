@@ -7,11 +7,17 @@ use Payum\Core\Request\Notify;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\System\Payment\Gateway\AbstractPaymentApi;
+use Shopwell\Core\System\Payment\Gateway\NotificationResult;
+use Shopwell\Core\System\Payment\Gateway\PaymentGatewayFactory;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
+use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
 use Shopwell\Core\System\Payment\PaymentException;
+use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
+use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
+use Shopwell\Core\System\Payment\Provider\PaymentProvider;
 use Shopwell\Core\System\Payment\Provider\Paypal\PaypalApi;
 use Shopwell\Core\System\Payment\Provider\Paypal\PaypalNotifyAction;
+use Shopwell\Core\System\Payment\Provider\ResolvedPaymentConfig;
 
 /**
  * @internal
@@ -20,12 +26,12 @@ use Shopwell\Core\System\Payment\Provider\Paypal\PaypalNotifyAction;
 #[CoversClass(PaypalNotifyAction::class)]
 class PaypalNotifyActionTest extends TestCase
 {
-    public function testSupportsOnlyNotifyRequestsWithAnArrayObjectModel(): void
+    public function testSupportsOnlyNotifyRequestsWithAPaymentGatewayModel(): void
     {
         $action = new PaypalNotifyAction();
 
-        static::assertTrue($action->supports(new Notify(new \ArrayObject())));
-        static::assertFalse($action->supports(new Capture(new \ArrayObject())));
+        static::assertTrue($action->supports(new Notify(new PaymentGatewayModel())));
+        static::assertFalse($action->supports(new Capture(new PaymentGatewayModel())));
         static::assertFalse($action->supports(new Notify(new \stdClass())));
     }
 
@@ -35,7 +41,7 @@ class PaypalNotifyActionTest extends TestCase
 
         $this->expectExceptionObject(PaymentException::actionWithoutApi(PaypalNotifyAction::class));
 
-        $action->execute(new Notify(new \ArrayObject()));
+        $action->execute(new Notify(new PaymentGatewayModel()));
     }
 
     public function testExecuteThrowsWhenTheNotificationIsNotJson(): void
@@ -54,7 +60,7 @@ class PaypalNotifyActionTest extends TestCase
         $action->setApi($this->api());
         $action->execute(new Notify($model));
 
-        $result = PaymentGatewayModel::notificationResult($model, 'paypal_checkout');
+        $result = $model->result(NotificationResult::class, 'paypal_checkout');
         static::assertFalse($result->signatureValid);
         static::assertTrue($result->succeeded);
         static::assertSame('CAP-1', $result->outPaymentNo);
@@ -63,7 +69,7 @@ class PaypalNotifyActionTest extends TestCase
         static::assertSame('USD', $result->currency);
         static::assertSame('PAYMENT.CAPTURE.COMPLETED', $result->status);
         static::assertSame($resource, $result->raw);
-        static::assertSame($event, PaymentGatewayModel::responseOf($model));
+        static::assertSame($event, $model->response());
     }
 
     public function testExecuteMarksADeniedCaptureAsNotSucceeded(): void
@@ -74,7 +80,7 @@ class PaypalNotifyActionTest extends TestCase
         $action->setApi($this->api());
         $action->execute(new Notify($model));
 
-        $result = PaymentGatewayModel::notificationResult($model, 'paypal_checkout');
+        $result = $model->result(NotificationResult::class, 'paypal_checkout');
         static::assertFalse($result->succeeded);
         static::assertFalse($result->signatureValid);
         static::assertSame('PAYMENT.CAPTURE.DENIED', $result->status);
@@ -92,7 +98,7 @@ class PaypalNotifyActionTest extends TestCase
         $action->setApi($this->api());
         $action->execute(new Notify($model));
 
-        $result = PaymentGatewayModel::notificationResult($model, 'paypal_checkout');
+        $result = $model->result(NotificationResult::class, 'paypal_checkout');
         static::assertTrue($result->succeeded);
         static::assertSame('CAP-1', $result->outRefundId);
         static::assertSame('CAP-1', $result->outPaymentNo);
@@ -107,7 +113,7 @@ class PaypalNotifyActionTest extends TestCase
         $action->setApi($this->api());
         $action->execute(new Notify($model));
 
-        $result = PaymentGatewayModel::notificationResult($model, 'paypal_checkout');
+        $result = $model->result(NotificationResult::class, 'paypal_checkout');
         static::assertSame('CAP-1', $result->outRefundId);
         static::assertFalse($result->succeeded);
     }
@@ -120,7 +126,7 @@ class PaypalNotifyActionTest extends TestCase
         $action->setApi($this->api());
         $action->execute(new Notify($model));
 
-        $result = PaymentGatewayModel::notificationResult($model, 'paypal_checkout');
+        $result = $model->result(NotificationResult::class, 'paypal_checkout');
         static::assertFalse($result->succeeded);
         static::assertNull($result->outRefundId);
         static::assertSame('PAYMENT.CAPTURE.PENDING', $result->status);
@@ -137,7 +143,7 @@ class PaypalNotifyActionTest extends TestCase
         $action->setApi($this->api());
         $action->execute(new Notify($model));
 
-        $result = PaymentGatewayModel::notificationResult($model, 'paypal_checkout');
+        $result = $model->result(NotificationResult::class, 'paypal_checkout');
         static::assertSame('USD', $result->currency);
         static::assertSame(500, $result->amount);
     }
@@ -153,7 +159,7 @@ class PaypalNotifyActionTest extends TestCase
         $action->setApi($this->api());
         $action->execute(new Notify($model));
 
-        $result = PaymentGatewayModel::notificationResult($model, 'paypal_checkout');
+        $result = $model->result(NotificationResult::class, 'paypal_checkout');
         static::assertSame(700, $result->amount);
         static::assertSame('USD', $result->currency);
     }
@@ -169,7 +175,7 @@ class PaypalNotifyActionTest extends TestCase
         $action->setApi($this->api());
         $action->execute(new Notify($model));
 
-        $result = PaymentGatewayModel::notificationResult($model, 'paypal_checkout');
+        $result = $model->result(NotificationResult::class, 'paypal_checkout');
         static::assertNull($result->amount);
     }
 
@@ -181,7 +187,7 @@ class PaypalNotifyActionTest extends TestCase
         $action->setApi($this->api());
         $action->execute(new Notify($model));
 
-        $result = PaymentGatewayModel::notificationResult($model, 'paypal_checkout');
+        $result = $model->result(NotificationResult::class, 'paypal_checkout');
         static::assertNull($result->outPaymentNo);
         static::assertSame([], $result->raw);
         static::assertTrue($result->succeeded);
@@ -193,7 +199,7 @@ class PaypalNotifyActionTest extends TestCase
         $action->setApi($this->api());
 
         try {
-            $action->execute(new Notify(new \ArrayObject([PaymentGatewayModel::RAW_BODY => $rawBody, PaymentGatewayModel::HEADERS => []])));
+            $action->execute(new Notify(new PaymentGatewayModel([PaymentGatewayModel::RAW_BODY => $rawBody, PaymentGatewayModel::HEADERS => []])));
             static::fail('The notification was expected to be rejected.');
         } catch (PaymentException $exception) {
             static::assertSame(PaymentException::NOTIFICATION_INVALID, $exception->getErrorCode());
@@ -202,12 +208,10 @@ class PaypalNotifyActionTest extends TestCase
 
     /**
      * @param array<string, mixed> $event
-     *
-     * @return \ArrayObject<string, mixed>
      */
-    private function model(array $event): \ArrayObject
+    private function model(array $event): PaymentGatewayModel
     {
-        return new \ArrayObject([
+        return new PaymentGatewayModel([
             PaymentGatewayModel::RAW_BODY => json_encode($event, \JSON_THROW_ON_ERROR),
             PaymentGatewayModel::HEADERS => [],
         ]);
@@ -215,16 +219,27 @@ class PaypalNotifyActionTest extends TestCase
 
     private function api(): PaypalApi
     {
-        return new PaypalApi([
-            AbstractPaymentApi::CONFIG_PROVIDER => 'paypal',
-            AbstractPaymentApi::CONFIG_CHANNEL => 'paypal_checkout',
-            AbstractPaymentApi::CONFIG_MODE => 'live',
-            AbstractPaymentApi::CONFIG_CREDENTIALS => [],
-            AbstractPaymentApi::CONFIG_PARAMS => [],
-            AbstractPaymentApi::CONFIG_SETTINGS => [],
-            AbstractPaymentApi::CONFIG_RUNTIME_PARAMS => [],
-            AbstractPaymentApi::CONFIG_NOTIFY_URL => 'https://example.com/notify',
-            AbstractPaymentApi::CONFIG_RETURN_URL => 'https://example.com/return',
-        ]);
+        $channel = new PaymentChannel('paypal_checkout', 'paypal', 'paypal_checkout', PaymentFlow::REDIRECT);
+
+        return new PaypalApi(
+            new ResolvedPaymentConfig(
+                provider: new PaymentProvider(
+                    'paypal',
+                    'paypal',
+                    [],
+                    ['paypal_checkout' => $channel],
+                    new PaymentGatewayFactory('paypal', PaypalApi::class, []),
+                    static::createStub(PaymentNotificationExtractorInterface::class),
+                ),
+                channel: $channel,
+                credentials: [],
+                params: [],
+                runtimeParams: [],
+                settings: [],
+                mode: 'live',
+            ),
+            'https://example.com/notify',
+            'https://example.com/return',
+        );
     }
 }
