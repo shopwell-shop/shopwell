@@ -139,6 +139,7 @@ app/config/parameters.yml
 *.cursorignore.local
 *.cursorindexingignore.local
 *.tabnineignore.local
+.trae/
 
 /dev-ops/check_requirements.php
 /performance/_fixtures.php
