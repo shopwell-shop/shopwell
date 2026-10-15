@@ -1,0 +1,50 @@
+{% block component_checkout_wallet_payment %}
+    {% if context.customer and not context.customer.guest %}
+        {% block component_checkout_wallet_payment_form %}
+            <div class="checkout-aside-action checkout-aside-wallet"
+                 data-wallet-payment="true"
+                 data-wallet-payment-options="{{ {
+                     infoUrl: path('frontend.account.wallet.json'),
+                     paymentUrl: path('frontend.account.wallet.payment'),
+                     currencyId: context.currency.id
+                 }|json_encode }}">
+                {% block component_checkout_wallet_payment_label %}
+                    <label class="mb-1" for="walletPaymentInput">
+                        {{ 'checkout.walletPaymentLabel'|trans|sw_sanitize }}
+                    </label>
+                {% endblock %}
+
+                {% block component_checkout_wallet_payment_balance %}
+                    <p class="checkout-aside-wallet-balance mb-2"
+                       data-wallet-payment-balance>
+                        {{ 'checkout.walletBalanceLoading'|trans|sw_sanitize }}
+                    </p>
+                {% endblock %}
+
+                {% block component_checkout_wallet_payment_input_group %}
+                    <div class="input-group">
+                        {% block component_checkout_wallet_payment_input %}
+                            <input type="number"
+                                   min="0"
+                                   step="0.01"
+                                   name="amount"
+                                   class="form-control"
+                                   id="walletPaymentInput"
+                                   data-wallet-payment-input
+                                   placeholder="{{ 'checkout.walletPaymentPlaceholder'|trans|striptags }}">
+                        {% endblock %}
+
+                        {% block component_checkout_wallet_payment_submit %}
+                            <button type="button"
+                                    class="btn btn-outline-secondary checkout-aside-wallet-button"
+                                    data-wallet-payment-submit
+                                    aria-labelledby="walletPaymentInput">
+                                {{ 'checkout.walletPaymentApply'|trans|sw_sanitize }}
+                            </button>
+                        {% endblock %}
+                    </div>
+                {% endblock %}
+            </div>
+        {% endblock %}
+    {% endif %}
+{% endblock %}

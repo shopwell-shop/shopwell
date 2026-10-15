@@ -405,6 +405,14 @@
         {% endif %}
     {% endblock %}
 
+    {% block page_checkout_confirm_loyalty %}
+        {% sw_include '@Storefront/storefront/component/checkout/loyalty-redeem-points.html.twig' %}
+    {% endblock %}
+
+    {% block page_checkout_confirm_wallet %}
+        {% sw_include '@Storefront/storefront/component/checkout/wallet-payment.html.twig' %}
+    {% endblock %}
+
     <div class="checkout-aside-action">
         <form id="confirmOrderForm"
               action="{{ confirmOrderFormAction }}"

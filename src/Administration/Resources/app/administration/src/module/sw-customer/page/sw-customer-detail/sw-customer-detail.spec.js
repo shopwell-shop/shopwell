@@ -1,5 +1,6 @@
 import { mount } from '@vue/test-utils';
 import ShopwellError from 'src/core/data/ShopwellError';
+import 'src/module/sw-customer/page/sw-customer-detail/extension/sw-customer-detail';
 
 /**
  * @sw-package checkout
@@ -313,6 +314,18 @@ describe('module/sw-customer/page/sw-customer-detail', () => {
         expect(wrapper.findComponent({ name: 'mt-tabs' }).exists()).toBe(false);
     });
 
+    it('should render the points and wallet tabs when the privileges are granted', async () => {
+        const wrapperWithPrivileges = await createWrapper(['loyalty.viewer', 'wallet.viewer']);
+
+        expect(wrapperWithPrivileges.find('.sw-customer-detail__tab-points').exists()).toBe(true);
+        expect(wrapperWithPrivileges.find('.sw-customer-detail__tab-wallet').exists()).toBe(true);
+    });
+
+    it('should not render the points and wallet tabs when the privileges are missing', () => {
+        expect(wrapper.find('.sw-customer-detail__tab-points').exists()).toBe(false);
+        expect(wrapper.find('.sw-customer-detail__tab-wallet').exists()).toBe(false);
+    });
+
     it('should render meteor tabs when the major feature flag is active', async () => {
         const wrapperWithMeteorTabs = await createWrapper([], false, defaultCustomer, {
             featureActive: true,
@@ -357,6 +370,59 @@ describe('module/sw-customer/page/sw-customer-detail', () => {
 
         expect(routerPush).toHaveBeenCalledWith({
             name: 'sw.customer.detail.addresses',
+            params: { id: 'customerId' },
+            query: { edit: true },
+        });
+    });
+
+    it('should render the points and wallet meteor tabs when the privileges are granted', async () => {
+        const wrapperWithPrivileges = await createWrapper(['loyalty.viewer', 'wallet.viewer'], false, defaultCustomer, {
+            featureActive: true,
+        });
+
+        const tabs = wrapperWithPrivileges.getComponent({ name: 'mt-tabs' });
+
+        expect(tabs.props('items')).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({
+                    label: 'sw-customer.detail.tabPoints',
+                    name: 'sw.customer.detail.loyalty',
+                    onClick: expect.any(Function),
+                }),
+                expect.objectContaining({
+                    label: 'sw-customer.detail.tabWallet',
+                    name: 'sw.customer.detail.wallet',
+                    onClick: expect.any(Function),
+                }),
+            ]),
+        );
+    });
+
+    it('should not render the points and wallet meteor tabs when the privileges are missing', async () => {
+        const wrapperWithoutPrivileges = await createWrapper([], false, defaultCustomer, {
+            featureActive: true,
+        });
+
+        const items = wrapperWithoutPrivileges.getComponent({ name: 'mt-tabs' }).props('items');
+
+        expect(items.find((item) => item.name === 'sw.customer.detail.loyalty')).toBeUndefined();
+        expect(items.find((item) => item.name === 'sw.customer.detail.wallet')).toBeUndefined();
+    });
+
+    it('should navigate to the wallet tab when the wallet meteor tab is clicked', async () => {
+        const routerPush = jest.fn();
+        const wrapperWithPrivileges = await createWrapper(['loyalty.viewer', 'wallet.viewer'], true, defaultCustomer, {
+            featureActive: true,
+            routerPush,
+        });
+
+        const tabs = wrapperWithPrivileges.getComponent({ name: 'mt-tabs' });
+        const walletTab = tabs.props('items').find((item) => item.name === 'sw.customer.detail.wallet');
+
+        walletTab.onClick();
+
+        expect(routerPush).toHaveBeenCalledWith({
+            name: 'sw.customer.detail.wallet',
             params: { id: 'customerId' },
             query: { edit: true },
         });

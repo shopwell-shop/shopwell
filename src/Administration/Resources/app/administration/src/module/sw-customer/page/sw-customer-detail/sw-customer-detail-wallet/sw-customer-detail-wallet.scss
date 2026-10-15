@@ -1,0 +1,25 @@
+.sw-customer-detail-wallet {
+    .sw-customer-detail-wallet__balance-item {
+        padding-bottom: 16px;
+    }
+
+    .sw-customer-detail-wallet__balance-label {
+        color: var(--color-text-secondary-default);
+        font-size: var(--font-size-xs);
+        margin: 0 0 4px;
+    }
+
+    .sw-customer-detail-wallet__balance-value {
+        font-size: var(--font-size-m);
+        font-weight: var(--font-weight-semibold);
+        margin: 0;
+    }
+
+    .sw-customer-detail-wallet__top-up + .sw-customer-detail-wallet__adjust {
+        margin-left: 8px;
+    }
+
+    .is--negative {
+        color: var(--color-text-critical-default);
+    }
+}

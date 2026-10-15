@@ -1,0 +1,200 @@
+{
+    "openapi": "3.2.0",
+    "info": [],
+    "paths": {
+        "/loyalty": {
+            "get": {
+                "tags": [
+                    "Loyalty"
+                ],
+                "summary": "Fetch the loyalty summary of the customer",
+                "description": "Returns the points balance, growth value, current membership tier, the redemption settings and the available membership tiers of the authenticated customer.",
+                "operationId": "readLoyalty",
+                "responses": {
+                    "200": {
+                        "description": "The loyalty summary of the customer.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "pointsBalance": {
+                                            "type": "integer",
+                                            "description": "The currently available points balance."
+                                        },
+                                        "growthValue": {
+                                            "type": "integer",
+                                            "description": "The accumulated growth value."
+                                        },
+                                        "membershipTierId": {
+                                            "type": [
+                                                "string",
+                                                "null"
+                                            ],
+                                            "description": "The id of the membership tier the customer currently belongs to."
+                                        },
+                                        "membershipValidUntil": {
+                                            "type": [
+                                                "string",
+                                                "null"
+                                            ],
+                                            "description": "The date until which the current membership is valid."
+                                        },
+                                        "pointValueInCurrency": {
+                                            "type": "number",
+                                            "description": "The amount a single point is worth when redeeming points."
+                                        },
+                                        "minRedeemablePoints": {
+                                            "type": "integer",
+                                            "description": "The minimum number of points that must be redeemed in a single order."
+                                        },
+                                        "maxRedeemablePercent": {
+                                            "type": "number",
+                                            "description": "The maximum share of the order total that may be paid with points."
+                                        },
+                                        "tiers": {
+                                            "type": "array",
+                                            "description": "The available membership tiers ordered by level.",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "string"
+                                                    },
+                                                    "technicalName": {
+                                                        "type": "string"
+                                                    },
+                                                    "name": {
+                                                        "type": [
+                                                            "string",
+                                                            "null"
+                                                        ]
+                                                    },
+                                                    "level": {
+                                                        "type": "integer"
+                                                    },
+                                                    "minGrowthValue": {
+                                                        "type": [
+                                                            "integer",
+                                                            "null"
+                                                        ]
+                                                    },
+                                                    "pointsMultiplier": {
+                                                        "type": [
+                                                            "number",
+                                                            "null"
+                                                        ]
+                                                    },
+                                                    "discountPercent": {
+                                                        "type": [
+                                                            "number",
+                                                            "null"
+                                                        ]
+                                                    },
+                                                    "freeShipping": {
+                                                        "type": [
+                                                            "boolean",
+                                                            "null"
+                                                        ]
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "The loyalty program is disabled.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/failure"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/401",
+                        "description": "The customer is not logged in."
+                    }
+                },
+                "security": [
+                    {
+                        "ApiKey": []
+                    }
+                ]
+            }
+        },
+        "/loyalty/redeem-points": {
+            "post": {
+                "tags": [
+                    "Loyalty"
+                ],
+                "summary": "Redeem loyalty points for the current cart",
+                "description": "Stores the number of points the customer wants to redeem for the current cart and returns the recalculated cart. The points are applied as a discount on the next cart calculation.",
+                "operationId": "redeemLoyaltyPoints",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "points": {
+                                        "type": "integer",
+                                        "description": "The number of points to redeem. Use 0 to remove a previous redemption."
+                                    }
+                                },
+                                "required": [
+                                    "points"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "The recalculated cart.",
+                        "headers": {
+                            "sw-context-token": {
+                                "description": "Contains sw-context-token value",
+                                "required": true,
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Cart"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "The loyalty program is disabled or the requested points are invalid.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/failure"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/401",
+                        "description": "The customer is not logged in."
+                    }
+                },
+                "security": [
+                    {
+                        "ApiKey": []
+                    }
+                ]
+            }
+        }
+    }
+}

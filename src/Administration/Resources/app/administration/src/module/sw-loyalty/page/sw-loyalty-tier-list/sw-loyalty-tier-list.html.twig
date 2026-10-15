@@ -1,0 +1,160 @@
+{% block sw_loyalty_tier_list %}
+<sw-page class="sw-loyalty-tier-list">
+
+    {% block sw_loyalty_tier_list_search_bar %}
+    <template #search-bar>
+        <sw-search-bar
+            initial-search-type="loyalty_tier"
+            :placeholder="$t('sw-loyalty.general.placeholderSearchBar')"
+            :initial-search="term"
+            @search="onSearch"
+        />
+    </template>
+    {% endblock %}
+
+    {% block sw_loyalty_tier_list_smart_bar_header %}
+    <template #smart-bar-header>
+        {% block sw_loyalty_tier_list_smart_bar_header_title %}
+        <h2>
+            {% block sw_loyalty_tier_list_smart_bar_header_title_text %}
+            {{ $t('sw-settings.index.title') }}
+            <mt-icon
+                name="regular-chevron-right-xs"
+                size="12px"
+            />
+            {{ $t('sw-loyalty.general.mainMenuItemGeneral') }}
+            {% endblock %}
+
+            {% block sw_loyalty_tier_list_smart_bar_header_amount %}
+            <span
+                v-if="!isLoading && loyaltyTiers && total"
+                class="sw-page__smart-bar-amount"
+            >
+                ({{ total }})
+            </span>
+            {% endblock %}
+        </h2>
+        {% endblock %}
+    </template>
+    {% endblock %}
+
+    {% block sw_loyalty_tier_list_language_switch %}
+    <template #language-switch>
+        <sw-language-switch @on-change="onRefresh" />
+    </template>
+    {% endblock %}
+
+    {% block sw_loyalty_tier_list_actions %}
+    <template #smart-bar-actions>
+        {% block sw_loyalty_tier_list_actions_create %}
+        <mt-button
+            v-tooltip.bottom="{
+                message: $t('sw-privileges.tooltip.warning'),
+                disabled: acl.can('loyalty.creator'),
+                showOnDisabledElements: true
+            }"
+            class="sw-loyalty-tier-list__create"
+            variant="primary"
+            :disabled="!acl.can('loyalty.creator') || undefined"
+            size="default"
+            @click="$router.push({ name: 'sw.settings.loyalty.create' })"
+        >
+            {{ $t('sw-loyalty.general.buttonCreate') }}
+        </mt-button>
+        {% endblock %}
+    </template>
+    {% endblock %}
+
+    {% block sw_loyalty_tier_list_cardview %}
+    <template #content>
+        <sw-card-view>
+            {% block sw_loyalty_tier_list_card_content %}
+            <mt-card position-identifier="sw-loyalty-tier-list">
+                {% block sw_loyalty_tier_list_grid %}
+                <template #grid>
+                    <sw-entity-listing
+                        v-if="(isLoading || entitySearchable) && !showEmptyState"
+                        ref="listing"
+                        class="sw-loyalty-tier-list-grid"
+                        identifier="sw-loyalty-tier-list"
+                        detail-route="sw.settings.loyalty.detail"
+                        :repository="loyaltyTierRepository"
+                        :criteria-limit="limit"
+                        :is-loading="isLoading"
+                        :data-source="loyaltyTiers"
+                        :columns="columns"
+                        :sort-by="currentSortBy"
+                        :sort-direction="sortDirection"
+                        :full-page="false"
+                        :allow-view="acl.can('loyalty.viewer')"
+                        :allow-edit="acl.can('loyalty.editor')"
+                        :allow-inline-edit="acl.can('loyalty.editor') || undefined"
+                        :allow-delete="acl.can('loyalty.deleter')"
+                        :show-selection="acl.can('loyalty.deleter') || undefined"
+                        @column-sort="onSortColumn"
+                        @page-change="onPageChange"
+                    >
+                        <template #bulk-modal-delete-items>
+                            <mt-button
+                                variant="critical"
+                                size="small"
+                                @click="deleteLoyaltyTiers"
+                            >
+                                {{ $t('global.default.delete') }}
+                            </mt-button>
+                        </template>
+
+                        <template #delete-action="{ item }">
+                            <sw-context-menu-item
+                                class="sw-loyalty-tier-list-grid__delete-action"
+                                variant="danger"
+                                :disabled="!acl.can('loyalty.deleter') || undefined"
+                                @click="onContextMenuDelete(item)"
+                            >
+                                {{ $t('global.default.delete') }}
+                            </sw-context-menu-item>
+                        </template>
+
+                        <template #delete-modal-delete-item="{ item }">
+                            <mt-button
+                                variant="critical"
+                                size="small"
+                                @click="deleteLoyaltyTier(item)"
+                            >
+                                {{ $t('global.default.delete') }}
+                            </mt-button>
+                        </template>
+
+                        {% block sw_loyalty_tier_list_grid_column_active %}
+                        <template #column-active="{ item }">
+                            <mt-icon
+                                :name="item.active ? 'regular-checkmark-xs' : 'regular-times-s'"
+                                :color="item.active ? '#37d046' : '#de294c'"
+                                size="16px"
+                                :aria-label="$t('sw-loyalty.list.columnActive')"
+                            />
+                        </template>
+                        {% endblock %}
+                    </sw-entity-listing>
+
+                    {% block sw_loyalty_tier_list_empty_state %}
+                    <mt-empty-state
+                        v-else-if="showEmptyState"
+                        centered
+                        :icon="$route.meta.$module.icon"
+                        :headline="$t('sw-empty-state.messageNoResultTitle')"
+                        description=""
+                        :link-text="$t('sw-empty-state.messageNoResultLink')"
+                        :link-href="$router.resolve({ name: 'sw.profile.index.searchPreferences' }).href"
+                    />
+                    {% endblock %}
+                </template>
+                {% endblock %}
+            </mt-card>
+            {% endblock %}
+        </sw-card-view>
+    </template>
+    {% endblock %}
+
+</sw-page>
+{% endblock %}

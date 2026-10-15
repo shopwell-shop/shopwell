@@ -1,0 +1,10 @@
+{% block sw_customer_detail_custom_field_sets %}
+{% parent %}
+
+{% block sw_customer_detail_base_loyalty_overview %}
+<sw-customer-detail-loyalty-overview
+    :customer="customer"
+    :customer-edit-mode="customerEditMode"
+/>
+{% endblock %}
+{% endblock %}

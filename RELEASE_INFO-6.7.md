@@ -10,6 +10,12 @@ External systems call the gateway at `/payment-api/v1/*` (payment orders, refund
 
 A migration seeds alipay's public sandbox account together with one demo app, so the gateway can be called right after the update. Those are alipay's public sandbox test credentials - replace them with the real merchant credentials and remove the demo app before go-live.
 
+### Customer loyalty and wallet
+
+Customers now collect loyalty points and growth value, move through configurable membership tiers, and can pay from a stored-value wallet. Merchants manage tiers in a new Administration section, and the customer detail page shows a customer's points, tier and wallet balances with manual point and wallet adjustments. Storefront customers get account pages for points, tier progress and wallet transactions, and can redeem points and apply wallet balance in the cart at checkout.
+
+The redemption rules (point value in currency, minimum redeemable points, maximum share of the cart, maximum wallet share) and the optional automatic customer group sync per tier are configurable. Every customer owns a wallet in the shop's default currency and a loyalty membership with a zero balance and the entry tier from the moment it is created, so a customer balance reads correctly before the first booking. The new `customer_loyalty`, `loyalty_tier`, `customer_wallet` and `customer_wallet_transaction` entities are readable through the DAL, and loyalty and wallet events are dispatched for extensions.
+
 # 6.7.17.0 (upcoming)
 
 ## Features

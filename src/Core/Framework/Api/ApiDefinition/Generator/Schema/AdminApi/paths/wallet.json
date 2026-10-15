@@ -1,0 +1,134 @@
+{
+    "openapi": "3.2.0",
+    "info": [],
+    "paths": {
+        "/_action/wallet/customer/{customerId}/top-up": {
+            "post": {
+                "tags": [
+                    "Wallet"
+                ],
+                "summary": "Top up the wallet of a customer",
+                "description": "Tops up the wallet of the given customer in the given currency by the given amount. The amount must be greater than zero and must not be below the configured minimum top-up amount.",
+                "operationId": "topUpCustomerWallet",
+                "parameters": [
+                    {
+                        "name": "customerId",
+                        "in": "path",
+                        "description": "The id of the customer whose wallet should be topped up.",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "currencyId": {
+                                        "type": "string",
+                                        "description": "The id of the currency the wallet is kept in."
+                                    },
+                                    "amount": {
+                                        "type": "number",
+                                        "description": "The amount to add to the wallet."
+                                    },
+                                    "externalReference": {
+                                        "type": "string",
+                                        "description": "An optional external reference, for example the id of the payment transaction that funded the top-up."
+                                    }
+                                },
+                                "required": [
+                                    "currencyId",
+                                    "amount"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "204": {
+                        "description": "The wallet was topped up successfully."
+                    },
+                    "400": {
+                        "description": "The top-up is invalid, for example when the amount is not positive or below the configured minimum.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/failure"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/_action/wallet/customer/{customerId}/adjust": {
+            "post": {
+                "tags": [
+                    "Wallet"
+                ],
+                "summary": "Adjust the wallet balance of a customer",
+                "description": "Books a manual wallet adjustment for the given customer. A positive amount adds to the balance, a negative amount deducts from it. The resulting balance must not become negative.",
+                "operationId": "adjustCustomerWallet",
+                "parameters": [
+                    {
+                        "name": "customerId",
+                        "in": "path",
+                        "description": "The id of the customer whose wallet should be adjusted.",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "currencyId": {
+                                        "type": "string",
+                                        "description": "The id of the currency the wallet is kept in."
+                                    },
+                                    "amount": {
+                                        "type": "number",
+                                        "description": "The amount to book. Negative values deduct from the balance."
+                                    },
+                                    "comment": {
+                                        "type": "string",
+                                        "description": "An optional comment describing the reason for the adjustment."
+                                    }
+                                },
+                                "required": [
+                                    "currencyId",
+                                    "amount"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "204": {
+                        "description": "The wallet was adjusted successfully."
+                    },
+                    "400": {
+                        "description": "The adjustment is invalid, for example when the resulting balance would become negative.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/failure"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

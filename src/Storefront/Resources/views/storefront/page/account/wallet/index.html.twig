@@ -1,0 +1,134 @@
+{% sw_extends '@Storefront/storefront/page/account/_page.html.twig' %}
+
+{% block page_account_main_content %}
+    {% block page_account_wallet %}
+        <div class="account-wallet">
+            {% block page_account_wallet_welcome %}
+                <div class="account-welcome">
+                    {% block page_account_wallet_welcome_headline %}
+                        <h1>{{ 'account.walletTitle'|trans|sw_sanitize }}</h1>
+                    {% endblock %}
+
+                    {% block page_account_wallet_welcome_intro %}
+                        <p>{{ 'account.walletWelcome'|trans|sw_sanitize }}</p>
+                    {% endblock %}
+                </div>
+            {% endblock %}
+
+            {% block page_account_wallet_content %}
+                {% block page_account_wallet_balances %}
+                    <div class="row account-wallet-balances">
+                        {% for wallet in page.wallet.wallets %}
+                            {% set isoCode = page.currencyIsoCodes[wallet.currencyId] ?? context.currency.isoCode %}
+
+                            <div class="col-sm-6 col-lg-4">
+                                <div class="card account-wallet-card">
+                                    <div class="card-body">
+                                        <div class="account-wallet-card-value">
+                                            {{ wallet.balance|currency(isoCode) }}
+                                        </div>
+                                        <div class="account-wallet-card-label">
+                                            {{ 'account.walletBalanceInCurrency'|trans({ '%currency%': isoCode })|sw_sanitize }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endblock %}
+
+                {% block page_account_wallet_transactions %}
+                    <div class="account-wallet-transactions card mt-4">
+                        <div class="card-body">
+                            {% block page_account_wallet_transactions_title %}
+                                <h2 class="card-title">{{ 'account.walletTransactionsTitle'|trans|sw_sanitize }}</h2>
+                            {% endblock %}
+
+                            {% set typeLabels = {
+                                top_up: 'account.walletTransactionTypeTopUp'|trans,
+                                consume: 'account.walletTransactionTypeConsume'|trans,
+                                refund: 'account.walletTransactionTypeRefund'|trans,
+                                adjust: 'account.walletTransactionTypeAdjust'|trans
+                            } %}
+
+                            {% if page.wallet.transactions is empty %}
+                                {% block page_account_wallet_transactions_empty %}
+                                    {% sw_include '@Storefront/storefront/utilities/alert.html.twig' with {
+                                        type: 'info',
+                                        content: 'account.walletTransactionsEmpty'|trans|sw_sanitize
+                                    } %}
+                                {% endblock %}
+                            {% else %}
+                                {% block page_account_wallet_transactions_table %}
+                                    <div class="table-responsive">
+                                        <table class="table account-wallet-transactions-table">
+                                            <thead>
+                                                {% block page_account_wallet_transactions_table_head %}
+                                                    <tr>
+                                                        <th scope="col">{{ 'account.walletTransactionColumnDate'|trans|sw_sanitize }}</th>
+                                                        <th scope="col">{{ 'account.walletTransactionColumnType'|trans|sw_sanitize }}</th>
+                                                        <th scope="col">{{ 'account.walletTransactionColumnAmount'|trans|sw_sanitize }}</th>
+                                                        <th scope="col">{{ 'account.walletTransactionColumnBalance'|trans|sw_sanitize }}</th>
+                                                    </tr>
+                                                {% endblock %}
+                                            </thead>
+                                            <tbody>
+                                                {% block page_account_wallet_transactions_table_body %}
+                                                    {% for transaction in page.wallet.transactions %}
+                                                        {% set isoCode = page.currencyIsoCodes[transaction.currencyId] ?? context.currency.isoCode %}
+
+                                                        <tr>
+                                                            <td>
+                                                                {{ transaction.createdAt|format_datetime('medium', 'short', locale=app.request.locale) }}
+                                                            </td>
+                                                            <td>{{ typeLabels[transaction.type] ?? transaction.type }}</td>
+                                                            <td>
+                                                                {% if transaction.amount > 0 %}+{% endif %}{{ transaction.amount|currency(isoCode) }}
+                                                            </td>
+                                                            <td>{{ transaction.balanceAfter|currency(isoCode) }}</td>
+                                                        </tr>
+                                                    {% endfor %}
+                                                {% endblock %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                {% endblock %}
+
+                                {% block page_account_wallet_transactions_paging %}
+                                    {% set hasNextPage = page.wallet.transactions|length == page.limit %}
+
+                                    {% if page.currentPage > 1 or hasNextPage %}
+                                        <nav class="account-wallet-pagination"
+                                             aria-label="{{ 'account.walletTransactionsTitle'|trans|striptags }}">
+                                            <ul class="pagination">
+                                                {% block page_account_wallet_transactions_paging_previous %}
+                                                    <li class="page-item{% if page.currentPage <= 1 %} disabled{% endif %}">
+                                                        <a class="page-link"
+                                                           href="{{ path('frontend.account.wallet.page', { page: page.currentPage - 1 }) }}"
+                                                           {% if page.currentPage <= 1 %} tabindex="-1" aria-disabled="true"{% endif %}>
+                                                            {{ 'general.previous'|trans|sw_sanitize }}
+                                                        </a>
+                                                    </li>
+                                                {% endblock %}
+
+                                                {% block page_account_wallet_transactions_paging_next %}
+                                                    <li class="page-item{% if not hasNextPage %} disabled{% endif %}">
+                                                        <a class="page-link"
+                                                           href="{{ path('frontend.account.wallet.page', { page: page.currentPage + 1 }) }}"
+                                                           {% if not hasNextPage %} tabindex="-1" aria-disabled="true"{% endif %}>
+                                                            {{ 'general.next'|trans|sw_sanitize }}
+                                                        </a>
+                                                    </li>
+                                                {% endblock %}
+                                            </ul>
+                                        </nav>
+                                    {% endif %}
+                                {% endblock %}
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endblock %}
+            {% endblock %}
+        </div>
+    {% endblock %}
+{% endblock %}

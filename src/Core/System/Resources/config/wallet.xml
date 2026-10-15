@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopwell-shop/shopwell/trunk/src/Core/System/SystemConfig/Schema/config.xsd">
+    <card>
+        <title>Wallet</title>
+        <title lang="zh-CN">储值钱包</title>
+
+        <input-field type="bool">
+            <name>enabled</name>
+            <defaultValue>true</defaultValue>
+            <label>Enable customer wallet</label>
+            <label lang="zh-CN">启用客户储值钱包</label>
+            <helpText>When enabled, administrators can top up a customer wallet and customers can pay part of the order total from their wallet balance.</helpText>
+            <helpText lang="zh-CN">开启后，管理员可为客户钱包充值，顾客可在结算时使用钱包余额抵扣部分订单金额。</helpText>
+        </input-field>
+
+        <input-field type="float">
+            <name>minTopUpAmount</name>
+            <defaultValue>0</defaultValue>
+            <label>Minimum top-up amount</label>
+            <label lang="zh-CN">最低充值金额</label>
+            <helpText>A top-up is rejected when the credited amount is lower than this value.</helpText>
+            <helpText lang="zh-CN">单次充值金额低于该数值时将被拒绝。</helpText>
+        </input-field>
+
+        <input-field type="float">
+            <name>maxPaymentPercent</name>
+            <defaultValue>100</defaultValue>
+            <label>Maximum share of the order total payable with wallet balance (in %)</label>
+            <label lang="zh-CN">钱包最多抵扣订单金额的百分比</label>
+            <helpText>Limits how much of the order total may be covered by the wallet balance. Use 100 to allow paying the full order with the wallet.</helpText>
+            <helpText lang="zh-CN">限制钱包余额可抵扣的订单金额上限。填写 100 表示允许全额抵扣。</helpText>
+        </input-field>
+    </card>
+</config>

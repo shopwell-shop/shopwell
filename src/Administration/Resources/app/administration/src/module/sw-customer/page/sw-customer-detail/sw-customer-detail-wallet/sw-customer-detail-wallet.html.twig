@@ -1,0 +1,231 @@
+{% block sw_customer_detail_wallet %}
+<div class="sw-customer-detail-wallet">
+
+    {% block sw_customer_detail_wallet_balance_cards %}
+    <mt-card
+        v-for="wallet in wallets"
+        :key="wallet.id"
+        class="sw-customer-detail-wallet__balance"
+        position-identifier="sw-customer-detail-wallet-balance"
+        :title="wallet.currency ? wallet.currency.name : wallet.currencyId"
+        :is-loading="isLoading"
+    >
+        {% block sw_customer_detail_wallet_balance_actions %}
+        <template #headerRight>
+            <mt-button
+                class="sw-customer-detail-wallet__top-up"
+                variant="secondary"
+                size="small"
+                :disabled="!allowWalletChange || undefined"
+                @click="openTopUpModal(wallet)"
+            >
+                {{ $t('sw-customer.detailWallet.buttonWalletTopUp') }}
+            </mt-button>
+            <mt-button
+                class="sw-customer-detail-wallet__adjust"
+                variant="secondary"
+                size="small"
+                :disabled="!allowWalletChange || undefined"
+                @click="openAdjustWalletModal(wallet)"
+            >
+                {{ $t('sw-customer.detailWallet.buttonWalletAdjust') }}
+            </mt-button>
+        </template>
+        {% endblock %}
+
+        {% block sw_customer_detail_wallet_balance_content %}
+        <sw-container
+            columns="repeat(auto-fit, minmax(200px, 1fr))"
+            gap="0px 30px"
+        >
+            {% block sw_customer_detail_wallet_balance_available %}
+            <div class="sw-customer-detail-wallet__balance-item">
+                <p class="sw-customer-detail-wallet__balance-label">
+                    {{ $t('sw-customer.detailWallet.labelBalance') }}
+                </p>
+                <p class="sw-customer-detail-wallet__balance-value">
+                    {{ formatAmount(wallet.balance, wallet.currency) }}
+                </p>
+            </div>
+            {% endblock %}
+
+            {% block sw_customer_detail_wallet_balance_locked %}
+            <div class="sw-customer-detail-wallet__balance-item">
+                <p class="sw-customer-detail-wallet__balance-label">
+                    {{ $t('sw-customer.detailWallet.labelLockedBalance') }}
+                </p>
+                <p class="sw-customer-detail-wallet__balance-value">
+                    {{ formatAmount(wallet.lockedBalance, wallet.currency) }}
+                </p>
+            </div>
+            {% endblock %}
+        </sw-container>
+        {% endblock %}
+    </mt-card>
+    {% endblock %}
+
+    {% block sw_customer_detail_wallet_empty_state %}
+    <mt-card
+        v-if="wallets.length === 0 && !isLoading"
+        class="sw-customer-detail-wallet__balances-empty"
+        position-identifier="sw-customer-detail-wallet-balances-empty"
+        :title="$t('sw-customer.detailWallet.cardWalletTitle')"
+    >
+        <mt-empty-state
+            centered
+            icon="regular-coins"
+            :headline="$t('sw-customer.detailWallet.emptyWallets')"
+        />
+    </mt-card>
+    {% endblock %}
+
+    {% block sw_customer_detail_wallet_transactions_card %}
+    <mt-card
+        class="sw-customer-detail-wallet__transactions"
+        position-identifier="sw-customer-detail-wallet-transactions"
+        :title="$t('sw-customer.detailWallet.cardWalletTransactionsTitle')"
+        :is-loading="isLoading"
+    >
+        {% block sw_customer_detail_wallet_transactions_grid %}
+        <sw-data-grid
+            v-if="walletTransactions.length > 0"
+            class="sw-customer-detail-wallet__transaction-grid"
+            :data-source="walletTransactions"
+            :columns="walletTransactionColumns"
+            :show-selection="false"
+            :show-settings="false"
+            :compact-mode="true"
+        >
+            {% block sw_customer_detail_wallet_transactions_grid_column_date %}
+            <template #column-createdAt="{ item }">
+                {{ formatDate(item.createdAt) }}
+            </template>
+            {% endblock %}
+
+            {% block sw_customer_detail_wallet_transactions_grid_column_type %}
+            <template #column-type="{ item }">
+                {{ getWalletTransactionTypeLabel(item.type) }}
+            </template>
+            {% endblock %}
+
+            {% block sw_customer_detail_wallet_transactions_grid_column_amount %}
+            <template #column-amount="{ item }">
+                <span :class="{ 'is--negative': item.amount < 0 }">
+                    {{ formatAmount(item.amount, item.currency) }}
+                </span>
+            </template>
+            {% endblock %}
+
+            {% block sw_customer_detail_wallet_transactions_grid_column_balance_after %}
+            <template #column-balanceAfter="{ item }">
+                {{ formatAmount(item.balanceAfter, item.currency) }}
+            </template>
+            {% endblock %}
+
+            {% block sw_customer_detail_wallet_transactions_grid_column_order %}
+            <template #column-orderId="{ item }">
+                <mt-link
+                    v-if="item.orderId"
+                    :to="{ name: 'sw.order.detail', params: { id: item.orderId } }"
+                >
+                    {{ item.orderId }}
+                </mt-link>
+                <span v-else>-</span>
+            </template>
+            {% endblock %}
+
+            {% block sw_customer_detail_wallet_transactions_grid_column_comment %}
+            <template #column-comment="{ item }">
+                {{ item.comment || '-' }}
+            </template>
+            {% endblock %}
+        </sw-data-grid>
+
+        {% block sw_customer_detail_wallet_transactions_empty_state %}
+        <mt-empty-state
+            v-else-if="!isLoading"
+            class="sw-customer-detail-wallet__transaction-empty-state"
+            centered
+            icon="regular-money-transfer"
+            :headline="$t('sw-customer.detailWallet.emptyWalletTransactions')"
+        />
+        {% endblock %}
+
+        {% block sw_customer_detail_wallet_transactions_pagination %}
+        <sw-pagination
+            v-if="total > 0"
+            :page="page"
+            :limit="limit"
+            :total="total"
+            @page-change="onPageChange"
+        />
+        {% endblock %}
+        {% endblock %}
+    </mt-card>
+    {% endblock %}
+
+    {% block sw_customer_detail_wallet_modal %}
+    <sw-modal
+        v-if="showWalletModal"
+        class="sw-customer-detail-wallet__wallet-modal"
+        :title="walletModalTitle"
+        @modal-close="closeWalletModal"
+    >
+        {% block sw_customer_detail_wallet_modal_content %}
+        <sw-entity-single-select
+            v-model:value="walletForm.currencyId"
+            class="sw-customer-detail-wallet__wallet-currency"
+            entity="currency"
+            label-property="name"
+            required
+            :label="$t('sw-customer.detailWallet.labelCurrency')"
+            :disabled="isCurrencyLocked || undefined"
+        />
+
+        <mt-number-field
+            v-model="walletForm.amount"
+            name="sw-field--walletForm-amount"
+            class="sw-customer-detail-wallet__wallet-amount"
+            number-type="float"
+            :label="$t('sw-customer.detailWallet.labelAmount')"
+            :help-text="walletModalMode === 'topUp'
+                ? $t('sw-customer.detailWallet.walletTopUpHelpText')
+                : $t('sw-customer.detailWallet.walletAdjustHelpText')"
+        />
+
+        <mt-textarea
+            v-if="walletModalMode === 'adjust'"
+            v-model="walletForm.comment"
+            name="sw-field--walletForm-comment"
+            class="sw-customer-detail-wallet__wallet-comment"
+            :label="$t('sw-customer.detailWallet.labelComment')"
+            :placeholder="$t('sw-customer.detailWallet.placeholderComment')"
+        />
+        {% endblock %}
+
+        {% block sw_customer_detail_wallet_modal_footer %}
+        <template #modal-footer>
+            <mt-button
+                class="sw-customer-detail-wallet__wallet-modal-cancel"
+                variant="secondary"
+                size="small"
+                @click="closeWalletModal"
+            >
+                {{ $t('global.default.cancel') }}
+            </mt-button>
+            <mt-button
+                class="sw-customer-detail-wallet__wallet-modal-save"
+                variant="primary"
+                size="small"
+                :is-loading="isSavingWallet"
+                :disabled="!isWalletFormValid || undefined"
+                @click="onSaveWallet"
+            >
+                {{ $t('global.default.save') }}
+            </mt-button>
+        </template>
+        {% endblock %}
+    </sw-modal>
+    {% endblock %}
+</div>
+{% endblock %}

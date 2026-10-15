@@ -1,0 +1,45 @@
+{
+  "sw-loyalty": {
+    "general": {
+      "mainMenuItemGeneral": "会员等级",
+      "description": "管理用于发放积分与权益的会员等级。",
+      "buttonCreate": "新建会员等级",
+      "placeholderSearchBar": "搜索会员等级..."
+    },
+    "list": {
+      "columnName": "名称",
+      "columnLevel": "等级",
+      "columnMinGrowthValue": "最低成长值",
+      "columnPointsMultiplier": "积分倍率",
+      "columnActive": "启用"
+    },
+    "detail": {
+      "cardTitle": "会员等级",
+      "fieldNameLabel": "名称",
+      "fieldTechnicalNameLabel": "技术名称",
+      "fieldLevelLabel": "等级",
+      "fieldMinGrowthValueLabel": "最低成长值",
+      "fieldPointsMultiplierLabel": "积分倍率",
+      "fieldDiscountPercentLabel": "折扣（%）",
+      "fieldFreeShippingLabel": "免运费",
+      "fieldActiveLabel": "启用",
+      "fieldCustomerGroupLabel": "客户组",
+      "fieldDescriptionLabel": "描述",
+      "placeholderName": "输入名称...",
+      "placeholderTechnicalName": "输入技术名称...",
+      "placeholderNewLoyaltyTier": "新建会员等级",
+      "notificationErrorMessage": "保存会员等级时出错。",
+      "messageSaveSuccess": "会员等级已保存。"
+    }
+  },
+  "sw-privileges": {
+    "permissions": {
+      "loyalty": {
+        "label": "会员积分"
+      },
+      "wallet": {
+        "label": "客户钱包"
+      }
+    }
+  }
+}

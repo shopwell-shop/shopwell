@@ -273,6 +273,14 @@
         {% endblock %}
     </div>
 
+    {% block page_checkout_cart_action_loyalty %}
+        {% sw_include '@Storefront/storefront/component/checkout/loyalty-redeem-points.html.twig' %}
+    {% endblock %}
+
+    {% block page_checkout_cart_action_wallet %}
+        {% sw_include '@Storefront/storefront/component/checkout/wallet-payment.html.twig' %}
+    {% endblock %}
+
     {% block page_checkout_cart_action_proceed %}
         <div class="checkout-aside-action d-grid">
             <a href="{{ path('frontend.checkout.confirm.page') }}"

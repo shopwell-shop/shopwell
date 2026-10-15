@@ -1,0 +1,191 @@
+{% block sw_customer_detail_points %}
+<div class="sw-customer-detail-points">
+
+    {% block sw_customer_detail_points_summary_card %}
+    <mt-card
+        class="sw-customer-detail-points__summary"
+        position-identifier="sw-customer-detail-points-summary"
+        :title="$t('sw-customer.detailPoints.cardSummaryTitle')"
+        :is-loading="isLoading"
+    >
+        {% block sw_customer_detail_points_summary_actions %}
+        <template #headerRight>
+            <mt-button
+                class="sw-customer-detail-points__adjust-points-action"
+                variant="secondary"
+                size="small"
+                :disabled="!allowAdjustPoints || undefined"
+                @click="openPointsModal"
+            >
+                {{ $t('sw-customer.detailPoints.buttonAdjustPoints') }}
+            </mt-button>
+        </template>
+        {% endblock %}
+
+        {% block sw_customer_detail_points_summary_content %}
+        <sw-container
+            columns="repeat(auto-fit, minmax(200px, 1fr))"
+            gap="0px 30px"
+        >
+            {% block sw_customer_detail_points_summary_points_balance %}
+            <div class="sw-customer-detail-points__summary-item">
+                <p class="sw-customer-detail-points__summary-label">
+                    {{ $t('sw-customer.detailPoints.labelPointsBalance') }}
+                </p>
+                <p class="sw-customer-detail-points__summary-value">
+                    {{ loyaltySummary ? loyaltySummary.pointsBalance : '-' }}
+                </p>
+            </div>
+            {% endblock %}
+
+            {% block sw_customer_detail_points_summary_growth_value %}
+            <div class="sw-customer-detail-points__summary-item">
+                <p class="sw-customer-detail-points__summary-label">
+                    {{ $t('sw-customer.detailPoints.labelGrowthValue') }}
+                </p>
+                <p class="sw-customer-detail-points__summary-value">
+                    {{ loyaltySummary ? loyaltySummary.growthValue : '-' }}
+                </p>
+            </div>
+            {% endblock %}
+
+            {% block sw_customer_detail_points_summary_membership_tier %}
+            <div class="sw-customer-detail-points__summary-item">
+                <p class="sw-customer-detail-points__summary-label">
+                    {{ $t('sw-customer.detailPoints.labelCurrentTier') }}
+                </p>
+                <p class="sw-customer-detail-points__summary-value">
+                    {{ loyaltySummary ? membershipTierLabel : '-' }}
+                </p>
+            </div>
+            {% endblock %}
+        </sw-container>
+        {% endblock %}
+    </mt-card>
+    {% endblock %}
+
+    {% block sw_customer_detail_points_transactions_card %}
+    <mt-card
+        class="sw-customer-detail-points__transactions"
+        position-identifier="sw-customer-detail-point-transactions"
+        :title="$t('sw-customer.detailPoints.cardPointTransactionsTitle')"
+        :is-loading="isLoading"
+    >
+        {% block sw_customer_detail_points_transactions_grid %}
+        <sw-data-grid
+            v-if="paginatedPointsTransactions.length > 0"
+            class="sw-customer-detail-points__transaction-grid"
+            :data-source="paginatedPointsTransactions"
+            :columns="pointsTransactionColumns"
+            :show-selection="false"
+            :show-settings="false"
+            :compact-mode="true"
+        >
+            {% block sw_customer_detail_points_transactions_grid_column_date %}
+            <template #column-createdAt="{ item }">
+                {{ formatDate(item.createdAt) }}
+            </template>
+            {% endblock %}
+
+            {% block sw_customer_detail_points_transactions_grid_column_type %}
+            <template #column-type="{ item }">
+                {{ getPointsTransactionTypeLabel(item.type) }}
+            </template>
+            {% endblock %}
+
+            {% block sw_customer_detail_points_transactions_grid_column_points %}
+            <template #column-points="{ item }">
+                <span :class="{ 'is--negative': item.points < 0 }">
+                    {{ item.points }}
+                </span>
+            </template>
+            {% endblock %}
+
+            {% block sw_customer_detail_points_transactions_grid_column_balance_after %}
+            <template #column-balanceAfter="{ item }">
+                {{ item.balanceAfter }}
+            </template>
+            {% endblock %}
+
+            {% block sw_customer_detail_points_transactions_grid_column_comment %}
+            <template #column-comment="{ item }">
+                {{ item.comment || '-' }}
+            </template>
+            {% endblock %}
+        </sw-data-grid>
+
+        {% block sw_customer_detail_points_transactions_empty_state %}
+        <mt-empty-state
+            v-else-if="!isLoading"
+            class="sw-customer-detail-points__transaction-empty-state"
+            centered
+            icon="regular-star"
+            :headline="$t('sw-customer.detailPoints.emptyPointTransactions')"
+        />
+        {% endblock %}
+
+        {% block sw_customer_detail_points_transactions_pagination %}
+        <sw-pagination
+            v-if="totalPointsTransactions > 0"
+            :page="page"
+            :limit="limit"
+            :total="totalPointsTransactions"
+            @page-change="onPageChange"
+        />
+        {% endblock %}
+        {% endblock %}
+    </mt-card>
+    {% endblock %}
+
+    {% block sw_customer_detail_points_modal %}
+    <sw-modal
+        v-if="showPointsModal"
+        class="sw-customer-detail-points__points-modal"
+        :title="$t('sw-customer.detailPoints.pointsModalTitle')"
+        @modal-close="closePointsModal"
+    >
+        {% block sw_customer_detail_points_modal_content %}
+        <mt-number-field
+            v-model="pointsForm.points"
+            name="sw-field--pointsForm-points"
+            class="sw-customer-detail-points__points-input"
+            number-type="int"
+            :label="$t('sw-customer.detailPoints.labelPoints')"
+            :help-text="$t('sw-customer.detailPoints.pointsHelpText')"
+        />
+
+        <mt-textarea
+            v-model="pointsForm.comment"
+            name="sw-field--pointsForm-comment"
+            class="sw-customer-detail-points__points-comment"
+            :label="$t('sw-customer.detailPoints.labelComment')"
+            :placeholder="$t('sw-customer.detailPoints.placeholderComment')"
+        />
+        {% endblock %}
+
+        {% block sw_customer_detail_points_modal_footer %}
+        <template #modal-footer>
+            <mt-button
+                class="sw-customer-detail-points__points-modal-cancel"
+                variant="secondary"
+                size="small"
+                @click="closePointsModal"
+            >
+                {{ $t('global.default.cancel') }}
+            </mt-button>
+            <mt-button
+                class="sw-customer-detail-points__points-modal-save"
+                variant="primary"
+                size="small"
+                :is-loading="isSavingPoints"
+                :disabled="!isPointsFormValid || undefined"
+                @click="onSavePoints"
+            >
+                {{ $t('global.default.save') }}
+            </mt-button>
+        </template>
+        {% endblock %}
+    </sw-modal>
+    {% endblock %}
+</div>
+{% endblock %}

@@ -1,0 +1,45 @@
+{
+  "sw-loyalty": {
+    "general": {
+      "mainMenuItemGeneral": "Loyalty tiers",
+      "description": "Manage loyalty tiers that award points and grant benefits.",
+      "buttonCreate": "Add loyalty tier",
+      "placeholderSearchBar": "Search loyalty tiers..."
+    },
+    "list": {
+      "columnName": "Name",
+      "columnLevel": "Level",
+      "columnMinGrowthValue": "Min. growth value",
+      "columnPointsMultiplier": "Points multiplier",
+      "columnActive": "Active"
+    },
+    "detail": {
+      "cardTitle": "Loyalty tier",
+      "fieldNameLabel": "Name",
+      "fieldTechnicalNameLabel": "Technical name",
+      "fieldLevelLabel": "Level",
+      "fieldMinGrowthValueLabel": "Min. growth value",
+      "fieldPointsMultiplierLabel": "Points multiplier",
+      "fieldDiscountPercentLabel": "Discount (%)",
+      "fieldFreeShippingLabel": "Free shipping",
+      "fieldActiveLabel": "Active",
+      "fieldCustomerGroupLabel": "Customer group",
+      "fieldDescriptionLabel": "Description",
+      "placeholderName": "Enter a name...",
+      "placeholderTechnicalName": "Enter a technical name...",
+      "placeholderNewLoyaltyTier": "New loyalty tier",
+      "notificationErrorMessage": "An error occurred while saving the loyalty tier.",
+      "messageSaveSuccess": "The loyalty tier has been saved."
+    }
+  },
+  "sw-privileges": {
+    "permissions": {
+      "loyalty": {
+        "label": "Loyalty"
+      },
+      "wallet": {
+        "label": "Customer wallet"
+      }
+    }
+  }
+}

@@ -1,0 +1,21 @@
+.sw-customer-detail-points {
+    .sw-customer-detail-points__summary-item {
+        padding-bottom: 16px;
+    }
+
+    .sw-customer-detail-points__summary-label {
+        color: var(--color-text-secondary-default);
+        font-size: var(--font-size-xs);
+        margin: 0 0 4px;
+    }
+
+    .sw-customer-detail-points__summary-value {
+        font-size: var(--font-size-m);
+        font-weight: var(--font-weight-semibold);
+        margin: 0;
+    }
+
+    .is--negative {
+        color: var(--color-text-critical-default);
+    }
+}
