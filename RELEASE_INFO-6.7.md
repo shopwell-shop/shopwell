@@ -16,6 +16,28 @@ Customers now collect loyalty points and growth value, move through configurable
 
 The redemption rules (point value in currency, minimum redeemable points, maximum share of the cart, maximum wallet share) and the optional automatic customer group sync per tier are configurable. Every customer owns a wallet in the shop's default currency and a loyalty membership with a zero balance and the entry tier from the moment it is created, so a customer balance reads correctly before the first booking. The new `customer_loyalty`, `loyalty_tier`, `customer_wallet` and `customer_wallet_transaction` entities are readable through the DAL, and loyalty and wallet events are dispatched for extensions.
 
+### Alibaba Cloud OSS filesystem
+
+A filesystem can be backed by an Alibaba Cloud OSS bucket. Set its type to `aliyun-oss` and pass at least the `bucket` and the `endpoint`:
+
+```yaml
+shopwell:
+    filesystem:
+        private:
+            type: aliyun-oss
+            config:
+                bucket: my-bucket
+                endpoint: oss-cn-hangzhou.aliyuncs.com
+                root: private
+                credentials:
+                    key: '%env(OSS_ACCESS_KEY_ID)%'
+                    secret: '%env(OSS_ACCESS_KEY_SECRET)%'
+```
+
+Without `credentials` the adapter reads the `OSS_ACCESS_KEY_ID`, `OSS_ACCESS_KEY_SECRET` and `OSS_SESSION_TOKEN` environment variables. An endpoint without a scheme is contacted over https, and a bucket that is bound to a custom domain has to be marked with `is_cname: true`.
+
+Objects are stored with the ACL of the filesystem's visibility, and private objects can be served through signed temporary URLs, so the adapter fits the `private` and the `public` filesystem alike.
+
 # 6.7.17.0 (upcoming)
 
 ## Features
