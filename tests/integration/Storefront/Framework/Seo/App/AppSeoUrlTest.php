@@ -278,8 +278,10 @@ class AppSeoUrlTest extends TestCase
         static::getContainer()->get(EntityIndexerRegistry::class)->index(useQueue: false, only: [AppSeoUrlIndexer::NAME]);
         $this->runWorker();
 
+        // fetchSeoPathsByLanguage() maps the rows in `ORDER BY seo_path_info` order, and `imprint`
+        // sorts before the Chinese path under the utf8mb4 collation, so the system language comes first
         static::assertSame(
-            [$zhCnId => '法律声明', Defaults::LANGUAGE_SYSTEM => 'imprint'],
+            [Defaults::LANGUAGE_SYSTEM => 'imprint', $zhCnId => '法律声明'],
             $this->fetchSeoPathsByLanguage(self::IMPRINT_ROUTE, $salesChannelId)
         );
     }

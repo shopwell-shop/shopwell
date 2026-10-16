@@ -454,7 +454,7 @@ class CartServiceTest extends TestCase
         static::assertInstanceOf(MailSentEvent::class, $mail, 'The mail.sent Event did not run');
         $htmlText = $mail->getContents()['text/html'];
         static::assertIsString($htmlText);
-        static::assertStringContainsString('Shipping costs: €0.00', $htmlText);
+        static::assertStringContainsString('Shipping costs: CN¥0.00', $htmlText);
     }
 
     public function testCartCreatedWithGivenToken(): void
