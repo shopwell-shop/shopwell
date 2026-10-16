@@ -1175,6 +1175,7 @@
     "customer.company",
     "customer.email",
     "customer.title",
+    "customer.phoneNumber",
     "customer.vatIds",
     "customer.affiliateCode",
     "customer.campaignCode",

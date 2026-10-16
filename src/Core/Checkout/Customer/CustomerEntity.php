@@ -60,6 +60,8 @@ class CustomerEntity extends Entity implements \Stringable
 
     protected ?string $title = null;
 
+    protected ?string $phoneNumber = null;
+
     /**
      * @var array<string>|null
      */
@@ -312,6 +314,16 @@ class CustomerEntity extends Entity implements \Stringable
     public function setTitle(?string $title): void
     {
         $this->title = $title;
+    }
+
+    public function getPhoneNumber(): ?string
+    {
+        return $this->phoneNumber;
+    }
+
+    public function setPhoneNumber(?string $phoneNumber): void
+    {
+        $this->phoneNumber = $phoneNumber;
     }
 
     /**

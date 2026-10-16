@@ -214,6 +214,16 @@
                             :error="customerEmailError"
                         />
                         {% endblock %}
+
+                        {% block sw_customer_card_metadata_customer_phone_number_editor %}
+                        <mt-text-field
+                            v-if="editMode"
+                            v-model="customer.phoneNumber"
+                            name="sw-field--customer-phoneNumber"
+                            :label="$t('sw-customer.card.labelPhoneNumber')"
+                            :placeholder="$t('sw-customer.card.placeholderPhoneNumber')"
+                        />
+                        {% endblock %}
                         {% endblock %}
 
                         {% block sw_customer_card_password %}

@@ -337,6 +337,7 @@ export default {
                     property: 'defaultBillingAddress.street',
                     label: 'sw-customer.list.columnStreet',
                     allowResize: true,
+                    visible: false,
                     useCustomSort: true,
                 },
                 {
@@ -344,12 +345,14 @@ export default {
                     label: 'sw-customer.list.columnZip',
                     align: 'right',
                     allowResize: true,
+                    visible: false,
                     useCustomSort: true,
                 },
                 {
                     property: 'defaultBillingAddress.city',
                     label: 'sw-customer.list.columnCity',
                     allowResize: true,
+                    visible: false,
                     useCustomSort: true,
                 },
                 {
@@ -377,6 +380,14 @@ export default {
                     inlineEdit: 'string',
                     label: 'sw-customer.list.columnEmail',
                     allowResize: true,
+                    useCustomSort: true,
+                },
+                {
+                    property: 'phoneNumber',
+                    inlineEdit: 'string',
+                    label: 'sw-customer.list.columnPhoneNumber',
+                    allowResize: true,
+                    visible: false,
                     useCustomSort: true,
                 },
                 {

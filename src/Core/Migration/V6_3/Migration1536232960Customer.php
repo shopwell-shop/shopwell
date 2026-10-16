@@ -39,6 +39,7 @@ class Migration1536232960Customer extends MigrationStep
               `legacy_encoder` VARCHAR(255) COLLATE utf8mb4_unicode_ci NULL,
               `email` VARCHAR(254) COLLATE utf8mb4_unicode_ci NOT NULL,
               `title` VARCHAR(100) COLLATE utf8mb4_unicode_ci NULL,
+              `phone_number` VARCHAR(40) COLLATE utf8mb4_unicode_ci NULL,
               `active` TINYINT(1) NOT NULL DEFAULT 1,
               `guest` TINYINT(1) NOT NULL DEFAULT 0,
               `first_login` DATE NULL,

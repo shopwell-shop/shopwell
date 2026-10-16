@@ -75,6 +75,16 @@ describe('module/sw-customer/page/sw-customer-card', () => {
         expect(accountTypeSelect.exists()).toBeTruthy();
     });
 
+    it('should display the phone number field in edit mode', async () => {
+        const wrapper = await createWrapper();
+        await wrapper.setProps({
+            editMode: true,
+            customer,
+        });
+
+        expect(wrapper.find('[aria-label="sw-customer.card.labelPhoneNumber"]').exists()).toBeTruthy();
+    });
+
     it('should vat fields when switching to business type', async () => {
         const wrapper = await createWrapper();
         await wrapper.setProps({

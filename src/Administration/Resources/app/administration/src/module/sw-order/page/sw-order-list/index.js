@@ -444,6 +444,7 @@ export default {
                     property: 'primaryOrderDelivery.shippingOrderAddress.street',
                     label: 'sw-order.list.columnDeliveryAddress',
                     allowResize: true,
+                    visible: false,
                 },
                 {
                     property: 'amountTotal',
