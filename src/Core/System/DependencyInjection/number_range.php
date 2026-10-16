@@ -5,7 +5,7 @@ namespace Shopwell\Core\System\DependencyInjection;
 use Doctrine\DBAL\Connection;
 use Psr\Clock\ClockInterface;
 use Shopwell\Core\Framework\Adapter\Redis\RedisConnectionProvider;
-use Shopwell\Core\Framework\Telemetry\Metrics\Meter;
+use Shopwell\Core\Framework\Telemetry\Telemetry;
 use Shopwell\Core\System\NumberRange\Aggregate\NumberRangeSalesChannel\NumberRangeSalesChannelDefinition;
 use Shopwell\Core\System\NumberRange\Aggregate\NumberRangeState\NumberRangeStateDefinition;
 use Shopwell\Core\System\NumberRange\Aggregate\NumberRangeTranslation\NumberRangeTranslationDefinition;
@@ -77,7 +77,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->decorate(AbstractIncrementStorage::class)
         ->args([
             service(IncrementStorageMetricsDecorator::class . '.inner'),
-            service(Meter::class),
+            service(Telemetry::class),
             service(NumberRangeTypeResolver::class),
             param('shopwell.number_range.increment_storage'),
         ]);

@@ -7,10 +7,11 @@ use Shopwell\Core\Checkout\Cart\CartCalculator;
 use Shopwell\Core\Checkout\Cart\Error\Error;
 use Shopwell\Core\Checkout\Promotion\Cart\PromotionProcessor;
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\Framework\Telemetry\Instrumentation\ElapsedTimer;
-use Shopwell\Core\Framework\Telemetry\Metrics\Meter;
+use Shopwell\Core\Framework\Telemetry\Instrumentation\DurationMetric;
+use Shopwell\Core\Framework\Telemetry\Instrumentation\OperationResult;
+use Shopwell\Core\Framework\Telemetry\Instrumentation\Span;
 use Shopwell\Core\Framework\Telemetry\Metrics\Metric\ConfiguredMetric;
-use Shopwell\Core\Profiling\Profiler;
+use Shopwell\Core\Framework\Telemetry\Telemetry;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
 use Shopwell\Core\System\SalesChannel\Telemetry\SalesChannelTypeResolver;
 
@@ -19,10 +20,10 @@ use Shopwell\Core\System\SalesChannel\Telemetry\SalesChannelTypeResolver;
  * calculation and derives the cart calculation metrics (duration, line item count, errors) from the
  * resulting cart, keeping telemetry logic and dependencies out of the Calculator.
  *
- * Depends on `Meter` and does manually calculation by design: the duration metric's `has_promotions`
- * label is only known after the calculation, so `Telemetry::instrument()` (labels fixed up-front) can't be used.
+ * Failed calculations are timed too (`result=failed`, `has_promotions=no` as the cart is unknown);
+ * the follow-up metrics (line items, errors) only exist for completed carts.
  *
- * Merely-hot path: relies on `Meter::emit`'s inner optimizations, not compiler pass based disabling.
+ * Merely-hot path: relies on the Meter's early-return when telemetry is disabled, not compiler pass based disabling.
  *
  * @internal
  *
@@ -34,7 +35,7 @@ use Shopwell\Core\System\SalesChannel\Telemetry\SalesChannelTypeResolver;
 class CartMetricsInstrumentor
 {
     public function __construct(
-        private readonly Meter $meter,
+        private readonly Telemetry $telemetry,
         private readonly SalesChannelTypeResolver $salesChannelTypeResolver,
     ) {
     }
@@ -46,24 +47,23 @@ class CartMetricsInstrumentor
     {
         $salesChannelType = $this->salesChannelTypeResolver->resolve($context->getSalesChannel()->getTypeId());
 
-        // Manual timing rather than Telemetry::instrument(): the duration metric carries a `has_promotions` label
-        // that is only known once the cart has been (re)calculated.
-        // The `cart-calculation` profiler span also lives here.
-        $timer = ElapsedTimer::start();
-        $cart = Profiler::trace('cart-calculation', $callback);
-        $durationMs = $timer->getElapsedMs();
+        $cart = $this->telemetry->instrument(
+            $callback,
+            new DurationMetric(
+                name: 'cart.calculation.duration',
+                labels: static fn (?Cart $cart, ?\Throwable $e): array => [
+                    'sales_channel_type' => $salesChannelType,
+                    'has_promotions' => $cart !== null && $cart->getLineItems()->filterType(PromotionProcessor::LINE_ITEM_TYPE)->count() > 0 ? 'yes' : 'no',
+                    'result' => OperationResult::fromOutcome($e),
+                ],
+            ),
+            new Span('cart-calculation'),
+        );
 
-        $hasPromotions = $cart->getLineItems()->filterType(PromotionProcessor::LINE_ITEM_TYPE)->count() > 0 ? 'yes' : 'no';
-
-        $this->meter->emit(new ConfiguredMetric(
-            name: 'cart.calculation.duration',
-            value: $durationMs,
-            labels: ['sales_channel_type' => $salesChannelType, 'has_promotions' => $hasPromotions],
-        ));
         // Counts top-level cart rows, not the flattened tree: a bundle of three sub-items is 1,
         // not 4. Nested children are excluded intentionally so basket size reflects rows rather than
         // structure — revisit if counting bundle sub-items proves the more useful signal.
-        $this->meter->emit(new ConfiguredMetric(
+        $this->telemetry->emit(new ConfiguredMetric(
             name: 'cart.line_items.count',
             value: $cart->getLineItems()->count(),
             labels: ['sales_channel_type' => $salesChannelType],
@@ -94,6 +94,6 @@ class CartMetricsInstrumentor
             return;
         }
 
-        $this->meter->emit(new ConfiguredMetric(name: 'cart.errors.count', value: $count));
+        $this->telemetry->emit(new ConfiguredMetric(name: 'cart.errors.count', value: $count));
     }
 }

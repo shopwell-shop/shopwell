@@ -140,6 +140,7 @@ use Shopwell\Core\Framework\Rule\Collector\RuleConditionRegistry;
 use Shopwell\Core\Framework\Script\AppContextCreator;
 use Shopwell\Core\Framework\Telemetry\Metrics\Config\MetricConfigProvider;
 use Shopwell\Core\Framework\Telemetry\Metrics\Meter;
+use Shopwell\Core\Framework\Telemetry\Telemetry;
 use Shopwell\Core\Framework\Util\HtmlSanitizer;
 use Shopwell\Core\System\CustomField\CustomFieldService;
 use Shopwell\Core\System\Language\LanguageLoader;
@@ -881,7 +882,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(SyncMetricsInstrumentor::class)
         ->args([
-            service(Meter::class),
+            service(Telemetry::class),
             service(EntityGroupResolver::class),
         ]);
 
@@ -917,7 +918,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(IndexerMetricsInstrumentor::class)
         ->args([
-            service(Meter::class),
+            service(Telemetry::class),
         ]);
 
     $services->set(EntityIndexingSubscriber::class)

@@ -119,7 +119,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\DefinitionInstanceRegistry;
 use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Log\ExceptionLogger;
 use Shopwell\Core\Framework\Script\Execution\ScriptExecutor;
-use Shopwell\Core\Framework\Telemetry\Metrics\Meter;
+use Shopwell\Core\Framework\Telemetry\Telemetry;
 use Shopwell\Core\Framework\Validation\DataValidator;
 use Shopwell\Core\System\Locale\LanguageLocaleCodeProvider;
 use Shopwell\Core\System\SalesChannel\SalesChannel\ContextSwitchRoute;
@@ -221,7 +221,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     // Telemetry: cart calculation metrics collaborator
     $services->set(CartMetricsInstrumentor::class)
         ->args([
-            service(Meter::class),
+            service(Telemetry::class),
             service(SalesChannelTypeResolver::class),
         ]);
 
