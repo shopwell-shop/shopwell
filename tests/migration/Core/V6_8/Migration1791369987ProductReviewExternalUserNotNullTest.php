@@ -90,8 +90,7 @@ class Migration1791369987ProductReviewExternalUserNotNullTest extends TestCase
             'default_billing_address_id' => Uuid::randomBytes(),
             'default_shipping_address_id' => Uuid::randomBytes(),
             'customer_number' => 'review-migration-test',
-            'first_name' => 'Jane',
-            'last_name' => 'Doe',
+            'name' => 'Jane Doe',
             'email' => 'review-migration-test@example.com',
             'created_at' => '2026-01-01 00:00:00.000',
         ]);
@@ -104,7 +103,7 @@ class Migration1791369987ProductReviewExternalUserNotNullTest extends TestCase
         $migration->updateDestructive($this->connection);
         $migration->updateDestructive($this->connection);
 
-        static::assertSame('Jane', $this->fetchExternalUser($customerReview));
+        static::assertSame('Jane Doe', $this->fetchExternalUser($customerReview));
         static::assertSame('', $this->fetchExternalUser($guestReview));
         static::assertSame('Max', $this->fetchExternalUser($namedReview));
         static::assertTrue(TableHelper::getColumnOfTable($this->connection, 'product_review', 'external_user')->isNotNull);

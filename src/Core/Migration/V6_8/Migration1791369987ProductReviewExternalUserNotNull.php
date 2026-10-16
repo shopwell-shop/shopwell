@@ -33,7 +33,7 @@ class Migration1791369987ProductReviewExternalUserNotNull extends MigrationStep
         $connection->executeStatement(
             'UPDATE `product_review`
              LEFT JOIN `customer` ON `customer`.`id` = `product_review`.`customer_id`
-             SET `product_review`.`external_user` = COALESCE(`customer`.`first_name`, \'\')
+             SET `product_review`.`external_user` = COALESCE(`customer`.`name`, \'\')
              WHERE `product_review`.`external_user` IS NULL'
         );
 
