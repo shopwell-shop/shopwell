@@ -21,7 +21,8 @@
       "FRAMEWORK__API_SALES_CHANNEL_MAINTENANCE_MODE": "所选销售渠道处于维护模式，且你的 IP 地址不在允许列表中。请关闭维护模式，或将你的 IP 地址加入允许列表。",
       "THEME__INVALID_SCSS_VAR": "SCSS 值 \"{value}\" 对类型 \"{type}\" 无效。",
       "DOCUMENT_BASE_CONFIG_INVALID_PAYMENT_DUE_DATE": "付款期限必须是相对日期，例如 \"+14 days\"。",
-      "INVALID_GARAN_GUARANTEE_MONTHS": "保修时长须为空，或为 30 到 600 个月之间的半年数，例如 30、36 或 42。"
+      "INVALID_GARAN_GUARANTEE_MONTHS": "保修时长须为空，或为 30 到 600 个月之间的半年数，例如 30、36 或 42。",
+      "INVALID_GARAN_GUARANTEE_TERMS_URL": "质保条款 URL 须以 http:// 或 https:// 开头。"
     },
     "default": {
       "add": "添加",
@@ -817,6 +818,7 @@
         "lineItemTotalPriceRule": "项目总额（数量 × 价格）",
         "lineItemWithQuantityRule": "带数量的项目",
         "lineItemPerItemQuantityRule": "每件项目的数量",
+        "orderDaysSincePlacedRule": "下单后经过的时间",
         "orderTagRule": "带标签的订单",
         "orderTrackingCodeRule": "包裹单号",
         "orderDeliveryStatusRule": "配送状态",

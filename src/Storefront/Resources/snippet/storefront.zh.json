@@ -626,6 +626,9 @@
   "detail": {
     "garanLabelShowLink": "显示 GARAN 标识",
     "garanLabelHideLink": "隐藏 GARAN 标识",
+    "garanLabelTitle": "GARAN 标识",
+    "garanLabelYourEuropeLink": "在 Your Europe 上了解耐用性质保（GARAN）的相关信息（在新标签页中打开）",
+    "garanTermsLink": "质保条款",
     "ordernumberLabel": "商品编号：",
     "productNumberLabel": "商品编号：",
     "addProduct": "加入购物车",
