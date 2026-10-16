@@ -7,13 +7,16 @@ use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Content\Media\Event\UnusedMediaSearchEvent;
 use Shopwell\Core\Content\Media\MediaCollection;
 use Shopwell\Core\Content\Media\UnusedMediaPurger;
+use Shopwell\Core\Content\Product\Aggregate\ProductDownload\ProductDownloadDefinition;
 use Shopwell\Core\Content\Test\Media\MediaFixtures;
+use Shopwell\Core\Defaults;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopwell\Core\Framework\Test\TestCaseBase\QueueTestBehaviour;
+use Shopwell\Core\Framework\Uuid\Uuid;
 use Symfony\Component\Clock\NativeClock;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 
@@ -248,5 +251,71 @@ class UnusedMediaPurgerTest extends TestCase
 
         static::assertTrue($this->getPublicFilesystem()->has($usedPath));
         static::assertFalse($this->getPublicFilesystem()->has($unusedPath));
+    }
+
+    public function testDeleteNotUsedMediaWithFolderEntityKeepsMediaUsedByAnotherEntity(): void
+    {
+        $connection = static::getContainer()->get(Connection::class);
+        static::assertInstanceOf(Connection::class, $connection);
+
+        $downloadFolderId = $connection->fetchOne(
+            'SELECT LOWER(HEX(media_folder.id)) FROM media_default_folder
+             INNER JOIN media_folder ON media_default_folder.id = media_folder.default_folder_id
+             WHERE entity = :entity',
+            ['entity' => ProductDownloadDefinition::ENTITY_NAME]
+        );
+        static::assertIsString($downloadFolderId);
+
+        $usedByProduct = Uuid::randomHex();
+        $unused = Uuid::randomHex();
+
+        $this->mediaRepo->create([
+            $this->mediaPayload($usedByProduct, $downloadFolderId),
+            $this->mediaPayload($unused, $downloadFolderId),
+        ], $this->context);
+
+        static::getContainer()->get('product.repository')->create([[
+            'id' => Uuid::randomHex(),
+            'productNumber' => 'product-' . $usedByProduct,
+            'name' => 'product using download folder media as image',
+            'stock' => 1,
+            'tax' => ['name' => 'test tax', 'taxRate' => 19],
+            'price' => [['currencyId' => Defaults::CURRENCY, 'gross' => 10, 'net' => 9, 'linked' => false]],
+            'media' => [['mediaId' => $usedByProduct, 'position' => 1]],
+        ]], $this->context);
+
+        $purger = new UnusedMediaPurger(
+            $this->mediaRepo,
+            $connection,
+            new EventDispatcher(),
+            new NativeClock()
+        );
+
+        $purger->deleteNotUsedMedia(folderEntity: ProductDownloadDefinition::ENTITY_NAME);
+        $this->runWorker();
+
+        $result = $this->mediaRepo->search(new Criteria([$usedByProduct, $unused]), $this->context)->getEntities();
+
+        static::assertNotNull(
+            $result->get($usedByProduct),
+            'media inside the product download folder must not be deleted while a product still references it as an image'
+        );
+        static::assertNull($result->get($unused));
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function mediaPayload(string $id, string $mediaFolderId): array
+    {
+        return [
+            'id' => $id,
+            'fileName' => 'media-' . $id,
+            'fileExtension' => 'png',
+            'mimeType' => 'image/png',
+            'fileSize' => 1024,
+            'private' => false,
+            'mediaFolderId' => $mediaFolderId,
+        ];
     }
 }

@@ -26,6 +26,7 @@ use Shopwell\Core\Framework\Test\TestCaseBase\SalesChannelApiTestBehaviour;
 use Shopwell\Core\System\SalesChannel\Context\AbstractSalesChannelContextFactory;
 use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextFactory;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+use Shopwell\Core\Test\Integration\EventDispatcher\EventHookDispatcher;
 use Shopwell\Core\Test\Stub\Framework\IdsCollection;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 
@@ -166,14 +167,9 @@ class CartLoadRouteTest extends TestCase
             $loadedCarts[] = $event->getCart()->getToken();
         };
 
-        $dispatcher = static::getContainer()->get('event_dispatcher');
-        $dispatcher->addListener(CartLoadedEvent::class, $tracker);
+        EventHookDispatcher::fromContainer(static::getContainer())->on(CartLoadedEvent::class, $tracker);
 
-        try {
-            $this->browser->request('GET', '/store-api/checkout/cart');
-        } finally {
-            $dispatcher->removeListener(CartLoadedEvent::class, $tracker);
-        }
+        $this->browser->request('GET', '/store-api/checkout/cart');
 
         static::assertSame([$this->ids->get('token')], $loadedCarts);
 

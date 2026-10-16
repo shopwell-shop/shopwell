@@ -8,6 +8,7 @@ use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Content\Product\Aggregate\ProductReview\ProductReviewCollection;
 use Shopwell\Core\Content\Product\Aggregate\ProductReview\ProductReviewEntity;
 use Shopwell\Core\Content\Product\SalesChannel\FindVariant\FindProductVariantRoute;
+use Shopwell\Core\Content\Product\SalesChannel\Garan\AbstractGaranLabelRoute;
 use Shopwell\Core\Content\Product\SalesChannel\PurchaseLimit\AbstractProductPurchaseLimitRoute;
 use Shopwell\Core\Content\Product\SalesChannel\Review\AbstractProductReviewSaveRoute;
 use Shopwell\Core\Content\Product\SalesChannel\Review\ProductReviewLoader;
@@ -50,6 +51,7 @@ class ProductReviewsWidgetLoadedHookTest extends TestCase
             static::createStub(SeoUrlPlaceholderHandlerInterface::class),
             $this->productReviewLoaderMock,
             static::createStub(AbstractProductPurchaseLimitRoute::class),
+            static::createStub(AbstractGaranLabelRoute::class),
         );
     }
 

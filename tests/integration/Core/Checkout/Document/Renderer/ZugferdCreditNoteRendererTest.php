@@ -159,7 +159,7 @@ class ZugferdCreditNoteRendererTest extends TestCase
             new DocumentRendererConfig(),
         );
 
-        static::assertEmpty($result->getErrors());
+        static::assertCount(0, $result->getErrors());
 
         $renderedDocument = $result->getSuccess()[$orderId] ?? null;
         static::assertInstanceOf(RenderedDocument::class, $renderedDocument);

@@ -38,7 +38,7 @@ use Shopwell\Core\System\Snippet\Service\TranslationLoader;
 use Shopwell\Core\System\Snippet\SnippetDefinition;
 use Shopwell\Core\System\Snippet\Struct\TranslationConfig;
 use Shopwell\Core\Test\Stub\DataAbstractionLayer\StaticEntityRepository;
-use Shopwell\Tests\Unit\Administration\Snippet\SnippetFileTrait;
+use Shopwell\Tests\Unit\Administration\Snippet\SnippetFixture;
 use Shopwell\Tests\Unit\Core\System\Snippet\Files\_fixtures\BaseSnippetSet\BaseSnippetSet;
 use Shopwell\Tests\Unit\Core\System\Snippet\Files\_fixtures\ShopwellBundleWithSnippets\ShopwellBundleWithSnippets;
 use Shopwell\Tests\Unit\Core\System\Snippet\Files\_fixtures\SnippetSet\SnippetSet;
@@ -53,8 +53,6 @@ use Symfony\Component\Filesystem\Path;
 #[CoversClass(SnippetFileLoader::class)]
 class SnippetFileLoaderTest extends TestCase
 {
-    use SnippetFileTrait;
-
     private TranslationConfig $config;
 
     private Filesystem $filesystem;
@@ -369,7 +367,7 @@ class SnippetFileLoaderTest extends TestCase
     public function testLoadInstalledCoreAndPluginSnippets(): void
     {
         $loader = $this->getTranslationLoader();
-        $this->createSnippetFixtures($this->filesystem, $loader);
+        SnippetFixture::createSnippetFixtures($this->filesystem, $loader);
 
         $path = __DIR__ . '/_fixtures/activePlugin';
 
@@ -541,7 +539,7 @@ class SnippetFileLoaderTest extends TestCase
     public function testLoadSkipsExcludedLocales(): void
     {
         $loader = $this->getTranslationLoader();
-        $this->createSnippetFixtures($this->filesystem, $loader);
+        SnippetFixture::createSnippetFixtures($this->filesystem, $loader);
 
         $path = __DIR__ . '/_fixtures/activePlugin';
 
@@ -581,7 +579,7 @@ class SnippetFileLoaderTest extends TestCase
         $snippetFileLoader->loadSnippetFilesIntoCollection($collection);
 
         $files = $collection->getElements();
-        static::assertEmpty($files);
+        static::assertCount(0, $files);
     }
 
     public function testLoadShippedSnippetsSkipsLocalFileOnlyForLocaleWithCoreTranslation(): void

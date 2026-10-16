@@ -4,7 +4,6 @@ namespace Shopwell\Tests\Unit\Core\Framework\App\Payment\Response;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
-use Shopwell\Core\Framework\App\Payment\Response\AbstractResponse;
 use Shopwell\Core\Framework\App\Payment\Response\ValidateResponse;
 use Shopwell\Core\Framework\Log\Package;
 
@@ -13,7 +12,6 @@ use Shopwell\Core\Framework\Log\Package;
  */
 #[Package('checkout')]
 #[CoversClass(ValidateResponse::class)]
-#[CoversClass(AbstractResponse::class)]
 class ValidateResponseTest extends TestCase
 {
     public function testEmpty(): void

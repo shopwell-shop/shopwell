@@ -79,7 +79,7 @@ export default {
             type: String,
             required: false,
             default() {
-                return Shopwell.Snippet.tc('global.entity-components.placeholderToManyAssociationCard');
+                return Shopwell.Snippet.t('global.entity-components.placeholderToManyAssociationCard');
             },
         },
 

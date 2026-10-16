@@ -2,11 +2,12 @@
 
 namespace Shopwell\Core\Framework\Store\Exception;
 
+use Shopwell\Core\Framework\Feature;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\ShopwellHttpException;
 
 /**
- * @deprecated tag:v6.8.0 - reason:remove-exception - Will be removed with the next major as it is unused
+ * @deprecated tag:v6.8.0 - Will be removed with the next major as it is unused
  */
 #[Package('checkout')]
 class LicenseDomainVerificationException extends ShopwellHttpException
@@ -15,6 +16,8 @@ class LicenseDomainVerificationException extends ShopwellHttpException
         string $domain,
         string $reason = ''
     ) {
+        Feature::throwIfActive('v6.8.0.0', Feature::deprecatedClassMessage(self::class, 'v6.8.0.0'));
+
         $reason = $reason ? (' ' . $reason) : '';
         $message = 'License host verification failed for domain "{{ domain }}.{{ reason }}"';
         parent::__construct($message, ['domain' => $domain, 'reason' => $reason]);

@@ -35,7 +35,7 @@ class CountryRegionDataPageletLoadedHookTest extends TestCase
 
     public function testExposesThePageLoadedServices(): void
     {
-        static::assertNotEmpty(CountryRegionDataPageletLoadedHook::getServiceIds());
+        static::assertNotSame([], CountryRegionDataPageletLoadedHook::getServiceIds());
     }
 
     public function testCarriesSalesChannelContext(): void

@@ -15,12 +15,12 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Write\EntityWriteGatewayInterface;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Struct\Serializer\StructNormalizer;
-use Shopwell\Core\Framework\Test\Api\Serializer\AssertValuesTrait;
 use Shopwell\Core\Framework\Test\DataAbstractionLayer\Field\TestDefinition\AssociationExtension;
 use Shopwell\Core\Framework\Test\DataAbstractionLayer\Field\TestDefinition\ExtendableDefinition;
 use Shopwell\Core\Framework\Test\DataAbstractionLayer\Field\TestDefinition\ExtendedDefinition;
 use Shopwell\Core\Framework\Test\DataAbstractionLayer\Field\TestDefinition\ScalarRuntimeExtension;
 use Shopwell\Core\System\User\UserDefinition;
+use Shopwell\Core\Test\Assert\ArrayValues;
 use Shopwell\Core\Test\Stub\DataAbstractionLayer\StaticDefinitionInstanceRegistry;
 use Shopwell\Tests\Integration\Core\Framework\Api\Serializer\fixtures\SerializationFixture;
 use Shopwell\Tests\Integration\Core\Framework\Api\Serializer\fixtures\TestBasicStruct;
@@ -38,8 +38,6 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
 #[CoversClass(JsonEntityEncoder::class)]
 class JsonSalesChannelEntityEncoderTest extends TestCase
 {
-    use AssertValuesTrait;
-
     private DefinitionInstanceRegistry $definitionRegistry;
 
     protected function setUp(): void
@@ -114,7 +112,7 @@ class JsonSalesChannelEntityEncoderTest extends TestCase
             SerializationFixture::SALES_CHANNEL_API_BASE_URL
         );
 
-        $this->assertValues($fixture->getSalesChannelJsonFixtures(), $actual);
+        ArrayValues::assertValues($fixture->getSalesChannelJsonFixtures(), $actual);
     }
 
     public function testEncodeStructWithExtension(): void
@@ -131,7 +129,7 @@ class JsonSalesChannelEntityEncoderTest extends TestCase
         );
         unset($actual['apiAlias']);
 
-        $this->assertValues($fixture->getSalesChannelJsonFixtures(), $actual);
+        ArrayValues::assertValues($fixture->getSalesChannelJsonFixtures(), $actual);
     }
 
     public function testEncodeStructWithToManyExtension(): void
@@ -148,7 +146,7 @@ class JsonSalesChannelEntityEncoderTest extends TestCase
         );
         unset($actual['apiAlias']);
 
-        $this->assertValues($fixture->getSalesChannelJsonFixtures(), $actual);
+        ArrayValues::assertValues($fixture->getSalesChannelJsonFixtures(), $actual);
     }
 
     private function createExtendableDefinitionWithExtensions(bool $includeScalarRuntimeExtension = true): ExtendableDefinition

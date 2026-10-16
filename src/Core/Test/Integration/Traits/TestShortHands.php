@@ -21,6 +21,7 @@ use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextFactory;
 use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextService;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
 use Shopwell\Core\Test\Integration\Builder\Customer\CustomerBuilder;
+use Shopwell\Core\Test\Integration\EventDispatcher\EventHookDispatcher;
 use Shopwell\Core\Test\Integration\Helper\MailEventListener;
 use Shopwell\Core\Test\Stub\Framework\IdsCollection;
 use Shopwell\Core\Test\TestDefaults;
@@ -149,13 +150,11 @@ trait TestShortHands
 
         $listener = new MailEventListener($mapping);
 
-        $dispatcher = static::getContainer()->get('event_dispatcher');
-
-        $dispatcher->addListener(FlowSendMailActionEvent::class, $listener);
+        EventHookDispatcher::fromContainer(static::getContainer())->on(FlowSendMailActionEvent::class, $listener);
 
         $result = $closure($listener);
 
-        $dispatcher->removeListener(FlowSendMailActionEvent::class, $listener);
+        EventHookDispatcher::fromContainer(static::getContainer())->off(FlowSendMailActionEvent::class, $listener);
 
         return $result;
     }

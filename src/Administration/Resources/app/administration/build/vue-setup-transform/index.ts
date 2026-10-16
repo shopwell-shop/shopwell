@@ -12,17 +12,13 @@
  */
 
 import { lowerShopwellSetupBlock } from './lower';
-import { analyzeShopwellSetupScript, type ShopwellSetupScriptAnalysis } from './script-analyzer';
+import { analyzeShopwellSetupScript } from './script-analyzer';
 import { applySourceEdits, type AppliedSourceEdits } from './source-edits/apply-source-edits';
-import {
-    analyzeBaseTemplate,
-    analyzeOverrideTemplate,
-    emptyTemplateAnalysis,
-    type TemplateAnalysis,
-} from './template-analyzer';
+import { analyzeBaseTemplate, analyzeOverrideTemplate } from './template-analyzer';
 import { parseShopwellSetupSfc } from './sfc-parser';
 import type { ShopwellSetupBlock } from './utils/shopwell-setup-block';
-import { ShopwellSetupTransformError } from './utils/transform-error';
+import { ShopwellSetupInternalError, ShopwellSetupTransformError } from './utils/transform-error';
+import { resolveErrorSource } from './utils/error-source';
 
 type ShopwellSetupTransformResult = {
     code: string;
@@ -39,57 +35,61 @@ type ShopwellSetupTransformResult = {
 };
 
 /**
- * Moves block-relative analyzer errors to the start of the original script body.
+ * Resolves the error's absolute offset against the original SFC. A position-less error is anchored
+ * to the script block so Vite and Jest still land in the right file region.
  */
-function withBlockOffset(error: unknown, block: ShopwellSetupBlock): unknown {
-    if (!(error instanceof ShopwellSetupTransformError) || error.index !== null) {
+function withAuthorLocation(error: unknown, source: string, filename: string, block: ShopwellSetupBlock | null): unknown {
+    if (!(error instanceof ShopwellSetupTransformError)) {
         return error;
     }
 
-    return new ShopwellSetupTransformError(error.message, block.contentStart);
+    const diagnostic = resolveErrorSource(source, filename, error.index ?? block?.contentStart ?? 0, error.endIndex);
+    error.loc = diagnostic.loc;
+    // Vite may catch this in the importer; supply the frame so it cannot highlight that file instead.
+    error.frame = diagnostic.frame;
+
+    return error;
 }
 
 /**
  * Converts a Shopwell setup SFC into plain Vue-compatible code before Vue compiles it.
  */
 function transformShopwellSetupSfc(source: string, filename = 'anonymous.vue'): ShopwellSetupTransformResult | null {
-    const block = parseShopwellSetupSfc(source, filename);
-
-    if (!block) {
-        return null;
-    }
-
-    let analysis: ShopwellSetupScriptAnalysis;
-    let edits: ReturnType<typeof lowerShopwellSetupBlock>;
-    let templateAnalysis: TemplateAnalysis = emptyTemplateAnalysis();
+    let block: ShopwellSetupBlock | null = null;
 
     try {
-        analysis = analyzeShopwellSetupScript(block.content, {
+        block = parseShopwellSetupSfc(source, filename);
+
+        if (!block) {
+            return null;
+        }
+
+        const analysis = analyzeShopwellSetupScript(block.content, {
             mode: block.mode,
             lang: block.lang,
             scriptOffset: block.contentStart,
         });
-        templateAnalysis = analysis.mode === 'base' ? analyzeBaseTemplate(block) : analyzeOverrideTemplate(block, analysis);
+        const templateAnalysis =
+            analysis.mode === 'base' ? analyzeBaseTemplate(block) : analyzeOverrideTemplate(block, analysis);
 
-        edits = lowerShopwellSetupBlock(block, analysis, templateAnalysis);
+        const edits = lowerShopwellSetupBlock(block, analysis, templateAnalysis);
+        const transformed = applySourceEdits(source, filename, edits);
+
+        return {
+            code: transformed.code,
+            map: transformed.map,
+            mode: block.mode,
+            // Exposed so the build integration can maintain a per-compilation registry and reject two
+            // SFCs that resolve to the same extendable component name. Cross-file enforcement lives with
+            // the loader/compilation layer; this transform stays a pure per-file step.
+            componentName: block.componentName,
+            filename,
+            ownedBlockNames: templateAnalysis.ownedBlockNames,
+            extendedBlockNames: templateAnalysis.extendedBlockNames,
+        };
     } catch (error) {
-        throw withBlockOffset(error, block);
+        throw withAuthorLocation(error, source, filename, block);
     }
-
-    const transformed = applySourceEdits(source, filename, edits);
-
-    return {
-        code: transformed.code,
-        map: transformed.map,
-        mode: block.mode,
-        // Exposed so the build integration can maintain a per-compilation registry and reject two
-        // SFCs that resolve to the same extendable component name. Cross-file enforcement lives with
-        // the loader/compilation layer; this transform stays a pure per-file step.
-        componentName: block.componentName,
-        filename,
-        ownedBlockNames: templateAnalysis.ownedBlockNames,
-        extendedBlockNames: templateAnalysis.extendedBlockNames,
-    };
 }
 
 /**
@@ -104,6 +104,7 @@ function validateShopwellSetupSfc(source: string, filename = 'anonymous.vue'): v
  */
 export {
     type ShopwellSetupTransformResult,
+    ShopwellSetupInternalError,
     ShopwellSetupTransformError,
     transformShopwellSetupSfc,
     validateShopwellSetupSfc,

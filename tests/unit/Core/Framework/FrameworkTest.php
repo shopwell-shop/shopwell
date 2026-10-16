@@ -15,6 +15,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\DefinitionInstanceRegistry;
 use Shopwell\Core\Framework\DependencyInjection\CompilerPass\EntityCompilerPass;
 use Shopwell\Core\Framework\DependencyInjection\CompilerPass\FeatureFlagCompilerPass;
 use Shopwell\Core\Framework\DependencyInjection\CompilerPass\McpToolDiscoveryCompilerPass;
+use Shopwell\Core\Framework\DependencyInjection\CompilerPass\McpToolResultCacheCompilerPass;
 use Shopwell\Core\Framework\Feature;
 use Shopwell\Core\Framework\Feature\FeatureFlagRegistry;
 use Shopwell\Core\Framework\Framework;
@@ -56,6 +57,7 @@ class FrameworkTest extends TestCase
         static::assertNotCount(0, array_filter($passes, static fn ($pass) => $pass instanceof FeatureFlagCompilerPass));
         static::assertNotCount(0, array_filter($passes, static fn ($pass) => $pass instanceof EntityCompilerPass));
         static::assertNotCount(0, array_filter($passes, static fn ($pass) => $pass instanceof McpToolDiscoveryCompilerPass));
+        static::assertNotCount(0, array_filter($passes, static fn ($pass) => $pass instanceof McpToolResultCacheCompilerPass), 'only this pass wires the tool-result cache into MCP tools');
 
         static::assertFalse($container->hasDefinition(AclTestController::class));
         static::assertCount(0, array_filter($passes, static fn ($pass) => $pass instanceof DisableRateLimiterCompilerPass));

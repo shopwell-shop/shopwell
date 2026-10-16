@@ -34,6 +34,7 @@ use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextPersister;
 use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextService;
 use Shopwell\Core\System\SalesChannel\SalesChannelCollection;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+use Shopwell\Core\Test\Integration\EventDispatcher\EventHookDispatcher;
 use Shopwell\Core\Test\Integration\Helper\MailEventListener;
 use Shopwell\Core\Test\Integration\Traits\Promotion\PromotionTestFixtureBehaviour;
 use Shopwell\Core\Test\Stub\Framework\IdsCollection;
@@ -1605,15 +1606,9 @@ class SalesChannelProxyControllerTest extends TestCase
             ->fetchAllKeyValue('SELECT LOWER(HEX(id)), technical_name FROM mail_template_type');
 
         $listener = new MailEventListener($mapping);
-        $dispatcher = static::getContainer()->get('event_dispatcher');
+        EventHookDispatcher::fromContainer(static::getContainer())->on(FlowSendMailActionEvent::class, $listener);
 
-        $dispatcher->addListener(FlowSendMailActionEvent::class, $listener);
-
-        try {
-            return $closure($listener);
-        } finally {
-            $dispatcher->removeListener(FlowSendMailActionEvent::class, $listener);
-        }
+        return $closure($listener);
     }
 
     private function createShippingMethod(): string

@@ -13,10 +13,12 @@ use Shopwell\Core\Checkout\Cart\Rule\LineItemProductStatesRule;
 use Shopwell\Core\Checkout\Cart\Rule\LineItemScope;
 use Shopwell\Core\Checkout\CheckoutRuleScope;
 use Shopwell\Core\Content\Product\State;
+use Shopwell\Core\Framework\Feature\FeatureException;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Rule\Rule;
 use Shopwell\Core\Framework\Rule\RuleConfig;
 use Shopwell\Core\Framework\Rule\RuleConstraints;
+use Shopwell\Core\Framework\Rule\RuleScope;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
 use Shopwell\Core\Test\Annotation\DisabledFeatures;
@@ -26,7 +28,6 @@ use Shopwell\Core\Test\Annotation\DisabledFeatures;
  */
 #[Package('fundamentals@after-sales')]
 #[CoversClass(LineItemProductStatesRule::class)]
-#[DisabledFeatures(['v6.8.0.0'])]
 class LineItemProductStatesRuleTest extends TestCase
 {
     private LineItemProductStatesRule $rule;
@@ -36,11 +37,35 @@ class LineItemProductStatesRuleTest extends TestCase
         $this->rule = new LineItemProductStatesRule();
     }
 
+    public function testConfigIsAbsentInMajorMode(): void
+    {
+        static::assertNull($this->rule->getConfig());
+    }
+
+    /**
+     * @deprecated tag:v6.8.0 - Remove with the major feature flag.
+     */
+    public function testMatchingThrowsInMajorMode(): void
+    {
+        $this->expectException(FeatureException::class);
+        $this->rule->match(static::createStub(RuleScope::class));
+    }
+
+    /**
+     * @deprecated tag:v6.8.0 - Remove with the major feature flag.
+     */
+    public function testConstraintsThrowInMajorMode(): void
+    {
+        $this->expectException(FeatureException::class);
+        $this->rule->getConstraints();
+    }
+
     public function testGetName(): void
     {
         static::assertSame('cartLineItemProductStates', $this->rule->getName());
     }
 
+    #[DisabledFeatures(['v6.8.0.0'])]
     public function testConstraints(): void
     {
         $constraints = $this->rule->getConstraints();
@@ -54,9 +79,11 @@ class LineItemProductStatesRuleTest extends TestCase
         static::assertEquals(RuleConstraints::stringOperators(false), $constraints['operator']);
     }
 
+    #[DisabledFeatures(['v6.8.0.0'])]
     public function testConfig(): void
     {
         $config = $this->rule->getConfig();
+        static::assertNotNull($config);
         $expected = (new RuleConfig())
             ->operatorSet(RuleConfig::OPERATOR_SET_STRING, false, true)
             ->selectField('productState', [
@@ -71,6 +98,7 @@ class LineItemProductStatesRuleTest extends TestCase
      * @param array<int, string> $states
      */
     #[DataProvider('caseDataProvider')]
+    #[DisabledFeatures(['v6.8.0.0'])]
     public function testMatchesWithLineItemScope(
         array $states,
         string $operator,
@@ -94,6 +122,7 @@ class LineItemProductStatesRuleTest extends TestCase
      * @param array<int, string> $states
      */
     #[DataProvider('caseDataProvider')]
+    #[DisabledFeatures(['v6.8.0.0'])]
     public function testMatchesWithCartRuleScope(
         array $states,
         string $operator,
@@ -120,6 +149,7 @@ class LineItemProductStatesRuleTest extends TestCase
         static::assertSame($expected, $match);
     }
 
+    #[DisabledFeatures(['v6.8.0.0'])]
     public function testNotMatchingWithIncorrectScope(): void
     {
         $this->rule->assign([

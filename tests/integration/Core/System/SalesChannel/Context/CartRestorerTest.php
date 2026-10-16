@@ -30,6 +30,7 @@ use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextPersister;
 use Shopwell\Core\System\SalesChannel\Event\SalesChannelContextRestoredEvent;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
 use Shopwell\Core\Test\Integration\Builder\Promotion\PromotionFixtureBuilder;
+use Shopwell\Core\Test\Integration\EventDispatcher\EventHookDispatcher;
 use Shopwell\Core\Test\Integration\Traits\Promotion\PromotionIntegrationTestBehaviour;
 use Shopwell\Core\Test\TestDefaults;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
@@ -116,7 +117,7 @@ class CartRestorerTest extends TestCase
         $this->contextPersister->save($currentContextToken, [], $currentContext->getSalesChannelId());
         $this->contextPersister->save($guestToken, [], $guestContext->getSalesChannelId());
 
-        $this->eventDispatcher->addListener(SalesChannelContextRestoredEvent::class, $this->callbackFn);
+        EventHookDispatcher::fromContainer(static::getContainer())->on(SalesChannelContextRestoredEvent::class, $this->callbackFn);
 
         $productLineItem1 = $this->createLineItem($currentContext, 2);
         $productLineItem2 = $this->createLineItem($currentContext, 3);
@@ -205,7 +206,7 @@ class CartRestorerTest extends TestCase
         $formerContext = $this->createSalesChannelContext('formerToken');
         $currentContext = $this->createSalesChannelContext('currentToken');
 
-        $this->eventDispatcher->addListener(SalesChannelContextRestoredEvent::class, $this->callbackFn);
+        EventHookDispatcher::fromContainer(static::getContainer())->on(SalesChannelContextRestoredEvent::class, $this->callbackFn);
 
         $restoredContext = $this->cartRestorer->restoreByToken($formerContext->getToken(), $this->customerId, $currentContext);
 
@@ -322,7 +323,7 @@ class CartRestorerTest extends TestCase
 
         $this->contextPersister->save($expectedContext->getToken(), [], $currentContext->getSalesChannelId(), $this->customerId);
 
-        $this->eventDispatcher->addListener(SalesChannelContextRestoredEvent::class, $this->callbackFn);
+        EventHookDispatcher::fromContainer(static::getContainer())->on(SalesChannelContextRestoredEvent::class, $this->callbackFn);
 
         $restoredContext = $this->cartRestorer->restore($this->customerId, $currentContext);
 
@@ -454,7 +455,7 @@ class CartRestorerTest extends TestCase
             'id' => $productLineItem3->getReferencedId(),
         ]], $customerContext->getContext());
 
-        $this->eventDispatcher->addListener(CartMergedEvent::class, $this->callbackFn);
+        EventHookDispatcher::fromContainer(static::getContainer())->on(CartMergedEvent::class, $this->callbackFn);
 
         $restoreContext = $this->cartRestorer->restore($this->customerId, $currentContext);
 
@@ -504,8 +505,8 @@ class CartRestorerTest extends TestCase
         $customerCart = new Cart($customerToken);
         $this->cartPersister->save($customerCart, $customerContext);
 
-        $this->eventDispatcher->addListener(BeforeCartMergeEvent::class, $this->callbackFn);
-        $this->eventDispatcher->addListener(CartMergedEvent::class, $this->callbackFn);
+        EventHookDispatcher::fromContainer(static::getContainer())->on(BeforeCartMergeEvent::class, $this->callbackFn);
+        EventHookDispatcher::fromContainer(static::getContainer())->on(CartMergedEvent::class, $this->callbackFn);
 
         $restoreContext = $this->cartRestorer->restore($this->customerId, $currentContext);
 

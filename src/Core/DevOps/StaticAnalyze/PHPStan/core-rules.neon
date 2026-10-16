@@ -45,12 +45,20 @@ rules:
 
 services:
     -
+        class: Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\Deprecation\DeprecatedExceptionPattern
+
+    -
+        class: Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\Deprecation\DeprecatedFrameworkMethodPattern
+
+    -
         class: Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\Deprecation\DeprecatedServiceDecoratorPattern
 
     -
         class: Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\Deprecation\DeprecatedMethodsThrowDeprecationRule
         arguments:
             deprecationPatterns:
+                - @Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\Deprecation\DeprecatedExceptionPattern
+                - @Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\Deprecation\DeprecatedFrameworkMethodPattern
                 - @Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\Deprecation\DeprecatedServiceDecoratorPattern
         tags:
             - phpstan.rules.rule

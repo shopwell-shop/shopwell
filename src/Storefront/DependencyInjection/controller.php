@@ -45,6 +45,7 @@ use Shopwell\Core\Content\Newsletter\SalesChannel\NewsletterSubscribeRoute;
 use Shopwell\Core\Content\Newsletter\SalesChannel\NewsletterUnsubscribeRoute;
 use Shopwell\Core\Content\Product\SalesChannel\Detail\ProductDetailRoute;
 use Shopwell\Core\Content\Product\SalesChannel\FindVariant\FindProductVariantRoute;
+use Shopwell\Core\Content\Product\SalesChannel\Garan\GaranLabelRoute;
 use Shopwell\Core\Content\Product\SalesChannel\Listing\ProductListingRoute;
 use Shopwell\Core\Content\Product\SalesChannel\ProductListRoute;
 use Shopwell\Core\Content\Product\SalesChannel\PurchaseLimit\ProductPurchaseLimitRoute;
@@ -338,6 +339,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(SeoUrlPlaceholderHandlerInterface::class),
             service(ProductReviewLoader::class),
             service(ProductPurchaseLimitRoute::class),
+            service(GaranLabelRoute::class),
         ])
         ->call('setContainer', [service('service_container')]);
 

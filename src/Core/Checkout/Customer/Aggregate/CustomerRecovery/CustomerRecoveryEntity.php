@@ -7,9 +7,6 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Entity;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityIdTrait;
 use Shopwell\Core\Framework\Log\Package;
 
-/**
- * @codeCoverageIgnore
- */
 #[Package('checkout')]
 class CustomerRecoveryEntity extends Entity
 {
@@ -33,6 +30,8 @@ class CustomerRecoveryEntity extends Entity
 
     public function getHash(): string
     {
+        $this->checkIfPropertyAccessIsAllowed('hash');
+
         return $this->hash;
     }
 

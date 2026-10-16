@@ -2,16 +2,16 @@
     "name": "{{ composerName }}",
     "description": "{{ composerName }}",
     "type": "shopwell-platform-plugin",
-    "version": "1.0.0",
-    "license": "MIT",
+    "version": "0.1.0",
+    "license": "proprietary",
     "require": {
         "shopwell/core": "~6.7.0"
     },
     "extra": {
         "shopwell-plugin-class": "{{ namespace }}\\{{ className }}",
         "label": {
-            "zh-CN": "骨架插件",
-            "en-GB": "Skeleton plugin"
+            "zh-CN": "{{ className }}",
+            "en-GB": "{{ className }}"
         }
     },
     "autoload": {

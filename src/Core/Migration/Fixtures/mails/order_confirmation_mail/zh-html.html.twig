@@ -83,6 +83,9 @@
                                     {% else %}
                                         GARAN 标识：{{ garanLabel.duration }} 年商业耐久性保证
                                     {% endif %}
+                                    {% if garanLabel.termsUrl %}
+                                        <div><a href="{{ garanLabel.termsUrl }}" target="_blank">质保条款</a></div>
+                                    {% endif %}
                                 </div>
                             {% endif %}
                         {% endif %}

@@ -94,7 +94,8 @@
         "labelKeywords": "关键词",
         "placeholderMetaTitle": "输入 Meta 标题…",
         "placeholderMetaDescription": "输入描述...",
-        "placeholderKeywords": "输入一个或多个关键词..."
+        "placeholderKeywords": "输入一个或多个关键词...",
+        "recommendedLength": "建议：最多 {max} 个字符（已使用 {count} 个）"
       },
       "menu": {
         "title": "菜单设置",

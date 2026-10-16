@@ -10,6 +10,7 @@ use Shopwell\Core\Framework\Test\TestCaseBase\DatabaseTransactionBehaviour;
 use Shopwell\Core\Framework\Test\TestCaseBase\KernelTestBehaviour;
 use Shopwell\Core\Framework\Test\TestCaseBase\RequestStackTestBehaviour;
 use Shopwell\Core\Framework\Test\TestCaseBase\SessionTestBehaviour;
+use Shopwell\Core\Test\Integration\EventDispatcher\EventHookDispatcher;
 use Shopwell\Storefront\Event\StorefrontRenderEvent;
 use Shopwell\Storefront\Page\Navigation\NavigationPage;
 use Shopwell\Storefront\Test\Controller\StorefrontControllerTestBehaviour;
@@ -29,10 +30,10 @@ class StorefrontRoutingTest extends TestCase
 
     public function testForwardFromAddPromotionToHomePage(): void
     {
-        $this->addEventListener(
-            static::getContainer()->get('event_dispatcher'),
+        $renderedParameters = [];
+        EventHookDispatcher::fromContainer(static::getContainer())->on(
             StorefrontRenderEvent::class,
-            static function (StorefrontRenderEvent $event): void {
+            static function (StorefrontRenderEvent $event) use (&$renderedParameters): void {
                 $skippedViews = [
                     '@Storefront/storefront/layout/header.html.twig',
                     '@Storefront/storefront/layout/footer.html.twig',
@@ -41,10 +42,7 @@ class StorefrontRoutingTest extends TestCase
                     return;
                 }
 
-                $data = $event->getParameters();
-                static::assertInstanceOf(NavigationPage::class, $data['page']);
-                static::assertInstanceOf(CmsPageEntity::class, $data['page']->getCmsPage());
-                static::assertSame('Default listing layout', $data['page']->getCmsPage()->getName());
+                $renderedParameters[] = $event->getParameters();
             }
         );
 
@@ -57,6 +55,11 @@ class StorefrontRoutingTest extends TestCase
         );
 
         static::assertSame(200, $response->getStatusCode());
+        static::assertCount(1, $renderedParameters);
+        $page = $renderedParameters[0]['page'];
+        static::assertInstanceOf(NavigationPage::class, $page);
+        static::assertInstanceOf(CmsPageEntity::class, $page->getCmsPage());
+        static::assertSame('Default listing layout', $page->getCmsPage()->getName());
     }
 
     public function testForwardFromAddPromotionToApiFails(): void

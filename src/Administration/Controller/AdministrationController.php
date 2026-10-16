@@ -2,6 +2,7 @@
 
 namespace Shopwell\Administration\Controller;
 
+use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Connection;
 use League\Flysystem\FilesystemException;
 use League\Flysystem\FilesystemOperator;
@@ -26,6 +27,7 @@ use Shopwell\Core\Framework\Feature;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Routing\RoutingException;
 use Shopwell\Core\Framework\Store\Services\FirstRunWizardService;
+use Shopwell\Core\Framework\Util\Hasher;
 use Shopwell\Core\Framework\Util\HtmlSanitizer;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\Framework\Validation\Exception\ConstraintViolationException;
@@ -184,7 +186,11 @@ class AdministrationController extends AbstractController
 
         $snippets = $this->filterByAuthentication($request, $snippets, $locale);
 
-        return new JsonResponse($snippets);
+        $response = new JsonResponse($snippets);
+        $response->setEtag(Hasher::hash($snippets));
+        $response->isNotModified($request);
+
+        return $response;
     }
 
     #[Route(
@@ -277,8 +283,9 @@ class AdministrationController extends AbstractController
             throw RoutingException::languageNotFound($context->getLanguageId());
         }
 
-        $zhCnLanguageId = $this->fetchLanguageIdByName('zh-CN', $this->connection);
-        $enLanguageId = $this->fetchLanguageIdByName('en-GB', $this->connection);
+        $languageIds = $this->fetchLanguageIdsByIsoCodes(['zh-CN', 'en-GB'], $this->connection);
+        $zhCnLanguageId = $languageIds['zh-CN'] ?? null;
+        $enLanguageId = $languageIds['en-GB'] ?? null;
 
         switch ($context->getLanguageId()) {
             case $zhCnLanguageId:
@@ -407,17 +414,24 @@ class AdministrationController extends AbstractController
         );
     }
 
-    private function fetchLanguageIdByName(string $isoCode, Connection $connection): ?string
+    /**
+     * @param list<string> $isoCodes
+     *
+     * @return array<string, string> language id (hex) indexed by iso code
+     */
+    private function fetchLanguageIdsByIsoCodes(array $isoCodes, Connection $connection): array
     {
-        $languageId = $connection->fetchOne(
+        /** @var array<string, string> $rows */
+        $rows = $connection->fetchAllKeyValue(
             '
-            SELECT `language`.id FROM `language`
+            SELECT `locale`.`code`, `language`.id FROM `language`
             INNER JOIN locale ON language.translation_code_id = locale.id
-            WHERE `code` = :code',
-            ['code' => $isoCode]
+            WHERE `code` IN (:codes)',
+            ['codes' => $isoCodes],
+            ['codes' => ArrayParameterType::STRING]
         );
 
-        return $languageId === false ? null : Uuid::fromBytesToHex($languageId);
+        return array_map(Uuid::fromBytesToHex(...), $rows);
     }
 
     private function getLatestApiVersion(): ?int

@@ -19,6 +19,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Event\EntityWrittenEvent;
 use Shopwell\Core\Framework\Event\NestedEventCollection;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Mcp\Context\McpContextProvider;
+use Shopwell\Core\Framework\Mcp\Result\McpToolError;
 use Shopwell\Core\Framework\Mcp\Tool\EntityUpsertTool;
 
 /**
@@ -236,6 +237,7 @@ class EntityUpsertToolTest extends TestCase
         static::assertFalse($result['success']);
         static::assertStringContainsString('unknown_entity', $result['error']);
         static::assertStringContainsString('shopwell://entities', $result['error']);
+        static::assertSame(McpToolError::INVALID_ARGUMENTS, $result['code']);
     }
 
     /**

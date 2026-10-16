@@ -83,6 +83,11 @@ return [
         preg_quote('REMOVED: Property Shopwell\Core\Checkout\Cart\Rule\LineItemPurchasePriceRule#$isNet was removed', '/'),
         preg_quote('CHANGED: The return type of Shopwell\Core\Framework\Rule\Rule#getConfig() changed from Shopwell\Core\Framework\Rule\RuleConfig|null to Shopwell\Core\Framework\Rule\RuleConfig', '/'),
 
+        // Rule::getConfig() already permits null. These deprecated implementations keep returning
+        // RuleConfig in 6.7 and only return null when their removal flag v6.8.0.0 is active.
+        preg_quote('CHANGED: The return type of Shopwell\Core\Checkout\Cart\Rule\LineItemStockRule#getConfig() changed from Shopwell\Core\Framework\Rule\RuleConfig to ', '/') . '(?:the non-covariant )?' . preg_quote('Shopwell\Core\Framework\Rule\RuleConfig|null', '/'),
+        preg_quote('CHANGED: The return type of Shopwell\Core\Checkout\Cart\Rule\LineItemProductStatesRule#getConfig() changed from Shopwell\Core\Framework\Rule\RuleConfig to ', '/') . '(?:the non-covariant )?' . preg_quote('Shopwell\Core\Framework\Rule\RuleConfig|null', '/'),
+
         // DefinitionValidator is @final; optional parameter added with default [], existing callers are unaffected
         preg_quote('ADDED: Parameter toleratedNonStandardForeignKeys was added to Method validate() of class Shopwell\Core\Framework\DataAbstractionLayer\DefinitionValidator', '/'),
 

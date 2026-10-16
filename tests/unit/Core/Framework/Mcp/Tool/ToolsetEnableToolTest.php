@@ -8,7 +8,6 @@ use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Mcp\McpToolsetRegistry;
 use Shopwell\Core\Framework\Mcp\McpToolsetSessionStorage;
 use Shopwell\Core\Framework\Mcp\Notification\McpListChangedNotifier;
-use Shopwell\Core\Framework\Mcp\Tool\McpToolResponse;
 use Shopwell\Core\Framework\Mcp\Tool\ToolsetEnableTool;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
@@ -18,7 +17,6 @@ use Symfony\Component\HttpFoundation\RequestStack;
  */
 #[Package('framework')]
 #[CoversClass(ToolsetEnableTool::class)]
-#[CoversClass(McpToolResponse::class)]
 class ToolsetEnableToolTest extends TestCase
 {
     public function testEnablesToolsetForCurrentSessionAndFlagsListChanged(): void

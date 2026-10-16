@@ -10,11 +10,14 @@
  */
 
 import type { CallExpression, Node as BabelNode, ObjectExpression } from '@babel/types';
-import { ShopwellSetupTransformError } from '../utils/transform-error';
+import { ShopwellSetupTransformError, type ShopwellSetupErrorPosition } from '../utils/transform-error';
 import { absoluteRange } from './utils';
 
 type ShopwellSetupMacroName = 'swDefinePublic' | 'swDefineOverride';
 type ShopwellSetupEntryType = 'public' | 'override';
+
+/** Keeps the property range until the analyzer has validated its binding. */
+type StaticObjectMarkerEntry = { name: string; position: ShopwellSetupErrorPosition };
 
 const RESERVED_OVERRIDE_STATE_NAME = '__swOverride';
 
@@ -53,7 +56,7 @@ function extractStaticObjectMarker(
     scriptOffset: number,
     macroName: ShopwellSetupMacroName,
     entryType: ShopwellSetupEntryType,
-): string[] {
+): StaticObjectMarkerEntry[] {
     const publicObject = assertSingleArgument(callNode, scriptOffset, macroName);
     const seenKeys = new Set<string>();
 
@@ -99,7 +102,7 @@ function extractStaticObjectMarker(
 
         seenKeys.add(localName);
 
-        return localName;
+        return { name: localName, position: absoluteRange(property, scriptOffset) };
     });
 }
 
@@ -125,6 +128,7 @@ function isWithDefaultsCall(node: BabelNode): node is CallExpression {
 export {
     type ShopwellSetupEntryType,
     type ShopwellSetupMacroName,
+    type StaticObjectMarkerEntry,
     OVERRIDE_NAMESPACE_BINDING,
     RESERVED_OVERRIDE_STATE_NAME,
     SHOPWELL_SETUP_INTERNAL_PREFIX,

@@ -9,6 +9,7 @@ use Shopwell\Administration\Controller\AdministrationController;
 use Shopwell\Administration\Framework\Adapter\Cache\Http\AdministrationCacheControlListener;
 use Shopwell\Administration\Framework\Routing\AdministrationRouteScope;
 use Shopwell\Core\Framework\Adapter\Cache\Http\Event\BeforeCacheControlEvent;
+use Shopwell\Core\Framework\Feature\FeatureException;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\PlatformRequest;
 use Shopwell\Core\Test\Annotation\DisabledFeatures;
@@ -24,6 +25,17 @@ use Symfony\Component\HttpFoundation\Response;
 #[CoversClass(AdministrationCacheControlListener::class)]
 class AdministrationCacheControlListenerTest extends TestCase
 {
+    /**
+     * @deprecated tag:v6.8.0 - Remove with the major feature flag.
+     */
+    public function testDirectInvocationThrowsInMajorMode(): void
+    {
+        $listener = new AdministrationCacheControlListener();
+
+        $this->expectException(FeatureException::class);
+        $listener(new BeforeCacheControlEvent(new Request(), new Response()));
+    }
+
     #[DataProvider('shouldSkipCacheControlProvider')]
     #[DisabledFeatures(['v6.8.0.0'])]
     public function testShouldSkipCacheControl(

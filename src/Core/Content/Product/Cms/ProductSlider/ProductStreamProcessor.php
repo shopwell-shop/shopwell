@@ -15,6 +15,8 @@ use Shopwell\Core\Content\Product\ProductCollection;
 use Shopwell\Core\Content\Product\ProductDefinition;
 use Shopwell\Core\Content\Product\SalesChannel\AbstractProductCloseoutFilterFactory;
 use Shopwell\Core\Content\Product\SalesChannel\Listing\ProductListingLoader;
+use Shopwell\Core\Content\ProductStream\Exception\EmptyProductStreamException;
+use Shopwell\Core\Content\ProductStream\Exception\NoFilterException;
 use Shopwell\Core\Content\ProductStream\Service\AbstractProductStreamBuilder;
 use Shopwell\Core\Content\ProductStream\Service\ProductStreamBuilderInterface;
 use Shopwell\Core\Framework\DataAbstractionLayer\Exception\EntityNotFoundException;
@@ -144,6 +146,18 @@ class ProductStreamProcessor extends AbstractProductSliderProcessor
         } catch (EntityNotFoundException $exception) {
             $this->logger->warning(
                 'Product stream configured for CMS product slider could not be found.',
+                [
+                    'productStreamId' => $config->getStringValue(),
+                    'exception' => $exception,
+                ]
+            );
+
+            return null;
+        } catch (EmptyProductStreamException) {
+            // An empty group selects all products, as in the product export
+        } catch (NoFilterException $exception) {
+            $this->logger->warning(
+                'Product stream configured for CMS product slider has no usable filters.',
                 [
                     'productStreamId' => $config->getStringValue(),
                     'exception' => $exception,

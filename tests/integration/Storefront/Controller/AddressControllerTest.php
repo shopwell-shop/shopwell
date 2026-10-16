@@ -25,6 +25,7 @@ use Shopwell\Core\System\Country\CountryCollection;
 use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextFactory;
 use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextPersister;
 use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextService;
+use Shopwell\Core\Test\Integration\EventDispatcher\EventHookDispatcher;
 use Shopwell\Core\Test\TestDefaults;
 use Shopwell\Storefront\Controller\AddressController;
 use Shopwell\Storefront\Event\StorefrontRenderEvent;
@@ -567,20 +568,21 @@ class AddressControllerTest extends TestCase
             ],
         ]);
 
-        $this->addEventListener(
-            static::getContainer()->get('event_dispatcher'),
+        $renderEvent = null;
+        EventHookDispatcher::fromContainer(static::getContainer())->on(
             StorefrontRenderEvent::class,
-            static function (StorefrontRenderEvent $event): void {
-                $data = $event->getParameters();
-
-                static::assertArrayHasKey('formViolations', $data);
-                static::assertArrayHasKey('postedAddress', $data);
+            static function (StorefrontRenderEvent $event) use (&$renderEvent): void {
+                $renderEvent = $event;
             },
-            0,
             true
         );
 
         $controller->addressManagerUpsert($request, $dataBag, $context, $customer, null, self::ADDRESS_TYPE_SHIPPING);
+
+        static::assertInstanceOf(StorefrontRenderEvent::class, $renderEvent);
+        $data = $renderEvent->getParameters();
+        static::assertArrayHasKey('formViolations', $data);
+        static::assertArrayHasKey('postedAddress', $data);
     }
 
     public function testAccountAddressOverview(): void

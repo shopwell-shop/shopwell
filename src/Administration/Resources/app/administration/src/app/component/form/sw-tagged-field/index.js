@@ -29,7 +29,7 @@ export default {
             type: String,
             required: false,
             default() {
-                return Shopwell.Snippet.tc('global.sw-tagged-field.text-default-placeholder');
+                return Shopwell.Snippet.t('global.sw-tagged-field.text-default-placeholder');
             },
         },
 

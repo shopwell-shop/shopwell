@@ -16,6 +16,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Validation\EntityExists;
 use Shopwell\Core\Framework\DataAbstractionLayer\Validation\EntityNotExists;
 use Shopwell\Core\Framework\Event\EventData\MailRecipientStruct;
 use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
+use Shopwell\Core\Framework\Feature;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
 use Shopwell\Core\Framework\Routing\StoreApiRouteScope;
@@ -152,7 +153,11 @@ class ProductReviewSaveRoute extends AbstractProductReviewSaveRoute
         $definition->add('title', new NotBlank(), new Length(min: 5));
         $definition->add('content', new NotBlank(), new Length(min: 40));
 
-        $definition->add('points', new GreaterThanOrEqual(1), new LessThanOrEqual(5));
+        if (Feature::isActive('v6.8.0.0')) {
+            $definition->add('points', new NotBlank(), new GreaterThanOrEqual(1), new LessThanOrEqual(5));
+        } else {
+            $definition->add('points', new GreaterThanOrEqual(1), new LessThanOrEqual(5));
+        }
 
         $criteria = new Criteria();
         $criteria->addFilter(new EqualsFilter('customerId', $data->get('customerId')));

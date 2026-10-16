@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-use Frosh\Rector\Rule\v68\EntitySearchResultGetEntitiesRector;
+use Shopwell\Rector\Rule\v68\EntitySearchResultGetEntitiesRector;
 use Rector\Caching\ValueObject\Storage\FileCacheStorage;
 use Rector\CodeQuality\Rector\BooleanAnd\SimplifyEmptyArrayCheckRector;
 use Rector\CodeQuality\Rector\Empty_\SimplifyEmptyCheckOnEmptyArrayRector;
@@ -44,8 +44,6 @@ return RectorConfig::configure()
         // Guards against the deprecated collection surface of EntitySearchResult (see #18655)
         EntitySearchResultGetEntitiesRector::class,
         ClassConstantToSelfClassRector::class,
-        DisallowedEmptyRuleFixerRector::class,
-        CountArrayToEmptyArrayComparisonRector::class,
         SimplifyEmptyArrayCheckRector::class,
         SimplifyEmptyCheckOnEmptyArrayRector::class,
         StrlenZeroToIdenticalEmptyStringRector::class,

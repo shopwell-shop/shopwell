@@ -11,6 +11,7 @@ use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopwell\Core\Framework\Test\TestCaseHelper\CallableClass;
 use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\Test\Integration\EventDispatcher\EventHookDispatcher;
 use Shopwell\Core\Test\Integration\Traits\Promotion\PromotionIntegrationTestBehaviour;
 use Shopwell\Core\Test\Integration\Traits\Promotion\PromotionTestFixtureBehaviour;
 
@@ -51,11 +52,9 @@ class PromotionCartEventTest extends TestCase
         $codes = [100, 1, 42, 13, 19];
         $this->createBulkPromotions($codes);
 
-        $dispatcher = static::getContainer()->get('event_dispatcher');
-
         $addListener = $this->createMock(CallableClass::class);
         $addListener->expects($this->exactly(1 + \count($codes)))->method('__invoke');
-        $this->addEventListener($dispatcher, BeforeLineItemAddedEvent::class, $addListener);
+        EventHookDispatcher::fromContainer(static::getContainer())->on(BeforeLineItemAddedEvent::class, $addListener);
 
         $cart = $this->cartService->getCart($this->getContext()->getToken(), $this->getContext());
 
@@ -83,11 +82,9 @@ class PromotionCartEventTest extends TestCase
         $codes = [100, 1, 42, 13, 19];
         $this->createBulkPromotions($codes);
 
-        $dispatcher = static::getContainer()->get('event_dispatcher');
-
         $removeListener = $this->createMock(CallableClass::class);
         $removeListener->expects($this->once())->method('__invoke');
-        $this->addEventListener($dispatcher, BeforeLineItemRemovedEvent::class, $removeListener);
+        EventHookDispatcher::fromContainer(static::getContainer())->on(BeforeLineItemRemovedEvent::class, $removeListener);
 
         $cart = $this->cartService->getCart($this->getContext()->getToken(), $this->getContext());
 
