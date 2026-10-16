@@ -18,6 +18,7 @@ use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\Test\Generator;
 use Shopwell\Core\Test\Stub\EventDispatcher\CollectingEventDispatcher;
+use Shopwell\Storefront\Checkout\Order\OrderProductAvailabilityResolver;
 use Shopwell\Storefront\Event\RouteRequest\OrderRouteRequestEvent;
 use Shopwell\Storefront\Page\Account\Order\AccountOrderPageLoadedEvent;
 use Shopwell\Storefront\Page\Account\Order\AccountOrderPageLoader;
@@ -55,6 +56,7 @@ class AccountOrderPageLoaderTest extends TestCase
             $this->eventDispatcher,
             $this->orderRoute,
             $this->translator,
+            static::createStub(OrderProductAvailabilityResolver::class),
         );
     }
 
