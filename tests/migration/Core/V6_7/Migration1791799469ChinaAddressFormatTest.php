@@ -62,7 +62,7 @@ class Migration1791799469ChinaAddressFormatTest extends TestCase
             ['countryId' => $countryId]
         );
 
-        static::assertNotEmpty($formats);
+        static::assertNotSame([], $formats);
 
         foreach ($formats as $format) {
             static::assertIsString($format);
@@ -92,7 +92,7 @@ class Migration1791799469ChinaAddressFormatTest extends TestCase
             ['countryId' => $countryId]
         );
 
-        static::assertNotEmpty($formats);
+        static::assertNotSame([], $formats);
 
         foreach ($formats as $format) {
             static::assertIsString($format);
