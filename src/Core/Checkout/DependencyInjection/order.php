@@ -39,6 +39,7 @@ use Shopwell\Core\Checkout\Order\SalesChannel\OrderRoute;
 use Shopwell\Core\Checkout\Order\SalesChannel\OrderService;
 use Shopwell\Core\Checkout\Order\SalesChannel\SetPaymentOrderRoute;
 use Shopwell\Core\Checkout\Order\Subscriber\OrderSalutationSubscriber;
+use Shopwell\Core\Checkout\Order\Subscriber\OrderTransactionVersionMergeSubscriber;
 use Shopwell\Core\Checkout\Order\Telemetry\OrderMetricsSubscriber;
 use Shopwell\Core\Checkout\Order\Validation\OrderValidationFactory;
 use Shopwell\Core\Checkout\Payment\Cart\PaymentRefundProcessor;
@@ -240,6 +241,12 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(OrderSalutationSubscriber::class)
         ->args([
             service(Connection::class),
+        ])
+        ->tag('kernel.event_subscriber');
+
+    $services->set(OrderTransactionVersionMergeSubscriber::class)
+        ->args([
+            service('order_transaction.repository'),
         ])
         ->tag('kernel.event_subscriber');
 

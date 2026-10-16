@@ -2,6 +2,8 @@
 
 namespace Shopwell\Core\Checkout\Cart\Order\Transformer;
 
+use Shopwell\Core\Checkout\Cart\Order\IdStruct;
+use Shopwell\Core\Checkout\Cart\Order\OrderConverter;
 use Shopwell\Core\Checkout\Cart\Price\Struct\CalculatedPrice;
 use Shopwell\Core\Checkout\Cart\Transaction\Struct\Transaction;
 use Shopwell\Core\Checkout\Cart\Transaction\Struct\TransactionCollection;
@@ -35,9 +37,18 @@ class TransactionTransformer
         string $stateId,
         Context $context
     ): array {
-        return [
+        $data = [
             'paymentMethodId' => $transaction->getPaymentMethodId(),
             'amount' => $transaction->getAmount(),
+        ];
+
+        $id = $transaction->getExtensionOfType(OrderConverter::ORIGINAL_ID, IdStruct::class)?->getId();
+        if ($id !== null) {
+            return ['id' => $id, ...$data];
+        }
+
+        return [
+            ...$data,
             'stateId' => $stateId,
             'validationData' => $transaction->getValidationStruct()?->jsonSerialize(),
         ];
