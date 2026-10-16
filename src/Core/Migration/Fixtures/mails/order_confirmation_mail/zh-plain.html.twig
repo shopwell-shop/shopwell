@@ -38,6 +38,9 @@
 {% set garanLabel = garanLabels[lineItem.productId] ?? null %}
 {% if garanLabel %}
 商业耐久性保证（GARAN）{{ garanLabel.duration }} 年，
+{% if garanLabel.termsUrl %}
+质保条款：{{ garanLabel.termsUrl }}，
+{% endif %}
 {% endif %}
 {% endif %}
 数量 {{ lineItem.quantity }}，
