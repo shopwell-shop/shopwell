@@ -16,11 +16,11 @@ use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\Framework\Test\TestCaseBase\EventDispatcherBehaviour;
 use Shopwell\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopwell\Core\Framework\Test\TestCaseBase\SalesChannelApiTestBehaviour;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextService;
+use Shopwell\Core\Test\Integration\EventDispatcher\EventHookDispatcher;
 use Symfony\Component\HttpFoundation\Request;
 
 /**
@@ -29,7 +29,6 @@ use Symfony\Component\HttpFoundation\Request;
 #[Package('checkout')]
 class ConvertGuestControllerTest extends TestCase
 {
-    use EventDispatcherBehaviour;
     use IntegrationTestBehaviour;
     use SalesChannelApiTestBehaviour;
 
@@ -101,8 +100,7 @@ class ConvertGuestControllerTest extends TestCase
         $customerId = $this->createCustomer(guest: true);
 
         $caughtEvent = null;
-        $this->addEventListener(
-            $this->getContainer()->get('event_dispatcher'),
+        EventHookDispatcher::fromContainer(static::getContainer())->on(
             CustomerAccountRecoverRequestEvent::EVENT_NAME,
             function (CustomerAccountRecoverRequestEvent $event) use (&$caughtEvent): void {
                 $caughtEvent = $event;
@@ -125,8 +123,7 @@ class ConvertGuestControllerTest extends TestCase
         $customerId = $this->createCustomer('test@test.com', guest: true);
 
         $caughtEvent = null;
-        $this->addEventListener(
-            $this->getContainer()->get('event_dispatcher'),
+        EventHookDispatcher::fromContainer(static::getContainer())->on(
             CustomerAccountRecoverRequestEvent::EVENT_NAME,
             function (CustomerAccountRecoverRequestEvent $event) use (&$caughtEvent): void {
                 $caughtEvent = $event;

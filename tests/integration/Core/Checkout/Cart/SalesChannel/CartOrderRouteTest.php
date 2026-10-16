@@ -33,6 +33,7 @@ use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextService;
 use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextServiceParameters;
 use Shopwell\Core\System\Salutation\SalutationDefinition;
 use Shopwell\Core\System\TaxProvider\TaxProviderCollection;
+use Shopwell\Core\Test\Integration\EventDispatcher\EventHookDispatcher;
 use Shopwell\Core\Test\Integration\PaymentHandler\TestPaymentHandler;
 use Shopwell\Core\Test\Stub\Framework\IdsCollection;
 use Shopwell\Core\Test\TestDefaults;
@@ -571,7 +572,7 @@ class CartOrderRouteTest extends TestCase
 
     protected function catchEvent(string $eventName, ?Event &$eventResult): void
     {
-        $this->addEventListener(static::getContainer()->get('event_dispatcher'), $eventName, static function (Event $event) use (&$eventResult): void {
+        EventHookDispatcher::fromContainer(static::getContainer())->on($eventName, static function (Event $event) use (&$eventResult): void {
             $eventResult = $event;
         });
     }

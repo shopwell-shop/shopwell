@@ -36,6 +36,7 @@ use Shopwell\Core\Framework\Adapter\Cache\Message\RefreshHttpCacheMessageHandler
 use Shopwell\Core\Framework\Adapter\Cache\ReverseProxy\AbstractReverseProxyGateway;
 use Shopwell\Core\Framework\Adapter\Cache\ReverseProxy\FastlyReverseProxyGateway;
 use Shopwell\Core\Framework\Adapter\Cache\ReverseProxy\ReverseProxyCache;
+use Shopwell\Core\Framework\Adapter\Cache\ReverseProxy\ReverseProxyServiceFactory;
 use Shopwell\Core\Framework\Adapter\Cache\ReverseProxy\VarnishReverseProxyGateway;
 use Shopwell\Core\Framework\Adapter\Cache\Script\Facade\CacheInvalidatorFacadeHookFactory;
 use Shopwell\Core\Framework\Adapter\Cache\Script\ScriptCacheInvalidationSubscriber;
@@ -64,6 +65,7 @@ use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigura
 use function Symfony\Component\DependencyInjection\Loader\Configurator\env;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\param;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
+use function Symfony\Component\DependencyInjection\Loader\Configurator\service_locator;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\tagged_locator;
 
 return static function (ContainerConfigurator $containerConfigurator): void {
@@ -239,7 +241,8 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('request_stack'),
             service('event_dispatcher'),
         ])
-        ->tag('kernel.event_listener');
+        ->tag('kernel.event_listener')
+        ->tag('kernel.reset', ['method' => 'reset']);
 
     $services->set(CacheTagCollection::class);
 
@@ -294,6 +297,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(AbstractReverseProxyGateway::class),
             param('shopwell.cache.invalidation.http_cache'),
             service(CacheTagCollector::class),
+            param('shopwell.http_cache.reverse_proxy.enabled'),
         ])
         ->tag('kernel.event_listener');
 
@@ -319,7 +323,17 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set('shopwell.reverse_proxy.http_client', Client::class);
 
-    $services->set(AbstractReverseProxyGateway::class, VarnishReverseProxyGateway::class)
+    $services->set(AbstractReverseProxyGateway::class)
+        ->factory([ReverseProxyServiceFactory::class, 'createGateway'])
+        ->args([
+            param('shopwell.http_cache.reverse_proxy.fastly.enabled'),
+            service_locator([
+                ReverseProxyServiceFactory::VARNISH_GATEWAY => service(VarnishReverseProxyGateway::class),
+                ReverseProxyServiceFactory::FASTLY_GATEWAY => service(FastlyReverseProxyGateway::class),
+            ]),
+        ]);
+
+    $services->set(VarnishReverseProxyGateway::class)
         ->args([
             param('shopwell.http_cache.reverse_proxy.hosts'),
             param('shopwell.http_cache.reverse_proxy.max_parallel_invalidations'),

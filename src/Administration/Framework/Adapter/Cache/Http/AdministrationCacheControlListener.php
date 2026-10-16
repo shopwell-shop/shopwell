@@ -5,19 +5,22 @@ namespace Shopwell\Administration\Framework\Adapter\Cache\Http;
 use Shopwell\Administration\Controller\AdministrationController;
 use Shopwell\Administration\Framework\Routing\AdministrationRouteScope;
 use Shopwell\Core\Framework\Adapter\Cache\Http\Event\BeforeCacheControlEvent;
+use Shopwell\Core\Framework\Feature;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\PlatformRequest;
 
 /**
  * @internal
  *
- * @deprecated tag:v6.8.0 - reason:remove-subscriber - Will be removed together with the BeforeCacheControlEvent and the CacheControlListener it hooks into.
+ * @deprecated tag:v6.8.0 - Will be removed together with the BeforeCacheControlEvent and the CacheControlListener it hooks into.
  */
 #[Package('framework')]
 readonly class AdministrationCacheControlListener
 {
     public function __invoke(BeforeCacheControlEvent $event): void
     {
+        Feature::throwIfActive('v6.8.0.0', Feature::deprecatedClassMessage(self::class, 'v6.8.0.0'));
+
         if (!$this->isAdministrationRequest($event)) {
             return;
         }

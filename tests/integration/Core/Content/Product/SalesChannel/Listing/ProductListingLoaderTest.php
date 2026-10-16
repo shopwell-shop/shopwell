@@ -34,6 +34,7 @@ use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextFactory;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
 use Shopwell\Core\System\SystemConfig\SystemConfigService;
+use Shopwell\Core\Test\Integration\EventDispatcher\EventHookDispatcher;
 use Shopwell\Core\Test\Stub\Framework\IdsCollection;
 use Shopwell\Core\Test\TestDefaults;
 
@@ -98,7 +99,7 @@ class ProductListingLoaderTest extends TestCase
 
         $listener = $this->createMock(CallableClass::class);
         $listener->expects($this->once())->method('__invoke');
-        static::getContainer()->get('event_dispatcher')->addListener(ProductListingResolvePreviewEvent::class, $listener);
+        EventHookDispatcher::fromContainer(static::getContainer())->on(ProductListingResolvePreviewEvent::class, $listener);
         $context = static::getContainer()->get(SalesChannelContextFactory::class)->create(Uuid::randomHex(), TestDefaults::SALES_CHANNEL);
 
         $criteria = new Criteria($ids->getList(['p1']));

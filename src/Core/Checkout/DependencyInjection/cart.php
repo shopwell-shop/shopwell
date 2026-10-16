@@ -107,7 +107,6 @@ use Shopwell\Core\Content\Product\Cart\ProductCartProcessor;
 use Shopwell\Core\Content\Product\Cart\ProductFeatureBuilder;
 use Shopwell\Core\Content\Product\Cart\ProductGateway;
 use Shopwell\Core\Content\Product\Cart\ProductLineItemValidator;
-use Shopwell\Core\Content\Product\ProductTypeRegistry;
 use Shopwell\Core\Content\Product\SalesChannel\Price\ProductPriceCalculator;
 use Shopwell\Core\Framework\Adapter\Cache\RedisConnectionFactory;
 use Shopwell\Core\Framework\Adapter\Redis\RedisConnectionProvider;
@@ -530,7 +529,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(ProductPriceCalculator::class),
             service(EntityCacheKeyGenerator::class),
             service(Connection::class),
-            service(ProductTypeRegistry::class),
+            service('event_dispatcher'),
         ])
         ->tag('shopwell.cart.processor', ['priority' => 5000])
         ->tag('shopwell.cart.collector', ['priority' => 5000]);
@@ -540,6 +539,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('custom_field.repository'),
             service(LanguageLocaleCodeProvider::class),
             service(DefinitionInstanceRegistry::class),
+            service(Translator::class),
         ]);
 
     $services->set(TransactionProcessor::class);

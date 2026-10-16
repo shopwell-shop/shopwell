@@ -2,6 +2,7 @@
 
 namespace Shopwell\Core\System\SalesChannel;
 
+use Mcp\Exception\ResourceNotFoundException;
 use Shopwell\Core\Checkout\Cart\CartException;
 use Shopwell\Core\Checkout\Customer\Exception\CustomerNotFoundByIdException;
 use Shopwell\Core\Checkout\Order\OrderException;
@@ -11,6 +12,7 @@ use Shopwell\Core\Framework\Deprecation\BCChange\ReturnTypeNarrowing;
 use Shopwell\Core\Framework\Feature;
 use Shopwell\Core\Framework\HttpException;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Mcp\McpException;
 use Shopwell\Core\Framework\ShopwellHttpException;
 use Shopwell\Core\System\SalesChannel\Exception\NoContextDataException;
 use Symfony\Component\HttpFoundation\Response;
@@ -379,5 +381,13 @@ class SalesChannelException extends HttpException
             'Expected a single field primary key for entity "{{ entityName }}", but got a combined primary key.',
             ['entityName' => $entityName]
         );
+    }
+
+    /**
+     * The Store API MCP server reports a missing tool result like the Admin API server does.
+     */
+    public static function mcpToolResultNotFound(string $id): ResourceNotFoundException
+    {
+        return McpException::toolResultNotFound($id);
     }
 }

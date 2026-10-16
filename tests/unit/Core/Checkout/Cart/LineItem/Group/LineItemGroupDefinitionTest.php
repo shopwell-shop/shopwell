@@ -9,7 +9,7 @@ use Shopwell\Core\Checkout\Cart\LineItem\Group\LineItemGroupDefinition;
 use Shopwell\Core\Content\Rule\RuleCollection;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Uuid\Uuid;
-use Shopwell\Tests\Unit\Core\Checkout\Cart\LineItem\Group\Helpers\Traits\RulesTestFixtureBehaviour;
+use Shopwell\Tests\Unit\Core\Checkout\Cart\LineItem\Group\Helpers\RulesFixture;
 
 /**
  * @internal
@@ -18,8 +18,6 @@ use Shopwell\Tests\Unit\Core\Checkout\Cart\LineItem\Group\Helpers\Traits\RulesTe
 #[CoversClass(LineItemGroupDefinition::class)]
 class LineItemGroupDefinitionTest extends TestCase
 {
-    use RulesTestFixtureBehaviour;
-
     /**
      * This test verifies that our property is correctly
      * assigned and returned in its getter.
@@ -79,8 +77,8 @@ class LineItemGroupDefinitionTest extends TestCase
     #[Group('lineitemgroup')]
     public function testRulesProperty(): void
     {
-        $ruleEntity = $this->buildRuleEntity(
-            $this->getMinQuantityRule(Uuid::randomBytes(), 2)
+        $ruleEntity = RulesFixture::buildRuleEntity(
+            RulesFixture::getMinQuantityRule(Uuid::randomBytes(), 2)
         );
 
         $ruleCollection = new RuleCollection([$ruleEntity]);

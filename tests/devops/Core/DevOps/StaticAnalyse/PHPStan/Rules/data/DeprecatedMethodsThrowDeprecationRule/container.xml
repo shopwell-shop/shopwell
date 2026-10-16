@@ -1,6 +1,9 @@
 <?xml version="1.0" ?>
 <container>
     <services>
+        <service id="Shopwell\Core\DevOps\MyFakeNamespace\GuardedListener" class="Shopwell\Core\DevOps\MyFakeNamespace\GuardedListener">
+            <tag name="kernel.event_listener" event="event"/>
+        </service>
         <service id="Shopwell\Core\DevOps\MyFakeNamespace\DeprecatedClass" class="Shopwell\Core\DevOps\MyFakeNamespace\DeprecatedClass"/>
         <service id="decorated.service" class="Shopwell\Core\DevOps\MyFakeNamespace\DecoratedService"/>
         <service id="Shopwell\Core\DevOps\MyFakeNamespace\DeprecatedDecorator" class="Shopwell\Core\DevOps\MyFakeNamespace\DeprecatedDecorator">

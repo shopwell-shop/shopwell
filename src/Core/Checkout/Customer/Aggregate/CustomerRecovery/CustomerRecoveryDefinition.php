@@ -5,6 +5,7 @@ namespace Shopwell\Core\Checkout\Customer\Aggregate\CustomerRecovery;
 use Shopwell\Core\Checkout\Customer\CustomerDefinition;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityDefinition;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\FkField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\ApiAware;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\PrimaryKey;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\Required;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\IdField;
@@ -50,7 +51,7 @@ class CustomerRecoveryDefinition extends EntityDefinition
     {
         return new FieldCollection([
             (new IdField('id', 'id'))->addFlags(new PrimaryKey(), new Required())->setDescription('Unique identity of the customer recovery account.'),
-            (new StringField('hash', 'hash'))->addFlags(new Required())->setDescription('Password hash for customer\'s account recovery.'),
+            (new StringField('hash', 'hash'))->removeFlag(ApiAware::class)->addFlags(new Required())->setDescription('Password hash for customer\'s account recovery.'),
             (new FkField('customer_id', 'customerId', CustomerDefinition::class))->addFlags(new Required())->setDescription('Unique identity of the customer.'),
             new OneToOneAssociationField('customer', 'customer_id', 'id', CustomerDefinition::class, false),
         ]);

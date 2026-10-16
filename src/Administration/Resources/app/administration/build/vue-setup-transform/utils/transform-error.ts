@@ -9,6 +9,11 @@
 type ShopwellSetupErrorPosition = { index: number; endIndex: number };
 
 /**
+ * Original SFC coordinates for Vite/Rollup: 1-based line and 0-based column.
+ */
+type ShopwellSetupErrorLocation = { file: string; line: number; column: number };
+
+/**
  * Error type used by Shopwell setup transform diagnostics.
  *
  * `index` is an absolute SFC source offset, letting build integrations and editor tooling point at the
@@ -24,6 +29,11 @@ class ShopwellSetupTransformError extends Error {
     readonly index: number | null;
 
     readonly endIndex: number | null;
+
+    /** Resolved at the transform boundary, where the original SFC source is available. */
+    loc: ShopwellSetupErrorLocation | null = null;
+
+    frame: string | null = null;
 
     /**
      * Carries a source position so build, lint, and editor adapters can report the same error.
@@ -49,6 +59,19 @@ class ShopwellSetupTransformError extends Error {
 }
 
 /**
+ * A broken transform invariant (an analyzer bug) rather than an authoring mistake.
+ *
+ * Its location still names the SFC that triggered it, but adapters keep the stack: unlike for an author
+ * error, the throw site is where the fix goes.
+ */
+class ShopwellSetupInternalError extends ShopwellSetupTransformError {
+    constructor(message: string, position: number | ShopwellSetupErrorPosition | null = null) {
+        super(message, position);
+        this.name = 'ShopwellSetupInternalError';
+    }
+}
+
+/**
  * @private
  */
-export { ShopwellSetupTransformError, type ShopwellSetupErrorPosition };
+export { ShopwellSetupInternalError, ShopwellSetupTransformError, type ShopwellSetupErrorPosition };

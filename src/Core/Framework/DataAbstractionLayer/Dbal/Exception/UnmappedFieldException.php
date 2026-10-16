@@ -4,14 +4,13 @@ namespace Shopwell\Core\Framework\DataAbstractionLayer\Dbal\Exception;
 
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityDefinition;
 use Shopwell\Core\Framework\DataAbstractionLayer\Exception\UnmappedFieldException as DalUnmappedFieldException;
+use Shopwell\Core\Framework\Feature;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\ShopwellHttpException;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * @deprecated tag:v6.8.0 - reason:remove-exception - Will be removed, use {@see DalUnmappedFieldException} instead
- *
- * @codeCoverageIgnore
+ * @deprecated tag:v6.8.0 - Will be removed, use {@see DalUnmappedFieldException} instead
  */
 #[Package('framework')]
 class UnmappedFieldException extends ShopwellHttpException
@@ -20,6 +19,8 @@ class UnmappedFieldException extends ShopwellHttpException
         string $field,
         EntityDefinition $definition
     ) {
+        Feature::throwIfActive('v6.8.0.0', Feature::deprecatedClassMessage(self::class, 'v6.8.0.0'));
+
         $fieldParts = explode('.', $field);
         $name = array_pop($fieldParts);
 

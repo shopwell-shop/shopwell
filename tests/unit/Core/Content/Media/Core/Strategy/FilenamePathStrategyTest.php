@@ -5,7 +5,6 @@ namespace Shopwell\Tests\Unit\Core\Content\Media\Core\Strategy;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
-use Shopwell\Core\Content\Media\Core\Application\AbstractMediaPathStrategy;
 use Shopwell\Core\Content\Media\Core\Params\MediaLocationStruct;
 use Shopwell\Core\Content\Media\Core\Params\ThumbnailLocationStruct;
 use Shopwell\Core\Content\Media\Core\Strategy\FilenamePathStrategy;
@@ -16,7 +15,6 @@ use Shopwell\Core\Framework\Log\Package;
  */
 #[Package('discovery')]
 #[CoversClass(FilenamePathStrategy::class)]
-#[CoversClass(AbstractMediaPathStrategy::class)]
 class FilenamePathStrategyTest extends TestCase
 {
     #[DataProvider('strategyProvider')]

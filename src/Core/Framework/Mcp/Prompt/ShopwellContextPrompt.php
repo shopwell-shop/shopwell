@@ -38,7 +38,7 @@ You are interacting with a Shopwell 6 e-commerce platform via MCP tools.
 - `shopwell-entity-read`: entity (string), id (string UUID), criteria (string, optional)
 - `shopwell-entity-aggregate`: entity (string), aggregations (string JSON), filters (string JSON, optional)
 - `shopwell-entity-upsert`: entity (string), payload (string JSON), dryRun (bool, default true)
-- `shopwell-entity-delete`: entity (string), ids (string JSON array), dryRun (bool, default true)
+- `shopwell-entity-delete`: entity (string), ids (string JSON array of UUIDs, or of key objects for mapping entities), dryRun (bool, default true)
 - `shopwell-system-config-read`: key (string), salesChannelId (string, optional)
 - `shopwell-system-config-write`: key (string), value (string), salesChannelId (string, optional), dryRun (bool, default true)
 - `shopwell-order-state`: orderNumber or orderId, orderAction / transactionAction / deliveryAction, dryRun (bool, default true)
@@ -50,8 +50,8 @@ You are interacting with a Shopwell 6 e-commerce platform via MCP tools.
 - `swag-dev-tools-log-stream`: limit (int, optional) — stream the most recent log lines
 
 ## Tool discovery (start here)
-- On a fresh session only the discovery tools are advertised: `shopwell-toolsets-list`, `shopwell-toolset-enable`, `shopwell-tool-search`. No domain tool is callable until you enable its toolset — the tools listed below become available only after enabling.
-- For any task, first call `shopwell-toolsets-list`, enable the matching toolset with `shopwell-toolset-enable`, then refresh `tools/list` after the server sends a list-changed notification. Use `shopwell-tool-search` when you know the capability but not which toolset holds it.
+- A fresh session advertises the discovery tools `shopwell-toolsets-list`, `shopwell-toolset-enable` and `shopwell-tool-search`, plus any toolsets selected in the connect URL (`?toolsets=`). Domain tools that are not advertised yet become available once you enable their toolset.
+- If an advertised tool fits the task, call it directly. Otherwise call `shopwell-toolsets-list`, enable the matching toolset with `shopwell-toolset-enable`, then refresh `tools/list` after the server sends a list-changed notification. Use `shopwell-tool-search` when you know the capability but not which toolset holds it.
 - Enabling a toolset lasts the whole MCP session and accumulates: enabling another toolset keeps the previously enabled ones. The allowlist and ACL permissions remain the security boundary.
 
 ## Key concepts
@@ -59,6 +59,7 @@ You are interacting with a Shopwell 6 e-commerce platform via MCP tools.
 - Entity IDs are UUIDs (32 hex chars, no dashes, lowercase).
 - `shopwell-entity-search` accepts Admin API criteria JSON: filter, sort, limit, page, associations, aggregations, includes, fields.
 - All write tools default to dryRun=true. Always preview before committing.
+- Many-to-many links (product categories, product properties, ...) are rows of a mapping entity, as in the Admin API sync endpoint. `shopwell-entity-upsert` can only ADD links. To REMOVE one, delete the mapping row with `shopwell-entity-delete`; this removes only the link, never the category or option itself. There is no "remove" or "delete" flag inside an upsert payload: every field sent on an associated record is written to that record.
 - State transitions via `shopwell-order-state` apply to the order, its transactions, and its deliveries independently.
 
 ## Common entity names
@@ -103,6 +104,9 @@ Field selection: `{"includes": {"product": ["id", "name", "productNumber", "pric
 2. Read `shopwell://currencies` to find the currency ID
 3. `shopwell-entity-upsert` on `product` with name, productNumber, stock, taxId, and price array: `[{"currencyId": "...", "gross": 29.99, "net": 25.20, "linked": true}]`
 4. dryRun=true first, then dryRun=false to persist
+
+### Add or remove a product category or property
+Add with `shopwell-entity-upsert` on `product`; remove with `shopwell-entity-delete` on the mapping entity `shopwell-entity-schema` names (`product_category`, `product_property`).
 
 ### Transition an order state
 1. `shopwell-entity-search` on `order` to find the order and its current stateMachineState

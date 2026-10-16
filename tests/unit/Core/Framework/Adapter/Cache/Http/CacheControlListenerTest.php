@@ -12,6 +12,7 @@ use Shopwell\Core\Framework\Adapter\Cache\Http\CacheControlListener;
 use Shopwell\Core\Framework\Adapter\Cache\Http\Event\BeforeCacheControlEvent;
 use Shopwell\Core\Framework\Adapter\Cache\Http\HttpCacheKeyGenerator;
 use Shopwell\Core\Framework\Event\BeforeSendResponseEvent;
+use Shopwell\Core\Framework\Feature\FeatureException;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\PlatformRequest;
 use Shopwell\Core\Test\Annotation\DisabledFeatures;
@@ -28,6 +29,19 @@ use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 #[CoversClass(CacheControlListener::class)]
 class CacheControlListenerTest extends TestCase
 {
+    /**
+     * @deprecated tag:v6.8.0 - Remove with the major feature flag.
+     */
+    public function testDirectInvocationThrowsInMajorMode(): void
+    {
+        $dispatcher = $this->createMock(EventDispatcherInterface::class);
+        $dispatcher->expects($this->never())->method('dispatch');
+        $listener = new CacheControlListener(false, $dispatcher);
+
+        $this->expectException(FeatureException::class);
+        $listener(new BeforeSendResponseEvent(new Request(), new Response()));
+    }
+
     #[DataProvider('headerCases')]
     #[DisabledFeatures(['v6.8.0.0', 'PERFORMANCE_TWEAKS', 'CACHE_REWORK'])]
     public function testResponseHeadersDeprecated(bool $reverseProxyEnabled, ?string $beforeHeader, string $afterHeader): void
@@ -53,6 +67,7 @@ class CacheControlListenerTest extends TestCase
     }
 
     #[DataProvider('notModifiedCacheControlCases')]
+    #[DisabledFeatures(['v6.8.0.0'])]
     public function testCacheControlHeadersAreNotModified(bool $reverseProxyEnabled, string $cacheControl): void
     {
         $response = new Response();

@@ -12,6 +12,7 @@ use Shopwell\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextFactory;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+use Shopwell\Core\Test\Integration\EventDispatcher\EventHookDispatcher;
 use Shopwell\Core\Test\TestDefaults;
 use Shopwell\Storefront\Controller\CountryStateController;
 use Shopwell\Storefront\Pagelet\Country\CountryRegionDataPagelet;
@@ -135,14 +136,10 @@ class CountryStateControllerTest extends TestCase
 
     public function testCountryStateControllerEvents(): void
     {
-        $dispatcher = static::getContainer()->get('event_dispatcher');
-
         $testSubscriber = new CountryStateControllerTestSubscriber();
-        $dispatcher->addSubscriber($testSubscriber);
+        EventHookDispatcher::fromContainer(static::getContainer())->subscribe($testSubscriber);
 
         $this->countryStateController->getCountryData(new Request([], ['countryId' => $this->countryIdDE]), $this->salesChannelContext);
-
-        $dispatcher->removeSubscriber($testSubscriber);
 
         static::assertInstanceOf(CountryStateDataPagelet::class, $testSubscriber->testPagelet);
         static::assertInstanceOf(CountryStateDataPageletCriteriaEvent::class, $testSubscriber->criteriaEvent);

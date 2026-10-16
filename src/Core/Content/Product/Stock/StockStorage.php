@@ -4,6 +4,7 @@ namespace Shopwell\Core\Content\Product\Stock;
 
 use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Connection;
+use Shopwell\Core\Content\Product\Events\ProductBackInStockEvent;
 use Shopwell\Core\Content\Product\Events\ProductNoLongerAvailableEvent;
 use Shopwell\Core\Content\Product\Events\ProductStockAlteredEvent;
 use Shopwell\Core\Defaults;
@@ -135,15 +136,28 @@ class StockStorage extends AbstractStockStorage
             ['ids' => ArrayParameterType::BINARY]
         );
 
-        $updated = [];
+        $noLongerAvailable = [];
+        $backInStock = [];
         foreach ($before as $id => $available) {
-            if ($available !== $after[$id]) {
-                $updated[] = (string) $id;
+            if ((bool) $available === (bool) $after[$id]) {
+                continue;
             }
+
+            if ((bool) $available) {
+                $noLongerAvailable[] = (string) $id;
+
+                continue;
+            }
+
+            $backInStock[] = (string) $id;
         }
 
-        if ($updated !== []) {
-            $this->dispatcher->dispatch(new ProductNoLongerAvailableEvent($updated, $context));
+        if ($noLongerAvailable !== []) {
+            $this->dispatcher->dispatch(new ProductNoLongerAvailableEvent($noLongerAvailable, $context));
+        }
+
+        if ($backInStock !== []) {
+            $this->dispatcher->dispatch(new ProductBackInStockEvent($backInStock, $context));
         }
     }
 }

@@ -10,6 +10,7 @@ use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Plugin\KernelPluginLoader\DbalKernelPluginLoader;
 use Shopwell\Core\Framework\Test\TestCaseBase\KernelLifecycleManager;
 use Shopwell\Core\Test\PHPUnit\CompletionGuard\CompletionGuard;
+use Shopwell\Core\Test\PHPUnit\EventHook\ResetEventHooksSubscriber;
 use Symfony\Bundle\FrameworkBundle\Console\Application;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\ArrayInput;
@@ -56,6 +57,7 @@ class TestBootstrapper
 
         // registered before anything below can fail, so a broken bootstrap can never disarm the guard
         CompletionGuard::register();
+        ResetEventHooksSubscriber::register();
 
         if ($this->loadEnvFile) {
             $this->loadEnvFile();

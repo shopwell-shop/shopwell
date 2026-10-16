@@ -36,6 +36,7 @@ use Shopwell\Core\Content\ProductExport\Provider\AbstractAgenticCommerceProductE
 use Shopwell\Core\Content\ProductExport\Validator\ValidatorInterface;
 use Shopwell\Core\Content\Seo\SeoUrlRoute\EntitySeoUrlRouteInterface;
 use Shopwell\Core\Content\Seo\SeoUrlRoute\SeoUrlRouteInterface;
+use Shopwell\Core\Content\Seo\SeoUrlRoute\SeoUrlRouteLoaderInterface;
 use Shopwell\Core\Content\Shared\MailFlow\DataProvider\MailFlowDataProviderInterface;
 use Shopwell\Core\Content\Sitemap\ConfigHandler\ConfigHandlerInterface;
 use Shopwell\Core\Content\Sitemap\Provider\AbstractUrlProvider;
@@ -129,6 +130,7 @@ return [
             'shopwell.sales_channel.type_capabilities' => AbstractSalesChannelTypeCapabilities::class,
             'shopwell.scheduled.task' => ScheduledTask::class,
             'shopwell.seo_url.route' => SeoUrlRouteInterface::class,
+            'shopwell.seo_url.route_loader' => SeoUrlRouteLoaderInterface::class,
             'shopwell.sitemap.config_handler' => ConfigHandlerInterface::class,
             'shopwell.sitemap_url_provider' => AbstractUrlProvider::class,
             'shopwell.snippet.filter' => SnippetFilterInterface::class,

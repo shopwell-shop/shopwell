@@ -39,7 +39,6 @@ use Shopwell\Elasticsearch\ExplainFieldQueryBuilder;
 use Shopwell\Elasticsearch\FieldQueryBuilder;
 use Shopwell\Elasticsearch\Framework\DataAbstractionLayer\ElasticsearchTokenizer;
 use Shopwell\Elasticsearch\NestedFieldQueryBuilder;
-use Shopwell\Elasticsearch\Product\AbstractProductSearchQueryBuilder;
 use Shopwell\Elasticsearch\Product\ElasticsearchOptimizeSwitch;
 use Shopwell\Elasticsearch\Product\ProductSearchQueryBuilder;
 use Shopwell\Elasticsearch\TokenQueryBuilder;
@@ -50,7 +49,6 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
  * @internal
  */
 #[Package('framework')]
-#[CoversClass(AbstractProductSearchQueryBuilder::class)]
 #[CoversClass(ProductSearchQueryBuilder::class)]
 class ProductSearchQueryBuilderTest extends TestCase
 {

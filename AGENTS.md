@@ -1,6 +1,7 @@
 # Shopwell 6
 
-Shopwell is an open-source e-commerce platform with API-first architecture exposing three distinct APIs (Admin, Store, Sync) alongside a built-in Twig-based storefront. It uses a custom Data Abstraction Layer instead of a traditional ORM, an event-driven extension system replacing decorators, and Flow Builder for business automation.
+Shopwell is an open-source e-commerce platform with API-first architecture exposing three distinct APIs (Admin, Store, Sync) alongside a built-in Twig-based storefront.
+It uses a custom Data Abstraction Layer instead of a traditional ORM, an event-driven extension system replacing decorators, and Flow Builder for business automation.
 
 ## Project Structure
 
@@ -44,17 +45,23 @@ shopwell/
 
 ## AI Skills
 
-This repo ships Agent Skills under `.agents/skills/`, with `.claude/skills` as a symlink for Claude Code compatibility. Skills normally match their `description` against the task — best-effort and model-decided, **not guaranteed** — while skills with unattended CI twins require explicit invocation. The mandatory steps below are therefore stated here, in the always-loaded file, so they apply even when no skill is triggered.
+This repo ships Agent Skills under `.agents/skills/`, with `.claude/skills` as a symlink for Claude Code compatibility.
+Skills normally match their `description` against the task — best-effort and model-decided, **not guaranteed** — while skills with unattended CI twins require explicit invocation.
+The mandatory steps below are therefore stated here, in the always-loaded file, so they apply even when no skill is triggered.
 
-### Definition of Done — mandatory for every change
+### Definition of Done — mandatory for every significant change
 
 Before you commit or hand work back:
-- **Behaviour change ⇒ tests are required.** Admin JS/TS/Vue → follow `shopwell-admin-js`; PHP → `shopwell-phpunit-tests`. Twig-only template changes follow the rule below. Style-only, snippet/translation, and docs-only changes do not need tests; still add one when it is useful and follows an established pattern.
-- **Twig-only template changes ⇒ never add PHP integration tests just to render or assert Twig output.** A direct render without a Storefront request can cache empty request-dependent Twig globals in the shared test kernel and break unrelated later tests. Run the Storefront Twig lint; use browser/acceptance coverage when the rendered behaviour needs testing.
+- **Behaviour change ⇒ tests are required.** Admin JS/TS/Vue → follow `shopwell-admin-js`; PHP → `shopwell-phpunit-tests`.
+  Twig-only template changes follow the rule below. Style-only, snippet/translation, and docs-only changes do not need tests;
+  still add one when it is useful and follows an established pattern.
+- **Twig-only template changes ⇒ never add PHP integration tests just to render or assert Twig output.**
+  A direct render without a Storefront request can cache empty request-dependent Twig globals in the shared test kernel and break unrelated later tests.
+  Run the Storefront Twig lint; use browser/acceptance coverage when the rendered behaviour needs testing.
 - **Writing a PR title or description? → follow `shopwell-pr-hygiene`** — the Shopwell PR template is required, not a generic one.
-- **Behavioural change, feature, deprecation, or config change? → check `shopwell-release-docs`** for RELEASE_INFO / UPGRADE entries. Put a blank line before and after every heading in those files; the Markdown renderer otherwise glues the heading to the previous paragraph.
+- **Behavioural change, feature, deprecation, or config change? → check `shopwell-release-docs`** for RELEASE_INFO / UPGRADE entries.
 - **Touching `.github/workflows/`, `.github/actions/`, or `.github/bin/`? → follow [`.github/AGENTS.md`](.github/AGENTS.md)** — a CI job must never report success without proving the work ran.
-- **Commit with a conventional message incl. scope**, e.g. `feat(administration): …`.
+- **Asked to commit changes? Commit with a conventional message incl. scope**, e.g. `feat(administration): …`. Never commit without explicitly beeing told to do so.
 - **After review feedback or CI failures**, create a follow-up commit; do not amend or force-push unless explicitly asked.
 - **Lint every file you touched** per the File Linting table below.
 
@@ -86,6 +93,18 @@ To add a new skill (interactive or unattended), follow the checklist in [`coding
 
 **MANDATORY**: All code must follow the guidelines in `coding-guidelines/`.
 
+### Writing Markdown
+
+This rules apply to every file with the ending `*.md`.
+
+- Put a blank line before and after every heading
+- Put only one sentence into one line.
+  Add a line break after the sentence ends.
+  If a sentence is getting too long, it is possible to add a line break after a comma or semicolon.
+- Indent continuation lines inside list items to align with the item's content (2 spaces for - ), instead of relying on lazy continuation lines.
+- Do not add a line break in the middle of a sentence, without a punctuation sign before it.
+- Add an empty line before a code example enclosed with code fences.
+
 ## Snippets & Translations
 
 Simplified Chinese (`zh`) is the second built-in language next to English. Write snippets the way Chinese e-commerce UIs phrase things: concise, product-oriented, no word-by-word translation of the English source. Keep terminology consistent per domain (Administration vs. Storefront) when adding or editing `zh` snippets.
@@ -107,26 +126,3 @@ Snippet files are named by language, not locale: `en.json` / `zh.json` in the Ad
 | **Snippets**           | `composer translation:lint`   | Manual fix required                          |
 | **Prettier** (Admin)   | `composer format:admin`       | `composer format:admin:fix`                  |
 | **GitHub Actions**     | `composer lint:actions`       | `composer lint:actions:fix`                  |
-
-## Shopwell licensing guardrail
-
-- Shopwell-owned code and publishable subpackages use Apache License 2.0.
-- Project-owned package/composer manifests must declare `Apache-2.0`.
-- Registered project-owned `LICENSE` files contain the standard Apache-2.0 text.
-- Original upstream legal text is preserved verbatim in the root `NOTICE`; do not
-  brand, shorten, delete, or move it into `LICENSE.upstream-*` files.
-- Dependency lock files keep truthful third-party license metadata.
-- Before commit, push, release, or sync completion, run:
-  `../sync-upstream/bin/syncctl audit-license shopware` and
-  `../sync-upstream/bin/syncctl audit-upstream-dependencies shopware`.
-- Runtime code and workflows must not depend on `shopware/*`, `shopwarelabs/*`,
-  `@shopware-ag/*`, or their GitHub repositories. A `shopwell-shop/*` Action
-  dependency must have a matching entry in the control registry.
-- Shopwell-owned npm and Composer dependencies must be published to a real registry
-  before use and must use a normal stable version constraint. Git URLs, `github:`,
-  GitHub archive/tarball URLs, commits, branches, Composer `dev-*`, `file:`, `link:`,
-  and `workspace:` are not releases and must not be committed as consumer dependencies.
-- A Git tag or successful publish workflow is not proof of release. Verify the exact
-  version through the npm/Composer registry API before marking related work ready.
-- If LICENSE, NOTICE, owned manifests, or upstream license inventory changes, update
-  `../sync-upstream/config/repos.json` in the same task. A failed audit blocks completion.

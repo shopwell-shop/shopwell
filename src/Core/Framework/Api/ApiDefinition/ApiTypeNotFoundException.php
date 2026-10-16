@@ -2,20 +2,21 @@
 
 namespace Shopwell\Core\Framework\Api\ApiDefinition;
 
+use Shopwell\Core\Framework\Feature;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\ShopwellHttpException;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * @deprecated tag:v6.8.0 - reason:remove-exception - Will be removed as it is unused
- *
- * @codeCoverageIgnore
+ * @deprecated tag:v6.8.0 - Will be removed as it is unused
  */
 #[Package('framework')]
 class ApiTypeNotFoundException extends ShopwellHttpException
 {
     public function __construct(string $type)
     {
+        Feature::throwIfActive('v6.8.0.0', Feature::deprecatedClassMessage(self::class, 'v6.8.0.0'));
+
         parent::__construct(
             'A api type "{{ type }}" was not found.',
             ['type' => $type]

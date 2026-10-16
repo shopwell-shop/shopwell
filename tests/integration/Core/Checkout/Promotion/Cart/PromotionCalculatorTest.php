@@ -39,7 +39,6 @@ use Shopwell\Core\System\SalesChannel\SalesChannelContext;
 use Shopwell\Core\Test\Integration\Traits\Promotion\PromotionIntegrationTestBehaviour;
 use Shopwell\Core\Test\Integration\Traits\Promotion\PromotionTestFixtureBehaviour;
 use Shopwell\Core\Test\TestDefaults;
-use Shopwell\Tests\Unit\Core\Checkout\Cart\LineItem\Group\Helpers\Traits\LineItemTestFixtureBehaviour;
 
 /**
  * @internal
@@ -48,7 +47,6 @@ use Shopwell\Tests\Unit\Core\Checkout\Cart\LineItem\Group\Helpers\Traits\LineIte
 class PromotionCalculatorTest extends TestCase
 {
     use IntegrationTestBehaviour;
-    use LineItemTestFixtureBehaviour;
     use PromotionIntegrationTestBehaviour;
     use PromotionTestFixtureBehaviour;
 

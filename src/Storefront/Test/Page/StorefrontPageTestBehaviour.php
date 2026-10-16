@@ -25,6 +25,7 @@ use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextFactory;
 use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextService;
 use Shopwell\Core\System\SalesChannel\Entity\SalesChannelRepository;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+use Shopwell\Core\Test\Integration\EventDispatcher\EventHookDispatcher;
 use Shopwell\Core\Test\TestDefaults;
 use Shopwell\Storefront\Page\PageLoadedEvent;
 use Shopwell\Storefront\Pagelet\PageletLoadedEvent;
@@ -278,7 +279,7 @@ trait StorefrontPageTestBehaviour
      */
     protected function catchEvent(string $eventName, ?Event &$eventResult): void
     {
-        $this->addEventListener(static::getContainer()->get('event_dispatcher'), $eventName, static function (Event $event) use (&$eventResult): void {
+        EventHookDispatcher::fromContainer(static::getContainer())->on($eventName, static function (Event $event) use (&$eventResult): void {
             $eventResult = $event;
         });
     }

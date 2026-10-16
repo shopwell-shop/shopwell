@@ -10,8 +10,11 @@ use Shopwell\Core\Content\Product\DataAbstractionLayer\StatesUpdater;
 use Shopwell\Core\Content\Product\Subscriber\RepairDigitalProductStatesSubscriber;
 use Shopwell\Core\Framework\Api\Context\SystemSource;
 use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\Feature;
+use Shopwell\Core\Framework\Feature\FeatureException;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Update\Event\UpdatePostFinishEvent;
+use Shopwell\Core\Test\Annotation\DisabledFeatures;
 use Shopwell\Core\Test\Stub\Framework\Adapter\Storage\ArrayKeyValueStorage;
 
 /**
@@ -19,8 +22,30 @@ use Shopwell\Core\Test\Stub\Framework\Adapter\Storage\ArrayKeyValueStorage;
  */
 #[Package('inventory')]
 #[CoversClass(RepairDigitalProductStatesSubscriber::class)]
+#[DisabledFeatures(['v6.8.0.0'])]
 class RepairDigitalProductStatesSubscriberTest extends TestCase
 {
+    public function testNoSubscribersInMajorMode(): void
+    {
+        Feature::withFeatureEnabled('v6.8.0.0', static function (): void {
+            static::assertSame([], RepairDigitalProductStatesSubscriber::getSubscribedEvents());
+        });
+    }
+
+    /**
+     * @deprecated tag:v6.8.0 - Remove with the major feature flag.
+     */
+    public function testDirectInvocationThrowsBeforeRepairInMajorMode(): void
+    {
+        $connection = $this->createMock(Connection::class);
+        $connection->expects($this->never())->method('fetchFirstColumn');
+        $subscriber = new RepairDigitalProductStatesSubscriber($connection, null, new ArrayKeyValueStorage(), static::createStub(LoggerInterface::class));
+        $event = $this->createEvent();
+
+        $this->expectException(FeatureException::class);
+        Feature::withFeatureEnabled('v6.8.0.0', static fn () => $subscriber->repair($event));
+    }
+
     public function testRepairReturnsEarlyWhenAlreadyMarked(): void
     {
         $storage = new ArrayKeyValueStorage([

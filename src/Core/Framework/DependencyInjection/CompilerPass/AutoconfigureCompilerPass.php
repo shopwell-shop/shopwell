@@ -20,6 +20,7 @@ use Shopwell\Core\Content\Flow\Dispatching\Storer\FlowStorer;
 use Shopwell\Core\Content\Product\SalesChannel\Listing\Filter\AbstractListingFilterHandler;
 use Shopwell\Core\Content\Product\SalesChannel\Listing\Processor\AbstractListingProcessor;
 use Shopwell\Core\Content\Seo\SeoUrlRoute\SeoUrlRouteInterface;
+use Shopwell\Core\Content\Seo\SeoUrlRoute\SeoUrlRouteLoaderInterface;
 use Shopwell\Core\Content\Sitemap\Provider\AbstractUrlProvider;
 use Shopwell\Core\Framework\Adapter\Filesystem\Adapter\AdapterFactoryInterface;
 use Shopwell\Core\Framework\Adapter\Twig\NamespaceHierarchy\TemplateNamespaceHierarchyBuilderInterface;
@@ -179,6 +180,10 @@ class AutoconfigureCompilerPass implements CompilerPassInterface
         $container
             ->registerForAutoconfiguration(SeoUrlRouteInterface::class)
             ->addTag('shopwell.seo_url.route');
+
+        $container
+            ->registerForAutoconfiguration(SeoUrlRouteLoaderInterface::class)
+            ->addTag('shopwell.seo_url.route_loader');
 
         $container
             ->registerForAutoconfiguration(TemplateNamespaceHierarchyBuilderInterface::class)

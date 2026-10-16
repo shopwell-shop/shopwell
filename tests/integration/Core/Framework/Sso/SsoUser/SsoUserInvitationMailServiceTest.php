@@ -14,6 +14,7 @@ use Shopwell\Core\Framework\Sso\SsoUser\SsoUserInvitationMailService;
 use Shopwell\Core\Framework\Test\TestCaseBase\SalesChannelFunctionalTestBehaviour;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\System\Locale\LocaleEntity;
+use Shopwell\Core\Test\Integration\EventDispatcher\EventHookDispatcher;
 use Shopwell\Core\Test\TestDefaults;
 
 /**
@@ -72,8 +73,7 @@ class SsoUserInvitationMailServiceTest extends TestCase
         );
 
         $caughtEvent = null;
-        $this->addEventListener(
-            static::getContainer()->get('event_dispatcher'),
+        EventHookDispatcher::fromContainer(static::getContainer())->on(
             MailBeforeSentEvent::class,
             static function (MailBeforeSentEvent $event) use (&$caughtEvent): void {
                 $caughtEvent = $event;

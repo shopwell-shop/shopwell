@@ -7,7 +7,6 @@ use Mcp\Schema\Tool;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\Framework\Mcp\Tool\AbstractToolSearchTool;
 use Shopwell\Core\Framework\Mcp\Tool\Search\ToolSearch;
 use Shopwell\Core\System\SalesChannel\Mcp\Tool\StoreApiToolSearchTool;
 
@@ -16,7 +15,6 @@ use Shopwell\Core\System\SalesChannel\Mcp\Tool\StoreApiToolSearchTool;
  */
 #[Package('framework')]
 #[CoversClass(StoreApiToolSearchTool::class)]
-#[CoversClass(AbstractToolSearchTool::class)]
 class StoreApiToolSearchToolTest extends TestCase
 {
     public function testSearchReturnsStoreApiToolDefinitions(): void

@@ -48,6 +48,7 @@ use Shopwell\Core\SalesChannelRequest;
 use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextFactory;
 use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextService;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+use Shopwell\Core\Test\Integration\EventDispatcher\EventHookDispatcher;
 use Shopwell\Core\Test\Integration\PaymentHandler\TestPaymentHandler;
 use Shopwell\Core\Test\TestDefaults;
 use Shopwell\Storefront\Checkout\Cart\Error\PaymentMethodChangedError;
@@ -571,14 +572,9 @@ class CheckoutControllerTest extends TestCase
             $loadedCarts[] = $event->getCart()->getToken();
         };
 
-        $dispatcher = static::getContainer()->get('event_dispatcher');
-        $dispatcher->addListener(CartLoadedEvent::class, $tracker);
+        EventHookDispatcher::fromContainer(static::getContainer())->on(CartLoadedEvent::class, $tracker);
 
-        try {
-            $browser->request('GET', '/checkout/cart.json');
-        } finally {
-            $dispatcher->removeListener(CartLoadedEvent::class, $tracker);
-        }
+        $browser->request('GET', '/checkout/cart.json');
 
         static::assertCount(1, $loadedCarts);
 

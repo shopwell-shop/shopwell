@@ -8,16 +8,11 @@ use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\CustomEntity\CustomEntityException;
 use Shopwell\Core\System\CustomEntity\Exception\CustomEntityXmlParsingException;
 use Shopwell\Core\System\CustomEntity\Xml\Config\AdminUi\AdminUiXmlSchema;
-use Shopwell\Core\System\CustomEntity\Xml\Config\AdminUi\XmlElements\AdminUi;
 use Shopwell\Core\System\CustomEntity\Xml\Config\AdminUi\XmlElements\Card;
 use Shopwell\Core\System\CustomEntity\Xml\Config\AdminUi\XmlElements\CardField;
 use Shopwell\Core\System\CustomEntity\Xml\Config\AdminUi\XmlElements\Column;
-use Shopwell\Core\System\CustomEntity\Xml\Config\AdminUi\XmlElements\Columns;
-use Shopwell\Core\System\CustomEntity\Xml\Config\AdminUi\XmlElements\Detail;
 use Shopwell\Core\System\CustomEntity\Xml\Config\AdminUi\XmlElements\Entity;
-use Shopwell\Core\System\CustomEntity\Xml\Config\AdminUi\XmlElements\Listing;
 use Shopwell\Core\System\CustomEntity\Xml\Config\AdminUi\XmlElements\Tab;
-use Shopwell\Core\System\CustomEntity\Xml\Config\AdminUi\XmlElements\Tabs;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -25,16 +20,6 @@ use Symfony\Component\HttpFoundation\Response;
  */
 #[Package('framework')]
 #[CoversClass(AdminUiXmlSchema::class)]
-#[CoversClass(AdminUi::class)]
-#[CoversClass(Card::class)]
-#[CoversClass(CardField::class)]
-#[CoversClass(Column::class)]
-#[CoversClass(Columns::class)]
-#[CoversClass(Detail::class)]
-#[CoversClass(Entity::class)]
-#[CoversClass(Listing::class)]
-#[CoversClass(Tab::class)]
-#[CoversClass(Tabs::class)]
 class AdminUiXmlSchemaTest extends TestCase
 {
     public function testPublicConstants(): void

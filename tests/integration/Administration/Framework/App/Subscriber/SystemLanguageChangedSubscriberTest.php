@@ -18,6 +18,7 @@ use Shopwell\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\Maintenance\System\Service\ShopConfigurator;
 use Shopwell\Core\Maintenance\System\Service\SystemLanguageChangeEvent;
+use Shopwell\Core\Test\Integration\EventDispatcher\EventHookDispatcher;
 
 /**
  * @internal
@@ -67,7 +68,7 @@ class SystemLanguageChangedSubscriberTest extends TestCase
 
         $previousLocaleCode = '';
         $newLocaleCode = '';
-        $this->getContainer()->get('event_dispatcher')->addListener(
+        EventHookDispatcher::fromContainer(static::getContainer())->on(
             SystemLanguageChangeEvent::class,
             static function (SystemLanguageChangeEvent $event) use (&$previousLocaleCode, &$newLocaleCode): void {
                 $previousLocaleCode = $event->previousLocaleCode;

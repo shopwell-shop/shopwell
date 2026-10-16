@@ -27,6 +27,7 @@ use Shopwell\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextFactory;
 use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextService;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+use Shopwell\Core\Test\Integration\EventDispatcher\EventHookDispatcher;
 use Shopwell\Core\Test\Integration\Traits\SnapshotTesting;
 use Shopwell\Core\Test\Stub\Framework\IdsCollection;
 use Shopwell\Core\Test\TestDefaults;
@@ -159,10 +160,9 @@ class DeliveryNoteRendererTest extends TestCase
 
         $caughtEvent = null;
 
-        static::getContainer()->get('event_dispatcher')
-            ->addListener(DeliveryNoteOrdersEvent::class, static function (DeliveryNoteOrdersEvent $event) use (&$caughtEvent): void {
-                $caughtEvent = $event;
-            });
+        EventHookDispatcher::fromContainer(static::getContainer())->on(DeliveryNoteOrdersEvent::class, static function (DeliveryNoteOrdersEvent $event) use (&$caughtEvent): void {
+            $caughtEvent = $event;
+        });
 
         $processedTemplate = $this->deliveryNoteRenderer->render(
             [$orderId => $operation],

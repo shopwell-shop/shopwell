@@ -9,6 +9,7 @@ use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Mcp\Attribute\McpToolDependsOn;
 use Shopwell\Core\Framework\Mcp\Attribute\McpToolGroup;
 use Shopwell\Core\Framework\Mcp\Attribute\McpToolRequires;
+use Shopwell\Core\Framework\Mcp\McpToolsetRegistry;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 
@@ -161,6 +162,12 @@ class McpToolAnalysisCompilerPass implements CompilerPassInterface
             }
 
             $group = McpToolAttributeReader::resolveAttribute($class, McpToolGroup::class)?->group;
+
+            // The discovery group is reserved for the core meta-tools (see McpToolDiscoveryCompilerPass).
+            if (McpToolsetRegistry::isReservedGroupClaim($group, $tool->name)) {
+                $group = McpToolsetRegistry::FALLBACK_GROUP;
+            }
+
             if ($group !== null && $group !== '') {
                 $groupMap[$tool->name] = $group;
             }

@@ -4,19 +4,20 @@ namespace Shopwell\Core\Checkout\Promotion\Exception;
 
 use Shopwell\Core\Checkout\Cart\LineItem\LineItem;
 use Shopwell\Core\Checkout\Promotion\PromotionException;
+use Shopwell\Core\Framework\Feature;
 use Shopwell\Core\Framework\Log\Package;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * @deprecated tag:v6.8.0 - reason:remove-exception - Will be removed, use PromotionException::priceNotFound() instead
- *
- * @codeCoverageIgnore
+ * @deprecated tag:v6.8.0 - Will be removed, use PromotionException::priceNotFound() instead
  */
 #[Package('checkout')]
 class PriceNotFoundException extends PromotionException
 {
     public function __construct(LineItem $item)
     {
+        Feature::throwIfActive('v6.8.0.0', Feature::deprecatedClassMessage(self::class, 'v6.8.0.0'));
+
         parent::__construct(
             Response::HTTP_BAD_REQUEST,
             parent::PRICE_NOT_FOUND_FOR_ITEM,

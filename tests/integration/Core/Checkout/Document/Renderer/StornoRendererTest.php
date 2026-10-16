@@ -32,6 +32,7 @@ use Shopwell\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextFactory;
 use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextService;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+use Shopwell\Core\Test\Integration\EventDispatcher\EventHookDispatcher;
 use Shopwell\Core\Test\Integration\Traits\SnapshotTesting;
 use Shopwell\Core\Test\Stub\Framework\IdsCollection;
 use Shopwell\Core\Test\TestDefaults;
@@ -200,10 +201,9 @@ class StornoRendererTest extends TestCase
 
         $caughtEvent = null;
 
-        static::getContainer()->get('event_dispatcher')
-            ->addListener(StornoOrdersEvent::class, static function (StornoOrdersEvent $event) use (&$caughtEvent): void {
-                $caughtEvent = $event;
-            });
+        EventHookDispatcher::fromContainer(static::getContainer())->on(StornoOrdersEvent::class, static function (StornoOrdersEvent $event) use (&$caughtEvent): void {
+            $caughtEvent = $event;
+        });
 
         $processedTemplate = $this->stornoRenderer->render(
             [$orderId => $operation],
@@ -237,8 +237,8 @@ class StornoRendererTest extends TestCase
             new DocumentRendererConfig()
         );
 
-        static::assertEmpty($processedTemplate->getSuccess());
-        static::assertNotEmpty($errors = $processedTemplate->getErrors());
+        static::assertCount(0, $processedTemplate->getSuccess());
+        static::assertNotCount(0, $errors = $processedTemplate->getErrors());
         static::assertArrayHasKey($orderId, $errors);
         static::assertInstanceOf(DocumentException::class, $errors[$orderId]);
         static::assertSame(

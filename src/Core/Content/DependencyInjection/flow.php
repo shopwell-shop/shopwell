@@ -63,6 +63,7 @@ use Shopwell\Core\Content\Flow\Indexing\FlowPayloadUpdater;
 use Shopwell\Core\Content\Flow\Rule\FlowRuleScopeBuilder;
 use Shopwell\Core\Content\Flow\Rule\OrderCreatedByAdminRule;
 use Shopwell\Core\Content\Flow\Rule\OrderCustomFieldRule;
+use Shopwell\Core\Content\Flow\Rule\OrderDaysSincePlacedRule;
 use Shopwell\Core\Content\Flow\Rule\OrderDeliveryStatusRule;
 use Shopwell\Core\Content\Flow\Rule\OrderDocumentTypeRule;
 use Shopwell\Core\Content\Flow\Rule\OrderDocumentTypeSentRule;
@@ -440,6 +441,9 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->tag('shopwell.rule.definition');
 
     $services->set(OrderTrackingCodeRule::class)
+        ->tag('shopwell.rule.definition');
+
+    $services->set(OrderDaysSincePlacedRule::class)
         ->tag('shopwell.rule.definition');
 
     $services->set(OrderDeliveryStatusRule::class)

@@ -389,7 +389,7 @@ function globalErrorHandlingInterceptor(client) {
  * @param {Object} data
  */
 function handleErrorStates({ status, errors, error = null, data }) {
-    // Get $tc for translations and bind the Vue component scope to make it working
+    // The Vue root is needed for router navigation in notification actions
     const viewRoot = Shopwell.Application.view.root;
 
     // Handle sync-api errors
@@ -436,8 +436,8 @@ function handleErrorStates({ status, errors, error = null, data }) {
                 system: true,
                 autoClose: false,
                 growl: true,
-                title: Shopwell.Snippet.tc('global.error-codes.FRAMEWORK__MISSING_PRIVILEGE_ERROR'),
-                message: `${Shopwell.Snippet.tc('sw-privileges.error.description')} <br> ${missingPrivilegesMessage}`,
+                title: Shopwell.Snippet.t('global.error-codes.FRAMEWORK__MISSING_PRIVILEGE_ERROR'),
+                message: `${Shopwell.Snippet.t('sw-privileges.error.description')} <br> ${missingPrivilegesMessage}`,
             });
         });
     }
@@ -451,11 +451,11 @@ function handleErrorStates({ status, errors, error = null, data }) {
             system: true,
             autoClose: false,
             growl: true,
-            title: Shopwell.Snippet.tc('sw-extension.errors.storeSessionExpired.title'),
-            message: Shopwell.Snippet.tc('sw-extension.errors.storeSessionExpired.message'),
+            title: Shopwell.Snippet.t('sw-extension.errors.storeSessionExpired.title'),
+            message: Shopwell.Snippet.t('sw-extension.errors.storeSessionExpired.message'),
             actions: [
                 {
-                    label: Shopwell.Snippet.tc('sw-extension.errors.storeSessionExpired.actionLabel'),
+                    label: Shopwell.Snippet.t('sw-extension.errors.storeSessionExpired.actionLabel'),
                     method: () => {
                         viewRoot.$router.push({
                             name: 'sw.extension.my-extensions.account',
@@ -475,17 +475,17 @@ function handleErrorStates({ status, errors, error = null, data }) {
 
             blockingEntities = parameters.usages.reduce((message, usageObject) => {
                 const times = usageObject.count;
-                const timesSnippet = Shopwell.Snippet.tc('global.default.xTimesIn', times);
-                const blockingEntitiesSnippet = Shopwell.Snippet.tc(`global.entities.${usageObject.entityName}`, times[1]);
+                const timesSnippet = Shopwell.Snippet.t('global.default.xTimesIn', times);
+                const blockingEntitiesSnippet = Shopwell.Snippet.t(`global.entities.${usageObject.entityName}`, times[1]);
                 return `${message}<br>${timesSnippet} <b>${blockingEntitiesSnippet}</b>`;
             }, '');
 
             Shopwell.Store.get('notification').createNotification({
                 variant: 'error',
-                title: Shopwell.Snippet.tc('global.default.error'),
-                message: `${Shopwell.Snippet.tc(
+                title: Shopwell.Snippet.t('global.default.error'),
+                message: `${Shopwell.Snippet.t(
                     'global.notification.messageDeleteFailed',
-                    { entityName: Shopwell.Snippet.tc(`global.entities.${entityName}`) },
+                    { entityName: Shopwell.Snippet.t(`global.entities.${entityName}`) },
                     0,
                 )}${blockingEntities}`,
             });

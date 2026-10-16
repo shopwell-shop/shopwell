@@ -23,6 +23,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\RequestCriteriaBuilder;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Mcp\Context\McpContextProvider;
+use Shopwell\Core\Framework\Mcp\Result\McpToolError;
 use Shopwell\Core\Framework\Mcp\Tool\EntityAggregateTool;
 
 /**
@@ -222,6 +223,7 @@ class EntityAggregateToolTest extends TestCase
 
         static::assertFalse($data['success']);
         static::assertStringContainsString('unknown_entity', $data['error']);
+        static::assertSame(McpToolError::INVALID_ARGUMENTS, $data['code']);
     }
 
     public function testReturnsErrorForNonListAggregations(): void

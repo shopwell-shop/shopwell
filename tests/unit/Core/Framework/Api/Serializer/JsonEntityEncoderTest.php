@@ -23,7 +23,6 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Write\EntityWriteGatewayInterfa
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Struct\ArrayEntity;
 use Shopwell\Core\Framework\Struct\Serializer\StructNormalizer;
-use Shopwell\Core\Framework\Test\Api\Serializer\AssertValuesTrait;
 use Shopwell\Core\Framework\Test\DataAbstractionLayer\Field\TestDefinition\AssociationExtension;
 use Shopwell\Core\Framework\Test\DataAbstractionLayer\Field\TestDefinition\CustomFieldTestDefinition;
 use Shopwell\Core\Framework\Test\DataAbstractionLayer\Field\TestDefinition\CustomFieldTestTranslationDefinition;
@@ -31,6 +30,7 @@ use Shopwell\Core\Framework\Test\DataAbstractionLayer\Field\TestDefinition\Exten
 use Shopwell\Core\Framework\Test\DataAbstractionLayer\Field\TestDefinition\ExtendedDefinition;
 use Shopwell\Core\Framework\Test\DataAbstractionLayer\Field\TestDefinition\ScalarRuntimeExtension;
 use Shopwell\Core\System\User\UserDefinition;
+use Shopwell\Core\Test\Assert\ArrayValues;
 use Shopwell\Core\Test\Stub\DataAbstractionLayer\StaticDefinitionInstanceRegistry;
 use Shopwell\Tests\Integration\Core\Framework\Api\Serializer\fixtures\SerializationFixture;
 use Shopwell\Tests\Integration\Core\Framework\Api\Serializer\fixtures\TestBasicStruct;
@@ -52,8 +52,6 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
 #[CoversClass(JsonEntityEncoder::class)]
 class JsonEntityEncoderTest extends TestCase
 {
-    use AssertValuesTrait;
-
     private DefinitionInstanceRegistry $definitionRegistry;
 
     protected function setUp(): void
@@ -121,7 +119,7 @@ class JsonEntityEncoderTest extends TestCase
         $encoder = $this->createEncoder();
         $actual = $encoder->encode(new Criteria(), $definition, $fixture->getInput(), SerializationFixture::API_BASE_URL);
 
-        $this->assertValues($fixture->getAdminJsonFixtures(), $actual);
+        ArrayValues::assertValues($fixture->getAdminJsonFixtures(), $actual);
     }
 
     public function testEncodeStructWithExtension(): void
@@ -134,7 +132,7 @@ class JsonEntityEncoderTest extends TestCase
 
         unset($actual['apiAlias']);
         static::assertEquals($fixture->getAdminJsonFixtures(), $actual);
-        $this->assertValues($fixture->getAdminJsonFixtures(), $actual);
+        ArrayValues::assertValues($fixture->getAdminJsonFixtures(), $actual);
     }
 
     public function testConcreteExtensionIncludeKeepsExtensionsWrapper(): void

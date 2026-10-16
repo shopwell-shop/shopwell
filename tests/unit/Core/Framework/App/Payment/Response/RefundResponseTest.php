@@ -4,7 +4,6 @@ namespace Shopwell\Tests\Unit\Core\Framework\App\Payment\Response;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
-use Shopwell\Core\Framework\App\Payment\Response\AbstractResponse;
 use Shopwell\Core\Framework\App\Payment\Response\RefundResponse;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\StateMachine\Aggregation\StateMachineTransition\StateMachineTransitionActions;
@@ -14,7 +13,6 @@ use Shopwell\Core\System\StateMachine\Aggregation\StateMachineTransition\StateMa
  */
 #[Package('checkout')]
 #[CoversClass(RefundResponse::class)]
-#[CoversClass(AbstractResponse::class)]
 class RefundResponseTest extends TestCase
 {
     public function testResponse(): void

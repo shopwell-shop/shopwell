@@ -20,6 +20,7 @@ use Shopwell\Core\Checkout\Cart\Price\Struct\CalculatedPrice;
 use Shopwell\Core\Checkout\Cart\Price\Struct\QuantityPriceDefinition;
 use Shopwell\Core\Checkout\Cart\Price\Struct\ReferencePriceDefinition;
 use Shopwell\Core\Checkout\CheckoutPermissions;
+use Shopwell\Core\Content\Product\Events\ProductCartDataContextHashEvent;
 use Shopwell\Core\Content\Product\ProductDefinition;
 use Shopwell\Core\Content\Product\ProductEntity;
 use Shopwell\Core\Content\Product\SalesChannel\Price\AbstractProductPriceCalculator;
@@ -35,6 +36,7 @@ use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\Profiling\Profiler;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
 use Shopwell\Core\System\Tax\TaxEntity;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 #[Package('inventory')]
 class ProductCartProcessor implements CartProcessorInterface, CartDataCollectorInterface
@@ -75,7 +77,8 @@ class ProductCartProcessor implements CartProcessorInterface, CartDataCollectorI
         private readonly ProductFeatureBuilder $featureBuilder,
         private readonly AbstractProductPriceCalculator $priceCalculator,
         private readonly EntityCacheKeyGenerator $generator,
-        private readonly Connection $connection
+        private readonly Connection $connection,
+        private readonly EventDispatcherInterface $eventDispatcher,
     ) {
     }
 
@@ -86,7 +89,7 @@ class ProductCartProcessor implements CartProcessorInterface, CartDataCollectorI
 
             $items = array_column($lineItems, 'item');
 
-            $hash = $this->getDataContextHash($context);
+            $hash = $this->getDataContextHash($data, $original, $context, $behavior);
 
             // find products in original cart which requires data from gateway
             $ids = $this->getNotCompleted($data, $items, $hash);
@@ -610,7 +613,7 @@ class ProductCartProcessor implements CartProcessorInterface, CartDataCollectorI
         $this->priceCalculator->calculate($affected, $context);
     }
 
-    private function getDataContextHash(SalesChannelContext $context): string
+    private function getDataContextHash(CartDataCollection $data, Cart $original, SalesChannelContext $context, CartBehavior $behavior): string
     {
         $contextHash = $this->generator->getSalesChannelContextHash($context, [RuleAreas::PRODUCT_AREA]);
 
@@ -618,6 +621,16 @@ class ProductCartProcessor implements CartProcessorInterface, CartDataCollectorI
             return $taxRule->getRules()?->getIds() ?: $taxRule->getId();
         }, $context->getTaxRules()->getElements());
 
-        return Hasher::hash([$contextHash, $activeTaxRules]);
+        $event = new ProductCartDataContextHashEvent($data, $original, $context, $behavior);
+        $this->eventDispatcher->dispatch($event);
+
+        $hashData = [$contextHash, $activeTaxRules];
+
+        $parts = $event->getParts();
+        if ($parts !== []) {
+            $hashData[] = $parts;
+        }
+
+        return Hasher::hash($hashData);
     }
 }

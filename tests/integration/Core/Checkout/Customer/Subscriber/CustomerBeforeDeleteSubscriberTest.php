@@ -10,6 +10,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Test\TestCaseBase\AdminFunctionalTestBehaviour;
 use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\Test\Integration\EventDispatcher\EventHookDispatcher;
 use Shopwell\Core\Test\TestDefaults;
 use Symfony\Contracts\EventDispatcher\Event;
 
@@ -47,7 +48,7 @@ class CustomerBeforeDeleteSubscriberTest extends TestCase
             $caughtEvents[] = $event;
         };
 
-        static::getContainer()->get('event_dispatcher')->addListener(CustomerDeletedEvent::class, $listenerClosure);
+        EventHookDispatcher::fromContainer(static::getContainer())->on(CustomerDeletedEvent::class, $listenerClosure);
 
         $this->customerRepository->delete([
             ['id' => $customerId1],
