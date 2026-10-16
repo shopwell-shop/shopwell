@@ -5,6 +5,7 @@ namespace Shopwell\Core\Checkout\Cart;
 use Shopwell\Core\Checkout\Cart\Hook\CartHook;
 use Shopwell\Core\Checkout\Cart\Price\AmountCalculator;
 use Shopwell\Core\Checkout\Cart\Transaction\TransactionProcessor;
+use Shopwell\Core\Checkout\CheckoutPermissions;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Script\Execution\ScriptExecutor;
 use Shopwell\Core\Profiling\Profiler;
@@ -63,6 +64,10 @@ class Processor
             $cart->addErrors(
                 ...$this->validator->validate($cart, $context)
             );
+
+            if ($behavior->hasPermission(CheckoutPermissions::KEEP_ORDER_TRANSACTION)) {
+                $cart->setTransactions($original->getTransactions());
+            }
 
             $cart->setTransactions(
                 $this->transactionProcessor->process($cart, $context)

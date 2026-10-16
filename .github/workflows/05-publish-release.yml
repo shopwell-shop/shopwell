@@ -44,7 +44,7 @@ jobs:
       - name: Invalidate CloudFront
         run: aws cloudfront create-invalidation --distribution-id ECVXLYHJ64DVV --paths "/changelog/*"
 
-      - uses: shopwell-shop/octo-sts-action@c0ea7b858a7f5719ff14390f67dd770a2defd203
+      - uses: shopwell-shop/octo-sts-action@ace087b5b8331bebfb452c74fdc94e3e2555c79b
         if: github.event.action == 'published'
         id: sts-production
         with:

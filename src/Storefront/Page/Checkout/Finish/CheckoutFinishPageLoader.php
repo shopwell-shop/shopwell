@@ -20,6 +20,7 @@ use Shopwell\Core\Framework\Uuid\Exception\InvalidUuidException;
 use Shopwell\Core\Profiling\Profiler;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
 use Shopwell\Core\System\SystemConfig\SystemConfigService;
+use Shopwell\Storefront\Checkout\Order\OrderProductAvailabilityResolver;
 use Shopwell\Storefront\Page\GenericPageLoaderInterface;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpFoundation\Request;
@@ -39,6 +40,7 @@ class CheckoutFinishPageLoader
         private readonly AbstractOrderRoute $orderRoute,
         private readonly AbstractTranslator $translator,
         private readonly SystemConfigService $systemConfigService,
+        private readonly OrderProductAvailabilityResolver $productAvailabilityResolver,
     ) {
     }
 
@@ -149,6 +151,8 @@ class CheckoutFinishPageLoader
         if (!$order) {
             throw OrderException::orderNotFound($orderId);
         }
+
+        $this->productAvailabilityResolver->addAvailability([$order], $salesChannelContext);
 
         return $order;
     }

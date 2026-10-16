@@ -74,6 +74,7 @@ use Shopwell\Core\Checkout\Cart\SalesChannel\CartItemRemoveRoute;
 use Shopwell\Core\Checkout\Cart\SalesChannel\CartItemUpdateRoute;
 use Shopwell\Core\Checkout\Cart\SalesChannel\CartLoadRoute;
 use Shopwell\Core\Checkout\Cart\SalesChannel\CartOrderRoute;
+use Shopwell\Core\Checkout\Cart\SalesChannel\CartReorderRoute;
 use Shopwell\Core\Checkout\Cart\SalesChannel\CartService;
 use Shopwell\Core\Checkout\Cart\SalesChannel\ProductShippingCostRoute;
 use Shopwell\Core\Checkout\Cart\SalesChannel\ShippingCostRoute;
@@ -99,6 +100,7 @@ use Shopwell\Core\Checkout\Gateway\Command\Handler\RemoveShippingMethodCommandHa
 use Shopwell\Core\Checkout\Gateway\Command\Registry\CheckoutGatewayCommandRegistry;
 use Shopwell\Core\Checkout\Gateway\SalesChannel\CheckoutGatewayRoute;
 use Shopwell\Core\Checkout\Order\OrderAddressService;
+use Shopwell\Core\Checkout\Order\SalesChannel\OrderRoute;
 use Shopwell\Core\Checkout\Payment\PaymentProcessor;
 use Shopwell\Core\Checkout\Payment\SalesChannel\PaymentMethodRoute;
 use Shopwell\Core\Checkout\Promotion\Cart\PromotionItemBuilder;
@@ -119,7 +121,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\DefinitionInstanceRegistry;
 use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Log\ExceptionLogger;
 use Shopwell\Core\Framework\Script\Execution\ScriptExecutor;
-use Shopwell\Core\Framework\Telemetry\Metrics\Meter;
+use Shopwell\Core\Framework\Telemetry\Telemetry;
 use Shopwell\Core\Framework\Validation\DataValidator;
 use Shopwell\Core\System\Locale\LanguageLocaleCodeProvider;
 use Shopwell\Core\System\SalesChannel\SalesChannel\ContextSwitchRoute;
@@ -221,7 +223,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     // Telemetry: cart calculation metrics collaborator
     $services->set(CartMetricsInstrumentor::class)
         ->args([
-            service(Meter::class),
+            service(Telemetry::class),
             service(SalesChannelTypeResolver::class),
         ]);
 
@@ -277,6 +279,15 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(LineItemFactoryRegistry::class),
             service('shopwell.rate_limiter'),
             service(CartLocker::class),
+            service(ExtensionDispatcher::class),
+        ]);
+
+    $services->set(CartReorderRoute::class)
+        ->public()
+        ->args([
+            service(OrderRoute::class),
+            service(CartItemAddRoute::class),
+            service(LineItemFactoryRegistry::class),
             service(ExtensionDispatcher::class),
         ]);
 

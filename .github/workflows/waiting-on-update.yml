@@ -67,7 +67,7 @@ jobs:
           path: ${{ runner.temp }}/relay
       - id: sts
         if: vars.WAITING_ON_PROJECT_NUMBER != ''
-        uses: shopwell-shop/octo-sts-action@c0ea7b858a7f5719ff14390f67dd770a2defd203
+        uses: shopwell-shop/octo-sts-action@ace087b5b8331bebfb452c74fdc94e3e2555c79b
         with:
           scope: shopwell-shop
           identity: ManageProjects

@@ -47,6 +47,7 @@ use Shopwell\Core\Test\Integration\Traits\CustomerTestTrait;
 use Shopwell\Core\Test\Integration\Traits\OrderFixture;
 use Shopwell\Core\Test\Stub\Framework\IdsCollection;
 use Shopwell\Storefront\Checkout\Cart\SalesChannel\StorefrontCartFacade;
+use Shopwell\Storefront\Checkout\Order\OrderProductAvailabilityResolver;
 use Shopwell\Storefront\Controller\AuthController;
 use Shopwell\Storefront\Controller\FormController;
 use Shopwell\Storefront\Framework\Routing\RequestTransformer;
@@ -406,7 +407,8 @@ class ControllerRateLimiterTest extends TestCase
             static::createStub(GenericPageLoader::class),
             static::createStub(EventDispatcher::class),
             $orderRoute,
-            static::createStub(AbstractTranslator::class)
+            static::createStub(AbstractTranslator::class),
+            static::createStub(OrderProductAvailabilityResolver::class)
         );
 
         $controller->load(new Request([

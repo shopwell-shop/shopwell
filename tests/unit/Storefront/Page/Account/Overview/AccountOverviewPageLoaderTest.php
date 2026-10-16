@@ -20,6 +20,7 @@ use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
 use Shopwell\Core\Test\Stub\EventDispatcher\CollectingEventDispatcher;
+use Shopwell\Storefront\Checkout\Order\OrderProductAvailabilityResolver;
 use Shopwell\Storefront\Event\RouteRequest\OrderRouteRequestEvent;
 use Shopwell\Storefront\Page\Account\Overview\AccountOverviewPage;
 use Shopwell\Storefront\Page\Account\Overview\AccountOverviewPageLoadedEvent;
@@ -122,7 +123,8 @@ class AccountOverviewPageLoaderTest extends TestCase
             $this->orderRoute,
             static::createStub(CustomerRoute::class),
             static::createStub(NewsletterAccountPageletLoader::class),
-            $this->translator
+            $this->translator,
+            static::createStub(OrderProductAvailabilityResolver::class)
         );
 
         $page = new AccountOverviewPage();
@@ -145,7 +147,8 @@ class AccountOverviewPageLoaderTest extends TestCase
             $orderRoute ?? $this->orderRoute,
             static::createStub(CustomerRoute::class),
             static::createStub(NewsletterAccountPageletLoader::class),
-            $translator ?? $this->translator
+            $translator ?? $this->translator,
+            static::createStub(OrderProductAvailabilityResolver::class)
         );
     }
 }
