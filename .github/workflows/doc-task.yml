@@ -8,11 +8,7 @@ on:
 
 jobs:
   manage-docs:
-    # The DOC_TASK_* repository variables describe the organisation project and description
-    # template this job writes into. Without them the script fails at
-    # repoVars.DOC_TASK_PROJECTS.split, so skip explicitly until they are configured instead of
-    # failing every scheduled run; drop the two variable checks once the project exists.
-    if: github.repository == 'shopwell-shop/shopwell' && github.ref == 'refs/heads/trunk' && vars.DOC_TASK_PROJECTS != '' && vars.DOC_TASK_PROJECT_ID != ''
+    if: github.repository == 'shopwell-shop/shopwell' && github.ref == 'refs/heads/trunk'
     runs-on: ubuntu-24.04
     permissions:
       id-token: write
