@@ -12,6 +12,7 @@ use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Test\TestCaseBase\KernelTestBehaviour;
 use Shopwell\Core\System\SystemConfig\SystemConfigService;
+use Shopwell\Core\Test\Integration\EventDispatcher\EventHookDispatcher;
 use Shopwell\Storefront\Event\ThemeCompilerConcatenatedStylesEvent;
 use Shopwell\Storefront\Theme\Event\ThemeCompilerEnrichScssVariablesEvent;
 use Shopwell\Storefront\Theme\MD5ThemePathBuilder;
@@ -127,7 +128,7 @@ class ThemeCompilerEventSubscriberTest extends TestCase
         $subscriber = new MockThemeVariablesSubscriber(
             static::getContainer()->get(SystemConfigService::class)
         );
-        $this->eventDispatcher->addSubscriber($subscriber);
+        EventHookDispatcher::fromContainer(static::getContainer())->subscribe($subscriber);
 
         $config = new StorefrontPluginConfiguration('TestTheme');
         $config->setThemeConfig([
@@ -140,21 +141,17 @@ class ThemeCompilerEventSubscriberTest extends TestCase
             ],
         ]);
 
-        try {
-            $this->themeCompiler->compileTheme(
-                $this->mockSalesChannelId,
-                'test-theme-id',
-                $config,
-                new StorefrontPluginConfigurationCollection(),
-                false,
-                Context::createDefaultContext()
-            );
+        $this->themeCompiler->compileTheme(
+            $this->mockSalesChannelId,
+            'test-theme-id',
+            $config,
+            new StorefrontPluginConfigurationCollection(),
+            false,
+            Context::createDefaultContext()
+        );
 
-            // Check that enriched variables were written
-            $variablesContent = $this->tempFilesystem->read('theme-variables.scss');
-            static::assertStringContainsString('$mock-variable-black: #000000', $variablesContent);
-        } finally {
-            $this->eventDispatcher->removeSubscriber($subscriber);
-        }
+        // Check that enriched variables were written
+        $variablesContent = $this->tempFilesystem->read('theme-variables.scss');
+        static::assertStringContainsString('$mock-variable-black: #000000', $variablesContent);
     }
 }

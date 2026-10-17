@@ -162,6 +162,12 @@
           "changeLabel": "修改：在店面显示标签",
           "label": "在店面显示标签",
           "helpText": "只有在填写有效的质保期限、制造商和制造商产品编号时，才会显示质保标签。"
+        },
+        "guaranteeTermsMedia": {
+          "changeLabel": "修改：质保条款（PDF）"
+        },
+        "guaranteeTermsUrl": {
+          "changeLabel": "修改：质保条款 URL"
         }
       },
       "seo": {

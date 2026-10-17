@@ -16,6 +16,7 @@ use Shopwell\Core\Framework\Feature;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Routing\RoutingException;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+use Shopwell\Storefront\Checkout\Order\OrderProductAvailabilityResolver;
 use Shopwell\Storefront\Event\RouteRequest\OrderRouteRequestEvent;
 use Shopwell\Storefront\Page\GenericPageLoaderInterface;
 use Shopwell\Storefront\Page\MetaInformation;
@@ -38,7 +39,8 @@ class AccountOverviewPageLoader
         private readonly AbstractOrderRoute $orderRoute,
         private readonly AbstractCustomerRoute $customerRoute,
         private readonly NewsletterAccountPageletLoader $newsletterAccountPageletLoader,
-        private readonly AbstractTranslator $translator
+        private readonly AbstractTranslator $translator,
+        private readonly OrderProductAvailabilityResolver $productAvailabilityResolver
     ) {
     }
 
@@ -59,6 +61,8 @@ class AccountOverviewPageLoader
         $order = $this->loadNewestOrder($salesChannelContext, $request);
 
         if ($order !== null) {
+            $this->productAvailabilityResolver->addAvailability([$order], $salesChannelContext);
+
             $page->setNewestOrder($order);
         }
 

@@ -94,14 +94,14 @@ export default {
             type: String,
             required: false,
             default() {
-                return Shopwell.Snippet.tc('global.sw-tabs-item.tooltipTabHasErrors');
+                return Shopwell.Snippet.t('global.sw-tabs-item.tooltipTabHasErrors');
             },
         },
         warningTooltip: {
             type: String,
             required: false,
             default() {
-                return Shopwell.Snippet.tc('global.sw-tabs-item.tooltipTabHasWarnings');
+                return Shopwell.Snippet.t('global.sw-tabs-item.tooltipTabHasWarnings');
             },
         },
     },

@@ -15,9 +15,4 @@ Shopwell.Module.register('sw-export-channel-tracking', {
     title: 'sw-export-channel-tracking.general.mainMenuItemGeneral',
     description: 'sw-export-channel-tracking.general.descriptionTextModule',
     routeMiddleware: (next) => next(),
-
-    snippets: {
-        'zh-CN': () => import('./snippet/zh.json'),
-        'en-GB': () => import('./snippet/en.json'),
-    },
 });

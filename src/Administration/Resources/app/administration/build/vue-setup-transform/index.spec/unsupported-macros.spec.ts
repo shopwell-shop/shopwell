@@ -3,33 +3,31 @@
  */
 
 /**
- * Covers Vue macros the transform rejects: unsupported macros such as `defineModel()` and
- * `defineExpose()` (nested calls stay untouched, like compiler-sfc), and base-only macros used in
- * override mode.
+ * Covers Vue macros the transform rejects: `defineExpose()`, which the transform generates itself
+ * (nested calls stay untouched, like compiler-sfc), and base-only macros used in override mode.
  */
 
 import { stripIndent, transformOrFail, transformShopwellSetupSfc } from './helpers';
 
 describe('build/vue-setup-transform unsupported macros', () => {
-    it.each([
-        ['defineModel()', 'Vue macro defineModel() is not supported inside Shopwell setup blocks.'],
-        ['defineExpose({})', 'defineExpose() is not supported inside Shopwell setup blocks.'],
-    ])('rejects unsupported Vue macro %s', (macro, expectedMessage) => {
+    it('rejects an unsupported Vue macro', () => {
         const source = stripIndent`
             <script setup>
-            ${macro};
+            defineExpose({});
             const count = 1;
             </script>
         `;
 
-        expect(() => transformShopwellSetupSfc(source, 'macro.vue')).toThrow(expectedMessage);
+        expect(() => transformShopwellSetupSfc(source, 'macro.vue')).toThrow(
+            'defineExpose() is not supported inside Shopwell setup blocks.',
+        );
     });
 
     it('ignores nested unsupported Vue macros like compiler-sfc does', () => {
         const source = stripIndent`
             <script setup>
-            function createModel() {
-                return defineModel();
+            function createExposeArgument() {
+                return defineExpose({});
             }
 
             const count = 1;
@@ -39,9 +37,9 @@ describe('build/vue-setup-transform unsupported macros', () => {
 
         const result = transformOrFail(source, 'nested-unsupported-macro.vue').code;
 
-        // The enclosing function is renamed as a top-level binding, but the nested defineModel() call
+        // The enclosing function is renamed as a top-level binding, but the nested defineExpose() call
         // is a function-local and stays untouched (never rejected as a top-level unsupported macro).
-        expect(result).toContain('return defineModel();');
+        expect(result).toContain('return defineExpose({});');
     });
 
     it('rejects defineProps() in override mode', () => {
@@ -124,6 +122,19 @@ describe('build/vue-setup-transform unsupported macros', () => {
 
         expect(() => transformShopwellSetupSfc(source, 'override-slots.override.vue')).toThrow(
             'defineSlots() is only supported in base Shopwell setup blocks.',
+        );
+    });
+
+    it('rejects defineModel() in override mode', () => {
+        const source = stripIndent`
+            <script setup lang="ts">
+            const model = defineModel<string>();
+            swDefineOverride({ model });
+            </script>
+        `;
+
+        expect(() => transformShopwellSetupSfc(source, 'override-model.override.vue')).toThrow(
+            'defineModel() is only supported in base Shopwell setup blocks.',
         );
     });
 

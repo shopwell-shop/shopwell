@@ -6,15 +6,17 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\DataAbstractionLayer\Dbal\Exception\InvalidSortingDirectionException;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Test\Annotation\DisabledFeatures;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
  * @internal
  *
- * @deprecated tag:v6.8.0 - reason:remove-exception - Will be removed, use DataAbstractionLayerException::invalidSortingDirection() instead
+ * @deprecated tag:v6.8.0 - Will be removed, use DataAbstractionLayerException::invalidSortingDirection() instead
  */
 #[Package('framework')]
 #[CoversClass(InvalidSortingDirectionException::class)]
+#[DisabledFeatures(['v6.8.0.0'])]
 class InvalidSortingDirectionExceptionTest extends TestCase
 {
     public function testException(): void

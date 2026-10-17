@@ -32,6 +32,7 @@ use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextFactory;
 use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextRestorer;
 use Shopwell\Core\System\SalesChannel\Event\SalesChannelContextRestorerOrderCriteriaEvent;
 use Shopwell\Core\Test\Integration\Builder\Customer\CustomerBuilder;
+use Shopwell\Core\Test\Integration\EventDispatcher\EventHookDispatcher;
 use Shopwell\Core\Test\Stub\Framework\IdsCollection;
 use Shopwell\Core\Test\TestDefaults;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
@@ -173,7 +174,7 @@ class SalesChannelContextRestorerTest extends TestCase
         $ids = new IdsCollection();
         $this->createOrder($ids);
 
-        $this->eventDispatcher->addListener(SalesChannelContextRestorerOrderCriteriaEvent::class, $this->callbackFn);
+        EventHookDispatcher::fromContainer(static::getContainer())->on(SalesChannelContextRestorerOrderCriteriaEvent::class, $this->callbackFn);
         $this->contextRestorer->restoreByOrder($ids->create('order'), $context);
 
         static::assertArrayHasKey(SalesChannelContextRestorerOrderCriteriaEvent::class, $this->events);

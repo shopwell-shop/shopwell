@@ -7,6 +7,7 @@ use Shopwell\Core\Checkout\Order\OrderException;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
+use Shopwell\Core\Test\Integration\EventDispatcher\EventHookDispatcher;
 use Shopwell\Storefront\Page\Checkout\Finish\CheckoutFinishPage;
 use Shopwell\Storefront\Page\Checkout\Finish\CheckoutFinishPageLoadedEvent;
 use Shopwell\Storefront\Page\Checkout\Finish\CheckoutFinishPageLoader;
@@ -47,15 +48,13 @@ class FinishPageTest extends TestCase
         $context = $this->createSalesChannelContextWithLoggedInCustomerAndWithNavigation();
         $orderId = $this->placeRandomOrder($context);
         $request = new Request(['orderId' => $orderId]);
-        $eventWasThrown = false;
         $criteria = new Criteria([$orderId]);
 
-        $this->addEventListener(
-            static::getContainer()->get('event_dispatcher'),
+        $criteriaEvent = null;
+        EventHookDispatcher::fromContainer(static::getContainer())->on(
             CheckoutFinishPageOrderCriteriaEvent::class,
-            static function (CheckoutFinishPageOrderCriteriaEvent $event) use ($criteria, &$eventWasThrown): void {
-                static::assertSame($criteria->getIds(), $event->getCriteria()->getIds());
-                $eventWasThrown = true;
+            static function (CheckoutFinishPageOrderCriteriaEvent $event) use (&$criteriaEvent): void {
+                $criteriaEvent = $event;
             }
         );
 
@@ -67,9 +66,8 @@ class FinishPageTest extends TestCase
         static::assertInstanceOf(CheckoutFinishPage::class, $page);
         static::assertSame(13.04, $page->getOrder()->getPrice()->getNetPrice());
         self::assertPageEvent(CheckoutFinishPageLoadedEvent::class, $event, $context, $request, $page);
-        static::assertTrue($eventWasThrown);
-
-        $this->resetEventDispatcher();
+        static::assertInstanceOf(CheckoutFinishPageOrderCriteriaEvent::class, $criteriaEvent);
+        static::assertSame($criteria->getIds(), $criteriaEvent->getCriteria()->getIds());
     }
 
     /**

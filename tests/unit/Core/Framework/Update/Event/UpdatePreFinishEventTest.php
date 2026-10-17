@@ -6,7 +6,6 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\Framework\Update\Event\UpdateEvent;
 use Shopwell\Core\Framework\Update\Event\UpdatePreFinishEvent;
 
 /**
@@ -14,7 +13,6 @@ use Shopwell\Core\Framework\Update\Event\UpdatePreFinishEvent;
  */
 #[Package('framework')]
 #[CoversClass(UpdatePreFinishEvent::class)]
-#[CoversClass(UpdateEvent::class)]
 class UpdatePreFinishEventTest extends TestCase
 {
     public function testGetters(): void

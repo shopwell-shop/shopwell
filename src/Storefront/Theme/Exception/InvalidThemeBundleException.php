@@ -2,20 +2,21 @@
 
 namespace Shopwell\Storefront\Theme\Exception;
 
+use Shopwell\Core\Framework\Feature;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\ShopwellHttpException;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * @deprecated tag:v6.8.0 - reason:remove-exception - Will be removed, use {@see ThemeException::invalidThemeBundle} instead
- *
- * @codeCoverageIgnore
+ * @deprecated tag:v6.8.0 - Will be removed, use {@see ThemeException::invalidThemeBundle} instead
  */
 #[Package('discovery')]
 class InvalidThemeBundleException extends ShopwellHttpException
 {
     public function __construct(string $themeName)
     {
+        Feature::throwIfActive('v6.8.0.0', Feature::deprecatedClassMessage(self::class, 'v6.8.0.0'));
+
         parent::__construct('Unable to find the theme.json for "{{ themeName }}"', ['themeName' => $themeName]);
     }
 

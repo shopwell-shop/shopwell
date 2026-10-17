@@ -14,6 +14,7 @@ use Shopwell\Core\Framework\Mcp\Attribute\McpToolDependsOn;
 use Shopwell\Core\Framework\Mcp\Attribute\McpToolGroup;
 use Shopwell\Core\Framework\Mcp\Attribute\McpToolRequires;
 use Shopwell\Core\Framework\Mcp\Context\McpContextProvider;
+use Shopwell\Core\Framework\Mcp\Result\McpToolError;
 use Shopwell\Core\Framework\ShopwellHttpException;
 
 /**
@@ -59,7 +60,7 @@ class EntitySearchTool extends McpToolResponse
         $context = $this->contextProvider->getContext();
 
         if (!$this->registry->has($entity)) {
-            return $this->error(\sprintf('Entity "%s" not found. Use the shopwell://entities resource for available entity names.', $entity));
+            return $this->error(\sprintf('Entity "%s" not found. Use the shopwell://entities resource for available entity names.', $entity), McpToolError::INVALID_ARGUMENTS);
         }
 
         if ($error = $this->requirePrivilege($context, $entity . ':read')) {

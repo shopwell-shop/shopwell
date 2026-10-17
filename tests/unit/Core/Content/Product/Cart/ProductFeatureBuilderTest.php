@@ -39,9 +39,11 @@ use Shopwell\Core\System\CustomField\CustomFieldDefinition;
 use Shopwell\Core\System\CustomField\CustomFieldEntity;
 use Shopwell\Core\System\CustomField\CustomFieldTypes;
 use Shopwell\Core\System\Locale\LanguageLocaleCodeProvider;
+use Shopwell\Core\System\SalesChannel\Context\LanguageInfo;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
 use Shopwell\Core\System\Unit\UnitEntity;
 use Shopwell\Core\Test\Generator;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 /**
  * @internal
@@ -57,6 +59,8 @@ class ProductFeatureBuilderTest extends TestCase
     private const LANGUAGE_CHAIN = [self::LANGUAGE_ID, Defaults::LANGUAGE_SYSTEM];
 
     private const CHILD_LANGUAGE_CHAIN = [self::CHILD_LANGUAGE_ID, self::LANGUAGE_ID, Defaults::LANGUAGE_SYSTEM];
+
+    private const LOCALE_CODE = 'zh-CN';
 
     private const CURRENCY_ID = 'currency-id-123';
 
@@ -77,6 +81,8 @@ class ProductFeatureBuilderTest extends TestCase
 
     private Stub&DefinitionInstanceRegistry $definitionRegistry;
 
+    private Stub&TranslatorInterface $translator;
+
     private SalesChannelContext $salesChannelContext;
 
     protected function setUp(): void
@@ -84,12 +90,15 @@ class ProductFeatureBuilderTest extends TestCase
         $this->customFieldRepository = static::createStub(EntityRepository::class);
         $this->languageLocaleProvider = static::createStub(LanguageLocaleCodeProvider::class);
         $this->definitionRegistry = static::createStub(DefinitionInstanceRegistry::class);
+        $this->translator = static::createStub(TranslatorInterface::class);
+        $this->translator->method('trans')->willReturnArgument(0);
         $this->salesChannelContext = Generator::generateSalesChannelContext();
 
         $this->productFeatureBuilder = new ProductFeatureBuilder(
             $this->customFieldRepository,
             $this->languageLocaleProvider,
-            $this->definitionRegistry
+            $this->definitionRegistry,
+            $this->translator,
         );
     }
 
@@ -148,7 +157,6 @@ class ProductFeatureBuilderTest extends TestCase
 
         $this->productFeatureBuilder->add([$lineItem], $data, $this->salesChannelContext);
 
-        static::assertNotEmpty($lineItem->getPayload()['features']);
         static::assertSame([
             [
                 'label' => 'color',
@@ -227,6 +235,53 @@ class ProductFeatureBuilderTest extends TestCase
                 'type' => 'customField',
             ],
         ], $features);
+    }
+
+    public function testCustomFieldLabelPrefersTheSnippetOfTheCustomField(): void
+    {
+        $this->useSnippets([self::LOCALE_CODE => ['customFields.custom_material' => '木料']]);
+
+        $features = $this->buildCustomFieldFeatures([
+            'en-GB' => 'Material',
+            'zh-CN' => '材质',
+        ]);
+
+        static::assertSame('木料', $features[0]['label']);
+    }
+
+    /**
+     * Only Storefront requests set the translator locale, so the snippet has to be read in the
+     * locale of the context for Store API and Admin API requests to label the feature correctly.
+     */
+    public function testCustomFieldLabelReadsTheSnippetInTheLocaleOfTheContext(): void
+    {
+        $this->useSnippets([
+            'en-GB' => ['customFields.custom_material' => 'Fabric'],
+            self::LOCALE_CODE => ['customFields.custom_material' => '面料'],
+        ]);
+
+        $features = $this->buildCustomFieldFeatures([
+            'en-GB' => 'Material',
+            'zh-CN' => '材质',
+        ]);
+
+        static::assertSame('面料', $features[0]['label']);
+    }
+
+    /**
+     * @param array<string, string> $snippets
+     */
+    #[DataProvider('unusableSnippetProvider')]
+    public function testCustomFieldLabelFallsBackToTheConfigLabelWithoutAUsableSnippet(array $snippets): void
+    {
+        $this->useSnippets([self::LOCALE_CODE => $snippets]);
+
+        $features = $this->buildCustomFieldFeatures([
+            'en-GB' => 'Material',
+            'zh-CN' => '材质',
+        ]);
+
+        static::assertSame('材质', $features[0]['label']);
     }
 
     /**
@@ -420,6 +475,37 @@ class ProductFeatureBuilderTest extends TestCase
     }
 
     /**
+     * @return iterable<string, array{array<string, string>}>
+     */
+    public static function unusableSnippetProvider(): iterable
+    {
+        yield 'no snippet for the custom field' => [['customFields.custom_other' => '其他']];
+        yield 'empty snippet for the custom field' => [['customFields.custom_material' => '']];
+        yield 'snippet is the technical name' => [['customFields.custom_material' => 'custom_material']];
+    }
+
+    /**
+     * The translator echoes the key of every snippet that is not defined in the requested locale,
+     * as the real translator does.
+     *
+     * @param array<string, array<string, string>> $snippetsByLocale
+     */
+    private function useSnippets(array $snippetsByLocale): void
+    {
+        $translator = static::createStub(TranslatorInterface::class);
+        $translator->method('trans')->willReturnCallback(
+            static fn (string $id, array $parameters, ?string $domain, ?string $locale): string => $snippetsByLocale[$locale ?? ''][$id] ?? $id
+        );
+
+        $this->productFeatureBuilder = new ProductFeatureBuilder(
+            $this->customFieldRepository,
+            $this->languageLocaleProvider,
+            $this->definitionRegistry,
+            $translator,
+        );
+    }
+
+    /**
      * Builds the features of a line item referencing a product with a single custom field feature.
      * The context defaults to the `zh-CN` language chain; the system language is `en-GB` throughout.
      *
@@ -486,6 +572,7 @@ class ProductFeatureBuilderTest extends TestCase
                 languageIdChain: $languageIdChain,
                 currencyFactor: $currencyFactor,
             ),
+            languageInfo: new LanguageInfo('中文', self::LOCALE_CODE),
         );
     }
 

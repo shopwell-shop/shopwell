@@ -8,7 +8,6 @@ use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\App\Aggregate\AppMcpResource\AppMcpResourceCollection;
 use Shopwell\Core\Framework\App\Aggregate\AppMcpResource\AppMcpResourceDefinition;
 use Shopwell\Core\Framework\App\Aggregate\AppMcpResource\AppMcpResourceEntity;
-use Shopwell\Core\Framework\App\Lifecycle\Persister\AbstractMcpCapabilityPersister;
 use Shopwell\Core\Framework\App\Lifecycle\Persister\McpResourcePersister;
 use Shopwell\Core\Framework\App\Mcp\Mcp;
 use Shopwell\Core\Framework\App\Mcp\Xml\McpResource;
@@ -24,7 +23,6 @@ use Shopwell\Core\Framework\Log\Package;
  */
 #[Package('framework')]
 #[CoversClass(McpResourcePersister::class)]
-#[CoversClass(AbstractMcpCapabilityPersister::class)]
 class McpResourcePersisterTest extends TestCase
 {
     /**

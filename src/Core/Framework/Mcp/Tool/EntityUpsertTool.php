@@ -11,6 +11,7 @@ use Shopwell\Core\Framework\Mcp\Attribute\McpToolDependsOn;
 use Shopwell\Core\Framework\Mcp\Attribute\McpToolGroup;
 use Shopwell\Core\Framework\Mcp\Attribute\McpToolRequires;
 use Shopwell\Core\Framework\Mcp\Context\McpContextProvider;
+use Shopwell\Core\Framework\Mcp\Result\McpToolError;
 
 /**
  * @experimental stableVersion:v6.8.0
@@ -19,7 +20,7 @@ use Shopwell\Core\Framework\Mcp\Context\McpContextProvider;
 #[McpTool(
     name: 'shopwell-entity-upsert',
     title: 'Entity Upsert',
-    description: 'Create or update Shopwell entity data. Always use dryRun=true (default) first to validate, then set dryRun=false to persist. If you don\'t already know the required fields, shopwell-entity-schema will tell you. Returns validation result in dryRun mode, or the written entity data on commit.'
+    description: 'Create or update Shopwell entity data. Always use dryRun=true (default) first to validate, then set dryRun=false to persist. If you don\'t already know the required fields, shopwell-entity-schema will tell you. Returns validation result in dryRun mode, or the written entity data on commit. Many-to-many links (e.g. product categories) can only be added here. To remove one, use shopwell-entity-delete on the mapping entity; a "remove" flag inside "categories" would be written to the category itself.'
 )]
 #[McpToolDependsOn('shopwell-entity-schema')]
 #[McpToolGroup('entity')]
@@ -47,7 +48,7 @@ class EntityUpsertTool extends McpToolResponse
         $context = $this->contextProvider->getContext();
 
         if (!$this->registry->has($entity)) {
-            return $this->error(\sprintf('Entity "%s" not found. Use the shopwell://entities resource for available entity names.', $entity));
+            return $this->error(\sprintf('Entity "%s" not found. Use the shopwell://entities resource for available entity names.', $entity), McpToolError::INVALID_ARGUMENTS);
         }
 
         $data = $this->decodeJsonOrError($payload, 'payload');

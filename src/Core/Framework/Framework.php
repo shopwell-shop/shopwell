@@ -4,7 +4,6 @@ namespace Shopwell\Core\Framework;
 
 use Shopwell\Core\Framework\Adapter\Cache\CacheCompilerPass;
 use Shopwell\Core\Framework\Adapter\Cache\CacheValueCompressor;
-use Shopwell\Core\Framework\Adapter\Cache\ReverseProxy\ReverseProxyCompilerPass;
 use Shopwell\Core\Framework\Adapter\Cache\StampedeProtectionConfigurator;
 use Shopwell\Core\Framework\Adapter\Database\ReplicaConnectionResetter;
 use Shopwell\Core\Framework\Adapter\Redis\RedisConnectionsCompilerPass;
@@ -26,6 +25,8 @@ use Shopwell\Core\Framework\DependencyInjection\CompilerPass\McpDebugCommandComp
 use Shopwell\Core\Framework\DependencyInjection\CompilerPass\McpServerBuilderCompilerPass;
 use Shopwell\Core\Framework\DependencyInjection\CompilerPass\McpToolAnalysisCompilerPass;
 use Shopwell\Core\Framework\DependencyInjection\CompilerPass\McpToolDiscoveryCompilerPass;
+use Shopwell\Core\Framework\DependencyInjection\CompilerPass\McpToolResultCacheCompilerPass;
+use Shopwell\Core\Framework\DependencyInjection\CompilerPass\McpToolResultRendererCompilerPass;
 use Shopwell\Core\Framework\DependencyInjection\CompilerPass\MessengerMiddlewareCompilerPass;
 use Shopwell\Core\Framework\DependencyInjection\CompilerPass\OverwriteSessionFactoryCompilerPass;
 use Shopwell\Core\Framework\DependencyInjection\CompilerPass\RateLimiterCompilerPass;
@@ -133,7 +134,6 @@ class Framework extends Bundle
         $container->addCompilerPass(new FilesystemConfigMigrationCompilerPass());
         $container->addCompilerPass(new RateLimiterCompilerPass());
         $container->addCompilerPass(new IncrementerGatewayCompilerPass());
-        $container->addCompilerPass(new ReverseProxyCompilerPass());
         $container->addCompilerPass(new CacheCompilerPass());
         $container->addCompilerPass(new OverwriteSessionFactoryCompilerPass());
         $container->addCompilerPass(new RedisPrefixCompilerPass(), PassConfig::TYPE_BEFORE_REMOVING, 0);
@@ -156,8 +156,12 @@ class Framework extends Bundle
         // "mcp.servers.elements" parameter, so it has to run before the bundle's own McpPass reads
         // it. That one is registered with the default priority.
         $container->addCompilerPass(new McpToolDiscoveryCompilerPass(), priority: 20);
+        // Wires the tool-result cache into every MCP tool: core, plugin and bundle tools.
+        $container->addCompilerPass(new McpToolResultCacheCompilerPass(), priority: 15);
         $container->addCompilerPass(new McpToolAnalysisCompilerPass());
         $container->addCompilerPass(new McpServerBuilderCompilerPass());
+        // After the bundle's McpPass, which sets the reference handler this pass wraps.
+        $container->addCompilerPass(new McpToolResultRendererCompilerPass(), priority: -10);
         $container->addCompilerPass(new McpDebugCommandCompilerPass());
 
         $container->addCompilerPass(new DemodataCompilerPass());
@@ -190,7 +194,7 @@ class Framework extends Bundle
         // ServicesResetter only resets initialized services; Symfony 8.1 removes this requirement.
         // https://github.com/symfony/symfony/pull/63751
         // The test verifies whether the Symfony fix resolves this and lets us remove this workaround safely.
-        // @see \Shopwell\Tests\Integration\Core\Framework\Adapter\Database\ReplicaConnectionResetterTest::testServicesResetterInitializesReplicaConnectionResetter()
+        // @see \Shopwell\Tests\DevOps\Core\Framework\Adapter\Database\ReplicaConnectionResetterTest::testServicesResetterInitializesReplicaConnectionResetter()
         $this->container->get(ReplicaConnectionResetter::class);
     }
 }

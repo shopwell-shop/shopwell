@@ -21,10 +21,10 @@ use Shopwell\Core\Checkout\Cart\Tax\Struct\TaxRuleCollection;
 use Shopwell\Core\Checkout\Shipping\ShippingMethodEntity;
 use Shopwell\Core\Content\Media\MediaEntity;
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\Framework\Test\TestCaseBase\EventDispatcherBehaviour;
 use Shopwell\Core\Framework\Test\TestCaseBase\KernelTestBehaviour;
 use Shopwell\Core\Framework\Test\TestCaseHelper\CallableClass;
 use Shopwell\Core\System\Country\CountryEntity;
+use Shopwell\Core\Test\Integration\EventDispatcher\EventHookDispatcher;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 
 /**
@@ -33,7 +33,6 @@ use Symfony\Component\EventDispatcher\EventDispatcher;
 #[Package('checkout')]
 class CartSerializationCleanerTest extends TestCase
 {
-    use EventDispatcherBehaviour;
     use KernelTestBehaviour;
 
     /**
@@ -48,7 +47,7 @@ class CartSerializationCleanerTest extends TestCase
         $listener = $this->createMock(CallableClass::class);
         $listener->expects($this->once())->method('__invoke');
 
-        $this->addEventListener($dispatcher, CartBeforeSerializationEvent::class, $listener);
+        EventHookDispatcher::fromContainer(static::getContainer())->on(CartBeforeSerializationEvent::class, $listener);
 
         $connection = $this->createMock(Connection::class);
         $connection->expects($this->once())->method('fetchFirstColumn')->willReturn($allowed);

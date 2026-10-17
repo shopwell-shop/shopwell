@@ -11,6 +11,7 @@ use Shopwell\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopwell\Core\Framework\Test\TestCaseHelper\CallableClass;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextFactory;
+use Shopwell\Core\Test\Integration\EventDispatcher\EventHookDispatcher;
 use Shopwell\Core\Test\TestDefaults;
 
 /**
@@ -34,8 +35,7 @@ class NavigationLoadedEventTest extends TestCase
         $listener = $this->createMock(CallableClass::class);
         $listener->expects($this->once())->method('__invoke');
 
-        $dispatcher = static::getContainer()->get('event_dispatcher');
-        $this->addEventListener($dispatcher, NavigationLoadedEvent::class, $listener);
+        EventHookDispatcher::fromContainer(static::getContainer())->on(NavigationLoadedEvent::class, $listener);
 
         $context = static::getContainer()->get(SalesChannelContextFactory::class)
             ->create(Uuid::randomHex(), TestDefaults::SALES_CHANNEL);

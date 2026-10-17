@@ -4,11 +4,17 @@ namespace Shopwell\Tests\Unit\Core\Framework\Rule\Container;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Checkout\CheckoutRuleScope;
+use Shopwell\Core\Framework\Feature;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Rule\Container\DaysSinceRule;
+use Shopwell\Core\Framework\Rule\Exception\UnsupportedValueException;
 use Shopwell\Core\Framework\Rule\Rule;
 use Shopwell\Core\Framework\Rule\RuleConfig;
 use Shopwell\Core\Framework\Rule\RuleConstraints;
+use Shopwell\Core\Framework\Rule\RuleException;
+use Shopwell\Core\Framework\Rule\RuleScope;
+use Shopwell\Core\System\SalesChannel\SalesChannelContext;
 use Shopwell\Tests\Unit\Core\Framework\Rule\Fixture\DaysSinceRuleFixture;
 
 /**
@@ -23,6 +29,35 @@ class DaysSinceRuleTest extends TestCase
     protected function setUp(): void
     {
         $this->rule = new DaysSinceRuleFixture();
+    }
+
+    public function testInvalidCombinationOfValueAndOperator(): void
+    {
+        if (!Feature::isActive('v6.8.0.0')) {
+            $this->expectException(UnsupportedValueException::class);
+        } else {
+            $this->expectException(RuleException::class);
+        }
+
+        $rule = new class extends DaysSinceRule {
+            final public const RULE_NAME = 'daysSinceTest';
+
+            protected function getDate(RuleScope $scope): ?\DateTimeInterface
+            {
+                return null;
+            }
+
+            protected function supportsScope(RuleScope $scope): bool
+            {
+                return true;
+            }
+        };
+        $rule->assign([
+            'operator' => Rule::OPERATOR_EQ,
+            'daysPassed' => null,
+        ]);
+
+        $rule->match(new CheckoutRuleScope(static::createStub(SalesChannelContext::class)));
     }
 
     public function testConstraints(): void

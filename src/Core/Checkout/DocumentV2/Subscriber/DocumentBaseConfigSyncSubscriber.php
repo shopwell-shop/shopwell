@@ -9,6 +9,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Event\EntityWriteEvent;
 use Shopwell\Core\Framework\DataAbstractionLayer\Write\Command\DeleteCommand;
 use Shopwell\Core\Framework\DataAbstractionLayer\Write\Command\UpdateCommand;
 use Shopwell\Core\Framework\DataAbstractionLayer\Write\Command\WriteCommand;
+use Shopwell\Core\Framework\Feature;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Util\Json;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
@@ -21,7 +22,7 @@ use Symfony\Component\EventDispatcher\EventSubscriberInterface;
  *
  * @internal
  *
- * @deprecated tag:v6.9.0 reason:remove-subscriber - Removed together with the legacy `config` JSON blob when v1 is removed.
+ * @deprecated tag:v6.9.0 - Removed together with the legacy `config` JSON blob when v1 is removed.
  */
 #[Package('after-sales')]
 class DocumentBaseConfigSyncSubscriber implements EventSubscriberInterface
@@ -78,6 +79,10 @@ class DocumentBaseConfigSyncSubscriber implements EventSubscriberInterface
      */
     public static function getSubscribedEvents(): array
     {
+        if (Feature::has('v6.9.0.0') && Feature::isActive('v6.9.0.0')) {
+            return [];
+        }
+
         return [
             EntityWriteEvent::class => 'syncDocumentBaseConfig',
         ];
@@ -85,6 +90,8 @@ class DocumentBaseConfigSyncSubscriber implements EventSubscriberInterface
 
     public function syncDocumentBaseConfig(EntityWriteEvent $event): void
     {
+        Feature::throwIfActive('v6.9.0.0', Feature::deprecatedClassMessage(self::class, 'v6.9.0.0'));
+
         $commands = $event->getCommandsForEntity(DocumentBaseConfigDefinition::ENTITY_NAME);
 
         if ($commands === []) {

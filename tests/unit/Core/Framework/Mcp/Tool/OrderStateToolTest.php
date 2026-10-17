@@ -23,6 +23,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Mcp\Context\McpContextProvider;
+use Shopwell\Core\Framework\Mcp\Result\McpToolError;
 use Shopwell\Core\Framework\Mcp\Tool\OrderStateTool;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\System\StateMachine\Aggregation\StateMachineState\StateMachineStateCollection;
@@ -174,6 +175,7 @@ class OrderStateToolTest extends TestCase
 
         static::assertFalse($data['success']);
         static::assertSame('Order not found.', $data['error']);
+        static::assertSame(McpToolError::NOT_FOUND, $data['code']);
     }
 
     public function testLookupByOrderId(): void

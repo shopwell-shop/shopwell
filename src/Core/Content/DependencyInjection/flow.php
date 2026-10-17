@@ -63,6 +63,7 @@ use Shopwell\Core\Content\Flow\Indexing\FlowPayloadUpdater;
 use Shopwell\Core\Content\Flow\Rule\FlowRuleScopeBuilder;
 use Shopwell\Core\Content\Flow\Rule\OrderCreatedByAdminRule;
 use Shopwell\Core\Content\Flow\Rule\OrderCustomFieldRule;
+use Shopwell\Core\Content\Flow\Rule\OrderDaysSincePlacedRule;
 use Shopwell\Core\Content\Flow\Rule\OrderDeliveryStatusRule;
 use Shopwell\Core\Content\Flow\Rule\OrderDocumentTypeRule;
 use Shopwell\Core\Content\Flow\Rule\OrderDocumentTypeSentRule;
@@ -88,7 +89,7 @@ use Shopwell\Core\Framework\App\Flow\Action\AppFlowActionProvider;
 use Shopwell\Core\Framework\DataAbstractionLayer\Dbal\Common\IteratorFactory;
 use Shopwell\Core\Framework\DataAbstractionLayer\DefinitionInstanceRegistry;
 use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
-use Shopwell\Core\Framework\Telemetry\Metrics\Meter;
+use Shopwell\Core\Framework\Telemetry\Telemetry;
 use Shopwell\Core\Framework\Validation\DataValidator;
 use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextFactory;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
@@ -169,7 +170,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(FlowMetricsInstrumentor::class)
         ->args([
-            service(Meter::class),
+            service(Telemetry::class),
             service(TriggerGroupResolver::class),
         ]);
 
@@ -440,6 +441,9 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->tag('shopwell.rule.definition');
 
     $services->set(OrderTrackingCodeRule::class)
+        ->tag('shopwell.rule.definition');
+
+    $services->set(OrderDaysSincePlacedRule::class)
         ->tag('shopwell.rule.definition');
 
     $services->set(OrderDeliveryStatusRule::class)

@@ -4,6 +4,8 @@ namespace Shopwell\Tests\Unit\Core\Checkout\Cart\Order\Transformer;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Checkout\Cart\Order\IdStruct;
+use Shopwell\Core\Checkout\Cart\Order\OrderConverter;
 use Shopwell\Core\Checkout\Cart\Order\Transformer\TransactionTransformer;
 use Shopwell\Core\Checkout\Cart\Price\Struct\CalculatedPrice;
 use Shopwell\Core\Checkout\Cart\Tax\Struct\CalculatedTaxCollection;
@@ -32,6 +34,22 @@ class TransactionTransformerTest extends TestCase
         static::assertSame($transaction->getAmount(), $data['amount']);
         static::assertSame('state', $data['stateId']);
         static::assertSame($transaction->getValidationStruct()?->jsonSerialize(), $data['validationData']);
+    }
+
+    public function testTransformLeavesStateAndValidationDataOfAnOrderTransaction(): void
+    {
+        $amount = new CalculatedPrice(1, 1, new CalculatedTaxCollection(), new TaxRuleCollection());
+        $transaction = new Transaction($amount, 'test');
+        $transaction->setValidationStruct(new ArrayStruct());
+        $transaction->addExtension(OrderConverter::ORIGINAL_ID, new IdStruct('order-transaction-id'));
+
+        $data = TransactionTransformer::transform($transaction, 'state', Context::createDefaultContext());
+
+        static::assertSame([
+            'id' => 'order-transaction-id',
+            'paymentMethodId' => 'test',
+            'amount' => $amount,
+        ], $data);
     }
 
     public function testTransformCollection(): void

@@ -29,6 +29,7 @@ use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\System\StateMachine\Aggregation\StateMachineTransition\StateMachineTransitionActions;
 use Shopwell\Core\System\StateMachine\StateMachineRegistry;
 use Shopwell\Core\System\StateMachine\Transition;
+use Shopwell\Core\Test\Integration\EventDispatcher\EventHookDispatcher;
 use Shopwell\Core\Test\Stub\Framework\IdsCollection;
 use Shopwell\Core\Test\TestDefaults;
 
@@ -112,9 +113,7 @@ class OrderStateChangeEventListenerTest extends TestCase
         $listener = $this->createMock(CallableClass::class);
         $listener->expects($this->once())->method('__invoke');
 
-        static::getContainer()
-            ->get('event_dispatcher')
-            ->addListener($event, $listener);
+        EventHookDispatcher::fromContainer(static::getContainer())->on($event, $listener);
     }
 
     private function createOrder(IdsCollection $ids): void

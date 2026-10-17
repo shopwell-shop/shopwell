@@ -11,11 +11,11 @@ use Shopwell\Core\Framework\Log\Monolog\DoctrineSQLHandler;
 use Shopwell\Core\Framework\Log\Monolog\ExcludeFlowEventHandler;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Test\TestCaseBase\AdminFunctionalTestBehaviour;
-use Shopwell\Core\Framework\Test\TestCaseBase\EventDispatcherBehaviour;
 use Shopwell\Core\Maintenance\User\Service\UserProvisioner;
 use Shopwell\Core\System\User\Aggregate\UserRecovery\UserRecoveryEntity;
 use Shopwell\Core\System\User\Recovery\UserRecoveryRequestEvent;
 use Shopwell\Core\System\User\Recovery\UserRecoveryService;
+use Shopwell\Core\Test\Integration\EventDispatcher\EventHookDispatcher;
 
 /**
  * @internal
@@ -24,7 +24,6 @@ use Shopwell\Core\System\User\Recovery\UserRecoveryService;
 class UserRecoveryControllerTest extends TestCase
 {
     use AdminFunctionalTestBehaviour;
-    use EventDispatcherBehaviour;
 
     private const VALID_EMAIL = UserProvisioner::USER_EMAIL_FALLBACK;
 
@@ -74,8 +73,7 @@ class UserRecoveryControllerTest extends TestCase
 
         $dispatchedEvent = null;
 
-        $this->addEventListener(
-            static::getContainer()->get('event_dispatcher'),
+        EventHookDispatcher::fromContainer(static::getContainer())->on(
             UserRecoveryRequestEvent::EVENT_NAME,
             static function (UserRecoveryRequestEvent $event) use (&$dispatchedEvent): void {
                 $dispatchedEvent = $event;

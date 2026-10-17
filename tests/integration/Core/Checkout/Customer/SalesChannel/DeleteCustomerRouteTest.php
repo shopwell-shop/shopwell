@@ -14,10 +14,10 @@ use Shopwell\Core\Framework\Routing\RoutingException;
 use Shopwell\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\PlatformRequest;
+use Shopwell\Core\Test\Integration\EventDispatcher\EventHookDispatcher;
 use Shopwell\Core\Test\Integration\Traits\CustomerTestTrait;
 use Shopwell\Core\Test\Stub\Framework\IdsCollection;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
-use Symfony\Component\HttpKernel\Debug\TraceableEventDispatcher;
 use Symfony\Contracts\EventDispatcher\Event;
 
 /**
@@ -86,10 +86,7 @@ class DeleteCustomerRouteTest extends TestCase
 
     public function testDeleteAValidCustomer(): void
     {
-        /** @var TraceableEventDispatcher $dispatcher */
-        $dispatcher = static::getContainer()->get('event_dispatcher');
-
-        $this->addEventListener($dispatcher, CustomerDeletedEvent::class, $this->callbackFn);
+        EventHookDispatcher::fromContainer(static::getContainer())->on(CustomerDeletedEvent::class, $this->callbackFn);
 
         static::assertArrayNotHasKey(
             CustomerDeletedEvent::class,
@@ -135,8 +132,6 @@ class DeleteCustomerRouteTest extends TestCase
         static::assertArrayHasKey(CustomerDeletedEvent::class, $this->events);
         $customerDeletedEvent = $this->events[CustomerDeletedEvent::class];
         static::assertInstanceOf(CustomerDeletedEvent::class, $customerDeletedEvent);
-
-        $dispatcher->removeListener(CustomerDeletedEvent::class, $this->callbackFn);
     }
 
     public function testDeleteGuestUser(): void

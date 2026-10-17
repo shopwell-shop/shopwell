@@ -67,7 +67,7 @@ async function createWrapper(props = {}, options = {}, route = categoryDetailCms
                                 {{ isInherited ? 'Remove' : 'Restore' }}
                             </button>
                         `,
-                        props: ['isInherited', 'disabled'],
+                        props: ['isInherited'],
                     },
                     'mt-icon': {
                         template: '<i class="mt-icon" :name="name"></i>',
@@ -102,23 +102,16 @@ async function createWrapper(props = {}, options = {}, route = categoryDetailCms
 describe('src/module/sw-cms/component/sw-cms-inherit-wrapper', () => {
     let initialLanguageId;
     let initialLanguage;
-    let initialSystemLanguageId;
 
     beforeEach(() => {
         initialLanguageId = Shopwell.Store.get('context').api.languageId;
         initialLanguage = Shopwell.Store.get('context').api.language;
-        initialSystemLanguageId = Shopwell.Store.get('context').api.systemLanguageId;
         Shopwell.Store.get('swCategoryDetail').$reset();
-
-        // Inheritance only applies to non-default languages, so default the suite to a child language.
-        Shopwell.Store.get('context').api.languageId = 'child-language-id';
-        Shopwell.Store.get('context').api.language = { parentId: 'parent-language-id' };
     });
 
     afterEach(() => {
         Shopwell.Store.get('context').api.languageId = initialLanguageId;
         Shopwell.Store.get('context').api.language = initialLanguage;
-        Shopwell.Store.get('context').api.systemLanguageId = initialSystemLanguageId;
     });
 
     describe('computed properties', () => {
@@ -232,27 +225,6 @@ describe('src/module/sw-cms/component/sw-cms-inherit-wrapper', () => {
             const wrapper = await createWrapper();
 
             expect(wrapper.vm.isInherited).toBe(false);
-        });
-
-        it('should never inherit and disable the switch in the system default language', async () => {
-            Shopwell.Store.get('swCategoryDetail').category = {
-                'test-slot-id': {
-                    testField: { value: 'child-value' },
-                },
-            };
-            // System default language: languageId equals systemLanguageId => root of the inheritance chain.
-            Shopwell.Store.get('context').api.systemLanguageId = 'system-language-id';
-            Shopwell.Store.get('context').api.languageId = 'system-language-id';
-            Shopwell.Store.get('context').api.language = { parentId: null };
-
-            const wrapper = await createWrapper();
-
-            expect(wrapper.vm.isSystemDefaultLanguage).toBe(true);
-            expect(wrapper.vm.isInherited).toBe(false);
-
-            const inheritanceSwitch = wrapper.findComponent('.sw-inheritance-switch');
-            expect(inheritanceSwitch.props('disabled')).toBe(true);
-            expect(inheritanceSwitch.props('isInherited')).toBe(false);
         });
     });
 

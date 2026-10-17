@@ -139,7 +139,7 @@ class RequestTransformer implements RequestTransformerInterface
             $salesChannel->salesChannelId
         );
 
-        // Admin and Admin API routes can't be served with a sales channel context, e.g. shopwell.de/de/admin,
+        // Admin and Admin API routes can't be served with a sales channel context, e.g. shopwell.cn/de/admin,
         // unless an SEO URL like "admin" resolved the path to a storefront route
         if ($this->isApiContextRoute($resolved->pathInfo)) {
             return $request;
@@ -185,6 +185,7 @@ class RequestTransformer implements RequestTransformerInterface
         );
 
         $transformedRequest = $request->duplicate(null, null, null, null, null, $transformedServerVars);
+        $this->mergeResolvedQueryParameters($transformedRequest, $resolved->pathInfo);
         $transformedRequest->attributes->set(self::SALES_CHANNEL_BASE_URL, $baseUrl);
         $transformedRequest->attributes->set(self::SALES_CHANNEL_ABSOLUTE_BASE_URL, rtrim($absoluteBaseUrl, '/'));
         $transformedRequest->attributes->set(
@@ -394,6 +395,22 @@ class RequestTransformer implements RequestTransformerInterface
             pathInfo: $seoPathInfo,
             queryString: $queryString,
         ));
+    }
+
+    private function mergeResolvedQueryParameters(Request $request, string $resolvedPathInfo): void
+    {
+        $resolvedQuery = parse_url($resolvedPathInfo, \PHP_URL_QUERY);
+
+        if (!\is_string($resolvedQuery) || $resolvedQuery === '') {
+            return;
+        }
+
+        $resolvedParameters = [];
+        parse_str($resolvedQuery, $resolvedParameters);
+
+        foreach ($resolvedParameters as $key => $value) {
+            $request->query->set((string) $key, $value);
+        }
     }
 
     private function getSchemeAndHttpHost(Request $request): string

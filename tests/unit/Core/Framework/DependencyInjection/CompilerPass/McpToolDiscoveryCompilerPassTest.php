@@ -11,6 +11,7 @@ use Shopwell\Core\Framework\DependencyInjection\CompilerPass\McpToolDiscoveryCom
 use Shopwell\Core\Framework\DependencyInjection\DependencyInjectionException;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Mcp\Attribute\McpToolGroup;
+use Shopwell\Core\Framework\Mcp\McpToolsetRegistry;
 use Shopwell\Core\Framework\Mcp\Tool\McpToolResponse;
 use Symfony\AI\McpBundle\DependencyInjection\ElementMatcher;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -225,9 +226,32 @@ class McpToolDiscoveryCompilerPassTest extends TestCase
         $pass->process($container);
 
         static::assertSame(
-            ['shopwell-discovery-visible-tool', 'shopwell-discovery-method-visible-tool'],
+            [McpToolsetRegistry::TOOL_SEARCH_TOOL, McpToolsetRegistry::LIST_TOOLSETS_TOOL],
             $container->getParameter('shopwell.mcp.advertised_tools'),
         );
+        static::assertSame([], $container->getParameter(McpToolDiscoveryCompilerPass::DEMOTED_DISCOVERY_TOOLS_PARAMETER));
+    }
+
+    public function testExtensionToolClaimingTheDiscoveryGroupIsNotAdvertised(): void
+    {
+        $container = $this->createContainer();
+
+        $adminTool = new Definition(McpDiscoveryTestExtensionClaimingDiscoveryTool::class);
+        $adminTool->addTag('shopwell.mcp.tool');
+        $container->setDefinition('tool.claiming-admin', $adminTool);
+
+        $storeTool = new Definition(McpDiscoveryTestExtensionClaimingDiscoveryTool::class);
+        $storeTool->addTag('shopwell.store_api_mcp.tool');
+        $container->setDefinition('tool.claiming-store', $storeTool);
+
+        (new McpToolDiscoveryCompilerPass())->process($container);
+
+        static::assertSame([], $container->getParameter('shopwell.mcp.advertised_tools'));
+        static::assertSame([], $container->getParameter('shopwell.store_api_mcp.advertised_tools'));
+        static::assertSame([
+            'api' => ['swag-claims-discovery' => McpDiscoveryTestExtensionClaimingDiscoveryTool::class],
+            'store-api' => ['swag-claims-discovery' => McpDiscoveryTestExtensionClaimingDiscoveryTool::class],
+        ], $container->getParameter(McpToolDiscoveryCompilerPass::DEMOTED_DISCOVERY_TOOLS_PARAMETER));
     }
 
     public function testPluginToolIsAssignedToTheAdminServer(): void
@@ -656,7 +680,7 @@ class McpDiscoveryTestNamespacedTool extends McpToolResponse
 /**
  * @internal
  */
-#[McpTool(name: 'shopwell-discovery-visible-tool', description: 'test visible tool')]
+#[McpTool(name: McpToolsetRegistry::TOOL_SEARCH_TOOL, description: 'test visible tool')]
 #[McpToolGroup('discovery')]
 class McpDiscoveryTestDiscoveryGroupTool extends McpToolResponse
 {
@@ -671,8 +695,21 @@ class McpDiscoveryTestDiscoveryGroupTool extends McpToolResponse
  */
 class McpDiscoveryTestMethodLevelDiscoveryGroupTool extends McpToolResponse
 {
-    #[McpTool(name: 'shopwell-discovery-method-visible-tool', description: 'test method visible tool')]
+    #[McpTool(name: McpToolsetRegistry::LIST_TOOLSETS_TOOL, description: 'test method visible tool')]
     #[McpToolGroup('discovery')]
+    public function __invoke(): string
+    {
+        return '';
+    }
+}
+
+/**
+ * @internal
+ */
+#[McpTool(name: 'swag-claims-discovery', description: 'extension tool claiming the reserved group')]
+#[McpToolGroup(McpToolsetRegistry::DISCOVERY_GROUP)]
+class McpDiscoveryTestExtensionClaimingDiscoveryTool extends McpToolResponse
+{
     public function __invoke(): string
     {
         return '';

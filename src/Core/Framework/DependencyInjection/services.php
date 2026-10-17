@@ -16,6 +16,8 @@ use Shopwell\Core\Framework\Adapter\Cache\Http\CacheStateValidator;
 use Shopwell\Core\Framework\Adapter\Cache\Http\CacheStore;
 use Shopwell\Core\Framework\Adapter\Cache\Http\HttpCacheKeyGenerator;
 use Shopwell\Core\Framework\Adapter\Cache\RedisConnectionFactory;
+use Shopwell\Core\Framework\Adapter\Cache\ReverseProxy\ReverseProxyCache;
+use Shopwell\Core\Framework\Adapter\Cache\ReverseProxy\ReverseProxyServiceFactory;
 use Shopwell\Core\Framework\Adapter\Command\S3FilesystemVisibilityCommand;
 use Shopwell\Core\Framework\Adapter\Database\ReplicaConnectionResetter;
 use Shopwell\Core\Framework\Adapter\Kernel\EnvIntOrNullProcessor;
@@ -157,6 +159,7 @@ use Symfony\Bridge\Twig\Extension\TranslationExtension;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\HttpKernel\HttpCache\StoreInterface;
 use Symfony\Component\HttpKernel\KernelInterface;
 use Symfony\Component\Runtime\Runner\Symfony\HttpKernelRunner;
 use Symfony\Component\Runtime\Runner\Symfony\ResponseRunner;
@@ -167,6 +170,7 @@ use Twig\Extra\String\StringExtension;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\env;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\param;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
+use function Symfony\Component\DependencyInjection\Loader\Configurator\service_locator;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\tagged_iterator;
 
 return static function (ContainerConfigurator $containerConfigurator): void {
@@ -967,8 +971,18 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             param('shopwell.http_cache.reverse_proxy.enabled'),
         ]);
 
-    $services->set(CacheStore::class)
+    $services->set(CacheStore::class, StoreInterface::class)
         ->public()
+        ->factory([ReverseProxyServiceFactory::class, 'createStore'])
+        ->args([
+            param('shopwell.http_cache.reverse_proxy.enabled'),
+            service_locator([
+                ReverseProxyServiceFactory::DEFAULT_STORE => service('shopwell.http_cache.store.default'),
+                ReverseProxyServiceFactory::REVERSE_PROXY_STORE => service(ReverseProxyCache::class),
+            ]),
+        ]);
+
+    $services->set('shopwell.http_cache.store.default', CacheStore::class)
         ->args([
             service('cache.http'),
             service(CacheStateValidator::class)->nullOnInvalid(),

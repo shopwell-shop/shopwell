@@ -9,6 +9,7 @@ use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Test\TestCaseBase\SalesChannelFunctionalTestBehaviour;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\System\SalesChannel\Event\SalesChannelContextSwitchEvent;
+use Shopwell\Core\Test\Integration\EventDispatcher\EventHookDispatcher;
 use Shopwell\Storefront\Framework\Routing\Router;
 use Shopwell\Storefront\Framework\Seo\SeoUrlRoute\ProductPageSeoUrlRoute;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
@@ -153,8 +154,7 @@ class ContextControllerContextTest extends TestCase
         static::assertSame(200, $this->browser->getResponse()->getStatusCode());
 
         $contextSubscriber = new ContextControllerTestSubscriber();
-        $dispatcher = static::getContainer()->get('event_dispatcher');
-        $dispatcher->addSubscriber($contextSubscriber);
+        EventHookDispatcher::fromContainer(static::getContainer())->subscribe($contextSubscriber);
 
         $this->browser->request(
             'POST',
@@ -163,8 +163,6 @@ class ContextControllerContextTest extends TestCase
         );
 
         $response = $this->browser->getResponse();
-
-        $dispatcher->removeSubscriber($contextSubscriber);
 
         static::assertSame(200, $response->getStatusCode(), $response->getContent() ?: '');
         static::assertSame($this->languageId, $contextSubscriber->switchEvent->getRequestDataBag()->get('languageId'));

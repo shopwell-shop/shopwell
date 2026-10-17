@@ -8,7 +8,6 @@ use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\App\Mcp\Mcp;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Mcp\Notification\AppMcpCapabilityDetector;
-use Shopwell\Core\Framework\Mcp\Notification\McpListChangedNotificationSet;
 use Shopwell\Core\Framework\Uuid\Uuid;
 
 /**
@@ -16,7 +15,6 @@ use Shopwell\Core\Framework\Uuid\Uuid;
  */
 #[Package('framework')]
 #[CoversClass(AppMcpCapabilityDetector::class)]
-#[CoversClass(McpListChangedNotificationSet::class)]
 class AppMcpCapabilityDetectorTest extends TestCase
 {
     public function testDetectsPersistedCapabilitiesForApp(): void

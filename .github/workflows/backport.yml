@@ -32,7 +32,7 @@ jobs:
       owner: ${{ steps.issue.outputs.owner }}
       repository: ${{ steps.issue.outputs.repository }}
     steps:
-      - uses: shopwell-shop/octo-sts-action@c0ea7b858a7f5719ff14390f67dd770a2defd203
+      - uses: shopwell-shop/octo-sts-action@ace087b5b8331bebfb452c74fdc94e3e2555c79b
         id: sts-shopwell-backport
         if: ${{ !github.event.act }}
         with:
@@ -86,7 +86,7 @@ jobs:
       ) && needs.find-linked-issue.outputs.id
     needs: [find-linked-issue]
     steps:
-      - uses: shopwell-shop/octo-sts-action@c0ea7b858a7f5719ff14390f67dd770a2defd203
+      - uses: shopwell-shop/octo-sts-action@ace087b5b8331bebfb452c74fdc94e3e2555c79b
         id: sts-shopwell-backport
         if: ${{ !github.event.act }}
         with:
@@ -217,9 +217,9 @@ jobs:
     strategy:
       matrix:
         target-branch: ${{ fromJSON(needs.parse-labels.outputs.target-branches) }}
-      fail-fast: true
+      fail-fast: false
     steps:
-      - uses: shopwell-shop/octo-sts-action@c0ea7b858a7f5719ff14390f67dd770a2defd203
+      - uses: shopwell-shop/octo-sts-action@ace087b5b8331bebfb452c74fdc94e3e2555c79b
         id: sts-shopwell-backport
         if: ${{ !github.event.act }}
         with:
@@ -227,7 +227,7 @@ jobs:
           identity: ShopwellBackport
 
       - name: Backporting
-        uses: kiegroup/git-backporting@2d651f7b8d88f89656c888eaa4779796db946b5b # main
+        uses: kiegroup/git-backporting@6f4ec81b2421164f083f642270b0b4e6adda88aa # main
         with:
           auth: ${{ github.event.act && secrets.GITHUB_TOKEN || steps.sts-shopwell-backport.outputs.token }}
           target-branch: ${{ matrix.target-branch }}
@@ -246,4 +246,5 @@ jobs:
             ${{ needs.collect-reviewers.outputs.reviewers && join(fromJSON(needs.collect-reviewers.outputs.reviewers), ',') || '' }}
           labels: >- # Inherit original labels, except backport and milestone ones
             ${{ needs.parse-labels.outputs.labels && join(fromJSON(needs.parse-labels.outputs.labels), ',') || '' }}
+          enable-err-notification: true
           dry-run: ${{ github.event.act && true || false }}

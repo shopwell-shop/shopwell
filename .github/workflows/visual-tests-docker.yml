@@ -131,7 +131,7 @@ jobs:
 
       - name: Configure AWS credentials
         if: ${{ steps.check-aws-allowed.outputs.has_role_arn == 'true' && hashFiles('tests/acceptance/playwright-report/*') }}
-        uses: aws-actions/configure-aws-credentials@cbe3b392738ccf3f987d68400dafcf4b0624a56c # v6.2.4
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
         with:
           aws-region: eu-central-1
           role-session-name: gha-playwright-${{ github.run_id }}-${{ github.run_attempt }}
@@ -181,7 +181,7 @@ jobs:
 
       - name: Create token for PR
         if: ${{ inputs.update-snapshots }}
-        uses: shopwell-shop/octo-sts-action@c0ea7b858a7f5719ff14390f67dd770a2defd203
+        uses: shopwell-shop/octo-sts-action@ace087b5b8331bebfb452c74fdc94e3e2555c79b
         id: create-pr-token
         with:
           scope: shopwell-shop

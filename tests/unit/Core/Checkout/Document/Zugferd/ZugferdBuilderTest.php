@@ -18,7 +18,6 @@ use Shopwell\Core\Checkout\Cart\Tax\TaxCalculator;
 use Shopwell\Core\Checkout\Document\DocumentConfiguration;
 use Shopwell\Core\Checkout\Document\DocumentConfigurationFactory;
 use Shopwell\Core\Checkout\Document\Zugferd\ZugferdBuilder;
-use Shopwell\Core\Checkout\Document\Zugferd\ZugferdDocument;
 use Shopwell\Core\Checkout\Order\Aggregate\OrderAddress\OrderAddressCollection;
 use Shopwell\Core\Checkout\Order\Aggregate\OrderAddress\OrderAddressEntity;
 use Shopwell\Core\Checkout\Order\Aggregate\OrderCustomer\OrderCustomerEntity;
@@ -40,7 +39,6 @@ use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
  */
 #[Package('after-sales')]
 #[CoversClass(ZugferdBuilder::class)]
-#[CoversClass(ZugferdDocument::class)]
 class ZugferdBuilderTest extends TestCase
 {
     private const ALLOWANCE_TOTAL = 20.00;
@@ -106,7 +104,7 @@ class ZugferdBuilderTest extends TestCase
         }
 
         $customerData = \array_filter($order->getOrderCustomer()?->getVars() ?? []);
-        static::assertNotEmpty($customerData);
+        static::assertNotCount(0, $customerData);
 
         foreach ($customerData as $value) {
             static::assertStringContainsString($value, $xmlContent);

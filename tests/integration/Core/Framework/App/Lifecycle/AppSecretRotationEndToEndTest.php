@@ -28,13 +28,12 @@ use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\Framework\Test\TestCaseBase\EventDispatcherBehaviour;
 use Shopwell\Core\Test\AppSystemTestBehaviour;
 use Shopwell\Core\Test\Integration\App\TestAppServer;
+use Shopwell\Core\Test\Integration\EventDispatcher\EventHookDispatcher;
 use Shopwell\Tests\Integration\Core\Framework\App\GuzzleTestClientBehaviour;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Tester\CommandTester;
-use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 /**
  * Exercises the whole app-secret-rotation lifecycle — install, rotation and recovery — against a fake app
@@ -50,7 +49,6 @@ use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 class AppSecretRotationEndToEndTest extends TestCase
 {
     use AppSystemTestBehaviour;
-    use EventDispatcherBehaviour;
     use GuzzleTestClientBehaviour;
 
     private const FIXTURE_APP_DIR = __DIR__ . '/../Manifest/_fixtures/test';
@@ -137,9 +135,7 @@ class AppSecretRotationEndToEndTest extends TestCase
     {
         $command = new CommandTester($this->createInstallCommand());
         $installedEvents = new \ArrayObject();
-        $eventDispatcher = static::getContainer()->get('event_dispatcher');
-        static::assertInstanceOf(EventDispatcherInterface::class, $eventDispatcher);
-        $this->addEventListener($eventDispatcher, AppInstalledEvent::class, static function (AppInstalledEvent $event) use ($installedEvents): void {
+        EventHookDispatcher::fromContainer(static::getContainer())->on(AppInstalledEvent::class, static function (AppInstalledEvent $event) use ($installedEvents): void {
             $installedEvents->append($event);
         });
 
@@ -195,9 +191,7 @@ class AppSecretRotationEndToEndTest extends TestCase
     {
         $command = new CommandTester($this->createInstallCommand());
         $installedEvents = new \ArrayObject();
-        $eventDispatcher = static::getContainer()->get('event_dispatcher');
-        static::assertInstanceOf(EventDispatcherInterface::class, $eventDispatcher);
-        $this->addEventListener($eventDispatcher, AppInstalledEvent::class, static function (AppInstalledEvent $event) use ($installedEvents): void {
+        EventHookDispatcher::fromContainer(static::getContainer())->on(AppInstalledEvent::class, static function (AppInstalledEvent $event) use ($installedEvents): void {
             $installedEvents->append($event);
         });
 

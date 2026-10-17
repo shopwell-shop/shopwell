@@ -21,6 +21,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\RequestCriteriaBuilder;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Mcp\Context\McpContextProvider;
+use Shopwell\Core\Framework\Mcp\Result\McpToolError;
 use Shopwell\Core\Framework\Mcp\Tool\EntityReadTool;
 use Shopwell\Core\Framework\Struct\ArrayEntity;
 
@@ -114,6 +115,7 @@ class EntityReadToolTest extends TestCase
 
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
         static::assertFalse($data['success']);
+        static::assertSame(McpToolError::NOT_FOUND, $data['code']);
         static::assertArrayHasKey('error', $data);
         static::assertArrayNotHasKey('data', $data);
         static::assertSame('Entity "product" with ID "prod-missing" not found.', $data['error']);
@@ -227,6 +229,7 @@ class EntityReadToolTest extends TestCase
         static::assertFalse($data['success']);
         static::assertStringContainsString('unknown_entity', $data['error']);
         static::assertStringContainsString('shopwell://entities', $data['error']);
+        static::assertSame(McpToolError::INVALID_ARGUMENTS, $data['code']);
     }
 
     #[TestDox('A malformed "includes" that makes the builder throw the base DataAbstractionLayerException is answered with its detail')]

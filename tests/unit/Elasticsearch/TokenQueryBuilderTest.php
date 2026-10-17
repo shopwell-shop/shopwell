@@ -33,7 +33,6 @@ use Shopwell\Core\System\Tag\TagDefinition;
 use Shopwell\Core\Test\Stub\DataAbstractionLayer\StaticDefinitionInstanceRegistry;
 use Shopwell\Core\Test\Stub\Framework\Adapter\Storage\ArrayKeyValueStorage;
 use Shopwell\Elasticsearch\AbstractFieldQueryBuilder;
-use Shopwell\Elasticsearch\AbstractTokenQueryBuilder;
 use Shopwell\Elasticsearch\ExplainFieldQueryBuilder;
 use Shopwell\Elasticsearch\FieldQueryBuilder;
 use Shopwell\Elasticsearch\Framework\DataAbstractionLayer\ElasticsearchTokenizer;
@@ -49,7 +48,6 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
  * @internal
  */
 #[Package('inventory')]
-#[CoversClass(AbstractTokenQueryBuilder::class)]
 #[CoversClass(TokenQueryBuilder::class)]
 class TokenQueryBuilderTest extends TestCase
 {

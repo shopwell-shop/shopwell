@@ -7,6 +7,7 @@ use Shopwell\Core\Checkout\Cart\CartException;
 use Shopwell\Core\Checkout\Cart\Error\Error;
 use Shopwell\Core\Checkout\Cart\LineItemFactoryHandler\LineItemFactoryInterface;
 use Shopwell\Core\Checkout\Cart\LineItemFactoryRegistry;
+use Shopwell\Core\Checkout\Cart\SalesChannel\CartReorderRoute;
 use Shopwell\Core\Checkout\Cart\SalesChannel\CartService;
 use Shopwell\Core\Checkout\Promotion\Cart\PromotionCartAddedInformationError;
 use Shopwell\Core\Checkout\Promotion\Cart\PromotionItemBuilder;
@@ -17,6 +18,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\MultiFilter;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\RateLimiter\Exception\RateLimitExceededException;
 use Shopwell\Core\Framework\Routing\RoutingException;
 use Shopwell\Core\Framework\Util\HtmlSanitizer;
 use Shopwell\Core\Framework\Validation\DataBag\RequestDataBag;
@@ -45,7 +47,8 @@ class CartLineItemController extends StorefrontController
         private readonly LineItemFactoryInterface $productLineItemFactory,
         private readonly HtmlSanitizer $htmlSanitizer,
         private readonly AbstractProductListRoute $productListRoute,
-        private readonly LineItemFactoryRegistry $lineItemFactoryRegistry
+        private readonly LineItemFactoryRegistry $lineItemFactoryRegistry,
+        private readonly CartReorderRoute $cartReorderRoute
     ) {
     }
 
@@ -330,6 +333,39 @@ class CartLineItemController extends StorefrontController
                     $this->addFlash(self::SUCCESS, $this->trans('checkout.addToCartSuccess', ['%count%' => $count]));
                 }
             } catch (ProductNotFoundException|RoutingException) {
+                $this->addFlash(self::DANGER, $this->trans('error.addToCartError'));
+            }
+
+            return $this->createActionResponse($request);
+        });
+    }
+
+    #[Route(
+        path: '/checkout/cart/reorder/{orderId}',
+        name: 'frontend.checkout.cart.reorder',
+        defaults: [
+            'XmlHttpRequest' => true,
+            PlatformRequest::ATTRIBUTE_LOGIN_REQUIRED => true,
+            PlatformRequest::ATTRIBUTE_LOGIN_REQUIRED_ALLOW_GUEST => true,
+        ],
+        methods: ['POST']
+    )]
+    public function reorder(string $orderId, Cart $cart, Request $request, SalesChannelContext $context): Response
+    {
+        return Profiler::trace('cart::reorder', function () use ($orderId, $cart, $request, $context) {
+            $quantityBefore = $cart->getLineItems()->getTotalQuantity();
+
+            try {
+                $cart = $this->cartReorderRoute->reorder($orderId, $request, $cart, $context)->getCart();
+
+                if (!$this->traceErrors($cart)) {
+                    $this->addFlash(self::SUCCESS, $this->trans('checkout.addToCartSuccess', [
+                        '%count%' => $cart->getLineItems()->getTotalQuantity() - $quantityBefore,
+                    ]));
+                }
+            } catch (RateLimitExceededException $exception) {
+                $this->addFlash(self::INFO, $this->trans('error.rateLimitExceeded', ['%seconds%' => $exception->getWaitTime()]));
+            } catch (CartException|ProductNotFoundException|RoutingException) {
                 $this->addFlash(self::DANGER, $this->trans('error.addToCartError'));
             }
 

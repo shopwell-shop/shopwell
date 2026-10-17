@@ -2,6 +2,7 @@
 
 namespace {{ namespace }}\Core\Content\Example\SalesChannel;
 
+use Shopwell\Core\Content\Product\ProductCollection;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
@@ -13,6 +14,9 @@ use Symfony\Component\Routing\Attribute\Route;
 #[Route(defaults: [PlatformRequest::ATTRIBUTE_ROUTE_SCOPE => [StoreApiRouteScope::ID]])]
 class ExampleRoute extends AbstractExampleRoute
 {
+    /**
+     * @param EntityRepository<ProductCollection> $productRepository
+     */
     public function __construct(private readonly EntityRepository $productRepository)
     {
     }

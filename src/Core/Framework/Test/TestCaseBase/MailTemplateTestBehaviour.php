@@ -7,6 +7,7 @@ use Shopwell\Core\Framework\Event\EventData\MailRecipientStruct;
 use Shopwell\Core\Framework\Event\MailAware;
 use Shopwell\Core\Framework\Event\ShopwellEvent;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+use Shopwell\Core\Test\Integration\EventDispatcher\EventHookDispatcher;
 use Symfony\Contracts\EventDispatcher\Event;
 
 trait MailTemplateTestBehaviour
@@ -38,8 +39,7 @@ trait MailTemplateTestBehaviour
      */
     protected function catchEvent(string $eventName, ?object &$eventResult): void
     {
-        $eventDispatcher = static::getContainer()->get('event_dispatcher');
-        $this->addEventListener($eventDispatcher, $eventName, static function ($event) use (&$eventResult): void {
+        EventHookDispatcher::fromContainer(static::getContainer())->on($eventName, static function (object $event) use (&$eventResult): void {
             $eventResult = $event;
         });
     }

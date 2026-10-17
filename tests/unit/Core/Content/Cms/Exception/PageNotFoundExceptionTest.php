@@ -6,6 +6,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Content\Cms\Exception\PageNotFoundException;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Test\Annotation\DisabledFeatures;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -13,6 +14,7 @@ use Symfony\Component\HttpFoundation\Response;
  */
 #[Package('discovery')]
 #[CoversClass(PageNotFoundException::class)]
+#[DisabledFeatures(['v6.8.0.0'])]
 class PageNotFoundExceptionTest extends TestCase
 {
     public function testPageNotFoundException(): void

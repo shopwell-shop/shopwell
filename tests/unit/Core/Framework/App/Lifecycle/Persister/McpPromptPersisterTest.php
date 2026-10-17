@@ -8,7 +8,6 @@ use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\App\Aggregate\AppMcpPrompt\AppMcpPromptCollection;
 use Shopwell\Core\Framework\App\Aggregate\AppMcpPrompt\AppMcpPromptDefinition;
 use Shopwell\Core\Framework\App\Aggregate\AppMcpPrompt\AppMcpPromptEntity;
-use Shopwell\Core\Framework\App\Lifecycle\Persister\AbstractMcpCapabilityPersister;
 use Shopwell\Core\Framework\App\Lifecycle\Persister\McpPromptPersister;
 use Shopwell\Core\Framework\App\Mcp\Mcp;
 use Shopwell\Core\Framework\App\Mcp\Xml\McpPrompt;
@@ -24,7 +23,6 @@ use Shopwell\Core\Framework\Log\Package;
  */
 #[Package('framework')]
 #[CoversClass(McpPromptPersister::class)]
-#[CoversClass(AbstractMcpCapabilityPersister::class)]
 class McpPromptPersisterTest extends TestCase
 {
     /**

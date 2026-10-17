@@ -7,7 +7,6 @@ use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Mcp\McpToolsetRegistry;
 use Shopwell\Core\Framework\Mcp\McpToolsetSessionStorage;
-use Shopwell\Core\Framework\Mcp\Tool\McpToolResponse;
 use Shopwell\Core\Framework\Mcp\Tool\ToolsetsListTool;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
@@ -17,7 +16,6 @@ use Symfony\Component\HttpFoundation\RequestStack;
  */
 #[Package('framework')]
 #[CoversClass(ToolsetsListTool::class)]
-#[CoversClass(McpToolResponse::class)]
 class ToolsetsListToolTest extends TestCase
 {
     public function testListsToolsetsWithEnabledSessionState(): void

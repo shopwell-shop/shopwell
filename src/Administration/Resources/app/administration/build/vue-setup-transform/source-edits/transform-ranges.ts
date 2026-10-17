@@ -9,7 +9,7 @@
  * input replacements and removed macro markers stay compiler-owned.
  */
 
-import { ShopwellSetupTransformError } from '../utils/transform-error';
+import { ShopwellSetupInternalError } from '../utils/transform-error';
 import { fromSource, generated, type SourceBlock, type SourceChunk } from './chunks';
 import type { SourceRange } from '../utils/source-range';
 
@@ -53,7 +53,7 @@ function transformRanges(
                 return;
             }
 
-            throw new ShopwellSetupTransformError(
+            throw new ShopwellSetupInternalError(
                 `Partially overlapping Shopwell setup source edits at ${range.start}-${range.end}: the range crosses the ` +
                     `boundary of an edit that ends at ${cursor}. This is an analyzer bug, not an authoring error.`,
                 range.start,

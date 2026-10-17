@@ -5,7 +5,6 @@ namespace Shopwell\Tests\Unit\Core\Framework\App\Command;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\App\AppStorage;
-use Shopwell\Core\Framework\App\Command\AbstractAppActivationCommand;
 use Shopwell\Core\Framework\App\Command\ActivateAppCommand;
 use Shopwell\Core\Framework\App\Lifecycle\AbstractAppLifecycle;
 use Shopwell\Core\Framework\Context;
@@ -17,7 +16,6 @@ use Symfony\Component\Console\Tester\CommandTester;
  * @internal
  */
 #[Package('framework')]
-#[CoversClass(AbstractAppActivationCommand::class)]
 #[CoversClass(ActivateAppCommand::class)]
 class ActivateAppCommandTest extends TestCase
 {

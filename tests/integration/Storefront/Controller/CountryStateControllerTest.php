@@ -12,6 +12,7 @@ use Shopwell\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextFactory;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+use Shopwell\Core\Test\Integration\EventDispatcher\EventHookDispatcher;
 use Shopwell\Core\Test\TestDefaults;
 use Shopwell\Storefront\Controller\CountryStateController;
 use Shopwell\Storefront\Pagelet\Country\CountryRegionDataPagelet;
@@ -98,10 +99,10 @@ class CountryStateControllerTest extends TestCase
 
         $cities = \json_decode((string) $response->getContent(), true, 512, \JSON_THROW_ON_ERROR)['cities'];
 
-        static::assertNotEmpty($cities);
+        static::assertNotSame([], $cities);
         static::assertArrayHasKey('id', $cities[0]);
         static::assertArrayHasKey('translated', $cities[0]);
-        static::assertNotEmpty($cities[0]['translated']['name']);
+        static::assertNotSame('', $cities[0]['translated']['name']);
     }
 
     public function testGetCityDataWithoutCountryStateId(): void
@@ -121,10 +122,10 @@ class CountryStateControllerTest extends TestCase
 
         $districts = \json_decode((string) $response->getContent(), true, 512, \JSON_THROW_ON_ERROR)['districts'];
 
-        static::assertNotEmpty($districts);
+        static::assertNotSame([], $districts);
         static::assertArrayHasKey('id', $districts[0]);
         static::assertArrayHasKey('translated', $districts[0]);
-        static::assertNotEmpty($districts[0]['translated']['name']);
+        static::assertNotSame('', $districts[0]['translated']['name']);
     }
 
     public function testGetDistrictDataWithoutCountryCityId(): void
@@ -135,14 +136,10 @@ class CountryStateControllerTest extends TestCase
 
     public function testCountryStateControllerEvents(): void
     {
-        $dispatcher = static::getContainer()->get('event_dispatcher');
-
         $testSubscriber = new CountryStateControllerTestSubscriber();
-        $dispatcher->addSubscriber($testSubscriber);
+        EventHookDispatcher::fromContainer(static::getContainer())->subscribe($testSubscriber);
 
         $this->countryStateController->getCountryData(new Request([], ['countryId' => $this->countryIdDE]), $this->salesChannelContext);
-
-        $dispatcher->removeSubscriber($testSubscriber);
 
         static::assertInstanceOf(CountryStateDataPagelet::class, $testSubscriber->testPagelet);
         static::assertInstanceOf(CountryStateDataPageletCriteriaEvent::class, $testSubscriber->criteriaEvent);
@@ -205,17 +202,13 @@ class CountryStateControllerTest extends TestCase
 
     public function testCountryRegionDataControllerEvents(): void
     {
-        $dispatcher = static::getContainer()->get('event_dispatcher');
-
         $testSubscriber = new CountryStateControllerTestSubscriber();
-        $dispatcher->addSubscriber($testSubscriber);
+        EventHookDispatcher::fromContainer(static::getContainer())->subscribe($testSubscriber);
 
         $this->countryStateController->getCityData(
             new Request(['countryStateId' => $this->getCountryStateIdByShortCode('CN-11')]),
             $this->salesChannelContext
         );
-
-        $dispatcher->removeSubscriber($testSubscriber);
 
         static::assertInstanceOf(CountryRegionDataPagelet::class, $testSubscriber->testRegionPagelet);
         static::assertInstanceOf(CountryRegionDataPageletCriteriaEvent::class, $testSubscriber->regionCriteriaEvent);

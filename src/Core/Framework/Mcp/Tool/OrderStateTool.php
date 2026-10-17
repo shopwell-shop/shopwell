@@ -18,6 +18,7 @@ use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Mcp\Attribute\McpToolGroup;
 use Shopwell\Core\Framework\Mcp\Attribute\McpToolRequires;
 use Shopwell\Core\Framework\Mcp\Context\McpContextProvider;
+use Shopwell\Core\Framework\Mcp\Result\McpToolError;
 use Shopwell\Core\System\StateMachine\StateMachineRegistry;
 use Shopwell\Core\System\StateMachine\Transition;
 
@@ -90,7 +91,7 @@ class OrderStateTool extends McpToolResponse
         $order = $this->loadOrder($orderId, $orderNumber, $context);
 
         if (!$order instanceof OrderEntity) {
-            return $this->error('Order not found.');
+            return $this->error('Order not found.', McpToolError::NOT_FOUND);
         }
 
         $base = [

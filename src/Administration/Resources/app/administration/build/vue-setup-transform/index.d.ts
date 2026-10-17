@@ -10,7 +10,12 @@
  * behind the `ownedBlockNames` / `extendedBlockNames` fields the transform returns.
  */
 
-export { ShopwellSetupTransformError, transformShopwellSetupSfc, validateShopwellSetupSfc } from './index';
+export {
+    ShopwellSetupInternalError,
+    ShopwellSetupTransformError,
+    transformShopwellSetupSfc,
+    validateShopwellSetupSfc,
+} from './index';
 
 export type { ShopwellSetupTransformResult } from './index';
 
