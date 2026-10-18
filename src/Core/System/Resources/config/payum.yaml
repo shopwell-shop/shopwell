@@ -1,0 +1,6 @@
+payum:
+    security:
+        token_storage:
+            Payum\Core\Model\Token:
+                custom:
+                    service: 'Shopwell\Core\System\Payment\Security\PaymentGatewayTokenStorage'
