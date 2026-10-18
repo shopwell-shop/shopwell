@@ -7,6 +7,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\Field;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\FieldType;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\ForeignKey;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\ManyToOne;
+use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\OnDelete;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\PrimaryKey;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\Required;
 use Shopwell\Core\Framework\DataAbstractionLayer\Entity as EntityStruct;
@@ -47,6 +48,15 @@ class PaymentWebhookDeliveryEntity extends EntityStruct
     #[Field(type: FieldType::STRING, api: ['admin-api' => true, 'store-api' => false], maxLength: 64)]
     public string $event;
 
+    /**
+     * What the event is about. An event that happens once per order carries SUBJECT_ORDER, a refund
+     * carries its refund id - so the unique key over order, event and subject guarantees that one
+     * event of one subject is announced once, while a second refund of the order is not blocked.
+     */
+    #[Required]
+    #[Field(type: FieldType::STRING, api: ['admin-api' => true, 'store-api' => false], maxLength: 64)]
+    public string $subject = PaymentWebhookDispatcher::SUBJECT_ORDER;
+
     #[Required]
     #[Field(type: FieldType::STRING, api: ['admin-api' => true, 'store-api' => false], maxLength: 1024)]
     public string $url;
@@ -80,12 +90,14 @@ class PaymentWebhookDeliveryEntity extends EntityStruct
     public ?\DateTimeInterface $succeededAt = null;
 
     /**
-     * A delivery is only kept as long as its order and its app exist, the cascades are declared on
-     * the reverse sides (PaymentOrderEntity and PaymentAppEntity).
+     * A delivery is only kept as long as its order and its app exist: both columns are required, so
+     * the delete rule has to be declared here as well - a cascade, because without its order a
+     * delivery has nothing left to tell. The reverse sides in PaymentOrderEntity and PaymentAppEntity
+     * declare the same intent for the dal.
      */
-    #[ManyToOne(entity: 'payment_order', api: ['admin-api' => true, 'store-api' => false])]
+    #[ManyToOne(entity: 'payment_order', onDelete: OnDelete::CASCADE, api: ['admin-api' => true, 'store-api' => false])]
     public ?PaymentOrderEntity $paymentOrder = null;
 
-    #[ManyToOne(entity: 'payment_app', api: ['admin-api' => true, 'store-api' => false])]
+    #[ManyToOne(entity: 'payment_app', onDelete: OnDelete::CASCADE, api: ['admin-api' => true, 'store-api' => false])]
     public ?PaymentAppEntity $paymentApp = null;
 }

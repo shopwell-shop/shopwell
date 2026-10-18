@@ -59,9 +59,7 @@ final class PaymentAppProvisioner
     }
 
     /**
-     * Creates or updates an app from the already decoded payload of the administration.
-     *
-     * @param array<string, mixed> $payload
+     * Creates or updates an app from the body of the administration call.
      *
      * @throws PaymentException
      *
@@ -69,31 +67,39 @@ final class PaymentAppProvisioner
      *                                                                       set when one was typed or generated in this call - whoever receives it is the only one
      *                                                                       who ever sees it
      */
-    public function save(array $payload): array
+    public function save(PaymentAppDto $dto): array
     {
-        $id = \is_string($payload['id'] ?? null) && $payload['id'] !== '' ? $payload['id'] : null;
-        $app = $id === null ? null : $this->loadApp($id);
-
-        $technicalName = \is_string($payload['technicalName'] ?? null) ? trim($payload['technicalName']) : '';
-
-        if ($technicalName === '') {
-            throw PaymentException::missingParameter('technicalName');
+        // the constraints of the dto reject a missing technical name, but the provisioner is also
+        // called without the controller in front of it - a null must never reach the write as an
+        // empty technical name, that would create an app nobody can address
+        if ($dto->technicalName === null) {
+            throw PaymentException::missingParameter('technical_name');
         }
+
+        $id = $dto->id !== null && $dto->id !== '' ? $dto->id : null;
+        $app = $id === null ? null : $this->loadApp($id);
 
         $write = [
             'id' => $app->id ?? Uuid::randomHex(),
-            'technicalName' => $technicalName,
-            'name' => \is_string($payload['name'] ?? null) ? $payload['name'] : '',
-            'active' => (bool) ($payload['active'] ?? false),
-            'notifyUrl' => $this->nullableString($payload['notifyUrl'] ?? null),
-            'returnUrl' => $this->nullableString($payload['returnUrl'] ?? null),
-            'allowedIps' => $this->allowedIps($payload['allowedIps'] ?? null),
-            'rateLimit' => \is_numeric($payload['rateLimit'] ?? null) ? (int) $payload['rateLimit'] : null,
+            'technicalName' => trim($dto->technicalName),
+            'name' => $dto->name,
+            'active' => $dto->active,
+            'notifyUrl' => $this->nullableString($dto->notifyUrl),
+            'returnUrl' => $this->nullableString($dto->returnUrl),
+            'allowedIps' => $this->allowedIps($dto->allowedIps),
+            'rateLimit' => $dto->rateLimit,
         ];
+
+        // an app onboarded here is always a caller of the api. The type is written on creation only:
+        // it is not part of the payload, and an existing row must never change its kind - the tenant
+        // of the shop is seeded by the migration and is not reachable through this endpoint at all
+        if ($app === null) {
+            $write['type'] = PaymentAppEntity::TYPE_EXTERNAL;
+        }
 
         // an app always has a secret, but only the one that is typed (or generated) in this call is
         // ever handed back - the stored one cannot be read again
-        $secret = \is_string($payload['appSecret'] ?? null) ? trim($payload['appSecret']) : '';
+        $secret = $dto->appSecret !== null ? trim($dto->appSecret) : '';
         $generated = false;
 
         if ($secret !== '') {
@@ -114,8 +120,15 @@ final class PaymentAppProvisioner
 
         $this->appRepository->upsert([$write], Context::createDefaultContext());
 
-        $providers = $this->syncProviders($write['id'], $payload['providers'] ?? null);
-        $this->syncChannels($write['id'], $payload['channels'] ?? null, $providers);
+        // an omitted list keeps the stored authorizations: revoking them is a security relevant
+        // decision and must never be a side effect of a caller that did not send the field
+        $providers = $dto->providers === null
+            ? $this->loadProviders($write['id'])
+            : $this->syncProviders($write['id'], $dto->providers);
+
+        if ($dto->channels !== null) {
+            $this->syncChannels($write['id'], $dto->channels, $providers);
+        }
 
         $stored = $this->loadApp($write['id']);
         \assert($stored instanceof PaymentAppEntity);
@@ -127,15 +140,13 @@ final class PaymentAppProvisioner
      * The interfaces of the app are the interfaces it may collect through, so the payload is the full
      * list: an interface that is not in it does not belong to the app anymore.
      *
+     * @param list<PaymentAppProviderDto> $incoming
+     *
      * @return array<string, PaymentAppProviderEntity>
      */
-    private function syncProviders(string $appId, mixed $incoming): array
+    private function syncProviders(string $appId, array $incoming): array
     {
         $existing = $this->loadProviders($appId);
-
-        if (!\is_array($incoming)) {
-            return $existing;
-        }
 
         $context = Context::createDefaultContext();
 
@@ -143,14 +154,12 @@ final class PaymentAppProvisioner
         $keep = [];
 
         foreach ($incoming as $provider) {
-            if (!\is_array($provider)) {
-                continue;
-            }
+            $technicalName = $provider->providerTechnicalName;
 
-            $technicalName = \is_string($provider['providerTechnicalName'] ?? null) ? $provider['providerTechnicalName'] : '';
-
-            if ($technicalName === '') {
-                throw PaymentException::missingParameter('providerTechnicalName');
+            // an authorization without an interface cannot be resolved and must not be looked up as
+            // the empty name - the request is invalid, not the registry
+            if ($technicalName === null) {
+                throw PaymentException::missingParameter('provider_technical_name');
             }
 
             // an interface the shop does not know cannot be enabled for an app
@@ -163,12 +172,12 @@ final class PaymentAppProvisioner
                 'id' => $current->id ?? Uuid::randomHex(),
                 'paymentAppId' => $appId,
                 'providerTechnicalName' => $technicalName,
-                'enabled' => (bool) ($provider['enabled'] ?? false),
-                'mode' => $this->mode($provider['mode'] ?? null),
-                'settings' => array_merge($current->settings ?? [], $this->mapOf($provider['settings'] ?? null)),
+                'enabled' => $provider->enabled,
+                'mode' => $this->mode($provider->mode),
+                'settings' => array_merge($current->settings ?? [], $provider->settings),
             ];
 
-            $credentials = $this->mergeValues($current === null ? [] : $this->cipher->decrypt($current->credentials), $provider['credentials'] ?? null);
+            $credentials = $this->mergeValues($current === null ? [] : $this->cipher->decrypt($current->credentials), $provider->credentials);
 
             if ($credentials !== []) {
                 $row['credentials'] = $this->cipher->encrypt($credentials);
@@ -200,14 +209,11 @@ final class PaymentAppProvisioner
      * when the interface behind it is authorized for the app - otherwise the app would hold an
      * assignment it can never use, and the gateway would refuse the payment later on.
      *
+     * @param list<PaymentAppChannelDto> $incoming
      * @param array<string, PaymentAppProviderEntity> $providers
      */
-    private function syncChannels(string $appId, mixed $incoming, array $providers): void
+    private function syncChannels(string $appId, array $incoming, array $providers): void
     {
-        if (!\is_array($incoming)) {
-            return;
-        }
-
         $existing = [];
         foreach ($this->loadChannels($appId) as $channel) {
             $existing[$channel->channelTechnicalName] = $channel;
@@ -217,15 +223,7 @@ final class PaymentAppProvisioner
         $keep = [];
 
         foreach ($incoming as $channel) {
-            if (!\is_array($channel)) {
-                continue;
-            }
-
-            $technicalName = \is_string($channel['channelTechnicalName'] ?? null) ? $channel['channelTechnicalName'] : '';
-
-            if ($technicalName === '') {
-                throw PaymentException::missingParameter('channelTechnicalName');
-            }
+            $technicalName = $channel->channelTechnicalName;
 
             // an unknown channel is an error, and its interface has to be authorized for the app
             $definition = $this->channelRegistry->get($technicalName);
@@ -241,11 +239,11 @@ final class PaymentAppProvisioner
                 'id' => $current->id ?? Uuid::randomHex(),
                 'paymentAppId' => $appId,
                 'channelTechnicalName' => $technicalName,
-                'enabled' => (bool) ($channel['enabled'] ?? false),
-                'settings' => array_merge($current->settings ?? [], $this->mapOf($channel['settings'] ?? null)),
+                'enabled' => $channel->enabled,
+                'settings' => array_merge($current->settings ?? [], $channel->settings),
             ];
 
-            $params = $this->mergeValues($current === null ? [] : $this->cipher->decrypt($current->params), $channel['params'] ?? null);
+            $params = $this->mergeValues($current === null ? [] : $this->cipher->decrypt($current->params), $channel->params);
 
             if ($params !== []) {
                 $row['params'] = $this->cipher->encrypt($params);
@@ -276,13 +274,14 @@ final class PaymentAppProvisioner
      * The values that are not sent stay untouched: an empty input means "keep what is stored", which
      * is the only way to edit an app whose secrets are never sent to the browser.
      *
-     * @param array<string, mixed> $current
+     * @param array<string, string> $current
+     * @param array<string, string> $incoming
      *
-     * @return array<string, mixed>
+     * @return array<string, string>
      */
-    private function mergeValues(array $current, mixed $incoming): array
+    private function mergeValues(array $current, array $incoming): array
     {
-        foreach ($this->mapOf($incoming) as $name => $value) {
+        foreach ($incoming as $name => $value) {
             if ($value === '') {
                 continue;
             }
@@ -293,28 +292,7 @@ final class PaymentAppProvisioner
         return $current;
     }
 
-    /**
-     * @return array<string, string>
-     */
-    private function mapOf(mixed $value): array
-    {
-        if (!\is_array($value)) {
-            return [];
-        }
-
-        $map = [];
-        foreach ($value as $name => $item) {
-            if (!\is_string($name) || !\is_scalar($item)) {
-                continue;
-            }
-
-            $map[$name] = (string) $item;
-        }
-
-        return $map;
-    }
-
-    private function mode(mixed $mode): string
+    private function mode(?string $mode): string
     {
         if ($mode === PaymentAppProviderEntity::MODE_OWN) {
             return PaymentAppProviderEntity::MODE_OWN;
@@ -324,17 +302,15 @@ final class PaymentAppProvisioner
     }
 
     /**
+     * @param list<string> $ips
+     *
      * @return list<string>
      */
-    private function allowedIps(mixed $ips): array
+    private function allowedIps(array $ips): array
     {
-        if (!\is_array($ips)) {
-            return [];
-        }
-
         $list = [];
         foreach ($ips as $ip) {
-            if (\is_string($ip) && $ip !== '') {
+            if ($ip !== '') {
                 $list[] = $ip;
             }
         }
@@ -342,9 +318,9 @@ final class PaymentAppProvisioner
         return $list;
     }
 
-    private function nullableString(mixed $value): ?string
+    private function nullableString(?string $value): ?string
     {
-        return \is_string($value) && $value !== '' ? $value : null;
+        return $value !== null && $value !== '' ? $value : null;
     }
 
     private function generateSecret(): string

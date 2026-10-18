@@ -18,6 +18,14 @@ export const PAYMENT_ORDER_STATE_MACHINE = 'payment_order.state';
 export const PAYMENT_REFUND_STATE_MACHINE = 'payment_refund.state';
 
 /**
+ * The machine of the payouts the platform sends to a recipient.
+ *
+ * @private
+ */
+export const PAYMENT_TRANSFER_STATE_MACHINE = 'payment_transfer.status';
+
+
+/**
  * The badge variants of `mt-badge`.
  */
 const BADGE_VARIANTS = [
@@ -43,8 +51,8 @@ export function createPaymentStateCriteria(machine) {
 }
 
 /**
- * The badge colour of a state, keyed by its technical name. The two machines share most of the names
- * (`failed` means the same in both), so one map is enough.
+ * The badge colour of a state, keyed by its technical name. The machines share most of the names
+ * (`failed` means the same in all of them), so one map is enough.
  */
 const STATE_VARIANTS = {
     created: 'neutral',
@@ -58,6 +66,11 @@ const STATE_VARIANTS = {
     open: 'info',
     processing: 'attention',
     finished: 'positive',
+    submitted: 'info',
+    awaiting_user_confirm: 'attention',
+    succeeded: 'positive',
+    canceled: 'neutral',
+    returned: 'critical',
 };
 
 /**

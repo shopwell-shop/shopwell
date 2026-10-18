@@ -2,20 +2,24 @@
 
 namespace Shopwell\Core\System\Payment\App\Api;
 
+use Shopwell\Core\Defaults;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\PlatformRequest;
 use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppChannel\PaymentAppChannelEntity;
 use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppProvider\PaymentAppProviderEntity;
 use Shopwell\Core\System\Payment\App\PaymentAppCollection;
+use Shopwell\Core\System\Payment\App\PaymentAppDto;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
 use Shopwell\Core\System\Payment\App\PaymentAppProvisioner;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use Symfony\Component\Routing\Attribute\Route;
 
 /**
@@ -27,8 +31,8 @@ use Symfony\Component\Routing\Attribute\Route;
  * when it is created or rotated. Reading an app never returns it - the administration only learns
  * whether one is set.
  *
- * The controller only translates the request into the payload of the provisioner and its answer
- * back into the response; the writing itself lives in the provisioner.
+ * The controller only maps the request onto the {@see PaymentAppDto} and its answer back into the
+ * response; the writing itself lives in the provisioner.
  *
  * @internal
  */
@@ -56,7 +60,10 @@ class PaymentAppController extends AbstractController
     )]
     public function list(): JsonResponse
     {
+        // only apps a merchant can actually manage: the tenant of the shop is seeded, cannot be
+        // edited and must never show up in the onboarding list
         $criteria = new Criteria();
+        $criteria->addFilter(new EqualsFilter('type', PaymentAppEntity::TYPE_EXTERNAL));
         $criteria->addAssociation('providers');
         $criteria->addAssociation('channels');
         $criteria->addSorting(new FieldSorting('technicalName'));
@@ -81,9 +88,9 @@ class PaymentAppController extends AbstractController
         ],
         methods: [Request::METHOD_POST]
     )]
-    public function save(Request $request): JsonResponse
+    public function save(#[MapRequestPayload] PaymentAppDto $dto): JsonResponse
     {
-        $result = $this->provisioner->save($this->payload($request));
+        $result = $this->provisioner->save($dto);
 
         $response = ['app' => $this->present($result['app'])];
 
@@ -161,27 +168,9 @@ class PaymentAppController extends AbstractController
             'hasSecret' => $app->appSecret !== '',
             // the moment of the last rotation tells the administration until when the previous
             // secret still signs a request
-            'secretRotatedAt' => $app->secretRotatedAt?->format(\DateTimeInterface::ATOM),
+            'secretRotatedAt' => $app->secretRotatedAt?->format(Defaults::STORAGE_DATE_TIME_FORMAT),
             'providers' => $providers,
             'channels' => $channels,
         ];
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function payload(Request $request): array
-    {
-        $content = $request->getContent();
-
-        if ($content !== '') {
-            $decoded = json_decode($content, true);
-
-            if (\is_array($decoded)) {
-                return $decoded;
-            }
-        }
-
-        return $request->request->all();
     }
 }

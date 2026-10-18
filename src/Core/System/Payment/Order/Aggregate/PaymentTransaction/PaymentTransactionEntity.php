@@ -27,7 +27,6 @@ class PaymentTransactionEntity extends EntityStruct
     use EntityCustomFieldsTrait;
 
     final public const TYPE_CAPTURE = 'capture';
-    final public const TYPE_CANCEL = 'cancel';
 
     final public const STATUS_PENDING = 'pending';
     final public const STATUS_SUCCESS = 'success';

@@ -53,7 +53,7 @@ final class AlipayNotifyAction extends AbstractPaymentAction
                     $this->signTypeOf($parameters, $api)
                 );
             } catch (\Throwable) {
-                $signatureValid = false;
+                // a verification that blows up is a verification that failed
             }
         }
 

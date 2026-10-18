@@ -3,6 +3,7 @@
 namespace Shopwell\Core\System\Payment\Gateway;
 
 use Payum\Core\Request\Generic;
+use Shopwell\Core\Framework\Log\Package;
 
 /**
  * Asks the payment interface what happened to a payment, the counterpart of the notification: the

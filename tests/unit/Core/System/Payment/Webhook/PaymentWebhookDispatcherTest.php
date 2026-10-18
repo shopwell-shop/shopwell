@@ -2,6 +2,7 @@
 
 namespace Shopwell\Tests\Unit\Core\System\Payment\Webhook;
 
+use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -70,6 +71,8 @@ class PaymentWebhookDispatcherTest extends TestCase
                 static::assertSame('order-id', $row['paymentOrderId']);
                 static::assertSame(self::APP_ID, $row['paymentAppId']);
                 static::assertSame(PaymentWebhookDispatcher::EVENT_ORDER_PAID, $row['event']);
+                // an event that happens once per order names the order as its subject
+                static::assertSame(PaymentWebhookDispatcher::SUBJECT_ORDER, $row['subject']);
                 static::assertSame('https://app.example.test/webhook', $row['url']);
                 static::assertSame(PaymentWebhookDeliveryEntity::STATUS_PENDING, $row['status']);
                 static::assertSame(0, $row['attemptCount']);
@@ -89,13 +92,167 @@ class PaymentWebhookDispatcherTest extends TestCase
                 return true;
             }));
 
-        $deliveryRepository->method('search')->willReturn($this->deliverySearchResult($created));
+        // the lookup for an already queued delivery finds none, the re-read after the write finds it
+        $deliveryRepository->method('search')->willReturnOnConsecutiveCalls(
+            $this->deliverySearchResult(),
+            $this->deliverySearchResult($created)
+        );
 
         $service = $this->service($deliveryRepository, $this->appRepository($this->app()));
 
         $result = $service->enqueue($this->order('https://app.example.test/webhook'), PaymentWebhookDispatcher::EVENT_ORDER_PAID, ['foo' => 'bar']);
 
         static::assertSame($created, $result);
+    }
+
+    public function testEnqueueReturnsTheQueuedDeliveryInsteadOfQueueingASecondOne(): void
+    {
+        $existing = $this->delivery('delivery-id', 0);
+
+        // the queued row is the retry mechanism itself, queueing it twice would send the event twice
+        $deliveryRepository = static::createMock(EntityRepository::class);
+        $deliveryRepository->expects($this->never())->method('create');
+        $deliveryRepository->expects($this->never())->method('update');
+        $deliveryRepository->method('search')->willReturn($this->deliverySearchResult($existing));
+
+        $service = $this->service($deliveryRepository, $this->appRepository($this->app()));
+
+        static::assertSame($existing, $service->enqueue($this->order('https://app.example.test/webhook'), PaymentWebhookDispatcher::EVENT_ORDER_PAID));
+    }
+
+    public function testEnqueueReturnsTheDeliveredDeliveryWhenTheAppAlreadyKnows(): void
+    {
+        $existing = $this->delivery('delivery-id', 1);
+        $existing->status = PaymentWebhookDeliveryEntity::STATUS_SUCCESS;
+
+        $deliveryRepository = static::createMock(EntityRepository::class);
+        $deliveryRepository->expects($this->never())->method('create');
+
+        $deliveryRepository->method('search')->willReturn($this->deliverySearchResult($existing));
+
+        $service = $this->service($deliveryRepository, $this->appRepository($this->app()));
+
+        static::assertSame($existing, $service->enqueue($this->order('https://app.example.test/webhook'), PaymentWebhookDispatcher::EVENT_ORDER_PAID));
+    }
+
+    public function testEnqueueDoesNotReArmADeliveryThatWasGivenUp(): void
+    {
+        $existing = $this->delivery('delivery-id', PaymentWebhookDispatcher::MAX_ATTEMPTS);
+        $existing->status = PaymentWebhookDeliveryEntity::STATUS_GIVING_UP;
+
+        // giving up is a decision that was made on purpose and logged as such, a duplicate callback
+        // must not reset the attempts behind that decision
+        $deliveryRepository = static::createMock(EntityRepository::class);
+        $deliveryRepository->expects($this->never())->method('create');
+        $deliveryRepository->expects($this->never())->method('update');
+        $deliveryRepository->method('search')->willReturn($this->deliverySearchResult($existing));
+
+        $service = $this->service($deliveryRepository, $this->appRepository($this->app()));
+
+        static::assertSame($existing, $service->enqueue($this->order('https://app.example.test/webhook'), PaymentWebhookDispatcher::EVENT_ORDER_PAID));
+    }
+
+    public function testEnqueueQueuesOneDeliveryPerSubjectOfTheSameOrder(): void
+    {
+        $first = $this->delivery('delivery-1', 0);
+        $first->event = PaymentWebhookDispatcher::EVENT_REFUND_FINISHED;
+        $first->subject = 'refund-1';
+
+        $second = $this->delivery('delivery-2', 0);
+        $second->event = PaymentWebhookDispatcher::EVENT_REFUND_FINISHED;
+        $second->subject = 'refund-2';
+
+        $subjects = [];
+        $deliveryRepository = static::createMock(EntityRepository::class);
+        $deliveryRepository->expects($this->exactly(2))
+            ->method('create')
+            ->with(static::callback(static function (array $data) use (&$subjects): bool {
+                $subjects[] = $data[0]['subject'];
+
+                return true;
+            }));
+        // find, reload, find, reload
+        $deliveryRepository->method('search')->willReturnOnConsecutiveCalls(
+            $this->deliverySearchResult(),
+            $this->deliverySearchResult($first),
+            $this->deliverySearchResult(),
+            $this->deliverySearchResult($second)
+        );
+
+        $service = $this->service($deliveryRepository, $this->appRepository($this->app()));
+        $order = $this->order('https://app.example.test/webhook');
+
+        static::assertSame($first, $service->enqueue($order, PaymentWebhookDispatcher::EVENT_REFUND_FINISHED, [], 'refund-1'));
+        static::assertSame($second, $service->enqueue($order, PaymentWebhookDispatcher::EVENT_REFUND_FINISHED, [], 'refund-2'));
+        static::assertSame(['refund-1', 'refund-2'], $subjects);
+    }
+
+    public function testEnqueueStoresTheSubjectOfTheEvent(): void
+    {
+        $created = $this->delivery('delivery-id', 0);
+        $created->subject = 'refund-id';
+
+        $deliveryRepository = static::createMock(EntityRepository::class);
+        $deliveryRepository->expects($this->once())
+            ->method('create')
+            ->with(static::callback(static function (array $data): bool {
+                static::assertSame('refund-id', $data[0]['subject']);
+
+                return true;
+            }));
+        $deliveryRepository->method('search')->willReturnOnConsecutiveCalls(
+            $this->deliverySearchResult(),
+            $this->deliverySearchResult($created)
+        );
+
+        $service = $this->service($deliveryRepository, $this->appRepository($this->app()));
+
+        static::assertSame($created, $service->enqueue($this->order('https://app.example.test/webhook'), PaymentWebhookDispatcher::EVENT_REFUND_FINISHED, [], 'refund-id'));
+    }
+
+    public function testEnqueueReportsTheDeliveryAConcurrentAnnounceWonTheRaceFor(): void
+    {
+        $existing = $this->delivery('delivery-id', 0);
+
+        $violation = static::createStub(UniqueConstraintViolationException::class);
+
+        // the channel notification and the reconciliation may announce the same order at the same
+        // moment: both lookups find nothing, one write wins the unique key, the loser reads it back
+        $deliveryRepository = static::createMock(EntityRepository::class);
+        $deliveryRepository->expects($this->once())
+            ->method('create')
+            ->willThrowException($violation);
+        $deliveryRepository->method('search')->willReturnOnConsecutiveCalls(
+            $this->deliverySearchResult(),
+            $this->deliverySearchResult($existing)
+        );
+
+        $service = $this->service($deliveryRepository, $this->appRepository($this->app()));
+
+        // no exception: the delivery of the winner is reported as if this call had queued it
+        static::assertSame($existing, $service->enqueue($this->order('https://app.example.test/webhook'), PaymentWebhookDispatcher::EVENT_ORDER_PAID));
+    }
+
+    public function testEnqueueRethrowsTheUniqueConstraintViolationWhenNoDeliveryWasWritten(): void
+    {
+        $violation = static::createStub(UniqueConstraintViolationException::class);
+
+        $deliveryRepository = static::createMock(EntityRepository::class);
+        $deliveryRepository->expects($this->once())
+            ->method('create')
+            ->willThrowException($violation);
+        // the violation was not caused by a parallel announce, so nothing can be read back
+        $deliveryRepository->method('search')->willReturn($this->deliverySearchResult());
+
+        $service = $this->service($deliveryRepository, $this->appRepository($this->app()));
+
+        try {
+            $service->enqueue($this->order('https://app.example.test/webhook'), PaymentWebhookDispatcher::EVENT_ORDER_PAID);
+            static::fail('A unique constraint violation without a readable winner has to be reported.');
+        } catch (UniqueConstraintViolationException $thrown) {
+            // the very same exception, not a swallowed one
+            static::assertSame($violation, $thrown);
+        }
     }
 
     public function testDeliverMarksTheDeliveryAsSucceededOnA2xxResponse(): void
@@ -143,7 +300,19 @@ class PaymentWebhookDispatcherTest extends TestCase
     public function testDeliverGivesUpOnTheLastAttempt(): void
     {
         $logger = static::createMock(LoggerInterface::class);
-        $logger->expects($this->once())->method('error');
+        $logger->expects($this->once())
+            ->method('error')
+            ->with(
+                'Giving up the payment webhook delivery to the app.',
+                static::callback(static function (array $context): bool {
+                    static::assertSame('delivery-id', $context['deliveryId']);
+                    // the log has to name the order the delivery belongs to, so support can find it
+                    static::assertSame('order-id', $context['paymentOrderId']);
+                    static::assertArrayNotHasKey('paymentNo', $context);
+
+                    return true;
+                })
+            );
 
         $service = $this->service(
             $this->expectedUpdate(function (array $row): void {

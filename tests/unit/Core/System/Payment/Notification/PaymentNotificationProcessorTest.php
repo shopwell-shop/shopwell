@@ -30,13 +30,18 @@ use Shopwell\Core\System\Payment\Notification\PaymentNotificationProcessor;
 use Shopwell\Core\System\Payment\Notification\PaymentNotifyUrlBuilder;
 use Shopwell\Core\System\Payment\Notification\Struct\PaymentNotificationData;
 use Shopwell\Core\System\Payment\Order\Event\PaymentOrderPaidEvent;
+use Shopwell\Core\System\Payment\Order\Event\PaymentRefundFinishedEvent;
 use Shopwell\Core\System\Payment\Order\PaymentOrderCollection;
 use Shopwell\Core\System\Payment\Order\PaymentOrderEntity;
+use Shopwell\Core\System\Payment\Order\PaymentOrderPaidHandler;
 use Shopwell\Core\System\Payment\Order\PaymentOrderService;
 use Shopwell\Core\System\Payment\Order\PaymentOrderStateHandler;
 use Shopwell\Core\System\Payment\Order\PaymentOrderStates;
+use Shopwell\Core\System\Payment\Order\Refund\PaymentRefundCollection;
+use Shopwell\Core\System\Payment\Order\Refund\PaymentRefundEntity;
 use Shopwell\Core\System\Payment\Order\Refund\PaymentRefundService;
 use Shopwell\Core\System\Payment\Order\Refund\PaymentRefundStateHandler;
+use Shopwell\Core\System\Payment\Order\Refund\PaymentRefundStates;
 use Shopwell\Core\System\Payment\PaymentException;
 use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
 use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannelRegistry;
@@ -46,6 +51,7 @@ use Shopwell\Core\System\Payment\Provider\PaymentConfigResolver;
 use Shopwell\Core\System\Payment\Provider\PaymentProvider;
 use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;
 use Shopwell\Core\System\Payment\Webhook\PaymentWebhookDeliveryCollection;
+use Shopwell\Core\System\Payment\Webhook\PaymentWebhookDeliveryEntity;
 use Shopwell\Core\System\Payment\Webhook\PaymentWebhookDispatcher;
 use Shopwell\Core\System\Payment\Webhook\PaymentWebhookSigner;
 use Shopwell\Core\System\StateMachine\Loader\InitialStateIdLoader;
@@ -145,6 +151,50 @@ class PaymentNotificationProcessorTest extends TestCase
         $service->process('alipay', 'raw-body', [], '1.2.3.4');
     }
 
+    public function testProcessRejectsANotificationWithAMismatchedCurrency(): void
+    {
+        $order = $this->order();
+
+        $notificationRepository = $this->notificationRepository(
+            onUpdate: function (array $row): void {
+                // the notification is not applied at all: rejected, not half written, and it is
+                // recorded as what it is - support filters by the result
+                static::assertSame(PaymentNotificationEntity::RESULT_CURRENCY_MISMATCH, $row['processResult']);
+                static::assertTrue($row['signatureValid']);
+                static::assertFalse($row['processed']);
+            }
+        );
+
+        [$orderRepository, $orderStateMachine, $eventDispatcher, $deliveryRepository] = $this->expectNoPaymentApplied($order);
+
+        $service = $this->service(
+            $notificationRepository,
+            $this->gateway(new NotificationResult(signatureValid: true, succeeded: true, amount: 1000, currency: 'JPY')),
+            $orderRepository,
+            $this->extractor('PG0001'),
+            orderService: $this->orderService($orderRepository, $orderStateMachine),
+            eventDispatcher: $eventDispatcher,
+            deliveryRepository: $deliveryRepository
+        );
+
+        $this->expectExceptionObject(PaymentException::currencyMismatch('PG0001', 'CNY', 'JPY'));
+
+        $service->process('alipay', 'raw-body', [], '1.2.3.4');
+    }
+
+    public function testProcessAppliesANotificationWhoseCurrencyIsReportedInAnotherCase(): void
+    {
+        // `cny` and `CNY` are the same currency, so the case must not reject a real payment
+        $this->assertTheNotificationIsApplied('cny');
+    }
+
+    public function testProcessAppliesANotificationWithoutAReportedCurrency(): void
+    {
+        // an interface that reports no currency cannot be disproved, and refusing the payment would
+        // leave it unpaid forever while the notification keeps retrying
+        $this->assertTheNotificationIsApplied(null);
+    }
+
     public function testProcessIgnoresANotificationThatDidNotSucceed(): void
     {
         $order = $this->order();
@@ -157,15 +207,17 @@ class PaymentNotificationProcessorTest extends TestCase
             }
         );
 
-        $orderStateMachine = static::createMock(StateMachineRegistry::class);
-        $orderStateMachine->expects($this->never())->method('transition');
+        // the handler must not be reached: nothing is written for a payment the channel did not confirm
+        [$orderRepository, $orderStateMachine, $eventDispatcher, $deliveryRepository] = $this->expectNoPaymentApplied($order);
 
         $service = $this->service(
             $notificationRepository,
             $this->gateway(new NotificationResult(signatureValid: true, succeeded: false, amount: 1000)),
-            $this->orderRepository($order),
+            $orderRepository,
             $this->extractor('PG0001'),
-            orderService: $this->orderService($this->orderRepository($order), $orderStateMachine)
+            orderService: $this->orderService($orderRepository, $orderStateMachine),
+            eventDispatcher: $eventDispatcher,
+            deliveryRepository: $deliveryRepository
         );
 
         $result = $service->process('alipay', 'raw-body', [], '1.2.3.4');
@@ -175,7 +227,8 @@ class PaymentNotificationProcessorTest extends TestCase
 
     public function testProcessTreatsANotificationOfAnAlreadyPaidOrderAsDuplicate(): void
     {
-        $order = $this->order(['paidAt' => new \DateTimeImmutable(self::NOW), 'stateId' => 'state-paid']);
+        $notifyUrl = 'https://app.example.test/webhook';
+        $order = $this->order(['paidAt' => new \DateTimeImmutable(self::NOW), 'paidAmount' => 1000, 'stateId' => 'state-paid', 'notifyUrl' => $notifyUrl]);
 
         $notificationRepository = $this->notificationRepository(
             onUpdate: function (array $row): void {
@@ -184,11 +237,34 @@ class PaymentNotificationProcessorTest extends TestCase
             }
         );
 
+        // a duplicate does not write the payment again and does not migrate the order again, but it
+        // does announce again: the announcement of the first processing may have failed, so every
+        // duplicate is a retry window for exactly that
+        $orderRepository = static::createMock(EntityRepository::class);
+        $orderRepository->method('search')->willReturn($this->orderSearchResult($order));
+        $orderRepository->expects($this->never())->method('update');
+
+        $orderStateMachine = static::createMock(StateMachineRegistry::class);
+        $orderStateMachine->expects($this->never())->method('transition');
+
+        $eventDispatcher = static::createMock(EventDispatcherInterface::class);
+        $eventDispatcher->expects($this->once())
+            ->method('dispatch')
+            ->with(static::isInstanceOf(PaymentOrderPaidEvent::class));
+
+        // the announce() of the duplicate finds the delivery of the first announce, so it returns it
+        // instead of queueing a second one
+        $deliveryRepository = $this->deliveryRepositoryWithExistingDelivery();
+
         $service = $this->service(
             $notificationRepository,
             $this->gateway(new NotificationResult(signatureValid: true, succeeded: true, amount: 1000)),
-            $this->orderRepository($order),
-            $this->extractor('PG0001')
+            $orderRepository,
+            $this->extractor('PG0001'),
+            orderService: $this->orderService($orderRepository, $orderStateMachine),
+            eventDispatcher: $eventDispatcher,
+            deliveryRepository: $deliveryRepository,
+            appRepository: $this->appRepository()
         );
 
         $result = $service->process('alipay', 'raw-body', [], '1.2.3.4');
@@ -198,16 +274,19 @@ class PaymentNotificationProcessorTest extends TestCase
 
     public function testProcessMarksTheOrderPaidAndNotifiesTheApp(): void
     {
-        $order = $this->order();
-        $paidOrder = $this->order(['paidAt' => new \DateTimeImmutable(self::NOW), 'paidAmount' => 1000, 'outPaymentNo' => 'channel-trade-1', 'stateId' => 'state-paid']);
+        $notifyUrl = 'https://app.example.test/webhook';
+        $order = $this->order(['notifyUrl' => $notifyUrl]);
+        $paidOrder = $this->order(['paidAt' => new \DateTimeImmutable(self::NOW), 'paidAmount' => 1000, 'outPaymentNo' => 'channel-trade-1', 'stateId' => 'state-paid', 'notifyUrl' => $notifyUrl]);
 
         $notificationRepository = $this->notificationRepository(
             onUpdate: function (array $row): void {
-                // NOTE: the service never assigns RESULT_OK, so processResult stays at its initial
-                // value and processed stays false even though the payment was applied - see the
-                // report of this task. Only the correct, observable effects are asserted here.
+                // a signed notification with a matching amount on an unpaid order is a successful
+                // processing, not an error
+                static::assertSame(PaymentNotificationEntity::RESULT_OK, $row['processResult']);
+                static::assertTrue($row['processed']);
                 static::assertSame('order-id', $row['paymentOrderId']);
                 static::assertTrue($row['signatureValid']);
+                static::assertNull($row['errorMessage']);
             }
         );
 
@@ -218,16 +297,69 @@ class PaymentNotificationProcessorTest extends TestCase
                 $this->orderSearchResult($order),
                 $this->orderSearchResult($paidOrder)
             );
+        // the handler is called exactly once: it is the only writer, and it gets the amount, the
+        // channel trade number and the raw answer the notification reported
+        $orderRepository->expects($this->once())
+            ->method('update')
+            ->with(static::callback(static function (array $data): bool {
+                $row = $data[0];
 
+                static::assertSame('order-id', $row['id']);
+                static::assertSame(1000, $row['paidAmount']);
+                static::assertSame('channel-trade-1', $row['outPaymentNo']);
+                static::assertSame(['trade' => 'raw'], $row['channelData']);
+                static::assertInstanceOf(\DateTimeInterface::class, $row['paidAt']);
+
+                return true;
+            }));
+
+        $transitions = [];
         $orderStateMachine = static::createMock(StateMachineRegistry::class);
         $orderStateMachine->expects($this->exactly(2))
             ->method('transition')
-            ->with(static::callback(static fn (Transition $t): bool => \in_array($t->getTransitionName(), [PaymentOrderStates::ACTION_PROCESS, PaymentOrderStates::ACTION_PAY], true)));
+            ->with(static::callback(static function (Transition $transition) use (&$transitions): bool {
+                $transitions[] = $transition->getTransitionName();
+
+                return \in_array($transition->getTransitionName(), [PaymentOrderStates::ACTION_PROCESS, PaymentOrderStates::ACTION_PAY], true);
+            }));
 
         $eventDispatcher = static::createMock(EventDispatcherInterface::class);
         $eventDispatcher->expects($this->once())
             ->method('dispatch')
             ->with(static::isInstanceOf(PaymentOrderPaidEvent::class));
+
+        $deliveryRepository = static::createMock(EntityRepository::class);
+        $deliveryRepository->expects($this->once())
+            ->method('create')
+            ->with(static::callback(function (array $data) use ($notifyUrl): bool {
+                $row = $data[0];
+
+                static::assertSame('order-id', $row['paymentOrderId']);
+                static::assertSame(PaymentWebhookDispatcher::EVENT_ORDER_PAID, $row['event']);
+                static::assertSame($notifyUrl, $row['url']);
+                static::assertSame(PaymentWebhookDeliveryEntity::STATUS_PENDING, $row['status']);
+
+                static::assertSame('PG0001', $row['payload']['payment_no']);
+                static::assertSame(PaymentOrderStates::STATE_PAID, $row['payload']['data']['state']);
+                static::assertSame(1000, $row['payload']['data']['amount']);
+                static::assertSame('channel-trade-1', $row['payload']['data']['out_payment_no']);
+
+                return true;
+            }));
+
+        $delivery = new PaymentWebhookDeliveryEntity();
+        $delivery->setUniqueIdentifier('delivery-id');
+        $delivery->id = 'delivery-id';
+        $delivery->paymentOrderId = 'order-id';
+        $delivery->paymentAppId = 'app-id';
+        $delivery->event = PaymentWebhookDispatcher::EVENT_ORDER_PAID;
+        $delivery->url = $notifyUrl;
+
+        // the lookup for an already queued delivery finds none, the re-read after the write finds it
+        $deliveryRepository->method('search')->willReturnOnConsecutiveCalls(
+            $this->deliverySearchResult(),
+            $this->deliverySearchResult($delivery)
+        );
 
         $service = $this->service(
             $notificationRepository,
@@ -235,7 +367,85 @@ class PaymentNotificationProcessorTest extends TestCase
             $orderRepository,
             $this->extractor('PG0001'),
             orderService: $this->orderService($orderRepository, $orderStateMachine),
-            eventDispatcher: $eventDispatcher
+            eventDispatcher: $eventDispatcher,
+            deliveryRepository: $deliveryRepository,
+            appRepository: $this->appRepository()
+        );
+
+        static::assertSame('notification-id', $service->process('alipay', 'raw-body', [], '1.2.3.4')->id);
+
+        // the order was opened first and paid afterwards, which is the order the state machine demands
+        static::assertSame([PaymentOrderStates::ACTION_PROCESS, PaymentOrderStates::ACTION_PAY], $transitions);
+    }
+
+    public function testProcessMarksASuccessfulRefundNotificationAsProcessed(): void
+    {
+        $order = $this->order(['paidAt' => new \DateTimeImmutable(self::NOW), 'paidAmount' => 1000, 'stateId' => 'state-paid']);
+        $refund = $this->refund();
+
+        // the repository expectation doubles as the proof that conclude() ran: the outcome of the
+        // processing is written exactly once, in the finally block of process()
+        $notificationRepository = $this->notificationRepository(
+            onUpdate: function (array $row): void {
+                static::assertSame(PaymentNotificationEntity::RESULT_OK, $row['processResult']);
+                static::assertTrue($row['processed']);
+                static::assertSame('order-id', $row['paymentOrderId']);
+                static::assertTrue($row['signatureValid']);
+                static::assertNull($row['errorMessage']);
+            }
+        );
+
+        $refundRepository = static::createMock(EntityRepository::class);
+        $refundRepository->method('search')->willReturn(new EntitySearchResult(
+            PaymentRefundEntity::ENTITY_NAME,
+            1,
+            new PaymentRefundCollection([$refund]),
+            null,
+            new Criteria(),
+            Context::createDefaultContext()
+        ));
+        // a confirmed refund is booked as finished on the refund itself
+        $refundRepository->expects($this->once())
+            ->method('update')
+            ->with(static::callback(static function (array $data): bool {
+                $row = $data[0];
+
+                static::assertSame('refund-id', $row['id']);
+                static::assertSame('channel-refund-1', $row['outRefundId']);
+                static::assertInstanceOf(\DateTimeInterface::class, $row['refundedAt']);
+
+                return true;
+            }));
+
+        $orderRepository = static::createMock(EntityRepository::class);
+        $orderRepository->method('search')->willReturn($this->orderSearchResult($order));
+        // and the settled amount is booked on the order
+        $orderRepository->expects($this->once())
+            ->method('update')
+            ->with(static::callback(static function (array $data): bool {
+                static::assertSame(400, $data[0]['refundedAmount']);
+
+                return true;
+            }));
+
+        $refundStateMachine = static::createMock(StateMachineRegistry::class);
+        $refundStateMachine->expects($this->once())
+            ->method('transition')
+            ->with(static::callback(static fn (Transition $transition): bool => $transition->getTransitionName() === PaymentRefundStates::ACTION_FINISH));
+
+        $eventDispatcher = static::createMock(EventDispatcherInterface::class);
+        $eventDispatcher->expects($this->once())
+            ->method('dispatch')
+            ->with(static::isInstanceOf(PaymentRefundFinishedEvent::class));
+
+        $service = $this->service(
+            $notificationRepository,
+            $this->gateway(new NotificationResult(signatureValid: true, succeeded: true, outRefundId: 'channel-refund-1', amount: 400)),
+            $orderRepository,
+            $this->refundExtractor('PR0001'),
+            eventDispatcher: $eventDispatcher,
+            refundRepository: $refundRepository,
+            refundStateMachine: $refundStateMachine
         );
 
         static::assertSame('notification-id', $service->process('alipay', 'raw-body', [], '1.2.3.4')->id);
@@ -275,6 +485,9 @@ class PaymentNotificationProcessorTest extends TestCase
     /**
      * @param EntityRepository<PaymentNotificationCollection> $notificationRepository
      * @param EntityRepository<PaymentOrderCollection>|null $orderRepository
+     * @param EntityRepository<PaymentWebhookDeliveryCollection>|null $deliveryRepository
+     * @param EntityRepository<PaymentAppCollection>|null $appRepository
+     * @param EntityRepository<PaymentRefundCollection>|null $refundRepository
      */
     private function service(
         EntityRepository $notificationRepository,
@@ -282,29 +495,37 @@ class PaymentNotificationProcessorTest extends TestCase
         ?EntityRepository $orderRepository = null,
         ?PaymentNotificationExtractorInterface $extractor = null,
         ?PaymentOrderService $orderService = null,
-        ?EventDispatcherInterface $eventDispatcher = null
+        ?EventDispatcherInterface $eventDispatcher = null,
+        ?EntityRepository $deliveryRepository = null,
+        ?EntityRepository $appRepository = null,
+        ?EntityRepository $refundRepository = null,
+        ?StateMachineRegistry $refundStateMachine = null
     ): PaymentNotificationProcessor {
         $cipher = new PaymentCredentialCipher('test-secret');
 
-        $deliveryRepository = static::createStub(EntityRepository::class);
-        $deliveryRepository->method('search')->willReturn(new EntitySearchResult(
-            'payment_webhook_delivery',
-            0,
-            new PaymentWebhookDeliveryCollection([]),
-            null,
-            new Criteria(),
-            Context::createDefaultContext()
-        ));
+        if (!$deliveryRepository instanceof EntityRepository) {
+            $deliveryRepository = static::createStub(EntityRepository::class);
+            $deliveryRepository->method('search')->willReturn(new EntitySearchResult(
+                'payment_webhook_delivery',
+                0,
+                new PaymentWebhookDeliveryCollection([]),
+                null,
+                new Criteria(),
+                Context::createDefaultContext()
+            ));
+        }
 
-        $appRepository = static::createStub(EntityRepository::class);
-        $appRepository->method('search')->willReturn(new EntitySearchResult(
-            'payment_app',
-            0,
-            new PaymentAppCollection([]),
-            null,
-            new Criteria(),
-            Context::createDefaultContext()
-        ));
+        if (!$appRepository instanceof EntityRepository) {
+            $appRepository = static::createStub(EntityRepository::class);
+            $appRepository->method('search')->willReturn(new EntitySearchResult(
+                'payment_app',
+                0,
+                new PaymentAppCollection([]),
+                null,
+                new Criteria(),
+                Context::createDefaultContext()
+            ));
+        }
 
         $webhookService = new PaymentWebhookDispatcher(
             $deliveryRepository,
@@ -315,26 +536,30 @@ class PaymentNotificationProcessorTest extends TestCase
             static::createStub(LoggerInterface::class)
         );
 
+        $orderService ??= $this->orderService($orderRepository ?? $this->orderRepository());
+        $eventDispatcher ??= static::createStub(EventDispatcherInterface::class);
+
+        $paidHandler = new PaymentOrderPaidHandler($orderService, $webhookService, $eventDispatcher);
+
         $refundService = new PaymentRefundService(
-            static::createStub(EntityRepository::class),
+            $refundRepository ?? static::createStub(EntityRepository::class),
             $this->configResolver($gateway),
-            $orderService ?? $this->orderService($orderRepository ?? $this->orderRepository()),
+            $orderService,
             $webhookService,
             new PaymentNotifyUrlBuilder(static::createStub(RequestStack::class), 'https://base.example.test'),
-            new PaymentRefundStateHandler(static::createStub(StateMachineRegistry::class)),
+            new PaymentRefundStateHandler($refundStateMachine ?? static::createStub(StateMachineRegistry::class)),
             $this->initialStateIdLoader(),
-            static::createStub(EventDispatcherInterface::class),
+            $eventDispatcher,
             new MockClock(self::NOW)
         );
 
         return new PaymentNotificationProcessor(
             $notificationRepository,
             $this->providerRegistry($extractor ?? $this->extractor(null)),
-            $orderService ?? $this->orderService($orderRepository ?? $this->orderRepository()),
+            $orderService,
             $refundService,
             $this->configResolver($gateway),
-            $webhookService,
-            $eventDispatcher ?? static::createStub(EventDispatcherInterface::class)
+            $paidHandler
         );
     }
 
@@ -363,6 +588,14 @@ class PaymentNotificationProcessorTest extends TestCase
     {
         $extractor = static::createStub(PaymentNotificationExtractorInterface::class);
         $extractor->method('extract')->willReturn(new PaymentNotificationData($paymentNo));
+
+        return $extractor;
+    }
+
+    private function refundExtractor(string $refundNo): PaymentNotificationExtractorInterface
+    {
+        $extractor = static::createStub(PaymentNotificationExtractorInterface::class);
+        $extractor->method('extract')->willReturn(new PaymentNotificationData(null, null, null, $refundNo));
 
         return $extractor;
     }
@@ -483,6 +716,103 @@ class PaymentNotificationProcessorTest extends TestCase
     }
 
     /**
+     * The notification is applied - the order is paid and the app is told - whichever way the
+     * interface spelled its currency.
+     */
+    private function assertTheNotificationIsApplied(?string $currency): void
+    {
+        $notifyUrl = 'https://app.example.test/webhook';
+        $order = $this->order(['notifyUrl' => $notifyUrl]);
+        $paidOrder = $this->order(['paidAt' => new \DateTimeImmutable(self::NOW), 'paidAmount' => 1000, 'outPaymentNo' => 'channel-trade-1', 'stateId' => 'state-paid', 'notifyUrl' => $notifyUrl]);
+
+        $notificationRepository = $this->notificationRepository(
+            onUpdate: function (array $row): void {
+                static::assertSame(PaymentNotificationEntity::RESULT_OK, $row['processResult']);
+                static::assertTrue($row['processed']);
+            }
+        );
+
+        $orderRepository = static::createMock(EntityRepository::class);
+        $orderRepository->expects($this->exactly(2))
+            ->method('search')
+            ->willReturnOnConsecutiveCalls(
+                $this->orderSearchResult($order),
+                $this->orderSearchResult($paidOrder)
+            );
+        $orderRepository->expects($this->once())
+            ->method('update')
+            ->with(static::callback(static function (array $data): bool {
+                static::assertSame(1000, $data[0]['paidAmount']);
+                static::assertSame('channel-trade-1', $data[0]['outPaymentNo']);
+
+                return true;
+            }));
+
+        $orderStateMachine = static::createMock(StateMachineRegistry::class);
+        $orderStateMachine->expects($this->exactly(2))->method('transition');
+
+        $eventDispatcher = static::createMock(EventDispatcherInterface::class);
+        $eventDispatcher->expects($this->once())
+            ->method('dispatch')
+            ->with(static::isInstanceOf(PaymentOrderPaidEvent::class));
+
+        $delivery = new PaymentWebhookDeliveryEntity();
+        $delivery->setUniqueIdentifier('delivery-id');
+        $delivery->id = 'delivery-id';
+        $delivery->paymentOrderId = 'order-id';
+        $delivery->paymentAppId = 'app-id';
+        $delivery->event = PaymentWebhookDispatcher::EVENT_ORDER_PAID;
+        $delivery->url = $notifyUrl;
+
+        $deliveryRepository = static::createMock(EntityRepository::class);
+        $deliveryRepository->expects($this->once())
+            ->method('create')
+            ->with(static::callback(static fn (array $data): bool => $data[0]['event'] === PaymentWebhookDispatcher::EVENT_ORDER_PAID));
+        $deliveryRepository->method('search')->willReturnOnConsecutiveCalls(
+            $this->deliverySearchResult(),
+            $this->deliverySearchResult($delivery)
+        );
+
+        $service = $this->service(
+            $notificationRepository,
+            $this->gateway(new NotificationResult(signatureValid: true, succeeded: true, outPaymentNo: 'channel-trade-1', amount: 1000, currency: $currency, raw: ['trade' => 'raw'])),
+            $orderRepository,
+            $this->extractor('PG0001'),
+            orderService: $this->orderService($orderRepository, $orderStateMachine),
+            eventDispatcher: $eventDispatcher,
+            deliveryRepository: $deliveryRepository,
+            appRepository: $this->appRepository()
+        );
+
+        static::assertSame('notification-id', $service->process('alipay', 'raw-body', [], '1.2.3.4')->id);
+    }
+
+    /**
+     * Doubles the collaborators a paid notification would write through, so that any write fails the
+     * test - a notification that is not applied must not touch the order, the state machine, the
+     * event dispatcher or the webhook queue.
+     *
+     * @return array{0: EntityRepository<PaymentOrderCollection>, 1: StateMachineRegistry, 2: EventDispatcherInterface, 3: EntityRepository<PaymentWebhookDeliveryCollection>}
+     */
+    private function expectNoPaymentApplied(PaymentOrderEntity $order): array
+    {
+        $orderRepository = static::createMock(EntityRepository::class);
+        $orderRepository->method('search')->willReturn($this->orderSearchResult($order));
+        $orderRepository->expects($this->never())->method('update');
+
+        $orderStateMachine = static::createMock(StateMachineRegistry::class);
+        $orderStateMachine->expects($this->never())->method('transition');
+
+        $eventDispatcher = static::createMock(EventDispatcherInterface::class);
+        $eventDispatcher->expects($this->never())->method('dispatch');
+
+        $deliveryRepository = static::createMock(EntityRepository::class);
+        $deliveryRepository->expects($this->never())->method('create');
+
+        return [$orderRepository, $orderStateMachine, $eventDispatcher, $deliveryRepository];
+    }
+
+    /**
      * @return EntitySearchResult<PaymentOrderCollection>
      */
     private function orderSearchResult(PaymentOrderEntity ...$orders): EntitySearchResult
@@ -551,6 +881,70 @@ class PaymentNotificationProcessorTest extends TestCase
         return $repository;
     }
 
+    /**
+     * A delivery repository that already holds the delivery of the announced event, so that
+     * announcing again is a no-op.
+     *
+     * @return EntityRepository<PaymentWebhookDeliveryCollection>
+     */
+    private function deliveryRepositoryWithExistingDelivery(): EntityRepository
+    {
+        $delivery = $this->queuedDelivery();
+
+        $repository = static::createMock(EntityRepository::class);
+        $repository->expects($this->never())->method('create');
+        $repository->expects($this->never())->method('update');
+        $repository->method('search')->willReturn($this->deliverySearchResult($delivery));
+
+        return $repository;
+    }
+
+    /**
+     * @return EntitySearchResult<PaymentWebhookDeliveryCollection>
+     */
+    private function deliverySearchResult(PaymentWebhookDeliveryEntity ...$deliveries): EntitySearchResult
+    {
+        return new EntitySearchResult(
+            'payment_webhook_delivery',
+            \count($deliveries),
+            new PaymentWebhookDeliveryCollection($deliveries),
+            null,
+            new Criteria(),
+            Context::createDefaultContext()
+        );
+    }
+
+    private function queuedDelivery(): PaymentWebhookDeliveryEntity
+    {
+        $delivery = new PaymentWebhookDeliveryEntity();
+        $delivery->setUniqueIdentifier('delivery-id');
+        $delivery->id = 'delivery-id';
+        $delivery->paymentOrderId = 'order-id';
+        $delivery->paymentAppId = 'app-id';
+        $delivery->event = PaymentWebhookDispatcher::EVENT_ORDER_PAID;
+        $delivery->url = 'https://app.example.test/webhook';
+
+        return $delivery;
+    }
+
+    /**
+     * @return EntityRepository<PaymentAppCollection>
+     */
+    private function appRepository(): EntityRepository
+    {
+        $repository = static::createStub(EntityRepository::class);
+        $repository->method('search')->willReturn(new EntitySearchResult(
+            'payment_app',
+            1,
+            new PaymentAppCollection([$this->app()]),
+            null,
+            new Criteria(),
+            Context::createDefaultContext()
+        ));
+
+        return $repository;
+    }
+
     private function notificationEntity(): PaymentNotificationEntity
     {
         $notification = new PaymentNotificationEntity();
@@ -598,7 +992,29 @@ class PaymentNotificationProcessorTest extends TestCase
             $order->outPaymentNo = (string) $overrides['outPaymentNo'];
         }
 
+        if (\array_key_exists('notifyUrl', $overrides)) {
+            $order->notifyUrl = (string) $overrides['notifyUrl'];
+        }
+
         return $order;
+    }
+
+    /**
+     * A refund of the order above that is waiting for the asynchronous confirmation of the channel.
+     */
+    private function refund(): PaymentRefundEntity
+    {
+        $refund = new PaymentRefundEntity();
+        $refund->setUniqueIdentifier('refund-id');
+        $refund->id = 'refund-id';
+        $refund->refundNo = 'PR0001';
+        $refund->paymentOrderId = 'order-id';
+        $refund->outRefundNo = 'app-refund-1';
+        $refund->amount = 400;
+        $refund->currency = 'CNY';
+        $refund->stateId = PaymentRefundStates::STATE_PROCESSING;
+
+        return $refund;
     }
 
     private function app(): PaymentAppEntity
@@ -607,7 +1023,8 @@ class PaymentNotificationProcessorTest extends TestCase
         $app->setUniqueIdentifier('app-id');
         $app->id = 'app-id';
         $app->technicalName = 'demo-app';
-        $app->appSecret = 'secret';
+        // the app secret is stored encrypted, the webhook signer decrypts it to sign the payload
+        $app->appSecret = (new PaymentCredentialCipher('test-secret'))->encryptValue('secret');
         $app->active = true;
 
         return $app;

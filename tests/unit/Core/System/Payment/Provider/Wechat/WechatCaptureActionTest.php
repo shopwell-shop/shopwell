@@ -133,6 +133,19 @@ class WechatCaptureActionTest extends TestCase
         static::assertArrayHasKey('error', $response);
     }
 
+    public function testTheH5ChannelNamesTheMissingClientIp(): void
+    {
+        $model = $this->orderModel();
+        $model->offsetUnset(PaymentGatewayModel::CLIENT_IP);
+
+        $action = new WechatCaptureAction();
+        $action->setApi($this->api(WechatApi::CHANNEL_H5));
+
+        $this->expectExceptionObject(PaymentException::missingParameter(PaymentGatewayModel::CLIENT_IP));
+
+        $action->execute(new Capture($model));
+    }
+
     public function testDescriptionIsCutAtTheChannelLimit(): void
     {
         $model = $this->orderModel();
@@ -164,6 +177,8 @@ class WechatCaptureActionTest extends TestCase
             PaymentGatewayModel::AMOUNT => 100,
             PaymentGatewayModel::CURRENCY => 'CNY',
             PaymentGatewayModel::SUBJECT => 'A subject',
+            // the h5 channel needs it, and the other channels simply carry it along
+            PaymentGatewayModel::CLIENT_IP => '203.0.113.7',
         ]);
     }
 

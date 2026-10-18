@@ -3,11 +3,15 @@
 namespace Shopwell\Core\System\Payment\Provider\Wechat;
 
 use GuzzleHttp\Exception\ClientException;
+use GuzzleHttp\HandlerStack;
+use Psr\Http\Message\ResponseInterface;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Payment\Gateway\AbstractPaymentApi;
+use Shopwell\Core\System\Payment\Gateway\CloseResult;
 use Shopwell\Core\System\Payment\Gateway\Payload;
 use Shopwell\Core\System\Payment\Gateway\QueryResult;
 use Shopwell\Core\System\Payment\PaymentException;
+use Shopwell\Core\System\Payment\Provider\ResolvedPaymentConfig;
 use WeChatPay\Builder;
 use WeChatPay\BuilderChainable;
 use WeChatPay\Crypto\Rsa;
@@ -83,9 +87,33 @@ final class WechatApi extends AbstractPaymentApi
     final public const API_V3_KEY = 'apiv3_key';
 
     /**
+     * The code {@see queryTransfer()} answers when wechat does not know the bill - the counterpart of
+     * the 404 {@see query()} maps to `absent`, read by the transfer query as "nothing was opened".
+     */
+    final public const TRANSFER_BILL_NOT_FOUND = 'NOT_FOUND';
+
+    /**
      * The order query of the api v3, answered for the merchant order number.
      */
-    private const URI_QUERY = 'v3/pay/transactions/out-trade-no/';
+    private const URI_QUERY = 'v3/pay/transactions/out-trade-no/%s';
+
+    /**
+     * The close of the api v3, answered for the merchant order number.
+     */
+    private const URI_CLOSE = 'v3/pay/transactions/out-trade-no/%s/close';
+
+    /**
+     * The merchant transfer of the api v3 - the payout of the platform to one openid, the product of
+     * 2025-01-15. The batch transfer (`v3/transfer/batches`) and the v2 promotion transfer are the
+     * predecessors, both are not what a new merchant opens.
+     */
+    private const URI_TRANSFER = 'v3/fund-app/mch-transfer/transfer-bills';
+
+    /**
+     * The query of a merchant transfer bill, answered for the out bill number of the merchant for the
+     * last 30 days only.
+     */
+    private const URI_TRANSFER_QUERY = 'v3/fund-app/mch-transfer/transfer-bills/out-bill-no/%s';
 
     /**
      * The trade states of wechat mapped to what the platform does with the order. A refunded trade
@@ -101,6 +129,20 @@ final class WechatApi extends AbstractPaymentApi
     private ?BuilderChainable $builder = null;
 
     /**
+     * @param HandlerStack|null $handler the guzzle handler the sdk client is built on; production
+     *                                   leaves it null and the sdk creates its own, the tests hand in
+     *                                   one that answers from canned responses and records what left
+     */
+    public function __construct(
+        ResolvedPaymentConfig $config,
+        string $notifyUrl,
+        string $returnUrl,
+        private readonly ?HandlerStack $handler = null,
+    ) {
+        parent::__construct($config, $notifyUrl, $returnUrl);
+    }
+
+    /**
      * The appid of the channel the payment was opened with - see {@see self::PARAM_APP_ID}.
      */
     public function appId(): string
@@ -114,48 +156,99 @@ final class WechatApi extends AbstractPaymentApi
             return $this->builder;
         }
 
-        return $this->builder = Builder::factory([
+        $config = [
             'mchid' => $this->requireCredential(self::MCH_ID),
             'serial' => $this->requireCredential(self::MCH_SERIAL),
             'privateKey' => $this->privateKey(),
             'certs' => $this->platformCerts(),
-        ]);
+        ];
+
+        if ($this->handler instanceof HandlerStack) {
+            $config['handler'] = $this->handler;
+        }
+
+        return $this->builder = Builder::factory($config);
     }
 
     /**
-     * Calls an api v3 endpoint and returns the decoded answer.
+     * Calls a fixed api v3 endpoint and returns the decoded answer.
+     *
+     * The sdk signs the request with the merchant private key and verifies the signature of the
+     * answer, so the body returned here is authenticated already - the headers are the ones the
+     * request needs next to a signature (a `Wechatpay-Serial`, for instance).
+     *
+     * **The path goes through `chain()`, so it may not carry a business number or an upper case
+     * letter.** `Builder::normalize()` rewrites every upper case character of a chain segment to `-`
+     * plus its lower case, which is meant for camel case endpoint names. A path with our own numbers
+     * in it (`PG20261018AB12CD34`) would be rewritten character by character and reach a path that
+     * exists nowhere - use {@see send()} for those.
      *
      * @param array<string, mixed> $payload
+     * @param array<string, string> $headers
      *
      * @throws \Throwable when the channel rejects the call
      *
      * @return array<string, mixed>
      */
-    public function post(string $uri, array $payload): array
+    public function post(string $uri, array $payload, array $headers = []): array
     {
-        $response = $this->builder()->chain($uri)->post(['json' => $payload]);
-        $body = (string) $response->getBody();
-        $decoded = json_decode($body, true);
+        $options = ['json' => $payload];
 
-        return \is_array($decoded) ? $decoded : [];
+        if ($headers !== []) {
+            $options['headers'] = $headers;
+        }
+
+        $response = $this->builder()->chain($uri)->post($options);
+
+        return self::decode($response);
     }
 
     /**
-     * Calls an api v3 endpoint with query parameters and returns the decoded answer.
+     * Submits a merchant transfer, the payout of the platform to one openid.
      *
-     * @param array<string, string> $query
+     * The body is built by the action - what the scene of the transfer consists of is a decision of
+     * the business case, not of the api. The headers carry the `Wechatpay-Serial` when the request
+     * encrypts a `user_name`, because the header names the certificate whose public key did it.
      *
-     * @throws \Throwable when the channel rejects the call
+     * @param array<string, mixed> $body
+     * @param array<string, string> $headers
+     *
+     * @throws \Throwable when wechat rejects the call
      *
      * @return array<string, mixed>
      */
-    public function get(string $uri, array $query = []): array
+    public function createTransfer(array $body, array $headers = []): array
     {
-        $response = $this->builder()->chain($uri)->get(['query' => $query]);
-        $body = (string) $response->getBody();
-        $decoded = json_decode($body, true);
+        return $this->post(self::URI_TRANSFER, $body, $headers);
+    }
 
-        return \is_array($decoded) ? $decoded : [];
+    /**
+     * Asks wechat what happened to a merchant transfer bill.
+     *
+     * A bill wechat does not know answers with a 404 - only the last 30 days are known. That is an
+     * answer of its own and no failure: the query action reads the `error.code` as "the bill does not
+     * exist" instead of having to tell a missing bill from a broken channel. Everything else bubbles.
+     *
+     * @throws \Throwable when wechat rejects the call for another reason
+     *
+     * @return array<string, mixed>
+     */
+    public function queryTransfer(string $outBillNo): array
+    {
+        try {
+            // the out bill number is `[0-9a-zA-Z]` - see send() for why this can not be chained
+            return self::decode($this->send('GET', \sprintf(self::URI_TRANSFER_QUERY, $outBillNo)));
+        } catch (ClientException $exception) {
+            if ($exception->getResponse()->getStatusCode() === 404) {
+                return ['error' => [
+                    'code' => self::TRANSFER_BILL_NOT_FOUND,
+                    'status' => 404,
+                    'message' => $exception->getMessage(),
+                ]];
+            }
+
+            throw $exception;
+        }
     }
 
     /**
@@ -169,13 +262,14 @@ final class WechatApi extends AbstractPaymentApi
     public function query(string $outTradeNo): QueryResult
     {
         try {
-            $answer = $this->get(self::URI_QUERY . $outTradeNo, [
-                'mchid' => $this->requireCredential(self::MCH_ID),
-            ]);
+            // our payment numbers start with `PG` and continue in upper case hex - see send()
+            $answer = self::decode($this->send('GET', \sprintf(self::URI_QUERY, $outTradeNo), [
+                'query' => ['mchid' => $this->requireCredential(self::MCH_ID)],
+            ]));
         } catch (ClientException $exception) {
             $response = $exception->getResponse();
 
-            if ($response !== null && $response->getStatusCode() === 404) {
+            if ($response->getStatusCode() === 404) {
                 return new QueryResult(QueryResult::STATUS_ABSENT, raw: ['error' => $exception->getMessage()]);
             }
 
@@ -196,6 +290,30 @@ final class WechatApi extends AbstractPaymentApi
     }
 
     /**
+     * Closes a trade, the close of the api v3.
+     *
+     * Wechat answers 204 without a body when the trade is closed. A trade it does not know, a trade
+     * that is already paid and a trade that is already closed are errors of the api, but they are
+     * answers of the caller's interest instead of failures - see {@see CloseResult}. Only everything
+     * else is a real failure and bubbles up.
+     *
+     * @throws \Throwable when wechat rejects the call for another reason
+     */
+    public function close(string $outTradeNo): CloseResult
+    {
+        try {
+            // our payment numbers start with `PG` and continue in upper case hex - see send()
+            $response = $this->send('POST', \sprintf(self::URI_CLOSE, $outTradeNo), [
+                'json' => ['mchid' => $this->requireCredential(self::MCH_ID)],
+            ]);
+        } catch (ClientException $exception) {
+            return $this->closeAnswerOf($exception);
+        }
+
+        return new CloseResult(CloseResult::STATUS_CLOSED, channelStatus: (string) $response->getStatusCode());
+    }
+
+    /**
      * The platform certificate of a serial number, used to verify a notification.
      */
     public function platformCertOf(?string $serial): ?string
@@ -208,6 +326,39 @@ final class WechatApi extends AbstractPaymentApi
         }
 
         return (string) $certs[$serial];
+    }
+
+    /**
+     * The platform certificate a transfer encrypts its `user_name` with, as `[serial, certificate]`.
+     *
+     * `Wechatpay-Serial` names the very certificate whose public key encrypted the field, so the
+     * serial is part of the answer and can not be looked up from the certificate alone. A channel
+     * that holds several platform certificates (a rotation is under way) and does not name the
+     * current one in `platform_serial` has no certificate this method could pick: guessing would send
+     * a serial wechat does not accept for the ciphertext, which burns the out number of the transfer.
+     *
+     * @throws PaymentException when no certificate is configured or the one to use is ambiguous
+     *
+     * @return array{serial: string, certificate: string}
+     */
+    public function platformCertificate(): array
+    {
+        $certs = $this->platformCerts();
+        $serial = $this->credential(self::PLATFORM_SERIAL);
+
+        if ($serial !== null && isset($certs[$serial])) {
+            return ['serial' => $serial, 'certificate' => $certs[$serial]];
+        }
+
+        if (\count($certs) === 1) {
+            return ['serial' => (string) array_key_first($certs), 'certificate' => (string) reset($certs)];
+        }
+
+        throw PaymentException::invalidProviderDeclaration(\sprintf(
+            'The wechat channel declares %d platform certificates but names no current one - set the credential "%s" to the serial whose certificate encrypts the user name.',
+            \count($certs),
+            self::PLATFORM_SERIAL,
+        ));
     }
 
     public function publicKeyOf(string $certificate): \OpenSSLAsymmetricKey
@@ -248,38 +399,90 @@ final class WechatApi extends AbstractPaymentApi
     }
 
     /**
+     * The close answer a rejection of wechat decides on its own.
+     *
+     * Pure on purpose and covered one code per row: mistaking "paid" for "closed" would close an
+     * order the money belongs to, which is the most expensive mistake this link can make.
+     *
+     * @param array<string, mixed> $raw
+     *
+     * @return CloseResult|null null when the code is no close answer at all
+     */
+    public static function closeResultForError(string $code, array $raw = []): ?CloseResult
+    {
+        return match ($code) {
+            'ORDER_NOT_EXIST' => new CloseResult(CloseResult::STATUS_NOT_FOUND, channelStatus: $code, raw: $raw),
+            'ORDER_PAID' => new CloseResult(CloseResult::STATUS_ALREADY_PAID, channelStatus: $code, raw: $raw),
+            // a trade that is already closed is closed, which is exactly what the caller wanted
+            'ORDER_CLOSED' => new CloseResult(CloseResult::STATUS_CLOSED, channelStatus: $code, raw: $raw),
+            default => null,
+        };
+    }
+
+    /**
+     * Sends one api v3 request on a path the caller built and returns the raw answer.
+     *
+     * **Every path that carries one of our own numbers goes through here and never through
+     * `chain()`.** The sdk normalizes a chain segment with `Builder::normalize()`
+     * (`vendor/wechatpay/wechatpay/src/Builder.php:91-98`): every upper case letter becomes `-` plus
+     * its lower case, because the segments are camel case endpoint names. A segment that carries a
+     * business number is rewritten character by character by that rule - our payment numbers start
+     * with `PG` and continue in upper case hex (`PaymentOrderService::generatePaymentNo()`), so
+     * `PG20261018AB12CD34` arrives at wechat as `-p-g20261018-a-b12-c-d34`, a path that exists
+     * nowhere. Wechat answers 404 for it, which is indistinguishable from "this trade does not
+     * exist" - the worst possible answer, because the reconciliation books it.
+     *
+     * The client behind the driver is the signed one: `Builder::factory()` puts the signer and the
+     * verifier on the very guzzle client `getDriver()` hands out, so a request sent here carries the
+     * `Authorization` of the merchant certificate exactly like a chained one.
+     *
+     * @param array<string, mixed> $options
+     *
+     * @throws \Throwable when wechat rejects the call
+     */
+    private function send(string $method, string $path, array $options = []): ResponseInterface
+    {
+        return $this->builder()->getDriver()->request($method, $path, $options);
+    }
+
+    /**
+     * The decoded body of an answer, as `array<string, mixed>`.
+     *
+     * @return array<string, mixed>
+     */
+    private static function decode(ResponseInterface $response): array
+    {
+        $decoded = json_decode((string) $response->getBody(), true);
+
+        return \is_array($decoded) ? $decoded : [];
+    }
+
+    /**
+     * @throws ClientException
+     */
+    private function closeAnswerOf(ClientException $exception): CloseResult
+    {
+        $decoded = json_decode((string) $exception->getResponse()->getBody(), true);
+
+        /** @var array<string, mixed> $decoded */
+        $decoded = \is_array($decoded) ? $decoded : [];
+        $code = Payload::string($decoded, 'code') ?? '';
+
+        $result = self::closeResultForError($code, $decoded);
+
+        if (!$result instanceof CloseResult) {
+            throw $exception;
+        }
+
+        return $result;
+    }
+
+    /**
      * @return array<string, string>
      */
     private function platformCerts(): array
     {
-        $certs = $this->credentials()[self::PLATFORM_CERTS] ?? null;
-
-        if (\is_string($certs)) {
-            $decoded = json_decode($certs, true);
-            $certs = \is_array($decoded) ? $decoded : [];
-        }
-
-        $normalized = [];
-        if (\is_array($certs)) {
-            foreach ($certs as $serial => $certificate) {
-                if (\is_scalar($certificate) && (string) $certificate !== '') {
-                    $normalized[(string) $serial] = (string) $certificate;
-                }
-            }
-        }
-
-        $single = $this->credentials()[self::PLATFORM_CERT] ?? null;
-        $singleSerial = $this->credential(self::PLATFORM_SERIAL);
-
-        if (\is_scalar($single) && (string) $single !== '') {
-            $normalized[$singleSerial ?? 'platform'] = (string) $single;
-        }
-
-        if ($normalized === []) {
-            throw PaymentException::missingCredentials($this->provider(), self::PLATFORM_CERTS);
-        }
-
-        return $normalized;
+        return WechatPlatformCertificates::of($this->credentials());
     }
 
     /**

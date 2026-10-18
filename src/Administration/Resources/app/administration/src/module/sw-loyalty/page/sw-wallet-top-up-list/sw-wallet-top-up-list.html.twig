@@ -1,0 +1,146 @@
+{% block sw_wallet_top_up_list %}
+<sw-page class="sw-wallet-top-up-list">
+
+    {% block sw_wallet_top_up_list_search_bar %}
+    <template #search-bar>
+        <sw-search-bar
+            :initial-search="term"
+            :placeholder="$t('sw-loyalty.topUp.list.placeholderSearchBar')"
+            @search="onSearch"
+        />
+    </template>
+    {% endblock %}
+
+    {% block sw_wallet_top_up_list_smart_bar_header %}
+    <template #smart-bar-header>
+        <h2>
+            {{ $t('sw-settings.index.title') }}
+            <mt-icon
+                name="regular-chevron-right-xs"
+                size="12px"
+            />
+            {{ $t('sw-loyalty.topUp.general.mainMenuItemGeneral') }}
+
+            <span
+                v-if="!isLoading && total"
+                class="sw-page__smart-bar-amount"
+            >
+                ({{ total }})
+            </span>
+        </h2>
+    </template>
+    {% endblock %}
+
+    {% block sw_wallet_top_up_list_language_switch %}
+    <template #language-switch>
+        <sw-language-switch @on-change="onRefresh" />
+    </template>
+    {% endblock %}
+
+    {% block sw_wallet_top_up_list_content %}
+    <template #content>
+        <sw-card-view>
+            {% block sw_wallet_top_up_list_card %}
+            <mt-card
+                position-identifier="sw-wallet-top-up-list"
+                :title="$t('sw-loyalty.topUp.list.cardTitle')"
+                :is-loading="isLoading"
+            >
+                {% block sw_wallet_top_up_list_filter %}
+                <template #headerRight>
+                    <mt-select
+                        v-model="stateFilter"
+                        class="sw-wallet-top-up-list__state-filter"
+                        :options="stateFilterOptions"
+                        :label="$t('sw-loyalty.topUp.list.labelFilterState')"
+                        size="small"
+                        @update:model-value="onFilterChange"
+                    />
+                </template>
+                {% endblock %}
+
+                {% block sw_wallet_top_up_list_grid %}
+                <sw-data-grid
+                    v-if="topUps.length > 0"
+                    class="sw-wallet-top-up-list__grid"
+                    :data-source="topUps"
+                    :columns="columns"
+                    :show-selection="false"
+                    :show-settings="false"
+                >
+                    {% block sw_wallet_top_up_list_grid_column_customer %}
+                    <template #column-customer="{ item }">
+                        <mt-link
+                            v-if="item.customer"
+                            :to="{ name: 'sw.customer.detail', params: { id: item.customerId } }"
+                        >
+                            {{ formatCustomer(item) }}
+                        </mt-link>
+                        <span v-else>{{ formatCustomer(item) }}</span>
+                    </template>
+                    {% endblock %}
+
+                    {% block sw_wallet_top_up_list_grid_column_amount %}
+                    <template #column-amount="{ item }">
+                        {{ formatAmount(item) }}
+                    </template>
+                    {% endblock %}
+
+                    {% block sw_wallet_top_up_list_grid_column_state %}
+                    <template #column-state="{ item }">
+                        <mt-badge
+                            class="sw-wallet-top-up-list__state"
+                            size="small"
+                            :type="getStateVariant(item.state)"
+                        >
+                            {{ getStateLabel(item.state) }}
+                        </mt-badge>
+                    </template>
+                    {% endblock %}
+
+                    {% block sw_wallet_top_up_list_grid_column_channel %}
+                    <template #column-channelTechnicalName="{ item }">
+                        {{ item.channelTechnicalName || '-' }}
+                    </template>
+                    {% endblock %}
+
+                    {% block sw_wallet_top_up_list_grid_column_created_at %}
+                    <template #column-createdAt="{ item }">
+                        {{ formatDate(item.createdAt) }}
+                    </template>
+                    {% endblock %}
+
+                    {% block sw_wallet_top_up_list_grid_column_credited_at %}
+                    <template #column-creditedAt="{ item }">
+                        {{ formatDate(item.creditedAt) }}
+                    </template>
+                    {% endblock %}
+                </sw-data-grid>
+
+                {% block sw_wallet_top_up_list_empty_state %}
+                <mt-empty-state
+                    v-else-if="!isLoading"
+                    centered
+                    icon="regular-money-transfer"
+                    :headline="$t('sw-loyalty.topUp.list.emptyStateHeadline')"
+                />
+                {% endblock %}
+                {% endblock %}
+
+                {% block sw_wallet_top_up_list_pagination %}
+                <sw-pagination
+                    v-if="total > 0"
+                    :page="page"
+                    :limit="limit"
+                    :total="total"
+                    @page-change="onPageChange"
+                />
+                {% endblock %}
+            </mt-card>
+            {% endblock %}
+        </sw-card-view>
+    </template>
+    {% endblock %}
+
+</sw-page>
+{% endblock %}

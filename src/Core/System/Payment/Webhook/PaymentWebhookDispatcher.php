@@ -2,6 +2,7 @@
 
 namespace Shopwell\Core\System\Payment\Webhook;
 
+use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Psr\Clock\ClockInterface;
 use Psr\Log\LoggerInterface;
 use Shopwell\Core\Defaults;
@@ -39,6 +40,13 @@ final class PaymentWebhookDispatcher
     final public const EVENT_ORDER_CLOSED = 'payment.order.closed';
     final public const EVENT_REFUND_FINISHED = 'payment.refund.finished';
 
+    /**
+     * The subject of an event that happens once per order, e.g. the payment of the order. A refund
+     * is the exception: it uses its refund id, because a refund happens once per refund and an order
+     * may be refunded more than once.
+     */
+    final public const SUBJECT_ORDER = 'order';
+
     final public const HEADER_EVENT = 'X-Payment-Event';
     final public const HEADER_SIGNATURE = 'X-Payment-Signature';
     final public const HEADER_DELIVERY = 'X-Payment-Delivery-Id';
@@ -70,10 +78,28 @@ final class PaymentWebhookDispatcher
     }
 
     /**
+     * Queues the delivery of an event, or returns the one that is already queued for it.
+     *
+     * The triple of order, event and subject identifies the delivery, so queueing the same event of
+     * the same subject twice is a no-op - and that no-op is the retry mechanism: the row itself is
+     * retried by {@see retryDue()} as long as it is `pending` or `failed`, and a `success` means the
+     * app already knows. Re-announcing is therefore constructionally harmless, which is what lets a
+     * duplicate notification of the channel announce again.
+     *
+     * A `giving_up` delivery is returned untouched as well: giving up is the decision that was made
+     * on purpose after the last attempt and it is logged as such, resetting it on every duplicate
+     * callback of the channel would contradict that very log line.
+     *
      * @param array<string, mixed> $data
+     * @param string $subject what the event is about - {@see self::SUBJECT_ORDER} for the events
+     *                        that happen once per order, the refund id for a refund
      */
-    public function enqueue(PaymentOrderEntity $order, string $event, array $data = []): ?PaymentWebhookDeliveryEntity
-    {
+    public function enqueue(
+        PaymentOrderEntity $order,
+        string $event,
+        array $data = [],
+        string $subject = self::SUBJECT_ORDER
+    ): ?PaymentWebhookDeliveryEntity {
         $url = $order->notifyUrl;
 
         if ($url === null || $url === '') {
@@ -85,24 +111,43 @@ final class PaymentWebhookDispatcher
             return null;
         }
 
+        $existing = $this->findDelivery($order->id, $event, $subject);
+        if ($existing instanceof PaymentWebhookDeliveryEntity) {
+            return $existing;
+        }
+
         $id = Uuid::randomHex();
 
         // the id is part of the signed payload, so a replayed body is detectable by it - the app
         // remembers the delivery ids it already processed, see PaymentWebhookSigner
         $signed = $this->signer->sign($id, $order, $app, $event, $data);
 
-        $this->deliveryRepository->create([[
-            'id' => $id,
-            'paymentOrderId' => $order->id,
-            'paymentAppId' => $order->paymentAppId,
-            'event' => $event,
-            'url' => $url,
-            'payload' => $signed['payload'],
-            'signature' => $signed['signature'],
-            'status' => PaymentWebhookDeliveryEntity::STATUS_PENDING,
-            'attemptCount' => 0,
-            'nextRetryAt' => $this->clock->now(),
-        ]], Context::createDefaultContext());
+        try {
+            $this->deliveryRepository->create([[
+                'id' => $id,
+                'paymentOrderId' => $order->id,
+                'paymentAppId' => $order->paymentAppId,
+                'event' => $event,
+                'subject' => $subject,
+                'url' => $url,
+                'payload' => $signed['payload'],
+                'signature' => $signed['signature'],
+                'status' => PaymentWebhookDeliveryEntity::STATUS_PENDING,
+                'attemptCount' => 0,
+                'nextRetryAt' => $this->clock->now(),
+            ]], Context::createDefaultContext());
+        } catch (UniqueConstraintViolationException $exception) {
+            // the notification of a channel and the reconciliation are two independent actors on the
+            // same order and may announce at the same moment. The unique key decides who wins; the
+            // loser reports the delivery the winner wrote instead of failing the whole processing.
+            $existing = $this->findDelivery($order->id, $event, $subject);
+
+            if ($existing instanceof PaymentWebhookDeliveryEntity) {
+                return $existing;
+            }
+
+            throw $exception;
+        }
 
         return $this->getDelivery($id);
     }
@@ -184,6 +229,24 @@ final class PaymentWebhookDispatcher
         return $delivery;
     }
 
+    /**
+     * The delivery of one event of one subject of one order, if it was queued already.
+     */
+    private function findDelivery(string $paymentOrderId, string $event, string $subject): ?PaymentWebhookDeliveryEntity
+    {
+        $criteria = new Criteria();
+        $criteria->addFilter(
+            new EqualsFilter('paymentOrderId', $paymentOrderId),
+            new EqualsFilter('event', $event),
+            new EqualsFilter('subject', $subject)
+        );
+        $criteria->setLimit(1);
+
+        $delivery = $this->deliveryRepository->search($criteria, Context::createDefaultContext())->getEntities()->first();
+
+        return $delivery instanceof PaymentWebhookDeliveryEntity ? $delivery : null;
+    }
+
     private function finish(
         PaymentWebhookDeliveryEntity $delivery,
         int $attempt,
@@ -210,7 +273,7 @@ final class PaymentWebhookDispatcher
         if ($givingUp) {
             $this->logger->error('Giving up the payment webhook delivery to the app.', [
                 'deliveryId' => $delivery->id,
-                'paymentNo' => $delivery->id,
+                'paymentOrderId' => $delivery->paymentOrderId,
                 'event' => $delivery->event,
                 'url' => $delivery->url,
                 'httpStatus' => $status,

@@ -30,6 +30,87 @@
       "placeholderNewLoyaltyTier": "新建会员等级",
       "notificationErrorMessage": "保存会员等级时出错。",
       "messageSaveSuccess": "会员等级已保存。"
+    },
+    "plan": {
+      "general": {
+        "mainMenuItemGeneral": "会员套餐",
+        "buttonCreate": "新建套餐",
+        "placeholderSearchBar": "搜索套餐..."
+      },
+      "list": {
+        "columnName": "套餐名称",
+        "columnTier": "会员等级",
+        "columnPrice": "价格",
+        "columnDurationDays": "时长",
+        "columnActive": "启用",
+        "durationDaysValue": "{days} 天",
+        "emptyStateHeadline": "还没有会员套餐",
+        "emptyStateDescription": "新建一个套餐，客户就能在店铺中购买会员。"
+      },
+      "detail": {
+        "cardTitle": "会员套餐",
+        "fieldNameLabel": "套餐名称",
+        "fieldTechnicalNameLabel": "技术名称",
+        "fieldTierLabel": "会员等级",
+        "fieldTierHelpText": "购买该套餐后客户获得的等级。",
+        "fieldCurrencyLabel": "币种",
+        "fieldPriceLabel": "价格",
+        "fieldDurationDaysLabel": "时长（天）",
+        "fieldActiveLabel": "启用",
+        "fieldDescriptionLabel": "描述",
+        "placeholderName": "输入套餐名称...",
+        "placeholderTechnicalName": "输入技术名称...",
+        "placeholderNewPlan": "新建会员套餐",
+        "notificationErrorMessage": "保存会员套餐时出错。",
+        "messageSaveSuccess": "会员套餐已保存。"
+      }
+    },
+    "order": {
+      "general": {
+        "mainMenuItemGeneral": "会员订单"
+      },
+      "list": {
+        "cardTitle": "会员订单",
+        "placeholderSearchBar": "搜索会员订单...",
+        "columnCustomer": "客户",
+        "columnPlan": "套餐",
+        "columnAmount": "金额",
+        "columnState": "状态",
+        "columnPaidAt": "支付时间",
+        "columnCreatedAt": "创建时间",
+        "labelFilterState": "状态",
+        "filterStateAll": "全部状态",
+        "emptyStateHeadline": "还没有会员订单"
+      },
+      "state": {
+        "open": "待支付",
+        "activated": "已生效",
+        "failed": "失败"
+      }
+    },
+    "topUp": {
+      "general": {
+        "mainMenuItemGeneral": "钱包充值单"
+      },
+      "list": {
+        "cardTitle": "钱包充值单",
+        "placeholderSearchBar": "搜索充值单...",
+        "columnCustomer": "客户",
+        "columnAmount": "金额",
+        "columnState": "状态",
+        "columnChannel": "支付通道",
+        "columnCreatedAt": "创建时间",
+        "columnCreditedAt": "入账时间",
+        "labelFilterState": "状态",
+        "filterStateAll": "全部状态",
+        "emptyStateHeadline": "还没有充值单"
+      },
+      "state": {
+        "open": "待支付",
+        "paid": "已支付",
+        "credited": "已入账",
+        "failed": "失败"
+      }
     }
   },
   "sw-privileges": {

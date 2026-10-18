@@ -7,6 +7,7 @@ use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Payment\Order\PaymentOrderEntity;
 use Shopwell\Core\System\Payment\Order\Refund\PaymentRefundEntity;
 use Shopwell\Core\System\Payment\PaymentException;
+use Shopwell\Core\System\Payment\Transfer\PaymentTransferEntity;
 
 /**
  * The model of a payum request: the contract between the services of the payment gateway and the
@@ -74,6 +75,12 @@ final class PaymentGatewayModel extends ArrayObject
     final public const LAST_CHANNEL_RESPONSE = 'last_channel_response';
 
     /**
+     * The subject a payout carries when the business case filed none - the one default, kept next to
+     * the factory that fills it in, so the record and the wire content can not diverge on it.
+     */
+    final public const DEFAULT_SUBJECT = '转账';
+
+    /**
      * @param array<string, mixed> $values
      */
     public function __construct(array $values = [])
@@ -123,6 +130,24 @@ final class PaymentGatewayModel extends ArrayObject
             self::RAW_BODY => $rawBody,
             self::HEADERS => $headers,
             self::REMOTE_IP => $remoteIp,
+        ]);
+    }
+
+    /**
+     * The model of a transfer: the payout data the actions of the gateway record their attempt on.
+     *
+     * A transfer rides the very same model a payment order does - the actions build the request from
+     * the entities the request carries, and the model is what they record the request, the answer and
+     * the result on, so every action of the gateway keeps one consistent way of leaving the evidence.
+     */
+    public static function forTransfer(PaymentTransferEntity $transfer): self
+    {
+        $subject = $transfer->metadata['subject'] ?? null;
+
+        return new self([
+            self::AMOUNT => $transfer->amount,
+            self::CURRENCY => $transfer->currency,
+            self::SUBJECT => \is_scalar($subject) && (string) $subject !== '' ? (string) $subject : self::DEFAULT_SUBJECT,
         ]);
     }
 

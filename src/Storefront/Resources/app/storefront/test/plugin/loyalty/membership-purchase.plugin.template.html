@@ -1,0 +1,19 @@
+<div data-membership-purchase="true">
+    <select data-membership-purchase-channel>
+        <option value="wechat_qr" data-flow="qrcode" selected>微信扫码</option>
+    </select>
+
+    <button type="button"
+            data-membership-plan-id="plan-1"
+            data-membership-plan-name="Gold, one year">立即开通</button>
+
+    <div class="alert d-none" data-membership-purchase-feedback>
+        <span data-membership-purchase-message></span>
+    </div>
+
+    <div class="d-none" data-membership-purchase-qrcode>
+        <div data-membership-purchase-qrcode-target></div>
+        <p data-membership-purchase-qrcode-hint></p>
+        <button type="button" data-membership-purchase-check>我已完成支付</button>
+    </div>
+</div>

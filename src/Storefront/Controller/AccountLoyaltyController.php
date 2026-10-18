@@ -5,6 +5,7 @@ namespace Shopwell\Storefront\Controller;
 use Shopwell\Core\Checkout\Cart\Cart;
 use Shopwell\Core\Checkout\Customer\CustomerEntity;
 use Shopwell\Core\Checkout\Loyalty\SalesChannel\LoyaltyRedeemRoute;
+use Shopwell\Core\Checkout\Loyalty\SalesChannel\MembershipPurchaseRoute;
 use Shopwell\Core\Framework\HttpException;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\PlatformRequest;
@@ -31,6 +32,7 @@ class AccountLoyaltyController extends StorefrontController
     public function __construct(
         private readonly AccountLoyaltyPageLoader $pageLoader,
         private readonly LoyaltyRedeemRoute $loyaltyRedeemRoute,
+        private readonly MembershipPurchaseRoute $membershipPurchaseRoute,
     ) {
     }
 
@@ -94,5 +96,36 @@ class AccountLoyaltyController extends StorefrontController
         }
 
         return $this->json(['success' => true]);
+    }
+
+    /**
+     * Buys a membership plan for the customer.
+     *
+     * The price, the tier and the duration are not taken from the request: the plan is loaded again by
+     * the route, so a page that was open while the operator changed the price cannot buy at the old
+     * one. What the browser gets back is only how to hand the payer over to the channel.
+     */
+    #[Route(
+        path: '/account/loyalty/membership',
+        name: 'frontend.account.loyalty.membership',
+        options: ['seo' => false],
+        defaults: [
+            PlatformRequest::ATTRIBUTE_LOGIN_REQUIRED => true,
+            'XmlHttpRequest' => true,
+        ],
+        methods: [Request::METHOD_POST]
+    )]
+    public function purchaseMembership(Request $request, SalesChannelContext $context, CustomerEntity $customer): JsonResponse
+    {
+        try {
+            $response = $this->membershipPurchaseRoute->purchase($request, $context, $customer);
+        } catch (HttpException $exception) {
+            return $this->json(
+                ['success' => false, 'errorCode' => $exception->getErrorCode()],
+                $exception->getStatusCode()
+            );
+        }
+
+        return $this->json(['success' => true, 'order' => $response->getObject()->all()]);
     }
 }

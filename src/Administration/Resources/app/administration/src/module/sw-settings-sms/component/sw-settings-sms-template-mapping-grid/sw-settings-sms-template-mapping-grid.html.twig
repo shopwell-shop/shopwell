@@ -1,117 +1,115 @@
 {% block sw_settings_sms_template_mapping_grid %}
-<div class="sw-settings-sms-template-mapping-grid">
+<sw-data-grid
+    class="sw-settings-sms-template-mapping-grid"
+    :data-source="mappings"
+    :columns="columns"
+    :show-selection="false"
+    :show-actions="true"
+    :plain-appearance="true"
+    identifier="sw-settings-sms-template-mapping-grid"
+>
 
-    {% block sw_settings_sms_template_mapping_grid_header %}
-    <div class="sw-settings-sms-template-mapping-grid__header">
-        <span class="sw-settings-sms-template-mapping-grid__header-cell">{{ $t('sw-settings-sms.mapping.columnTechnicalName') }}</span>
-        <span class="sw-settings-sms-template-mapping-grid__header-cell">{{ $t('sw-settings-sms.mapping.columnGateway') }}</span>
-        <span class="sw-settings-sms-template-mapping-grid__header-cell">{{ $t('sw-settings-sms.mapping.columnTemplateCode') }}</span>
-        <span class="sw-settings-sms-template-mapping-grid__header-cell">{{ $t('sw-settings-sms.mapping.columnSignName') }}</span>
-        <span class="sw-settings-sms-template-mapping-grid__header-cell">{{ $t('sw-settings-sms.mapping.columnAuditStatus') }}</span>
-        <span class="sw-settings-sms-template-mapping-grid__header-cell"></span>
-    </div>
-    {% endblock %}
-
-    {% block sw_settings_sms_template_mapping_grid_rows %}
-    <div
-        v-for="mapping in mappings"
-        :key="mapping.id"
-        class="sw-settings-sms-template-mapping-grid__row"
-    >
-        {% block sw_settings_sms_template_mapping_grid_row_provider %}
-        <sw-single-select
-            v-model:value="mapping.technicalName"
+    {% block sw_settings_sms_template_mapping_grid_column_provider %}
+    <template #column-technicalName="{ item }">
+        <mt-select
+            v-model="item.technicalName"
             class="sw-settings-sms-template-mapping-grid__provider"
-            value-property="value"
-            label-property="label"
+            name="technicalName"
             :options="providerOptions"
             :disabled="disabled || undefined"
         />
-        {% endblock %}
+    </template>
+    {% endblock %}
 
-        {% block sw_settings_sms_template_mapping_grid_row_gateway %}
-        <sw-single-select
-            v-model:value="mapping.gatewayId"
+    {% block sw_settings_sms_template_mapping_grid_column_gateway %}
+    <template #column-gatewayId="{ item }">
+        <mt-select
+            v-model="item.gatewayId"
             class="sw-settings-sms-template-mapping-grid__gateway"
-            value-property="value"
-            label-property="label"
-            show-clearable-button
+            name="gatewayId"
+            clearable
             :placeholder="$t('sw-settings-sms.mapping.gatewayAllAccounts')"
             :options="gatewayOptions"
             :disabled="disabled || undefined"
         />
-        {% endblock %}
+    </template>
+    {% endblock %}
 
-        {% block sw_settings_sms_template_mapping_grid_row_template_code %}
+    {% block sw_settings_sms_template_mapping_grid_column_template_code %}
+    <template #column-templateCode="{ item }">
         <mt-text-field
-            v-model="mapping.templateCode"
+            v-model="item.templateCode"
             class="sw-settings-sms-template-mapping-grid__template-code"
+            name="templateCode"
             :placeholder="$t('sw-settings-sms.mapping.templateCodePlaceholder')"
-            :required="needsTemplateCode(mapping)"
+            :required="needsTemplateCode(item)"
             :disabled="disabled || undefined"
         />
-        {% endblock %}
+    </template>
+    {% endblock %}
 
-        {% block sw_settings_sms_template_mapping_grid_row_sign_name %}
+    {% block sw_settings_sms_template_mapping_grid_column_sign_name %}
+    <template #column-signName="{ item }">
         <mt-text-field
-            v-model="mapping.signName"
+            v-model="item.signName"
             class="sw-settings-sms-template-mapping-grid__sign-name"
+            name="signName"
             :placeholder="$t('sw-settings-sms.mapping.signNamePlaceholder')"
             :disabled="disabled || undefined"
         />
-        {% endblock %}
+    </template>
+    {% endblock %}
 
-        {% block sw_settings_sms_template_mapping_grid_row_audit_status %}
-        <sw-single-select
-            v-model:value="mapping.auditStatus"
+    {% block sw_settings_sms_template_mapping_grid_column_audit_status %}
+    <template #column-auditStatus="{ item }">
+        <mt-select
+            v-model="item.auditStatus"
             class="sw-settings-sms-template-mapping-grid__audit-status"
-            value-property="value"
-            label-property="label"
+            name="auditStatus"
             :options="auditStatusOptions"
             :disabled="disabled || undefined"
         />
-        {% endblock %}
+    </template>
+    {% endblock %}
 
-        {% block sw_settings_sms_template_mapping_grid_row_remove %}
-        <mt-button
+    {% block sw_settings_sms_template_mapping_grid_actions %}
+    <template #actions="{ item }">
+        <sw-context-menu-item
             class="sw-settings-sms-template-mapping-grid__remove"
-            variant="critical"
-            ghost
-            size="small"
+            variant="danger"
             :disabled="disabled || undefined"
-            @click="onRemoveMapping(mapping)"
+            @click="onRemoveMapping(item)"
         >
             {{ $t('global.default.delete') }}
-        </mt-button>
-        {% endblock %}
-    </div>
+        </sw-context-menu-item>
+    </template>
     {% endblock %}
 
     {% block sw_settings_sms_template_mapping_grid_empty %}
-    <p
-        v-if="mappings.length === 0"
-        class="sw-settings-sms-template-mapping-grid__empty"
-    >
-        {{ $t('sw-settings-sms.mapping.emptyState') }}
-    </p>
+    <template #empty-state>
+        <mt-empty-state
+            class="sw-settings-sms-template-mapping-grid__empty"
+            :description="$t('sw-settings-sms.mapping.emptyState')"
+        />
+    </template>
     {% endblock %}
+</sw-data-grid>
 
-    {% block sw_settings_sms_template_mapping_grid_add %}
-    <mt-button
-        class="sw-settings-sms-template-mapping-grid__add"
-        variant="secondary"
-        size="small"
-        :disabled="disabled || undefined"
-        @click="onAddMapping"
-    >
-        {{ $t('global.default.add') }}
-    </mt-button>
-    {% endblock %}
+{% block sw_settings_sms_template_mapping_grid_add %}
+<mt-button
+    class="sw-settings-sms-template-mapping-grid__add"
+    variant="secondary"
+    size="small"
+    :disabled="disabled || undefined"
+    @click="onAddMapping"
+>
+    {{ $t('global.default.add') }}
+</mt-button>
+{% endblock %}
 
-    {% block sw_settings_sms_template_mapping_grid_help %}
-    <p class="sw-settings-sms-template-mapping-grid__help">
-        {{ $t('sw-settings-sms.mapping.helpText') }}
-    </p>
-    {% endblock %}
-</div>
+{% block sw_settings_sms_template_mapping_grid_help %}
+<p class="sw-settings-sms-template-mapping-grid__help">
+    {{ $t('sw-settings-sms.mapping.helpText') }}
+</p>
+{% endblock %}
 {% endblock %}

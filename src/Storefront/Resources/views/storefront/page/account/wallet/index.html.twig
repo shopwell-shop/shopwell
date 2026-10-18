@@ -2,6 +2,9 @@
 
 {% block page_account_main_content %}
     {% block page_account_wallet %}
+        {% set isoCode = context.currency.isoCode %}
+        {% set topUpOptions = page.wallet.topUpOptions %}
+
         <div class="account-wallet">
             {% block page_account_wallet_welcome %}
                 <div class="account-welcome">
@@ -19,22 +22,270 @@
                 {% block page_account_wallet_balances %}
                     <div class="row account-wallet-balances">
                         {% for wallet in page.wallet.wallets %}
-                            {% set isoCode = page.currencyIsoCodes[wallet.currencyId] ?? context.currency.isoCode %}
+                            {% set walletIsoCode = page.currencyIsoCodes[wallet.currencyId] ?? isoCode %}
 
                             <div class="col-sm-6 col-lg-4">
                                 <div class="card account-wallet-card">
                                     <div class="card-body">
                                         <div class="account-wallet-card-value">
-                                            {{ wallet.balance|currency(isoCode) }}
+                                            {{ wallet.balance|currency(walletIsoCode) }}
                                         </div>
                                         <div class="account-wallet-card-label">
-                                            {{ 'account.walletBalanceInCurrency'|trans({ '%currency%': isoCode })|sw_sanitize }}
+                                            {{ 'account.walletBalanceInCurrency'|trans({ '%currency%': walletIsoCode })|sw_sanitize }}
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         {% endfor %}
                     </div>
+                {% endblock %}
+
+                {% block page_account_wallet_top_up %}
+                    <div class="card account-wallet-top-up mt-4"
+                         data-wallet-top-up="true"
+                         data-wallet-top-up-options="{{ {
+                             topUpUrl: path('frontend.account.wallet.top-up'),
+                             statusUrl: path('frontend.account.wallet.top-up.status', { topUpId: '__TOP_UP_ID__' }),
+                             returnUrl: url('frontend.account.wallet.page'),
+                             currency: isoCode,
+                             min: topUpOptions.min,
+                             max: topUpOptions.max,
+                             presets: topUpOptions.presets,
+                             qrHintTemplate: 'account.walletTopUpQrHint'|trans,
+                             walletTopUpProcessing: 'account.walletTopUpProcessing'|trans,
+                             walletTopUpErrorGeneric: 'account.walletTopUpErrorGeneric'|trans,
+                             walletTopUpErrorAmount: 'account.walletTopUpErrorAmount'|trans,
+                             walletTopUpSdkUnsupported: 'account.walletTopUpSdkUnsupported'|trans,
+                             walletTopUpOpen: 'account.walletTopUpOpen'|trans,
+                             walletTopUpPaid: 'account.walletTopUpPaid'|trans,
+                             walletTopUpFailed: 'account.walletTopUpFailed'|trans,
+                             walletTopUpStatusPending: 'account.walletTopUpStatusPending'|trans,
+                             pollInterval: 4000,
+                             pollTimeout: 600000
+                         }|json_encode }}">
+                        <div class="card-body">
+                            {% block page_account_wallet_top_up_title %}
+                                <h2 class="card-title">{{ 'account.walletTopUpTitle'|trans|sw_sanitize }}</h2>
+                            {% endblock %}
+
+                            {% block page_account_wallet_top_up_intro %}
+                                <p class="account-wallet-top-up-intro">
+                                    {{ 'account.walletTopUpIntro'|trans|sw_sanitize }}
+                                </p>
+                            {% endblock %}
+
+                            {% block page_account_wallet_top_up_limits %}
+                                {% if topUpOptions.min > 0 or topUpOptions.max > 0 %}
+                                    <p class="account-wallet-top-up-limits">
+                                        {% if topUpOptions.min > 0 %}
+                                            <span>{{ 'account.walletTopUpLimitMin'|trans({ '%amount%': topUpOptions.min|currency(isoCode) })|sw_sanitize }}</span>
+                                        {% endif %}
+
+                                        {% if topUpOptions.max > 0 %}
+                                            <span class="{% if topUpOptions.min > 0 %}ms-2{% endif %}">
+                                                {{ 'account.walletTopUpLimitMax'|trans({ '%amount%': topUpOptions.max|currency(isoCode) })|sw_sanitize }}
+                                            </span>
+                                        {% endif %}
+                                    </p>
+                                {% endif %}
+                            {% endblock %}
+
+                            <form class="account-wallet-top-up-form"
+                                  data-wallet-top-up-form
+                                  novalidate>
+                                {% block page_account_wallet_top_up_amount %}
+                                    <div class="row g-3 align-items-end">
+                                        <div class="col-12 col-md-5">
+                                            <label class="form-label" for="walletTopUpAmount">
+                                                {{ 'account.walletTopUpAmountLabel'|trans|sw_sanitize }}
+                                            </label>
+
+                                            <div class="input-group">
+                                                <input type="number"
+                                                       class="form-control account-wallet-top-up-amount"
+                                                       id="walletTopUpAmount"
+                                                       name="amount"
+                                                       inputmode="decimal"
+                                                       min="{{ topUpOptions.min }}"
+                                                       {% if topUpOptions.max > 0 %}max="{{ topUpOptions.max }}"{% endif %}
+                                                       step="0.01"
+                                                       autocomplete="off"
+                                                       required
+                                                       placeholder="{{ 'account.walletTopUpAmountPlaceholder'|trans|striptags }}"
+                                                       data-wallet-top-up-amount>
+                                                <span class="input-group-text">{{ isoCode }}</span>
+                                            </div>
+                                        </div>
+
+                                        {% block page_account_wallet_top_up_channel %}
+                                            <div class="col-12 col-md-7">
+                                                <label class="form-label" for="walletTopUpChannel">
+                                                    {{ 'account.walletTopUpChannelLabel'|trans|sw_sanitize }}
+                                                </label>
+
+                                                <select class="form-select account-wallet-top-up-channel"
+                                                        id="walletTopUpChannel"
+                                                        data-wallet-top-up-channel
+                                                        {% if topUpOptions.channels is empty %}disabled{% endif %}>
+                                                    {% for channel in topUpOptions.channels %}
+                                                        <option value="{{ channel.channel }}"
+                                                                data-flow="{{ channel.flow }}">
+                                                            {{ channel.label }}
+                                                        </option>
+                                                    {% endfor %}
+                                                </select>
+                                            </div>
+                                        {% endblock %}
+                                    </div>
+                                {% endblock %}
+
+                                {% block page_account_wallet_top_up_presets %}
+                                    {% if topUpOptions.presets is not empty %}
+                                        <div class="account-wallet-top-up-presets mt-3" role="group"
+                                             aria-label="{{ 'account.walletTopUpPresetsLabel'|trans|striptags }}">
+                                            {% for preset in topUpOptions.presets %}
+                                                <button type="button"
+                                                        class="btn btn-outline-secondary account-wallet-top-up-preset"
+                                                        data-wallet-top-up-preset="{{ preset }}">
+                                                    {{ preset|currency(isoCode) }}
+                                                </button>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                {% endblock %}
+
+                                {% block page_account_wallet_top_up_submit %}
+                                    <div class="account-wallet-top-up-actions mt-3">
+                                        <button type="submit"
+                                                class="btn btn-primary account-wallet-top-up-submit"
+                                                data-wallet-top-up-submit
+                                                {% if topUpOptions.channels is empty %}disabled{% endif %}>
+                                            {{ 'account.walletTopUpSubmit'|trans|sw_sanitize }}
+                                        </button>
+                                    </div>
+                                {% endblock %}
+                            </form>
+
+                            {% block page_account_wallet_top_up_no_channel %}
+                                {% if topUpOptions.channels is empty %}
+                                    {% sw_include '@Storefront/storefront/utilities/alert.html.twig' with {
+                                        type: 'info',
+                                        content: 'account.walletTopUpNoChannel'|trans|sw_sanitize
+                                    } %}
+                                {% endif %}
+                            {% endblock %}
+
+                            {% block page_account_wallet_top_up_feedback %}
+                                <div class="alert account-wallet-top-up-feedback d-none mt-3"
+                                     role="status"
+                                     aria-live="polite"
+                                     data-wallet-top-up-feedback>
+                                    <span data-wallet-top-up-message></span>
+                                </div>
+                            {% endblock %}
+
+                            {% block page_account_wallet_top_up_qrcode %}
+                                <div class="account-wallet-top-up-qrcode d-none mt-3" data-wallet-top-up-qrcode>
+                                    <h3 class="account-wallet-top-up-qrcode-title">
+                                        {{ 'account.walletTopUpQrTitle'|trans|sw_sanitize }}
+                                    </h3>
+
+                                    <div class="account-wallet-top-up-qrcode-target"
+                                         data-wallet-top-up-qrcode-target></div>
+
+                                    <p class="account-wallet-top-up-qrcode-hint"
+                                       data-wallet-top-up-qrcode-hint></p>
+
+                                    <p class="account-wallet-top-up-qrcode-amount">
+                                        <span>{{ 'account.walletTopUpQrAmountLabel'|trans|sw_sanitize }}</span>
+                                        <strong data-wallet-top-up-qrcode-amount></strong>
+                                    </p>
+
+                                    <button type="button"
+                                            class="btn btn-outline-primary"
+                                            data-wallet-top-up-check>
+                                        {{ 'account.walletTopUpQrCheck'|trans|sw_sanitize }}
+                                    </button>
+                                </div>
+                            {% endblock %}
+                        </div>
+                    </div>
+                {% endblock %}
+
+                {% block page_account_wallet_recent_top_ups %}
+                    {% if page.wallet.topUps is not empty %}
+                        {% set topUpStateLabels = {
+                            open: 'account.walletTopUpStateOpen',
+                            paid: 'account.walletTopUpStatePaid',
+                            credited: 'account.walletTopUpStateCredited',
+                            failed: 'account.walletTopUpStateFailed'
+                        } %}
+                        {% set topUpStateVariants = {
+                            open: 'warning',
+                            paid: 'info',
+                            credited: 'success',
+                            failed: 'danger'
+                        } %}
+
+                        <div class="card account-wallet-recent mt-4">
+                            <div class="card-body">
+                                {% block page_account_wallet_recent_top_ups_title %}
+                                    <h2 class="card-title">{{ 'account.walletTopUpRecentTitle'|trans|sw_sanitize }}</h2>
+                                {% endblock %}
+
+                                <div class="table-responsive">
+                                    <table class="table account-wallet-recent-table">
+                                        <thead>
+                                            {% block page_account_wallet_recent_top_ups_head %}
+                                                <tr>
+                                                    <th scope="col">{{ 'account.walletTopUpColumnDate'|trans|sw_sanitize }}</th>
+                                                    <th scope="col">{{ 'account.walletTopUpColumnAmount'|trans|sw_sanitize }}</th>
+                                                    <th scope="col">{{ 'account.walletTopUpColumnState'|trans|sw_sanitize }}</th>
+                                                    <th scope="col" class="text-end">{{ 'account.walletTopUpColumnAction'|trans|sw_sanitize }}</th>
+                                                </tr>
+                                            {% endblock %}
+                                        </thead>
+                                        <tbody>
+                                            {% block page_account_wallet_recent_top_ups_body %}
+                                                {% for topUp in page.wallet.topUps %}
+                                                    <tr>
+                                                        <td>
+                                                            {% if topUp.createdAt %}
+                                                                {{ topUp.createdAt|format_datetime('medium', 'short', locale=app.request.locale) }}
+                                                            {% else %}
+                                                                &ndash;
+                                                            {% endif %}
+                                                        </td>
+                                                        <td>{{ topUp.amount|currency(topUp.currency) }}</td>
+                                                        <td>
+                                                            <span class="badge bg-{{ topUpStateVariants[topUp.state]|default('secondary') }}">
+                                                                {{ topUpStateLabels[topUp.state]|default('account.walletTopUpStateOpen')|trans|sw_sanitize }}
+                                                            </span>
+                                                        </td>
+                                                        <td class="text-end">
+                                                            {% if topUp.state == 'open' %}
+                                                                <button type="button"
+                                                                        class="btn btn-sm btn-link"
+                                                                        data-wallet-top-up-status="{{ topUp.id }}">
+                                                                    {{ 'account.walletTopUpCheckStatus'|trans|sw_sanitize }}
+                                                                </button>
+
+                                                                <button type="button"
+                                                                        class="btn btn-sm btn-outline-primary"
+                                                                        data-wallet-top-up-resume="{{ topUp.amount }}">
+                                                                    {{ 'account.walletTopUpResume'|trans|sw_sanitize }}
+                                                                </button>
+                                                            {% endif %}
+                                                        </td>
+                                                    </tr>
+                                                {% endfor %}
+                                            {% endblock %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
                 {% endblock %}
 
                 {% block page_account_wallet_transactions %}
@@ -75,17 +326,17 @@
                                             <tbody>
                                                 {% block page_account_wallet_transactions_table_body %}
                                                     {% for transaction in page.wallet.transactions %}
-                                                        {% set isoCode = page.currencyIsoCodes[transaction.currencyId] ?? context.currency.isoCode %}
+                                                        {% set transactionIsoCode = page.currencyIsoCodes[transaction.currencyId] ?? isoCode %}
 
                                                         <tr>
                                                             <td>
                                                                 {{ transaction.createdAt|format_datetime('medium', 'short', locale=app.request.locale) }}
                                                             </td>
                                                             <td>{{ typeLabels[transaction.type] ?? transaction.type }}</td>
-                                                            <td>
-                                                                {% if transaction.amount > 0 %}+{% endif %}{{ transaction.amount|currency(isoCode) }}
+                                                            <td class="{% if transaction.amount > 0 %}account-wallet-transactions-positive{% endif %}">
+                                                                {% if transaction.amount > 0 %}+{% endif %}{{ transaction.amount|currency(transactionIsoCode) }}
                                                             </td>
-                                                            <td>{{ transaction.balanceAfter|currency(isoCode) }}</td>
+                                                            <td>{{ transaction.balanceAfter|currency(transactionIsoCode) }}</td>
                                                         </tr>
                                                     {% endfor %}
                                                 {% endblock %}

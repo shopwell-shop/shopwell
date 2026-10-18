@@ -110,7 +110,7 @@ class PaymentProviderSchemaReaderTest extends TestCase
 
         static::assertInstanceOf(PaymentConfigField::class, $field);
         static::assertTrue($field->isSelect());
-        static::assertSame(['RSA2' => 'RSA2', 'RSA' => 'RSA'], $field->options);
+        static::assertSame(['RSA2' => 'RSA2'], $field->options);
         static::assertSame('RSA2', $field->default);
     }
 
@@ -147,7 +147,7 @@ class PaymentProviderSchemaReaderTest extends TestCase
         static::assertSame(PaymentFlow::REDIRECT, $h5->flow);
         static::assertSame(['CNY'], $h5->currencies);
         static::assertSame(['wap'], $h5->devices);
-        static::assertSame([], $h5->params);
+        static::assertSame(['http_method'], array_map(static fn (PaymentConfigField $field): string => $field->name, $h5->params));
         static::assertSame([], $h5->runtimeParams);
     }
 

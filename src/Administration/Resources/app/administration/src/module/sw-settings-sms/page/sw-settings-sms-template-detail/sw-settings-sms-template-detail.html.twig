@@ -51,6 +51,10 @@
     {% block sw_settings_sms_template_detail_content %}
     <template #content>
         <sw-card-view>
+            {% block sw_settings_sms_template_detail_tabs %}
+            <sw-settings-sms-section-tabs active="template" />
+            {% endblock %}
+
             {% block sw_settings_sms_template_detail_loading %}
             <template v-if="isLoading">
                 <sw-skeleton />
@@ -84,11 +88,10 @@
                         {% endblock %}
 
                         {% block sw_settings_sms_template_detail_scene %}
-                        <sw-single-select
-                            v-model:value="template.scene"
+                        <mt-select
+                            v-model="template.scene"
                             class="sw-settings-sms-template-detail__scene"
-                            value-property="value"
-                            label-property="label"
+                            name="scene"
                             required
                             :label="$t('sw-settings-sms.template.labelScene')"
                             :help-text="$t('sw-settings-sms.template.labelSceneHelpText')"

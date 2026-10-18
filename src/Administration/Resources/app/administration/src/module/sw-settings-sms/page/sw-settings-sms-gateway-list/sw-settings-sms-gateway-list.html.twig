@@ -90,6 +90,12 @@
                         </template>
                         {% endblock %}
 
+                        {% block sw_settings_sms_gateway_list_grid_columns_label %}
+                        <template #column-label="{ item }">
+                            {{ gatewayName(item) }}
+                        </template>
+                        {% endblock %}
+
                         {% block sw_settings_sms_gateway_list_grid_columns_enabled %}
                         <template #column-enabled="{ item }">
                             <mt-icon

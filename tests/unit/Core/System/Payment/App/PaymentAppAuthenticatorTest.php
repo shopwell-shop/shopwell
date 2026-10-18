@@ -127,6 +127,32 @@ class PaymentAppAuthenticatorTest extends TestCase
         $authenticator->authenticate($this->request(), $this->signedParams());
     }
 
+    /**
+     * The tenant of the shop is no caller, whatever secret it carries: the api must answer it like an
+     * app that does not exist, so nobody learns that this technical name is taken.
+     */
+    public function testAuthenticateRejectsThePlatformTenant(): void
+    {
+        $authenticator = $this->authenticator($this->app(type: PaymentAppEntity::TYPE_PLATFORM));
+
+        $this->expectExceptionObject(PaymentException::appNotFound(self::APP_ID));
+
+        $authenticator->authenticate($this->request(), $this->signedParams());
+    }
+
+    /**
+     * The kind of the tenant is checked before its state: were the order reversed, a disabled tenant
+     * of the shop would answer "disabled" and thereby confirm that it exists.
+     */
+    public function testAuthenticateRejectsADisabledPlatformTenantAsUnknown(): void
+    {
+        $authenticator = $this->authenticator($this->app(active: false, type: PaymentAppEntity::TYPE_PLATFORM));
+
+        $this->expectExceptionObject(PaymentException::appNotFound(self::APP_ID));
+
+        $authenticator->authenticate($this->request(), $this->signedParams());
+    }
+
     public function testAuthenticateRejectsAWrongSignature(): void
     {
         $authenticator = $this->authenticator($this->app());
@@ -229,13 +255,14 @@ class PaymentAppAuthenticatorTest extends TestCase
     /**
      * @param list<string>|null $allowedIps
      */
-    private function app(bool $active = true, ?array $allowedIps = null): PaymentAppEntity
+    private function app(bool $active = true, ?array $allowedIps = null, string $type = PaymentAppEntity::TYPE_EXTERNAL): PaymentAppEntity
     {
         $app = new PaymentAppEntity();
         $app->setUniqueIdentifier(self::APP_ID);
         $app->id = self::APP_ID;
         $app->technicalName = self::APP_ID;
         $app->name = 'Test app';
+        $app->type = $type;
         $app->active = $active;
         $app->appSecret = $this->cipher->encryptValue(self::SECRET);
         $app->allowedIps = $allowedIps;

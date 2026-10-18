@@ -3,6 +3,15 @@
  */
 
 import { mount } from '@vue/test-utils';
+import type { VueWrapper } from '@vue/test-utils';
+
+type TypedWrapper<T> = { vm: T } & VueWrapper;
+
+type TierCreateVm = {
+    loyaltyTier: { isNew: () => boolean };
+    allowSave: boolean;
+    onSave: () => Promise<void>;
+};
 
 const loyaltyTierRepository = {
     create: jest.fn(() => {
@@ -24,8 +33,8 @@ const loyaltyTierRepository = {
 
 const routerPush = jest.fn();
 
-async function createWrapper(privileges: string[] = []) {
-    return mount(
+async function createWrapper(privileges: string[] = []): Promise<TypedWrapper<TierCreateVm>> {
+    const wrapper = mount(
         await wrapTestComponent('sw-loyalty-tier-create', {
             sync: true,
         }),
@@ -81,6 +90,8 @@ async function createWrapper(privileges: string[] = []) {
             },
         },
     );
+
+    return wrapper as unknown as TypedWrapper<TierCreateVm>;
 }
 
 describe('src/module/sw-loyalty/page/sw-loyalty-tier-create', () => {
@@ -101,7 +112,7 @@ describe('src/module/sw-loyalty/page/sw-loyalty-tier-create', () => {
         await wrapper.vm.$nextTick();
 
         expect(loyaltyTierRepository.create).toHaveBeenCalledTimes(1);
-        expect((wrapper.vm.loyaltyTier as { isNew: () => boolean }).isNew()).toBe(true);
+        expect(wrapper.vm.loyaltyTier.isNew()).toBe(true);
         expect(wrapper.vm.allowSave).toBe(true);
     });
 

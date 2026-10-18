@@ -42,6 +42,10 @@
     {% block sw_settings_sms_gateway_detail_content %}
     <template #content>
         <sw-card-view>
+            {% block sw_settings_sms_gateway_detail_tabs %}
+            <sw-settings-sms-section-tabs active="gateway" />
+            {% endblock %}
+
             {% block sw_settings_sms_gateway_detail_loading %}
             <template v-if="isLoading">
                 <sw-skeleton />
@@ -63,17 +67,16 @@
                         gap="0px 30px"
                     >
                         {% block sw_settings_sms_gateway_detail_provider %}
-                        <sw-single-select
-                            v-model:value="gateway.technicalName"
+                        <mt-select
+                            v-model="gateway.technicalName"
                             class="sw-settings-sms-gateway-detail__provider"
-                            value-property="value"
-                            label-property="label"
+                            name="technicalName"
                             :label="$t('sw-settings-sms.gateway.labelTechnicalName')"
                             :placeholder="$t('sw-settings-sms.gateway.labelTechnicalNamePlaceholder')"
                             :options="providerOptions"
                             :disabled="!acl.can('sms_gateway.editor') || undefined"
                             required
-                            @update:value="onProviderChange"
+                            @update:model-value="onProviderChange"
                         />
                         {% endblock %}
 
@@ -88,11 +91,10 @@
                         {% endblock %}
 
                         {% block sw_settings_sms_gateway_detail_strategy %}
-                        <sw-single-select
-                            v-model:value="gateway.strategy"
+                        <mt-select
+                            v-model="gateway.strategy"
                             class="sw-settings-sms-gateway-detail__strategy"
-                            value-property="value"
-                            label-property="label"
+                            name="strategy"
                             :label="$t('sw-settings-sms.gateway.labelStrategy')"
                             :options="strategyOptions"
                             :disabled="!acl.can('sms_gateway.editor') || undefined"

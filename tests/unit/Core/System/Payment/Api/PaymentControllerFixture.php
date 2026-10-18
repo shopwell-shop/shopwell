@@ -2,6 +2,8 @@
 
 namespace Shopwell\Tests\Unit\Core\System\Payment\Api;
 
+use Payum\Core\GatewayInterface;
+use Payum\Core\Request\Generic;
 use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\TestCase;
 use Psr\Cache\CacheItemInterface;
@@ -24,16 +26,23 @@ use Shopwell\Core\System\Payment\App\PaymentAppCollection;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
 use Shopwell\Core\System\Payment\App\PaymentCredentialCipher;
 use Shopwell\Core\System\Payment\App\PaymentSignatureService;
+use Shopwell\Core\System\Payment\Gateway\CloseResult;
+use Shopwell\Core\System\Payment\Gateway\PaymentCloser;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayFactory;
+use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationCollection;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationProcessor;
 use Shopwell\Core\System\Payment\Notification\PaymentNotifyUrlBuilder;
 use Shopwell\Core\System\Payment\Order\Aggregate\PaymentTransaction\PaymentTransactionCollection;
 use Shopwell\Core\System\Payment\Order\PaymentOrderCapture;
+use Shopwell\Core\System\Payment\Order\PaymentOrderCloser;
 use Shopwell\Core\System\Payment\Order\PaymentOrderCollection;
 use Shopwell\Core\System\Payment\Order\PaymentOrderEntity;
+use Shopwell\Core\System\Payment\Order\PaymentOrderPaidHandler;
 use Shopwell\Core\System\Payment\Order\PaymentOrderPresenter;
+use Shopwell\Core\System\Payment\Order\PaymentOrderQueryResultHandler;
+use Shopwell\Core\System\Payment\Order\PaymentOrderReconciler;
 use Shopwell\Core\System\Payment\Order\PaymentOrderService;
 use Shopwell\Core\System\Payment\Order\PaymentOrderStateHandler;
 use Shopwell\Core\System\Payment\Order\Refund\PaymentRefundCollection;
@@ -116,6 +125,7 @@ final class PaymentControllerFixture extends TestCase
         $app->setUniqueIdentifier($app->id);
         $app->technicalName = $technicalName;
         $app->name = $technicalName;
+        $app->type = PaymentAppEntity::TYPE_EXTERNAL;
         $app->active = $active;
         $app->appSecret = self::cipher()->encryptValue($secret);
 
@@ -228,8 +238,12 @@ final class PaymentControllerFixture extends TestCase
     /**
      * @param list<PaymentChannel> $channels
      */
-    public static function provider(string $technicalName, array $channels = [], ?PaymentNotificationExtractorInterface $extractor = null): PaymentProvider
-    {
+    public static function provider(
+        string $technicalName,
+        array $channels = [],
+        ?PaymentNotificationExtractorInterface $extractor = null,
+        ?PaymentGatewayFactory $gatewayFactory = null
+    ): PaymentProvider {
         $indexed = [];
         foreach ($channels as $channel) {
             $indexed[$channel->technicalName] = $channel;
@@ -240,9 +254,34 @@ final class PaymentControllerFixture extends TestCase
             $technicalName,
             [],
             $indexed,
-            static::createStub(PaymentGatewayFactory::class),
+            $gatewayFactory ?? static::createStub(PaymentGatewayFactory::class),
             $extractor ?? static::createStub(PaymentNotificationExtractorInterface::class),
         );
+    }
+
+    /**
+     * A gateway factory whose gateway answers a close with the given answer - the channels themselves
+     * are covered by their own tests, here only the path through the services matters.
+     */
+    public static function closingGatewayFactory(string $status = CloseResult::STATUS_CLOSED): PaymentGatewayFactory
+    {
+        $gateway = static::createStub(GatewayInterface::class);
+        $gateway->method('execute')->willReturnCallback(static function (Generic $request) use ($status): void {
+            $model = $request->getModel();
+
+            if (!$model instanceof PaymentGatewayModel) {
+                return;
+            }
+
+            $model->offsetSet(PaymentGatewayModel::REQUEST, ['out_trade_no' => 'T-1']);
+            $model->offsetSet(PaymentGatewayModel::RESPONSE, ['status' => $status]);
+            $model->offsetSet(PaymentGatewayModel::RESULT, new CloseResult($status, $status));
+        });
+
+        $factory = static::createStub(PaymentGatewayFactory::class);
+        $factory->method('createForPayment')->willReturn($gateway);
+
+        return $factory;
     }
 
     public static function providerRegistry(PaymentProvider ...$providers): PaymentProviderRegistry
@@ -309,6 +348,38 @@ final class PaymentControllerFixture extends TestCase
     }
 
     /**
+     * The close path end to end: the gateway answer, the transaction behind it and the bookkeeping of
+     * the order - the reconciliation is part of it because a close may turn up a payment.
+     *
+     * @param EntityRepository<PaymentOrderCollection> $paymentOrderRepository
+     * @param EntityRepository<PaymentTransactionCollection> $transactionRepository
+     */
+    public static function closer(
+        EntityRepository $paymentOrderRepository,
+        EntityRepository $transactionRepository,
+        PaymentConfigResolver $configResolver,
+        PaymentOrderService $orderService
+    ): PaymentOrderCloser {
+        $webhooks = self::webhookService();
+        $paidHandler = new PaymentOrderPaidHandler($orderService, $webhooks, static::createStub(EventDispatcherInterface::class));
+
+        return new PaymentOrderCloser(
+            new PaymentCloser($transactionRepository, $configResolver, self::clock()),
+            $orderService,
+            new PaymentOrderReconciler(
+                $paymentOrderRepository,
+                self::repository(StateMachineStateCollection::class),
+                $configResolver,
+                $orderService,
+                $paidHandler,
+                new PaymentOrderQueryResultHandler($orderService, $webhooks, $paidHandler, self::clock()),
+                self::clock(),
+                static::createStub(LoggerInterface::class),
+            ),
+        );
+    }
+
+    /**
      * @param EntityRepository<PaymentRefundCollection> $refundRepository
      */
     public static function refundService(EntityRepository $refundRepository, PaymentConfigResolver $configResolver, PaymentOrderService $orderService): PaymentRefundService
@@ -354,8 +425,7 @@ final class PaymentControllerFixture extends TestCase
             $orderService,
             $refundService,
             $configResolver,
-            self::webhookService(),
-            static::createStub(EventDispatcherInterface::class),
+            new PaymentOrderPaidHandler($orderService, self::webhookService(), static::createStub(EventDispatcherInterface::class)),
         );
     }
 

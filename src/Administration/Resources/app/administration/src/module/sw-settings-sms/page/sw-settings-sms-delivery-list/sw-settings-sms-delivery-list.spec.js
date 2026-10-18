@@ -49,6 +49,7 @@ async function createWrapper({ rows = [], hasSnippet = false } = {}) {
                 'sw-entity-listing': true,
                 'sw-settings-sms-section-tabs': true,
                 'sw-single-select': true,
+                'mt-select': true,
                 'mt-badge': true,
             },
         },

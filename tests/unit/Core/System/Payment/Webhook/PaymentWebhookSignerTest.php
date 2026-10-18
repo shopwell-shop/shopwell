@@ -26,10 +26,11 @@ class PaymentWebhookSignerTest extends TestCase
     {
         $signer = $this->signer();
 
-        $signed = $signer->sign($this->order(), $this->app(), PaymentWebhookDispatcher::EVENT_ORDER_PAID, ['foo' => 'bar']);
+        $signed = $signer->sign('dlv-0001', $this->order(), $this->app(), PaymentWebhookDispatcher::EVENT_ORDER_PAID, ['foo' => 'bar']);
 
         static::assertSame([
             'event' => PaymentWebhookDispatcher::EVENT_ORDER_PAID,
+            'delivery_id' => 'dlv-0001',
             'payment_no' => 'PG0001',
             'out_trade_no' => 'app-trade-1',
             'attach' => 'attach-data',

@@ -20,8 +20,8 @@
         </field>
         <field name="sign_type" type="select" default="RSA2">
             <label>签名算法</label>
+            <help-text>支付宝 SDK 目前只实现 RSA2（SHA256withRSA），因此这是唯一可选值。</help-text>
             <option value="RSA2">RSA2</option>
-            <option value="RSA">RSA</option>
         </field>
         <field name="gateway_url" type="text" default="https://openapi.alipay.com">
             <label>网关地址</label>
@@ -35,6 +35,14 @@
             <flow>redirect</flow>
             <currencies>CNY</currencies>
             <devices>wap</devices>
+            <params>
+                <field name="http_method" type="select" default="GET">
+                    <label>跳转方式</label>
+                    <help-text>GET 直接把用户跳转到支付宝页面；POST 由平台返回自提交表单，参数过长时使用。</help-text>
+                    <option value="GET">GET（直接跳转）</option>
+                    <option value="POST">POST（自提交表单）</option>
+                </field>
+            </params>
         </channel>
 
         <channel name="alipay_web">
@@ -42,6 +50,14 @@
             <flow>redirect</flow>
             <currencies>CNY</currencies>
             <devices>web</devices>
+            <params>
+                <field name="http_method" type="select" default="GET">
+                    <label>跳转方式</label>
+                    <help-text>GET 直接把用户跳转到支付宝页面；POST 由平台返回自提交表单，参数过长时使用。</help-text>
+                    <option value="GET">GET（直接跳转）</option>
+                    <option value="POST">POST（自提交表单）</option>
+                </field>
+            </params>
         </channel>
 
         <channel name="alipay_qr">
@@ -63,6 +79,12 @@
             <flow>sdk</flow>
             <currencies>CNY</currencies>
             <devices>mini</devices>
+            <params>
+                <field name="op_app_id" type="text">
+                    <label>小程序 APPID</label>
+                    <help-text>拉起收银台的小程序 APPID，须在商家平台与 JSAPI 支付产品绑定；留空使用凭据中的应用 APPID。</help-text>
+                </field>
+            </params>
             <runtime-params>
                 <param name="buyer_id" required="true"/>
             </runtime-params>

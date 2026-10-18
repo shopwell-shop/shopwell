@@ -39,6 +39,8 @@ class PaymentException extends HttpException
     final public const PAYMENT_VALIDATE_PREPARED_ERROR = 'CHECKOUT__VALIDATE_PREPARED_PAYMENT_ERROR';
     final public const PAYMENT_METHOD_DUPLICATE_TECHNICAL_NAME = 'CHECKOUT__DUPLICATE_PAYMENT_METHOD_TECHNICAL_NAME';
     final public const MISSING_REQUEST_PARAMETER_CODE = 'CHECKOUT__MISSING_REQUEST_PARAMETER';
+    final public const PAYMENT_CHANNEL_DISABLED = 'CHECKOUT__PAYMENT_CHANNEL_DISABLED';
+    final public const PAYMENT_PLATFORM_TENANT_MISSING = 'CHECKOUT__PAYMENT_PLATFORM_TENANT_MISSING';
 
     public static function asyncFinalizeInterrupted(string $orderTransactionId, string $errorMessage, ?\Throwable $e = null): self
     {
@@ -323,5 +325,34 @@ class PaymentException extends HttpException
     public static function unexpectedConstraintType(Constraint $constraint, string $expectedType): ValidatorException
     {
         return new UnexpectedTypeException($constraint, $expectedType);
+    }
+
+    /**
+     * The shop collects through the gateway of the platform, and the platform does not offer this
+     * channel at all - no app can collect through it, whether it pays with the credentials of the
+     * platform or with its own ones.
+     */
+    public static function channelDisabledByPlatform(string $technicalName): self
+    {
+        return new self(
+            Response::HTTP_FORBIDDEN,
+            self::PAYMENT_CHANNEL_DISABLED,
+            'The payment channel "{{ technicalName }}" is not offered by the platform.',
+            ['technicalName' => $technicalName]
+        );
+    }
+
+    /**
+     * The tenant of the shop is seeded by the payment migration and cannot be created at runtime, so
+     * its absence means the installation or the upgrade is broken - not the request that hit it.
+     */
+    public static function platformTenantMissing(string $technicalName): self
+    {
+        return new self(
+            Response::HTTP_INTERNAL_SERVER_ERROR,
+            self::PAYMENT_PLATFORM_TENANT_MISSING,
+            'The platform tenant "{{ technicalName }}" is missing. The payment migration has not seeded it.',
+            ['technicalName' => $technicalName]
+        );
     }
 }

@@ -12,17 +12,14 @@ use Shopwell\Core\System\Payment\App\PaymentAppEntity;
 use Shopwell\Core\System\Payment\Gateway\NotificationResult;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
 use Shopwell\Core\System\Payment\Notification\Struct\PaymentNotificationData;
-use Shopwell\Core\System\Payment\Order\Event\PaymentOrderPaidEvent;
 use Shopwell\Core\System\Payment\Order\PaymentOrderEntity;
+use Shopwell\Core\System\Payment\Order\PaymentOrderPaidHandler;
 use Shopwell\Core\System\Payment\Order\PaymentOrderService;
-use Shopwell\Core\System\Payment\Order\PaymentOrderStates;
 use Shopwell\Core\System\Payment\Order\Refund\PaymentRefundEntity;
 use Shopwell\Core\System\Payment\Order\Refund\PaymentRefundService;
 use Shopwell\Core\System\Payment\PaymentException;
 use Shopwell\Core\System\Payment\Provider\PaymentConfigResolver;
 use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;
-use Shopwell\Core\System\Payment\Webhook\PaymentWebhookDispatcher;
-use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 /**
  * Processes the asynchronous notifications of the payment interfaces.
@@ -33,7 +30,7 @@ use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
  *
  *  1. the references are extracted without credentials, only to locate the payment order,
  *  2. the credentials of that order are resolved and the interface verifies the notification,
- *  3. the amount the interface confirms is compared with the amount of the platform,
+ *  3. the amount and the currency the interface confirms are compared with the ones of the platform,
  *  4. and only then is anything written.
  *
  * The notification is attributed to a payment *interface* and not to a channel: it is the interface
@@ -61,8 +58,7 @@ final class PaymentNotificationProcessor
         private readonly PaymentOrderService $orderService,
         private readonly PaymentRefundService $refundService,
         private readonly PaymentConfigResolver $configResolver,
-        private readonly PaymentWebhookDispatcher $webhookService,
-        private readonly EventDispatcherInterface $eventDispatcher,
+        private readonly PaymentOrderPaidHandler $paidHandler,
     ) {
     }
 
@@ -99,7 +95,7 @@ final class PaymentNotificationProcessor
                 throw $exception;
             }
 
-            throw PaymentException::gatewayError($providerTechnicalName, $exception->getMessage());
+            throw PaymentException::gatewayError($providerTechnicalName, $exception->getMessage(), $exception);
         } finally {
             $this->conclude($notificationId, $state);
         }
@@ -179,8 +175,25 @@ final class PaymentNotificationProcessor
             throw PaymentException::amountMismatch($order->paymentNo, $expected, $result->amount ?? 0);
         }
 
+        // the currency is judged as strictly as the amount: the same number in another currency is not
+        // the payment of this order. A currency the interface does not report cannot be disproved -
+        // rejecting it would leave a payment that really happened unpaid while the notification keeps
+        // retrying - so only a reported currency has to match, and it is compared case insensitively
+        // because `cny` and `CNY` are the same currency.
+        if ($result->currency !== null && strtoupper($result->currency) !== strtoupper($order->currency)) {
+            // a result of its own: support filters this table by what went wrong, and a currency
+            // mismatch reported as an amount mismatch would send them looking at the amount check
+            $state['result'] = PaymentNotificationEntity::RESULT_CURRENCY_MISMATCH;
+
+            throw PaymentException::currencyMismatch($order->paymentNo, $order->currency, $result->currency);
+        }
+
         if ($refund instanceof PaymentRefundEntity) {
             $this->refundService->applyNotification($refund, $order, $result);
+
+            // the notification is applied to the refund, so it is fully processed - whether the
+            // refund is settled by it or stays processing is not an error of the notification
+            $state['result'] = PaymentNotificationEntity::RESULT_OK;
 
             return;
         }
@@ -198,6 +211,10 @@ final class PaymentNotificationProcessor
         if ($order->paidAt !== null) {
             $state['result'] = PaymentNotificationEntity::RESULT_DUPLICATE;
 
+            // the payment is written, but one of its consequences may have failed the first time - a
+            // duplicate notification is the retry window for exactly that
+            $this->paidHandler->announce($order);
+
             return;
         }
 
@@ -210,22 +227,11 @@ final class PaymentNotificationProcessor
         }
 
         // an order may be paid without the app ever having asked for the pay parameters
-        $this->orderService->markOpened($order);
-        $this->orderService->markPaid($order, $result->amount ?? $order->amount, $result->outPaymentNo, $result->raw);
+        $this->paidHandler->handle($order, $result->amount ?? $order->amount, $result->outPaymentNo, $result->raw);
 
-        $paid = $this->orderService->getById($order->id);
-
-        $this->eventDispatcher->dispatch(new PaymentOrderPaidEvent($paid, Context::createDefaultContext()));
-
-        $this->webhookService->enqueue($paid, PaymentWebhookDispatcher::EVENT_ORDER_PAID, [
-            'amount' => $paid->paidAmount,
-            'currency' => $paid->currency,
-            'provider' => $paid->providerTechnicalName,
-            'channel' => $paid->channelTechnicalName,
-            'out_payment_no' => $paid->outPaymentNo,
-            'paid_at' => $paid->paidAt?->format(\DateTimeInterface::ATOM),
-            'state' => PaymentOrderStates::STATE_PAID,
-        ]);
+        // the payment is applied and the app is told about it, which is the only fully successful
+        // outcome: every branch above either returns early or throws
+        $state['result'] = PaymentNotificationEntity::RESULT_OK;
     }
 
     /**
@@ -262,6 +268,8 @@ final class PaymentNotificationProcessor
                 PaymentNotificationEntity::RESULT_DUPLICATE,
                 PaymentNotificationEntity::RESULT_IGNORED,
             ], true),
+            // 32 is the width of the column: every result constant is far shorter, and a shortened one
+            // would read like a different outcome in exactly the table support diagnoses with
             'processResult' => mb_substr($state['result'], 0, 32),
             'errorMessage' => $state['message'] === null ? null : mb_substr($state['message'], 0, 512),
         ]], Context::createDefaultContext());

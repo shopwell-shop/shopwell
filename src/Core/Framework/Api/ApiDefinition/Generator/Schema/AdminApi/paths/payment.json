@@ -1,0 +1,1205 @@
+{
+    "openapi": "3.2.0",
+    "info": [],
+    "paths": {
+        "/_action/payment/apps": {
+            "get": {
+                "tags": [
+                    "Payment"
+                ],
+                "summary": "List the apps of the payment gateway",
+                "description": "Returns all apps that may call the payment gateway. The secret of an app never leaves the server, the app only reports whether one is set.",
+                "operationId": "listPaymentApps",
+                "responses": {
+                    "200": {
+                        "description": "The apps of the payment gateway.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "apps": {
+                                            "type": "array",
+                                            "description": "The apps, sorted by their technical name.",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "string",
+                                                        "description": "The id of the app."
+                                                    },
+                                                    "technicalName": {
+                                                        "type": "string",
+                                                        "description": "The technical name the app authenticates with."
+                                                    },
+                                                    "name": {
+                                                        "type": "string",
+                                                        "description": "The display name of the app."
+                                                    },
+                                                    "active": {
+                                                        "type": "boolean",
+                                                        "description": "Whether the app may call the gateway."
+                                                    },
+                                                    "notifyUrl": {
+                                                        "type": [
+                                                            "string",
+                                                            "null"
+                                                        ],
+                                                        "description": "The url the gateway sends its webhooks to, or null when none is configured."
+                                                    },
+                                                    "returnUrl": {
+                                                        "type": [
+                                                            "string",
+                                                            "null"
+                                                        ],
+                                                        "description": "The url the payer is sent back to after the payment, or null when none is configured."
+                                                    },
+                                                    "allowedIps": {
+                                                        "type": "array",
+                                                        "description": "The ip addresses the app may call the gateway from. An empty list allows every address.",
+                                                        "items": {
+                                                            "type": "string"
+                                                        }
+                                                    },
+                                                    "rateLimit": {
+                                                        "type": [
+                                                            "integer",
+                                                            "null"
+                                                        ],
+                                                        "description": "The request limit configured for the app, or null when none is configured."
+                                                    },
+                                                    "hasSecret": {
+                                                        "type": "boolean",
+                                                        "description": "Whether a secret is stored for the app. The secret itself is never returned."
+                                                    },
+                                                    "secretRotatedAt": {
+                                                        "type": [
+                                                            "string",
+                                                            "null"
+                                                        ],
+                                                        "description": "The moment the secret was rotated last, or null when it was never rotated."
+                                                    },
+                                                    "providers": {
+                                                        "type": "array",
+                                                        "description": "The payment interfaces the app is authorized for.",
+                                                        "items": {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "providerTechnicalName": {
+                                                                    "type": "string",
+                                                                    "description": "The technical name of the payment interface."
+                                                                },
+                                                                "enabled": {
+                                                                    "type": "boolean",
+                                                                    "description": "Whether the app may collect through the interface."
+                                                                },
+                                                                "mode": {
+                                                                    "type": "string",
+                                                                    "description": "Whose merchant account is charged. \"platform\" uses the credentials of the shop, \"own\" the credentials the app brought itself.",
+                                                                    "enum": [
+                                                                        "platform",
+                                                                        "own"
+                                                                    ]
+                                                                },
+                                                                "hasCredentials": {
+                                                                    "type": "boolean",
+                                                                    "description": "Whether the app stored its own credentials for the interface. The credentials themselves are never returned."
+                                                                },
+                                                                "settings": {
+                                                                    "type": "object",
+                                                                    "description": "Additional settings of the interface for this app, as name => value.",
+                                                                    "additionalProperties": true
+                                                                }
+                                                            }
+                                                        }
+                                                    },
+                                                    "channels": {
+                                                        "type": "array",
+                                                        "description": "The payment channels the app offers to its own users.",
+                                                        "items": {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "channelTechnicalName": {
+                                                                    "type": "string",
+                                                                    "description": "The technical name of the payment channel."
+                                                                },
+                                                                "enabled": {
+                                                                    "type": "boolean",
+                                                                    "description": "Whether the app may collect through the channel."
+                                                                },
+                                                                "hasParams": {
+                                                                    "type": "boolean",
+                                                                    "description": "Whether the app stored its own parameters for the channel. The parameters themselves are never returned."
+                                                                },
+                                                                "settings": {
+                                                                    "type": "object",
+                                                                    "description": "Additional settings of the channel for this app, as name => value.",
+                                                                    "additionalProperties": true
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Payment"
+                ],
+                "summary": "Create or update an app of the payment gateway",
+                "description": "Stores the app, the payment interfaces it is authorized for and the channels it offers. The interfaces and the channels are sent as the full list: an interface or channel that is not in the payload does not belong to the app anymore. A channel can only be enabled for an interface the app is authorized for, because the interface carries the credentials. The secret is sealed on the server and handed back exactly once, in the answer of this call.",
+                "operationId": "savePaymentApp",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "id": {
+                                        "type": "string",
+                                        "description": "The id of the app to update. Leave it out to create a new app."
+                                    },
+                                    "technicalName": {
+                                        "type": "string",
+                                        "description": "The technical name the app authenticates with."
+                                    },
+                                    "name": {
+                                        "type": "string",
+                                        "description": "The display name of the app."
+                                    },
+                                    "active": {
+                                        "type": "boolean",
+                                        "description": "Whether the app may call the gateway."
+                                    },
+                                    "notifyUrl": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "description": "The url the gateway sends its webhooks to."
+                                    },
+                                    "returnUrl": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "description": "The url the payer is sent back to after the payment."
+                                    },
+                                    "allowedIps": {
+                                        "type": "array",
+                                        "description": "The ip addresses the app may call the gateway from. An empty list allows every address.",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "rateLimit": {
+                                        "type": [
+                                            "integer",
+                                            "null"
+                                        ],
+                                        "description": "The request limit of the app."
+                                    },
+                                    "appSecret": {
+                                        "type": "string",
+                                        "description": "The secret the app signs its requests with. Leave it out to keep the stored one, which is also generated for a new app. A value that differs from the stored one rotates the secret, and the previous one stays valid for a grace window."
+                                    },
+                                    "providers": {
+                                        "type": "array",
+                                        "description": "The payment interfaces the app may collect through.",
+                                        "items": {
+                                            "type": "object",
+                                            "properties": {
+                                                "providerTechnicalName": {
+                                                    "type": "string",
+                                                    "description": "The technical name of the payment interface."
+                                                },
+                                                "enabled": {
+                                                    "type": "boolean",
+                                                    "description": "Whether the app may collect through the interface."
+                                                },
+                                                "mode": {
+                                                    "type": "string",
+                                                    "description": "Whose merchant account is charged. \"platform\" uses the credentials of the shop, \"own\" the credentials the app brings itself.",
+                                                    "enum": [
+                                                        "platform",
+                                                        "own"
+                                                    ]
+                                                },
+                                                "credentials": {
+                                                    "type": "object",
+                                                    "description": "The credentials of the app for the interface, as name => value. A value that is not sent keeps the stored one.",
+                                                    "additionalProperties": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "settings": {
+                                                    "type": "object",
+                                                    "description": "Additional settings of the interface for this app, as name => value.",
+                                                    "additionalProperties": true
+                                                }
+                                            },
+                                            "required": [
+                                                "providerTechnicalName"
+                                            ]
+                                        }
+                                    },
+                                    "channels": {
+                                        "type": "array",
+                                        "description": "The payment channels the app offers to its own users.",
+                                        "items": {
+                                            "type": "object",
+                                            "properties": {
+                                                "channelTechnicalName": {
+                                                    "type": "string",
+                                                    "description": "The technical name of the payment channel."
+                                                },
+                                                "enabled": {
+                                                    "type": "boolean",
+                                                    "description": "Whether the app may collect through the channel."
+                                                },
+                                                "params": {
+                                                    "type": "object",
+                                                    "description": "The parameters of the app for the channel, as name => value. A value that is not sent keeps the stored one.",
+                                                    "additionalProperties": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "settings": {
+                                                    "type": "object",
+                                                    "description": "Additional settings of the channel for this app, as name => value.",
+                                                    "additionalProperties": true
+                                                }
+                                            },
+                                            "required": [
+                                                "channelTechnicalName"
+                                            ]
+                                        }
+                                    }
+                                },
+                                "required": [
+                                    "technicalName"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "The stored app. When a secret was typed or generated in this call, it is handed back once as appSecret.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "app": {
+                                            "type": "object",
+                                            "description": "The stored app, in the same shape the list endpoint returns.",
+                                            "properties": {
+                                                "id": {
+                                                    "type": "string",
+                                                    "description": "The id of the app."
+                                                },
+                                                "technicalName": {
+                                                    "type": "string",
+                                                    "description": "The technical name the app authenticates with."
+                                                },
+                                                "name": {
+                                                    "type": "string",
+                                                    "description": "The display name of the app."
+                                                },
+                                                "active": {
+                                                    "type": "boolean",
+                                                    "description": "Whether the app may call the gateway."
+                                                },
+                                                "notifyUrl": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ],
+                                                    "description": "The url the gateway sends its webhooks to, or null when none is configured."
+                                                },
+                                                "returnUrl": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ],
+                                                    "description": "The url the payer is sent back to after the payment, or null when none is configured."
+                                                },
+                                                "allowedIps": {
+                                                    "type": "array",
+                                                    "description": "The ip addresses the app may call the gateway from. An empty list allows every address.",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "rateLimit": {
+                                                    "type": [
+                                                        "integer",
+                                                        "null"
+                                                    ],
+                                                    "description": "The request limit configured for the app, or null when none is configured."
+                                                },
+                                                "hasSecret": {
+                                                    "type": "boolean",
+                                                    "description": "Whether a secret is stored for the app. The secret itself is never returned."
+                                                },
+                                                "secretRotatedAt": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ],
+                                                    "description": "The moment the secret was rotated last, or null when it was never rotated."
+                                                },
+                                                "providers": {
+                                                    "type": "array",
+                                                    "description": "The payment interfaces the app is authorized for.",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "providerTechnicalName": {
+                                                                "type": "string"
+                                                            },
+                                                            "enabled": {
+                                                                "type": "boolean"
+                                                            },
+                                                            "mode": {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "platform",
+                                                                    "own"
+                                                                ]
+                                                            },
+                                                            "hasCredentials": {
+                                                                "type": "boolean"
+                                                            },
+                                                            "settings": {
+                                                                "type": "object",
+                                                                "additionalProperties": true
+                                                            }
+                                                        }
+                                                    }
+                                                },
+                                                "channels": {
+                                                    "type": "array",
+                                                    "description": "The payment channels the app offers to its own users.",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "channelTechnicalName": {
+                                                                "type": "string"
+                                                            },
+                                                            "enabled": {
+                                                                "type": "boolean"
+                                                            },
+                                                            "hasParams": {
+                                                                "type": "boolean"
+                                                            },
+                                                            "settings": {
+                                                                "type": "object",
+                                                                "additionalProperties": true
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        "appSecret": {
+                                            "type": "string",
+                                            "description": "The plain secret of the app. It is only part of the answer when a secret was typed or generated in this call, and never again afterwards."
+                                        },
+                                        "secretGenerated": {
+                                            "type": "boolean",
+                                            "description": "Whether the returned secret was generated by the platform instead of typed. Only part of the answer together with appSecret."
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "The payload is incomplete, for example when the technical name of the app, of an interface or of a channel is missing.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/failure"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "A channel belongs to an interface the app is not authorized for.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/failure"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "An interface or channel in the payload is unknown to the server.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/failure"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/_action/payment/apps/{id}": {
+            "delete": {
+                "tags": [
+                    "Payment"
+                ],
+                "summary": "Delete an app of the payment gateway",
+                "description": "Deletes the app together with its interface and channel authorizations. The app can no longer authenticate against the gateway. The deletion is refused while payment orders of the app exist, because they are the bookkeeping of the platform.",
+                "operationId": "deletePaymentApp",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "The id of the app to delete.",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "The app was deleted successfully."
+                    }
+                }
+            }
+        },
+        "/_action/payment/providers": {
+            "get": {
+                "tags": [
+                    "Payment"
+                ],
+                "summary": "List the payment interfaces the shop can be configured with",
+                "description": "Returns every payment interface the server supports, including the ones an extension adds, together with the stored configuration of the shop. What the administration renders comes from the `payment-provider.xml` of the interface. A field marked as secret is never echoed back, it only reports whether a value is stored.",
+                "operationId": "listPaymentProviders",
+                "responses": {
+                    "200": {
+                        "description": "The payment interfaces and their configuration.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "providers": {
+                                            "type": "array",
+                                            "description": "The payment interfaces.",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "technicalName": {
+                                                        "type": "string",
+                                                        "description": "The technical name of the interface."
+                                                    },
+                                                    "label": {
+                                                        "type": "string",
+                                                        "description": "The label of the interface."
+                                                    },
+                                                    "enabled": {
+                                                        "type": "boolean",
+                                                        "description": "Whether the interface is enabled."
+                                                    },
+                                                    "configured": {
+                                                        "type": "boolean",
+                                                        "description": "Whether credentials are stored for the interface."
+                                                    },
+                                                    "credentialFields": {
+                                                        "type": "array",
+                                                        "description": "The credential fields the interface declares, with the stored value of every field that is not secret.",
+                                                        "items": {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "name": {
+                                                                    "type": "string",
+                                                                    "description": "The key of the value inside the credentials."
+                                                                },
+                                                                "label": {
+                                                                    "type": [
+                                                                        "string",
+                                                                        "null"
+                                                                    ],
+                                                                    "description": "The snippet key of the label. The administration falls back to the name when it is null."
+                                                                },
+                                                                "type": {
+                                                                    "type": "string",
+                                                                    "description": "The input the administration renders for the field.",
+                                                                    "enum": [
+                                                                        "text",
+                                                                        "password",
+                                                                        "textarea",
+                                                                        "select",
+                                                                        "bool",
+                                                                        "number"
+                                                                    ]
+                                                                },
+                                                                "required": {
+                                                                    "type": "boolean",
+                                                                    "description": "Whether the field has to be filled before the interface can be enabled."
+                                                                },
+                                                                "secret": {
+                                                                    "type": "boolean",
+                                                                    "description": "Whether the value of the field is never echoed back."
+                                                                },
+                                                                "options": {
+                                                                    "type": "object",
+                                                                    "description": "The selectable values of a select field, given as value => label.",
+                                                                    "additionalProperties": {
+                                                                        "type": "string"
+                                                                    }
+                                                                },
+                                                                "default": {
+                                                                    "type": [
+                                                                        "string",
+                                                                        "null"
+                                                                    ],
+                                                                    "description": "The value the form starts with."
+                                                                },
+                                                                "helpText": {
+                                                                    "type": [
+                                                                        "string",
+                                                                        "null"
+                                                                    ],
+                                                                    "description": "The snippet key of the help text of the field."
+                                                                },
+                                                                "value": {
+                                                                    "type": [
+                                                                        "string",
+                                                                        "null"
+                                                                    ],
+                                                                    "description": "The stored value of the field. Null when nothing is stored and always null for a secret field."
+                                                                },
+                                                                "configured": {
+                                                                    "type": "boolean",
+                                                                    "description": "Whether a value is stored for the field."
+                                                                }
+                                                            }
+                                                        }
+                                                    },
+                                                    "settings": {
+                                                        "type": "object",
+                                                        "description": "The stored settings of the interface, as name => value.",
+                                                        "additionalProperties": true
+                                                    },
+                                                    "channels": {
+                                                        "type": "array",
+                                                        "description": "The channels the interface offers, with the stored configuration of the shop.",
+                                                        "items": {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "channel": {
+                                                                    "type": "string",
+                                                                    "description": "The technical name of the channel."
+                                                                },
+                                                                "label": {
+                                                                    "type": "string",
+                                                                    "description": "The label of the channel."
+                                                                },
+                                                                "flow": {
+                                                                    "type": "string",
+                                                                    "description": "How the payer is handed over to the channel. \"redirect\" sends the payer to a url of the channel, \"qrcode\" renders a qr code the payer scans, \"sdk\" hands the parameters to the app instead of a url.",
+                                                                    "enum": [
+                                                                        "redirect",
+                                                                        "qrcode",
+                                                                        "sdk"
+                                                                    ]
+                                                                },
+                                                                "currencies": {
+                                                                    "type": "array",
+                                                                    "description": "The iso 4217 codes the channel can process. An empty list means every currency.",
+                                                                    "items": {
+                                                                        "type": "string"
+                                                                    }
+                                                                },
+                                                                "devices": {
+                                                                    "type": "array",
+                                                                    "description": "The devices the channel can be used on, for example \"wap\", \"web\", \"app\" or \"mini\". An empty list means every device.",
+                                                                    "items": {
+                                                                        "type": "string"
+                                                                    }
+                                                                },
+                                                                "runtimeParams": {
+                                                                    "type": "object",
+                                                                    "description": "The parameters a payment call has to bring, as name => whether the parameter is required.",
+                                                                    "additionalProperties": {
+                                                                        "type": "boolean"
+                                                                    }
+                                                                },
+                                                                "paramFields": {
+                                                                    "type": "array",
+                                                                    "description": "The parameter fields the channel declares, with the stored value of every field that is not secret.",
+                                                                    "items": {
+                                                                        "type": "object",
+                                                                        "properties": {
+                                                                            "name": {
+                                                                                "type": "string",
+                                                                                "description": "The key of the value inside the params."
+                                                                            },
+                                                                            "label": {
+                                                                                "type": [
+                                                                                    "string",
+                                                                                    "null"
+                                                                                ],
+                                                                                "description": "The snippet key of the label. The administration falls back to the name when it is null."
+                                                                            },
+                                                                            "type": {
+                                                                                "type": "string",
+                                                                                "description": "The input the administration renders for the field.",
+                                                                                "enum": [
+                                                                                    "text",
+                                                                                    "password",
+                                                                                    "textarea",
+                                                                                    "select",
+                                                                                    "bool",
+                                                                                    "number"
+                                                                                ]
+                                                                            },
+                                                                            "required": {
+                                                                                "type": "boolean",
+                                                                                "description": "Whether the field has to be filled before the channel can be enabled."
+                                                                            },
+                                                                            "secret": {
+                                                                                "type": "boolean",
+                                                                                "description": "Whether the value of the field is never echoed back."
+                                                                            },
+                                                                            "options": {
+                                                                                "type": "object",
+                                                                                "description": "The selectable values of a select field, given as value => label.",
+                                                                                "additionalProperties": {
+                                                                                    "type": "string"
+                                                                                }
+                                                                            },
+                                                                            "default": {
+                                                                                "type": [
+                                                                                    "string",
+                                                                                    "null"
+                                                                                ],
+                                                                                "description": "The value the form starts with."
+                                                                            },
+                                                                            "helpText": {
+                                                                                "type": [
+                                                                                    "string",
+                                                                                    "null"
+                                                                                ],
+                                                                                "description": "The snippet key of the help text of the field."
+                                                                            },
+                                                                            "value": {
+                                                                                "type": [
+                                                                                    "string",
+                                                                                    "null"
+                                                                                ],
+                                                                                "description": "The stored value of the field. Null when nothing is stored and always null for a secret field."
+                                                                            },
+                                                                            "configured": {
+                                                                                "type": "boolean",
+                                                                                "description": "Whether a value is stored for the field."
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "enabled": {
+                                                                    "type": "boolean",
+                                                                    "description": "Whether the channel is enabled."
+                                                                },
+                                                                "configured": {
+                                                                    "type": "boolean",
+                                                                    "description": "Whether parameters are stored for the channel."
+                                                                },
+                                                                "settings": {
+                                                                    "type": "object",
+                                                                    "description": "The stored settings of the channel, as name => value.",
+                                                                    "additionalProperties": true
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/_action/payment/providers/{provider}": {
+            "post": {
+                "tags": [
+                    "Payment"
+                ],
+                "summary": "Save the credentials of a payment interface",
+                "description": "Seals and stores the credentials of the given payment interface. A value that is not sent keeps the stored one, which is what makes an interface editable without typing its secrets again. An interface can only be enabled when every required credential is stored.",
+                "operationId": "savePaymentProvider",
+                "parameters": [
+                    {
+                        "name": "provider",
+                        "in": "path",
+                        "description": "The technical name of the payment interface.",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "enabled": {
+                                        "type": "boolean",
+                                        "description": "Whether the interface is enabled for the shop."
+                                    },
+                                    "credentials": {
+                                        "type": "object",
+                                        "description": "The credentials of the interface, as name => value. A value that is not sent keeps the stored one.",
+                                        "additionalProperties": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "settings": {
+                                        "type": "object",
+                                        "description": "The settings of the interface, as name => value.",
+                                        "additionalProperties": true
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "The stored configuration of the interface, in the same shape the list endpoint returns. Secret fields only report whether a value is stored.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "provider": {
+                                            "type": "object",
+                                            "description": "The stored configuration of the interface.",
+                                            "properties": {
+                                                "technicalName": {
+                                                    "type": "string",
+                                                    "description": "The technical name of the interface."
+                                                },
+                                                "label": {
+                                                    "type": "string",
+                                                    "description": "The label of the interface."
+                                                },
+                                                "enabled": {
+                                                    "type": "boolean",
+                                                    "description": "Whether the interface is enabled."
+                                                },
+                                                "configured": {
+                                                    "type": "boolean",
+                                                    "description": "Whether credentials are stored for the interface."
+                                                },
+                                                "settings": {
+                                                    "type": "object",
+                                                    "description": "The stored settings of the interface, as name => value.",
+                                                    "additionalProperties": true
+                                                },
+                                                "channels": {
+                                                    "type": "array",
+                                                    "description": "The channels the interface offers, with their stored configuration.",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "channel": {
+                                                                "type": "string",
+                                                                "description": "The technical name of the channel."
+                                                            },
+                                                            "enabled": {
+                                                                "type": "boolean",
+                                                                "description": "Whether the channel is enabled."
+                                                            },
+                                                            "configured": {
+                                                                "type": "boolean",
+                                                                "description": "Whether parameters are stored for the channel."
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "The payment interface is unknown to the server, for example when it was added by an extension that is not installed anymore.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/failure"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Payment"
+                ],
+                "summary": "Reset the credentials of a payment interface",
+                "description": "Deletes the stored credentials and settings of the given payment interface, so the interface falls back to being unconfigured. The channel configurations of the interface are left untouched.",
+                "operationId": "resetPaymentProvider",
+                "parameters": [
+                    {
+                        "name": "provider",
+                        "in": "path",
+                        "description": "The technical name of the payment interface.",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The configuration of the interface after the reset. Secret fields only report whether a value is stored.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "provider": {
+                                            "type": "object",
+                                            "description": "The configuration of the interface after the reset.",
+                                            "properties": {
+                                                "technicalName": {
+                                                    "type": "string",
+                                                    "description": "The technical name of the interface."
+                                                },
+                                                "label": {
+                                                    "type": "string",
+                                                    "description": "The label of the interface."
+                                                },
+                                                "enabled": {
+                                                    "type": "boolean",
+                                                    "description": "Whether the interface is enabled. Always false after a reset."
+                                                },
+                                                "configured": {
+                                                    "type": "boolean",
+                                                    "description": "Whether credentials are stored for the interface. Always false after a reset."
+                                                },
+                                                "settings": {
+                                                    "type": "object",
+                                                    "description": "The stored settings of the interface, as name => value.",
+                                                    "additionalProperties": true
+                                                },
+                                                "channels": {
+                                                    "type": "array",
+                                                    "description": "The channels the interface offers, with their stored configuration.",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "channel": {
+                                                                "type": "string",
+                                                                "description": "The technical name of the channel."
+                                                            },
+                                                            "enabled": {
+                                                                "type": "boolean",
+                                                                "description": "Whether the channel is enabled."
+                                                            },
+                                                            "configured": {
+                                                                "type": "boolean",
+                                                                "description": "Whether parameters are stored for the channel."
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "The payment interface is unknown to the server.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/failure"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/_action/payment/providers/{provider}/channels/{channel}": {
+            "post": {
+                "tags": [
+                    "Payment"
+                ],
+                "summary": "Save the parameters of a payment channel",
+                "description": "Seals and stores the parameters of one channel of the given payment interface. A value that is not sent keeps the stored one. A channel can only be enabled when every required parameter is stored.",
+                "operationId": "savePaymentChannel",
+                "parameters": [
+                    {
+                        "name": "provider",
+                        "in": "path",
+                        "description": "The technical name of the payment interface.",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "channel",
+                        "in": "path",
+                        "description": "The technical name of the payment channel.",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "enabled": {
+                                        "type": "boolean",
+                                        "description": "Whether the shop offers the channel."
+                                    },
+                                    "params": {
+                                        "type": "object",
+                                        "description": "The parameters of the channel, as name => value. A value that is not sent keeps the stored one.",
+                                        "additionalProperties": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "settings": {
+                                        "type": "object",
+                                        "description": "The settings of the channel, as name => value.",
+                                        "additionalProperties": true
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "The stored configuration of the channel. Secret fields only report whether a value is stored.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "channel": {
+                                            "type": "object",
+                                            "description": "The stored configuration of the channel.",
+                                            "properties": {
+                                                "channel": {
+                                                    "type": "string",
+                                                    "description": "The technical name of the channel."
+                                                },
+                                                "label": {
+                                                    "type": "string",
+                                                    "description": "The label of the channel."
+                                                },
+                                                "flow": {
+                                                    "type": "string",
+                                                    "description": "How the payer is handed over to the channel.",
+                                                    "enum": [
+                                                        "redirect",
+                                                        "qrcode",
+                                                        "sdk"
+                                                    ]
+                                                },
+                                                "currencies": {
+                                                    "type": "array",
+                                                    "description": "The iso 4217 codes the channel can process. An empty list means every currency.",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "devices": {
+                                                    "type": "array",
+                                                    "description": "The devices the channel can be used on. An empty list means every device.",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "runtimeParams": {
+                                                    "type": "object",
+                                                    "description": "The parameters a payment call has to bring, as name => whether the parameter is required.",
+                                                    "additionalProperties": {
+                                                        "type": "boolean"
+                                                    }
+                                                },
+                                                "enabled": {
+                                                    "type": "boolean",
+                                                    "description": "Whether the shop offers the channel."
+                                                },
+                                                "configured": {
+                                                    "type": "boolean",
+                                                    "description": "Whether parameters are stored for the channel."
+                                                },
+                                                "settings": {
+                                                    "type": "object",
+                                                    "description": "The stored settings of the channel, as name => value.",
+                                                    "additionalProperties": true
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "The payment interface or the channel of that interface is unknown to the server.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/failure"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Payment"
+                ],
+                "summary": "Reset the parameters of a payment channel",
+                "description": "Deletes the stored parameters and settings of one channel of the given payment interface, so the channel falls back to being unconfigured.",
+                "operationId": "resetPaymentChannel",
+                "parameters": [
+                    {
+                        "name": "provider",
+                        "in": "path",
+                        "description": "The technical name of the payment interface.",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "channel",
+                        "in": "path",
+                        "description": "The technical name of the payment channel.",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The configuration of the channel after the reset. Secret fields only report whether a value is stored.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "channel": {
+                                            "type": "object",
+                                            "description": "The configuration of the channel after the reset.",
+                                            "properties": {
+                                                "channel": {
+                                                    "type": "string",
+                                                    "description": "The technical name of the channel."
+                                                },
+                                                "label": {
+                                                    "type": "string",
+                                                    "description": "The label of the channel."
+                                                },
+                                                "flow": {
+                                                    "type": "string",
+                                                    "description": "How the payer is handed over to the channel.",
+                                                    "enum": [
+                                                        "redirect",
+                                                        "qrcode",
+                                                        "sdk"
+                                                    ]
+                                                },
+                                                "currencies": {
+                                                    "type": "array",
+                                                    "description": "The iso 4217 codes the channel can process. An empty list means every currency.",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "devices": {
+                                                    "type": "array",
+                                                    "description": "The devices the channel can be used on. An empty list means every device.",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "runtimeParams": {
+                                                    "type": "object",
+                                                    "description": "The parameters a payment call has to bring, as name => whether the parameter is required.",
+                                                    "additionalProperties": {
+                                                        "type": "boolean"
+                                                    }
+                                                },
+                                                "enabled": {
+                                                    "type": "boolean",
+                                                    "description": "Whether the shop offers the channel. Always false after a reset."
+                                                },
+                                                "configured": {
+                                                    "type": "boolean",
+                                                    "description": "Whether parameters are stored for the channel. Always false after a reset."
+                                                },
+                                                "settings": {
+                                                    "type": "object",
+                                                    "description": "The stored settings of the channel, as name => value.",
+                                                    "additionalProperties": true
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "The payment interface or the channel of that interface is unknown to the server.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/failure"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

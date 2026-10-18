@@ -105,4 +105,66 @@ class PaymentNotifyUrlBuilderTest extends TestCase
 
         static::assertStringStartsWith('https://app.example.com/', $builder->build($app, 'stripe', 'P-1'));
     }
+
+    /**
+     * The payout url names the app and not the payout: the channels notify a merchant account, and the
+     * payout number is read from the signed body. It is the same base url the payment notifications
+     * use - an installation behind a proxy pins it once.
+     */
+    public function testBuildTransferNamesTheAppAndNotThePayout(): void
+    {
+        $builder = new PaymentNotifyUrlBuilder(new RequestStack(), 'https://configured.example.com');
+
+        $app = new PaymentAppEntity();
+        $app->id = 'app-id';
+        $app->settings = null;
+
+        static::assertSame(
+            'https://configured.example.com/payment-api/v1/transfer-notify/stripe/app-id',
+            $builder->buildTransfer($app, 'stripe')
+        );
+    }
+
+    public function testBuildTransferPrefersTheSettingAndTrimsItsTrailingSlash(): void
+    {
+        $builder = new PaymentNotifyUrlBuilder(new RequestStack(), 'https://configured.example.com');
+
+        $app = new PaymentAppEntity();
+        $app->id = 'app-id';
+        $app->settings = [PaymentNotifyUrlBuilder::SETTING_BASE_URL => 'https://app.example.com/'];
+
+        static::assertSame(
+            'https://app.example.com/payment-api/v1/transfer-notify/alipay/app-id',
+            $builder->buildTransfer($app, 'alipay')
+        );
+    }
+
+    public function testBuildTransferFallsBackToTheCurrentRequest(): void
+    {
+        $stack = new RequestStack();
+        $stack->push(Request::create('https://shop.example.com/some/path'));
+
+        $app = new PaymentAppEntity();
+        $app->id = 'app-id';
+        $app->settings = null;
+
+        static::assertSame(
+            'https://shop.example.com/payment-api/v1/transfer-notify/wechat/app-id',
+            (new PaymentNotifyUrlBuilder($stack))->buildTransfer($app, 'wechat')
+        );
+    }
+
+    public function testBuildTransferUrlEncodesTheProviderAndTheApp(): void
+    {
+        $builder = new PaymentNotifyUrlBuilder(new RequestStack(), 'https://shop.example.com');
+
+        $app = new PaymentAppEntity();
+        $app->id = 'app/id';
+        $app->settings = null;
+
+        static::assertSame(
+            'https://shop.example.com/payment-api/v1/transfer-notify/alipay%2Fh5/app%2Fid',
+            $builder->buildTransfer($app, 'alipay/h5')
+        );
+    }
 }

@@ -4,6 +4,10 @@ namespace Shopwell\Core\Checkout\Loyalty\Api;
 
 use Shopwell\Core\Checkout\Loyalty\Entity\CustomerLoyalty\CustomerLoyaltyCollection;
 use Shopwell\Core\Checkout\Loyalty\Entity\CustomerLoyalty\CustomerLoyaltyEntity;
+use Shopwell\Core\Checkout\Loyalty\Entity\CustomerPointTransaction\CustomerPointTransactionCollection;
+use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyTier\LoyaltyTierCollection;
+use Shopwell\Core\Checkout\Loyalty\LoyaltyException;
+use Shopwell\Core\Checkout\Loyalty\Service\LoyaltyLedger;
 use Shopwell\Core\Checkout\Loyalty\Service\LoyaltyPointService;
 use Shopwell\Core\Framework\Api\Context\AdminApiSource;
 use Shopwell\Core\Framework\Context;
@@ -25,14 +29,21 @@ class LoyaltyController
 {
     private const TRANSACTION_LIMIT = 25;
 
+    private const TRANSACTION_LIMIT_MAX = 100;
+
     /**
      * @internal
      *
      * @param EntityRepository<CustomerLoyaltyCollection> $customerLoyaltyRepository
+     * @param EntityRepository<CustomerPointTransactionCollection> $pointTransactionRepository
+     * @param EntityRepository<LoyaltyTierCollection> $loyaltyTierRepository
      */
     public function __construct(
         private readonly EntityRepository $customerLoyaltyRepository,
+        private readonly EntityRepository $pointTransactionRepository,
+        private readonly EntityRepository $loyaltyTierRepository,
         private readonly LoyaltyPointService $loyaltyPointService,
+        private readonly LoyaltyLedger $loyaltyLedger,
     ) {
     }
 
@@ -52,6 +63,88 @@ class LoyaltyController
         return new JsonResponse(null, Response::HTTP_NO_CONTENT);
     }
 
+    /**
+     * The point ledger of one customer, one page at a time - the summary carries the balances only, so a
+     * customer with a long history does not load all of it to show the last ten bookings.
+     */
+    #[Route(
+        path: '/api/_action/loyalty/customer/{customerId}/transactions',
+        name: 'api.action.loyalty.customer.transactions',
+        defaults: [PlatformRequest::ATTRIBUTE_ACL => ['loyalty.viewer']],
+        methods: [Request::METHOD_GET]
+    )]
+    public function transactions(string $customerId, Request $request, Context $context): Response
+    {
+        $page = max($request->query->getInt('page', 1), 1);
+        $limit = min(max($request->query->getInt('limit', self::TRANSACTION_LIMIT), 1), self::TRANSACTION_LIMIT_MAX);
+
+        $criteria = new Criteria();
+        $criteria->setLimit($limit);
+        $criteria->setOffset(($page - 1) * $limit);
+
+        $criteria->addFilter(new EqualsFilter('customerId', $customerId));
+
+        $type = (string) $request->query->get('type', '');
+
+        if ($type !== '') {
+            $criteria->addFilter(new EqualsFilter('type', $type));
+        }
+
+        $criteria->addSorting(new FieldSorting('createdAt', FieldSorting::DESCENDING));
+
+        $result = $this->pointTransactionRepository->search($criteria, $context);
+
+        $transactions = [];
+
+        foreach ($result->getEntities() as $transaction) {
+            $transactions[] = [
+                'id' => $transaction->getId(),
+                'type' => $transaction->getType(),
+                'points' => $transaction->getPoints(),
+                'balanceAfter' => $transaction->getBalanceAfter(),
+                'orderId' => $transaction->getOrderId(),
+                'comment' => $transaction->getComment(),
+                'expiresAt' => $transaction->getExpiresAt()?->format(\DATE_ATOM),
+                'createdAt' => $transaction->getCreatedAt()?->format(\DATE_ATOM),
+            ];
+        }
+
+        return new JsonResponse([
+            'total' => $result->getTotal(),
+            'transactions' => $transactions,
+        ]);
+    }
+
+    /**
+     * Grants a membership the operator decided on - a goodwill upgrade, a correction, or a membership
+     * that was paid outside of the shop. The period is written by the ledger, so an extension of the
+     * same tier continues where the running one ends instead of restarting today.
+     */
+    #[Route(
+        path: '/api/_action/loyalty/customer/{customerId}/membership',
+        name: 'api.action.loyalty.customer.membership',
+        defaults: [PlatformRequest::ATTRIBUTE_ACL => ['loyalty.editor']],
+        methods: [Request::METHOD_POST]
+    )]
+    public function grantMembership(string $customerId, Request $request, Context $context): Response
+    {
+        $tierId = (string) $request->request->get('tierId', '');
+        $durationDays = $request->request->getInt('durationDays');
+
+        if ($durationDays < 1) {
+            throw LoyaltyException::invalidMembershipDuration($durationDays);
+        }
+
+        $this->assertTierExists($tierId, $context);
+
+        $period = $this->loyaltyLedger->activateMembership($customerId, $tierId, $durationDays, $context);
+
+        return new JsonResponse([
+            'startsAt' => $period['startsAt']->format(\DATE_ATOM),
+            'expiresAt' => $period['expiresAt']->format(\DATE_ATOM),
+        ]);
+    }
+
     #[Route(
         path: '/api/_action/loyalty/customer/{customerId}/summary',
         name: 'api.action.loyalty.customer.summary',
@@ -63,10 +156,6 @@ class LoyaltyController
         $criteria = new Criteria();
         $criteria->addFilter(new EqualsFilter('customerId', $customerId));
         $criteria->addAssociation('membershipTier');
-        $criteria->addAssociation('transactions');
-        $criteria->getAssociation('transactions')
-            ->addSorting(new FieldSorting('createdAt', FieldSorting::DESCENDING))
-            ->setLimit(self::TRANSACTION_LIMIT);
         $criteria->setLimit(1);
 
         $loyalty = $this->customerLoyaltyRepository->search($criteria, $context)->getEntities()->first();
@@ -77,7 +166,6 @@ class LoyaltyController
                 'growthValue' => 0,
                 'membershipTier' => null,
                 'membershipValidUntil' => null,
-                'transactions' => [],
             ]);
         }
 
@@ -94,37 +182,17 @@ class LoyaltyController
                 'pointsMultiplier' => $tier->getPointsMultiplier(),
             ],
             'membershipValidUntil' => $loyalty->getMembershipValidUntil()?->format(\DATE_ATOM),
-            'transactions' => $this->mapTransactions($loyalty),
         ]);
     }
 
-    /**
-     * @return list<array<string, mixed>>
-     */
-    private function mapTransactions(CustomerLoyaltyEntity $loyalty): array
+    private function assertTierExists(string $tierId, Context $context): void
     {
-        $collection = $loyalty->getTransactions();
+        $criteria = new Criteria([$tierId]);
+        $criteria->setLimit(1);
 
-        if ($collection === null) {
-            return [];
+        if ($this->loyaltyTierRepository->searchIds($criteria, $context)->getTotal() === 0) {
+            throw LoyaltyException::tierNotFound($tierId);
         }
-
-        $transactions = [];
-
-        foreach ($collection as $transaction) {
-            $transactions[] = [
-                'id' => $transaction->getId(),
-                'type' => $transaction->getType(),
-                'points' => $transaction->getPoints(),
-                'balanceAfter' => $transaction->getBalanceAfter(),
-                'orderId' => $transaction->getOrderId(),
-                'comment' => $transaction->getComment(),
-                'expiresAt' => $transaction->getExpiresAt()?->format(\DATE_ATOM),
-                'createdAt' => $transaction->getCreatedAt()?->format(\DATE_ATOM),
-            ];
-        }
-
-        return $transactions;
     }
 
     private function resolveAdministratorId(Context $context): ?string

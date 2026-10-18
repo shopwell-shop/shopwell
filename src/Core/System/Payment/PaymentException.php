@@ -18,6 +18,7 @@ class PaymentException extends HttpException
     public const UNKNOWN_CHANNEL = 'PAYMENT__UNKNOWN_CHANNEL';
     public const DUPLICATE_CHANNEL = 'PAYMENT__DUPLICATE_CHANNEL';
     public const INVALID_PROVIDER_DECLARATION = 'PAYMENT__INVALID_PROVIDER_DECLARATION';
+    public const STATE_MACHINE_INVALID = 'PAYMENT__STATE_MACHINE_INVALID';
 
     public const PROVIDER_NOT_ENABLED = 'PAYMENT__PROVIDER_NOT_ENABLED';
     public const PROVIDER_NOT_CONFIGURED = 'PAYMENT__PROVIDER_NOT_CONFIGURED';
@@ -35,14 +36,19 @@ class PaymentException extends HttpException
     public const FOREIGN_APP = 'PAYMENT__FOREIGN_APP';
     public const APP_NOT_FOUND = 'PAYMENT__APP_NOT_FOUND';
     public const APP_DISABLED = 'PAYMENT__APP_DISABLED';
+    public const PLATFORM_TENANT_MISSING = 'PAYMENT__PLATFORM_TENANT_MISSING';
 
     public const MISSING_PARAMETER = 'PAYMENT__MISSING_PARAMETER';
 
     public const ORDER_NOT_FOUND = 'PAYMENT__ORDER_NOT_FOUND';
+    public const ORDER_CONFLICT = 'PAYMENT__ORDER_CONFLICT';
     public const ORDER_NOT_PAYABLE = 'PAYMENT__ORDER_NOT_PAYABLE';
     public const ORDER_ALREADY_CLOSED = 'PAYMENT__ORDER_ALREADY_CLOSED';
+    public const ORDER_ALREADY_PAID = 'PAYMENT__ORDER_ALREADY_PAID';
+    public const ORDER_NOT_EXPIRABLE = 'PAYMENT__ORDER_NOT_EXPIRABLE';
     public const INVALID_AMOUNT = 'PAYMENT__INVALID_AMOUNT';
     public const AMOUNT_MISMATCH = 'PAYMENT__AMOUNT_MISMATCH';
+    public const CURRENCY_MISMATCH = 'PAYMENT__CURRENCY_MISMATCH';
 
     public const REFUND_NOT_ALLOWED = 'PAYMENT__REFUND_NOT_ALLOWED';
     public const REFUND_AMOUNT_EXCEEDS_ORDER = 'PAYMENT__REFUND_AMOUNT_EXCEEDS_ORDER';
@@ -59,6 +65,33 @@ class PaymentException extends HttpException
 
     public const UNSUPPORTED_API = 'PAYMENT__UNSUPPORTED_API';
     public const ACTION_WITHOUT_API = 'PAYMENT__ACTION_WITHOUT_API';
+
+    public const PAYMENT_METHOD_CHANNEL_MISSING = 'PAYMENT__PAYMENT_METHOD_CHANNEL_MISSING';
+    public const CHANNEL_NOT_AVAILABLE_IN_STOREFRONT = 'PAYMENT__CHANNEL_NOT_AVAILABLE_IN_STOREFRONT';
+
+    public const CYCLE_NOT_EXPRESSIBLE = 'PAYMENT__CYCLE_NOT_EXPRESSIBLE';
+    public const INVALID_PERIOD_UNIT = 'PAYMENT__INVALID_PERIOD_UNIT';
+    public const INVALID_PERIOD_COUNT = 'PAYMENT__INVALID_PERIOD_COUNT';
+    public const CYCLE_NOT_FOUND = 'PAYMENT__CYCLE_NOT_FOUND';
+    public const CYCLE_CONFLICT = 'PAYMENT__CYCLE_CONFLICT';
+    public const CYCLE_NOT_REARMABLE = 'PAYMENT__CYCLE_NOT_REARMABLE';
+    public const SUBSCRIPTION_NOT_FOUND = 'PAYMENT__SUBSCRIPTION_NOT_FOUND';
+
+    public const TRANSFER_NOT_FOUND = 'PAYMENT__TRANSFER_NOT_FOUND';
+    public const TRANSFER_CONFLICT = 'PAYMENT__TRANSFER_CONFLICT';
+    public const TRANSFER_RECIPIENT_NOT_FOUND = 'PAYMENT__TRANSFER_RECIPIENT_NOT_FOUND';
+    public const TRANSFER_IDENTITY_NOT_SUPPORTED = 'PAYMENT__TRANSFER_IDENTITY_NOT_SUPPORTED';
+    public const TRANSFER_RECIPIENT_INCOMPLETE = 'PAYMENT__TRANSFER_RECIPIENT_INCOMPLETE';
+    public const TRANSFER_RECIPIENT_NOT_READY = 'PAYMENT__TRANSFER_RECIPIENT_NOT_READY';
+    public const TRANSFER_IDENTITY_VALUE_TOO_LONG = 'PAYMENT__TRANSFER_IDENTITY_VALUE_TOO_LONG';
+    public const TRANSFER_AMOUNT_INVALID = 'PAYMENT__TRANSFER_AMOUNT_INVALID';
+    public const TRANSFER_OUT_NO_INVALID = 'PAYMENT__TRANSFER_OUT_NO_INVALID';
+    public const TRANSFER_ALREADY_FINALIZED = 'PAYMENT__TRANSFER_ALREADY_FINALIZED';
+    public const TRANSFER_FOREIGN_APP = 'PAYMENT__TRANSFER_FOREIGN_APP';
+    public const TRANSFER_PROVIDER_REF_MISSING = 'PAYMENT__TRANSFER_PROVIDER_REF_MISSING';
+    public const TRANSFER_NOTIFICATION_APP_UNKNOWN = 'PAYMENT__TRANSFER_NOTIFICATION_APP_UNKNOWN';
+    public const TRANSFER_NOTIFICATION_PROVIDER_UNKNOWN = 'PAYMENT__TRANSFER_NOTIFICATION_PROVIDER_UNKNOWN';
+    public const TRANSFER_NOTIFICATION_TRANSFER_UNKNOWN = 'PAYMENT__TRANSFER_NOTIFICATION_TRANSFER_UNKNOWN';
 
     public static function unknownProvider(string $technicalName): self
     {
@@ -97,6 +130,16 @@ class PaymentException extends HttpException
             self::INVALID_PROVIDER_DECLARATION,
             'A payment provider declaration is invalid: {{ reason }}',
             ['reason' => $reason]
+        );
+    }
+
+    public static function stateMachineInvalid(string $stateMachine, string $reason): self
+    {
+        return new self(
+            Response::HTTP_INTERNAL_SERVER_ERROR,
+            self::STATE_MACHINE_INVALID,
+            'The state machine "{{ stateMachine }}" is not usable for payments: {{ reason }}',
+            ['stateMachine' => $stateMachine, 'reason' => $reason]
         );
     }
 
@@ -264,6 +307,20 @@ class PaymentException extends HttpException
         );
     }
 
+    /**
+     * The tenant of the shop is seeded by the migration and cannot be created at runtime, so its
+     * absence means the installation or the upgrade is broken - not the request that hit it.
+     */
+    public static function platformTenantMissing(string $technicalName): self
+    {
+        return new self(
+            Response::HTTP_INTERNAL_SERVER_ERROR,
+            self::PLATFORM_TENANT_MISSING,
+            'The platform tenant "{{ technicalName }}" is missing. The payment migration has not seeded it.',
+            ['technicalName' => $technicalName]
+        );
+    }
+
     public static function missingParameter(string $name): self
     {
         return new self(
@@ -281,6 +338,21 @@ class PaymentException extends HttpException
             self::ORDER_NOT_FOUND,
             'The payment order "{{ paymentNo }}" does not exist.',
             ['paymentNo' => $paymentNo]
+        );
+    }
+
+    /**
+     * The insert of a payment order hit a unique key, but neither the out trade number nor the
+     * idempotency key reads the conflicting order back - the order exists, it is just not visible
+     * to this request yet, so retrying is the right answer and "not found" would be a lie.
+     */
+    public static function orderConflict(string $outTradeNo): self
+    {
+        return new self(
+            Response::HTTP_CONFLICT,
+            self::ORDER_CONFLICT,
+            'The payment order for the out trade number "{{ outTradeNo }}" conflicts with an existing order that cannot be read back.',
+            ['outTradeNo' => $outTradeNo]
         );
     }
 
@@ -304,6 +376,30 @@ class PaymentException extends HttpException
         );
     }
 
+    /**
+     * The order cannot be closed because the payment already arrived: the close is refused instead of
+     * hiding a payment the platform has to book.
+     */
+    public static function orderAlreadyPaid(string $paymentNo): self
+    {
+        return new self(
+            Response::HTTP_CONFLICT,
+            self::ORDER_ALREADY_PAID,
+            'The payment order "{{ paymentNo }}" is already paid and cannot be closed.',
+            ['paymentNo' => $paymentNo]
+        );
+    }
+
+    public static function orderNotExpirable(string $paymentNo): self
+    {
+        return new self(
+            Response::HTTP_CONFLICT,
+            self::ORDER_NOT_EXPIRABLE,
+            'The payment order "{{ paymentNo }}" can no longer expire.',
+            ['paymentNo' => $paymentNo]
+        );
+    }
+
     public static function invalidAmount(int $amount): self
     {
         return new self(
@@ -320,6 +416,16 @@ class PaymentException extends HttpException
             Response::HTTP_CONFLICT,
             self::AMOUNT_MISMATCH,
             'The notified amount of "{{ paymentNo }}" is {{ actual }} but {{ expected }} was expected.',
+            ['paymentNo' => $paymentNo, 'expected' => $expected, 'actual' => $actual]
+        );
+    }
+
+    public static function currencyMismatch(string $paymentNo, string $expected, string $actual): self
+    {
+        return new self(
+            Response::HTTP_CONFLICT,
+            self::CURRENCY_MISMATCH,
+            'The notified currency of "{{ paymentNo }}" is "{{ actual }}" but "{{ expected }}" was expected.',
             ['paymentNo' => $paymentNo, 'expected' => $expected, 'actual' => $actual]
         );
     }
@@ -384,13 +490,18 @@ class PaymentException extends HttpException
         );
     }
 
-    public static function gatewayError(string $channel, string $reason): self
+    /**
+     * The interface failed. The original exception is kept as the previous one: the message alone
+     * loses the stack and the raw answer of the channel, which is what a failure is debugged with.
+     */
+    public static function gatewayError(string $channel, string $reason, ?\Throwable $previous = null): self
     {
         return new self(
             Response::HTTP_BAD_GATEWAY,
             self::GATEWAY_ERROR,
             'The payment channel "{{ channel }}" returned an error: {{ reason }}',
-            ['channel' => $channel, 'reason' => $reason]
+            ['channel' => $channel, 'reason' => $reason],
+            $previous
         );
     }
 
@@ -448,6 +559,338 @@ class PaymentException extends HttpException
             self::ACTION_WITHOUT_API,
             'The action "{{ action }}" was executed without an api.',
             ['action' => $action]
+        );
+    }
+
+    /**
+     * A checkout payment method without a bound gateway channel cannot collect at all: the shopper
+     * picked a method the administration never told how to reach an interface.
+     */
+    public static function paymentMethodChannelMissing(string $paymentMethodId): self
+    {
+        return new self(
+            Response::HTTP_NOT_FOUND,
+            self::PAYMENT_METHOD_CHANNEL_MISSING,
+            'The payment method "{{ paymentMethodId }}" has no gateway channel bound to it.',
+            ['paymentMethodId' => $paymentMethodId]
+        );
+    }
+
+    /**
+     * A channel that is opened by an sdk cannot be used by the storefront: it is pulled up by an app
+     * that renders the payment itself, a browser has no sdk to hand the parameters to.
+     */
+    public static function channelNotAvailableInStorefront(string $technicalName): self
+    {
+        return new self(
+            Response::HTTP_BAD_REQUEST,
+            self::CHANNEL_NOT_AVAILABLE_IN_STOREFRONT,
+            'The payment channel "{{ technicalName }}" cannot be used in the storefront checkout.',
+            ['technicalName' => $technicalName]
+        );
+    }
+
+    /**
+     * A subscription plan whose monthly deduction day falls after the 28th cannot be signed up at
+     * alipay at all: `period_rule_params.execute_time` is capped there by the provider. Refusing
+     * at plan level beats silently moving the deduction day - the subscriber would be charged on
+     * a day they never agreed to.
+     */
+    public static function paymentCycleNotExpressible(string $provider, string $unit, int $count, int $anchorDayOfMonth): self
+    {
+        return new self(
+            Response::HTTP_UNPROCESSABLE_ENTITY,
+            self::CYCLE_NOT_EXPRESSIBLE,
+            'A subscription charging every {{ count }} {{ unit }} on day {{ anchorDayOfMonth }} of the month cannot be expressed at the provider "{{ provider }}": monthly deduction days are limited to the 28th there.',
+            ['provider' => $provider, 'unit' => $unit, 'count' => $count, 'anchorDayOfMonth' => $anchorDayOfMonth]
+        );
+    }
+
+    public static function paymentCycleNotFound(string $id): self
+    {
+        return new self(
+            Response::HTTP_NOT_FOUND,
+            self::CYCLE_NOT_FOUND,
+            'The subscription cycle "{{ id }}" does not exist.',
+            ['id' => $id]
+        );
+    }
+
+    /**
+     * The insert of a cycle hit the unique key over (subscription, cycle number), but the
+     * conflicting row cannot be read back in this request - the cycle exists, it is just not
+     * visible yet, so retrying is the right answer and "not found" would be a lie.
+     */
+    public static function paymentCycleConflict(string $subscriptionId, int $cycleNo): self
+    {
+        return new self(
+            Response::HTTP_CONFLICT,
+            self::CYCLE_CONFLICT,
+            'The cycle {{ cycleNo }} of the subscription "{{ subscriptionId }}" conflicts with an existing cycle that cannot be read back.',
+            ['subscriptionId' => $subscriptionId, 'cycleNo' => $cycleNo]
+        );
+    }
+
+    /**
+     * Only a cycle the channel answered definitively for may be re-armed: an in-flight trade has
+     * to stay `unknown` until a query resolves it, and a settled cycle has nothing to re-arm.
+     */
+    public static function paymentCycleNotRearmable(string $id, string $state): self
+    {
+        return new self(
+            Response::HTTP_CONFLICT,
+            self::CYCLE_NOT_REARMABLE,
+            'The subscription cycle "{{ id }}" is "{{ state }}" and cannot be re-armed for another charge attempt.',
+            ['id' => $id, 'state' => $state]
+        );
+    }
+
+    public static function subscriptionNotFound(string $id): self
+    {
+        return new self(
+            Response::HTTP_NOT_FOUND,
+            self::SUBSCRIPTION_NOT_FOUND,
+            'The payment subscription "{{ id }}" does not exist.',
+            ['id' => $id]
+        );
+    }
+
+    public static function invalidPeriodUnit(string $unit): self
+    {
+        return new self(
+            Response::HTTP_BAD_REQUEST,
+            self::INVALID_PERIOD_UNIT,
+            'The period unit "{{ unit }}" is not one of day, week, month or year.',
+            ['unit' => $unit]
+        );
+    }
+
+    public static function invalidPeriodCount(int $count): self
+    {
+        return new self(
+            Response::HTTP_BAD_REQUEST,
+            self::INVALID_PERIOD_COUNT,
+            'A period must advance by at least 1, got {{ count }}.',
+            ['count' => $count]
+        );
+    }
+
+    public static function transferNotFound(string $id): self
+    {
+        return new self(
+            Response::HTTP_NOT_FOUND,
+            self::TRANSFER_NOT_FOUND,
+            'The payment transfer "{{ id }}" does not exist.',
+            ['id' => $id]
+        );
+    }
+
+    /**
+     * The insert hit a unique key, but the conflicting row cannot be read back in this request - it
+     * exists, it is just not visible yet, so retrying is the right answer and "not found" would be a
+     * lie. Both unique keys of the domain report through this factory: the out number of a transfer
+     * and the identity hash of a recipient.
+     */
+    public static function transferConflict(string $reference): self
+    {
+        return new self(
+            Response::HTTP_CONFLICT,
+            self::TRANSFER_CONFLICT,
+            'The payment transfer "{{ reference }}" conflicts with an existing row that cannot be read back.',
+            ['reference' => $reference]
+        );
+    }
+
+    public static function transferRecipientNotFound(string $id): self
+    {
+        return new self(
+            Response::HTTP_NOT_FOUND,
+            self::TRANSFER_RECIPIENT_NOT_FOUND,
+            'The payment transfer recipient "{{ id }}" does not exist.',
+            ['id' => $id]
+        );
+    }
+
+    /**
+     * The interface cannot pay out to this kind of identity at all - wechat only knows an openid of
+     * the very app, stripe only a connected account, alipay no paypal email. Rejecting the pair at
+     * intake beats building a request the interface is guaranteed to refuse.
+     */
+    public static function transferIdentityNotSupported(string $provider, string $identityType): self
+    {
+        return new self(
+            Response::HTTP_UNPROCESSABLE_ENTITY,
+            self::TRANSFER_IDENTITY_NOT_SUPPORTED,
+            'The payment interface "{{ provider }}" cannot pay out to the identity type "{{ identityType }}".',
+            ['provider' => $provider, 'identityType' => $identityType]
+        );
+    }
+
+    /**
+     * A field the interface demands for this combination is missing - the name of the holder for an
+     * alipay logon id, the bank details for a card, the name of the holder from 2000 yuan on at wechat.
+     */
+    public static function transferRecipientIncomplete(string $field): self
+    {
+        return new self(
+            Response::HTTP_UNPROCESSABLE_ENTITY,
+            self::TRANSFER_RECIPIENT_INCOMPLETE,
+            'The transfer recipient is missing the field "{{ field }}" that the interface requires.',
+            ['field' => $field]
+        );
+    }
+
+    /**
+     * The plain identity has to fit into the encrypted column, and the ciphertext is larger than the
+     * plain text: `PaymentCredentialCipher::encryptValue()` returns
+     * `base64_encode(nonce(24) + sodium secretbox(plain + 16))`, so a plain text of `n` bytes becomes
+     * `4 * ceil((n + 40) / 3)` characters. With `identity_value` being `VARCHAR(255)` the limit is
+     * therefore `4 * ceil((n + 40) / 3) <= 255`, i.e. `n <= 149`.
+     *
+     * The limit is enforced before encrypting on purpose: the write would otherwise fail with MySQL
+     * error 1406 ("Data too long") and surface as a 500 instead of a readable 422. It is not a reason
+     * to widen the column - 149 bytes already cover every real identity (paypal's `receiver` tops out
+     * at 127 characters, and every identity type is ASCII), and a wider column only wastes storage on
+     * ciphertext.
+     */
+    public static function transferIdentityValueTooLong(int $length): self
+    {
+        return new self(
+            Response::HTTP_UNPROCESSABLE_ENTITY,
+            self::TRANSFER_IDENTITY_VALUE_TOO_LONG,
+            'The transfer recipient identity is {{ length }} bytes long and must not exceed 149 bytes, so that its encrypted form fits into the 255 character column.',
+            ['length' => $length]
+        );
+    }
+
+    public static function transferAmountInvalid(): self
+    {
+        return new self(
+            Response::HTTP_UNPROCESSABLE_ENTITY,
+            self::TRANSFER_AMOUNT_INVALID,
+            'The transfer amount must be a positive integer in the smallest currency unit.',
+            []
+        );
+    }
+
+    /**
+     * The out number is the idempotency key of a payout and the interfaces cap it: wechat allows 32
+     * characters of `[0-9a-zA-Z]` on `out_bill_no`, alipay 64 on `out_biz_no`, and paypal 30 on the
+     * batch and item ids it derives from the number. The strictest limit wins, and a payout that
+     * cannot be sent under the number it was booked with must never be booked at all.
+     */
+    public static function transferOutNoInvalid(string $outNo): self
+    {
+        return new self(
+            Response::HTTP_UNPROCESSABLE_ENTITY,
+            self::TRANSFER_OUT_NO_INVALID,
+            'The out number "{{ outNo }}" must consist of 1 to 30 characters of [0-9a-zA-Z].',
+            ['outNo' => $outNo]
+        );
+    }
+
+    /**
+     * The transfer is already past the point of submission. Sending it again would not be a retry but
+     * a second payout - a retry always queries the channel first ("query before sending").
+     */
+    public static function transferAlreadyFinalized(string $outNo, string $state): self
+    {
+        return new self(
+            Response::HTTP_CONFLICT,
+            self::TRANSFER_ALREADY_FINALIZED,
+            'The payment transfer "{{ outNo }}" is "{{ state }}" and can not be submitted again.',
+            ['outNo' => $outNo, 'state' => $state]
+        );
+    }
+
+    /**
+     * The credentials of a payout are resolved from the app the caller acts for, so a transfer of
+     * another app would be paid out of that merchant account. The out number is the business case and
+     * is what the caller can act on - the transfer id is an internal detail.
+     */
+    public static function transferForeignApp(string $appId, string $outNo): self
+    {
+        return new self(
+            Response::HTTP_FORBIDDEN,
+            self::TRANSFER_FOREIGN_APP,
+            'The payment transfer "{{ outNo }}" does not belong to the app "{{ appId }}".',
+            ['appId' => $appId, 'outNo' => $outNo]
+        );
+    }
+
+    /**
+     * A transfer that reached the interface has to name the object the interface created - every later
+     * query and every notification is matched by it. A row in an open state without one is a data
+     * defect of the submission, not a missing field of the recipient, and has to be reported as such:
+     * no query can be made and no answer can be booked.
+     */
+    public static function transferProviderRefMissing(string $outNo): self
+    {
+        return new self(
+            Response::HTTP_INTERNAL_SERVER_ERROR,
+            self::TRANSFER_PROVIDER_REF_MISSING,
+            'The payment transfer "{{ outNo }}" carries no provider reference and can not be queried at the channel.',
+            ['outNo' => $outNo]
+        );
+    }
+
+    /**
+     * The interface does not pay out to a recipient that has not finished its onboarding: stripe
+     * refuses every payout of a connected account whose `payouts_enabled` is not true. Refusing the
+     * call locally - before a single request is built - beats using the error code of the interface
+     * as a validator, which would burn the idempotency key of the transfer on a guaranteed refusal.
+     */
+    public static function transferRecipientNotReady(string $recipientId): self
+    {
+        return new self(
+            Response::HTTP_CONFLICT,
+            self::TRANSFER_RECIPIENT_NOT_READY,
+            'The transfer recipient "{{ recipientId }}" is not ready to be paid out on the side of the interface.',
+            ['recipientId' => $recipientId]
+        );
+    }
+
+    /**
+     * A payout notification names an app in its url, and an app that does not exist has no merchant
+     * account whose signing key could verify the notification. The endpoint answers it the same way it
+     * answers an unknown interface: not found, without saying which of the two was wrong.
+     */
+    public static function transferNotificationAppUnknown(string $appId): self
+    {
+        return new self(
+            Response::HTTP_NOT_FOUND,
+            self::TRANSFER_NOTIFICATION_APP_UNKNOWN,
+            'The app "{{ appId }}" of the payout notification does not exist.',
+            ['appId' => $appId]
+        );
+    }
+
+    /**
+     * A payout notification can only be verified by the interface that sent it. An interface the
+     * platform does not ship has no verifier, and guessing one would mean trusting an unverified body.
+     */
+    public static function transferNotificationProviderUnknown(string $provider): self
+    {
+        return new self(
+            Response::HTTP_NOT_FOUND,
+            self::TRANSFER_NOTIFICATION_PROVIDER_UNKNOWN,
+            'The payment interface "{{ provider }}" can not verify a payout notification.',
+            ['provider' => $provider]
+        );
+    }
+
+    /**
+     * The signed body of a payout notification named a payout the app does not have. It is a defect of
+     * the caller or a payout of another merchant account, and neither becomes true by repeating the
+     * notification.
+     */
+    public static function transferNotificationTransferUnknown(string $outNo): self
+    {
+        return new self(
+            Response::HTTP_NOT_FOUND,
+            self::TRANSFER_NOTIFICATION_TRANSFER_UNKNOWN,
+            'The payout "{{ outNo }}" named by the notification does not exist for this app.',
+            ['outNo' => $outNo]
         );
     }
 }

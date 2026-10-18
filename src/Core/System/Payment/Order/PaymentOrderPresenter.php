@@ -2,6 +2,7 @@
 
 namespace Shopwell\Core\System\Payment\Order;
 
+use Shopwell\Core\Defaults;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
@@ -46,9 +47,9 @@ final class PaymentOrderPresenter
             'attach' => $order->attach,
             'state' => $this->stateName($order->stateId),
             'out_payment_no' => $result->outPaymentNo ?? $order->outPaymentNo,
-            'expire_at' => $order->expireAt?->format(\DateTimeInterface::ATOM),
-            'paid_at' => $order->paidAt?->format(\DateTimeInterface::ATOM),
-            'closed_at' => $order->closedAt?->format(\DateTimeInterface::ATOM),
+            'expire_at' => $order->expireAt?->format(Defaults::STORAGE_DATE_TIME_FORMAT),
+            'paid_at' => $order->paidAt?->format(Defaults::STORAGE_DATE_TIME_FORMAT),
+            'closed_at' => $order->closedAt?->format(Defaults::STORAGE_DATE_TIME_FORMAT),
             'pay' => $result?->params,
         ];
     }
@@ -66,7 +67,7 @@ final class PaymentOrderPresenter
             'reason' => $refund->reason,
             'state' => $this->stateName($refund->stateId),
             'out_refund_id' => $refund->outRefundId,
-            'refunded_at' => $refund->refundedAt?->format(\DateTimeInterface::ATOM),
+            'refunded_at' => $refund->refundedAt?->format(Defaults::STORAGE_DATE_TIME_FORMAT),
         ];
     }
 

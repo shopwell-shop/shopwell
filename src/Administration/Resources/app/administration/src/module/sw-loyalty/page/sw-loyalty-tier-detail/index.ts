@@ -70,6 +70,10 @@ export default defineComponent({
 
     computed: {
         identifier(): string {
+            if (!this.loyaltyTier) {
+                return '';
+            }
+
             return this.placeholder(this.loyaltyTier, 'name', '') as string;
         },
 
@@ -86,6 +90,10 @@ export default defineComponent({
         },
 
         entityDescription(): string {
+            if (!this.loyaltyTier) {
+                return this.$t('sw-loyalty.detail.placeholderNewLoyaltyTier');
+            }
+
             return this.placeholder(
                 this.loyaltyTier,
                 'name',
@@ -102,10 +110,10 @@ export default defineComponent({
                 };
             }
 
-            const systemKey: string = (this.$device as DeviceHelper).getSystemKey();
+            const device = this as unknown as { $device: DeviceHelper };
 
             return {
-                message: `${systemKey} + S`,
+                message: `${device.$device.getSystemKey()} + S`,
                 appearance: 'light',
             };
         },
@@ -164,7 +172,7 @@ export default defineComponent({
 
             try {
                 this.loyaltyTier = await this.loyaltyTierRepository.get(
-                    this.loyaltyTierId,
+                    this.loyaltyTierId as LoyaltyTier['id'],
                     Shopwell.Context.api,
                     this.loyaltyTierCriteria,
                 );
@@ -182,6 +190,10 @@ export default defineComponent({
         },
 
         onSave(): Promise<void> {
+            if (!this.loyaltyTier) {
+                return Promise.resolve();
+            }
+
             this.isSaveSuccessful = false;
             this.isLoading = true;
 

@@ -5,8 +5,12 @@ namespace Shopwell\Tests\Integration\Core\System\Payment\Api;
 
 use Doctrine\DBAL\Connection;
 use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Defaults;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
+use Shopwell\Core\System\Payment\Order\PaymentOrderCollection;
 use Shopwell\Core\System\Payment\Order\PaymentOrderStates;
 use Shopwell\Core\System\Payment\PaymentException;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
@@ -15,6 +19,14 @@ use Symfony\Component\HttpFoundation\Response;
 /**
  * Contract of `POST /payment-api/v1/payment-orders`, `GET /payment-api/v1/payment-orders/{paymentNo}`
  * and `POST /payment-api/v1/payment-orders/{paymentNo}/close`.
+ *
+ * The tests are about the HTTP contract, not about the calls to the interface: closing a payment is
+ * the only call the platform initiates itself, and its success path is covered by
+ * {@see \Shopwell\Tests\Unit\Core\System\Payment\Order\PaymentOrderCloserTest},
+ * {@see \Shopwell\Tests\Unit\Core\System\Payment\Gateway\PaymentCloserTest} and
+ * {@see \Shopwell\Tests\Unit\Core\System\Payment\Provider\Alipay\AlipayCloseActionTest}. The
+ * integration layer therefore only exercises the paths that are decided before the interface is
+ * called - the closed order is seeded directly in those states.
  *
  * @internal
  */
@@ -99,7 +111,9 @@ class PaymentOrderApiTest extends TestCase
         static::assertSame(PaymentOrderStates::STATE_OPENED, $order['state']);
         // the h5 channel is a redirect flow, the channel answers no trade number of its own yet
         static::assertNull($order['out_payment_no']);
-        static::assertMatchesRegularExpression('/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/', (string) $order['expire_at']);
+        // the api answers the storage format of the platform, not iso 8601
+        static::assertNotFalse(\DateTimeImmutable::createFromFormat(Defaults::STORAGE_DATE_TIME_FORMAT, (string) $order['expire_at']));
+        static::assertMatchesRegularExpression('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}$/', (string) $order['expire_at']);
         static::assertNull($order['paid_at']);
         static::assertNull($order['closed_at']);
 
@@ -355,43 +369,27 @@ class PaymentOrderApiTest extends TestCase
         self::assertError($client->getResponse(), Response::HTTP_FORBIDDEN, PaymentException::FOREIGN_APP);
     }
 
-    public function testCloseOrder(): void
+    public function testCloseUnknownOrder(): void
     {
         $client = $this->getBrowser();
 
-        $created = $this->createOrderViaApi($client);
-        $path = self::PATH_ORDERS . '/' . $created['payment_no'] . '/close';
-
+        $path = self::PATH_ORDERS . '/PG20990101000000DEADBEEF/close';
         $this->postJson($client, $path, $this->signedPayload('POST', $path));
 
-        $response = $client->getResponse();
-        static::assertSame(Response::HTTP_OK, $response->getStatusCode(), (string) $response->getContent());
-
-        $order = self::decodeResponse($response);
-        static::assertSame(PaymentOrderStates::STATE_CLOSED, $order['state']);
-        static::assertNotNull($order['closed_at']);
-        static::assertNull($order['pay']);
-
-        $getPath = self::PATH_ORDERS . '/' . $created['payment_no'];
-        $client->request('GET', $getPath, $this->signedPayload('GET', $getPath));
-
-        $order = self::decodeResponse($client->getResponse());
-        static::assertSame(PaymentOrderStates::STATE_CLOSED, $order['state']);
-        static::assertNotNull($order['closed_at']);
+        // the order is resolved before the interface is involved, so nothing leaves the process
+        self::assertError($client->getResponse(), Response::HTTP_NOT_FOUND, PaymentException::ORDER_NOT_FOUND);
     }
 
-    public function testCloseOrderTwiceIsConflict(): void
+    public function testCloseClosedOrderIsConflict(): void
     {
         $client = $this->getBrowser();
 
-        $created = $this->createOrderViaApi($client);
-        $path = self::PATH_ORDERS . '/' . $created['payment_no'] . '/close';
-
-        $this->postJson($client, $path, $this->signedPayload('POST', $path));
-        static::assertSame(Response::HTTP_OK, $client->getResponse()->getStatusCode(), (string) $client->getResponse()->getContent());
+        $seed = $this->seedClosedOrder();
+        $path = self::PATH_ORDERS . '/' . $seed['paymentNo'] . '/close';
 
         $this->postJson($client, $path, $this->signedPayload('POST', $path));
 
+        // a closed order is refused before the interface is called, see the class doc
         self::assertError($client->getResponse(), Response::HTTP_CONFLICT, PaymentException::ORDER_ALREADY_CLOSED);
     }
 
@@ -399,22 +397,42 @@ class PaymentOrderApiTest extends TestCase
     {
         $client = $this->getBrowser();
 
-        $business = ['out_trade_no' => 'OT' . bin2hex(random_bytes(8))] + self::CREATE_DEFAULTS;
-        $created = $this->createOrderViaApi($client, $business);
+        $seed = $this->seedClosedOrder();
 
-        $closePath = self::PATH_ORDERS . '/' . $created['payment_no'] . '/close';
-        $this->postJson($client, $closePath, $this->signedPayload('POST', $closePath));
-        static::assertSame(Response::HTTP_OK, $client->getResponse()->getStatusCode(), (string) $client->getResponse()->getContent());
-
-        // a retry after a lost answer reports the state of the order instead of an error
+        // a retry after the order was closed reports its state instead of an error, and the closed
+        // order is answered as it is - the interface is never called for it again
+        $business = ['out_trade_no' => $seed['outTradeNo']] + self::CREATE_DEFAULTS;
         $this->postJson($client, self::PATH_ORDERS, $this->signedPayload('POST', self::PATH_ORDERS, $business));
         $response = $client->getResponse();
         static::assertSame(Response::HTTP_OK, $response->getStatusCode(), (string) $response->getContent());
 
         $recreated = self::decodeResponse($response);
-        static::assertSame($created['payment_no'], $recreated['payment_no']);
+        static::assertSame($seed['paymentNo'], $recreated['payment_no']);
         static::assertSame(PaymentOrderStates::STATE_CLOSED, $recreated['state']);
         static::assertNull($recreated['pay']);
+    }
+
+    /**
+     * A closed order is seeded in its final state instead of being closed through the api: the close
+     * endpoint is the one call that leaves the process, and the fixtures signed with a locally
+     * generated key pair can never succeed against the real interface. The state itself is what the
+     * contract tests are about.
+     *
+     * @return array{id: string, paymentNo: string, outTradeNo: string}
+     */
+    private function seedClosedOrder(): array
+    {
+        $seed = $this->seedPaymentOrder();
+
+        /** @var EntityRepository<PaymentOrderCollection> $orderRepository */
+        $orderRepository = static::getContainer()->get('payment_order.repository');
+        $orderRepository->update([[
+            'id' => $seed['id'],
+            'stateId' => $this->paymentOrderStateId(PaymentOrderStates::STATE_CLOSED),
+            'closedAt' => new \DateTimeImmutable(),
+        ]], Context::createDefaultContext());
+
+        return $seed;
     }
 
     /**

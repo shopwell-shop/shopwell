@@ -3,6 +3,16 @@
  */
 
 import { mount } from '@vue/test-utils';
+import type { VueWrapper } from '@vue/test-utils';
+
+type TypedWrapper<T> = { vm: T } & VueWrapper;
+
+type TierDetailVm = {
+    loyaltyTier: { technicalName: string } | null;
+    allowSave: boolean;
+    tooltipSave: Record<string, unknown>;
+    loadLoyaltyTier: () => Promise<void>;
+};
 
 const loyaltyTierRepository = {
     create: () => {
@@ -38,8 +48,8 @@ const loyaltyTierRepository = {
     save: jest.fn(() => Promise.resolve({})),
 };
 
-async function createWrapper(privileges: string[] = []) {
-    return mount(
+async function createWrapper(privileges: string[] = []): Promise<TypedWrapper<TierDetailVm>> {
+    const wrapper = mount(
         await wrapTestComponent('sw-loyalty-tier-detail', {
             sync: true,
         }),
@@ -102,6 +112,8 @@ async function createWrapper(privileges: string[] = []) {
             },
         },
     );
+
+    return wrapper as unknown as TypedWrapper<TierDetailVm>;
 }
 
 describe('src/module/sw-loyalty/page/sw-loyalty-tier-detail', () => {
@@ -161,7 +173,7 @@ describe('src/module/sw-loyalty/page/sw-loyalty-tier-detail', () => {
         await flushPromises();
 
         expect(wrapper.vm.loyaltyTier).toBeTruthy();
-        expect(wrapper.vm.loyaltyTier.technicalName).toBe('gold');
+        expect(wrapper.vm.loyaltyTier?.technicalName).toBe('gold');
     });
 
     it('should persist the loyalty tier and reload it on save', async () => {

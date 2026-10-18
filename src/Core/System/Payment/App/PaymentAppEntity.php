@@ -19,10 +19,12 @@ use Shopwell\Core\System\Payment\Order\PaymentOrderEntity;
 use Shopwell\Core\System\Payment\Webhook\PaymentWebhookDeliveryEntity;
 
 /**
- * An external app that is allowed to create payment orders through the generic payment gateway.
+ * A tenant that collects through the generic payment gateway.
  *
- * The credentials are handed over as request parameters (app_id, timestamp, nonce and sign on the
- * top level of the payload), the secret is stored encrypted.
+ * An external app creates its payment orders through the api: the credentials are handed over as
+ * request parameters (app_id, timestamp, nonce and sign on the top level of the payload), the secret
+ * is stored encrypted. The shop itself is a tenant as well, of type platform - it collects for the
+ * checkout, is seeded by the migration and can never be authenticated.
  *
  * @codeCoverageIgnore
  */
@@ -31,6 +33,23 @@ use Shopwell\Core\System\Payment\Webhook\PaymentWebhookDeliveryEntity;
 class PaymentAppEntity extends EntityStruct
 {
     use EntityCustomFieldsTrait;
+
+    /**
+     * An app that calls the payment api and signs its requests.
+     */
+    final public const TYPE_EXTERNAL = 'external';
+
+    /**
+     * The tenant of the shop itself: it collects for the checkout and is never authenticated.
+     */
+    final public const TYPE_PLATFORM = 'platform';
+
+    /**
+     * The technical name of that tenant, and the single source of it: the payment migration seeds the
+     * row with this name, the checkout looks it up by it. It is deliberately the same literal as
+     * {@see self::TYPE_PLATFORM}, because both answer the question "which tenant is the shop itself".
+     */
+    final public const PLATFORM_TECHNICAL_NAME = 'platform';
 
     #[PrimaryKey]
     #[Field(type: FieldType::UUID, api: ['admin-api' => true, 'store-api' => false])]
@@ -44,6 +63,21 @@ class PaymentAppEntity extends EntityStruct
     #[Field(type: FieldType::STRING, api: ['admin-api' => true, 'store-api' => false])]
     #[SearchRanking(SearchRanking::MIDDLE_SEARCH_RANKING)]
     public string $name;
+
+    /**
+     * What kind of tenant this is. The type is the only thing that keeps the tenant of the shop out of
+     * the payment api: it is checked before anything else when a caller is authenticated, and no
+     * request is ever accepted for it - see {@see PaymentAppAuthenticator}.
+     *
+     * It deliberately has no initial value. The dal never writes the initial value of a property into
+     * the insert, only what the caller passes, so a `= self::TYPE_EXTERNAL` here would look like a
+     * default while every writer still had to spell the value out - and the one writer that forgot
+     * would fail with a `NotBlank` instead of silently creating an app of the wrong kind. Both writers
+     * (the provisioner and the migration) therefore set it explicitly.
+     */
+    #[Required]
+    #[Field(type: FieldType::STRING, api: ['admin-api' => true, 'store-api' => false], maxLength: 32)]
+    public string $type;
 
     /**
      * The secret the app signs its requests with, stored encrypted. It deliberately stays out of the

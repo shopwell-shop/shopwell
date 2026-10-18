@@ -34,7 +34,8 @@ final class PaymentProviderSchemaReader extends XmlReader
     public function readProvider(
         string $xmlFile,
         PaymentGatewayFactory $gatewayFactory,
-        PaymentNotificationExtractorInterface $notificationExtractor
+        PaymentNotificationExtractorInterface $notificationExtractor,
+        ?PayParamsDecoderInterface $payParamsDecoder = null
     ): PaymentProvider {
         $parsed = $this->parseProviderFile($xmlFile);
 
@@ -60,6 +61,7 @@ final class PaymentProviderSchemaReader extends XmlReader
             channels: $this->channelsOf($channels, $name),
             gatewayFactory: $gatewayFactory,
             notificationExtractor: $notificationExtractor,
+            payParamsDecoder: $payParamsDecoder,
         );
     }
 

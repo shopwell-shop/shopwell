@@ -38,7 +38,7 @@ final readonly class QueryResult
      * @param int|null $amount the amount the channel reports, in the smallest unit of the currency
      * @param string|null $currency the currency of the amount, upper case
      * @param string|null $channelStatus the status in the words of the channel, e.g. the wechat
-     *                                    trade_state, kept for support
+     *                                   trade_state, kept for support
      * @param array<string, mixed> $raw the payload of the channel, sanitized for the payment order
      */
     public function __construct(

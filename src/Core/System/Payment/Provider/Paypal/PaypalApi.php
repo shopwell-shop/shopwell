@@ -65,13 +65,16 @@ final class PaypalApi extends AbstractPaymentApi
     final public const HEADER_AUTH_ALGO = 'paypal-auth-algo';
 
     /**
-     * The algorithms paypal uses for its notification signatures.
+     * The header paypal de-duplicates a payout by - it honours it for 30 days, which is the idempotency
+     * window of the interface.
      */
-    private const AUTH_ALGORITHMS = [
-        'SHA1WITHRSA' => \OPENSSL_ALGO_SHA1,
-        'SHA256WITHRSA' => \OPENSSL_ALGO_SHA256,
-        'SHA512WITHRSA' => \OPENSSL_ALGO_SHA512,
-    ];
+    private const HEADER_REQUEST_ID = 'PayPal-Request-Id';
+
+    /**
+     * The payouts resource. The installed sdk carries no controller for it, so the two calls below
+     * speak to it directly.
+     */
+    private const PAYOUTS_PATH = '/v1/payments/payouts';
 
     /**
      * The capture states of paypal mapped to what the platform does with the order. A (partially)
@@ -88,21 +91,31 @@ final class PaypalApi extends AbstractPaymentApi
     private ?PaypalServerSdkClient $client = null;
 
     /**
-     * @var array<string, \OpenSSLAsymmetricKey|null>
+     * The verifier of the webhooks, kept for the lifetime of the api so the certificate it fetched
+     * once is reused by the notifications that follow.
      */
-    private array $certificates = [];
+    private ?PaypalWebhookSignature $webhookSignature = null;
 
     /**
      * @param HttpClientInterface|null $httpClient fetches the certificate a webhook of paypal is signed
-     *                                             with, which is the only reason the api is not stateless
+     *                                             with and carries the calls of the payouts resource,
+     *                                             which the sdk does not cover - the only reason the api
+     *                                             is not stateless
+     * @param PaypalServerSdkClient|null $client an already built sdk client; without one it is built
+     *                                           from the credentials of the payment on first use. A
+     *                                           caller that holds a client of its own - one that already
+     *                                           carries a token, for instance - hands it over instead
      */
     public function __construct(
         ResolvedPaymentConfig $config,
         string $notifyUrl,
         string $returnUrl,
         private readonly ?HttpClientInterface $httpClient = null,
+        ?PaypalServerSdkClient $client = null,
     ) {
         parent::__construct($config, $notifyUrl, $returnUrl);
+
+        $this->client = $client;
     }
 
     public function client(): PaypalServerSdkClient
@@ -172,6 +185,70 @@ final class PaypalApi extends AbstractPaymentApi
         return new QueryResult(QueryResult::STATUS_ABSENT);
     }
 
+    /**
+     * Verifies a webhook of paypal, see the "verify webhook signature" section of the paypal rest docs.
+     *
+     * The signed message is `transmissionId|transmissionTime|webhookId|crc32(rawBody)` and it is
+     * verified with the certificate of the notification itself - paypal rotates those, so there is no
+     * certificate of our own to configure.
+     *
+     * @param array<string, string> $headers
+     */
+    public function verifyWebhookSignature(string $rawBody, array $headers): bool
+    {
+        // a notification without the signature headers is unverified and not a configuration error:
+        // the order is still reconciled by a query, and a missing webhook id must not fail that path
+        if (!PaypalWebhookSignature::hasSignatureHeaders($headers)) {
+            return false;
+        }
+
+        // one verifier per api object: paypal rotates its certificates, and a batch of notifications
+        // of the same transmission must not download the certificate again for each of them
+        $this->webhookSignature ??= new PaypalWebhookSignature($this->httpClient);
+
+        return $this->webhookSignature->verify($this->webhookId(), $rawBody, $headers);
+    }
+
+    /**
+     * Submits a payout, `POST /v1/payments/payouts`.
+     *
+     * Paypal has no single-transfer endpoint: a payout is a batch of items, and a single payout is a
+     * batch of one - the business content is built by
+     * {@see \Shopwell\Core\System\Payment\Provider\Paypal\PaypalTransferAction}.
+     *
+     * The installed sdk ships no payouts controller, so the call is made against the base uri of the
+     * sdk client with the bearer token of its client credentials - the sdk stays the one place the
+     * environment and the authorization of the account are resolved.
+     *
+     * `PayPal-Request-Id` is honoured by paypal for 30 days; a call repeated with the same id answers
+     * the batch it created the first time instead of moving the money twice.
+     *
+     * @param array<string, mixed> $body the business content, wire snake_case
+     *
+     * @return array<string, mixed> the answer of the interface; a rejected call is an answer as well
+     *                              and carries `error.code` and `error.message`. This method never
+     *                              throws - what an error means is decided by the action.
+     */
+    public function createPayout(array $body, string $requestId): array
+    {
+        return $this->payoutCall('POST', self::PAYOUTS_PATH, $body, $requestId);
+    }
+
+    /**
+     * Asks paypal what happened to a payout batch, `GET /v1/payments/payouts/{payout_batch_id}`.
+     *
+     * The batch is the object the transfer query is made for - its `items` are where the fate of the
+     * money actually sits, the batch status alone does not tell it.
+     *
+     * @return array<string, mixed> the answer of the interface; a rejected call is an answer as well
+     *                              and carries `error.code` and `error.message`. This method never
+     *                              throws - what an error means is decided by the action.
+     */
+    public function retrievePayout(string $batchId): array
+    {
+        return $this->payoutCall('GET', self::PAYOUTS_PATH . '/' . rawurlencode($batchId), null, null);
+    }
+
     private function queryCapture(string $captureId): QueryResult
     {
         try {
@@ -211,7 +288,7 @@ final class PaypalApi extends AbstractPaymentApi
             throw PaymentException::gatewayError($this->channel(), 'the interface did not answer an order');
         }
 
-        $status = (string) ($order->getStatus() ?? '');
+        $status = $order->getStatus() ?? '';
 
         if ($status === OrderStatus::COMPLETED) {
             return $this->queryCompletedOrder($order);
@@ -266,7 +343,7 @@ final class PaypalApi extends AbstractPaymentApi
 
     private function resultOfCapture(CapturedPayment $capture): QueryResult
     {
-        $status = (string) ($capture->getStatus() ?? '');
+        $status = $capture->getStatus() ?? '';
         $amount = $capture->getAmount();
 
         return new QueryResult(
@@ -298,100 +375,138 @@ final class PaypalApi extends AbstractPaymentApi
     }
 
     /**
-     * Verifies a webhook of paypal, see the "verify webhook signature" section of the paypal rest docs.
+     * One call of the payouts resource.
      *
-     * The signed message is `transmissionId|transmissionTime|webhookId|crc32(rawBody)` and it is
-     * verified with the certificate of the notification itself - paypal rotates those, so there is no
-     * certificate of our own to configure.
+     * Nothing of this method throws: a transport failure, a refusal of the interface and an answer
+     * that is not json are all reported the way the actions read them, because only the action knows
+     * what a failed call means for the transfer it belongs to.
      *
-     * @param array<string, string> $headers
+     * @param array<string, mixed>|null $body
+     *
+     * @return array<string, mixed>
      */
-    public function verifyWebhookSignature(string $rawBody, array $headers): bool
+    private function payoutCall(string $method, string $path, ?array $body, ?string $requestId): array
     {
-        $transmissionId = $headers[self::HEADER_TRANSMISSION_ID] ?? '';
-        $transmissionTime = $headers[self::HEADER_TRANSMISSION_TIME] ?? '';
-        $signature = $headers[self::HEADER_TRANSMISSION_SIG] ?? '';
-        $certificateUrl = $headers[self::HEADER_CERT_URL] ?? '';
+        $httpClient = $this->httpClient;
 
-        if ($transmissionId === '' || $transmissionTime === '' || $signature === '' || $certificateUrl === '') {
-            return false;
-        }
-
-        $certificate = $this->certificateOf($certificateUrl);
-
-        if ($certificate === null) {
-            return false;
-        }
-
-        $decoded = base64_decode($signature, true);
-
-        if ($decoded === false) {
-            return false;
-        }
-
-        $message = implode('|', [
-            $transmissionId,
-            $transmissionTime,
-            $this->webhookId(),
-            (string) crc32($rawBody),
-        ]);
-
-        try {
-            return openssl_verify($message, $decoded, $certificate, $this->authAlgorithm($headers)) === 1;
-        } catch (\Throwable) {
-            return false;
-        }
-    }
-
-    /**
-     * The certificate of a notification, fetched once per api object and only from paypal.
-     */
-    private function certificateOf(string $url): ?\OpenSSLAsymmetricKey
-    {
-        if (\array_key_exists($url, $this->certificates)) {
-            return $this->certificates[$url];
-        }
-
-        if (!$this->isTrustedCertUrl($url) || $this->httpClient === null) {
-            return $this->certificates[$url] = null;
+        if ($httpClient === null) {
+            // the factory of the api hands the http client over - without it there is no way to talk
+            // to the payouts resource at all, which is no answer about the money
+            return self::errorAnswer('http_client', 'the api carries no http client', '');
         }
 
         try {
-            $pem = $this->httpClient->request('GET', $url, ['timeout' => 10])->getContent();
-        } catch (\Throwable) {
-            return $this->certificates[$url] = null;
+            // the sdk resolves the credentials and the environment of the account - the url and the
+            // token are taken from it, nothing is resolved a second time here
+            $baseUri = rtrim($this->client()->getBaseUri(), '/');
+            $token = $this->bearerToken();
+        } catch (\Throwable $exception) {
+            return self::errorAnswer('authorization', $exception->getMessage(), '');
         }
 
-        $key = openssl_pkey_get_public($pem);
+        $headers = [
+            'Authorization' => 'Bearer ' . $token,
+            'Content-Type' => 'application/json',
+            'Accept' => 'application/json',
+        ];
 
-        return $this->certificates[$url] = ($key === false ? null : $key);
+        if ($requestId !== null) {
+            $headers[self::HEADER_REQUEST_ID] = $requestId;
+        }
+
+        $options = ['headers' => $headers];
+
+        if ($body !== null) {
+            $options['json'] = $body;
+        }
+
+        try {
+            $response = $httpClient->request($method, $baseUri . $path, $options);
+
+            $status = $response->getStatusCode();
+            $content = $response->getContent(false);
+        } catch (\Throwable $exception) {
+            return self::errorAnswer('transport', $exception->getMessage(), '');
+        }
+
+        $decoded = json_decode($content, true);
+        $answer = \is_array($decoded) ? $decoded : null;
+
+        if ($status < 200 || $status >= 300) {
+            return self::errorAnswer(
+                self::errorFieldOf($answer, 'name', 'error') ?? 'http_' . $status,
+                self::errorFieldOf($answer, 'message', 'error_description') ?? 'paypal answered HTTP ' . $status,
+                $answer ?? $content,
+            );
+        }
+
+        if ($answer === null) {
+            return self::errorAnswer('invalid_response', 'paypal answered no json body', $content);
+        }
+
+        return $answer;
     }
 
     /**
-     * A notification may point at any host, so only paypal is allowed to be called.
+     * The bearer token of the client credentials of the account.
+     *
+     * The token is fetched through the sdk, so the credentials and the environment are resolved in one
+     * place. A token the client was built with and that has not expired yet is used as is - the
+     * transfer actions build one api per transfer and there is no reason to ask paypal for a token
+     * that is already at hand.
      */
-    private function isTrustedCertUrl(string $url): bool
+    private function bearerToken(): string
     {
-        if (parse_url($url, \PHP_URL_SCHEME) !== 'https') {
-            return false;
+        $auth = $this->client()->getClientCredentialsAuth();
+        $token = $auth->getOAuthToken();
+
+        if ($token === null || $auth->isTokenExpired($token)) {
+            $token = $auth->fetchToken();
         }
 
-        $host = parse_url($url, \PHP_URL_HOST);
-
-        if (!\is_string($host) || $host === '') {
-            return false;
-        }
-
-        return str_ends_with($host, '.paypal.com') || str_ends_with($host, '.paypalobjects.com');
+        return $token->getAccessToken();
     }
 
     /**
-     * @param array<string, string> $headers
+     * The answer of a call that produced no usable body, normalized the way the actions read it.
+     *
+     * @param array<string, mixed>|string $raw
+     *
+     * @return array<string, mixed>
      */
-    private function authAlgorithm(array $headers): int
+    private static function errorAnswer(string $code, string $message, array|string $raw): array
     {
-        $algorithm = strtoupper(trim($headers[self::HEADER_AUTH_ALGO] ?? ''));
+        return [
+            'error' => [
+                'code' => $code,
+                'message' => $message,
+            ],
+            // the original body rides along - the evidence of a support case
+            'raw' => $raw,
+        ];
+    }
 
-        return self::AUTH_ALGORITHMS[$algorithm] ?? \OPENSSL_ALGO_SHA256;
+    /**
+     * One string field of an error body of paypal. The rest api names the code `name` and the
+     * message `message`; the oauth style of the same family uses `error` and `error_description`, so
+     * both are read.
+     *
+     * @param array<string, mixed>|null $decoded
+     */
+    private static function errorFieldOf(?array $decoded, string $key, string $fallbackKey): ?string
+    {
+        if ($decoded === null) {
+            return null;
+        }
+
+        foreach ([$key, $fallbackKey] as $name) {
+            $value = $decoded[$name] ?? null;
+
+            if (\is_string($value) && $value !== '') {
+                return $value;
+            }
+        }
+
+        return null;
     }
 }

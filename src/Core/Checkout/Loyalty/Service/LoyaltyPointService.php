@@ -5,7 +5,6 @@ namespace Shopwell\Core\Checkout\Loyalty\Service;
 use Psr\Clock\ClockInterface;
 use Shopwell\Core\Checkout\Loyalty\Entity\CustomerLoyalty\CustomerLoyaltyCollection;
 use Shopwell\Core\Checkout\Loyalty\Entity\CustomerLoyalty\CustomerLoyaltyEntity;
-use Shopwell\Core\Checkout\Loyalty\Entity\CustomerPointTransaction\CustomerPointTransactionCollection;
 use Shopwell\Core\Checkout\Loyalty\Event\LoyaltyPointsAwardedEvent;
 use Shopwell\Core\Checkout\Loyalty\Event\LoyaltyPointsRedeemedEvent;
 use Shopwell\Core\Checkout\Loyalty\LoyaltyException;
@@ -18,6 +17,13 @@ use Shopwell\Core\System\SystemConfig\SystemConfigService;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 /**
+ * The business rules of the loyalty program: what a point booking means, how long points live and
+ * when a booking is allowed.
+ *
+ * The balances are written by {@see LoyaltyLedger}, never here - this service validates, delegates and
+ * announces. Events are only dispatched for bookings that really happened, so a redelivered webhook
+ * does not tell the shop twice that points were awarded.
+ *
  * @final
  */
 #[Package('checkout')]
@@ -36,12 +42,11 @@ class LoyaltyPointService
     /**
      * @internal
      *
-     * @param EntityRepository<CustomerPointTransactionCollection> $pointTransactionRepository
      * @param EntityRepository<CustomerLoyaltyCollection> $customerLoyaltyRepository
      */
     public function __construct(
-        private readonly EntityRepository $pointTransactionRepository,
         private readonly EntityRepository $customerLoyaltyRepository,
+        private readonly LoyaltyLedger $ledger,
         private readonly SystemConfigService $systemConfigService,
         private readonly EventDispatcherInterface $eventDispatcher,
         private readonly ClockInterface $clock,
@@ -66,46 +71,58 @@ class LoyaltyPointService
             return;
         }
 
-        $this->createMembership($customerId, 0, $context);
+        $this->customerLoyaltyRepository->create([[
+            'customerId' => $customerId,
+            'pointsBalance' => 0,
+            'membershipTierId' => $this->tierResolver->findTierIdForGrowthValue(0, $context),
+        ]], $context);
     }
 
     public function award(string $customerId, int $points, ?string $orderId, string $idempotencyKey, Context $context): void
     {
-        if ($points <= 0 || $this->hasTransaction($idempotencyKey, $context)) {
+        if ($points <= 0) {
             return;
         }
 
-        $this->book(
-            $customerId,
-            self::TRANSACTION_TYPE_AWARD,
-            $points,
-            $orderId,
-            $idempotencyKey,
-            null,
-            null,
-            $context
+        $balanceAfter = $this->ledger->bookPoints(
+            customerId: $customerId,
+            type: self::TRANSACTION_TYPE_AWARD,
+            points: $points,
+            context: $context,
+            orderId: $orderId,
+            idempotencyKey: $idempotencyKey,
+            expiresAt: $this->resolveExpiresAt()
         );
+
+        if ($balanceAfter === null) {
+            return;
+        }
 
         $this->eventDispatcher->dispatch(new LoyaltyPointsAwardedEvent($customerId, $points, $orderId, $context));
     }
 
+    /**
+     * @throws LoyaltyException
+     */
     public function redeem(string $customerId, int $points, ?string $orderId, ?string $idempotencyKey, Context $context): void
     {
         if ($points <= 0) {
             throw LoyaltyException::invalidPoints($points);
         }
 
-        if ($idempotencyKey !== null && $this->hasTransaction($idempotencyKey, $context)) {
+        $balanceAfter = $this->ledger->bookPoints(
+            customerId: $customerId,
+            type: self::TRANSACTION_TYPE_REDEEM,
+            points: -$points,
+            context: $context,
+            orderId: $orderId,
+            idempotencyKey: $idempotencyKey,
+            rejectNegativeBalance: true
+        );
+
+        if ($balanceAfter === null) {
             return;
         }
-
-        $balance = $this->getBalance($customerId, $context);
-
-        if ($balance < $points) {
-            throw LoyaltyException::insufficientPoints($customerId, $points, $balance);
-        }
-
-        $this->book($customerId, self::TRANSACTION_TYPE_REDEEM, -$points, $orderId, $idempotencyKey, null, null, $context);
 
         $this->eventDispatcher->dispatch(new LoyaltyPointsRedeemedEvent($customerId, $points, $orderId, $context));
     }
@@ -119,11 +136,18 @@ class LoyaltyPointService
             return;
         }
 
-        $this->book($customerId, self::TRANSACTION_TYPE_EXPIRE, -$points, null, null, null, null, $context);
+        $this->ledger->bookPoints(
+            customerId: $customerId,
+            type: self::TRANSACTION_TYPE_EXPIRE,
+            points: -$points,
+            context: $context
+        );
     }
 
     /**
      * Books a manual adjustment by an administrator. The resulting balance must not become negative.
+     *
+     * @throws LoyaltyException
      */
     public function adjust(string $customerId, int $points, string $comment, ?string $administratorId, Context $context): void
     {
@@ -131,67 +155,23 @@ class LoyaltyPointService
             return;
         }
 
-        $balance = $this->getBalance($customerId, $context);
-
-        if ($balance + $points < 0) {
-            throw LoyaltyException::insufficientPoints($customerId, abs($points), $balance);
-        }
-
-        $this->book($customerId, self::TRANSACTION_TYPE_ADJUST, $points, null, null, $comment, $administratorId, $context);
-    }
-
-    private function book(
-        string $customerId,
-        string $type,
-        int $points,
-        ?string $orderId,
-        ?string $idempotencyKey,
-        ?string $comment,
-        ?string $administratorId,
-        Context $context
-    ): void {
-        $loyalty = $this->findLoyalty($customerId, $context);
-
-        $balance = $loyalty?->getPointsBalance() ?? 0;
-        $balanceAfter = $balance + $points;
-
-        $this->pointTransactionRepository->create([[
-            'customerId' => $customerId,
-            'type' => $type,
-            'points' => $points,
-            'balanceAfter' => $balanceAfter,
-            'idempotencyKey' => $idempotencyKey,
-            'orderId' => $orderId,
-            'expiresAt' => $type === self::TRANSACTION_TYPE_AWARD ? $this->resolveExpiresAt() : null,
-            'comment' => $comment,
-            'administratorId' => $administratorId,
-        ]], $context);
-
-        if ($loyalty === null) {
-            $this->createMembership($customerId, $balanceAfter, $context);
-
-            return;
-        }
-
-        $this->customerLoyaltyRepository->update([[
-            'id' => $loyalty->getId(),
-            'pointsBalance' => $balanceAfter,
-        ]], $context);
+        $this->ledger->bookPoints(
+            customerId: $customerId,
+            type: self::TRANSACTION_TYPE_ADJUST,
+            points: $points,
+            context: $context,
+            comment: $comment,
+            administratorId: $administratorId,
+            rejectNegativeBalance: true
+        );
     }
 
     /**
-     * A membership starts with the balance it is opened with, a growth value of zero and the tier
-     * that zero growth unlocks - the tier a customer moves on from with its first order. The tier is
-     * assigned here as well and not only in {@see TierResolver::resolve()}, so that a membership
-     * always carries the tier its growth value entitles the customer to.
+     * Adds the growth value a completed order earned and answers the new value.
      */
-    private function createMembership(string $customerId, int $pointsBalance, Context $context): void
+    public function addGrowthValue(string $customerId, int $growth, Context $context): int
     {
-        $this->customerLoyaltyRepository->create([[
-            'customerId' => $customerId,
-            'pointsBalance' => $pointsBalance,
-            'membershipTierId' => $this->tierResolver->findTierIdForGrowthValue(0, $context),
-        ]], $context);
+        return $this->ledger->addGrowthValue($customerId, $growth, $context);
     }
 
     private function resolveExpiresAt(): ?\DateTimeInterface
@@ -203,15 +183,6 @@ class LoyaltyPointService
         }
 
         return $this->clock->now()->modify(\sprintf('+%d days', $validityDays));
-    }
-
-    private function hasTransaction(string $idempotencyKey, Context $context): bool
-    {
-        $criteria = new Criteria();
-        $criteria->addFilter(new EqualsFilter('idempotencyKey', $idempotencyKey));
-        $criteria->setLimit(1);
-
-        return $this->pointTransactionRepository->searchIds($criteria, $context)->getTotal() > 0;
     }
 
     private function findLoyalty(string $customerId, Context $context): ?CustomerLoyaltyEntity

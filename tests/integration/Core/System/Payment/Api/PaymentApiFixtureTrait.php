@@ -15,6 +15,7 @@ use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppChannel\PaymentAppChann
 use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppProvider\PaymentAppProviderCollection;
 use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppProvider\PaymentAppProviderEntity;
 use Shopwell\Core\System\Payment\App\PaymentAppCollection;
+use Shopwell\Core\System\Payment\App\PaymentAppEntity;
 use Shopwell\Core\System\Payment\App\PaymentCredentialCipher;
 use Shopwell\Core\System\Payment\App\PaymentSignatureService;
 use Shopwell\Core\System\Payment\Order\PaymentOrderCollection;
@@ -132,6 +133,9 @@ trait PaymentApiFixtureTrait
             'id' => $appId,
             'technicalName' => $this->paymentAppTechnicalName,
             'name' => 'Payment api contract test app',
+            // every app the contract tests onboard is an external one: the platform tenant is the
+            // only row that may carry the other type, and it is written by the migration alone
+            'type' => PaymentAppEntity::TYPE_EXTERNAL,
             'appSecret' => $cipher->encryptValue($this->paymentAppSecret),
             'active' => $active,
             'returnUrl' => $returnUrl,

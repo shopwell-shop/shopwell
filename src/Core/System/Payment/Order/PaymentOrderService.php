@@ -4,12 +4,15 @@ namespace Shopwell\Core\System\Payment\Order;
 
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Psr\Clock\ClockInterface;
+use Shopwell\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
+use Shopwell\Core\Checkout\Order\OrderEntity;
 use Shopwell\Core\Defaults;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\RangeFilter;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\System\Payment\Api\Struct\PaymentOrderRequest;
@@ -44,10 +47,19 @@ final class PaymentOrderService
     }
 
     /**
+     * The order and its transaction are the references of the self-operated checkout: its checkout
+     * hands them over so a payment can be found from the order it belongs to. They are objects rather
+     * than ids on purpose - the payment api has no business letting an external app claim that a
+     * payment belongs to an order of the shop.
+     *
      * @throws PaymentException
      */
-    public function create(PaymentAppEntity $app, PaymentOrderRequest $request): PaymentOrderEntity
-    {
+    public function create(
+        PaymentAppEntity $app,
+        PaymentOrderRequest $request,
+        ?OrderEntity $order = null,
+        ?OrderTransactionEntity $orderTransaction = null,
+    ): PaymentOrderEntity {
         // validates that the channel exists, is enabled for the app, that the app is authorized for its
         // interface, that both support the currency and the device, and that the runtime parameters the
         // channel demands are all there
@@ -68,43 +80,96 @@ final class PaymentOrderService
         $id = Uuid::randomHex();
         $expireAt = $now->modify(\sprintf('+%d minutes', $request->expireMinutes ?? self::DEFAULT_EXPIRE_MINUTES));
 
+        $row = [
+            'id' => $id,
+            'paymentNo' => $this->generatePaymentNo($now),
+            'outTradeNo' => $request->outTradeNo,
+            'paymentAppId' => $app->id,
+            'providerTechnicalName' => $resolved->provider->technicalName,
+            'channelTechnicalName' => $request->channel,
+            'channelParams' => $request->channelParams === [] ? null : $request->channelParams,
+            'amount' => $request->amount,
+            // a fresh order was neither paid nor refunded; the fields are not nullable, so the
+            // dal write validation demands them
+            'paidAmount' => 0,
+            'refundedAmount' => 0,
+            'currency' => $request->currency,
+            'subject' => $request->subject,
+            'body' => $request->body,
+            'attach' => $request->attach,
+            'stateId' => $this->initialStateIdLoader->get(PaymentOrderStates::STATE_MACHINE),
+            'clientIp' => $request->clientIp,
+            'device' => $request->device,
+            'notifyUrl' => $request->notifyUrl ?? $app->notifyUrl,
+            'returnUrl' => $request->returnUrl ?? $app->returnUrl,
+            'idempotencyKey' => $request->idempotencyKey,
+            'expireAt' => $expireAt,
+        ];
+
+        // only the self-operated checkout references its own order - an external app never does, and
+        // the keys are left out instead of written as null so the columns stay empty. The order and
+        // its transaction are versioned, so the reference spans id and version: the foreign keys are
+        // composite, and the version field is required as soon as the id is written.
+        if ($order instanceof OrderEntity) {
+            $row['orderId'] = $order->getId();
+            // an entity that was not hydrated from the database carries no version; the checkout
+            // always works on the live version, which is the same value the dal would default to
+            $row['orderVersionId'] = $order->getVersionId() ?? Defaults::LIVE_VERSION;
+        }
+
+        if ($orderTransaction instanceof OrderTransactionEntity) {
+            $row['orderTransactionId'] = $orderTransaction->getId();
+            $row['orderTransactionVersionId'] = $orderTransaction->getVersionId() ?? Defaults::LIVE_VERSION;
+        }
+
         try {
-            $this->paymentOrderRepository->create([[
-                'id' => $id,
-                'paymentNo' => $this->generatePaymentNo($now),
-                'outTradeNo' => $request->outTradeNo,
-                'paymentAppId' => $app->id,
-                'providerTechnicalName' => $resolved->provider->technicalName,
-                'channelTechnicalName' => $request->channel,
-                'channelParams' => $request->channelParams === [] ? null : $request->channelParams,
-                'amount' => $request->amount,
-                // a fresh order was neither paid nor refunded; the fields are not nullable, so the
-                // dal write validation demands them
-                'paidAmount' => 0,
-                'refundedAmount' => 0,
-                'currency' => $request->currency,
-                'subject' => $request->subject,
-                'body' => $request->body,
-                'attach' => $request->attach,
-                'stateId' => $this->initialStateIdLoader->get(PaymentOrderStates::STATE_MACHINE),
-                'clientIp' => $request->clientIp,
-                'device' => $request->device,
-                'notifyUrl' => $request->notifyUrl ?? $app->notifyUrl,
-                'returnUrl' => $request->returnUrl ?? $app->returnUrl,
-                'idempotencyKey' => $request->idempotencyKey,
-                'expireAt' => $expireAt,
-            ]], Context::createDefaultContext());
+            $this->paymentOrderRepository->create([$row], Context::createDefaultContext());
         } catch (UniqueConstraintViolationException) {
-            // a parallel request created the very same order, hand it out instead of failing
+            // two unique keys describe a create: the out trade number of the app and its idempotency
+            // key. A replay with the same idempotency key but a fresh trade number violates the
+            // second one, so the lookup by trade number alone would miss the order it created.
             $race = $this->findByOutTradeNo($app->id, $request->outTradeNo);
+
+            if ($race === null && $request->idempotencyKey !== null) {
+                $race = $this->findByIdempotencyKey($app->id, $request->idempotencyKey);
+            }
+
             if ($race === null) {
-                throw PaymentException::orderNotFound($request->outTradeNo);
+                // the conflicting row is not readable in this request, so its payment number is not
+                // known either - reporting the trade number is the only honest answer
+                throw PaymentException::orderConflict($request->outTradeNo);
             }
 
             return $race;
         }
 
         return $this->getById($id);
+    }
+
+    /**
+     * The payment order of a checkout transaction - the newest one, if the checkout tried more than
+     * once.
+     *
+     * There is no unique constraint on the transaction: reopening a payment after the first one timed
+     * out or failed is normal business and has to create a second payment order. The newest one is the
+     * one in charge, because only it may still be within its expiry.
+     */
+    public function findLatestByOrderTransaction(string $orderTransactionId): ?PaymentOrderEntity
+    {
+        $criteria = new Criteria();
+        $criteria->addFilter(new EqualsFilter('orderTransactionId', $orderTransactionId));
+        // the caller resolves the channel credentials of the payment, which needs the app
+        $criteria->addAssociation('paymentApp');
+        // a caller reopening the payment rebuilds the parameters of the hand over from the answer of
+        // the last capture, which lives on the transactions - without them it would believe the
+        // payment never reached the channel and open a second trade
+        $criteria->addAssociation('transactions');
+        $criteria->addSorting(new FieldSorting('createdAt', FieldSorting::DESCENDING));
+        $criteria->setLimit(1);
+
+        $order = $this->paymentOrderRepository->search($criteria, Context::createDefaultContext())->getEntities()->first();
+
+        return $order instanceof PaymentOrderEntity ? $order : null;
     }
 
     /**
@@ -143,11 +208,21 @@ final class PaymentOrderService
     }
 
     /**
+     * Closes the order locally. The channel is asked first - see {@see PaymentOrderCloser}, which is
+     * the only caller that belongs here: this service writes the state machine and never talks to a
+     * channel, so closing at the channel cannot be forgotten half way.
+     *
      * @throws PaymentException
      */
     public function close(PaymentOrderEntity $order): void
     {
-        if ($order->closedAt !== null || $order->paidAt !== null) {
+        // "paid" and "closed" are two different answers for the app: a paid order means the money has
+        // to be booked, a closed one only means the close was repeated
+        if ($order->paidAt !== null) {
+            throw PaymentException::orderAlreadyPaid($order->paymentNo);
+        }
+
+        if ($order->closedAt !== null) {
             throw PaymentException::orderAlreadyClosed($order->paymentNo);
         }
 
@@ -168,8 +243,20 @@ final class PaymentOrderService
      */
     public function expire(PaymentOrderEntity $order): void
     {
-        if ($order->closedAt !== null || $order->paidAt !== null) {
+        // an order that was paid is never expired: the payment has to be booked, and the caller has
+        // to know that it is not merely a repetition of an expiry
+        if ($order->paidAt !== null) {
+            throw PaymentException::orderAlreadyPaid($order->paymentNo);
+        }
+
+        if ($order->closedAt !== null) {
             throw PaymentException::orderAlreadyClosed($order->paymentNo);
+        }
+
+        // only an order the app never got pay parameters for may expire: once the channel was handed
+        // the order the payer may still pay it, and expiring it would lose that payment
+        if (!$this->isCreated($order)) {
+            throw PaymentException::orderNotExpirable($order->paymentNo);
         }
 
         $this->stateHandler->expire($order->id);
@@ -318,6 +405,24 @@ final class PaymentOrderService
         $criteria->addFilter(
             new EqualsFilter('paymentAppId', $appId),
             new EqualsFilter('outTradeNo', $outTradeNo)
+        );
+        $criteria->setLimit(1);
+
+        $order = $this->paymentOrderRepository->search($criteria, Context::createDefaultContext())->getEntities()->first();
+
+        return $order instanceof PaymentOrderEntity ? $order : null;
+    }
+
+    /**
+     * The second unique key of a create: the app scoped idempotency key. An app that retries with the
+     * same key but a fresh trade number is asking for the order it already created.
+     */
+    private function findByIdempotencyKey(string $appId, string $idempotencyKey): ?PaymentOrderEntity
+    {
+        $criteria = new Criteria();
+        $criteria->addFilter(
+            new EqualsFilter('paymentAppId', $appId),
+            new EqualsFilter('idempotencyKey', $idempotencyKey)
         );
         $criteria->setLimit(1);
 

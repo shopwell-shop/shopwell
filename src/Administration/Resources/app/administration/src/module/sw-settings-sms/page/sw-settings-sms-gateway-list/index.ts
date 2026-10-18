@@ -109,6 +109,14 @@ export default Shopwell.Component.wrapComponentConfig({
             return this.$te(snippet) ? this.$t(snippet) : technicalName;
         },
 
+        /**
+         * The seeded baseline gateway carries no name of its own, so the name of the provider stands
+         * in for it instead of leaving the column empty.
+         */
+        gatewayName(gateway: EntitySchema.Entity<'sms_gateway'>): string {
+            return gateway.label || this.providerLabel(gateway.technicalName);
+        },
+
         strategyLabel(strategy: string): string {
             const snippet = `sw-settings-sms.gateway.strategy.${strategy}`;
 

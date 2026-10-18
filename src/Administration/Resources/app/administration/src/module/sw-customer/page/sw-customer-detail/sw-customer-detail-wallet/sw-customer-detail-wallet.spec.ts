@@ -3,6 +3,33 @@
  */
 
 import { mount } from '@vue/test-utils';
+import type { VueWrapper } from '@vue/test-utils';
+
+type TypedWrapper<T> = { vm: T } & VueWrapper;
+
+type Wallet = typeof wallet;
+type WalletTransaction = typeof walletTransaction;
+type PendingTopUp = typeof pendingTopUp;
+
+type WalletDetailVm = {
+    wallets: Wallet[];
+    walletTransactions: WalletTransaction[];
+    pendingTopUps: PendingTopUp[];
+    total: number;
+    page: number;
+    typeFilter: string | null;
+    allowWalletChange: boolean;
+    showWalletModal: boolean;
+    walletModalMode: string;
+    isWalletFormValid: boolean;
+    walletForm: { currencyId: string | null; amount: number; comment: string | null };
+    openTopUpModal: (wallet: Wallet | null) => void;
+    openAdjustWalletModal: (wallet: Wallet) => void;
+    onSaveWallet: () => Promise<void>;
+    setAmount: (amount: number) => void;
+    resolveTypeSnippetKey: (type: string) => string;
+    onFilterChange: () => void;
+};
 
 const wallet = {
     id: 'wallet-1',
@@ -27,12 +54,42 @@ const walletTransaction = {
     createdAt: '2024-01-01T00:00:00+00:00',
 };
 
+const pendingTopUp = {
+    id: 'top-up-1',
+    amount: 50,
+    currency: 'EUR',
+    state: 'open',
+    channelTechnicalName: 'alipay_h5',
+    createdAt: '2024-01-02T00:00:00+00:00',
+};
+
 const walletRepository = {
     search: jest.fn(() => Promise.resolve([wallet])),
 };
 
+interface TransactionCriteria {
+    page: number;
+    limit: number;
+}
+
+let lastTransactionCriteria: TransactionCriteria | null = null;
+
+/**
+ * The component always asks through a criteria object; the last one is kept so a test can check the
+ * page and the filter the list was asked for.
+ */
+function searchTransactions(criteria: TransactionCriteria) {
+    lastTransactionCriteria = criteria;
+
+    return Promise.resolve(Object.assign([walletTransaction], { total: 1 }));
+}
+
 const walletTransactionRepository = {
-    search: jest.fn(() => Promise.resolve(Object.assign([walletTransaction], { total: 1 }))),
+    search: jest.fn(searchTransactions),
+};
+
+const topUpRepository = {
+    search: jest.fn(() => Promise.resolve([pendingTopUp])),
 };
 
 function createLoyaltyApiService() {
@@ -42,7 +99,10 @@ function createLoyaltyApiService() {
     };
 }
 
-async function createWrapper(privileges: string[] = [], loyaltyApiService = createLoyaltyApiService()) {
+async function createWrapper(
+    privileges: string[] = [],
+    loyaltyApiService = createLoyaltyApiService(),
+): Promise<{ wrapper: TypedWrapper<WalletDetailVm>; loyaltyApiService: ReturnType<typeof createLoyaltyApiService> }> {
     const wrapper = mount(
         await wrapTestComponent('sw-customer-detail-wallet', {
             sync: true,
@@ -57,6 +117,8 @@ async function createWrapper(privileges: string[] = [], loyaltyApiService = crea
                         template: '<div><slot name="headerRight"></slot><slot></slot></div>',
                     },
                     'mt-button': true,
+                    'mt-badge': true,
+                    'mt-select': true,
                     'mt-empty-state': true,
                     'mt-number-field': true,
                     'mt-textarea': true,
@@ -83,6 +145,10 @@ async function createWrapper(privileges: string[] = [], loyaltyApiService = crea
                                 return walletTransactionRepository;
                             }
 
+                            if (name === 'customer_wallet_top_up') {
+                                return topUpRepository;
+                            }
+
                             throw new Error(`No repository for ${name} configured`);
                         },
                     },
@@ -103,13 +169,18 @@ async function createWrapper(privileges: string[] = [], loyaltyApiService = crea
 
     await flushPromises();
 
-    return { wrapper, loyaltyApiService };
+    return { wrapper: wrapper as unknown as TypedWrapper<WalletDetailVm>, loyaltyApiService };
 }
 
 describe('src/module/sw-customer/page/sw-customer-detail/sw-customer-detail-wallet', () => {
     beforeEach(() => {
+        lastTransactionCriteria = null;
         walletRepository.search.mockClear();
         walletTransactionRepository.search.mockClear();
+        topUpRepository.search.mockClear();
+        walletRepository.search.mockResolvedValue([wallet]);
+        walletTransactionRepository.search.mockImplementation(searchTransactions);
+        topUpRepository.search.mockResolvedValue([pendingTopUp]);
     });
 
     it('should be a vue js component', async () => {
@@ -118,13 +189,15 @@ describe('src/module/sw-customer/page/sw-customer-detail/sw-customer-detail-wall
         expect(wrapper.vm).toBeTruthy();
     });
 
-    it('should load the wallets and their transactions', async () => {
+    it('should load the balances, the bookings and the open top ups', async () => {
         const { wrapper } = await createWrapper();
 
         expect(walletRepository.search).toHaveBeenCalledTimes(1);
         expect(walletTransactionRepository.search).toHaveBeenCalledTimes(1);
+        expect(topUpRepository.search).toHaveBeenCalledTimes(1);
         expect(wrapper.vm.wallets).toHaveLength(1);
         expect(wrapper.vm.walletTransactions).toHaveLength(1);
+        expect(wrapper.vm.pendingTopUps).toHaveLength(1);
         expect(wrapper.vm.total).toBe(1);
     });
 
@@ -141,18 +214,14 @@ describe('src/module/sw-customer/page/sw-customer-detail/sw-customer-detail-wall
         const { wrapper } = await createWrapper();
 
         expect(wrapper.vm.allowWalletChange).toBe(false);
-
-        const button = wrapper.find('.sw-customer-detail-wallet__top-up');
-        expect(button.attributes('disabled')).toBeDefined();
+        expect(wrapper.find('.sw-customer-detail-wallet__top-up').attributes('disabled')).toBeDefined();
     });
 
     it('should be able to change the wallet with permission', async () => {
         const { wrapper } = await createWrapper(['wallet.editor']);
 
         expect(wrapper.vm.allowWalletChange).toBe(true);
-
-        const button = wrapper.find('.sw-customer-detail-wallet__top-up');
-        expect(button.attributes('disabled')).toBeFalsy();
+        expect(wrapper.find('.sw-customer-detail-wallet__top-up').attributes('disabled')).toBeFalsy();
     });
 
     it('should top up the wallet of the given currency', async () => {
@@ -165,8 +234,24 @@ describe('src/module/sw-customer/page/sw-customer-detail/sw-customer-detail-wall
         wrapper.vm.walletForm.amount = 50;
         await wrapper.vm.onSaveWallet();
 
-        expect(loyaltyApiService.topUpWallet).toHaveBeenCalledWith('customer-1', 'currency-1', 50);
+        expect(loyaltyApiService.topUpWallet).toHaveBeenCalledWith('customer-1', 'currency-1', 50, undefined);
         expect(wrapper.vm.showWalletModal).toBe(false);
+    });
+
+    it('should carry a typed reference into the top up', async () => {
+        const { wrapper, loyaltyApiService } = await createWrapper(['wallet.editor']);
+
+        wrapper.vm.openTopUpModal(wallet);
+        wrapper.vm.walletForm.amount = 50;
+        wrapper.vm.walletForm.comment = 'paid in the shop';
+        await wrapper.vm.onSaveWallet();
+
+        expect(loyaltyApiService.topUpWallet).toHaveBeenCalledWith(
+            'customer-1',
+            'currency-1',
+            50,
+            'paid in the shop',
+        );
     });
 
     it('should adjust the wallet balance', async () => {
@@ -182,10 +267,12 @@ describe('src/module/sw-customer/page/sw-customer-detail/sw-customer-detail-wall
         expect(loyaltyApiService.adjustWallet).toHaveBeenCalledWith('customer-1', 'currency-1', -20, 'Correction');
     });
 
-    it('should not book the wallet when no currency is selected', async () => {
+    it('should refuse a top up without a currency', async () => {
         const { wrapper, loyaltyApiService } = await createWrapper(['wallet.editor']);
 
+        wrapper.vm.wallets = [];
         wrapper.vm.openTopUpModal(null);
+
         expect(wrapper.vm.walletForm.currencyId).toBeNull();
 
         wrapper.vm.walletForm.amount = 50;
@@ -194,11 +281,46 @@ describe('src/module/sw-customer/page/sw-customer-detail/sw-customer-detail-wall
         expect(loyaltyApiService.topUpWallet).not.toHaveBeenCalled();
     });
 
+    it('should refuse to deduct money with a top up', async () => {
+        const { wrapper, loyaltyApiService } = await createWrapper(['wallet.editor']);
+
+        wrapper.vm.openTopUpModal(wallet);
+        wrapper.vm.walletForm.amount = -10;
+
+        expect(wrapper.vm.isWalletFormValid).toBe(false);
+
+        await wrapper.vm.onSaveWallet();
+
+        expect(loyaltyApiService.topUpWallet).not.toHaveBeenCalled();
+    });
+
+    it('should take a quick amount over into the form', async () => {
+        const { wrapper } = await createWrapper(['wallet.editor']);
+
+        wrapper.vm.openTopUpModal(wallet);
+        wrapper.vm.setAmount(500);
+
+        expect(wrapper.vm.walletForm.amount).toBe(500);
+    });
+
     it('should resolve the snippet key of a booking type', async () => {
         const { wrapper } = await createWrapper();
 
         expect(wrapper.vm.resolveTypeSnippetKey('top_up')).toBe('topUp');
         expect(wrapper.vm.resolveTypeSnippetKey('refund')).toBe('refund');
+    });
+
+    it('should start on the first page when the type filter changes', async () => {
+        const { wrapper } = await createWrapper();
+        walletTransactionRepository.search.mockClear();
+
+        wrapper.vm.page = 3;
+        wrapper.vm.typeFilter = 'consume';
+        wrapper.vm.onFilterChange();
+        await flushPromises();
+
+        expect(wrapper.vm.page).toBe(1);
+        expect(walletTransactionRepository.search).toHaveBeenCalledTimes(1);
     });
 
     it('should reload the transactions when the page changes', async () => {
@@ -210,6 +332,6 @@ describe('src/module/sw-customer/page/sw-customer-detail/sw-customer-detail-wall
 
         expect(wrapper.vm.page).toBe(2);
         expect(walletTransactionRepository.search).toHaveBeenCalledTimes(1);
-        expect(walletTransactionRepository.search.mock.calls[0][0].page).toBe(2);
+        expect(lastTransactionCriteria?.page).toBe(2);
     });
 });

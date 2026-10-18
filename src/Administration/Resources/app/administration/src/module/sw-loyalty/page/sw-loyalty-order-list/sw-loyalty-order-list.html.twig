@@ -1,0 +1,146 @@
+{% block sw_loyalty_order_list %}
+<sw-page class="sw-loyalty-order-list">
+
+    {% block sw_loyalty_order_list_search_bar %}
+    <template #search-bar>
+        <sw-search-bar
+            :initial-search="term"
+            :placeholder="$t('sw-loyalty.order.list.placeholderSearchBar')"
+            @search="onSearch"
+        />
+    </template>
+    {% endblock %}
+
+    {% block sw_loyalty_order_list_smart_bar_header %}
+    <template #smart-bar-header>
+        <h2>
+            {{ $t('sw-settings.index.title') }}
+            <mt-icon
+                name="regular-chevron-right-xs"
+                size="12px"
+            />
+            {{ $t('sw-loyalty.order.general.mainMenuItemGeneral') }}
+
+            <span
+                v-if="!isLoading && total"
+                class="sw-page__smart-bar-amount"
+            >
+                ({{ total }})
+            </span>
+        </h2>
+    </template>
+    {% endblock %}
+
+    {% block sw_loyalty_order_list_language_switch %}
+    <template #language-switch>
+        <sw-language-switch @on-change="onRefresh" />
+    </template>
+    {% endblock %}
+
+    {% block sw_loyalty_order_list_content %}
+    <template #content>
+        <sw-card-view>
+            {% block sw_loyalty_order_list_card %}
+            <mt-card
+                position-identifier="sw-loyalty-order-list"
+                :title="$t('sw-loyalty.order.list.cardTitle')"
+                :is-loading="isLoading"
+            >
+                {% block sw_loyalty_order_list_filter %}
+                <template #headerRight>
+                    <mt-select
+                        v-model="stateFilter"
+                        class="sw-loyalty-order-list__state-filter"
+                        :options="stateFilterOptions"
+                        :label="$t('sw-loyalty.order.list.labelFilterState')"
+                        size="small"
+                        @update:model-value="onFilterChange"
+                    />
+                </template>
+                {% endblock %}
+
+                {% block sw_loyalty_order_list_grid %}
+                <sw-data-grid
+                    v-if="orders.length > 0"
+                    class="sw-loyalty-order-list__grid"
+                    :data-source="orders"
+                    :columns="columns"
+                    :show-selection="false"
+                    :show-settings="false"
+                >
+                    {% block sw_loyalty_order_list_grid_column_customer %}
+                    <template #column-customer="{ item }">
+                        <mt-link
+                            v-if="item.customer"
+                            :to="{ name: 'sw.customer.detail', params: { id: item.customerId } }"
+                        >
+                            {{ formatCustomer(item) }}
+                        </mt-link>
+                        <span v-else>{{ formatCustomer(item) }}</span>
+                    </template>
+                    {% endblock %}
+
+                    {% block sw_loyalty_order_list_grid_column_plan %}
+                    <template #column-planName="{ item }">
+                        {{ item.planName || '-' }}
+                    </template>
+                    {% endblock %}
+
+                    {% block sw_loyalty_order_list_grid_column_amount %}
+                    <template #column-amount="{ item }">
+                        {{ formatAmount(item) }}
+                    </template>
+                    {% endblock %}
+
+                    {% block sw_loyalty_order_list_grid_column_state %}
+                    <template #column-state="{ item }">
+                        <mt-badge
+                            class="sw-loyalty-order-list__state"
+                            size="small"
+                            :type="getStateVariant(item.state)"
+                        >
+                            {{ getStateLabel(item.state) }}
+                        </mt-badge>
+                    </template>
+                    {% endblock %}
+
+                    {% block sw_loyalty_order_list_grid_column_paid_at %}
+                    <template #column-paidAt="{ item }">
+                        {{ formatDate(item.paidAt) }}
+                    </template>
+                    {% endblock %}
+
+                    {% block sw_loyalty_order_list_grid_column_created_at %}
+                    <template #column-createdAt="{ item }">
+                        {{ formatDate(item.createdAt) }}
+                    </template>
+                    {% endblock %}
+                </sw-data-grid>
+
+                {% block sw_loyalty_order_list_empty_state %}
+                <mt-empty-state
+                    v-else-if="!isLoading"
+                    centered
+                    icon="regular-shopping-bag"
+                    :headline="$t('sw-loyalty.order.list.emptyStateHeadline')"
+                />
+                {% endblock %}
+                {% endblock %}
+
+                {% block sw_loyalty_order_list_pagination %}
+                <sw-pagination
+                    v-if="total > 0"
+                    :page="page"
+                    :limit="limit"
+                    :total="total"
+                    @page-change="onPageChange"
+                />
+                {% endblock %}
+            </mt-card>
+            {% endblock %}
+        </sw-card-view>
+    </template>
+    {% endblock %}
+
+</sw-page>
+{% endblock %}

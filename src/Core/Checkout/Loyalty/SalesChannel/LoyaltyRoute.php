@@ -2,6 +2,7 @@
 
 namespace Shopwell\Core\Checkout\Loyalty\SalesChannel;
 
+use Psr\Clock\ClockInterface;
 use Shopwell\Core\Checkout\Customer\CustomerEntity;
 use Shopwell\Core\Checkout\Loyalty\Cart\LoyaltyPointCartProcessor;
 use Shopwell\Core\Checkout\Loyalty\Entity\CustomerLoyalty\CustomerLoyaltyCollection;
@@ -9,6 +10,7 @@ use Shopwell\Core\Checkout\Loyalty\Entity\CustomerLoyalty\CustomerLoyaltyEntity;
 use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyTier\LoyaltyTierCollection;
 use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyTier\LoyaltyTierEntity;
 use Shopwell\Core\Checkout\Loyalty\Extension\LoyaltyRouteExtension;
+use Shopwell\Core\Checkout\Loyalty\Service\MembershipService;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
@@ -27,6 +29,8 @@ use Symfony\Component\Routing\Attribute\Route;
 #[Route(defaults: [PlatformRequest::ATTRIBUTE_ROUTE_SCOPE => [StoreApiRouteScope::ID]])]
 class LoyaltyRoute
 {
+    private const RECENT_ORDER_LIMIT = 5;
+
     /**
      * @internal
      *
@@ -37,6 +41,8 @@ class LoyaltyRoute
         private readonly EntityRepository $customerLoyaltyRepository,
         private readonly EntityRepository $tierRepository,
         private readonly SystemConfigService $systemConfigService,
+        private readonly MembershipService $membershipService,
+        private readonly ClockInterface $clock,
         private readonly ExtensionDispatcher $extensions,
     ) {
     }
@@ -51,21 +57,25 @@ class LoyaltyRoute
     {
         return $this->extensions->publish(
             name: LoyaltyRouteExtension::NAME,
-            extension: new LoyaltyRouteExtension($request, $context, $customer),
+            extension: new LoyaltyRouteExtension($context, $customer),
             function: $this->_load(...),
         );
     }
 
-    private function _load(Request $request, SalesChannelContext $context, CustomerEntity $customer): LoyaltyRouteResponse
+    private function _load(SalesChannelContext $context, CustomerEntity $customer): LoyaltyRouteResponse
     {
         $loyalty = $this->loadLoyalty($customer->getId(), $context);
+        $validUntil = $loyalty?->getMembershipValidUntil();
 
         /** @var array<string, mixed> $data */
         $data = [
             'pointsBalance' => $loyalty?->getPointsBalance() ?? 0,
             'growthValue' => $loyalty?->getGrowthValue() ?? 0,
             'membershipTierId' => $loyalty?->getMembershipTierId(),
-            'membershipValidUntil' => $loyalty?->getMembershipValidUntil()?->format(\DATE_ATOM),
+            'membershipValidUntil' => $validUntil?->format(\DATE_ATOM),
+            // a membership that was bought runs until its end, a tier that was only reached through the
+            // growth value has no end - the storefront shows the plans only in the second case as an upgrade
+            'membershipActive' => $validUntil !== null && $validUntil > $this->clock->now(),
             'pointValueInCurrency' => $this->systemConfigService->getFloat(
                 LoyaltyPointCartProcessor::CONFIG_KEY_POINT_VALUE,
                 $context->getSalesChannelId()
@@ -79,6 +89,15 @@ class LoyaltyRoute
                 $context->getSalesChannelId()
             ),
             'tiers' => $this->loadTiers($context),
+            'plans' => $this->membershipService->plans($context->getCurrency()->getId(), $context->getContext()),
+            // the account page is the same on every device, so no device is filtered out here: a plan
+            // bought on a desktop is often paid by scanning it with a phone
+            'membershipChannels' => $this->membershipService->channels($context->getCurrency()->getIsoCode(), null),
+            'membershipOrders' => $this->membershipService->orders(
+                $customer->getId(),
+                self::RECENT_ORDER_LIMIT,
+                $context->getContext()
+            ),
         ];
 
         return new LoyaltyRouteResponse(new ArrayStruct($data));

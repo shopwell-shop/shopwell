@@ -7,6 +7,7 @@ use Shopwell\Core\PlatformRequest;
 use Shopwell\Core\System\Payment\Api\Struct\PaymentOrderRequest;
 use Shopwell\Core\System\Payment\App\PaymentAppAuthenticator;
 use Shopwell\Core\System\Payment\Order\PaymentOrderCapture;
+use Shopwell\Core\System\Payment\Order\PaymentOrderCloser;
 use Shopwell\Core\System\Payment\Order\PaymentOrderPresenter;
 use Shopwell\Core\System\Payment\Order\PaymentOrderService;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -26,6 +27,7 @@ class PaymentOrderController extends AbstractPaymentApiController
         PaymentAppAuthenticator $authenticator,
         private readonly PaymentOrderService $orderService,
         private readonly PaymentOrderCapture $captureService,
+        private readonly PaymentOrderCloser $closer,
         private readonly PaymentOrderPresenter $presenter,
     ) {
         parent::__construct($authenticator);
@@ -84,7 +86,7 @@ class PaymentOrderController extends AbstractPaymentApiController
         [$app] = $this->authenticate($request);
 
         $order = $this->orderService->getByPaymentNo($paymentNo, $app);
-        $this->orderService->close($order);
+        $this->closer->close($order);
 
         return $this->json($this->presenter->order($this->orderService->getById($order->id)));
     }

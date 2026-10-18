@@ -7,8 +7,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Checkout\Wallet\Entity\CustomerWallet\CustomerWalletCollection;
 use Shopwell\Core\Checkout\Wallet\Entity\CustomerWallet\CustomerWalletEntity;
-use Shopwell\Core\Checkout\Wallet\Entity\CustomerWalletTransaction\CustomerWalletTransactionCollection;
-use Shopwell\Core\Checkout\Wallet\Event\WalletBalanceChangedEvent;
+use Shopwell\Core\Checkout\Wallet\Service\WalletLedger;
 use Shopwell\Core\Checkout\Wallet\Service\WalletService;
 use Shopwell\Core\Checkout\Wallet\WalletException;
 use Shopwell\Core\Defaults;
@@ -16,9 +15,11 @@ use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Test\Stub\DataAbstractionLayer\StaticEntityRepository;
 use Shopwell\Core\Test\Stub\SystemConfigService\StaticSystemConfigService;
-use Symfony\Component\EventDispatcher\EventDispatcher;
 
 /**
+ * The rules of the wallet are tested here, the balances and their locking in
+ * {@see \Shopwell\Tests\Unit\Core\Checkout\Wallet\Service\WalletLedgerTest}.
+ *
  * @internal
  */
 #[Package('checkout')]
@@ -36,14 +37,9 @@ class WalletServiceTest extends TestCase
      */
     private StaticEntityRepository $walletRepository;
 
-    /**
-     * @var StaticEntityRepository<CustomerWalletTransactionCollection>
-     */
-    private StaticEntityRepository $walletTransactionRepository;
-
     private StaticSystemConfigService $systemConfigService;
 
-    private EventDispatcher $eventDispatcher;
+    private WalletLedger $ledger;
 
     private WalletService $walletService;
 
@@ -52,16 +48,14 @@ class WalletServiceTest extends TestCase
     protected function setUp(): void
     {
         $this->walletRepository = StaticEntityRepository::of(CustomerWalletCollection::class);
-        $this->walletTransactionRepository = StaticEntityRepository::of(CustomerWalletTransactionCollection::class);
         $this->systemConfigService = new StaticSystemConfigService();
-        $this->eventDispatcher = new EventDispatcher();
+        $this->ledger = static::createStub(WalletLedger::class);
         $this->context = Context::createDefaultContext();
 
         $this->walletService = new WalletService(
             $this->walletRepository,
-            $this->walletTransactionRepository,
+            $this->ledger,
             $this->systemConfigService,
-            $this->eventDispatcher,
         );
     }
 
@@ -77,6 +71,29 @@ class WalletServiceTest extends TestCase
         $this->walletRepository->addSearch(new CustomerWalletCollection([$this->createWallet(42.5)]));
 
         static::assertSame(42.5, $this->walletService->getBalance(self::CUSTOMER_ID, self::CURRENCY_ID, $this->context));
+    }
+
+    public function testProvisionAccountOpensAWalletInTheDefaultCurrency(): void
+    {
+        $this->walletRepository->addSearch(new CustomerWalletCollection());
+
+        $this->walletService->provisionAccount(self::CUSTOMER_ID, $this->context);
+
+        $wallet = $this->walletRepository->creates[0][0];
+        static::assertSame(self::CUSTOMER_ID, $wallet['customerId']);
+        static::assertSame(Defaults::CURRENCY, $wallet['currencyId']);
+        static::assertSame(0.0, $wallet['balance']);
+        static::assertSame(0.0, $wallet['lockedBalance']);
+    }
+
+    public function testProvisionAccountKeepsAnExistingWallet(): void
+    {
+        $this->walletRepository->addSearch(new CustomerWalletCollection([$this->createWallet(42.5)]));
+
+        $this->walletService->provisionAccount(self::CUSTOMER_ID, $this->context);
+
+        static::assertSame([], $this->walletRepository->creates);
+        static::assertSame([], $this->walletRepository->updates);
     }
 
     /**
@@ -105,107 +122,124 @@ class WalletServiceTest extends TestCase
         $this->walletService->topUp(self::CUSTOMER_ID, self::CURRENCY_ID, 5.0, null, $this->context);
     }
 
-    public function testTopUpCreatesWalletWhenCustomerHasNone(): void
+    public function testTopUpDelegatesToTheLedger(): void
     {
-        $this->walletRepository->addSearch(new CustomerWalletCollection());
+        $ledger = $this->createMock(WalletLedger::class);
+        $ledger->expects($this->once())
+            ->method('book')
+            ->with(
+                self::CUSTOMER_ID,
+                self::CURRENCY_ID,
+                WalletService::TRANSACTION_TYPE_TOP_UP,
+                25.0,
+                $this->context,
+                null,
+                'external-ref'
+            )
+            ->willReturn(25.0);
 
-        $this->walletService->topUp(self::CUSTOMER_ID, self::CURRENCY_ID, 25.0, 'external-ref', $this->context);
-
-        $wallet = $this->walletRepository->creates[0][0];
-        static::assertSame(self::CUSTOMER_ID, $wallet['customerId']);
-        static::assertSame(self::CURRENCY_ID, $wallet['currencyId']);
-        static::assertSame(0.0, $wallet['balance']);
-
-        $transaction = $this->walletTransactionRepository->creates[0][0];
-        static::assertSame(WalletService::TRANSACTION_TYPE_TOP_UP, $transaction['type']);
-        static::assertSame(25.0, $transaction['amount']);
-        static::assertSame(25.0, $transaction['balanceAfter']);
-        static::assertSame('external-ref', $transaction['externalReference']);
-
-        static::assertSame(25.0, $this->walletRepository->updates[0][0]['balance']);
+        static::assertSame(25.0, $this->service($ledger)->topUp(self::CUSTOMER_ID, self::CURRENCY_ID, 25.0, 'external-ref', $this->context));
     }
 
-    public function testTopUpBooksOntoExistingWallet(): void
+    public function testCreditPaidTopUpIgnoresTheConfiguredMinimum(): void
     {
-        $this->walletRepository->addSearch(new CustomerWalletCollection([$this->createWallet(10.0)]));
+        // the limit may have moved while the payer was in the payment interface, a payment that
+        // really happened must still be credited
+        $this->systemConfigService->set(WalletService::CONFIG_KEY_MIN_TOP_UP_AMOUNT, 100.0);
 
-        $this->walletService->topUp(self::CUSTOMER_ID, self::CURRENCY_ID, 5.0, null, $this->context);
+        $ledger = $this->createMock(WalletLedger::class);
+        $ledger->expects($this->once())
+            ->method('book')
+            ->with(
+                self::CUSTOMER_ID,
+                self::CURRENCY_ID,
+                WalletService::TRANSACTION_TYPE_TOP_UP,
+                5.0,
+                $this->context,
+                null,
+                'top-up-id'
+            )
+            ->willReturn(5.0);
 
-        static::assertSame(self::WALLET_ID, $this->walletTransactionRepository->creates[0][0]['customerWalletId']);
-        static::assertSame(15.0, $this->walletTransactionRepository->creates[0][0]['balanceAfter']);
-        static::assertSame(15.0, $this->walletRepository->updates[0][0]['balance']);
+        $this->service($ledger)->creditPaidTopUp(self::CUSTOMER_ID, self::CURRENCY_ID, 5.0, 'top-up-id', $this->context);
     }
 
-    public function testTopUpDispatchesBalanceChangedEvent(): void
+    public function testCreditPaidTopUpRejectsNonPositiveAmounts(): void
     {
-        $this->walletRepository->addSearch(new CustomerWalletCollection([$this->createWallet(10.0)]));
+        $this->expectExceptionObject(WalletException::invalidAmount(0.0));
 
-        $events = [];
-        $this->eventDispatcher->addListener(WalletBalanceChangedEvent::class, static function (WalletBalanceChangedEvent $event) use (&$events): void {
-            $events[] = $event;
-        });
-
-        $this->walletService->topUp(self::CUSTOMER_ID, self::CURRENCY_ID, 5.0, null, $this->context);
-
-        static::assertCount(1, $events);
-        static::assertSame(self::CUSTOMER_ID, $events[0]->getCustomerId());
-        static::assertSame(self::CURRENCY_ID, $events[0]->getCurrencyId());
-        static::assertSame(WalletService::TRANSACTION_TYPE_TOP_UP, $events[0]->getType());
-        static::assertSame(5.0, $events[0]->getAmount());
-        static::assertSame(15.0, $events[0]->getBalanceAfter());
+        $this->walletService->creditPaidTopUp(self::CUSTOMER_ID, self::CURRENCY_ID, 0.0, 'top-up-id', $this->context);
     }
 
-    public function testConsumeThrowsWhenCustomerHasNoWallet(): void
+    public function testConsumeBooksANegativeEntryThatMayNotOverdraw(): void
     {
-        $this->walletRepository->addSearch(new CustomerWalletCollection());
+        $ledger = $this->createMock(WalletLedger::class);
+        $ledger->expects($this->once())
+            ->method('book')
+            ->with(
+                self::CUSTOMER_ID,
+                self::CURRENCY_ID,
+                WalletService::TRANSACTION_TYPE_CONSUME,
+                -30.0,
+                $this->context,
+                'order-1',
+                null,
+                null,
+                null,
+                true,
+                true
+            )
+            ->willReturn(70.0);
 
-        $this->expectExceptionObject(WalletException::insufficientBalance(self::CUSTOMER_ID, self::CURRENCY_ID, 30.0, 0.0));
-
-        $this->walletService->consume(self::CUSTOMER_ID, self::CURRENCY_ID, 30.0, 'order-1', $this->context);
+        $this->service($ledger)->consume(self::CUSTOMER_ID, self::CURRENCY_ID, 30.0, 'order-1', $this->context);
     }
 
-    public function testConsumeThrowsWhenBalanceIsInsufficient(): void
+    public function testConsumeWithoutAnOrderIsNotBookedOncePerOrder(): void
     {
-        $this->walletRepository->addSearch(new CustomerWalletCollection([$this->createWallet(20.0)]));
+        $ledger = $this->createMock(WalletLedger::class);
+        $ledger->expects($this->once())
+            ->method('book')
+            ->with(
+                self::CUSTOMER_ID,
+                self::CURRENCY_ID,
+                WalletService::TRANSACTION_TYPE_CONSUME,
+                -30.0,
+                $this->context,
+                null,
+                null,
+                null,
+                null,
+                true,
+                false
+            )
+            ->willReturn(70.0);
 
-        $this->expectExceptionObject(WalletException::insufficientBalance(self::CUSTOMER_ID, self::CURRENCY_ID, 50.0, 20.0));
-
-        $this->walletService->consume(self::CUSTOMER_ID, self::CURRENCY_ID, 50.0, 'order-1', $this->context);
+        $this->service($ledger)->consume(self::CUSTOMER_ID, self::CURRENCY_ID, 30.0, null, $this->context);
     }
 
-    public function testConsumeIsIgnoredForAnOrderThatWasAlreadyDebited(): void
+    public function testConsumeThrowsForNonPositiveAmounts(): void
     {
-        $this->walletRepository->addSearch(new CustomerWalletCollection([$this->createWallet(100.0)]));
-        $this->walletTransactionRepository->addSearch(['existing-transaction']);
+        $this->expectExceptionObject(WalletException::invalidAmount(0.0));
 
-        $this->walletService->consume(self::CUSTOMER_ID, self::CURRENCY_ID, 30.0, 'order-1', $this->context);
-
-        static::assertSame([], $this->walletTransactionRepository->creates);
+        $this->walletService->consume(self::CUSTOMER_ID, self::CURRENCY_ID, 0.0, 'order-1', $this->context);
     }
 
-    public function testConsumeBooksNegativeTransactionWithoutOrder(): void
+    public function testRefundBooksPositiveEntry(): void
     {
-        $this->walletRepository->addSearch(new CustomerWalletCollection([$this->createWallet(100.0)]));
+        $ledger = $this->createMock(WalletLedger::class);
+        $ledger->expects($this->once())
+            ->method('book')
+            ->with(
+                self::CUSTOMER_ID,
+                self::CURRENCY_ID,
+                WalletService::TRANSACTION_TYPE_REFUND,
+                15.0,
+                $this->context,
+                'order-1'
+            )
+            ->willReturn(25.0);
 
-        $this->walletService->consume(self::CUSTOMER_ID, self::CURRENCY_ID, 30.0, null, $this->context);
-
-        $transaction = $this->walletTransactionRepository->creates[0][0];
-        static::assertSame(WalletService::TRANSACTION_TYPE_CONSUME, $transaction['type']);
-        static::assertSame(-30.0, $transaction['amount']);
-        static::assertSame(70.0, $transaction['balanceAfter']);
-        static::assertSame(70.0, $this->walletRepository->updates[0][0]['balance']);
-    }
-
-    public function testConsumeBooksNegativeTransactionForANewOrder(): void
-    {
-        $this->walletRepository->addSearch(new CustomerWalletCollection([$this->createWallet(100.0)]));
-        $this->walletTransactionRepository->addSearch([]);
-
-        $this->walletService->consume(self::CUSTOMER_ID, self::CURRENCY_ID, 30.0, 'order-1', $this->context);
-
-        $transaction = $this->walletTransactionRepository->creates[0][0];
-        static::assertSame(-30.0, $transaction['amount']);
-        static::assertSame('order-1', $transaction['orderId']);
+        $this->service($ledger)->refund(self::CUSTOMER_ID, self::CURRENCY_ID, 15.0, 'order-1', $this->context);
     }
 
     public function testRefundThrowsForNonPositiveAmount(): void
@@ -215,74 +249,47 @@ class WalletServiceTest extends TestCase
         $this->walletService->refund(self::CUSTOMER_ID, self::CURRENCY_ID, 0.0, 'order-1', $this->context);
     }
 
-    public function testRefundBooksPositiveTransaction(): void
+    public function testAdjustBooksManualCorrectionThatMayNotOverdraw(): void
     {
-        $this->walletRepository->addSearch(new CustomerWalletCollection([$this->createWallet(10.0)]));
+        $ledger = $this->createMock(WalletLedger::class);
+        $ledger->expects($this->once())
+            ->method('book')
+            ->with(
+                self::CUSTOMER_ID,
+                self::CURRENCY_ID,
+                WalletService::TRANSACTION_TYPE_ADJUST,
+                -50.0,
+                $this->context,
+                null,
+                null,
+                'correction',
+                'admin-id',
+                true
+            )
+            ->willReturn(30.0);
 
-        $this->walletService->refund(self::CUSTOMER_ID, self::CURRENCY_ID, 15.0, 'order-1', $this->context);
-
-        $transaction = $this->walletTransactionRepository->creates[0][0];
-        static::assertSame(WalletService::TRANSACTION_TYPE_REFUND, $transaction['type']);
-        static::assertSame(15.0, $transaction['amount']);
-        static::assertSame(25.0, $transaction['balanceAfter']);
-        static::assertSame('order-1', $transaction['orderId']);
-    }
-
-    public function testAdjustThrowsWhenResultingBalanceWouldBeNegative(): void
-    {
-        $this->walletRepository->addSearch(new CustomerWalletCollection([$this->createWallet(30.0)]));
-
-        $this->expectExceptionObject(WalletException::insufficientBalance(self::CUSTOMER_ID, self::CURRENCY_ID, 50.0, 30.0));
-
-        $this->walletService->adjust(self::CUSTOMER_ID, self::CURRENCY_ID, -50.0, 'correction', 'admin-id', $this->context);
-    }
-
-    public function testAdjustBooksManualCorrection(): void
-    {
-        $this->walletRepository->addSearch(new CustomerWalletCollection([$this->createWallet(30.0)]));
-
-        $this->walletService->adjust(self::CUSTOMER_ID, self::CURRENCY_ID, 20.0, 'goodwill', 'admin-id', $this->context);
-
-        $transaction = $this->walletTransactionRepository->creates[0][0];
-        static::assertSame(WalletService::TRANSACTION_TYPE_ADJUST, $transaction['type']);
-        static::assertSame(20.0, $transaction['amount']);
-        static::assertSame(50.0, $transaction['balanceAfter']);
-        static::assertSame('goodwill', $transaction['comment']);
-        static::assertSame('admin-id', $transaction['administratorId']);
+        $this->service($ledger)->adjust(self::CUSTOMER_ID, self::CURRENCY_ID, -50.0, 'correction', 'admin-id', $this->context);
     }
 
     public function testAdjustIgnoresZeroAmount(): void
     {
-        $this->walletService->adjust(self::CUSTOMER_ID, self::CURRENCY_ID, 0.0, 'noop', null, $this->context);
+        $ledger = $this->createMock(WalletLedger::class);
+        $ledger->expects($this->never())->method('book');
 
-        static::assertSame([], $this->walletTransactionRepository->creates);
-        static::assertSame([], $this->walletRepository->searches);
+        $this->service($ledger)->adjust(self::CUSTOMER_ID, self::CURRENCY_ID, 0.0, 'noop', null, $this->context);
     }
 
-    public function testProvisionAccountOpensAWalletInTheDefaultCurrency(): void
+    /**
+     * The service under test with the double the scenario needs - the shared one of setUp() only
+     * answers, it is no mock.
+     */
+    private function service(?WalletLedger $ledger = null): WalletService
     {
-        $this->walletRepository->addSearch(new CustomerWalletCollection());
-
-        $this->walletService->provisionAccount(self::CUSTOMER_ID, $this->context);
-
-        $wallet = $this->walletRepository->creates[0][0];
-        static::assertSame(self::CUSTOMER_ID, $wallet['customerId']);
-        static::assertSame(Defaults::CURRENCY, $wallet['currencyId']);
-        static::assertSame(0.0, $wallet['balance']);
-        static::assertSame(0.0, $wallet['lockedBalance']);
-
-        // the balance belongs to the ledger, opening the account books nothing
-        static::assertSame([], $this->walletTransactionRepository->creates);
-    }
-
-    public function testProvisionAccountKeepsAnExistingWallet(): void
-    {
-        $this->walletRepository->addSearch(new CustomerWalletCollection([$this->createWallet(42.5)]));
-
-        $this->walletService->provisionAccount(self::CUSTOMER_ID, $this->context);
-
-        static::assertSame([], $this->walletRepository->creates);
-        static::assertSame([], $this->walletRepository->updates);
+        return new WalletService(
+            $this->walletRepository,
+            $ledger ?? $this->ledger,
+            $this->systemConfigService,
+        );
     }
 
     private function createWallet(float $balance): CustomerWalletEntity

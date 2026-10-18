@@ -31,5 +31,23 @@
             <helpText>Limits how much of the order total may be covered by the wallet balance. Use 100 to allow paying the full order with the wallet.</helpText>
             <helpText lang="zh-CN">限制钱包余额可抵扣的订单金额上限。填写 100 表示允许全额抵扣。</helpText>
         </input-field>
+
+        <input-field type="float">
+            <name>maxTopUpAmount</name>
+            <defaultValue>0</defaultValue>
+            <label>Maximum online top-up amount</label>
+            <label lang="zh-CN">单笔在线充值上限</label>
+            <helpText>An online top-up above this value is rejected. Use 0 to allow any amount.</helpText>
+            <helpText lang="zh-CN">在线充值金额高于该数值时将被拒绝。填写 0 表示不限制。</helpText>
+        </input-field>
+
+        <input-field type="text">
+            <name>topUpPresets</name>
+            <defaultValue>100,200,500,1000,2000</defaultValue>
+            <label>Suggested top-up amounts</label>
+            <label lang="zh-CN">充值金额快捷档位</label>
+            <helpText>Comma separated amounts the storefront offers next to the free input, e.g. 100,200,500.</helpText>
+            <helpText lang="zh-CN">门店前台在自定义金额之外展示的快捷档位，多个金额用英文逗号分隔，例如 100,200,500。</helpText>
+        </input-field>
     </card>
 </config>

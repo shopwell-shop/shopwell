@@ -4,8 +4,6 @@ namespace Shopwell\Core\Checkout\Loyalty\Subscriber;
 
 use Shopwell\Core\Checkout\Cart\LineItem\LineItem;
 use Shopwell\Core\Checkout\Loyalty\Cart\LoyaltyPointCartProcessor;
-use Shopwell\Core\Checkout\Loyalty\Entity\CustomerLoyalty\CustomerLoyaltyCollection;
-use Shopwell\Core\Checkout\Loyalty\Entity\CustomerLoyalty\CustomerLoyaltyEntity;
 use Shopwell\Core\Checkout\Loyalty\Service\LoyaltyPointService;
 use Shopwell\Core\Checkout\Loyalty\Service\TierResolver;
 use Shopwell\Core\Checkout\Order\OrderCollection;
@@ -15,7 +13,6 @@ use Shopwell\Core\Defaults;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
-use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\StateMachine\Event\StateMachineTransitionEvent;
 use Shopwell\Core\System\SystemConfig\SystemConfigService;
@@ -33,11 +30,9 @@ class OrderStateChangeLoyaltySubscriber implements EventSubscriberInterface
 
     /**
      * @param EntityRepository<OrderCollection> $orderRepository
-     * @param EntityRepository<CustomerLoyaltyCollection> $customerLoyaltyRepository
      */
     public function __construct(
         private readonly EntityRepository $orderRepository,
-        private readonly EntityRepository $customerLoyaltyRepository,
         private readonly LoyaltyPointService $loyaltyPointService,
         private readonly TierResolver $tierResolver,
         private readonly SystemConfigService $systemConfigService,
@@ -125,17 +120,9 @@ class OrderStateChangeLoyaltySubscriber implements EventSubscriberInterface
             return;
         }
 
-        $loyalty = $this->findLoyalty($customerId, $context);
-        if ($loyalty === null) {
-            return;
-        }
-
-        $growthValue = $loyalty->getGrowthValue() + $growth;
-
-        $this->customerLoyaltyRepository->update([[
-            'id' => $loyalty->getId(),
-            'growthValue' => $growthValue,
-        ]], $context);
+        // the growth value is written under the same lock as the points, so two completed orders at
+        // the same time cannot overwrite each other's growth
+        $growthValue = $this->loyaltyPointService->addGrowthValue($customerId, $growth, $context);
 
         $this->tierResolver->resolve($customerId, $growthValue, $context);
     }
@@ -177,16 +164,5 @@ class OrderStateChangeLoyaltySubscriber implements EventSubscriberInterface
         $order = $this->orderRepository->search($criteria, $context)->getEntities()->first();
 
         return $order instanceof OrderEntity ? $order : null;
-    }
-
-    private function findLoyalty(string $customerId, Context $context): ?CustomerLoyaltyEntity
-    {
-        $criteria = new Criteria();
-        $criteria->addFilter(new EqualsFilter('customerId', $customerId));
-        $criteria->setLimit(1);
-
-        $loyalty = $this->customerLoyaltyRepository->search($criteria, $context)->getEntities()->first();
-
-        return $loyalty instanceof CustomerLoyaltyEntity ? $loyalty : null;
     }
 }

@@ -47,6 +47,7 @@ use Shopwell\Core\System\Payment\Provider\PaymentConfigResolver;
 use Shopwell\Core\System\Payment\Provider\PaymentProvider;
 use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;
 use Shopwell\Core\System\Payment\Webhook\PaymentWebhookDeliveryCollection;
+use Shopwell\Core\System\Payment\Webhook\PaymentWebhookDeliveryEntity;
 use Shopwell\Core\System\Payment\Webhook\PaymentWebhookDispatcher;
 use Shopwell\Core\System\Payment\Webhook\PaymentWebhookSigner;
 use Shopwell\Core\System\StateMachine\Loader\InitialStateIdLoader;
@@ -120,6 +121,35 @@ class PaymentRefundServiceTest extends TestCase
         $service = $this->refundService($refundRepository, $gateway);
 
         static::assertSame($existing, $service->refund($this->app(), $this->paidOrder(), $this->refundRequest(1000)));
+    }
+
+    /**
+     * The replay of a refund that already settled: its amount is booked, so the refundable amount is
+     * exhausted - the idempotency lookup has to answer before the balance check, otherwise the very
+     * refund that succeeded would be rejected as an over-refund, and the channel would be asked twice.
+     */
+    public function testRefundAnswersTheReplayOfASettledFullRefundWithoutTouchingTheChannel(): void
+    {
+        $existing = $this->refundEntity(['refundedAt' => new \DateTimeImmutable(self::NOW)]);
+
+        $refundRepository = static::createMock(EntityRepository::class);
+        $refundRepository->method('search')->willReturn($this->refundResult($existing));
+        $refundRepository->expects($this->never())->method('create');
+        $refundRepository->expects($this->never())->method('update');
+
+        $gateway = static::createMock(GatewayInterface::class);
+        $gateway->expects($this->never())->method('execute');
+
+        $order = $this->order([
+            'paidAt' => new \DateTimeImmutable(self::NOW),
+            'paidAmount' => 1000,
+            'refundedAmount' => 1000,
+            'stateId' => 'state-refunded',
+        ]);
+
+        $service = $this->refundService($refundRepository, $gateway);
+
+        static::assertSame($existing, $service->refund($this->app(), $order, $this->refundRequest(1000)));
     }
 
     public function testRefundSettlesSynchronouslyAndNotifiesTheApp(): void
@@ -338,40 +368,94 @@ class PaymentRefundServiceTest extends TestCase
         )->applyNotification($refund, $this->paidOrder(), new NotificationResult(true, true, outRefundId: 'channel-refund-1', amount: 1000, raw: ['status' => 'done']));
     }
 
+    public function testApplyNotificationAnnouncesTheRefundWithItsOwnSubject(): void
+    {
+        $refund = $this->refundEntity();
+        $order = $this->paidOrder();
+        $order->notifyUrl = 'https://app.example.test/webhook';
+
+        $refundRepository = static::createMock(EntityRepository::class);
+        $refundRepository->method('search')->willReturn($this->refundResult($refund));
+        $refundRepository->expects($this->exactly(2))->method('update');
+
+        $delivery = new PaymentWebhookDeliveryEntity();
+        $delivery->setUniqueIdentifier('delivery-id');
+        $delivery->id = 'delivery-id';
+        $delivery->paymentOrderId = 'order-id';
+        $delivery->paymentAppId = 'app-id';
+        $delivery->event = PaymentWebhookDispatcher::EVENT_REFUND_FINISHED;
+        $delivery->subject = 'refund-id';
+        $delivery->url = 'https://app.example.test/webhook';
+
+        $deliveryRepository = static::createMock(EntityRepository::class);
+        $deliveryRepository->expects($this->once())
+            ->method('create')
+            ->with(static::callback(static function (array $data): bool {
+                // the refund id is the subject, so a second refund of the same order is announced too
+                static::assertSame(PaymentWebhookDispatcher::EVENT_REFUND_FINISHED, $data[0]['event']);
+                static::assertSame('refund-id', $data[0]['subject']);
+                static::assertSame('order-id', $data[0]['paymentOrderId']);
+
+                return true;
+            }));
+        $deliveryRepository->method('search')->willReturnOnConsecutiveCalls(
+            new EntitySearchResult('payment_webhook_delivery', 0, new PaymentWebhookDeliveryCollection([]), null, new Criteria(), Context::createDefaultContext()),
+            new EntitySearchResult('payment_webhook_delivery', 1, new PaymentWebhookDeliveryCollection([$delivery]), null, new Criteria(), Context::createDefaultContext())
+        );
+
+        $this->refundService(
+            $refundRepository,
+            $this->gateway(null),
+            $this->orderService($this->orderRepository($order)),
+            static::createStub(StateMachineRegistry::class),
+            null,
+            $deliveryRepository,
+            $this->appRepository()
+        )->applyNotification($refund, $order, new NotificationResult(true, true, outRefundId: 'channel-refund-1', amount: 1000, raw: ['status' => 'done']));
+    }
+
     /**
      * @param EntityRepository<PaymentRefundCollection> $refundRepository
+     * @param EntityRepository<PaymentWebhookDeliveryCollection>|null $deliveryRepository
+     * @param EntityRepository<PaymentAppCollection>|null $appRepository
      */
     private function refundService(
         EntityRepository $refundRepository,
         GatewayInterface $gateway,
         ?PaymentOrderService $orderService = null,
         ?StateMachineRegistry $refundStateMachine = null,
-        ?EventDispatcherInterface $eventDispatcher = null
+        ?EventDispatcherInterface $eventDispatcher = null,
+        ?EntityRepository $deliveryRepository = null,
+        ?EntityRepository $appRepository = null
     ): PaymentRefundService {
         $initialStateIdLoader = static::createStub(InitialStateIdLoader::class);
         $initialStateIdLoader->method('get')->willReturn('state-open');
 
         $cipher = new PaymentCredentialCipher('test-secret');
 
-        $deliveryRepository = static::createStub(EntityRepository::class);
-        $deliveryRepository->method('search')->willReturn(new EntitySearchResult(
-            'payment_webhook_delivery',
-            0,
-            new PaymentWebhookDeliveryCollection([]),
-            null,
-            new Criteria(),
-            Context::createDefaultContext()
-        ));
+        if (!$deliveryRepository instanceof EntityRepository) {
+            $deliveryRepository = static::createStub(EntityRepository::class);
+            $deliveryRepository->method('search')->willReturn(new EntitySearchResult(
+                'payment_webhook_delivery',
+                0,
+                new PaymentWebhookDeliveryCollection([]),
+                null,
+                new Criteria(),
+                Context::createDefaultContext()
+            ));
+        }
 
-        $appRepository = static::createStub(EntityRepository::class);
-        $appRepository->method('search')->willReturn(new EntitySearchResult(
-            'payment_app',
-            0,
-            new PaymentAppCollection([]),
-            null,
-            new Criteria(),
-            Context::createDefaultContext()
-        ));
+        if (!$appRepository instanceof EntityRepository) {
+            $appRepository = static::createStub(EntityRepository::class);
+            $appRepository->method('search')->willReturn(new EntitySearchResult(
+                'payment_app',
+                0,
+                new PaymentAppCollection([]),
+                null,
+                new Criteria(),
+                Context::createDefaultContext()
+            ));
+        }
 
         $webhookService = new PaymentWebhookDispatcher(
             $deliveryRepository,
@@ -631,6 +715,27 @@ class PaymentRefundServiceTest extends TestCase
             'outPaymentNo' => 'channel-trade-1',
             'stateId' => 'state-paid',
         ]);
+    }
+
+    /**
+     * @return EntityRepository<PaymentAppCollection>
+     */
+    private function appRepository(): EntityRepository
+    {
+        $app = $this->app();
+        $app->appSecret = (new PaymentCredentialCipher('test-secret'))->encryptValue('secret');
+
+        $repository = static::createStub(EntityRepository::class);
+        $repository->method('search')->willReturn(new EntitySearchResult(
+            'payment_app',
+            1,
+            new PaymentAppCollection([$app]),
+            null,
+            new Criteria(),
+            Context::createDefaultContext()
+        ));
+
+        return $repository;
     }
 
     private function app(): PaymentAppEntity

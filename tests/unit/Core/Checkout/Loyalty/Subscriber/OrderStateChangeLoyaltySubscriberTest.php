@@ -6,8 +6,6 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Checkout\Cart\LineItem\LineItem;
 use Shopwell\Core\Checkout\Loyalty\Cart\LoyaltyPointCartProcessor;
-use Shopwell\Core\Checkout\Loyalty\Entity\CustomerLoyalty\CustomerLoyaltyCollection;
-use Shopwell\Core\Checkout\Loyalty\Entity\CustomerLoyalty\CustomerLoyaltyEntity;
 use Shopwell\Core\Checkout\Loyalty\Service\LoyaltyPointService;
 use Shopwell\Core\Checkout\Loyalty\Service\TierResolver;
 use Shopwell\Core\Checkout\Loyalty\Subscriber\OrderStateChangeLoyaltySubscriber;
@@ -137,16 +135,12 @@ class OrderStateChangeLoyaltySubscriberTest extends TestCase
         $customerId = Uuid::randomHex();
         $orderId = Uuid::randomHex();
 
-        $loyalty = new CustomerLoyaltyEntity();
-        $loyalty->setId(Uuid::randomHex());
-        $loyalty->setCustomerId($customerId);
-        $loyalty->setGrowthValue(20);
-
-        $customerLoyaltyRepository = StaticEntityRepository::of(CustomerLoyaltyCollection::class, [[$loyalty]]);
-
         $loyaltyPointService = static::createMock(LoyaltyPointService::class);
         $loyaltyPointService->expects($this->once())->method('award')
             ->with($customerId, 300, $orderId, $orderId . '-earned', static::anything());
+        $loyaltyPointService->expects($this->once())->method('addGrowthValue')
+            ->with($customerId, 100, static::anything())
+            ->willReturn(120);
 
         $tierResolver = static::createMock(TierResolver::class);
         $tierResolver->method('getPointsMultiplier')->willReturn(1.5);
@@ -155,7 +149,6 @@ class OrderStateChangeLoyaltySubscriberTest extends TestCase
 
         $subscriber = new OrderStateChangeLoyaltySubscriber(
             StaticEntityRepository::of(OrderCollection::class, [[$this->createOrder($customerId, 100.0, [], $orderId)]]),
-            $customerLoyaltyRepository,
             $loyaltyPointService,
             $tierResolver,
             new StaticSystemConfigService([
@@ -165,11 +158,6 @@ class OrderStateChangeLoyaltySubscriberTest extends TestCase
         );
 
         $subscriber->onOrderStateChange($this->createEvent('order', $orderId, OrderStates::STATE_COMPLETED));
-
-        static::assertSame(
-            [['id' => $loyalty->getId(), 'growthValue' => 120]],
-            $customerLoyaltyRepository->updates[0],
-        );
     }
 
     public function testDoesNotAwardWhenRatesAreZero(): void
@@ -188,29 +176,28 @@ class OrderStateChangeLoyaltySubscriberTest extends TestCase
         )->onOrderStateChange($this->createEvent('order', Uuid::randomHex(), OrderStates::STATE_COMPLETED));
     }
 
-    public function testDoesNotUpdateGrowthWithoutLoyaltyRecord(): void
+    public function testResolvesTheTierWithTheGrowthValueTheLedgerAnswered(): void
     {
         $customerId = Uuid::randomHex();
 
-        $customerLoyaltyRepository = StaticEntityRepository::of(CustomerLoyaltyCollection::class, [[]]);
+        $loyaltyPointService = static::createStub(LoyaltyPointService::class);
+        $loyaltyPointService->method('addGrowthValue')->willReturn(40);
 
         $tierResolver = static::createMock(TierResolver::class);
         $tierResolver->method('getPointsMultiplier')->willReturn(1.0);
-        $tierResolver->expects($this->never())->method('resolve');
+        $tierResolver->expects($this->once())->method('resolve')
+            ->with($customerId, 40, static::anything());
 
         $subscriber = new OrderStateChangeLoyaltySubscriber(
             StaticEntityRepository::of(OrderCollection::class, [[$this->createOrder($customerId, 100.0, [])]]),
-            $customerLoyaltyRepository,
-            static::createStub(LoyaltyPointService::class),
+            $loyaltyPointService,
             $tierResolver,
             new StaticSystemConfigService([
                 OrderStateChangeLoyaltySubscriber::CONFIG_KEY_GROWTH_PER_CURRENCY_UNIT => 1,
             ]),
         );
 
-        $subscriber->onOrderStateChange($this->createEvent('order', Uuid::randomHex(), OrderStates::STATE_COMPLETED));
-
-        static::assertSame([], $customerLoyaltyRepository->updates);
+        $subscriber->onOrderStateChange($this->createEvent('order', $customerId, OrderStates::STATE_COMPLETED));
     }
 
     /**
@@ -221,7 +208,6 @@ class OrderStateChangeLoyaltySubscriberTest extends TestCase
     {
         return new OrderStateChangeLoyaltySubscriber(
             StaticEntityRepository::of(OrderCollection::class, $orders === [] ? [[]] : [$orders]),
-            StaticEntityRepository::of(CustomerLoyaltyCollection::class, [[]]),
             $loyaltyPointService,
             static::createStub(TierResolver::class),
             new StaticSystemConfigService($config),

@@ -41,7 +41,7 @@ export default defineComponent({
         sortBy: string;
         limit: number;
         loyaltyTiers: EntityCollection<'loyalty_tier'> | null;
-        sortDirection: string;
+        sortDirection: 'ASC' | 'DESC';
         searchConfigEntity: string;
     } {
         return {

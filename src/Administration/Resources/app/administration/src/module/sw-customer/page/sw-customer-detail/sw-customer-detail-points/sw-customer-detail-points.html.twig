@@ -1,65 +1,161 @@
 {% block sw_customer_detail_points %}
 <div class="sw-customer-detail-points">
 
-    {% block sw_customer_detail_points_summary_card %}
+    {% block sw_customer_detail_points_membership_card %}
     <mt-card
-        class="sw-customer-detail-points__summary"
-        position-identifier="sw-customer-detail-points-summary"
-        :title="$t('sw-customer.detailPoints.cardSummaryTitle')"
+        class="sw-customer-detail-points__membership"
+        position-identifier="sw-customer-detail-points-membership"
+        :title="$t('sw-customer.detailPoints.cardMembershipTitle')"
         :is-loading="isLoading"
     >
-        {% block sw_customer_detail_points_summary_actions %}
+        {% block sw_customer_detail_points_membership_actions %}
         <template #headerRight>
             <mt-button
-                class="sw-customer-detail-points__adjust-points-action"
+                class="sw-customer-detail-points__grant-membership-action"
                 variant="secondary"
                 size="small"
                 :disabled="!allowAdjustPoints || undefined"
-                @click="openPointsModal"
+                @click="openMembershipModal"
             >
-                {{ $t('sw-customer.detailPoints.buttonAdjustPoints') }}
+                {{ $t('sw-customer.detailPoints.buttonGrantMembership') }}
             </mt-button>
         </template>
         {% endblock %}
 
-        {% block sw_customer_detail_points_summary_content %}
+        {% block sw_customer_detail_points_membership_content %}
         <sw-container
             columns="repeat(auto-fit, minmax(200px, 1fr))"
             gap="0px 30px"
         >
-            {% block sw_customer_detail_points_summary_points_balance %}
-            <div class="sw-customer-detail-points__summary-item">
-                <p class="sw-customer-detail-points__summary-label">
+            {% block sw_customer_detail_points_membership_tier %}
+            <div class="sw-customer-detail-points__item">
+                <p class="sw-customer-detail-points__item-label">
+                    {{ $t('sw-customer.detailPoints.labelCurrentTier') }}
+                </p>
+                <p class="sw-customer-detail-points__item-value">
+                    {{ loyaltySummary ? membershipTierLabel : '-' }}
+                </p>
+                <mt-badge
+                    v-if="loyaltySummary && loyaltySummary.membershipTier"
+                    class="sw-customer-detail-points__membership-state"
+                    size="small"
+                    :type="membershipIsRunning ? 'success' : 'warning'"
+                >
+                    {{ membershipIsRunning
+                    ? $t('sw-customer.detailPoints.membershipRunning')
+                    : $t('sw-customer.detailPoints.membershipExpired') }}
+                </mt-badge>
+            </div>
+            {% endblock %}
+
+            {% block sw_customer_detail_points_membership_valid_until %}
+            <div class="sw-customer-detail-points__item">
+                <p class="sw-customer-detail-points__item-label">
+                    {{ $t('sw-customer.detailPoints.labelMembershipValidUntil') }}
+                </p>
+                <p class="sw-customer-detail-points__item-value">
+                    {{ loyaltySummary ? formatExpiry(membershipValidUntil) : '-' }}
+                </p>
+            </div>
+            {% endblock %}
+
+            {% block sw_customer_detail_points_membership_points_balance %}
+            <div class="sw-customer-detail-points__item">
+                <p class="sw-customer-detail-points__item-label">
                     {{ $t('sw-customer.detailPoints.labelPointsBalance') }}
                 </p>
-                <p class="sw-customer-detail-points__summary-value">
+                <p class="sw-customer-detail-points__item-value">
                     {{ loyaltySummary ? loyaltySummary.pointsBalance : '-' }}
                 </p>
             </div>
             {% endblock %}
-
-            {% block sw_customer_detail_points_summary_growth_value %}
-            <div class="sw-customer-detail-points__summary-item">
-                <p class="sw-customer-detail-points__summary-label">
-                    {{ $t('sw-customer.detailPoints.labelGrowthValue') }}
-                </p>
-                <p class="sw-customer-detail-points__summary-value">
-                    {{ loyaltySummary ? loyaltySummary.growthValue : '-' }}
-                </p>
-            </div>
-            {% endblock %}
-
-            {% block sw_customer_detail_points_summary_membership_tier %}
-            <div class="sw-customer-detail-points__summary-item">
-                <p class="sw-customer-detail-points__summary-label">
-                    {{ $t('sw-customer.detailPoints.labelCurrentTier') }}
-                </p>
-                <p class="sw-customer-detail-points__summary-value">
-                    {{ loyaltySummary ? membershipTierLabel : '-' }}
-                </p>
-            </div>
-            {% endblock %}
         </sw-container>
+        {% endblock %}
+
+        {% block sw_customer_detail_points_growth %}
+        <div
+            v-if="nextTier"
+            class="sw-customer-detail-points__growth"
+        >
+            <div class="sw-customer-detail-points__growth-header">
+                <span class="sw-customer-detail-points__item-label">
+                    {{ $t('sw-customer.detailPoints.labelGrowthValue') }}
+                </span>
+                <span class="sw-customer-detail-points__growth-values">
+                    {{ $t('sw-customer.detailPoints.growthProgress', {
+                    current: growthValue,
+                    required: nextTier.minGrowthValue,
+                    tier: nextTier.name
+                    }, 0) }}
+                </span>
+            </div>
+            <mt-progress-bar
+                class="sw-customer-detail-points__growth-bar"
+                :model-value="growthProgress"
+                :max-value="100"
+            />
+        </div>
+        {% endblock %}
+    </mt-card>
+    {% endblock %}
+
+    {% block sw_customer_detail_points_orders_card %}
+    <mt-card
+        class="sw-customer-detail-points__orders"
+        position-identifier="sw-customer-detail-points-orders"
+        :title="$t('sw-customer.detailPoints.cardMembershipOrdersTitle')"
+        :is-loading="isLoading"
+    >
+        {% block sw_customer_detail_points_orders_grid %}
+        <sw-data-grid
+            v-if="orders.length > 0"
+            class="sw-customer-detail-points__order-grid"
+            :data-source="orders"
+            :columns="orderColumns"
+            :show-selection="false"
+            :show-settings="false"
+            :compact-mode="true"
+        >
+            {% block sw_customer_detail_points_orders_grid_column_plan %}
+            <template #column-planName="{ item }">
+                {{ item.planName || '-' }}
+            </template>
+            {% endblock %}
+
+            {% block sw_customer_detail_points_orders_grid_column_amount %}
+            <template #column-amount="{ item }">
+                {{ formatAmount(item.amount, item.currency) }}
+            </template>
+            {% endblock %}
+
+            {% block sw_customer_detail_points_orders_grid_column_state %}
+            <template #column-state="{ item }">
+                <mt-badge
+                    class="sw-customer-detail-points__order-state"
+                    size="small"
+                    :type="getOrderStateVariant(item.state)"
+                >
+                    {{ getOrderStateLabel(item.state) }}
+                </mt-badge>
+            </template>
+            {% endblock %}
+
+            {% block sw_customer_detail_points_orders_grid_column_paid_at %}
+            <template #column-paidAt="{ item }">
+                {{ formatDate(item.paidAt) }}
+            </template>
+            {% endblock %}
+        </sw-data-grid>
+
+        {% block sw_customer_detail_points_orders_empty %}
+        <mt-empty-state
+            v-else-if="!isLoading"
+            class="sw-customer-detail-points__order-empty-state"
+            centered
+            icon="regular-shopping-bag"
+            :headline="$t('sw-customer.detailPoints.emptyMembershipOrders')"
+        />
+        {% endblock %}
         {% endblock %}
     </mt-card>
     {% endblock %}
@@ -71,11 +167,35 @@
         :title="$t('sw-customer.detailPoints.cardPointTransactionsTitle')"
         :is-loading="isLoading"
     >
+        {% block sw_customer_detail_points_transactions_actions %}
+        <template #headerRight>
+            <div class="sw-customer-detail-points__transaction-actions">
+                <mt-select
+                    v-model="typeFilter"
+                    class="sw-customer-detail-points__type-filter"
+                    :options="typeFilterOptions"
+                    :label="$t('sw-customer.detailPoints.labelFilterType')"
+                    size="small"
+                    @update:model-value="onFilterChange"
+                />
+                <mt-button
+                    class="sw-customer-detail-points__adjust-points-action"
+                    variant="secondary"
+                    size="small"
+                    :disabled="!allowAdjustPoints || undefined"
+                    @click="openPointsModal"
+                >
+                    {{ $t('sw-customer.detailPoints.buttonAdjustPoints') }}
+                </mt-button>
+            </div>
+        </template>
+        {% endblock %}
+
         {% block sw_customer_detail_points_transactions_grid %}
         <sw-data-grid
-            v-if="paginatedPointsTransactions.length > 0"
+            v-if="transactions.length > 0"
             class="sw-customer-detail-points__transaction-grid"
-            :data-source="paginatedPointsTransactions"
+            :data-source="transactions"
             :columns="pointsTransactionColumns"
             :show-selection="false"
             :show-settings="false"
@@ -126,10 +246,10 @@
 
         {% block sw_customer_detail_points_transactions_pagination %}
         <sw-pagination
-            v-if="totalPointsTransactions > 0"
+            v-if="total > 0"
             :page="page"
             :limit="limit"
-            :total="totalPointsTransactions"
+            :total="total"
             @page-change="onPageChange"
         />
         {% endblock %}
@@ -180,6 +300,62 @@
                 :is-loading="isSavingPoints"
                 :disabled="!isPointsFormValid || undefined"
                 @click="onSavePoints"
+            >
+                {{ $t('global.default.save') }}
+            </mt-button>
+        </template>
+        {% endblock %}
+    </sw-modal>
+    {% endblock %}
+
+    {% block sw_customer_detail_points_membership_modal %}
+    <sw-modal
+        v-if="showMembershipModal"
+        class="sw-customer-detail-points__membership-modal"
+        :title="$t('sw-customer.detailPoints.membershipModalTitle')"
+        @modal-close="closeMembershipModal"
+    >
+        {% block sw_customer_detail_points_membership_modal_content %}
+        <p class="sw-customer-detail-points__membership-modal-description">
+            {{ $t('sw-customer.detailPoints.membershipHelpText') }}
+        </p>
+
+        <mt-select
+            v-model="membershipForm.tierId"
+            class="sw-customer-detail-points__membership-tier"
+            :options="tierOptions"
+            :label="$t('sw-customer.detailPoints.labelMembershipTier')"
+            required
+        />
+
+        <mt-number-field
+            v-model="membershipForm.durationDays"
+            name="sw-field--membershipForm-durationDays"
+            class="sw-customer-detail-points__membership-duration"
+            number-type="int"
+            :min="1"
+            :label="$t('sw-customer.detailPoints.labelMembershipDuration')"
+            :help-text="$t('sw-customer.detailPoints.membershipDurationHelpText')"
+        />
+        {% endblock %}
+
+        {% block sw_customer_detail_points_membership_modal_footer %}
+        <template #modal-footer>
+            <mt-button
+                class="sw-customer-detail-points__membership-modal-cancel"
+                variant="secondary"
+                size="small"
+                @click="closeMembershipModal"
+            >
+                {{ $t('global.default.cancel') }}
+            </mt-button>
+            <mt-button
+                class="sw-customer-detail-points__membership-modal-save"
+                variant="primary"
+                size="small"
+                :is-loading="isSavingMembership"
+                :disabled="!isMembershipFormValid || undefined"
+                @click="onSaveMembership"
             >
                 {{ $t('global.default.save') }}
             </mt-button>

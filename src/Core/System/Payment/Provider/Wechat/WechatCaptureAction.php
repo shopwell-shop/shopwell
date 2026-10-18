@@ -42,9 +42,22 @@ final class WechatCaptureAction extends AbstractPaymentAction
 
     final public const URI_APP = 'v3/pay/transactions/app';
 
+    /**
+     * The key of the h5 scene type: declared as a channel parameter and accepted as a free setting.
+     */
     final public const SETTING_H5_TYPE = 'h5_type';
 
     final public const DEFAULT_H5_TYPE = 'Wap';
+
+    /**
+     * The keys the answers of the two browser products are recorded under. They are part of the
+     * contract with {@see WechatPayParamsDecoder}, which turns a recorded answer back into the
+     * parameters the payer is handed to - the two must spell the keys in one place or a reopen
+     * silently degrades to a second capture at wechat.
+     */
+    final public const RESPONSE_H5_URL = 'h5_url';
+
+    final public const RESPONSE_CODE_URL = 'code_url';
 
     /**
      * The package the app sdk of wechat expects for an app trade.
@@ -112,14 +125,23 @@ final class WechatCaptureAction extends AbstractPaymentAction
     {
         $api = $this->api();
 
+        $payerClientIp = $this->stringValue($model, PaymentGatewayModel::CLIENT_IP);
+
+        if ($payerClientIp === '') {
+            // the ip is mandatory for an h5 trade, and wechat answers a 400 that names nothing when it is
+            // missing; failing here says which value is missing. The channel does not declare the ip as a
+            // runtime parameter, so nothing has validated it before this point.
+            throw PaymentException::missingParameter(PaymentGatewayModel::CLIENT_IP);
+        }
+
         $payload['scene_info'] = [
-            'payer_client_ip' => $this->stringValue($model, PaymentGatewayModel::CLIENT_IP),
-            'h5_info' => ['type' => $api->setting(self::SETTING_H5_TYPE, self::DEFAULT_H5_TYPE)],
+            'payer_client_ip' => $payerClientIp,
+            'h5_info' => ['type' => $this->h5Type()],
         ];
 
         $answer = $this->post($model, $uri, $payload);
 
-        $payUrl = $answer['h5_url'] ?? null;
+        $payUrl = $answer[self::RESPONSE_H5_URL] ?? null;
 
         if (!\is_string($payUrl) || $payUrl === '') {
             throw PaymentException::gatewayError($api->channel(), 'the interface did not answer a payment url');
@@ -134,6 +156,20 @@ final class WechatCaptureAction extends AbstractPaymentAction
     }
 
     /**
+     * The scene type of the h5 trade, which wechat uses for its risk control: `Wap` for a mobile
+     * browser, `iOS` / `Android` when the page runs inside an app of that platform.
+     *
+     * The declared channel parameter wins over the free settings, so the switch is reachable from the
+     * administration: the form it renders is built from the channel parameters.
+     */
+    private function h5Type(): string
+    {
+        $api = $this->api();
+
+        return $api->param(self::SETTING_H5_TYPE) ?? $api->setting(self::SETTING_H5_TYPE, self::DEFAULT_H5_TYPE) ?? self::DEFAULT_H5_TYPE;
+    }
+
+    /**
      * The native product: wechat answers a code url the app renders as a qr code.
      *
      * @param array<string, mixed> $payload
@@ -144,7 +180,7 @@ final class WechatCaptureAction extends AbstractPaymentAction
 
         $answer = $this->post($model, self::URI_NATIVE, $payload);
 
-        $codeUrl = $answer['code_url'] ?? null;
+        $codeUrl = $answer[self::RESPONSE_CODE_URL] ?? null;
 
         if (!\is_string($codeUrl) || $codeUrl === '') {
             throw PaymentException::gatewayError($api->channel(), 'the interface did not answer a code url');
@@ -269,6 +305,8 @@ final class WechatCaptureAction extends AbstractPaymentAction
 
         $expireAt = $this->value($model, PaymentGatewayModel::EXPIRE_AT);
         if ($expireAt instanceof \DateTimeInterface) {
+            // deliberately not Defaults::STORAGE_DATE_TIME_FORMAT: wechat pay v3 demands RFC3339 with
+            // an offset for time_expire, the storage format it rejects the trade with
             $payload['time_expire'] = $expireAt->format(\DateTimeInterface::ATOM);
         }
 
@@ -291,7 +329,7 @@ final class WechatCaptureAction extends AbstractPaymentAction
         } catch (\Throwable $exception) {
             $this->recordResponse($model, ['error' => $exception->getMessage()]);
 
-            throw PaymentException::gatewayError($api->channel(), $exception->getMessage());
+            throw PaymentException::gatewayError($api->channel(), $exception->getMessage(), $exception);
         }
 
         $this->recordResponse($model, $answer);

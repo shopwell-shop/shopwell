@@ -25,6 +25,10 @@
         <field name="platform_cert" type="textarea">
             <label>微信支付平台证书</label>
         </field>
+        <field name="platform_certs" type="textarea">
+            <label>微信支付平台证书（轮换用）</label>
+            <help-text>JSON 对象，键为证书序列号、值为证书内容；平台证书轮换时可同时配置新旧两张，避免验签中断。</help-text>
+        </field>
     </credentials>
 
     <channels>
@@ -36,6 +40,13 @@
             <params>
                 <field name="appid" type="text" required="true">
                     <label>公众号 / APP 的 appid</label>
+                </field>
+                <field name="h5_type" type="select" default="Wap">
+                    <label>H5 场景类型</label>
+                    <help-text>微信按场景类型做风险控制，须与用户实际终端一致：手机浏览器选 Wap，内嵌在 iOS / Android 应用里则选 iOS / Android。</help-text>
+                    <option value="Wap">Wap（手机浏览器）</option>
+                    <option value="iOS">iOS（iOS 应用内）</option>
+                    <option value="Android">Android（Android 应用内）</option>
                 </field>
             </params>
         </channel>

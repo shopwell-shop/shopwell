@@ -178,11 +178,17 @@ class PaymentOrderControllerTest extends TestCase
     public function testACloseClosesTheOrder(): void
     {
         $app = PaymentControllerFixture::app('client-a', 'secret-a');
-        $order = PaymentControllerFixture::order($app->id, ['stateId' => 'state-closed']);
+        // the order the api hands over carries its app, which is what the channel configuration is
+        // resolved from
+        $order = PaymentControllerFixture::order($app->id, ['stateId' => 'state-closed', 'paymentApp' => $app]);
 
         $request = PaymentControllerFixture::signedRequest('client-a', 'secret-a', Request::METHOD_POST, self::ORDER_PATH . '/close');
 
         $controller = $this->controller($app, PaymentControllerFixture::repository(PaymentOrderCollection::class, [$order]), [
+            'appProviders' => [PaymentControllerFixture::appProvider($app->id)],
+            'appChannels' => [PaymentControllerFixture::appChannel($app->id)],
+            'channelConfigs' => [PaymentControllerFixture::channelConfig()],
+            'providerConfigs' => [PaymentControllerFixture::providerConfig()],
             'states' => ['closed'],
         ]);
 
@@ -216,7 +222,11 @@ class PaymentOrderControllerTest extends TestCase
      */
     private function controller(PaymentAppEntity $app, EntityRepository $orderRepository, array $options = []): PaymentOrderController
     {
-        $providers = PaymentControllerFixture::providerRegistry(PaymentControllerFixture::provider('alipay', [PaymentControllerFixture::channel('alipay_h5', 'alipay')]));
+        $providers = PaymentControllerFixture::providerRegistry(PaymentControllerFixture::provider(
+            'alipay',
+            [PaymentControllerFixture::channel('alipay_h5', 'alipay')],
+            gatewayFactory: PaymentControllerFixture::closingGatewayFactory(),
+        ));
         $resolver = PaymentControllerFixture::configResolver(
             $providers,
             PaymentControllerFixture::channelRegistry($providers),
@@ -230,10 +240,13 @@ class PaymentOrderControllerTest extends TestCase
 
         $states = array_map(PaymentControllerFixture::stateName(...), $options['states'] ?? []);
 
+        $transactions = PaymentControllerFixture::repository(PaymentTransactionCollection::class);
+
         return new PaymentOrderController(
             PaymentControllerFixture::authenticator([$app]),
             $orderService,
-            PaymentControllerFixture::captureService(PaymentControllerFixture::repository(PaymentTransactionCollection::class), $resolver, $orderService),
+            PaymentControllerFixture::captureService($transactions, $resolver, $orderService),
+            PaymentControllerFixture::closer($orderRepository, $transactions, $resolver, $orderService),
             PaymentControllerFixture::presenter($states),
         );
     }

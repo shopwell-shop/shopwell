@@ -250,6 +250,75 @@ class PaymentConfigResolverTest extends TestCase
         static::assertSame(['appid' => 'wx-own'], $resolved->params);
     }
 
+    /**
+     * A payout notification has no channel in its url, so the credentials are resolved per interface.
+     * They are handed to the verifier in clear - the stored value is ciphertext, and a verifier that
+     * was given the ciphertext could never validate anything.
+     */
+    public function testResolveProviderCredentialsReturnsTheDecryptedPlatformCredentials(): void
+    {
+        $resolver = $this->resolver(
+            appProviders: $this->appProviders($this->appProvider()),
+            providerConfigs: $this->providerConfigs($this->providerConfig(
+                credentials: $this->cipher->encrypt(['webhook_secret' => 'whsec_platform'])
+            ))
+        );
+
+        static::assertSame(
+            ['webhook_secret' => 'whsec_platform'],
+            $resolver->resolveProviderCredentials($this->app, self::PROVIDER)
+        );
+    }
+
+    /**
+     * The app may run the interface with its own merchant account, and then the notification is signed
+     * with the app's key - the platform credentials would not verify it.
+     */
+    public function testResolveProviderCredentialsUsesTheOwnCredentialsInOwnMode(): void
+    {
+        $resolver = $this->resolver(
+            appProviders: $this->appProviders($this->appProvider(
+                mode: PaymentAppProviderEntity::MODE_OWN,
+                credentials: $this->cipher->encrypt(['webhook_secret' => 'whsec_own'])
+            ))
+        );
+
+        static::assertSame(
+            ['webhook_secret' => 'whsec_own'],
+            $resolver->resolveProviderCredentials($this->app, self::PROVIDER)
+        );
+    }
+
+    public function testResolveProviderCredentialsRejectsAProviderTheAppIsNotAuthorizedFor(): void
+    {
+        $this->expectExceptionObject(PaymentException::providerNotEnabled(self::PROVIDER, 'app'));
+
+        $this->resolver()->resolveProviderCredentials($this->app, self::PROVIDER);
+    }
+
+    public function testResolveProviderCredentialsRejectsADisabledAuthorization(): void
+    {
+        $resolver = $this->resolver(
+            appProviders: $this->appProviders($this->appProvider(enabled: false))
+        );
+
+        $this->expectExceptionObject(PaymentException::providerNotEnabled(self::PROVIDER, 'app'));
+
+        $resolver->resolveProviderCredentials($this->app, self::PROVIDER);
+    }
+
+    public function testResolveProviderCredentialsRejectsAnEmptyConfiguration(): void
+    {
+        $resolver = $this->resolver(
+            appProviders: $this->appProviders($this->appProvider()),
+            providerConfigs: $this->providerConfigs($this->providerConfig(credentials: $this->cipher->encrypt([])))
+        );
+
+        $this->expectExceptionObject(PaymentException::providerNotConfigured(self::PROVIDER));
+
+        $resolver->resolveProviderCredentials($this->app, self::PROVIDER);
+    }
+
     public function testEnabledForReturnsNothingWithoutAnyAuthorization(): void
     {
         static::assertSame([], $this->resolver()->enabledFor($this->app));

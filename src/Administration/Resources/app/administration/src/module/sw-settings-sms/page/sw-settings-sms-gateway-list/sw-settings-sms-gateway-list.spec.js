@@ -106,6 +106,19 @@ describe('src/module/sw-settings-sms/page/sw-settings-sms-gateway-list', () => {
         expect(wrapper.vm.providerLabel('aliyun')).toBe('sms.gateway.aliyun');
     });
 
+    it('should name a gateway by the name an administrator gave it', async () => {
+        ({ wrapper } = await createWrapper({ hasSnippet: true }));
+
+        expect(wrapper.vm.gatewayName({ technicalName: 'aliyun', label: 'main' })).toBe('main');
+    });
+
+    it('should name a gateway by its provider when it carries no name', async () => {
+        ({ wrapper } = await createWrapper({ hasSnippet: true }));
+
+        // the seeded baseline gateway has no name of its own, the provider names it
+        expect(wrapper.vm.gatewayName({ technicalName: 'null', label: null })).toBe('sms.gateway.null');
+    });
+
     it('should show the technical name of a strategy it has no label for', async () => {
         ({ wrapper } = await createWrapper({ hasSnippet: false }));
 

@@ -1,18 +1,55 @@
 .sw-customer-detail-points {
-    .sw-customer-detail-points__summary-item {
+    .sw-customer-detail-points__item {
         padding-bottom: 16px;
     }
 
-    .sw-customer-detail-points__summary-label {
+    .sw-customer-detail-points__item-label {
+        margin: 0 0 4px;
         color: var(--color-text-secondary-default);
         font-size: var(--font-size-xs);
-        margin: 0 0 4px;
     }
 
-    .sw-customer-detail-points__summary-value {
+    .sw-customer-detail-points__item-value {
+        margin: 0;
         font-size: var(--font-size-m);
         font-weight: var(--font-weight-semibold);
-        margin: 0;
+    }
+
+    .sw-customer-detail-points__membership-state {
+        margin-top: 8px;
+    }
+
+    .sw-customer-detail-points__growth {
+        margin-top: 8px;
+    }
+
+    .sw-customer-detail-points__growth-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 16px;
+        margin-bottom: 8px;
+    }
+
+    .sw-customer-detail-points__growth-values {
+        color: var(--color-text-secondary-default);
+        font-size: var(--font-size-xs);
+    }
+
+    .sw-customer-detail-points__transaction-actions {
+        display: flex;
+        align-items: flex-end;
+        gap: 8px;
+    }
+
+    .sw-customer-detail-points__type-filter {
+        min-width: 180px;
+    }
+
+    .sw-customer-detail-points__membership-modal-description {
+        margin: 0 0 16px;
+        color: var(--color-text-secondary-default);
+        font-size: var(--font-size-xs);
     }
 
     .is--negative {

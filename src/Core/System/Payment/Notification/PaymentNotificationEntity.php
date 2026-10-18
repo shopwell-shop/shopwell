@@ -13,6 +13,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Entity as EntityStruct;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityCustomFieldsTrait;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Payment\Order\PaymentOrderEntity;
+use Shopwell\Core\System\Payment\Transfer\PaymentTransferEntity;
 
 /**
  * An incoming asynchronous notification of a channel. The raw body is stored before it is processed
@@ -32,6 +33,7 @@ class PaymentNotificationEntity extends EntityStruct
     final public const RESULT_INVALID_SIGNATURE = 'invalid_signature';
     final public const RESULT_UNMATCHED = 'unmatched';
     final public const RESULT_AMOUNT_MISMATCH = 'amount_mismatch';
+    final public const RESULT_CURRENCY_MISMATCH = 'currency_mismatch';
     final public const RESULT_ERROR = 'error';
 
     #[PrimaryKey]
@@ -40,6 +42,13 @@ class PaymentNotificationEntity extends EntityStruct
 
     #[ForeignKey(entity: 'payment_order', api: ['admin-api' => true, 'store-api' => false])]
     public ?string $paymentOrderId = null;
+
+    /**
+     * The payout the notification is about. A notification belongs to one of the two domains and
+     * never to both: the order reference is written for a collection, this one for a payout.
+     */
+    #[ForeignKey(entity: 'payment_transfer', api: ['admin-api' => true, 'store-api' => false])]
+    public ?string $paymentTransferId = null;
 
     /**
      * The payment interface that sent the notification: it is the interface, not the channel, that
@@ -79,4 +88,11 @@ class PaymentNotificationEntity extends EntityStruct
      */
     #[ManyToOne(entity: 'payment_order', api: ['admin-api' => true, 'store-api' => false])]
     public ?PaymentOrderEntity $paymentOrder = null;
+
+    /**
+     * The payout of the notification. It is filled in once the signed body named the transfer, which
+     * happens after the row was recorded - the reason the column is nullable.
+     */
+    #[ManyToOne(entity: 'payment_transfer', api: ['admin-api' => true, 'store-api' => false])]
+    public ?PaymentTransferEntity $paymentTransfer = null;
 }

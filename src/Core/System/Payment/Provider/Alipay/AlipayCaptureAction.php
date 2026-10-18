@@ -31,8 +31,8 @@ use Symfony\Component\Clock\NativeClock;
  *  - `alipay_app` `alipay.trade.app.pay`, alipay answers the order string the sdk of the app signs,
  *  - `alipay_mini` `alipay.trade.create`, the mini program then calls `my.tradePay` with the trade no.
  *
- * With the setting `http_method=POST` the two gateway products answer with a self submitting form
- * instead of a url, which is what a desktop browser needs when the url would grow too long.
+ * With the channel parameter `http_method=POST` the two gateway products answer with a self submitting
+ * form instead of a url, which is what a desktop browser needs when the url would grow too long.
  *
  * @internal
  */
@@ -60,9 +60,37 @@ final class AlipayCaptureAction extends AbstractPaymentAction
      */
     final public const RUNTIME_BUYER_ID = 'buyer_id';
 
+    /**
+     * The channel parameter of the mini program payment: the appid of the mini program that opens the
+     * cashier. It falls back to the appid of the credentials, which is the mini program itself unless a
+     * service provider creates the trade on behalf of a merchant.
+     */
+    final public const PARAM_OP_APP_ID = 'op_app_id';
+
+    /**
+     * The key of the gateway http method: declared as a channel parameter and accepted as a free
+     * setting.
+     */
     final public const SETTING_HTTP_METHOD = 'http_method';
 
     final public const DEFAULT_HTTP_METHOD = 'GET';
+
+    /**
+     * The keys the answers of this interface are recorded under. They are part of the contract with
+     * {@see AlipayPayParamsDecoder}, which turns a recorded answer back into the parameters the payer
+     * is handed to - the two must spell the keys in one place or a reopen silently degrades to a
+     * second capture at alipay.
+     */
+    final public const RESPONSE_HTTP_METHOD = 'http_method';
+
+    final public const RESPONSE_ANSWER = 'answer';
+
+    final public const RESPONSE_QR_CODE = 'qr_code';
+
+    /**
+     * The longest payment window alipay accepts, as the minutes of `timeout_express`.
+     */
+    final public const MAX_TIMEOUT_MINUTES = 21600;
 
     protected string $apiClass = AlipayApi::class;
 
@@ -146,10 +174,10 @@ final class AlipayCaptureAction extends AbstractPaymentAction
         } catch (\Throwable $exception) {
             $this->recordResponse($model, ['error' => $exception->getMessage()]);
 
-            throw PaymentException::gatewayError($api->channel(), $exception->getMessage());
+            throw PaymentException::gatewayError($api->channel(), $exception->getMessage(), $exception);
         }
 
-        $this->recordResponse($model, ['http_method' => $httpMethod, 'answer' => $answer]);
+        $this->recordResponse($model, [self::RESPONSE_HTTP_METHOD => $httpMethod, self::RESPONSE_ANSWER => $answer]);
 
         $params = $httpMethod === 'GET'
             ? new PayParams(flow: PaymentFlow::REDIRECT, payUrl: $answer, httpMethod: 'GET', extra: ['method' => $method])
@@ -189,7 +217,7 @@ final class AlipayCaptureAction extends AbstractPaymentAction
         } catch (\Throwable $exception) {
             $this->recordResponse($model, ['error' => $exception->getMessage()]);
 
-            throw PaymentException::gatewayError($api->channel(), $exception->getMessage());
+            throw PaymentException::gatewayError($api->channel(), $exception->getMessage(), $exception);
         }
 
         if (!$answer instanceof AlipayTradePrecreateResponseModel) {
@@ -201,7 +229,7 @@ final class AlipayCaptureAction extends AbstractPaymentAction
 
         $qrCode = $answer->getQrCode();
 
-        $this->recordResponse($model, ['qr_code' => $qrCode]);
+        $this->recordResponse($model, [self::RESPONSE_QR_CODE => $qrCode]);
 
         if (!\is_string($qrCode) || $qrCode === '') {
             throw PaymentException::gatewayError($api->channel(), 'the interface did not answer a qr code');
@@ -224,11 +252,17 @@ final class AlipayCaptureAction extends AbstractPaymentAction
         $this->recordRequest($model, ['method' => self::METHOD_APP_PAY, 'content' => $content]);
 
         try {
-            $orderString = $api->genericApi()->sdkExecute(self::METHOD_APP_PAY, $content);
+            // the sdk turns the `biz_content` array into the json string of the wire format; handing it
+            // the business content alone would send it as public parameters, which alipay rejects - the
+            // notification url is a public parameter as well, so an app payment carries it here
+            $orderString = $api->genericApi()->sdkExecute(self::METHOD_APP_PAY, [
+                'biz_content' => $content,
+                'notify_url' => $api->notifyUrl(),
+            ]);
         } catch (\Throwable $exception) {
             $this->recordResponse($model, ['error' => $exception->getMessage()]);
 
-            throw PaymentException::gatewayError($api->channel(), $exception->getMessage());
+            throw PaymentException::gatewayError($api->channel(), $exception->getMessage(), $exception);
         }
 
         $this->recordResponse($model, ['order_str' => $orderString]);
@@ -255,6 +289,13 @@ final class AlipayCaptureAction extends AbstractPaymentAction
         // part of the shop configuration
         $content[self::RUNTIME_BUYER_ID] = $api->runtimeParam(self::RUNTIME_BUYER_ID);
 
+        // the jsapi product requires the appid of the mini program that opens the cashier; the appid of
+        // the credentials is that mini program unless a service provider creates the trade for a merchant
+        $opAppId = $api->param(self::PARAM_OP_APP_ID) ?? $api->credential(AlipayApi::APP_ID);
+        if ($opAppId !== null) {
+            $content[self::PARAM_OP_APP_ID] = $opAppId;
+        }
+
         $this->recordRequest($model, ['method' => 'alipay.trade.create', 'content' => $content]);
 
         $trade = new AlipayTradeCreateModel();
@@ -276,7 +317,7 @@ final class AlipayCaptureAction extends AbstractPaymentAction
         } catch (\Throwable $exception) {
             $this->recordResponse($model, ['error' => $exception->getMessage()]);
 
-            throw PaymentException::gatewayError($api->channel(), $exception->getMessage());
+            throw PaymentException::gatewayError($api->channel(), $exception->getMessage(), $exception);
         }
 
         if (!$answer instanceof AlipayTradeCreateResponseModel) {
@@ -338,18 +379,32 @@ final class AlipayCaptureAction extends AbstractPaymentAction
         return $content;
     }
 
+    /**
+     * The declared channel parameter wins over the free settings, so the switch is reachable from the
+     * administration: the form it renders is built from the channel parameters, the settings are a
+     * free payload the api may send next to them.
+     */
     private function httpMethod(): string
     {
-        return strtoupper($this->api()->setting(self::SETTING_HTTP_METHOD, self::DEFAULT_HTTP_METHOD) ?? self::DEFAULT_HTTP_METHOD);
+        $api = $this->api();
+
+        $method = $api->param(self::SETTING_HTTP_METHOD) ?? $api->setting(self::SETTING_HTTP_METHOD, self::DEFAULT_HTTP_METHOD);
+
+        return strtoupper($method ?? self::DEFAULT_HTTP_METHOD);
     }
 
     /**
-     * Alipay limits `timeout_express` to minutes, hours and days.
+     * Alipay limits `timeout_express` to minutes, hours and days, and accepts 1m to 15d only.
+     *
+     * An expiry beyond that is cut at the upper bound instead of being sent as it is: alipay would
+     * reject the whole trade, and a payment that stays open for 15 days is still better than a payment
+     * that cannot be opened at all. Whether an order may live longer is a decision of the order - it
+     * would be taken when the order is created, never here, where the trade is already being opened.
      */
     private function timeoutExpress(\DateTimeInterface $expireAt): string
     {
         $seconds = max(0, $expireAt->getTimestamp() - $this->clock->now()->getTimestamp());
-        $minutes = max(1, (int) ceil($seconds / 60));
+        $minutes = min(self::MAX_TIMEOUT_MINUTES, max(1, (int) ceil($seconds / 60)));
 
         return $minutes . 'm';
     }

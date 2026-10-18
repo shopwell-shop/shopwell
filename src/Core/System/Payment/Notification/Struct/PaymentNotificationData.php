@@ -28,6 +28,13 @@ final readonly class PaymentNotificationData
          * The refund number of the platform, sent back as the merchant refund number.
          */
         public ?string $refundNo = null,
+        /**
+         * The transfer number of the platform, sent back as the merchant payout number. It is the
+         * payout counterpart of `paymentNo`: a notification names one of the two, never both.
+         *
+         * Declared last on purpose - the notification processor builds this object positionally.
+         */
+        public ?string $transferNo = null,
     ) {
     }
 }

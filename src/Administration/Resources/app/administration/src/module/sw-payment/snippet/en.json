@@ -4,6 +4,7 @@
             "mainMenuItemGeneral": "Payment",
             "mainMenuItemPaymentOrders": "Payment orders",
             "mainMenuItemRefunds": "Refunds",
+            "mainMenuItemTransfers": "Transfers",
             "description": "Payments of external apps through the generic payment gateway"
         },
         "configField": {
@@ -195,6 +196,87 @@
                 "labelResponsePayload": "Answer"
             }
         },
+        "transfer": {
+            "list": {
+                "title": "Transfers",
+                "placeholderSearchBar": "Search transfers...",
+                "titleSidebarItemRefresh": "Refresh list",
+                "columnTransferNo": "Transfer no.",
+                "columnOutNo": "Merchant transfer no.",
+                "columnRecipient": "Recipient",
+                "columnProvider": "Provider",
+                "columnChannel": "Channel",
+                "columnAmount": "Amount",
+                "columnState": "State",
+                "columnCreatedAt": "Created at",
+                "messageEmpty": "No transfers yet",
+                "sublineEmpty": "Payouts the platform sends to recipients through the payment gateway are listed here.",
+                "messageNoResult": "Transfer not found",
+                "messageNoResultSubline": "The transfer may have been removed or you may not have permission to see it."
+            },
+            "filters": {
+                "transferNoFilter": {
+                    "label": "Transfer no.",
+                    "placeholder": "Separate multiple numbers with a comma..."
+                },
+                "outNoFilter": {
+                    "label": "Merchant transfer no.",
+                    "placeholder": "Separate multiple numbers with a comma..."
+                },
+                "channelFilter": {
+                    "label": "Channel",
+                    "placeholder": "Separate multiple channels with a comma..."
+                },
+                "providerFilter": {
+                    "label": "Provider",
+                    "placeholder": "Separate multiple providers with a comma..."
+                },
+                "stateFilter": {
+                    "label": "State",
+                    "placeholder": "All states..."
+                }
+            },
+            "detail": {
+                "title": "Transfer",
+                "buttonRefresh": "Refresh",
+                "cardGeneralTitle": "General",
+                "cardRecipientTitle": "Recipient",
+                "cardTimelineTitle": "Timeline",
+                "cardChannelRefTitle": "Channel reference",
+                "cardFailureTitle": "Failure",
+                "cardConfirmationTitle": "Wechat confirmation",
+                "cardMetadataTitle": "Metadata",
+                "labelTransferNo": "Transfer no.",
+                "labelOutNo": "Merchant transfer no.",
+                "labelProvider": "Provider",
+                "labelChannel": "Channel",
+                "labelAmount": "Amount",
+                "labelCurrency": "Currency",
+                "labelSubmitAttempts": "Submit attempts",
+                "labelPaymentApp": "App",
+                "labelRecipientName": "Name",
+                "labelIdentityType": "Identity type",
+                "labelProviderAccountId": "Channel account",
+                "labelOnboardingStatus": "Onboarding status",
+                "labelPayoutEnabled": "Payout enabled",
+                "labelVerifiedAt": "Verified at",
+                "labelCreatedAt": "Created at",
+                "labelSubmittedAt": "Submitted at",
+                "labelSettledAt": "Settled at",
+                "labelReturnedAt": "Returned at",
+                "labelCanceledAt": "Canceled at",
+                "labelExpireAt": "Expires at",
+                "labelProviderRef": "Channel reference",
+                "labelProviderStageRef": "Channel stage reference",
+                "labelFailureCode": "Failure code",
+                "labelFailureReason": "Failure reason",
+                "labelConfirmation": "Confirmation payload",
+                "valueConfirmationGenerated": "Generated, waiting for the recipient",
+                "valueConfirmationMissing": "Not generated",
+                "labelMetadata": "Metadata",
+                "messageNoMetadata": "No metadata"
+            }
+        },
         "transactionType": {
             "capture": "Capture",
             "cancel": "Cancel"
@@ -211,6 +293,7 @@
             "invalid_signature": "Invalid signature",
             "unmatched": "Unmatched",
             "amount_mismatch": "Amount mismatch",
+            "currency_mismatch": "Currency mismatch",
             "error": "Error"
         },
         "webhookStatus": {

@@ -248,7 +248,7 @@
     "detail": {
       "tabGeneral": "General",
       "tabAddresses": "Addresses",
-      "tabPoints": "Points",
+      "tabPoints": "Points & membership",
       "tabWallet": "Wallet",
       "messageCustomerNotFound": "The customer could not be found. The customer may have been deleted.",
       "messageSaveError": "Customer could not be saved.",
@@ -300,7 +300,35 @@
         "expire": "Expire"
       },
       "emptyPointTransactions": "No point transactions yet.",
-      "notificationErrorMessage": "The points could not be updated."
+      "notificationErrorMessage": "The points could not be updated.",
+      "cardMembershipTitle": "Membership",
+      "buttonGrantMembership": "Grant / extend",
+      "labelMembershipValidUntil": "Valid until",
+      "membershipExpiresNever": "No expiry",
+      "membershipRunning": "Active",
+      "membershipExpired": "Expired",
+      "growthProgress": "Growth value {current} / {required}, next tier {tier}",
+      "cardMembershipOrdersTitle": "Membership orders",
+      "columnOrderPlan": "Plan",
+      "columnOrderAmount": "Amount",
+      "columnOrderState": "State",
+      "columnOrderPaidAt": "Paid at",
+      "membershipOrderState": {
+        "open": "Awaiting payment",
+        "activated": "Active",
+        "failed": "Failed"
+      },
+      "emptyMembershipOrders": "This customer has no membership orders yet.",
+      "labelFilterType": "Type",
+      "filterTypeAll": "All types",
+      "membershipModalTitle": "Grant membership",
+      "membershipHelpText": "Extending the same tier continues after the running period, another tier starts today.",
+      "labelMembershipTier": "Membership tier",
+      "labelMembershipDuration": "Duration (days)",
+      "membershipDurationHelpText": "A membership lasts at least one day.",
+      "messageMembershipSaved": "The membership has been granted.",
+      "notificationMembershipErrorMessage": "The membership could not be granted.",
+      "tierLevel": "L{level}"
     },
     "detailWallet": {
       "cardWalletTitle": "Wallet balances",
@@ -330,7 +358,15 @@
         "adjust": "Adjustment"
       },
       "emptyWalletTransactions": "No wallet transactions yet.",
-      "notificationErrorMessage": "The wallet balance could not be updated."
+      "notificationErrorMessage": "The wallet balance could not be updated.",
+      "emptyWalletsDescription": "A wallet is opened automatically when the customer orders or tops up.",
+      "cardPendingTopUpsTitle": "Open top ups",
+      "pendingTopUpsHint": "These top ups have no payment result yet, the money is not on the balance.",
+      "pendingTopUpState": "Awaiting payment",
+      "columnChannel": "Channel",
+      "columnState": "State",
+      "labelFilterType": "Type",
+      "filterTypeAll": "All types"
     },
     "filter": {
       "customerNumber": {

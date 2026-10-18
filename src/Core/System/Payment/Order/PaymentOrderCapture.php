@@ -76,7 +76,7 @@ final class PaymentOrderCapture
         } catch (\Throwable $exception) {
             $this->finishTransaction($transactionId, PaymentTransactionEntity::STATUS_FAILED, $model, null, $exception);
 
-            throw PaymentException::gatewayError($order->channelTechnicalName, $exception->getMessage());
+            throw PaymentException::gatewayError($order->channelTechnicalName, $exception->getMessage(), $exception);
         }
 
         $this->finishTransaction($transactionId, PaymentTransactionEntity::STATUS_SUCCESS, $model, $result->outPaymentNo);

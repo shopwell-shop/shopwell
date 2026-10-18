@@ -4,7 +4,11 @@ namespace Shopwell\Tests\Unit\Core\System\Payment\App\Api;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppChannel\PaymentAppChannelCollection;
@@ -12,14 +16,18 @@ use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppChannel\PaymentAppChann
 use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppProvider\PaymentAppProviderCollection;
 use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppProvider\PaymentAppProviderEntity;
 use Shopwell\Core\System\Payment\App\Api\PaymentAppController;
+use Shopwell\Core\System\Payment\App\PaymentAppChannelDto;
 use Shopwell\Core\System\Payment\App\PaymentAppCollection;
+use Shopwell\Core\System\Payment\App\PaymentAppDto;
+use Shopwell\Core\System\Payment\App\PaymentAppEntity;
+use Shopwell\Core\System\Payment\App\PaymentAppProviderDto;
 use Shopwell\Core\System\Payment\App\PaymentAppProvisioner;
 use Shopwell\Core\System\Payment\PaymentException;
 use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannelRegistry;
 use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;
 use Shopwell\Tests\Unit\Core\System\Payment\Api\PaymentControllerFixture;
+use Symfony\Component\Clock\NativeClock;
 use Symfony\Component\HttpFoundation\JsonResponse;
-use Symfony\Component\HttpFoundation\Request;
 
 /**
  * @internal
@@ -61,13 +69,36 @@ class PaymentAppControllerTest extends TestCase
         static::assertSame([], $data['apps']);
     }
 
-    public function testSavingWithoutATechnicalNameIsRejected(): void
+    /**
+     * The tenant of the shop is seeded and cannot be edited, so it must not show up in the onboarding
+     * list - an operator would only ever see a row he cannot change.
+     */
+    public function testTheListOnlyAsksForExternalApps(): void
     {
-        $controller = $this->controller(PaymentControllerFixture::repository(PaymentAppCollection::class));
+        $repository = static::createMock(EntityRepository::class);
+        $repository->expects($this->once())
+            ->method('search')
+            ->with(static::callback(function (Criteria $criteria): bool {
+                $filters = $criteria->getFilters();
+                static::assertCount(1, $filters);
 
-        $this->expectExceptionObject(PaymentException::missingParameter('technicalName'));
+                $filter = $filters[0];
+                static::assertInstanceOf(EqualsFilter::class, $filter);
+                static::assertSame('type', $filter->getField());
+                static::assertSame(PaymentAppEntity::TYPE_EXTERNAL, $filter->getValue());
 
-        $controller->save($this->payload(['name' => 'Client A']));
+                return true;
+            }))
+            ->willReturn(new EntitySearchResult(
+                'payment_app',
+                0,
+                new PaymentAppCollection(),
+                null,
+                new Criteria(),
+                Context::createDefaultContext()
+            ));
+
+        static::assertSame([], $this->decode($this->controller($repository)->list())['apps']);
     }
 
     public function testANewAppGetsAGeneratedSecretReturnedOnce(): void
@@ -75,15 +106,15 @@ class PaymentAppControllerTest extends TestCase
         $stored = PaymentControllerFixture::app('client-a', 'stored-secret');
         $controller = $this->controller(PaymentControllerFixture::repository(PaymentAppCollection::class, [$stored]));
 
-        $data = $this->decode($controller->save($this->payload([
-            'technicalName' => '  client-a  ',
-            'name' => 'Client A',
-            'active' => true,
-            'notifyUrl' => 'https://app.example.com/notify',
-            'returnUrl' => '',
-            'allowedIps' => ['10.0.0.1', '', '10.0.0.2'],
-            'rateLimit' => '60',
-        ])));
+        $data = $this->decode($controller->save(new PaymentAppDto(
+            technicalName: '  client-a  ',
+            name: 'Client A',
+            active: true,
+            notifyUrl: 'https://app.example.com/notify',
+            returnUrl: '',
+            allowedIps: ['10.0.0.1', '', '10.0.0.2'],
+            rateLimit: 60,
+        )));
 
         static::assertSame($stored->id, $data['app']['id']);
         static::assertTrue($data['secretGenerated']);
@@ -97,10 +128,10 @@ class PaymentAppControllerTest extends TestCase
         $existing = PaymentControllerFixture::app('client-a', 'stored-secret');
         $controller = $this->controller(PaymentControllerFixture::repository(PaymentAppCollection::class, [$existing]));
 
-        $data = $this->decode($controller->save($this->payload([
-            'id' => $existing->id,
-            'technicalName' => 'client-a',
-        ])));
+        $data = $this->decode($controller->save(new PaymentAppDto(
+            id: $existing->id,
+            technicalName: 'client-a',
+        )));
 
         static::assertSame($existing->id, $data['app']['id']);
         static::assertArrayNotHasKey('appSecret', $data);
@@ -112,26 +143,14 @@ class PaymentAppControllerTest extends TestCase
         $existing = PaymentControllerFixture::app('client-a', 'stored-secret');
         $controller = $this->controller(PaymentControllerFixture::repository(PaymentAppCollection::class, [$existing]));
 
-        $data = $this->decode($controller->save($this->payload([
-            'id' => $existing->id,
-            'technicalName' => 'client-a',
-            'appSecret' => '  my-own-secret  ',
-        ])));
+        $data = $this->decode($controller->save(new PaymentAppDto(
+            id: $existing->id,
+            technicalName: 'client-a',
+            appSecret: '  my-own-secret  ',
+        )));
 
         static::assertSame('my-own-secret', $data['appSecret']);
         static::assertFalse($data['secretGenerated']);
-    }
-
-    public function testThePayloadIsAlsoReadFromFormParameters(): void
-    {
-        $stored = PaymentControllerFixture::app('client-a', 'stored-secret');
-        $controller = $this->controller(PaymentControllerFixture::repository(PaymentAppCollection::class, [$stored]));
-
-        $request = new Request([], ['technicalName' => 'client-a']);
-
-        $data = $this->decode($controller->save($request));
-
-        static::assertSame('client-a', $data['app']['technicalName']);
     }
 
     public function testAnUnknownProviderInThePayloadIsRejected(): void
@@ -141,23 +160,10 @@ class PaymentAppControllerTest extends TestCase
 
         $this->expectExceptionObject(PaymentException::unknownProvider('stripe'));
 
-        $controller->save($this->payload([
-            'technicalName' => 'client-a',
-            'providers' => [['providerTechnicalName' => 'stripe']],
-        ]));
-    }
-
-    public function testAProviderWithoutATechnicalNameIsRejected(): void
-    {
-        $stored = PaymentControllerFixture::app('client-a', 'stored-secret');
-        $controller = $this->controller(PaymentControllerFixture::repository(PaymentAppCollection::class, [$stored]));
-
-        $this->expectExceptionObject(PaymentException::missingParameter('providerTechnicalName'));
-
-        $controller->save($this->payload([
-            'technicalName' => 'client-a',
-            'providers' => [['enabled' => true]],
-        ]));
+        $controller->save(new PaymentAppDto(
+            technicalName: 'client-a',
+            providers: [new PaymentAppProviderDto(providerTechnicalName: 'stripe')],
+        ));
     }
 
     public function testProvidersAndChannelsAreStoredAndPresented(): void
@@ -174,20 +180,20 @@ class PaymentAppControllerTest extends TestCase
             $this->registry()
         );
 
-        $data = $this->decode($controller->save($this->payload([
-            'technicalName' => 'client-a',
-            'providers' => [[
-                'providerTechnicalName' => 'alipay',
-                'enabled' => true,
-                'mode' => PaymentAppProviderEntity::MODE_OWN,
-                'settings' => ['sandbox' => '1'],
-            ]],
-            'channels' => [[
-                'channelTechnicalName' => 'alipay_h5',
-                'enabled' => true,
-                'settings' => ['theme' => 'blue'],
-            ]],
-        ])));
+        $data = $this->decode($controller->save(new PaymentAppDto(
+            technicalName: 'client-a',
+            providers: [new PaymentAppProviderDto(
+                providerTechnicalName: 'alipay',
+                enabled: true,
+                mode: PaymentAppProviderEntity::MODE_OWN,
+                settings: ['sandbox' => '1'],
+            )],
+            channels: [new PaymentAppChannelDto(
+                channelTechnicalName: 'alipay_h5',
+                enabled: true,
+                settings: ['theme' => 'blue'],
+            )],
+        )));
 
         static::assertCount(1, $data['app']['providers']);
         static::assertSame('alipay', $data['app']['providers'][0]['providerTechnicalName']);
@@ -207,11 +213,11 @@ class PaymentAppControllerTest extends TestCase
 
         $this->expectExceptionObject(PaymentException::providerNotEnabled('alipay', $stored->id));
 
-        $controller->save($this->payload([
-            'id' => $stored->id,
-            'technicalName' => 'client-a',
-            'channels' => [['channelTechnicalName' => 'alipay_h5', 'enabled' => true]],
-        ]));
+        $controller->save(new PaymentAppDto(
+            id: $stored->id,
+            technicalName: 'client-a',
+            channels: [new PaymentAppChannelDto(channelTechnicalName: 'alipay_h5', enabled: true)],
+        ));
     }
 
     public function testAnUnknownChannelIsRejected(): void
@@ -226,10 +232,10 @@ class PaymentAppControllerTest extends TestCase
 
         $this->expectExceptionObject(PaymentException::unknownChannel('alipay_wap'));
 
-        $controller->save($this->payload([
-            'technicalName' => 'client-a',
-            'channels' => [['channelTechnicalName' => 'alipay_wap', 'enabled' => true]],
-        ]));
+        $controller->save(new PaymentAppDto(
+            technicalName: 'client-a',
+            channels: [new PaymentAppChannelDto(channelTechnicalName: 'alipay_wap', enabled: true)],
+        ));
     }
 
     public function testDeleteAnswersWithoutContent(): void
@@ -278,16 +284,9 @@ class PaymentAppControllerTest extends TestCase
                 PaymentControllerFixture::cipher(),
                 $registry,
                 new PaymentChannelRegistry($registry),
+                new NativeClock(),
             ),
         );
-    }
-
-    /**
-     * @param array<string, mixed> $payload
-     */
-    private function payload(array $payload): Request
-    {
-        return new Request([], [], [], [], [], ['REQUEST_URI' => '/api/_action/payment/apps'], (string) json_encode($payload));
     }
 
     /**

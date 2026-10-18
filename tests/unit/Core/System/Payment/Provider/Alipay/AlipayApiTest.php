@@ -3,9 +3,12 @@
 namespace Shopwell\Tests\Unit\Core\System\Payment\Provider\Alipay;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Payment\Gateway\CloseResult;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayFactory;
+use Shopwell\Core\System\Payment\Gateway\QueryResult;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
 use Shopwell\Core\System\Payment\PaymentException;
 use Shopwell\Core\System\Payment\Provider\Alipay\AlipayApi;
@@ -162,6 +165,65 @@ class AlipayApiTest extends TestCase
 
         static::assertSame($api->tradeApi(), $api->tradeApi());
         static::assertSame($api->genericApi(), $api->genericApi());
+    }
+
+    /**
+     * @return iterable<string, array{string, string|null}>
+     */
+    public static function closeErrorCodes(): iterable
+    {
+        yield 'ACQ.TRADE_NOT_EXIST' => ['ACQ.TRADE_NOT_EXIST', CloseResult::STATUS_NOT_FOUND];
+        // the legacy gateway calls the same thing without the prefix
+        yield 'TRADE_NOT_EXIST' => ['TRADE_NOT_EXIST', CloseResult::STATUS_NOT_FOUND];
+        // "paid" and "closed" share this code - it is decided by asking the trade, not by the code
+        yield 'ACQ.TRADE_STATUS_ERROR' => ['ACQ.TRADE_STATUS_ERROR', null];
+        yield 'ACQ.SYSTEM_ERROR' => ['ACQ.SYSTEM_ERROR', null];
+    }
+
+    #[DataProvider('closeErrorCodes')]
+    public function testTheCloseErrorCodesThatAreDecidedWithoutAskingTheTrade(string $code, ?string $expected): void
+    {
+        $result = AlipayApi::closeResultForError($code, ['code' => $code]);
+
+        if ($expected === null) {
+            static::assertNull($result);
+
+            return;
+        }
+
+        static::assertInstanceOf(CloseResult::class, $result);
+        static::assertSame($expected, $result->status);
+        static::assertSame($code, $result->channelStatus);
+        static::assertSame(['code' => $code], $result->raw);
+    }
+
+    /**
+     * @return iterable<string, array{string, string|null}>
+     */
+    public static function closeTradeStatuses(): iterable
+    {
+        // the money is there: closing the order locally would lose it
+        yield 'paid' => [QueryResult::STATUS_PAID, CloseResult::STATUS_ALREADY_PAID];
+        // already closed is what the caller wanted
+        yield 'closed' => [QueryResult::STATUS_CLOSED, CloseResult::STATUS_CLOSED];
+        yield 'pending' => [QueryResult::STATUS_PENDING, null];
+        yield 'absent' => [QueryResult::STATUS_ABSENT, null];
+        yield 'failed' => [QueryResult::STATUS_FAILED, null];
+    }
+
+    #[DataProvider('closeTradeStatuses')]
+    public function testTheCloseAnswerOfATradeThatCannotBeClosed(string $tradeStatus, ?string $expected): void
+    {
+        $result = AlipayApi::closeResultForTrade($tradeStatus);
+
+        if ($expected === null) {
+            static::assertNull($result);
+
+            return;
+        }
+
+        static::assertInstanceOf(CloseResult::class, $result);
+        static::assertSame($expected, $result->status);
     }
 
     /**

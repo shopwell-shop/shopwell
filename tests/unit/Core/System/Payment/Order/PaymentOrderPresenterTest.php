@@ -62,9 +62,9 @@ class PaymentOrderPresenterTest extends TestCase
         static::assertSame('attach-data', $result['attach']);
         static::assertSame('paid', $result['state']);
         static::assertSame('channel-trade-1', $result['out_payment_no']);
-        static::assertSame('2024-01-01T12:00:00+00:00', $result['expire_at']);
-        static::assertSame('2024-01-01T12:05:00+00:00', $result['paid_at']);
-        static::assertSame('2024-01-01T12:10:00+00:00', $result['closed_at']);
+        static::assertSame('2024-01-01 12:00:00.000', $result['expire_at']);
+        static::assertSame('2024-01-01 12:05:00.000', $result['paid_at']);
+        static::assertSame('2024-01-01 12:10:00.000', $result['closed_at']);
         static::assertNull($result['pay']);
     }
 
@@ -165,7 +165,7 @@ class PaymentOrderPresenterTest extends TestCase
         static::assertSame('Customer request', $result['reason']);
         static::assertSame('finished', $result['state']);
         static::assertSame('channel-refund-1', $result['out_refund_id']);
-        static::assertSame('2024-02-02T08:30:00+00:00', $result['refunded_at']);
+        static::assertSame('2024-02-02 08:30:00.000', $result['refunded_at']);
     }
 
     public function testRefundWithoutRefundedAtExposesNull(): void

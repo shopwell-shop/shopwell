@@ -3,8 +3,10 @@
 namespace Shopwell\Tests\Unit\Core\System\Payment\Provider\Wechat;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Payment\Gateway\CloseResult;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayFactory;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
 use Shopwell\Core\System\Payment\PaymentException;
@@ -119,6 +121,57 @@ class WechatApiTest extends TestCase
         $api->platformCertOf(null);
     }
 
+    public function testPlatformCertificateReturnsTheSingleCertificateWithItsSerial(): void
+    {
+        $api = $this->api(credentials: [
+            WechatApi::PLATFORM_CERT => 'CERT-PEM',
+            WechatApi::PLATFORM_SERIAL => 'PLATFORM-SERIAL',
+        ]);
+
+        // the serial is part of the answer: the request names it in `Wechatpay-Serial`
+        static::assertSame(
+            ['serial' => 'PLATFORM-SERIAL', 'certificate' => 'CERT-PEM'],
+            $api->platformCertificate(),
+        );
+    }
+
+    public function testPlatformCertificateUsesTheDeclaredSerialWhenSeveralAreConfigured(): void
+    {
+        $api = $this->api(credentials: [
+            WechatApi::PLATFORM_CERTS => ['SERIAL-A' => 'CERT-A', 'SERIAL-B' => 'CERT-B'],
+            WechatApi::PLATFORM_SERIAL => 'SERIAL-B',
+        ]);
+
+        static::assertSame(['serial' => 'SERIAL-B', 'certificate' => 'CERT-B'], $api->platformCertificate());
+    }
+
+    /**
+     * A rotation leaves several certificates behind, and naming the wrong one would encrypt the name
+     * with a public key whose serial the header does not match - wechat rejects the call and the out
+     * number of the transfer is burned.
+     */
+    public function testPlatformCertificateRefusesToGuessBetweenSeveralCertificates(): void
+    {
+        $api = $this->api(credentials: [
+            WechatApi::PLATFORM_CERTS => ['SERIAL-A' => 'CERT-A', 'SERIAL-B' => 'CERT-B'],
+        ]);
+
+        $this->expectExceptionObject(PaymentException::invalidProviderDeclaration(
+            'The wechat channel declares 2 platform certificates but names no current one - set the credential "platform_serial" to the serial whose certificate encrypts the user name.',
+        ));
+
+        $api->platformCertificate();
+    }
+
+    public function testPlatformCertificateThrowsWhenNoCertificateIsConfigured(): void
+    {
+        $api = $this->api();
+
+        $this->expectExceptionObject(PaymentException::missingCredentials('wechat', WechatApi::PLATFORM_CERTS));
+
+        $api->platformCertificate();
+    }
+
     public function testMerchantPrivateKeyAcceptsAPemAndSignsAMessage(): void
     {
         [$privateKey, $publicKey] = $this->keyPair();
@@ -168,6 +221,41 @@ class WechatApiTest extends TestCase
         $builder = $api->builder();
 
         static::assertSame($builder, $api->builder());
+    }
+
+    /**
+     * @param array<string, mixed> $credentials
+     * @param array<string, mixed> $params
+     */
+    /**
+     * @return iterable<string, array{string, string|null}>
+     */
+    public static function closeErrorCodes(): iterable
+    {
+        yield 'ORDER_NOT_EXIST' => ['ORDER_NOT_EXIST', CloseResult::STATUS_NOT_FOUND];
+        // the money is there: closing the order locally would lose it
+        yield 'ORDER_PAID' => ['ORDER_PAID', CloseResult::STATUS_ALREADY_PAID];
+        // already closed is what the caller wanted
+        yield 'ORDER_CLOSED' => ['ORDER_CLOSED', CloseResult::STATUS_CLOSED];
+        yield 'SYSTEM_ERROR' => ['SYSTEM_ERROR', null];
+        yield 'FREQUENCY_LIMITED' => ['FREQUENCY_LIMITED', null];
+    }
+
+    #[DataProvider('closeErrorCodes')]
+    public function testTheCloseAnswersAYesOrNoRejectionIsDecidedByItsCode(string $code, ?string $expected): void
+    {
+        $result = WechatApi::closeResultForError($code, ['code' => $code]);
+
+        if ($expected === null) {
+            static::assertNull($result);
+
+            return;
+        }
+
+        static::assertInstanceOf(CloseResult::class, $result);
+        static::assertSame($expected, $result->status);
+        static::assertSame($code, $result->channelStatus);
+        static::assertSame(['code' => $code], $result->raw);
     }
 
     /**

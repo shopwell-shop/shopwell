@@ -134,6 +134,13 @@ final class PaymentAppAuthenticator
             throw PaymentException::appNotFound($appId);
         }
 
+        // the tenant of the shop is no caller: it is answered like an app that does not exist, so the
+        // api does not tell anyone that this technical name is taken - the check has to come before
+        // the one for `active`, otherwise a disabled platform tenant would still confirm its presence
+        if ($app->type !== PaymentAppEntity::TYPE_EXTERNAL) {
+            throw PaymentException::appNotFound($appId);
+        }
+
         if (!$app->active) {
             throw PaymentException::appDisabled($appId);
         }

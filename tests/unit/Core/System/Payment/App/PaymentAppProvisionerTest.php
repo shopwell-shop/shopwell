@@ -11,13 +11,17 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppChannel\PaymentAppChannelCollection;
 use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppProvider\PaymentAppProviderCollection;
+use Shopwell\Core\System\Payment\App\PaymentAppChannelDto;
 use Shopwell\Core\System\Payment\App\PaymentAppCollection;
+use Shopwell\Core\System\Payment\App\PaymentAppDto;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
+use Shopwell\Core\System\Payment\App\PaymentAppProviderDto;
 use Shopwell\Core\System\Payment\App\PaymentAppProvisioner;
 use Shopwell\Core\System\Payment\PaymentException;
 use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannelRegistry;
 use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;
 use Shopwell\Tests\Unit\Core\System\Payment\Api\PaymentControllerFixture;
+use Symfony\Component\Clock\NativeClock;
 
 /**
  * @internal
@@ -39,6 +43,8 @@ class PaymentAppProvisionerTest extends TestCase
 
                 static::assertSame('client-a', $row['technicalName']);
                 static::assertSame('Client A', $row['name']);
+                // an app onboarded here is always a caller of the api, never the tenant of the shop
+                static::assertSame(PaymentAppEntity::TYPE_EXTERNAL, $row['type']);
                 static::assertTrue($row['active']);
                 static::assertSame('https://app.example.com/notify', $row['notifyUrl']);
                 static::assertNull($row['returnUrl']);
@@ -49,19 +55,52 @@ class PaymentAppProvisionerTest extends TestCase
                 return true;
             }));
 
-        $result = $this->provisioner($appRepository)->save([
-            'technicalName' => '  client-a  ',
-            'name' => 'Client A',
-            'active' => true,
-            'notifyUrl' => 'https://app.example.com/notify',
-            'returnUrl' => '',
-            'allowedIps' => ['10.0.0.1', '', '10.0.0.2'],
-            'rateLimit' => '60',
-        ]);
+        $result = $this->provisioner($appRepository)->save(new PaymentAppDto(
+            technicalName: '  client-a  ',
+            name: 'Client A',
+            active: true,
+            notifyUrl: 'https://app.example.com/notify',
+            returnUrl: '',
+            allowedIps: ['10.0.0.1', '', '10.0.0.2'],
+            rateLimit: 60,
+        ));
 
         static::assertSame($stored, $result['app']);
         static::assertTrue($result['generated']);
         static::assertMatchesRegularExpression('/^[0-9a-f]{64}$/', $result['secret']);
+    }
+
+    /**
+     * A missing technical name must not be written as an empty one: the app would then exist without
+     * a name anybody could address it by.
+     */
+    public function testAnAppWithoutATechnicalNameIsRejected(): void
+    {
+        $appRepository = static::createMock(EntityRepository::class);
+        $appRepository->expects($this->never())->method('upsert');
+
+        $this->expectExceptionObject(PaymentException::missingParameter('technical_name'));
+
+        $this->provisioner($appRepository)->save(new PaymentAppDto(name: 'Client A'));
+    }
+
+    /**
+     * An authorization without an interface must not be looked up as the empty provider name either.
+     */
+    public function testAnAuthorizationWithoutAnInterfaceIsRejected(): void
+    {
+        $stored = PaymentControllerFixture::app('client-a', 'stored-secret');
+
+        $appRepository = static::createStub(EntityRepository::class);
+        $appRepository->method('search')->willReturn($this->appResult($stored));
+
+        $this->expectExceptionObject(PaymentException::missingParameter('provider_technical_name'));
+
+        $this->provisioner($appRepository)->save(new PaymentAppDto(
+            id: $stored->id,
+            technicalName: 'client-a',
+            providers: [new PaymentAppProviderDto()],
+        ));
     }
 
     public function testUpdatingAnAppWithoutATypedSecretKeepsTheStoredOne(): void
@@ -75,14 +114,17 @@ class PaymentAppProvisionerTest extends TestCase
             ->with(static::callback(function (array $data) use ($existing): bool {
                 static::assertSame($existing->id, $data[0]['id']);
                 static::assertArrayNotHasKey('appSecret', $data[0]);
+                // the kind of an app never changes through this endpoint - a stored platform tenant
+                // must not become an external app by being saved again
+                static::assertArrayNotHasKey('type', $data[0]);
 
                 return true;
             }));
 
-        $result = $this->provisioner($appRepository)->save([
-            'id' => $existing->id,
-            'technicalName' => 'client-a',
-        ]);
+        $result = $this->provisioner($appRepository)->save(new PaymentAppDto(
+            id: $existing->id,
+            technicalName: 'client-a',
+        ));
 
         static::assertSame('', $result['secret']);
         static::assertFalse($result['generated']);
@@ -102,22 +144,14 @@ class PaymentAppProvisionerTest extends TestCase
                 return true;
             }));
 
-        $result = $this->provisioner($appRepository)->save([
-            'id' => $existing->id,
-            'technicalName' => 'client-a',
-            'appSecret' => '  my-own-secret  ',
-        ]);
+        $result = $this->provisioner($appRepository)->save(new PaymentAppDto(
+            id: $existing->id,
+            technicalName: 'client-a',
+            appSecret: '  my-own-secret  ',
+        ));
 
         static::assertSame('my-own-secret', $result['secret']);
         static::assertFalse($result['generated']);
-    }
-
-    public function testSavingWithoutATechnicalNameIsRejected(): void
-    {
-        $this->expectExceptionObject(PaymentException::missingParameter('technicalName'));
-
-        $this->provisioner(PaymentControllerFixture::repository(PaymentAppCollection::class))
-            ->save(['name' => 'Client A']);
     }
 
     public function testAnUnknownProviderIsRejected(): void
@@ -127,10 +161,10 @@ class PaymentAppProvisionerTest extends TestCase
         $this->expectExceptionObject(PaymentException::unknownProvider('stripe'));
 
         $this->provisioner(PaymentControllerFixture::repository(PaymentAppCollection::class, [$stored]))
-            ->save([
-                'technicalName' => 'client-a',
-                'providers' => [['providerTechnicalName' => 'stripe']],
-            ]);
+            ->save(new PaymentAppDto(
+                technicalName: 'client-a',
+                providers: [new PaymentAppProviderDto(providerTechnicalName: 'stripe')],
+            ));
     }
 
     public function testAChannelWhoseProviderIsNotAuthorizedIsRejected(): void
@@ -145,11 +179,11 @@ class PaymentAppProvisionerTest extends TestCase
             PaymentControllerFixture::repository(PaymentAppProviderCollection::class),
             PaymentControllerFixture::repository(PaymentAppChannelCollection::class),
             $registry
-        )->save([
-            'id' => $stored->id,
-            'technicalName' => 'client-a',
-            'channels' => [['channelTechnicalName' => 'alipay_h5', 'enabled' => true]],
-        ]);
+        )->save(new PaymentAppDto(
+            id: $stored->id,
+            technicalName: 'client-a',
+            channels: [new PaymentAppChannelDto(channelTechnicalName: 'alipay_h5', enabled: true)],
+        ));
     }
 
     public function testProvidersAreSyncedAndTheOnesMissingFromThePayloadAreRemoved(): void
@@ -189,13 +223,104 @@ class PaymentAppProvisionerTest extends TestCase
             $appProviderRepository,
             PaymentControllerFixture::repository(PaymentAppChannelCollection::class),
             $registry
-        )->save([
-            'id' => $stored->id,
-            'technicalName' => 'client-a',
-            'providers' => [['providerTechnicalName' => 'alipay', 'enabled' => true]],
-        ]);
+        )->save(new PaymentAppDto(
+            id: $stored->id,
+            technicalName: 'client-a',
+            providers: [new PaymentAppProviderDto(providerTechnicalName: 'alipay', enabled: true)],
+        ));
 
         static::assertSame($stored, $result['app']);
+    }
+
+    public function testSaveLeavesTheAuthorizationsUntouchedWhenNoProvidersAreGiven(): void
+    {
+        $stored = PaymentControllerFixture::app('client-a', 'stored-secret');
+        $provider = PaymentControllerFixture::appProvider($stored->id);
+        $channel = PaymentControllerFixture::appChannel($stored->id);
+
+        // revoking an authorization is a security relevant decision: a caller that does not send the
+        // field must not revoke anything
+        $appProviderRepository = static::createMock(EntityRepository::class);
+        $appProviderRepository->method('search')->willReturn(new EntitySearchResult(
+            'payment_app_provider',
+            1,
+            new PaymentAppProviderCollection([$provider]),
+            null,
+            new Criteria(),
+            Context::createDefaultContext()
+        ));
+        $appProviderRepository->expects($this->never())->method('delete');
+        $appProviderRepository->expects($this->never())->method('upsert');
+
+        $appChannelRepository = static::createMock(EntityRepository::class);
+        $appChannelRepository->method('search')->willReturn(new EntitySearchResult(
+            'payment_app_channel',
+            1,
+            new PaymentAppChannelCollection([$channel]),
+            null,
+            new Criteria(),
+            Context::createDefaultContext()
+        ));
+        $appChannelRepository->expects($this->never())->method('delete');
+        $appChannelRepository->expects($this->never())->method('upsert');
+
+        $result = $this->provisioner(
+            PaymentControllerFixture::repository(PaymentAppCollection::class, [$stored]),
+            $appProviderRepository,
+            $appChannelRepository
+        )->save(new PaymentAppDto(
+            id: $stored->id,
+            technicalName: 'client-a',
+        ));
+
+        static::assertSame($stored, $result['app']);
+    }
+
+    public function testSaveRevokesEveryAuthorizationWhenAnEmptyListIsGiven(): void
+    {
+        $stored = PaymentControllerFixture::app('client-a', 'stored-secret');
+        $provider = PaymentControllerFixture::appProvider($stored->id);
+        $channel = PaymentControllerFixture::appChannel($stored->id);
+
+        // an explicitly sent empty list is the way to revoke everything, and it is the only one
+        $appProviderRepository = static::createMock(EntityRepository::class);
+        $appProviderRepository->method('search')->willReturn(new EntitySearchResult(
+            'payment_app_provider',
+            1,
+            new PaymentAppProviderCollection([$provider]),
+            null,
+            new Criteria(),
+            Context::createDefaultContext()
+        ));
+        $appProviderRepository->expects($this->once())
+            ->method('delete')
+            ->with(static::callback(static fn (array $data): bool => $data === [['id' => $provider->id]]));
+        $appProviderRepository->expects($this->never())->method('upsert');
+
+        $appChannelRepository = static::createMock(EntityRepository::class);
+        $appChannelRepository->method('search')->willReturn(new EntitySearchResult(
+            'payment_app_channel',
+            1,
+            new PaymentAppChannelCollection([$channel]),
+            null,
+            new Criteria(),
+            Context::createDefaultContext()
+        ));
+        $appChannelRepository->expects($this->once())
+            ->method('delete')
+            ->with(static::callback(static fn (array $data): bool => $data === [['id' => $channel->id]]));
+        $appChannelRepository->expects($this->never())->method('upsert');
+
+        $this->provisioner(
+            PaymentControllerFixture::repository(PaymentAppCollection::class, [$stored]),
+            $appProviderRepository,
+            $appChannelRepository
+        )->save(new PaymentAppDto(
+            id: $stored->id,
+            technicalName: 'client-a',
+            providers: [],
+            channels: [],
+        ));
     }
 
     /**
@@ -218,6 +343,7 @@ class PaymentAppProvisionerTest extends TestCase
             PaymentControllerFixture::cipher(),
             $registry,
             new PaymentChannelRegistry($registry),
+            new NativeClock(),
         );
     }
 

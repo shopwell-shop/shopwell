@@ -58,7 +58,10 @@ async function createWrapper({ mappings = [], templateId = 'template-1' } = {}) 
                 },
             },
             stubs: {
-                'sw-single-select': true,
+                'sw-data-grid': true,
+                'sw-context-menu-item': true,
+                'mt-select': true,
+                'mt-empty-state': true,
                 'mt-text-field': true,
                 'mt-button': true,
             },

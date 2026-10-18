@@ -2,6 +2,7 @@
 
 namespace Shopwell\Core\Checkout\Loyalty\Service;
 
+use Psr\Clock\ClockInterface;
 use Shopwell\Core\Checkout\Customer\CustomerCollection;
 use Shopwell\Core\Checkout\Loyalty\Entity\CustomerLoyalty\CustomerLoyaltyCollection;
 use Shopwell\Core\Checkout\Loyalty\Entity\CustomerLoyalty\CustomerLoyaltyEntity;
@@ -37,7 +38,8 @@ class TierResolver
         private readonly EntityRepository $customerLoyaltyRepository,
         private readonly EntityRepository $customerRepository,
         private readonly SystemConfigService $systemConfigService,
-        private readonly EventDispatcherInterface $eventDispatcher
+        private readonly EventDispatcherInterface $eventDispatcher,
+        private readonly ClockInterface $clock,
     ) {
     }
 
@@ -50,7 +52,7 @@ class TierResolver
         }
 
         $previousTierId = $loyalty->getMembershipTierId();
-        $tier = $this->findMatchingTier($growthValue, $context);
+        $tier = $this->resolveTier($loyalty, $growthValue, $context);
         $newTierId = $tier?->getId();
 
         if ($previousTierId === $newTierId) {
@@ -87,18 +89,41 @@ class TierResolver
      */
     public function getPointsMultiplier(string $customerId, Context $context): float
     {
-        $criteria = new Criteria();
-        $criteria->addFilter(new EqualsFilter('customerId', $customerId));
-        $criteria->addAssociation('membershipTier');
-        $criteria->setLimit(1);
+        $loyalty = $this->findLoyalty($customerId, $context);
 
-        $loyalty = $this->customerLoyaltyRepository->search($criteria, $context)->getEntities()->first();
-
-        if (!$loyalty instanceof CustomerLoyaltyEntity) {
+        if ($loyalty === null) {
             return 1.0;
         }
 
-        return $loyalty->getMembershipTier()?->getPointsMultiplier() ?? 1.0;
+        $tier = $this->resolveTier($loyalty, $loyalty->getGrowthValue(), $context);
+
+        return $tier?->getPointsMultiplier() ?? 1.0;
+    }
+
+    /**
+     * The tier the customer belongs to right now.
+     *
+     * A paid membership outranks the growth value for as long as it runs - buying a tier must not be
+     * undone by the next order that only reaches a lower one. Once it ended, the growth value decides
+     * again, which is why the end of the membership is checked here and not in a clean up task.
+     */
+    private function resolveTier(CustomerLoyaltyEntity $loyalty, int $growthValue, Context $context): ?LoyaltyTierEntity
+    {
+        return $this->findPaidTier($loyalty, $context) ?? $this->findMatchingTier($growthValue, $context);
+    }
+
+    private function findPaidTier(CustomerLoyaltyEntity $loyalty, Context $context): ?LoyaltyTierEntity
+    {
+        $tierId = $loyalty->getMembershipTierId();
+        $validUntil = $loyalty->getMembershipValidUntil();
+
+        if ($tierId === null || $validUntil === null || $validUntil <= $this->clock->now()) {
+            return null;
+        }
+
+        $tier = $this->tierRepository->search(new Criteria([$tierId]), $context)->getEntities()->first();
+
+        return $tier instanceof LoyaltyTierEntity && $tier->getActive() ? $tier : null;
     }
 
     private function findMatchingTier(int $growthValue, Context $context): ?LoyaltyTierEntity

@@ -3,12 +3,14 @@
 namespace Shopwell\Core\System\DependencyInjection;
 
 use Psr\Clock\ClockInterface;
+use Shopwell\Core\Checkout\Payment\Aggregate\PaymentMethodGatewayChannel\PaymentMethodGatewayChannelEntity;
 use Shopwell\Core\System\Payment\Api\NotifyController;
 use Shopwell\Core\System\Payment\Api\PaymentApiRouteScope;
 use Shopwell\Core\System\Payment\Api\PaymentChannelController;
 use Shopwell\Core\System\Payment\Api\PaymentOrderController;
 use Shopwell\Core\System\Payment\Api\PaymentRefundController;
 use Shopwell\Core\System\Payment\Api\ReturnController;
+use Shopwell\Core\System\Payment\Api\PaymentTransferNotifyController;
 use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppChannel\PaymentAppChannelEntity;
 use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppProvider\PaymentAppProviderEntity;
 use Shopwell\Core\System\Payment\App\Api\PaymentAppController;
@@ -17,14 +19,18 @@ use Shopwell\Core\System\Payment\App\PaymentAppEntity;
 use Shopwell\Core\System\Payment\App\PaymentAppProvisioner;
 use Shopwell\Core\System\Payment\App\PaymentCredentialCipher;
 use Shopwell\Core\System\Payment\App\PaymentSignatureService;
+use Shopwell\Core\System\Payment\Gateway\PaymentCloser;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayFactory;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationEntity;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationProcessor;
 use Shopwell\Core\System\Payment\Notification\PaymentNotifyUrlBuilder;
 use Shopwell\Core\System\Payment\Order\Aggregate\PaymentTransaction\PaymentTransactionEntity;
 use Shopwell\Core\System\Payment\Order\PaymentOrderCapture;
+use Shopwell\Core\System\Payment\Order\PaymentOrderCloser;
 use Shopwell\Core\System\Payment\Order\PaymentOrderEntity;
+use Shopwell\Core\System\Payment\Order\PaymentOrderPaidHandler;
 use Shopwell\Core\System\Payment\Order\PaymentOrderPresenter;
+use Shopwell\Core\System\Payment\Order\PaymentOrderQueryResultHandler;
 use Shopwell\Core\System\Payment\Order\PaymentOrderReconciler;
 use Shopwell\Core\System\Payment\Order\PaymentOrderService;
 use Shopwell\Core\System\Payment\Order\PaymentOrderStateHandler;
@@ -33,10 +39,15 @@ use Shopwell\Core\System\Payment\Order\Refund\PaymentRefundService;
 use Shopwell\Core\System\Payment\Order\Refund\PaymentRefundStateHandler;
 use Shopwell\Core\System\Payment\Provider\Alipay\AlipayApi;
 use Shopwell\Core\System\Payment\Provider\Alipay\AlipayCaptureAction;
+use Shopwell\Core\System\Payment\Provider\Alipay\AlipayCloseAction;
 use Shopwell\Core\System\Payment\Provider\Alipay\AlipayNotificationExtractor;
 use Shopwell\Core\System\Payment\Provider\Alipay\AlipayNotifyAction;
+use Shopwell\Core\System\Payment\Provider\Alipay\AlipayPayParamsDecoder;
 use Shopwell\Core\System\Payment\Provider\Alipay\AlipayQueryAction;
 use Shopwell\Core\System\Payment\Provider\Alipay\AlipayRefundAction;
+use Shopwell\Core\System\Payment\Provider\Alipay\AlipayTransferAction;
+use Shopwell\Core\System\Payment\Provider\Alipay\AlipayTransferNotificationVerifier;
+use Shopwell\Core\System\Payment\Provider\Alipay\AlipayTransferQueryAction;
 use Shopwell\Core\System\Payment\Provider\Api\PaymentProviderConfigController;
 use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannelRegistry;
 use Shopwell\Core\System\Payment\Provider\PaymentChannelConfigEntity;
@@ -52,22 +63,50 @@ use Shopwell\Core\System\Payment\Provider\Paypal\PaypalNotificationExtractor;
 use Shopwell\Core\System\Payment\Provider\Paypal\PaypalNotifyAction;
 use Shopwell\Core\System\Payment\Provider\Paypal\PaypalQueryAction;
 use Shopwell\Core\System\Payment\Provider\Paypal\PaypalRefundAction;
+use Shopwell\Core\System\Payment\Provider\Paypal\PaypalTransferAction;
+use Shopwell\Core\System\Payment\Provider\Paypal\PaypalTransferNotificationVerifier;
+use Shopwell\Core\System\Payment\Provider\Paypal\PaypalTransferQueryAction;
 use Shopwell\Core\System\Payment\Provider\Stripe\StripeApi;
 use Shopwell\Core\System\Payment\Provider\Stripe\StripeCaptureAction;
 use Shopwell\Core\System\Payment\Provider\Stripe\StripeNotificationExtractor;
 use Shopwell\Core\System\Payment\Provider\Stripe\StripeNotifyAction;
 use Shopwell\Core\System\Payment\Provider\Stripe\StripeQueryAction;
 use Shopwell\Core\System\Payment\Provider\Stripe\StripeRefundAction;
+use Shopwell\Core\System\Payment\Provider\Stripe\StripeTransferAction;
+use Shopwell\Core\System\Payment\Provider\Stripe\StripeTransferNotificationVerifier;
+use Shopwell\Core\System\Payment\Provider\Stripe\StripeTransferQueryAction;
 use Shopwell\Core\System\Payment\Provider\Wechat\WechatApi;
 use Shopwell\Core\System\Payment\Provider\Wechat\WechatCaptureAction;
+use Shopwell\Core\System\Payment\Provider\Wechat\WechatCloseAction;
 use Shopwell\Core\System\Payment\Provider\Wechat\WechatNotificationExtractor;
 use Shopwell\Core\System\Payment\Provider\Wechat\WechatNotifyAction;
+use Shopwell\Core\System\Payment\Provider\Wechat\WechatPayParamsDecoder;
 use Shopwell\Core\System\Payment\Provider\Wechat\WechatQueryAction;
 use Shopwell\Core\System\Payment\Provider\Wechat\WechatRefundAction;
+use Shopwell\Core\System\Payment\Provider\Wechat\WechatTransferAction;
+use Shopwell\Core\System\Payment\Provider\Wechat\WechatTransferNotificationVerifier;
+use Shopwell\Core\System\Payment\Provider\Wechat\WechatTransferQueryAction;
 use Shopwell\Core\System\Payment\ScheduledTask\ExpirePaymentOrdersTask;
 use Shopwell\Core\System\Payment\ScheduledTask\ExpirePaymentOrdersTaskHandler;
 use Shopwell\Core\System\Payment\ScheduledTask\ReconcileOpenPaymentOrdersTask;
 use Shopwell\Core\System\Payment\ScheduledTask\ReconcileOpenPaymentOrdersTaskHandler;
+use Shopwell\Core\System\Payment\ScheduledTask\ReconcileOpenPaymentTransfersTask;
+use Shopwell\Core\System\Payment\ScheduledTask\ReconcileOpenPaymentTransfersTaskHandler;
+use Shopwell\Core\System\Payment\Security\PaymentGatewayTokenEntity;
+use Shopwell\Core\System\Payment\Security\PaymentGatewayTokenStorage;
+use Shopwell\Core\System\Payment\Subscription\PaymentMandateEntity;
+use Shopwell\Core\System\Payment\Subscription\PaymentPlanEntity;
+use Shopwell\Core\System\Payment\Subscription\PaymentSubscriptionCycleEntity;
+use Shopwell\Core\System\Payment\Subscription\PaymentSubscriptionEntity;
+use Shopwell\Core\System\Payment\Transfer\PaymentTransferEntity;
+use Shopwell\Core\System\Payment\Transfer\PaymentTransferRecipientEntity;
+use Shopwell\Core\System\Payment\Transfer\PaymentTransferRecipientService;
+use Shopwell\Core\System\Payment\Transfer\PaymentTransferReconciler;
+use Shopwell\Core\System\Payment\Transfer\PaymentTransferService;
+use Shopwell\Core\System\Payment\Transfer\PaymentTransferStateHandler;
+use Shopwell\Core\System\Payment\Transfer\PaymentTransferSubmitter;
+use Shopwell\Core\System\Payment\Transfer\Notification\PaymentTransferNotificationProcessor;
+use Shopwell\Core\System\Payment\Transfer\Notification\PaymentTransferNotificationVerifierRegistry;
 use Shopwell\Core\System\Payment\Webhook\PaymentWebhookDeliveryEntity;
 use Shopwell\Core\System\Payment\Webhook\PaymentWebhookDispatcher;
 use Shopwell\Core\System\Payment\Webhook\PaymentWebhookSigner;
@@ -101,6 +140,17 @@ return static function (ContainerConfigurator $container): void {
     $container->parameters()->set('shopwell.payment.notify_base_url', '');
 
     $services = $container->services();
+
+    // ---- Security: the payum tokens, kept in the database so every node resolves them ----
+    // `payment_token` belongs to the checkout (return url jwts, single use, cleaned up on expiry),
+    // so the tokens of the gateway get a table of their own
+    $services->set(PaymentGatewayTokenEntity::class)
+        ->tag('shopwell.entity');
+
+    $services->set(PaymentGatewayTokenStorage::class)
+        ->args([
+            service('payment_gateway_token.repository'),
+        ]);
 
     // ---- App: the apps that call the payment api, and their secrets ----
     $services->set(PaymentAppEntity::class)
@@ -164,6 +214,11 @@ return static function (ContainerConfigurator $container): void {
     $services->set(PaypalNotificationExtractor::class);
     $services->set(StripeNotificationExtractor::class);
 
+    // An interface that can hand a returning payer back to the answer it already gave registers the
+    // decoder here; an interface without one is simply captured again on a reopen.
+    $services->set(AlipayPayParamsDecoder::class);
+    $services->set(WechatPayParamsDecoder::class);
+
     // The declaration of the interfaces is the contract with the administration, so it lives in a file
     // and not in this wiring: the credentials and the channels below are read from the xml next to the
     // api of the interface and bound to its services here. An interface of an extension brings its own
@@ -173,10 +228,10 @@ return static function (ContainerConfigurator $container): void {
     $configDir = __DIR__ . '/../Payment/Provider/Resources/config';
 
     $interfaces = [
-        'alipay' => ['file' => $configDir . '/alipay.xml', 'factory' => 'shopwell.payment.gateway.factory.alipay', 'extractor' => AlipayNotificationExtractor::class],
-        'wechat' => ['file' => $configDir . '/wechat.xml', 'factory' => 'shopwell.payment.gateway.factory.wechat', 'extractor' => WechatNotificationExtractor::class],
-        'paypal' => ['file' => $configDir . '/paypal.xml', 'factory' => 'shopwell.payment.gateway.factory.paypal', 'extractor' => PaypalNotificationExtractor::class],
-        'stripe' => ['file' => $configDir . '/stripe.xml', 'factory' => 'shopwell.payment.gateway.factory.stripe', 'extractor' => StripeNotificationExtractor::class],
+        'alipay' => ['file' => $configDir . '/alipay.xml', 'factory' => 'shopwell.payment.gateway.factory.alipay', 'extractor' => AlipayNotificationExtractor::class, 'decoder' => AlipayPayParamsDecoder::class],
+        'wechat' => ['file' => $configDir . '/wechat.xml', 'factory' => 'shopwell.payment.gateway.factory.wechat', 'extractor' => WechatNotificationExtractor::class, 'decoder' => WechatPayParamsDecoder::class],
+        'paypal' => ['file' => $configDir . '/paypal.xml', 'factory' => 'shopwell.payment.gateway.factory.paypal', 'extractor' => PaypalNotificationExtractor::class, 'decoder' => null],
+        'stripe' => ['file' => $configDir . '/stripe.xml', 'factory' => 'shopwell.payment.gateway.factory.stripe', 'extractor' => StripeNotificationExtractor::class, 'decoder' => null],
     ];
 
     foreach ($interfaces as $name => $interface) {
@@ -186,6 +241,7 @@ return static function (ContainerConfigurator $container): void {
                 $interface['file'],
                 service($interface['factory']),
                 service($interface['extractor']),
+                $interface['decoder'] === null ? null : service($interface['decoder']),
             ])
             ->tag('shopwell.payment.provider');
     }
@@ -241,6 +297,10 @@ return static function (ContainerConfigurator $container): void {
     $services->set(AlipayRefundAction::class);
     $services->set(AlipayNotifyAction::class);
     $services->set(AlipayQueryAction::class);
+    $services->set(AlipayCloseAction::class);
+    $services->set(AlipayTransferAction::class)
+        ->args([service(PaymentCredentialCipher::class)]);
+    $services->set(AlipayTransferQueryAction::class);
 
     $services->set('shopwell.payment.gateway.factory.alipay', PaymentGatewayFactory::class)
         ->args(['alipay', AlipayApi::class, [
@@ -248,12 +308,19 @@ return static function (ContainerConfigurator $container): void {
             service(AlipayRefundAction::class),
             service(AlipayNotifyAction::class),
             service(AlipayQueryAction::class),
+            service(AlipayCloseAction::class),
+            service(AlipayTransferAction::class),
+            service(AlipayTransferQueryAction::class),
         ]]);
 
     $services->set(WechatCaptureAction::class);
     $services->set(WechatRefundAction::class);
     $services->set(WechatNotifyAction::class);
     $services->set(WechatQueryAction::class);
+    $services->set(WechatCloseAction::class);
+    $services->set(WechatTransferAction::class)
+        ->args([service(PaymentCredentialCipher::class)]);
+    $services->set(WechatTransferQueryAction::class);
 
     $services->set('shopwell.payment.gateway.factory.wechat', PaymentGatewayFactory::class)
         ->args(['wechat', WechatApi::class, [
@@ -261,12 +328,18 @@ return static function (ContainerConfigurator $container): void {
             service(WechatRefundAction::class),
             service(WechatNotifyAction::class),
             service(WechatQueryAction::class),
+            service(WechatCloseAction::class),
+            service(WechatTransferAction::class),
+            service(WechatTransferQueryAction::class),
         ]]);
 
     $services->set(PaypalCaptureAction::class);
     $services->set(PaypalRefundAction::class);
     $services->set(PaypalNotifyAction::class);
     $services->set(PaypalQueryAction::class);
+    $services->set(PaypalTransferAction::class)
+        ->args([service(PaymentCredentialCipher::class)]);
+    $services->set(PaypalTransferQueryAction::class);
 
     // the api of paypal fetches the certificate a webhook is signed with, so its factory hands the
     // http client over to it
@@ -276,6 +349,8 @@ return static function (ContainerConfigurator $container): void {
             service(PaypalRefundAction::class),
             service(PaypalNotifyAction::class),
             service(PaypalQueryAction::class),
+            service(PaypalTransferAction::class),
+            service(PaypalTransferQueryAction::class),
         ], [service('http_client')]]);
 
     $services->set(StripeCaptureAction::class)
@@ -283,6 +358,8 @@ return static function (ContainerConfigurator $container): void {
     $services->set(StripeRefundAction::class);
     $services->set(StripeNotifyAction::class);
     $services->set(StripeQueryAction::class);
+    $services->set(StripeTransferAction::class);
+    $services->set(StripeTransferQueryAction::class);
 
     $services->set('shopwell.payment.gateway.factory.stripe', PaymentGatewayFactory::class)
         ->args(['stripe', StripeApi::class, [
@@ -290,6 +367,8 @@ return static function (ContainerConfigurator $container): void {
             service(StripeRefundAction::class),
             service(StripeNotifyAction::class),
             service(StripeQueryAction::class),
+            service(StripeTransferAction::class),
+            service(StripeTransferQueryAction::class),
         ]]);
 
     // ---- Order: the payment order, its capture and its refunds ----
@@ -322,6 +401,43 @@ return static function (ContainerConfigurator $container): void {
             service(PaymentConfigResolver::class),
             service(PaymentOrderService::class),
             service(PaymentNotifyUrlBuilder::class),
+            service(ClockInterface::class),
+        ]);
+
+    // the gateway side of closing: it talks to the channel and keeps the attempt as a transaction,
+    // but it never touches the order - the state machine stays with PaymentOrderService
+    $services->set(PaymentCloser::class)
+        ->args([
+            service('payment_transaction.repository'),
+            service(PaymentConfigResolver::class),
+            service(ClockInterface::class),
+        ]);
+
+    // the orchestration of a close: the channel first, the order afterwards. It sits between the two
+    // services that must not know each other, because the reconciliation needs PaymentOrderService
+    $services->set(PaymentOrderCloser::class)
+        ->args([
+            service(PaymentCloser::class),
+            service(PaymentOrderService::class),
+            service(PaymentOrderReconciler::class),
+        ]);
+
+    // the one path a payment order becomes paid: a notification and the reconciliation both write
+    // the payment through here, so the two cannot drift apart
+    $services->set(PaymentOrderPaidHandler::class)
+        ->args([
+            service(PaymentOrderService::class),
+            service(PaymentWebhookDispatcher::class),
+            service('event_dispatcher'),
+        ]);
+
+    // the write side of the reconciliation: the answer of a query becomes the same bookkeeping a
+    // notification of the interface would have produced
+    $services->set(PaymentOrderQueryResultHandler::class)
+        ->args([
+            service(PaymentOrderService::class),
+            service(PaymentWebhookDispatcher::class),
+            service(PaymentOrderPaidHandler::class),
             service(ClockInterface::class),
         ]);
 
@@ -366,8 +482,8 @@ return static function (ContainerConfigurator $container): void {
             service('state_machine_state.repository'),
             service(PaymentConfigResolver::class),
             service(PaymentOrderService::class),
-            service(PaymentWebhookDispatcher::class),
-            service('event_dispatcher'),
+            service(PaymentOrderPaidHandler::class),
+            service(PaymentOrderQueryResultHandler::class),
             service(ClockInterface::class),
             service('logger'),
         ]);
@@ -400,13 +516,131 @@ return static function (ContainerConfigurator $container): void {
             service(PaymentOrderService::class),
             service(PaymentRefundService::class),
             service(PaymentConfigResolver::class),
-            service(PaymentWebhookDispatcher::class),
-            service('event_dispatcher'),
+            service(PaymentOrderPaidHandler::class),
         ]);
 
     // ---- Webhook: the signed deliveries of what happened to the apps ----
     $services->set(PaymentWebhookDeliveryEntity::class)
         ->tag('shopwell.entity');
+
+    // ---- Checkout: the channel a payment method of the shop collects through ----
+    $services->set(PaymentMethodGatewayChannelEntity::class)
+        ->tag('shopwell.entity');
+
+    // ---- Subscription: the plans, their instances, the signing agreements and their cycles ----
+    $services->set(PaymentPlanEntity::class)
+        ->tag('shopwell.entity');
+
+    $services->set(PaymentMandateEntity::class)
+        ->tag('shopwell.entity');
+
+    $services->set(PaymentSubscriptionEntity::class)
+        ->tag('shopwell.entity');
+
+    $services->set(PaymentSubscriptionCycleEntity::class)
+        ->tag('shopwell.entity');
+
+    // ---- Transfer: the payouts of the platform to its recipients ----
+    $services->set(PaymentTransferRecipientEntity::class)
+        ->tag('shopwell.entity');
+
+    $services->set(PaymentTransferEntity::class)
+        ->tag('shopwell.entity');
+
+    $services->set(PaymentTransferStateHandler::class)
+        ->args([
+            service(StateMachineRegistry::class),
+        ]);
+
+    $services->set(PaymentTransferRecipientService::class)
+        ->args([
+            service('payment_transfer_recipient.repository'),
+            service(PaymentCredentialCipher::class),
+            service(ClockInterface::class),
+        ]);
+
+    $services->set(PaymentTransferService::class)
+        ->args([
+            service('payment_transfer.repository'),
+            service('payment_transfer_recipient.repository'),
+            service(PaymentTransferStateHandler::class),
+            service(PaymentTransferRecipientService::class),
+            service(PaymentCredentialCipher::class),
+            service(InitialStateIdLoader::class),
+            service(ClockInterface::class),
+        ]);
+
+    // the two sides of a transfer that talk to the channel: submitting it, and asking what became of
+    // it. They share the service as the only writer of the record and the resolver as the only way to
+    // the credentials of the app
+    $services->set(PaymentTransferSubmitter::class)
+        ->args([
+            service(PaymentConfigResolver::class),
+            service(PaymentTransferService::class),
+        ]);
+
+    $services->set(PaymentTransferReconciler::class)
+        ->args([
+            service(PaymentConfigResolver::class),
+            service(PaymentTransferService::class),
+            service('payment_transfer.repository'),
+            service('state_machine_state.repository'),
+            service(ClockInterface::class),
+            service('logger'),
+        ]);
+
+    // the payout side of the reconciliation: a submission may answer nothing at all, and only a
+    // repeating question finds out what became of the money
+    $services->set(ReconcileOpenPaymentTransfersTask::class)
+        ->tag('shopwell.scheduled.task');
+
+    $services->set(ReconcileOpenPaymentTransfersTaskHandler::class)
+        ->args([
+            service('scheduled_task.repository'),
+            service('logger'),
+            service(PaymentTransferReconciler::class),
+        ])
+        ->tag('messenger.message_handler');
+
+    // ---- Transfer notification: a verified trigger, never a source of state ----
+    // The body only proves that the interface sent it and names the payout; what became of the payout
+    // is asked for with the query of that interface, so the state mapping exists once
+    $services->set(AlipayTransferNotificationVerifier::class)
+        ->tag('shopwell.payment.transfer_notification_verifier');
+
+    $services->set(WechatTransferNotificationVerifier::class)
+        ->args([service('logger')])
+        ->tag('shopwell.payment.transfer_notification_verifier');
+
+    $services->set(StripeTransferNotificationVerifier::class)
+        ->tag('shopwell.payment.transfer_notification_verifier');
+
+    $services->set(PaypalTransferNotificationVerifier::class)
+        ->args([service('http_client')])
+        ->tag('shopwell.payment.transfer_notification_verifier');
+
+    $services->set(PaymentTransferNotificationVerifierRegistry::class)
+        ->args([tagged_iterator('shopwell.payment.transfer_notification_verifier')]);
+
+    $services->set(PaymentTransferNotificationProcessor::class)
+        ->args([
+            service('payment_notification.repository'),
+            service('payment_app.repository'),
+            service(PaymentTransferNotificationVerifierRegistry::class),
+            service(PaymentConfigResolver::class),
+            service(PaymentTransferService::class),
+            service(PaymentTransferReconciler::class),
+        ]);
+
+    // the interface calls this one, so it is not behind the app authentication
+    $services->set(PaymentTransferNotifyController::class)
+        ->public()
+        ->args([
+            service(PaymentTransferNotificationVerifierRegistry::class),
+            service(PaymentTransferNotificationProcessor::class),
+            service('logger'),
+        ])
+        ->tag('controller.service_arguments');
 
     // the payload and its signature are the contract with the app, so they are built in one place -
     // the dispatcher only queues, sends and retries
@@ -450,6 +684,7 @@ return static function (ContainerConfigurator $container): void {
             service(PaymentAppAuthenticator::class),
             service(PaymentOrderService::class),
             service(PaymentOrderCapture::class),
+            service(PaymentOrderCloser::class),
             service(PaymentOrderPresenter::class),
         ])
         ->tag('controller.service_arguments');

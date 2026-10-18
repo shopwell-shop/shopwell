@@ -26,4 +26,5 @@ return static function (RoutingConfigurator $routes): void {
 
     // the generic payment gateway is a plain json api of its own, see PaymentApiRouteScope
     $routes->import('../../Payment/**/*Controller.php', 'attribute');
+    $routes->import('../../Sms/Api/*Controller.php', 'attribute');
 };

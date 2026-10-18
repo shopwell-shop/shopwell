@@ -2,6 +2,8 @@
 
 namespace Shopwell\Core\System\Payment\Order;
 
+use Shopwell\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
+use Shopwell\Core\Checkout\Order\OrderEntity;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\Entity;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\Field;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\FieldType;
@@ -10,6 +12,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\ManyToOne;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\OnDelete;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\OneToMany;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\PrimaryKey;
+use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\ReferenceVersion;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\Required;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\SearchRanking;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\State;
@@ -21,10 +24,13 @@ use Shopwell\Core\System\Payment\Notification\PaymentNotificationEntity;
 use Shopwell\Core\System\Payment\Order\Aggregate\PaymentTransaction\PaymentTransactionEntity;
 use Shopwell\Core\System\Payment\Order\Refund\PaymentRefundEntity;
 use Shopwell\Core\System\Payment\Webhook\PaymentWebhookDeliveryEntity;
+use Shopwell\Core\System\StateMachine\Aggregation\StateMachineState\StateMachineStateEntity;
 
 /**
- * A payment order of the generic payment gateway. It is the source of truth of one payment and is
- * completely independent of an order, the app brings its own out trade number.
+ * A payment order of the generic payment gateway. An external app brings its own out trade number and
+ * needs no order, the shop's own orders carry the order and the transaction they were opened for.
+ * The references are what the paid event is written back to, so a checkout and a refund can find the
+ * payment again.
  *
  * All amounts are integers in the smallest unit of the currency (e.g. fen for CNY).
  *
@@ -61,6 +67,30 @@ class PaymentOrderEntity extends EntityStruct
     #[Required]
     #[ForeignKey(entity: 'payment_app', api: ['admin-api' => true, 'store-api' => false])]
     public string $paymentAppId;
+
+    /**
+     * The order of the checkout this payment was opened for. It stays empty for the order of an
+     * external app, which is complete without the shop's order.
+     */
+    #[ForeignKey(entity: 'order', api: false)]
+    public ?string $orderId = null;
+
+    /**
+     * The version the order reference points into. The order is versioned, so a reference into it
+     * always spans the id and the version - the same way a transaction references its order.
+     */
+    #[ReferenceVersion(entity: 'order')]
+    public ?string $orderVersionId = null;
+
+    /**
+     * The transaction of that order. The paid state is written back to it, therefore a checkout order
+     * always has it while an app order never does.
+     */
+    #[ForeignKey(entity: 'order_transaction', api: false)]
+    public ?string $orderTransactionId = null;
+
+    #[ReferenceVersion(entity: 'order_transaction')]
+    public ?string $orderTransactionVersionId = null;
 
     /**
      * The payment interface that is charged and holds the merchant account, e.g. `alipay`. It decides
@@ -164,6 +194,27 @@ class PaymentOrderEntity extends EntityStruct
 
     #[ManyToOne(entity: 'payment_app', onDelete: OnDelete::RESTRICT, api: ['admin-api' => true, 'store-api' => false])]
     public ?PaymentAppEntity $paymentApp = null;
+
+    /**
+     * The state of the order, reading the very same column as the state field above.
+     *
+     * A state field is only a foreign key value to the dal - it does not know the table it points
+     * into, so without this association the schema builder never sees the relation and every
+     * `dal:migration:create` would propose to drop the foreign key that the migration created. The
+     * association is the trunk way of declaring it: one field and one association on `state_id`.
+     */
+    #[ManyToOne(entity: 'state_machine_state', onDelete: OnDelete::RESTRICT, api: ['admin-api' => true, 'store-api' => false], column: 'state_id')]
+    public ?StateMachineStateEntity $stateMachineState = null;
+
+    /**
+     * The order of the checkout, deleted together with it like its transactions - a payment of a
+     * deleted order can no longer be booked anywhere.
+     */
+    #[ManyToOne(entity: 'order', onDelete: OnDelete::CASCADE, api: false)]
+    public ?OrderEntity $order = null;
+
+    #[ManyToOne(entity: 'order_transaction', onDelete: OnDelete::CASCADE, api: false)]
+    public ?OrderTransactionEntity $orderTransaction = null;
 
     /**
      * The attempts to pay this order, they only exist together with the order.

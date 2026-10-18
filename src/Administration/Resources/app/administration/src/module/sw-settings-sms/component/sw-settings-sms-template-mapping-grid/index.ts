@@ -66,6 +66,31 @@ export default Shopwell.Component.wrapComponentConfig({
             return collection ? Array.from(collection) : [];
         },
 
+        columns(): Array<{ property: string; label: string }> {
+            return [
+                {
+                    property: 'technicalName',
+                    label: 'sw-settings-sms.mapping.columnTechnicalName',
+                },
+                {
+                    property: 'gatewayId',
+                    label: 'sw-settings-sms.mapping.columnGateway',
+                },
+                {
+                    property: 'templateCode',
+                    label: 'sw-settings-sms.mapping.columnTemplateCode',
+                },
+                {
+                    property: 'signName',
+                    label: 'sw-settings-sms.mapping.columnSignName',
+                },
+                {
+                    property: 'auditStatus',
+                    label: 'sw-settings-sms.mapping.columnAuditStatus',
+                },
+            ];
+        },
+
         providerOptions(): Array<{ value: string; label: string }> {
             return (this.providers as SmsGatewayProvider[]).map((provider) => {
                 return {

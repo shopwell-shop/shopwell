@@ -1,0 +1,92 @@
+.account-loyalty {
+    &-card-value {
+        font-size: $font-size-lg;
+        font-weight: $font-weight-bold;
+        font-variant-numeric: tabular-nums;
+        line-height: 1.2;
+    }
+
+    &-card-label {
+        margin-top: $spacer * 0.25;
+        font-size: $font-size-sm;
+        color: $secondary;
+    }
+
+    &-membership {
+        &-state {
+            font-size: $font-size-base;
+        }
+
+        &-valid-until {
+            margin-bottom: 0;
+            color: $secondary;
+            font-size: $font-size-sm;
+        }
+    }
+
+    &-plans {
+        &-channel {
+            min-width: 12rem;
+        }
+    }
+
+    &-plan {
+        &-name {
+            font-size: $font-size-base;
+            font-weight: $font-weight-bold;
+        }
+
+        &-tier,
+        &-duration {
+            color: $secondary;
+            font-size: $font-size-sm;
+        }
+
+        &-price {
+            margin-bottom: $spacer * 0.25;
+            font-size: $font-size-lg;
+            font-weight: $font-weight-bold;
+            font-variant-numeric: tabular-nums;
+        }
+
+        &-description {
+            margin-bottom: $spacer;
+            color: $secondary;
+            font-size: $font-size-sm;
+        }
+    }
+
+    &-plans-qrcode {
+        &-title {
+            font-size: $font-size-base;
+            font-weight: $font-weight-bold;
+        }
+
+        &-target {
+            display: flex;
+            justify-content: center;
+            padding: $spacer;
+            background-color: $body-bg;
+            border: 1px solid $border-color;
+            border-radius: $border-radius;
+        }
+
+        &-hint {
+            margin-top: $spacer * 0.5;
+            color: $secondary;
+            font-size: $font-size-sm;
+        }
+    }
+
+    &-tier-current {
+        background-color: $table-hover-bg;
+    }
+
+    &-orders-table {
+        margin-bottom: 0;
+
+        td {
+            vertical-align: middle;
+        }
+    }
+}

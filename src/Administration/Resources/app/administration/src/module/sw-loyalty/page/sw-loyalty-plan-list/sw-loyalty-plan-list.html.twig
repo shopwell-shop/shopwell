@@ -1,0 +1,159 @@
+{% block sw_loyalty_plan_list %}
+<sw-page class="sw-loyalty-plan-list">
+
+    {% block sw_loyalty_plan_list_search_bar %}
+    <template #search-bar>
+        <sw-search-bar
+            initial-search-type="membership_plan"
+            :placeholder="$t('sw-loyalty.plan.general.placeholderSearchBar')"
+            :initial-search="term"
+            @search="onSearch"
+        />
+    </template>
+    {% endblock %}
+
+    {% block sw_loyalty_plan_list_smart_bar_header %}
+    <template #smart-bar-header>
+        <h2>
+            {{ $t('sw-settings.index.title') }}
+            <mt-icon
+                name="regular-chevron-right-xs"
+                size="12px"
+            />
+            {{ $t('sw-loyalty.plan.general.mainMenuItemGeneral') }}
+
+            <span
+                v-if="!isLoading && total"
+                class="sw-page__smart-bar-amount"
+            >
+                ({{ total }})
+            </span>
+        </h2>
+    </template>
+    {% endblock %}
+
+    {% block sw_loyalty_plan_list_language_switch %}
+    <template #language-switch>
+        <sw-language-switch @on-change="onRefresh" />
+    </template>
+    {% endblock %}
+
+    {% block sw_loyalty_plan_list_actions %}
+    <template #smart-bar-actions>
+        <mt-button
+            v-tooltip.bottom="{
+                message: $t('sw-privileges.tooltip.warning'),
+                disabled: acl.can('loyalty.creator'),
+                showOnDisabledElements: true
+            }"
+            class="sw-loyalty-plan-list__create"
+            variant="primary"
+            :disabled="!acl.can('loyalty.creator') || undefined"
+            size="default"
+            @click="$router.push({ name: 'sw.settings.loyalty.planCreate' })"
+        >
+            {{ $t('sw-loyalty.plan.general.buttonCreate') }}
+        </mt-button>
+    </template>
+    {% endblock %}
+
+    {% block sw_loyalty_plan_list_content %}
+    <template #content>
+        <sw-card-view>
+            {% block sw_loyalty_plan_list_card %}
+            <mt-card position-identifier="sw-loyalty-plan-list">
+                {% block sw_loyalty_plan_list_grid %}
+                <template #grid>
+                    <sw-entity-listing
+                        v-if="!isLoading"
+                        ref="listing"
+                        class="sw-loyalty-plan-list-grid"
+                        identifier="sw-loyalty-plan-list"
+                        detail-route="sw.settings.loyalty.planDetail"
+                        :repository="planRepository"
+                        :criteria-limit="limit"
+                        :is-loading="isLoading"
+                        :data-source="plans"
+                        :columns="columns"
+                        :sort-by="sortBy"
+                        :sort-direction="sortDirection"
+                        :full-page="false"
+                        :allow-view="acl.can('loyalty.viewer')"
+                        :allow-edit="acl.can('loyalty.editor')"
+                        :allow-delete="acl.can('loyalty.deleter')"
+                        :show-selection="acl.can('loyalty.deleter') || undefined"
+                        @column-sort="onSortColumn"
+                        @page-change="onPageChange"
+                    >
+                        <template #column-loyaltyTier="{ item }">
+                            {{ item.loyaltyTier ? item.loyaltyTier.name : '-' }}
+                        </template>
+
+                        <template #column-price="{ item }">
+                            {{ formatPrice(item) }}
+                        </template>
+
+                        <template #column-durationDays="{ item }">
+                            {{ $t('sw-loyalty.plan.list.durationDaysValue', { days: item.durationDays }, 0) }}
+                        </template>
+
+                        <template #column-active="{ item }">
+                            <mt-icon
+                                :name="item.active ? 'regular-checkmark-xs' : 'regular-times-s'"
+                                :color="item.active ? 'var(--color-emerald-500)' : 'var(--color-crimson-500)'"
+                                size="16px"
+                                :aria-label="$t('sw-loyalty.plan.list.columnActive')"
+                            />
+                        </template>
+
+                        <template #bulk-modal-delete-items>
+                            <mt-button
+                                variant="critical"
+                                size="small"
+                                @click="onDeletePlans"
+                            >
+                                {{ $t('global.default.delete') }}
+                            </mt-button>
+                        </template>
+
+                        <template #delete-action="{ item }">
+                            <sw-context-menu-item
+                                class="sw-loyalty-plan-list-grid__delete-action"
+                                variant="danger"
+                                :disabled="!acl.can('loyalty.deleter') || undefined"
+                                @click="onContextMenuDelete(item)"
+                            >
+                                {{ $t('global.default.delete') }}
+                            </sw-context-menu-item>
+                        </template>
+
+                        <template #delete-modal-delete-item="{ item }">
+                            <mt-button
+                                variant="critical"
+                                size="small"
+                                @click="onDeletePlan(item)"
+                            >
+                                {{ $t('global.default.delete') }}
+                            </mt-button>
+                        </template>
+                    </sw-entity-listing>
+
+                    {% block sw_loyalty_plan_list_empty_state %}
+                    <mt-empty-state
+                        v-else-if="showEmptyState"
+                        centered
+                        icon="regular-shopping-bag"
+                        :headline="$t('sw-loyalty.plan.list.emptyStateHeadline')"
+                        :description="$t('sw-loyalty.plan.list.emptyStateDescription')"
+                    />
+                    {% endblock %}
+                </template>
+                {% endblock %}
+            </mt-card>
+            {% endblock %}
+        </sw-card-view>
+    </template>
+    {% endblock %}
+
+</sw-page>
+{% endblock %}

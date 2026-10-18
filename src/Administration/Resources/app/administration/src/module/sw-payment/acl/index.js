@@ -50,4 +50,20 @@ Shopwell.Service('privileges')
                 dependencies: [],
             },
         },
+    })
+    .addPrivilegeMappingEntry({
+        category: 'permissions',
+        parent: 'payment_gateway',
+        key: 'payment_transfer',
+        roles: {
+            viewer: {
+                privileges: [
+                    'payment_transfer:read',
+                    'payment_transfer_recipient:read',
+                    'payment_app:read',
+                    'state_machine_state:read',
+                ],
+                dependencies: [],
+            },
+        },
     });

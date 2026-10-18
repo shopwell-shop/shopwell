@@ -8,6 +8,7 @@ use Shopwell\Core\Checkout\Wallet\Entity\CustomerWallet\CustomerWalletEntity;
 use Shopwell\Core\Checkout\Wallet\Entity\CustomerWalletTransaction\CustomerWalletTransactionCollection;
 use Shopwell\Core\Checkout\Wallet\Entity\CustomerWalletTransaction\CustomerWalletTransactionEntity;
 use Shopwell\Core\Checkout\Wallet\Extension\WalletRouteExtension;
+use Shopwell\Core\Checkout\Wallet\Service\WalletTopUpService;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsAnyFilter;
@@ -30,6 +31,8 @@ class WalletRoute
 
     private const MAX_LIMIT = 100;
 
+    private const RECENT_TOP_UP_LIMIT = 5;
+
     /**
      * @internal
      *
@@ -39,6 +42,7 @@ class WalletRoute
     public function __construct(
         private readonly EntityRepository $walletRepository,
         private readonly EntityRepository $walletTransactionRepository,
+        private readonly WalletTopUpService $topUpService,
         private readonly ExtensionDispatcher $extensions,
     ) {
     }
@@ -60,6 +64,8 @@ class WalletRoute
 
     private function _load(Request $request, SalesChannelContext $context, CustomerEntity $customer): WalletRouteResponse
     {
+        $currency = $context->getCurrency()->getIsoCode();
+
         $wallets = $this->loadWallets($customer->getId(), $context);
 
         $walletIds = array_map(static fn (array $wallet): string => (string) $wallet['id'], $wallets);
@@ -75,6 +81,10 @@ class WalletRoute
                 $wallets
             ),
             'transactions' => $this->loadTransactions($walletIds, $request, $context),
+            // the account page needs the form and the ledger in one call, so a reloaded page shows
+            // a payment that is still open without asking the gateway again
+            'topUps' => $this->topUpService->recent($customer->getId(), self::RECENT_TOP_UP_LIMIT, $context->getContext()),
+            'topUpOptions' => $this->topUpService->options($currency, $this->deviceOf($request)),
         ];
 
         return new WalletRouteResponse(new ArrayStruct($data));
@@ -147,5 +157,15 @@ class WalletRoute
         }
 
         return $transactions;
+    }
+
+    /**
+     * The channels are filtered by device, so a phone is not offered a desktop only channel.
+     */
+    private function deviceOf(Request $request): ?string
+    {
+        $device = $request->query->get('device');
+
+        return \is_string($device) && $device !== '' ? strtolower($device) : null;
     }
 }

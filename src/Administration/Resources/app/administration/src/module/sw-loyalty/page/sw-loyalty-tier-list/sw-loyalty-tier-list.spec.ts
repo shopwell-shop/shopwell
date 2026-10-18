@@ -3,11 +3,19 @@
  */
 
 import { mount } from '@vue/test-utils';
+import type { VueWrapper } from '@vue/test-utils';
 import { searchRankingPoint } from 'src/app/service/search-ranking.service';
 import Criteria from 'src/core/data/criteria.data';
 
 type SearchRankingPoint = {
     HIGH_SEARCH_RANKING: number;
+};
+
+type TypedWrapper<T> = { vm: T } & VueWrapper;
+
+type TierListVm = {
+    showEmptyState: boolean;
+    getList: () => Promise<void>;
 };
 
 const searchRankingServiceMock = {
@@ -16,8 +24,8 @@ const searchRankingServiceMock = {
     isValidTerm: jest.fn(),
 };
 
-async function createWrapper(privileges: string[] = []) {
-    return mount(
+async function createWrapper(privileges: string[] = []): Promise<TypedWrapper<TierListVm>> {
+    const wrapper = mount(
         await wrapTestComponent('sw-loyalty-tier-list', {
             sync: true,
         }),
@@ -115,6 +123,8 @@ async function createWrapper(privileges: string[] = []) {
             },
         },
     );
+
+    return wrapper as unknown as TypedWrapper<TierListVm>;
 }
 
 describe('src/module/sw-loyalty/page/sw-loyalty-tier-list', () => {

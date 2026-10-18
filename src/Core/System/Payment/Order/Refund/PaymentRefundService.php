@@ -59,6 +59,14 @@ final class PaymentRefundService
      */
     public function refund(PaymentAppEntity $app, PaymentOrderEntity $order, PaymentRefundRequest $request): PaymentRefundEntity
     {
+        // the replay of a refund the platform already knows is answered before anything is validated:
+        // its amount is already booked on the order, so a second balance check would reject the very
+        // refund that succeeded - and the channel must never be asked twice for the same refund
+        $existing = $this->findByOutRefundNo($order->id, $request->outRefundNo);
+        if ($existing instanceof PaymentRefundEntity) {
+            return $existing;
+        }
+
         if ($order->paidAt === null) {
             throw PaymentException::refundNotAllowed($order->paymentNo);
         }
@@ -70,11 +78,6 @@ final class PaymentRefundService
         $available = $order->paidAmount - $order->refundedAmount;
         if ($request->amount > $available) {
             throw PaymentException::refundAmountExceedsOrder($order->paymentNo, $request->amount, $available);
-        }
-
-        $existing = $this->findByOutRefundNo($order->id, $request->outRefundNo);
-        if ($existing instanceof PaymentRefundEntity) {
-            return $existing;
         }
 
         $refund = $this->create($order, $request);
@@ -103,7 +106,7 @@ final class PaymentRefundService
             $this->recordResponse($refund, $model, $exception);
             $this->stateHandler->fail($refund->id);
 
-            throw PaymentException::gatewayError($order->channelTechnicalName, $exception->getMessage());
+            throw PaymentException::gatewayError($order->channelTechnicalName, $exception->getMessage(), $exception);
         }
 
         if ($result->status === PaymentRefundStates::STATE_PROCESSING) {
@@ -220,6 +223,7 @@ final class PaymentRefundService
 
         $this->eventDispatcher->dispatch(new PaymentRefundFinishedEvent($refund, $order, Context::createDefaultContext()));
 
+        // a refund is announced per refund and not per order: an order can be refunded more than once
         $this->webhookService->enqueue($order, PaymentWebhookDispatcher::EVENT_REFUND_FINISHED, [
             'refund_no' => $refund->refundNo,
             'out_refund_no' => $refund->outRefundNo,
@@ -228,7 +232,7 @@ final class PaymentRefundService
             'currency' => $refund->currency,
             'refunded_amount' => $order->refundedAmount,
             'state' => PaymentRefundStates::STATE_FINISHED,
-        ]);
+        ], $refund->id);
 
         return $refund;
     }

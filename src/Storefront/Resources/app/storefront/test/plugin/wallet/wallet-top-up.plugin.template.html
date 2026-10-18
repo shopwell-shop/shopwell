@@ -1,0 +1,25 @@
+<div data-wallet-top-up="true">
+    <form data-wallet-top-up-form>
+        <input type="number" data-wallet-top-up-amount id="walletTopUpAmount" value="">
+
+        <select data-wallet-top-up-channel id="walletTopUpChannel">
+            <option value="wechat_qr" data-flow="qrcode" selected>微信扫码</option>
+            <option value="alipay_redirect" data-flow="redirect">支付宝</option>
+        </select>
+
+        <button type="submit" data-wallet-top-up-submit>立即充值</button>
+    </form>
+
+    <button type="button" data-wallet-top-up-preset="500">500</button>
+
+    <div class="alert d-none" data-wallet-top-up-feedback>
+        <span data-wallet-top-up-message></span>
+    </div>
+
+    <div class="d-none" data-wallet-top-up-qrcode>
+        <div data-wallet-top-up-qrcode-target></div>
+        <p data-wallet-top-up-qrcode-hint></p>
+        <strong data-wallet-top-up-qrcode-amount></strong>
+        <button type="button" data-wallet-top-up-check>我已完成支付</button>
+    </div>
+</div>

@@ -5,6 +5,7 @@ namespace Shopwell\Tests\Unit\Core\Checkout\Loyalty\Service;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Psr\Clock\ClockInterface;
 use Shopwell\Core\Checkout\Customer\CustomerCollection;
 use Shopwell\Core\Checkout\Loyalty\Entity\CustomerLoyalty\CustomerLoyaltyCollection;
 use Shopwell\Core\Checkout\Loyalty\Entity\CustomerLoyalty\CustomerLoyaltyEntity;
@@ -16,6 +17,7 @@ use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Test\Stub\DataAbstractionLayer\StaticEntityRepository;
 use Shopwell\Core\Test\Stub\SystemConfigService\StaticSystemConfigService;
+use Symfony\Component\Clock\MockClock;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 
 /**
@@ -28,6 +30,8 @@ class TierResolverTest extends TestCase
     private const CUSTOMER_ID = 'customer-id';
 
     private const LOYALTY_ID = 'loyalty-id';
+
+    private const NOW = '2026-06-01 12:00:00';
 
     /**
      * @var StaticEntityRepository<LoyaltyTierCollection>
@@ -48,6 +52,8 @@ class TierResolverTest extends TestCase
 
     private EventDispatcher $eventDispatcher;
 
+    private ClockInterface $clock;
+
     private TierResolver $tierResolver;
 
     private Context $context;
@@ -61,12 +67,15 @@ class TierResolverTest extends TestCase
         $this->eventDispatcher = new EventDispatcher();
         $this->context = Context::createDefaultContext();
 
+        $this->clock = new MockClock(self::NOW);
+
         $this->tierResolver = new TierResolver(
             $this->tierRepository,
             $this->customerLoyaltyRepository,
             $this->customerRepository,
             $this->systemConfigService,
             $this->eventDispatcher,
+            $this->clock,
         );
     }
 
@@ -102,6 +111,62 @@ class TierResolverTest extends TestCase
         static::assertCount(1, $events);
         static::assertNull($events[0]->getPreviousTierId());
         static::assertSame('silver', $events[0]->getNewTierId());
+    }
+
+    /**
+     * A running membership outranks the growth value, so no downgrade happens even though the
+     * growth value alone would only reach a lower tier.
+     */
+    public function testResolveKeepsThePaidTierWhileTheMembershipRuns(): void
+    {
+        $paidTier = $this->createTier('silver', 2, 1000);
+        $this->customerLoyaltyRepository->addSearch(new CustomerLoyaltyCollection([
+            $this->createLoyalty('silver', $paidTier, '2026-12-01 00:00:00'),
+        ]));
+        $this->tierRepository->addSearch(new LoyaltyTierCollection([$paidTier]));
+
+        $this->tierResolver->resolve(self::CUSTOMER_ID, 0, $this->context);
+
+        static::assertSame([], $this->customerLoyaltyRepository->updates);
+    }
+
+    /**
+     * Once the membership ended the growth value decides again, which is why the end date has to be
+     * checked on every resolution instead of in a clean up task.
+     */
+    public function testResolveFallsBackToTheGrowthValueOnceTheMembershipEnded(): void
+    {
+        $this->customerLoyaltyRepository->addSearch(new CustomerLoyaltyCollection([
+            $this->createLoyalty('gold', $this->createTier('gold', 3, 5000), '2026-01-01 00:00:00'),
+        ]));
+        $this->tierRepository->addSearch(new LoyaltyTierCollection([$this->createTier('bronze', 1, 0)]));
+
+        $this->tierResolver->resolve(self::CUSTOMER_ID, 100, $this->context);
+
+        static::assertSame('bronze', $this->customerLoyaltyRepository->updates[0][0]['membershipTierId']);
+    }
+
+    public function testGetPointsMultiplierUsesTheRunningMembership(): void
+    {
+        $paidTier = $this->createTier('silver', 2, 1000);
+        $paidTier->setPointsMultiplier(1.5);
+
+        $this->customerLoyaltyRepository->addSearch(new CustomerLoyaltyCollection([
+            $this->createLoyalty('silver', $paidTier, '2026-12-01 00:00:00'),
+        ]));
+        $this->tierRepository->addSearch(new LoyaltyTierCollection([$paidTier]));
+
+        static::assertSame(1.5, $this->tierResolver->getPointsMultiplier(self::CUSTOMER_ID, $this->context));
+    }
+
+    public function testGetPointsMultiplierFallsBackAfterTheMembershipEnded(): void
+    {
+        $this->customerLoyaltyRepository->addSearch(new CustomerLoyaltyCollection([
+            $this->createLoyalty('gold', $this->createTier('gold', 3, 5000), '2026-01-01 00:00:00'),
+        ]));
+        $this->tierRepository->addSearch(new LoyaltyTierCollection([$this->createTier('bronze', 1, 0)]));
+
+        static::assertSame(1.0, $this->tierResolver->getPointsMultiplier(self::CUSTOMER_ID, $this->context));
     }
 
     public function testResolveDoesNothingWhenTierIsUnchanged(): void
@@ -176,7 +241,11 @@ class TierResolverTest extends TestCase
         $tier = $this->createTier('silver', 2, 1000);
         $tier->setPointsMultiplier(2.0);
 
-        $this->customerLoyaltyRepository->addSearch(new CustomerLoyaltyCollection([$this->createLoyalty('silver', $tier)]));
+        $loyalty = $this->createLoyalty(null);
+        $loyalty->setGrowthValue(1500);
+
+        $this->customerLoyaltyRepository->addSearch(new CustomerLoyaltyCollection([$loyalty]));
+        $this->tierRepository->addSearch(new LoyaltyTierCollection([$tier]));
 
         static::assertSame(2.0, $this->tierResolver->getPointsMultiplier(self::CUSTOMER_ID, $this->context));
     }
@@ -191,6 +260,7 @@ class TierResolverTest extends TestCase
     public function testGetPointsMultiplierDefaultsToOneWithoutTier(): void
     {
         $this->customerLoyaltyRepository->addSearch(new CustomerLoyaltyCollection([$this->createLoyalty(null)]));
+        $this->tierRepository->addSearch(new LoyaltyTierCollection([$this->createTier('silver', 2, 1000)]));
 
         static::assertSame(1.0, $this->tierResolver->getPointsMultiplier(self::CUSTOMER_ID, $this->context));
     }
@@ -225,12 +295,16 @@ class TierResolverTest extends TestCase
         static::assertNull($this->tierResolver->findTierIdForGrowthValue(0, $this->context));
     }
 
-    private function createLoyalty(?string $tierId, ?LoyaltyTierEntity $tier = null): CustomerLoyaltyEntity
+    private function createLoyalty(?string $tierId, ?LoyaltyTierEntity $tier = null, ?string $validUntil = null): CustomerLoyaltyEntity
     {
         $loyalty = new CustomerLoyaltyEntity();
         $loyalty->setId(self::LOYALTY_ID);
         $loyalty->setCustomerId(self::CUSTOMER_ID);
         $loyalty->setMembershipTierId($tierId);
+
+        if ($validUntil !== null) {
+            $loyalty->setMembershipValidUntil(new \DateTimeImmutable($validUntil));
+        }
 
         if ($tier !== null) {
             $loyalty->setMembershipTier($tier);

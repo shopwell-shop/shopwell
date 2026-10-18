@@ -248,7 +248,7 @@
     "detail": {
       "tabGeneral": "基本信息",
       "tabAddresses": "地址",
-      "tabPoints": "积分",
+      "tabPoints": "积分会员",
       "tabWallet": "钱包",
       "messageCustomerNotFound": "未找到该客户。客户可能已被删除。",
       "messageSaveError": "客户无法保存。",
@@ -300,7 +300,35 @@
         "expire": "过期"
       },
       "emptyPointTransactions": "暂无积分流水。",
-      "notificationErrorMessage": "积分更新失败。"
+      "notificationErrorMessage": "积分更新失败。",
+      "cardMembershipTitle": "会员状态",
+      "buttonGrantMembership": "开通 / 续期",
+      "labelMembershipValidUntil": "有效期至",
+      "membershipExpiresNever": "长期有效",
+      "membershipRunning": "生效中",
+      "membershipExpired": "已过期",
+      "growthProgress": "成长值 {current} / {required}，距 {tier}",
+      "cardMembershipOrdersTitle": "会员订单",
+      "columnOrderPlan": "套餐",
+      "columnOrderAmount": "金额",
+      "columnOrderState": "状态",
+      "columnOrderPaidAt": "支付时间",
+      "membershipOrderState": {
+        "open": "待支付",
+        "activated": "已生效",
+        "failed": "失败"
+      },
+      "emptyMembershipOrders": "该客户暂无会员订单。",
+      "labelFilterType": "类型",
+      "filterTypeAll": "全部类型",
+      "membershipModalTitle": "开通会员",
+      "membershipHelpText": "同等级续期会在现有到期时间之后顺延，更换等级则从今天开始计算。",
+      "labelMembershipTier": "会员等级",
+      "labelMembershipDuration": "时长（天）",
+      "membershipDurationHelpText": "会员至少开通 1 天。",
+      "messageMembershipSaved": "会员已开通。",
+      "notificationMembershipErrorMessage": "开通会员失败。",
+      "tierLevel": "L{level}"
     },
     "detailWallet": {
       "cardWalletTitle": "钱包余额",
@@ -330,7 +358,15 @@
         "adjust": "调整"
       },
       "emptyWalletTransactions": "暂无钱包流水。",
-      "notificationErrorMessage": "钱包更新失败。"
+      "notificationErrorMessage": "钱包更新失败。",
+      "emptyWalletsDescription": "客户下单或充值后会自动开户。",
+      "cardPendingTopUpsTitle": "待支付的充值单",
+      "pendingTopUpsHint": "这些充值单还没有收到支付结果，金额尚未入账。",
+      "pendingTopUpState": "待支付",
+      "columnChannel": "支付通道",
+      "columnState": "状态",
+      "labelFilterType": "类型",
+      "filterTypeAll": "全部类型"
     },
     "filter": {
       "customerNumber": {

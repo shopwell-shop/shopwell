@@ -1,0 +1,186 @@
+{% block sw_loyalty_plan_detail %}
+<sw-page class="sw-loyalty-plan-detail">
+
+    {% block sw_loyalty_plan_detail_search_bar %}
+    <template #search-bar></template>
+    {% endblock %}
+
+    {% block sw_loyalty_plan_detail_smart_bar_header %}
+    <template #smart-bar-header>
+        <h2>
+            {{ placeholder(plan, 'name', $t('sw-loyalty.plan.detail.placeholderNewPlan')) }}
+        </h2>
+    </template>
+    {% endblock %}
+
+    {% block sw_loyalty_plan_detail_language_switch %}
+    <template #language-switch>
+        <sw-language-switch
+            :disabled="planId == null"
+            @on-change="onChangeLanguage"
+        />
+    </template>
+    {% endblock %}
+
+    {% block sw_loyalty_plan_detail_actions %}
+    <template #smart-bar-actions>
+        {% block sw_loyalty_plan_detail_actions_cancel %}
+        <mt-button
+            v-tooltip.bottom="tooltipCancel"
+            class="sw-loyalty-plan-detail__cancel"
+            variant="secondary"
+            size="default"
+            @click="onCancel"
+        >
+            {{ $t('global.default.cancel') }}
+        </mt-button>
+        {% endblock %}
+
+        {% block sw_loyalty_plan_detail_actions_save %}
+        <sw-button-process
+            v-model:process-success="isSaveSuccessful"
+            v-tooltip.bottom="tooltipSave"
+            class="sw-loyalty-plan-detail__save"
+            variant="primary"
+            :is-loading="isLoading"
+            :disabled="!allowSave || undefined"
+            @click="onSave"
+        >
+            {{ $t('global.default.save') }}
+        </sw-button-process>
+        {% endblock %}
+    </template>
+    {% endblock %}
+
+    {% block sw_loyalty_plan_detail_content %}
+    <template #content>
+        <sw-card-view>
+            <sw-skeleton v-if="isLoading" />
+
+            <template v-else>
+                {% block sw_loyalty_plan_detail_language_info %}
+                <sw-language-info :entity-description="entityDescription" />
+                {% endblock %}
+
+                {% block sw_loyalty_plan_detail_card %}
+                <mt-card
+                    v-if="plan"
+                    :title="$t('sw-loyalty.plan.detail.cardTitle')"
+                    position-identifier="sw-loyalty-plan-detail-content"
+                >
+                    <!-- eslint-disable sw-deprecation-rules/no-twigjs-blocks,vue/attributes-order -->
+                    <sw-container
+                        columns="repeat(2, minmax(250px, 1fr))"
+                        gap="0px 30px"
+                    >
+                        {% block sw_loyalty_plan_detail_card_name %}
+                        <mt-text-field
+                            v-model="plan.name"
+                            name="sw-field--plan-name"
+                            class="sw-loyalty-plan-detail__name"
+                            required
+                            validation="required"
+                            :label="$t('sw-loyalty.plan.detail.fieldNameLabel')"
+                            :error="planNameError"
+                            :placeholder="placeholder(plan, 'name', $t('sw-loyalty.plan.detail.placeholderName'))"
+                            :disabled="!acl.can('loyalty.editor') || undefined"
+                        />
+                        {% endblock %}
+
+                        {% block sw_loyalty_plan_detail_card_technical_name %}
+                        <mt-text-field
+                            v-model="plan.technicalName"
+                            name="sw-field--plan-technicalName"
+                            class="sw-loyalty-plan-detail__technical-name"
+                            required
+                            validation="required"
+                            :label="$t('sw-loyalty.plan.detail.fieldTechnicalNameLabel')"
+                            :error="planTechnicalNameError"
+                            :placeholder="$t('sw-loyalty.plan.detail.placeholderTechnicalName')"
+                            :disabled="!acl.can('loyalty.editor') || undefined"
+                        />
+                        {% endblock %}
+
+                        {% block sw_loyalty_plan_detail_card_tier %}
+                        <sw-entity-single-select
+                            v-model:value="plan.loyaltyTierId"
+                            class="sw-loyalty-plan-detail__tier"
+                            entity="loyalty_tier"
+                            label-property="name"
+                            required
+                            :label="$t('sw-loyalty.plan.detail.fieldTierLabel')"
+                            :help-text="$t('sw-loyalty.plan.detail.fieldTierHelpText')"
+                            :disabled="!acl.can('loyalty.editor') || undefined"
+                        />
+                        {% endblock %}
+
+                        {% block sw_loyalty_plan_detail_card_currency %}
+                        <sw-entity-single-select
+                            v-model:value="plan.currencyId"
+                            class="sw-loyalty-plan-detail__currency"
+                            entity="currency"
+                            label-property="name"
+                            required
+                            :label="$t('sw-loyalty.plan.detail.fieldCurrencyLabel')"
+                            :disabled="!acl.can('loyalty.editor') || undefined"
+                        />
+                        {% endblock %}
+
+                        {% block sw_loyalty_plan_detail_card_price %}
+                        <mt-number-field
+                            v-model="plan.price"
+                            name="sw-field--plan-price"
+                            class="sw-loyalty-plan-detail__price"
+                            number-type="float"
+                            required
+                            :min="0"
+                            :label="$t('sw-loyalty.plan.detail.fieldPriceLabel')"
+                            :error="planPriceError"
+                            :disabled="!acl.can('loyalty.editor') || undefined"
+                        />
+                        {% endblock %}
+
+                        {% block sw_loyalty_plan_detail_card_duration %}
+                        <mt-number-field
+                            v-model="plan.durationDays"
+                            name="sw-field--plan-durationDays"
+                            class="sw-loyalty-plan-detail__duration"
+                            number-type="int"
+                            required
+                            :min="1"
+                            :label="$t('sw-loyalty.plan.detail.fieldDurationDaysLabel')"
+                            :error="planDurationDaysError"
+                            :disabled="!acl.can('loyalty.editor') || undefined"
+                        />
+                        {% endblock %}
+
+                        {% block sw_loyalty_plan_detail_card_active %}
+                        <mt-switch
+                            v-model="plan.active"
+                            name="sw-field--plan-active"
+                            class="sw-loyalty-plan-detail__active"
+                            :label="$t('sw-loyalty.plan.detail.fieldActiveLabel')"
+                            :disabled="!acl.can('loyalty.editor') || undefined"
+                        />
+                        {% endblock %}
+                    </sw-container>
+                    <!-- eslint-enable sw-deprecation-rules/no-twigjs-blocks,vue/attributes-order -->
+
+                    {% block sw_loyalty_plan_detail_card_description %}
+                    <mt-textarea
+                        v-model="plan.description"
+                        name="sw-field--plan-description"
+                        class="sw-loyalty-plan-detail__description"
+                        :label="$t('sw-loyalty.plan.detail.fieldDescriptionLabel')"
+                        :disabled="!acl.can('loyalty.editor') || undefined"
+                    />
+                    {% endblock %}
+                </mt-card>
+                {% endblock %}
+            </template>
+        </sw-card-view>
+    </template>
+    {% endblock %}
+
+</sw-page>
+{% endblock %}

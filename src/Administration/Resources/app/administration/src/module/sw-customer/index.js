@@ -24,10 +24,6 @@ Shopwell.Component.register(
     'sw-customer-detail-wallet',
     () => import('./page/sw-customer-detail/sw-customer-detail-wallet'),
 );
-Shopwell.Component.register(
-    'sw-customer-detail-loyalty-overview',
-    () => import('./page/sw-customer-detail/sw-customer-detail-loyalty-overview'),
-);
 Shopwell.Component.register('sw-customer-base-form', () => import('./component/sw-customer-base-form'));
 Shopwell.Component.register('sw-customer-base-info', () => import('./component/sw-customer-base-info'));
 Shopwell.Component.register('sw-customer-address-form', () => import('./component/sw-customer-address-form'));

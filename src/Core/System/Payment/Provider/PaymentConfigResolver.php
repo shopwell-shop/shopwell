@@ -132,6 +132,48 @@ final class PaymentConfigResolver
     }
 
     /**
+     * The merchant credentials of an interface as they apply to one app.
+     *
+     * A payout notification is signed by the interface and not by a channel, but whose merchant
+     * account signed it still follows the app: an app that runs the interface in `own` mode uses its
+     * own keys, and verifying its notifications with the platform ones would reject every single one.
+     * This is the provider half of {@see resolve()} without a channel - the notification endpoint has
+     * no channel, and the body that names the payout is not read before the signature is verified.
+     *
+     * @throws PaymentException
+     *
+     * @return array<string, mixed> the decrypted credentials of the interface
+     */
+    public function resolveProviderCredentials(PaymentAppEntity $app, string $providerTechnicalName): array
+    {
+        $provider = $this->providerRegistry->get($providerTechnicalName);
+
+        $appProvider = $this->loadAppProvider($app->id, $provider->technicalName);
+
+        if (!$appProvider instanceof PaymentAppProviderEntity || !$appProvider->enabled) {
+            throw PaymentException::providerNotEnabled($provider->technicalName, $app->technicalName);
+        }
+
+        if ($appProvider->mode === PaymentAppProviderEntity::MODE_OWN) {
+            $credentials = $this->cipher->decrypt($appProvider->credentials);
+        } else {
+            $platformProvider = $this->loadProviderConfig($provider->technicalName);
+
+            if (!$platformProvider instanceof PaymentProviderConfigEntity || !$platformProvider->enabled) {
+                throw PaymentException::providerNotConfigured($provider->technicalName);
+            }
+
+            $credentials = $this->cipher->decrypt($platformProvider->credentials);
+        }
+
+        if ($credentials === []) {
+            throw PaymentException::providerNotConfigured($provider->technicalName);
+        }
+
+        return $credentials;
+    }
+
+    /**
      * The channels an app may actually use, so the app can build its own payment selection without
      * guessing which of the channels of the platform are enabled for it.
      *

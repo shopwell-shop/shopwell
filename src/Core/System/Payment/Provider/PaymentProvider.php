@@ -3,6 +3,7 @@
 namespace Shopwell\Core\System\Payment\Provider;
 
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Payment\Api\Struct\PayParams;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayFactory;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
 use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
@@ -27,6 +28,7 @@ final readonly class PaymentProvider
     /**
      * @param list<PaymentConfigField> $credentials the fields of the merchant account, in the order the administration renders them
      * @param array<string, PaymentChannel> $channels the offered channels, indexed by their technical name
+     * @param PayParamsDecoderInterface|null $payParamsDecoder the interface knows the shape of its own answer; without a decoder a reopen captures again
      */
     public function __construct(
         public string $technicalName,
@@ -35,7 +37,22 @@ final readonly class PaymentProvider
         public array $channels,
         public PaymentGatewayFactory $gatewayFactory,
         public PaymentNotificationExtractorInterface $notificationExtractor,
+        public ?PayParamsDecoderInterface $payParamsDecoder = null,
     ) {
+    }
+
+    /**
+     * The parameters a payer who comes back is handed to, rebuilt from the answer of the last capture.
+     *
+     * Null means the interface cannot hand the payer over again - either it did not record enough of
+     * its answer or the answer belongs to a flow only an app can continue - and the payment has to be
+     * captured anew.
+     *
+     * @param array<string, mixed> $response
+     */
+    public function payParamsFromResponse(array $response): ?PayParams
+    {
+        return $this->payParamsDecoder?->payParamsFromResponse($response);
     }
 
     public function credentialField(string $name): ?PaymentConfigField

@@ -50,16 +50,15 @@
                     {% block sw_settings_sms_delivery_list_toolbar %}
                     <div class="sw-settings-sms-delivery-list__toolbar">
                         {% block sw_settings_sms_delivery_list_toolbar_status_filter %}
-                        <sw-single-select
+                        <mt-select
                             class="sw-settings-sms-delivery-list__status-filter"
-                            value-property="value"
-                            label-property="label"
-                            show-clearable-button
-                            size="small"
+                            name="status"
+                            small
+                            clearable
+                            :model-value="statusFilter"
                             :placeholder="$t('sw-settings-sms.delivery.filterStatus')"
                             :options="statusFilterOptions"
-                            :value="statusFilter"
-                            @update:value="onFilterStatus"
+                            @update:model-value="onFilterStatus"
                         />
                         {% endblock %}
                     </div>

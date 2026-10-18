@@ -1,6 +1,6 @@
 import './acl';
+import './service';
 import defaultSearchConfiguration from './default-search-configuration';
-import LoyaltyApiService from './service/loyalty.api.service';
 
 /**
  * @sw-package checkout
@@ -12,17 +12,12 @@ const { Module } = Shopwell;
 Shopwell.Component.register('sw-loyalty-tier-list', () => import('./page/sw-loyalty-tier-list'));
 Shopwell.Component.register('sw-loyalty-tier-detail', () => import('./page/sw-loyalty-tier-detail'));
 Shopwell.Component.extend('sw-loyalty-tier-create', 'sw-loyalty-tier-detail', () => import('./page/sw-loyalty-tier-create'));
+Shopwell.Component.register('sw-loyalty-plan-list', () => import('./page/sw-loyalty-plan-list'));
+Shopwell.Component.register('sw-loyalty-plan-detail', () => import('./page/sw-loyalty-plan-detail'));
+Shopwell.Component.extend('sw-loyalty-plan-create', 'sw-loyalty-plan-detail', () => import('./page/sw-loyalty-plan-create'));
+Shopwell.Component.register('sw-loyalty-order-list', () => import('./page/sw-loyalty-order-list'));
+Shopwell.Component.register('sw-wallet-top-up-list', () => import('./page/sw-wallet-top-up-list'));
 /* eslint-enable sw-deprecation-rules/private-feature-declarations */
-
-/**
- * @private
- */
-Shopwell.Service().register('loyaltyApiService', () => {
-    return new LoyaltyApiService(
-        Shopwell.Application.getContainer('init').httpClient,
-        Shopwell.Service().get('loginService'),
-    );
-});
 
 // eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
 Module.register('sw-settings-loyalty', {
@@ -69,14 +64,89 @@ Module.register('sw-settings-loyalty', {
                 privilege: 'loyalty.creator',
             },
         },
+        plans: {
+            component: 'sw-loyalty-plan-list',
+            path: 'plans',
+            meta: {
+                parentPath: 'sw.settings.index',
+                privilege: 'loyalty.viewer',
+            },
+        },
+        planDetail: {
+            component: 'sw-loyalty-plan-detail',
+            path: 'plans/detail/:id',
+            meta: {
+                parentPath: 'sw.settings.loyalty.plans',
+                privilege: 'loyalty.viewer',
+            },
+            props: {
+                default(route: { params: { id: string } }) {
+                    return {
+                        planId: route.params.id.toLowerCase(),
+                    };
+                },
+            },
+        },
+        planCreate: {
+            component: 'sw-loyalty-plan-create',
+            path: 'plans/create',
+            meta: {
+                parentPath: 'sw.settings.loyalty.plans',
+                privilege: 'loyalty.creator',
+            },
+        },
+        orders: {
+            component: 'sw-loyalty-order-list',
+            path: 'orders',
+            meta: {
+                parentPath: 'sw.settings.index',
+                privilege: 'loyalty.viewer',
+            },
+        },
+        topUps: {
+            component: 'sw-wallet-top-up-list',
+            path: 'top-ups',
+            meta: {
+                parentPath: 'sw.settings.index',
+                privilege: 'wallet.viewer',
+            },
+        },
     },
 
-    settingsItem: {
-        group: 'customer',
-        to: 'sw.settings.loyalty.index',
-        icon: 'regular-star',
-        privilege: 'loyalty.viewer',
-    },
+    settingsItem: [
+        {
+            id: 'sw-settings-loyalty',
+            group: 'customer',
+            to: 'sw.settings.loyalty.index',
+            icon: 'regular-star',
+            privilege: 'loyalty.viewer',
+            label: 'sw-loyalty.general.mainMenuItemGeneral',
+        },
+        {
+            id: 'sw-settings-loyalty-plans',
+            group: 'customer',
+            to: 'sw.settings.loyalty.plans',
+            icon: 'regular-shopping-bag',
+            privilege: 'loyalty.viewer',
+            label: 'sw-loyalty.plan.general.mainMenuItemGeneral',
+        },
+        {
+            id: 'sw-settings-loyalty-orders',
+            group: 'customer',
+            to: 'sw.settings.loyalty.orders',
+            icon: 'regular-clipboard',
+            privilege: 'loyalty.viewer',
+            label: 'sw-loyalty.order.general.mainMenuItemGeneral',
+        },
+        {
+            id: 'sw-settings-wallet-top-ups',
+            group: 'customer',
+            to: 'sw.settings.loyalty.topUps',
+            icon: 'regular-money-transfer',
+            privilege: 'wallet.viewer',
+            label: 'sw-loyalty.topUp.general.mainMenuItemGeneral',
+        },
+    ],
 
     defaultSearchConfiguration,
 });

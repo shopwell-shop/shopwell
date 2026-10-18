@@ -6,8 +6,8 @@ use Doctrine\DBAL\Connection;
 use Shopwell\Core\Defaults;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Migration\MigrationStep;
-use Shopwell\Core\Framework\Sms\DataAbstractionLayer\SmsTemplateEntity;
 use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\System\Sms\Template\SmsTemplateEntity;
 
 /**
  * Adds the verification code template a shop can send without configuring anything first.

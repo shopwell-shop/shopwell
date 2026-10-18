@@ -125,6 +125,12 @@ export default function createSearchTypeService() {
             listingRoute: 'sw.payment.refund',
             hideOnGlobalSearchBar: true,
         },
+        payment_transfer: {
+            entityName: 'payment_transfer',
+            placeholderSnippet: 'sw-payment.transfer.list.placeholderSearchBar',
+            listingRoute: 'sw.payment.transfer',
+            hideOnGlobalSearchBar: true,
+        },
         sms_gateway: {
             entityName: 'sms_gateway',
             placeholderSnippet: 'sw-settings-sms.gateway.placeholderSearchBar',
