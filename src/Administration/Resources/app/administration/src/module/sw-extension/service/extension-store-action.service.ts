@@ -67,7 +67,12 @@ interface License {
 }
 
 interface Extension {
-    id: number | null;
+    /**
+     * The store's own id: an opaque string. Upstream's store uses numbers, a
+     * self-hosted one uses UUIDs, and the id is only ever routed with — never
+     * computed on — so it is typed as a string here.
+     */
+    id: string | null;
     localId: string | null;
     source: ExtensionSource;
     name: string;
