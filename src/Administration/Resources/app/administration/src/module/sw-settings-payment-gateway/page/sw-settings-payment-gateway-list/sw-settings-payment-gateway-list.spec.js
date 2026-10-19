@@ -6,8 +6,8 @@ import { mount } from '@vue/test-utils';
 const apps = [
     {
         id: 'app-1',
-        technicalName: 'alipay_sandbox_demo',
-        name: '支付宝沙箱联调应用',
+        technicalName: 'pos',
+        name: 'POS 收银',
         active: true,
         hasSecret: true,
         providers: [{ providerTechnicalName: 'alipay', enabled: true, mode: 'platform' }],
@@ -99,7 +99,8 @@ describe('module/sw-settings-payment-gateway/page/sw-settings-payment-gateway-li
         wrapper.vm.onSearch('shop');
         expect(wrapper.vm.filteredApps.map((app) => app.id)).toEqual(['app-2']);
 
-        wrapper.vm.onSearch('沙箱');
+        // the demo app is still findable, but through the new name of the seeded row
+        wrapper.vm.onSearch('POS');
         expect(wrapper.vm.filteredApps.map((app) => app.id)).toEqual(['app-1']);
 
         wrapper.vm.onSearch('nothing');

@@ -76,8 +76,8 @@ const registryProviders = [
 
 const existingApp = {
     id: 'app-1',
-    technicalName: 'alipay_sandbox_demo',
-    name: '支付宝沙箱联调应用',
+    technicalName: 'pos',
+    name: 'POS 收银',
     active: true,
     notifyUrl: null,
     returnUrl: null,
@@ -185,7 +185,7 @@ describe('module/sw-settings-payment-gateway/page/sw-settings-payment-gateway-de
         const { wrapper } = await createWrapper();
 
         expect(wrapper.vm.isNew).toBe(false);
-        expect(wrapper.vm.app.technicalName).toBe('alipay_sandbox_demo');
+        expect(wrapper.vm.app.technicalName).toBe('pos');
         expect(wrapper.vm.allowedIpsInput).toBe('127.0.0.1');
 
         expect(wrapper.vm.providers).toHaveLength(2);
@@ -259,8 +259,8 @@ describe('module/sw-settings-payment-gateway/page/sw-settings-payment-gateway-de
 
         expect(service.saveApp).toHaveBeenCalledWith({
             id: 'app-1',
-            technicalName: 'alipay_sandbox_demo',
-            name: '支付宝沙箱联调应用',
+            technicalName: 'pos',
+            name: 'POS 收银',
             active: true,
             notifyUrl: null,
             returnUrl: null,

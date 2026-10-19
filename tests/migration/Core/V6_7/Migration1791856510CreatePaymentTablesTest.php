@@ -413,10 +413,13 @@ class Migration1791856510CreatePaymentTablesTest extends TestCase
     }
 
     /**
-     * The platform is usable right after the installation: the alipay sandbox account and a demo app
-     * that collects with it are seeded, the credentials sealed the way the application seals them.
+     * The platform is usable right after the installation: the alipay sandbox account is seeded - the
+     * credentials sealed the way the application seals them - and the h5 channel is switched on.
+     *
+     * The only tenant of a fresh installation is the platform itself, and it is not authorized for
+     * anything yet: the first collection through a channel writes that authorization.
      */
-    public function testSeedsTheAlipaySandboxAccountAndTheDemoApp(): void
+    public function testSeedsTheAlipaySandboxAccountForThePlatformTenant(): void
     {
         (new Migration1791856510CreatePaymentTables())->update($this->connection);
 
@@ -437,25 +440,38 @@ class Migration1791856510CreatePaymentTablesTest extends TestCase
             ['provider' => Migration1791856510CreatePaymentTables::PROVIDER, 'channel' => Migration1791856510CreatePaymentTables::CHANNEL]
         ));
 
+        // the platform tenant is the default app of the installation, there is no seeded app beside it
         $app = $this->connection->fetchAssociative(
-            'SELECT `id`, `name`, `active`, `app_secret` FROM `payment_app` WHERE `technical_name` = :name',
-            ['name' => Migration1791856510CreatePaymentTables::DEMO_APP_TECHNICAL_NAME]
+            'SELECT `id`, `name`, `type`, `active`, `app_secret` FROM `payment_app` WHERE `technical_name` = :name',
+            ['name' => PaymentAppEntity::PLATFORM_TECHNICAL_NAME]
         );
         static::assertIsArray($app);
-        static::assertSame('支付宝沙箱联调应用', $app['name']);
+        static::assertSame('平台支付', $app['name']);
+        static::assertSame(PaymentAppEntity::TYPE_PLATFORM, $app['type']);
         static::assertSame(1, (int) $app['active']);
-        static::assertSame(
-            Migration1791856510CreatePaymentTables::DEMO_APP_SECRET,
-            $this->cipher()->decryptValue((string) $app['app_secret'])
-        );
 
-        static::assertSame('platform', $this->connection->fetchOne(
-            'SELECT `mode` FROM `payment_app_provider` WHERE `payment_app_id` = :app AND `provider_technical_name` = :provider',
-            ['app' => $app['id'], 'provider' => Migration1791856510CreatePaymentTables::PROVIDER]
-        ));
+        // the secret exists because the column is not nullable, and it is sealed like every other one
+        static::assertMatchesRegularExpression('/^[0-9a-f]{64}$/', $this->cipher()->decryptValue((string) $app['app_secret']));
+
+        // among the names this migration ever writes, the platform is the only row - and there is no
+        // external demo tenant beside it, an app of a caller is onboarded in the administration
         static::assertSame(1, (int) $this->connection->fetchOne(
-            'SELECT `enabled` FROM `payment_app_channel` WHERE `payment_app_id` = :app AND `channel_technical_name` = :channel',
-            ['app' => $app['id'], 'channel' => Migration1791856510CreatePaymentTables::CHANNEL]
+            'SELECT COUNT(*) FROM `payment_app` WHERE `technical_name` IN (:platform, :demo)',
+            ['platform' => PaymentAppEntity::PLATFORM_TECHNICAL_NAME, 'demo' => 'alipay_sandbox_demo']
+        ));
+        static::assertSame(0, (int) $this->connection->fetchOne(
+            'SELECT COUNT(*) FROM `payment_app` WHERE `technical_name` = :name',
+            ['name' => 'alipay_sandbox_demo']
+        ));
+
+        // the authorization is lazy - PlatformPaymentApp writes it for the channel that is really used
+        static::assertSame(0, (int) $this->connection->fetchOne(
+            'SELECT COUNT(*) FROM `payment_app_provider` WHERE `payment_app_id` = :app',
+            ['app' => $app['id']]
+        ));
+        static::assertSame(0, (int) $this->connection->fetchOne(
+            'SELECT COUNT(*) FROM `payment_app_channel` WHERE `payment_app_id` = :app',
+            ['app' => $app['id']]
         ));
     }
 

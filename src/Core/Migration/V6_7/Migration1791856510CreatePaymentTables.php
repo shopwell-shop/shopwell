@@ -10,7 +10,6 @@ use Shopwell\Core\Framework\Migration\MigrationStep;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\Migration\Traits\StateMachineMigration;
 use Shopwell\Core\Migration\Traits\StateMachineMigrationTrait;
-use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppProvider\PaymentAppProviderEntity;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
 use Shopwell\Core\System\Payment\App\PaymentCredentialCipher;
 use Shopwell\Core\System\Payment\Order\PaymentOrderStates;
@@ -42,17 +41,21 @@ use Shopwell\Core\System\Payment\Subscription\PaymentSubscriptionStates;
  *
  * There are two kinds of tenants: an external app creates its orders through the api and carries its
  * own out trade number, while the orders of the shop itself reference the checkout order and its
- * transaction - that reference is what the gateway writes the paid state back through. The tenant of
- * the shop is seeded below, the app of an external caller is onboarded in the administration.
+ * transaction - that reference is what the gateway writes the paid state back through.
+ *
+ * Only one tenant is seeded: the shop itself (`platform`). It is the default app of the installation
+ * and the account the checkout collects through, so an installation can take its first payment
+ * without anyone creating an app first. An external app is onboarded by an administrator in the
+ * administration, never here.
  *
  * The state machines are imported first, because the state fields of the bookkeeping tables reference
  * them.
  *
  * ⚠️ The seeded credentials below are alipay's *public sandbox* test account: they are deliberately
  * not a secret, but they must be replaced with the real merchant credentials before this channel is
- * used in production, and the demo app has to be removed. The seeded key pair is a locally generated
- * placeholder: it is complete and signs and verifies against itself, but it belongs to no alipay app,
- * so both keys have to be swapped for the ones of the real sandbox app in the alipay console.
+ * used in production. The seeded key pair is a locally generated placeholder: it is complete and
+ * signs and verifies against itself, but it belongs to no alipay app, so both keys have to be
+ * swapped for the ones of the real sandbox app in the alipay console.
  *
  * @internal
  */
@@ -84,10 +87,6 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
      */
     final public const SANDBOX_ALIPAY_PUBLIC_KEY = 'MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAsdTvO+HunAM08DqlNkYv/GWhrtVnb42fDGojIDQCEdUmYe8if/h3Atoo6TD6tMdfhaAls9Lv4WghzSRVi9+nz2iyCyUzonDfRMKnUAk9CW2EMNUzi/lfhvf7atmBbos8FckSfrmtqgtCWaE/XKn1WU8U0Cfvh/vqSfV4ybUx8hF8AJfPcWCNSo2LtUuS5j7bi46cfsZnIPUvr2XWMRVt8r0R67L2SOBAkjYtANu3KWz0qrnKu8NnI34YrLT403XsOPodOadpYgvV2Kn5zUX7/K94rn8j/6L1TBVBA7UnCL3sl9i2/oNZegH6f+aN+vbyNySx1ACPnGBelLQ+lrYmbQIDAQAB';
 
-    final public const DEMO_APP_TECHNICAL_NAME = 'alipay_sandbox_demo';
-
-    final public const DEMO_APP_SECRET = 'sandbox-only-app-secret';
-
     public function getCreationTimestamp(): int
     {
         return 1791856510;
@@ -118,13 +117,12 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
         $this->createPaymentSubscriptionTable($connection);
         $this->createPaymentSubscriptionCycleTable($connection);
 
-        // the demo sandbox account is the reason the api can be called right after the installation
+        // the seeded platform account is the reason the checkout can collect right after an installation
         $now = (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT);
         $cipher = $this->cipher();
 
         $this->seedProviderConfig($connection, $cipher, $now);
         $this->seedChannelConfig($connection, $now);
-        $this->seedDemoApp($connection, $cipher, $now);
         $this->seedPlatformTenant($connection, $cipher, $now);
     }
 
@@ -924,11 +922,11 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
     }
 
     /**
-     * Seeds the alipay interface with the public sandbox account of the alipay open platform, plus one
-     * demo app that may collect through it, so the payment api can be called right away.
+     * Seeds the alipay interface with the public sandbox account of the alipay open platform, so the
+     * checkout can collect through it right away.
      *
      * The credentials are written where they belong in the model: on the interface and not on a single
-     * product of it, so the demo app can collect through every channel alipay is declared with.
+     * product of it, so every channel alipay is declared with collects with the very same keys.
      * Everything is written the very same way the application writes it - the credentials are sealed
      * with the same cipher, so nothing is stored in plain text. The cipher key is derived from
      * APP_SECRET, so this migration needs that environment variable, which every installation has.
@@ -966,10 +964,10 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
 
     /**
      * A configured interface does not offer a channel by itself - the platform decides here which of
-     * the channels of an interface an app may collect through at all.
+     * the channels of an interface the shop may collect through at all.
      *
      * The h5 channel declares no parameter of its own, so switching it on is everything that is needed
-     * for the demo app to work out of the box.
+     * for the checkout to work out of the box.
      */
     private function seedChannelConfig(Connection $connection, string $now): void
     {
@@ -996,36 +994,14 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
         ]);
     }
 
-    private function seedDemoApp(Connection $connection, PaymentCredentialCipher $cipher, string $now): void
-    {
-        $appId = $connection->fetchOne(
-            'SELECT `id` FROM `payment_app` WHERE `technical_name` = :name',
-            ['name' => self::DEMO_APP_TECHNICAL_NAME]
-        );
-
-        if (!\is_string($appId) || $appId === '') {
-            $appId = Uuid::randomBytes();
-
-            $connection->insert('payment_app', [
-                'id' => $appId,
-                'technical_name' => self::DEMO_APP_TECHNICAL_NAME,
-                'name' => '支付宝沙箱联调应用',
-                'type' => PaymentAppEntity::TYPE_EXTERNAL,
-                'app_secret' => $cipher->encryptValue(self::DEMO_APP_SECRET),
-                'active' => 1,
-                'created_at' => $now,
-            ]);
-        }
-
-        $this->seedAppProvider($connection, $appId, $now);
-        $this->seedAppChannel($connection, $appId, $now);
-    }
-
     /**
      * The tenant the shop itself collects through. It is written here, because the checkout cannot
      * create its first payment order without it - and here only, so the row has exactly one writer.
      * {@see \Shopwell\Core\Checkout\Payment\Storefront\PlatformPaymentApp} reads it and reports a
      * missing row as a broken installation instead of writing a second one at runtime.
+     *
+     * It is the default app of the installation: there is no separate demo tenant next to it, an
+     * external caller is onboarded by an administrator.
      *
      * The secret is a random value sealed like every other secret and never handed out: nobody signs
      * a request with it, it exists because the column is not nullable. What keeps the api from
@@ -1049,56 +1025,10 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
         $connection->insert('payment_app', [
             'id' => Uuid::randomBytes(),
             'technical_name' => PaymentAppEntity::PLATFORM_TECHNICAL_NAME,
-            'name' => '自营商城',
+            'name' => '平台支付',
             'type' => PaymentAppEntity::TYPE_PLATFORM,
             'app_secret' => $cipher->encryptValue(bin2hex(random_bytes(32))),
             'active' => 1,
-            'created_at' => $now,
-        ]);
-    }
-
-    /**
-     * The app is authorized for the whole interface, so it can collect through every channel of alipay
-     * the platform has configured - and it pays with the account of the platform.
-     */
-    private function seedAppProvider(Connection $connection, string $appId, string $now): void
-    {
-        $binding = $connection->fetchOne(
-            'SELECT `id` FROM `payment_app_provider` WHERE `payment_app_id` = :app AND `provider_technical_name` = :provider',
-            ['app' => $appId, 'provider' => self::PROVIDER]
-        );
-
-        if (\is_string($binding) && $binding !== '') {
-            return;
-        }
-
-        $connection->insert('payment_app_provider', [
-            'id' => Uuid::randomBytes(),
-            'payment_app_id' => $appId,
-            'provider_technical_name' => self::PROVIDER,
-            'enabled' => 1,
-            // the demo app pays with the credentials of the platform, so it needs no own alipay account
-            'mode' => PaymentAppProviderEntity::MODE_PLATFORM,
-            'created_at' => $now,
-        ]);
-    }
-
-    private function seedAppChannel(Connection $connection, string $appId, string $now): void
-    {
-        $binding = $connection->fetchOne(
-            'SELECT `id` FROM `payment_app_channel` WHERE `payment_app_id` = :app AND `channel_technical_name` = :channel',
-            ['app' => $appId, 'channel' => self::CHANNEL]
-        );
-
-        if (\is_string($binding) && $binding !== '') {
-            return;
-        }
-
-        $connection->insert('payment_app_channel', [
-            'id' => Uuid::randomBytes(),
-            'payment_app_id' => $appId,
-            'channel_technical_name' => self::CHANNEL,
-            'enabled' => 1,
             'created_at' => $now,
         ]);
     }
