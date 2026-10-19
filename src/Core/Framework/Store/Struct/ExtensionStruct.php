@@ -16,7 +16,17 @@ class ExtensionStruct extends Struct
     final public const SOURCE_LOCAL = 'local';
     final public const SOURCE_STORE = 'store';
 
-    protected ?int $id = null;
+    /**
+     * The store's own id for this extension — an opaque string, not a number.
+     *
+     * Upstream's store hands out sequential integers, so this was `?int`; a
+     * self-hosted store addresses a listing by its UUID, and a numeric type
+     * would silently truncate it to `0` on the way in. It is a string here
+     * because an identifier's only job is to be comparable and routable, and
+     * both the store page (`GET detail/{id}`) and the review endpoint take it
+     * as an opaque path segment.
+     */
+    protected ?string $id = null;
 
     protected ?string $localId = null;
 
@@ -184,14 +194,19 @@ class ExtensionStruct extends Struct
         return (new self())->assign($data);
     }
 
-    public function getId(): ?int
+    public function getId(): ?string
     {
         return $this->id;
     }
 
-    public function setId(?int $id): void
+    /**
+     * Accepts an int as well as a string: an extension loaded from a store that
+     * still answers with numeric ids is not an error, it is just another
+     * store, and the value is normalised here rather than at every call site.
+     */
+    public function setId(string|int|null $id): void
     {
-        $this->id = $id;
+        $this->id = $id === null ? null : (string) $id;
     }
 
     public function getLocalId(): ?string

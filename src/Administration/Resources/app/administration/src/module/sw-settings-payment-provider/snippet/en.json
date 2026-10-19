@@ -1,0 +1,66 @@
+{
+    "sw-settings-payment-provider": {
+        "general": {
+            "mainMenuItemGeneral": "Payment providers",
+            "description": "Configures the merchant credentials of the platform for every payment provider (Alipay, WeChat Pay, ...) and the channels each provider offers to apps.",
+            "emptyStateTitle": "No payment providers",
+            "emptyState": "There is no payment provider to configure."
+        },
+        "provider": {
+            "cardSubtitle": "The credentials are issued by the payment provider and shared by all of its channels. They are never echoed back, the form only reports whether a value is stored.",
+            "enabled": "Enable this provider",
+            "enabledHelpText": "Apps that pay with the platform credentials can only collect through this provider once it is enabled.",
+            "configured": "Configured",
+            "reset": "Clear configuration",
+            "resetModalTitle": "Clear provider credentials",
+            "resetModalMessage": "Clear all credentials of \u201c{name}\u201d? Apps that pay with the platform credentials will no longer be able to collect through this provider.",
+            "hint": "The credentials are encrypted on the server and never echoed back - an empty input keeps the stored value. Every required field has to be filled before the provider can be enabled."
+        },
+        "list": {
+            "channelCount": "Channels: {enabled}/{total} enabled",
+            "editDetails": "Edit credentials and channels"
+        },
+        "channels": {
+            "title": "Payment channels",
+            "subtitle": "A channel is one way of paying that the provider offers. A channel that is switched off here cannot be enabled by any app."
+        },
+        "channel": {
+            "enabled": "Enabled",
+            "enabledHelpText": "Once switched off, no app can collect through this channel anymore.",
+            "configured": "Configured",
+            "reset": "Clear",
+            "resetModalTitle": "Clear channel configuration",
+            "resetModalMessage": "Clear the parameters of \u201c{name}\u201d? The channel will no longer be offered to any app.",
+            "allCurrencies": "All currencies",
+            "allDevices": "All devices",
+            "runtimeHint": "When paying through this channel the app also has to hand in the runtime parameters: {params}."
+        },
+        "flow": {
+            "redirect": "Redirect",
+            "qrcode": "QR code",
+            "sdk": "SDK"
+        },
+        "device": {
+            "wap": "Mobile browser",
+            "web": "Desktop browser",
+            "app": "Native app",
+            "mini": "Mini program"
+        },
+        "notification": {
+            "saveSuccess": "The payment provider settings have been saved.",
+            "resetSuccess": "The payment provider configuration has been cleared.",
+            "missingFields": "\u201c{name}\u201d is enabled, please fill in every required field first.",
+            "nothingToSave": "There is nothing to save."
+        }
+    },
+    "sw-privileges": {
+        "permissions": {
+            "payment_provider_config": {
+                "label": "Payment providers"
+            },
+            "payment_channel_config": {
+                "label": "Payment channels"
+            }
+        }
+    }
+}

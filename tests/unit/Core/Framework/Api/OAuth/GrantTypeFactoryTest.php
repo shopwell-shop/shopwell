@@ -12,6 +12,8 @@ use Shopwell\Core\Framework\Api\OAuth\RefreshTokenRepository;
 use Shopwell\Core\Framework\Api\OAuth\ShopwellAuthCodeGrantType;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Sso\Config\LoginConfigService;
+use Shopwell\Core\Framework\Sso\OAuth2LoginGrantType;
+use Shopwell\Core\Framework\Sso\Service\OAuth2LoginCodeService;
 use Shopwell\Core\Framework\Sso\ShopwellGrantType;
 use Shopwell\Core\Framework\Sso\ShopwellPasswordGrantType;
 use Shopwell\Core\Framework\Sso\ShopwellRefreshTokenGrantType;
@@ -56,13 +58,15 @@ class GrantTypeFactoryTest extends TestCase
             $userService,
             $externalTokenService,
             $clock,
+            new OAuth2LoginCodeService(new ArrayAdapter(), $clock),
+            StaticEntityRepository::of(UserCollection::class, []),
         );
 
         $grantTypes = $factory->createGrantTypes();
 
         $identifiers = array_map(static fn ($grantType) => $grantType->getIdentifier(), $grantTypes);
         static::assertSame(
-            ['password', 'refresh_token', 'client_credentials', ShopwellGrantType::TYPE, 'authorization_code'],
+            ['password', 'refresh_token', 'client_credentials', ShopwellGrantType::TYPE, 'authorization_code', OAuth2LoginGrantType::TYPE],
             $identifiers
         );
 
@@ -70,5 +74,6 @@ class GrantTypeFactoryTest extends TestCase
         static::assertInstanceOf(ShopwellRefreshTokenGrantType::class, $grantTypes[1]);
         static::assertInstanceOf(ShopwellGrantType::class, $grantTypes[3]);
         static::assertInstanceOf(ShopwellAuthCodeGrantType::class, $grantTypes[4]);
+        static::assertInstanceOf(OAuth2LoginGrantType::class, $grantTypes[5]);
     }
 }

@@ -109,7 +109,7 @@ class ExtensionStructTest extends TestCase
         $extension->setInAppFeaturesAvailable(true);
         $extension->setInAppPurchases(['iap-1']);
 
-        static::assertSame(7, $extension->getId());
+        static::assertSame('7', $extension->getId());
         static::assertSame('local-id', $extension->getLocalId());
         static::assertSame('name', $extension->getName());
         static::assertSame('label', $extension->getLabel());
@@ -178,6 +178,22 @@ class ExtensionStructTest extends TestCase
         static::assertSame($installedAt, $extension->getInstalledAt());
         static::assertSame($storeExtension, $extension->getStoreExtension());
         static::assertSame($updatedAt, $extension->getUpdatedAt());
+    }
+
+    /**
+     * The id is an opaque string. Upstream's store sends numbers and a
+     * self-hosted store sends UUIDs; both have to survive the round trip
+     * unaltered, and a numeric type would have flattened the UUID to 0.
+     */
+    public function testIdKeepsAUuidIntact(): void
+    {
+        $extension = new ExtensionStruct();
+        $extension->setId('0f8fad5b-d9cb-469f-a165-70867728950e');
+
+        static::assertSame('0f8fad5b-d9cb-469f-a165-70867728950e', $extension->getId());
+
+        $extension->setId(null);
+        static::assertNull($extension->getId());
     }
 
     /**

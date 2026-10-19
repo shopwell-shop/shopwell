@@ -28,6 +28,7 @@ use Shopwell\Core\Migration\Traits\StateMachineMigrationImporter;
 use Shopwell\Core\Migration\V6_3\Migration1536233560BasicData;
 use Shopwell\Core\Migration\V6_4\Migration1632721037OrderDocumentMailTemplate;
 use Shopwell\Core\Migration\V6_5\Migration1672931011ReviewFormMailTemplate;
+use Shopwell\Core\Migration\V6_7\Migration1791856510CreatePaymentTables;
 use Symfony\Component\Console\Command\Command;
 
 /**
@@ -70,6 +71,9 @@ class DomainExceptionRule implements Rule
         // Basic data reads the bundled chinese region fixture, a broken fixture has to abort the
         // migration instead of silently installing a shop without provinces, cities and districts.
         Migration1536233560BasicData::class => MigrationException::class,
+        // The seeded payment credentials are sealed with a key derived from the application secret,
+        // a missing secret has to abort the migration instead of storing the credentials in plain text.
+        Migration1791856510CreatePaymentTables::class => MigrationException::class,
         /** @deprecated tag:v6.9.0 - DocumentRoute keeps the v1 exception because its error codes are the Store api contract. Remove with document generation v1. */
         DocumentRoute::class => DocumentException::class,
     ];

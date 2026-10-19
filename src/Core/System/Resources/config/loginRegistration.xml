@@ -28,7 +28,7 @@
         <input-field type="bool">
             <name>showSalutation</name>
             <label>Show salutation</label>
-            <label lang="zh-CN">显示称谓</label>
+            <label lang="zh-CN">显示称呼</label>
         </input-field>
 
         <input-field type="bool">

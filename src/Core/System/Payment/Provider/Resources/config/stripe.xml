@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<provider>
+
+    <name>stripe</name>
+    <label>Stripe</label>
+
+    <credentials>
+        <field name="secret_key" type="password" required="true" secret="true">
+            <label>Secret Key</label>
+        </field>
+        <field name="publishable_key" type="text">
+            <label>Publishable Key</label>
+        </field>
+        <field name="webhook_secret" type="password" secret="true">
+            <label>Webhook 签名密钥</label>
+        </field>
+        <field name="api_version" type="text">
+            <label>API 版本</label>
+        </field>
+    </credentials>
+
+    <channels>
+        <channel name="stripe_checkout">
+            <label>Stripe Checkout</label>
+            <flow>redirect</flow>
+        </channel>
+    </channels>
+
+</provider>

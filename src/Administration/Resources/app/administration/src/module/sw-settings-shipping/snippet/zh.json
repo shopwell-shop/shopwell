@@ -1,7 +1,7 @@
 {
   "sw-settings-shipping": {
     "general": {
-      "mainMenuItemGeneral": "配送",
+      "mainMenuItemGeneral": "配送方式",
       "placeholderSearchBar": "搜索全部配送方式…",
       "descriptionTextModule": "配送方式管理"
     },

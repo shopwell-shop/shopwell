@@ -31,17 +31,29 @@ use Shopwell\Core\Checkout\Payment\DataAbstractionLayer\PaymentDistinguishableNa
 use Shopwell\Core\Checkout\Payment\DataAbstractionLayer\PaymentHandlerIdentifierSubscriber;
 use Shopwell\Core\Checkout\Payment\DataAbstractionLayer\PaymentMethodIndexer;
 use Shopwell\Core\Checkout\Payment\DataAbstractionLayer\PaymentMethodValidator;
+use Shopwell\Core\Checkout\Payment\Gateway\OrderPaymentPaidListener;
+use Shopwell\Core\Checkout\Payment\Gateway\OrderPaymentStarter;
+use Shopwell\Core\Checkout\Payment\Gateway\PaymentGatewayHandler;
+use Shopwell\Core\Checkout\Payment\Gateway\PaymentMethodChannelResolver;
 use Shopwell\Core\Checkout\Payment\PaymentMethodDefinition;
 use Shopwell\Core\Checkout\Payment\PaymentProcessor;
 use Shopwell\Core\Checkout\Payment\SalesChannel\HandlePaymentMethodRoute;
 use Shopwell\Core\Checkout\Payment\SalesChannel\PaymentMethodRoute;
 use Shopwell\Core\Checkout\Payment\SalesChannel\SalesChannelPaymentMethodDefinition;
+use Shopwell\Core\Checkout\Payment\Storefront\PlatformPaymentApp;
 use Shopwell\Core\Framework\Adapter\Cache\CacheTagCollector;
 use Shopwell\Core\Framework\DataAbstractionLayer\Dbal\Common\IteratorFactory;
 use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Rule\RuleIdMatcher;
 use Shopwell\Core\Framework\Script\Execution\ScriptExecutor;
 use Shopwell\Core\Framework\Validation\DataValidator;
+use Shopwell\Core\System\Payment\Order\Event\PaymentOrderPaidEvent;
+use Shopwell\Core\System\Payment\Order\PaymentOrderCapture;
+use Shopwell\Core\System\Payment\Order\PaymentOrderReconciler;
+use Shopwell\Core\System\Payment\Order\PaymentOrderService;
+use Shopwell\Core\System\Payment\Order\Refund\PaymentRefundService;
+use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannelRegistry;
+use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;
 use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextService;
 use Shopwell\Core\System\StateMachine\Loader\InitialStateIdLoader;
 use Shopwell\Core\System\SystemConfig\SystemConfigService;
@@ -181,6 +193,58 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(OrderTransactionStateHandler::class),
         ])
         ->tag('shopwell.payment.method');
+
+    // the binding table is the edge between a checkout payment method and a gateway channel; its
+    // entity is registered with the other payment tables in the system payment configuration
+    $services->set(PaymentMethodChannelResolver::class)
+        ->args([
+            service('payment_method_gateway_channel.repository'),
+            service(PaymentChannelRegistry::class),
+        ]);
+
+    // the tenant the shop itself collects through. The row is seeded by the payment migration; only
+    // the authorizations around it are written here, for the channel that is actually used
+    $services->set(PlatformPaymentApp::class)
+        ->args([
+            service('payment_app.repository'),
+            service('payment_app_provider.repository'),
+            service('payment_app_channel.repository'),
+            service('payment_provider_config.repository'),
+            service('payment_channel_config.repository'),
+            service(PaymentChannelRegistry::class),
+            service(PaymentProviderRegistry::class),
+        ]);
+
+    $services->set(OrderPaymentStarter::class)
+        ->args([
+            service(PlatformPaymentApp::class),
+            service(PaymentProviderRegistry::class),
+            service(PaymentOrderService::class),
+            service(PaymentOrderCapture::class),
+            service('router'),
+        ]);
+
+    // the handler identifier persisted on the payment method is the class name, and the handler
+    // registry resolves it by the service id - the id must not be changed
+    $services->set(PaymentGatewayHandler::class)
+        ->args([
+            service('order_transaction.repository'),
+            service(PaymentMethodChannelResolver::class),
+            service(OrderPaymentStarter::class),
+            service(PaymentOrderService::class),
+            service(PaymentOrderReconciler::class),
+            service(PaymentRefundService::class),
+            service('order_transaction_capture_refund.repository'),
+            service('logger'),
+        ])
+        ->tag('shopwell.payment.method');
+
+    $services->set(OrderPaymentPaidListener::class)
+        ->args([
+            service(OrderTransactionStateHandler::class),
+            service('logger'),
+        ])
+        ->tag('kernel.event_listener', ['event' => PaymentOrderPaidEvent::class]);
 
     $services->set(PaymentHandlerIdentifierSubscriber::class)
         ->tag('kernel.event_subscriber');

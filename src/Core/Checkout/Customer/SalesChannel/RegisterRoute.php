@@ -398,6 +398,7 @@ class RegisterRoute extends AbstractRegisterRoute
             'name' => $data->get('name'),
             'email' => $data->get('email'),
             'title' => $data->get('title'),
+            'phoneNumber' => $data->get('phoneNumber'),
             'affiliateCode' => $data->get(OrderService::AFFILIATE_CODE_KEY),
             'campaignCode' => $data->get(OrderService::CAMPAIGN_CODE_KEY),
             'active' => true,

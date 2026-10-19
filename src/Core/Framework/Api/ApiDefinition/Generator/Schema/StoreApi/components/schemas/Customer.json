@@ -76,6 +76,10 @@
                         "description": "Titles or honorifics like Mr, Mrs, etc.",
                         "type": "string"
                     },
+                    "phoneNumber": {
+                        "description": "Customer's phone number.",
+                        "type": "string"
+                    },
                     "affiliateCode": {
                         "description": "An affiliate code is an identification option with which website operators can mark outgoing links.",
                         "type": "string"

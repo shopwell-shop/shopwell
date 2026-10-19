@@ -29,6 +29,8 @@ use Shopwell\Core\Checkout\Customer\SalesChannel\ResetPasswordRoute;
 use Shopwell\Core\Checkout\Customer\SalesChannel\SendPasswordRecoveryMailRoute;
 use Shopwell\Core\Checkout\Customer\SalesChannel\UpsertAddressRoute;
 use Shopwell\Core\Checkout\DocumentV2\SalesChannel\DocumentRoute;
+use Shopwell\Core\Checkout\Loyalty\SalesChannel\LoyaltyRedeemRoute;
+use Shopwell\Core\Checkout\Loyalty\SalesChannel\MembershipPurchaseRoute;
 use Shopwell\Core\Checkout\Order\SalesChannel\CancelOrderRoute;
 use Shopwell\Core\Checkout\Order\SalesChannel\OrderRoute;
 use Shopwell\Core\Checkout\Order\SalesChannel\OrderService;
@@ -36,6 +38,9 @@ use Shopwell\Core\Checkout\Order\SalesChannel\SetPaymentOrderRoute;
 use Shopwell\Core\Checkout\Payment\PaymentProcessor;
 use Shopwell\Core\Checkout\Payment\SalesChannel\HandlePaymentMethodRoute;
 use Shopwell\Core\Checkout\Promotion\Cart\PromotionItemBuilder;
+use Shopwell\Core\Checkout\Wallet\SalesChannel\WalletPaymentRoute;
+use Shopwell\Core\Checkout\Wallet\SalesChannel\WalletTopUpCreateRoute;
+use Shopwell\Core\Checkout\Wallet\SalesChannel\WalletTopUpStatusRoute;
 use Shopwell\Core\Content\Category\SalesChannel\CategoryRoute;
 use Shopwell\Core\Content\Category\Service\CategoryUrlGenerator;
 use Shopwell\Core\Content\Cms\SalesChannel\CmsRoute;
@@ -60,13 +65,16 @@ use Shopwell\Core\Framework\Adapter\Translation\ConstraintViolationTranslator;
 use Shopwell\Core\Framework\App\Api\AppJWTGenerateRoute;
 use Shopwell\Core\Framework\Gateway\Context\SalesChannel\ContextGatewayRoute;
 use Shopwell\Core\Framework\Script\Api\ScriptResponseEncoder;
+use Shopwell\Core\Framework\Sso\Service\OAuth2LoginService;
 use Shopwell\Core\Framework\Util\HtmlSanitizer;
 use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextService;
 use Shopwell\Core\System\SalesChannel\SalesChannel\ContextSwitchRoute;
 use Shopwell\Core\System\SystemConfig\SystemConfigService;
 use Shopwell\Storefront\Checkout\Cart\SalesChannel\StorefrontCartFacade;
+use Shopwell\Storefront\Controller\AccountLoyaltyController;
 use Shopwell\Storefront\Controller\AccountOrderController;
 use Shopwell\Storefront\Controller\AccountProfileController;
+use Shopwell\Storefront\Controller\AccountWalletController;
 use Shopwell\Storefront\Controller\AddressController;
 use Shopwell\Storefront\Controller\Api\CaptchaController as ApiCaptchaController;
 use Shopwell\Storefront\Controller\AppController;
@@ -87,6 +95,7 @@ use Shopwell\Storefront\Controller\LandingPageController;
 use Shopwell\Storefront\Controller\MaintenanceController;
 use Shopwell\Storefront\Controller\NavigationController;
 use Shopwell\Storefront\Controller\NewsletterController;
+use Shopwell\Storefront\Controller\OAuth2LoginController;
 use Shopwell\Storefront\Controller\ProductController;
 use Shopwell\Storefront\Controller\RegisterController;
 use Shopwell\Storefront\Controller\RobotsController;
@@ -103,12 +112,14 @@ use Shopwell\Storefront\Framework\Routing\MaintenanceModeResolver;
 use Shopwell\Storefront\Framework\Twig\ErrorTemplateResolver;
 use Shopwell\Storefront\Page\Account\CustomerGroupRegistration\CustomerGroupRegistrationPageLoader;
 use Shopwell\Storefront\Page\Account\Login\AccountLoginPageLoader;
+use Shopwell\Storefront\Page\Account\Loyalty\AccountLoyaltyPageLoader;
 use Shopwell\Storefront\Page\Account\Order\AccountEditOrderPageLoader;
 use Shopwell\Storefront\Page\Account\Order\AccountOrderDetailPageLoader;
 use Shopwell\Storefront\Page\Account\Order\AccountOrderPageLoader;
 use Shopwell\Storefront\Page\Account\Overview\AccountOverviewPageLoader;
 use Shopwell\Storefront\Page\Account\Profile\AccountProfilePageLoader;
 use Shopwell\Storefront\Page\Account\RecoverPassword\AccountRecoverPasswordPageLoader;
+use Shopwell\Storefront\Page\Account\Wallet\AccountWalletPageLoader;
 use Shopwell\Storefront\Page\Address\Detail\AddressDetailPageLoader;
 use Shopwell\Storefront\Page\Address\Listing\AddressListingPageLoader;
 use Shopwell\Storefront\Page\Checkout\Cart\CheckoutCartPageLoader;
@@ -186,6 +197,23 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(ChangeEmailRoute::class),
             service(DeleteCustomerRoute::class),
             service('logger'),
+        ])
+        ->call('setContainer', [service('service_container')]);
+
+    $services->set(AccountLoyaltyController::class)
+        ->args([
+            service(AccountLoyaltyPageLoader::class),
+            service(LoyaltyRedeemRoute::class),
+            service(MembershipPurchaseRoute::class),
+        ])
+        ->call('setContainer', [service('service_container')]);
+
+    $services->set(AccountWalletController::class)
+        ->args([
+            service(AccountWalletPageLoader::class),
+            service(WalletPaymentRoute::class),
+            service(WalletTopUpCreateRoute::class),
+            service(WalletTopUpStatusRoute::class),
         ])
         ->call('setContainer', [service('service_container')]);
 
@@ -459,6 +487,14 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service('twig'),
             service(StorybookService::class),
+        ])
+        ->call('setContainer', [service('service_container')]);
+
+    $services->set(OAuth2LoginController::class)
+        ->public()
+        ->args([
+            service(OAuth2LoginService::class),
+            service(AccountService::class),
         ])
         ->call('setContainer', [service('service_container')]);
 };

@@ -1,0 +1,306 @@
+{
+    "sw-payment": {
+        "general": {
+            "mainMenuItemGeneral": "支付",
+            "mainMenuItemPaymentOrders": "支付订单",
+            "mainMenuItemRefunds": "退款订单",
+            "mainMenuItemTransfers": "打款",
+            "description": "外部应用通过通用支付网关发起的支付"
+        },
+        "configField": {
+            "configuredHint": "已配置，留空表示保持原值不变。"
+        },
+        "order": {
+            "list": {
+                "title": "支付订单",
+                "placeholderSearchBar": "搜索支付订单...",
+                "titleSidebarItemRefresh": "刷新列表",
+                "columnPaymentNo": "支付单号",
+                "columnOutTradeNo": "商户订单号",
+                "columnPaymentApp": "所属应用",
+                "columnProvider": "支付接口",
+                "columnChannel": "支付渠道",
+                "columnState": "状态",
+                "columnAmount": "金额",
+                "columnCurrency": "货币",
+                "columnCreatedAt": "创建时间",
+                "messageEmpty": "暂无支付订单",
+                "sublineEmpty": "应用通过支付网关创建的支付订单会显示在这里。"
+            },
+            "filters": {
+                "paymentNoFilter": {
+                    "label": "支付单号",
+                    "placeholder": "多个单号用逗号分隔..."
+                },
+                "outTradeNoFilter": {
+                    "label": "商户订单号",
+                    "placeholder": "多个单号用逗号分隔..."
+                },
+                "paymentAppFilter": {
+                    "label": "所属应用",
+                    "placeholder": "全部应用..."
+                },
+                "channelFilter": {
+                    "label": "支付渠道",
+                    "placeholder": "多个渠道用逗号分隔..."
+                },
+                "providerFilter": {
+                    "label": "支付接口",
+                    "placeholder": "多个接口用逗号分隔..."
+                },
+                "stateFilter": {
+                    "label": "状态",
+                    "placeholder": "全部状态..."
+                }
+            },
+            "detail": {
+                "title": "支付订单",
+                "buttonRefresh": "刷新",
+                "tabGeneral": "基本信息",
+                "tabTransactions": "支付交易",
+                "tabRefunds": "退款记录",
+                "tabNotifications": "异步通知",
+                "tabWebhookDeliveries": "Webhook 投递",
+                "tabChannelData": "渠道原始数据",
+                "cardGeneralTitle": "支付订单",
+                "cardAppTitle": "所属应用",
+                "cardAmountTitle": "金额",
+                "cardChannelTitle": "支付渠道",
+                "cardPayerTitle": "付款人与回调地址",
+                "cardChannelDataTitle": "渠道返回的原始报文",
+                "titleTransactions": "支付交易",
+                "titleRefunds": "退款记录",
+                "titleNotifications": "收到的异步通知",
+                "titleWebhookDeliveries": "发出的 Webhook 投递",
+                "labelPaymentNo": "支付单号",
+                "labelOutTradeNo": "商户订单号",
+                "labelPaymentApp": "所属应用",
+                "labelProvider": "支付接口",
+                "labelChannel": "支付渠道",
+                "labelState": "状态",
+                "labelAmount": "订单金额",
+                "labelPaidAmount": "已付金额",
+                "labelRefundedAmount": "已退金额",
+                "labelCurrency": "货币",
+                "labelSubject": "商品标题",
+                "labelBody": "商品描述",
+                "labelAttach": "附加参数",
+                "labelOutPaymentNo": "渠道交易号",
+                "labelClientIp": "客户端 IP",
+                "labelDevice": "设备",
+                "labelNotifyUrl": "异步通知地址",
+                "labelReturnUrl": "同步跳转地址",
+                "labelIdempotencyKey": "幂等键",
+                "labelExpireAt": "失效时间",
+                "labelPaidAt": "支付时间",
+                "labelClosedAt": "关闭时间",
+                "labelCreatedAt": "创建时间",
+                "labelUpdatedAt": "更新时间",
+                "messageEmptyTransactions": "暂无支付交易记录",
+                "messageEmptyRefunds": "暂无退款记录",
+                "messageEmptyNotifications": "暂无异步通知",
+                "messageEmptyWebhookDeliveries": "暂无 Webhook 投递记录",
+                "sublineTransactions": "该支付单的每一次支付尝试都会记录在这里，包含与渠道交互的报文。",
+                "sublineRefunds": "该支付单产生的退款会显示在这里。",
+                "sublineNotifications": "渠道针对该支付单推送的异步通知会显示在这里。",
+                "sublineWebhookDeliveries": "平台向该支付单所属应用发送的通知会显示在这里。",
+                "messageNoChannelData": "渠道尚未返回数据"
+            },
+            "transaction": {
+                "columnTransactionNo": "交易单号",
+                "columnType": "类型",
+                "columnProvider": "支付接口",
+                "columnChannel": "支付渠道",
+                "columnStatus": "状态",
+                "columnOutTransactionId": "渠道单号",
+                "columnCreatedAt": "创建时间"
+            },
+            "notification": {
+                "columnProvider": "支付接口",
+                "columnChannel": "支付渠道",
+                "columnSignature": "验签",
+                "columnProcessResult": "处理结果",
+                "columnRemoteIp": "来源 IP",
+                "columnCreatedAt": "接收时间",
+                "labelSignatureValid": "通过",
+                "labelSignatureInvalid": "未通过"
+            },
+            "webhook": {
+                "columnEvent": "事件",
+                "columnUrl": "地址",
+                "columnStatus": "状态",
+                "columnAttemptCount": "尝试次数",
+                "columnLastHttpStatus": "HTTP 状态",
+                "columnNextRetryAt": "下次重试",
+                "columnCreatedAt": "创建时间"
+            }
+        },
+        "refund": {
+            "list": {
+                "title": "退款订单",
+                "placeholderSearchBar": "搜索退款订单...",
+                "titleSidebarItemRefresh": "刷新列表",
+                "columnRefundNo": "退款单号",
+                "columnPaymentOrder": "关联支付单",
+                "columnOutRefundNo": "商户退款号",
+                "columnState": "状态",
+                "columnAmount": "退款金额",
+                "columnCurrency": "货币",
+                "columnRefundedAt": "退款时间",
+                "columnCreatedAt": "创建时间",
+                "messageEmpty": "暂无退款订单",
+                "sublineEmpty": "应用通过支付网关申请的退款会显示在这里。"
+            },
+            "filters": {
+                "refundNoFilter": {
+                    "label": "退款单号",
+                    "placeholder": "多个单号用逗号分隔..."
+                },
+                "outRefundNoFilter": {
+                    "label": "商户退款号",
+                    "placeholder": "多个单号用逗号分隔..."
+                },
+                "channelFilter": {
+                    "label": "支付渠道",
+                    "placeholder": "多个渠道用逗号分隔..."
+                },
+                "stateFilter": {
+                    "label": "状态",
+                    "placeholder": "全部状态..."
+                }
+            },
+            "detail": {
+                "title": "退款订单",
+                "buttonRefresh": "刷新",
+                "tabGeneral": "基本信息",
+                "tabPayload": "报文",
+                "cardGeneralTitle": "退款订单",
+                "cardOrderTitle": "关联支付单",
+                "cardAmountTitle": "金额",
+                "cardPayloadTitle": "请求与响应",
+                "labelRefundNo": "退款单号",
+                "labelOutRefundNo": "商户退款号",
+                "labelPaymentOrder": "关联支付单",
+                "labelOutPaymentNo": "渠道交易号",
+                "labelChannel": "支付渠道",
+                "labelPaymentApp": "所属应用",
+                "labelState": "状态",
+                "labelAmount": "退款金额",
+                "labelCurrency": "货币",
+                "labelReason": "退款原因",
+                "labelOutRefundId": "渠道退款号",
+                "labelRefundedAt": "退款时间",
+                "labelCreatedAt": "创建时间",
+                "labelUpdatedAt": "更新时间",
+                "labelRequestPayload": "请求",
+                "labelResponsePayload": "响应"
+            }
+        },
+        "transfer": {
+            "list": {
+                "title": "打款订单",
+                "placeholderSearchBar": "搜索打款订单...",
+                "titleSidebarItemRefresh": "刷新列表",
+                "columnTransferNo": "平台单号",
+                "columnOutNo": "业务单号",
+                "columnRecipient": "收款方",
+                "columnProvider": "支付服务商",
+                "columnChannel": "支付渠道",
+                "columnAmount": "打款金额",
+                "columnState": "状态",
+                "columnCreatedAt": "创建时间",
+                "messageEmpty": "暂无打款订单",
+                "sublineEmpty": "平台通过支付网关向收款方发起的打款会显示在这里。",
+                "messageNoResult": "未找到该打款订单",
+                "messageNoResultSubline": "该打款订单可能已被删除，或你没有查看权限。"
+            },
+            "filters": {
+                "transferNoFilter": {
+                    "label": "平台单号",
+                    "placeholder": "多个单号用逗号分隔..."
+                },
+                "outNoFilter": {
+                    "label": "业务单号",
+                    "placeholder": "多个单号用逗号分隔..."
+                },
+                "channelFilter": {
+                    "label": "支付渠道",
+                    "placeholder": "多个渠道用逗号分隔..."
+                },
+                "providerFilter": {
+                    "label": "支付服务商",
+                    "placeholder": "多个服务商用逗号分隔..."
+                },
+                "stateFilter": {
+                    "label": "状态",
+                    "placeholder": "全部状态..."
+                }
+            },
+            "detail": {
+                "title": "打款订单",
+                "buttonRefresh": "刷新",
+                "cardGeneralTitle": "基本信息",
+                "cardRecipientTitle": "收款方",
+                "cardTimelineTitle": "时间线",
+                "cardChannelRefTitle": "通道引用",
+                "cardFailureTitle": "失败信息",
+                "cardConfirmationTitle": "微信确认",
+                "cardMetadataTitle": "元数据",
+                "labelTransferNo": "平台单号",
+                "labelOutNo": "业务单号",
+                "labelProvider": "支付服务商",
+                "labelChannel": "支付渠道",
+                "labelAmount": "打款金额",
+                "labelCurrency": "货币",
+                "labelSubmitAttempts": "提交次数",
+                "labelPaymentApp": "所属应用",
+                "labelRecipientName": "持款人姓名",
+                "labelIdentityType": "身份类型",
+                "labelProviderAccountId": "通道账户",
+                "labelOnboardingStatus": "入驻状态",
+                "labelPayoutEnabled": "可打款",
+                "labelVerifiedAt": "认证时间",
+                "labelCreatedAt": "创建时间",
+                "labelSubmittedAt": "提交时间",
+                "labelSettledAt": "到账时间",
+                "labelReturnedAt": "退回时间",
+                "labelCanceledAt": "取消时间",
+                "labelExpireAt": "过期时间",
+                "labelProviderRef": "通道引用",
+                "labelProviderStageRef": "通道阶段引用",
+                "labelFailureCode": "失败码",
+                "labelFailureReason": "失败原因",
+                "labelConfirmation": "确认凭证",
+                "valueConfirmationGenerated": "已生成，等待收款方领取",
+                "valueConfirmationMissing": "未生成",
+                "labelMetadata": "元数据",
+                "messageNoMetadata": "暂无元数据"
+            }
+        },
+        "transactionType": {
+            "capture": "支付",
+            "cancel": "撤销"
+        },
+        "transactionStatus": {
+            "pending": "处理中",
+            "success": "成功",
+            "failed": "失败"
+        },
+        "notificationResult": {
+            "ok": "已处理",
+            "duplicate": "重复通知",
+            "ignored": "已忽略",
+            "invalid_signature": "验签失败",
+            "unmatched": "未匹配到订单",
+            "amount_mismatch": "金额不一致",
+            "currency_mismatch": "币种不一致",
+            "error": "处理出错"
+        },
+        "webhookStatus": {
+            "pending": "待投递",
+            "success": "已送达",
+            "failed": "投递失败",
+            "giving_up": "放弃投递"
+        }
+    }
+}

@@ -1,0 +1,184 @@
+{
+    "openapi": "3.2.0",
+    "info": [],
+    "paths": {
+        "/_action/loyalty/customer/{customerId}/points": {
+            "post": {
+                "tags": [
+                    "Loyalty"
+                ],
+                "summary": "Adjust the loyalty points of a customer",
+                "description": "Books a manual point adjustment for the given customer. A positive number of points adds to the balance, a negative number deducts points. The resulting balance must not become negative.",
+                "operationId": "adjustCustomerLoyaltyPoints",
+                "parameters": [
+                    {
+                        "name": "customerId",
+                        "in": "path",
+                        "description": "The id of the customer whose points should be adjusted.",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "points": {
+                                        "type": "integer",
+                                        "description": "The number of points to book. Negative values deduct points."
+                                    },
+                                    "comment": {
+                                        "type": "string",
+                                        "description": "An optional comment describing the reason for the adjustment."
+                                    }
+                                },
+                                "required": [
+                                    "points"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "204": {
+                        "description": "The points were adjusted successfully."
+                    },
+                    "400": {
+                        "description": "The adjustment is invalid, for example when the resulting balance would become negative.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/failure"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/_action/loyalty/customer/{customerId}/summary": {
+            "get": {
+                "tags": [
+                    "Loyalty"
+                ],
+                "summary": "Get the loyalty summary of a customer",
+                "description": "Returns the current points balance, growth value, membership tier and the most recent point transactions of the given customer.",
+                "operationId": "readCustomerLoyaltySummary",
+                "parameters": [
+                    {
+                        "name": "customerId",
+                        "in": "path",
+                        "description": "The id of the customer whose loyalty summary should be read.",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The loyalty summary of the customer.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "pointsBalance": {
+                                            "type": "integer",
+                                            "description": "The currently available points balance."
+                                        },
+                                        "growthValue": {
+                                            "type": "integer",
+                                            "description": "The accumulated growth value."
+                                        },
+                                        "membershipTier": {
+                                            "type": [
+                                                "object",
+                                                "null"
+                                            ],
+                                            "description": "The membership tier the customer currently belongs to, or null if none is assigned.",
+                                            "properties": {
+                                                "id": {
+                                                    "type": "string"
+                                                },
+                                                "technicalName": {
+                                                    "type": "string"
+                                                },
+                                                "name": {
+                                                    "type": "string"
+                                                },
+                                                "level": {
+                                                    "type": "integer"
+                                                },
+                                                "pointsMultiplier": {
+                                                    "type": "number"
+                                                }
+                                            }
+                                        },
+                                        "membershipValidUntil": {
+                                            "type": [
+                                                "string",
+                                                "null"
+                                            ],
+                                            "description": "The date until which the current membership is valid."
+                                        },
+                                        "transactions": {
+                                            "type": "array",
+                                            "description": "The most recent point transactions.",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "string"
+                                                    },
+                                                    "type": {
+                                                        "type": "string"
+                                                    },
+                                                    "points": {
+                                                        "type": "integer"
+                                                    },
+                                                    "balanceAfter": {
+                                                        "type": "integer"
+                                                    },
+                                                    "orderId": {
+                                                        "type": [
+                                                            "string",
+                                                            "null"
+                                                        ]
+                                                    },
+                                                    "comment": {
+                                                        "type": [
+                                                            "string",
+                                                            "null"
+                                                        ]
+                                                    },
+                                                    "expiresAt": {
+                                                        "type": [
+                                                            "string",
+                                                            "null"
+                                                        ]
+                                                    },
+                                                    "createdAt": {
+                                                        "type": [
+                                                            "string",
+                                                            "null"
+                                                        ]
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+
+    <xs:element name="provider">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="name" type="xs:string"/>
+                <xs:element name="label" type="xs:string"/>
+                <xs:element name="credentials" type="fieldList" minOccurs="0"/>
+                <xs:element name="channels" type="channelList"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:complexType name="fieldList">
+        <xs:sequence>
+            <xs:element name="field" type="field" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="field">
+        <xs:sequence>
+            <xs:element name="label" type="xs:string" minOccurs="0"/>
+            <xs:element name="help-text" type="xs:string" minOccurs="0"/>
+            <xs:element name="option" type="option" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+        <xs:attribute name="name" type="xs:string" use="required"/>
+        <xs:attribute name="type" type="fieldType" default="text"/>
+        <xs:attribute name="required" type="xs:boolean" default="false"/>
+        <xs:attribute name="secret" type="xs:boolean" default="false"/>
+        <xs:attribute name="default" type="xs:string"/>
+    </xs:complexType>
+
+    <xs:complexType name="option">
+        <xs:simpleContent>
+            <xs:extension base="xs:string">
+                <xs:attribute name="value" type="xs:string" use="required"/>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+
+    <xs:simpleType name="fieldType">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="text"/>
+            <xs:enumeration value="password"/>
+            <xs:enumeration value="textarea"/>
+            <xs:enumeration value="select"/>
+            <xs:enumeration value="bool"/>
+            <xs:enumeration value="number"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:complexType name="channelList">
+        <xs:sequence>
+            <xs:element name="channel" type="channel" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="channel">
+        <xs:sequence>
+            <xs:element name="label" type="xs:string"/>
+            <xs:element name="flow" type="flowType"/>
+            <xs:element name="currencies" type="xs:string" minOccurs="0"/>
+            <xs:element name="devices" type="xs:string" minOccurs="0"/>
+            <xs:element name="params" type="fieldList" minOccurs="0"/>
+            <xs:element name="runtime-params" type="runtimeParamList" minOccurs="0"/>
+        </xs:sequence>
+        <xs:attribute name="name" type="xs:string" use="required"/>
+    </xs:complexType>
+
+    <xs:complexType name="runtimeParamList">
+        <xs:sequence>
+            <xs:element name="param" type="runtimeParam" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="runtimeParam">
+        <xs:attribute name="name" type="xs:string" use="required"/>
+        <xs:attribute name="required" type="xs:boolean" default="false"/>
+    </xs:complexType>
+
+    <xs:simpleType name="flowType">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="redirect"/>
+            <xs:enumeration value="qrcode"/>
+            <xs:enumeration value="sdk"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+</xs:schema>

@@ -1,0 +1,98 @@
+{% block sw_settings_payment_provider_list %}
+<sw-page class="sw-settings-payment-provider-list">
+
+    {% block sw_settings_payment_provider_list_content %}
+    <template #content>
+        <sw-card-view>
+
+            {% block sw_settings_payment_provider_list_loading %}
+            <template v-if="isLoading">
+                <sw-skeleton />
+                <sw-skeleton />
+            </template>
+            {% endblock %}
+
+            {% block sw_settings_payment_provider_list_empty_state %}
+            <mt-card
+                v-else-if="providers.length === 0"
+                position-identifier="sw-settings-payment-provider-list-empty-state"
+            >
+                <mt-empty-state
+                    centered
+                    icon="regular-credit-card"
+                    :headline="$t('sw-settings-payment-provider.general.emptyStateTitle')"
+                    :description="$t('sw-settings-payment-provider.general.emptyState')"
+                />
+            </mt-card>
+            {% endblock %}
+
+            {% block sw_settings_payment_provider_list_cards %}
+            <template v-else>
+                {% block sw_settings_payment_provider_list_card %}
+                <mt-card
+                    v-for="provider in providers"
+                    :key="provider.technicalName"
+                    class="sw-settings-payment-provider-list__card"
+                    position-identifier="sw-settings-payment-provider-list-card"
+                    :title="provider.label"
+                >
+                    <template #headerRight>
+                        {% block sw_settings_payment_provider_list_card_state %}
+                        <mt-badge
+                            v-if="provider.configured"
+                            variant="positive"
+                        >
+                            {{ $t('sw-settings-payment-provider.provider.configured') }}
+                        </mt-badge>
+                        {% endblock %}
+                    </template>
+
+                    <div class="sw-settings-payment-provider-list__card-content">
+
+                        {% block sw_settings_payment_provider_list_card_meta %}
+                        <div class="sw-settings-payment-provider-list__card-meta">
+                            <span class="sw-settings-payment-provider-list__card-channels">
+                                {{ $t('sw-settings-payment-provider.list.channelCount', {
+                                enabled: enabledChannelCount(provider),
+                                total: channelCount(provider),
+                                }) }}
+                            </span>
+                        </div>
+                        {% endblock %}
+
+                        {% block sw_settings_payment_provider_list_card_link %}
+                        <sw-internal-link
+                            class="sw-settings-payment-provider-list__card-link"
+                            :router-link="{ name: 'sw.settings.payment.provider.detail', params: { id: provider.technicalName } }"
+                            :disabled="!canEdit || undefined"
+                            hide-icon
+                        >
+                            {{ $t('sw-settings-payment-provider.list.editDetails') }}
+                        </sw-internal-link>
+                        {% endblock %}
+
+                        {% block sw_settings_payment_provider_list_card_toggle %}
+                        <mt-switch
+                            v-model="provider.enabled"
+                            class="sw-settings-payment-provider-list__card-toggle"
+                            :disabled="!canEdit || undefined"
+                            :label="$t('sw-settings-payment-provider.provider.enabled')"
+                            :help-text="$t('sw-settings-payment-provider.provider.enabledHelpText')"
+                            @update:model-value="onToggleProvider(provider)"
+                        />
+                        {% endblock %}
+
+                    </div>
+                </mt-card>
+                {% endblock %}
+            </template>
+            {% endblock %}
+
+            {% block sw_settings_payment_provider_list_extension %}
+            <sw-extension-component-section position-identifier="sw-settings-payment-provider-list__after-content" />
+            {% endblock %}
+        </sw-card-view>
+    </template>
+    {% endblock %}
+</sw-page>
+{% endblock %}

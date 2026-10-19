@@ -156,6 +156,19 @@ function createTransactionCollection(transactions) {
     return new EntityCollection(null, null, null, new Criteria(1, 25), transactions);
 }
 
+/**
+ * The delivery address column is hidden by default, so the tests asserting its
+ * rendered content have to enable the column explicitly.
+ */
+async function showDeliveryAddressColumn(wrapper) {
+    const deliveryAddressColumn = wrapper.vm.$refs.orderGrid.currentColumns.find(
+        (column) => column.property === 'primaryOrderDelivery.shippingOrderAddress.street',
+    );
+    deliveryAddressColumn.visible = true;
+
+    await wrapper.vm.$nextTick();
+}
+
 Shopwell.Service().register('filterService', () => {
     return {
         mergeWithStoredFilters: (storeKey, criteria) => criteria,
@@ -390,8 +403,8 @@ describe('src/module/sw-order/page/sw-order-list', () => {
             total: 2,
         });
 
-        const firstRow = wrapper.findAll('.sw-data-grid__cell .sw-data-grid__cell-content');
-        expect(firstRow.at(22).text()).toBe('Paid');
+        const paymentStateCell = wrapper.find('.sw-data-grid__cell--primaryOrderTransaction-stateMachineState-name');
+        expect(paymentStateCell.text()).toBe('Paid');
     });
 
     it('should push to a new route when editing items', async () => {
@@ -560,11 +573,24 @@ describe('src/module/sw-order/page/sw-order-list', () => {
             ],
             total: 1,
         });
+        await showDeliveryAddressColumn(wrapper);
 
         const html = wrapper.html();
         expect(html).toContain('742 Evergreen Terrace');
         expect(html).toContain('Springfield');
         expect(html).toContain('99999');
+    });
+
+    it('should hide the delivery address column by default', async () => {
+        global.activeAclRoles = [];
+        wrapper = await createWrapper();
+
+        const deliveryAddressColumn = wrapper.vm
+            .getOrderColumns()
+            .find((column) => column.property === 'primaryOrderDelivery.shippingOrderAddress.street');
+
+        expect(deliveryAddressColumn).toBeDefined();
+        expect(deliveryAddressColumn.visible).toBe(false);
     });
 
     it('should render the delivery state from primaryOrderDelivery', async () => {
@@ -675,6 +701,7 @@ describe('src/module/sw-order/page/sw-order-list', () => {
                 ],
                 total: 1,
             });
+            await showDeliveryAddressColumn(wrapper);
 
             const html = wrapper.html();
             expect(html).toContain('Fallback Street 1');
@@ -719,6 +746,7 @@ describe('src/module/sw-order/page/sw-order-list', () => {
                 ],
                 total: 1,
             });
+            await showDeliveryAddressColumn(wrapper);
 
             const html = wrapper.html();
             expect(html).toContain('First Fallback Street');

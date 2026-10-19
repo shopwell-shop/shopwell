@@ -45,6 +45,10 @@ class AclValidPermissionsHelper
         'increment:manage',
         'message_queue_stats:read',
         'system:queue:process',
+        'loyalty.viewer',
+        'loyalty.editor',
+        'wallet.viewer',
+        'wallet.editor',
     ];
 
     /**

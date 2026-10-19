@@ -30,7 +30,7 @@
       "titleSidebarItemFilterAffiliateCode": "推广代码",
       "titleSidebarItemFilterCampaignCode": "活动代码",
       "textDeleteConfirm": "确定要删除此订单 ({orderNumber}) 吗？",
-      "labelManualOrder": "由管理员创建",
+      "labelManualOrder": "管理员创建",
       "tooltipCustomerComment": "附加信息：{comment}",
       "tooltipInternalComment": "内部备注：{comment}"
     },
@@ -46,7 +46,7 @@
       "messageRecalculationError": "计算价格时发生错误：<br>",
       "messageSaveError": "保存时发生错误",
       "messageShippingNotAvailable": "无法配送到目标国家。",
-      "labelManualOrder": "由管理员创建",
+      "labelManualOrder": "管理员创建",
       "textUnsavedOrderWarning": "存在未保存的更改。离开此页面前请先保存订单。",
       "messageEmptyLineItems": "订单无法保存。没有项目。"
     },

@@ -73,6 +73,60 @@
                     </div>
                 {% endblock %}
 
+                {% block page_account_profile_oauth2_login %}
+                    {% set oauth2Login = page.extensions.oauth2Login ?? null %}
+
+                    {% if oauth2Login is not null and oauth2Login.channels is not empty %}
+                        <div class="card account-profile-oauth2-login mb-4">
+                            <div class="card-body">
+                                {% block page_account_profile_oauth2_login_header %}
+                                    <div class="card-title">
+                                        {{ 'sso.oauth2.account.header'|trans|sw_sanitize }}
+                                    </div>
+                                {% endblock %}
+
+                                {% block page_account_profile_oauth2_login_description %}
+                                    <p class="account-profile-oauth2-login-description">
+                                        {{ 'sso.oauth2.account.description'|trans|sw_sanitize }}
+                                    </p>
+                                {% endblock %}
+
+                                {% block page_account_profile_oauth2_login_channels %}
+                                    <ul class="list-unstyled account-profile-oauth2-login-channels">
+                                        {% for channel in oauth2Login.channels %}
+                                            {% set channelName = channel.labelSnippet|trans %}
+                                            {% set isLinked = channel.technicalName in oauth2Login.linked|default([]) %}
+
+                                            {% block page_account_profile_oauth2_login_channel %}
+                                                <li class="account-profile-oauth2-login-channel d-flex align-items-center justify-content-between py-1">
+                                                    <span class="account-profile-oauth2-login-channel-name">
+                                                        {{ channelName|sw_sanitize }}
+                                                    </span>
+
+                                                    {% if isLinked %}
+                                                        <form method="post"
+                                                              action="{{ path('frontend.account.oauth2-login.unbind', { channel: channel.technicalName }) }}">
+                                                            <button type="submit"
+                                                                    class="btn btn-light btn-sm">
+                                                                {{ 'sso.oauth2.account.unlink'|trans|sw_sanitize }}
+                                                            </button>
+                                                        </form>
+                                                    {% else %}
+                                                        <a class="btn btn-light btn-sm"
+                                                           href="{{ path('frontend.oauth2-login.start', { channel: channel.technicalName, bind: 1 }) }}">
+                                                            {{ 'sso.oauth2.account.link'|trans({'%channel%': channelName})|sw_sanitize }}
+                                                        </a>
+                                                    {% endif %}
+                                                </li>
+                                            {% endblock %}
+                                        {% endfor %}
+                                    </ul>
+                                {% endblock %}
+                            </div>
+                        </div>
+                    {% endif %}
+                {% endblock %}
+
                 {% block page_account_profile_credentials %}
                     <div class="card account-profile-credentials mb-4">
                         <div class="card-body">

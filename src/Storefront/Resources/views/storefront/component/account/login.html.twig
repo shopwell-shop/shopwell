@@ -106,6 +106,36 @@
                     {% endblock %}
                 </form>
             {% endblock %}
+
+            {% block component_account_login_oauth2 %}
+                {% set oauth2Channels = page is defined and page.extensions.oauth2Login is defined ? page.extensions.oauth2Login.channels : [] %}
+
+                {% if oauth2Channels is not empty %}
+                    <div class="login-oauth2 mt-3">
+                        {% block component_account_login_oauth2_header %}
+                            <div class="login-oauth2-header">
+                                {{ 'sso.oauth2.loginHeader'|trans|sw_sanitize }}
+                            </div>
+                        {% endblock %}
+
+                        {% block component_account_login_oauth2_channels %}
+                            <div class="login-oauth2-channels">
+                                {% for channel in oauth2Channels %}
+                                    {% set channelName = channel.labelSnippet|trans %}
+
+                                    {% block component_account_login_oauth2_channel %}
+                                        <a class="btn btn-outline-secondary login-oauth2-channel login-oauth2-channel-{{ channel.technicalName }}"
+                                           href="{{ path('frontend.oauth2-login.start', { channel: channel.technicalName }) }}"
+                                           title="{{ 'sso.oauth2.loginWith'|trans({'%channel%': channelName}) }}">
+                                            {{ 'sso.oauth2.loginWith'|trans({'%channel%': channelName})|sw_sanitize }}
+                                        </a>
+                                    {% endblock %}
+                                {% endfor %}
+                            </div>
+                        {% endblock %}
+                    </div>
+                {% endif %}
+            {% endblock %}
         </div>
     </div>
 {% endblock %}

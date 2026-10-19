@@ -1,0 +1,25 @@
+{% block sw_customer_detail_content_tab_after %}
+{% parent %}
+
+{% block sw_customer_detail_content_tab_points %}
+<sw-tabs-item
+    v-if="acl.can('loyalty.viewer')"
+    class="sw-customer-detail__tab-points"
+    :route="loyaltyRoute"
+    :title="$t('sw-customer.detail.tabPoints')"
+>
+    {{ $t('sw-customer.detail.tabPoints') }}
+</sw-tabs-item>
+{% endblock %}
+
+{% block sw_customer_detail_content_tab_wallet %}
+<sw-tabs-item
+    v-if="acl.can('wallet.viewer')"
+    class="sw-customer-detail__tab-wallet"
+    :route="walletRoute"
+    :title="$t('sw-customer.detail.tabWallet')"
+>
+    {{ $t('sw-customer.detail.tabWallet') }}
+</sw-tabs-item>
+{% endblock %}
+{% endblock %}

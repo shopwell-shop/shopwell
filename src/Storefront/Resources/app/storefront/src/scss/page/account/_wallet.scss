@@ -1,0 +1,88 @@
+.account-wallet {
+    &-card,
+    &-top-up,
+    &-recent,
+    &-transactions {
+        border-radius: $border-radius;
+    }
+
+    &-card-value {
+        font-size: $font-size-lg;
+        font-weight: $font-weight-bold;
+        font-variant-numeric: tabular-nums;
+        line-height: 1.2;
+    }
+
+    &-card-label {
+        margin-top: $spacer * 0.25;
+        font-size: $font-size-sm;
+        color: $secondary;
+    }
+
+    &-top-up {
+        &-intro,
+        &-limits {
+            color: $secondary;
+            font-size: $font-size-sm;
+        }
+
+        &-limits {
+            margin-bottom: $spacer;
+        }
+
+        &-presets {
+            display: flex;
+            flex-wrap: wrap;
+            gap: $spacer * 0.25;
+        }
+
+        &-preset {
+            min-width: 5rem;
+            font-variant-numeric: tabular-nums;
+        }
+
+        &-amount {
+            font-variant-numeric: tabular-nums;
+        }
+
+        &-qrcode {
+            &-target {
+                display: flex;
+                justify-content: center;
+                padding: $spacer;
+                background-color: $body-bg;
+                border: 1px solid $border-color;
+                border-radius: $border-radius;
+            }
+
+            &-title {
+                font-size: $font-size-base;
+                font-weight: $font-weight-bold;
+            }
+
+            &-hint,
+            &-amount {
+                margin-top: $spacer * 0.5;
+                color: $secondary;
+                font-size: $font-size-sm;
+            }
+        }
+    }
+
+    &-transactions {
+        &-positive {
+            color: $success;
+            font-variant-numeric: tabular-nums;
+        }
+    }
+
+    &-recent {
+        &-table {
+            margin-bottom: 0;
+
+            td {
+                vertical-align: middle;
+            }
+        }
+    }
+}

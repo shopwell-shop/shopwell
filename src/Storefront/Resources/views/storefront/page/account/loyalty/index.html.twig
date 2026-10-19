@@ -1,0 +1,397 @@
+{% sw_extends '@Storefront/storefront/page/account/_page.html.twig' %}
+
+{% block page_account_main_content %}
+    {% block page_account_loyalty %}
+        {% set loyalty = page.loyalty %}
+        {% set isoCode = context.currency.isoCode %}
+
+        <div class="account-loyalty">
+            {% block page_account_loyalty_welcome %}
+                <div class="account-welcome">
+                    {% block page_account_loyalty_welcome_headline %}
+                        <h1>{{ 'account.loyaltyTitle'|trans|sw_sanitize }}</h1>
+                    {% endblock %}
+
+                    {% block page_account_loyalty_welcome_intro %}
+                        <p>{{ 'account.loyaltyWelcome'|trans|sw_sanitize }}</p>
+                    {% endblock %}
+                </div>
+            {% endblock %}
+
+            {% block page_account_loyalty_content %}
+                <div class="row account-loyalty-overview">
+                    {% block page_account_loyalty_balance %}
+                        <div class="col-sm-6 col-lg-3">
+                            <div class="card account-loyalty-card">
+                                <div class="card-body">
+                                    <div class="account-loyalty-card-value">{{ loyalty.pointsBalance }}</div>
+                                    <div class="account-loyalty-card-label">
+                                        {{ 'account.loyaltyPointsBalance'|trans|sw_sanitize }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endblock %}
+
+                    {% block page_account_loyalty_value %}
+                        <div class="col-sm-6 col-lg-3">
+                            <div class="card account-loyalty-card">
+                                <div class="card-body">
+                                    <div class="account-loyalty-card-value">
+                                        {{ loyalty.pointValueInCurrency|currency(isoCode) }}
+                                    </div>
+                                    <div class="account-loyalty-card-label">
+                                        {{ 'account.loyaltyPointValue'|trans|sw_sanitize }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endblock %}
+
+                    {% block page_account_loyalty_growth %}
+                        <div class="col-sm-6 col-lg-3">
+                            <div class="card account-loyalty-card">
+                                <div class="card-body">
+                                    <div class="account-loyalty-card-value">{{ loyalty.growthValue }}</div>
+                                    <div class="account-loyalty-card-label">
+                                        {{ 'account.loyaltyGrowthValue'|trans|sw_sanitize }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endblock %}
+
+                    {% block page_account_loyalty_tier %}
+                        <div class="col-sm-6 col-lg-3">
+                            <div class="card account-loyalty-card">
+                                <div class="card-body">
+                                    <div class="account-loyalty-card-value">
+                                        {% if page.currentTier %}
+                                            {{ page.currentTier.name }}
+                                        {% else %}
+                                            {{ 'account.loyaltyNoTier'|trans|sw_sanitize }}
+                                        {% endif %}
+                                    </div>
+                                    <div class="account-loyalty-card-label">
+                                        {{ 'account.loyaltyMembershipTier'|trans|sw_sanitize }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endblock %}
+                </div>
+
+                {% block page_account_loyalty_membership %}
+                    <div class="card account-loyalty-membership mt-4">
+                        <div class="card-body">
+                            {% block page_account_loyalty_membership_title %}
+                                <h2 class="card-title">{{ 'account.loyaltyMembershipTitle'|trans|sw_sanitize }}</h2>
+                            {% endblock %}
+
+                            {% block page_account_loyalty_membership_state %}
+                                <p class="account-loyalty-membership-state mb-1"
+                                   data-membership-state>
+                                    {% if loyalty.membershipActive %}
+                                        <span class="badge bg-success">{{ 'account.loyaltyMembershipActive'|trans|sw_sanitize }}</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">{{ 'account.loyaltyMembershipInactive'|trans|sw_sanitize }}</span>
+                                    {% endif %}
+                                </p>
+                            {% endblock %}
+
+                            {% block page_account_loyalty_membership_valid_until %}
+                                {% if loyalty.membershipValidUntil %}
+                                    <p class="account-loyalty-membership-valid-until">
+                                        {{ 'account.loyaltyMembershipValidUntil'|trans({
+                                            '%date%': loyalty.membershipValidUntil|format_datetime('medium', 'none', locale=app.request.locale)
+                                        })|sw_sanitize }}
+                                    </p>
+                                {% endif %}
+                            {% endblock %}
+                        </div>
+                    </div>
+                {% endblock %}
+
+                {% block page_account_loyalty_progress %}
+                    {% if page.nextTier %}
+                        {% set currentGrowth = page.currentTier ? page.currentTier.minGrowthValue : 0 %}
+                        {% set targetGrowth = page.nextTier.minGrowthValue %}
+                        {% set progressRange = targetGrowth - currentGrowth %}
+                        {% set progress = progressRange > 0 ? ((loyalty.growthValue - currentGrowth) / progressRange * 100)|round(0, 'floor') : 0 %}
+                        {% set progress = progress < 0 ? 0 : (progress > 100 ? 100 : progress) %}
+
+                        <div class="account-loyalty-progress card mt-4">
+                            <div class="card-body">
+                                {% block page_account_loyalty_progress_header %}
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span>{{ 'account.loyaltyProgressTo'|trans({ '%tier%': page.nextTier.name })|sw_sanitize }}</span>
+                                        <span>{{ loyalty.growthValue }} / {{ targetGrowth }}</span>
+                                    </div>
+                                {% endblock %}
+
+                                {% block page_account_loyalty_progress_bar %}
+                                    <div class="progress account-loyalty-progress-bar"
+                                         role="progressbar"
+                                         aria-valuenow="{{ progress }}"
+                                         aria-valuemin="0"
+                                         aria-valuemax="100">
+                                        <div class="progress-bar" style="width: {{ progress }}%"></div>
+                                    </div>
+                                {% endblock %}
+                            </div>
+                        </div>
+                    {% endif %}
+                {% endblock %}
+
+                {% block page_account_loyalty_plans %}
+                    {% set channels = loyalty.membershipChannels ?? [] %}
+
+                    <div class="account-loyalty-plans mt-4"
+                         data-membership-purchase="true"
+                         data-membership-purchase-options="{{ {
+                             purchaseUrl: path('frontend.account.loyalty.membership'),
+                             statusUrl: path('frontend.account.loyalty.json'),
+                             returnUrl: url('frontend.account.loyalty.page'),
+                             qrHintTemplate: 'account.loyaltyMembershipQrHint'|trans,
+                             loyaltyMembershipProcessing: 'account.loyaltyMembershipProcessing'|trans,
+                             loyaltyMembershipErrorGeneric: 'account.loyaltyMembershipErrorGeneric'|trans,
+                             loyaltyMembershipSdkUnsupported: 'account.loyaltyMembershipSdkUnsupported'|trans,
+                             loyaltyMembershipOpen: 'account.loyaltyMembershipOpen'|trans,
+                             loyaltyMembershipActivated: 'account.loyaltyMembershipActivated'|trans,
+                             loyaltyMembershipFailed: 'account.loyaltyMembershipFailed'|trans,
+                             pollInterval: 4000,
+                             pollTimeout: 600000
+                         }|json_encode }}">
+                        <div class="d-flex flex-wrap justify-content-between align-items-end mb-3">
+                            {% block page_account_loyalty_plans_title %}
+                                <h2 class="card-title mb-0">{{ 'account.loyaltyMembershipPlansTitle'|trans|sw_sanitize }}</h2>
+                            {% endblock %}
+
+                            {% block page_account_loyalty_plans_channel %}
+                                {% if channels is not empty %}
+                                    <div class="account-loyalty-plans-channel">
+                                        <label class="form-label mb-1" for="membershipChannel">
+                                            {{ 'account.loyaltyMembershipChannelLabel'|trans|sw_sanitize }}
+                                        </label>
+
+                                        <select class="form-select"
+                                                id="membershipChannel"
+                                                data-membership-purchase-channel>
+                                            {% for channel in channels %}
+                                                <option value="{{ channel.channel }}"
+                                                        data-flow="{{ channel.flow }}">
+                                                    {{ channel.label }}
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                {% endif %}
+                            {% endblock %}
+                        </div>
+
+                        {% if loyalty.plans is empty %}
+                            {% block page_account_loyalty_plans_empty %}
+                                {% sw_include '@Storefront/storefront/utilities/alert.html.twig' with {
+                                    type: 'info',
+                                    content: 'account.loyaltyMembershipPlansEmpty'|trans|sw_sanitize
+                                } %}
+                            {% endblock %}
+                        {% else %}
+                            <div class="row g-3 account-loyalty-plan-grid">
+                                {% block page_account_loyalty_plans_grid %}
+                                    {% for plan in loyalty.plans %}
+                                        <div class="col-12 col-md-6 col-xl-4">
+                                            <div class="card h-100 account-loyalty-plan">
+                                                <div class="card-body d-flex flex-column">
+                                                    {% block page_account_loyalty_plan_header %}
+                                                        <h3 class="account-loyalty-plan-name">{{ plan.name }}</h3>
+
+                                                        {% if plan.tier %}
+                                                            <p class="account-loyalty-plan-tier mb-1">
+                                                                {{ 'account.loyaltyMembershipPlanTier'|trans({ '%tier%': plan.tier.name })|sw_sanitize }}
+                                                            </p>
+                                                        {% endif %}
+
+                                                        <p class="account-loyalty-plan-price">
+                                                            {{ plan.price|currency(isoCode) }}
+                                                        </p>
+
+                                                        <p class="account-loyalty-plan-duration">
+                                                            {{ 'account.loyaltyMembershipPlanDuration'|trans({ '%days%': plan.durationDays })|sw_sanitize }}
+                                                        </p>
+                                                    {% endblock %}
+
+                                                    {% block page_account_loyalty_plan_description %}
+                                                        {% if plan.description %}
+                                                            <p class="account-loyalty-plan-description">{{ plan.description }}</p>
+                                                        {% endif %}
+                                                    {% endblock %}
+
+                                                    {% block page_account_loyalty_plan_action %}
+                                                        <button type="button"
+                                                                class="btn btn-primary mt-auto"
+                                                                data-membership-plan-id="{{ plan.id }}"
+                                                                data-membership-plan-name="{{ plan.name }}"
+                                                                {% if channels is empty %}disabled{% endif %}>
+                                                            {{ 'account.loyaltyMembershipPlanBuy'|trans|sw_sanitize }}
+                                                        </button>
+                                                    {% endblock %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                {% endblock %}
+                            </div>
+                        {% endif %}
+
+                        {% block page_account_loyalty_plans_no_channel %}
+                            {% if channels is empty %}
+                                {% sw_include '@Storefront/storefront/utilities/alert.html.twig' with {
+                                    type: 'info',
+                                    content: 'account.loyaltyMembershipNoChannel'|trans|sw_sanitize
+                                } %}
+                            {% endif %}
+                        {% endblock %}
+
+                        {% block page_account_loyalty_plans_feedback %}
+                            <div class="alert account-loyalty-plans-feedback d-none mt-3"
+                                 role="status"
+                                 aria-live="polite"
+                                 data-membership-purchase-feedback>
+                                <span data-membership-purchase-message></span>
+                            </div>
+                        {% endblock %}
+
+                        {% block page_account_loyalty_plans_qrcode %}
+                            <div class="account-loyalty-plans-qrcode d-none mt-3"
+                                 data-membership-purchase-qrcode>
+                                <h3 class="account-loyalty-plans-qrcode-title">
+                                    {{ 'account.loyaltyMembershipQrTitle'|trans|sw_sanitize }}
+                                </h3>
+
+                                <div class="account-loyalty-plans-qrcode-target"
+                                     data-membership-purchase-qrcode-target></div>
+
+                                <p class="account-loyalty-plans-qrcode-hint"
+                                   data-membership-purchase-qrcode-hint></p>
+
+                                <button type="button"
+                                        class="btn btn-outline-primary"
+                                        data-membership-purchase-check>
+                                    {{ 'account.loyaltyMembershipQrCheck'|trans|sw_sanitize }}
+                                </button>
+                            </div>
+                        {% endblock %}
+                    </div>
+                {% endblock %}
+
+                {% block page_account_loyalty_orders %}
+                    {% if loyalty.membershipOrders is not empty %}
+                        {% set orderStateLabels = {
+                            open: 'account.loyaltyMembershipOrderStateOpen',
+                            activated: 'account.loyaltyMembershipOrderStateActivated',
+                            failed: 'account.loyaltyMembershipOrderStateFailed'
+                        } %}
+                        {% set orderStateVariants = {
+                            open: 'warning',
+                            activated: 'success',
+                            failed: 'danger'
+                        } %}
+
+                        <div class="card account-loyalty-orders mt-4">
+                            <div class="card-body">
+                                {% block page_account_loyalty_orders_title %}
+                                    <h2 class="card-title">{{ 'account.loyaltyMembershipOrdersTitle'|trans|sw_sanitize }}</h2>
+                                {% endblock %}
+
+                                <div class="table-responsive">
+                                    <table class="table account-loyalty-orders-table">
+                                        <thead>
+                                            {% block page_account_loyalty_orders_head %}
+                                                <tr>
+                                                    <th scope="col">{{ 'account.loyaltyMembershipOrderColumnDate'|trans|sw_sanitize }}</th>
+                                                    <th scope="col">{{ 'account.loyaltyMembershipOrderColumnPlan'|trans|sw_sanitize }}</th>
+                                                    <th scope="col">{{ 'account.loyaltyMembershipOrderColumnAmount'|trans|sw_sanitize }}</th>
+                                                    <th scope="col">{{ 'account.loyaltyMembershipOrderColumnState'|trans|sw_sanitize }}</th>
+                                                </tr>
+                                            {% endblock %}
+                                        </thead>
+                                        <tbody>
+                                            {% block page_account_loyalty_orders_body %}
+                                                {% for order in loyalty.membershipOrders %}
+                                                    <tr data-membership-order-id="{{ order.id }}">
+                                                        <td>
+                                                            {% if order.createdAt %}
+                                                                {{ order.createdAt|format_datetime('medium', 'short', locale=app.request.locale) }}
+                                                            {% else %}
+                                                                &ndash;
+                                                            {% endif %}
+                                                        </td>
+                                                        <td>{{ order.planName }}</td>
+                                                        <td>{{ order.amount|currency(order.currency) }}</td>
+                                                        <td>
+                                                            <span class="badge bg-{{ orderStateVariants[order.state]|default('secondary') }}">
+                                                                {{ orderStateLabels[order.state]|default('account.loyaltyMembershipOrderStateOpen')|trans|sw_sanitize }}
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                {% endfor %}
+                                            {% endblock %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                {% endblock %}
+
+                {% block page_account_loyalty_tiers %}
+                    {% if loyalty.tiers is not empty %}
+                        <div class="account-loyalty-tiers card mt-4">
+                            <div class="card-body">
+                                {% block page_account_loyalty_tiers_title %}
+                                    <h2 class="card-title">{{ 'account.loyaltyTiersTitle'|trans|sw_sanitize }}</h2>
+                                {% endblock %}
+
+                                {% block page_account_loyalty_tiers_table %}
+                                    <div class="table-responsive">
+                                        <table class="table account-loyalty-tiers-table">
+                                            <thead>
+                                                {% block page_account_loyalty_tiers_table_head %}
+                                                    <tr>
+                                                        <th scope="col">{{ 'account.loyaltyTierColumnName'|trans|sw_sanitize }}</th>
+                                                        <th scope="col">{{ 'account.loyaltyTierColumnGrowth'|trans|sw_sanitize }}</th>
+                                                        <th scope="col">{{ 'account.loyaltyTierColumnMultiplier'|trans|sw_sanitize }}</th>
+                                                        <th scope="col">{{ 'account.loyaltyTierColumnDiscount'|trans|sw_sanitize }}</th>
+                                                    </tr>
+                                                {% endblock %}
+                                            </thead>
+                                            <tbody>
+                                                {% block page_account_loyalty_tiers_table_body %}
+                                                    {% for tier in loyalty.tiers %}
+                                                        <tr class="{% if page.currentTier and tier.id is same as(page.currentTier.id) %}account-loyalty-tier-current fw-bold{% endif %}">
+                                                            <td>{{ tier.name }}</td>
+                                                            <td>{{ tier.minGrowthValue }}</td>
+                                                            <td>{{ tier.pointsMultiplier }}</td>
+                                                            <td>
+                                                                {% if tier.discountPercent > 0 %}
+                                                                    {{ tier.discountPercent }}%
+                                                                {% else %}
+                                                                    &ndash;
+                                                                {% endif %}
+                                                            </td>
+                                                        </tr>
+                                                    {% endfor %}
+                                                {% endblock %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                {% endblock %}
+                            </div>
+                        </div>
+                    {% endif %}
+                {% endblock %}
+            {% endblock %}
+        </div>
+    {% endblock %}
+{% endblock %}

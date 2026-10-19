@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<provider>
+
+    <name>paypal</name>
+    <label>PayPal</label>
+
+    <credentials>
+        <field name="client_id" type="text" required="true">
+            <label>Client ID</label>
+        </field>
+        <field name="client_secret" type="password" required="true" secret="true">
+            <label>Client Secret</label>
+        </field>
+        <field name="environment" type="select" default="sandbox">
+            <label>运行环境</label>
+            <option value="sandbox">sandbox</option>
+            <option value="live">live</option>
+        </field>
+        <field name="webhook_id" type="text">
+            <label>Webhook ID</label>
+        </field>
+        <field name="brand_name" type="text">
+            <label>收银台品牌名</label>
+        </field>
+    </credentials>
+
+    <channels>
+        <channel name="paypal_checkout">
+            <label>PayPal 结账</label>
+            <flow>redirect</flow>
+        </channel>
+    </channels>
+
+</provider>

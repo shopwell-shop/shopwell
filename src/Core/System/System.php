@@ -7,6 +7,7 @@ use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\CustomEntity\CustomEntityRegistrar;
 use Shopwell\Core\System\DependencyInjection\CompilerPass\NumberRangeIncrementerCompilerPass;
 use Shopwell\Core\System\DependencyInjection\CompilerPass\SalesChannelEntityCompilerPass;
+use Shopwell\Core\System\Sms\SmsConfigurationCompilerPass;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -52,6 +53,8 @@ class System extends Bundle
 
         $phpLoader->load('consent.php');
         $phpLoader->load('usage_data.php');
+        $phpLoader->load('payment.php');
+        $phpLoader->load('sms.php');
 
         if ($container->getParameter('kernel.environment') === 'test') {
             $phpLoader->load('services_test.php');
@@ -59,6 +62,7 @@ class System extends Bundle
 
         $container->addCompilerPass(new SalesChannelEntityCompilerPass());
         $container->addCompilerPass(new NumberRangeIncrementerCompilerPass());
+        $container->addCompilerPass(new SmsConfigurationCompilerPass());
     }
 
     public function boot(): void

@@ -1,0 +1,16 @@
+.sw-settings-payment-gateway-list {
+    &__content {
+        display: flex;
+        flex-direction: column;
+        gap: var(--scale-size-16);
+        padding: var(--scale-size-24);
+    }
+
+    &__empty-state {
+        padding-block: var(--scale-size-48);
+    }
+
+    &__delete-modal-content {
+        margin: 0;
+    }
+}

@@ -24,6 +24,18 @@
         </mt-banner>
         {% endblock %}
 
+        {% block sw_login_login_oauth2_error %}
+        <mt-banner
+            v-if="oauth2ErrorMessage"
+            class="sw-login__oauth2-error-banner"
+            variant="critical"
+            :show-icon="true"
+            :closable="false"
+        >
+            {{ oauth2ErrorMessage }}
+        </mt-banner>
+        {% endblock %}
+
         {% block sw_login_login_sso %}
         <div
             v-if="loginConfig.url"
@@ -120,6 +132,42 @@
             </div>
             {% endblock %}
         </div>
+
+        {% block sw_login_login_oauth2 %}
+        <div
+            v-if="oauth2Channels.length > 0"
+            class="sw-login__oauth2"
+        >
+            {% block sw_login_login_oauth2_divider %}
+            <div
+                v-if="loginConfig.useDefault"
+                class="sw-login__sso-divider"
+            >
+                <span class="sw-login__sso-divider-text">
+                    {{ $t('sw-login.index.orContinueWith') }}
+                </span>
+            </div>
+            {% endblock %}
+
+            {% block sw_login_login_oauth2_channels %}
+            <div class="sw-login__oauth2-channels">
+                {% block sw_login_login_oauth2_channel %}
+                <mt-button
+                    v-for="channel in oauth2Channels"
+                    :key="channel.technicalName"
+                    class="sw-login__oauth2-button"
+                    variant="secondary"
+                    size="default"
+                    :block="true"
+                    @click.prevent="loginWithOAuth2(channel)"
+                >
+                    {{ channelLabel(channel) }}
+                </mt-button>
+                {% endblock %}
+            </div>
+            {% endblock %}
+        </div>
+        {% endblock %}
     </div>
 
     <div

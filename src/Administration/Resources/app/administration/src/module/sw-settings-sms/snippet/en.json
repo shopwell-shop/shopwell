@@ -1,0 +1,175 @@
+{
+  "sw-settings-sms": {
+    "general": {
+      "mainMenuItemGeneral": "SMS",
+      "description": "Manage sms gateways, sms templates and the record of what was sent.",
+      "tabGateway": "Gateways",
+      "tabTemplate": "Templates",
+      "tabDelivery": "Send log",
+      "buttonCreate": "Create",
+      "placeholderSearchBar": "Search…"
+    },
+    "gateway": {
+      "listTitle": "SMS gateways",
+      "detailTitleCreate": "Create an sms gateway",
+      "detailTitleEdit": "Edit sms gateway",
+      "cardCredentials": "Provider account",
+      "cardConnection": "Connection and routing",
+      "columnTechnicalName": "Provider",
+      "columnLabel": "Name",
+      "columnEnabled": "Active",
+      "columnPriority": "Priority",
+      "columnStrategy": "Strategy",
+      "columnSalesChannel": "Sales channel",
+      "labelTechnicalName": "Provider",
+      "labelTechnicalNamePlaceholder": "Select a provider",
+      "labelLabel": "Name",
+      "labelLabelPlaceholder": "e.g. Aliyun main account",
+      "labelEnabled": "Activate this gateway",
+      "labelEnabledHelpText": "Only an active gateway is picked to send a message.",
+      "labelPriority": "Priority",
+      "labelPriorityHelpText": "The lower the number, the earlier the gateway is picked and tried on failover.",
+      "labelStrategy": "Strategy across gateways",
+      "labelSalesChannel": "Sales channel",
+      "labelSalesChannelHelpText": "Leave empty to make the gateway available in every sales channel.",
+      "labelOptions": "Connection options",
+      "labelOptionsHelpText": "Provider specific settings, given as JSON, e.g. {'{'}\"signName\":\"Shop\"{'}'}.",
+      "credentialsEmpty": "This provider needs no account details.",
+      "credentialsHelpText": "The account details are assigned by the provider, its secrets are shown as password fields.",
+      "regions": "Regions",
+      "regionGlobal": "Global",
+      "templateModeRequired": "Reported template required",
+      "templateModeFreeText": "Free text",
+      "strategy": {
+        "exclusive": "Exclusive",
+        "failover": "Failover",
+        "round_robin": "Round robin"
+      },
+      "emptyStateTitle": "No sms gateway yet",
+      "emptyStateDescription": "Create a gateway to let the shop send messages over a provider.",
+      "placeholderSearchBar": "Search sms gateways…",
+      "removeModalTitle": "Delete sms gateway",
+      "removeModalMessage": "Delete \"{name}\"? The template mappings of the gateway go with it, the messages it sent stay in the log."
+    },
+    "template": {
+      "listTitle": "SMS templates",
+      "detailTitleCreate": "Create an sms template",
+      "detailTitleEdit": "Edit sms template",
+      "cardGeneral": "Template",
+      "cardContent": "Message body",
+      "cardMapping": "Provider mapping",
+      "saveFirst": "Save the template to map it to a provider.",
+      "columnTechnicalName": "Technical name",
+      "columnScene": "Scene",
+      "columnEnabled": "Active",
+      "columnMaxLength": "Length limit",
+      "labelTechnicalName": "Technical name",
+      "labelTechnicalNamePlaceholder": "e.g. customer.otp.login",
+      "labelTechnicalNameHelpText": "The name the business code refers to, unique per installation.",
+      "labelScene": "Scene",
+      "labelSceneHelpText": "The scene decides the queue priority.",
+      "labelMaxLength": "Length limit",
+      "labelMaxLengthHelpText": "A rendered body longer than this is rejected, leave empty for no limit.",
+      "labelValiditySeconds": "Business validity (seconds)",
+      "labelValiditySecondsHelpText": "e.g. the lifetime of an otp. It is read by the caller and does not take part in sending.",
+      "labelEnabled": "Activate this template",
+      "labelParamsSchema": "Parameter contract",
+      "labelParamsSchemaHelpText": "The parameters the template accepts as a JSON list, validated before a message is built.",
+      "labelContent": "Body",
+      "labelContentHelpText": "Use {'{'} param {'}'} as placeholder. Empty means the language uses the body of the default language.",
+      "labelContentLanguage": "Language",
+      "contentInherited": "Uses the body of the default language",
+      "scene": {
+        "otp": "Verification code",
+        "transaction": "Transactional",
+        "marketing": "Marketing"
+      },
+      "emptyStateTitle": "No sms template yet",
+      "emptyStateDescription": "A verification code template ships with the shop, further ones can be created here.",
+      "placeholderSearchBar": "Search sms templates…",
+      "removeModalTitle": "Delete sms template",
+      "removeModalMessage": "Delete \"{name}\"? The provider mappings of the template go with it."
+    },
+    "mapping": {
+      "columnTechnicalName": "Provider",
+      "columnGateway": "Gateway account",
+      "columnTemplateCode": "Provider template id",
+      "columnSignName": "Signature",
+      "columnAuditStatus": "Audit state",
+      "columnReportedAt": "Reported at",
+      "gatewayAllAccounts": "Every account",
+      "templateCodePlaceholder": "e.g. SMS_123456789",
+      "signNamePlaceholder": "e.g. Shopwell",
+      "emptyState": "The template is not mapped to a provider yet, add a row.",
+      "auditStatus": {
+        "pending": "Pending",
+        "approved": "Approved",
+        "rejected": "Rejected",
+        "suspended": "Suspended"
+      },
+      "helpText": "The provider template id and the signature are assigned by the provider, a message goes out once the template is approved."
+    },
+    "delivery": {
+      "listTitle": "Send log",
+      "columnCreatedAt": "Time",
+      "columnTemplateRef": "Template",
+      "columnTechnicalName": "Provider",
+      "columnPhoneMasked": "Number",
+      "columnStatus": "State",
+      "columnErrorCode": "Error code",
+      "detailTitle": "Delivery",
+      "labelErrorMessage": "Error message",
+      "labelProviderMessageId": "Provider receipt id",
+      "labelScene": "Scene",
+      "emptyStateTitle": "Nothing was sent yet",
+      "emptyStateDescription": "Every attempt the shop makes is recorded here.",
+      "placeholderSearchBar": "Search the send log…",
+      "filterStatus": "State",
+      "status": {
+        "queued": "Queued",
+        "sent": "Sent",
+        "failed": "Failed"
+      }
+    },
+    "notification": {
+      "saveSuccess": "The sms settings were saved.",
+      "removeSuccess": "Deleted.",
+      "mappingSaveSuccess": "The provider mapping was saved.",
+      "missingFields": "Some required fields are still empty.",
+      "mappingMissingName": "Select a provider first."
+    }
+  },
+  "sms": {
+    "gateway": {
+      "aliyun": "Aliyun SMS",
+      "tencentcloud": "Tencent Cloud SMS",
+      "null": "Null gateway (records, does not send)",
+      "log": "Log gateway (development)"
+    },
+    "credential": {
+      "aliyun": {
+        "accessKeyId": "AccessKey ID",
+        "accessKeySecret": "AccessKey Secret"
+      },
+      "tencentcloud": {
+        "secretId": "SecretId",
+        "secretKey": "SecretKey",
+        "sdkAppId": "Sms SdkAppId",
+        "region": "Region"
+      }
+    }
+  },
+  "sw-privileges": {
+    "permissions": {
+      "sms_gateway": {
+        "label": "SMS gateways"
+      },
+      "sms_template": {
+        "label": "SMS templates"
+      },
+      "sms_delivery": {
+        "label": "SMS send log"
+      }
+    }
+  }
+}

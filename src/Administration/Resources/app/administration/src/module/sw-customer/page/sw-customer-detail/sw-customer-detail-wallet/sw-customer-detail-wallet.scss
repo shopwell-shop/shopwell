@@ -1,0 +1,69 @@
+.sw-customer-detail-wallet {
+    .sw-customer-detail-wallet__asset {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        padding: 16px;
+        border: 1px solid var(--color-border-primary-default);
+        border-radius: var(--border-radius-default);
+        background: var(--color-background-secondary-default);
+    }
+
+    .sw-customer-detail-wallet__asset-currency {
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+        margin: 0;
+        color: var(--color-text-secondary-default);
+        font-size: var(--font-size-xs);
+    }
+
+    .sw-customer-detail-wallet__asset-code {
+        color: var(--color-text-tertiary-default);
+    }
+
+    .sw-customer-detail-wallet__asset-balance {
+        margin: 0;
+        font-size: var(--font-size-l);
+        font-weight: var(--font-weight-semibold);
+    }
+
+    .sw-customer-detail-wallet__asset-locked {
+        margin: 0;
+        color: var(--color-text-tertiary-default);
+        font-size: var(--font-size-xs);
+    }
+
+    .sw-customer-detail-wallet__asset-actions {
+        display: flex;
+        gap: 8px;
+        margin-top: 8px;
+    }
+
+    .sw-customer-detail-wallet__pending-hint {
+        margin: 0 0 16px;
+        color: var(--color-text-secondary-default);
+        font-size: var(--font-size-xs);
+    }
+
+    .sw-customer-detail-wallet__type-filter {
+        min-width: 180px;
+    }
+
+    .sw-customer-detail-wallet__wallet-modal-description {
+        margin: 0 0 16px;
+        color: var(--color-text-secondary-default);
+        font-size: var(--font-size-xs);
+    }
+
+    .sw-customer-detail-wallet__quick-amounts {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin: -8px 0 16px;
+    }
+
+    .is--negative {
+        color: var(--color-text-critical-default);
+    }
+}

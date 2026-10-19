@@ -7,6 +7,7 @@ use Shopwell\Core\Framework\Adapter\Asset\AssetInstallCommand;
 use Shopwell\Core\Framework\Adapter\Asset\AssetService;
 use Shopwell\Core\Framework\Adapter\Asset\FallbackUrlPackage;
 use Shopwell\Core\Framework\Adapter\Asset\FlysystemLastModifiedVersionStrategy;
+use Shopwell\Core\Framework\Adapter\Filesystem\Adapter\AliyunOssFactory;
 use Shopwell\Core\Framework\Adapter\Filesystem\Adapter\AwsS3v3Factory;
 use Shopwell\Core\Framework\Adapter\Filesystem\Adapter\GoogleStorageFactory;
 use Shopwell\Core\Framework\Adapter\Filesystem\Adapter\LocalFactory;
@@ -81,6 +82,9 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->tag('shopwell.filesystem.factory');
 
     $services->set(FilesystemFactory::class . '.google_storage', GoogleStorageFactory::class)
+        ->tag('shopwell.filesystem.factory');
+
+    $services->set(FilesystemFactory::class . '.aliyun_oss', AliyunOssFactory::class)
         ->tag('shopwell.filesystem.factory');
 
     $services->set('console.command.assets_install', AssetInstallCommand::class)

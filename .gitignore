@@ -26,6 +26,8 @@ Thumbs.db
 yalc.lock
 
 # AI/LLM Development Tools
+# WorkBuddy 工作区数据（会话记忆、计划、调试产物）——不得进入版本库
+.workbuddy/
 # Ignore everything in .claude/ EXCEPT the skills symlink for Claude Code.
 .claude/*
 !.claude/skills
@@ -139,6 +141,7 @@ app/config/parameters.yml
 *.cursorignore.local
 *.cursorindexingignore.local
 *.tabnineignore.local
+.trae/
 
 /dev-ops/check_requirements.php
 /performance/_fixtures.php

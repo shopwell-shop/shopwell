@@ -26,6 +26,7 @@ class Migration1536232810User extends MigrationStep
               `password`        VARCHAR(255) COLLATE utf8mb4_unicode_ci NOT NULL,
               `name`            VARCHAR(255) COLLATE utf8mb4_unicode_ci NOT NULL,
               `email`           VARCHAR(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+              `phone_number`    VARCHAR(40) COLLATE utf8mb4_unicode_ci  NULL,
               `active`          TINYINT(1)                              NOT NULL DEFAULT 0,
               `avatar_id`       BINARY(16)                              NULL,
               `locale_id`       BINARY(16)                              NOT NULL,

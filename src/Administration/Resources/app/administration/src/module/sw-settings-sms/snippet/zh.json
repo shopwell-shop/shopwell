@@ -1,0 +1,175 @@
+{
+  "sw-settings-sms": {
+    "general": {
+      "mainMenuItemGeneral": "短信",
+      "description": "管理短信网关、短信模板与发送记录。",
+      "tabGateway": "短信网关",
+      "tabTemplate": "短信模板",
+      "tabDelivery": "发送记录",
+      "buttonCreate": "新建",
+      "placeholderSearchBar": "搜索…"
+    },
+    "gateway": {
+      "listTitle": "短信网关",
+      "detailTitleCreate": "新建短信网关",
+      "detailTitleEdit": "编辑短信网关",
+      "cardCredentials": "厂商账号",
+      "cardConnection": "连接与路由",
+      "columnTechnicalName": "厂商",
+      "columnLabel": "名称",
+      "columnEnabled": "启用",
+      "columnPriority": "优先级",
+      "columnStrategy": "策略",
+      "columnSalesChannel": "销售渠道",
+      "labelTechnicalName": "厂商",
+      "labelTechnicalNamePlaceholder": "选择厂商",
+      "labelLabel": "名称",
+      "labelLabelPlaceholder": "例如：阿里云主账号",
+      "labelEnabled": "启用该网关",
+      "labelEnabledHelpText": "只有启用的网关会被选中来发送短信。",
+      "labelPriority": "优先级",
+      "labelPriorityHelpText": "数字越小越先被选中，故障转移按此顺序尝试。",
+      "labelStrategy": "多网关策略",
+      "labelSalesChannel": "销售渠道",
+      "labelSalesChannelHelpText": "留空表示在所有销售渠道都可用。",
+      "labelOptions": "连接选项",
+      "labelOptionsHelpText": "厂商特有的连接设置，填写为 JSON，例如 {'{'}\"signName\":\"签名\"{'}'}。",
+      "credentialsEmpty": "该厂商无需额外的账号信息。",
+      "credentialsHelpText": "账号信息由厂商分配，其中的密钥会以密码框显示。",
+      "regions": "支持地区",
+      "regionGlobal": "全球",
+      "templateModeRequired": "需要报备模板",
+      "templateModeFreeText": "支持自由文本",
+      "strategy": {
+        "exclusive": "独占",
+        "failover": "故障转移",
+        "round_robin": "轮询"
+      },
+      "emptyStateTitle": "还没有短信网关",
+      "emptyStateDescription": "新建一个网关后，系统才能通过厂商发送短信。",
+      "placeholderSearchBar": "搜索短信网关…",
+      "removeModalTitle": "删除短信网关",
+      "removeModalMessage": "确定要删除「{name}」吗？该网关下的模板映射会一并删除，已产生的发送记录会保留。"
+    },
+    "template": {
+      "listTitle": "短信模板",
+      "detailTitleCreate": "新建短信模板",
+      "detailTitleEdit": "编辑短信模板",
+      "cardGeneral": "模板",
+      "cardContent": "短信内容",
+      "cardMapping": "厂商映射",
+      "saveFirst": "保存模板后即可配置厂商映射。",
+      "columnTechnicalName": "技术名称",
+      "columnScene": "场景",
+      "columnEnabled": "启用",
+      "columnMaxLength": "字数上限",
+      "labelTechnicalName": "技术名称",
+      "labelTechnicalNamePlaceholder": "例如：customer.otp.login",
+      "labelTechnicalNameHelpText": "业务代码引用模板时使用的名称，全站唯一。",
+      "labelScene": "场景",
+      "labelSceneHelpText": "场景决定队列优先级。",
+      "labelMaxLength": "字数上限",
+      "labelMaxLengthHelpText": "渲染后的正文超过该长度会被拒绝，留空表示不限制。",
+      "labelValiditySeconds": "业务有效期（秒）",
+      "labelValiditySecondsHelpText": "例如验证码的有效期，由调用方读取，不参与发送。",
+      "labelEnabled": "启用该模板",
+      "labelParamsSchema": "参数契约",
+      "labelParamsSchemaHelpText": "模板可用参数的 JSON 列表，发送前按此校验。",
+      "labelContent": "正文",
+      "labelContentHelpText": "用 {'{'} 参数名 {'}'} 作为占位符，留空表示该语言沿用默认语言的正文。",
+      "labelContentLanguage": "语言",
+      "contentInherited": "沿用默认语言的正文",
+      "scene": {
+        "otp": "验证码",
+        "transaction": "交易通知",
+        "marketing": "营销"
+      },
+      "emptyStateTitle": "还没有短信模板",
+      "emptyStateDescription": "系统已内置验证码模板，你也可以新建其它场景的模板。",
+      "placeholderSearchBar": "搜索短信模板…",
+      "removeModalTitle": "删除短信模板",
+      "removeModalMessage": "确定要删除「{name}」吗？该模板的厂商映射会一并删除。"
+    },
+    "mapping": {
+      "columnTechnicalName": "厂商",
+      "columnGateway": "网关账号",
+      "columnTemplateCode": "厂商模板 ID",
+      "columnSignName": "签名",
+      "columnAuditStatus": "审核状态",
+      "columnReportedAt": "报备时间",
+      "gatewayAllAccounts": "全部账号",
+      "templateCodePlaceholder": "例如：SMS_123456789",
+      "signNamePlaceholder": "例如：某某商城",
+      "emptyState": "该模板还没有映射到任何厂商，请添加一条。",
+      "auditStatus": {
+        "pending": "待审核",
+        "approved": "已通过",
+        "rejected": "已驳回",
+        "suspended": "已暂停"
+      },
+      "helpText": "厂商模板 ID 与签名由短信厂商分配，审核通过后才可以发送。"
+    },
+    "delivery": {
+      "listTitle": "发送记录",
+      "columnCreatedAt": "时间",
+      "columnTemplateRef": "模板",
+      "columnTechnicalName": "厂商",
+      "columnPhoneMasked": "手机号",
+      "columnStatus": "状态",
+      "columnErrorCode": "错误码",
+      "detailTitle": "发送详情",
+      "labelErrorMessage": "错误信息",
+      "labelProviderMessageId": "厂商回执 ID",
+      "labelScene": "场景",
+      "emptyStateTitle": "还没有发送记录",
+      "emptyStateDescription": "系统发出短信后，这里会记录每一次尝试。",
+      "placeholderSearchBar": "搜索发送记录…",
+      "filterStatus": "状态",
+      "status": {
+        "queued": "排队中",
+        "sent": "已发送",
+        "failed": "失败"
+      }
+    },
+    "notification": {
+      "saveSuccess": "短信设置已保存。",
+      "removeSuccess": "已删除。",
+      "mappingSaveSuccess": "厂商映射已保存。",
+      "missingFields": "还有必填项没有填写。",
+      "mappingMissingName": "请先选择厂商。"
+    }
+  },
+  "sms": {
+    "gateway": {
+      "aliyun": "阿里云短信",
+      "tencentcloud": "腾讯云短信",
+      "null": "空网关（只记录不发送）",
+      "log": "日志网关（开发用）"
+    },
+    "credential": {
+      "aliyun": {
+        "accessKeyId": "AccessKey ID",
+        "accessKeySecret": "AccessKey Secret"
+      },
+      "tencentcloud": {
+        "secretId": "SecretId",
+        "secretKey": "SecretKey",
+        "sdkAppId": "短信应用 SdkAppId",
+        "region": "地域"
+      }
+    }
+  },
+  "sw-privileges": {
+    "permissions": {
+      "sms_gateway": {
+        "label": "短信网关"
+      },
+      "sms_template": {
+        "label": "短信模板"
+      },
+      "sms_delivery": {
+        "label": "短信发送记录"
+      }
+    }
+  }
+}

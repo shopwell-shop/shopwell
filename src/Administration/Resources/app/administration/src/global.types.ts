@@ -140,6 +140,8 @@ import type { SwShippingDetailStore } from './module/sw-settings-shipping/page/s
 import type { PaymentOverviewCardStore } from './module/sw-settings-payment/store/overview-cards.store';
 import type { SwProductDetailStore } from './module/sw-product/page/sw-product-detail/store';
 import type { SwProfileStore } from './module/sw-profile/store/sw-profile.store';
+import type OAuth2ChannelService from './module/sw-settings-oauth2-login/service/oauth2-channel.api.service';
+import type SmsGatewayProviderService from './module/sw-settings-sms/service/sms-gateway-provider.service';
 import type { SwPromotionDetailStore } from './module/sw-promotion-v2/page/sw-promotion-v2-detail/store';
 import type { SwFlowStore } from './module/sw-flow/store/flow.store';
 import type { SwBulkStore } from './app/store/sw-bulk-edit.store';
@@ -284,6 +286,9 @@ declare global {
         mediaService: MediaService;
         menuService: $TSFixMe;
         numberRangeService: $TSFixMe;
+        oauth2ChannelService: OAuth2ChannelService;
+        oauth2IdentityService: $TSFixMe;
+        oauth2LoginService: $TSFixMe;
         oauthAuthorizeApiService: OAuthAuthorizeApiService;
         orderStateMachineService: OrderStateMachineApiService;
         privileges: PrivilegesService;
@@ -295,6 +300,7 @@ declare global {
         searchRankingService: $TSFixMe;
         searchTypeService: $TSFixMe;
         shopwellDiscountCampaignService: ShopwellDiscountCampaignService;
+        smsGatewayProviderService: SmsGatewayProviderService;
         snackbarService: SnackbarService;
         shortcutService: $TSFixMe;
         snippetService: SnippetApiService;

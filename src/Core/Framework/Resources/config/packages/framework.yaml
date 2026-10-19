@@ -35,6 +35,13 @@ framework:
     mailer:
         message_bus: false
         dsn: '%env(MAILER_DSN)%'
+    notifier:
+        # the same shape as mailer: the asynchronous decision is made by
+        # Shopwell\Core\System\Sms\Service\SmsSender, the notifier must not queue a message again
+        message_bus: false
+        # the transports of the text channel are built from the sms_gateway rows at runtime, see
+        # Shopwell\Core\System\Sms\SmsConfigurationCompilerPass
+        texter_transports: { }
     lock: '%env(LOCK_DSN)%'
     php_errors:
         log: true

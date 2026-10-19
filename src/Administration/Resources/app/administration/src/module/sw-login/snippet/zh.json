@@ -26,7 +26,15 @@
       "messageGeneralError": "登录时发生错误，请重试。",
       "messageAuthThrottled": "尝试次数过多。请等待 {seconds} 秒后再试。",
       "forgottenPasswordLink": "忘记密码？",
-      "orContinueWith": "或使用以下方式继续"
+      "orContinueWith": "或使用以下方式继续",
+      "oauth2LoginWith": "使用 {channel} 登录",
+      "oauth2Channel": {
+        "google": "Google",
+        "wechat": "微信"
+      },
+      "oauth2ErrorFailed": "第三方登录失败，请重试。",
+      "oauth2ErrorNotAvailable": "该第三方登录方式当前不可用。",
+      "oauth2ErrorNotLinked": "该第三方账号尚未绑定后台账号。请先使用密码登录，再在个人设置中完成绑定。"
     },
     "recovery": {
       "info": {

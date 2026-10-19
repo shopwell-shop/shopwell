@@ -1,4 +1,6 @@
 import './acl';
+import './page/sw-customer-detail/extension/sw-customer-detail';
+import './page/sw-customer-detail/extension/sw-customer-detail-base';
 import defaultSearchConfiguration from './default-search-configuration';
 
 /**
@@ -14,6 +16,14 @@ Shopwell.Component.register('sw-customer-create', () => import('./page/sw-custom
 Shopwell.Component.register('sw-customer-detail-base', () => import('./view/sw-customer-detail-base'));
 Shopwell.Component.register('sw-customer-detail-addresses', () => import('./view/sw-customer-detail-addresses'));
 Shopwell.Component.register('sw-customer-detail-order', () => import('./view/sw-customer-detail-order'));
+Shopwell.Component.register(
+    'sw-customer-detail-points',
+    () => import('./page/sw-customer-detail/sw-customer-detail-points'),
+);
+Shopwell.Component.register(
+    'sw-customer-detail-wallet',
+    () => import('./page/sw-customer-detail/sw-customer-detail-wallet'),
+);
 Shopwell.Component.register('sw-customer-base-form', () => import('./component/sw-customer-base-form'));
 Shopwell.Component.register('sw-customer-base-info', () => import('./component/sw-customer-base-info'));
 Shopwell.Component.register('sw-customer-address-form', () => import('./component/sw-customer-address-form'));
@@ -95,6 +105,22 @@ Module.register('sw-customer', {
                     meta: {
                         parentPath: 'sw.customer.index',
                         privilege: 'customer.viewer',
+                    },
+                },
+                loyalty: {
+                    component: 'sw-customer-detail-points',
+                    path: 'loyalty',
+                    meta: {
+                        parentPath: 'sw.customer.index',
+                        privilege: 'loyalty.viewer',
+                    },
+                },
+                wallet: {
+                    component: 'sw-customer-detail-wallet',
+                    path: 'wallet',
+                    meta: {
+                        parentPath: 'sw.customer.index',
+                        privilege: 'wallet.viewer',
                     },
                 },
             },

@@ -1,8 +1,14 @@
 /**
  * @sw-package framework
  */
+import OAuth2LoginService from './service/oauth2-login.api.service';
 
 const { Component, Module } = Shopwell;
+
+// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+Shopwell.Service().register('oauth2LoginService', () => {
+    return new OAuth2LoginService(Shopwell.Application.getContainer('init').httpClient);
+});
 
 /** @private */
 Component.register('sw-login-recovery', () => import('./view/sw-login-recovery'));

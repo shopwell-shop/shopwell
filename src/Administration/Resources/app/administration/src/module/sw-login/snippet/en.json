@@ -26,7 +26,15 @@
       "messageGeneralError": "Something went wrong during login. Please try again.",
       "messageAuthThrottled": "Too many login attempts. Please wait {seconds} seconds before trying to log in again.",
       "forgottenPasswordLink": "Forgot password?",
-      "orContinueWith": "or continue with"
+      "orContinueWith": "or continue with",
+      "oauth2LoginWith": "Log in with {channel}",
+      "oauth2Channel": {
+        "google": "Google",
+        "wechat": "WeChat"
+      },
+      "oauth2ErrorFailed": "The third party login failed, please try again.",
+      "oauth2ErrorNotAvailable": "This third party login is currently not available.",
+      "oauth2ErrorNotLinked": "This third party account is not linked to an administration account yet. Log in with your password first and link it in your personal settings."
     },
     "recovery" : {
       "info": {

@@ -60,6 +60,15 @@
         />
         {% endblock %}
 
+        {% block sw_customer_base_form_phone_number_field %}
+        <mt-text-field
+            v-model="customer.phoneNumber"
+            name="sw-field--customer-phoneNumber"
+            :label="$t('sw-customer.baseForm.labelPhoneNumber')"
+            :placeholder="$t('sw-customer.baseForm.placeholderPhoneNumber')"
+        />
+        {% endblock %}
+
         {% block sw_customer_base_form_password_field %}
         <mt-password-field
             v-model="customer.password"

@@ -1,0 +1,90 @@
+{% block sw_payment_config_field %}
+<!-- The fields hold api secrets, not login credentials: the autocomplete hints keep the browser's
+     password manager from treating the card as a login form and filling a saved user name into an
+     unrelated input, e.g. the search bar of the page. -->
+<mt-text-field
+    v-if="field.type === 'text'"
+    v-model="currentValue"
+    class="sw-payment-config-field__input"
+    :name="`sw-field--payment-config-${field.name}`"
+    :label="label"
+    :placeholder="placeholder"
+    :required="field.required"
+    :help-text="helpText"
+    :disabled="disabled || undefined"
+    autocomplete="off"
+/>
+
+<mt-password-field
+    v-else-if="field.type === 'password'"
+    v-model="currentValue"
+    class="sw-payment-config-field__input"
+    :name="`sw-field--payment-config-${field.name}`"
+    :label="label"
+    :placeholder="placeholder"
+    :required="field.required"
+    :help-text="helpText"
+    :disabled="disabled || undefined"
+    autocomplete="new-password"
+/>
+
+<mt-textarea
+    v-else-if="field.type === 'textarea'"
+    v-model="currentValue"
+    class="sw-payment-config-field__input sw-payment-config-field__input--textarea"
+    :name="`sw-field--payment-config-${field.name}`"
+    :label="label"
+    :placeholder="placeholder"
+    :required="field.required"
+    :help-text="helpText"
+    :disabled="disabled || undefined"
+    autocomplete="off"
+/>
+
+<mt-select
+    v-else-if="field.type === 'select'"
+    v-model="currentValue"
+    class="sw-payment-config-field__input"
+    :name="`sw-field--payment-config-${field.name}`"
+    :label="label"
+    :options="options"
+    :placeholder="placeholder"
+    :help-text="helpText"
+    :disabled="disabled || undefined"
+/>
+
+<mt-switch
+    v-else-if="field.type === 'bool'"
+    v-model="currentBoolean"
+    class="sw-payment-config-field__input sw-payment-config-field__input--switch"
+    bordered
+    :label="label"
+    :help-text="helpText"
+    :disabled="disabled || undefined"
+/>
+
+<mt-number-field
+    v-else-if="field.type === 'number'"
+    v-model="currentNumber"
+    class="sw-payment-config-field__input"
+    :name="`sw-field--payment-config-${field.name}`"
+    :label="label"
+    :placeholder="placeholder"
+    :help-text="helpText"
+    :disabled="disabled || undefined"
+    autocomplete="off"
+/>
+
+<mt-text-field
+    v-else
+    v-model="currentValue"
+    class="sw-payment-config-field__input"
+    :name="`sw-field--payment-config-${field.name}`"
+    :label="label"
+    :placeholder="placeholder"
+    :required="field.required"
+    :help-text="helpText"
+    :disabled="disabled || undefined"
+    autocomplete="off"
+/>
+{% endblock %}

@@ -39,6 +39,8 @@ class UserEntity extends Entity
 
     protected ?string $title = null;
 
+    protected ?string $phoneNumber = null;
+
     protected string $email;
 
     protected bool $active;
@@ -305,6 +307,16 @@ class UserEntity extends Entity
     public function setTitle(?string $title): void
     {
         $this->title = $title;
+    }
+
+    public function getPhoneNumber(): ?string
+    {
+        return $this->phoneNumber;
+    }
+
+    public function setPhoneNumber(?string $phoneNumber): void
+    {
+        $this->phoneNumber = $phoneNumber;
     }
 
     public function getCreatedOrders(): ?OrderCollection

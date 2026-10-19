@@ -194,6 +194,17 @@
             </dd>
         </sw-description-list>
         {% endblock %}
+
+        {% block sw_customer_base_metadata_phone_number %}
+        <sw-description-list>
+            <dt class="sw-customer-base-info__label">
+                {{ $t('sw-customer.baseInfo.labelPhoneNumber') }}
+            </dt>
+            <dd class="sw-customer-base__label-phone-number">
+                {{ customer.phoneNumber || '-' }}
+            </dd>
+        </sw-description-list>
+        {% endblock %}
     </div>
     {% endblock %}
 

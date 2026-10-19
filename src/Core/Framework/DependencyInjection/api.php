@@ -95,6 +95,7 @@ use Shopwell\Core\Framework\Routing\RequestTransformer;
 use Shopwell\Core\Framework\Routing\RequestTransformerInterface;
 use Shopwell\Core\Framework\Routing\RouteScopeRegistry;
 use Shopwell\Core\Framework\Sso\Config\LoginConfigService;
+use Shopwell\Core\Framework\Sso\Service\OAuth2LoginCodeService;
 use Shopwell\Core\Framework\Sso\SsoService;
 use Shopwell\Core\Framework\Sso\TokenService\ExternalTokenService;
 use Shopwell\Core\Framework\Sso\UserService\UserService;
@@ -471,6 +472,8 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(UserService::class),
             service(ExternalTokenService::class),
             service(ClockInterface::class),
+            service(OAuth2LoginCodeService::class),
+            service('user.repository'),
             param('shopwell.api.refresh_token_ttl'),
             param('shopwell.api.auth_code_ttl'),
         ]);

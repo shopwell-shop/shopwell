@@ -1,0 +1,206 @@
+{% block sw_loyalty_tier_detail %}
+<sw-page class="sw-loyalty-tier-detail">
+
+    {% block sw_loyalty_tier_detail_search_bar %}
+    <template #search-bar></template>
+    {% endblock %}
+
+    {% block sw_loyalty_tier_detail_smart_bar_header %}
+    <template #smart-bar-header>
+        {% block sw_loyalty_tier_detail_smart_bar_header_title %}
+        <h2>
+            {{ placeholder(loyaltyTier, 'name', $t('sw-loyalty.detail.placeholderNewLoyaltyTier')) }}
+        </h2>
+        {% endblock %}
+    </template>
+    {% endblock %}
+
+    {% block sw_loyalty_tier_detail_language_switch %}
+    <template #language-switch>
+        <sw-language-switch
+            :disabled="loyaltyTierId == null"
+            @on-change="onChangeLanguage"
+        />
+    </template>
+    {% endblock %}
+
+    {% block sw_loyalty_tier_detail_actions %}
+    <template #smart-bar-actions>
+        {% block sw_loyalty_tier_detail_actions_cancel %}
+        <mt-button
+            v-tooltip.bottom="tooltipCancel"
+            class="sw-loyalty-tier-detail__cancel"
+            variant="secondary"
+            size="default"
+            @click="onCancel"
+        >
+            {{ $t('global.default.cancel') }}
+        </mt-button>
+        {% endblock %}
+
+        {% block sw_loyalty_tier_detail_actions_save %}
+        <sw-button-process
+            v-model:process-success="isSaveSuccessful"
+            v-tooltip.bottom="tooltipSave"
+            class="sw-loyalty-tier-detail__save"
+            variant="primary"
+            :is-loading="isLoading"
+            :disabled="!allowSave || undefined"
+            @click="onSave"
+        >
+            {{ $t('global.default.save') }}
+        </sw-button-process>
+        {% endblock %}
+    </template>
+    {% endblock %}
+
+    {% block sw_loyalty_tier_detail_cardview %}
+    <template #content>
+        <sw-card-view>
+            <sw-skeleton v-if="isLoading" />
+
+            <template v-else>
+                {% block sw_loyalty_tier_detail_content_language_info %}
+                <sw-language-info :entity-description="entityDescription" />
+                {% endblock %}
+
+                {% block sw_loyalty_tier_detail_content_card %}
+                <mt-card
+                    :is-loading="isLoading"
+                    :title="$t('sw-loyalty.detail.cardTitle')"
+                    position-identifier="sw-loyalty-tier-detail-content"
+                >
+                    <template v-if="!isLoading">
+                        <!-- eslint-disable sw-deprecation-rules/no-twigjs-blocks,vue/attributes-order -->
+                        <sw-container
+                            columns="repeat(2, minmax(250px, 1fr))"
+                            gap="0px 30px"
+                        >
+                            {% block sw_loyalty_tier_detail_content_card_name %}
+                            <mt-text-field
+                                v-model="loyaltyTier.name"
+                                name="sw-field--loyaltyTier-name"
+                                class="sw-loyalty-tier-detail__name"
+                                required
+                                validation="required"
+                                :label="$t('sw-loyalty.detail.fieldNameLabel')"
+                                :error="loyaltyTierNameError"
+                                :placeholder="placeholder(loyaltyTier, 'name', $t('sw-loyalty.detail.placeholderName'))"
+                                :disabled="!acl.can('loyalty.editor') || undefined"
+                            />
+                            {% endblock %}
+
+                            {% block sw_loyalty_tier_detail_content_card_technical_name %}
+                            <mt-text-field
+                                v-model="loyaltyTier.technicalName"
+                                name="sw-field--loyaltyTier-technicalName"
+                                class="sw-loyalty-tier-detail__technical-name"
+                                required
+                                validation="required"
+                                :label="$t('sw-loyalty.detail.fieldTechnicalNameLabel')"
+                                :error="loyaltyTierTechnicalNameError"
+                                :placeholder="$t('sw-loyalty.detail.placeholderTechnicalName')"
+                                :disabled="!acl.can('loyalty.editor') || undefined"
+                            />
+                            {% endblock %}
+
+                            {% block sw_loyalty_tier_detail_content_card_level %}
+                            <mt-number-field
+                                v-model="loyaltyTier.level"
+                                name="sw-field--loyaltyTier-level"
+                                class="sw-loyalty-tier-detail__level"
+                                number-type="int"
+                                required
+                                validation="required"
+                                :label="$t('sw-loyalty.detail.fieldLevelLabel')"
+                                :error="loyaltyTierLevelError"
+                                :disabled="!acl.can('loyalty.editor') || undefined"
+                            />
+                            {% endblock %}
+
+                            {% block sw_loyalty_tier_detail_content_card_min_growth_value %}
+                            <mt-number-field
+                                v-model="loyaltyTier.minGrowthValue"
+                                name="sw-field--loyaltyTier-minGrowthValue"
+                                class="sw-loyalty-tier-detail__min-growth-value"
+                                number-type="int"
+                                :label="$t('sw-loyalty.detail.fieldMinGrowthValueLabel')"
+                                :disabled="!acl.can('loyalty.editor') || undefined"
+                            />
+                            {% endblock %}
+
+                            {% block sw_loyalty_tier_detail_content_card_points_multiplier %}
+                            <mt-number-field
+                                v-model="loyaltyTier.pointsMultiplier"
+                                name="sw-field--loyaltyTier-pointsMultiplier"
+                                class="sw-loyalty-tier-detail__points-multiplier"
+                                number-type="float"
+                                :label="$t('sw-loyalty.detail.fieldPointsMultiplierLabel')"
+                                :disabled="!acl.can('loyalty.editor') || undefined"
+                            />
+                            {% endblock %}
+
+                            {% block sw_loyalty_tier_detail_content_card_discount_percent %}
+                            <mt-number-field
+                                v-model="loyaltyTier.discountPercent"
+                                name="sw-field--loyaltyTier-discountPercent"
+                                class="sw-loyalty-tier-detail__discount-percent"
+                                number-type="float"
+                                :label="$t('sw-loyalty.detail.fieldDiscountPercentLabel')"
+                                :disabled="!acl.can('loyalty.editor') || undefined"
+                            />
+                            {% endblock %}
+
+                            {% block sw_loyalty_tier_detail_content_card_customer_group %}
+                            <sw-entity-single-select
+                                v-model:value="loyaltyTier.customerGroupId"
+                                class="sw-loyalty-tier-detail__customer-group"
+                                entity="customer_group"
+                                label-property="name"
+                                show-clearable-button
+                                :label="$t('sw-loyalty.detail.fieldCustomerGroupLabel')"
+                                :disabled="!acl.can('loyalty.editor') || undefined"
+                            />
+                            {% endblock %}
+
+                            {% block sw_loyalty_tier_detail_content_card_free_shipping %}
+                            <mt-switch
+                                v-model="loyaltyTier.freeShipping"
+                                name="sw-field--loyaltyTier-freeShipping"
+                                class="sw-loyalty-tier-detail__free-shipping"
+                                :label="$t('sw-loyalty.detail.fieldFreeShippingLabel')"
+                                :disabled="!acl.can('loyalty.editor') || undefined"
+                            />
+                            {% endblock %}
+
+                            {% block sw_loyalty_tier_detail_content_card_active %}
+                            <mt-switch
+                                v-model="loyaltyTier.active"
+                                name="sw-field--loyaltyTier-active"
+                                class="sw-loyalty-tier-detail__active"
+                                :label="$t('sw-loyalty.detail.fieldActiveLabel')"
+                                :disabled="!acl.can('loyalty.editor') || undefined"
+                            />
+                            {% endblock %}
+                        </sw-container>
+                        <!-- eslint-enable sw-deprecation-rules/no-twigjs-blocks,vue/attributes-order -->
+
+                        {% block sw_loyalty_tier_detail_content_card_description %}
+                        <mt-textarea
+                            v-model="loyaltyTier.description"
+                            name="sw-field--loyaltyTier-description"
+                            class="sw-loyalty-tier-detail__description"
+                            :label="$t('sw-loyalty.detail.fieldDescriptionLabel')"
+                            :disabled="!acl.can('loyalty.editor') || undefined"
+                        />
+                        {% endblock %}
+                    </template>
+                </mt-card>
+                {% endblock %}
+            </template>
+        </sw-card-view>
+    </template>
+    {% endblock %}
+
+</sw-page>
+{% endblock %}

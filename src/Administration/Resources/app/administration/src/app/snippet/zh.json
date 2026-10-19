@@ -913,7 +913,7 @@
         "zipCodeWildcardPlaceholder": "使用 \"*\" 作为通配符 ...",
         "customerBirthdayRule": "客户生日",
         "customerCreatedByAdminRule": "管理员创建的客户",
-        "customerSalutationRule": "客户称谓",
+        "customerSalutationRule": "客户称呼",
         "lineItemPropertyValueRule": "带属性规格的项目",
         "lineItemVariantValueRule": "带变体规格的项目"
       }
@@ -1081,7 +1081,7 @@
       "media_thumbnail": "缩略图 | 缩略图",
       "media_thumbnail_size": "缩略图尺寸 | 缩略图尺寸",
       "newsletter_recipient": "邮件订阅者",
-      "number_range": "编号范围 | 编号范围",
+      "number_range": "编号格式 | 编号格式",
       "order": "订单 | 订单",
       "order_address": "地址 | 地址",
       "order_delivery": "配送 | 配送",
@@ -1090,6 +1090,9 @@
       "order_transaction": "交易 | 交易",
       "order_transaction_state": "支付状态 | 支付状态",
       "payment_method": "支付方式 | 支付方式",
+      "payment_order": "支付订单 | 支付订单",
+      "payment_refund": "退款订单 | 退款订单",
+      "payment_transfer": "打款单 | 打款单",
       "privacy": "隐私政策",
       "plugin_manager": "插件",
       "product": "商品 | 商品",
@@ -1107,7 +1110,7 @@
       "rule_condition": "条件 | 条件",
       "sales_channel": "销售渠道 | 销售渠道",
       "sales_channel_type": "销售渠道类型 | 销售渠道类型",
-      "salutation": "称谓 | 称谓",
+      "salutation": "称呼 | 称呼",
       "seo_url": "SEO URL | SEO URL",
       "shipping_method": "配送方式 | 配送方式",
       "snippet": "文本模块 | 文本模块",
@@ -1132,7 +1135,10 @@
       "module": "模块",
       "frequently_used": "常用",
       "recently_searched": "最近搜索",
-      "flow_sequence": "流程"
+      "flow_sequence": "流程",
+      "sms_gateway": "短信网关 | 短信网关",
+      "sms_template": "短信模板 | 短信模板",
+      "sms_delivery": "发送记录 | 发送记录"
     },
     "day-of-week": {
       "monday": "星期一",

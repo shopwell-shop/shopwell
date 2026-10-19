@@ -16,10 +16,12 @@ use Shopwell\Core\Checkout\Customer\SalesChannel\ListAddressRoute;
 use Shopwell\Core\Checkout\Customer\SalesChannel\LoadWishlistRoute;
 use Shopwell\Core\Checkout\Customer\Validation\AddressValidationFactory;
 use Shopwell\Core\Checkout\Gateway\SalesChannel\CheckoutGatewayRoute;
+use Shopwell\Core\Checkout\Loyalty\SalesChannel\LoyaltyRoute;
 use Shopwell\Core\Checkout\Order\SalesChannel\OrderRoute;
 use Shopwell\Core\Checkout\Order\SalesChannel\OrderService;
 use Shopwell\Core\Checkout\Payment\SalesChannel\PaymentMethodRoute;
 use Shopwell\Core\Checkout\Shipping\SalesChannel\ShippingMethodRoute;
+use Shopwell\Core\Checkout\Wallet\SalesChannel\WalletRoute;
 use Shopwell\Core\Content\Category\SalesChannel\CategoryRoute;
 use Shopwell\Core\Content\Category\Service\CategoryBreadcrumbBuilder;
 use Shopwell\Core\Content\Category\Service\NavigationLoader;
@@ -53,6 +55,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Cache\EntityCacheKeyGenerator;
 use Shopwell\Core\Framework\Event\BeforeSendResponseEvent;
 use Shopwell\Core\Framework\Routing\MaintenanceModeResolver as CoreMaintenanceModeResolver;
 use Shopwell\Core\Framework\Routing\RequestTransformerInterface;
+use Shopwell\Core\Framework\Sso\Service\OAuth2LoginService;
 use Shopwell\Core\Framework\Validation\DataValidator;
 use Shopwell\Core\Maintenance\SalesChannel\Service\SalesChannelCreator;
 use Shopwell\Core\System\Country\SalesChannel\CountryCityRoute;
@@ -126,12 +129,15 @@ use Shopwell\Storefront\Framework\Twig\TwigAppVariable;
 use Shopwell\Storefront\Framework\Twig\TwigDateRequestListener;
 use Shopwell\Storefront\Page\Account\CustomerGroupRegistration\CustomerGroupRegistrationPageLoader;
 use Shopwell\Storefront\Page\Account\Login\AccountLoginPageLoader;
+use Shopwell\Storefront\Page\Account\Login\OAuth2LoginPageSubscriber;
+use Shopwell\Storefront\Page\Account\Loyalty\AccountLoyaltyPageLoader;
 use Shopwell\Storefront\Page\Account\Order\AccountEditOrderPageLoader;
 use Shopwell\Storefront\Page\Account\Order\AccountOrderDetailPageLoader;
 use Shopwell\Storefront\Page\Account\Order\AccountOrderPageLoader;
 use Shopwell\Storefront\Page\Account\Overview\AccountOverviewPageLoader;
 use Shopwell\Storefront\Page\Account\Profile\AccountProfilePageLoader;
 use Shopwell\Storefront\Page\Account\RecoverPassword\AccountRecoverPasswordPageLoader;
+use Shopwell\Storefront\Page\Account\Wallet\AccountWalletPageLoader;
 use Shopwell\Storefront\Page\Address\Detail\AddressDetailPageLoader;
 use Shopwell\Storefront\Page\Address\Listing\AddressListingPageLoader;
 use Shopwell\Storefront\Page\Checkout\Cart\CheckoutCartPageLoader;
@@ -617,6 +623,23 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(Translator::class),
         ]);
 
+    $services->set(AccountLoyaltyPageLoader::class)
+        ->args([
+            service(GenericPageLoader::class),
+            service('event_dispatcher'),
+            service(LoyaltyRoute::class),
+            service(Translator::class),
+        ]);
+
+    $services->set(AccountWalletPageLoader::class)
+        ->args([
+            service(GenericPageLoader::class),
+            service('event_dispatcher'),
+            service(WalletRoute::class),
+            service(CurrencyRoute::class),
+            service(Translator::class),
+        ]);
+
     $services->set(AccountOverviewPageLoader::class)
         ->args([
             service(GenericPageLoader::class),
@@ -672,6 +695,12 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(AbstractSalutationsSorter::class),
             service(Translator::class),
         ]);
+
+    $services->set(OAuth2LoginPageSubscriber::class)
+        ->args([
+            service(OAuth2LoginService::class),
+        ])
+        ->tag('kernel.event_subscriber');
 
     $services->set(AccountRecoverPasswordPageLoader::class)
         ->args([

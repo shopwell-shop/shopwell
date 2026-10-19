@@ -14,6 +14,7 @@
             "tabContent": "Content",
             "tabAutomation": "Automation",
             "tabPlugins": "Extensions",
+            "tabPayment": "Payment",
             "textSettingRenameBanner": "The <b>Scale units</b> settings have been renamed to <b>Product units</b>.",
             "search": {
                 "placeholder": "Find settings...",

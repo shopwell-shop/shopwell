@@ -1,0 +1,11 @@
+.sw-settings-sms-delivery-list__toolbar {
+    display: flex;
+    flex: 1 1 auto;
+    justify-content: flex-end;
+}
+
+.sw-settings-sms-delivery-list__toolbar .sw-settings-sms-delivery-list__status-filter {
+    width: 240px;
+    min-width: 240px;
+    flex: 0 0 240px;
+}

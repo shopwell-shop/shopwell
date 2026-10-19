@@ -22,4 +22,8 @@ return static function (RoutingConfigurator $routes): void {
     $routes->import('../../Cart/SalesChannel/**/*Route.php', 'attribute');
     $routes->import('../../DocumentV2/SalesChannel/**/*Route.php', 'attribute');
     $routes->import('../../Gateway/SalesChannel/**/*Route.php', 'attribute');
+    $routes->import('../../Loyalty/**/*Controller.php', 'attribute');
+    $routes->import('../../Wallet/**/*Controller.php', 'attribute');
+    $routes->import('../../Loyalty/SalesChannel/**/*Route.php', 'attribute');
+    $routes->import('../../Wallet/SalesChannel/**/*Route.php', 'attribute');
 };

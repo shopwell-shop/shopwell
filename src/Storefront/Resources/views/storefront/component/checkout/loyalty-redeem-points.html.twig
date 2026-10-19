@@ -1,0 +1,49 @@
+{% block component_checkout_loyalty_redeem_points %}
+    {% if context.customer and not context.customer.guest %}
+        {% block component_checkout_loyalty_redeem_points_form %}
+            <div class="checkout-aside-action checkout-aside-loyalty"
+                 data-loyalty-redeem-points="true"
+                 data-loyalty-redeem-points-options="{{ {
+                     infoUrl: path('frontend.account.loyalty.json'),
+                     redeemUrl: path('frontend.account.loyalty.redeem')
+                 }|json_encode }}">
+                {% block component_checkout_loyalty_redeem_points_label %}
+                    <label class="mb-1" for="loyaltyRedeemPointsInput">
+                        {{ 'checkout.loyaltyRedeemLabel'|trans|sw_sanitize }}
+                    </label>
+                {% endblock %}
+
+                {% block component_checkout_loyalty_redeem_points_balance %}
+                    <p class="checkout-aside-loyalty-balance mb-2"
+                       data-loyalty-redeem-points-balance>
+                        {{ 'checkout.loyaltyBalanceLoading'|trans|sw_sanitize }}
+                    </p>
+                {% endblock %}
+
+                {% block component_checkout_loyalty_redeem_points_input_group %}
+                    <div class="input-group">
+                        {% block component_checkout_loyalty_redeem_points_input %}
+                            <input type="number"
+                                   min="0"
+                                   step="1"
+                                   name="points"
+                                   class="form-control"
+                                   id="loyaltyRedeemPointsInput"
+                                   data-loyalty-redeem-points-input
+                                   placeholder="{{ 'checkout.loyaltyRedeemPlaceholder'|trans|striptags }}">
+                        {% endblock %}
+
+                        {% block component_checkout_loyalty_redeem_points_submit %}
+                            <button type="button"
+                                    class="btn btn-outline-secondary checkout-aside-loyalty-button"
+                                    data-loyalty-redeem-points-submit
+                                    aria-labelledby="loyaltyRedeemPointsInput">
+                                {{ 'checkout.loyaltyRedeemApply'|trans|sw_sanitize }}
+                            </button>
+                        {% endblock %}
+                    </div>
+                {% endblock %}
+            </div>
+        {% endblock %}
+    {% endif %}
+{% endblock %}

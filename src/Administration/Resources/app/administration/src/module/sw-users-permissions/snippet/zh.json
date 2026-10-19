@@ -145,6 +145,7 @@
         "labelRolesPermissionsCard": "角色与权限",
         "labelName": "姓名",
         "labelEmail": "邮箱地址",
+        "labelPhoneNumber": "手机号",
         "errorEmailUsed": "该邮箱地址已被使用。",
         "errorUsernameUsed": "该用户名已被使用。",
         "labelUsername": "用户名",

@@ -1,0 +1,126 @@
+{
+  "sw-loyalty": {
+    "general": {
+      "mainMenuItemGeneral": "Loyalty tiers",
+      "description": "Manage loyalty tiers that award points and grant benefits.",
+      "buttonCreate": "Add loyalty tier",
+      "placeholderSearchBar": "Search loyalty tiers..."
+    },
+    "list": {
+      "columnName": "Name",
+      "columnLevel": "Level",
+      "columnMinGrowthValue": "Min. growth value",
+      "columnPointsMultiplier": "Points multiplier",
+      "columnActive": "Active"
+    },
+    "detail": {
+      "cardTitle": "Loyalty tier",
+      "fieldNameLabel": "Name",
+      "fieldTechnicalNameLabel": "Technical name",
+      "fieldLevelLabel": "Level",
+      "fieldMinGrowthValueLabel": "Min. growth value",
+      "fieldPointsMultiplierLabel": "Points multiplier",
+      "fieldDiscountPercentLabel": "Discount (%)",
+      "fieldFreeShippingLabel": "Free shipping",
+      "fieldActiveLabel": "Active",
+      "fieldCustomerGroupLabel": "Customer group",
+      "fieldDescriptionLabel": "Description",
+      "placeholderName": "Enter a name...",
+      "placeholderTechnicalName": "Enter a technical name...",
+      "placeholderNewLoyaltyTier": "New loyalty tier",
+      "notificationErrorMessage": "An error occurred while saving the loyalty tier.",
+      "messageSaveSuccess": "The loyalty tier has been saved."
+    },
+    "plan": {
+      "general": {
+        "mainMenuItemGeneral": "Membership plans",
+        "buttonCreate": "Create plan",
+        "placeholderSearchBar": "Search plans..."
+      },
+      "list": {
+        "columnName": "Plan",
+        "columnTier": "Tier",
+        "columnPrice": "Price",
+        "columnDurationDays": "Duration",
+        "columnActive": "Active",
+        "durationDaysValue": "{days} days",
+        "emptyStateHeadline": "No membership plans yet",
+        "emptyStateDescription": "Create a plan so customers can buy a membership in the storefront."
+      },
+      "detail": {
+        "cardTitle": "Membership plan",
+        "fieldNameLabel": "Plan name",
+        "fieldTechnicalNameLabel": "Technical name",
+        "fieldTierLabel": "Membership tier",
+        "fieldTierHelpText": "The tier the customer holds after buying this plan.",
+        "fieldCurrencyLabel": "Currency",
+        "fieldPriceLabel": "Price",
+        "fieldDurationDaysLabel": "Duration (days)",
+        "fieldActiveLabel": "Active",
+        "fieldDescriptionLabel": "Description",
+        "placeholderName": "Enter a plan name...",
+        "placeholderTechnicalName": "Enter a technical name...",
+        "placeholderNewPlan": "New membership plan",
+        "notificationErrorMessage": "The membership plan could not be saved.",
+        "messageSaveSuccess": "The membership plan has been saved."
+      }
+    },
+    "order": {
+      "general": {
+        "mainMenuItemGeneral": "Membership orders"
+      },
+      "list": {
+        "cardTitle": "Membership orders",
+        "placeholderSearchBar": "Search membership orders...",
+        "columnCustomer": "Customer",
+        "columnPlan": "Plan",
+        "columnAmount": "Amount",
+        "columnState": "State",
+        "columnPaidAt": "Paid at",
+        "columnCreatedAt": "Created at",
+        "labelFilterState": "State",
+        "filterStateAll": "All states",
+        "emptyStateHeadline": "No membership orders yet"
+      },
+      "state": {
+        "open": "Awaiting payment",
+        "activated": "Active",
+        "failed": "Failed"
+      }
+    },
+    "topUp": {
+      "general": {
+        "mainMenuItemGeneral": "Wallet top ups"
+      },
+      "list": {
+        "cardTitle": "Wallet top ups",
+        "placeholderSearchBar": "Search top ups...",
+        "columnCustomer": "Customer",
+        "columnAmount": "Amount",
+        "columnState": "State",
+        "columnChannel": "Channel",
+        "columnCreatedAt": "Created at",
+        "columnCreditedAt": "Credited at",
+        "labelFilterState": "State",
+        "filterStateAll": "All states",
+        "emptyStateHeadline": "No top ups yet"
+      },
+      "state": {
+        "open": "Awaiting payment",
+        "paid": "Paid",
+        "credited": "Credited",
+        "failed": "Failed"
+      }
+    }
+  },
+  "sw-privileges": {
+    "permissions": {
+      "loyalty": {
+        "label": "Loyalty"
+      },
+      "wallet": {
+        "label": "Customer wallet"
+      }
+    }
+  }
+}

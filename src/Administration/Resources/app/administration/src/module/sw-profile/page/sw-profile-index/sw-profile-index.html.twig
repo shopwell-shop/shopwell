@@ -70,6 +70,15 @@
                     >
                         {{ $t('sw-profile.tabPrivacyPreferences.title') }}
                     </sw-tabs-item>
+
+                    {% block sw_profile_index_tabs_item_oauth2_login %}
+                    <sw-tabs-item
+                        :route="{ name: 'sw.profile.index.oauth2Login' }"
+                        :title="$t('sw-profile.tabOAuth2Login.title')"
+                    >
+                        {{ $t('sw-profile.tabOAuth2Login.title') }}
+                    </sw-tabs-item>
+                    {% endblock %}
                 </sw-tabs>
             </template>
             {% endblock %}

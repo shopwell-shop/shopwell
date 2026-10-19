@@ -1,0 +1,478 @@
+{% block sw_settings_payment_gateway_detail %}
+<sw-page class="sw-settings-payment-gateway-detail">
+
+    {% block sw_settings_payment_gateway_detail_smart_bar_header %}
+    <template #smart-bar-header>
+        {% block sw_settings_payment_gateway_detail_smart_bar_header_title %}
+        <h2>
+            {% block sw_settings_payment_gateway_detail_smart_bar_header_title_text %}
+            {{ $t('sw-settings.index.title') }}
+            <mt-icon
+                name="regular-chevron-right-xs"
+                size="var(--scale-size-12)"
+            />
+            <router-link :to="{ name: 'sw.settings.payment.gateway.list' }">
+                {{ $t('sw-settings-payment-gateway.general.mainMenuItemGeneral') }}
+            </router-link>
+            <mt-icon
+                name="regular-chevron-right-xs"
+                size="var(--scale-size-12)"
+            />
+            {{ isNew ? $t('sw-settings-payment-gateway.detail.createTitle') : pageTitle }}
+            {% endblock %}
+        </h2>
+        {% endblock %}
+    </template>
+    {% endblock %}
+
+    {% block sw_settings_payment_gateway_detail_smart_bar_actions %}
+    <template #smart-bar-actions>
+        {% block sw_settings_payment_gateway_detail_smart_bar_actions_delete %}
+        <mt-button
+            v-if="!isNew"
+            class="sw-settings-payment-gateway-detail__delete-action"
+            variant="critical"
+            ghost
+            size="default"
+            :disabled="isLoading || isSaving || !canDelete || undefined"
+            @click="onOpenDeleteModal"
+        >
+            {{ $t('global.default.delete') }}
+        </mt-button>
+        {% endblock %}
+
+        {% block sw_settings_payment_gateway_detail_smart_bar_actions_save %}
+        <mt-button
+            class="sw-settings-payment-gateway-detail__save-action"
+            variant="primary"
+            size="default"
+            :is-loading="isSaving"
+            :disabled="isLoading || isSaving || (isNew ? !canCreate : !canEdit) || undefined"
+            @click="onSave"
+        >
+            {{ $t('global.default.save') }}
+        </mt-button>
+        {% endblock %}
+    </template>
+    {% endblock %}
+
+    {% block sw_settings_payment_gateway_detail_content %}
+    <template #content>
+        <sw-card-view>
+            {% block sw_settings_payment_gateway_detail_content_loading %}
+            <template v-if="isLoading">
+                <sw-skeleton />
+                <sw-skeleton />
+            </template>
+            {% endblock %}
+
+            {% block sw_settings_payment_gateway_detail_content_form %}
+            <template v-else-if="app">
+                {% block sw_settings_payment_gateway_detail_content_general %}
+                <mt-card
+                    position-identifier="sw-settings-payment-gateway-detail-general"
+                    :title="$t('sw-settings-payment-gateway.detail.cardGeneralTitle')"
+                    :subtitle="$t('sw-settings-payment-gateway.detail.cardGeneralSubtitle')"
+                >
+                    <sw-container
+                        class="sw-settings-payment-gateway-detail__grid"
+                        columns="1fr 1fr"
+                        gap="0px 30px"
+                    >
+                        {% block sw_settings_payment_gateway_detail_content_technical_name %}
+                        <mt-text-field
+                            v-model="app.technicalName"
+                            name="sw-field--payment-app-technical-name"
+                            :label="$t('sw-settings-payment-gateway.detail.labelTechnicalName')"
+                            :help-text="$t('sw-settings-payment-gateway.detail.labelTechnicalNameHelpText')"
+                            required
+                            :disabled="!canEdit || undefined"
+                        />
+                        {% endblock %}
+
+                        {% block sw_settings_payment_gateway_detail_content_name %}
+                        <mt-text-field
+                            v-model="app.name"
+                            name="sw-field--payment-app-name"
+                            :label="$t('sw-settings-payment-gateway.detail.labelName')"
+                            :disabled="!canEdit || undefined"
+                        />
+                        {% endblock %}
+                    </sw-container>
+
+                    {% block sw_settings_payment_gateway_detail_content_active %}
+                    <mt-switch
+                        v-model="app.active"
+                        class="sw-settings-payment-gateway-detail__active"
+                        bordered
+                        :disabled="!canEdit || undefined"
+                        :label="$t('sw-settings-payment-gateway.detail.labelActive')"
+                        :help-text="$t('sw-settings-payment-gateway.detail.labelActiveHelpText')"
+                    />
+                    {% endblock %}
+                </mt-card>
+                {% endblock %}
+
+                {% block sw_settings_payment_gateway_detail_content_endpoint %}
+                <mt-card
+                    position-identifier="sw-settings-payment-gateway-detail-endpoint"
+                    :title="$t('sw-settings-payment-gateway.detail.cardEndpointTitle')"
+                    :subtitle="$t('sw-settings-payment-gateway.detail.cardEndpointSubtitle')"
+                >
+                    <sw-container
+                        class="sw-settings-payment-gateway-detail__grid"
+                        columns="1fr 1fr"
+                        gap="0px 30px"
+                    >
+                        {% block sw_settings_payment_gateway_detail_content_notify_url %}
+                        <mt-url-field
+                            v-model="app.notifyUrl"
+                            name="sw-field--payment-app-notify-url"
+                            :label="$t('sw-settings-payment-gateway.detail.labelNotifyUrl')"
+                            :disabled="!canEdit || undefined"
+                        />
+                        {% endblock %}
+
+                        {% block sw_settings_payment_gateway_detail_content_return_url %}
+                        <mt-url-field
+                            v-model="app.returnUrl"
+                            name="sw-field--payment-app-return-url"
+                            :label="$t('sw-settings-payment-gateway.detail.labelReturnUrl')"
+                            :disabled="!canEdit || undefined"
+                        />
+                        {% endblock %}
+
+                        {% block sw_settings_payment_gateway_detail_content_rate_limit %}
+                        <mt-number-field
+                            v-model="app.rateLimit"
+                            name="sw-field--payment-app-rate-limit"
+                            number-type="int"
+                            :min="0"
+                            :label="$t('sw-settings-payment-gateway.detail.labelRateLimit')"
+                            :help-text="$t('sw-settings-payment-gateway.detail.labelRateLimitHelpText')"
+                            :disabled="!canEdit || undefined"
+                        />
+                        {% endblock %}
+                    </sw-container>
+
+                    {% block sw_settings_payment_gateway_detail_content_allowed_ips %}
+                    <mt-textarea
+                        v-model="allowedIpsInput"
+                        class="sw-settings-payment-gateway-detail__allowed-ips"
+                        name="sw-field--payment-app-allowed-ips"
+                        :label="$t('sw-settings-payment-gateway.detail.labelAllowedIps')"
+                        :placeholder="$t('sw-settings-payment-gateway.detail.placeholderAllowedIps')"
+                        :help-text="$t('sw-settings-payment-gateway.detail.labelAllowedIpsHelpText')"
+                        :disabled="!canEdit || undefined"
+                    />
+                    {% endblock %}
+                </mt-card>
+                {% endblock %}
+
+                {% block sw_settings_payment_gateway_detail_content_secret %}
+                <mt-card
+                    position-identifier="sw-settings-payment-gateway-detail-secret"
+                    :title="$t('sw-settings-payment-gateway.detail.cardSecretTitle')"
+                    :subtitle="$t('sw-settings-payment-gateway.detail.cardSecretSubtitle')"
+                >
+                    <template #headerRight>
+                        <mt-badge
+                            v-if="app.hasSecret"
+                            variant="positive"
+                        >
+                            {{ $t('sw-settings-payment-gateway.detail.secretConfigured') }}
+                        </mt-badge>
+                    </template>
+
+                    {% block sw_settings_payment_gateway_detail_content_app_secret %}
+                    <mt-password-field
+                        v-model="appSecretInput"
+                        class="sw-settings-payment-gateway-detail__secret"
+                        name="sw-field--payment-app-secret"
+                        :label="$t('sw-settings-payment-gateway.detail.labelAppSecret')"
+                        :help-text="$t('sw-settings-payment-gateway.detail.labelAppSecretHelpText')"
+                        :disabled="!canEdit || undefined"
+                    />
+                    {% endblock %}
+
+                    {% block sw_settings_payment_gateway_detail_content_app_secret_generate %}
+                    <mt-button
+                        class="sw-settings-payment-gateway-detail__secret-generate"
+                        variant="secondary"
+                        size="small"
+                        :disabled="!canEdit || undefined"
+                        @click="onGenerateSecret"
+                    >
+                        {{ $t('sw-settings-payment-gateway.detail.buttonGenerateSecret') }}
+                    </mt-button>
+                    {% endblock %}
+
+                    {% block sw_settings_payment_gateway_detail_content_secret_hint %}
+                    <mt-banner
+                        class="sw-settings-payment-gateway-detail__secret-hint"
+                        variant="attention"
+                    >
+                        {{ $t('sw-settings-payment-gateway.detail.secretHint') }}
+                    </mt-banner>
+                    {% endblock %}
+                </mt-card>
+                {% endblock %}
+
+                {% block sw_settings_payment_gateway_detail_content_providers_header %}
+                <div class="sw-settings-payment-gateway-detail__section">
+                    <h3 class="sw-settings-payment-gateway-detail__section-title">
+                        {{ $t('sw-settings-payment-gateway.detail.sectionProvidersTitle') }}
+                    </h3>
+                    <p class="sw-settings-payment-gateway-detail__section-subtitle">
+                        {{ $t('sw-settings-payment-gateway.detail.sectionProvidersSubtitle') }}
+                    </p>
+                </div>
+                {% endblock %}
+
+                {% block sw_settings_payment_gateway_detail_content_provider %}
+                <mt-card
+                    v-for="provider in providers"
+                    :key="provider.technicalName"
+                    class="sw-settings-payment-gateway-detail__provider"
+                    position-identifier="sw-settings-payment-gateway-detail-provider"
+                    :title="provider.label"
+                >
+                    <template #headerRight>
+                        {% block sw_settings_payment_gateway_detail_content_provider_authorized %}
+                        <mt-badge
+                            v-if="provider.enabled"
+                            class="sw-settings-payment-gateway-detail__provider-authorized"
+                            variant="positive"
+                        >
+                            {{ $t('sw-settings-payment-gateway.detail.providerAuthorized') }}
+                        </mt-badge>
+                        {% endblock %}
+
+                        {% block sw_settings_payment_gateway_detail_content_provider_credentials %}
+                        <mt-badge
+                            v-if="provider.mode === 'own' && provider.hasCredentials"
+                            class="sw-settings-payment-gateway-detail__provider-credentials"
+                            variant="info"
+                        >
+                            {{ $t('sw-settings-payment-gateway.detail.secretConfigured') }}
+                        </mt-badge>
+                        {% endblock %}
+                    </template>
+
+                    {% block sw_settings_payment_gateway_detail_content_provider_enabled %}
+                    <mt-switch
+                        v-model="provider.enabled"
+                        class="sw-settings-payment-gateway-detail__provider-enabled"
+                        bordered
+                        :disabled="!canEdit || undefined"
+                        :label="$t('sw-settings-payment-gateway.detail.labelProviderEnabled')"
+                        :help-text="$t('sw-settings-payment-gateway.detail.labelProviderEnabledHelpText')"
+                    />
+                    {% endblock %}
+
+                    {% block sw_settings_payment_gateway_detail_content_provider_mode %}
+                    <sw-container
+                        class="sw-settings-payment-gateway-detail__grid"
+                        columns="1fr 1fr"
+                        gap="0px 30px"
+                    >
+                        <mt-select
+                            v-model="provider.mode"
+                            class="sw-settings-payment-gateway-detail__provider-mode"
+                            :name="`sw-field--payment-app-provider-${provider.technicalName}-mode`"
+                            :label="$t('sw-settings-payment-gateway.detail.labelProviderMode')"
+                            :help-text="$t('sw-settings-payment-gateway.detail.labelProviderModeHelpText')"
+                            :options="modeOptions()"
+                            :disabled="!canEdit || !provider.enabled || undefined"
+                        />
+                    </sw-container>
+                    {% endblock %}
+
+                    {% block sw_settings_payment_gateway_detail_content_provider_own_credentials %}
+                    <sw-container
+                        v-if="provider.enabled && provider.mode === 'own'"
+                        class="sw-settings-payment-gateway-detail__grid"
+                        columns="1fr 1fr"
+                        gap="0px 30px"
+                    >
+                        <sw-payment-config-field
+                            v-for="field in provider.credentialFields"
+                            :key="field.name"
+                            v-model="provider.credentialInput[field.name]"
+                            class="sw-settings-payment-gateway-detail__field"
+                            :field="field"
+                            :disabled="!canEdit"
+                        />
+                    </sw-container>
+                    {% endblock %}
+
+                    {% block sw_settings_payment_gateway_detail_content_provider_channels %}
+                    <div class="sw-settings-payment-gateway-detail__channels">
+                        <h4 class="sw-settings-payment-gateway-detail__channels-title">
+                            {{ $t('sw-settings-payment-gateway.detail.providerChannelsTitle') }}
+                        </h4>
+
+                        {% block sw_settings_payment_gateway_detail_content_provider_channel %}
+                        <div
+                            v-for="channel in provider.channels"
+                            :key="channel.technicalName"
+                            class="sw-settings-payment-gateway-detail__channel"
+                        >
+                            {% block sw_settings_payment_gateway_detail_content_provider_channel_enabled %}
+                            <mt-switch
+                                v-model="channel.enabled"
+                                class="sw-settings-payment-gateway-detail__channel-enabled"
+                                :disabled="!canEdit || !provider.enabled || undefined"
+                                :label="channel.label"
+                            />
+                            {% endblock %}
+
+                            {% block sw_settings_payment_gateway_detail_content_provider_channel_meta %}
+                            <div class="sw-settings-payment-gateway-detail__channel-meta">
+                                <mt-badge
+                                    size="small"
+                                    variant="neutral"
+                                >
+                                    {{ flowLabel(channel.flow) }}
+                                </mt-badge>
+
+                                <span class="sw-settings-payment-gateway-detail__channel-meta-item">
+                                    <mt-icon
+                                        name="regular-money-bill"
+                                        size="var(--scale-size-14)"
+                                    />
+                                    {{ currencyList(channel) }}
+                                </span>
+
+                                <span class="sw-settings-payment-gateway-detail__channel-meta-item">
+                                    <mt-icon
+                                        name="regular-mobile"
+                                        size="var(--scale-size-14)"
+                                    />
+                                    {{ deviceList(channel) }}
+                                </span>
+
+                                <span
+                                    v-if="runtimeParamList(channel).length > 0"
+                                    class="sw-settings-payment-gateway-detail__channel-meta-item"
+                                >
+                                    <mt-icon
+                                        name="regular-key"
+                                        size="var(--scale-size-14)"
+                                    />
+                                    {{ runtimeParamList(channel).join(' / ') }}
+                                </span>
+                            </div>
+                            {% endblock %}
+
+                            {% block sw_settings_payment_gateway_detail_content_provider_channel_params %}
+                            <sw-container
+                                v-if="provider.mode === 'own' && channel.enabled && channel.paramFields.length > 0"
+                                class="sw-settings-payment-gateway-detail__grid"
+                                columns="1fr 1fr"
+                                gap="0px 30px"
+                            >
+                                <sw-payment-config-field
+                                    v-for="field in channel.paramFields"
+                                    :key="field.name"
+                                    v-model="channel.paramInput[field.name]"
+                                    class="sw-settings-payment-gateway-detail__field"
+                                    :field="field"
+                                    :disabled="!canEdit"
+                                />
+                            </sw-container>
+                            {% endblock %}
+                        </div>
+                        {% endblock %}
+                    </div>
+                    {% endblock %}
+                </mt-card>
+                {% endblock %}
+            </template>
+            {% endblock %}
+        </sw-card-view>
+
+        {% block sw_settings_payment_gateway_detail_secret_modal %}
+        <mt-modal-root
+            v-if="isSecretModalOpen"
+            is-open
+            @change="onSecretModalChange"
+        >
+            <mt-modal
+                width="s"
+                :title="$t('sw-settings-payment-gateway.detail.secretModalTitle')"
+            >
+                {% block sw_settings_payment_gateway_detail_secret_modal_content %}
+                <p class="sw-settings-payment-gateway-detail__secret-modal-message">
+                    {{ $t('sw-settings-payment-gateway.detail.secretModalMessage') }}
+                </p>
+
+                <pre class="sw-settings-payment-gateway-detail__secret-value">{{ generatedSecret }}</pre>
+                {% endblock %}
+
+                {% block sw_settings_payment_gateway_detail_secret_modal_footer %}
+                <template #footer>
+                    {% block sw_settings_payment_gateway_detail_secret_modal_footer_confirm %}
+                    <mt-modal-action
+                        as="mt-button"
+                        variant="primary"
+                        size="small"
+                        @click="onCloseSecretModal"
+                    >
+                        {{ $t('sw-settings-payment-gateway.detail.secretModalConfirm') }}
+                    </mt-modal-action>
+                    {% endblock %}
+                </template>
+                {% endblock %}
+            </mt-modal>
+        </mt-modal-root>
+        {% endblock %}
+
+        {% block sw_settings_payment_gateway_detail_delete_modal %}
+        <mt-modal-root
+            v-if="isDeleteModalOpen"
+            is-open
+            @change="onDeleteModalChange"
+        >
+            <mt-modal
+                width="s"
+                :title="$t('sw-settings-payment-gateway.detail.deleteModalTitle')"
+            >
+                {% block sw_settings_payment_gateway_detail_delete_modal_content %}
+                <p class="sw-settings-payment-gateway-detail__delete-modal-message">
+                    {{ $t('sw-settings-payment-gateway.detail.deleteModalMessage', { app: pageTitle }) }}
+                </p>
+                {% endblock %}
+
+                {% block sw_settings_payment_gateway_detail_delete_modal_footer %}
+                <template #footer>
+                    {% block sw_settings_payment_gateway_detail_delete_modal_footer_cancel %}
+                    <mt-modal-close
+                        as="mt-button"
+                        variant="secondary"
+                        size="small"
+                    >
+                        {{ $t('global.default.cancel') }}
+                    </mt-modal-close>
+                    {% endblock %}
+
+                    {% block sw_settings_payment_gateway_detail_delete_modal_footer_confirm %}
+                    <mt-modal-action
+                        as="mt-button"
+                        variant="critical"
+                        size="small"
+                        :is-loading="isDeleting"
+                        @click="onConfirmDelete"
+                    >
+                        {{ $t('global.default.delete') }}
+                    </mt-modal-action>
+                    {% endblock %}
+                </template>
+                {% endblock %}
+            </mt-modal>
+        </mt-modal-root>
+        {% endblock %}
+    </template>
+    {% endblock %}
+</sw-page>
+{% endblock %}

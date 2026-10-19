@@ -1,0 +1,25 @@
+# FrankenPHP configuration for Contena in traditional (non-worker) mode.
+#
+# Every request is executed in a fresh PHP context, just like PHP-FPM/CGI.
+# The request lifecycle stays identical to the classic setup, which matters
+# because public/index.php handles the installer redirect and the update
+# maintenance page with early `exit` calls that are only safe outside
+# worker mode.
+#
+# Usage:
+#   frankenphp run --config Caddyfile
+# (just like "symfony server:start", using the project's .env as-is)
+{
+	# Let php_server take precedence over static file handling
+	order php_server before file_server
+}
+
+:8000 {
+	root * public/
+
+	# Compress responses
+	encode zstd br gzip
+
+	# Traditional mode: a fresh PHP execution per request
+	php_server
+}

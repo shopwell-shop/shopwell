@@ -155,6 +155,25 @@
     },
     "tabPrivacyPreferences": {
       "title": "Privacy preferences"
+    },
+    "tabOAuth2Login": {
+      "title": "Third party login"
+    },
+    "oauth2Login": {
+      "title": "Third party login",
+      "subtitle": "Log in to the administration with an external account",
+      "description": "Link a third party account to log in to the administration with a single click.",
+      "emptyStateTitle": "No third party login channel",
+      "emptyState": "There is no third party login channel available for the administration, enable and configure one in the settings first.",
+      "linked": "Linked",
+      "notLinked": "Not linked",
+      "unbind": "Unlink",
+      "hint": "The link is created automatically the first time you log in with such an account. Only platforms that return a verified email address (e.g. Google) can be linked automatically, WeChat and the like can not.",
+      "removeModalTitle": "Unlink third party account",
+      "removeModalMessage": "Unlink \"{channel}\"? You have to log in with this platform once again to link it anew.",
+      "notificationLoadError": "The third party accounts could not be loaded.",
+      "notificationUnbindSuccess": "The third party account has been unlinked.",
+      "notificationUnbindError": "Unlinking the third party account failed."
     }
   },
   "sw-privileges": {

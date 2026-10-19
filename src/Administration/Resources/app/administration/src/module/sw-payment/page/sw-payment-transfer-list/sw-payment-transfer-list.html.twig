@@ -1,0 +1,134 @@
+{% block sw_payment_transfer_list %}
+<sw-page class="sw-payment-transfer-list">
+    {% block sw_payment_transfer_list_search_bar %}
+    <template #search-bar>
+        <sw-search-bar
+            initial-search-type="payment_transfer"
+            :initial-search="term"
+            @search="onSearch"
+        />
+    </template>
+    {% endblock %}
+
+    {% block sw_payment_transfer_list_smart_bar_header %}
+    <template #smart-bar-header>
+        {% block sw_payment_transfer_list_smart_bar_header_title %}
+        <h2>
+            {% block sw_payment_transfer_list_smart_bar_header_title_text %}
+            {{ $t('sw-payment.transfer.list.title') }}
+            {% endblock %}
+
+            {% block sw_payment_transfer_list_smart_bar_header_amount %}
+            <span
+                v-if="!isLoading"
+                class="sw-page__smart-bar-amount"
+            >
+                ({{ total }})
+            </span>
+            {% endblock %}
+        </h2>
+        {% endblock %}
+    </template>
+    {% endblock %}
+
+    {% block sw_payment_transfer_list_content %}
+    <template #content>
+        {% block sw_payment_transfer_list_content_inner %}
+        <div class="sw-payment-transfer-list__content">
+
+            {% block sw_payment_transfer_list_empty_state %}
+            <mt-empty-state
+                v-if="!isLoading && !total"
+                centered
+                :icon="$route.meta.$module.icon"
+                :headline="hasActiveSearchOrFilter ? $t('sw-empty-state.messageNoResultTitle') : $t('sw-payment.transfer.list.messageEmpty')"
+                :description="hasActiveSearchOrFilter ? $t('sw-empty-state.messageNoResultSubline') : $t('sw-payment.transfer.list.sublineEmpty')"
+            />
+            {% endblock %}
+
+            {% block sw_payment_transfer_list_grid %}
+            <sw-entity-listing
+                v-else-if="isLoading || transfers"
+                ref="listing"
+                class="sw-payment-transfer-list__grid"
+                identifier="sw-payment-transfer-list"
+                :data-source="transfers"
+                :columns="transferColumns"
+                :repository="transferRepository"
+                :sort-by="sortBy"
+                :sort-direction="sortDirection"
+                :is-loading="isLoading"
+                :full-page="true"
+                :show-selection="false"
+                :show-settings="true"
+                :disable-data-fetching="true"
+                :allow-inline-edit="false"
+                :allow-column-edit="true"
+                :allow-edit="false"
+                :allow-delete="false"
+                :allow-view="acl.can('payment_transfer.viewer') || undefined"
+                detail-route="sw.payment.transferDetail"
+                @page-change="onPageChange"
+                @column-sort="onSortColumn"
+            >
+                {% block sw_payment_transfer_list_grid_column_recipient %}
+                <template #column-recipientId="{ item }">
+                    {{ recipientLabel(item) }}
+                </template>
+                {% endblock %}
+
+                {% block sw_payment_transfer_list_grid_column_state %}
+                <template #column-statusId="{ item }">
+                    <mt-badge
+                        v-if="item.statusId"
+                        :variant="transferStateVariant(item.statusId)"
+                    >
+                        {{ transferStateLabel(item.statusId) }}
+                    </mt-badge>
+                </template>
+                {% endblock %}
+
+                {% block sw_payment_transfer_list_grid_column_amount %}
+                <template #column-amount="{ item }">
+                    {{ formatAmount(item.amount, item.currency) }}
+                </template>
+                {% endblock %}
+
+                {% block sw_payment_transfer_list_grid_column_created_at %}
+                <template #column-createdAt="{ item }">
+                    {{ formatDateOrDash(item.createdAt) }}
+                </template>
+                {% endblock %}
+            </sw-entity-listing>
+            {% endblock %}
+        </div>
+        {% endblock %}
+    </template>
+    {% endblock %}
+
+    {% block sw_payment_transfer_list_sidebar %}
+    <template #sidebar>
+        <sw-sidebar class="sw-payment-transfer-list__sidebar">
+            {% block sw_payment_transfer_list_sidebar_refresh %}
+            <sw-sidebar-item
+                icon="regular-undo"
+                :title="$t('sw-payment.transfer.list.titleSidebarItemRefresh')"
+                @click="onRefresh"
+            />
+            {% endblock %}
+
+            {% block sw_payment_transfer_list_sidebar_filter %}
+            <sw-sidebar-filter-panel
+                entity="payment_transfer"
+                :store-key="storeKey"
+                :filters="listFilters"
+                :defaults="defaultFilters"
+                :active-filter-number="activeFilterNumber"
+                @criteria-changed="updateCriteria"
+            />
+            {% endblock %}
+        </sw-sidebar>
+    </template>
+    {% endblock %}
+</sw-page>
+{% endblock %}

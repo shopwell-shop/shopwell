@@ -50,6 +50,8 @@ class UserDefinition extends EntityDefinition
 {
     final public const ENTITY_NAME = 'user';
 
+    public const MAX_LENGTH_PHONE_NUMBER = 40;
+
     /**
      * Timezone a user starts with and falls back to when none is configured.
      */
@@ -100,6 +102,7 @@ class UserDefinition extends EntityDefinition
             (new PasswordField('password', 'password', \PASSWORD_DEFAULT, [], PasswordField::FOR_ADMIN))->removeFlag(ApiAware::class)->addFlags(new Required()),
             (new StringField('name', 'name'))->addFlags(new Required(), new SearchRanking(SearchRanking::HIGH_SEARCH_RANKING))->setDescription('Full name of the user.'),
             (new StringField('title', 'title'))->addFlags(new SearchRanking(SearchRanking::MIDDLE_SEARCH_RANKING))->setDescription('Title of the user.'),
+            (new StringField('phone_number', 'phoneNumber', self::MAX_LENGTH_PHONE_NUMBER))->setDescription('Phone number of the user.'),
             (new EmailField('email', 'email'))->addFlags(new Required(), new SearchRanking(SearchRanking::HIGH_SEARCH_RANKING))->setDescription('Email of the user.'),
             (new BoolField('active', 'active'))->setDescription('When boolean value is `true`, the user is enabled.'),
             // The regular Admin API CRUD endpoint authorizes elevated admin changes in the controller; direct DAL writes remain write-protected.

@@ -1,7 +1,7 @@
 {
   "sw-settings-number-range": {
     "general": {
-      "mainMenuItemGeneral": "编号范围",
+      "mainMenuItemGeneral": "编号格式",
       "placeholderSearchBar": "搜索编号范围 ...",
       "infoGlobalType": "类型 \"{typeName}\" 的编号范围只能有一个。对 \"{typeName}\" 类型编号范围的修改必须在此进行，并将全局影响所有销售渠道。",
       "infoGlobalTypeTitle": "全局编号范围类型 \"{typeName}\"",
@@ -10,22 +10,22 @@
       "infoSalesChannelBound": "要更改编号范围类型，必须先移除所有现有的销售渠道分配。"
     },
     "list": {
-      "textHeadline": "编号范围",
+      "textHeadline": "编号格式",
       "messageEmpty": "暂无编号范围",
       "textDeleteConfirm": "确定要删除编号范围 \"{name}\" 吗？",
       "columnName": "名称",
       "columnUsedIn": "类型",
       "columnAssignment": "分配",
       "buttonAddNumberRange": "添加编号范围",
-      "messageDeleteSuccess": "编号范围 \"{name}\" 已成功删除。",
+      "messageDeleteSuccess": "编号格式 \"{name}\" 已成功删除。",
       "global": "全局"
     },
     "detail": {
       "textHeadline": "新建编号范围",
       "configCard": "设置",
       "assignmentCard": "分配",
-      "messageSaveSuccess": "编号范围 \"{name}\" 已成功保存。",
-      "messageSaveError": "编号范围 \"{name}\" 未能保存。",
+      "messageSaveSuccess": "编号格式 \"{name}\" 已成功保存。",
+      "messageSaveError": "编号格式 \"{name}\" 未能保存。",
       "labelName": "名称",
       "labelDescription": "描述",
       "labelPrefix": "前缀",
@@ -53,7 +53,7 @@
   "sw-privileges": {
     "permissions": {
       "number_ranges": {
-        "label": "编号范围"
+        "label": "编号格式"
       }
     }
   }

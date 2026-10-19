@@ -1,8 +1,8 @@
 {
   "sw-settings-store": {
     "general": {
-      "mainMenuItemGeneral": "Shopwell Account",
-      "textHeadline": "Shopwell Account",
+      "mainMenuItemGeneral": "软件授权",
+      "textHeadline": "软件授权",
       "description": "可在此进行 Shopwell 账户设置。",
       "messageSaveSuccess": "你的 Shopwell 账户数据已成功保存。"
     },

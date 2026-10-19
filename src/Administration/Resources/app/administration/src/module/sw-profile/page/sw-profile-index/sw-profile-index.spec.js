@@ -211,7 +211,7 @@ describe('src/module/sw-profile/page/sw-profile-index', () => {
 
         const tabItems = wrapper.findAllComponents({ name: 'sw-tabs-item' });
 
-        expect(tabItems).toHaveLength(3);
+        expect(tabItems).toHaveLength(4);
         expect(tabItems[0].props('route')).toStrictEqual({ name: 'sw.profile.index.general' });
         expect(tabItems[0].props('title')).toBe('sw-profile.tabGeneral.title');
         expect(tabItems[0].text()).toBe('sw-profile.tabGeneral.title');
@@ -223,6 +223,10 @@ describe('src/module/sw-profile/page/sw-profile-index', () => {
         expect(tabItems[2].props('route')).toStrictEqual({ name: 'sw.profile.index.privacyPreferences' });
         expect(tabItems[2].props('title')).toBe('sw-profile.tabPrivacyPreferences.title');
         expect(tabItems[2].text()).toBe('sw-profile.tabPrivacyPreferences.title');
+
+        expect(tabItems[3].props('route')).toStrictEqual({ name: 'sw.profile.index.oauth2Login' });
+        expect(tabItems[3].props('title')).toBe('sw-profile.tabOAuth2Login.title');
+        expect(tabItems[3].text()).toBe('sw-profile.tabOAuth2Login.title');
     });
 
     it('should render meteor tabs when the major feature flag is active', async () => {
@@ -249,6 +253,11 @@ describe('src/module/sw-profile/page/sw-profile-index', () => {
             expect.objectContaining({
                 label: 'sw-profile.tabPrivacyPreferences.title',
                 name: 'sw.profile.index.privacyPreferences',
+                onClick: expect.any(Function),
+            }),
+            expect.objectContaining({
+                label: 'sw-profile.tabOAuth2Login.title',
+                name: 'sw.profile.index.oauth2Login',
                 onClick: expect.any(Function),
             }),
         ]);

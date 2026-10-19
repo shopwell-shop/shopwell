@@ -1,8 +1,8 @@
 {
   "sw-settings-listing": {
     "general": {
-      "mainMenuItemGeneral": "商品",
-      "textHeadline": "商品",
+      "mainMenuItemGeneral": "商品列表",
+      "textHeadline": "商品列表",
       "description": "管理商品的展示方式。",
       "messageSaveSuccess": "配置已保存。",
       "messageSaveError": "配置删除失败。\"{message}\"",

@@ -1,0 +1,306 @@
+{
+    "sw-payment": {
+        "general": {
+            "mainMenuItemGeneral": "Payment",
+            "mainMenuItemPaymentOrders": "Payment orders",
+            "mainMenuItemRefunds": "Refunds",
+            "mainMenuItemTransfers": "Transfers",
+            "description": "Payments of external apps through the generic payment gateway"
+        },
+        "configField": {
+            "configuredHint": "Already configured - an empty input keeps the stored value."
+        },
+        "order": {
+            "list": {
+                "title": "Payment orders",
+                "placeholderSearchBar": "Search payment orders...",
+                "titleSidebarItemRefresh": "Refresh list",
+                "columnPaymentNo": "Payment no.",
+                "columnOutTradeNo": "Merchant trade no.",
+                "columnPaymentApp": "App",
+                "columnProvider": "Provider",
+                "columnChannel": "Channel",
+                "columnState": "State",
+                "columnAmount": "Amount",
+                "columnCurrency": "Currency",
+                "columnCreatedAt": "Created at",
+                "messageEmpty": "No payment orders yet",
+                "sublineEmpty": "Payment orders that apps create through the payment gateway are listed here."
+            },
+            "filters": {
+                "paymentNoFilter": {
+                    "label": "Payment no.",
+                    "placeholder": "Separate multiple numbers with a comma..."
+                },
+                "outTradeNoFilter": {
+                    "label": "Merchant trade no.",
+                    "placeholder": "Separate multiple numbers with a comma..."
+                },
+                "paymentAppFilter": {
+                    "label": "App",
+                    "placeholder": "All apps..."
+                },
+                "channelFilter": {
+                    "label": "Channel",
+                    "placeholder": "Separate multiple channels with a comma..."
+                },
+                "providerFilter": {
+                    "label": "Provider",
+                    "placeholder": "Separate multiple providers with a comma..."
+                },
+                "stateFilter": {
+                    "label": "State",
+                    "placeholder": "All states..."
+                }
+            },
+            "detail": {
+                "title": "Payment order",
+                "buttonRefresh": "Refresh",
+                "tabGeneral": "General",
+                "tabTransactions": "Transactions",
+                "tabRefunds": "Refunds",
+                "tabNotifications": "Notifications",
+                "tabWebhookDeliveries": "Webhook deliveries",
+                "tabChannelData": "Channel data",
+                "cardGeneralTitle": "Payment order",
+                "cardAppTitle": "App",
+                "cardAmountTitle": "Amounts",
+                "cardChannelTitle": "Channel",
+                "cardPayerTitle": "Payer and urls",
+                "cardChannelDataTitle": "Raw answer of the channel",
+                "titleTransactions": "Transactions",
+                "titleRefunds": "Refunds",
+                "titleNotifications": "Incoming notifications",
+                "titleWebhookDeliveries": "Outgoing webhook deliveries",
+                "labelPaymentNo": "Payment no.",
+                "labelOutTradeNo": "Merchant trade no.",
+                "labelPaymentApp": "App",
+                "labelProvider": "Provider",
+                "labelChannel": "Channel",
+                "labelState": "State",
+                "labelAmount": "Amount",
+                "labelPaidAmount": "Paid amount",
+                "labelRefundedAmount": "Refunded amount",
+                "labelCurrency": "Currency",
+                "labelSubject": "Subject",
+                "labelBody": "Body",
+                "labelAttach": "Attach",
+                "labelOutPaymentNo": "Channel trade no.",
+                "labelClientIp": "Client ip",
+                "labelDevice": "Device",
+                "labelNotifyUrl": "Notify url",
+                "labelReturnUrl": "Return url",
+                "labelIdempotencyKey": "Idempotency key",
+                "labelExpireAt": "Expires at",
+                "labelPaidAt": "Paid at",
+                "labelClosedAt": "Closed at",
+                "labelCreatedAt": "Created at",
+                "labelUpdatedAt": "Updated at",
+                "messageEmptyTransactions": "No transaction was recorded yet",
+                "messageEmptyRefunds": "No refund was created yet",
+                "messageEmptyNotifications": "No notification was received yet",
+                "messageEmptyWebhookDeliveries": "No webhook was delivered yet",
+                "sublineTransactions": "Every attempt to pay this order is kept here, including the payload of the channel.",
+                "sublineRefunds": "Refunds of this payment order are listed here.",
+                "sublineNotifications": "Asynchronous notifications the channel sent for this order are listed here.",
+                "sublineWebhookDeliveries": "Notifications the platform sent to the app of this order are listed here.",
+                "messageNoChannelData": "The channel has not answered yet"
+            },
+            "transaction": {
+                "columnTransactionNo": "Transaction no.",
+                "columnType": "Type",
+                "columnProvider": "Provider",
+                "columnChannel": "Channel",
+                "columnStatus": "Status",
+                "columnOutTransactionId": "Channel id",
+                "columnCreatedAt": "Created at"
+            },
+            "notification": {
+                "columnProvider": "Provider",
+                "columnChannel": "Channel",
+                "columnSignature": "Signature",
+                "columnProcessResult": "Result",
+                "columnRemoteIp": "Remote ip",
+                "columnCreatedAt": "Received at",
+                "labelSignatureValid": "Valid",
+                "labelSignatureInvalid": "Invalid"
+            },
+            "webhook": {
+                "columnEvent": "Event",
+                "columnUrl": "Url",
+                "columnStatus": "Status",
+                "columnAttemptCount": "Attempts",
+                "columnLastHttpStatus": "Http status",
+                "columnNextRetryAt": "Next retry",
+                "columnCreatedAt": "Created at"
+            }
+        },
+        "refund": {
+            "list": {
+                "title": "Refunds",
+                "placeholderSearchBar": "Search refunds...",
+                "titleSidebarItemRefresh": "Refresh list",
+                "columnRefundNo": "Refund no.",
+                "columnPaymentOrder": "Payment order",
+                "columnOutRefundNo": "Merchant refund no.",
+                "columnState": "State",
+                "columnAmount": "Amount",
+                "columnCurrency": "Currency",
+                "columnRefundedAt": "Refunded at",
+                "columnCreatedAt": "Created at",
+                "messageEmpty": "No refunds yet",
+                "sublineEmpty": "Refunds that apps request through the payment gateway are listed here."
+            },
+            "filters": {
+                "refundNoFilter": {
+                    "label": "Refund no.",
+                    "placeholder": "Separate multiple numbers with a comma..."
+                },
+                "outRefundNoFilter": {
+                    "label": "Merchant refund no.",
+                    "placeholder": "Separate multiple numbers with a comma..."
+                },
+                "channelFilter": {
+                    "label": "Channel",
+                    "placeholder": "Separate multiple channels with a comma..."
+                },
+                "stateFilter": {
+                    "label": "State",
+                    "placeholder": "All states..."
+                }
+            },
+            "detail": {
+                "title": "Refund",
+                "buttonRefresh": "Refresh",
+                "tabGeneral": "General",
+                "tabPayload": "Payload",
+                "cardGeneralTitle": "Refund",
+                "cardOrderTitle": "Payment order",
+                "cardAmountTitle": "Amount",
+                "cardPayloadTitle": "Request and answer",
+                "labelRefundNo": "Refund no.",
+                "labelOutRefundNo": "Merchant refund no.",
+                "labelPaymentOrder": "Payment order",
+                "labelOutPaymentNo": "Channel trade no.",
+                "labelChannel": "Channel",
+                "labelPaymentApp": "App",
+                "labelState": "State",
+                "labelAmount": "Amount",
+                "labelCurrency": "Currency",
+                "labelReason": "Reason",
+                "labelOutRefundId": "Channel refund no.",
+                "labelRefundedAt": "Refunded at",
+                "labelCreatedAt": "Created at",
+                "labelUpdatedAt": "Updated at",
+                "labelRequestPayload": "Request",
+                "labelResponsePayload": "Answer"
+            }
+        },
+        "transfer": {
+            "list": {
+                "title": "Transfers",
+                "placeholderSearchBar": "Search transfers...",
+                "titleSidebarItemRefresh": "Refresh list",
+                "columnTransferNo": "Transfer no.",
+                "columnOutNo": "Merchant transfer no.",
+                "columnRecipient": "Recipient",
+                "columnProvider": "Provider",
+                "columnChannel": "Channel",
+                "columnAmount": "Amount",
+                "columnState": "State",
+                "columnCreatedAt": "Created at",
+                "messageEmpty": "No transfers yet",
+                "sublineEmpty": "Payouts the platform sends to recipients through the payment gateway are listed here.",
+                "messageNoResult": "Transfer not found",
+                "messageNoResultSubline": "The transfer may have been removed or you may not have permission to see it."
+            },
+            "filters": {
+                "transferNoFilter": {
+                    "label": "Transfer no.",
+                    "placeholder": "Separate multiple numbers with a comma..."
+                },
+                "outNoFilter": {
+                    "label": "Merchant transfer no.",
+                    "placeholder": "Separate multiple numbers with a comma..."
+                },
+                "channelFilter": {
+                    "label": "Channel",
+                    "placeholder": "Separate multiple channels with a comma..."
+                },
+                "providerFilter": {
+                    "label": "Provider",
+                    "placeholder": "Separate multiple providers with a comma..."
+                },
+                "stateFilter": {
+                    "label": "State",
+                    "placeholder": "All states..."
+                }
+            },
+            "detail": {
+                "title": "Transfer",
+                "buttonRefresh": "Refresh",
+                "cardGeneralTitle": "General",
+                "cardRecipientTitle": "Recipient",
+                "cardTimelineTitle": "Timeline",
+                "cardChannelRefTitle": "Channel reference",
+                "cardFailureTitle": "Failure",
+                "cardConfirmationTitle": "Wechat confirmation",
+                "cardMetadataTitle": "Metadata",
+                "labelTransferNo": "Transfer no.",
+                "labelOutNo": "Merchant transfer no.",
+                "labelProvider": "Provider",
+                "labelChannel": "Channel",
+                "labelAmount": "Amount",
+                "labelCurrency": "Currency",
+                "labelSubmitAttempts": "Submit attempts",
+                "labelPaymentApp": "App",
+                "labelRecipientName": "Name",
+                "labelIdentityType": "Identity type",
+                "labelProviderAccountId": "Channel account",
+                "labelOnboardingStatus": "Onboarding status",
+                "labelPayoutEnabled": "Payout enabled",
+                "labelVerifiedAt": "Verified at",
+                "labelCreatedAt": "Created at",
+                "labelSubmittedAt": "Submitted at",
+                "labelSettledAt": "Settled at",
+                "labelReturnedAt": "Returned at",
+                "labelCanceledAt": "Canceled at",
+                "labelExpireAt": "Expires at",
+                "labelProviderRef": "Channel reference",
+                "labelProviderStageRef": "Channel stage reference",
+                "labelFailureCode": "Failure code",
+                "labelFailureReason": "Failure reason",
+                "labelConfirmation": "Confirmation payload",
+                "valueConfirmationGenerated": "Generated, waiting for the recipient",
+                "valueConfirmationMissing": "Not generated",
+                "labelMetadata": "Metadata",
+                "messageNoMetadata": "No metadata"
+            }
+        },
+        "transactionType": {
+            "capture": "Capture",
+            "cancel": "Cancel"
+        },
+        "transactionStatus": {
+            "pending": "Pending",
+            "success": "Succeeded",
+            "failed": "Failed"
+        },
+        "notificationResult": {
+            "ok": "Processed",
+            "duplicate": "Duplicate",
+            "ignored": "Ignored",
+            "invalid_signature": "Invalid signature",
+            "unmatched": "Unmatched",
+            "amount_mismatch": "Amount mismatch",
+            "currency_mismatch": "Currency mismatch",
+            "error": "Error"
+        },
+        "webhookStatus": {
+            "pending": "Pending",
+            "success": "Delivered",
+            "failed": "Failed",
+            "giving_up": "Giving up"
+        }
+    }
+}

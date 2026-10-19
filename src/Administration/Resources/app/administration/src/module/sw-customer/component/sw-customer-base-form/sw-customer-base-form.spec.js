@@ -61,6 +61,11 @@ describe('module/sw-customer/page/sw-customer-base-form', () => {
         expect(languageSelect.exists()).toBeTruthy();
     });
 
+    it('should display the phone number field', async () => {
+        const wrapper = await createWrapper();
+        expect(wrapper.find('[aria-label="sw-customer.baseForm.labelPhoneNumber"]').exists()).toBeTruthy();
+    });
+
     it('should filter the selectable languages by the selected sales channel', async () => {
         const wrapper = await createWrapper();
 

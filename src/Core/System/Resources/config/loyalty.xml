@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopwell-shop/shopwell/trunk/src/Core/System/SystemConfig/Schema/config.xsd">
+    <card>
+        <title>Loyalty</title>
+        <title lang="zh-CN">会员忠诚度</title>
+
+        <input-field type="bool">
+            <name>enabled</name>
+            <defaultValue>true</defaultValue>
+            <label>Enable loyalty program</label>
+            <label lang="zh-CN">启用会员忠诚度计划</label>
+            <helpText>When enabled, customers earn points and growth value for completed orders and can redeem points for a discount at checkout.</helpText>
+            <helpText lang="zh-CN">开启后，顾客在订单完成后可获得积分与成长值，并能在结算时使用积分抵扣。</helpText>
+        </input-field>
+
+        <input-field type="int">
+            <name>pointsPerCurrencyUnit</name>
+            <defaultValue>1</defaultValue>
+            <label>Points earned per currency unit</label>
+            <label lang="zh-CN">每 1 个货币单位获得的积分</label>
+            <helpText>Number of points a customer earns per currency unit of the order total. The membership tier multiplier is applied on top of this value.</helpText>
+            <helpText lang="zh-CN">订单金额每满 1 个货币单位可获得的积分数。会员等级的积分倍率会在此基础再叠加。</helpText>
+        </input-field>
+
+        <input-field type="int">
+            <name>growthPerCurrencyUnit</name>
+            <defaultValue>1</defaultValue>
+            <label>Growth value earned per currency unit</label>
+            <label lang="zh-CN">每 1 个货币单位获得的成长值</label>
+            <helpText>Growth value is used to determine the membership tier and is never spent or redeemed.</helpText>
+            <helpText lang="zh-CN">成长值用于评定会员等级，只增不减，不参与抵扣。</helpText>
+        </input-field>
+
+        <input-field type="float">
+            <name>pointValueInCurrency</name>
+            <defaultValue>0.01</defaultValue>
+            <label>Currency value of one point</label>
+            <label lang="zh-CN">1 积分可抵扣的金额</label>
+            <helpText>Amount a single point is worth when redeeming points at checkout.</helpText>
+            <helpText lang="zh-CN">结算时 1 积分可抵扣的订单金额。</helpText>
+        </input-field>
+
+        <input-field type="int">
+            <name>minRedeemablePoints</name>
+            <defaultValue>100</defaultValue>
+            <label>Minimum points per redemption</label>
+            <label lang="zh-CN">单次抵扣的最低积分</label>
+            <helpText>A customer must redeem at least this number of points in a single order.</helpText>
+            <helpText lang="zh-CN">单笔订单一次性使用的积分不得低于该数值。</helpText>
+        </input-field>
+
+        <input-field type="float">
+            <name>maxRedeemablePercent</name>
+            <defaultValue>50</defaultValue>
+            <label>Maximum share of the order total payable with points (in %)</label>
+            <label lang="zh-CN">积分最多抵扣订单金额的百分比</label>
+            <helpText>Limits how much of the order total may be covered by redeemed points. Use 100 to allow paying the full order with points.</helpText>
+            <helpText lang="zh-CN">限制积分可抵扣的订单金额上限。填写 100 表示允许全额抵扣。</helpText>
+        </input-field>
+
+        <input-field type="int">
+            <name>pointsValidityDays</name>
+            <defaultValue>365</defaultValue>
+            <label>Points validity in days</label>
+            <label lang="zh-CN">积分有效期（天）</label>
+            <helpText>Number of days after which awarded points expire. Enter 0 to make points valid indefinitely.</helpText>
+            <helpText lang="zh-CN">积分自获得之日起的有效天数。填写 0 表示积分永久有效。</helpText>
+        </input-field>
+
+        <input-field type="bool">
+            <name>tierAutoGroupSync</name>
+            <defaultValue>false</defaultValue>
+            <label>Sync customer group on tier upgrade</label>
+            <label lang="zh-CN">升级时同步客户群</label>
+            <helpText>When enabled, the customer group configured on the membership tier is assigned to the customer on every tier change. Leave disabled to manage customer groups manually.</helpText>
+            <helpText lang="zh-CN">开启后，会员等级变更时会自动把该等级绑定的客户群赋给客户。关闭时可自行维护客户群。</helpText>
+        </input-field>
+    </card>
+</config>

@@ -1,0 +1,23 @@
+.sw-payment-transfer-detail {
+    &__breadcrumb {
+        font-weight: var(--font-weight-regular);
+    }
+
+    &__loading-placeholder {
+        min-height: var(--scale-size-160);
+    }
+
+    &__payload {
+        max-height: 320px;
+        padding: var(--scale-size-16);
+        margin: 0;
+        overflow: auto;
+        font-family: ui-monospace, SFMono-Regular, menlo, monaco, consolas, monospace;
+        font-size: var(--font-size-xs);
+        line-height: var(--font-line-height-s);
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        background: var(--color-background-secondary-default);
+        border-radius: var(--border-radius-xs);
+    }
+}
