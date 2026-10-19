@@ -1,14 +1,20 @@
 .sw-settings-payment-gateway-detail {
+    &__grid {
+        row-gap: var(--scale-size-24);
+    }
+
     &__active,
     &__allowed-ips,
-    &__secret-hint,
-    &__provider-enabled,
-    &__provider-mode {
+    &__secret-hint {
         margin-block-start: var(--scale-size-24);
     }
 
     &__secret-generate {
         margin-block-start: var(--scale-size-8);
+    }
+
+    &__secret-state {
+        margin-inline-end: var(--scale-size-8);
     }
 
     &__secret-value {
@@ -27,68 +33,122 @@
         margin: 0;
     }
 
-    &__provider-authorized,
-    &__provider-credentials {
-        margin-inline-end: var(--scale-size-8, 8px);
+    &__platform-notice {
+        margin-block-end: var(--scale-size-16);
     }
 
-    &__section {
-        margin: var(--scale-size-24, 24px) 0 0;
-    }
-
-    &__section-title {
-        margin: 0;
-        color: var(--color-text-primary-default);
-        font-size: var(--font-size-m, 16px);
-        font-weight: var(--font-weight-semibold, 600);
-    }
-
-    &__section-subtitle {
-        margin: var(--scale-size-4, 4px) 0 0;
-        color: var(--color-text-secondary-default);
-        font-size: var(--font-size-xs, 12px);
-    }
-
-    &__provider {
-        margin-top: var(--scale-size-16, 16px);
-    }
-
-    &__channels {
-        margin-block-start: var(--scale-size-24);
-        padding-block-start: var(--scale-size-16);
-        border-block-start: 1px solid var(--color-border-secondary-default, rgba(0, 0, 0, 8%));
-    }
-
-    &__channels-title {
-        margin: 0 0 var(--scale-size-8);
-        color: var(--color-text-secondary-default);
-        font-size: var(--font-size-xs, 12px);
-        font-weight: var(--font-weight-semibold, 600);
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-    }
-
-    &__channel {
-        padding-block: var(--scale-size-12, 12px);
+    &__account {
+        padding-block: var(--scale-size-16);
 
         & + & {
             border-block-start: 1px solid var(--color-border-secondary-default, rgba(0, 0, 0, 8%));
         }
+
+        &:first-of-type {
+            padding-block-start: 0;
+        }
+    }
+
+    &__account-head {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--scale-size-16);
+        align-items: center;
+        justify-content: space-between;
+        margin-block-end: var(--scale-size-16);
+    }
+
+    &__account-identity {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--scale-size-8);
+        align-items: center;
+        min-width: 0;
+    }
+
+    &__account-name {
+        overflow: hidden;
+        color: var(--color-text-primary-default);
+        font-size: var(--font-size-m);
+        font-weight: var(--font-weight-semibold);
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    &__account-enabled {
+        flex: 0 0 auto;
+    }
+
+    &__inheritance {
+        margin: var(--scale-size-16) 0 0;
+        color: var(--color-text-secondary-default);
+        font-size: var(--font-size-xs);
+        line-height: var(--font-line-height-s);
+    }
+
+    &__inheritance-warning {
+        margin-block-start: var(--scale-size-8);
+    }
+
+    &__channel-group {
+        padding-block: var(--scale-size-16);
+
+        & + & {
+            border-block-start: 1px solid var(--color-border-secondary-default, rgba(0, 0, 0, 8%));
+        }
+
+        &:first-of-type {
+            padding-block-start: 0;
+        }
+    }
+
+    &__channel-group-head {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--scale-size-8);
+        align-items: baseline;
+        margin-block-end: var(--scale-size-8);
+    }
+
+    &__channel-group-title {
+        margin: 0;
+        color: var(--color-text-primary-default);
+        font-size: var(--font-size-s);
+        font-weight: var(--font-weight-semibold);
+    }
+
+    &__channel-group-hint {
+        color: var(--color-text-secondary-default);
+        font-size: var(--font-size-xs);
+    }
+
+    &__channel {
+        padding-block: var(--scale-size-8);
     }
 
     &__channel-meta {
         display: flex;
         flex-wrap: wrap;
-        gap: var(--scale-size-16, 16px);
+        gap: var(--scale-size-16);
         align-items: center;
-        margin-block-start: var(--scale-size-4, 4px);
+        margin-block-start: var(--scale-size-4);
         color: var(--color-text-secondary-default);
-        font-size: var(--font-size-xs, 12px);
+        font-size: var(--font-size-xs);
     }
 
     &__channel-meta-item {
         display: inline-flex;
-        gap: var(--scale-size-4, 4px);
+        gap: var(--scale-size-4);
         align-items: center;
+    }
+
+    &__channel-params {
+        margin-block-start: var(--scale-size-16);
+    }
+
+    &__channel-params-inherited {
+        margin: var(--scale-size-4) 0 0;
+        color: var(--color-text-secondary-default);
+        font-size: var(--font-size-xs);
     }
 }

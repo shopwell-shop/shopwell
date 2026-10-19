@@ -1,175 +1,8 @@
 /**
  * @sw-package framework
  */
-import { mount } from '@vue/test-utils';
-
-const registryProviders = [
-    {
-        technicalName: 'alipay',
-        label: '支付宝',
-        enabled: true,
-        configured: true,
-        credentialFields: [
-            {
-                name: 'app_id',
-                label: '支付宝应用 APPID',
-                type: 'text',
-                required: true,
-                secret: false,
-                options: {},
-                default: null,
-                value: '2021000000000000',
-                configured: true,
-            },
-        ],
-        settings: {},
-        channels: [
-            {
-                channel: 'alipay_h5',
-                label: '支付宝 手机网站支付',
-                flow: 'redirect',
-                currencies: ['CNY'],
-                devices: ['wap'],
-                runtimeParams: {},
-                paramFields: [],
-                enabled: true,
-                configured: true,
-                settings: {},
-            },
-        ],
-    },
-    {
-        technicalName: 'stripe',
-        label: 'Stripe',
-        enabled: false,
-        configured: false,
-        credentialFields: [
-            {
-                name: 'secret_key',
-                label: 'Secret Key',
-                type: 'password',
-                required: true,
-                secret: true,
-                options: {},
-                default: null,
-                value: null,
-                configured: false,
-            },
-        ],
-        settings: {},
-        channels: [
-            {
-                channel: 'stripe_checkout',
-                label: 'Stripe Checkout',
-                flow: 'redirect',
-                currencies: [],
-                devices: [],
-                runtimeParams: {},
-                paramFields: [],
-                enabled: false,
-                configured: false,
-                settings: {},
-            },
-        ],
-    },
-];
-
-const existingApp = {
-    id: 'app-1',
-    technicalName: 'pos',
-    name: 'POS 收银',
-    active: true,
-    notifyUrl: null,
-    returnUrl: null,
-    allowedIps: ['127.0.0.1'],
-    rateLimit: 60,
-    hasSecret: true,
-    providers: [
-        {
-            providerTechnicalName: 'alipay',
-            enabled: true,
-            mode: 'platform',
-            hasCredentials: false,
-            settings: {},
-        },
-    ],
-    channels: [
-        {
-            channelTechnicalName: 'alipay_h5',
-            enabled: true,
-            hasParams: false,
-            settings: {},
-        },
-    ],
-};
-
-async function createWrapper({ appId = 'app-1', app = existingApp, savedApp = null, appSecret = null } = {}) {
-    const service = {
-        listProviders: jest.fn(() => Promise.resolve(registryProviders)),
-        listApps: jest.fn(() => Promise.resolve(app === null ? [] : [app])),
-        saveApp: jest.fn(() =>
-            Promise.resolve({
-                app: savedApp ?? app,
-                ...(appSecret === null ? {} : { appSecret }),
-            }),
-        ),
-        deleteApp: jest.fn(() => Promise.resolve()),
-    };
-
-    const push = jest.fn();
-    const replace = jest.fn();
-
-    const wrapper = mount(await wrapTestComponent('sw-settings-payment-gateway-detail', { sync: true }), {
-        props: { appId },
-        global: {
-            stubs: {
-                'sw-page': {
-                    template: `
-                        <div>
-                            <slot name="smart-bar-header"></slot>
-                            <slot name="smart-bar-actions"></slot>
-                            <slot name="content"></slot>
-                        </div>`,
-                },
-                'sw-card-view': { template: '<div><slot></slot></div>' },
-                'sw-container': { template: '<div><slot></slot></div>' },
-                'sw-skeleton': true,
-                'sw-payment-config-field': {
-                    props: ['field', 'modelValue'],
-                    template: '<div class="sw-payment-config-field-stub">{{ field.name }}</div>',
-                },
-                'router-link': { template: '<a><slot></slot></a>' },
-                'mt-card': { template: '<div><slot></slot><slot name="headerRight"></slot></div>' },
-                'mt-button': true,
-                'mt-badge': true,
-                'mt-icon': true,
-                'mt-switch': true,
-                'mt-select': true,
-                'mt-text-field': true,
-                'mt-password-field': true,
-                'mt-textarea': true,
-                'mt-url-field': true,
-                'mt-number-field': true,
-                'mt-banner': true,
-                'mt-modal-root': { template: '<div><slot></slot></div>' },
-                'mt-modal': { template: '<div><slot></slot><slot name="footer"></slot></div>' },
-                'mt-modal-close': true,
-                'mt-modal-action': true,
-            },
-            provide: {
-                paymentGatewayService: service,
-            },
-            mocks: {
-                $router: { push, replace },
-                $te: () => false,
-            },
-        },
-    });
-
-    await flushPromises();
-
-    return { wrapper, service, push, replace };
-}
+import { createWrapper } from './sw-settings-payment-gateway-detail.spec/create-wrapper';
+import { existingApp, otherApp, platformApp } from './sw-settings-payment-gateway-detail.spec/fixtures';
 
 describe('module/sw-settings-payment-gateway/page/sw-settings-payment-gateway-detail', () => {
     beforeEach(() => {
@@ -190,11 +23,37 @@ describe('module/sw-settings-payment-gateway/page/sw-settings-payment-gateway-de
 
         expect(wrapper.vm.providers).toHaveLength(2);
         expect(wrapper.vm.providers[0]).toEqual(
-            expect.objectContaining({ technicalName: 'alipay', enabled: true, mode: 'platform' }),
+            expect.objectContaining({ technicalName: 'alipay', enabled: true, sourceAppId: '' }),
         );
         expect(wrapper.vm.providers[1]).toEqual(
-            expect.objectContaining({ technicalName: 'stripe', enabled: false, mode: 'platform' }),
+            expect.objectContaining({ technicalName: 'stripe', enabled: false, sourceAppId: '' }),
         );
+
+        // the account source is an app, the field the page used to offer does not exist anymore
+        expect(wrapper.vm.providers[0]).not.toHaveProperty('mode');
+    });
+
+    it('should keep the account source of an authorization that inherits from another app', async () => {
+        const inheriting = {
+            ...existingApp,
+            providers: [
+                {
+                    providerTechnicalName: 'alipay',
+                    enabled: true,
+                    sourceAppId: 'app-2',
+                    sourceAppName: 'POS 二号',
+                    hasCredentials: false,
+                    settings: {},
+                },
+            ],
+        };
+
+        const { wrapper } = await createWrapper({ app: inheriting });
+
+        expect(wrapper.vm.providers[0].sourceAppId).toBe('app-2');
+        expect(wrapper.vm.isAccountInherited(wrapper.vm.providers[0])).toBe(true);
+        expect(wrapper.vm.sourceAppName(wrapper.vm.providers[0])).toBe('POS 二号');
+        expect(wrapper.vm.sourceAppMissesInterface(wrapper.vm.providers[0])).toBe(false);
     });
 
     it('should nest the channels under their interface and merge the assignment of the app', async () => {
@@ -216,6 +75,7 @@ describe('module/sw-settings-payment-gateway/page/sw-settings-payment-gateway-de
             id: null,
             technicalName: '',
             name: '',
+            type: 'external',
             active: false,
             notifyUrl: null,
             returnUrl: null,
@@ -242,6 +102,67 @@ describe('module/sw-settings-payment-gateway/page/sw-settings-payment-gateway-de
         expect(push).toHaveBeenCalledWith({ name: 'sw.settings.payment.gateway.list' });
     });
 
+    it('should offer the own account and every other app as the account source, the platform tenant first', async () => {
+        const { wrapper } = await createWrapper();
+
+        const options = wrapper.vm.accountSourceOptions();
+
+        expect(options).toEqual([
+            { value: '', label: 'sw-settings-payment-gateway.detail.accountSourceOwn' },
+            { value: 'app-platform', label: 'Platform Payment App' },
+            { value: 'app-2', label: 'POS 二号' },
+        ]);
+
+        // the app of the page is never an account source of its own - that would be a circle
+        expect(options.map((option) => option.value)).not.toContain('app-1');
+    });
+
+    it('should show the credentials of the app itself and hide them behind a note when it inherits', async () => {
+        const { wrapper } = await createWrapper();
+
+        // both interfaces collect on an account of their own, so both render their credential fields
+        expect(wrapper.findAll('.sw-payment-config-field-stub')).toHaveLength(2);
+
+        wrapper.vm.providers[0].sourceAppId = 'app-2';
+
+        await wrapper.vm.$nextTick();
+
+        // the switch is immediate, only the interface that inherits lost its fields
+        expect(wrapper.findAll('.sw-payment-config-field-stub')).toHaveLength(1);
+        expect(wrapper.vm.inheritanceText(wrapper.vm.providers[0])).toContain('POS 二号');
+        expect(wrapper.vm.inheritanceText(wrapper.vm.providers[0])).toContain('支付宝');
+
+        // the parameters of a channel belong to the account that is charged, so they are not editable
+        expect(wrapper.vm.channelParamsInheritedText(wrapper.vm.providers[0])).toContain('POS 二号');
+    });
+
+    it('should warn when the app it inherits from is not authorized for the interface', async () => {
+        const { wrapper } = await createWrapper();
+
+        wrapper.vm.apps = [
+            platformApp,
+            existingApp,
+            {
+                ...otherApp,
+                providers: [
+                    {
+                        providerTechnicalName: 'alipay',
+                        enabled: false,
+                        sourceAppId: null,
+                        sourceAppName: '',
+                        hasCredentials: false,
+                        settings: {},
+                    },
+                ],
+            },
+        ];
+
+        wrapper.vm.providers[0].sourceAppId = 'app-2';
+
+        expect(wrapper.vm.sourceAppMissesInterface(wrapper.vm.providers[0])).toBe(true);
+        expect(wrapper.vm.sourceAppWarning(wrapper.vm.providers[0])).toContain('POS 二号');
+    });
+
     it('should send the interfaces and the channels of the app', async () => {
         const { wrapper, service } = await createWrapper();
 
@@ -251,7 +172,6 @@ describe('module/sw-settings-payment-gateway/page/sw-settings-payment-gateway-de
 
         const stripe = wrapper.vm.providers[1];
         stripe.enabled = true;
-        stripe.mode = 'own';
         stripe.credentialInput.secret_key = 'sk_test';
         stripe.channels[0].enabled = true;
 
@@ -271,14 +191,14 @@ describe('module/sw-settings-payment-gateway/page/sw-settings-payment-gateway-de
                 {
                     providerTechnicalName: 'alipay',
                     enabled: true,
-                    mode: 'platform',
+                    sourceAppId: null,
                     credentials: { app_id: '' },
                     settings: {},
                 },
                 {
                     providerTechnicalName: 'stripe',
                     enabled: true,
-                    mode: 'own',
+                    sourceAppId: null,
                     credentials: { secret_key: 'sk_test' },
                     settings: {},
                 },
@@ -298,6 +218,52 @@ describe('module/sw-settings-payment-gateway/page/sw-settings-payment-gateway-de
                 },
             ],
         });
+    });
+
+    it('should send the account source and keep no credentials of its own when it inherits', async () => {
+        const { wrapper, service } = await createWrapper();
+
+        wrapper.vm.providers[0].sourceAppId = 'app-2';
+        wrapper.vm.providers[0].credentialInput.app_id = 'typed-but-not-sent';
+
+        await wrapper.vm.onSave();
+
+        const payload = service.saveApp.mock.calls[0][0];
+
+        expect(payload.providers[0]).toEqual({
+            providerTechnicalName: 'alipay',
+            enabled: true,
+            sourceAppId: 'app-2',
+            credentials: {},
+            settings: {},
+        });
+    });
+
+    it('should rebuild the interfaces from the declaration after a save', async () => {
+        const { wrapper, service } = await createWrapper();
+
+        await wrapper.vm.onSave();
+
+        expect(service.saveApp).toHaveBeenCalled();
+        // a state of the page is not a declaration: the channels keep their technical name
+        expect(wrapper.vm.providers[0].channels[0].technicalName).toBe('alipay_h5');
+        expect(wrapper.vm.providers[1].channels[0].technicalName).toBe('stripe_checkout');
+    });
+
+    it('should render the tenant of the platform read only', async () => {
+        const { wrapper } = await createWrapper({ appId: 'app-platform', app: platformApp });
+
+        expect(wrapper.vm.isPlatformTenant).toBe(true);
+        expect(wrapper.vm.isReadOnly).toBe(true);
+    });
+
+    it('should render the page read only without the editor role', async () => {
+        global.activeAclRoles = ['payment_app.viewer'];
+
+        const { wrapper } = await createWrapper();
+
+        expect(wrapper.vm.isPlatformTenant).toBe(false);
+        expect(wrapper.vm.isReadOnly).toBe(true);
     });
 
     it('should hand out a generated secret once and clear the input', async () => {
