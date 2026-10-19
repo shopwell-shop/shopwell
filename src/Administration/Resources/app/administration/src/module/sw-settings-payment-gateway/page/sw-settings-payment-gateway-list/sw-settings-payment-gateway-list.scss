@@ -10,6 +10,29 @@
         padding-block: var(--scale-size-48);
     }
 
+    // the row of the platform is read only and says why: it is listed for the merchant to see the
+    // account the platform itself collects through, not to be configured
+    &__platform {
+        display: flex;
+        flex-direction: column;
+        gap: var(--scale-size-2);
+    }
+
+    &__platform-hint {
+        color: var(--color-text-secondary-default);
+        font-size: var(--font-size-2xs);
+        line-height: var(--font-line-height-2xs);
+    }
+
+    &__platform-providers {
+        font-size: var(--font-size-2xs);
+        line-height: var(--font-line-height-2xs);
+    }
+
+    &__platform-badge {
+        margin-inline-start: var(--scale-size-8);
+    }
+
     &__delete-modal-content {
         margin: 0;
     }

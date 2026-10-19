@@ -79,6 +79,11 @@ final class PaymentAppProvisioner
         $id = $dto->id !== null && $dto->id !== '' ? $dto->id : null;
         $app = $id === null ? null : $this->loadApp($id);
 
+        // being able to name the row is not being allowed to write it: the tenant of the platform is
+        // seeded by the migration and its secret is the one the platform signs its own notifications
+        // with, so it is refused here - the one place every write goes through
+        $this->assertWritable($app);
+
         $write = [
             'id' => $app->id ?? Uuid::randomHex(),
             'technicalName' => trim($dto->technicalName),
@@ -92,7 +97,7 @@ final class PaymentAppProvisioner
 
         // an app onboarded here is always a caller of the api. The type is written on creation only:
         // it is not part of the payload, and an existing row must never change its kind - the tenant
-        // of the shop is seeded by the migration and is not reachable through this endpoint at all
+        // of the shop is seeded by the migration and a save that names it is refused above
         if ($app === null) {
             $write['type'] = PaymentAppEntity::TYPE_EXTERNAL;
         }
@@ -134,6 +139,40 @@ final class PaymentAppProvisioner
         \assert($stored instanceof PaymentAppEntity);
 
         return ['app' => $stored, 'secret' => $secret, 'generated' => $generated];
+    }
+
+    /**
+     * Removes an app and everything that is cascaded with it.
+     *
+     * The row is read before it is deleted: only the stored row tells which kind of tenant it is, and
+     * the tenant of the platform must not be deletable at all - the shop would lose the account it
+     * attributes its own payments to, and every platform payment would lose its bookkeeping.
+     *
+     * @throws PaymentException
+     */
+    public function delete(string $id, Context $context): void
+    {
+        $app = $this->loadApp($id);
+
+        $this->assertWritable($app);
+
+        $this->appRepository->delete([['id' => $id]], $context);
+    }
+
+    /**
+     * The tenant of the platform is seeded by the migration and cannot be written through the app
+     * endpoint at all - not its name, not its notify url, not its secret and not its state. It is
+     * listed for the merchant's sake, but every other operation on it is refused.
+     *
+     * @throws PaymentException
+     */
+    private function assertWritable(?PaymentAppEntity $app): void
+    {
+        if ($app === null || $app->type !== PaymentAppEntity::TYPE_PLATFORM) {
+            return;
+        }
+
+        throw PaymentException::platformTenantReadOnly($app->technicalName);
     }
 
     /**

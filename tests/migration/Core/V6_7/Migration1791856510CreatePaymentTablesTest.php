@@ -12,6 +12,7 @@ use Shopwell\Core\Framework\Test\TestCaseBase\KernelLifecycleManager;
 use Shopwell\Core\Framework\Util\Database\TableHelper;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\Migration\V6_7\Migration1791856510CreatePaymentTables;
+use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppProvider\PaymentAppProviderEntity;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
 use Shopwell\Core\System\Payment\App\PaymentCredentialCipher;
 use Shopwell\Core\System\Payment\Order\PaymentOrderStates;
@@ -215,7 +216,7 @@ class Migration1791856510CreatePaymentTablesTest extends TestCase
 
         $table = TableHelper::getTable($this->connection, 'payment_method_gateway_channel');
         static::assertSame(
-            ['id', 'payment_method_id', 'provider_technical_name', 'channel_technical_name', 'created_at', 'updated_at'],
+            ['id', 'payment_method_id', 'payment_app_id', 'channel_technical_name', 'created_at', 'updated_at'],
             array_column($table->columns, 'name')
         );
 
@@ -228,18 +229,23 @@ class Migration1791856510CreatePaymentTablesTest extends TestCase
         ));
         static::assertSame('UNIQUE', TableHelper::getIndexOfTable($this->connection, 'payment_method_gateway_channel', 'uniq.payment_method_gateway_channel.payment_method_id')->type);
 
-        // and one channel may only be claimed by one payment method
+        // and one channel of an app may only be claimed by one payment method
         static::assertTrue(TableHelper::indexSpansColumns(
             $this->connection,
             'payment_method_gateway_channel',
             'uniq.payment_method_gateway_channel.channel',
-            ['provider_technical_name', 'channel_technical_name']
+            ['payment_app_id', 'channel_technical_name']
         ));
         static::assertSame('UNIQUE', TableHelper::getIndexOfTable($this->connection, 'payment_method_gateway_channel', 'uniq.payment_method_gateway_channel.channel')->type);
 
         // the binding is deleted together with the payment method it belongs to
         static::assertTrue(TableHelper::foreignKeyExists($this->connection, 'payment_method_gateway_channel', 'fk.payment_method_gateway_channel.payment_method_id'));
         static::assertSame('CASCADE', $this->deleteRuleOf('payment_method_gateway_channel', 'fk.payment_method_gateway_channel.payment_method_id'));
+
+        // and with the app whose account it charges: an app that is gone must not leave a method
+        // pointing at a channel nobody collects through any more
+        static::assertTrue(TableHelper::foreignKeyExists($this->connection, 'payment_method_gateway_channel', 'fk.payment_method_gateway_channel.payment_app_id'));
+        static::assertSame('CASCADE', $this->deleteRuleOf('payment_method_gateway_channel', 'fk.payment_method_gateway_channel.payment_app_id'));
     }
 
     /**
@@ -360,9 +366,11 @@ class Migration1791856510CreatePaymentTablesTest extends TestCase
      * The shop collects for its own checkout through a tenant that is seeded like the sandbox account:
      * without it the checkout cannot open a single payment order.
      *
-     * Only the row itself is seeded. Which interfaces and channels it may use is decided the first
-     * time the shop collects through one - the migration must not authorize them all, that would
-     * bypass the merchant's switch.
+     * The tenant alone cannot collect anything - an app without an authorized interface cannot open a
+     * payment at all - so the interface of the one channel `payment_channel_config` switches on is
+     * authorized for it in the same run, and that channel is offered to it. It is that one channel and
+     * not every authorization the interfaces declare: seeding them all would bypass the merchant's
+     * switch, and the channels an operator enables later are authorized on demand.
      */
     public function testSeedsThePlatformTenant(): void
     {
@@ -380,12 +388,32 @@ class Migration1791856510CreatePaymentTablesTest extends TestCase
         $secret = $this->cipher()->decryptValue((string) $app['app_secret']);
         static::assertMatchesRegularExpression('/^[0-9a-f]{64}$/', $secret);
 
-        // no authorization is seeded: PlatformPaymentApp adds it for the channel that is really used
-        static::assertSame(0, (int) $this->connection->fetchOne(
+        // the default app can collect right away: the interface is authorized for it, on the merchant
+        // account of the platform
+        $authorization = $this->connection->fetchAssociative(
+            'SELECT `provider_technical_name`, `enabled`, `mode` FROM `payment_app_provider` WHERE `payment_app_id` = :app',
+            ['app' => $app['id']]
+        );
+        static::assertIsArray($authorization);
+        static::assertSame(Migration1791856510CreatePaymentTables::PROVIDER, $authorization['provider_technical_name']);
+        static::assertSame(1, (int) $authorization['enabled']);
+        static::assertSame(PaymentAppProviderEntity::MODE_PLATFORM, $authorization['mode']);
+
+        // and exactly that one - a second authorization would mean the switch of the merchant was
+        // bypassed somewhere
+        static::assertSame(1, (int) $this->connection->fetchOne(
             'SELECT COUNT(*) FROM `payment_app_provider` WHERE `payment_app_id` = :app',
             ['app' => $app['id']]
         ));
-        static::assertSame(0, (int) $this->connection->fetchOne(
+
+        $channel = $this->connection->fetchAssociative(
+            'SELECT `channel_technical_name`, `enabled` FROM `payment_app_channel` WHERE `payment_app_id` = :app',
+            ['app' => $app['id']]
+        );
+        static::assertIsArray($channel);
+        static::assertSame(Migration1791856510CreatePaymentTables::CHANNEL, $channel['channel_technical_name']);
+        static::assertSame(1, (int) $channel['enabled']);
+        static::assertSame(1, (int) $this->connection->fetchOne(
             'SELECT COUNT(*) FROM `payment_app_channel` WHERE `payment_app_id` = :app',
             ['app' => $app['id']]
         ));
@@ -414,13 +442,19 @@ class Migration1791856510CreatePaymentTablesTest extends TestCase
 
     /**
      * The platform is usable right after the installation: the alipay sandbox account is seeded - the
-     * credentials sealed the way the application seals them - and the h5 channel is switched on.
-     *
-     * The only tenant of a fresh installation is the platform itself, and it is not authorized for
-     * anything yet: the first collection through a channel writes that authorization.
+     * credentials sealed the way the application seals them - the h5 channel is switched on, and both
+     * are authorized for the platform tenant, which is the default app of the installation.
      */
     public function testSeedsTheAlipaySandboxAccountForThePlatformTenant(): void
     {
+        // the seed is what is asserted here, not the row an earlier installation left behind: the
+        // migration tests share one database, and a row that was seeded by an older version of this
+        // migration still carries the names of that version. The authorizations cascade with it.
+        $this->connection->executeStatement(
+            'DELETE FROM `payment_app` WHERE `technical_name` = :name',
+            ['name' => PaymentAppEntity::PLATFORM_TECHNICAL_NAME]
+        );
+
         (new Migration1791856510CreatePaymentTables())->update($this->connection);
 
         $provider = $this->connection->fetchAssociative(
@@ -464,15 +498,80 @@ class Migration1791856510CreatePaymentTablesTest extends TestCase
             ['name' => 'alipay_sandbox_demo']
         ));
 
-        // the authorization is lazy - PlatformPaymentApp writes it for the channel that is really used
-        static::assertSame(0, (int) $this->connection->fetchOne(
+        // the authorization is not lazy for the seeded channel: the default app has to be able to
+        // collect the moment the installation is finished
+        static::assertSame(1, (int) $this->connection->fetchOne(
+            'SELECT COUNT(*) FROM `payment_app_provider` WHERE `payment_app_id` = :app AND `provider_technical_name` = :provider',
+            ['app' => $app['id'], 'provider' => Migration1791856510CreatePaymentTables::PROVIDER]
+        ));
+        static::assertSame(1, (int) $this->connection->fetchOne(
+            'SELECT COUNT(*) FROM `payment_app_channel` WHERE `payment_app_id` = :app AND `channel_technical_name` = :channel',
+            ['app' => $app['id'], 'channel' => Migration1791856510CreatePaymentTables::CHANNEL]
+        ));
+    }
+
+    /**
+     * The migration runs on every upgrade, and the operator of the shop may have switched the platform
+     * authorizations off in the meantime. A second run must neither write a second row (the unique keys
+     * would make the migration fail) nor turn the switch back on - that would silently undo a decision
+     * the merchant made on purpose.
+     *
+     * The migration tests share one database, so this one starts from a known state and leaves one
+     * behind: the row is deleted first (its authorizations cascade with it) and at the end as well, and
+     * every other test of this class seeds it again by running the migration.
+     */
+    public function testThePlatformAuthorizationsAreSeededOnceAndNotTouchedAgain(): void
+    {
+        $this->connection->executeStatement(
+            'DELETE FROM `payment_app` WHERE `technical_name` = :name',
+            ['name' => PaymentAppEntity::PLATFORM_TECHNICAL_NAME]
+        );
+
+        $migration = new Migration1791856510CreatePaymentTables();
+        $migration->update($this->connection);
+
+        $appId = $this->connection->fetchOne(
+            'SELECT `id` FROM `payment_app` WHERE `technical_name` = :name',
+            ['name' => PaymentAppEntity::PLATFORM_TECHNICAL_NAME]
+        );
+        static::assertIsString($appId);
+
+        $this->connection->update(
+            'payment_app_provider',
+            ['enabled' => 0, 'mode' => PaymentAppProviderEntity::MODE_OWN],
+            ['payment_app_id' => $appId]
+        );
+        $this->connection->update('payment_app_channel', ['enabled' => 0], ['payment_app_id' => $appId]);
+
+        $migration->update($this->connection);
+
+        static::assertSame(1, (int) $this->connection->fetchOne(
             'SELECT COUNT(*) FROM `payment_app_provider` WHERE `payment_app_id` = :app',
-            ['app' => $app['id']]
+            ['app' => $appId]
         ));
-        static::assertSame(0, (int) $this->connection->fetchOne(
+        static::assertSame(1, (int) $this->connection->fetchOne(
             'SELECT COUNT(*) FROM `payment_app_channel` WHERE `payment_app_id` = :app',
-            ['app' => $app['id']]
+            ['app' => $appId]
         ));
+
+        $authorization = $this->connection->fetchAssociative(
+            'SELECT `enabled`, `mode` FROM `payment_app_provider` WHERE `payment_app_id` = :app',
+            ['app' => $appId]
+        );
+        static::assertIsArray($authorization);
+        static::assertSame(0, (int) $authorization['enabled']);
+        static::assertSame(PaymentAppProviderEntity::MODE_OWN, $authorization['mode']);
+
+        static::assertSame(0, (int) $this->connection->fetchOne(
+            'SELECT `enabled` FROM `payment_app_channel` WHERE `payment_app_id` = :app',
+            ['app' => $appId]
+        ));
+
+        // leave a fresh installation behind for the tests that follow
+        $this->connection->executeStatement(
+            'DELETE FROM `payment_app` WHERE `technical_name` = :name',
+            ['name' => PaymentAppEntity::PLATFORM_TECHNICAL_NAME]
+        );
     }
 
     /**

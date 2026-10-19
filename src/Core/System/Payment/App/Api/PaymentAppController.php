@@ -6,8 +6,6 @@ use Shopwell\Core\Defaults;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
-use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
-use Shopwell\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\PlatformRequest;
 use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppChannel\PaymentAppChannelEntity;
@@ -24,6 +22,10 @@ use Symfony\Component\Routing\Attribute\Route;
 
 /**
  * Onboards the external apps that call the payment api.
+ *
+ * The list is not limited to those apps: the tenant of the shop itself is part of it, because a
+ * merchant has to see through which account the platform collects its own payments. That row is
+ * read only - it is seeded by the migration, cannot be created here and is refused on every write.
  *
  * An app is an entity like any other, but its secret is not: storing it through the generic entity
  * endpoints would store it in plain text, so the secret is sealed by the {@see PaymentAppProvisioner}
@@ -60,19 +62,38 @@ class PaymentAppController extends AbstractController
     )]
     public function list(): JsonResponse
     {
-        // only apps a merchant can actually manage: the tenant of the shop is seeded, cannot be
-        // edited and must never show up in the onboarding list
+        // the tenant of the platform is listed on purpose: a merchant has to see through which
+        // account the platform itself collects, otherwise the list looks like nothing could collect
+        // at all. It is read only, but that is not enforced here - the guard lives in the provisioner,
+        // which is the only writer, so every write path is covered and not just this endpoint.
         $criteria = new Criteria();
-        $criteria->addFilter(new EqualsFilter('type', PaymentAppEntity::TYPE_EXTERNAL));
         $criteria->addAssociation('providers');
         $criteria->addAssociation('channels');
-        $criteria->addSorting(new FieldSorting('technicalName'));
 
-        $apps = [];
+        $entities = [];
         foreach ($this->appRepository->search($criteria, Context::createDefaultContext())->getEntities() as $app) {
             if ($app instanceof PaymentAppEntity) {
-                $apps[] = $this->present($app);
+                $entities[] = $app;
             }
+        }
+
+        // the order is built here and not in the criteria: "the tenant of the platform first" is not
+        // a field order, and the platform row is the one an operator looks for first - the rest keeps
+        // the technical name order it is addressable by
+        usort($entities, static function (PaymentAppEntity $left, PaymentAppEntity $right): int {
+            $leftIsPlatform = $left->type === PaymentAppEntity::TYPE_PLATFORM;
+            $rightIsPlatform = $right->type === PaymentAppEntity::TYPE_PLATFORM;
+
+            if ($leftIsPlatform !== $rightIsPlatform) {
+                return $leftIsPlatform ? -1 : 1;
+            }
+
+            return strcmp($left->technicalName, $right->technicalName);
+        });
+
+        $apps = [];
+        foreach ($entities as $app) {
+            $apps[] = $this->present($app);
         }
 
         return new JsonResponse(['apps' => $apps]);
@@ -115,7 +136,9 @@ class PaymentAppController extends AbstractController
     )]
     public function delete(string $id): JsonResponse
     {
-        $this->appRepository->delete([['id' => $id]], Context::createDefaultContext());
+        // the deletion is not done here: the provisioner is the one writer of an app and the one
+        // place that knows which rows may not be touched at all
+        $this->provisioner->delete($id, Context::createDefaultContext());
 
         return new JsonResponse(null, JsonResponse::HTTP_NO_CONTENT);
     }
@@ -160,6 +183,9 @@ class PaymentAppController extends AbstractController
             'id' => $app->id,
             'technicalName' => $app->technicalName,
             'name' => $app->name,
+            // the administration renders the tenant of the platform as a read only row, so it has to
+            // know which one it is - the type is the only difference between the two kinds of row
+            'type' => $app->type,
             'active' => $app->active,
             'notifyUrl' => $app->notifyUrl,
             'returnUrl' => $app->returnUrl,

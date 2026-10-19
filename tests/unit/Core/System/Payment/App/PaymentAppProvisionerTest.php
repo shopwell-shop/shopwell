@@ -232,6 +232,58 @@ class PaymentAppProvisionerTest extends TestCase
         static::assertSame($stored, $result['app']);
     }
 
+    /**
+     * The tenant of the platform is seeded by the migration and its secret is the one the platform
+     * signs its own notifications with - naming its id must not be enough to rewrite it.
+     */
+    public function testSavingThePlatformTenantIsRejected(): void
+    {
+        $platform = $this->platformTenant();
+
+        $appRepository = static::createMock(EntityRepository::class);
+        $appRepository->method('search')->willReturn($this->appResult($platform));
+        $appRepository->expects($this->never())->method('upsert');
+
+        $this->expectExceptionObject(PaymentException::platformTenantReadOnly(PaymentAppEntity::PLATFORM_TECHNICAL_NAME));
+
+        $this->provisioner($appRepository)->save(new PaymentAppDto(
+            id: $platform->id,
+            technicalName: PaymentAppEntity::PLATFORM_TECHNICAL_NAME,
+            name: 'Renamed',
+            active: false,
+            notifyUrl: 'https://evil.example.com/notify',
+        ));
+    }
+
+    public function testDeletingThePlatformTenantIsRejected(): void
+    {
+        $platform = $this->platformTenant();
+
+        $appRepository = static::createMock(EntityRepository::class);
+        $appRepository->method('search')->willReturn($this->appResult($platform));
+        $appRepository->expects($this->never())->method('delete');
+
+        $this->expectExceptionObject(PaymentException::platformTenantReadOnly(PaymentAppEntity::PLATFORM_TECHNICAL_NAME));
+
+        $this->provisioner($appRepository)->delete($platform->id, Context::createDefaultContext());
+    }
+
+    public function testDeletingAnExternalAppRemovesTheRow(): void
+    {
+        $external = PaymentControllerFixture::app('client-a', 'stored-secret');
+
+        $appRepository = static::createMock(EntityRepository::class);
+        $appRepository->method('search')->willReturn($this->appResult($external));
+        $appRepository->expects($this->once())
+            ->method('delete')
+            ->with(
+                static::callback(static fn (array $data): bool => $data === [['id' => $external->id]]),
+                static::anything()
+            );
+
+        $this->provisioner($appRepository)->delete($external->id, Context::createDefaultContext());
+    }
+
     public function testSaveLeavesTheAuthorizationsUntouchedWhenNoProvidersAreGiven(): void
     {
         $stored = PaymentControllerFixture::app('client-a', 'stored-secret');
@@ -345,6 +397,18 @@ class PaymentAppProvisionerTest extends TestCase
             new PaymentChannelRegistry($registry),
             new NativeClock(),
         );
+    }
+
+    /**
+     * The row the payment migration seeds: the tenant the platform itself collects through.
+     */
+    private function platformTenant(): PaymentAppEntity
+    {
+        $platform = PaymentControllerFixture::app(PaymentAppEntity::PLATFORM_TECHNICAL_NAME, 'platform-secret');
+        $platform->name = '平台支付';
+        $platform->type = PaymentAppEntity::TYPE_PLATFORM;
+
+        return $platform;
     }
 
     /**

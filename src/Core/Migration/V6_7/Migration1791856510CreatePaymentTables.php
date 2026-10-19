@@ -10,6 +10,7 @@ use Shopwell\Core\Framework\Migration\MigrationStep;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\Migration\Traits\StateMachineMigration;
 use Shopwell\Core\Migration\Traits\StateMachineMigrationTrait;
+use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppProvider\PaymentAppProviderEntity;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
 use Shopwell\Core\System\Payment\App\PaymentCredentialCipher;
 use Shopwell\Core\System\Payment\Order\PaymentOrderStates;
@@ -1007,9 +1008,16 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
      * a request with it, it exists because the column is not nullable. What keeps the api from
      * accepting this tenant as a caller is its type, not the secret, see PaymentAppEntity.
      *
-     * No interface or channel is authorized here. That is done the first time the shop collects
-     * through a channel, and only for a channel the merchant has enabled - seeding them all would
-     * bypass the switch that opens a channel for the shop.
+     * The interface and the channel seeded above are authorized for it in the same run, because the
+     * default app has to be able to collect the moment the installation is finished - an app without
+     * a single authorized interface cannot open a payment at all, and the application list would show
+     * a tenant that could not do what it exists for. That is the one interface whose channel
+     * `payment_channel_config` switches on, not all of them: seeding every authorization would bypass
+     * the merchant's switch, and the channels an operator enables later are still authorized on
+     * demand by {@see \Shopwell\Core\Checkout\Payment\Storefront\PlatformPaymentApp::appForChannel()}.
+     *
+     * Both writes are insert-if-absent. A merchant may have switched the authorization off or changed
+     * its mode by hand; an upgrade that re-enabled it would silently undo that decision.
      */
     private function seedPlatformTenant(Connection $connection, PaymentCredentialCipher $cipher, string $now): void
     {
@@ -1018,17 +1026,75 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
             ['name' => PaymentAppEntity::PLATFORM_TECHNICAL_NAME]
         );
 
-        if (\is_string($appId) && $appId !== '') {
+        if (!\is_string($appId) || $appId === '') {
+            $appId = Uuid::randomBytes();
+
+            $connection->insert('payment_app', [
+                'id' => $appId,
+                'technical_name' => PaymentAppEntity::PLATFORM_TECHNICAL_NAME,
+                'name' => '平台支付',
+                'type' => PaymentAppEntity::TYPE_PLATFORM,
+                'app_secret' => $cipher->encryptValue(bin2hex(random_bytes(32))),
+                'active' => 1,
+                'created_at' => $now,
+            ]);
+        }
+
+        // an existing tenant is not skipped: the authorizations are what makes it usable, and an
+        // installation that ran this migration before seeding them has to get them as well
+        $this->authorizePlatformProvider($connection, $appId, $now);
+        $this->offerPlatformChannel($connection, $appId, $now);
+    }
+
+    /**
+     * Authorizes the interface of the seeded channel for the platform tenant: the shop collects on the
+     * merchant account of the platform, never on an account of its own.
+     *
+     * An existing row is left exactly as it is - the merchant may have switched the interface off or
+     * pointed it at own credentials, and neither is undone here.
+     */
+    private function authorizePlatformProvider(Connection $connection, string $appId, string $now): void
+    {
+        $existing = $connection->fetchOne(
+            'SELECT `id` FROM `payment_app_provider` WHERE `payment_app_id` = :app AND `provider_technical_name` = :provider',
+            ['app' => $appId, 'provider' => self::PROVIDER]
+        );
+
+        if (\is_string($existing) && $existing !== '') {
             return;
         }
 
-        $connection->insert('payment_app', [
+        $connection->insert('payment_app_provider', [
             'id' => Uuid::randomBytes(),
-            'technical_name' => PaymentAppEntity::PLATFORM_TECHNICAL_NAME,
-            'name' => '平台支付',
-            'type' => PaymentAppEntity::TYPE_PLATFORM,
-            'app_secret' => $cipher->encryptValue(bin2hex(random_bytes(32))),
-            'active' => 1,
+            'payment_app_id' => $appId,
+            'provider_technical_name' => self::PROVIDER,
+            'enabled' => 1,
+            'mode' => PaymentAppProviderEntity::MODE_PLATFORM,
+            'created_at' => $now,
+        ]);
+    }
+
+    /**
+     * Offers the seeded channel to the platform tenant. It is the channel `payment_channel_config`
+     * switches on, so the checkout can pay through it right away; every other channel is offered the
+     * first time it is used and only once the merchant enabled it.
+     */
+    private function offerPlatformChannel(Connection $connection, string $appId, string $now): void
+    {
+        $existing = $connection->fetchOne(
+            'SELECT `id` FROM `payment_app_channel` WHERE `payment_app_id` = :app AND `channel_technical_name` = :channel',
+            ['app' => $appId, 'channel' => self::CHANNEL]
+        );
+
+        if (\is_string($existing) && $existing !== '') {
+            return;
+        }
+
+        $connection->insert('payment_app_channel', [
+            'id' => Uuid::randomBytes(),
+            'payment_app_id' => $appId,
+            'channel_technical_name' => self::CHANNEL,
+            'enabled' => 1,
             'created_at' => $now,
         ]);
     }

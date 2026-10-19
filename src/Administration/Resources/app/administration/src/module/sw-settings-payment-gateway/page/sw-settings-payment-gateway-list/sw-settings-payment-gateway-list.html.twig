@@ -108,9 +108,55 @@
             >
                 {% block sw_settings_payment_gateway_list_grid_column_technical_name %}
                 <template #column-technicalName="{ item }">
-                    <router-link :to="{ name: 'sw.settings.payment.gateway.detail', params: { id: item.id } }">
+                    {% block sw_settings_payment_gateway_list_grid_column_technical_name_link %}
+                    <router-link
+                        v-if="!isPlatformApp(item)"
+                        :to="{ name: 'sw.settings.payment.gateway.detail', params: { id: item.id } }"
+                    >
                         {{ item.technicalName }}
                     </router-link>
+                    {% endblock %}
+
+                    {% block sw_settings_payment_gateway_list_grid_column_technical_name_platform %}
+                    <div
+                        v-else
+                        class="sw-settings-payment-gateway-list__platform"
+                    >
+                        <span class="sw-settings-payment-gateway-list__platform-technical-name">
+                            {{ item.technicalName }}
+                        </span>
+                        {% block sw_settings_payment_gateway_list_grid_column_technical_name_platform_providers %}
+                        <span class="sw-settings-payment-gateway-list__platform-providers">
+                            <template v-if="enabledProviderLabels(item).length > 0">
+                                {{ $t('sw-settings-payment-gateway.list.platformActiveProviders') }}
+                                {{ enabledProviderLabels(item).join(', ') }}
+                            </template>
+                            <template v-else>
+                                {{ $t('sw-settings-payment-gateway.list.platformNoActiveProvider') }}
+                            </template>
+                        </span>
+                        {% endblock %}
+                        <span class="sw-settings-payment-gateway-list__platform-hint">
+                            {{ $t('sw-settings-payment-gateway.list.platformReadOnlyHint') }}
+                        </span>
+                    </div>
+                    {% endblock %}
+                </template>
+                {% endblock %}
+
+                {% block sw_settings_payment_gateway_list_grid_column_name %}
+                <template #column-name="{ item }">
+                    <span class="sw-settings-payment-gateway-list__name">
+                        {{ item.name }}
+                    </span>
+                    <mt-badge
+                        v-if="isPlatformApp(item)"
+                        class="sw-settings-payment-gateway-list__platform-badge"
+                        variant="info"
+                        size="small"
+                    >
+                        {{ $t('sw-settings-payment-gateway.list.badgePlatform') }}
+                    </mt-badge>
                 </template>
                 {% endblock %}
 
@@ -138,6 +184,7 @@
                 <template #actions="{ item }">
                     {% block sw_settings_payment_gateway_list_grid_actions_edit %}
                     <sw-context-menu-item
+                        v-if="!isPlatformApp(item)"
                         class="sw-settings-payment-gateway-list__edit-action"
                         :disabled="!canEdit || undefined"
                         @click="onEdit(item)"
@@ -148,6 +195,7 @@
 
                     {% block sw_settings_payment_gateway_list_grid_actions_delete %}
                     <sw-context-menu-item
+                        v-if="!isPlatformApp(item)"
                         class="sw-settings-payment-gateway-list__delete-action"
                         variant="danger"
                         :disabled="!canDelete || undefined"

@@ -8,7 +8,6 @@ use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
-use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppChannel\PaymentAppChannelCollection;
@@ -49,6 +48,9 @@ class PaymentAppControllerTest extends TestCase
         static::assertCount(1, $data['apps']);
         static::assertSame($app->id, $data['apps'][0]['id']);
         static::assertSame('client-a', $data['apps'][0]['technicalName']);
+        // the administration has to tell the two kinds of row apart, otherwise it cannot render the
+        // tenant of the platform read only
+        static::assertSame(PaymentAppEntity::TYPE_EXTERNAL, $data['apps'][0]['type']);
         static::assertTrue($data['apps'][0]['hasSecret']);
         static::assertSame([], $data['apps'][0]['allowedIps']);
         static::assertCount(1, $data['apps'][0]['providers']);
@@ -70,35 +72,69 @@ class PaymentAppControllerTest extends TestCase
     }
 
     /**
-     * The tenant of the shop is seeded and cannot be edited, so it must not show up in the onboarding
-     * list - an operator would only ever see a row he cannot change.
+     * The tenant of the platform collects for the shop itself and is listed on purpose: a merchant has
+     * to see through which account the platform is paid, otherwise the list looks like nothing could
+     * collect at all. It is the first row because it is the one an operator looks for, and it is
+     * presented like any other app - plus the type that makes the page render it read only.
      */
-    public function testTheListOnlyAsksForExternalApps(): void
+    public function testTheListPresentsThePlatformTenantFirstAndDoesNotFilterByType(): void
     {
+        $external = PaymentControllerFixture::app('client-a', 'stored-secret');
+        $platform = $this->platformTenant();
+
         $repository = static::createMock(EntityRepository::class);
         $repository->expects($this->once())
             ->method('search')
             ->with(static::callback(function (Criteria $criteria): bool {
-                $filters = $criteria->getFilters();
-                static::assertCount(1, $filters);
-
-                $filter = $filters[0];
-                static::assertInstanceOf(EqualsFilter::class, $filter);
-                static::assertSame('type', $filter->getField());
-                static::assertSame(PaymentAppEntity::TYPE_EXTERNAL, $filter->getValue());
+                // no filter at all: the earlier "external only" filter is what hid the tenant
+                static::assertSame([], $criteria->getFilters());
 
                 return true;
             }))
-            ->willReturn(new EntitySearchResult(
-                'payment_app',
-                0,
-                new PaymentAppCollection(),
-                null,
-                new Criteria(),
-                Context::createDefaultContext()
-            ));
+            ->willReturn($this->appResult([$external, $platform]));
 
-        static::assertSame([], $this->decode($this->controller($repository)->list())['apps']);
+        $data = $this->decode($this->controller($repository)->list());
+
+        static::assertCount(2, $data['apps']);
+        static::assertSame($platform->id, $data['apps'][0]['id']);
+        static::assertSame(PaymentAppEntity::PLATFORM_TECHNICAL_NAME, $data['apps'][0]['technicalName']);
+        static::assertSame(PaymentAppEntity::TYPE_PLATFORM, $data['apps'][0]['type']);
+        static::assertSame($external->id, $data['apps'][1]['id']);
+        static::assertSame(PaymentAppEntity::TYPE_EXTERNAL, $data['apps'][1]['type']);
+    }
+
+    /**
+     * Naming the row is what made the earlier hole possible: the id is enough to reach the write
+     * without ever looking at the kind of tenant it points at.
+     */
+    public function testSavingThePlatformTenantIsRejected(): void
+    {
+        $platform = $this->platformTenant();
+
+        $controller = $this->controller(PaymentControllerFixture::repository(PaymentAppCollection::class, [$platform]));
+
+        $this->expectExceptionObject(PaymentException::platformTenantReadOnly(PaymentAppEntity::PLATFORM_TECHNICAL_NAME));
+
+        $controller->save(new PaymentAppDto(
+            id: $platform->id,
+            technicalName: PaymentAppEntity::PLATFORM_TECHNICAL_NAME,
+            name: 'Renamed',
+        ));
+    }
+
+    public function testDeletingThePlatformTenantIsRejected(): void
+    {
+        $platform = $this->platformTenant();
+
+        $repository = static::createMock(EntityRepository::class);
+        $repository->method('search')->willReturn($this->appResult([$platform]));
+        $repository->expects($this->never())->method('delete');
+
+        $controller = $this->controller($repository);
+
+        $this->expectExceptionObject(PaymentException::platformTenantReadOnly(PaymentAppEntity::PLATFORM_TECHNICAL_NAME));
+
+        $controller->delete($platform->id);
     }
 
     public function testANewAppGetsAGeneratedSecretReturnedOnce(): void
@@ -250,6 +286,35 @@ class PaymentAppControllerTest extends TestCase
     private function providerAssignment(string $appId): PaymentAppProviderEntity
     {
         return PaymentControllerFixture::appProvider($appId);
+    }
+
+    /**
+     * The row the payment migration seeds: the tenant the platform itself collects through.
+     */
+    private function platformTenant(): PaymentAppEntity
+    {
+        $platform = PaymentControllerFixture::app(PaymentAppEntity::PLATFORM_TECHNICAL_NAME, 'platform-secret');
+        $platform->name = '平台支付';
+        $platform->type = PaymentAppEntity::TYPE_PLATFORM;
+
+        return $platform;
+    }
+
+    /**
+     * @param list<PaymentAppEntity> $entities
+     *
+     * @return EntitySearchResult<PaymentAppCollection>
+     */
+    private function appResult(array $entities): EntitySearchResult
+    {
+        return new EntitySearchResult(
+            'payment_app',
+            \count($entities),
+            new PaymentAppCollection($entities),
+            null,
+            new Criteria(),
+            Context::createDefaultContext()
+        );
     }
 
     private function channelAssignment(string $appId): PaymentAppChannelEntity
