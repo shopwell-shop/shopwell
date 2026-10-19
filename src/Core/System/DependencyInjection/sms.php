@@ -28,7 +28,13 @@ use Shopwell\Core\System\Sms\Template\SmsTemplateMappingLocator;
 use Shopwell\Core\System\Sms\Template\SmsTemplateRenderer;
 use Shopwell\Core\System\Sms\Template\SmsTemplateResolver;
 use Shopwell\Core\System\Sms\Transport\SmsTransportLoader;
+use Shopwell\Core\System\Sms\Util\CountryDialCodeResolver;
+use Shopwell\Core\System\Sms\Util\PhoneNumberMasker;
+use Shopwell\Core\System\Sms\Util\PhoneNumberMaskerInterface;
 use Shopwell\Core\System\Sms\Util\PhoneNumberNormalizer;
+use Shopwell\Core\System\Sms\Util\PhoneNumberNormalizerInterface;
+use Shopwell\Core\System\Sms\Util\ShippedCountryDialCodeProvider;
+use Shopwell\Core\System\Sms\Util\SmsSegmentCounter;
 use Shopwell\Core\System\SystemConfig\SystemConfigService;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
@@ -67,13 +73,30 @@ return static function (ContainerConfigurator $container): void {
     $services->set(NullGatewayTransportFactory::class)
         ->tag('shopwell.sms.gateway');
 
+    // the dial code data the normaliser reads, a provider is the extension point: a shop that sells
+    // into a country the platform ships no code for adds one instead of forking the component
+    $services->set(CountryDialCodeResolver::class)
+        ->args([tagged_iterator('shopwell.sms.country_dial_code_provider')]);
+
+    $services->set(ShippedCountryDialCodeProvider::class)
+        ->tag('shopwell.sms.country_dial_code_provider');
+
     $services->set(PhoneNumberNormalizer::class)
-        ->args([service(SystemConfigService::class)]);
+        ->args([service(CountryDialCodeResolver::class)]);
+
+    $services->alias(PhoneNumberNormalizerInterface::class, PhoneNumberNormalizer::class);
+
+    $services->set(PhoneNumberMasker::class);
+
+    $services->alias(PhoneNumberMaskerInterface::class, PhoneNumberMasker::class);
+
+    $services->set(SmsSegmentCounter::class);
 
     $services->set(LogGatewayTransportFactory::class)
         ->args([
             service('logger'),
-            service(PhoneNumberNormalizer::class),
+            service(PhoneNumberNormalizerInterface::class),
+            service(PhoneNumberMaskerInterface::class),
         ])
         ->tag('shopwell.sms.gateway');
 
@@ -107,6 +130,7 @@ return static function (ContainerConfigurator $container): void {
             service('sms_gateway.repository'),
             service('sms_template_mapping.repository'),
             service(SmsGatewayRegistry::class),
+            service(SmsGatewayAuditCapabilities::class),
             service(SystemConfigService::class),
         ]);
 
@@ -150,13 +174,13 @@ return static function (ContainerConfigurator $container): void {
     $services->set(SmsTemplateResolver::class)
         ->args([
             service('sms_template.repository'),
-            service('sms_template_mapping.repository'),
+            service(SmsTemplateMappingLocator::class),
             service('sms_gateway.repository'),
             service(SmsGatewayRegistry::class),
             service(SmsGatewayResolverInterface::class),
             service(SmsParamValidator::class),
             service(SmsTemplateRenderer::class),
-            service(PhoneNumberNormalizer::class),
+            service(PhoneNumberNormalizerInterface::class),
         ]);
 
     // ---- the facade ----
@@ -165,7 +189,7 @@ return static function (ContainerConfigurator $container): void {
             service('texter.transports'),
             service(SmsTemplateResolver::class),
             service(SmsGatewayResolverInterface::class),
-            service(PhoneNumberNormalizer::class),
+            service(PhoneNumberNormalizerInterface::class),
             service('messenger.default_bus'),
         ]);
 
@@ -180,7 +204,9 @@ return static function (ContainerConfigurator $container): void {
             service('sms_delivery.repository'),
             service('sms_gateway.repository'),
             service('sms_template.repository'),
-            service(PhoneNumberNormalizer::class),
+            service(PhoneNumberNormalizerInterface::class),
+            service(PhoneNumberMaskerInterface::class),
+            service(SmsSegmentCounter::class),
             service(Connection::class),
             service(ClockInterface::class),
             service('event_dispatcher'),

@@ -15,6 +15,10 @@ use Shopwell\Core\System\Sms\Template\SmsTemplateEntity;
  * A message that goes out as free text carries the scene and the template name only, templateCode
  * stays empty and the subject is the rendered body.
  *
+ * A message that could not be routed names the reason it was not sent, which is the only thing the
+ * delivery record can report in that case: the message was built and handled, it simply had no
+ * gateway to go out over.
+ *
  * @internal
  */
 #[Package('framework')]
@@ -22,6 +26,8 @@ final class SmsMessageOptions implements TemplateSmsOptionsInterface
 {
     /**
      * @param array<string, string> $params the parameters the provider expects
+     * @param string|null $undeliverableReason the error code of the module that explains why no
+     *                                         gateway took the message, null when one did
      */
     public function __construct(
         private readonly string $scene = SmsTemplateEntity::SCENE_TRANSACTION,
@@ -29,6 +35,7 @@ final class SmsMessageOptions implements TemplateSmsOptionsInterface
         private readonly ?string $templateCode = null,
         private readonly ?string $signName = null,
         private readonly array $params = [],
+        private readonly ?string $undeliverableReason = null,
     ) {
     }
 
@@ -66,6 +73,17 @@ final class SmsMessageOptions implements TemplateSmsOptionsInterface
     public function isTemplateBased(): bool
     {
         return $this->templateCode !== null && $this->templateCode !== '';
+    }
+
+    /**
+     * The error code of the module that explains why no gateway took the message, null when one did.
+     *
+     * It is read by the delivery record, which writes it as the failure of the attempt instead of
+     * reporting a message that never left the shop as sent.
+     */
+    public function getUndeliverableReason(): ?string
+    {
+        return $this->undeliverableReason;
     }
 
     /**

@@ -18,11 +18,12 @@ use Shopwell\Core\System\Sms\Template\Aggregate\SmsTemplateMapping\SmsTemplateMa
 use Shopwell\Core\System\Sms\Template\SmsParamValidator;
 use Shopwell\Core\System\Sms\Template\SmsTemplateCollection;
 use Shopwell\Core\System\Sms\Template\SmsTemplateEntity;
+use Shopwell\Core\System\Sms\Template\SmsTemplateMappingLocator;
 use Shopwell\Core\System\Sms\Template\SmsTemplateRenderer;
 use Shopwell\Core\System\Sms\Template\SmsTemplateResolver;
-use Shopwell\Core\System\Sms\Util\PhoneNumberNormalizer;
+use Shopwell\Core\System\Sms\Util\PhoneNumber;
+use Shopwell\Core\System\Sms\Util\PhoneNumberNormalizerInterface;
 use Shopwell\Core\Test\Stub\DataAbstractionLayer\StaticEntityRepository;
-use Shopwell\Core\Test\Stub\SystemConfigService\StaticSystemConfigService;
 
 /**
  * @internal
@@ -102,16 +103,75 @@ class SmsTemplateResolverTest extends TestCase
         );
     }
 
-    public function testItNormalisesTheNumberOfTheRecipient(): void
+    public function testItWorksOnTheNumberTheNormalizerAnswers(): void
     {
         $template = $this->createTemplate(content: 'Your code is {{ code }}.');
         $gateway = $this->createGateway('twilio');
 
-        $resolver = $this->createResolver([$template], [$gateway], [], ['twilio' => []], [$gateway->id]);
+        $normalizer = $this->createMock(PhoneNumberNormalizerInterface::class);
+        $normalizer->expects($this->once())
+            ->method('normalize')
+            ->with('138 0000 0000', 'CN')
+            ->willReturn(PhoneNumber::fromE164('+8613800000000', 'CN', '86'));
 
-        $message = $resolver->resolve('customer.otp.login', ['code' => '123456'], '138 0000 0000');
+        $resolver = $this->createResolver(
+            [$template],
+            [$gateway],
+            [],
+            ['twilio' => []],
+            [$gateway->id],
+            normalizer: $normalizer,
+        );
+
+        // the country the caller knows is handed to the normaliser, which alone decides the e.164
+        // form - the resolver never writes a number itself
+        $message = $resolver->resolve('customer.otp.login', ['code' => '123456'], '138 0000 0000', null, null, 'CN');
 
         static::assertSame('+8613800000000', $message->getPhone());
+    }
+
+    public function testTheRoutingGetsTheCountryOfTheNormalisedNumber(): void
+    {
+        $template = $this->createTemplate(content: 'Your code is {{ code }}.');
+        $gateway = $this->createGateway('twilio');
+
+        $gatewayResolver = $this->createMock(SmsGatewayResolverInterface::class);
+        $gatewayResolver->expects($this->once())
+            ->method('resolveGatewayIds')
+            ->with(static::anything(), null, 'DE', $template)
+            ->willReturn([]);
+
+        $this->createResolver(
+            [$template],
+            [$gateway],
+            [],
+            ['twilio' => []],
+            gatewayResolver: $gatewayResolver,
+            normalizer: $this->normalizerReturning('+4915112345678', 'DE', '49'),
+        )->resolve('customer.otp.login', ['code' => '123456'], '+4915112345678', null, null, 'CN');
+    }
+
+    public function testACountryTheNumberDoesNotNameReachesTheRoutingAsUnknown(): void
+    {
+        $template = $this->createTemplate(content: 'Your code is {{ code }}.');
+        $gateway = $this->createGateway('twilio');
+
+        $gatewayResolver = $this->createMock(SmsGatewayResolverInterface::class);
+        $gatewayResolver->expects($this->once())
+            ->method('resolveGatewayIds')
+            ->with(static::anything(), null, null, $template)
+            ->willReturn([]);
+
+        // the number itself is valid, the dial code data simply does not know its country - the
+        // routing has to see that as unknown and not as a domestic number
+        $this->createResolver(
+            [$template],
+            [$gateway],
+            [],
+            ['twilio' => []],
+            gatewayResolver: $gatewayResolver,
+            normalizer: $this->normalizerReturning('+998901234567', null, ''),
+        )->resolve('customer.otp.login', ['code' => '123456'], '+998901234567');
     }
 
     public function testItThrowsForATemplateThatDoesNotExist(): void
@@ -234,6 +294,33 @@ class SmsTemplateResolverTest extends TestCase
         // the message is still built and recorded, it simply does not leave the platform
         static::assertSame(SmsGatewayResolverInterface::GATEWAY_NULL, $message->getTransport());
         static::assertSame('Your code is 123456.', $message->getSubject());
+
+        $options = $message->getOptions();
+
+        static::assertInstanceOf(SmsMessageOptions::class, $options);
+        // the record of the attempt has to say why nothing took the message
+        static::assertSame(SmsException::NO_USABLE_GATEWAY, $options->getUndeliverableReason());
+    }
+
+    public function testItThrowsForAReportedTemplateWithoutACode(): void
+    {
+        $template = $this->createTemplate();
+        $gateway = $this->createGateway('aliyun');
+
+        $mapping = $this->createMapping($template, 'aliyun', $gateway);
+        $mapping->templateCode = null;
+
+        $resolver = $this->createResolver(
+            [$template],
+            [$gateway],
+            [$mapping],
+            ['aliyun' => ['templateMode' => true]],
+            [$gateway->id],
+        );
+
+        $this->expectExceptionObject(SmsException::templateNotConfigured('customer.otp.login', 'aliyun'));
+
+        $resolver->resolve('customer.otp.login', ['code' => '123456'], '+8613800000000');
     }
 
     /**
@@ -249,20 +336,56 @@ class SmsTemplateResolverTest extends TestCase
         array $mappings,
         array $factories,
         array $resolvedGatewayIds = [],
+        ?SmsGatewayResolverInterface $gatewayResolver = null,
+        ?PhoneNumberNormalizerInterface $normalizer = null,
     ): SmsTemplateResolver {
-        $gatewayResolver = static::createStub(SmsGatewayResolverInterface::class);
-        $gatewayResolver->method('resolveGatewayIds')->willReturn($resolvedGatewayIds);
+        $mappingRepository = StaticEntityRepository::of(
+            SmsTemplateMappingCollection::class,
+            [new SmsTemplateMappingCollection($mappings)]
+        );
+
+        if ($gatewayResolver === null) {
+            $stub = static::createStub(SmsGatewayResolverInterface::class);
+            $stub->method('resolveGatewayIds')->willReturn($resolvedGatewayIds);
+
+            $gatewayResolver = $stub;
+        }
 
         return new SmsTemplateResolver(
             StaticEntityRepository::of(SmsTemplateCollection::class, [new SmsTemplateCollection($templates)]),
-            StaticEntityRepository::of(SmsTemplateMappingCollection::class, [new SmsTemplateMappingCollection($mappings)]),
+            new SmsTemplateMappingLocator($mappingRepository),
             StaticEntityRepository::of(SmsGatewayCollection::class, [new SmsGatewayCollection($gateways)]),
             $this->createRegistry($factories),
             $gatewayResolver,
             new SmsParamValidator(),
             new SmsTemplateRenderer(),
-            new PhoneNumberNormalizer(new StaticSystemConfigService()),
+            $normalizer ?? $this->normalizerKeepingTheNumberAsWritten(),
         );
+    }
+
+    /**
+     * The normaliser of the cases that do not care about it: it keeps the number as written and
+     * places it nowhere, so the routing sees the unknown country of a number nobody named.
+     */
+    private function normalizerKeepingTheNumberAsWritten(): PhoneNumberNormalizerInterface
+    {
+        $normalizer = static::createStub(PhoneNumberNormalizerInterface::class);
+        $normalizer->method('normalize')->willReturnCallback(
+            static fn (string $phone): PhoneNumber => PhoneNumber::fromE164($phone, null, '')
+        );
+
+        return $normalizer;
+    }
+
+    /**
+     * The normaliser of the cases that care about the country the number carries.
+     */
+    private function normalizerReturning(string $e164, ?string $countryIso, string $dialCode): PhoneNumberNormalizerInterface
+    {
+        $normalizer = static::createStub(PhoneNumberNormalizerInterface::class);
+        $normalizer->method('normalize')->willReturn(PhoneNumber::fromE164($e164, $countryIso, $dialCode));
+
+        return $normalizer;
     }
 
     /**
