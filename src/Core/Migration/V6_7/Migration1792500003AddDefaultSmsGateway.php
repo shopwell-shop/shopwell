@@ -8,7 +8,6 @@ use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Migration\MigrationStep;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\System\Sms\Gateway\Null\NullGatewayTransportFactory;
-use Shopwell\Core\System\Sms\Gateway\SmsGatewayEntity;
 
 /**
  * Seeds the gateway a shop sends over until an administrator configures a provider.
@@ -54,7 +53,6 @@ class Migration1792500003AddDefaultSmsGateway extends MigrationStep
             // available in every sales channel, it is the baseline and not an account of a channel
             'sales_channel_id' => null,
             'priority' => self::PRIORITY,
-            'strategy' => SmsGatewayEntity::STRATEGY_EXCLUSIVE,
             'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
         ]);
     }

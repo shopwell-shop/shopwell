@@ -411,7 +411,6 @@ class SmsGatewayResolverTest extends TestCase
         $gateway->enabled = $enabled;
         $gateway->salesChannelId = $salesChannelId;
         $gateway->priority = $priority;
-        $gateway->strategy = SmsGatewayEntity::STRATEGY_EXCLUSIVE;
         $gateway->credentials = ['accessKeyId' => 'key'];
         $gateway->options = [];
         $gateway->label = 'test gateway';

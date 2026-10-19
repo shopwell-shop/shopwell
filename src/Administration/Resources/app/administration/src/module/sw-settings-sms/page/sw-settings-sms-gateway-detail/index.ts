@@ -106,15 +106,6 @@ export default Shopwell.Component.wrapComponentConfig({
             });
         },
 
-        strategyOptions(): Array<{ value: string; label: string }> {
-            return ['exclusive', 'failover', 'round_robin'].map((strategy) => {
-                return {
-                    value: strategy,
-                    label: this.$t(`sw-settings-sms.gateway.strategy.${strategy}`),
-                };
-            });
-        },
-
         title(): string {
             return this.isNew
                 ? this.$t('sw-settings-sms.gateway.detailTitleCreate')
@@ -155,7 +146,6 @@ export default Shopwell.Component.wrapComponentConfig({
                     const gateway = this.gatewayRepository.create();
                     gateway.enabled = true;
                     gateway.priority = 0;
-                    gateway.strategy = 'exclusive';
                     gateway.technicalName = this.providers[0]?.technicalName ?? '';
 
                     this.gateway = gateway;

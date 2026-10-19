@@ -154,7 +154,6 @@ class SmsTransportLoaderTest extends TestCase
         $gateway->setUniqueIdentifier($gateway->id);
         $gateway->technicalName = $technicalName;
         $gateway->enabled = $enabled;
-        $gateway->strategy = SmsGatewayEntity::STRATEGY_EXCLUSIVE;
         $gateway->credentials = ['accessKeyId' => 'key'];
         $gateway->options = ['sandbox' => true];
 

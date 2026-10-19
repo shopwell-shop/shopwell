@@ -90,17 +90,6 @@
                         />
                         {% endblock %}
 
-                        {% block sw_settings_sms_gateway_detail_strategy %}
-                        <mt-select
-                            v-model="gateway.strategy"
-                            class="sw-settings-sms-gateway-detail__strategy"
-                            name="strategy"
-                            :label="$t('sw-settings-sms.gateway.labelStrategy')"
-                            :options="strategyOptions"
-                            :disabled="!acl.can('sms_gateway.editor') || undefined"
-                        />
-                        {% endblock %}
-
                         {% block sw_settings_sms_gateway_detail_priority %}
                         <mt-number-field
                             v-model="gateway.priority"

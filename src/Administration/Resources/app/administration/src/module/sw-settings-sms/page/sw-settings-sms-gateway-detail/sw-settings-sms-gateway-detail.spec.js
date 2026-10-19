@@ -122,7 +122,6 @@ describe('src/module/sw-settings-sms/page/sw-settings-sms-gateway-detail', () =>
         expect(wrapper.vm.isNew).toBe(true);
         expect(wrapper.vm.gateway.technicalName).toBe('with-credentials');
         expect(wrapper.vm.gateway.enabled).toBe(true);
-        expect(wrapper.vm.gateway.strategy).toBe('exclusive');
         expect(wrapper.vm.credentialFields.map((field) => field.name)).toEqual(['accessKeyId', 'accessKeySecret']);
         expect(wrapper.vm.credentialValues).toEqual({ accessKeyId: '', accessKeySecret: '' });
     });
@@ -143,7 +142,6 @@ describe('src/module/sw-settings-sms/page/sw-settings-sms-gateway-detail', () =>
                 technicalName: 'with-credentials',
                 enabled: true,
                 priority: 3,
-                strategy: 'failover',
                 credentials: { accessKeyId: 'the-id', accessKeySecret: 'the-secret', dropped: 'x' },
                 options: { signName: 'Shop' },
             },
@@ -217,7 +215,6 @@ describe('src/module/sw-settings-sms/page/sw-settings-sms-gateway-detail', () =>
                 technicalName: 'with-credentials',
                 enabled: true,
                 priority: 0,
-                strategy: 'exclusive',
                 credentials: { accessKeyId: 'id', accessKeySecret: 'secret' },
                 options: null,
             },
@@ -260,7 +257,6 @@ describe('src/module/sw-settings-sms/page/sw-settings-sms-gateway-detail', () =>
                 technicalName: 'with-credentials',
                 enabled: true,
                 priority: 0,
-                strategy: 'exclusive',
                 credentials: { accessKeyId: 'id', accessKeySecret: 'secret' },
                 options: null,
                 customFields: { sms_accept_unknown_region: true },
@@ -278,7 +274,6 @@ describe('src/module/sw-settings-sms/page/sw-settings-sms-gateway-detail', () =>
                 technicalName: 'with-credentials',
                 enabled: true,
                 priority: 0,
-                strategy: 'exclusive',
                 credentials: { accessKeyId: 'id', accessKeySecret: 'secret' },
                 options: null,
                 customFields: { sms_accept_unknown_region: false, another_flag: 'kept' },

@@ -114,12 +114,6 @@
                         </template>
                         {% endblock %}
 
-                        {% block sw_settings_sms_gateway_list_grid_columns_strategy %}
-                        <template #column-strategy="{ item }">
-                            {{ strategyLabel(item.strategy) }}
-                        </template>
-                        {% endblock %}
-
                         {% block sw_settings_sms_gateway_list_grid_columns_actions %}
                         <template #actions="{ item }">
                             {% block sw_settings_sms_gateway_list_grid_columns_actions_delete %}
