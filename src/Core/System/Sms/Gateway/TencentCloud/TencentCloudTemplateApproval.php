@@ -205,8 +205,8 @@ final class TencentCloudTemplateApproval
             }
         }
 
-        // the fields are the ones the core prefilled, an empty one falls back to the submission
-        // itself, so a template is never reported under a blank name
+        // the name is the one the core prefilled, a caller without the form reports under the
+        // reference of the template so a template is never created with a blank name
         $name = $submission->values['templateName'] ?? null;
         $templateName = \is_string($name) && trim($name) !== '' ? $name : $submission->templateRef;
 
