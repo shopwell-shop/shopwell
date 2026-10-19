@@ -27,18 +27,19 @@ class RegisterAddressRequiredTemplateTest extends TestCase
     use StorefrontControllerTestBehaviour;
 
     /**
-     * The optional address form must not block the submission of the account registration via client side validation.
+     * The account registration only asks for email and password, so no address or personal data is rendered.
      */
-    public function testAccountRegistrationRendersOptionalAddressForm(): void
+    public function testAccountRegistrationOnlyRendersMailAndPassword(): void
     {
-        $content = $this->getContent('GET', '/account/register');
+        $this->assertRendersCredentialsOnly($this->getContent('GET', '/account/register'));
+    }
 
-        static::assertStringContainsString('register-address-optional-hint', $content);
-        static::assertNull($this->extractInputWithRequiredRule($content, 'billingAddress-AddressStreet'));
-        static::assertNull($this->extractInputWithRequiredRule($content, 'billingAddressAddressCity'));
-        // the server side rendering must not mark the zipcode as required either, the client side
-        // required state is added at runtime by the country selection plugin (see the QA report)
-        static::assertNull($this->extractInputWithRequiredRule($content, 'billingAddressAddressZipcode'));
+    /**
+     * The login page renders the same registration card, so it must not render the address or personal data either.
+     */
+    public function testLoginPageRegistrationOnlyRendersMailAndPassword(): void
+    {
+        $this->assertRendersCredentialsOnly($this->getContent('GET', '/account/login'));
     }
 
     /**
@@ -84,6 +85,24 @@ class RegisterAddressRequiredTemplateTest extends TestCase
         static::assertSame(200, $response->getStatusCode(), (string) $response->getContent());
 
         return (string) $response->getContent();
+    }
+
+    /**
+     * Guards the registration card which is rendered by the account registration and by the login page.
+     */
+    private function assertRendersCredentialsOnly(string $content): void
+    {
+        static::assertStringContainsString('name="email"', $content);
+        static::assertStringContainsString('name="password"', $content);
+        static::assertStringContainsString('register-address-optional-hint', $content);
+
+        // neither the address form nor the personal fields of the address form are rendered
+        static::assertStringNotContainsString('name="billingAddress[', $content);
+        static::assertStringNotContainsString('name="shippingAddress[', $content);
+        static::assertStringNotContainsString('differentShippingAddress', $content);
+        static::assertStringNotContainsString('register-billing', $content);
+        static::assertStringNotContainsString('name="salutationId"', $content);
+        static::assertStringNotContainsString('name="phoneNumber"', $content);
     }
 
     /**

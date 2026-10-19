@@ -4,12 +4,13 @@
 
 {#
     A customer account only requires an email address and a password, the addresses are collected during checkout.
-    Therefore the account registration does not render the personal data (salutation, name, account type, phone
-    number) nor the address forms at all. All other use cases of this template (guest checkout registration,
-    customer group registration, ...) still need the address and the name, which is why the requirement is derived
-    from the current route and can be overwritten by the including template.
+    Therefore neither the account registration nor the registration card of the login page renders the personal data
+    (salutation, name, account type, phone number) or the address forms at all - the login page renders this component
+    as well. All other use cases (guest checkout registration, customer group registration, ...) still need the address
+    and the name, which is why the requirement is derived from the current route and can be overwritten by the
+    including template.
 #}
-{% set addressRequired = addressRequired ?? (activeRoute != 'frontend.account.register.page') %}
+{% set addressRequired = addressRequired ?? (activeRoute not in ['frontend.account.register.page', 'frontend.account.login.page']) %}
 
 {% block component_account_register %}
     <div class="card register-card">

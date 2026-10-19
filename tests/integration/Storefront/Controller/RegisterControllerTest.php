@@ -206,6 +206,26 @@ class RegisterControllerTest extends TestCase
         static::assertStringNotContainsString('register-shipping', $content);
     }
 
+    public function testLoginPageRegistrationCardOnlyRendersEmailAndPassword(): void
+    {
+        $response = $this->request('GET', '/account/login', []);
+        static::assertSame(200, $response->getStatusCode());
+
+        $content = (string) $response->getContent();
+
+        // The login page renders the same registration card, so it also only asks for the credentials
+        static::assertStringContainsString('name="email"', $content);
+        static::assertStringContainsString('name="password"', $content);
+        static::assertStringContainsString('register-address-optional-hint', $content);
+
+        static::assertStringNotContainsString('name="billingAddress[', $content);
+        static::assertStringNotContainsString('name="shippingAddress[', $content);
+        static::assertStringNotContainsString('differentShippingAddress', $content);
+        static::assertStringNotContainsString('name="phoneNumber"', $content);
+        static::assertStringNotContainsString('name="salutationId"', $content);
+        static::assertStringNotContainsString('register-billing', $content);
+    }
+
     public function testRegisterAccountWithEmailAndPasswordOnly(): void
     {
         $email = 'register-credentials-only@example.com';
