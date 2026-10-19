@@ -42,6 +42,7 @@ class SmsException extends HttpException
     public const TEMPLATE_AUDIT_ACCOUNT_REQUIRED = 'SMS__TEMPLATE_AUDIT_ACCOUNT_REQUIRED';
     public const TEMPLATE_AUDIT_RESPONSE_INVALID = 'SMS__TEMPLATE_AUDIT_RESPONSE_INVALID';
     public const TEMPLATE_AUDIT_CONFIRMATION_INVALID = 'SMS__TEMPLATE_AUDIT_CONFIRMATION_INVALID';
+    public const MISSING_CONTEXT = 'SMS__MISSING_CONTEXT';
 
     /**
      * @param list<string> $available
@@ -304,6 +305,21 @@ class SmsException extends HttpException
             self::TEMPLATE_AUDIT_CONFIRMATION_INVALID,
             'The manual confirmation of the sms template "{{ templateRef }}" at "{{ technicalName }}" is invalid: {{ violations }}',
             ['templateRef' => $templateRef, 'technicalName' => $technicalName, 'violations' => implode(', ', $violations)]
+        );
+    }
+
+    /**
+     * The api middleware attaches the context of the caller to every request before an action runs,
+     * so this is a request that never reached an action through the api - without the context the
+     * row may not be read at all and a default context would be a read the caller never asked for.
+     */
+    public static function missingContext(string $route): self
+    {
+        return new self(
+            Response::HTTP_BAD_REQUEST,
+            self::MISSING_CONTEXT,
+            'The request of the route "{{ route }}" carries no context.',
+            ['route' => $route]
         );
     }
 }

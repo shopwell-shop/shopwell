@@ -5,6 +5,7 @@ namespace Shopwell\Core\System\DependencyInjection;
 use Doctrine\DBAL\Connection;
 use Psr\Clock\ClockInterface;
 use Shopwell\Core\System\Sms\Api\SmsGatewayProviderController;
+use Shopwell\Core\System\Sms\Api\SmsTemplateAuditController;
 use Shopwell\Core\System\Sms\Delivery\SmsDeliveryEntity;
 use Shopwell\Core\System\Sms\Gateway\Aliyun\AliyunGatewayTransportFactory;
 use Shopwell\Core\System\Sms\Gateway\Audit\SmsGatewayAuditCapabilities;
@@ -122,6 +123,15 @@ return static function (ContainerConfigurator $container): void {
         ->public()
         ->args([
             service(SmsGatewayRegistry::class),
+            service(SmsGatewayAuditCapabilities::class),
+        ])
+        ->call('setContainer', [service('service_container')]);
+
+    // the three steps of the audit loop of one mapping row, one action per button of the screen
+    $services->set(SmsTemplateAuditController::class)
+        ->public()
+        ->args([
+            service(SmsTemplateAuditService::class),
         ])
         ->call('setContainer', [service('service_container')]);
 
