@@ -86,7 +86,7 @@ class PhoneNumberNormalizerTest extends TestCase
             $digits = str_starts_with($written, '00') ? substr($written, 2) : $digits;
 
             static::assertStringStartsWith('+', $number->e164());
-            static::assertSame($digits, $number->withoutPlus());
+            static::assertSame($digits, substr($number->e164(), 1));
         }
     }
 

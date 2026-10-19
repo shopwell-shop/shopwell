@@ -23,7 +23,6 @@ class PhoneNumberTest extends TestCase
         static::assertSame('CN', $number->countryIso());
         static::assertSame('13800000000', $number->nationalNumber());
         static::assertSame('86', $number->dialCode());
-        static::assertSame('8613800000000', $number->withoutPlus());
     }
 
     public function testANumberOfAnUnknownCountryKeepsTheWholeNumberAsItsNationalPart(): void
