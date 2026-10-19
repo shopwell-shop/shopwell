@@ -117,7 +117,18 @@ async function createWrapper({ providers = registryProviders, providerId = 'alip
                     props: ['field', 'modelValue'],
                     template: '<div class="sw-payment-config-field-stub">{{ field.name }}</div>',
                 },
-                'mt-card': { template: '<div><slot></slot><slot name="headerRight"></slot></div>' },
+                /**
+                 * The double of the card reports the title it was given, so the test can tell which
+                 * cards the page renders and in which order.
+                 */
+                'mt-card': {
+                    props: ['title', 'subtitle'],
+                    template: `
+                        <div class="mt-card-stub" :data-title="title">
+                            <slot></slot>
+                            <slot name="headerRight"></slot>
+                        </div>`,
+                },
                 'mt-button': true,
                 'mt-badge': true,
                 'mt-icon': true,
@@ -255,16 +266,21 @@ describe('module/sw-settings-payment-provider/page/sw-settings-payment-provider-
         expect(wrapper.vm.resetTarget).toBeNull();
     });
 
-    it('should show the declared facts of the interface on the read-only overview card', async () => {
+    it('should render only the three cards of the page and no overview card', async () => {
         const { wrapper } = await createWrapper();
 
-        const summary = wrapper.find('.sw-settings-payment-provider-detail__summary');
+        const titles = wrapper.findAll('.mt-card-stub').map((card) => card.attributes('data-title'));
 
-        expect(summary.exists()).toBe(true);
-        expect(summary.findAll('.sw-settings-payment-provider-detail__summary-item')).toHaveLength(4);
-        expect(summary.findAll('.sw-settings-payment-provider-detail__code').at(0).text()).toBe('alipay');
+        expect(titles).toEqual([
+            'sw-settings-payment-provider.provider.cardTitle',
+            'sw-settings-payment-provider.channels.title',
+            'sw-settings-payment-provider.danger.title',
+        ]);
+        // the overview card is gone, and with it the only place the technical name was printed on
+        // this page - the list card keeps it in its header right
+        expect(wrapper.find('.sw-settings-payment-provider-detail__summary').exists()).toBe(false);
+        expect(wrapper.text()).not.toMatch(/\balipay\b/);
         expect(wrapper.vm.channelCount).toBe(2);
-        expect(wrapper.vm.enabledChannelCount).toBe(1);
     });
 
     it('should render one table row per channel and fold the parameters by default', async () => {
@@ -304,6 +320,111 @@ describe('module/sw-settings-payment-provider/page/sw-settings-payment-provider-
         expect(wrapper.find('.sw-settings-payment-provider-detail__channel-params-empty').text()).toBe(
             'sw-settings-payment-provider.channel.noParams',
         );
+    });
+
+    /**
+     * The runtime parameters are no column of their own: they are what the app has to hand in when it
+     * pays, so they are named inside the folded parameters instead of being repeated on every row.
+     * The configuration state is no column either: whether a channel is configured is what the folded
+     * parameters are there to change, and the switch says whether the channel is offered at all.
+     */
+    it('should render exactly the five channel columns and no runtime parameter column', async () => {
+        const { wrapper } = await createWrapper();
+
+        const headers = wrapper.findAll('.sw-settings-payment-provider-detail__channel-head th');
+
+        expect(headers).toHaveLength(5);
+        expect(headers.map((header) => header.text())).toEqual([
+            'sw-settings-payment-provider.channel.columnLabel',
+            'sw-settings-payment-provider.channel.columnFlow',
+            'sw-settings-payment-provider.channel.columnCurrencies',
+            'sw-settings-payment-provider.channel.columnDevices',
+            'sw-settings-payment-provider.channel.enabled',
+        ]);
+    });
+
+    /**
+     * Every cell of a row has to belong to one of the declared columns, so a row that kept a cell of
+     * the removed column would be one cell wider than the head.
+     */
+    it('should render as many cells per channel row as the head declares', async () => {
+        const { wrapper } = await createWrapper();
+
+        const headers = wrapper.findAll('.sw-settings-payment-provider-detail__channel-head th');
+        const cells = wrapper.findAll('.sw-settings-payment-provider-detail__channel-row').at(0).findAll('td');
+
+        expect(cells).toHaveLength(headers.length);
+    });
+
+    it('should span the folded parameters row over every declared column', async () => {
+        const { wrapper } = await createWrapper();
+
+        const headers = wrapper.findAll('.sw-settings-payment-provider-detail__channel-head th');
+
+        wrapper.vm.toggleChannel(wrapper.vm.provider.channels[0]);
+        await wrapper.vm.$nextTick();
+
+        const paramsCell = wrapper.find('.sw-settings-payment-provider-detail__channel-cell--params');
+
+        expect(Number(paramsCell.attributes('colspan'))).toBe(headers.length);
+    });
+
+    /**
+     * The name cell is the control: the row has no toggle column of its own anymore, because that one
+     * was the first thing a narrow window cut off.
+     */
+    it('should fold a channel out when its name cell is clicked', async () => {
+        const { wrapper } = await createWrapper();
+
+        const cell = wrapper.findAll('.sw-settings-payment-provider-detail__channel-cell--channel').at(1);
+
+        expect(cell.attributes('aria-expanded')).toBe('false');
+
+        await cell.trigger('click');
+
+        expect(wrapper.vm.isChannelExpanded(wrapper.vm.provider.channels[1])).toBe(true);
+        expect(wrapper.findAll('.sw-settings-payment-provider-detail__channel-row--params')).toHaveLength(1);
+        expect(
+            wrapper.findAll('.sw-settings-payment-provider-detail__channel-cell--channel').at(1).attributes('aria-expanded'),
+        ).toBe('true');
+    });
+
+    it('should also fold a channel out with the keyboard', async () => {
+        const { wrapper } = await createWrapper();
+
+        const cell = wrapper.findAll('.sw-settings-payment-provider-detail__channel-cell--channel').at(0);
+
+        await cell.trigger('keydown.enter');
+
+        expect(wrapper.vm.isChannelExpanded(wrapper.vm.provider.channels[0])).toBe(true);
+    });
+
+    /**
+     * Clearing a channel is only an action when there is something to clear, so the button lives in
+     * the parameters it clears - and a channel that never stored a value offers none.
+     */
+    it('should offer clearing the parameters inside the folded parameters of a configured channel', async () => {
+        const { wrapper } = await createWrapper();
+
+        const mini = wrapper.vm.provider.channels[1];
+        wrapper.vm.toggleChannel(mini);
+        await wrapper.vm.$nextTick();
+
+        const paramsRow = wrapper.find('.sw-settings-payment-provider-detail__channel-row--params');
+
+        expect(paramsRow.find('.sw-settings-payment-provider-detail__channel-reset').exists()).toBe(true);
+        expect(wrapper.vm.hasStoredParams(mini)).toBe(true);
+    });
+
+    it('should not offer clearing a channel that stored no parameter', async () => {
+        const { wrapper } = await createWrapper();
+
+        const h5 = wrapper.vm.provider.channels[0];
+        wrapper.vm.toggleChannel(h5);
+        await wrapper.vm.$nextTick();
+
+        expect(wrapper.vm.hasStoredParams(h5)).toBe(false);
+        expect(wrapper.find('.sw-settings-payment-provider-detail__channel-reset').exists()).toBe(false);
     });
 
     it('should fold a channel again when its row is expanded a second time', async () => {

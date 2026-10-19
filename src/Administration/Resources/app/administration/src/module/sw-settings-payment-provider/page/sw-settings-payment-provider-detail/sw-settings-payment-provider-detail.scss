@@ -1,33 +1,4 @@
 .sw-settings-payment-provider-detail {
-    .sw-settings-payment-provider-detail__summary {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: var(--scale-size-24, 24px);
-        margin: 0;
-    }
-
-    .sw-settings-payment-provider-detail__summary-item {
-        display: flex;
-        flex-direction: column;
-        gap: var(--scale-size-4, 4px);
-        min-width: 0;
-    }
-
-    .sw-settings-payment-provider-detail__summary-term {
-        color: var(--color-text-secondary-default);
-        font-size: var(--font-size-xs, 12px);
-    }
-
-    .sw-settings-payment-provider-detail__summary-value {
-        margin: 0;
-        color: var(--color-text-primary-default);
-    }
-
-    .sw-settings-payment-provider-detail__code {
-        font-family: var(--font-family-monospace, monospace);
-        font-size: var(--font-size-xs, 12px);
-    }
-
     .sw-settings-payment-provider-detail__state {
         margin-inline-end: var(--scale-size-8, 8px);
     }
@@ -76,13 +47,37 @@
         white-space: nowrap;
     }
 
-    .sw-settings-payment-provider-detail__channel-cell--toggle {
-        width: var(--scale-size-48, 48px);
+    .sw-settings-payment-provider-detail__channel-cell--channel {
+        cursor: pointer;
+        transition: background-color 0.15s ease;
+
+        &:hover {
+            background-color: var(--color-background-secondary-default, rgba(0, 0, 0, 2%));
+        }
+
+        &:focus-visible {
+            outline: 2px solid var(--color-border-brand-default, #0870ff);
+            outline-offset: -2px;
+        }
     }
 
-    .sw-settings-payment-provider-detail__channel-cell--actions {
-        text-align: right;
-        white-space: nowrap;
+    .sw-settings-payment-provider-detail__channel-select {
+        display: flex;
+        align-items: center;
+        gap: var(--scale-size-8, 8px);
+    }
+
+    .sw-settings-payment-provider-detail__channel-select-icon {
+        display: flex;
+        flex-shrink: 0;
+        align-items: center;
+        color: var(--color-text-secondary-default);
+    }
+
+    .sw-settings-payment-provider-detail__channel-info {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
     }
 
     .sw-settings-payment-provider-detail__channel-cell--params {
@@ -104,12 +99,14 @@
         font-size: var(--font-size-xs, 12px);
     }
 
-    .sw-settings-payment-provider-detail__channel-toggle {
-        flex-shrink: 0;
-    }
-
     .sw-settings-payment-provider-detail__channel-params {
         margin-bottom: var(--scale-size-8, 8px);
+    }
+
+    .sw-settings-payment-provider-detail__channel-params-actions {
+        display: flex;
+        justify-content: flex-end;
+        margin-top: var(--scale-size-8, 8px);
     }
 
     .sw-settings-payment-provider-detail__channel-params-empty {

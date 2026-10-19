@@ -4,46 +4,23 @@
             "mainMenuItemGeneral": "Payment providers",
             "description": "Configures the merchant credentials of the platform for every payment provider (Alipay, WeChat Pay, ...) and the channels each provider offers to apps.",
             "emptyStateTitle": "No payment providers",
-            "emptyState": "The current installation does not provide any payment provider.",
-            "codeProvidedHint": "Payment providers are provided by code, either by the core or by a plugin. Install a plugin that ships a payment provider and it shows up here; this page only configures its merchant credentials and its payment channels."
+            "emptyState": "The current installation does not provide any payment provider."
         },
         "provider": {
-            "cardTitle": "Merchant account and credentials",
+            "cardTitle": "Merchant account",
             "cardSubtitle": "The credentials are issued by the payment provider and shared by all of its channels. They are never echoed back, the form only reports whether a value is stored.",
             "enabled": "Enable this provider",
-            "enabledLabel": "Enabled",
             "enabledHelpText": "Apps that pay with the platform credentials can only collect through this provider once it is enabled.",
             "configured": "Configured",
             "notConfigured": "Not configured",
             "reset": "Clear credentials",
             "resetModalTitle": "Clear provider credentials",
             "resetModalMessage": "Clear all credentials of \u201c{name}\u201d? Apps that pay with the platform credentials will no longer be able to collect through this provider.",
-            "hint": "The credentials are encrypted on the server and never echoed back - an empty input keeps the stored value. Every required field has to be filled before the provider can be enabled."
-        },
-        "summary": {
-            "title": "Overview",
-            "subtitle": "What the provider declares about itself. Everything on this card is read-only.",
-            "label": "Name",
-            "technicalName": "Technical name",
-            "enabled": "Status",
-            "channels": "Payment channels"
-        },
-        "state": {
-            "enabled": "Enabled",
-            "disabled": "Disabled"
-        },
-        "list": {
-            "columns": {
-                "label": "Provider",
-                "status": "Status",
-                "credentials": "Credentials",
-                "channels": "Channels",
-                "actions": "Actions"
-            },
-            "credentialCount": "{filled}/{total} filled",
-            "credentialMissing": "{count} required missing",
-            "channelCount": "{enabled}/{total} enabled",
-            "editDetails": "Edit credentials and channels"
+            "hint": "The credentials are encrypted on the server and never echoed back - an empty input keeps the stored value. Every required field has to be filled before the provider can be enabled.",
+            "alipay": "Alipay",
+            "wechat": "WeChat Pay",
+            "paypal": "PayPal",
+            "stripe": "Stripe"
         },
         "channels": {
             "title": "Payment channels",
@@ -54,24 +31,31 @@
             "emptyState": "This provider does not declare any payment channel. That is a defect of the code that ships the provider, not a setting of this page.",
             "enabled": "Enabled",
             "enabledHelpText": "Once switched off, no app can collect through this channel anymore.",
-            "configured": "Configured",
             "reset": "Clear",
             "resetModalTitle": "Clear channel configuration",
             "resetModalMessage": "Clear the parameters of \u201c{name}\u201d? The channel will no longer be offered to any app.",
             "expand": "Show parameters",
             "collapse": "Hide parameters",
             "noParams": "This channel needs no further parameters.",
-            "noRuntimeParams": "None",
             "columnLabel": "Channel",
             "columnFlow": "Flow",
             "columnCurrencies": "Currencies",
             "columnDevices": "Devices",
-            "columnRuntimeParams": "Runtime parameters",
-            "columnConfigured": "Configuration",
-            "columnActions": "Actions",
             "allCurrencies": "All currencies",
             "allDevices": "All devices",
-            "runtimeHint": "When paying through this channel the app also has to hand in the runtime parameters: {params}."
+            "runtimeHint": "When paying through this channel the app also has to hand in the runtime parameters: {params}.",
+            "alipay_h5": "Alipay Mobile Web",
+            "alipay_web": "Alipay Desktop Web",
+            "alipay_qr": "Alipay Face to Face (QR code)",
+            "alipay_app": "Alipay App",
+            "alipay_mini": "Alipay Mini Program",
+            "wechat_h5": "WeChat Pay H5",
+            "wechat_native": "WeChat Pay Native (QR code)",
+            "wechat_jsapi": "WeChat Pay JSAPI",
+            "wechat_mini": "WeChat Pay Mini Program",
+            "wechat_app": "WeChat Pay App",
+            "paypal_checkout": "PayPal Checkout",
+            "stripe_checkout": "Stripe Checkout"
         },
         "danger": {
             "title": "Danger zone",
@@ -93,6 +77,12 @@
             "resetSuccess": "The payment provider configuration has been cleared.",
             "missingFields": "\u201c{name}\u201d is enabled, please fill in every required field first.",
             "nothingToSave": "There is nothing to save."
+        },
+        "list": {
+            "enableModalTitle": "Enable payment provider",
+            "enableModalText": "Apps that collect with the platform credentials can only use this provider once it is enabled.",
+            "disableModalTitle": "Disable payment provider",
+            "disableModalText": "Once this provider is disabled, no app can collect through it anymore."
         }
     },
     "sw-privileges": {

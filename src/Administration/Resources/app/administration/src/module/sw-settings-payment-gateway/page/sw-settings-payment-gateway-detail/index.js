@@ -92,6 +92,19 @@ export default {
     },
 
     methods: {
+        /**
+         * The name of an interface and of a channel is a snippet key, not a text. The core ships the
+         * keys of its own interfaces, a plugin ships its own; a key without an entry is shown as it is,
+         * so a missing translation is visible instead of silent.
+         */
+        displayLabel(label) {
+            if (!label) {
+                return '';
+            }
+
+            return this.$te(label) ? this.$t(label) : label;
+        },
+
         async createdComponent() {
             this.isLoading = true;
 

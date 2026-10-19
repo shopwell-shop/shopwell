@@ -235,7 +235,7 @@
                     :key="provider.technicalName"
                     class="sw-settings-payment-gateway-detail__provider"
                     position-identifier="sw-settings-payment-gateway-detail-provider"
-                    :title="provider.label"
+                    :title="displayLabel(provider.label)"
                 >
                     <template #headerRight>
                         {% block sw_settings_payment_gateway_detail_content_provider_authorized %}
@@ -323,7 +323,7 @@
                                 v-model="channel.enabled"
                                 class="sw-settings-payment-gateway-detail__channel-enabled"
                                 :disabled="!canEdit || !provider.enabled || undefined"
-                                :label="channel.label"
+                                :label="displayLabel(channel.label)"
                             />
                             {% endblock %}
 

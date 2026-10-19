@@ -1,143 +1,138 @@
 {% block sw_settings_payment_provider_list %}
 <sw-page class="sw-settings-payment-provider-list">
 
+    {% block sw_settings_payment_provider_list_smart_bar_header %}
+    <template #smart-bar-header>
+        {% block sw_settings_payment_provider_list_smart_bar_header_title %}
+        <h2>
+            {% block sw_settings_payment_provider_list_smart_bar_header_title_text %}
+            {{ $t('sw-settings.index.title') }}
+            <mt-icon
+                name="regular-chevron-right-xs"
+                size="12px"
+            />
+            {{ $t('sw-settings-payment-provider.general.mainMenuItemGeneral') }}
+            {% endblock %}
+
+            {% block sw_settings_payment_provider_list_smart_bar_header_amount %}
+            <span
+                v-if="!isLoading"
+                class="sw-page__smart-bar-amount"
+            >
+                ({{ providers.length }})
+            </span>
+            {% endblock %}
+        </h2>
+        {% endblock %}
+    </template>
+    {% endblock %}
+
     {% block sw_settings_payment_provider_list_content %}
     <template #content>
         <sw-card-view>
 
             {% block sw_settings_payment_provider_list_loading %}
             <template v-if="isLoading">
-                <sw-skeleton />
-                <sw-skeleton />
+                <mt-card>
+                    <sw-skeleton />
+                    <sw-skeleton />
+                </mt-card>
             </template>
             {% endblock %}
 
             {% block sw_settings_payment_provider_list_empty_state %}
-            <mt-card
+            <mt-empty-state
                 v-else-if="providers.length === 0"
-                position-identifier="sw-settings-payment-provider-list-empty-state"
-            >
-                <mt-empty-state
-                    centered
-                    icon="regular-credit-card"
-                    :headline="$t('sw-settings-payment-provider.general.emptyStateTitle')"
-                    :description="$t('sw-settings-payment-provider.general.emptyState')"
-                />
-            </mt-card>
+                centered
+                icon="regular-credit-card"
+                :headline="$t('sw-settings-payment-provider.general.emptyStateTitle')"
+                :description="$t('sw-settings-payment-provider.general.emptyState')"
+            />
             {% endblock %}
 
-            {% block sw_settings_payment_provider_list_hint %}
-            <mt-banner
-                v-else
-                class="sw-settings-payment-provider-list__hint"
-                variant="info"
-            >
-                {{ $t('sw-settings-payment-provider.general.codeProvidedHint') }}
-            </mt-banner>
-            {% endblock %}
+            {% block sw_settings_payment_provider_list_cards %}
+            <template v-else>
+                {% block sw_settings_payment_provider_list_card %}
+                <mt-card
+                    v-for="provider in sortedProviders"
+                    :key="provider.technicalName"
+                    position-identifier="sw-settings-payment-provider-list-card"
+                    :title="displayLabel(provider)"
+                >
+                    {% block sw_settings_payment_provider_list_card_technical_name %}
+                    <template #headerRight>
+                        <span class="sw-settings-payment-provider-list__technical-name">
+                            {{ provider.technicalName }}
+                        </span>
+                    </template>
+                    {% endblock %}
 
-            {% block sw_settings_payment_provider_list_grid_card %}
-            <mt-card
-                v-if="!isLoading && providers.length > 0"
-                class="sw-settings-payment-provider-list__card"
-                position-identifier="sw-settings-payment-provider-list-grid"
-            >
-                {% block sw_settings_payment_provider_list_grid %}
-                <template #grid>
-                    <sw-data-grid
-                        class="sw-settings-payment-provider-list__grid"
-                        identifier="sw-settings-payment-provider-list"
-                        :data-source="sortedProviders"
-                        :columns="providerColumns"
-                        :full-page="false"
-                        :show-selection="false"
-                        :show-actions="false"
-                        :show-settings="true"
-                        :show-header="true"
-                        :allow-inline-edit="false"
-                        :allow-column-edit="true"
+                    {% block sw_settings_payment_provider_list_card_content %}
+                    {#
+                    The card carries no content of its own, so the actions of the card sit on the
+                    right - like on the card of a payment method, where the description pushes
+                    them there. The first column is the empty left half, `justify="end"` moves
+                    the link to the end of it, which puts the link and the switch side by side
+                    on the right of the card.
+                    #}
+                    <sw-container
+                        class="sw-settings-payment-provider-list__card-content"
+                        columns="1fr auto"
+                        gap="16px"
+                        justify="end"
                     >
-                        {% block sw_settings_payment_provider_list_grid_column_label %}
-                        <template #column-label="{ item }">
-                            <span class="sw-settings-payment-provider-list__label">
-                                {{ item.label }}
-                            </span>
-
-                            <span class="sw-settings-payment-provider-list__technical-name">
-                                {{ item.technicalName }}
-                            </span>
-                        </template>
+                        {% block sw_settings_payment_provider_list_card_link %}
+                        <sw-internal-link
+                            class="sw-settings-payment-provider-list__edit-link"
+                            :router-link="{ name: 'sw.settings.payment.provider.detail', params: { id: provider.technicalName } }"
+                            :disabled="!canView || undefined"
+                            hide-icon
+                        >
+                            {{ $t('global.default.configure') }}
+                        </sw-internal-link>
                         {% endblock %}
 
-                        {% block sw_settings_payment_provider_list_grid_column_status %}
-                        <template #column-configured="{ item }">
-                            <div class="sw-settings-payment-provider-list__status">
-                                <mt-badge :variant="item.configured ? 'positive' : 'neutral'">
-                                    <template v-if="item.configured">
-                                        {{ $t('sw-settings-payment-provider.provider.configured') }}
-                                    </template>
-                                    <template v-else>
-                                        {{ $t('sw-settings-payment-provider.provider.notConfigured') }}
-                                    </template>
-                                </mt-badge>
-
-                                <mt-switch
-                                    v-model="item.enabled"
-                                    v-tooltip.bottom="$t('sw-settings-payment-provider.provider.enabledHelpText')"
-                                    class="sw-settings-payment-provider-list__switch"
-                                    :label="$t('sw-settings-payment-provider.provider.enabledLabel')"
-                                    :disabled="!canEdit || undefined"
-                                    @update:model-value="onToggleProvider(item)"
-                                />
-                            </div>
-                        </template>
+                        {% block sw_settings_payment_provider_list_card_toggle %}
+                        {#
+                        The key changes when the dialog closes, so the switch is rebuilt from the
+                        stored state - the native box was flipped by the browser and stays
+                        flipped otherwise, because the stored state did not change.
+                        #}
+                        <mt-switch
+                            :key="`${provider.technicalName}-${toggleRenderKey}`"
+                            v-tooltip="{
+                                message: $t('sw-settings-payment-provider.provider.enabledHelpText'),
+                                disabled: canEdit,
+                                showOnDisabledElements: true
+                            }"
+                            class="sw-settings-payment-provider-list__switch"
+                            :model-value="provider.enabled"
+                            :disabled="!canEdit || undefined"
+                            :label="$t('sw-settings-payment-provider.provider.enabled')"
+                            @update:model-value="onRequestToggleProvider(provider, $event)"
+                        />
                         {% endblock %}
-
-                        {% block sw_settings_payment_provider_list_grid_column_credentials %}
-                        <template #column-credentials="{ item }">
-                            <span class="sw-settings-payment-provider-list__count">
-                                {{ $t('sw-settings-payment-provider.list.credentialCount', {
-                                filled: filledCredentialCount(item),
-                                total: requiredCredentialCount(item),
-                                }) }}
-                            </span>
-
-                            <span
-                                v-if="missingCredentialCount(item) > 0"
-                                class="sw-settings-payment-provider-list__attention"
-                            >
-                                {{ $t('sw-settings-payment-provider.list.credentialMissing', {
-                                count: missingCredentialCount(item),
-                                }) }}
-                            </span>
-                        </template>
-                        {% endblock %}
-
-                        {% block sw_settings_payment_provider_list_grid_column_channels %}
-                        <template #column-channels="{ item }">
-                            {{ $t('sw-settings-payment-provider.list.channelCount', {
-                            enabled: enabledChannelCount(item),
-                            total: channelCount(item),
-                            }) }}
-                        </template>
-                        {% endblock %}
-
-                        {% block sw_settings_payment_provider_list_grid_column_actions %}
-                        <template #column-actions="{ item }">
-                            <sw-internal-link
-                                class="sw-settings-payment-provider-list__edit-link"
-                                :router-link="{ name: 'sw.settings.payment.provider.detail', params: { id: item.technicalName } }"
-                                :disabled="!canView || undefined"
-                                hide-icon
-                            >
-                                {{ $t('sw-settings-payment-provider.list.editDetails') }}
-                            </sw-internal-link>
-                        </template>
-                        {% endblock %}
-                    </sw-data-grid>
-                </template>
+                    </sw-container>
+                    {% endblock %}
+                </mt-card>
                 {% endblock %}
-            </mt-card>
+            </template>
+            {% endblock %}
+
+            {% block sw_settings_payment_provider_list_toggle_confirm_modal %}
+            {#
+            Switching an interface off stops every app that collects through it, so the click of
+            the switch only opens this dialog and the state is written on confirmation. The switch
+            is bound one way, so it keeps the stored value while the dialog is open.
+            #}
+            <sw-confirm-modal
+                v-if="toggleTarget !== null"
+                :title="toggleModalTitle"
+                :text="toggleModalText"
+                @confirm="confirmToggle"
+                @cancel="cancelToggle"
+                @close="cancelToggle"
+            />
             {% endblock %}
 
             {% block sw_settings_payment_provider_list_extension %}

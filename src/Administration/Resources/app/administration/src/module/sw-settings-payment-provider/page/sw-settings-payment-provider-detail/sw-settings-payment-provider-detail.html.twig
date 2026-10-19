@@ -7,7 +7,7 @@
         <h2>
             {% block sw_settings_payment_provider_detail_smart_bar_header_title_text %}
             <template v-if="provider">
-                {{ provider.label }}
+                {{ $te(provider.label) ? $t(provider.label) : provider.label }}
             </template>
             <template v-else>
                 {{ $t('sw-settings-payment-provider.general.mainMenuItemGeneral') }}
@@ -58,91 +58,6 @@
 
             {% block sw_settings_payment_provider_detail_content_provider %}
             <template v-if="!isLoading && provider">
-
-                {% block sw_settings_payment_provider_detail_content_summary %}
-                <mt-card
-                    class="sw-settings-payment-provider-detail__summary-card"
-                    position-identifier="sw-settings-payment-provider-detail-summary"
-                    :title="$t('sw-settings-payment-provider.summary.title')"
-                    :subtitle="$t('sw-settings-payment-provider.summary.subtitle')"
-                >
-                    <template #headerRight>
-                        {% block sw_settings_payment_provider_detail_content_summary_state %}
-                        <mt-badge
-                            v-if="provider.configured"
-                            class="sw-settings-payment-provider-detail__state"
-                            variant="positive"
-                        >
-                            {{ $t('sw-settings-payment-provider.provider.configured') }}
-                        </mt-badge>
-
-                        <mt-badge
-                            v-else
-                            class="sw-settings-payment-provider-detail__state"
-                            variant="neutral"
-                        >
-                            {{ $t('sw-settings-payment-provider.provider.notConfigured') }}
-                        </mt-badge>
-                        {% endblock %}
-                    </template>
-
-                    {% block sw_settings_payment_provider_detail_content_summary_list %}
-                    <dl class="sw-settings-payment-provider-detail__summary">
-                        {% block sw_settings_payment_provider_detail_content_summary_label %}
-                        <div class="sw-settings-payment-provider-detail__summary-item">
-                            <dt class="sw-settings-payment-provider-detail__summary-term">
-                                {{ $t('sw-settings-payment-provider.summary.label') }}
-                            </dt>
-                            <dd class="sw-settings-payment-provider-detail__summary-value">
-                                {{ provider.label }}
-                            </dd>
-                        </div>
-                        {% endblock %}
-
-                        {% block sw_settings_payment_provider_detail_content_summary_technical_name %}
-                        <div class="sw-settings-payment-provider-detail__summary-item">
-                            <dt class="sw-settings-payment-provider-detail__summary-term">
-                                {{ $t('sw-settings-payment-provider.summary.technicalName') }}
-                            </dt>
-                            <dd class="sw-settings-payment-provider-detail__summary-value">
-                                <code class="sw-settings-payment-provider-detail__code">{{ provider.technicalName }}</code>
-                            </dd>
-                        </div>
-                        {% endblock %}
-
-                        {% block sw_settings_payment_provider_detail_content_summary_enabled %}
-                        <div class="sw-settings-payment-provider-detail__summary-item">
-                            <dt class="sw-settings-payment-provider-detail__summary-term">
-                                {{ $t('sw-settings-payment-provider.summary.enabled') }}
-                            </dt>
-                            <dd class="sw-settings-payment-provider-detail__summary-value">
-                                <template v-if="provider.enabled">
-                                    {{ $t('sw-settings-payment-provider.state.enabled') }}
-                                </template>
-                                <template v-else>
-                                    {{ $t('sw-settings-payment-provider.state.disabled') }}
-                                </template>
-                            </dd>
-                        </div>
-                        {% endblock %}
-
-                        {% block sw_settings_payment_provider_detail_content_summary_channels %}
-                        <div class="sw-settings-payment-provider-detail__summary-item">
-                            <dt class="sw-settings-payment-provider-detail__summary-term">
-                                {{ $t('sw-settings-payment-provider.summary.channels') }}
-                            </dt>
-                            <dd class="sw-settings-payment-provider-detail__summary-value">
-                                {{ $t('sw-settings-payment-provider.list.channelCount', {
-                                enabled: enabledChannelCount,
-                                total: channelCount,
-                                }) }}
-                            </dd>
-                        </div>
-                        {% endblock %}
-                    </dl>
-                    {% endblock %}
-                </mt-card>
-                {% endblock %}
 
                 {% block sw_settings_payment_provider_detail_content_credentials %}
                 <mt-card
@@ -256,14 +171,6 @@
                                 <tr>
                                     <th
                                         scope="col"
-                                        class="sw-settings-payment-provider-detail__channel-cell sw-settings-payment-provider-detail__channel-cell--toggle"
-                                    >
-                                        <span class="visually-hidden">
-                                            {{ $t('sw-settings-payment-provider.channel.expand') }}
-                                        </span>
-                                    </th>
-                                    <th
-                                        scope="col"
                                         class="sw-settings-payment-provider-detail__channel-cell"
                                     >
                                         {{ $t('sw-settings-payment-provider.channel.columnLabel') }}
@@ -290,25 +197,7 @@
                                         scope="col"
                                         class="sw-settings-payment-provider-detail__channel-cell"
                                     >
-                                        {{ $t('sw-settings-payment-provider.channel.columnRuntimeParams') }}
-                                    </th>
-                                    <th
-                                        scope="col"
-                                        class="sw-settings-payment-provider-detail__channel-cell"
-                                    >
-                                        {{ $t('sw-settings-payment-provider.channel.columnConfigured') }}
-                                    </th>
-                                    <th
-                                        scope="col"
-                                        class="sw-settings-payment-provider-detail__channel-cell"
-                                    >
                                         {{ $t('sw-settings-payment-provider.channel.enabled') }}
-                                    </th>
-                                    <th
-                                        scope="col"
-                                        class="sw-settings-payment-provider-detail__channel-cell sw-settings-payment-provider-detail__channel-cell--actions"
-                                    >
-                                        {{ $t('sw-settings-payment-provider.channel.columnActions') }}
                                     </th>
                                 </tr>
                             </thead>
@@ -323,42 +212,45 @@
                                 >
                                 {% block sw_settings_payment_provider_detail_content_channel_row %}
                                     <tr class="sw-settings-payment-provider-detail__channel-row">
-                                    {% block sw_settings_payment_provider_detail_content_channel_toggle %}
-                                        <td class="sw-settings-payment-provider-detail__channel-cell sw-settings-payment-provider-detail__channel-cell--toggle">
-                                            <mt-button
-                                                class="sw-settings-payment-provider-detail__channel-toggle"
-                                                variant="secondary"
-                                                size="small"
-                                                square
-                                                :aria-label="isChannelExpanded(channel)
-                                                    ? $t('sw-settings-payment-provider.channel.collapse')
-                                                    : $t('sw-settings-payment-provider.channel.expand')"
-                                                :aria-expanded="isChannelExpanded(channel) ? 'true' : 'false'"
-                                                @click="toggleChannel(channel)"
-                                            >
-                                                <mt-icon
-                                                    v-if="isChannelExpanded(channel)"
-                                                    name="regular-chevron-down-xs"
-                                                    size="var(--scale-size-16)"
-                                                />
-                                                <mt-icon
-                                                    v-else
-                                                    name="regular-chevron-right-xs"
-                                                    size="var(--scale-size-16)"
-                                                />
-                                            </mt-button>
-                                        </td>
-                                    {% endblock %}
-
                                     {% block sw_settings_payment_provider_detail_content_channel_info %}
-                                        <td class="sw-settings-payment-provider-detail__channel-cell">
-                                            <span class="sw-settings-payment-provider-detail__channel-label">
-                                                {{ channel.label }}
-                                            </span>
+                                        <!-- the whole cell folds the parameters out: the row has no separate
+                                             toggle column anymore, so the name is the control -->
+                                        <td
+                                            class="sw-settings-payment-provider-detail__channel-cell sw-settings-payment-provider-detail__channel-cell--channel"
+                                            role="button"
+                                            tabindex="0"
+                                            :aria-expanded="isChannelExpanded(channel) ? 'true' : 'false'"
+                                            :aria-label="isChannelExpanded(channel)
+                                                ? $t('sw-settings-payment-provider.channel.collapse')
+                                                : $t('sw-settings-payment-provider.channel.expand')"
+                                            @click="toggleChannel(channel)"
+                                            @keydown.enter.prevent="toggleChannel(channel)"
+                                            @keydown.space.prevent="toggleChannel(channel)"
+                                        >
+                                            <div class="sw-settings-payment-provider-detail__channel-select">
+                                                <span class="sw-settings-payment-provider-detail__channel-select-icon">
+                                                    <mt-icon
+                                                        v-if="isChannelExpanded(channel)"
+                                                        name="regular-chevron-down-xs"
+                                                        size="var(--scale-size-16)"
+                                                    />
+                                                    <mt-icon
+                                                        v-else
+                                                        name="regular-chevron-right-xs"
+                                                        size="var(--scale-size-16)"
+                                                    />
+                                                </span>
 
-                                            <span class="sw-settings-payment-provider-detail__channel-technical-name">
-                                                {{ channel.technicalName }}
-                                            </span>
+                                                <span class="sw-settings-payment-provider-detail__channel-info">
+                                                    <span class="sw-settings-payment-provider-detail__channel-label">
+                                                        {{ $te(channel.label) ? $t(channel.label) : channel.label }}
+                                                    </span>
+
+                                                    <span class="sw-settings-payment-provider-detail__channel-technical-name">
+                                                        {{ channel.technicalName }}
+                                                    </span>
+                                                </span>
+                                            </div>
                                         </td>
                                     {% endblock %}
 
@@ -386,35 +278,6 @@
                                         </td>
                                     {% endblock %}
 
-                                    {% block sw_settings_payment_provider_detail_content_channel_runtime_params %}
-                                        <td class="sw-settings-payment-provider-detail__channel-cell">
-                                            <template v-if="runtimeParamList(channel).length > 0">
-                                                {{ runtimeParamList(channel).join(' / ') }}
-                                            </template>
-                                            <template v-else>
-                                                {{ $t('sw-settings-payment-provider.channel.noRuntimeParams') }}
-                                            </template>
-                                        </td>
-                                    {% endblock %}
-
-                                    {% block sw_settings_payment_provider_detail_content_channel_configured %}
-                                        <td class="sw-settings-payment-provider-detail__channel-cell">
-                                            <mt-badge
-                                                v-if="channel.configured"
-                                                variant="positive"
-                                            >
-                                                {{ $t('sw-settings-payment-provider.channel.configured') }}
-                                            </mt-badge>
-
-                                            <mt-badge
-                                                v-else
-                                                variant="neutral"
-                                            >
-                                                {{ $t('sw-settings-payment-provider.provider.notConfigured') }}
-                                            </mt-badge>
-                                        </td>
-                                    {% endblock %}
-
                                     {% block sw_settings_payment_provider_detail_content_channel_enabled %}
                                         <td class="sw-settings-payment-provider-detail__channel-cell">
                                             <mt-switch
@@ -427,21 +290,6 @@
                                         </td>
                                     {% endblock %}
 
-                                    {% block sw_settings_payment_provider_detail_content_channel_actions %}
-                                        <td class="sw-settings-payment-provider-detail__channel-cell sw-settings-payment-provider-detail__channel-cell--actions">
-                                            <mt-button
-                                                v-if="channel.configured"
-                                                class="sw-settings-payment-provider-detail__channel-reset"
-                                                variant="critical"
-                                                ghost
-                                                size="small"
-                                                :disabled="!canDeleteChannel || undefined"
-                                                @click="onOpenResetChannel(channel)"
-                                            >
-                                                {{ $t('sw-settings-payment-provider.channel.reset') }}
-                                            </mt-button>
-                                        </td>
-                                    {% endblock %}
                                     </tr>
                                 {% endblock %}
 
@@ -452,7 +300,7 @@
                                     >
                                         <td
                                             class="sw-settings-payment-provider-detail__channel-cell sw-settings-payment-provider-detail__channel-cell--params"
-                                            colspan="9"
+                                            colspan="5"
                                         >
                                         {% block sw_settings_payment_provider_detail_content_channel_params %}
                                             <sw-container
@@ -491,6 +339,27 @@
                                                 params: runtimeParamList(channel).join(' / '),
                                                 }) }}
                                             </mt-banner>
+                                        {% endblock %}
+
+                                        {% block sw_settings_payment_provider_detail_content_channel_params_reset %}
+                                            <!-- the parameters are the only thing a channel can be cleared of, so
+                                                 the action lives with them: a channel without a stored value
+                                                 shows no button instead of an empty column -->
+                                            <div
+                                                v-if="hasStoredParams(channel)"
+                                                class="sw-settings-payment-provider-detail__channel-params-actions"
+                                            >
+                                                <mt-button
+                                                    class="sw-settings-payment-provider-detail__channel-reset"
+                                                    variant="critical"
+                                                    ghost
+                                                    size="small"
+                                                    :disabled="!canDeleteChannel || undefined"
+                                                    @click="onOpenResetChannel(channel)"
+                                                >
+                                                    {{ $t('sw-settings-payment-provider.channel.reset') }}
+                                                </mt-button>
+                                            </div>
                                         {% endblock %}
                                         </td>
                                     </tr>
@@ -553,10 +422,10 @@
                 {% block sw_settings_payment_provider_detail_reset_modal_content %}
                 <p class="sw-settings-payment-provider-detail__reset-modal-message">
                     <template v-if="resetTarget.type === 'provider'">
-                        {{ $t('sw-settings-payment-provider.provider.resetModalMessage', { name: resetTarget.label }) }}
+                        {{ $t('sw-settings-payment-provider.provider.resetModalMessage', { name: displayLabel(resetTarget.label) }) }}
                     </template>
                     <template v-else>
-                        {{ $t('sw-settings-payment-provider.channel.resetModalMessage', { name: resetTarget.label }) }}
+                        {{ $t('sw-settings-payment-provider.channel.resetModalMessage', { name: displayLabel(resetTarget.label) }) }}
                     </template>
                 </p>
                 {% endblock %}

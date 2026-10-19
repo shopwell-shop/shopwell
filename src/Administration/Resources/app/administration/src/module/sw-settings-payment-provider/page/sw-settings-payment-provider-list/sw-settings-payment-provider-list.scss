@@ -1,42 +1,21 @@
 .sw-settings-payment-provider-list {
-    .sw-settings-payment-provider-list__hint {
-        margin-bottom: var(--scale-size-24, 24px);
-    }
-
-    .sw-settings-payment-provider-list__label {
-        display: block;
-        color: var(--color-text-primary-default);
-        font-weight: var(--font-weight-semibold, 600);
+    .sw-settings-payment-provider-list__card-content {
+        align-items: center;
     }
 
     .sw-settings-payment-provider-list__technical-name {
-        display: block;
         color: var(--color-text-secondary-default);
         font-size: var(--font-size-xs, 12px);
         font-family: var(--font-family-monospace, monospace);
     }
 
-    .sw-settings-payment-provider-list__status {
-        display: flex;
-        gap: var(--scale-size-12, 12px);
-        align-items: center;
+    // the link sits next to the switch, so it is underlined like the one of the payment method card
+    .sw-settings-payment-provider-list__edit-link {
+        flex-shrink: 0;
+        text-decoration: underline;
     }
 
     .sw-settings-payment-provider-list__switch {
         margin: 0;
-    }
-
-    .sw-settings-payment-provider-list__count {
-        display: block;
-    }
-
-    .sw-settings-payment-provider-list__attention {
-        display: block;
-        color: var(--color-text-critical-default);
-        font-size: var(--font-size-xs, 12px);
-    }
-
-    .sw-settings-payment-provider-list__edit-link {
-        text-decoration: underline;
     }
 }

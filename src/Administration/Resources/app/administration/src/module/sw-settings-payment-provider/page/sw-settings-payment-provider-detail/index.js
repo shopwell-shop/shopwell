@@ -46,7 +46,7 @@ export default {
 
     metaInfo() {
         return {
-            title: this.$createTitle(this.provider?.label),
+            title: this.$createTitle(this.provider === null ? '' : this.displayLabel(this.provider.label)),
         };
     },
 
@@ -81,10 +81,6 @@ export default {
 
         channelCount() {
             return this.provider === null ? 0 : this.provider.channels.length;
-        },
-
-        enabledChannelCount() {
-            return this.provider === null ? 0 : this.provider.channels.filter((channel) => channel.enabled).length;
         },
 
         /**
@@ -127,6 +123,20 @@ export default {
     },
 
     methods: {
+        /**
+         * The name of an interface and of a channel is a snippet key, not a text: the core ships the
+         * keys of the interfaces it declares in this module's snippets, a plugin ships its own. An
+         * installation that has no entry for a key shows the key itself - ugly, but it tells the
+         * operator that a translation is missing instead of hiding it.
+         */
+        displayLabel(label) {
+            if (!label) {
+                return '';
+            }
+
+            return this.$te(label) ? this.$t(label) : label;
+        },
+
         async createdComponent() {
             this.isLoading = true;
 
@@ -316,6 +326,21 @@ export default {
             return Object.keys(channel.runtimeParams ?? {}).filter((name) => channel.runtimeParams[name]);
         },
 
+        /**
+         * Whether clearing this channel would remove anything.
+         *
+         * The stored input is what the server handed over, so it answers "has this channel ever been
+         * configured" instead of "is it configured now": a channel whose fields are all empty has
+         * nothing to clear, and the reset action only exists when there is something to clear.
+         */
+        hasStoredParams(channel) {
+            return Object.keys(channel.storedInput ?? {}).some((name) => {
+                const value = channel.storedInput[name];
+
+                return value !== null && value !== undefined && value !== '';
+            });
+        },
+
         onCancel() {
             this.$router.push({ name: 'sw.settings.payment.provider.index' });
         },
@@ -363,7 +388,7 @@ export default {
                 this.createNotificationError({
                     title: this.$t('global.default.error'),
                     message: this.$t('sw-settings-payment-provider.notification.missingFields', {
-                        name: this.provider.label,
+                        name: this.displayLabel(this.provider.label),
                     }),
                 });
 
@@ -378,7 +403,7 @@ export default {
                 this.createNotificationError({
                     title: this.$t('global.default.error'),
                     message: this.$t('sw-settings-payment-provider.notification.missingFields', {
-                        name: channelWithInvalidParams.label,
+                        name: this.displayLabel(channelWithInvalidParams.label),
                     }),
                 });
 
