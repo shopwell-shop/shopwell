@@ -7,6 +7,7 @@ use Psr\Clock\ClockInterface;
 use Shopwell\Core\System\Sms\Api\SmsGatewayProviderController;
 use Shopwell\Core\System\Sms\Delivery\SmsDeliveryEntity;
 use Shopwell\Core\System\Sms\Gateway\Aliyun\AliyunGatewayTransportFactory;
+use Shopwell\Core\System\Sms\Gateway\Audit\SmsGatewayAuditCapabilities;
 use Shopwell\Core\System\Sms\Gateway\Log\LogGatewayTransportFactory;
 use Shopwell\Core\System\Sms\Gateway\Null\NullGatewayTransportFactory;
 use Shopwell\Core\System\Sms\Gateway\SmsGatewayEntity;
@@ -83,6 +84,11 @@ return static function (ContainerConfigurator $container): void {
 
     $services->set(SmsGatewayRegistry::class)
         ->args([tagged_iterator('shopwell.sms.gateway')]);
+
+    // the one place that knows which provider declares which audit capability, everything else asks
+    // it by technical name instead of comparing a provider name or probing a method
+    $services->set(SmsGatewayAuditCapabilities::class)
+        ->args([service(SmsGatewayRegistry::class)]);
 
     // tells the administration which providers exist and which credentials they need, so the
     // credential form of a provider - including the one of an extension - is rendered, not shipped
