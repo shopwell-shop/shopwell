@@ -338,6 +338,7 @@ class SmsGatewayResolverTest extends TestCase
     }
 
     /**
+     * @param StaticEntityRepository<SmsGatewayCollection> $gatewayRepository
      * @param StaticEntityRepository<SmsTemplateMappingCollection> $mappingRepository
      * @param array<string, mixed> $config
      */

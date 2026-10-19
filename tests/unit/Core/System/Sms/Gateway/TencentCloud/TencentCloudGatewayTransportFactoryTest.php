@@ -5,10 +5,9 @@ namespace Shopwell\Tests\Unit\Core\System\Sms\Gateway\TencentCloud;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\System\Sms\Gateway\Audit\ReadsTemplateApprovalStatusInterface;
-use Shopwell\Core\System\Sms\Gateway\Audit\RequiresTemplateApprovalInterface;
-use Shopwell\Core\System\Sms\Gateway\Audit\SubmitsTemplatesForApprovalInterface;
+use Shopwell\Core\System\Sms\Gateway\Audit\SmsGatewayAuditCapabilities;
 use Shopwell\Core\System\Sms\Gateway\Audit\TemplateSubmission;
+use Shopwell\Core\System\Sms\Gateway\SmsGatewayRegistry;
 use Shopwell\Core\System\Sms\Gateway\TencentCloud\TencentCloudGatewayTransportFactory;
 use Shopwell\Core\System\Sms\Gateway\TencentCloud\TencentCloudSmsTransport;
 use Shopwell\Core\System\Sms\Gateway\TencentCloud\TencentCloudTemplateApproval;
@@ -33,13 +32,15 @@ class TencentCloudGatewayTransportFactoryTest extends TestCase
         static::assertTrue($factory->supportsTemplateMode());
     }
 
-    public function testItDeclaresTheThreeAuditCapabilities(): void
+    public function testTheCoreDiscoversTheAuditCapabilitiesOfTencentCloud(): void
     {
-        $factory = new TencentCloudGatewayTransportFactory();
+        // the core learns the capabilities from the interfaces the provider implements, so a
+        // provider an extension adds is discovered without a change here
+        $capabilities = new SmsGatewayAuditCapabilities(new SmsGatewayRegistry([new TencentCloudGatewayTransportFactory()]));
 
-        static::assertInstanceOf(RequiresTemplateApprovalInterface::class, $factory);
-        static::assertInstanceOf(SubmitsTemplatesForApprovalInterface::class, $factory);
-        static::assertInstanceOf(ReadsTemplateApprovalStatusInterface::class, $factory);
+        static::assertTrue($capabilities->requiresApproval('tencentcloud'));
+        static::assertTrue($capabilities->canSubmit('tencentcloud'));
+        static::assertTrue($capabilities->canReadStatus('tencentcloud'));
     }
 
     public function testItDescribesTheSubmissionFormOfTheProvider(): void

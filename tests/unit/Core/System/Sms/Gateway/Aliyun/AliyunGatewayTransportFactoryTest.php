@@ -8,10 +8,9 @@ use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Sms\Gateway\Aliyun\AliyunGatewayTransportFactory;
 use Shopwell\Core\System\Sms\Gateway\Aliyun\AliyunSmsTransport;
 use Shopwell\Core\System\Sms\Gateway\Aliyun\AliyunTemplateApproval;
-use Shopwell\Core\System\Sms\Gateway\Audit\ReadsTemplateApprovalStatusInterface;
-use Shopwell\Core\System\Sms\Gateway\Audit\RequiresTemplateApprovalInterface;
-use Shopwell\Core\System\Sms\Gateway\Audit\SubmitsTemplatesForApprovalInterface;
+use Shopwell\Core\System\Sms\Gateway\Audit\SmsGatewayAuditCapabilities;
 use Shopwell\Core\System\Sms\Gateway\Audit\TemplateSubmission;
+use Shopwell\Core\System\Sms\Gateway\SmsGatewayRegistry;
 use Shopwell\Core\System\Sms\SmsException;
 use Shopwell\Core\System\Sms\Template\SmsTemplateEntity;
 
@@ -68,15 +67,16 @@ class AliyunGatewayTransportFactoryTest extends TestCase
         (new AliyunGatewayTransportFactory())->create([], []);
     }
 
-    public function testItDeclaresTheThreeCapabilitiesOfAnAuditedProvider(): void
+    public function testTheCoreDiscoversTheAuditCapabilitiesOfAliyun(): void
     {
-        $factory = new AliyunGatewayTransportFactory();
-
         // a template of aliyun is delivered only after its audit, and the account can be asked both
-        // to report it and for its state
-        static::assertInstanceOf(RequiresTemplateApprovalInterface::class, $factory);
-        static::assertInstanceOf(SubmitsTemplatesForApprovalInterface::class, $factory);
-        static::assertInstanceOf(ReadsTemplateApprovalStatusInterface::class, $factory);
+        // to report it and for its state - the core learns that from the interfaces the provider
+        // implements, so a provider an extension adds is discovered without a change here
+        $capabilities = new SmsGatewayAuditCapabilities(new SmsGatewayRegistry([new AliyunGatewayTransportFactory()]));
+
+        static::assertTrue($capabilities->requiresApproval('aliyun'));
+        static::assertTrue($capabilities->canSubmit('aliyun'));
+        static::assertTrue($capabilities->canReadStatus('aliyun'));
     }
 
     public function testItAsksTheAuditOfAliyunForTheSubmissionForm(): void
