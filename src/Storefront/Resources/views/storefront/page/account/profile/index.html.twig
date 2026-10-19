@@ -48,6 +48,23 @@
                                             onlyCompanyRegistration: onlyCompanyRegistration,
                                             showCompanyFields: true,
                                         } %}
+
+                                        {% block page_account_profile_personal_phone %}
+                                            <div class="row g-2">
+                                                {% sw_include '@Storefront/storefront/component/form/form-input.html.twig' with {
+                                                    type: 'tel',
+                                                    label: 'account.profilePhoneNumberLabel'|trans|sw_sanitize,
+                                                    id: 'profilePhoneNumber',
+                                                    name: 'phoneNumber',
+                                                    value: context.customer.phoneNumber,
+                                                    description: 'account.profilePhoneNumberHelp'|trans|sw_sanitize,
+                                                    autocomplete: 'section-personal tel',
+                                                    violationPath: '/phoneNumber',
+                                                    validationRules: '',
+                                                    additionalClass: 'col-sm-6',
+                                                } %}
+                                            </div>
+                                        {% endblock %}
                                     {% endblock %}
 
                                     {% block page_account_profile_personal_required %}

@@ -222,6 +222,86 @@ class ChangeCustomerProfileRouteTest extends TestCase
         $change->change($data, $salesChannelContext, $customer);
     }
 
+    public function testPhoneNumberIsPersistedTrimmed(): void
+    {
+        $customerRepository = $this->createMock(EntityRepository::class);
+        $customerRepository
+            ->expects($this->once())
+            ->method('update')
+            ->with(static::callback(static function (array $data) {
+                static::assertIsArray($data[0]);
+                static::assertArrayHasKey('phoneNumber', $data[0]);
+                static::assertSame('0123456789', $data[0]['phoneNumber']);
+
+                return true;
+            }));
+
+        $change = $this->createRoute($customerRepository);
+
+        $customer = new CustomerEntity();
+        $customer->setId('customer1');
+
+        $data = new RequestDataBag([
+            'salutationId' => '1',
+            'phoneNumber' => " 0123456789\u{3000}",
+        ]);
+
+        $change->change($data, static::createStub(SalesChannelContext::class), $customer);
+    }
+
+    public function testBlankPhoneNumberUnbindsIt(): void
+    {
+        $customerRepository = $this->createMock(EntityRepository::class);
+        $customerRepository
+            ->expects($this->once())
+            ->method('update')
+            ->with(static::callback(static function (array $data) {
+                static::assertIsArray($data[0]);
+                static::assertArrayHasKey('phoneNumber', $data[0]);
+                static::assertNull($data[0]['phoneNumber']);
+
+                return true;
+            }));
+
+        $change = $this->createRoute($customerRepository);
+
+        $customer = new CustomerEntity();
+        $customer->setId('customer1');
+
+        $data = new RequestDataBag([
+            'salutationId' => '1',
+            'phoneNumber' => "\u{3000} ",
+        ]);
+
+        $change->change($data, static::createStub(SalesChannelContext::class), $customer);
+    }
+
+    public function testPhoneNumberIsLeftUntouchedWhenItIsNotSubmitted(): void
+    {
+        $customerRepository = $this->createMock(EntityRepository::class);
+        $customerRepository
+            ->expects($this->once())
+            ->method('update')
+            ->with(static::callback(static function (array $data) {
+                static::assertIsArray($data[0]);
+                static::assertArrayNotHasKey('phoneNumber', $data[0]);
+
+                return true;
+            }));
+
+        $change = $this->createRoute($customerRepository);
+
+        $customer = new CustomerEntity();
+        $customer->setId('customer1');
+        $customer->setPhoneNumber('0123456789');
+
+        $data = new RequestDataBag([
+            'salutationId' => '1',
+        ]);
+
+        $change->change($data, static::createStub(SalesChannelContext::class), $customer);
+    }
+
     public function testPublishesExtension(): void
     {
         $data = new RequestDataBag();
@@ -248,5 +328,18 @@ class ChangeCustomerProfileRouteTest extends TestCase
         );
 
         static::assertSame($response, $route->change($data, $context, $customer));
+    }
+
+    private function createRoute(EntityRepository $customerRepository): ChangeCustomerProfileRoute
+    {
+        return new ChangeCustomerProfileRoute(
+            $customerRepository,
+            new EventDispatcher(),
+            static::createStub(DataValidator::class),
+            static::createStub(CustomerValidationFactory::class),
+            static::createStub(StoreApiCustomFieldMapper::class),
+            static::createStub(EntityRepository::class),
+            new ExtensionDispatcher(new EventDispatcher()),
+        );
     }
 }

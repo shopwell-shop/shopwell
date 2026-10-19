@@ -3,6 +3,7 @@
 namespace Shopwell\Core\Checkout\Customer\Validation;
 
 use Shopwell\Core\Checkout\Customer\CustomerDefinition;
+use Shopwell\Core\Checkout\Customer\Validation\Constraint\CustomerPhoneNumberUnique;
 use Shopwell\Core\Framework\DataAbstractionLayer\Validation\EntityExists;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Validation\Constraint\NoHtml;
@@ -70,7 +71,9 @@ class CustomerProfileValidationFactory implements DataValidationFactoryInterface
             ->add('phoneNumber', new Length(max: CustomerDefinition::MAX_LENGTH_PHONE_NUMBER, exactMessage: 'VIOLATION::PHONE_NUMBER_IS_TOO_LONG'))
             ->add('title', new NoHtml(message: 'VIOLATION::CONTAINS_HTML_ERROR'))
             ->add('name', new NoHtml(message: 'VIOLATION::CONTAINS_HTML_ERROR'))
-            ->add('phoneNumber', new NoHtml(message: 'VIOLATION::CONTAINS_HTML_ERROR'));
+            ->add('phoneNumber', new NoHtml(message: 'VIOLATION::CONTAINS_HTML_ERROR'))
+            // A number that two customers share would make the login by sms refuse both of them.
+            ->add('phoneNumber', new CustomerPhoneNumberUnique(salesChannelContext: $context));
 
         $salesChannelId = $context->getSalesChannelId();
 

@@ -79,6 +79,7 @@ use Shopwell\Core\Checkout\Customer\Subscriber\ProductReviewSubscriber;
 use Shopwell\Core\Checkout\Customer\Validation\AddressValidationFactory;
 use Shopwell\Core\Checkout\Customer\Validation\Constraint\CustomerEmailUniqueValidator;
 use Shopwell\Core\Checkout\Customer\Validation\Constraint\CustomerPasswordMatchesValidator;
+use Shopwell\Core\Checkout\Customer\Validation\Constraint\CustomerPhoneNumberUniqueValidator;
 use Shopwell\Core\Checkout\Customer\Validation\Constraint\CustomerVatIdentificationValidator;
 use Shopwell\Core\Checkout\Customer\Validation\Constraint\CustomerZipCodeValidator;
 use Shopwell\Core\Checkout\Customer\Validation\CustomerEmailUniqueChecker;
@@ -217,6 +218,12 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(CustomerPasswordMatchesValidator::class)
         ->args([
             service(AccountService::class),
+        ])
+        ->tag('validator.constraint_validator');
+
+    $services->set(CustomerPhoneNumberUniqueValidator::class)
+        ->args([
+            service('customer.repository'),
         ])
         ->tag('validator.constraint_validator');
 

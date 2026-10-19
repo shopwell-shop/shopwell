@@ -116,11 +116,22 @@ class ChangeCustomerProfileRoute extends AbstractChangeCustomerProfileRoute
             $data->set('salutationId', $this->getDefaultSalutationId($context));
         }
 
+        // The number the login by sms resolves is read here and not only by the form, so a blank
+        // number unbinds it. A request that never sends the field keeps the stored number, see the
+        // `only()` call below.
+        if ($data->has('phoneNumber')) {
+            $phoneNumber = $data->get('phoneNumber');
+
+            if (!\is_array($phoneNumber) && !$phoneNumber instanceof DataBag) {
+                $data->set('phoneNumber', $this->normalizePhoneNumber($phoneNumber));
+            }
+        }
+
         $this->dispatchValidationEvent($validation, $data, $context->getContext());
 
         $this->validator->validate($data->all(), $validation);
 
-        $customerData = $data->only('name', 'salutationId', 'title', 'company', 'accountType');
+        $customerData = $data->only('name', 'salutationId', 'title', 'company', 'accountType', 'phoneNumber');
 
         $vatIds = $data->get('vatIds');
 
@@ -175,6 +186,24 @@ class ChangeCustomerProfileRoute extends AbstractChangeCustomerProfileRoute
         }
 
         $validation->add('vatIds', ...$constraints);
+    }
+
+    /**
+     * Reads the written number, or null when the customer cleared the field and wants to unbind it.
+     *
+     * The number is stored as it was written, only trimmed: the login by sms reads the number
+     * through its normalizer, so the shop keeps what the customer typed and can show it back.
+     */
+    private function normalizePhoneNumber(mixed $phoneNumber): ?string
+    {
+        if (!\is_scalar($phoneNumber)) {
+            return null;
+        }
+
+        // mb_trim also strips full width spaces, which customers of the Chinese storefront tend to enter
+        $phoneNumber = mb_trim((string) $phoneNumber);
+
+        return $phoneNumber === '' ? null : $phoneNumber;
     }
 
     private function getBirthday(DataBag $data): ?\DateTimeInterface

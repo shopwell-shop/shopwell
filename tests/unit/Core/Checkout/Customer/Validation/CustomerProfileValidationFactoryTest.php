@@ -6,6 +6,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Checkout\Customer\CustomerDefinition;
 use Shopwell\Core\Checkout\Customer\CustomerEntity;
+use Shopwell\Core\Checkout\Customer\Validation\Constraint\CustomerPhoneNumberUnique;
 use Shopwell\Core\Checkout\Customer\Validation\CustomerProfileValidationFactory;
 use Shopwell\Core\Defaults;
 use Shopwell\Core\Framework\DataAbstractionLayer\Validation\EntityExists;
@@ -269,7 +270,8 @@ class CustomerProfileValidationFactoryTest extends TestCase
             ->add('phoneNumber', new Length(max: CustomerDefinition::MAX_LENGTH_PHONE_NUMBER, exactMessage: 'VIOLATION::PHONE_NUMBER_IS_TOO_LONG'))
             ->add('title', new NoHtml(message: 'VIOLATION::CONTAINS_HTML_ERROR'))
             ->add('name', new NoHtml(message: 'VIOLATION::CONTAINS_HTML_ERROR'))
-            ->add('phoneNumber', new NoHtml(message: 'VIOLATION::CONTAINS_HTML_ERROR'));
+            ->add('phoneNumber', new NoHtml(message: 'VIOLATION::CONTAINS_HTML_ERROR'))
+            ->add('phoneNumber', new CustomerPhoneNumberUnique(salesChannelContext: $context));
     }
 
     private function addConstraintsBirthday(DataValidationDefinition $definition): void
