@@ -392,8 +392,12 @@ class Migration1536233560BasicData extends MigrationStep
         $connection->insert('country_translation', $languageEN($frId, 'France'));
         $connection->insert('country_translation', $languageZh($frId, '法国'));
 
+        // China is the home market of this distribution and holds position 0, which makes it the first
+        // active country. The default country of a sales channel is the first active country ordered by
+        // position, both for the channels seeded by this migration (see createSalesChannel()) and for
+        // the storefront channel that system:install creates through SalesChannelCreator.
         $cnId = Uuid::randomBytes();
-        $connection->insert('country', ['id' => $cnId, 'iso' => 'CN', 'position' => 10, 'active' => 1, 'iso3' => 'CHN', 'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT)]);
+        $connection->insert('country', ['id' => $cnId, 'iso' => 'CN', 'position' => 0, 'active' => 1, 'iso3' => 'CHN', 'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT)]);
         $connection->insert('country_translation', $languageEN($cnId, 'China'));
         $connection->insert('country_translation', $languageZh($cnId, '中国'));
 
