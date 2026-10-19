@@ -9,8 +9,8 @@ use Shopwell\Core\System\Payment\Api\PaymentApiRouteScope;
 use Shopwell\Core\System\Payment\Api\PaymentChannelController;
 use Shopwell\Core\System\Payment\Api\PaymentOrderController;
 use Shopwell\Core\System\Payment\Api\PaymentRefundController;
-use Shopwell\Core\System\Payment\Api\ReturnController;
 use Shopwell\Core\System\Payment\Api\PaymentTransferNotifyController;
+use Shopwell\Core\System\Payment\Api\ReturnController;
 use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppChannel\PaymentAppChannelEntity;
 use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppProvider\PaymentAppProviderEntity;
 use Shopwell\Core\System\Payment\App\Api\PaymentAppController;
@@ -19,8 +19,8 @@ use Shopwell\Core\System\Payment\App\PaymentAppEntity;
 use Shopwell\Core\System\Payment\App\PaymentAppProvisioner;
 use Shopwell\Core\System\Payment\App\PaymentCredentialCipher;
 use Shopwell\Core\System\Payment\App\PaymentSignatureService;
+use Shopwell\Core\System\Payment\Command\PaymentProvidersValidateCommand;
 use Shopwell\Core\System\Payment\Gateway\PaymentCloser;
-use Shopwell\Core\System\Payment\Gateway\PaymentGatewayFactory;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationEntity;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationProcessor;
 use Shopwell\Core\System\Payment\Notification\PaymentNotifyUrlBuilder;
@@ -37,12 +37,12 @@ use Shopwell\Core\System\Payment\Order\PaymentOrderStateHandler;
 use Shopwell\Core\System\Payment\Order\Refund\PaymentRefundEntity;
 use Shopwell\Core\System\Payment\Order\Refund\PaymentRefundService;
 use Shopwell\Core\System\Payment\Order\Refund\PaymentRefundStateHandler;
-use Shopwell\Core\System\Payment\Provider\Alipay\AlipayApi;
 use Shopwell\Core\System\Payment\Provider\Alipay\AlipayCaptureAction;
 use Shopwell\Core\System\Payment\Provider\Alipay\AlipayCloseAction;
 use Shopwell\Core\System\Payment\Provider\Alipay\AlipayNotificationExtractor;
 use Shopwell\Core\System\Payment\Provider\Alipay\AlipayNotifyAction;
 use Shopwell\Core\System\Payment\Provider\Alipay\AlipayPayParamsDecoder;
+use Shopwell\Core\System\Payment\Provider\Alipay\AlipayProvider;
 use Shopwell\Core\System\Payment\Provider\Alipay\AlipayQueryAction;
 use Shopwell\Core\System\Payment\Provider\Alipay\AlipayRefundAction;
 use Shopwell\Core\System\Payment\Provider\Alipay\AlipayTransferAction;
@@ -52,35 +52,34 @@ use Shopwell\Core\System\Payment\Provider\Api\PaymentProviderConfigController;
 use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannelRegistry;
 use Shopwell\Core\System\Payment\Provider\PaymentChannelConfigEntity;
 use Shopwell\Core\System\Payment\Provider\PaymentConfigResolver;
-use Shopwell\Core\System\Payment\Provider\PaymentProvider;
 use Shopwell\Core\System\Payment\Provider\PaymentProviderConfigEntity;
 use Shopwell\Core\System\Payment\Provider\PaymentProviderConfigService;
+use Shopwell\Core\System\Payment\Provider\PaymentProviderFactory;
 use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;
-use Shopwell\Core\System\Payment\Provider\PaymentProviderSchemaReader;
-use Shopwell\Core\System\Payment\Provider\Paypal\PaypalApi;
 use Shopwell\Core\System\Payment\Provider\Paypal\PaypalCaptureAction;
 use Shopwell\Core\System\Payment\Provider\Paypal\PaypalNotificationExtractor;
 use Shopwell\Core\System\Payment\Provider\Paypal\PaypalNotifyAction;
+use Shopwell\Core\System\Payment\Provider\Paypal\PaypalProvider;
 use Shopwell\Core\System\Payment\Provider\Paypal\PaypalQueryAction;
 use Shopwell\Core\System\Payment\Provider\Paypal\PaypalRefundAction;
 use Shopwell\Core\System\Payment\Provider\Paypal\PaypalTransferAction;
 use Shopwell\Core\System\Payment\Provider\Paypal\PaypalTransferNotificationVerifier;
 use Shopwell\Core\System\Payment\Provider\Paypal\PaypalTransferQueryAction;
-use Shopwell\Core\System\Payment\Provider\Stripe\StripeApi;
 use Shopwell\Core\System\Payment\Provider\Stripe\StripeCaptureAction;
 use Shopwell\Core\System\Payment\Provider\Stripe\StripeNotificationExtractor;
 use Shopwell\Core\System\Payment\Provider\Stripe\StripeNotifyAction;
+use Shopwell\Core\System\Payment\Provider\Stripe\StripeProvider;
 use Shopwell\Core\System\Payment\Provider\Stripe\StripeQueryAction;
 use Shopwell\Core\System\Payment\Provider\Stripe\StripeRefundAction;
 use Shopwell\Core\System\Payment\Provider\Stripe\StripeTransferAction;
 use Shopwell\Core\System\Payment\Provider\Stripe\StripeTransferNotificationVerifier;
 use Shopwell\Core\System\Payment\Provider\Stripe\StripeTransferQueryAction;
-use Shopwell\Core\System\Payment\Provider\Wechat\WechatApi;
 use Shopwell\Core\System\Payment\Provider\Wechat\WechatCaptureAction;
 use Shopwell\Core\System\Payment\Provider\Wechat\WechatCloseAction;
 use Shopwell\Core\System\Payment\Provider\Wechat\WechatNotificationExtractor;
 use Shopwell\Core\System\Payment\Provider\Wechat\WechatNotifyAction;
 use Shopwell\Core\System\Payment\Provider\Wechat\WechatPayParamsDecoder;
+use Shopwell\Core\System\Payment\Provider\Wechat\WechatProvider;
 use Shopwell\Core\System\Payment\Provider\Wechat\WechatQueryAction;
 use Shopwell\Core\System\Payment\Provider\Wechat\WechatRefundAction;
 use Shopwell\Core\System\Payment\Provider\Wechat\WechatTransferAction;
@@ -98,6 +97,8 @@ use Shopwell\Core\System\Payment\Subscription\PaymentMandateEntity;
 use Shopwell\Core\System\Payment\Subscription\PaymentPlanEntity;
 use Shopwell\Core\System\Payment\Subscription\PaymentSubscriptionCycleEntity;
 use Shopwell\Core\System\Payment\Subscription\PaymentSubscriptionEntity;
+use Shopwell\Core\System\Payment\Transfer\Notification\PaymentTransferNotificationProcessor;
+use Shopwell\Core\System\Payment\Transfer\Notification\PaymentTransferNotificationVerifierRegistry;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferEntity;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferRecipientEntity;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferRecipientService;
@@ -105,8 +106,6 @@ use Shopwell\Core\System\Payment\Transfer\PaymentTransferReconciler;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferService;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferStateHandler;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferSubmitter;
-use Shopwell\Core\System\Payment\Transfer\Notification\PaymentTransferNotificationProcessor;
-use Shopwell\Core\System\Payment\Transfer\Notification\PaymentTransferNotificationVerifierRegistry;
 use Shopwell\Core\System\Payment\Webhook\PaymentWebhookDeliveryEntity;
 use Shopwell\Core\System\Payment\Webhook\PaymentWebhookDispatcher;
 use Shopwell\Core\System\Payment\Webhook\PaymentWebhookSigner;
@@ -119,18 +118,18 @@ use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigura
 use function Symfony\Component\DependencyInjection\Loader\Configurator\env;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\param;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
+use function Symfony\Component\DependencyInjection\Loader\Configurator\service_locator;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\tagged_iterator;
 
 /**
  * The generic payment gateway: the api the external apps call, the payment interfaces and their
  * channels, and the bookkeeping of everything that happened.
  *
- * A payment interface is data plus two services: its declaration file (`Payment/Provider/Resources/
- * config/*.xml`) describes which credentials a merchant has to type in and which channels the
- * interface offers - and that declaration is what the administration renders - while its payum
- * gateway factory and its notification extractor are the code that talks to it. Adding another
- * interface of the platform is one more block below, an interface of an extension is one block in
- * the extension.
+ * A payment interface is a declaration plus the actions it consists of: `AbstractPaymentProvider`
+ * names its credentials, its channels, its capabilities and its transfer and cycle rules, and its
+ * actions are the code that talks to it. Adding another interface of the platform is one declaration
+ * service next to the api of that interface - an interface of an extension is one declaration service
+ * tagged `shopwell.payment.provider` in the extension, and this file does not change for it.
  *
  * @codeCoverageIgnore
  */
@@ -138,6 +137,10 @@ return static function (ContainerConfigurator $container): void {
     // the interfaces are not told where to notify the platform by an app but by this url, so an
     // installation behind a proxy can pin it instead of trusting the host header of a request
     $container->parameters()->set('shopwell.payment.notify_base_url', '');
+
+    // which declaration decorates which, per technical name, outermost first. Filled by
+    // `PaymentProviderCompilerPass` and only read by `payment:providers:validate`.
+    $container->parameters()->set('shopwell.payment.provider.decoration_chain', []);
 
     $services = $container->services();
 
@@ -207,8 +210,8 @@ return static function (ContainerConfigurator $container): void {
         ->tag('shopwell.entity');
 
     // ---- the payment interfaces ----
-    // One notification extractor per interface; the payum gateway factories of the interfaces live in
-    // the Gateway section below, together with the actions they consist of.
+    // One notification extractor per interface; the actions of the interfaces and their declarations
+    // live in the Gateway section below, together with the api they talk to.
     $services->set(AlipayNotificationExtractor::class);
     $services->set(WechatNotificationExtractor::class);
     $services->set(PaypalNotificationExtractor::class);
@@ -219,40 +222,39 @@ return static function (ContainerConfigurator $container): void {
     $services->set(AlipayPayParamsDecoder::class);
     $services->set(WechatPayParamsDecoder::class);
 
-    // The declaration of the interfaces is the contract with the administration, so it lives in a file
-    // and not in this wiring: the credentials and the channels below are read from the xml next to the
-    // api of the interface and bound to its services here. An interface of an extension brings its own
-    // xml, its own api and its own actions.
-    $services->set(PaymentProviderSchemaReader::class);
+    $services->set(PaymentProviderFactory::class);
 
-    $configDir = __DIR__ . '/../Payment/Provider/Resources/config';
-
-    $interfaces = [
-        'alipay' => ['file' => $configDir . '/alipay.xml', 'factory' => 'shopwell.payment.gateway.factory.alipay', 'extractor' => AlipayNotificationExtractor::class, 'decoder' => AlipayPayParamsDecoder::class],
-        'wechat' => ['file' => $configDir . '/wechat.xml', 'factory' => 'shopwell.payment.gateway.factory.wechat', 'extractor' => WechatNotificationExtractor::class, 'decoder' => WechatPayParamsDecoder::class],
-        'paypal' => ['file' => $configDir . '/paypal.xml', 'factory' => 'shopwell.payment.gateway.factory.paypal', 'extractor' => PaypalNotificationExtractor::class, 'decoder' => null],
-        'stripe' => ['file' => $configDir . '/stripe.xml', 'factory' => 'shopwell.payment.gateway.factory.stripe', 'extractor' => StripeNotificationExtractor::class, 'decoder' => null],
-    ];
-
-    foreach ($interfaces as $name => $interface) {
-        $services->set('shopwell.payment.provider.' . $name, PaymentProvider::class)
-            ->factory([service(PaymentProviderSchemaReader::class), 'readProvider'])
-            ->args([
-                $interface['file'],
-                service($interface['factory']),
-                service($interface['extractor']),
-                $interface['decoder'] === null ? null : service($interface['decoder']),
-            ])
-            ->tag('shopwell.payment.provider');
-    }
-
+    // The declarations are collected by `PaymentProviderCompilerPass`, which fills this argument with
+    // one definition per technical name. An installation that ships no interface at all keeps the empty
+    // array, so the registry is never a reason for the container to fail.
+    //
+    // It is public because `payment:providers:validate` resolves it through a locator inside its
+    // `execute()`: the registry builds every declaration when it is constructed, so a broken one has to
+    // be reachable from the command in order to be reported instead of crashing the container.
     $services->set(PaymentProviderRegistry::class)
-        ->args([tagged_iterator('shopwell.payment.provider')]);
+        ->args([[]])
+        ->public();
 
     // the channels are indexed across the interfaces, and a name may only be used once - an app names
     // the way it wants to be paid and the platform derives the interface (and its credentials) from it
     $services->set(PaymentChannelRegistry::class)
         ->args([service(PaymentProviderRegistry::class)]);
+
+    // the CI and the operator entry point: it prints every interface with its channels, its
+    // capabilities and the decoration chain, and fails when a declaration is not coherent. It is
+    // handed a locator holding the provider registry, not the registry itself: the registry builds
+    // every declaration while it is constructed, so injecting it would throw while the container
+    // wires the command - before execute() runs and before anything can report the broken
+    // declaration. The channel index is built inside the command for the same reason: it is the
+    // thing that refuses a duplicated channel name.
+    $services->set(PaymentProvidersValidateCommand::class)
+        ->args([
+            service_locator([
+                PaymentProviderRegistry::class => service(PaymentProviderRegistry::class),
+            ]),
+            param('shopwell.payment.provider.decoration_chain'),
+        ])
+        ->tag('console.command');
 
     // ---- the resolution of one payment ----
     $services->set(PaymentConfigResolver::class)
@@ -287,11 +289,15 @@ return static function (ContainerConfigurator $container): void {
         ->tag('controller.service_arguments');
 
     // ---- Gateway: the payum integration ----
-    // One payum gateway factory per interface, not per channel: the channels of an interface share the
-    // credentials, the api and everything but the call that opens a payment, so the capture action
-    // dispatches on the channel itself. The factory is wired with the api class and the actions of its
-    // interface - the actions are stateless services, the api is built per payment because it carries
-    // the resolved credentials of the very payment.
+    // One gateway per interface, not per channel: the channels of an interface share the credentials,
+    // the api and everything but the call that opens a payment, so the capture action dispatches on the
+    // channel itself. The gateway is assembled per payment out of the declaration of its interface - the
+    // actions are stateless services, the api is built per payment because it carries the resolved
+    // credentials of the very payment.
+    //
+    // The priority of a declaration is fixed at -100 for the interfaces the platform ships: it is the
+    // lowest one, so a plugin that extends one of them decorates it with a higher priority and the base
+    // implementation stays the one the chain ends at.
     $services->set(AlipayCaptureAction::class)
         ->args([service(ClockInterface::class)]);
     $services->set(AlipayRefundAction::class);
@@ -302,8 +308,8 @@ return static function (ContainerConfigurator $container): void {
         ->args([service(PaymentCredentialCipher::class)]);
     $services->set(AlipayTransferQueryAction::class);
 
-    $services->set('shopwell.payment.gateway.factory.alipay', PaymentGatewayFactory::class)
-        ->args(['alipay', AlipayApi::class, [
+    $services->set(AlipayProvider::class)
+        ->args([
             service(AlipayCaptureAction::class),
             service(AlipayRefundAction::class),
             service(AlipayNotifyAction::class),
@@ -311,7 +317,11 @@ return static function (ContainerConfigurator $container): void {
             service(AlipayCloseAction::class),
             service(AlipayTransferAction::class),
             service(AlipayTransferQueryAction::class),
-        ]]);
+            service(AlipayNotificationExtractor::class),
+            service(AlipayPayParamsDecoder::class),
+            service(AlipayTransferNotificationVerifier::class),
+        ])
+        ->tag('shopwell.payment.provider', ['key' => 'alipay', 'priority' => -100]);
 
     $services->set(WechatCaptureAction::class);
     $services->set(WechatRefundAction::class);
@@ -322,8 +332,8 @@ return static function (ContainerConfigurator $container): void {
         ->args([service(PaymentCredentialCipher::class)]);
     $services->set(WechatTransferQueryAction::class);
 
-    $services->set('shopwell.payment.gateway.factory.wechat', PaymentGatewayFactory::class)
-        ->args(['wechat', WechatApi::class, [
+    $services->set(WechatProvider::class)
+        ->args([
             service(WechatCaptureAction::class),
             service(WechatRefundAction::class),
             service(WechatNotifyAction::class),
@@ -331,7 +341,11 @@ return static function (ContainerConfigurator $container): void {
             service(WechatCloseAction::class),
             service(WechatTransferAction::class),
             service(WechatTransferQueryAction::class),
-        ]]);
+            service(WechatNotificationExtractor::class),
+            service(WechatPayParamsDecoder::class),
+            service(WechatTransferNotificationVerifier::class),
+        ])
+        ->tag('shopwell.payment.provider', ['key' => 'wechat', 'priority' => -100]);
 
     $services->set(PaypalCaptureAction::class);
     $services->set(PaypalRefundAction::class);
@@ -341,17 +355,21 @@ return static function (ContainerConfigurator $container): void {
         ->args([service(PaymentCredentialCipher::class)]);
     $services->set(PaypalTransferQueryAction::class);
 
-    // the api of paypal fetches the certificate a webhook is signed with, so its factory hands the
+    // the api of paypal fetches the certificate a webhook is signed with, so its declaration hands the
     // http client over to it
-    $services->set('shopwell.payment.gateway.factory.paypal', PaymentGatewayFactory::class)
-        ->args(['paypal', PaypalApi::class, [
+    $services->set(PaypalProvider::class)
+        ->args([
             service(PaypalCaptureAction::class),
             service(PaypalRefundAction::class),
             service(PaypalNotifyAction::class),
             service(PaypalQueryAction::class),
             service(PaypalTransferAction::class),
             service(PaypalTransferQueryAction::class),
-        ], [service('http_client')]]);
+            service(PaypalNotificationExtractor::class),
+            service(PaypalTransferNotificationVerifier::class),
+            service('http_client'),
+        ])
+        ->tag('shopwell.payment.provider', ['key' => 'paypal', 'priority' => -100]);
 
     $services->set(StripeCaptureAction::class)
         ->args([service(ClockInterface::class)]);
@@ -361,15 +379,18 @@ return static function (ContainerConfigurator $container): void {
     $services->set(StripeTransferAction::class);
     $services->set(StripeTransferQueryAction::class);
 
-    $services->set('shopwell.payment.gateway.factory.stripe', PaymentGatewayFactory::class)
-        ->args(['stripe', StripeApi::class, [
+    $services->set(StripeProvider::class)
+        ->args([
             service(StripeCaptureAction::class),
             service(StripeRefundAction::class),
             service(StripeNotifyAction::class),
             service(StripeQueryAction::class),
             service(StripeTransferAction::class),
             service(StripeTransferQueryAction::class),
-        ]]);
+            service(StripeNotificationExtractor::class),
+            service(StripeTransferNotificationVerifier::class),
+        ])
+        ->tag('shopwell.payment.provider', ['key' => 'stripe', 'priority' => -100]);
 
     // ---- Order: the payment order, its capture and its refunds ----
     $services->set(PaymentOrderEntity::class)

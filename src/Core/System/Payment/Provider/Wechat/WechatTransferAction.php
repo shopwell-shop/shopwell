@@ -10,6 +10,7 @@ use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
 use Shopwell\Core\System\Payment\Gateway\PaymentTransferRequest;
 use Shopwell\Core\System\Payment\Gateway\TransferResult;
 use Shopwell\Core\System\Payment\PaymentException;
+use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferEntity;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferRecipientEntity;
 use WeChatPay\Crypto\Rsa;
@@ -113,6 +114,11 @@ final class WechatTransferAction extends AbstractPaymentAction
 
     public function __construct(private readonly PaymentCredentialCipher $cipher)
     {
+    }
+
+    public function capability(): PaymentCapability
+    {
+        return PaymentCapability::TRANSFER;
     }
 
     /**

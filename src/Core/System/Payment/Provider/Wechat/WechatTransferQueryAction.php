@@ -9,6 +9,7 @@ use Shopwell\Core\System\Payment\Gateway\PaymentTransferQuery;
 use Shopwell\Core\System\Payment\Gateway\TransferQueryResult;
 use Shopwell\Core\System\Payment\Gateway\TransferResult;
 use Shopwell\Core\System\Payment\PaymentException;
+use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
 
 /**
  * Asks wechat what happened to a merchant transfer,
@@ -33,6 +34,11 @@ use Shopwell\Core\System\Payment\PaymentException;
 final class WechatTransferQueryAction extends AbstractPaymentAction
 {
     protected string $apiClass = WechatApi::class;
+
+    public function capability(): PaymentCapability
+    {
+        return PaymentCapability::TRANSFER_QUERY;
+    }
 
     /**
      * @throws PaymentException

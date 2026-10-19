@@ -43,8 +43,8 @@ final class AlipayApi extends AbstractPaymentApi
     final public const PROVIDER = 'alipay';
 
     /**
-     * The channels of alipay as they are declared in `Resources/config/alipay.xml`. The names are the
-     * contract between the declaration and the capture action, which is the only place a channel
+     * The channels of alipay as they are declared in {@see AlipayProvider::getChannels()}. The names are
+     * the contract between the declaration and the capture action, which is the only place a channel
      * matters - adding a channel means declaring it there and teaching the action to open it.
      */
     final public const CHANNEL_H5 = 'alipay_h5';

@@ -9,6 +9,7 @@ use Shopwell\Core\System\Payment\Gateway\CloseResult;
 use Shopwell\Core\System\Payment\Gateway\PaymentClose;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
 use Shopwell\Core\System\Payment\PaymentException;
+use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
 
 /**
  * Closes an alipay trade, the counterpart of the capture.
@@ -27,6 +28,11 @@ final class AlipayCloseAction extends AbstractPaymentAction
     final public const METHOD_CLOSE = 'alipay.trade.close';
 
     protected string $apiClass = AlipayApi::class;
+
+    public function capability(): PaymentCapability
+    {
+        return PaymentCapability::CLOSE;
+    }
 
     public function execute($request): void
     {

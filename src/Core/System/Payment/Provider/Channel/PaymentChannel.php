@@ -16,11 +16,11 @@ use Shopwell\Core\System\Payment\Provider\PaymentConfigField;
  * refunding and verifying a notification all work on the credentials of the interface alone, which is
  * why the adapters talk to an interface api and only dispatch on the channel when a payment is opened.
  *
- * A channel is data plus its declaration in the `payment-provider.xml` of its interface: the flow, the
- * currencies, the devices and the runtime parameters are declared there, so the administration and the
- * api pick up a new channel without a code change. The call that actually opens the payment is the one
- * thing that stays with the interface - its products differ in the api they call - and is named per
- * channel by the capture action of that interface.
+ * A channel is data plus its declaration in {@see \Shopwell\Core\System\Payment\Provider\AbstractPaymentProvider::getChannels()}
+ * of its interface: the flow, the currencies, the devices and the runtime parameters are declared there,
+ * so the administration and the api pick up a new channel without a code change. The call that actually
+ * opens the payment is the one thing that stays with the interface - its products differ in the api they
+ * call - and is named per channel by the capture action of that interface.
  *
  * @internal
  */

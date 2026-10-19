@@ -10,6 +10,7 @@ use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
 use Shopwell\Core\System\Payment\Gateway\RefundResult;
 use Shopwell\Core\System\Payment\Order\Refund\PaymentRefundStates;
 use Shopwell\Core\System\Payment\PaymentException;
+use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
 
 /**
  * Refunds a wechat pay trade (api v3).
@@ -34,6 +35,11 @@ final class WechatRefundAction extends AbstractPaymentAction
     final public const FAILED_STATES = ['CLOSED', 'ABNORMAL'];
 
     protected string $apiClass = WechatApi::class;
+
+    public function capability(): PaymentCapability
+    {
+        return PaymentCapability::REFUND;
+    }
 
     public function execute($request): void
     {

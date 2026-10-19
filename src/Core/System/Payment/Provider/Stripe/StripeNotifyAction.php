@@ -9,6 +9,7 @@ use Shopwell\Core\System\Payment\Gateway\AbstractPaymentAction;
 use Shopwell\Core\System\Payment\Gateway\NotificationResult;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
 use Shopwell\Core\System\Payment\PaymentException;
+use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
 use Stripe\Exception\SignatureVerificationException;
 use Stripe\WebhookSignature;
 
@@ -45,6 +46,11 @@ final class StripeNotifyAction extends AbstractPaymentAction
     final public const REFUND_EVENTS = ['refund.created', 'refund.updated', 'refund.failed'];
 
     protected string $apiClass = StripeApi::class;
+
+    public function capability(): PaymentCapability
+    {
+        return PaymentCapability::NOTIFICATION;
+    }
 
     public function execute($request): void
     {

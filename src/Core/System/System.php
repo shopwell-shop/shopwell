@@ -6,6 +6,7 @@ use Shopwell\Core\Framework\Bundle;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\CustomEntity\CustomEntityRegistrar;
 use Shopwell\Core\System\DependencyInjection\CompilerPass\NumberRangeIncrementerCompilerPass;
+use Shopwell\Core\System\Payment\DependencyInjection\PaymentProviderCompilerPass;
 use Shopwell\Core\System\DependencyInjection\CompilerPass\SalesChannelEntityCompilerPass;
 use Shopwell\Core\System\Sms\SmsConfigurationCompilerPass;
 use Symfony\Component\Config\FileLocator;
@@ -63,6 +64,10 @@ class System extends Bundle
         $container->addCompilerPass(new SalesChannelEntityCompilerPass());
         $container->addCompilerPass(new NumberRangeIncrementerCompilerPass());
         $container->addCompilerPass(new SmsConfigurationCompilerPass());
+
+        // collects the payment interfaces of the platform and of the plugins, and refuses to compile
+        // when two declarations of one technical name are not a decoration chain
+        $container->addCompilerPass(new PaymentProviderCompilerPass());
     }
 
     public function boot(): void

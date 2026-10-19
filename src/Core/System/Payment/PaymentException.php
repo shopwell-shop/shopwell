@@ -17,6 +17,9 @@ class PaymentException extends HttpException
     public const UNKNOWN_PROVIDER = 'PAYMENT__UNKNOWN_PROVIDER';
     public const UNKNOWN_CHANNEL = 'PAYMENT__UNKNOWN_CHANNEL';
     public const DUPLICATE_CHANNEL = 'PAYMENT__DUPLICATE_CHANNEL';
+    public const DUPLICATE_PROVIDER = 'PAYMENT__DUPLICATE_PROVIDER';
+    public const AMBIGUOUS_PROVIDER_PRIORITY = 'PAYMENT__AMBIGUOUS_PROVIDER_PRIORITY';
+    public const INVALID_PROVIDER_NAME = 'PAYMENT__INVALID_PROVIDER_NAME';
     public const INVALID_PROVIDER_DECLARATION = 'PAYMENT__INVALID_PROVIDER_DECLARATION';
     public const STATE_MACHINE_INVALID = 'PAYMENT__STATE_MACHINE_INVALID';
 
@@ -130,6 +133,72 @@ class PaymentException extends HttpException
             self::INVALID_PROVIDER_DECLARATION,
             'A payment provider declaration is invalid: {{ reason }}',
             ['reason' => $reason]
+        );
+    }
+
+    /**
+     * Two implementations of the very same technical name, where the second one is not a decorator.
+     *
+     * A technical name is a foreign key value - `payment_order.provider_technical_name`,
+     * `payment_provider_config.provider_technical_name`, `payment_app_provider.provider_technical_name` -
+     * so a second implementation that silently takes over would make every historic row
+     * uninterpretable. Extending an interface is done by decorating it, replacing it by giving the
+     * replacement a technical name of its own. The container refuses to compile, which is the only
+     * moment the conflict can still be answered with "fix the declaration".
+     */
+    public static function duplicateProvider(string $technicalName, string $firstDeclaration, string $secondDeclaration): self
+    {
+        return new self(
+            Response::HTTP_INTERNAL_SERVER_ERROR,
+            self::DUPLICATE_PROVIDER,
+            'The payment provider "{{ technicalName }}" is declared by "{{ firstDeclaration }}" and by "{{ secondDeclaration }}", but the second one is not a decorator. Declare a technical name of its own or decorate the existing declaration through getDecorated().',
+            ['technicalName' => $technicalName, 'firstDeclaration' => $firstDeclaration, 'secondDeclaration' => $secondDeclaration]
+        );
+    }
+
+    /**
+     * Two declarations of one technical name that carry the very same priority.
+     *
+     * The priority is what orders the decoration chain, so one priority for two declarations means the
+     * order is decided by the container - by the order the services happen to be registered in. That
+     * order changes when an unrelated plugin installs itself, which would silently swap the outermost
+     * decorator, i.e. the instance that represents the interface. Since a chain only has one valid
+     * order, the ambiguity is refused at compile time instead of being resolved by chance.
+     */
+    public static function ambiguousProviderPriority(
+        string $technicalName,
+        int $priority,
+        string $firstDeclaration,
+        string $secondDeclaration,
+    ): self {
+        return new self(
+            Response::HTTP_INTERNAL_SERVER_ERROR,
+            self::AMBIGUOUS_PROVIDER_PRIORITY,
+            'The payment provider "{{ technicalName }}" is declared by "{{ firstDeclaration }}" and by "{{ secondDeclaration }}", both with the priority {{ priority }}. The priority orders the decoration chain, so give them different priorities.',
+            [
+                'technicalName' => $technicalName,
+                'priority' => $priority,
+                'firstDeclaration' => $firstDeclaration,
+                'secondDeclaration' => $secondDeclaration,
+            ]
+        );
+    }
+
+    /**
+     * A technical name that the notify url could not carry.
+     *
+     * The route of the notify endpoint is `/payment-api/v1/notify/{provider}/{paymentNo}` with the
+     * requirement `[A-Za-z0-9_-]+` (`Api/NotifyController`), so a name outside of that character set
+     * would produce an interface whose callbacks can never arrive. It is refused at container compile
+     * time instead of at the first payment.
+     */
+    public static function invalidProviderName(string $technicalName): self
+    {
+        return new self(
+            Response::HTTP_INTERNAL_SERVER_ERROR,
+            self::INVALID_PROVIDER_NAME,
+            'The payment provider technical name "{{ technicalName }}" is invalid, it must match [A-Za-z0-9_-]+ so that the notify url can carry it.',
+            ['technicalName' => $technicalName]
         );
     }
 

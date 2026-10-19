@@ -59,6 +59,7 @@ use Shopwell\Core\Framework\SystemCheck\BaseCheck;
 use Shopwell\Core\Framework\Telemetry\Metrics\Metric\PeriodicMetricCollectorInterface;
 use Shopwell\Core\Framework\Telemetry\Metrics\MetricTransportInterface;
 use Shopwell\Core\System\NumberRange\ValueGenerator\Pattern\AbstractValueGenerator;
+use Shopwell\Core\System\Payment\Provider\AbstractPaymentProvider;
 use Shopwell\Core\System\NumberRange\ValueGenerator\Pattern\IncrementStorage\AbstractIncrementStorage;
 use Shopwell\Core\System\SalesChannel\Capability\AbstractSalesChannelTypeCapabilities;
 use Shopwell\Core\System\Sms\Gateway\SmsGatewayTransportFactoryInterface;
@@ -123,6 +124,7 @@ return [
             'shopwell.oauth.scope' => ScopeEntityInterface::class,
             'shopwell.path.strategy' => AbstractMediaPathStrategy::class,
             'shopwell.payment.method' => AbstractPaymentHandler::class,
+            'shopwell.payment.provider' => AbstractPaymentProvider::class,
             'shopwell.product.stock_filter' => AbstractStockUpdateFilter::class,
             'shopwell.product_export.provider' => AbstractAgenticCommerceProductExportProvider::class,
             'shopwell.product_export.validator' => ValidatorInterface::class,

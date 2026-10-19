@@ -8,6 +8,7 @@ use Shopwell\Core\System\Payment\Gateway\AbstractPaymentAction;
 use Shopwell\Core\System\Payment\Gateway\PaymentTransferQuery;
 use Shopwell\Core\System\Payment\Gateway\TransferQueryResult;
 use Shopwell\Core\System\Payment\Gateway\TransferResult;
+use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
 
 /**
  * Asks paypal what happened to a payout, `GET /v1/payments/payouts/{payout_batch_id}`.
@@ -30,6 +31,11 @@ use Shopwell\Core\System\Payment\Gateway\TransferResult;
 final class PaypalTransferQueryAction extends AbstractPaymentAction
 {
     protected string $apiClass = PaypalApi::class;
+
+    public function capability(): PaymentCapability
+    {
+        return PaymentCapability::TRANSFER_QUERY;
+    }
 
     public function execute($request): void
     {

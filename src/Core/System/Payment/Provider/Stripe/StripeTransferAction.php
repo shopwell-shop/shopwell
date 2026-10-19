@@ -9,6 +9,7 @@ use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
 use Shopwell\Core\System\Payment\Gateway\PaymentTransferRequest;
 use Shopwell\Core\System\Payment\Gateway\TransferResult;
 use Shopwell\Core\System\Payment\PaymentException;
+use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferEntity;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferRecipientEntity;
 
@@ -71,6 +72,11 @@ final class StripeTransferAction extends AbstractPaymentAction
     final public const STATUS_CANCELED = 'canceled';
 
     protected string $apiClass = StripeApi::class;
+
+    public function capability(): PaymentCapability
+    {
+        return PaymentCapability::TRANSFER;
+    }
 
     public function execute($request): void
     {

@@ -9,6 +9,7 @@ use Shopwell\Core\System\Payment\Gateway\PaymentTransferQuery;
 use Shopwell\Core\System\Payment\Gateway\TransferQueryResult;
 use Shopwell\Core\System\Payment\Gateway\TransferResult;
 use Shopwell\Core\System\Payment\PaymentException;
+use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
 
 /**
  * Asks alipay what happened to a payout, `alipay.fund.trans.common.query`.
@@ -28,6 +29,11 @@ use Shopwell\Core\System\Payment\PaymentException;
 final class AlipayTransferQueryAction extends AbstractPaymentAction
 {
     protected string $apiClass = AlipayApi::class;
+
+    public function capability(): PaymentCapability
+    {
+        return PaymentCapability::TRANSFER_QUERY;
+    }
 
     public function execute($request): void
     {

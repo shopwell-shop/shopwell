@@ -10,6 +10,7 @@ use Shopwell\Core\System\Payment\Gateway\AbstractPaymentAction;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
 use Shopwell\Core\System\Payment\Gateway\PayResult;
 use Shopwell\Core\System\Payment\PaymentException;
+use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
 use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
 use WeChatPay\Formatter;
 
@@ -70,6 +71,11 @@ final class WechatCaptureAction extends AbstractPaymentAction
     private const MAX_DESCRIPTION_LENGTH = 127;
 
     protected string $apiClass = WechatApi::class;
+
+    public function capability(): PaymentCapability
+    {
+        return PaymentCapability::CAPTURE;
+    }
 
     public function execute($request): void
     {

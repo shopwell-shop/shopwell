@@ -11,6 +11,7 @@ use Shopwell\Core\System\Payment\Gateway\NotificationResult;
 use Shopwell\Core\System\Payment\Gateway\Payload;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
 use Shopwell\Core\System\Payment\PaymentException;
+use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
 
 /**
  * Verifies and reads the asynchronous notification of paypal.
@@ -42,6 +43,11 @@ final class PaypalNotifyAction extends AbstractPaymentAction
     final public const REFUND_SUCCEEDED_EVENTS = ['PAYMENT.CAPTURE.REFUNDED', 'PAYMENT.CAPTURE.REVERSED'];
 
     protected string $apiClass = PaypalApi::class;
+
+    public function capability(): PaymentCapability
+    {
+        return PaymentCapability::NOTIFICATION;
+    }
 
     public function execute($request): void
     {

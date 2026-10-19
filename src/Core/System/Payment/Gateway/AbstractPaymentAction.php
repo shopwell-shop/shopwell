@@ -10,6 +10,7 @@ use Payum\Core\GatewayAwareTrait;
 use Payum\Core\Request\Generic;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Payment\PaymentException;
+use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
 
 /**
  * Base of the payum actions of the channels.
@@ -21,6 +22,10 @@ use Shopwell\Core\System\Payment\PaymentException;
  * Every action names the api it works with in `$apiClass` - payum validates what it injects against
  * it - and overrides `api()` with a covariant return type, so it can call the methods of its concrete
  * api without a cast.
+ *
+ * Every action also names the capability it implements. That is the single source of truth for what an
+ * interface can do: the capability set of an interface is the union of the capabilities of its actions,
+ * so a capability cannot be announced without the code that executes it.
  *
  * @internal
  */
@@ -35,6 +40,16 @@ abstract class AbstractPaymentAction implements ActionInterface, ApiAwareInterfa
     protected string $apiClass = AbstractPaymentApi::class;
 
     private ?AbstractPaymentApi $api = null;
+
+    /**
+     * The one thing this action lets its interface do.
+     *
+     * Only request capabilities belong here - the ones that have a payum request, see
+     * {@see PaymentCapability::requestClass()}. A policy capability has no request, so no action could
+     * ever execute it; an interface declares those in
+     * {@see \Shopwell\Core\System\Payment\Provider\AbstractPaymentProvider::getDeclaredCapabilities()}.
+     */
+    abstract public function capability(): PaymentCapability;
 
     public function setApi($api): void
     {

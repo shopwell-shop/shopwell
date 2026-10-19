@@ -11,6 +11,7 @@ use Shopwell\Core\System\Payment\Gateway\AbstractPaymentAction;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
 use Shopwell\Core\System\Payment\Gateway\PayResult;
 use Shopwell\Core\System\Payment\PaymentException;
+use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
 use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
 use Stripe\Checkout\Session;
 use Stripe\PaymentIntent;
@@ -56,6 +57,11 @@ final class StripeCaptureAction extends AbstractPaymentAction
 
     public function __construct(private readonly ClockInterface $clock = new NativeClock())
     {
+    }
+
+    public function capability(): PaymentCapability
+    {
+        return PaymentCapability::CAPTURE;
     }
 
     public function execute($request): void

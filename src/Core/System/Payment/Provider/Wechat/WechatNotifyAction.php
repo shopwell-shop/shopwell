@@ -10,6 +10,7 @@ use Shopwell\Core\System\Payment\Gateway\NotificationResult;
 use Shopwell\Core\System\Payment\Gateway\Payload;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
 use Shopwell\Core\System\Payment\PaymentException;
+use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
 use WeChatPay\Crypto\AesGcm;
 use WeChatPay\Crypto\Rsa;
 
@@ -34,6 +35,11 @@ final class WechatNotifyAction extends AbstractPaymentAction
     final public const REFUND_SUCCESS = 'SUCCESS';
 
     protected string $apiClass = WechatApi::class;
+
+    public function capability(): PaymentCapability
+    {
+        return PaymentCapability::NOTIFICATION;
+    }
 
     public function execute($request): void
     {

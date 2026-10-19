@@ -9,8 +9,8 @@ use Shopwell\Core\Framework\Log\Package;
  *
  * The administration renders the settings form of an interface from these declarations instead of
  * knowing the fields of every interface itself, so an interface of an extension is configurable without
- * touching the administration at all. The fields are declared in the `payment-provider.xml` of the
- * interface and are turned into these objects by the {@see PaymentProviderSchemaReader}.
+ * touching the administration at all. The fields are declared in
+ * {@see AbstractPaymentProvider::getCredentials()} and in the `params` of a channel.
  *
  * A field marked as `secret` is never handed back to the administration: the form always starts empty
  * and only reports whether a value is stored. Every other field is echoed back, so an operator can see

@@ -10,6 +10,7 @@ use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
 use Shopwell\Core\System\Payment\Gateway\RefundResult;
 use Shopwell\Core\System\Payment\Order\Refund\PaymentRefundStates;
 use Shopwell\Core\System\Payment\PaymentException;
+use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
 use Stripe\Refund as StripeRefund;
 
 /**
@@ -37,6 +38,11 @@ final class StripeRefundAction extends AbstractPaymentAction
     final public const REASON_REQUESTED_BY_CUSTOMER = 'requested_by_customer';
 
     protected string $apiClass = StripeApi::class;
+
+    public function capability(): PaymentCapability
+    {
+        return PaymentCapability::REFUND;
+    }
 
     public function execute($request): void
     {
