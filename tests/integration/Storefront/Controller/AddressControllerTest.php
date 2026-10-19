@@ -371,8 +371,11 @@ class AddressControllerTest extends TestCase
 
         static::getContainer()->get('request_stack')->push($request);
 
+        $defaultBillingAddressId = $customer->getDefaultBillingAddressId();
+        static::assertNotNull($defaultBillingAddressId, 'the customer of this test has a default billing address');
+
         /** @var RedirectResponse $response */
-        $response = $controller->switchDefaultAddress('foo', $customer->getDefaultBillingAddressId(), $context, $customer);
+        $response = $controller->switchDefaultAddress('foo', $defaultBillingAddressId, $context, $customer);
 
         static::assertInstanceOf(FlashBagAwareSessionInterface::class, $this->getSession());
         static::assertSame(

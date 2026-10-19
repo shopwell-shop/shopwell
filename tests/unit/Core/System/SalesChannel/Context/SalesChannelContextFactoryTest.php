@@ -60,12 +60,17 @@ class SalesChannelContextFactoryTest extends TestCase
         $basePaymentMethod = new PaymentMethodEntity();
         $basePaymentMethod->setId(Uuid::randomHex());
 
+        // the ids are kept in variables: the default address of a customer is nullable since the
+        // registration address became optional, the fixtures still need an address that has one
+        $billingAddressId = Uuid::randomHex();
+        $shippingAddressId = Uuid::randomHex();
+
         $customer = new CustomerEntity();
         $customer->setId(Uuid::randomHex());
         $customer->setActive(true);
         $customer->setLastPaymentMethodId(Uuid::randomHex());
-        $customer->setDefaultBillingAddressId(Uuid::randomHex());
-        $customer->setDefaultShippingAddressId(Uuid::randomHex());
+        $customer->setDefaultBillingAddressId($billingAddressId);
+        $customer->setDefaultShippingAddressId($shippingAddressId);
         $customer->setGroupId(Uuid::randomHex());
 
         $country = new CountryEntity();
@@ -75,9 +80,9 @@ class SalesChannelContextFactoryTest extends TestCase
         $currency->setFactor(1);
 
         $billingAddress = new CustomerAddressEntity();
-        $billingAddress->setId($customer->getDefaultBillingAddressId());
+        $billingAddress->setId($billingAddressId);
         $shippingAddress = new CustomerAddressEntity();
-        $shippingAddress->setId($customer->getDefaultShippingAddressId());
+        $shippingAddress->setId($shippingAddressId);
         $shippingAddress->setCountry($country);
         $addresses = new CustomerAddressCollection([$billingAddress, $shippingAddress]);
 
@@ -188,12 +193,15 @@ class SalesChannelContextFactoryTest extends TestCase
         $basePaymentMethod = new PaymentMethodEntity();
         $basePaymentMethod->setId(Uuid::randomHex());
 
+        $billingAddressId = Uuid::randomHex();
+        $shippingAddressId = Uuid::randomHex();
+
         $customer = new CustomerEntity();
         $customer->setId(Uuid::randomHex());
         $customer->setActive(false);
         $customer->setLastPaymentMethodId(Uuid::randomHex());
-        $customer->setDefaultBillingAddressId(Uuid::randomHex());
-        $customer->setDefaultShippingAddressId(Uuid::randomHex());
+        $customer->setDefaultBillingAddressId($billingAddressId);
+        $customer->setDefaultShippingAddressId($shippingAddressId);
         $customer->setGroupId(Uuid::randomHex());
 
         $country = new CountryEntity();
@@ -203,9 +211,9 @@ class SalesChannelContextFactoryTest extends TestCase
         $currency->setFactor(1);
 
         $billingAddress = new CustomerAddressEntity();
-        $billingAddress->setId($customer->getDefaultBillingAddressId());
+        $billingAddress->setId($billingAddressId);
         $shippingAddress = new CustomerAddressEntity();
-        $shippingAddress->setId($customer->getDefaultShippingAddressId());
+        $shippingAddress->setId($shippingAddressId);
         $shippingAddress->setCountry($country);
         $addresses = new CustomerAddressCollection([$billingAddress, $shippingAddress]);
 
@@ -293,12 +301,17 @@ class SalesChannelContextFactoryTest extends TestCase
         $basePaymentMethod = new PaymentMethodEntity();
         $basePaymentMethod->setId(Uuid::randomHex());
 
+        // the ids are kept in variables: the default address of a customer is nullable since the
+        // registration address became optional, the fixtures still need an address that has one
+        $billingAddressId = Uuid::randomHex();
+        $shippingAddressId = Uuid::randomHex();
+
         $customer = new CustomerEntity();
         $customer->setId(Uuid::randomHex());
         $customer->setActive(true);
         $customer->setLastPaymentMethodId(Uuid::randomHex());
-        $customer->setDefaultBillingAddressId(Uuid::randomHex());
-        $customer->setDefaultShippingAddressId(Uuid::randomHex());
+        $customer->setDefaultBillingAddressId($billingAddressId);
+        $customer->setDefaultShippingAddressId($shippingAddressId);
         $customer->setGroupId(Uuid::randomHex());
 
         $country = new CountryEntity();
@@ -308,9 +321,9 @@ class SalesChannelContextFactoryTest extends TestCase
         $currency->setFactor(1);
 
         $billingAddress = new CustomerAddressEntity();
-        $billingAddress->setId($customer->getDefaultBillingAddressId());
+        $billingAddress->setId($billingAddressId);
         $shippingAddress = new CustomerAddressEntity();
-        $shippingAddress->setId($customer->getDefaultShippingAddressId());
+        $shippingAddress->setId($shippingAddressId);
         $shippingAddress->setCountry($country);
         $addresses = new CustomerAddressCollection([$billingAddress, $shippingAddress]);
 
@@ -400,11 +413,14 @@ class SalesChannelContextFactoryTest extends TestCase
         $salesChannel = new SalesChannelEntity();
         $salesChannel->setId(Uuid::randomHex());
 
+        $billingAddressId = Uuid::randomHex();
+        $shippingAddressId = Uuid::randomHex();
+
         $customer = new CustomerEntity();
         $customer->setId(Uuid::randomHex());
         $customer->setActive(true);
-        $customer->setDefaultBillingAddressId(Uuid::randomHex());
-        $customer->setDefaultShippingAddressId(Uuid::randomHex());
+        $customer->setDefaultBillingAddressId($billingAddressId);
+        $customer->setDefaultShippingAddressId($shippingAddressId);
         $customer->setGroupId(Uuid::randomHex());
 
         $billingCountry = new CountryEntity();
@@ -423,14 +439,14 @@ class SalesChannelContextFactoryTest extends TestCase
 
         if (!\in_array('billing', $danglingDefaults, true)) {
             $billingAddress = new CustomerAddressEntity();
-            $billingAddress->setId($customer->getDefaultBillingAddressId());
+            $billingAddress->setId($billingAddressId);
             $billingAddress->setCountry($billingCountry);
             $addresses->add($billingAddress);
         }
 
         if (!\in_array('shipping', $danglingDefaults, true)) {
             $shippingAddress = new CustomerAddressEntity();
-            $shippingAddress->setId($customer->getDefaultShippingAddressId());
+            $shippingAddress->setId($shippingAddressId);
             $shippingAddress->setCountry($shippingCountry);
             $addresses->add($shippingAddress);
         }
