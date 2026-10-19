@@ -3,6 +3,7 @@
  */
 import './acl';
 import SmsGatewayProviderService from './service/sms-gateway-provider.service';
+import SmsTemplateAuditService from './service/sms-template-audit.service';
 
 const { Module } = Shopwell;
 
@@ -63,6 +64,20 @@ Shopwell.Component.register(
  */
 Shopwell.Service().register('smsGatewayProviderService', () => {
     return new SmsGatewayProviderService(
+        Shopwell.Application.getContainer('init').httpClient,
+        Shopwell.Service().get('loginService'),
+    );
+});
+
+/**
+ * The three steps of the audit loop of a mapping row. They are one service because the server
+ * answers them with one shape, and because the screens must not know which provider can do what.
+ *
+ * @sw-package framework
+ * @private
+ */
+Shopwell.Service().register('smsTemplateAuditService', () => {
+    return new SmsTemplateAuditService(
         Shopwell.Application.getContainer('init').httpClient,
         Shopwell.Service().get('loginService'),
     );
