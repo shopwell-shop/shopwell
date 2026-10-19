@@ -32,6 +32,18 @@ class CustomerPhoneNumberUniqueTest extends TestCase
         static::assertSame('VIOLATION::PHONE_NUMBER_IS_ALREADY_TAKEN', CustomerPhoneNumberUnique::CUSTOMER_PHONE_NUMBER_NOT_UNIQUE_CODE);
     }
 
+    public function testItNamesTheCauseWithoutTheViolationPrefix(): void
+    {
+        $constraint = new CustomerPhoneNumberUnique(static::createStub(SalesChannelContext::class));
+
+        // the violation exception builds the api code as 'VIOLATION::' . getErrorName(), so the name
+        // must not carry the prefix the message template already has
+        static::assertSame(
+            'PHONE_NUMBER_IS_ALREADY_TAKEN',
+            $constraint->getErrorName(CustomerPhoneNumberUnique::CUSTOMER_PHONE_NUMBER_NOT_UNIQUE)
+        );
+    }
+
     public function testItAcceptsACustomMessage(): void
     {
         $constraint = new CustomerPhoneNumberUnique(

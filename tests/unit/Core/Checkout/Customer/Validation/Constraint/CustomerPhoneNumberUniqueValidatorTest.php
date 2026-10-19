@@ -160,7 +160,9 @@ class CustomerPhoneNumberUniqueValidatorTest extends ConstraintValidatorTestCase
         $violation = $violations[0];
         // The storefront translates the message template, so it has to be the snippet key.
         static::assertSame(CustomerPhoneNumberUnique::CUSTOMER_PHONE_NUMBER_NOT_UNIQUE_CODE, $violation->getMessageTemplate());
-        static::assertSame(CustomerPhoneNumberUnique::CUSTOMER_PHONE_NUMBER_NOT_UNIQUE_CODE, $violation->getCode());
+        // The code is the named cause, not the template: the violation exception prefixes VIOLATION::
+        // itself, a template here would end up as VIOLATION::VIOLATION::...
+        static::assertSame(CustomerPhoneNumberUnique::CUSTOMER_PHONE_NUMBER_NOT_UNIQUE, $violation->getCode());
     }
 
     public function testItRejectsAnUnexpectedConstraintType(): void

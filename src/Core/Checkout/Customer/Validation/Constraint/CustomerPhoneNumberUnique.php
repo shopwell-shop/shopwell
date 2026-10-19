@@ -23,7 +23,7 @@ class CustomerPhoneNumberUnique extends Constraint
     final public const CUSTOMER_PHONE_NUMBER_NOT_UNIQUE_CODE = 'VIOLATION::PHONE_NUMBER_IS_ALREADY_TAKEN';
 
     protected const ERROR_NAMES = [
-        self::CUSTOMER_PHONE_NUMBER_NOT_UNIQUE => 'CUSTOMER_PHONE_NUMBER_NOT_UNIQUE',
+        self::CUSTOMER_PHONE_NUMBER_NOT_UNIQUE => 'PHONE_NUMBER_IS_ALREADY_TAKEN',
     ];
 
     public string $message = self::CUSTOMER_PHONE_NUMBER_NOT_UNIQUE_CODE;

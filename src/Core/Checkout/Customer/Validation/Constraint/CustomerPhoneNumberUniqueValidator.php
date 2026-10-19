@@ -57,7 +57,9 @@ class CustomerPhoneNumberUniqueValidator extends ConstraintValidator
         }
 
         $this->context->buildViolation($constraint->getMessage())
-            ->setCode(CustomerPhoneNumberUnique::CUSTOMER_PHONE_NUMBER_NOT_UNIQUE_CODE)
+            // the code names the cause, the exception prefixes it with VIOLATION:: and reads the
+            // name from ERROR_NAMES - the message template already carries that prefix
+            ->setCode(CustomerPhoneNumberUnique::CUSTOMER_PHONE_NUMBER_NOT_UNIQUE)
             ->addViolation();
     }
 
