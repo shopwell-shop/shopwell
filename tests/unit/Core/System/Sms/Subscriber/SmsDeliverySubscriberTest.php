@@ -16,6 +16,7 @@ use Shopwell\Core\System\Sms\Event\SmsFailedEvent;
 use Shopwell\Core\System\Sms\Event\SmsSentEvent;
 use Shopwell\Core\System\Sms\Gateway\SmsGatewayCollection;
 use Shopwell\Core\System\Sms\Gateway\SmsGatewayEntity;
+use Shopwell\Core\System\Sms\SmsException;
 use Shopwell\Core\System\Sms\Struct\SmsMessageOptions;
 use Shopwell\Core\System\Sms\Subscriber\SmsDeliverySubscriber;
 use Shopwell\Core\System\Sms\Template\SmsTemplateCollection;
@@ -194,6 +195,30 @@ class SmsDeliverySubscriberTest extends TestCase
         static::assertNull($record['gatewayId']);
         static::assertSame('null', $record['technicalName']);
         static::assertSame('sent', $record['status']);
+    }
+
+    public function testItRecordsAMessageTheSenderCouldNotRouteAsFailed(): void
+    {
+        $gateway = $this->createGateway('null');
+        $deliveryRepository = $this->createDeliveryRepository();
+
+        $subscriber = $this->createSubscriber($deliveryRepository, [$gateway], []);
+
+        // the sender falls back to the null gateway when no gateway of the shop carries the country
+        // of the number, so the record has to say that nothing left the shop
+        $message = (new SmsMessage('+998901234567', 'hello', '', new SmsMessageOptions(
+            undeliverableReason: SmsException::NO_USABLE_GATEWAY,
+        )))->transport($gateway->id);
+
+        $subscriber->onSentMessage(new SentMessageEvent(new SentMessage($message, 'null')));
+
+        $record = $deliveryRepository->creates[0][0];
+
+        static::assertSame('failed', $record['status']);
+        static::assertSame(SmsException::NO_USABLE_GATEWAY, $record['errorCode']);
+        static::assertNull($record['sentAt']);
+        static::assertNotNull($record['failedAt']);
+        static::assertNull($record['countryCode']);
     }
 
     public function testItRecordsAVendorMessageThatCarriesNoOptions(): void

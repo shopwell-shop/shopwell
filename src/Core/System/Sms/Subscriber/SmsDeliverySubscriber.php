@@ -97,6 +97,28 @@ class SmsDeliverySubscriber implements EventSubscriberInterface
         $gatewayId = $this->gatewayIdOf($message);
         $technicalName = $this->technicalNameOf($gatewayId);
 
+        $undeliverableReason = $this->undeliverableReasonOf($message);
+
+        if ($undeliverableReason !== null) {
+            // the null gateway took the message although no gateway of the shop carries the country
+            // of the number: the sender stays silent so a checkout is not interrupted, the record is
+            // the one place that says the message never left the shop
+            $this->deliveryRepository->create([
+                $this->record(
+                    $message,
+                    $gatewayId,
+                    $technicalName,
+                    SmsDeliveryEntity::STATUS_FAILED,
+                    null,
+                    null,
+                    $undeliverableReason,
+                    'No gateway of the shop accepts the country of the number.',
+                ),
+            ], Context::createDefaultContext());
+
+            return;
+        }
+
         $this->deliveryRepository->create([
             $this->record($message, $gatewayId, $technicalName, SmsDeliveryEntity::STATUS_SENT, null, $sentMessage->getMessageId()),
         ], Context::createDefaultContext());
@@ -147,6 +169,8 @@ class SmsDeliverySubscriber implements EventSubscriberInterface
         string $status,
         ?\Throwable $error,
         ?string $providerMessageId,
+        ?string $errorCode = null,
+        ?string $errorMessage = null,
     ): array {
         $options = $message->getOptions();
         $options = $options instanceof SmsMessageOptions ? $options : null;
@@ -182,7 +206,23 @@ class SmsDeliverySubscriber implements EventSubscriberInterface
             $record['errorMessage'] = mb_substr($error->getMessage(), 0, 512);
         }
 
+        if ($errorCode !== null) {
+            $record['errorCode'] = $errorCode;
+            $record['errorMessage'] = $errorMessage === null ? null : mb_substr($errorMessage, 0, 512);
+        }
+
         return $record;
+    }
+
+    /**
+     * The reason the sender already knows a message will not leave the shop, null when it left or
+     * when it failed for a cause the provider reported.
+     */
+    private function undeliverableReasonOf(SmsMessage $message): ?string
+    {
+        $options = $message->getOptions();
+
+        return $options instanceof SmsMessageOptions ? $options->getUndeliverableReason() : null;
     }
 
     /**
