@@ -26,7 +26,7 @@ final class PhoneNumberMasker implements PhoneNumberMaskerInterface
         $dialCode = $phone->dialCode();
         $nationalNumber = $phone->nationalNumber();
 
-        if ($dialCode === '' || \strlen($nationalNumber) < self::MIN_NATIONAL_DIGITS) {
+        if (\strlen($nationalNumber) < self::MIN_NATIONAL_DIGITS) {
             return $this->maskTail($phone->e164());
         }
 

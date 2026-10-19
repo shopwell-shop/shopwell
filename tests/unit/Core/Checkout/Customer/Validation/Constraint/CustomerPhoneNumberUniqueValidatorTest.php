@@ -4,6 +4,7 @@ namespace Shopwell\Tests\Unit\Core\Checkout\Customer\Validation\Constraint;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\MockObject\Stub;
+use Shopwell\Core\Checkout\Customer\CustomerCollection;
 use Shopwell\Core\Checkout\Customer\CustomerEntity;
 use Shopwell\Core\Checkout\Customer\CustomerException;
 use Shopwell\Core\Checkout\Customer\Validation\Constraint\CustomerPhoneNumberUnique;
@@ -31,6 +32,9 @@ use Symfony\Component\Validator\Test\ConstraintValidatorTestCase;
 #[CoversClass(CustomerPhoneNumberUniqueValidator::class)]
 class CustomerPhoneNumberUniqueValidatorTest extends ConstraintValidatorTestCase
 {
+    /**
+     * @var EntityRepository<CustomerCollection>&Stub
+     */
     private EntityRepository&Stub $customerRepository;
 
     protected function setUp(): void
@@ -157,7 +161,8 @@ class CustomerPhoneNumberUniqueValidatorTest extends ConstraintValidatorTestCase
         $violations = $this->context->getViolations();
         static::assertCount(1, $violations);
 
-        $violation = $violations[0];
+        // get() does not return null, the violation list throws for an unknown offset
+        $violation = $violations->get(0);
         // The storefront translates the message template, so it has to be the snippet key.
         static::assertSame(CustomerPhoneNumberUnique::CUSTOMER_PHONE_NUMBER_NOT_UNIQUE_CODE, $violation->getMessageTemplate());
         // The code is the named cause, not the template: the violation exception prefixes VIOLATION::
@@ -184,6 +189,9 @@ class CustomerPhoneNumberUniqueValidatorTest extends ConstraintValidatorTestCase
         return new CustomerPhoneNumberUniqueValidator($this->customerRepository);
     }
 
+    /**
+     * @param EntityRepository<CustomerCollection> $customerRepository
+     */
     private function validateValue(EntityRepository $customerRepository, mixed $value, ?string $customerId = null): void
     {
         $validator = new CustomerPhoneNumberUniqueValidator($customerRepository);
@@ -196,6 +204,8 @@ class CustomerPhoneNumberUniqueValidatorTest extends ConstraintValidatorTestCase
 
     /**
      * Validates a value that must not reach the repository at all.
+     *
+     * @param EntityRepository<CustomerCollection> $customerRepository
      */
     private function validateValueThatIsNotChecked(EntityRepository $customerRepository, mixed $value): void
     {

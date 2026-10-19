@@ -5,6 +5,7 @@ namespace Shopwell\Tests\Unit\Core\Checkout\Customer\SalesChannel;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Checkout\Customer\Aggregate\CustomerAddress\CustomerAddressEntity;
+use Shopwell\Core\Checkout\Customer\CustomerCollection;
 use Shopwell\Core\Checkout\Customer\CustomerEntity;
 use Shopwell\Core\Checkout\Customer\Extension\ChangeCustomerProfileRouteExtension;
 use Shopwell\Core\Checkout\Customer\SalesChannel\ChangeCustomerProfileRoute;
@@ -330,6 +331,9 @@ class ChangeCustomerProfileRouteTest extends TestCase
         static::assertSame($response, $route->change($data, $context, $customer));
     }
 
+    /**
+     * @param EntityRepository<CustomerCollection> $customerRepository
+     */
     private function createRoute(EntityRepository $customerRepository): ChangeCustomerProfileRoute
     {
         return new ChangeCustomerProfileRoute(

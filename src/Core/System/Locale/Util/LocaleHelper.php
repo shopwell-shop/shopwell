@@ -15,10 +15,12 @@ class LocaleHelper
 
     public static function isLocale(string $locale): bool
     {
+        // intl refuses a locale it cannot parse with a ValueError, the intl stubs of phpstan do not
+        // declare that throw, so the catch below looks dead to the analysis while it is reached at
+        // runtime: new \NumberFormatter('xx_YY', \NumberFormatter::CURRENCY) throws on PHP 8.5
         try {
-            /** @phpstan-ignore new.resultUnused */
             new \NumberFormatter($locale, \NumberFormatter::CURRENCY);
-        } catch (\ValueError) {
+        } catch (\ValueError) { // @phpstan-ignore catch.neverThrown
             return false;
         }
 

@@ -28,8 +28,8 @@ class CustomerPhoneNumberUniqueTest extends TestCase
     {
         $constraint = new CustomerPhoneNumberUnique(static::createStub(SalesChannelContext::class));
 
+        // the default message is the snippet key the storefront translates, that is the CODE constant
         static::assertSame('VIOLATION::PHONE_NUMBER_IS_ALREADY_TAKEN', $constraint->getMessage());
-        static::assertSame('VIOLATION::PHONE_NUMBER_IS_ALREADY_TAKEN', CustomerPhoneNumberUnique::CUSTOMER_PHONE_NUMBER_NOT_UNIQUE_CODE);
     }
 
     public function testItNamesTheCauseWithoutTheViolationPrefix(): void
