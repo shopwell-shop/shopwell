@@ -178,6 +178,7 @@
     "smsLoginSubmit": "Sign in with the code",
     "smsLoginCodeSent": "If the number is registered, the code was sent - please check your messages.",
     "smsLoginThrottled": "Too many requests. Please wait %seconds% seconds before trying again.",
+    "smsLoginDisabled": "The login with an sms verification code is not enabled.",
     "registerAdvantagesHeader": "Login advantages:",
     "registerAdvantage1": "Express shopping",
     "registerAdvantage2": "Save your data and settings",

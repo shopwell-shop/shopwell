@@ -17,6 +17,7 @@ use Shopwell\Core\Framework\Test\TestCaseBase\KernelLifecycleManager;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\System\Sms\Util\PhoneNumberMaskerInterface;
 use Shopwell\Core\System\Sms\Util\PhoneNumberNormalizerInterface;
+use Shopwell\Core\System\SystemConfig\SystemConfigService;
 use Shopwell\Core\Test\TestDefaults;
 use Shopwell\Storefront\Test\Controller\StorefrontControllerTestBehaviour;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
@@ -38,6 +39,19 @@ class SmsLoginControllerTest extends TestCase
     use StorefrontControllerTestBehaviour;
 
     private const CODE = '123456';
+
+    private const LOGIN_ENABLED_CONFIG_KEY = 'core.loginRegistration.loginEnabled';
+
+    /**
+     * The switch is written for the whole installation, so it has to be dropped again even when a
+     * case fails - the cache of the configuration is dropped along with it.
+     */
+    protected function tearDown(): void
+    {
+        static::getContainer()->get(SystemConfigService::class)->delete(self::LOGIN_ENABLED_CONFIG_KEY);
+
+        parent::tearDown();
+    }
 
     public function testLoginPageRendersTheSmsForm(): void
     {
@@ -216,6 +230,99 @@ class SmsLoginControllerTest extends TestCase
         static::assertInstanceOf(RedirectResponse::class, $response);
         static::assertStringContainsString('/account/login', $response->getTargetUrl());
         static::assertSame(302, $this->followAccountPage($browser));
+    }
+
+    /**
+     * A switched off login must not answer a code request at all: the answer is the message of the
+     * switched off login, no quota is spent and no message leaves the shop.
+     */
+    public function testCodeRequestIsRefusedWhenTheLoginIsSwitchedOff(): void
+    {
+        $phone = $this->randomPhone();
+        $this->createCustomer($phone);
+        $deliveriesBefore = $this->countDeliveries($this->mask($phone));
+
+        $this->switchLoginOff();
+
+        $browser = $this->createBrowser();
+        $response = $this->requestCode($browser, $phone);
+
+        static::assertInstanceOf(RedirectResponse::class, $response);
+        static::assertStringContainsString('/account/login', $response->getTargetUrl());
+        static::assertStringContainsString(
+            'The login with an sms verification code is not enabled.',
+            $this->followRedirect($browser, $response)
+        );
+
+        static::assertSame(
+            $deliveriesBefore,
+            $this->countDeliveries($this->mask($phone)),
+            'a switched off login must not send a code'
+        );
+    }
+
+    /**
+     * The form is hidden, but the route stays reachable for whoever posts it - the code that would
+     * log the customer in must not be accepted by a switched off login.
+     */
+    public function testLoginIsRefusedWhenTheLoginIsSwitchedOff(): void
+    {
+        $phone = $this->randomPhone();
+        $customer = $this->createCustomer($phone);
+        $this->storeCode($phone, self::CODE);
+
+        $this->switchLoginOff();
+
+        $browser = $this->createBrowser();
+        $response = $this->requestLogin($browser, $phone, self::CODE);
+
+        static::assertInstanceOf(RedirectResponse::class, $response);
+        static::assertStringContainsString('/account/login', $response->getTargetUrl());
+        static::assertStringContainsString(
+            'The login with an sms verification code is not enabled.',
+            $this->followRedirect($browser, $response)
+        );
+
+        // the right code does not help either, the second way into the account stays closed
+        static::assertSame(302, $this->followAccountPage($browser));
+        static::assertNull($this->reloadCustomer($customer->getId())?->getLastLogin(), 'the customer was not logged in');
+    }
+
+    /**
+     * A quota that a refused request may not spend: the request after switching the login on again
+     * still sends the code, so the refused one never reached the limiter.
+     */
+    public function testARefusedCodeRequestDoesNotSpendTheQuota(): void
+    {
+        $phone = $this->randomPhone();
+        $this->createCustomer($phone);
+        $deliveriesBefore = $this->countDeliveries($this->mask($phone));
+
+        $this->switchLoginOff();
+
+        $browser = $this->createBrowser();
+        $this->requestCode($browser, $phone);
+
+        $this->switchLoginOn();
+
+        $response = $this->requestCode($browser, $phone);
+
+        static::assertInstanceOf(RedirectResponse::class, $response);
+        static::assertSame(
+            $deliveriesBefore + 1,
+            $this->countDeliveries($this->mask($phone)),
+            'the refused request must not have spent the cooldown of the number'
+        );
+    }
+
+    private function switchLoginOff(): void
+    {
+        static::getContainer()->get(SystemConfigService::class)->set(self::LOGIN_ENABLED_CONFIG_KEY, false);
+    }
+
+    private function switchLoginOn(): void
+    {
+        static::getContainer()->get(SystemConfigService::class)->set(self::LOGIN_ENABLED_CONFIG_KEY, true);
     }
 
     private function createBrowser(): KernelBrowser

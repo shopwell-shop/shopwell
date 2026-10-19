@@ -108,83 +108,89 @@
             {% endblock %}
 
             {% block component_account_login_sms %}
-                <div class="login-sms mt-3">
-                    {% block component_account_login_sms_header %}
-                        <h3 class="login-sms-header">
-                            {{ 'account.smsLoginHeader'|trans|sw_sanitize }}
-                        </h3>
-                    {% endblock %}
+                {# the login is on until an administrator switches it off, a missing value must not
+                   take the second way into an account away from a fresh installation #}
+                {% set smsLoginEnabled = config('core.loginRegistration.loginEnabled') %}
 
-                    {% block component_account_login_sms_description %}
-                        <p class="login-sms-description">
-                            {{ 'account.smsLoginDescription'|trans|sw_sanitize }}
-                        </p>
-                    {% endblock %}
+                {% if smsLoginEnabled is null or smsLoginEnabled %}
+                    <div class="login-sms mt-3">
+                        {% block component_account_login_sms_header %}
+                            <h3 class="login-sms-header">
+                                {{ 'account.smsLoginHeader'|trans|sw_sanitize }}
+                            </h3>
+                        {% endblock %}
 
-                    {# one form with two submit buttons: the number is typed once, whether the customer
-                       asks for a code first or has one already #}
-                    {% block component_account_login_sms_form %}
-                        <form class="login-sms-form"
-                              action="{{ path('frontend.account.login.sms') }}"
-                              method="post">
-                            {% block component_account_login_sms_form_redirect %}
-                                <input type="hidden"
-                                       name="redirectTo"
-                                       value="{{ redirectTo }}">
+                        {% block component_account_login_sms_description %}
+                            <p class="login-sms-description">
+                                {{ 'account.smsLoginDescription'|trans|sw_sanitize }}
+                            </p>
+                        {% endblock %}
 
-                                <input type="hidden"
-                                       name="redirectParameters"
-                                       value="{{ redirectParameters is iterable ? redirectParameters|json_encode : redirectParameters }}">
-                            {% endblock %}
+                        {# one form with two submit buttons: the number is typed once, whether the customer
+                           asks for a code first or has one already #}
+                        {% block component_account_login_sms_form %}
+                            <form class="login-sms-form"
+                                  action="{{ path('frontend.account.login.sms') }}"
+                                  method="post">
+                                {% block component_account_login_sms_form_redirect %}
+                                    <input type="hidden"
+                                           name="redirectTo"
+                                           value="{{ redirectTo }}">
 
-                            {% block component_account_login_sms_form_phone %}
-                                {% sw_include '@Storefront/storefront/component/form/form-input.html.twig' with {
-                                    type: 'tel',
-                                    label: 'account.smsLoginPhoneLabel'|trans|sw_sanitize,
-                                    id: 'loginSmsPhone',
-                                    name: 'phone',
-                                    value: phone|default(''),
-                                    autocomplete: 'tel',
-                                    validationRules: 'required',
-                                } %}
-                            {% endblock %}
+                                    <input type="hidden"
+                                           name="redirectParameters"
+                                           value="{{ redirectParameters is iterable ? redirectParameters|json_encode : redirectParameters }}">
+                                {% endblock %}
 
-                            {# the code is not required: the button that asks for one submits the same
-                               form, and the server answers an empty code with the message of an
-                               invalid code, exactly like a code of another number #}
-                            {% block component_account_login_sms_form_code %}
-                                {% sw_include '@Storefront/storefront/component/form/form-input.html.twig' with {
-                                    type: 'text',
-                                    label: 'account.smsLoginCodeLabel'|trans|sw_sanitize,
-                                    id: 'loginSmsCode',
-                                    name: 'code',
-                                    autocomplete: 'one-time-code',
-                                    maxlength: 6,
-                                    attributes: {
-                                        inputmode: 'numeric',
-                                        pattern: '\\d{6}',
-                                    },
-                                } %}
-                            {% endblock %}
+                                {% block component_account_login_sms_form_phone %}
+                                    {% sw_include '@Storefront/storefront/component/form/form-input.html.twig' with {
+                                        type: 'tel',
+                                        label: 'account.smsLoginPhoneLabel'|trans|sw_sanitize,
+                                        id: 'loginSmsPhone',
+                                        name: 'phone',
+                                        value: phone|default(''),
+                                        autocomplete: 'tel',
+                                        validationRules: 'required',
+                                    } %}
+                                {% endblock %}
 
-                            {% block component_account_login_sms_form_submit %}
-                                <div class="login-submit d-flex gap-2">
-                                    <button type="submit"
-                                            class="btn btn-secondary"
-                                            formaction="{{ path('frontend.account.login.sms-code') }}"
-                                            formnovalidate>
-                                        {{ 'account.smsLoginSendCodeSubmit'|trans|sw_sanitize }}
-                                    </button>
+                                {# the code is not required: the button that asks for one submits the same
+                                   form, and the server answers an empty code with the message of an
+                                   invalid code, exactly like a code of another number #}
+                                {% block component_account_login_sms_form_code %}
+                                    {% sw_include '@Storefront/storefront/component/form/form-input.html.twig' with {
+                                        type: 'text',
+                                        label: 'account.smsLoginCodeLabel'|trans|sw_sanitize,
+                                        id: 'loginSmsCode',
+                                        name: 'code',
+                                        autocomplete: 'one-time-code',
+                                        maxlength: 6,
+                                        attributes: {
+                                            inputmode: 'numeric',
+                                            pattern: '\\d{6}',
+                                        },
+                                    } %}
+                                {% endblock %}
 
-                                    <button type="submit"
-                                            class="btn btn-primary">
-                                        {{ 'account.smsLoginSubmit'|trans|sw_sanitize }}
-                                    </button>
-                                </div>
-                            {% endblock %}
-                        </form>
-                    {% endblock %}
-                </div>
+                                {% block component_account_login_sms_form_submit %}
+                                    <div class="login-submit d-flex gap-2">
+                                        <button type="submit"
+                                                class="btn btn-secondary"
+                                                formaction="{{ path('frontend.account.login.sms-code') }}"
+                                                formnovalidate>
+                                            {{ 'account.smsLoginSendCodeSubmit'|trans|sw_sanitize }}
+                                        </button>
+
+                                        <button type="submit"
+                                                class="btn btn-primary">
+                                            {{ 'account.smsLoginSubmit'|trans|sw_sanitize }}
+                                        </button>
+                                    </div>
+                                {% endblock %}
+                            </form>
+                        {% endblock %}
+                    </div>
+                {% endif %}
             {% endblock %}
 
             {% block component_account_login_oauth2 %}

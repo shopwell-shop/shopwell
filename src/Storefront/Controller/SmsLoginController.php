@@ -12,6 +12,7 @@ use Shopwell\Core\Framework\RateLimiter\RateLimiter;
 use Shopwell\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopwell\Core\PlatformRequest;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+use Shopwell\Core\System\SystemConfig\SystemConfigService;
 use Shopwell\Storefront\Checkout\Cart\SalesChannel\StorefrontCartFacade;
 use Shopwell\Storefront\Framework\Routing\StorefrontRouteScope;
 use Symfony\Component\HttpFoundation\Request;
@@ -42,6 +43,7 @@ class SmsLoginController extends StorefrontController
         private readonly AccountService $accountService,
         private readonly StorefrontCartFacade $cartFacade,
         private readonly RateLimiter $rateLimiter,
+        private readonly SystemConfigService $systemConfigService,
     ) {
     }
 
@@ -55,6 +57,12 @@ class SmsLoginController extends StorefrontController
     {
         if ($this->isLoggedIn($context)) {
             return $this->createActionResponse($request);
+        }
+
+        if (!$this->isLoginEnabled($context)) {
+            $this->addFlash(self::DANGER, $this->trans('account.smsLoginDisabled'));
+
+            return $this->redirectToRoute('frontend.account.login.page');
         }
 
         $phone = $data->getString('phone');
@@ -95,6 +103,12 @@ class SmsLoginController extends StorefrontController
     {
         if ($this->isLoggedIn($context)) {
             return $this->createActionResponse($request);
+        }
+
+        if (!$this->isLoginEnabled($context)) {
+            $this->addFlash(self::DANGER, $this->trans('account.smsLoginDisabled'));
+
+            return $this->redirectToRoute('frontend.account.login.page');
         }
 
         $phone = $data->getString('phone');
@@ -143,6 +157,20 @@ class SmsLoginController extends StorefrontController
         $customer = $context->getCustomer();
 
         return $customer !== null && $customer->getGuest() === false;
+    }
+
+    /**
+     * Whether the shop offers the login by sms at all.
+     *
+     * The login is on until an administrator switches it off, a missing value must not take the
+     * second way into an account away from a fresh installation - the same reading the sms channel
+     * itself uses.
+     */
+    private function isLoginEnabled(SalesChannelContext $context): bool
+    {
+        $configured = $this->systemConfigService->get('core.loginRegistration.loginEnabled', $context->getSalesChannelId());
+
+        return $configured === null ? true : (bool) $configured;
     }
 
     /**

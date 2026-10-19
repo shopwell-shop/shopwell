@@ -12,6 +12,14 @@
         </input-field>
 
         <input-field type="bool">
+            <name>loginEnabled</name>
+            <label>Allow the login with an sms verification code</label>
+            <label lang="zh-CN">启用手机号验证码登录</label>
+            <helpText>A customer needs a phone number on the profile, and a gateway that reaches the country of that number.</helpText>
+            <helpText lang="zh-CN">客户需先在账户资料中绑定手机号，并已配置能覆盖该号码所在国家的短信网关。</helpText>
+        </input-field>
+
+        <input-field type="bool">
             <name>createCustomerAccountDefault</name>
             <label>Create customer account by default</label>
             <label lang="zh-CN">默认创建客户账号</label>

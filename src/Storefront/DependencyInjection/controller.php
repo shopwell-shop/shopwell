@@ -428,6 +428,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(AccountService::class),
             service(StorefrontCartFacade::class),
             service(RateLimiter::class),
+            service(SystemConfigService::class),
         ])
         ->call('setContainer', [service('service_container')]);
 

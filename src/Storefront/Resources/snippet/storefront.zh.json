@@ -178,6 +178,7 @@
     "smsLoginSubmit": "验证码登录",
     "smsLoginCodeSent": "如果该手机号已注册，验证码已发送，请注意查收。",
     "smsLoginThrottled": "请求过于频繁，请 %seconds% 秒后重试。",
+    "smsLoginDisabled": "手机号验证码登录未启用。",
     "registerAdvantagesHeader": "注册权益：",
     "registerAdvantage1": "快速下单",
     "registerAdvantage2": "保存信息和设置",
