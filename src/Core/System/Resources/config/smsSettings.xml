@@ -18,13 +18,5 @@
             <placeholder>Technical name of a gateway, e.g. aliyun</placeholder>
             <placeholder lang="zh-CN">网关技术名，例如 aliyun</placeholder>
         </input-field>
-
-        <input-field>
-            <name>defaultCountry</name>
-            <label>Default country of a phone number</label>
-            <label lang="zh-CN">手机号默认国家</label>
-            <placeholder>ISO code, e.g. CN</placeholder>
-            <placeholder lang="zh-CN">ISO 代码，例如 CN</placeholder>
-        </input-field>
     </card>
 </config>

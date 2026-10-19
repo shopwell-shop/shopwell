@@ -21,10 +21,14 @@ use Shopwell\Core\System\Sms\Gateway\Null\NullGatewayTransportFactory;
 use Shopwell\Core\System\Sms\Gateway\SmsGatewayCollection;
 use Shopwell\Core\System\Sms\Gateway\SmsGatewayEntity;
 use Shopwell\Core\System\Sms\Gateway\SmsGatewayResolverInterface;
+use Shopwell\Core\System\Sms\SmsException;
 use Shopwell\Core\System\Sms\Struct\SmsMessageOptions;
 use Shopwell\Core\System\Sms\Template\SmsTemplateCollection;
 use Shopwell\Core\System\Sms\Template\SmsTemplateEntity;
-use Shopwell\Core\System\Sms\Util\PhoneNumberNormalizer;
+use Shopwell\Core\System\Sms\Util\PhoneNumber;
+use Shopwell\Core\System\Sms\Util\PhoneNumberMaskerInterface;
+use Shopwell\Core\System\Sms\Util\PhoneNumberNormalizerInterface;
+use Shopwell\Core\System\Sms\Util\SmsSegmentCounter;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\Notifier\Event\FailedMessageEvent;
 use Symfony\Component\Notifier\Event\SentMessageEvent;
@@ -46,6 +50,11 @@ use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 class SmsDeliverySubscriber implements EventSubscriberInterface
 {
     /**
+     * What the record shows instead of a number when the message never became an e.164 number.
+     */
+    private const UNKNOWN_NUMBER = '***';
+
+    /**
      * @var array<string, string|null>
      */
     private array $templateIds = [];
@@ -59,7 +68,9 @@ class SmsDeliverySubscriber implements EventSubscriberInterface
         private readonly EntityRepository $deliveryRepository,
         private readonly EntityRepository $gatewayRepository,
         private readonly EntityRepository $templateRepository,
-        private readonly PhoneNumberNormalizer $normalizer,
+        private readonly PhoneNumberNormalizerInterface $normalizer,
+        private readonly PhoneNumberMaskerInterface $masker,
+        private readonly SmsSegmentCounter $segmentCounter,
         private readonly Connection $connection,
         private readonly ClockInterface $clock,
         private readonly EventDispatcherInterface $eventDispatcher,
@@ -141,14 +152,18 @@ class SmsDeliverySubscriber implements EventSubscriberInterface
         $options = $options instanceof SmsMessageOptions ? $options : null;
         $templateRef = $options?->getTemplateRef();
 
+        // the number travelled through the sender already, so this is the canonical form of the
+        // message and not a second reading of what the caller wrote
+        $number = $this->numberOf($message);
+
         $now = $this->clock->now();
         $record = [
             'id' => Uuid::randomHex(),
             'gatewayId' => $gatewayId,
             'technicalName' => $technicalName,
-            'phoneMasked' => $this->normalizer->mask($message->getPhone()),
-            'phoneHash' => $this->normalizer->hash($message->getPhone()),
-            'countryCode' => $this->normalizer->countryCode($message->getPhone()),
+            'phoneMasked' => $number === null ? self::UNKNOWN_NUMBER : $this->masker->mask($number),
+            'phoneHash' => Hasher::hash($number?->e164() ?? $message->getPhone()),
+            'countryCode' => $number?->countryIso(),
             'scene' => $options?->getScene(),
             'templateId' => $templateRef === null ? null : $this->templateIdOf($templateRef),
             'templateRef' => $templateRef,
@@ -157,7 +172,7 @@ class SmsDeliverySubscriber implements EventSubscriberInterface
             'contentHash' => $options !== null && $options->isTemplateBased() ? null : Hasher::hash($message->getSubject()),
             'status' => $status,
             'providerMessageId' => $providerMessageId,
-            'segments' => $this->normalizer->countSegments($message->getSubject()),
+            'segments' => $this->segmentCounter->count($message->getSubject()),
             'sentAt' => $status === SmsDeliveryEntity::STATUS_SENT ? $now : null,
             'failedAt' => $status === SmsDeliveryEntity::STATUS_FAILED ? $now : null,
         ];
@@ -168,6 +183,22 @@ class SmsDeliverySubscriber implements EventSubscriberInterface
         }
 
         return $record;
+    }
+
+    /**
+     * The number of the message, or null when it never became an e.164 number.
+     *
+     * A transport that only logs takes a number no provider would accept, and the record of such a
+     * message still has to be written - bookkeeping must not turn a delivery that happened into an
+     * error the caller sees.
+     */
+    private function numberOf(SmsMessage $message): ?PhoneNumber
+    {
+        try {
+            return $this->normalizer->normalize($message->getPhone());
+        } catch (SmsException) {
+            return null;
+        }
     }
 
     private function logFailure(SmsMessage $message, \Throwable $error): void

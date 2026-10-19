@@ -5,7 +5,8 @@ namespace Shopwell\Core\System\Sms\Gateway\Log;
 use Psr\Log\LoggerInterface;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Sms\Gateway\SmsGatewayTransportFactoryInterface;
-use Shopwell\Core\System\Sms\Util\PhoneNumberNormalizer;
+use Shopwell\Core\System\Sms\Util\PhoneNumberMaskerInterface;
+use Shopwell\Core\System\Sms\Util\PhoneNumberNormalizerInterface;
 use Symfony\Component\Notifier\Transport\TransportInterface;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
@@ -22,7 +23,8 @@ final class LogGatewayTransportFactory implements SmsGatewayTransportFactoryInte
 
     public function __construct(
         private readonly LoggerInterface $logger,
-        private readonly PhoneNumberNormalizer $normalizer,
+        private readonly PhoneNumberNormalizerInterface $normalizer,
+        private readonly PhoneNumberMaskerInterface $masker,
     ) {
     }
 
@@ -56,6 +58,6 @@ final class LogGatewayTransportFactory implements SmsGatewayTransportFactoryInte
         array $options,
         ?EventDispatcherInterface $dispatcher = null,
     ): TransportInterface {
-        return new LogSmsTransport($this->logger, $this->normalizer, $dispatcher);
+        return new LogSmsTransport($this->logger, $this->normalizer, $this->masker, $dispatcher);
     }
 }

@@ -8,8 +8,10 @@ use Psr\Log\LoggerInterface;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Sms\Gateway\Log\LogGatewayTransportFactory;
 use Shopwell\Core\System\Sms\Gateway\Log\LogSmsTransport;
+use Shopwell\Core\System\Sms\Util\CountryDialCodeResolver;
+use Shopwell\Core\System\Sms\Util\PhoneNumberMasker;
 use Shopwell\Core\System\Sms\Util\PhoneNumberNormalizer;
-use Shopwell\Core\Test\Stub\SystemConfigService\StaticSystemConfigService;
+use Shopwell\Core\System\Sms\Util\ShippedCountryDialCodeProvider;
 use Symfony\Component\Notifier\Message\SmsMessage;
 
 /**
@@ -47,7 +49,8 @@ class LogGatewayTransportFactoryTest extends TestCase
     {
         return new LogGatewayTransportFactory(
             $logger,
-            new PhoneNumberNormalizer(new StaticSystemConfigService()),
+            new PhoneNumberNormalizer(new CountryDialCodeResolver([new ShippedCountryDialCodeProvider()])),
+            new PhoneNumberMasker(),
         );
     }
 }

@@ -7,8 +7,10 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Sms\Gateway\Log\LogSmsTransport;
+use Shopwell\Core\System\Sms\Util\CountryDialCodeResolver;
+use Shopwell\Core\System\Sms\Util\PhoneNumberMasker;
 use Shopwell\Core\System\Sms\Util\PhoneNumberNormalizer;
-use Shopwell\Core\Test\Stub\SystemConfigService\StaticSystemConfigService;
+use Shopwell\Core\System\Sms\Util\ShippedCountryDialCodeProvider;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\Notifier\Event\MessageEvent;
 use Symfony\Component\Notifier\Event\SentMessageEvent;
@@ -82,7 +84,8 @@ class LogSmsTransportTest extends TestCase
     ): LogSmsTransport {
         return new LogSmsTransport(
             $logger ?? static::createStub(LoggerInterface::class),
-            new PhoneNumberNormalizer(new StaticSystemConfigService()),
+            new PhoneNumberNormalizer(new CountryDialCodeResolver([new ShippedCountryDialCodeProvider()])),
+            new PhoneNumberMasker(),
             $dispatcher,
         );
     }

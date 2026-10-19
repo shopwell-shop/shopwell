@@ -20,8 +20,10 @@ use Shopwell\Core\System\Sms\Gateway\Null\NullSmsTransport;
 use Shopwell\Core\System\Sms\Gateway\SmsGatewayRegistry;
 use Shopwell\Core\System\Sms\Gateway\SmsGatewayTransportFactoryInterface;
 use Shopwell\Core\System\Sms\SmsException;
+use Shopwell\Core\System\Sms\Util\CountryDialCodeResolver;
+use Shopwell\Core\System\Sms\Util\PhoneNumberMasker;
 use Shopwell\Core\System\Sms\Util\PhoneNumberNormalizer;
-use Shopwell\Core\Test\Stub\SystemConfigService\StaticSystemConfigService;
+use Shopwell\Core\System\Sms\Util\ShippedCountryDialCodeProvider;
 use Symfony\Component\Notifier\Transport\TransportInterface;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
@@ -145,7 +147,8 @@ class SmsGatewayAuditCapabilitiesTest extends TestCase
             new NullGatewayTransportFactory(),
             new LogGatewayTransportFactory(
                 new NullLogger(),
-                new PhoneNumberNormalizer(new StaticSystemConfigService())
+                new PhoneNumberNormalizer(new CountryDialCodeResolver([new ShippedCountryDialCodeProvider()])),
+                new PhoneNumberMasker(),
             ),
         ]));
     }

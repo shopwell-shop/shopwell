@@ -12,7 +12,7 @@ use Shopwell\Core\System\Sms\Struct\SmsMessageOptions;
 use Shopwell\Core\System\Sms\Template\SmsTemplateEntity;
 use Shopwell\Core\System\Sms\Template\SmsTemplateResolver;
 use Shopwell\Core\System\Sms\Transport\SmsTransports;
-use Shopwell\Core\System\Sms\Util\PhoneNumberNormalizer;
+use Shopwell\Core\System\Sms\Util\PhoneNumberNormalizerInterface;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Notifier\Message\SentMessage;
 use Symfony\Component\Notifier\Message\SmsMessage;
@@ -35,7 +35,7 @@ class SmsSender extends AbstractSmsSender
         private readonly SmsTransports $transports,
         private readonly SmsTemplateResolver $templateResolver,
         private readonly SmsGatewayResolverInterface $gatewayResolver,
-        private readonly PhoneNumberNormalizer $normalizer,
+        private readonly PhoneNumberNormalizerInterface $normalizer,
         private readonly MessageBusInterface $bus,
     ) {
     }
@@ -49,11 +49,11 @@ class SmsSender extends AbstractSmsSender
     {
         $context ??= Context::createDefaultContext();
 
-        $phone = $this->normalizer->toE164($message->getPhone(), $salesChannelId);
-        $message->phone($phone);
+        $number = $this->normalizer->normalize($message->getPhone());
+        $message->phone($number->e164());
 
         if ($message->getTransport() === null) {
-            $gatewayIds = $this->gatewayResolver->resolveGatewayIds($context, $salesChannelId, $this->normalizer->countryCode($phone));
+            $gatewayIds = $this->gatewayResolver->resolveGatewayIds($context, $salesChannelId, $number->countryIso());
 
             // no gateway matched, the message is recorded but does not leave the platform
             $message->transport($gatewayIds[0] ?? SmsGatewayResolverInterface::GATEWAY_NULL);
@@ -74,10 +74,15 @@ class SmsSender extends AbstractSmsSender
         string $phone,
         ?Context $context = null,
         ?string $salesChannelId = null,
+        ?string $countryIso = null,
     ): ?SentMessage {
         $context ??= Context::createDefaultContext();
 
-        return $this->send($this->templateResolver->resolve($templateRef, $params, $phone, $context, $salesChannelId), $context, $salesChannelId);
+        return $this->send(
+            $this->templateResolver->resolve($templateRef, $params, $phone, $context, $salesChannelId, $countryIso),
+            $context,
+            $salesChannelId
+        );
     }
 
     /**

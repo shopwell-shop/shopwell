@@ -10,8 +10,10 @@ use Shopwell\Core\System\Sms\Gateway\Log\LogGatewayTransportFactory;
 use Shopwell\Core\System\Sms\Gateway\Null\NullGatewayTransportFactory;
 use Shopwell\Core\System\Sms\Gateway\SmsGatewayRegistry;
 use Shopwell\Core\System\Sms\SmsException;
+use Shopwell\Core\System\Sms\Util\CountryDialCodeResolver;
+use Shopwell\Core\System\Sms\Util\PhoneNumberMasker;
 use Shopwell\Core\System\Sms\Util\PhoneNumberNormalizer;
-use Shopwell\Core\Test\Stub\SystemConfigService\StaticSystemConfigService;
+use Shopwell\Core\System\Sms\Util\ShippedCountryDialCodeProvider;
 
 /**
  * @internal
@@ -25,7 +27,8 @@ class SmsGatewayRegistryTest extends TestCase
         $null = new NullGatewayTransportFactory();
         $log = new LogGatewayTransportFactory(
             new NullLogger(),
-            new PhoneNumberNormalizer(new StaticSystemConfigService())
+            new PhoneNumberNormalizer(new CountryDialCodeResolver([new ShippedCountryDialCodeProvider()])),
+            new PhoneNumberMasker(),
         );
 
         $registry = new SmsGatewayRegistry([$null, $log]);
