@@ -68,9 +68,12 @@ class PaymentException extends HttpException
 
     public const UNSUPPORTED_API = 'PAYMENT__UNSUPPORTED_API';
     public const ACTION_WITHOUT_API = 'PAYMENT__ACTION_WITHOUT_API';
+    public const PROVIDER_LACKS_CAPABILITY = 'PAYMENT__PROVIDER_LACKS_CAPABILITY';
 
     public const PAYMENT_METHOD_CHANNEL_MISSING = 'PAYMENT__PAYMENT_METHOD_CHANNEL_MISSING';
+    public const PAYMENT_METHOD_CHANNEL_TAKEN = 'PAYMENT__PAYMENT_METHOD_CHANNEL_TAKEN';
     public const CHANNEL_NOT_AVAILABLE_IN_STOREFRONT = 'PAYMENT__CHANNEL_NOT_AVAILABLE_IN_STOREFRONT';
+    public const PLATFORM_TENANT_READ_ONLY = 'PAYMENT__PLATFORM_TENANT_READ_ONLY';
 
     public const CYCLE_NOT_EXPRESSIBLE = 'PAYMENT__CYCLE_NOT_EXPRESSIBLE';
     public const INVALID_PERIOD_UNIT = 'PAYMENT__INVALID_PERIOD_UNIT';
@@ -632,6 +635,24 @@ class PaymentException extends HttpException
     }
 
     /**
+     * The caller asked for an operation the interface never declared.
+     *
+     * Payum answers an unsupported request with an error inside the gateway, which the services
+     * around it can only report as a channel fault. That reads as "the interface is down" to whoever
+     * called, when the truth is "this interface cannot do that at all" - a fact the declaration knows
+     * before a single request is signed, and the one answer the caller can act on.
+     */
+    public static function providerLacksCapability(string $technicalName, string $capability): self
+    {
+        return new self(
+            Response::HTTP_BAD_REQUEST,
+            self::PROVIDER_LACKS_CAPABILITY,
+            'The payment provider "{{ technicalName }}" does not support "{{ capability }}".',
+            ['technicalName' => $technicalName, 'capability' => $capability]
+        );
+    }
+
+    /**
      * A checkout payment method without a bound gateway channel cannot collect at all: the shopper
      * picked a method the administration never told how to reach an interface.
      */
@@ -642,6 +663,43 @@ class PaymentException extends HttpException
             self::PAYMENT_METHOD_CHANNEL_MISSING,
             'The payment method "{{ paymentMethodId }}" has no gateway channel bound to it.',
             ['paymentMethodId' => $paymentMethodId]
+        );
+    }
+
+    /**
+     * The app/channel pair that is already bound to another payment method cannot be bound a second
+     * time: the shopper's choice between the two methods would become meaningless and the money of one
+     * of them would land in the account of the other. The database enforces the same rule over
+     * (app, channel), this is the answer that names the method in the way of the one being configured.
+     */
+    public static function paymentMethodChannelTaken(string $paymentAppName, string $channelTechnicalName, string $paymentMethodId, string $paymentMethodName): self
+    {
+        return new self(
+            Response::HTTP_CONFLICT,
+            self::PAYMENT_METHOD_CHANNEL_TAKEN,
+            'The payment app "{{ paymentAppName }}" already collects the channel "{{ channelTechnicalName }}" for the payment method "{{ paymentMethodName }}" ({{ paymentMethodId }}).',
+            [
+                'paymentAppName' => $paymentAppName,
+                'channelTechnicalName' => $channelTechnicalName,
+                'paymentMethodId' => $paymentMethodId,
+                'paymentMethodName' => $paymentMethodName,
+            ]
+        );
+    }
+
+    /**
+     * The tenant the platform itself collects through is seeded, not onboarded: its secret is the
+     * one the platform signs its own notifications with. Editing or deleting it through the app
+     * endpoint would either lock the platform out of its own payment api or leave the shop without
+     * a tenant to attribute platform payments to.
+     */
+    public static function platformTenantReadOnly(string $technicalName): self
+    {
+        return new self(
+            Response::HTTP_BAD_REQUEST,
+            self::PLATFORM_TENANT_READ_ONLY,
+            'The payment app "{{ technicalName }}" is the tenant of the platform and cannot be changed or deleted here.',
+            ['technicalName' => $technicalName]
         );
     }
 
