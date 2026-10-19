@@ -329,7 +329,10 @@ class SmsTemplateAuditServiceTest extends TestCase
         $factory->method('readTemplateApprovalStatus')
             ->willThrowException(SmsException::providerUnavailable(self::TECHNICAL_NAME, '500', 'the provider is down'));
 
-        $service = $this->createService($factory, $mappingRepository);
+        $dispatcher = $this->createMock(EventDispatcherInterface::class);
+        $dispatcher->expects($this->never())->method('dispatch');
+
+        $service = $this->createService($factory, $mappingRepository, eventDispatcher: $dispatcher);
 
         try {
             $service->refresh($this->context, self::MAPPING_ID);

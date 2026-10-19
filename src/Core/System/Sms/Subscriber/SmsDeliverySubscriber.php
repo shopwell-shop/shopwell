@@ -102,9 +102,9 @@ class SmsDeliverySubscriber implements EventSubscriberInterface
         $undeliverableReason = $options?->getUndeliverableReason();
 
         if ($undeliverableReason !== null) {
-            // the null gateway took the message although no gateway of the shop carries the country
-            // of the number: the sender stays silent so a checkout is not interrupted, the record is
-            // the one place that says the message never left the shop
+            // the null gateway took the message because the routing found no candidate for it - the
+            // sender stays silent so a checkout is not interrupted, the record is the one place that
+            // says the message never left the shop and why
             $this->deliveryRepository->create([
                 $this->record(
                     $message,

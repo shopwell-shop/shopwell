@@ -16,6 +16,7 @@ use Shopwell\Core\System\Sms\Gateway\SmsGatewayEntity;
 use Shopwell\Core\System\Sms\Gateway\SmsGatewayRegistry;
 use Shopwell\Core\System\Sms\Gateway\SmsGatewayResolver;
 use Shopwell\Core\System\Sms\Gateway\SmsGatewayTransportFactoryInterface;
+use Shopwell\Core\System\Sms\SmsException;
 use Shopwell\Core\System\Sms\Template\Aggregate\SmsTemplateMapping\SmsTemplateMappingCollection;
 use Shopwell\Core\System\Sms\Template\Aggregate\SmsTemplateMapping\SmsTemplateMappingEntity;
 use Shopwell\Core\System\Sms\Template\SmsTemplateEntity;
@@ -285,6 +286,151 @@ class SmsGatewayResolverTest extends TestCase
             [$gateway->id],
             $resolver->resolveGatewayIds(Context::createDefaultContext(), null, 'DE', $template)
         );
+    }
+
+    public function testItNamesNoReasonWhenAGatewayTookTheMessage(): void
+    {
+        $gateway = $this->createGateway('aliyun');
+        $template = $this->createTemplate('customer.otp.login');
+
+        $resolver = $this->createResolver(
+            [$gateway],
+            ['aliyun' => ['templateMode' => true, 'requiresApproval' => true]],
+            [$this->createMapping($template, 'aliyun', TemplateApprovalStatus::APPROVED, $gateway)],
+        );
+
+        $context = Context::createDefaultContext();
+
+        static::assertSame([$gateway->id], $resolver->resolveGatewayIds($context, null, 'CN', $template));
+        // nothing was refused, so there is nothing to explain
+        static::assertNull($resolver->undeliverableReason($context, null, 'CN', $template));
+    }
+
+    public function testItNamesTheProviderThatStillAuditsTheTemplate(): void
+    {
+        $gateway = $this->createGateway('aliyun');
+        $template = $this->createTemplate('customer.otp.login');
+
+        $resolver = $this->createResolver(
+            [$gateway],
+            ['aliyun' => ['templateMode' => true, 'requiresApproval' => true]],
+            [$this->createMapping($template, 'aliyun', TemplateApprovalStatus::PENDING, $gateway)],
+        );
+
+        $context = Context::createDefaultContext();
+
+        static::assertSame([], $resolver->resolveGatewayIds($context, null, 'CN', $template));
+
+        $reason = $resolver->undeliverableReason($context, null, 'CN', $template);
+        $expected = SmsException::templateNotApproved('customer.otp.login', 'aliyun', TemplateApprovalStatus::PENDING);
+
+        static::assertNotNull($reason);
+        static::assertSame($expected->getErrorCode(), $reason->getErrorCode());
+        static::assertSame($expected->getMessage(), $reason->getMessage());
+    }
+
+    public function testItNamesNoProviderWhenTheTemplateWasNeverReported(): void
+    {
+        $gateway = $this->createGateway('aliyun');
+        $template = $this->createTemplate('customer.otp.login');
+
+        // the gateway needs an approved mapping and holds none: the message has no gateway, but there
+        // is no audit an operator could wait for either
+        $resolver = $this->createResolver([$gateway], ['aliyun' => ['templateMode' => true, 'requiresApproval' => true]]);
+
+        $context = Context::createDefaultContext();
+
+        static::assertSame([], $resolver->resolveGatewayIds($context, null, 'CN', $template));
+        static::assertNull($resolver->undeliverableReason($context, null, 'CN', $template));
+    }
+
+    public function testItNamesNoProviderWhenNoGatewayServesTheCountry(): void
+    {
+        $domestic = $this->createGateway('aliyun');
+        $template = $this->createTemplate('customer.otp.login');
+
+        // the only row of the template belongs to a provider this shop runs no gateway for, and the
+        // configured gateway is dropped by the country - the row has nothing to do with this message
+        $resolver = $this->createResolver(
+            [$domestic],
+            ['aliyun' => ['regions' => ['CN'], 'templateMode' => true, 'requiresApproval' => true]],
+            [$this->createMapping($template, 'twilio', TemplateApprovalStatus::PENDING)],
+        );
+
+        static::assertNull($resolver->undeliverableReason(Context::createDefaultContext(), null, 'DE', $template));
+    }
+
+    public function testItNamesNoProviderWhenNoGatewayIsConfiguredAtAll(): void
+    {
+        $template = $this->createTemplate('customer.otp.login');
+
+        // a mapping row that survived the gateway it belonged to is no audit of this shop
+        $resolver = $this->createResolver([], [], [$this->createMapping($template, 'twilio', TemplateApprovalStatus::PENDING)]);
+
+        static::assertNull($resolver->undeliverableReason(Context::createDefaultContext(), null, 'CN', $template));
+    }
+
+    public function testItNamesTheCandidateTheAuditDroppedAndNoProviderThatIsNotARoute(): void
+    {
+        $audited = $this->createGateway('aliyun', priority: 1);
+        $orphan = $this->createGateway('removed-provider', priority: 2);
+        $template = $this->createTemplate('customer.otp.login');
+
+        $resolver = $this->createResolver(
+            [$audited, $orphan],
+            ['aliyun' => ['templateMode' => true, 'requiresApproval' => true]],
+            [$this->createMapping($template, 'aliyun', TemplateApprovalStatus::REJECTED, $audited)],
+        );
+
+        $context = Context::createDefaultContext();
+
+        static::assertSame([], $resolver->resolveGatewayIds($context, null, 'CN', $template));
+
+        $reason = $resolver->undeliverableReason($context, null, 'CN', $template);
+        $expected = SmsException::templateNotApproved('customer.otp.login', 'aliyun', TemplateApprovalStatus::REJECTED);
+
+        static::assertNotNull($reason);
+        static::assertSame($expected->getErrorCode(), $reason->getErrorCode());
+        static::assertSame($expected->getMessage(), $reason->getMessage());
+    }
+
+    public function testItNamesNoReasonWhileAnotherGatewayTookTheMessage(): void
+    {
+        $audited = $this->createGateway('aliyun', priority: 1);
+        $freeText = $this->createGateway('twilio', priority: 2);
+        $template = $this->createTemplate('customer.otp.login');
+
+        // the audited gateway is dropped, the message still goes out over the other one - an audit
+        // that did not matter for this message must not be reported as its failure
+        $resolver = $this->createResolver(
+            [$audited, $freeText],
+            [
+                'aliyun' => ['templateMode' => true, 'requiresApproval' => true],
+                'twilio' => ['templateMode' => false, 'requiresApproval' => false],
+            ],
+            [$this->createMapping($template, 'aliyun', TemplateApprovalStatus::PENDING, $audited)],
+        );
+
+        $context = Context::createDefaultContext();
+
+        static::assertSame([$freeText->id], $resolver->resolveGatewayIds($context, null, 'CN', $template));
+        static::assertNull($resolver->undeliverableReason($context, null, 'CN', $template));
+    }
+
+    public function testItNamesNoReasonWhenSmsIsSwitchedOff(): void
+    {
+        $gateway = $this->createGateway('aliyun');
+        $template = $this->createTemplate('customer.otp.login');
+
+        $resolver = $this->createResolver(
+            [$gateway],
+            ['aliyun' => ['templateMode' => true, 'requiresApproval' => true]],
+            [$this->createMapping($template, 'aliyun', TemplateApprovalStatus::PENDING, $gateway)],
+            config: ['core.smsSettings.enabled' => false],
+        );
+
+        // an operator switched the channel off on purpose, no audit has to be blamed for that
+        static::assertNull($resolver->undeliverableReason(Context::createDefaultContext(), null, 'CN', $template));
     }
 
     public function testTheAuditStateIsCachedPerGatewayAndTemplate(): void

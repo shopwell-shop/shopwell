@@ -303,18 +303,16 @@ class SmsTemplateResolverTest extends TestCase
         static::assertSame(SmsException::NO_USABLE_GATEWAY, $options->getUndeliverableReason());
     }
 
-    public function testItNamesTheAuditThatKeepsTheMessageFromGoingOut(): void
+    public function testItNamesTheAuditTheRoutingReports(): void
     {
         $template = $this->createTemplate(content: 'Your code is {{ code }}.');
         $gateway = $this->createGateway('aliyun');
 
-        $mapping = $this->createMapping($template, 'aliyun', $gateway);
-        $mapping->auditStatus = TemplateApprovalStatus::PENDING;
+        $refusal = SmsException::templateNotApproved('customer.otp.login', 'aliyun', TemplateApprovalStatus::PENDING);
 
-        // the routing drops the only gateway because the template of the shop is reported there and
-        // not approved yet, and an empty candidate list is the same answer it gives for a shop
-        // without a usable gateway - the record has to name the audit instead
-        $resolver = $this->createResolver([$template], [$gateway], [$mapping], ['aliyun' => ['templateMode' => true]]);
+        // which gate dropped the candidates is knowledge of the routing, the resolver only carries the
+        // answer into the message the record reads
+        $resolver = $this->createResolver([$template], [$gateway], [], ['aliyun' => ['templateMode' => true]], refusal: $refusal);
 
         $message = $resolver->resolve('customer.otp.login', ['code' => '123456'], '+8613800000000');
 
@@ -324,21 +322,19 @@ class SmsTemplateResolverTest extends TestCase
 
         static::assertInstanceOf(SmsMessageOptions::class, $options);
         static::assertSame(SmsException::TEMPLATE_NOT_APPROVED, $options->getUndeliverableReason());
-        // the state and the provider that is still auditing are part of the sentence
-        static::assertSame(
-            SmsException::templateNotApproved('customer.otp.login', 'aliyun', TemplateApprovalStatus::PENDING)->getMessage(),
-            $options->getUndeliverableMessage()
-        );
+        static::assertSame($refusal->getMessage(), $options->getUndeliverableMessage());
     }
 
-    public function testAnApprovedTemplateWithoutAUsableGatewayStaysANoGatewayCase(): void
+    public function testAStaleMappingRowIsNoReasonOfItsOwn(): void
     {
         $template = $this->createTemplate(content: 'Your code is {{ code }}.');
         $gateway = $this->createGateway('aliyun');
 
-        // every row of the template is approved, so the audit is not what kept the routing empty
         $mapping = $this->createMapping($template, 'aliyun', $gateway);
+        $mapping->auditStatus = TemplateApprovalStatus::PENDING;
 
+        // the row belongs to a provider the routing never considered, so the record must not blame its
+        // audit - the shop has no usable gateway and that is what the record says
         $resolver = $this->createResolver([$template], [$gateway], [$mapping], ['aliyun' => ['templateMode' => true]]);
 
         $options = $resolver->resolve('customer.otp.login', ['code' => '123456'], '+8613800000000')->getOptions();
@@ -346,6 +342,29 @@ class SmsTemplateResolverTest extends TestCase
         static::assertInstanceOf(SmsMessageOptions::class, $options);
         static::assertSame(SmsException::NO_USABLE_GATEWAY, $options->getUndeliverableReason());
         static::assertNull($options->getUndeliverableMessage());
+    }
+
+    public function testTheReasonIsAskedForTheArgumentsTheRoutingWasAskedFor(): void
+    {
+        $template = $this->createTemplate(content: 'Your code is {{ code }}.');
+        $gateway = $this->createGateway('aliyun');
+
+        $gatewayResolver = $this->createMock(SmsGatewayResolverInterface::class);
+        $gatewayResolver->method('resolveGatewayIds')->willReturn([]);
+        $gatewayResolver->expects($this->once())
+            ->method('undeliverableReason')
+            // the same country and the same template, otherwise the routing explains another message
+            ->with(static::anything(), 'my-sales-channel', 'DE', $template)
+            ->willReturn(null);
+
+        $this->createResolver(
+            [$template],
+            [$gateway],
+            [],
+            ['aliyun' => []],
+            gatewayResolver: $gatewayResolver,
+            normalizer: $this->normalizerReturning('+4915112345678', 'DE', '49'),
+        )->resolve('customer.otp.login', ['code' => '123456'], '+4915112345678', null, 'my-sales-channel', 'CN');
     }
 
     public function testItThrowsForAReportedTemplateWithoutACode(): void
@@ -375,6 +394,7 @@ class SmsTemplateResolverTest extends TestCase
      * @param list<SmsTemplateMappingEntity> $mappings
      * @param array<string, array{regions?: list<string>, templateMode?: bool}> $factories
      * @param list<string> $resolvedGatewayIds
+     * @param SmsException|null $refusal the reason the routing gives when it picked nothing
      */
     private function createResolver(
         array $templates,
@@ -384,6 +404,7 @@ class SmsTemplateResolverTest extends TestCase
         array $resolvedGatewayIds = [],
         ?SmsGatewayResolverInterface $gatewayResolver = null,
         ?PhoneNumberNormalizerInterface $normalizer = null,
+        ?SmsException $refusal = null,
     ): SmsTemplateResolver {
         $mappingRepository = StaticEntityRepository::of(
             SmsTemplateMappingCollection::class,
@@ -393,6 +414,7 @@ class SmsTemplateResolverTest extends TestCase
         if ($gatewayResolver === null) {
             $stub = static::createStub(SmsGatewayResolverInterface::class);
             $stub->method('resolveGatewayIds')->willReturn($resolvedGatewayIds);
+            $stub->method('undeliverableReason')->willReturn($refusal);
 
             $gatewayResolver = $stub;
         }

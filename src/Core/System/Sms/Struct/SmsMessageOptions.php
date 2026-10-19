@@ -91,7 +91,8 @@ final class SmsMessageOptions implements TemplateSmsOptionsInterface
     }
 
     /**
-     * Why the message was not sent, in the words of the module, null when it was sent.
+     * Why the message was not sent, in the words of the module, null when the code speaks for itself
+     * or when the message left the shop.
      */
     public function getUndeliverableMessage(): ?string
     {

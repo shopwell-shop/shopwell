@@ -216,6 +216,8 @@ class SmsDeliverySubscriberTest extends TestCase
 
         static::assertSame('failed', $record['status']);
         static::assertSame(SmsException::NO_USABLE_GATEWAY, $record['errorCode']);
+        // a reason that names no wording of its own falls back to the sentence of the record
+        static::assertSame('No gateway of the shop accepts the country of the number.', $record['errorMessage']);
         static::assertNull($record['sentAt']);
         static::assertNotNull($record['failedAt']);
         static::assertNull($record['countryCode']);

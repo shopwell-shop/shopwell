@@ -102,39 +102,6 @@ class SmsTemplateMappingLocatorTest extends TestCase
         static::assertSame($lowerId, $locator->locate($this->context, self::TEMPLATE_ID, self::TECHNICAL_NAME, null));
     }
 
-    public function testItFindsTheRowThatKeepsATemplateFromBeingSent(): void
-    {
-        $approved = $this->createMapping(null, TemplateApprovalStatus::APPROVED);
-        $pending = $this->createMapping(null, TemplateApprovalStatus::PENDING);
-
-        // the approved row is no reason to send, the pending one is the audit that is still open
-        static::assertSame(
-            $pending,
-            $this->createLocator([$approved, $pending])->findUnsendable($this->context, self::TEMPLATE_ID)
-        );
-    }
-
-    public function testItFindsNoBlockingRowWhenEveryRowOfTheTemplateIsApproved(): void
-    {
-        $locator = $this->createLocator([
-            $this->createMapping(null, TemplateApprovalStatus::APPROVED),
-            $this->createMapping('a1b2c3d4e5f60718293a4b5c6d7e8f90', TemplateApprovalStatus::APPROVED),
-        ]);
-
-        static::assertNull($locator->findUnsendable($this->context, self::TEMPLATE_ID));
-    }
-
-    public function testItNamesTheRowThatBlockedMostRecently(): void
-    {
-        $rejectedEarlier = $this->createMapping(null, TemplateApprovalStatus::REJECTED, '2026-01-01 10:00:00.000');
-        $suspendedLater = $this->createMapping(null, TemplateApprovalStatus::SUSPENDED, '2026-02-01 10:00:00.000');
-
-        static::assertSame(
-            $suspendedLater,
-            $this->createLocator([$rejectedEarlier, $suspendedLater])->findUnsendable($this->context, self::TEMPLATE_ID)
-        );
-    }
-
     /**
      * @param list<SmsTemplateMappingEntity> $mappings
      */
