@@ -9,7 +9,6 @@ use Shopwell\Core\System\Sms\Message\SendLowPrioritySmsMessage;
 use Shopwell\Core\System\Sms\Message\SendSmsHandler;
 use Shopwell\Core\System\Sms\Message\SendSmsMessage;
 use Shopwell\Core\System\Sms\SmsException;
-use Shopwell\Core\System\Sms\SmsUnrecoverableException;
 use Shopwell\Core\System\Sms\Transport\SmsTransportLoader;
 use Shopwell\Core\System\Sms\Transport\SmsTransports;
 use Symfony\Component\Messenger\Exception\UnrecoverableMessageHandlingException;
@@ -46,7 +45,7 @@ class SendSmsHandlerTest extends TestCase
     {
         $message = (new SmsMessage('+8613800000000', 'hello'))->transport('gateway-id');
 
-        $refusal = SmsUnrecoverableException::providerRejected('aliyun', 'isv.SMS_TEMPLATE_ILLEGAL', 'not approved');
+        $refusal = SmsException::providerRejected('aliyun', 'isv.SMS_TEMPLATE_ILLEGAL', 'not approved');
 
         $transport = static::createStub(TransportInterface::class);
         $transport->method('send')->willThrowException($refusal);

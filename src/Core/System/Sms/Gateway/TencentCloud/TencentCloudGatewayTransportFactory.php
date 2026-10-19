@@ -85,16 +85,18 @@ final class TencentCloudGatewayTransportFactory extends AbstractSmsGatewayTransp
 
         $client = new SmsClient(
             new Credential(
-                $this->stringValue($credentials, 'secretId'),
-                $this->stringValue($credentials, 'secretKey')
+                (string) ($credentials['secretId'] ?? ''),
+                (string) ($credentials['secretKey'] ?? '')
             ),
-            $this->stringValue($credentials, 'region')
+            (string) ($credentials['region'] ?? '')
         );
+
+        $signName = $options['signName'] ?? null;
 
         return new TencentCloudSmsTransport(
             $client,
-            $this->stringValue($credentials, 'sdkAppId'),
-            $this->optionalString($options, 'signName'),
+            (string) ($credentials['sdkAppId'] ?? ''),
+            $signName === null || $signName === '' ? null : (string) $signName,
             $dispatcher
         );
     }

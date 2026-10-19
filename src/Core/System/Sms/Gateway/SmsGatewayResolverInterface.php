@@ -11,8 +11,6 @@ use Shopwell\Core\System\Sms\Template\SmsTemplateEntity;
  *
  * The whole chain lives behind this interface, so an extension can replace the routing as a whole
  * instead of adding a step to it.
- *
- * @internal
  */
 #[Package('framework')]
 interface SmsGatewayResolverInterface

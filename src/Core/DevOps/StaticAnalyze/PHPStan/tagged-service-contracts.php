@@ -61,6 +61,7 @@ use Shopwell\Core\Framework\Telemetry\Metrics\MetricTransportInterface;
 use Shopwell\Core\System\NumberRange\ValueGenerator\Pattern\AbstractValueGenerator;
 use Shopwell\Core\System\NumberRange\ValueGenerator\Pattern\IncrementStorage\AbstractIncrementStorage;
 use Shopwell\Core\System\SalesChannel\Capability\AbstractSalesChannelTypeCapabilities;
+use Shopwell\Core\System\Sms\Gateway\SmsGatewayTransportFactoryInterface;
 use Shopwell\Core\System\Snippet\Filter\SnippetFilterInterface;
 use Shopwell\Core\System\Tax\TaxRuleType\TaxRuleTypeFilterInterface;
 use Shopwell\Elasticsearch\Admin\Indexer\AbstractAdminIndexer;
@@ -133,6 +134,7 @@ return [
             'shopwell.seo_url.route_loader' => SeoUrlRouteLoaderInterface::class,
             'shopwell.sitemap.config_handler' => ConfigHandlerInterface::class,
             'shopwell.sitemap_url_provider' => AbstractUrlProvider::class,
+            'shopwell.sms.gateway' => SmsGatewayTransportFactoryInterface::class,
             'shopwell.snippet.filter' => SnippetFilterInterface::class,
             'shopwell.storefront.captcha' => AbstractCaptcha::class,
             'shopwell.sync.fk_resolver' => AbstractFkResolver::class,

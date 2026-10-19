@@ -8,7 +8,6 @@ use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Sms\Gateway\TencentCloud\TencentCloudSmsOptions;
 use Shopwell\Core\System\Sms\Gateway\TencentCloud\TencentCloudSmsTransport;
 use Shopwell\Core\System\Sms\SmsException;
-use Shopwell\Core\System\Sms\SmsUnrecoverableException;
 use Symfony\Component\Notifier\Message\MessageInterface;
 use Symfony\Component\Notifier\Message\MessageOptionsInterface;
 use Symfony\Component\Notifier\Message\SmsMessage;
@@ -107,7 +106,7 @@ class TencentCloudSmsTransportTest extends TestCase
 
     public function testATemplateTheProviderDoesNotKnowIsFinal(): void
     {
-        $this->expectExceptionObject(SmsUnrecoverableException::providerRejected('tencentcloud', 'FailedOperation.TemplateIncorrectOrUnapproved', 'not approved'));
+        $this->expectExceptionObject(SmsException::providerRejected('tencentcloud', 'FailedOperation.TemplateIncorrectOrUnapproved', 'not approved'));
 
         $this->createTransport($this->clientReturning($this->response($this->sendStatus('FailedOperation.TemplateIncorrectOrUnapproved', 'serial-1', 'not approved'))))
             ->send($this->message());
@@ -126,7 +125,7 @@ class TencentCloudSmsTransportTest extends TestCase
 
     public function testARejectionOfTheApiIsFinal(): void
     {
-        $this->expectExceptionObject(SmsUnrecoverableException::providerRejected('tencentcloud', 'AuthFailure.SignatureFailure', 'the signature is wrong'));
+        $this->expectExceptionObject(SmsException::providerRejected('tencentcloud', 'AuthFailure.SignatureFailure', 'the signature is wrong'));
 
         $this->createTransport($this->clientThrowing(new TencentCloudSDKException('AuthFailure.SignatureFailure', 'the signature is wrong', 'req-1')))
             ->send($this->message());
@@ -167,7 +166,7 @@ class TencentCloudSmsTransportTest extends TestCase
 
     public function testAGatewayWithoutASignatureCannotSend(): void
     {
-        $this->expectExceptionObject(SmsUnrecoverableException::signNameMissing('tencentcloud'));
+        $this->expectExceptionObject(SmsException::signNameMissing('tencentcloud'));
 
         $this->createTransport()->send(new SmsMessage('+8613800000000', 'hello', options: new TencentCloudSmsOptions('1234567')));
     }

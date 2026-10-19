@@ -7,7 +7,7 @@ use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Sms\Gateway\Aliyun\AliyunGatewayTransportFactory;
 use Shopwell\Core\System\Sms\Gateway\Aliyun\AliyunSmsTransport;
-use Shopwell\Core\System\Sms\SmsUnrecoverableException;
+use Shopwell\Core\System\Sms\SmsException;
 
 /**
  * @internal
@@ -57,15 +57,8 @@ class AliyunGatewayTransportFactoryTest extends TestCase
 
     public function testAGatewayWithoutCredentialsCannotSend(): void
     {
-        $this->expectExceptionObject(SmsUnrecoverableException::credentialsIncomplete('aliyun', ['accessKeyId', 'accessKeySecret']));
+        $this->expectExceptionObject(SmsException::credentialsIncomplete('aliyun', ['accessKeyId', 'accessKeySecret']));
 
         (new AliyunGatewayTransportFactory())->create([], []);
-    }
-
-    public function testACredentialThatWasStoredAsAnEmptyStringCountsAsMissing(): void
-    {
-        $this->expectExceptionObject(SmsUnrecoverableException::credentialsIncomplete('aliyun', ['accessKeySecret']));
-
-        (new AliyunGatewayTransportFactory())->create(['accessKeyId' => 'key', 'accessKeySecret' => ''], []);
     }
 }

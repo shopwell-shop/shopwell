@@ -48,6 +48,20 @@ final class AliyunSmsTransport extends AbstractTemplateSmsTransport
     ];
 
     /**
+     * A handful of the codes name a cause the shop can act on, they get the dedicated error code
+     * instead of the generic rejection - an operator has to correct the signature or the template
+     * at the console, everything else stays a plain rejection.
+     *
+     * @var array<string, 'signature'|'template'>
+     */
+    private const TERMINAL_CODE_REASONS = [
+        'isv.SMS_SIGNATURE_ILLEGAL' => 'signature',
+        'isv.SMS_SIGN_ILLEGAL' => 'signature',
+        'isv.SMS_TEMPLATE_ILLEGAL' => 'template',
+        'isv.SMS_TEMPLATE_NOT_EXIST' => 'template',
+    ];
+
+    /**
      * @param Dysmsapi $sdk the client of the provider, the name does not collide with the http client
      *                      of the notifier that AbstractTransport keeps in $client
      */
@@ -87,7 +101,7 @@ final class AliyunSmsTransport extends AbstractTemplateSmsTransport
         if ($options instanceof AliyunSmsOptions) {
             $outId = $options->getOutId();
 
-            if ($outId !== null && $outId !== '') {
+            if ($outId !== null) {
                 $request->outId = $outId;
             }
         }
@@ -99,13 +113,13 @@ final class AliyunSmsTransport extends AbstractTemplateSmsTransport
             throw SmsException::providerUnavailable(self::TECHNICAL_NAME, $error->code, $error->message);
         } catch (AlibabaCloudException $error) {
             // everything else the endpoint refused, the code says whether it can pass later
-            $this->fail($error->code, $error->message, self::RETRYABLE_CODE_PREFIXES);
+            $this->failWithCause($error->code, $error->message, $data['signName']);
         }
 
         $answer = self::answerOf($response->body);
 
         if ($answer['code'] !== self::SUCCESS_CODE) {
-            $this->fail($answer['code'], $answer['message'], self::RETRYABLE_CODE_PREFIXES);
+            $this->failWithCause($answer['code'], $answer['message'], $data['signName']);
         }
 
         $sentMessage = new SentMessage($message, self::TECHNICAL_NAME, [
@@ -119,6 +133,19 @@ final class AliyunSmsTransport extends AbstractTemplateSmsTransport
         }
 
         return $sentMessage;
+    }
+
+    /**
+     * Splits a refusal into the causes the shop can act on and the rest, which the base class
+     * classifies by its retryable prefixes.
+     */
+    private function failWithCause(string $code, string $message, ?string $signName): never
+    {
+        match (self::TERMINAL_CODE_REASONS[$code] ?? null) {
+            'signature' => throw SmsException::signNameNotApproved(self::TECHNICAL_NAME, $signName ?? '', $code, $message),
+            'template' => throw SmsException::providerRejected(self::TECHNICAL_NAME, $code, $message),
+            default => $this->fail($code, $message, self::RETRYABLE_CODE_PREFIXES),
+        };
     }
 
     /**

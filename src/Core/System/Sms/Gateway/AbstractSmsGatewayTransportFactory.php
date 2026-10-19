@@ -3,7 +3,7 @@
 namespace Shopwell\Core\System\Sms\Gateway;
 
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\System\Sms\SmsUnrecoverableException;
+use Shopwell\Core\System\Sms\SmsException;
 
 /**
  * The base of a provider of the platform.
@@ -12,8 +12,6 @@ use Shopwell\Core\System\Sms\SmsUnrecoverableException;
  * before a client is built, so a gateway that was stored without one of them reports a configuration
  * the shop has to fix rather than a request the provider refused. The administration renders the same
  * schema into the form that fills the credentials, so the two can never disagree.
- *
- * @internal
  */
 #[Package('framework')]
 abstract class AbstractSmsGatewayTransportFactory implements SmsGatewayTransportFactoryInterface
@@ -21,7 +19,7 @@ abstract class AbstractSmsGatewayTransportFactory implements SmsGatewayTransport
     /**
      * @param array<string, mixed> $credentials the credentials of the sms_gateway row
      *
-     * @throws SmsUnrecoverableException
+     * @throws SmsException a configuration the shop has to fix, thrown as the unrecoverable subclass
      */
     final protected function requireCredentials(array $credentials): void
     {
@@ -32,33 +30,13 @@ abstract class AbstractSmsGatewayTransportFactory implements SmsGatewayTransport
                 continue;
             }
 
-            if ($this->stringValue($credentials, $definition['name']) === '') {
+            if (($credentials[$definition['name']] ?? null) === null) {
                 $missing[] = $definition['name'];
             }
         }
 
         if ($missing !== []) {
-            throw SmsUnrecoverableException::credentialsIncomplete($this->getTechnicalName(), $missing);
+            throw SmsException::credentialsIncomplete($this->getTechnicalName(), $missing);
         }
-    }
-
-    /**
-     * @param array<string, mixed> $values
-     */
-    final protected function stringValue(array $values, string $name): string
-    {
-        $value = $values[$name] ?? null;
-
-        return $value === null ? '' : (string) $value;
-    }
-
-    /**
-     * @param array<string, mixed> $values
-     */
-    final protected function optionalString(array $values, string $name): ?string
-    {
-        $value = $this->stringValue($values, $name);
-
-        return $value === '' ? null : $value;
     }
 }

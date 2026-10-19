@@ -76,14 +76,16 @@ final class AliyunGatewayTransportFactory extends AbstractSmsGatewayTransportFac
         $this->requireCredentials($credentials);
 
         $config = new Config([
-            'accessKeyId' => $this->stringValue($credentials, 'accessKeyId'),
-            'accessKeySecret' => $this->stringValue($credentials, 'accessKeySecret'),
+            'accessKeyId' => (string) ($credentials['accessKeyId'] ?? ''),
+            'accessKeySecret' => (string) ($credentials['accessKeySecret'] ?? ''),
         ]);
         $config->endpoint = self::ENDPOINT;
 
+        $signName = $options['signName'] ?? null;
+
         return new AliyunSmsTransport(
             new Dysmsapi($config),
-            $this->optionalString($options, 'signName'),
+            $signName === null || $signName === '' ? null : (string) $signName,
             $dispatcher
         );
     }

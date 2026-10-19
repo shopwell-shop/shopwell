@@ -7,7 +7,7 @@ use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Sms\Gateway\TencentCloud\TencentCloudGatewayTransportFactory;
 use Shopwell\Core\System\Sms\Gateway\TencentCloud\TencentCloudSmsTransport;
-use Shopwell\Core\System\Sms\SmsUnrecoverableException;
+use Shopwell\Core\System\Sms\SmsException;
 
 /**
  * @internal
@@ -69,14 +69,14 @@ class TencentCloudGatewayTransportFactoryTest extends TestCase
 
     public function testAGatewayWithoutCredentialsCannotSend(): void
     {
-        $this->expectExceptionObject(SmsUnrecoverableException::credentialsIncomplete('tencentcloud', ['secretId', 'secretKey', 'sdkAppId', 'region']));
+        $this->expectExceptionObject(SmsException::credentialsIncomplete('tencentcloud', ['secretId', 'secretKey', 'sdkAppId', 'region']));
 
         (new TencentCloudGatewayTransportFactory())->create([], []);
     }
 
     public function testOnlyTheCredentialsThatAreMissingAreReported(): void
     {
-        $this->expectExceptionObject(SmsUnrecoverableException::credentialsIncomplete('tencentcloud', ['sdkAppId']));
+        $this->expectExceptionObject(SmsException::credentialsIncomplete('tencentcloud', ['sdkAppId']));
 
         (new TencentCloudGatewayTransportFactory())->create([
             'secretId' => 'id',

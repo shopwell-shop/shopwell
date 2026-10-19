@@ -56,6 +56,17 @@ final class TencentCloudSmsTransport extends AbstractTemplateSmsTransport
     ];
 
     /**
+     * The codes that name a cause an operator has to correct at the console, they get an error code
+     * of their own instead of the generic rejection.
+     *
+     * @var array<string, 'signature'|'template'>
+     */
+    private const TERMINAL_CODE_REASONS = [
+        'FailedOperation.SignatureIncorrectOrUnapproved' => 'signature',
+        'FailedOperation.TemplateIncorrectOrUnapproved' => 'template',
+    ];
+
+    /**
      * @param SmsClient $sdk the client of the provider, the name does not collide with the http client
      *                       of the notifier that AbstractTransport keeps in $client
      */
@@ -117,7 +128,7 @@ final class TencentCloudSmsTransport extends AbstractTemplateSmsTransport
                 );
             }
 
-            $this->fail($code, $error->getMessage(), self::RETRYABLE_CODE_PREFIXES);
+            $this->failWithCause($code, $error->getMessage(), $data['signName']);
         }
 
         /** @var SendStatus|null $status */
@@ -134,7 +145,7 @@ final class TencentCloudSmsTransport extends AbstractTemplateSmsTransport
         $reported = self::statusOf($status);
 
         if ($reported['code'] !== self::SUCCESS_CODE) {
-            $this->fail($reported['code'], $reported['message'], self::RETRYABLE_CODE_PREFIXES);
+            $this->failWithCause($reported['code'], $reported['message'], $data['signName']);
         }
 
         $sentMessage = new SentMessage($message, self::TECHNICAL_NAME, [
@@ -148,6 +159,19 @@ final class TencentCloudSmsTransport extends AbstractTemplateSmsTransport
         }
 
         return $sentMessage;
+    }
+
+    /**
+     * Splits a refusal into the causes the shop can act on and the rest, which the base class
+     * classifies by its retryable prefixes.
+     */
+    private function failWithCause(string $code, string $message, ?string $signName): never
+    {
+        match (self::TERMINAL_CODE_REASONS[$code] ?? null) {
+            'signature' => throw SmsException::signNameNotApproved(self::TECHNICAL_NAME, $signName ?? '', $code, $message),
+            'template' => throw SmsException::providerRejected(self::TECHNICAL_NAME, $code, $message),
+            default => $this->fail($code, $message, self::RETRYABLE_CODE_PREFIXES),
+        };
     }
 
     /**
