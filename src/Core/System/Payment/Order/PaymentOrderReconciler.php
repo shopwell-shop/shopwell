@@ -17,6 +17,7 @@ use Shopwell\Core\System\Payment\Gateway\PaymentQuery;
 use Shopwell\Core\System\Payment\Gateway\QueryResult;
 use Shopwell\Core\System\Payment\Order\Aggregate\PaymentTransaction\PaymentTransactionEntity;
 use Shopwell\Core\System\Payment\PaymentException;
+use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
 use Shopwell\Core\System\Payment\Provider\PaymentConfigResolver;
 use Shopwell\Core\System\StateMachine\Aggregation\StateMachineState\StateMachineStateCollection;
 use Shopwell\Core\System\StateMachine\Aggregation\StateMachineState\StateMachineStateEntity;
@@ -152,6 +153,16 @@ final class PaymentOrderReconciler
             $order->device,
             $order->channelParams ?? []
         );
+
+        // An interface that never declared a query cannot be asked what became of a payment. Without
+        // the guard payum throws "no action supports this request" inside the gateway, which reads as
+        // a broken channel (502) instead of "this interface cannot be reconciled at all" - and that
+        // distinction is the whole point of the declaration. It reads the resolved provider, i.e. the
+        // end of the decoration chain, so a plugin that adds a query action to an interface makes the
+        // reconciliation reachable for it.
+        if (!$resolved->provider->supports(PaymentCapability::QUERY)) {
+            throw PaymentException::providerLacksCapability($resolved->provider->technicalName, PaymentCapability::QUERY->value);
+        }
 
         $model = PaymentGatewayModel::forQuery($order, $this->lastChannelResponseOf($order));
         $gateway = $resolved->provider->gatewayFactory->createForPayment($resolved, (string) $order->notifyUrl, (string) $order->returnUrl);

@@ -114,7 +114,6 @@ class AlipayRefundActionTest extends TestCase
                 params: [],
                 runtimeParams: [],
                 settings: [],
-                mode: 'own',
             ),
             'https://example.com/notify',
             '',

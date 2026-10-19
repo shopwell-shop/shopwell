@@ -346,6 +346,9 @@ class StripeTransferActionTest extends TestCase
         static::assertSame('OUT-1:payout', StripeTransferAction::idempotencyKey('OUT-1', StripeTransferAction::STAGE_PAYOUT));
     }
 
+    /**
+     * @param array<string, mixed> $body
+     */
     private static function json(array $body): string
     {
         $encoded = json_encode($body);
@@ -417,7 +420,6 @@ class StripeTransferActionTest extends TestCase
                 params: [],
                 runtimeParams: [],
                 settings: [],
-                mode: 'own',
             ),
             'https://example.com/notify',
             '',

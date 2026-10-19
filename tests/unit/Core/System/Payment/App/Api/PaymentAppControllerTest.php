@@ -55,7 +55,9 @@ class PaymentAppControllerTest extends TestCase
         static::assertSame([], $data['apps'][0]['allowedIps']);
         static::assertCount(1, $data['apps'][0]['providers']);
         static::assertSame('alipay', $data['apps'][0]['providers'][0]['providerTechnicalName']);
-        static::assertSame(PaymentAppProviderEntity::MODE_PLATFORM, $data['apps'][0]['providers'][0]['mode']);
+        // the account source is an app, `null` for an account of the app itself
+        static::assertNull($data['apps'][0]['providers'][0]['sourceAppId']);
+        static::assertSame('', $data['apps'][0]['providers'][0]['sourceAppName']);
         static::assertFalse($data['apps'][0]['providers'][0]['hasCredentials']);
         static::assertCount(1, $data['apps'][0]['channels']);
         static::assertSame('alipay_h5', $data['apps'][0]['channels'][0]['channelTechnicalName']);
@@ -221,7 +223,7 @@ class PaymentAppControllerTest extends TestCase
             providers: [new PaymentAppProviderDto(
                 providerTechnicalName: 'alipay',
                 enabled: true,
-                mode: PaymentAppProviderEntity::MODE_OWN,
+                sourceAppId: null,
                 settings: ['sandbox' => '1'],
             )],
             channels: [new PaymentAppChannelDto(
@@ -294,7 +296,7 @@ class PaymentAppControllerTest extends TestCase
     private function platformTenant(): PaymentAppEntity
     {
         $platform = PaymentControllerFixture::app(PaymentAppEntity::PLATFORM_TECHNICAL_NAME, 'platform-secret');
-        $platform->name = '平台支付';
+        $platform->name = 'Platform Payment App';
         $platform->type = PaymentAppEntity::TYPE_PLATFORM;
 
         return $platform;

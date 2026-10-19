@@ -3,6 +3,7 @@
 namespace Shopwell\Core\Migration\V6_7;
 
 use Doctrine\DBAL\Connection;
+use Shopwell\Core\Checkout\Payment\Gateway\PaymentGatewayHandler;
 use Shopwell\Core\Defaults;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Migration\MigrationException;
@@ -10,12 +11,12 @@ use Shopwell\Core\Framework\Migration\MigrationStep;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\Migration\Traits\StateMachineMigration;
 use Shopwell\Core\Migration\Traits\StateMachineMigrationTrait;
-use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppProvider\PaymentAppProviderEntity;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
 use Shopwell\Core\System\Payment\App\PaymentCredentialCipher;
 use Shopwell\Core\System\Payment\Order\PaymentOrderStates;
 use Shopwell\Core\System\Payment\Order\Refund\PaymentRefundStates;
 use Shopwell\Core\System\Payment\Provider\Alipay\AlipayApi;
+use Shopwell\Core\System\Payment\Provider\Wechat\WechatApi;
 use Shopwell\Core\System\Payment\Subscription\PaymentMandateStates;
 use Shopwell\Core\System\Payment\Subscription\PaymentSubscriptionCycleStates;
 use Shopwell\Core\System\Payment\Subscription\PaymentSubscriptionStates;
@@ -26,8 +27,9 @@ use Shopwell\Core\System\Payment\Subscription\PaymentSubscriptionStates;
  * The configuration of the gateway is a 2x2 matrix, and the tables follow it exactly:
  *
  *  - `payment_provider_config` is the platform account of a payment interface (alipay, wechat pay, …),
- *  - `payment_app_provider` is the authorization of an app for a whole interface, and it carries the
- *    mode - the platform account or the account the app brings itself,
+ *  - `payment_app_provider` is the authorization of an app for a whole interface, and it names the
+ *    account source - `NULL` for the credentials the app brings itself, the id of another app to
+ *    inherit the account of that app, the tenant of the platform in particular,
  *  - `payment_channel_config` are the parameters of one channel of an interface (the appid of a wechat
  *    channel, for instance),
  *  - `payment_app_channel` is the switch of one channel for one app.
@@ -49,6 +51,12 @@ use Shopwell\Core\System\Payment\Subscription\PaymentSubscriptionStates;
  * without anyone creating an app first. An external app is onboarded by an administrator in the
  * administration, never here.
  *
+ * Two payment methods are seeded on top of that tenant - alipay and wechat pay - so the selection of
+ * the checkout is not empty after the installation and the merchant configures a method that already
+ * works instead of assembling one. What the two differ in is their readiness, and that difference is
+ * data, not code: alipay collects with the sandbox account seeded below, wechat pay waits for the
+ * merchant id and the certificate of *this* merchant and stays out of the checkout until they exist.
+ *
  * The state machines are imported first, because the state fields of the bookkeeping tables reference
  * them.
  *
@@ -68,6 +76,40 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
     final public const PROVIDER = AlipayApi::PROVIDER;
 
     final public const CHANNEL = AlipayApi::CHANNEL_H5;
+
+    /**
+     * The technical name of the alipay payment method a fresh installation offers.
+     */
+    final public const PAYMENT_METHOD_ALIPAY = 'alipay';
+
+    /**
+     * The technical name of the wechat pay payment method a fresh installation offers.
+     */
+    final public const PAYMENT_METHOD_WECHAT = 'wechat';
+
+    /**
+     * The channel the alipay payment method collects through.
+     *
+     * It is the only non sdk channel of alipay that declares both `web` and `wap`, so the one method
+     * is collectable on a desktop browser and on a phone alike.
+     */
+    final public const PAYMENT_METHOD_ALIPAY_CHANNEL = AlipayApi::CHANNEL_QR;
+
+    /**
+     * The channel the wechat pay payment method collects through.
+     *
+     * It is the only non sdk channel of wechat pay that declares `web`: `wechat_h5` is wap only and the
+     * remaining three are opened by an sdk the storefront must not bind.
+     */
+    final public const PAYMENT_METHOD_WECHAT_CHANNEL = WechatApi::CHANNEL_NATIVE;
+
+    /**
+     * The positions the two seeded methods take in the payment selection, right after the four
+     * methods of the checkout itself.
+     */
+    final public const PAYMENT_METHOD_ALIPAY_POSITION = 10;
+
+    final public const PAYMENT_METHOD_WECHAT_POSITION = 11;
 
     /**
      * The app id of the sandbox app of the alipay open platform.
@@ -125,6 +167,10 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
         $this->seedProviderConfig($connection, $cipher, $now);
         $this->seedChannelConfig($connection, $now);
         $this->seedPlatformTenant($connection, $cipher, $now);
+
+        // the methods the checkout offers right away - they collect on the tenant seeded above, so
+        // they are written after it
+        $this->seedGatewayPaymentMethods($connection, $now);
     }
 
     public function updateDestructive(Connection $connection): void
@@ -456,6 +502,15 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
 
     /**
      * Which interface an app may collect through, and whose merchant account is charged.
+     *
+     * `source_app_id` names the app whose account is charged, `NULL` means the app brings its own one.
+     * Pointing it at the tenant of the platform is what "the platform collects for me" means.
+     *
+     * The foreign key is `ON DELETE SET NULL` on purpose: deleting the source app must not delete the
+     * authorization of the inheriting app, and it must not leave a dangling id either. The inheriting
+     * app falls back to "collects on its own account" instead, which has no credentials and is
+     * therefore refused at payment time - visibly, instead of silently collecting on an account that
+     * is not ours anymore.
      */
     private function createPaymentAppProviderTable(Connection $connection): void
     {
@@ -464,8 +519,8 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
                 `id` BINARY(16) NOT NULL,
                 `payment_app_id` BINARY(16) NOT NULL,
                 `provider_technical_name` VARCHAR(64) NOT NULL,
+                `source_app_id` BINARY(16) NULL,
                 `enabled` TINYINT(1) NOT NULL DEFAULT 1,
-                `mode` VARCHAR(32) NOT NULL DEFAULT \'platform\',
                 `credentials` JSON NULL,
                 `settings` JSON NULL,
                 `custom_fields` JSON NULL,
@@ -474,7 +529,9 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
                 PRIMARY KEY (`id`),
                 UNIQUE KEY `uniq.payment_app_provider.app_provider` (`payment_app_id`, `provider_technical_name`),
                 KEY `idx.payment_app_provider.provider` (`provider_technical_name`),
-                CONSTRAINT `fk.payment_app_provider.payment_app_id` FOREIGN KEY (`payment_app_id`) REFERENCES `payment_app` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+                KEY `idx.payment_app_provider.source_app` (`source_app_id`),
+                CONSTRAINT `fk.payment_app_provider.payment_app_id` FOREIGN KEY (`payment_app_id`) REFERENCES `payment_app` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+                CONSTRAINT `fk.payment_app_provider.source_app_id` FOREIGN KEY (`source_app_id`) REFERENCES `payment_app` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;'
         );
     }
@@ -980,9 +1037,21 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
      */
     private function seedChannelConfig(Connection $connection, string $now): void
     {
+        $this->enableChannel($connection, self::PROVIDER, self::CHANNEL, $now);
+    }
+
+    /**
+     * Switches one channel of one interface on, or leaves the existing row exactly as it is.
+     *
+     * An existing row is not re-enabled: the merchant may have switched the channel off, and an
+     * upgrade that undid that decision would start collecting through a product the shop does not want
+     * to sell anymore.
+     */
+    private function enableChannel(Connection $connection, string $providerTechnicalName, string $channelTechnicalName, string $now): void
+    {
         $existing = $connection->fetchOne(
             'SELECT `id` FROM `payment_channel_config` WHERE `provider_technical_name` = :provider AND `channel_technical_name` = :channel',
-            ['provider' => self::PROVIDER, 'channel' => self::CHANNEL]
+            ['provider' => $providerTechnicalName, 'channel' => $channelTechnicalName]
         );
 
         if (\is_string($existing) && $existing !== '') {
@@ -996,8 +1065,8 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
 
         $connection->insert('payment_channel_config', [
             'id' => Uuid::randomBytes(),
-            'provider_technical_name' => self::PROVIDER,
-            'channel_technical_name' => self::CHANNEL,
+            'provider_technical_name' => $providerTechnicalName,
+            'channel_technical_name' => $channelTechnicalName,
             'enabled' => 1,
             'created_at' => $now,
         ]);
@@ -1024,8 +1093,8 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
      * the merchant's switch, and the channels an operator enables later are still authorized on
      * demand by {@see \Shopwell\Core\Checkout\Payment\Storefront\PlatformPaymentApp::appForChannel()}.
      *
-     * Both writes are insert-if-absent. A merchant may have switched the authorization off or changed
-     * its mode by hand; an upgrade that re-enabled it would silently undo that decision.
+     * Both writes are insert-if-absent. A merchant may have switched the authorization off or pointed
+     * it at an account of its own; an upgrade that re-enabled it would silently undo that decision.
      */
     private function seedPlatformTenant(Connection $connection, PaymentCredentialCipher $cipher, string $now): void
     {
@@ -1040,7 +1109,7 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
             $connection->insert('payment_app', [
                 'id' => $appId,
                 'technical_name' => PaymentAppEntity::PLATFORM_TECHNICAL_NAME,
-                'name' => '平台支付',
+                'name' => 'Platform Payment App',
                 'type' => PaymentAppEntity::TYPE_PLATFORM,
                 'app_secret' => $cipher->encryptValue(bin2hex(random_bytes(32))),
                 'active' => 1,
@@ -1055,8 +1124,9 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
     }
 
     /**
-     * Authorizes the interface of the seeded channel for the platform tenant: the shop collects on the
-     * merchant account of the platform, never on an account of its own.
+     * Authorizes the interface of the seeded channel for the platform tenant: the tenant of the
+     * platform is the root of every inheritance chain, it collects on the merchant account that is
+     * configured on the platform level - `source_app_id` stays NULL, there is nobody to inherit from.
      *
      * An existing row is left exactly as it is - the merchant may have switched the interface off or
      * pointed it at own credentials, and neither is undone here.
@@ -1076,8 +1146,8 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
             'id' => Uuid::randomBytes(),
             'payment_app_id' => $appId,
             'provider_technical_name' => self::PROVIDER,
+            'source_app_id' => null,
             'enabled' => 1,
-            'mode' => PaymentAppProviderEntity::MODE_PLATFORM,
             'created_at' => $now,
         ]);
     }
@@ -1089,9 +1159,22 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
      */
     private function offerPlatformChannel(Connection $connection, string $appId, string $now): void
     {
+        $this->offerChannel($connection, $appId, self::CHANNEL, $now);
+    }
+
+    /**
+     * Offers one channel to one app, or leaves the existing row exactly as it is.
+     *
+     * The row is what {@see \Shopwell\Core\System\Payment\Provider\PaymentConfigResolver::resolve()}
+     * requires before a payment can be opened at all, and what the administration shows as the switch
+     * of the channel for that app - a merchant who switched it off has decided against that product
+     * and keeps that decision.
+     */
+    private function offerChannel(Connection $connection, string $appId, string $channelTechnicalName, string $now): void
+    {
         $existing = $connection->fetchOne(
             'SELECT `id` FROM `payment_app_channel` WHERE `payment_app_id` = :app AND `channel_technical_name` = :channel',
-            ['app' => $appId, 'channel' => self::CHANNEL]
+            ['app' => $appId, 'channel' => $channelTechnicalName]
         );
 
         if (\is_string($existing) && $existing !== '') {
@@ -1101,10 +1184,282 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
         $connection->insert('payment_app_channel', [
             'id' => Uuid::randomBytes(),
             'payment_app_id' => $appId,
-            'channel_technical_name' => self::CHANNEL,
+            'channel_technical_name' => $channelTechnicalName,
             'enabled' => 1,
             'created_at' => $now,
         ]);
+    }
+
+    /**
+     * Seeds the two payment methods a fresh installation offers: alipay and wechat pay.
+     *
+     * A payment method of the gateway is a binding and nothing else. It names the app whose merchant
+     * account is charged and one channel of that app - the interface is derived from the channel and
+     * the credentials from the app - so everything the method is worth is the row in
+     * `payment_method_gateway_channel`. Seeding the two methods therefore means seeding that binding,
+     * and the method itself on top of it.
+     *
+     * The channels are the only ones that can be handed a shopper in a browser of either kind:
+     *
+     *  - `alipay_qr` is the only non sdk channel of alipay that declares both `web` and `wap`, so the
+     *    one method covers a desktop browser and a phone. Binding `alipay_h5` would have hidden it from
+     *    every desktop, binding `alipay_web` from every phone.
+     *  - `wechat_native` is the only non sdk channel of wechat pay that declares `web`. `wechat_h5` is
+     *    wap only and `wechat_jsapi`, `wechat_mini` and `wechat_app` are opened by an sdk, which the
+     *    checkout refuses to hand a payer over to.
+     *
+     * The two are not equally ready, and the difference is expressed in data instead of code:
+     *
+     *  - alipay collects the moment the installation finishes. {@see seedProviderConfig()} seeded the
+     *    sandbox account of the interface, and the channel the method is bound to is switched on here,
+     *    both on the platform level and for the terminal app - a channel that is not switched on, or
+     *    not offered by the app whose account is charged, is not collectable even though the method
+     *    exists.
+     *  - wechat pay is listed in the administration but never offered to a shopper. No
+     *    `payment_channel_config` row is written for `wechat_native` and the interface has no
+     *    credentials, so {@see \Shopwell\Core\Checkout\Payment\Gateway\PaymentMethodCollectability}
+     *    drops the method before the shopper ever sees it. That is the rule and not an omission: wechat
+     *    pay needs the merchant id and the certificate of *this* merchant, nobody can invent them, and
+     *    a method that throws at the end of the checkout is worse than one that is not offered. The
+     *    merchant fills them in on the payment interface page and the method appears by itself.
+     *
+     * Both methods are assigned to every sales channel that exists at this point. On a fresh
+     * installation that is no channel at all - the installer runs this migration before it creates the
+     * storefront, and the storefront brings its own selection of methods afterwards, so nothing is
+     * missing there. The assignments matter for an instance that is *upgraded*: its sales channels are
+     * already there when this migration runs, and a method that no sales channel offers never reaches
+     * the store api, no matter how correct its configuration is.
+     */
+    private function seedGatewayPaymentMethods(Connection $connection, string $now): void
+    {
+        $platformAppId = $connection->fetchOne(
+            'SELECT `id` FROM `payment_app` WHERE `technical_name` = :name',
+            ['name' => PaymentAppEntity::PLATFORM_TECHNICAL_NAME]
+        );
+
+        if (!\is_string($platformAppId) || $platformAppId === '') {
+            // there is no app to collect the methods on, so there is nothing to bind them to
+            return;
+        }
+
+        $alipayMethodId = $this->seedGatewayPaymentMethod(
+            $connection,
+            $platformAppId,
+            self::PAYMENT_METHOD_ALIPAY,
+            self::PAYMENT_METHOD_ALIPAY_CHANNEL,
+            self::PAYMENT_METHOD_ALIPAY_POSITION,
+            ['zh' => '支付宝', 'en' => 'Alipay'],
+            $now
+        );
+
+        if ($alipayMethodId === null) {
+            return;
+        }
+
+        // the seeded account of the interface is only collectable through a channel the platform
+        // offers, so the channel of the method is switched on together with the method.
+        //
+        // This has to be `alipay_qr` and cannot be left to the channel that {@see seedChannelConfig()}
+        // already switched on: that one is `alipay_h5`, which has no payment method bound to it, so a
+        // shopper could pick nothing through it. `alipay_qr` is the channel this method is bound to, and
+        // a bound channel that is not switched on is filtered out by the collectability check just like
+        // a channel that does not exist - the method would be listed but not collect a single payment.
+        $this->enableChannel($connection, self::PROVIDER, self::PAYMENT_METHOD_ALIPAY_CHANNEL, $now);
+        $this->offerChannel($connection, $platformAppId, self::PAYMENT_METHOD_ALIPAY_CHANNEL, $now);
+
+        // wechat pay is deliberately left unconfigured: its method is bound, but neither the channel
+        // nor the credentials exist, so the collectability filter keeps it out of the checkout until a
+        // merchant fills in the merchant id and the certificate of this very shop
+        $this->seedGatewayPaymentMethod(
+            $connection,
+            $platformAppId,
+            self::PAYMENT_METHOD_WECHAT,
+            self::PAYMENT_METHOD_WECHAT_CHANNEL,
+            self::PAYMENT_METHOD_WECHAT_POSITION,
+            ['zh' => '微信支付', 'en' => 'WeChat Pay'],
+            $now
+        );
+    }
+
+    /**
+     * Writes one payment method of the gateway, its binding, its translations and its sales channel
+     * assignments - each of them only when it is not there yet.
+     *
+     * The row of the method itself is skipped as a whole when a method with that technical name exists:
+     * an administrator may have renamed it, repositioned it or switched it off, and none of that is
+     * undone by an upgrade. The translations, the binding and the assignments are still completed,
+     * because a method that lost one of them does not work - and each of them is matched on its own
+     * identity, so a name an administrator edited is never overwritten either.
+     *
+     * @param array{zh: string, en: string} $names the name of the method in chinese and in english
+     *
+     * @return string|null the id of the method, `null` when the channel is already collected through by
+     *                     another method - the binding is unique, so that method keeps the channel
+     */
+    private function seedGatewayPaymentMethod(
+        Connection $connection,
+        string $platformAppId,
+        string $technicalName,
+        string $channelTechnicalName,
+        int $position,
+        array $names,
+        string $now
+    ): ?string {
+        $existing = $connection->fetchOne(
+            'SELECT `id` FROM `payment_method` WHERE `technical_name` = :name',
+            ['name' => $technicalName]
+        );
+
+        $methodId = \is_string($existing) && $existing !== '' ? $existing : null;
+
+        if ($methodId === null) {
+            $methodId = Uuid::randomBytes();
+
+            $connection->insert('payment_method', [
+                'id' => $methodId,
+                'handler_identifier' => PaymentGatewayHandler::class,
+                'technical_name' => $technicalName,
+                'position' => $position,
+                'active' => 1,
+                // a failed payment is retried with the method the shopper picked, not with another one
+                'after_order_enabled' => 0,
+                'plugin_id' => null,
+                'media_id' => null,
+                'availability_rule_id' => null,
+                'created_at' => $now,
+            ]);
+        }
+
+        $this->seedPaymentMethodTranslations($connection, $methodId, $names, $now);
+
+        $bound = $connection->fetchOne(
+            'SELECT `payment_method_id` FROM `payment_method_gateway_channel` WHERE `payment_method_id` = :method',
+            ['method' => $methodId]
+        );
+
+        if (!\is_string($bound) || $bound === '') {
+            // the channel of an app is claimed by exactly one method, so a channel another method
+            // already collects through is left to it instead of failing the unique key
+            $claimed = $connection->fetchOne(
+                'SELECT `payment_method_id` FROM `payment_method_gateway_channel` WHERE `payment_app_id` = :app AND `channel_technical_name` = :channel',
+                ['app' => $platformAppId, 'channel' => $channelTechnicalName]
+            );
+
+            if (\is_string($claimed) && $claimed !== '') {
+                return null;
+            }
+
+            $connection->insert('payment_method_gateway_channel', [
+                'id' => Uuid::randomBytes(),
+                'payment_method_id' => $methodId,
+                'payment_app_id' => $platformAppId,
+                'channel_technical_name' => $channelTechnicalName,
+                'created_at' => $now,
+            ]);
+        }
+
+        $this->assignPaymentMethodToSalesChannels($connection, $methodId);
+
+        return $methodId;
+    }
+
+    /**
+     * The name of a seeded method in every language of the installation.
+     *
+     * The language id is never hard coded: an installation brings its own set of languages, and any of
+     * them may be chinese. The row is matched on the locale of the language instead - `zh-CN` and
+     * `zh_CN` alike, since the separator is a spelling of the locale and not a different language - and
+     * a language that is neither chinese nor english is left without a translation rather than given a
+     * wrong one: the method then shows its key, which is visible instead of silent.
+     *
+     * An existing translation is never overwritten - an administrator may have renamed the method.
+     *
+     * @param array{zh: string, en: string} $names
+     */
+    private function seedPaymentMethodTranslations(Connection $connection, string $methodId, array $names, string $now): void
+    {
+        $languages = $connection->fetchAllAssociative(
+            'SELECT `language`.`id` AS `id`, `locale`.`code` AS `code`
+                FROM `language`
+                    LEFT JOIN `locale` ON `locale`.`id` = `language`.`locale_id`'
+        );
+
+        foreach ($languages as $language) {
+            $languageId = $language['id'] ?? null;
+
+            if (!\is_string($languageId) || $languageId === '') {
+                continue;
+            }
+
+            $code = strtolower((string) ($language['code'] ?? ''));
+
+            $name = match (true) {
+                str_starts_with($code, 'zh') => $names['zh'],
+                str_starts_with($code, 'en') => $names['en'],
+                default => null,
+            };
+
+            if ($name === null) {
+                continue;
+            }
+
+            $existing = $connection->fetchOne(
+                'SELECT 1 FROM `payment_method_translation` WHERE `payment_method_id` = :method AND `language_id` = :language',
+                ['method' => $methodId, 'language' => $languageId]
+            );
+
+            if ($existing !== false) {
+                continue;
+            }
+
+            $connection->insert('payment_method_translation', [
+                'payment_method_id' => $methodId,
+                'language_id' => $languageId,
+                'name' => $name,
+                'created_at' => $now,
+            ]);
+        }
+    }
+
+    /**
+     * Makes a seeded method available in every sales channel that exists right now.
+     *
+     * This is the upgrade half of the seeding, not the installation half: the installer runs the
+     * migrations before it creates the storefront, so on a fresh installation there is not a single
+     * sales channel yet and this method writes no row at all. An upgraded instance is the opposite -
+     * its channels are already there, and they will never learn about the two new methods on their own.
+     * That is why the assignments are written here instead of being left to the channel creation path.
+     *
+     * The availability of a payment method is the assignment and not the method: the store api reports
+     * the methods of the sales channel it is called for, so a method without an assignment is invisible
+     * in every storefront even though it is active and correctly bound.
+     *
+     * A channel that is opened later than this migration is not covered by it - it picks its methods
+     * through the administration, like it does for every other method of the checkout.
+     */
+    private function assignPaymentMethodToSalesChannels(Connection $connection, string $methodId): void
+    {
+        $salesChannelIds = $connection->fetchFirstColumn('SELECT `id` FROM `sales_channel`');
+
+        foreach ($salesChannelIds as $salesChannelId) {
+            if (!\is_string($salesChannelId) || $salesChannelId === '') {
+                continue;
+            }
+
+            $existing = $connection->fetchOne(
+                'SELECT 1 FROM `sales_channel_payment_method` WHERE `sales_channel_id` = :channel AND `payment_method_id` = :method',
+                ['channel' => $salesChannelId, 'method' => $methodId]
+            );
+
+            if ($existing !== false) {
+                continue;
+            }
+
+            $connection->insert('sales_channel_payment_method', [
+                'sales_channel_id' => $salesChannelId,
+                'payment_method_id' => $methodId,
+            ]);
+        }
     }
 
     /**

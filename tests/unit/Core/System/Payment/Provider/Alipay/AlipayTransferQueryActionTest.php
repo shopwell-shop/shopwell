@@ -165,6 +165,9 @@ class AlipayTransferQueryActionTest extends TestCase
         ];
     }
 
+    /**
+     * @param array<string, mixed> $answer
+     */
     #[DataProvider('answers')]
     public function testTheAnswerIsNarrowedToWhatTheTransferMeans(
         array $answer,
@@ -223,7 +226,6 @@ class AlipayTransferQueryActionTest extends TestCase
                 params: [],
                 runtimeParams: [],
                 settings: [],
-                mode: 'own',
             ),
             'https://example.com/notify',
             '',

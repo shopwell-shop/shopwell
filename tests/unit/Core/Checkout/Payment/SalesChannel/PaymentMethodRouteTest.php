@@ -108,8 +108,8 @@ class PaymentMethodRouteTest extends TestCase
         array $methods,
         ?PaymentMethodCollectability $collectability = null,
     ): PaymentMethodRoute {
-        $repository = static::createMock(SalesChannelRepository::class);
-        $repository->expects(static::any())->method('search')->willReturn(new EntitySearchResult(
+        $repository = static::createStub(SalesChannelRepository::class);
+        $repository->method('search')->willReturn(new EntitySearchResult(
             'payment_method',
             \count($methods),
             new PaymentMethodCollection($methods),

@@ -11,8 +11,9 @@ use Shopwell\Core\System\Payment\Provider\ResolvedPaymentConfig;
  * payment - the interface, the channel, the credentials, the parameters and the urls - and hands it
  * to the actions.
  *
- * The credentials of the merchant account are resolved per payment - either the ones of the app or
- * the ones of the platform - which is exactly why the gateways are not configured statically and why
+ * The credentials of the merchant account are resolved per payment - either the ones the app brings
+ * itself or the ones of the app it inherits its account from, the platform tenant in particular -
+ * which is exactly why the gateways are not configured statically and why
  * every action reaches for the credentials through this api object instead of through the container.
  * The channel is part of it as well, because the channel is what tells the actions of an interface
  * which of its products the payment was opened with: an alipay api serves the mobile web payment and
@@ -47,11 +48,21 @@ abstract class AbstractPaymentApi
     }
 
     /**
-     * Whether the payment is processed with the credentials of the merchant (`own`) or of the platform.
+     * The app whose merchant account is charged, `null` when the payment is collected on an account
+     * the app brings itself.
      */
-    public function mode(): string
+    public function sourceAppId(): ?string
     {
-        return $this->config->mode;
+        return $this->config->sourceAppId;
+    }
+
+    /**
+     * Whether the payment runs on the merchant account of another app - the tenant of the platform in
+     * particular - instead of on an account of the app itself.
+     */
+    public function inherited(): bool
+    {
+        return $this->config->isInherited();
     }
 
     /**

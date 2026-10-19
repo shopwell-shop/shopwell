@@ -689,7 +689,6 @@ class PaymentOrderServiceTest extends TestCase
         $appProvider->paymentAppId = 'app-id';
         $appProvider->providerTechnicalName = 'alipay';
         $appProvider->enabled = true;
-        $appProvider->mode = PaymentAppProviderEntity::MODE_OWN;
         $appProvider->credentials = $cipher->encrypt(['app_id' => 'own-app-id']);
 
         $appChannel = new PaymentAppChannelEntity();

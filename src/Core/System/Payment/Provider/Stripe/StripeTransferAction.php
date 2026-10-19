@@ -78,6 +78,15 @@ final class StripeTransferAction extends AbstractPaymentAction
         return PaymentCapability::TRANSFER;
     }
 
+    /**
+     * A channel failure leaves this method as a {@see PaymentException} of code `GATEWAY_ERROR` - the
+     * requests and responses of the stages that were reached are recorded on the model before the
+     * exception is thrown, so the caller can persist how far the payout got. The exception is
+     * documented here because that is the contract a caller catches by: without the tag the failure
+     * looks like a `RequestNotSupportedException` of the payum interface and nothing else.
+     *
+     * @throws PaymentException
+     */
     public function execute($request): void
     {
         RequestNotSupportedException::assertSupports($this, $request);

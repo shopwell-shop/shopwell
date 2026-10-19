@@ -241,7 +241,8 @@ final class PaymentGatewayFixture extends TestCase
         $appProvider->paymentAppId = self::PLATFORM_APP_ID;
         $appProvider->providerTechnicalName = self::PROVIDER;
         $appProvider->enabled = true;
-        $appProvider->mode = PaymentAppProviderEntity::MODE_PLATFORM;
+        // the platform tenant collects on the platform level configuration, it inherits from nobody
+        $appProvider->sourceAppId = null;
 
         return $appProvider;
     }

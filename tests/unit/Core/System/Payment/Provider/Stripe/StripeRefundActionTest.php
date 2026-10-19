@@ -193,7 +193,6 @@ class StripeRefundActionTest extends TestCase
                 params: [],
                 runtimeParams: [],
                 settings: [],
-                mode: 'own',
             ),
             'https://example.com/notify',
             '',

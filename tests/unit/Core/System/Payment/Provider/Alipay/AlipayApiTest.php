@@ -30,7 +30,8 @@ class AlipayApiTest extends TestCase
 
         static::assertSame('alipay', $api->provider());
         static::assertSame('alipay_h5', $api->channel());
-        static::assertSame('own', $api->mode());
+        static::assertNull($api->sourceAppId());
+        static::assertFalse($api->inherited());
         static::assertSame([AlipayApi::APP_ID => '2021000000000000'], $api->credentials());
         static::assertSame('https://example.com/notify', $api->notifyUrl());
         static::assertSame('https://example.com/return', $api->returnUrl());
@@ -248,7 +249,6 @@ class AlipayApiTest extends TestCase
                 params: [],
                 runtimeParams: [],
                 settings: [],
-                mode: 'own',
             ),
             'https://example.com/notify',
             'https://example.com/return',

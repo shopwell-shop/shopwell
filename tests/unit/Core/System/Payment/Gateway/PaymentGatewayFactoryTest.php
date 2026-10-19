@@ -129,7 +129,7 @@ class PaymentGatewayFactoryTest extends TestCase
             params: $params,
             runtimeParams: [],
             settings: [],
-            mode: 'platform',
+            usesPlatformAccount: true,
         );
     }
 }

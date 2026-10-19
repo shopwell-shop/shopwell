@@ -68,6 +68,9 @@ class PaymentAppController extends AbstractController
         // which is the only writer, so every write path is covered and not just this endpoint.
         $criteria = new Criteria();
         $criteria->addAssociation('providers');
+        // the page names the app an interface inherits its account from, so the name has to be part
+        // of the answer instead of a second request per row
+        $criteria->addAssociation('providers.sourceApp');
         $criteria->addAssociation('channels');
 
         $entities = [];
@@ -157,7 +160,12 @@ class PaymentAppController extends AbstractController
             $providers[] = [
                 'providerTechnicalName' => $provider->providerTechnicalName,
                 'enabled' => $provider->enabled,
-                'mode' => $provider->mode,
+                // the account source: null means the app collects on its own account, otherwise the
+                // payment runs on the account of the app named here. The name is part of the answer so
+                // the page can say "collects on the account of X" without a second request; a source app
+                // that is gone leaves the id behind until the next write, and an empty name then
+                'sourceAppId' => $provider->sourceAppId,
+                'sourceAppName' => $provider->sourceApp->name ?? '',
                 // the credentials themselves stay on the server, the administration only renders
                 // "configured / not configured"
                 'hasCredentials' => $provider->credentials !== null && $provider->credentials !== [],

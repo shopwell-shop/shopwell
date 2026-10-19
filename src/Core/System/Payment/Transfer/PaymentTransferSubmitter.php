@@ -8,6 +8,7 @@ use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
 use Shopwell\Core\System\Payment\Gateway\PaymentTransferRequest;
 use Shopwell\Core\System\Payment\Gateway\TransferResult;
 use Shopwell\Core\System\Payment\PaymentException;
+use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
 use Shopwell\Core\System\Payment\Provider\PaymentConfigResolver;
 
 /**
@@ -87,6 +88,15 @@ final class PaymentTransferSubmitter
         );
 
         $model = PaymentGatewayModel::forTransfer($transfer);
+
+        // An interface that never declared a payout cannot be asked to pay out. Without the guard
+        // payum fails inside the gateway with "no action supports this request", which the catch below
+        // can only report as a channel fault - and a 502 on money leaving the platform is the one
+        // answer that makes a caller retry a request that can never succeed. The guard sits before the
+        // attempt is recorded: nothing was attempted, so nothing may be written as an attempt.
+        if (!$resolved->provider->supports(PaymentCapability::TRANSFER)) {
+            throw PaymentException::providerLacksCapability($resolved->provider->technicalName, PaymentCapability::TRANSFER->value);
+        }
 
         // no transfer action reads the notification or the return url - those two exist for the
         // capture and the refund of a payment order only. They are passed empty on purpose: a payout

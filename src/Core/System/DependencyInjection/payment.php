@@ -19,6 +19,7 @@ use Shopwell\Core\System\Payment\App\PaymentAppEntity;
 use Shopwell\Core\System\Payment\App\PaymentAppProvisioner;
 use Shopwell\Core\System\Payment\App\PaymentCredentialCipher;
 use Shopwell\Core\System\Payment\App\PaymentSignatureService;
+use Shopwell\Core\System\Payment\Command\PaymentProvidersPruneCommand;
 use Shopwell\Core\System\Payment\Command\PaymentProvidersValidateCommand;
 use Shopwell\Core\System\Payment\Gateway\PaymentCloser;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationEntity;
@@ -253,6 +254,23 @@ return static function (ContainerConfigurator $container): void {
                 PaymentProviderRegistry::class => service(PaymentProviderRegistry::class),
             ]),
             param('shopwell.payment.provider.decoration_chain'),
+        ])
+        ->tag('console.command');
+
+    // the operator counterpart of the validation: it reports - and only with `--force` deletes - the
+    // configuration rows of interfaces and channels this installation does not declare anymore. The
+    // registry travels in a locator for the very same reason as above: its construction is what
+    // validates the declarations, so it has to happen inside execute() where a broken declaration can
+    // be reported instead of breaking the container
+    $services->set(PaymentProvidersPruneCommand::class)
+        ->args([
+            service_locator([
+                PaymentProviderRegistry::class => service(PaymentProviderRegistry::class),
+            ]),
+            service('payment_provider_config.repository'),
+            service('payment_channel_config.repository'),
+            service('payment_app_provider.repository'),
+            service('payment_app_channel.repository'),
         ])
         ->tag('console.command');
 

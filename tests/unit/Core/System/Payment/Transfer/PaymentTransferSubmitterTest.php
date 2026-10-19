@@ -25,6 +25,7 @@ use Shopwell\Core\System\Payment\Gateway\PaymentTransferRequest;
 use Shopwell\Core\System\Payment\Gateway\TransferResult;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
 use Shopwell\Core\System\Payment\PaymentException;
+use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
 use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
 use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannelRegistry;
 use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
@@ -61,6 +62,16 @@ class PaymentTransferSubmitterTest extends TestCase
     private const SECRET = 'unit-test-application-secret';
 
     private const NOW = '2026-10-18T09:00:00+00:00';
+
+    /**
+     * What the four interfaces declare for their payouts: they pay out and they answer what became of
+     * a payout.
+     */
+    private const TRANSFER_CAPABILITIES = [
+        PaymentCapability::CAPTURE,
+        PaymentCapability::TRANSFER,
+        PaymentCapability::TRANSFER_QUERY,
+    ];
 
     /**
      * A channel that hands out the final state immediately still walks the money path: the machine has
@@ -265,6 +276,29 @@ class PaymentTransferSubmitterTest extends TestCase
     }
 
     /**
+     * An interface that never declared a payout is refused before anything is sent, and before the
+     * attempt is recorded: nothing was attempted, so nothing may be written as an attempt - and the
+     * caller gets a 400 naming the capability instead of a 502 on money it would retry.
+     */
+    public function testAnInterfaceWithoutTransferIsRefusedBeforeAnythingIsSent(): void
+    {
+        $gateway = static::createMock(GatewayInterface::class);
+        $gateway->expects($this->never())->method('execute');
+
+        $transfers = static::createMock(EntityRepository::class);
+        $transfers->expects($this->never())->method('update');
+
+        $submitter = new PaymentTransferSubmitter(
+            $this->resolverFor($gateway, [PaymentCapability::CAPTURE, PaymentCapability::REFUND]),
+            $this->transferService($transfers)
+        );
+
+        $this->expectExceptionObject(PaymentException::providerLacksCapability('alipay', PaymentCapability::TRANSFER->value));
+
+        $submitter->submit($this->app('app-id'), $this->createdTransfer());
+    }
+
+    /**
      * A channel that refuses a payout names the reason in its answer, and the answer is the only place
      * that has it - the code alone (`PAYEE_NOT_EXIST`) does not say what the holder should fix.
      */
@@ -412,8 +446,10 @@ class PaymentTransferSubmitterTest extends TestCase
     /**
      * A resolver that actually resolves: one app, authorized for alipay, with the channel enabled - and
      * the given gateway handed out by the factory of the interface.
+     *
+     * @param list<PaymentCapability> $capabilities
      */
-    private function resolverFor(GatewayInterface $gateway): PaymentConfigResolver
+    private function resolverFor(GatewayInterface $gateway, array $capabilities = self::TRANSFER_CAPABILITIES): PaymentConfigResolver
     {
         $cipher = new PaymentCredentialCipher(self::SECRET);
 
@@ -434,6 +470,7 @@ class PaymentTransferSubmitterTest extends TestCase
             channels: ['alipay_h5' => $channel],
             gatewayFactory: $gatewayFactory,
             notificationExtractor: static::createStub(PaymentNotificationExtractorInterface::class),
+            capabilities: $capabilities,
         );
 
         $providers = new PaymentProviderRegistry([$provider]);
@@ -443,7 +480,6 @@ class PaymentTransferSubmitterTest extends TestCase
         $appProvider->paymentAppId = 'app-id';
         $appProvider->providerTechnicalName = 'alipay';
         $appProvider->enabled = true;
-        $appProvider->mode = PaymentAppProviderEntity::MODE_OWN;
         $appProvider->credentials = $cipher->encrypt(['app_id' => 'own-app-id']);
 
         $appChannel = new PaymentAppChannelEntity();

@@ -12,6 +12,8 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\System\Payment\PaymentException;
+use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
+use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;
 use Shopwell\Core\System\Payment\Subscription\Schedule\PaymentCycleCalendar;
 use Shopwell\Core\System\Payment\Subscription\Schedule\PaymentRetryPolicy;
 use Shopwell\Core\System\StateMachine\Loader\InitialStateIdLoader;
@@ -44,6 +46,7 @@ final class PaymentCycleService
         private readonly PaymentCycleCalendar $calendar,
         private readonly PaymentRetryPolicy $retryPolicy,
         private readonly InitialStateIdLoader $initialStateIdLoader,
+        private readonly PaymentProviderRegistry $providerRegistry,
         private readonly ClockInterface $clock,
     ) {
     }
@@ -55,10 +58,30 @@ final class PaymentCycleService
      * on Jan 31st ends its first period on Feb 28th and the next one on Mar 28th, never back on
      * Mar 31st.
      *
+     * This is also the last point before a charge leaves the platform at which the interface of the
+     * subscription is known, so it is where the capability guard for a recurring charge lives: an
+     * interface that cannot charge on an agreement would otherwise only fail at the first deduction -
+     * after the subscriber signed and after the period was promised. Guarding earlier is not possible
+     * without inventing an entry point: a plan and a subscription are written through the generic
+     * entity endpoints, which have no service that could ask the declaration anything.
+     *
+     * A channel managed subscription (stripe, paypal) needs no mandate - the channel schedules and
+     * charges itself and the platform only mirrors its reports - so only a merchant initiated one
+     * requires `MANDATE`. Refusing it here is a 400 and not a channel fault: the interface answered
+     * the question by not declaring the capability, nothing was signed and nothing was sent.
+     *
      * @throws PaymentException
      */
     public function scheduleCycle(PaymentSubscriptionEntity $subscription, PaymentPlanEntity $plan): PaymentSubscriptionCycleEntity
     {
+        if ($subscription->billingMode === PaymentPlanEntity::BILLING_MODE_MERCHANT_INITIATED) {
+            $provider = $this->providerRegistry->get($subscription->provider);
+
+            if (!$provider->supports(PaymentCapability::MANDATE)) {
+                throw PaymentException::providerLacksCapability($provider->technicalName, PaymentCapability::MANDATE->value);
+            }
+        }
+
         $now = $this->clock->now();
 
         $periodStart = \DateTimeImmutable::createFromInterface(

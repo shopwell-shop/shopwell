@@ -27,7 +27,8 @@ class StripeApiTest extends TestCase
 
         static::assertSame('stripe', $api->provider());
         static::assertSame('stripe_checkout', $api->channel());
-        static::assertSame('own', $api->mode());
+        static::assertNull($api->sourceAppId());
+        static::assertFalse($api->inherited());
         static::assertSame([StripeApi::SECRET_KEY => 'sk_test_123'], $api->credentials());
         static::assertSame('https://example.com/notify', $api->notifyUrl());
         static::assertSame('https://example.com/return', $api->returnUrl());
@@ -122,7 +123,6 @@ class StripeApiTest extends TestCase
                 params: [],
                 runtimeParams: [],
                 settings: [],
-                mode: 'own',
             ),
             'https://example.com/notify',
             'https://example.com/return',

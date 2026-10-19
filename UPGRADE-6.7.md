@@ -1,3 +1,207 @@
+# 6.7.18.0
+
+## Payment interfaces are declared as services, not in XML
+
+A payment interface used to be described by an XML file under `src/Core/System/Payment/Provider/Resources/config/`, read by `PaymentProviderSchemaReader` and validated against `payment-provider.xsd`. Its actions were then wired by name in `src/Core/System/DependencyInjection/payment.php`, so an extension could neither ship an interface of its own nor replace one of the four that ship with the platform.
+
+All three artefacts are gone. A declaration is now a service that extends `Shopwell\Core\System\Payment\Provider\AbstractPaymentProvider` and is tagged with the technical name of its interface:
+
+```php
+$services->set(MyPayProvider::class)
+    ->tag('shopwell.payment.provider', ['key' => 'mypay', 'priority' => 0]);
+```
+
+`getName()` has to return the same string as the `key` attribute; the container refuses to compile otherwise, because the technical name is a foreign key value in `payment_order`, `payment_provider_config`, `payment_app_provider` and `payment_method_gateway_channel`. Two declarations under one key are only accepted when the second one returns the first through `getDecorated()`; a second declaration that simply names itself the same is rejected instead of silently taking over, which is what used to happen.
+
+The capabilities of an interface are derived from the actions it declares and can no longer be listed separately. `bin/console payment:providers:validate` prints the resulting interfaces, their decoration chains and the union of their capabilities, and exits non-zero when a declaration is broken.
+
+If you wrote an XML declaration for a plugin, port it to a declaration class. The remaining XML configuration of the platform is unaffected.
+
+## The sandbox demo payment app is no longer seeded
+
+A fresh installation used to come with a payment app named `alipay_sandbox_demo` (displayed as "alipay sandbox app"), an external app that existed only to make the payment api callable right after `system:install`. It made the app list look like a list of leftovers and, worse, it was the only entry there while the tenant the platform actually collects through was hidden.
+
+New installations no longer seed it. Existing installations keep it until it is removed:
+
+```sql
+DELETE FROM `payment_app` WHERE `technical_name` = 'alipay_sandbox_demo';
+```
+
+`payment_app_provider` and `payment_app_channel` cascade with it. Any integration still holding the secret of that app stops working, which is the point - its secret was `sandbox-only-app-secret`.
+
+The credentials of the `alipay` interface stay seeded: they are the public sandbox account of the alipay open platform, they let a fresh installation be exercised end to end, and they are replaced by the real merchant account through Settings > Payment interfaces before going live.
+
+## The account source of an interface is an app, not a mode
+
+`payment_app_provider.mode` was a `platform` / `own` switch: an app either collected on the merchant account of the platform or on one it brought itself. That is now `source_app_id`, a foreign key into `payment_app`:
+
+- `NULL` - the app collects on its own merchant account, the credentials in `payment_app_provider.credentials` are used,
+- the id of an app - the app inherits the account of that app for this very interface. Pointing at the tenant of the platform (`technical_name = 'platform'`) is what `mode = 'platform'` used to mean, and the credentials come from the platform level `payment_provider_config` / `payment_channel_config` as before.
+
+Inheritance is resolved along the chain and stops at the tenant of the platform, so an app may inherit from an app that inherits again. A chain that names an app twice is refused with `PAYMENT__PROVIDER_INHERITANCE_CYCLE`, one that names a deleted app with `PAYMENT__PROVIDER_SOURCE_APP_MISSING`.
+
+The column is a foreign key with `ON DELETE SET NULL`: deleting the source app does not delete the authorization of the inheriting app, it only drops the inheritance. That app then has no credentials of its own, so its payments are refused with `PAYMENT__PROVIDER_NOT_CONFIGURED` - visibly, instead of being collected on an account that is not ours anymore.
+
+Existing installations convert their rows once:
+
+```sql
+ALTER TABLE `payment_app_provider`
+    ADD COLUMN `source_app_id` BINARY(16) NULL AFTER `provider_technical_name`;
+
+UPDATE `payment_app_provider`
+SET `source_app_id` = (SELECT `id` FROM `payment_app` WHERE `technical_name` = 'platform')
+WHERE `mode` = 'platform'
+  AND `payment_app_id` <> (SELECT `id` FROM `payment_app` WHERE `technical_name` = 'platform');
+
+ALTER TABLE `payment_app_provider`
+    ADD KEY `idx.payment_app_provider.source_app` (`source_app_id`),
+    ADD CONSTRAINT `fk.payment_app_provider.source_app_id` FOREIGN KEY (`source_app_id`)
+        REFERENCES `payment_app` (`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+
+ALTER TABLE `payment_app_provider` DROP COLUMN `mode`;
+```
+
+`mode = 'own'` rows keep `source_app_id = NULL` and their credentials, so an app that collected on its own account keeps doing so. The tenant of the platform ends the chain and never inherits, its own authorizations stay at `NULL` - inheriting from itself would make it its own source and be refused as a circle.
+
+## The tenant of the platform is shown, and collects out of the box
+
+The tenant the platform itself collects through (`technical_name = 'platform'`) used to be hidden from the app list, which left an operator looking at an empty page and asking how the shop is supposed to take money at all. It is listed now, read only: `POST /api/_action/payment/apps` and `DELETE /api/_action/payment/apps/{id}` refuse it with `PAYMENT__PLATFORM_TENANT_READ_ONLY`.
+
+A new installation also authorizes the `alipay` interface on that tenant and offers its `alipay_h5` channel, so the default app is a usable one rather than an empty shell. An existing installation has neither row, and no migration writes them - add them by hand if you want the same starting point:
+
+```sql
+SET @platform_app = (SELECT `id` FROM `payment_app`
+                     WHERE `technical_name` = 'platform' AND `type` = 'platform');
+
+INSERT IGNORE INTO `payment_app_provider`
+    (`id`, `payment_app_id`, `provider_technical_name`, `source_app_id`, `enabled`, `created_at`)
+VALUES
+    (UNHEX(REPLACE(UUID(), '-', '')), @platform_app, 'alipay', NULL, 1, NOW(3));
+
+INSERT IGNORE INTO `payment_app_channel`
+    (`id`, `payment_app_id`, `channel_technical_name`, `enabled`, `created_at`)
+VALUES
+    (UNHEX(REPLACE(UUID(), '-', '')), @platform_app, 'alipay_h5', 1, NOW(3));
+```
+
+Skipping this is not a broken installation: `PlatformPaymentApp` still authorizes the interface of a channel the first time that channel is collected through. The difference is only whether the app shows an active interface before the first payment.
+
+The tenant was also renamed, twice: from "自营商城" to "平台支付", and now to "Platform Payment App". The name is display only, but an existing installation keeps the old one:
+
+```sql
+UPDATE `payment_app` SET `name` = 'Platform Payment App'
+WHERE `technical_name` = 'platform' AND `type` = 'platform';
+```
+
+## The checkout offers alipay and wechat pay after the installation
+
+A fresh installation used to come with no payment method of the gateway at all: the interface was configured, the tenant was authorized, and the payment selection of the storefront was still empty until somebody bound a method by hand.
+
+Two methods are seeded now, both collecting on the tenant of the platform:
+
+| method | channel | position | ready out of the box |
+| --- | --- | --- | --- |
+| `alipay` | `alipay_qr` | 10 | yes, on the seeded sandbox account |
+| `wechat` | `wechat_native` | 11 | no, it needs the merchant id and the certificate of this shop |
+
+The channels are the only ones that can be handed a shopper in a browser of either kind. `alipay_qr` is the only non sdk channel of alipay that declares both `web` and `wap`, so one method covers a desktop and a phone; binding `alipay_h5` would have hidden it from every desktop. `wechat_native` is the only non sdk channel of wechat pay that declares `web` - `wechat_h5` is wap only and the remaining three are opened by an sdk, which the checkout refuses to bind.
+
+alipay is collectable the moment the installation finishes, because the sandbox credentials of the interface are seeded and the channel the method is bound to is switched on. wechat pay is listed in the administration but **not** in the checkout: no `payment_channel_config` row is written for `wechat_native` and no credentials exist for the interface, so `PaymentMethodCollectability` drops the method before a shopper sees it. That is deliberate - wechat pay needs the merchant id and the certificate of the merchant, which cannot be invented, and a method that throws after "buy" is worse than one that is not offered. Fill in the merchant account under Settings > Payment interfaces and the method appears by itself.
+
+Existing installations add the two methods with the statements below. Each of them is written only when the row is not there yet, so running them twice changes nothing and a method an administrator renamed, repositioned or switched off is never overwritten:
+
+```sql
+SET @platform_app = (SELECT `id` FROM `payment_app` WHERE `technical_name` = 'platform');
+
+INSERT INTO `payment_method`
+    (`id`, `handler_identifier`, `technical_name`, `position`, `active`, `after_order_enabled`,
+     `plugin_id`, `media_id`, `availability_rule_id`, `created_at`)
+SELECT UNHEX(REPLACE(UUID(), '-', '')), 'Shopwell\\Core\\Checkout\\Payment\\Gateway\\PaymentGatewayHandler',
+       'alipay', 10, 1, 0, NULL, NULL, NULL, NOW(3)
+FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM `payment_method` WHERE `technical_name` = 'alipay');
+
+INSERT INTO `payment_method`
+    (`id`, `handler_identifier`, `technical_name`, `position`, `active`, `after_order_enabled`,
+     `plugin_id`, `media_id`, `availability_rule_id`, `created_at`)
+SELECT UNHEX(REPLACE(UUID(), '-', '')), 'Shopwell\\Core\\Checkout\\Payment\\Gateway\\PaymentGatewayHandler',
+       'wechat', 11, 1, 0, NULL, NULL, NULL, NOW(3)
+FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM `payment_method` WHERE `technical_name` = 'wechat');
+
+SET @alipay = (SELECT `id` FROM `payment_method` WHERE `technical_name` = 'alipay');
+SET @wechat = (SELECT `id` FROM `payment_method` WHERE `technical_name` = 'wechat');
+
+-- the name per language, matched on the locale of the language and not on a language id
+INSERT INTO `payment_method_translation` (`payment_method_id`, `language_id`, `name`, `created_at`)
+SELECT @alipay, `l`.`id`,
+       CASE WHEN LOWER(`loc`.`code`) LIKE 'zh%' THEN '支付宝' ELSE 'Alipay' END,
+       NOW(3)
+FROM `language` `l`
+    LEFT JOIN `locale` `loc` ON `loc`.`id` = `l`.`locale_id`
+WHERE (LOWER(`loc`.`code`) LIKE 'zh%' OR LOWER(`loc`.`code`) LIKE 'en%')
+  AND NOT EXISTS (SELECT 1 FROM `payment_method_translation` `t`
+                  WHERE `t`.`payment_method_id` = @alipay AND `t`.`language_id` = `l`.`id`);
+
+INSERT INTO `payment_method_translation` (`payment_method_id`, `language_id`, `name`, `created_at`)
+SELECT @wechat, `l`.`id`,
+       CASE WHEN LOWER(`loc`.`code`) LIKE 'zh%' THEN '微信支付' ELSE 'WeChat Pay' END,
+       NOW(3)
+FROM `language` `l`
+    LEFT JOIN `locale` `loc` ON `loc`.`id` = `l`.`locale_id`
+WHERE (LOWER(`loc`.`code`) LIKE 'zh%' OR LOWER(`loc`.`code`) LIKE 'en%')
+  AND NOT EXISTS (SELECT 1 FROM `payment_method_translation` `t`
+                  WHERE `t`.`payment_method_id` = @wechat AND `t`.`language_id` = `l`.`id`);
+
+-- the binding: the app whose account is charged, and one channel of it
+INSERT INTO `payment_method_gateway_channel`
+    (`id`, `payment_method_id`, `payment_app_id`, `channel_technical_name`, `created_at`)
+SELECT UNHEX(REPLACE(UUID(), '-', '')), @alipay, @platform_app, 'alipay_qr', NOW(3)
+FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM `payment_method_gateway_channel` WHERE `payment_method_id` = @alipay)
+  AND NOT EXISTS (SELECT 1 FROM `payment_method_gateway_channel`
+                  WHERE `payment_app_id` = @platform_app AND `channel_technical_name` = 'alipay_qr');
+
+INSERT INTO `payment_method_gateway_channel`
+    (`id`, `payment_method_id`, `payment_app_id`, `channel_technical_name`, `created_at`)
+SELECT UNHEX(REPLACE(UUID(), '-', '')), @wechat, @platform_app, 'wechat_native', NOW(3)
+FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM `payment_method_gateway_channel` WHERE `payment_method_id` = @wechat)
+  AND NOT EXISTS (SELECT 1 FROM `payment_method_gateway_channel`
+                  WHERE `payment_app_id` = @platform_app AND `channel_technical_name` = 'wechat_native');
+
+-- a method no sales channel offers never reaches the store api. This is the part the migration
+-- cannot do for you on this path: it runs after the channels of an existing installation exist, so
+-- they have to be told about the two new methods. The installer does not need it - it creates the
+-- storefront after the migration, and the storefront picks its methods while being created.
+INSERT INTO `sales_channel_payment_method` (`sales_channel_id`, `payment_method_id`)
+SELECT `sc`.`id`, @alipay FROM `sales_channel` `sc`
+WHERE NOT EXISTS (SELECT 1 FROM `sales_channel_payment_method` `a`
+                  WHERE `a`.`sales_channel_id` = `sc`.`id` AND `a`.`payment_method_id` = @alipay);
+
+INSERT INTO `sales_channel_payment_method` (`sales_channel_id`, `payment_method_id`)
+SELECT `sc`.`id`, @wechat FROM `sales_channel` `sc`
+WHERE NOT EXISTS (SELECT 1 FROM `sales_channel_payment_method` `a`
+                  WHERE `a`.`sales_channel_id` = `sc`.`id` AND `a`.`payment_method_id` = @wechat);
+
+-- alipay_qr is switched on and offered to the tenant, or the seeded method is not collectable
+INSERT INTO `payment_channel_config`
+    (`id`, `provider_technical_name`, `channel_technical_name`, `enabled`, `created_at`)
+SELECT UNHEX(REPLACE(UUID(), '-', '')), 'alipay', 'alipay_qr', 1, NOW(3)
+FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM `payment_channel_config`
+                  WHERE `provider_technical_name` = 'alipay' AND `channel_technical_name` = 'alipay_qr');
+
+INSERT INTO `payment_app_channel`
+    (`id`, `payment_app_id`, `channel_technical_name`, `enabled`, `created_at`)
+SELECT UNHEX(REPLACE(UUID(), '-', '')), @platform_app, 'alipay_qr', 1, NOW(3)
+FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM `payment_app_channel`
+                  WHERE `payment_app_id` = @platform_app AND `channel_technical_name` = 'alipay_qr');
+```
+
+Nothing is written for `wechat` beyond the method, the binding and the translation: no `payment_channel_config` row and no `payment_provider_config` row, so the method stays out of the checkout instead of failing there. Check the result with `bin/console payment:providers:validate`; the storefront reports the methods of a sales channel, so the two have to be assigned to it - on an installation that adds a channel later, assign them there.
+
 # 6.7.16.0
 
 ## Reorder no longer posts its line items

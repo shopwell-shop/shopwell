@@ -49,6 +49,7 @@ use Shopwell\Core\System\Payment\Order\Refund\PaymentRefundCollection;
 use Shopwell\Core\System\Payment\Order\Refund\PaymentRefundEntity;
 use Shopwell\Core\System\Payment\Order\Refund\PaymentRefundService;
 use Shopwell\Core\System\Payment\Order\Refund\PaymentRefundStateHandler;
+use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
 use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
 use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannelRegistry;
 use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
@@ -87,6 +88,22 @@ use Symfony\Contracts\HttpClient\HttpClientInterface;
 final class PaymentControllerFixture extends TestCase
 {
     private const CIPHER_SECRET = 'unit-test-cipher-secret';
+
+    /**
+     * Everything the four interfaces of the platform can do between them - the fixture models an
+     * interface that is asked for a close, a query, a refund or a payout, and a declaration has to
+     * carry the capability before the service in front of the gateway sends anything.
+     */
+    private const CAPABILITIES = [
+        PaymentCapability::CAPTURE,
+        PaymentCapability::QUERY,
+        PaymentCapability::CLOSE,
+        PaymentCapability::REFUND,
+        PaymentCapability::PARTIAL_REFUND,
+        PaymentCapability::TRANSFER,
+        PaymentCapability::TRANSFER_QUERY,
+        PaymentCapability::MANDATE,
+    ];
 
     private const NOW = '2026-01-01 12:00:00';
 
@@ -181,15 +198,29 @@ final class PaymentControllerFixture extends TestCase
         return $refund;
     }
 
-    public static function appProvider(string $appId, bool $enabled = true, string $mode = PaymentAppProviderEntity::MODE_PLATFORM): PaymentAppProviderEntity
-    {
+    /**
+     * The authorization of an app for the `alipay` interface.
+     *
+     * `sourceAppId` names the app whose merchant account is charged, `null` means "an account of the
+     * app itself" - the credentials the app typed are then the ones of `credentials`.
+     *
+     * @param array<string, mixed>|null $credentials the merchant credentials of the app, sealed like
+     *                                               the provisioning stores them
+     */
+    public static function appProvider(
+        string $appId,
+        bool $enabled = true,
+        ?string $sourceAppId = null,
+        ?array $credentials = null
+    ): PaymentAppProviderEntity {
         $provider = new PaymentAppProviderEntity();
         $provider->id = Uuid::randomHex();
         $provider->setUniqueIdentifier($provider->id);
         $provider->paymentAppId = $appId;
         $provider->providerTechnicalName = 'alipay';
         $provider->enabled = $enabled;
-        $provider->mode = $mode;
+        $provider->sourceAppId = $sourceAppId;
+        $provider->credentials = $credentials === null ? null : self::cipher()->encrypt($credentials);
 
         return $provider;
     }
@@ -237,12 +268,17 @@ final class PaymentControllerFixture extends TestCase
 
     /**
      * @param list<PaymentChannel> $channels
+     * @param list<PaymentCapability> $capabilities what the interface can do - the services in front of
+     *                                              the gateway ask the declaration before they send a
+     *                                              request, so a fixture has to declare what its tests
+     *                                              exercise
      */
     public static function provider(
         string $technicalName,
         array $channels = [],
         ?PaymentNotificationExtractorInterface $extractor = null,
-        ?PaymentGatewayFactory $gatewayFactory = null
+        ?PaymentGatewayFactory $gatewayFactory = null,
+        array $capabilities = self::CAPABILITIES
     ): PaymentProvider {
         $indexed = [];
         foreach ($channels as $channel) {
@@ -256,6 +292,8 @@ final class PaymentControllerFixture extends TestCase
             $indexed,
             $gatewayFactory ?? static::createStub(PaymentGatewayFactory::class),
             $extractor ?? static::createStub(PaymentNotificationExtractorInterface::class),
+            null,
+            $capabilities,
         );
     }
 

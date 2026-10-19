@@ -37,6 +37,7 @@ use Shopwell\Core\System\Payment\Order\PaymentOrderService;
 use Shopwell\Core\System\Payment\Order\PaymentOrderStateHandler;
 use Shopwell\Core\System\Payment\Order\PaymentOrderStates;
 use Shopwell\Core\System\Payment\PaymentException;
+use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
 use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
 use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannelRegistry;
 use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
@@ -283,6 +284,8 @@ class PaymentOrderCloserTest extends TestCase
             channels: ['alipay_h5' => $channel],
             gatewayFactory: $gatewayFactory,
             notificationExtractor: static::createStub(PaymentNotificationExtractorInterface::class),
+            // alipay closes and queries; the reconciler of the closer needs the query as well
+            capabilities: [PaymentCapability::CAPTURE, PaymentCapability::CLOSE, PaymentCapability::QUERY],
         );
 
         $providerRegistry = new PaymentProviderRegistry([$provider]);
@@ -292,7 +295,6 @@ class PaymentOrderCloserTest extends TestCase
         $appProvider->paymentAppId = 'app-id';
         $appProvider->providerTechnicalName = 'alipay';
         $appProvider->enabled = true;
-        $appProvider->mode = PaymentAppProviderEntity::MODE_OWN;
         $appProvider->credentials = $cipher->encrypt(['app_id' => 'own-app-id']);
 
         $appChannel = new PaymentAppChannelEntity();

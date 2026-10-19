@@ -19,6 +19,7 @@ use Shopwell\Core\System\Payment\Gateway\PaymentTransferQuery;
 use Shopwell\Core\System\Payment\Gateway\TransferQueryResult;
 use Shopwell\Core\System\Payment\Gateway\TransferResult;
 use Shopwell\Core\System\Payment\PaymentException;
+use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
 use Shopwell\Core\System\Payment\Provider\PaymentConfigResolver;
 use Shopwell\Core\System\StateMachine\Aggregation\StateMachineState\StateMachineStateCollection;
 use Shopwell\Core\System\StateMachine\Aggregation\StateMachineState\StateMachineStateEntity;
@@ -223,6 +224,15 @@ final class PaymentTransferReconciler
         );
 
         $model = PaymentGatewayModel::forTransfer($transfer);
+
+        // An interface that never declared a payout query cannot be asked what became of a payout.
+        // Without the guard payum fails inside the gateway with "no action supports this request",
+        // which reads as a broken channel (502) instead of "this interface cannot be reconciled" - and
+        // a payout that is never asked about stays open forever. The guard reads the resolved provider,
+        // so a plugin that adds the query action makes the reconciliation reachable for that interface.
+        if (!$resolved->provider->supports(PaymentCapability::TRANSFER_QUERY)) {
+            throw PaymentException::providerLacksCapability($resolved->provider->technicalName, PaymentCapability::TRANSFER_QUERY->value);
+        }
 
         // no transfer action reads the notification or the return url - only capture and refund do.
         // They are empty on purpose, like in the submission

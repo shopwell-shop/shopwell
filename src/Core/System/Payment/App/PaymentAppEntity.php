@@ -126,8 +126,9 @@ class PaymentAppEntity extends EntityStruct
     public ?array $settings = null;
 
     /**
-     * The payment interfaces the app is authorized for, one row per interface. The row carries the mode
-     * - platform or own credentials - and the credentials of the app when it brings its own ones.
+     * The payment interfaces the app is authorized for, one row per interface. The row names the
+     * account source - an account of the app itself, or one inherited from another app - and carries
+     * the credentials of the app when it collects on an account of its own.
      *
      * @var array<string, PaymentAppProviderEntity>|null
      */

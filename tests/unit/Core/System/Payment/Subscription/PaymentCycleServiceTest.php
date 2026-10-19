@@ -12,7 +12,12 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Currency\CurrencyEntity;
+use Shopwell\Core\System\Payment\Gateway\PaymentGatewayFactory;
+use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
 use Shopwell\Core\System\Payment\PaymentException;
+use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
+use Shopwell\Core\System\Payment\Provider\PaymentProvider;
+use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;
 use Shopwell\Core\System\Payment\Subscription\PaymentCycleService;
 use Shopwell\Core\System\Payment\Subscription\PaymentCycleStateHandler;
 use Shopwell\Core\System\Payment\Subscription\PaymentPlanEntity;
@@ -31,6 +36,7 @@ use Shopwell\Core\System\StateMachine\Loader\InitialStateIdLoader;
 use Shopwell\Core\System\StateMachine\StateMachineRegistry;
 use Shopwell\Core\System\StateMachine\Transition;
 use Symfony\Component\Clock\MockClock;
+use Symfony\Component\HttpFoundation\Response;
 
 /**
  * @internal
@@ -70,7 +76,7 @@ class PaymentCycleServiceTest extends TestCase
         $repository->expects($this->once())
             ->method('create')
             ->with(static::callback(function (array $data) use (&$written): bool {
-                $written = $data[0];
+                $written = $this->payloadOf($data);
 
                 return true;
             }));
@@ -78,10 +84,10 @@ class PaymentCycleServiceTest extends TestCase
         $result = $this->service($repository)->scheduleCycle($subscription, $this->plan());
 
         static::assertSame($created, $result);
-        static::assertSame($currentPeriodEnd, $written['periodStart']->format('Y-m-d H:i:s'));
+        static::assertSame($currentPeriodEnd, $this->writtenDate($written, 'periodStart')->format('Y-m-d H:i:s'));
         // 1/31 -> 2/28 -> 3/28: the clamped day is the anchor of the next period, the original
         // anchor is never recomputed
-        static::assertSame($expectedPeriodEnd, $written['periodEnd']->format('Y-m-d H:i:s'));
+        static::assertSame($expectedPeriodEnd, $this->writtenDate($written, 'periodEnd')->format('Y-m-d H:i:s'));
     }
 
     /**
@@ -91,6 +97,54 @@ class PaymentCycleServiceTest extends TestCase
     {
         yield 'a 31st is clamped to the last day of february' => ['2025-01-31 00:00:00', '2025-02-28 00:00:00'];
         yield 'the clamped day feeds the next period' => ['2025-02-28 00:00:00', '2025-03-28 00:00:00'];
+    }
+
+    /**
+     * An interface that cannot charge on an agreement is refused before a period is booked for it:
+     * the subscriber would otherwise sign, be promised the period, and only the first deduction would
+     * reveal that the interface never declared `MANDATE`. The refusal is a 400 with its own code, not a
+     * channel fault, and nothing is written - there is no period to charge.
+     */
+    public function testScheduleCycleRefusesAnInterfaceWithoutTheMandateCapability(): void
+    {
+        $repository = static::createMock(EntityRepository::class);
+        $repository->expects($this->never())->method('create');
+        $repository->expects($this->never())->method('search');
+
+        $service = $this->service($repository, null, $this->providerRegistry(false));
+
+        try {
+            $service->scheduleCycle($this->subscription(), $this->plan());
+            static::fail('an interface without "mandate" must not book a cycle');
+        } catch (PaymentException $exception) {
+            static::assertSame(Response::HTTP_BAD_REQUEST, $exception->getStatusCode());
+            static::assertSame(PaymentException::PROVIDER_LACKS_CAPABILITY, $exception->getErrorCode());
+            static::assertStringContainsString(PaymentCapability::MANDATE->value, $exception->getMessage());
+        }
+    }
+
+    /**
+     * A channel managed subscription needs no mandate: stripe and paypal schedule and charge on their
+     * side and the platform only mirrors what they report, so the guard is limited to the merchant
+     * initiated mode on purpose.
+     */
+    public function testScheduleCycleNeedsNoMandateForAChannelManagedSubscription(): void
+    {
+        $subscription = $this->subscription(['billingMode' => PaymentPlanEntity::BILLING_MODE_CHANNEL_MANAGED]);
+        $created = $this->cycle();
+
+        $repository = static::createMock(EntityRepository::class);
+        $repository->expects($this->exactly(2))
+            ->method('search')
+            ->willReturnOnConsecutiveCalls(
+                $this->cycleSearchResult([]),
+                $this->cycleSearchResult([$created])
+            );
+        $repository->expects($this->once())->method('create');
+
+        $result = $this->service($repository, null, $this->providerRegistry(false))->scheduleCycle($subscription, $this->plan());
+
+        static::assertSame($created, $result);
     }
 
     public function testScheduleCycleBooksTheFirstPeriodOfANewSubscription(): void
@@ -109,7 +163,7 @@ class PaymentCycleServiceTest extends TestCase
         $repository->expects($this->once())
             ->method('create')
             ->with(static::callback(function (array $data) use (&$written): bool {
-                $written = $data[0];
+                $written = $this->payloadOf($data);
 
                 return true;
             }));
@@ -120,8 +174,8 @@ class PaymentCycleServiceTest extends TestCase
         static::assertSame('subscription-id', $written['subscriptionId']);
         static::assertSame(1, $written['cycleNo']);
         // without an anchor the period starts now - and still ends on the clamped month end
-        static::assertSame('2025-01-31', $written['periodStart']->format('Y-m-d'));
-        static::assertSame('2025-02-28', $written['periodEnd']->format('Y-m-d'));
+        static::assertSame('2025-01-31', $this->writtenDate($written, 'periodStart')->format('Y-m-d'));
+        static::assertSame('2025-02-28', $this->writtenDate($written, 'periodEnd')->format('Y-m-d'));
         static::assertSame(1000, $written['amount']);
         static::assertSame('CNY', $written['currency']);
         static::assertSame(self::SCHEDULED_STATE, $written['stateId']);
@@ -141,7 +195,7 @@ class PaymentCycleServiceTest extends TestCase
 
         $written = $this->scheduleCapture($subscription);
 
-        static::assertSame('2025-02-15', $written['periodStart']->format('Y-m-d'));
+        static::assertSame('2025-02-15', $this->writtenDate($written, 'periodStart')->format('Y-m-d'));
     }
 
     public function testScheduleCycleStartsAtTheTrialEndWhileTheSubscriptionTrials(): void
@@ -153,8 +207,8 @@ class PaymentCycleServiceTest extends TestCase
 
         $written = $this->scheduleCapture($subscription);
 
-        static::assertSame('2025-03-10', $written['periodStart']->format('Y-m-d'));
-        static::assertSame('2025-04-10', $written['periodEnd']->format('Y-m-d'));
+        static::assertSame('2025-03-10', $this->writtenDate($written, 'periodStart')->format('Y-m-d'));
+        static::assertSame('2025-04-10', $this->writtenDate($written, 'periodEnd')->format('Y-m-d'));
     }
 
     public function testScheduleCycleNumbersTheCycleAfterTheHighestOne(): void
@@ -243,7 +297,7 @@ class PaymentCycleServiceTest extends TestCase
         $repository->expects($this->once())
             ->method('update')
             ->with(static::callback(function (array $data) use (&$written): bool {
-                $written = $data[0];
+                $written = $this->payloadOf($data);
 
                 return true;
             }));
@@ -288,7 +342,7 @@ class PaymentCycleServiceTest extends TestCase
         $cycleRepository->expects($this->once())
             ->method('update')
             ->with(static::callback(function (array $data) use (&$cycleWritten): bool {
-                $cycleWritten = $data[0];
+                $cycleWritten = $this->payloadOf($data);
 
                 return true;
             }));
@@ -299,7 +353,7 @@ class PaymentCycleServiceTest extends TestCase
         $subscriptionRepository->expects($this->once())
             ->method('update')
             ->with(static::callback(function (array $data) use (&$subscriptionWritten): bool {
-                $subscriptionWritten = $data[0];
+                $subscriptionWritten = $this->payloadOf($data);
 
                 return true;
             }));
@@ -312,17 +366,17 @@ class PaymentCycleServiceTest extends TestCase
 
         static::assertSame('cycle-id', $cycleWritten['id']);
         static::assertSame('channel-tx-1', $cycleWritten['providerTransactionId']);
-        static::assertSame('2025-02-01 09:00:00', $cycleWritten['paidAt']->format('Y-m-d H:i:s'));
+        static::assertSame('2025-02-01 09:00:00', $this->writtenDate($cycleWritten, 'paidAt')->format('Y-m-d H:i:s'));
         // a paid cycle must not look like it still needs a query
         static::assertNull($cycleWritten['failureCode']);
         static::assertNull($cycleWritten['failureClass']);
         static::assertNull($cycleWritten['nextRetryAt']);
 
         static::assertSame('subscription-id', $subscriptionWritten['id']);
-        static::assertSame('2025-01-31', $subscriptionWritten['currentPeriodStart']->format('Y-m-d'));
-        static::assertSame('2025-02-28', $subscriptionWritten['currentPeriodEnd']->format('Y-m-d'));
+        static::assertSame('2025-01-31', $this->writtenDate($subscriptionWritten, 'currentPeriodStart')->format('Y-m-d'));
+        static::assertSame('2025-02-28', $this->writtenDate($subscriptionWritten, 'currentPeriodEnd')->format('Y-m-d'));
         // the next period is scheduled from the period that was just paid
-        static::assertSame('2025-02-28', $subscriptionWritten['nextBillingAt']->format('Y-m-d'));
+        static::assertSame('2025-02-28', $this->writtenDate($subscriptionWritten, 'nextBillingAt')->format('Y-m-d'));
         static::assertSame(0, $subscriptionWritten['failureCount']);
         static::assertNull($subscriptionWritten['lastFailureCode']);
         static::assertNull($subscriptionWritten['nextRetryAt']);
@@ -340,7 +394,7 @@ class PaymentCycleServiceTest extends TestCase
     {
         $subscription = $this->subscription(['status' => PaymentSubscriptionStates::STATE_PAST_DUE]);
 
-        $subscriptionRepository = static::createMock(EntityRepository::class);
+        $subscriptionRepository = static::createStub(EntityRepository::class);
         $subscriptionRepository->method('search')->willReturn($this->subscriptionSearchResult($subscription));
         $subscriptionRepository->method('update');
 
@@ -370,7 +424,7 @@ class PaymentCycleServiceTest extends TestCase
         $cycleRepository->expects($this->once())
             ->method('update')
             ->with(static::callback(function (array $data) use (&$written): bool {
-                $written = $data[0];
+                $written = $this->payloadOf($data);
 
                 return true;
             }));
@@ -388,7 +442,7 @@ class PaymentCycleServiceTest extends TestCase
         static::assertSame($consumed + 1, $written['attemptCount']);
         static::assertSame(
             $expectedNextRetryAt,
-            $written['nextRetryAt']->setTimezone(new \DateTimeZone(self::SHANGHAI))->format('Y-m-d H:i:s')
+            $this->writtenDate($written, 'nextRetryAt')->setTimezone(new \DateTimeZone(self::SHANGHAI))->format('Y-m-d H:i:s')
         );
 
         static::assertSame(
@@ -455,7 +509,7 @@ class PaymentCycleServiceTest extends TestCase
     {
         $subscription = $this->subscription(['failureCount' => 2]);
 
-        $cycleRepository = static::createMock(EntityRepository::class);
+        $cycleRepository = static::createStub(EntityRepository::class);
         $cycleRepository->method('update');
 
         $subscriptionWritten = [];
@@ -464,7 +518,7 @@ class PaymentCycleServiceTest extends TestCase
         $subscriptionRepository->expects($this->once())
             ->method('update')
             ->with(static::callback(function (array $data) use (&$subscriptionWritten): bool {
-                $subscriptionWritten = $data[0];
+                $subscriptionWritten = $this->payloadOf($data);
 
                 return true;
             }));
@@ -496,7 +550,7 @@ class PaymentCycleServiceTest extends TestCase
             'failureCount' => 1,
         ]);
 
-        $cycleRepository = static::createMock(EntityRepository::class);
+        $cycleRepository = static::createStub(EntityRepository::class);
         $cycleRepository->method('update');
 
         $subscriptionWritten = [];
@@ -505,7 +559,7 @@ class PaymentCycleServiceTest extends TestCase
         $subscriptionRepository->expects($this->once())
             ->method('update')
             ->with(static::callback(function (array $data) use (&$subscriptionWritten): bool {
-                $subscriptionWritten = $data[0];
+                $subscriptionWritten = $this->payloadOf($data);
 
                 return true;
             }));
@@ -730,12 +784,12 @@ class PaymentCycleServiceTest extends TestCase
         $cycleRepository->expects($this->once())
             ->method('update')
             ->with(static::callback(function (array $data) use (&$written): bool {
-                $written = $data[0];
+                $written = $this->payloadOf($data);
 
                 return true;
             }));
 
-        $subscriptionRepository = static::createMock(EntityRepository::class);
+        $subscriptionRepository = static::createStub(EntityRepository::class);
         $subscriptionRepository->method('search')->willReturn($this->subscriptionSearchResult($subscription));
         $subscriptionRepository->method('update');
 
@@ -755,7 +809,7 @@ class PaymentCycleServiceTest extends TestCase
         $repository->expects($this->once())
             ->method('update')
             ->with(static::callback(function (array $data) use (&$written): bool {
-                $written = $data[0];
+                $written = $this->payloadOf($data);
 
                 return true;
             }));
@@ -785,7 +839,7 @@ class PaymentCycleServiceTest extends TestCase
         $repository->expects($this->once())
             ->method('create')
             ->with(static::callback(function (array $data) use (&$written): bool {
-                $written = $data[0];
+                $written = $this->payloadOf($data);
 
                 return true;
             }));
@@ -795,9 +849,48 @@ class PaymentCycleServiceTest extends TestCase
         return $written;
     }
 
+    /**
+     * The payload of one row write, as the dal hands it to the repository - `$data[0]` of the
+     * callback. The write is the only place a test can see what the service actually books, so the
+     * shape is asserted here instead of being read as `mixed` at every assertion.
+     *
+     * @param array<int|string, mixed> $data
+     *
+     * @return array<string, mixed>
+     */
+    private function payloadOf(array $data): array
+    {
+        $payload = $data[0] ?? null;
+        static::assertIsArray($payload, 'a write has to carry the row as its first element');
+
+        /** @var array<string, mixed> $payload */
+        return $payload;
+    }
+
+    /**
+     * A date of a written payload, asserted to be the date type the entity property holds - reading it
+     * as `mixed` would let a string or a null through and the format assertion would silently pass.
+     *
+     * @param array<string, mixed> $payload
+     */
+    private function writtenDate(array $payload, string $key): \DateTimeImmutable
+    {
+        static::assertArrayHasKey($key, $payload, \sprintf('the written payload has to carry "%s"', $key));
+
+        $value = $payload[$key];
+        static::assertInstanceOf(\DateTimeImmutable::class, $value, \sprintf('"%s" has to be written as a date', $key));
+
+        return $value;
+    }
+
+    /**
+     * @param EntityRepository<PaymentSubscriptionCycleCollection>|null $cycleRepository
+     * @param EntityRepository<PaymentSubscriptionCollection>|null $subscriptionRepository
+     */
     private function service(
         ?EntityRepository $cycleRepository = null,
         ?EntityRepository $subscriptionRepository = null,
+        ?PaymentProviderRegistry $providerRegistry = null,
     ): PaymentCycleService {
         $registry = static::createStub(StateMachineRegistry::class);
         $registry->method('transition')->willReturnCallback(function (Transition $transition): StateMachineStateCollection {
@@ -818,8 +911,31 @@ class PaymentCycleServiceTest extends TestCase
             new PaymentCycleCalendar(),
             new PaymentRetryPolicy(),
             $this->initialStateIdLoader(),
+            $providerRegistry ?? $this->providerRegistry(),
             new MockClock(self::NOW),
         );
+    }
+
+    /**
+     * The declaration of the interface the subscriber signed with. Alipay charges on an agreement
+     * (`period_rule_params`), so it declares `MANDATE` - a subscription it cannot charge recurrently
+     * would only fail at the first deduction.
+     */
+    private function providerRegistry(bool $supportsMandate = true): PaymentProviderRegistry
+    {
+        $provider = new PaymentProvider(
+            technicalName: 'alipay',
+            label: 'Alipay',
+            credentials: [],
+            channels: [],
+            gatewayFactory: static::createStub(PaymentGatewayFactory::class),
+            notificationExtractor: static::createStub(PaymentNotificationExtractorInterface::class),
+            capabilities: $supportsMandate
+                ? [PaymentCapability::CAPTURE, PaymentCapability::MANDATE]
+                : [PaymentCapability::CAPTURE],
+        );
+
+        return new PaymentProviderRegistry([$provider]);
     }
 
     private function initialStateIdLoader(): InitialStateIdLoader
@@ -889,44 +1005,61 @@ class PaymentCycleServiceTest extends TestCase
     }
 
     /**
-     * @param array<string, mixed> $overrides
+     * The cycle a test schedules or reports on. The overrides are a closed shape on purpose: a test
+     * names the field it wants to differ from the default, so a typo cannot silently leave the default
+     * in place.
+     *
+     * @param array{
+     *     id?: string,
+     *     cycleNo?: int,
+     *     attemptCount?: int,
+     *     outTradeNo?: string,
+     *     periodStart?: \DateTimeImmutable,
+     *     periodEnd?: \DateTimeImmutable,
+     *     state?: string,
+     * } $overrides
      */
     private function cycle(array $overrides = []): PaymentSubscriptionCycleEntity
     {
-        $state = $overrides['state'] ?? null;
-        unset($overrides['state']);
-
         $cycle = new PaymentSubscriptionCycleEntity();
-        $cycle->id = 'cycle-id';
+        $cycle->id = $overrides['id'] ?? 'cycle-id';
         $cycle->subscriptionId = 'subscription-id';
-        $cycle->cycleNo = 1;
-        $cycle->periodStart = $this->shanghai('2025-01-01 00:00:00');
-        $cycle->periodEnd = $this->shanghai('2025-02-01 00:00:00');
+        $cycle->cycleNo = $overrides['cycleNo'] ?? 1;
+        $cycle->periodStart = $overrides['periodStart'] ?? $this->shanghai('2025-01-01 00:00:00');
+        $cycle->periodEnd = $overrides['periodEnd'] ?? $this->shanghai('2025-02-01 00:00:00');
         $cycle->amount = 1000;
         $cycle->currency = 'CNY';
         $cycle->stateId = 'state-scheduled';
-        $cycle->outTradeNo = 'SC250101000000ABCDEF0123';
+        $cycle->outTradeNo = $overrides['outTradeNo'] ?? 'SC250101000000ABCDEF0123';
 
-        foreach ($overrides as $property => $value) {
-            $cycle->{$property} = $value;
+        if (\array_key_exists('attemptCount', $overrides)) {
+            $cycle->attemptCount = $overrides['attemptCount'];
         }
 
         $cycle->setUniqueIdentifier($cycle->id);
 
-        if ($state !== null) {
-            $cycle->stateMachineState = $this->stateOf($state);
+        if (isset($overrides['state'])) {
+            $cycle->stateMachineState = $this->stateOf($overrides['state']);
         }
 
         return $cycle;
     }
 
     /**
-     * @param array<string, mixed> $overrides
+     * The subscription a cycle is scheduled for - see {@see self::cycle()} on why the overrides are a
+     * closed shape.
+     *
+     * @param array{
+     *     status?: string,
+     *     currentPeriodEnd?: \DateTimeImmutable|null,
+     *     trialEnd?: \DateTimeImmutable|null,
+     *     billingMode?: string,
+     *     failureCount?: int,
+     * } $overrides
      */
     private function subscription(array $overrides = []): PaymentSubscriptionEntity
     {
         $status = $overrides['status'] ?? PaymentSubscriptionStates::STATE_ACTIVE;
-        unset($overrides['status']);
 
         $subscription = new PaymentSubscriptionEntity();
         $subscription->id = 'subscription-id';
@@ -934,14 +1067,18 @@ class PaymentCycleServiceTest extends TestCase
         $subscription->planId = 'plan-id';
         $subscription->customerId = 'customer-id';
         $subscription->salesChannelId = 'sales-channel-id';
-        $subscription->billingMode = PaymentPlanEntity::BILLING_MODE_MERCHANT_INITIATED;
+        $subscription->billingMode = $overrides['billingMode'] ?? PaymentPlanEntity::BILLING_MODE_MERCHANT_INITIATED;
         $subscription->provider = 'alipay';
         $subscription->channel = 'alipay_h5';
         $subscription->statusId = 'status-active';
-        $subscription->failureCount = 0;
+        $subscription->failureCount = $overrides['failureCount'] ?? 0;
 
-        foreach ($overrides as $property => $value) {
-            $subscription->{$property} = $value;
+        if (\array_key_exists('currentPeriodEnd', $overrides)) {
+            $subscription->currentPeriodEnd = $overrides['currentPeriodEnd'];
+        }
+
+        if (\array_key_exists('trialEnd', $overrides)) {
+            $subscription->trialEnd = $overrides['trialEnd'];
         }
 
         $subscription->setUniqueIdentifier($subscription->id);

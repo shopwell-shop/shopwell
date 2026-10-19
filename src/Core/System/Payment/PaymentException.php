@@ -25,6 +25,8 @@ class PaymentException extends HttpException
 
     public const PROVIDER_NOT_ENABLED = 'PAYMENT__PROVIDER_NOT_ENABLED';
     public const PROVIDER_NOT_CONFIGURED = 'PAYMENT__PROVIDER_NOT_CONFIGURED';
+    public const PROVIDER_INHERITANCE_CYCLE = 'PAYMENT__PROVIDER_INHERITANCE_CYCLE';
+    public const PROVIDER_SOURCE_APP_MISSING = 'PAYMENT__PROVIDER_SOURCE_APP_MISSING';
     public const CHANNEL_NOT_ENABLED = 'PAYMENT__CHANNEL_NOT_ENABLED';
     public const CHANNEL_NOT_CONFIGURED = 'PAYMENT__CHANNEL_NOT_CONFIGURED';
     public const CHANNEL_DISABLED = 'PAYMENT__CHANNEL_DISABLED';
@@ -232,6 +234,36 @@ class PaymentException extends HttpException
             self::PROVIDER_NOT_CONFIGURED,
             'The payment provider "{{ technicalName }}" is enabled but its credentials are not configured.',
             ['technicalName' => $technicalName]
+        );
+    }
+
+    /**
+     * The account sources of an interface run in a circle: app A inherits from app B, app B inherits
+     * from app A again. Neither of them owns an account, so the chain has no end and no credentials -
+     * it is a configuration mistake and is refused instead of being walked until a hop limit hits.
+     */
+    public static function providerInheritanceCycle(string $technicalName, string $appTechnicalName): self
+    {
+        return new self(
+            Response::HTTP_BAD_REQUEST,
+            self::PROVIDER_INHERITANCE_CYCLE,
+            'The account source of the payment provider "{{ technicalName }}" runs in a circle: the app "{{ appTechnicalName }}" inherits it from an app that inherits it from "{{ appTechnicalName }}" again. Exactly one app of the chain has to collect on an account of its own.',
+            ['technicalName' => $technicalName, 'appTechnicalName' => $appTechnicalName]
+        );
+    }
+
+    /**
+     * The account of an interface is inherited from an app that does not exist anymore. The column is
+     * a foreign key with `ON DELETE SET NULL`, so this only happens for a row that was written by
+     * hand or by an import - a clear answer beats walking into "no credentials" without saying why.
+     */
+    public static function providerSourceAppMissing(string $technicalName, string $appTechnicalName, string $sourceAppId): self
+    {
+        return new self(
+            Response::HTTP_BAD_REQUEST,
+            self::PROVIDER_SOURCE_APP_MISSING,
+            'The app "{{ appTechnicalName }}" inherits the account of the payment provider "{{ technicalName }}" from the app "{{ sourceAppId }}", which does not exist.',
+            ['technicalName' => $technicalName, 'appTechnicalName' => $appTechnicalName, 'sourceAppId' => $sourceAppId]
         );
     }
 

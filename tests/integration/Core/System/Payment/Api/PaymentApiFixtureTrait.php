@@ -13,7 +13,6 @@ use Shopwell\Core\Framework\Test\TestCaseBase\KernelLifecycleManager;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppChannel\PaymentAppChannelCollection;
 use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppProvider\PaymentAppProviderCollection;
-use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppProvider\PaymentAppProviderEntity;
 use Shopwell\Core\System\Payment\App\PaymentAppCollection;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
 use Shopwell\Core\System\Payment\App\PaymentCredentialCipher;
@@ -148,8 +147,10 @@ trait PaymentApiFixtureTrait
             $appProviderRepository->create([[
                 'paymentAppId' => $appId,
                 'providerTechnicalName' => AlipayApi::PROVIDER,
+                // the app collects on the merchant account of the platform tenant, which is what the
+                // retired `mode = 'platform'` used to say
+                'sourceAppId' => $this->platformTenantId($context),
                 'enabled' => true,
-                'mode' => PaymentAppProviderEntity::MODE_PLATFORM,
             ]], $context);
         }
 
@@ -162,6 +163,30 @@ trait PaymentApiFixtureTrait
                 'enabled' => true,
             ]], $context);
         }
+    }
+
+    /**
+     * The id of the tenant the platform itself collects through.
+     *
+     * An app that used to be declared with `mode = 'platform'` collects on the merchant account of
+     * that tenant, so the contract tests let their app inherit it instead of holding credentials of its
+     * own. The row is the one the installation writes, so it always exists.
+     */
+    private function platformTenantId(Context $context): string
+    {
+        /** @var EntityRepository<PaymentAppCollection> $appRepository */
+        $appRepository = static::getContainer()->get('payment_app.repository');
+
+        $id = $appRepository->searchIds(
+            (new Criteria())
+                ->addFilter(new EqualsFilter('technicalName', PaymentAppEntity::PLATFORM_TECHNICAL_NAME))
+                ->setLimit(1),
+            $context
+        )->firstId();
+
+        Assert::assertIsString($id, 'the tenant of the platform is seeded by the migration');
+
+        return $id;
     }
 
     /**
@@ -264,7 +289,9 @@ trait PaymentApiFixtureTrait
 
         /** @var EntityRepository<PaymentOrderCollection> $orderRepository */
         $orderRepository = static::getContainer()->get('payment_order.repository');
-        $orderRepository->create([[
+        // the overrides win: they are what makes a test seed an order in another state, on another
+        // interface or on another channel
+        $orderRepository->create([$overrides + [
             'id' => $id,
             'paymentNo' => $paymentNo,
             'outTradeNo' => $outTradeNo,
@@ -278,7 +305,7 @@ trait PaymentApiFixtureTrait
             'subject' => '测试商品',
             'stateId' => $this->paymentOrderStateId(PaymentOrderStates::STATE_OPENED),
             'expireAt' => new \DateTimeImmutable('+30 minutes'),
-        ] + $overrides], Context::createDefaultContext());
+        ]], Context::createDefaultContext());
 
         return [
             'id' => (string) ($overrides['id'] ?? $id),

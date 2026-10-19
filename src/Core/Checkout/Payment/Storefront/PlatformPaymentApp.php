@@ -204,7 +204,8 @@ final class PlatformPaymentApp
      * interface of the seeded channel is already authorized by the migration.
      *
      * Only a missing or a switched-off authorization is written: a row that is enabled stays as it is,
-     * including its mode, because the operator may have pointed it at own credentials on purpose.
+     * including its account source, because the operator may have pointed it at own credentials on
+     * purpose.
      */
     private function authorizeProvider(string $appId, PaymentChannel $channel): void
     {
@@ -226,8 +227,9 @@ final class PlatformPaymentApp
             'paymentAppId' => $appId,
             'providerTechnicalName' => $channel->providerTechnicalName,
             'enabled' => true,
-            // the shop always collects on the merchant account of the platform, never on an own one
-            'mode' => PaymentAppProviderEntity::MODE_PLATFORM,
+            // the tenant of the platform is the root of every inheritance chain: it collects on the
+            // platform level configuration and has no account to inherit
+            'sourceAppId' => null,
         ]], Context::createDefaultContext());
     }
 

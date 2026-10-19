@@ -207,6 +207,9 @@ class StripeTransferQueryActionTest extends TestCase
         static::assertSame($expectedFailureCode, $result->failureCode);
     }
 
+    /**
+     * @param array<string, mixed> $body
+     */
     private static function json(array $body): string
     {
         $encoded = json_encode($body);
@@ -272,7 +275,6 @@ class StripeTransferQueryActionTest extends TestCase
                 params: [],
                 runtimeParams: [],
                 settings: [],
-                mode: 'own',
             ),
             'https://example.com/notify',
             '',

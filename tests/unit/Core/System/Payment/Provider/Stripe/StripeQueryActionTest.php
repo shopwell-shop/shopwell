@@ -154,7 +154,6 @@ class StripeQueryActionTest extends TestCase
                 params: [],
                 runtimeParams: [],
                 settings: [],
-                mode: 'live',
             ),
             'https://example.com/notify',
             '',

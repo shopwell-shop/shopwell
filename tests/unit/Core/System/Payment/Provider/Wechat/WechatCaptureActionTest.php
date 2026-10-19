@@ -205,7 +205,6 @@ class WechatCaptureActionTest extends TestCase
                 params: array_replace([WechatApi::PARAM_APP_ID => 'wx-app-id'], $params),
                 runtimeParams: [],
                 settings: $settings,
-                mode: 'live',
             ),
             'https://example.com/notify',
             '',

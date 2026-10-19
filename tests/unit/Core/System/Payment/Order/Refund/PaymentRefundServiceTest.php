@@ -39,6 +39,7 @@ use Shopwell\Core\System\Payment\Order\Refund\PaymentRefundService;
 use Shopwell\Core\System\Payment\Order\Refund\PaymentRefundStateHandler;
 use Shopwell\Core\System\Payment\Order\Refund\PaymentRefundStates;
 use Shopwell\Core\System\Payment\PaymentException;
+use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
 use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
 use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannelRegistry;
 use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
@@ -55,6 +56,7 @@ use Shopwell\Core\System\StateMachine\StateMachineRegistry;
 use Shopwell\Core\System\StateMachine\Transition;
 use Symfony\Component\Clock\MockClock;
 use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
@@ -68,6 +70,21 @@ class PaymentRefundServiceTest extends TestCase
     private const NOW = '2024-01-01T00:00:00+00:00';
 
     private const CREATED_STATE = 'state-created';
+
+    /**
+     * What alipay, wechat and the two card interfaces declare: they refund, and they refund less than
+     * the whole payment.
+     */
+    private const REFUND_CAPABILITIES = [
+        PaymentCapability::CAPTURE,
+        PaymentCapability::REFUND,
+        PaymentCapability::PARTIAL_REFUND,
+    ];
+
+    /**
+     * An interface that can only hand the whole payment back.
+     */
+    private const FULL_REFUND_ONLY_CAPABILITIES = [PaymentCapability::CAPTURE, PaymentCapability::REFUND];
 
     public function testRefundThrowsWhenTheOrderWasNeverPaid(): void
     {
@@ -277,6 +294,130 @@ class PaymentRefundServiceTest extends TestCase
         $service->refund($this->app(), $this->paidOrder(), $this->refundRequest(1000));
     }
 
+    /**
+     * An interface that never declared a refund cannot give money back: the declaration answers that
+     * before a request is signed, so the caller gets a 400 naming the capability instead of a 502 that
+     * reads like a broken channel - and no refund row is written for a call that never happened.
+     */
+    public function testAnInterfaceWithoutRefundIsRefusedBeforeTheAttemptIsBooked(): void
+    {
+        $refundRepository = static::createMock(EntityRepository::class);
+        $refundRepository->method('search')->willReturn($this->refundResult());
+        $refundRepository->expects($this->never())->method('create');
+        $refundRepository->expects($this->never())->method('update');
+
+        $gateway = static::createMock(GatewayInterface::class);
+        $gateway->expects($this->never())->method('execute');
+
+        $service = $this->refundService($refundRepository, $gateway, capabilities: [PaymentCapability::CAPTURE]);
+
+        try {
+            $service->refund($this->app(), $this->paidOrder(), $this->refundRequest(1000));
+            static::fail('the missing refund capability has to be reported');
+        } catch (PaymentException $exception) {
+            static::assertSame(Response::HTTP_BAD_REQUEST, $exception->getStatusCode());
+            static::assertSame(PaymentException::PROVIDER_LACKS_CAPABILITY, $exception->getErrorCode());
+            static::assertStringContainsString(PaymentCapability::REFUND->value, $exception->getMessage());
+            static::assertStringNotContainsString('returned an error', $exception->getMessage());
+        }
+    }
+
+    /**
+     * A partial refund is the distinct operation: an interface that declares only `refund` hands back
+     * the whole payment and nothing less, so less than the remaining amount is refused - with the
+     * capability that is missing, again before anything is booked.
+     */
+    public function testAPartialRefundIsRefusedWithoutThePartialRefundCapability(): void
+    {
+        $refundRepository = static::createMock(EntityRepository::class);
+        $refundRepository->method('search')->willReturn($this->refundResult());
+        $refundRepository->expects($this->never())->method('create');
+        $refundRepository->expects($this->never())->method('update');
+
+        $gateway = static::createMock(GatewayInterface::class);
+        $gateway->expects($this->never())->method('execute');
+
+        $service = $this->refundService($refundRepository, $gateway, capabilities: self::FULL_REFUND_ONLY_CAPABILITIES);
+
+        $this->expectExceptionObject(PaymentException::providerLacksCapability('alipay', PaymentCapability::PARTIAL_REFUND->value));
+
+        // 500 of 1000 still refundable is a partial refund
+        $service->refund($this->app(), $this->paidOrder(), $this->refundRequest(500));
+    }
+
+    /**
+     * The full amount that is left is not a partial refund, so an interface that declares `refund`
+     * alone may still hand the whole payment back - refusing it there would close the only way out of
+     * a wrong payment.
+     */
+    public function testAFullRefundNeedsNoPartialRefundCapability(): void
+    {
+        $refund = $this->refundEntity();
+
+        $refundRepository = static::createMock(EntityRepository::class);
+        $refundRepository->method('search')->willReturnCallback(
+            fn (Criteria $criteria): EntitySearchResult => $criteria->getIds() === []
+                ? $this->refundResult()
+                : $this->refundResult($refund)
+        );
+        $refundRepository->expects($this->once())->method('create');
+        $refundRepository->expects($this->once())->method('update');
+
+        $refundStateMachine = static::createMock(StateMachineRegistry::class);
+        $refundStateMachine->expects($this->once())
+            ->method('transition')
+            ->with(static::callback(static fn (Transition $t): bool => $t->getTransitionName() === PaymentRefundStates::ACTION_FINISH));
+
+        $service = $this->refundService(
+            $refundRepository,
+            $this->gateway(PaymentRefundStates::STATE_FINISHED, 'channel-refund-1'),
+            $this->orderService($this->orderRepository($this->paidOrder())),
+            $refundStateMachine,
+            capabilities: self::FULL_REFUND_ONLY_CAPABILITIES
+        );
+
+        static::assertSame($refund, $service->refund($this->app(), $this->paidOrder(), $this->refundRequest(1000)));
+    }
+
+    /**
+     * The remaining amount is what "full" means: a second refund of what the first one left is a full
+     * refund again, not a partial one - otherwise an interface without `partial_refund` could refund
+     * exactly once and never finish the job.
+     */
+    public function testRefundingTheRemainderOfAnAlreadyRefundedOrderIsAFullRefund(): void
+    {
+        $refund = $this->refundEntity();
+
+        $refundRepository = static::createMock(EntityRepository::class);
+        $refundRepository->method('search')->willReturnCallback(
+            fn (Criteria $criteria): EntitySearchResult => $criteria->getIds() === []
+                ? $this->refundResult()
+                : $this->refundResult($refund)
+        );
+        $refundRepository->expects($this->once())->method('create');
+        $refundRepository->expects($this->once())->method('update');
+
+        $refundStateMachine = static::createStub(StateMachineRegistry::class);
+
+        $order = $this->order([
+            'paidAt' => new \DateTimeImmutable(self::NOW),
+            'paidAmount' => 1000,
+            'refundedAmount' => 600,
+            'stateId' => 'state-partially-refunded',
+        ]);
+
+        $service = $this->refundService(
+            $refundRepository,
+            $this->gateway(PaymentRefundStates::STATE_FINISHED, 'channel-refund-1'),
+            $this->orderService($this->orderRepository($order)),
+            $refundStateMachine,
+            capabilities: self::FULL_REFUND_ONLY_CAPABILITIES
+        );
+
+        // 400 of the 400 that are left
+        static::assertSame($refund, $service->refund($this->app(), $order, $this->refundRequest(400)));
+    }
+
     public function testFindByRefundNoReturnsTheRefund(): void
     {
         $refund = $this->refundEntity();
@@ -418,6 +559,7 @@ class PaymentRefundServiceTest extends TestCase
      * @param EntityRepository<PaymentRefundCollection> $refundRepository
      * @param EntityRepository<PaymentWebhookDeliveryCollection>|null $deliveryRepository
      * @param EntityRepository<PaymentAppCollection>|null $appRepository
+     * @param list<PaymentCapability> $capabilities
      */
     private function refundService(
         EntityRepository $refundRepository,
@@ -426,7 +568,8 @@ class PaymentRefundServiceTest extends TestCase
         ?StateMachineRegistry $refundStateMachine = null,
         ?EventDispatcherInterface $eventDispatcher = null,
         ?EntityRepository $deliveryRepository = null,
-        ?EntityRepository $appRepository = null
+        ?EntityRepository $appRepository = null,
+        array $capabilities = self::REFUND_CAPABILITIES
     ): PaymentRefundService {
         $initialStateIdLoader = static::createStub(InitialStateIdLoader::class);
         $initialStateIdLoader->method('get')->willReturn('state-open');
@@ -468,7 +611,7 @@ class PaymentRefundServiceTest extends TestCase
 
         return new PaymentRefundService(
             $refundRepository,
-            $this->configResolver($gateway),
+            $this->configResolver($gateway, $capabilities),
             $orderService ?? $this->orderService($this->orderRepository($this->paidOrder())),
             $webhookService,
             new PaymentNotifyUrlBuilder(static::createStub(RequestStack::class), 'https://base.example.test'),
@@ -507,7 +650,10 @@ class PaymentRefundServiceTest extends TestCase
         return $gateway;
     }
 
-    private function configResolver(GatewayInterface $gateway): PaymentConfigResolver
+    /**
+     * @param list<PaymentCapability> $capabilities
+     */
+    private function configResolver(GatewayInterface $gateway, array $capabilities = self::REFUND_CAPABILITIES): PaymentConfigResolver
     {
         $cipher = new PaymentCredentialCipher('test-secret');
 
@@ -528,6 +674,7 @@ class PaymentRefundServiceTest extends TestCase
             channels: ['alipay_h5' => $channel],
             gatewayFactory: $gatewayFactory,
             notificationExtractor: static::createStub(PaymentNotificationExtractorInterface::class),
+            capabilities: $capabilities,
         );
 
         $providerRegistry = new PaymentProviderRegistry([$provider]);
@@ -537,7 +684,6 @@ class PaymentRefundServiceTest extends TestCase
         $appProvider->paymentAppId = 'app-id';
         $appProvider->providerTechnicalName = 'alipay';
         $appProvider->enabled = true;
-        $appProvider->mode = PaymentAppProviderEntity::MODE_OWN;
         $appProvider->credentials = $cipher->encrypt(['app_id' => 'own-app-id']);
 
         $appChannel = new PaymentAppChannelEntity();

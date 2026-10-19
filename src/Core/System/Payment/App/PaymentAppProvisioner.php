@@ -27,8 +27,9 @@ use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;
  *
  * Which payments an app may collect is two decisions, and both are made here:
  *
- *  1. the app is authorized for a payment interface, and `mode` says whose merchant account is
- *     charged - the one of the platform or the one the app brings itself,
+ *  1. the app is authorized for a payment interface, and the account source of that authorization
+ *     says whose merchant account is charged - an account of its own, or the one of another app it
+ *     inherits, the tenant of the platform in particular,
  *  2. the app has individual channels of that interface enabled - being allowed to collect through
  *     alipay does not mean the app offers every alipay product to its users.
  *
@@ -41,6 +42,14 @@ use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;
 final class PaymentAppProvisioner
 {
     private const GENERATED_SECRET_BYTES = 32;
+
+    /**
+     * How many hops an inheritance chain may have, see
+     * {@see \Shopwell\Core\System\Payment\Provider\PaymentConfigResolver}. The provisioner refuses a
+     * chain that is longer than the resolver is willing to walk, so a save can never write a row that
+     * the payment would then be unable to resolve.
+     */
+    private const MAX_ACCOUNT_SOURCE_HOPS = 8;
 
     /**
      * @param EntityRepository<PaymentAppCollection> $appRepository
@@ -129,7 +138,7 @@ final class PaymentAppProvisioner
         // decision and must never be a side effect of a caller that did not send the field
         $providers = $dto->providers === null
             ? $this->loadProviders($write['id'])
-            : $this->syncProviders($write['id'], $dto->providers);
+            : $this->syncProviders($write['id'], $write['technicalName'], $dto->providers);
 
         if ($dto->channels !== null) {
             $this->syncChannels($write['id'], $dto->channels, $providers);
@@ -183,7 +192,7 @@ final class PaymentAppProvisioner
      *
      * @return array<string, PaymentAppProviderEntity>
      */
-    private function syncProviders(string $appId, array $incoming): array
+    private function syncProviders(string $appId, string $appTechnicalName, array $incoming): array
     {
         $existing = $this->loadProviders($appId);
 
@@ -207,16 +216,23 @@ final class PaymentAppProvisioner
             $current = $existing[$technicalName] ?? null;
             $keep[] = $technicalName;
 
+            $sourceAppId = $this->accountSource($appId, $appTechnicalName, $technicalName, $provider->sourceAppId);
+
             $row = [
                 'id' => $current->id ?? Uuid::randomHex(),
                 'paymentAppId' => $appId,
                 'providerTechnicalName' => $technicalName,
                 'enabled' => $provider->enabled,
-                'mode' => $this->mode($provider->mode),
+                'sourceAppId' => $sourceAppId,
                 'settings' => array_merge($current->settings ?? [], $provider->settings),
             ];
 
-            $credentials = $this->mergeValues($current === null ? [] : $this->cipher->decrypt($current->credentials), $provider->credentials);
+            // the credentials belong to the account of the app itself. An inheriting authorization
+            // keeps whatever was stored before (the merchant may switch back tomorrow), but nothing
+            // new is collected from a form that was not even shown.
+            $credentials = $sourceAppId === null
+                ? $this->mergeValues($current === null ? [] : $this->cipher->decrypt($current->credentials), $provider->credentials)
+                : [];
 
             if ($credentials !== []) {
                 $row['credentials'] = $this->cipher->encrypt($credentials);
@@ -331,13 +347,66 @@ final class PaymentAppProvisioner
         return $current;
     }
 
-    private function mode(?string $mode): string
-    {
-        if ($mode === PaymentAppProviderEntity::MODE_OWN) {
-            return PaymentAppProviderEntity::MODE_OWN;
+    /**
+     * The account source of one interface, validated before it is written.
+     *
+     * An empty value means "the app collects on its own account". Anything else has to name an app
+     * that exists, and the resulting chain has to end somewhere: an app that inherits from itself, or
+     * two apps that inherit from each other, would have no account at all. Both are refused here
+     * instead of at the first payment, because this is the only moment the merchant can still act on
+     * it.
+     *
+     * The walk is the same one {@see \Shopwell\Core\System\Payment\Provider\PaymentConfigResolver}
+     * does when it collects, so a chain that is accepted here is one the payment can resolve. The
+     * tenant of the platform ends every chain, it never inherits itself.
+     *
+     * @throws PaymentException
+     */
+    private function accountSource(
+        string $appId,
+        string $appTechnicalName,
+        string $providerTechnicalName,
+        ?string $sourceAppId
+    ): ?string {
+        if ($sourceAppId === null || $sourceAppId === '') {
+            return null;
         }
 
-        return PaymentAppProviderEntity::MODE_PLATFORM;
+        $visited = [$appId => true];
+        $currentId = $sourceAppId;
+        $hops = 0;
+
+        while (true) {
+            // naming the app itself is the shortest circle, and the visited set is what catches the
+            // longer ones - the hop limit only keeps an absurdly deep chain from being written
+            if (isset($visited[$currentId]) || $hops > self::MAX_ACCOUNT_SOURCE_HOPS) {
+                throw PaymentException::providerInheritanceCycle($providerTechnicalName, $appTechnicalName);
+            }
+
+            $visited[$currentId] = true;
+
+            $source = $this->loadAppRow($currentId);
+
+            if (!$source instanceof PaymentAppEntity) {
+                throw PaymentException::providerSourceAppMissing($providerTechnicalName, $appTechnicalName, $currentId);
+            }
+
+            // the tenant of the platform is the root of the chain: it collects on the platform level
+            // configuration and has nobody to inherit from
+            if ($source->type === PaymentAppEntity::TYPE_PLATFORM) {
+                return $sourceAppId;
+            }
+
+            ++$hops;
+
+            $nextSourceAppId = $this->loadProviderRow($currentId, $providerTechnicalName)?->sourceAppId;
+
+            if ($nextSourceAppId === null) {
+                return $sourceAppId;
+            }
+
+            $currentId = $nextSourceAppId;
+        }
     }
 
     /**
@@ -371,11 +440,37 @@ final class PaymentAppProvisioner
     {
         $criteria = new Criteria([$id]);
         $criteria->addAssociation('providers');
+        $criteria->addAssociation('providers.sourceApp');
         $criteria->addAssociation('channels');
 
         $app = $this->appRepository->search($criteria, Context::createDefaultContext())->getEntities()->first();
 
         return $app instanceof PaymentAppEntity ? $app : null;
+    }
+
+    /**
+     * The plain row of an app, without any association: the account source chain only needs the type
+     * and the technical name of the apps it walks through.
+     */
+    private function loadAppRow(string $id): ?PaymentAppEntity
+    {
+        $app = $this->appRepository->search(new Criteria([$id]), Context::createDefaultContext())->getEntities()->first();
+
+        return $app instanceof PaymentAppEntity ? $app : null;
+    }
+
+    private function loadProviderRow(string $appId, string $providerTechnicalName): ?PaymentAppProviderEntity
+    {
+        $criteria = new Criteria();
+        $criteria->addFilter(
+            new EqualsFilter('paymentAppId', $appId),
+            new EqualsFilter('providerTechnicalName', $providerTechnicalName)
+        );
+        $criteria->setLimit(1);
+
+        $provider = $this->appProviderRepository->search($criteria, Context::createDefaultContext())->getEntities()->first();
+
+        return $provider instanceof PaymentAppProviderEntity ? $provider : null;
     }
 
     /**

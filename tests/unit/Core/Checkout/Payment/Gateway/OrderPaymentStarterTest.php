@@ -17,7 +17,6 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Payment\Api\Struct\PayParams;
-use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppProvider\PaymentAppProviderEntity;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
 use Shopwell\Core\System\Payment\Gateway\PayResult;
@@ -206,7 +205,8 @@ class OrderPaymentStarterTest extends TestCase
             ->with(static::callback(static function (array $payload): bool {
                 static::assertSame(PaymentGatewayFixture::PLATFORM_APP_ID, $payload[0]['paymentAppId']);
                 static::assertSame(PaymentGatewayFixture::PROVIDER, $payload[0]['providerTechnicalName']);
-                static::assertSame(PaymentAppProviderEntity::MODE_PLATFORM, $payload[0]['mode']);
+                // the tenant of the platform is the root of the chain: it inherits from nobody
+                static::assertNull($payload[0]['sourceAppId']);
                 static::assertTrue($payload[0]['enabled']);
 
                 return true;

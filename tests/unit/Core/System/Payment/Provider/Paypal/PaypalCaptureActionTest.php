@@ -115,7 +115,6 @@ class PaypalCaptureActionTest extends TestCase
                 params: [],
                 runtimeParams: [],
                 settings: [PaypalCaptureAction::SETTING_FLOW => PaypalCaptureAction::FLOW_REDIRECT],
-                mode: 'live',
             ),
             'https://example.com/notify',
             'https://example.com/return',

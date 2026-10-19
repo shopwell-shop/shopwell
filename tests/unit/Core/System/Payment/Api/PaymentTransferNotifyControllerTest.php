@@ -160,7 +160,6 @@ class PaymentTransferNotifyControllerTest extends TestCase
         $appProvider->paymentAppId = self::APP_ID;
         $appProvider->providerTechnicalName = 'alipay';
         $appProvider->enabled = true;
-        $appProvider->mode = PaymentAppProviderEntity::MODE_OWN;
         $appProvider->credentials = $cipher->encrypt(['alipay_public_key' => 'key']);
 
         $appProviderRepository = $this->appProviderRepository($appProvider);
