@@ -374,6 +374,14 @@ class Migration1791856510CreatePaymentTablesTest extends TestCase
      */
     public function testSeedsThePlatformTenant(): void
     {
+        // the seed is what is asserted here, not a row another process left behind: the migration
+        // tests share one database, and a row written with another APP_SECRET cannot be decrypted
+        // here. Its authorizations cascade with it.
+        $this->connection->executeStatement(
+            'DELETE FROM `payment_app` WHERE `technical_name` = :name',
+            ['name' => PaymentAppEntity::PLATFORM_TECHNICAL_NAME]
+        );
+
         (new Migration1791856510CreatePaymentTables())->update($this->connection);
 
         $app = $this->connection->fetchAssociative(
