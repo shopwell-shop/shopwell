@@ -180,6 +180,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('logger'),
             service(ClockInterface::class),
             param('kernel.secret'),
+            service(SystemConfigService::class),
         ]);
 
     $services->set(AddressValidationFactory::class)

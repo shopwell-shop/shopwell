@@ -79,7 +79,7 @@ class SmsLoginController extends StorefrontController
         }
 
         if (!$this->smsLoginService->acquireSendSlot($phone, $context)) {
-            $this->addFlash(self::WARNING, $this->trans('account.smsLoginThrottled', ['%seconds%' => SmsLoginService::RESEND_COOLDOWN]));
+            $this->addFlash(self::WARNING, $this->trans('account.smsLoginThrottled', ['%seconds%' => $this->smsLoginService->resendInterval($context)]));
 
             return $this->redirectToLoginPage($request, $phone);
         }

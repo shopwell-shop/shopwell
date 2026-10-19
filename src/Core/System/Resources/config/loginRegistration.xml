@@ -19,6 +19,33 @@
             <helpText lang="zh-CN">客户需先在账户资料中绑定手机号，并已配置能覆盖该号码所在国家的短信网关。</helpText>
         </input-field>
 
+        <input-field type="int">
+            <name>smsLoginCodeLifetime</name>
+            <label>Validity of a login code (seconds)</label>
+            <label lang="zh-CN">登录验证码有效期（秒）</label>
+            <helpText>Between 60 and 3600. The message tells the customer this lifetime.</helpText>
+            <helpText lang="zh-CN">取值 60–3600 秒。短信文案中的有效期由它推导。</helpText>
+            <defaultValue>300</defaultValue>
+        </input-field>
+
+        <input-field type="int">
+            <name>smsLoginResendInterval</name>
+            <label>Wait before another code is sent for the same number (seconds)</label>
+            <label lang="zh-CN">同一号码重发验证码的间隔（秒）</label>
+            <helpText>Between 0 and 3600, 0 disables the wait.</helpText>
+            <helpText lang="zh-CN">取值 0–3600 秒，0 表示不限制。</helpText>
+            <defaultValue>60</defaultValue>
+        </input-field>
+
+        <input-field type="int">
+            <name>smsLoginMaxAttempts</name>
+            <label>Wrong answers a login code survives</label>
+            <label lang="zh-CN">登录验证码允许答错的次数</label>
+            <helpText>Between 1 and 20. The code is dropped when the budget is used up.</helpText>
+            <helpText lang="zh-CN">取值 1–20 次。用完次数后验证码立即作废。</helpText>
+            <defaultValue>5</defaultValue>
+        </input-field>
+
         <input-field type="bool">
             <name>createCustomerAccountDefault</name>
             <label>Create customer account by default</label>

@@ -18,6 +18,7 @@ use Shopwell\Core\System\Sms\SmsException;
 use Shopwell\Core\System\Sms\Util\PhoneNumber;
 use Shopwell\Core\System\Sms\Util\PhoneNumberMaskerInterface;
 use Shopwell\Core\System\Sms\Util\PhoneNumberNormalizerInterface;
+use Shopwell\Core\System\SystemConfig\SystemConfigService;
 use Symfony\Contracts\Cache\CacheInterface;
 use Symfony\Contracts\Cache\ItemInterface;
 
@@ -53,24 +54,44 @@ class SmsLoginService
     public const TEMPLATE_REF = 'customer.otp.login';
 
     /**
-     * How long a code is valid, in seconds.
+     * How long a code is valid, in seconds, when the administrator configured nothing.
      */
     public const CODE_LIFETIME = 300;
 
     /**
-     * How long a number has to wait before another code is sent for it, in seconds.
+     * How long a number has to wait before another code is sent for it, in seconds, when the
+     * administrator configured nothing.
      */
     public const RESEND_COOLDOWN = 60;
 
     /**
-     * How often a code may be answered wrong before it is dropped.
+     * How often a code may be answered wrong before it is dropped, when the administrator
+     * configured nothing.
      */
     public const MAX_ATTEMPTS = 5;
 
+    private const CONFIG_CODE_LIFETIME = 'core.loginRegistration.smsLoginCodeLifetime';
+
+    private const CONFIG_RESEND_INTERVAL = 'core.loginRegistration.smsLoginResendInterval';
+
+    private const CONFIG_MAX_ATTEMPTS = 'core.loginRegistration.smsLoginMaxAttempts';
+
     /**
-     * The minutes the template of the message announces, see CODE_LIFETIME.
+     * The window the administrator may choose from, in seconds. A value outside of it is clamped
+     * instead of refused: a configuration that cannot be read must not take the login away, and the
+     * bounds are the ones the settings page documents.
      */
-    private const TEMPLATE_MINUTES = '5';
+    private const CODE_LIFETIME_MIN = 60;
+
+    private const CODE_LIFETIME_MAX = 3600;
+
+    private const RESEND_INTERVAL_MIN = 0;
+
+    private const RESEND_INTERVAL_MAX = 3600;
+
+    private const MAX_ATTEMPTS_MIN = 1;
+
+    private const MAX_ATTEMPTS_MAX = 20;
 
     private const CODE_MIN = 100000;
 
@@ -91,6 +112,7 @@ class SmsLoginService
         private readonly LoggerInterface $logger,
         private readonly ClockInterface $clock,
         private readonly string $kernelSecret,
+        private readonly SystemConfigService $systemConfigService,
     ) {
     }
 
@@ -117,19 +139,45 @@ class SmsLoginService
      */
     public function acquireSendSlot(string $phone, SalesChannelContext $context): bool
     {
+        $interval = $this->resendInterval($context);
+
+        if ($interval === 0) {
+            // the administrator switched the wait off: no key is written, so nothing has to be read
+            // and the anti enumeration rule of the slot - it is taken for every number - cannot be
+            // broken by an entry that only exists for the numbers of customers
+            return true;
+        }
+
         $key = $this->cooldownKey($phone, $context);
         $acquired = false;
 
-        // a hit means the slot was taken less than RESEND_COOLDOWN seconds ago and the callback,
-        // which is the only place that takes it, is not called
-        $this->cache->get($key, static function (ItemInterface $item) use (&$acquired): bool {
-            $item->expiresAfter(self::RESEND_COOLDOWN);
+        // a hit means the slot was taken less than $interval seconds ago and the callback, which is
+        // the only place that takes it, is not called
+        $this->cache->get($key, static function (ItemInterface $item) use (&$acquired, $interval): bool {
+            $item->expiresAfter($interval);
             $acquired = true;
 
             return true;
         });
 
         return $acquired;
+    }
+
+    /**
+     * How long a number has to wait before another code is sent for it, in seconds.
+     *
+     * It is public because the storefront tells a throttled customer how long the wait is - the
+     * number in that message has to be the number the slot was actually taken with.
+     */
+    public function resendInterval(SalesChannelContext $context): int
+    {
+        return $this->configuredInt(
+            self::CONFIG_RESEND_INTERVAL,
+            $context->getSalesChannelId(),
+            self::RESEND_COOLDOWN,
+            self::RESEND_INTERVAL_MIN,
+            self::RESEND_INTERVAL_MAX,
+        );
     }
 
     /**
@@ -165,10 +213,14 @@ class SmsLoginService
         $code = (string) random_int(self::CODE_MIN, self::CODE_MAX);
         $this->storeCode($number, $code, $context->getSalesChannelId());
 
+        // the message announces the lifetime the entry was written with, rounded up to whole
+        // minutes so a customer is never told a shorter lifetime than the code actually has
+        $minutes = (string) max(1, (int) ceil($this->codeLifetime($context->getSalesChannelId()) / 60));
+
         try {
             $this->smsSender->sendTemplate(
                 self::TEMPLATE_REF,
-                ['code' => $code, 'minutes' => self::TEMPLATE_MINUTES],
+                ['code' => $code, 'minutes' => $minutes],
                 $number->e164(),
                 $context->getContext(),
                 $context->getSalesChannelId(),
@@ -254,7 +306,7 @@ class SmsLoginService
      */
     public function storeCode(PhoneNumber $number, string $code, string $salesChannelId): void
     {
-        $this->writeCode($number, $salesChannelId, $this->hashCode($code), 0, $this->now() + self::CODE_LIFETIME);
+        $this->writeCode($number, $salesChannelId, $this->hashCode($code), 0, $this->now() + $this->codeLifetime($salesChannelId));
     }
 
     /**
@@ -354,7 +406,7 @@ class SmsLoginService
     {
         $attempts = $entry['attempts'] + 1;
 
-        if ($attempts >= self::MAX_ATTEMPTS) {
+        if ($attempts >= $this->maxAttempts($salesChannelId)) {
             // the budget of a code is spent, the number needs a new one
             $this->deleteCode($number, $salesChannelId);
             $this->logger->warning('A login by sms used up the attempts of its code.', [
@@ -457,6 +509,57 @@ class SmsLoginService
     private function now(): int
     {
         return $this->clock->now()->getTimestamp();
+    }
+
+    /**
+     * How long a code is valid, in seconds, as the administrator configured it.
+     *
+     * The read happens on every write and not once per process: an administrator who shortens the
+     * lifetime must not have to wait for a restart of the php worker until the shop honours it.
+     */
+    private function codeLifetime(string $salesChannelId): int
+    {
+        return $this->configuredInt(
+            self::CONFIG_CODE_LIFETIME,
+            $salesChannelId,
+            self::CODE_LIFETIME,
+            self::CODE_LIFETIME_MIN,
+            self::CODE_LIFETIME_MAX,
+        );
+    }
+
+    /**
+     * How often a code may be answered wrong, as the administrator configured it.
+     */
+    private function maxAttempts(string $salesChannelId): int
+    {
+        return $this->configuredInt(
+            self::CONFIG_MAX_ATTEMPTS,
+            $salesChannelId,
+            self::MAX_ATTEMPTS,
+            self::MAX_ATTEMPTS_MIN,
+            self::MAX_ATTEMPTS_MAX,
+        );
+    }
+
+    /**
+     * Reads an integer setting and keeps it inside the window it is documented with.
+     *
+     * A missing, unreadable or out of range value falls back to the default of the setting instead
+     * of failing the login: the settings page is the one place that validates the input, and a shop
+     * that has a stale or hand written value must still be able to log its customers in.
+     */
+    private function configuredInt(string $key, string $salesChannelId, int $default, int $min, int $max): int
+    {
+        $configured = $this->systemConfigService->get($key, $salesChannelId);
+
+        // getInt() would answer 0 for a value that was never written and 0 is a meaningful interval,
+        // so the raw value is read and the "not configured" case is decided here
+        if (!is_numeric($configured)) {
+            return $default;
+        }
+
+        return max($min, min($max, (int) $configured));
     }
 
     private function codeKey(PhoneNumber $number, string $salesChannelId): string

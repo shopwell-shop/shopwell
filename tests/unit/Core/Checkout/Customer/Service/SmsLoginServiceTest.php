@@ -3,6 +3,7 @@
 namespace Shopwell\Tests\Unit\Core\Checkout\Customer\Service;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use Shopwell\Core\Checkout\Customer\CustomerCollection;
@@ -20,6 +21,7 @@ use Shopwell\Core\System\Sms\Util\CountryDialCodeResolver;
 use Shopwell\Core\System\Sms\Util\PhoneNumberMasker;
 use Shopwell\Core\System\Sms\Util\PhoneNumberNormalizer;
 use Shopwell\Core\System\Sms\Util\ShippedCountryDialCodeProvider;
+use Shopwell\Core\System\SystemConfig\SystemConfigService;
 use Shopwell\Core\Test\Assert\Serialization;
 use Shopwell\Core\Test\Generator;
 use Shopwell\Core\Test\Stub\DataAbstractionLayer\StaticEntityRepository;
@@ -40,6 +42,12 @@ class SmsLoginServiceTest extends TestCase
 
     private const NATIONAL = '15112345678';
 
+    private const CONFIG_CODE_LIFETIME = 'core.loginRegistration.smsLoginCodeLifetime';
+
+    private const CONFIG_RESEND_INTERVAL = 'core.loginRegistration.smsLoginResendInterval';
+
+    private const CONFIG_MAX_ATTEMPTS = 'core.loginRegistration.smsLoginMaxAttempts';
+
     /**
      * @var StaticEntityRepository<CustomerCollection>
      */
@@ -55,6 +63,16 @@ class SmsLoginServiceTest extends TestCase
     private AbstractSmsSender $smsSender;
 
     private LoggerInterface $logger;
+
+    /**
+     * The settings an administrator saved, keyed by the config key.
+     *
+     * A key that is missing is a key nobody ever saved, which is the state every default has to
+     * survive - and the state a fresh installation is in.
+     *
+     * @var array<string, mixed>
+     */
+    private array $configuredValues = [];
 
     /**
      * The failure the sms component answers with, null when the message is recorded instead.
@@ -79,6 +97,7 @@ class SmsLoginServiceTest extends TestCase
         $this->smsFailure = null;
         $this->sentMessages = [];
         $this->logRecords = [];
+        $this->configuredValues = [];
 
         $this->smsSender = static::createStub(AbstractSmsSender::class);
 
@@ -379,6 +398,168 @@ class SmsLoginServiceTest extends TestCase
         static::assertFalse($service->acquireSendSlot('+49 151 12345678', $context));
     }
 
+    public function testTheConfiguredLifetimeDecidesHowLongTheCodeLives(): void
+    {
+        $customer = $this->createCustomer(self::E164);
+        $this->customerRepository->searches = [
+            new CustomerCollection([$customer]),
+            new CustomerCollection([$customer]),
+        ];
+        $this->configuredValues[self::CONFIG_CODE_LIFETIME] = 120;
+
+        $service = $this->createService();
+        $context = $this->createContext();
+        $sentAt = $this->clock->now()->getTimestamp();
+        $code = $this->sendCodeAndReadTheCode(self::E164, $context);
+
+        // the message announces the lifetime the administrator chose, in whole minutes
+        static::assertSame('2', $this->sentMessages[0]['params']['minutes']);
+
+        $stored = $this->cachedCodeEntries();
+        static::assertCount(1, $stored);
+        static::assertSame($sentAt + 120, $stored[0]['expiresAt'] ?? null);
+
+        // and the deadline of the entry is the deadline of the code, not the one of the pool
+        $this->clock->sleep(120);
+        static::assertNull($service->verifyCode(self::E164, $code, $context));
+        static::assertSame([], $this->codeEntries());
+    }
+
+    public function testTheConfiguredNumberOfAttemptsDropsTheCodeEarlier(): void
+    {
+        $customer = $this->createCustomer(self::E164);
+        $this->customerRepository->searches = [new CustomerCollection([$customer])];
+        $this->configuredValues[self::CONFIG_MAX_ATTEMPTS] = 2;
+
+        $service = $this->createService();
+        $context = $this->createContext();
+        $code = $this->sendCodeAndReadTheCode(self::E164, $context);
+        $wrongCode = $this->otherCodeOf($code);
+
+        // one wrong answer is survived, the budget is not spent yet
+        static::assertNull($service->verifyCode(self::E164, $wrongCode, $context));
+        static::assertCount(1, $this->cachedCodeEntries());
+
+        // the second one spends it, the code is gone and the right code cannot revive it
+        static::assertNull($service->verifyCode(self::E164, $wrongCode, $context));
+        static::assertSame([], $this->cachedCodeEntries());
+        static::assertNull($service->verifyCode(self::E164, $code, $context));
+    }
+
+    public function testASendIntervalOfZeroLetsTheCustomerAskAgainImmediately(): void
+    {
+        $this->configuredValues[self::CONFIG_RESEND_INTERVAL] = 0;
+
+        $service = $this->createService();
+        $context = $this->createContext();
+
+        static::assertSame(0, $service->resendInterval($context));
+
+        // two requests within the same second, both get a slot although no second has passed
+        static::assertTrue($service->acquireSendSlot(self::E164, $context));
+        static::assertTrue($service->acquireSendSlot(self::E164, $context));
+
+        // the wait is switched off by not taking a slot at all, so the cache holds no trace of it -
+        // an entry that only exists for the numbers of customers would be a way to count them
+        static::assertSame([], $this->cooldownKeys());
+    }
+
+    public function testTheConfiguredSendIntervalIsTheOneACustomerHasToWait(): void
+    {
+        $this->configuredValues[self::CONFIG_RESEND_INTERVAL] = 180;
+
+        $service = $this->createService();
+        $context = $this->createContext();
+
+        // the message of a throttled customer announces this number, so it is the one the slot was
+        // taken with
+        static::assertSame(180, $service->resendInterval($context));
+
+        static::assertTrue($service->acquireSendSlot(self::E164, $context));
+        static::assertFalse($service->acquireSendSlot(self::E164, $context));
+
+        // the slot is one key of the number and nothing else was written for the request
+        static::assertCount(1, $this->cooldownKeys());
+        static::assertSame([], $this->codeEntries());
+    }
+
+    /**
+     * @return iterable<string, array{configured: int, expectedSeconds: int, expectedMinutes: string}>
+     */
+    public static function outOfRangeLifetimeProvider(): iterable
+    {
+        yield 'below the documented minimum' => ['configured' => 5, 'expectedSeconds' => 60, 'expectedMinutes' => '1'];
+        yield 'zero, which is no lifetime at all' => ['configured' => 0, 'expectedSeconds' => 60, 'expectedMinutes' => '1'];
+        yield 'above the documented maximum' => ['configured' => 99999, 'expectedSeconds' => 3600, 'expectedMinutes' => '60'];
+    }
+
+    #[DataProvider('outOfRangeLifetimeProvider')]
+    public function testALifetimeOutsideTheDocumentedWindowIsClamped(int $configured, int $expectedSeconds, string $expectedMinutes): void
+    {
+        $this->customerRepository->searches = [new CustomerCollection([$this->createCustomer(self::E164)])];
+        $this->configuredValues[self::CONFIG_CODE_LIFETIME] = $configured;
+
+        $sentAt = $this->clock->now()->getTimestamp();
+        $this->sendCodeAndReadTheCode();
+
+        static::assertSame($expectedMinutes, $this->sentMessages[0]['params']['minutes']);
+
+        $stored = $this->cachedCodeEntries();
+        static::assertCount(1, $stored);
+        static::assertSame($sentAt + $expectedSeconds, $stored[0]['expiresAt'] ?? null);
+    }
+
+    public function testANumberOfZeroAttemptsIsRaisedToOne(): void
+    {
+        $customer = $this->createCustomer(self::E164);
+        $this->customerRepository->searches = [new CustomerCollection([$customer])];
+        $this->configuredValues[self::CONFIG_MAX_ATTEMPTS] = 0;
+
+        $service = $this->createService();
+        $context = $this->createContext();
+        $code = $this->sendCodeAndReadTheCode(self::E164, $context);
+
+        // a budget of nothing would make the code unusable, so the first wrong answer spends the
+        // smallest budget that still lets a customer answer once
+        static::assertNull($service->verifyCode(self::E164, $this->otherCodeOf($code), $context));
+        static::assertSame([], $this->cachedCodeEntries());
+    }
+
+    public function testAValueThatCannotBeReadFallsBackToTheDefaults(): void
+    {
+        $this->configuredValues[self::CONFIG_CODE_LIFETIME] = null;
+        $this->configuredValues[self::CONFIG_RESEND_INTERVAL] = null;
+        $this->configuredValues[self::CONFIG_MAX_ATTEMPTS] = 'not a number';
+
+        $service = $this->createService();
+        $context = $this->createContext();
+
+        static::assertSame(SmsLoginService::RESEND_COOLDOWN, $service->resendInterval($context));
+
+        $this->customerRepository->searches = [new CustomerCollection([$this->createCustomer(self::E164)])];
+        $code = $this->sendCodeAndReadTheCode(self::E164, $context);
+
+        static::assertSame('5', $this->sentMessages[0]['params']['minutes']);
+
+        $stored = $this->cachedCodeEntries();
+        static::assertCount(1, $stored);
+        static::assertSame(
+            $this->clock->now()->getTimestamp() + SmsLoginService::CODE_LIFETIME,
+            $stored[0]['expiresAt'] ?? null
+        );
+
+        // an unreadable budget falls back to the default one instead of locking the code up
+        $wrongCode = $this->otherCodeOf($code);
+        for ($attempt = 1; $attempt < SmsLoginService::MAX_ATTEMPTS; ++$attempt) {
+            static::assertNull($service->verifyCode(self::E164, $wrongCode, $context));
+        }
+
+        static::assertCount(1, $this->cachedCodeEntries());
+
+        static::assertNull($service->verifyCode(self::E164, $wrongCode, $context));
+        static::assertSame([], $this->cachedCodeEntries());
+    }
+
     public function testRateLimiterKeyReadsEveryNotationOfANumberTheSame(): void
     {
         $service = $this->createService();
@@ -429,7 +610,21 @@ class SmsLoginServiceTest extends TestCase
             $this->logger,
             $this->clock,
             self::SECRET,
+            $this->createSystemConfigService(),
         );
+    }
+
+    /**
+     * The settings of the shop, answering null for everything that was never saved.
+     */
+    private function createSystemConfigService(): SystemConfigService
+    {
+        $systemConfigService = static::createStub(SystemConfigService::class);
+        $systemConfigService->method('get')->willReturnCallback(
+            fn (string $key, ?string $salesChannelId = null): mixed => $this->configuredValues[$key] ?? null
+        );
+
+        return $systemConfigService;
     }
 
     private function createContext(): SalesChannelContext
@@ -489,6 +684,24 @@ class SmsLoginServiceTest extends TestCase
         }
 
         return $entries;
+    }
+
+    /**
+     * The keys of the slots the service took, so a test can tell whether a slot was taken at all.
+     *
+     * @return list<string>
+     */
+    private function cooldownKeys(): array
+    {
+        $keys = [];
+
+        foreach (array_keys($this->cache->getValues()) as $key) {
+            if (str_contains((string) $key, 'cooldown.')) {
+                $keys[] = (string) $key;
+            }
+        }
+
+        return $keys;
     }
 
     /**
