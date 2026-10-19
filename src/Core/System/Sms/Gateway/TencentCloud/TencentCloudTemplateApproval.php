@@ -8,6 +8,7 @@ use Shopwell\Core\System\Sms\Gateway\Audit\TemplateApprovalStatus;
 use Shopwell\Core\System\Sms\Gateway\Audit\TemplateSubmission;
 use Shopwell\Core\System\Sms\Gateway\Audit\TemplateSubmissionReceipt;
 use Shopwell\Core\System\Sms\SmsException;
+use Shopwell\Core\System\Sms\Template\SmsTemplateEntity;
 use TencentCloud\Common\Credential;
 use TencentCloud\Common\Exception\TencentCloudSDKException;
 use TencentCloud\Sms\V20210111\Models\AddSmsTemplateRequest;
@@ -53,6 +54,17 @@ final class TencentCloudTemplateApproval
     private const SMS_TYPE_MARKETING = 1;
     private const SMS_TYPE_NOTIFICATION = 2;
     private const SMS_TYPE_VERIFICATION = 3;
+
+    /**
+     * The use of a template as tencent cloud numbers it, keyed by the scenes of the module.
+     *
+     * @var array<string, int>
+     */
+    private const SCENE_TYPE_MAP = [
+        SmsTemplateEntity::SCENE_OTP => self::SMS_TYPE_VERIFICATION,
+        SmsTemplateEntity::SCENE_TRANSACTION => self::SMS_TYPE_NOTIFICATION,
+        SmsTemplateEntity::SCENE_MARKETING => self::SMS_TYPE_MARKETING,
+    ];
 
     /**
      * The state the provider reports for a template in DescribeSmsTemplateList.
@@ -109,11 +121,10 @@ final class TencentCloudTemplateApproval
     }
 
     /**
-     * The fields an operator fills for AddSmsTemplate, in the vocabulary of the provider.
+     * The fields an operator confirms for AddSmsTemplate, in the vocabulary of the provider.
      *
-     * The submitter and the body are prefilled by the core because it knows them already, the type
-     * of the message is the decision of the operator and the remark is the explanation the reviewer
-     * of the provider reads.
+     * The name and the body are the ones the shop already holds, the use of the template is the scene
+     * of it - the operator confirms the three read only and never types them again.
      *
      * @return list<array{
      *     name: string,
@@ -148,28 +159,21 @@ final class TencentCloudTemplateApproval
                 'type' => 'select',
                 'required' => true,
                 'labelSnippet' => 'sw-settings-sms.submission.tencentcloud.smsType',
-                'default' => self::SMS_TYPE_NOTIFICATION,
+                'prefill' => 'scene',
                 'options' => [
                     [
-                        'value' => self::SMS_TYPE_MARKETING,
-                        'labelSnippet' => 'sw-settings-sms.submission.tencentcloud.smsType.marketing',
+                        'value' => SmsTemplateEntity::SCENE_OTP,
+                        'labelSnippet' => 'sw-settings-sms.submission.tencentcloud.smsType.verification',
                     ],
                     [
-                        'value' => self::SMS_TYPE_NOTIFICATION,
+                        'value' => SmsTemplateEntity::SCENE_TRANSACTION,
                         'labelSnippet' => 'sw-settings-sms.submission.tencentcloud.smsType.notification',
                     ],
                     [
-                        'value' => self::SMS_TYPE_VERIFICATION,
-                        'labelSnippet' => 'sw-settings-sms.submission.tencentcloud.smsType.verification',
+                        'value' => SmsTemplateEntity::SCENE_MARKETING,
+                        'labelSnippet' => 'sw-settings-sms.submission.tencentcloud.smsType.marketing',
                     ],
                 ],
-            ],
-            [
-                'name' => 'remark',
-                'type' => 'string',
-                'required' => false,
-                'labelSnippet' => 'sw-settings-sms.submission.tencentcloud.remark',
-                'helpSnippet' => 'sw-settings-sms.submission.tencentcloud.remarkHelp',
             ],
         ];
     }
@@ -201,25 +205,18 @@ final class TencentCloudTemplateApproval
             }
         }
 
-        $smsType = $submission->values['smsType'] ?? null;
-
-        if ($smsType === null) {
-            throw SmsException::templateSubmissionInvalid(
-                $submission->templateRef,
-                self::TECHNICAL_NAME,
-                ['"smsType" is required']
-            );
-        }
-
-        $templateName = (string) ($submission->values['templateName'] ?? $submission->templateRef);
+        // the fields are the ones the core prefilled, an empty one falls back to the submission
+        // itself, so a template is never reported under a blank name
+        $name = $submission->values['templateName'] ?? null;
+        $templateName = \is_string($name) && trim($name) !== '' ? $name : $submission->templateRef;
 
         $request = new AddSmsTemplateRequest();
         $request->TemplateName = $templateName;
+        // the body of the default language is the only body this round reports
         $request->TemplateContent = $submission->content;
-        $request->SmsType = (int) $smsType;
+        $request->SmsType = self::smsTypeOf($submission);
         // the round has no dimension for the range of delivery, so every template is domestic
         $request->International = self::DOMESTIC;
-        $request->Remark = (string) ($submission->values['remark'] ?? '');
 
         try {
             /** @var AddSmsTemplateResponse $response */
@@ -231,8 +228,8 @@ final class TencentCloudTemplateApproval
         /** @var array{AddTemplateStatus?: AddTemplateStatus} $answer */
         $answer = get_object_vars($response);
 
-        $templateCode = '';
         $added = $answer['AddTemplateStatus'] ?? null;
+        $templateCode = '';
 
         if ($added !== null) {
             /** @var array{TemplateId?: string} $fields */
@@ -311,6 +308,24 @@ final class TencentCloudTemplateApproval
             '',
             \sprintf('Tencent cloud lists no domestic template with the id "%s".', $templateCode),
         );
+    }
+
+    /**
+     * The use of the template as tencent cloud numbers it.
+     *
+     * The scene the operator confirmed decides it, the scene of the template itself when the
+     * submission carries no choice. A scene the module does not know is reported as a notification -
+     * the safest of the three, as a marketing template is refused for a message a customer waits for.
+     */
+    private static function smsTypeOf(TemplateSubmission $submission): int
+    {
+        $confirmed = $submission->values['smsType'] ?? null;
+
+        if (\is_string($confirmed) && \array_key_exists($confirmed, self::SCENE_TYPE_MAP)) {
+            return self::SCENE_TYPE_MAP[$confirmed];
+        }
+
+        return self::SCENE_TYPE_MAP[$submission->scene] ?? self::SMS_TYPE_NOTIFICATION;
     }
 
     /**

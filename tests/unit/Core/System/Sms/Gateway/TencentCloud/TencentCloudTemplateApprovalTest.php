@@ -10,6 +10,7 @@ use Shopwell\Core\System\Sms\Gateway\Audit\TemplateApprovalStatus;
 use Shopwell\Core\System\Sms\Gateway\Audit\TemplateSubmission;
 use Shopwell\Core\System\Sms\Gateway\TencentCloud\TencentCloudTemplateApproval;
 use Shopwell\Core\System\Sms\SmsException;
+use Shopwell\Core\System\Sms\Template\SmsTemplateEntity;
 use TencentCloud\Common\Exception\TencentCloudSDKException;
 use TencentCloud\Sms\V20210111\Models\AddSmsTemplateRequest;
 use TencentCloud\Sms\V20210111\Models\AddSmsTemplateResponse;
@@ -52,28 +53,21 @@ class TencentCloudTemplateApprovalTest extends TestCase
                 'type' => 'select',
                 'required' => true,
                 'labelSnippet' => 'sw-settings-sms.submission.tencentcloud.smsType',
-                'default' => 2,
+                'prefill' => 'scene',
                 'options' => [
                     [
-                        'value' => 1,
-                        'labelSnippet' => 'sw-settings-sms.submission.tencentcloud.smsType.marketing',
+                        'value' => SmsTemplateEntity::SCENE_OTP,
+                        'labelSnippet' => 'sw-settings-sms.submission.tencentcloud.smsType.verification',
                     ],
                     [
-                        'value' => 2,
+                        'value' => SmsTemplateEntity::SCENE_TRANSACTION,
                         'labelSnippet' => 'sw-settings-sms.submission.tencentcloud.smsType.notification',
                     ],
                     [
-                        'value' => 3,
-                        'labelSnippet' => 'sw-settings-sms.submission.tencentcloud.smsType.verification',
+                        'value' => SmsTemplateEntity::SCENE_MARKETING,
+                        'labelSnippet' => 'sw-settings-sms.submission.tencentcloud.smsType.marketing',
                     ],
                 ],
-            ],
-            [
-                'name' => 'remark',
-                'type' => 'string',
-                'required' => false,
-                'labelSnippet' => 'sw-settings-sms.submission.tencentcloud.remark',
-                'helpSnippet' => 'sw-settings-sms.submission.tencentcloud.remarkHelp',
             ],
         ], (new TencentCloudTemplateApproval())->getTemplateSubmissionFieldDefinitions());
     }
@@ -100,10 +94,10 @@ class TencentCloudTemplateApprovalTest extends TestCase
                     return $request instanceof AddSmsTemplateRequest
                         && $request->TemplateName === 'customer.otp.login'
                         && $request->TemplateContent === 'Your code is {{ code }}.'
+                        // the scene of the template is the use it is reported with
                         && $request->SmsType === 3
                         // only domestic templates are reported in this round
-                        && $request->International === 0
-                        && $request->Remark === 'login code';
+                        && $request->International === 0;
                 })
             )
             ->willReturn(self::added('1234567'));
@@ -117,7 +111,41 @@ class TencentCloudTemplateApprovalTest extends TestCase
         static::assertNull($receipt->providerCode);
     }
 
-    public function testItFallsBackToTheReferenceOfTheTemplateAndAnEmptyRemark(): void
+    /**
+     * @return iterable<string, array{string, array<string, mixed>, int}>
+     */
+    public static function sceneTypeProvider(): iterable
+    {
+        yield 'the scene of the template decides' => ['marketing', [], 1];
+        yield 'the scene the operator confirmed decides' => ['otp', ['smsType' => 'transaction'], 2];
+        yield 'a scene the module does not know is a notification' => ['unknown-scene', [], 2];
+    }
+
+    /**
+     * @param array<string, mixed> $values
+     */
+    #[DataProvider('sceneTypeProvider')]
+    public function testTheTypeOfTheTemplateFollowsTheScene(string $scene, array $values, int $expectedType): void
+    {
+        $client = $this->createMock(SmsClient::class);
+        $client->expects($this->once())
+            ->method('__call')
+            ->with(
+                'AddSmsTemplate',
+                static::callback(static function (array $arguments) use ($expectedType): bool {
+                    $request = $arguments[0] ?? null;
+
+                    return $request instanceof AddSmsTemplateRequest && $request->SmsType === $expectedType;
+                })
+            )
+            ->willReturn(self::added('1234567'));
+
+        $receipt = $this->approval($client)->submitTemplate($this->submission(null, $values, $scene));
+
+        static::assertSame('1234567', $receipt->templateCode);
+    }
+
+    public function testItFallsBackToTheReferenceOfTheTemplate(): void
     {
         $client = $this->createMock(SmsClient::class);
         $client->expects($this->once())
@@ -128,27 +156,14 @@ class TencentCloudTemplateApprovalTest extends TestCase
                     $request = $arguments[0] ?? null;
 
                     return $request instanceof AddSmsTemplateRequest
-                        && $request->TemplateName === 'customer.otp.login'
-                        && $request->Remark === '';
+                        && $request->TemplateName === 'customer.otp.login';
                 })
             )
             ->willReturn(self::added('1234567'));
 
-        $receipt = $this->approval($client)->submitTemplate($this->submission(null, ['smsType' => 3]));
+        $receipt = $this->approval($client)->submitTemplate($this->submission(null, ['templateName' => '']));
 
         static::assertSame('1234567', $receipt->templateCode);
-    }
-
-    public function testASubmissionWithoutASmsTypeIsRefused(): void
-    {
-        $this->expectExceptionObject(SmsException::templateSubmissionInvalid(
-            'customer.otp.login',
-            'tencentcloud',
-            ['"smsType" is required']
-        ));
-
-        $this->approval($this->clientReturning(self::added('1234567')))
-            ->submitTemplate($this->submission(null, ['templateName' => 'customer.otp.login']));
     }
 
     public function testAnAnswerWithoutATemplateIdIsInvalid(): void
@@ -325,15 +340,18 @@ class TencentCloudTemplateApprovalTest extends TestCase
     /**
      * @param array<string, mixed> $values
      */
-    private function submission(?string $existingTemplateCode = null, array $values = []): TemplateSubmission
-    {
+    private function submission(
+        ?string $existingTemplateCode = null,
+        array $values = ['templateName' => 'customer.otp.login', 'smsType' => 'otp'],
+        string $scene = 'otp',
+    ): TemplateSubmission {
         return new TemplateSubmission(
             'customer.otp.login',
-            'otp',
+            $scene,
             'Your code is {{ code }}.',
             'Shopwell',
             ['code'],
-            $values === [] ? ['templateName' => 'customer.otp.login', 'smsType' => 3, 'remark' => 'login code'] : $values,
+            $values,
             $existingTemplateCode,
         );
     }
