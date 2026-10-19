@@ -84,6 +84,8 @@ class FullWidthSpaceAddressValidationTest extends TestCase
 
     /**
      * @param array<string, mixed> $overrides
+     *
+     * @return array<string, mixed>
      */
     private function createAddress(array $overrides = []): array
     {
