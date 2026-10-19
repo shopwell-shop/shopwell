@@ -97,7 +97,9 @@ class SmsDeliverySubscriber implements EventSubscriberInterface
         $gatewayId = $this->gatewayIdOf($message);
         $technicalName = $this->technicalNameOf($gatewayId);
 
-        $undeliverableReason = $this->undeliverableReasonOf($message);
+        $options = $message->getOptions();
+        $options = $options instanceof SmsMessageOptions ? $options : null;
+        $undeliverableReason = $options?->getUndeliverableReason();
 
         if ($undeliverableReason !== null) {
             // the null gateway took the message although no gateway of the shop carries the country
@@ -112,7 +114,7 @@ class SmsDeliverySubscriber implements EventSubscriberInterface
                     null,
                     null,
                     $undeliverableReason,
-                    'No gateway of the shop accepts the country of the number.',
+                    $options?->getUndeliverableMessage() ?? 'No gateway of the shop accepts the country of the number.',
                 ),
             ], Context::createDefaultContext());
 
@@ -212,17 +214,6 @@ class SmsDeliverySubscriber implements EventSubscriberInterface
         }
 
         return $record;
-    }
-
-    /**
-     * The reason the sender already knows a message will not leave the shop, null when it left or
-     * when it failed for a cause the provider reported.
-     */
-    private function undeliverableReasonOf(SmsMessage $message): ?string
-    {
-        $options = $message->getOptions();
-
-        return $options instanceof SmsMessageOptions ? $options->getUndeliverableReason() : null;
     }
 
     /**

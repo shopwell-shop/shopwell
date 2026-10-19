@@ -6,6 +6,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\System\Sms\Gateway\Audit\TemplateApprovalStatus;
 use Shopwell\Core\System\Sms\Gateway\SmsGatewayCollection;
 use Shopwell\Core\System\Sms\Gateway\SmsGatewayEntity;
 use Shopwell\Core\System\Sms\Gateway\SmsGatewayRegistry;
@@ -14,7 +15,6 @@ use Shopwell\Core\System\Sms\Gateway\SmsGatewayTransportFactoryInterface;
 use Shopwell\Core\System\Sms\SmsException;
 use Shopwell\Core\System\Sms\Struct\SmsMessageOptions;
 use Shopwell\Core\System\Sms\Template\Aggregate\SmsTemplateMapping\SmsTemplateMappingCollection;
-use Shopwell\Core\System\Sms\Gateway\Audit\TemplateApprovalStatus;
 use Shopwell\Core\System\Sms\Template\Aggregate\SmsTemplateMapping\SmsTemplateMappingEntity;
 use Shopwell\Core\System\Sms\Template\SmsParamValidator;
 use Shopwell\Core\System\Sms\Template\SmsTemplateCollection;
@@ -303,6 +303,51 @@ class SmsTemplateResolverTest extends TestCase
         static::assertSame(SmsException::NO_USABLE_GATEWAY, $options->getUndeliverableReason());
     }
 
+    public function testItNamesTheAuditThatKeepsTheMessageFromGoingOut(): void
+    {
+        $template = $this->createTemplate(content: 'Your code is {{ code }}.');
+        $gateway = $this->createGateway('aliyun');
+
+        $mapping = $this->createMapping($template, 'aliyun', $gateway);
+        $mapping->auditStatus = TemplateApprovalStatus::PENDING;
+
+        // the routing drops the only gateway because the template of the shop is reported there and
+        // not approved yet, and an empty candidate list is the same answer it gives for a shop
+        // without a usable gateway - the record has to name the audit instead
+        $resolver = $this->createResolver([$template], [$gateway], [$mapping], ['aliyun' => ['templateMode' => true]]);
+
+        $message = $resolver->resolve('customer.otp.login', ['code' => '123456'], '+8613800000000');
+
+        static::assertSame(SmsGatewayResolverInterface::GATEWAY_NULL, $message->getTransport());
+
+        $options = $message->getOptions();
+
+        static::assertInstanceOf(SmsMessageOptions::class, $options);
+        static::assertSame(SmsException::TEMPLATE_NOT_APPROVED, $options->getUndeliverableReason());
+        // the state and the provider that is still auditing are part of the sentence
+        static::assertSame(
+            SmsException::templateNotApproved('customer.otp.login', 'aliyun', TemplateApprovalStatus::PENDING)->getMessage(),
+            $options->getUndeliverableMessage()
+        );
+    }
+
+    public function testAnApprovedTemplateWithoutAUsableGatewayStaysANoGatewayCase(): void
+    {
+        $template = $this->createTemplate(content: 'Your code is {{ code }}.');
+        $gateway = $this->createGateway('aliyun');
+
+        // every row of the template is approved, so the audit is not what kept the routing empty
+        $mapping = $this->createMapping($template, 'aliyun', $gateway);
+
+        $resolver = $this->createResolver([$template], [$gateway], [$mapping], ['aliyun' => ['templateMode' => true]]);
+
+        $options = $resolver->resolve('customer.otp.login', ['code' => '123456'], '+8613800000000')->getOptions();
+
+        static::assertInstanceOf(SmsMessageOptions::class, $options);
+        static::assertSame(SmsException::NO_USABLE_GATEWAY, $options->getUndeliverableReason());
+        static::assertNull($options->getUndeliverableMessage());
+    }
+
     public function testItThrowsForAReportedTemplateWithoutACode(): void
     {
         $template = $this->createTemplate();
@@ -431,7 +476,6 @@ class SmsTemplateResolverTest extends TestCase
         $gateway->setUniqueIdentifier($gateway->id);
         $gateway->technicalName = $technicalName;
         $gateway->enabled = true;
-        $gateway->strategy = SmsGatewayEntity::STRATEGY_EXCLUSIVE;
         $gateway->credentials = ['accessKeyId' => 'key'];
         $gateway->options = [];
 

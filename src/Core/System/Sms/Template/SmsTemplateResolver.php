@@ -89,7 +89,7 @@ final class SmsTemplateResolver
         if ($gateway === null) {
             // nothing is usable, the message still goes through the pipeline and is recorded with the
             // reason it could not be sent
-            return $this->buildTextMessage($template, $params, $e164, SmsException::NO_USABLE_GATEWAY)
+            return $this->buildUndeliverableMessage($template, $params, $e164, $context)
                 ->transport(SmsGatewayResolverInterface::GATEWAY_NULL);
         }
 
@@ -127,6 +127,42 @@ final class SmsTemplateResolver
     }
 
     /**
+     * Names the reason the routing could not name: a template that was reported to a provider and is
+     * not approved yet and a shop without a usable gateway both end up as an empty candidate list,
+     * and the operator of the send log has to be able to tell them apart.
+     *
+     * @param array<string, mixed> $params
+     */
+    private function buildUndeliverableMessage(
+        SmsTemplateEntity $template,
+        array $params,
+        string $e164,
+        Context $context,
+    ): SmsMessage {
+        $unsendable = $this->mappingLocator->findUnsendable($context, $template->id);
+
+        if ($unsendable === null) {
+            return $this->buildTextMessage($template, $params, $e164, SmsException::NO_USABLE_GATEWAY);
+        }
+
+        // the row that blocks carries the provider and the state, so the record can say which audit
+        // is still open instead of guessing
+        $reason = SmsException::templateNotApproved(
+            $template->technicalName,
+            $unsendable->technicalName,
+            $unsendable->auditStatus
+        );
+
+        return $this->buildTextMessage(
+            $template,
+            $params,
+            $e164,
+            $reason->getErrorCode(),
+            $reason->getMessage()
+        );
+    }
+
+    /**
      * @param array<string, mixed> $params
      */
     private function buildTextMessage(
@@ -134,11 +170,13 @@ final class SmsTemplateResolver
         array $params,
         string $e164,
         ?string $undeliverableReason = null,
+        ?string $undeliverableMessage = null,
     ): SmsMessage {
         $options = new SmsMessageOptions(
             scene: $template->scene,
             templateRef: $template->technicalName,
             undeliverableReason: $undeliverableReason,
+            undeliverableMessage: $undeliverableMessage,
         );
 
         return new SmsMessage($e164, $this->renderer->render($template, $params), '', $options);

@@ -221,6 +221,31 @@ class SmsDeliverySubscriberTest extends TestCase
         static::assertNull($record['countryCode']);
     }
 
+    public function testItRecordsTheReasonTheSenderGaveForAMessageThatNeverLeft(): void
+    {
+        $gateway = $this->createGateway('null');
+        $deliveryRepository = $this->createDeliveryRepository();
+
+        $subscriber = $this->createSubscriber($deliveryRepository, [$gateway], []);
+
+        // the sender knew more than the code: the template of the shop is still in the audit of the
+        // provider, and the record must not send an operator looking for a routing problem
+        $reason = 'The sms template "customer.otp.login" is "pending" at "aliyun", only approved templates may be sent.';
+
+        $message = (new SmsMessage('+8613800000000', 'hello', '', new SmsMessageOptions(
+            undeliverableReason: SmsException::TEMPLATE_NOT_APPROVED,
+            undeliverableMessage: $reason,
+        )))->transport($gateway->id);
+
+        $subscriber->onSentMessage(new SentMessageEvent(new SentMessage($message, 'null')));
+
+        $record = $deliveryRepository->creates[0][0];
+
+        static::assertSame('failed', $record['status']);
+        static::assertSame(SmsException::TEMPLATE_NOT_APPROVED, $record['errorCode']);
+        static::assertSame($reason, $record['errorMessage']);
+    }
+
     public function testItRecordsAVendorMessageThatCarriesNoOptions(): void
     {
         $gateway = $this->createGateway('twilio');
@@ -331,7 +356,6 @@ class SmsDeliverySubscriberTest extends TestCase
         $gateway->setUniqueIdentifier($gateway->id);
         $gateway->technicalName = $technicalName;
         $gateway->enabled = true;
-        $gateway->strategy = SmsGatewayEntity::STRATEGY_EXCLUSIVE;
 
         return $gateway;
     }

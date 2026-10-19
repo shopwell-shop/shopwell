@@ -68,6 +68,33 @@ final class SmsTemplateMappingLocator
     }
 
     /**
+     * The row that keeps a template from being sent, or null when every row of it is sendable.
+     *
+     * A row exists only once the shop reported the template to a provider that audits it, so a row
+     * that is not sendable is a report the provider has not approved - the reason the routing
+     * skipped its gateway, which the caller could not name otherwise.
+     *
+     * @internal
+     */
+    public function findUnsendable(Context $context, string $templateId): ?SmsTemplateMappingEntity
+    {
+        $criteria = new Criteria();
+        $criteria->addFilter(new EqualsFilter('templateId', $templateId));
+
+        $unsendable = [];
+
+        foreach ($this->mappingRepository->search($criteria, $context)->getEntities() as $mapping) {
+            \assert($mapping instanceof SmsTemplateMappingEntity);
+
+            if (!TemplateApprovalStatus::isSendable($mapping->auditStatus)) {
+                $unsendable[] = $mapping;
+            }
+        }
+
+        return $this->pick($unsendable);
+    }
+
+    /**
      * @param list<SmsTemplateMappingEntity> $mappings
      */
     private function pick(array $mappings): ?SmsTemplateMappingEntity

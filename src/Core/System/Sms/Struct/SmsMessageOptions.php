@@ -28,6 +28,9 @@ final class SmsMessageOptions implements TemplateSmsOptionsInterface
      * @param array<string, string> $params the parameters the provider expects
      * @param string|null $undeliverableReason the error code of the module that explains why no
      *                                         gateway took the message, null when one did
+     * @param string|null $undeliverableMessage the sentence the caller reads in the delivery record,
+     *                                          it carries the provider and the state the message
+     *                                          failed on and is therefore no fixed text per code
      */
     public function __construct(
         private readonly string $scene = SmsTemplateEntity::SCENE_TRANSACTION,
@@ -36,6 +39,7 @@ final class SmsMessageOptions implements TemplateSmsOptionsInterface
         private readonly ?string $signName = null,
         private readonly array $params = [],
         private readonly ?string $undeliverableReason = null,
+        private readonly ?string $undeliverableMessage = null,
     ) {
     }
 
@@ -84,6 +88,14 @@ final class SmsMessageOptions implements TemplateSmsOptionsInterface
     public function getUndeliverableReason(): ?string
     {
         return $this->undeliverableReason;
+    }
+
+    /**
+     * Why the message was not sent, in the words of the module, null when it was sent.
+     */
+    public function getUndeliverableMessage(): ?string
+    {
+        return $this->undeliverableMessage;
     }
 
     /**
