@@ -65,19 +65,19 @@ final class CountryDialCodeResolver
     }
 
     /**
-     * The ISO code of a dial code, null when the data does not know it.
+     * The ISO code of a dial code, null when the data does not know it or there is none.
      */
-    public function isoOfDialCode(string $dialCode): ?string
+    public function isoOfDialCode(?string $dialCode): ?string
     {
-        return $this->byDialCode[$dialCode] ?? null;
+        return $this->byDialCode[$dialCode ?? ''] ?? null;
     }
 
     /**
-     * The dial code of an ISO code, null when the data does not know it.
+     * The dial code of an ISO code, null when the data does not know it or there is none.
      */
-    public function dialCodeOfIso(string $iso): ?string
+    public function dialCodeOfIso(?string $iso): ?string
     {
-        return $this->byIso[strtoupper($iso)] ?? null;
+        return $this->byIso[strtoupper((string) $iso)] ?? null;
     }
 
     /**

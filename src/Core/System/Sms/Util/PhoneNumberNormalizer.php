@@ -53,9 +53,10 @@ final class PhoneNumberNormalizer implements PhoneNumberNormalizerInterface
             throw SmsException::invalidPhoneNumber($phone);
         }
 
-        // a prefix the data does not know keeps the number valid, it just names no country
+        // a prefix the data does not know keeps the number valid, it just names no country - and a
+        // number without a country carries an empty dial code, see PhoneNumber
         $dialCode = $this->dialCodes->matchPrefix($digits) ?? '';
-        $iso = $dialCode === '' ? null : $this->dialCodes->isoOfDialCode($dialCode);
+        $iso = $this->dialCodes->isoOfDialCode($dialCode);
 
         return PhoneNumber::fromE164($written, $iso, $dialCode);
     }
@@ -66,7 +67,7 @@ final class PhoneNumberNormalizer implements PhoneNumberNormalizerInterface
      */
     private function withDialCode(string $written, ?string $countryIso, string $phone): string
     {
-        $dialCode = $countryIso === null ? null : $this->dialCodes->dialCodeOfIso($countryIso);
+        $dialCode = $this->dialCodes->dialCodeOfIso($countryIso);
 
         if ($dialCode === null) {
             // neither the caller nor the number itself names a country the module knows, and it never
@@ -76,10 +77,6 @@ final class PhoneNumberNormalizer implements PhoneNumberNormalizerInterface
 
         // a trunk prefix is no part of the number, 0138… and 138… are the same number of China
         $nationalNumber = ltrim($written, '0');
-
-        if ($nationalNumber === '') {
-            throw SmsException::invalidPhoneNumber($phone);
-        }
 
         // the number already carries its dial code, e.g. 8613800000000 written for China
         if (str_starts_with($nationalNumber, $dialCode)) {
