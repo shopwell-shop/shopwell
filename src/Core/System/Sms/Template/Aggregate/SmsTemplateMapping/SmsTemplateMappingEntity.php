@@ -12,6 +12,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\Required;
 use Shopwell\Core\Framework\DataAbstractionLayer\Entity as EntityStruct;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityCustomFieldsTrait;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Sms\Gateway\Audit\TemplateApprovalStatus;
 use Shopwell\Core\System\Sms\Gateway\SmsGatewayEntity;
 use Shopwell\Core\System\Sms\Template\SmsTemplateEntity;
 
@@ -35,11 +36,6 @@ class SmsTemplateMappingEntity extends EntityStruct
     use EntityCustomFieldsTrait;
 
     final public const ENTITY_NAME = 'sms_template_mapping';
-
-    final public const AUDIT_PENDING = 'pending';
-    final public const AUDIT_APPROVED = 'approved';
-    final public const AUDIT_REJECTED = 'rejected';
-    final public const AUDIT_SUSPENDED = 'suspended';
 
     #[PrimaryKey]
     #[Field(type: FieldType::UUID, api: ['admin-api' => true, 'store-api' => false])]
@@ -86,12 +82,12 @@ class SmsTemplateMappingEntity extends EntityStruct
     public ?array $paramsMap = null;
 
     /**
-     * The locally kept snapshot of the audit state of the provider, one of the AUDIT_* constants.
-     * A message is only sent over a mapping that is approved.
+     * The locally kept snapshot of the audit state of the provider, one of the values of
+     * TemplateApprovalStatus. A message is only sent over a mapping that is approved.
      */
     #[Required]
     #[Field(type: FieldType::STRING, api: ['admin-api' => true, 'store-api' => false], maxLength: 32)]
-    public string $auditStatus = self::AUDIT_PENDING;
+    public string $auditStatus = TemplateApprovalStatus::PENDING;
 
     /**
      * The body that was handed to the provider for the audit. It is a snapshot for the reconciliation

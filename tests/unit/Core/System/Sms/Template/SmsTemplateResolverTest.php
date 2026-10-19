@@ -14,6 +14,7 @@ use Shopwell\Core\System\Sms\Gateway\SmsGatewayTransportFactoryInterface;
 use Shopwell\Core\System\Sms\SmsException;
 use Shopwell\Core\System\Sms\Struct\SmsMessageOptions;
 use Shopwell\Core\System\Sms\Template\Aggregate\SmsTemplateMapping\SmsTemplateMappingCollection;
+use Shopwell\Core\System\Sms\Gateway\Audit\TemplateApprovalStatus;
 use Shopwell\Core\System\Sms\Template\Aggregate\SmsTemplateMapping\SmsTemplateMappingEntity;
 use Shopwell\Core\System\Sms\Template\SmsParamValidator;
 use Shopwell\Core\System\Sms\Template\SmsTemplateCollection;
@@ -447,7 +448,7 @@ class SmsTemplateResolverTest extends TestCase
         $mapping->setUniqueIdentifier($mapping->id);
         $mapping->templateId = $template->id;
         $mapping->technicalName = $technicalName;
-        $mapping->auditStatus = SmsTemplateMappingEntity::AUDIT_APPROVED;
+        $mapping->auditStatus = TemplateApprovalStatus::APPROVED;
         $mapping->templateCode = 'SMS_123456789';
         $mapping->signName = 'Shopwell';
         $mapping->gatewayId = $gateway?->id;
