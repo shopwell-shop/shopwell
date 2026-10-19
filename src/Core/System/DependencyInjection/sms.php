@@ -124,12 +124,11 @@ return static function (ContainerConfigurator $container): void {
     // ---- the templates ----
     $services->set(SmsParamValidator::class);
 
-    // the audit and the renderer read the same body, so a reported template cannot differ from the
-    // one that is sent
+    // the audit reports the body of the default language, so the reader is the single source of
+    // what a provider sees - the renderer below is the body a free text gateway delivers instead
     $services->set(SmsTemplateBodyReader::class);
 
-    $services->set(SmsTemplateRenderer::class)
-        ->args([service(SmsTemplateBodyReader::class)]);
+    $services->set(SmsTemplateRenderer::class);
 
     // the single place that resolves the mapping row of a (template, provider, account) combination
     $services->set(SmsTemplateMappingLocator::class)

@@ -4,12 +4,9 @@ namespace Shopwell\Tests\Unit\Core\System\Sms\Template;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
-use Shopwell\Core\Defaults;
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\Framework\Struct\ArrayEntity;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\System\Sms\SmsException;
-use Shopwell\Core\System\Sms\Template\Audit\SmsTemplateBodyReader;
 use Shopwell\Core\System\Sms\Template\SmsTemplateEntity;
 use Shopwell\Core\System\Sms\Template\SmsTemplateRenderer;
 
@@ -26,7 +23,7 @@ class SmsTemplateRendererTest extends TestCase
 
         static::assertSame(
             'Your code is 123456, it is valid for 5 minutes.',
-            $this->createRenderer()->render($template, ['code' => '123456', 'minutes' => 5])
+            (new SmsTemplateRenderer())->render($template, ['code' => '123456', 'minutes' => 5])
         );
     }
 
@@ -34,7 +31,7 @@ class SmsTemplateRendererTest extends TestCase
     {
         $template = $this->createTemplate('Your order was shipped.');
 
-        static::assertSame('Your order was shipped.', $this->createRenderer()->render($template, []));
+        static::assertSame('Your order was shipped.', (new SmsTemplateRenderer())->render($template, []));
     }
 
     public function testItThrowsWhenTheContentIsMissing(): void
@@ -43,7 +40,7 @@ class SmsTemplateRendererTest extends TestCase
 
         $this->expectExceptionObject(SmsException::templateContentMissing('customer.otp.login'));
 
-        $this->createRenderer()->render($template, []);
+        (new SmsTemplateRenderer())->render($template, []);
     }
 
     public function testItThrowsWhenTheContentIsEmpty(): void
@@ -52,7 +49,7 @@ class SmsTemplateRendererTest extends TestCase
 
         $this->expectExceptionObject(SmsException::templateContentMissing('customer.otp.login'));
 
-        $this->createRenderer()->render($template, []);
+        (new SmsTemplateRenderer())->render($template, []);
     }
 
     public function testItFallsBackToTheBodyOfTheDefaultLanguage(): void
@@ -64,7 +61,7 @@ class SmsTemplateRendererTest extends TestCase
 
         static::assertSame(
             'Ihr Code ist 123456.',
-            $this->createRenderer()->render($template, ['code' => '123456'])
+            (new SmsTemplateRenderer())->render($template, ['code' => '123456'])
         );
     }
 
@@ -75,36 +72,18 @@ class SmsTemplateRendererTest extends TestCase
 
         static::assertSame(
             'Your code is 123456.',
-            $this->createRenderer()->render($template, ['code' => '123456'])
+            (new SmsTemplateRenderer())->render($template, ['code' => '123456'])
         );
     }
 
-    public function testTheBodyOfTheDefaultLanguageWinsOverTheOneOfTheContext(): void
+    public function testABodyOfTheLanguageWinsOverTheOneOfTheDefaultLanguage(): void
     {
-        // this round reports and sends the body of the default language only, so a body of the
-        // context language must never be rendered - it would differ from the reported one
         $template = $this->createTemplate('Votre code est {{ code }}.');
         $template->addTranslated('content', 'Your code is {{ code }}.');
 
         static::assertSame(
-            'Your code is 123456.',
-            $this->createRenderer()->render($template, ['code' => '123456'])
-        );
-    }
-
-    public function testItRendersTheDefaultLanguageWhenTheTranslationsAreLoadedAndTheContextIsAnotherLanguage(): void
-    {
-        // the context language is en-US: the property carries the en-US body and both translation
-        // rows are loaded, the rendered body is still the one of the default language
-        $template = $this->createTemplate('Your code is {{ code }}.');
-        $template->translations = [
-            Defaults::LANGUAGE_SYSTEM => (new ArrayEntity())->assign(['content' => 'Ihr Code ist {{ code }}.']),
-            Uuid::randomHex() => (new ArrayEntity())->assign(['content' => 'Your code is {{ code }}.']),
-        ];
-
-        static::assertSame(
-            'Ihr Code ist 123456.',
-            $this->createRenderer()->render($template, ['code' => '123456'])
+            'Votre code est 123456.',
+            (new SmsTemplateRenderer())->render($template, ['code' => '123456'])
         );
     }
 
@@ -115,7 +94,7 @@ class SmsTemplateRendererTest extends TestCase
 
         $this->expectExceptionObject(SmsException::templateContentMissing('customer.otp.login'));
 
-        $this->createRenderer()->render($template, []);
+        (new SmsTemplateRenderer())->render($template, []);
     }
 
     public function testItThrowsWhenTheContentRefersToAParameterThatWasNotPassed(): void
@@ -127,7 +106,7 @@ class SmsTemplateRendererTest extends TestCase
             ['the content refers to "code" which was not passed']
         ));
 
-        $this->createRenderer()->render($template, []);
+        (new SmsTemplateRenderer())->render($template, []);
     }
 
     public function testItThrowsWhenTheRenderedBodyIsLongerThanTheTemplateAllows(): void
@@ -136,7 +115,7 @@ class SmsTemplateRendererTest extends TestCase
 
         $this->expectExceptionObject(SmsException::messageTooLong('customer.otp.login', 20, 10));
 
-        $this->createRenderer()->render($template, ['code' => '123456']);
+        (new SmsTemplateRenderer())->render($template, ['code' => '123456']);
     }
 
     public function testItAcceptsABodyAtTheUpperBound(): void
@@ -145,13 +124,8 @@ class SmsTemplateRendererTest extends TestCase
 
         static::assertSame(
             'Your code is 123456.',
-            $this->createRenderer()->render($template, ['code' => '123456'])
+            (new SmsTemplateRenderer())->render($template, ['code' => '123456'])
         );
-    }
-
-    private function createRenderer(): SmsTemplateRenderer
-    {
-        return new SmsTemplateRenderer(new SmsTemplateBodyReader());
     }
 
     private function createTemplate(?string $content, ?int $maxLength = null): SmsTemplateEntity

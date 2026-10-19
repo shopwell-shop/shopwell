@@ -18,7 +18,6 @@ use Shopwell\Core\System\Sms\Service\SmsSender;
 use Shopwell\Core\System\Sms\SmsException;
 use Shopwell\Core\System\Sms\Struct\SmsMessageOptions;
 use Shopwell\Core\System\Sms\Template\Aggregate\SmsTemplateMapping\SmsTemplateMappingCollection;
-use Shopwell\Core\System\Sms\Template\Audit\SmsTemplateBodyReader;
 use Shopwell\Core\System\Sms\Template\SmsParamValidator;
 use Shopwell\Core\System\Sms\Template\SmsTemplateCollection;
 use Shopwell\Core\System\Sms\Template\SmsTemplateEntity;
@@ -201,7 +200,7 @@ class SmsSenderTest extends TestCase
             new SmsGatewayRegistry($factories),
             $gatewayResolver,
             new SmsParamValidator(),
-            new SmsTemplateRenderer(new SmsTemplateBodyReader()),
+            new SmsTemplateRenderer(),
             new PhoneNumberNormalizer(new StaticSystemConfigService()),
         );
 
