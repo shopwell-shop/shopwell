@@ -109,6 +109,9 @@ class AuthController extends StorefrontController
             'waitTime' => $request->attributes->get('waitTime'),
             'errorSnippet' => $request->attributes->get('errorSnippet'),
             'data' => $data,
+            // the number a login by sms was requested for, so the form of the code does not ask for
+            // it a second time
+            'phone' => $request->query->getString('phone'),
         ]);
     }
 

@@ -28,6 +28,7 @@ use Shopwell\Core\Checkout\Customer\SalesChannel\RemoveWishlistProductRoute;
 use Shopwell\Core\Checkout\Customer\SalesChannel\ResetPasswordRoute;
 use Shopwell\Core\Checkout\Customer\SalesChannel\SendPasswordRecoveryMailRoute;
 use Shopwell\Core\Checkout\Customer\SalesChannel\UpsertAddressRoute;
+use Shopwell\Core\Checkout\Customer\Service\SmsLoginService;
 use Shopwell\Core\Checkout\DocumentV2\SalesChannel\DocumentRoute;
 use Shopwell\Core\Checkout\Loyalty\SalesChannel\LoyaltyRedeemRoute;
 use Shopwell\Core\Checkout\Loyalty\SalesChannel\MembershipPurchaseRoute;
@@ -64,6 +65,7 @@ use Shopwell\Core\Content\Sitemap\SalesChannel\SitemapFileRoute;
 use Shopwell\Core\Framework\Adapter\Translation\ConstraintViolationTranslator;
 use Shopwell\Core\Framework\App\Api\AppJWTGenerateRoute;
 use Shopwell\Core\Framework\Gateway\Context\SalesChannel\ContextGatewayRoute;
+use Shopwell\Core\Framework\RateLimiter\RateLimiter;
 use Shopwell\Core\Framework\Script\Api\ScriptResponseEncoder;
 use Shopwell\Core\Framework\Sso\Service\OAuth2LoginService;
 use Shopwell\Core\Framework\Util\HtmlSanitizer;
@@ -102,6 +104,7 @@ use Shopwell\Storefront\Controller\RobotsController;
 use Shopwell\Storefront\Controller\ScriptController;
 use Shopwell\Storefront\Controller\SearchController;
 use Shopwell\Storefront\Controller\SitemapController;
+use Shopwell\Storefront\Controller\SmsLoginController;
 use Shopwell\Storefront\Controller\StorybookController;
 use Shopwell\Storefront\Controller\VerificationHashController;
 use Shopwell\Storefront\Controller\WellKnownController;
@@ -416,6 +419,15 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service(SitemapPageLoader::class),
             service(SitemapFileRoute::class),
+        ])
+        ->call('setContainer', [service('service_container')]);
+
+    $services->set(SmsLoginController::class)
+        ->args([
+            service(SmsLoginService::class),
+            service(AccountService::class),
+            service(StorefrontCartFacade::class),
+            service(RateLimiter::class),
         ])
         ->call('setContainer', [service('service_container')]);
 

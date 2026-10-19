@@ -62,6 +62,7 @@ use Shopwell\Core\Checkout\Customer\SalesChannel\UpsertAddressRoute;
 use Shopwell\Core\Checkout\Customer\Service\DoubleOptInService;
 use Shopwell\Core\Checkout\Customer\Service\GuestAuthenticator;
 use Shopwell\Core\Checkout\Customer\Service\ProductReviewCountService;
+use Shopwell\Core\Checkout\Customer\Service\SmsLoginService;
 use Shopwell\Core\Checkout\Customer\Subscriber\AddressHashSubscriber;
 use Shopwell\Core\Checkout\Customer\Subscriber\CustomerAddressSubscriber;
 use Shopwell\Core\Checkout\Customer\Subscriber\CustomerBeforeDeleteSubscriber;
@@ -101,10 +102,14 @@ use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextPersister;
 use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextRestorer;
 use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextService;
 use Shopwell\Core\System\SalesChannel\StoreApiCustomFieldMapper;
+use Shopwell\Core\System\Sms\Service\AbstractSmsSender;
+use Shopwell\Core\System\Sms\Util\PhoneNumberMaskerInterface;
+use Shopwell\Core\System\Sms\Util\PhoneNumberNormalizerInterface;
 use Shopwell\Core\System\SystemConfig\SystemConfigService;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Contracts\Cache\CacheInterface;
 
 use function Symfony\Component\DependencyInjection\Loader\Configurator\env;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\param;
@@ -162,6 +167,18 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(SystemConfigService::class),
             service('sales_channel_domain.repository'),
             service(ClockInterface::class),
+        ]);
+
+    $services->set(SmsLoginService::class)
+        ->args([
+            service('customer.repository'),
+            service(AbstractSmsSender::class),
+            service(CacheInterface::class),
+            service(PhoneNumberNormalizerInterface::class),
+            service(PhoneNumberMaskerInterface::class),
+            service('logger'),
+            service(ClockInterface::class),
+            param('kernel.secret'),
         ]);
 
     $services->set(AddressValidationFactory::class)

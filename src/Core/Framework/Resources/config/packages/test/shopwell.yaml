@@ -141,6 +141,24 @@ shopwell:
                         interval: '30 seconds'
                     -   limit: 20
                         interval: '60 seconds'
+            sms_login_code: # the verification code of the login by sms, see RateLimiter::SMS_LOGIN_CODE
+                enabled: true
+                policy: 'time_backoff'
+                reset: '24 hours'
+                limits:
+                    -   limit: 3
+                        interval: '60 seconds'
+                    -   limit: 5
+                        interval: '10 minutes'
+            sms_login_verify: # the answer to a code of the login by sms, see RateLimiter::SMS_LOGIN_VERIFY
+                enabled: true
+                policy: 'time_backoff'
+                reset: '24 hours'
+                limits:
+                    -   limit: 5
+                        interval: '60 seconds'
+                    -   limit: 10
+                        interval: '10 minutes'
             reset_password:
                 enabled: true
                 policy: 'time_backoff'
