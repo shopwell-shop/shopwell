@@ -12,6 +12,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\System\Sms\Event\SmsTemplateAuditStatusChangedEvent;
 use Shopwell\Core\System\Sms\Gateway\Audit\SmsGatewayAuditCapabilities;
 use Shopwell\Core\System\Sms\Gateway\Audit\TemplateApprovalStatus;
 use Shopwell\Core\System\Sms\Gateway\Audit\TemplateSubmission;
@@ -23,6 +24,7 @@ use Shopwell\Core\System\Sms\Template\Aggregate\SmsTemplateMapping\SmsTemplateMa
 use Shopwell\Core\System\Sms\Template\SmsTemplateCollection;
 use Shopwell\Core\System\Sms\Template\SmsTemplateEntity;
 use Shopwell\Core\System\Sms\Template\SmsTemplateMappingLocator;
+use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 /**
  * Drives the audit loop of one mapping row: report the template of the shop at the provider,
@@ -88,6 +90,7 @@ final class SmsTemplateAuditService
         private readonly SmsTemplateBodyReader $bodyReader,
         private readonly Connection $connection,
         private readonly ClockInterface $clock,
+        private readonly EventDispatcherInterface $eventDispatcher,
     ) {
     }
 
@@ -164,6 +167,8 @@ final class SmsTemplateAuditService
 
         $mapping->setCustomFields($customFields);
 
+        $fromStatus = $mapping->auditStatus;
+
         // the row keeps the body that was reported, so a body that changed in the shop can be
         // reported again deliberately instead of silently differing from the one at the provider
         $this->mappingRepository->update([[
@@ -174,6 +179,8 @@ final class SmsTemplateAuditService
             'auditStatus' => $receipt->status,
             'customFields' => $mapping->getCustomFields(),
         ]], $context);
+
+        $this->dispatchStatusChange($context, $mapping, $fromStatus, $receipt->status, $receipt->templateCode);
 
         return $this->loadMapping($context, $mappingId);
     }
@@ -223,11 +230,15 @@ final class SmsTemplateAuditService
 
         $mapping->setCustomFields($customFields);
 
+        $fromStatus = $mapping->auditStatus;
+
         $this->mappingRepository->update([[
             'id' => $mapping->id,
             'auditStatus' => $reading->status,
             'customFields' => $mapping->getCustomFields(),
         ]], $context);
+
+        $this->dispatchStatusChange($context, $mapping, $fromStatus, $reading->status, $templateCode);
 
         return $this->loadMapping($context, $mappingId);
     }
@@ -269,6 +280,8 @@ final class SmsTemplateAuditService
 
         $this->logConfirmation($context, $mapping, $template, $fromStatus, $status, $note);
 
+        $this->dispatchStatusChange($context, $mapping, $fromStatus, $status, $mapping->templateCode);
+
         return $this->loadMapping($context, $mappingId);
     }
 
@@ -304,6 +317,36 @@ final class SmsTemplateAuditService
         ]], $context);
 
         return $this->loadMapping($context, $mappingId);
+    }
+
+    /**
+     * Reports the transition of a row after it was written.
+     *
+     * Only a transition is news: a pending template is read back again and again, and a subscriber
+     * that wants to act on "the template became approved" must not be woken by a refresh that read
+     * the same state a second time.
+     */
+    private function dispatchStatusChange(
+        Context $context,
+        SmsTemplateMappingEntity $mapping,
+        string $fromStatus,
+        string $toStatus,
+        ?string $providerTemplateCode,
+    ): void {
+        if ($fromStatus === $toStatus) {
+            return;
+        }
+
+        $this->eventDispatcher->dispatch(new SmsTemplateAuditStatusChangedEvent(
+            mappingId: $mapping->id,
+            templateId: $mapping->templateId,
+            technicalName: $mapping->technicalName,
+            gatewayId: $mapping->gatewayId,
+            previousStatus: $fromStatus,
+            status: $toStatus,
+            providerTemplateCode: $providerTemplateCode,
+            context: $context,
+        ));
     }
 
     /**

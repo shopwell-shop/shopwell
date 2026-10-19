@@ -179,6 +179,7 @@ return static function (ContainerConfigurator $container): void {
             service(SmsTemplateBodyReader::class),
             service(Connection::class),
             service(ClockInterface::class),
+            service('event_dispatcher'),
         ]);
 
     $services->set(SmsTemplateResolver::class)

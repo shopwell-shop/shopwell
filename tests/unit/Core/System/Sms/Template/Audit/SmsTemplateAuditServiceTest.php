@@ -11,6 +11,7 @@ use Psr\Clock\ClockInterface;
 use Shopwell\Core\Framework\Api\Context\AdminApiSource;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Sms\Event\SmsTemplateAuditStatusChangedEvent;
 use Shopwell\Core\System\Sms\Gateway\Audit\ReadsTemplateApprovalStatusInterface;
 use Shopwell\Core\System\Sms\Gateway\Audit\SmsGatewayAuditCapabilities;
 use Shopwell\Core\System\Sms\Gateway\Audit\SubmitsTemplatesForApprovalInterface;
@@ -32,6 +33,8 @@ use Shopwell\Core\System\Sms\Template\SmsTemplateCollection;
 use Shopwell\Core\System\Sms\Template\SmsTemplateEntity;
 use Shopwell\Core\System\Sms\Template\SmsTemplateMappingLocator;
 use Shopwell\Core\Test\Stub\DataAbstractionLayer\StaticEntityRepository;
+use Symfony\Component\EventDispatcher\EventDispatcher;
+use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 /**
  * @internal
@@ -511,6 +514,158 @@ class SmsTemplateAuditServiceTest extends TestCase
         static::assertIsString($created['id']);
     }
 
+    public function testASubmissionReportsTheStateTheProviderGave(): void
+    {
+        $mapping = $this->createMapping(templateCode: 'SMS_OLD', auditStatus: TemplateApprovalStatus::REJECTED);
+        $mappingRepository = $this->createMappingRepository($mapping, $mapping);
+
+        $factory = $this->createFactory();
+        $factory->expects($this->once())
+            ->method('submitTemplate')
+            ->willReturn(new TemplateSubmissionReceipt('SMS_123456789', TemplateApprovalStatus::PENDING));
+
+        $events = [];
+        $dispatcher = $this->createMock(EventDispatcherInterface::class);
+        $dispatcher->expects($this->once())
+            ->method('dispatch')
+            ->willReturnCallback(static function (object $event) use (&$events): object {
+                $events[] = $event;
+
+                return $event;
+            });
+
+        $service = $this->createService($factory, $mappingRepository, eventDispatcher: $dispatcher);
+
+        $service->submit($this->context, self::MAPPING_ID, $this->createFieldValues());
+
+        static::assertCount(1, $events);
+        static::assertInstanceOf(SmsTemplateAuditStatusChangedEvent::class, $events[0]);
+
+        $event = $events[0];
+
+        static::assertSame(self::MAPPING_ID, $event->getMappingId());
+        static::assertSame(self::TEMPLATE_ID, $event->getTemplateId());
+        static::assertSame(self::TECHNICAL_NAME, $event->getTechnicalName());
+        static::assertSame(self::GATEWAY_ID, $event->getGatewayId());
+        static::assertSame(TemplateApprovalStatus::REJECTED, $event->getPreviousStatus());
+        static::assertSame(TemplateApprovalStatus::PENDING, $event->getStatus());
+        static::assertSame('SMS_123456789', $event->getProviderTemplateCode());
+        static::assertSame($this->context, $event->getContext());
+    }
+
+    public function testASubmissionThatKeepsTheStateReportsNoTransition(): void
+    {
+        $mapping = $this->createMapping(templateCode: 'SMS_OLD', auditStatus: TemplateApprovalStatus::REJECTED);
+        $mappingRepository = $this->createMappingRepository($mapping, $mapping);
+
+        $factory = $this->createFactory();
+        $factory->method('submitTemplate')
+            ->willReturn(new TemplateSubmissionReceipt('SMS_123456789', TemplateApprovalStatus::REJECTED));
+
+        $dispatcher = $this->createMock(EventDispatcherInterface::class);
+        $dispatcher->expects($this->never())->method('dispatch');
+
+        $this->createService($factory, $mappingRepository, eventDispatcher: $dispatcher)
+            ->submit($this->context, self::MAPPING_ID, $this->createFieldValues());
+
+        // the row is written, only the news for a subscriber is missing
+        static::assertCount(1, $mappingRepository->updates);
+    }
+
+    public function testARefreshReportsTheStateItRead(): void
+    {
+        $mapping = $this->createMapping(templateCode: 'SMS_123456789', auditStatus: TemplateApprovalStatus::PENDING);
+        $mappingRepository = $this->createMappingRepository($mapping, $mapping);
+
+        $factory = $this->createFactory();
+        $factory->method('readTemplateApprovalStatus')
+            ->willReturn(new TemplateApprovalReading(
+                status: TemplateApprovalStatus::APPROVED,
+                providerStatusCode: '0',
+                providerStatusMessage: 'OK',
+            ));
+
+        $events = [];
+        $dispatcher = $this->createMock(EventDispatcherInterface::class);
+        $dispatcher->expects($this->once())
+            ->method('dispatch')
+            ->willReturnCallback(static function (object $event) use (&$events): object {
+                $events[] = $event;
+
+                return $event;
+            });
+
+        $this->createService($factory, $mappingRepository, eventDispatcher: $dispatcher)
+            ->refresh($this->context, self::MAPPING_ID);
+
+        static::assertCount(1, $events);
+        static::assertInstanceOf(SmsTemplateAuditStatusChangedEvent::class, $events[0]);
+        static::assertSame(TemplateApprovalStatus::PENDING, $events[0]->getPreviousStatus());
+        static::assertSame(TemplateApprovalStatus::APPROVED, $events[0]->getStatus());
+        static::assertSame('SMS_123456789', $events[0]->getProviderTemplateCode());
+    }
+
+    public function testARefreshThatReadsTheSameStateReportsNoTransition(): void
+    {
+        $mapping = $this->createMapping(templateCode: 'SMS_123456789', auditStatus: TemplateApprovalStatus::PENDING);
+        $mappingRepository = $this->createMappingRepository($mapping, $mapping);
+
+        $factory = $this->createFactory();
+        $factory->method('readTemplateApprovalStatus')
+            ->willReturn(new TemplateApprovalReading(
+                status: TemplateApprovalStatus::PENDING,
+                providerStatusCode: '1',
+                providerStatusMessage: 'in audit',
+            ));
+
+        $dispatcher = $this->createMock(EventDispatcherInterface::class);
+        $dispatcher->expects($this->never())->method('dispatch');
+
+        $this->createService($factory, $mappingRepository, eventDispatcher: $dispatcher)
+            ->refresh($this->context, self::MAPPING_ID);
+
+        // a pending template is refreshed again and again, only the transition is news
+        static::assertCount(1, $mappingRepository->updates);
+    }
+
+    public function testAManualConfirmationReportsTheStateItSet(): void
+    {
+        $mapping = $this->createMapping(templateCode: 'SMS_123456789', technicalName: 'null');
+        $mappingRepository = $this->createMappingRepository($mapping, $mapping);
+
+        $events = [];
+        $dispatcher = $this->createMock(EventDispatcherInterface::class);
+        $dispatcher->expects($this->once())
+            ->method('dispatch')
+            ->willReturnCallback(static function (object $event) use (&$events): object {
+                $events[] = $event;
+
+                return $event;
+            });
+
+        $this->createService(new NullGatewayTransportFactory(), $mappingRepository, eventDispatcher: $dispatcher)
+            ->confirmManually($this->context, self::MAPPING_ID, TemplateApprovalStatus::APPROVED, 'approved at the console');
+
+        static::assertCount(1, $events);
+        static::assertInstanceOf(SmsTemplateAuditStatusChangedEvent::class, $events[0]);
+        static::assertSame(TemplateApprovalStatus::PENDING, $events[0]->getPreviousStatus());
+        static::assertSame(TemplateApprovalStatus::APPROVED, $events[0]->getStatus());
+        static::assertSame('null', $events[0]->getTechnicalName());
+    }
+
+    public function testEnsureMappingReportsNoTransition(): void
+    {
+        $mapping = $this->createMapping();
+        $mappingRepository = $this->createMappingRepository($mapping, $mapping);
+
+        $dispatcher = $this->createMock(EventDispatcherInterface::class);
+        $dispatcher->expects($this->never())->method('dispatch');
+
+        // creating the row is no audit result, there is no state to report
+        $this->createService($this->createFactory(), $mappingRepository, eventDispatcher: $dispatcher)
+            ->ensureMapping($this->context, self::TEMPLATE_ID, self::TECHNICAL_NAME, self::GATEWAY_ID);
+    }
+
     /**
      * A provider that reports templates and can be asked for their state.
      */
@@ -541,6 +696,7 @@ class SmsTemplateAuditServiceTest extends TestCase
         ?StaticEntityRepository $gatewayRepository = null,
         ?StaticEntityRepository $templateRepository = null,
         ?Connection $connection = null,
+        ?EventDispatcherInterface $eventDispatcher = null,
     ): SmsTemplateAuditService {
         $clock = static::createStub(ClockInterface::class);
         $clock->method('now')->willReturn(new \DateTimeImmutable(self::NOW));
@@ -554,6 +710,7 @@ class SmsTemplateAuditServiceTest extends TestCase
             new SmsTemplateBodyReader(),
             $connection ?? $this->createMock(Connection::class),
             $clock,
+            $eventDispatcher ?? new EventDispatcher(),
         );
     }
 

@@ -31,6 +31,7 @@ use Shopwell\Core\System\Sms\Template\SmsTemplateCollection;
 use Shopwell\Core\System\Sms\Template\SmsTemplateEntity;
 use Shopwell\Core\System\Sms\Template\SmsTemplateMappingLocator;
 use Shopwell\Core\Test\Stub\DataAbstractionLayer\StaticEntityRepository;
+use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 
@@ -307,6 +308,7 @@ class SmsTemplateAuditControllerTest extends TestCase
             new SmsTemplateBodyReader(),
             static::createStub(Connection::class),
             $clock,
+            new EventDispatcher(),
         );
 
         return new SmsTemplateAuditController($service);
