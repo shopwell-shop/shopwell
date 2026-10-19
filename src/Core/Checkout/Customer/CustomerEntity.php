@@ -39,9 +39,15 @@ class CustomerEntity extends Entity implements \Stringable
 
     protected ?string $lastPaymentMethodId = null;
 
-    protected string $defaultBillingAddressId;
+    /**
+     * Optional, as a customer may register without any address and add one during checkout.
+     */
+    protected ?string $defaultBillingAddressId = null;
 
-    protected string $defaultShippingAddressId;
+    /**
+     * Optional, as a customer may register without any address and add one during checkout.
+     */
+    protected ?string $defaultShippingAddressId = null;
 
     protected string $customerNumber;
 
@@ -218,22 +224,22 @@ class CustomerEntity extends Entity implements \Stringable
         $this->lastPaymentMethodId = $lastPaymentMethodId;
     }
 
-    public function getDefaultBillingAddressId(): string
+    public function getDefaultBillingAddressId(): ?string
     {
         return $this->defaultBillingAddressId;
     }
 
-    public function setDefaultBillingAddressId(string $defaultBillingAddressId): void
+    public function setDefaultBillingAddressId(?string $defaultBillingAddressId): void
     {
         $this->defaultBillingAddressId = $defaultBillingAddressId;
     }
 
-    public function getDefaultShippingAddressId(): string
+    public function getDefaultShippingAddressId(): ?string
     {
         return $this->defaultShippingAddressId;
     }
 
-    public function setDefaultShippingAddressId(string $defaultShippingAddressId): void
+    public function setDefaultShippingAddressId(?string $defaultShippingAddressId): void
     {
         $this->defaultShippingAddressId = $defaultShippingAddressId;
     }

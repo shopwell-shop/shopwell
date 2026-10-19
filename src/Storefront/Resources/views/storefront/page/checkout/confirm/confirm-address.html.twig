@@ -34,7 +34,7 @@
                 {% if page.order is defined %}
                     {% set lineItems = page.order.lineItems %}
                 {% endif %}
-                {% if not page.isHideShippingAddress() %}
+                {% if not page.isHideShippingAddress() and shippingAddress is not null %}
                     <div class="col-sm-6 card-col confirm-shipping-address">
                         <div class="card checkout-card">
                             <div class="card-body">
@@ -91,7 +91,19 @@
 
                             {% block page_checkout_confirm_address_billing_data %}
                                 <div class="confirm-address-billing mb-3">
-                                    {% if billingAddress.id is same as(shippingAddress.id) and not page.isHideShippingAddress()%}
+                                    {% if billingAddress is null %}
+                                        {% block page_checkout_confirm_address_billing_data_missing %}
+                                            <p>
+                                                {{ 'checkout.addressMissingAlert'|trans|sw_sanitize }}
+                                            </p>
+
+                                            <a href="{{ path('frontend.account.address.create.page') }}"
+                                               title="{{ 'account.addressCreateBtn'|trans|striptags }}"
+                                               class="btn btn-light">
+                                                {{ 'account.addressCreateBtn'|trans|sw_sanitize }}
+                                            </a>
+                                        {% endblock %}
+                                    {% elseif billingAddress.id is same as(shippingAddress.id) and not page.isHideShippingAddress()%}
                                         {% block page_checkout_confirm_address_billing_data_equal %}
                                             <p>
                                                 {{ 'checkout.addressEqualText'|trans|sw_sanitize }}
@@ -106,25 +118,27 @@
                             {% endblock %}
 
                             {% block page_checkout_confirm_address_billing_actions %}
-                                <div class="card-actions">
-                                    {% set addressManagerOptions = {
-                                        initialTab: 'billing',
-                                        addressId: billingAddress.id,
-                                        addressManagerUrl: path('frontend.account.addressmanager.get'),
-                                        addressSwitchUrl: path('frontend.account.address.switch-default'),
-                                    } %}
+                                {% if billingAddress is not null %}
+                                    <div class="card-actions">
+                                        {% set addressManagerOptions = {
+                                            initialTab: 'billing',
+                                            addressId: billingAddress.id,
+                                            addressManagerUrl: path('frontend.account.addressmanager.get'),
+                                            addressSwitchUrl: path('frontend.account.address.switch-default'),
+                                        } %}
 
-                                    {% block page_checkout_confirm_address_billing_actions_link %}
-                                        <a href="{{ path('frontend.account.address.edit.page', {addressId: billingAddress.id}) }}"
-                                           title="{{ 'account.overviewChangeBilling'|trans|striptags }}"
-                                           class="btn btn-light"
-                                           data-address-manager="true"
-                                           data-address-manager-options="{{ addressManagerOptions|json_encode }}"
-                                        >
-                                            {{ 'account.overviewChangeBilling'|trans|sw_sanitize }}
-                                        </a>
-                                    {% endblock %}
-                                </div>
+                                        {% block page_checkout_confirm_address_billing_actions_link %}
+                                            <a href="{{ path('frontend.account.address.edit.page', {addressId: billingAddress.id}) }}"
+                                               title="{{ 'account.overviewChangeBilling'|trans|striptags }}"
+                                               class="btn btn-light"
+                                               data-address-manager="true"
+                                               data-address-manager-options="{{ addressManagerOptions|json_encode }}"
+                                            >
+                                                {{ 'account.overviewChangeBilling'|trans|sw_sanitize }}
+                                            </a>
+                                        {% endblock %}
+                                    </div>
+                                {% endif %}
                             {% endblock %}
                         </div>
                     </div>

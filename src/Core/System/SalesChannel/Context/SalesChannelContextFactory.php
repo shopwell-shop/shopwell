@@ -258,38 +258,44 @@ class SalesChannelContextFactory extends AbstractSalesChannelContextFactory
         $addressIds[] = $customer->getDefaultBillingAddressId();
         $addressIds[] = $customer->getDefaultShippingAddressId();
 
-        $criteria = new Criteria(\array_unique($addressIds));
-        $criteria->setTitle('context-factory::addresses');
-        $criteria->addAssociation('salutation');
-        $criteria->addAssociation('country');
-        $criteria->addAssociation('countryState');
-        $criteria->addAssociation('countryCity');
-        $criteria->addAssociation('countryDistrict');
+        // a customer may register without any address, so only existing ids may be used in the criteria
+        $addressIds = array_values(array_unique(array_filter($addressIds, static fn (mixed $id) => \is_string($id))));
 
-        $addresses = $this->addressRepository->search($criteria, $context)->getEntities();
+        $addresses = new CustomerAddressCollection();
+        if ($addressIds !== []) {
+            $criteria = new Criteria($addressIds);
+            $criteria->setTitle('context-factory::addresses');
+            $criteria->addAssociation('salutation');
+            $criteria->addAssociation('country');
+            $criteria->addAssociation('countryState');
+            $criteria->addAssociation('countryCity');
+            $criteria->addAssociation('countryDistrict');
+
+            $addresses = $this->addressRepository->search($criteria, $context)->getEntities();
+        }
 
         // a default address id can point to a deleted row, and the setters are not nullable yet
         // an existing requested address wins over an injected one, e.g. the order's address during recalculation
         $activeBillingAddress = $addresses->get($options[SalesChannelContextService::BILLING_ADDRESS_ID] ?? '')
             ?? $this->getInjectedAddress($options, SalesChannelContextService::BILLING_ADDRESS)
-            ?? $addresses->get($customer->getDefaultBillingAddressId());
+            ?? $addresses->get($customer->getDefaultBillingAddressId() ?? '');
         if ($activeBillingAddress !== null) {
             $customer->setActiveBillingAddress($activeBillingAddress);
         }
 
         $activeShippingAddress = $addresses->get($options[SalesChannelContextService::SHIPPING_ADDRESS_ID] ?? '')
             ?? $this->getInjectedAddress($options, SalesChannelContextService::SHIPPING_ADDRESS)
-            ?? $addresses->get($customer->getDefaultShippingAddressId());
+            ?? $addresses->get($customer->getDefaultShippingAddressId() ?? '');
         if ($activeShippingAddress !== null) {
             $customer->setActiveShippingAddress($activeShippingAddress);
         }
 
-        $defaultBillingAddress = $addresses->get($customer->getDefaultBillingAddressId());
+        $defaultBillingAddress = $addresses->get($customer->getDefaultBillingAddressId() ?? '');
         if ($defaultBillingAddress !== null) {
             $customer->setDefaultBillingAddress($defaultBillingAddress);
         }
 
-        $defaultShippingAddress = $addresses->get($customer->getDefaultShippingAddressId());
+        $defaultShippingAddress = $addresses->get($customer->getDefaultShippingAddressId() ?? '');
         if ($defaultShippingAddress !== null) {
             $customer->setDefaultShippingAddress($defaultShippingAddress);
         }

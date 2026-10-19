@@ -1143,7 +1143,7 @@
                                         "type": "string"
                                     },
                                     "name": {
-                                        "description": "Customer name. Required unless a `billingAddress` is sent, whose name is used instead. When both are sent, this value also replaces the name of the billing address.",
+                                        "description": "Customer name. Optional for normal customers, as a customer account only requires an email address and a password. When it is not sent, the local part of the email address is used as display name, but the name of a sent `billingAddress` takes precedence. When both are sent, this value also replaces the name of the billing address.",
                                         "type": "string"
                                     },
                                     "acceptedDataProtection": {
@@ -1159,7 +1159,7 @@
                                         "type": "string"
                                     },
                                     "billingAddress": {
-                                        "description": "Billing address of the customer. Required unless a `shippingAddress` is sent, which is then used as the billing address as well.",
+                                        "description": "Billing address of the customer. Optional for customer registrations, as the address is collected during checkout, but required for guest registrations. When a `shippingAddress` is sent without a `billingAddress`, the shipping address is used as the billing address as well.",
                                         "$ref": "#/components/schemas/CustomerAddressBody"
                                     },
                                     "shippingAddress": {

@@ -1561,8 +1561,80 @@ class RegisterRouteTest extends TestCase
                 json_encode($registrationData, \JSON_THROW_ON_ERROR)
             );
 
+        static::assertSame(200, $this->browser->getResponse()->getStatusCode());
+
+        $response = json_decode((string) $this->browser->getResponse()->getContent(), true, 512, \JSON_THROW_ON_ERROR);
+        static::assertSame('customer', $response['apiAlias']);
+
+        $criteria = new Criteria([$response['id']]);
+        $criteria->addAssociation('addresses');
+
+        $customer = $this->customerRepository->search($criteria, Context::createDefaultContext())->getEntities()->first();
+        static::assertInstanceOf(CustomerEntity::class, $customer);
+
+        // the customer is valid without any address, the addresses are collected during checkout
+        static::assertNull($customer->getDefaultBillingAddressId());
+        static::assertNull($customer->getDefaultShippingAddressId());
+        static::assertNull($customer->getDefaultBillingAddress());
+        static::assertNull($customer->getDefaultShippingAddress());
+
+        $addresses = $customer->getAddresses();
+        static::assertNotNull($addresses);
+        static::assertCount(0, $addresses);
+
+        static::assertSame('Max Mustermann', $customer->getName());
+    }
+
+    public function testRegistrationWithoutAnyAddressAndWithoutName(): void
+    {
+        $registrationData = $this->getRegistrationData();
+        unset($registrationData['billingAddress']);
+        unset($registrationData['shippingAddress']);
+        unset($registrationData['name']);
+
+        $this->browser
+            ->request(
+                'POST',
+                '/store-api/account/register',
+                [],
+                [],
+                ['CONTENT_TYPE' => 'application/json'],
+                json_encode($registrationData, \JSON_THROW_ON_ERROR)
+            );
+
+        static::assertSame(200, $this->browser->getResponse()->getStatusCode());
+
         $response = json_decode((string) $this->browser->getResponse()->getContent(), true, 512, \JSON_THROW_ON_ERROR);
 
+        $criteria = new Criteria([$response['id']]);
+
+        $customer = $this->customerRepository->search($criteria, Context::createDefaultContext())->getEntities()->first();
+        static::assertInstanceOf(CustomerEntity::class, $customer);
+
+        // a customer account only requires email and password, the name falls back to the email local part
+        static::assertSame('teg-reg', $customer->getName());
+    }
+
+    public function testGuestRegistrationWithoutAnyAddress(): void
+    {
+        $registrationData = $this->getRegistrationData();
+        $registrationData['guest'] = true;
+        unset($registrationData['billingAddress']);
+        unset($registrationData['shippingAddress']);
+
+        $this->browser
+            ->request(
+                'POST',
+                '/store-api/account/register',
+                [],
+                [],
+                ['CONTENT_TYPE' => 'application/json'],
+                json_encode($registrationData, \JSON_THROW_ON_ERROR)
+            );
+
+        $response = json_decode((string) $this->browser->getResponse()->getContent(), true, 512, \JSON_THROW_ON_ERROR);
+
+        // guests order immediately, therefore the billing address stays mandatory for them
         static::assertNotCount(0, $response['errors']);
         static::assertSame('VIOLATION::IS_BLANK_ERROR', $response['errors'][0]['code']);
     }

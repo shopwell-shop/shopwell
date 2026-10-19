@@ -97,6 +97,8 @@ class AddressValidationFactory implements DataValidationFactoryInterface
             return $value;
         }
 
-        return trim($value);
+        // mb_trim also removes full width spaces, so an address field which only contains such a space is
+        // still detected as blank by the `NotBlank` constraints above
+        return mb_trim($value);
     }
 }

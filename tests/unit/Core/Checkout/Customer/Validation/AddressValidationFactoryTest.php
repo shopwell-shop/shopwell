@@ -72,6 +72,22 @@ class AddressValidationFactoryTest extends TestCase
         $this->assertAddressDefinition($definition);
     }
 
+    public function testNotBlankNormalizerAlsoRemovesFullWidthSpaces(): void
+    {
+        $definition = $this->addressValidationFactory->create($this->salesChannelContext)->getProperties();
+
+        foreach (['name', 'street', 'city'] as $property) {
+            $constraint = $definition[$property][0];
+
+            static::assertInstanceOf(NotBlank::class, $constraint);
+            static::assertNotNull($constraint->normalizer);
+
+            $normalizer = $constraint->normalizer;
+            static::assertSame('', $normalizer(" \u{3000}\t"));
+            static::assertSame('Musterstrasse 13', $normalizer("\u{3000}Musterstrasse 13 "));
+        }
+    }
+
     /**
      * @param array<string, mixed> $definition
      */

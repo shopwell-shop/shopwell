@@ -312,7 +312,8 @@ class RegisterRoute extends AbstractRegisterRoute
 
         $accountType = $data->get('accountType', CustomerEntity::ACCOUNT_TYPE_PRIVATE);
 
-        // The billing address is mandatory.
+        // The billing address is mandatory for guests, as they order immediately. A customer account can be
+        // created without any address, the address is then requested during the checkout.
         // The shipping address is optional but if there is one, a non-array value results in an exception in the validation process.
         $definition->add(
             'billingAddress',
@@ -328,8 +329,11 @@ class RegisterRoute extends AbstractRegisterRoute
 
         // The billing address validation must not be added if the data is neither a data bag nor valid because the validation building will fail.
         // Using a null value must be possible to allow the event based modification (see BuildValidationEvent).
-        if ($billingAddress instanceof DataBag || (!$shippingAddress instanceof DataBag && $billingAddress === null)) {
-            $definition->addSub('billingAddress', $this->getCreateAddressValidationDefinition($data, $accountType, $billingAddress ?? new RequestDataBag(), $context));
+        if ($billingAddress instanceof DataBag) {
+            $definition->addSub('billingAddress', $this->getCreateAddressValidationDefinition($data, $accountType, $billingAddress, $context));
+        } elseif ($isGuest && !$shippingAddress instanceof DataBag) {
+            // Only guests have to provide the billing address during the registration, see above.
+            $definition->addSub('billingAddress', $this->getCreateAddressValidationDefinition($data, $accountType, new RequestDataBag(), $context));
         }
 
         if ($shippingAddress instanceof DataBag) {
@@ -416,9 +420,37 @@ class RegisterRoute extends AbstractRegisterRoute
         $this->eventDispatcher->dispatch($event, CustomerEvents::MAPPING_REGISTER_CUSTOMER);
 
         $customer = $event->getOutput();
+
+        // The name is optional for a customer account, as the registration only requires email and password.
+        // A fallback is used nevertheless, so that admin lists, documents and mails always have something to display.
+        $customer['name'] = $this->resolveCustomerName($customer['name'] ?? null, $customer['email'] ?? null);
         $customer['id'] = Uuid::randomHex();
 
         return $customer;
+    }
+
+    /**
+     * Derives a displayable customer name from the email address as long as the customer did not provide one.
+     */
+    private function resolveCustomerName(mixed $name, mixed $email): ?string
+    {
+        // mb_trim also strips full width spaces, which customers of the Chinese storefront tend to enter
+        $name = \is_string($name) ? mb_trim($name) : '';
+        if ($name !== '') {
+            return $name;
+        }
+
+        $email = \is_string($email) ? mb_trim($email) : '';
+        if ($email === '') {
+            return null;
+        }
+
+        $localPart = strstr($email, '@', true);
+        if ($localPart === false || $localPart === '') {
+            $localPart = $email;
+        }
+
+        return mb_substr($localPart, 0, CustomerDefinition::MAX_LENGTH_NAME);
     }
 
     private function getCreateAddressValidationDefinition(

@@ -54,7 +54,7 @@ class CustomerProfileValidationFactoryTest extends TestCase
         $salesChannelContext = $this->getSalesChannelContext();
         $actual = $customerProfileValidationFactory->create($salesChannelContext);
         $expected = new DataValidationDefinition('customer.profile.create');
-        $this->addConstraintsSalesChannelContext($expected, $salesChannelContext);
+        $this->addConstraintsSalesChannelContext($expected, $salesChannelContext, requireName: false);
 
         static::assertEquals($expected, $actual);
     }
@@ -73,7 +73,7 @@ class CustomerProfileValidationFactoryTest extends TestCase
         $salesChannelContext = $this->getSalesChannelContext();
         $actual = $customerProfileValidationFactory->create($salesChannelContext);
         $expected = new DataValidationDefinition('customer.profile.create');
-        $this->addConstraintsSalesChannelContext($expected, $salesChannelContext);
+        $this->addConstraintsSalesChannelContext($expected, $salesChannelContext, requireName: false);
 
         static::assertEquals($expected, $actual);
     }
@@ -95,7 +95,7 @@ class CustomerProfileValidationFactoryTest extends TestCase
         $salesChannelContext = $this->getSalesChannelContext();
         $actual = $customerProfileValidationFactory->create($salesChannelContext);
         $expected = new DataValidationDefinition('customer.profile.create');
-        $this->addConstraintsSalesChannelContext($expected, $salesChannelContext);
+        $this->addConstraintsSalesChannelContext($expected, $salesChannelContext, requireName: false);
 
         static::assertEquals($expected, $actual);
     }
@@ -117,7 +117,7 @@ class CustomerProfileValidationFactoryTest extends TestCase
         $salesChannelContext = $this->getSalesChannelContext();
         $actual = $customerProfileValidationFactory->create($salesChannelContext);
         $expected = new DataValidationDefinition('customer.profile.create');
-        $this->addConstraintsSalesChannelContext($expected, $salesChannelContext);
+        $this->addConstraintsSalesChannelContext($expected, $salesChannelContext, requireName: false);
         $this->addConstraintsBirthday($expected);
 
         static::assertEquals($expected, $actual);
@@ -221,6 +221,24 @@ class CustomerProfileValidationFactoryTest extends TestCase
         }
     }
 
+    public function testNameIsOnlyRequiredWhenUpdatingTheProfile(): void
+    {
+        $customerProfileValidationFactory = new CustomerProfileValidationFactory(
+            static::createStub(SystemConfigService::class),
+            $this->accountTypes,
+        );
+
+        $salesChannelContext = $this->getSalesChannelContext();
+
+        // the registration only requires email and password, so the name must not be mandatory
+        $createConstraints = $customerProfileValidationFactory->create($salesChannelContext)->getProperties()['name'];
+        static::assertCount(0, array_filter($createConstraints, static fn ($constraint) => $constraint instanceof NotBlank));
+
+        // the profile page offers the name as a mandatory field, which is why updating still requires it
+        $updateConstraints = $customerProfileValidationFactory->update($salesChannelContext)->getProperties()['name'];
+        static::assertCount(1, array_filter($updateConstraints, static fn ($constraint) => $constraint instanceof NotBlank));
+    }
+
     private function getSalesChannelContext(): SalesChannelContext
     {
         $salesChannel = new SalesChannelEntity();
@@ -232,12 +250,20 @@ class CustomerProfileValidationFactoryTest extends TestCase
         );
     }
 
-    private function addConstraintsSalesChannelContext(DataValidationDefinition $definition, SalesChannelContext $context): void
-    {
+    private function addConstraintsSalesChannelContext(
+        DataValidationDefinition $definition,
+        SalesChannelContext $context,
+        bool $requireName = true
+    ): void {
         $definition
             ->add('salutationId', new EntityExists(entity: SalutationDefinition::ENTITY_NAME, context: $context->getContext()))
-            ->add('title', new Length(max: CustomerDefinition::MAX_LENGTH_TITLE))
-            ->add('name', new NotBlank())
+            ->add('title', new Length(max: CustomerDefinition::MAX_LENGTH_TITLE));
+
+        if ($requireName) {
+            $definition->add('name', new NotBlank());
+        }
+
+        $definition
             ->add('name', new Length(max: CustomerDefinition::MAX_LENGTH_NAME))
             ->add('accountType', new Choice(choices: $this->accountTypes))
             ->add('phoneNumber', new Length(max: CustomerDefinition::MAX_LENGTH_PHONE_NUMBER, exactMessage: 'VIOLATION::PHONE_NUMBER_IS_TOO_LONG'))

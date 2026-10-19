@@ -131,6 +131,173 @@ class RegisterControllerTest extends TestCase
         static::assertTrue($request->attributes->has(PlatformRequest::ATTRIBUTE_SALES_CHANNEL_CONTEXT_OBJECT));
     }
 
+    public function testRegisterCustomerAccountWithoutAddress(): void
+    {
+        $data = $this->getRegistrationData(false);
+
+        // The address form is always rendered, so an untouched form submits empty strings instead of omitting it
+        $data->set('billingAddress', [
+            'name' => 'Max Mustermann',
+            'countryId' => $this->getValidCountryId(),
+            'street' => ' ',
+            'zipcode' => '',
+            'city' => '',
+        ]);
+
+        $request = $this->createRequest();
+
+        $response = static::getContainer()->get(RegisterController::class)->register($request, $data, $this->salesChannelContext);
+
+        $customers = static::getContainer()->get(Connection::class)
+            ->fetchAllAssociative('SELECT * FROM customer WHERE email = :mail', ['mail' => $data->get('email')]);
+
+        static::assertSame(200, $response->getStatusCode());
+        static::assertCount(1, $customers);
+        static::assertNull($customers[0]['default_billing_address_id']);
+        static::assertNull($customers[0]['default_shipping_address_id']);
+        static::assertSame('Max Mustermann', $customers[0]['name']);
+        static::assertSame(0, (int) static::getContainer()->get(Connection::class)
+            ->fetchOne(
+                'SELECT COUNT(*) FROM customer_address WHERE customer_id = :customerId',
+                ['customerId' => $customers[0]['id']]
+            ));
+        static::assertTrue($request->attributes->has(PlatformRequest::ATTRIBUTE_SALES_CHANNEL_CONTEXT_OBJECT));
+    }
+
+    public function testRegisterCustomerAccountWithoutAddressAndName(): void
+    {
+        $data = $this->getRegistrationData(false, 'teg-dev-reg@example.com');
+        $data->remove('name');
+        $data->remove('billingAddress');
+
+        $request = $this->createRequest();
+
+        $response = static::getContainer()->get(RegisterController::class)->register($request, $data, $this->salesChannelContext);
+
+        $customers = static::getContainer()->get(Connection::class)
+            ->fetchAllAssociative('SELECT * FROM customer WHERE email = :mail', ['mail' => $data->get('email')]);
+
+        static::assertSame(200, $response->getStatusCode());
+        static::assertCount(1, $customers);
+        static::assertNull($customers[0]['default_billing_address_id']);
+        static::assertNull($customers[0]['default_shipping_address_id']);
+        static::assertSame('teg-dev-reg', $customers[0]['name']);
+    }
+
+    public function testAccountRegisterPageOnlyRendersEmailAndPassword(): void
+    {
+        $response = $this->request('GET', '/account/register', []);
+        static::assertSame(200, $response->getStatusCode());
+
+        $content = (string) $response->getContent();
+
+        // The credentials are the only fields of an account registration
+        static::assertStringContainsString('name="email"', $content);
+        static::assertStringContainsString('name="password"', $content);
+
+        // Neither the personal data nor the addresses are collected during the account registration
+        static::assertStringNotContainsString('name="billingAddress[', $content);
+        static::assertStringNotContainsString('name="shippingAddress[', $content);
+        static::assertStringNotContainsString('differentShippingAddress', $content);
+        static::assertStringNotContainsString('name="phoneNumber"', $content);
+        static::assertStringNotContainsString('name="salutationId"', $content);
+        static::assertStringNotContainsString('name="accountType"', $content);
+        static::assertStringNotContainsString('register-billing', $content);
+        static::assertStringNotContainsString('register-shipping', $content);
+    }
+
+    public function testRegisterAccountWithEmailAndPasswordOnly(): void
+    {
+        $email = 'register-credentials-only@example.com';
+
+        $response = $this->request('POST', '/account/register', [
+            'createCustomerAccount' => '1',
+            'email' => $email,
+            'password' => TestDefaults::HASHED_PASSWORD,
+            'errorRoute' => 'frontend.account.register.page',
+            'redirectTo' => 'frontend.account.home.page',
+        ]);
+
+        static::assertSame(302, $response->getStatusCode(), (string) $response->getContent());
+
+        $customers = static::getContainer()->get(Connection::class)
+            ->fetchAllAssociative('SELECT * FROM customer WHERE email = :mail', ['mail' => $email]);
+
+        static::assertCount(1, $customers);
+        static::assertNull($customers[0]['default_billing_address_id']);
+        static::assertNull($customers[0]['default_shipping_address_id']);
+        static::assertSame('register-credentials-only', $customers[0]['name']);
+        static::assertSame(0, (int) static::getContainer()->get(Connection::class)
+            ->fetchOne(
+                'SELECT COUNT(*) FROM customer_address WHERE customer_id = :customerId',
+                ['customerId' => $customers[0]['id']]
+            ));
+    }
+
+    public function testCheckoutRegisterPageStillRendersTheRequiredAddressFields(): void
+    {
+        $productNumber = 'checkout-register-address';
+
+        $this->createProduct(Uuid::randomHex(), $productNumber);
+
+        $this->request(
+            'POST',
+            '/checkout/product/add-by-number',
+            $this->tokenize('frontend.checkout.product.add-by-number', ['number' => $productNumber])
+        );
+
+        $response = $this->request('GET', '/checkout/register', []);
+        static::assertSame(200, $response->getStatusCode());
+
+        $content = (string) $response->getContent();
+
+        // The guest registration still collects the billing address and keeps it mandatory
+        foreach (['street', 'city', 'countryId'] as $field) {
+            static::assertStringContainsString('name="billingAddress[' . $field . ']"', $content);
+            static::assertMatchesRegularExpression(
+                '/name="billingAddress\[' . $field . '\]"[^>]*data-validation="required"/s',
+                $content,
+                \sprintf('The billing address field "%s" is not marked as required anymore', $field)
+            );
+        }
+
+        static::assertStringContainsString('name="billingAddress[name]"', $content);
+        static::assertStringContainsString('name="differentShippingAddress"', $content);
+    }
+
+    public function testGuestRegistrationWithoutAddressIsStillRefused(): void
+    {
+        $productNumber = 'checkout-register-guest-without-address';
+
+        $this->createProduct(Uuid::randomHex(), $productNumber);
+
+        $this->request(
+            'POST',
+            '/checkout/product/add-by-number',
+            $this->tokenize('frontend.checkout.product.add-by-number', ['number' => $productNumber])
+        );
+
+        $email = 'guest-without-address@example.com';
+
+        $response = $this->request('POST', '/account/register', [
+            'guest' => '1',
+            'email' => $email,
+            'errorRoute' => 'frontend.checkout.register.page',
+        ]);
+
+        // The checkout register form is re-rendered with the violation instead of creating the guest customer
+        static::assertSame(200, $response->getStatusCode(), (string) $response->getContent());
+
+        static::assertCount(
+            0,
+            static::getContainer()->get(Connection::class)
+                ->fetchAllAssociative('SELECT * FROM customer WHERE email = :mail', ['mail' => $email])
+        );
+
+        // The address form is rendered again, so the guest is able to complete the missing address
+        static::assertStringContainsString('name="billingAddress[street]"', (string) $response->getContent());
+    }
+
     public function testDoubleSubmittedGuestRegistrationCreatesOnlyOneCustomer(): void
     {
         $registerController = static::getContainer()->get(RegisterController::class);

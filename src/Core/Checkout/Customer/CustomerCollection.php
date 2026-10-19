@@ -65,7 +65,7 @@ class CustomerCollection extends EntityCollection
     }
 
     /**
-     * @return array<string>
+     * @return array<string|null>
      */
     public function getDefaultBillingAddressIds(): array
     {
@@ -78,7 +78,7 @@ class CustomerCollection extends EntityCollection
     }
 
     /**
-     * @return array<string>
+     * @return array<string|null>
      */
     public function getDefaultShippingAddressIds(): array
     {

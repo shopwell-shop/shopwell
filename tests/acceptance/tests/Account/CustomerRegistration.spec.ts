@@ -1,54 +1,54 @@
 import { test } from '@fixtures/AcceptanceTest';
-import { satisfies } from 'compare-versions';
 
 test(
-    'As a new customer, I must be able to register in the Storefront.',
+    'As a new customer, I must be able to register in the Storefront with an email address and a password only.',
     {
         tag: [
             '@Registration',
             '@Storefront',
         ],
     },
-    async ({ ShopCustomer, StorefrontAccountLogin, StorefrontAccount, IdProvider, Register }) => {
-        const customer = { email: IdProvider.getIdPair().uuid + '@test.com' };
+    async ({ ShopCustomer, StorefrontAccountLogin, StorefrontAccount, IdProvider }) => {
+        const customer = { email: IdProvider.getIdPair().uuid + '@test.com', password: 'shopware' };
 
         await ShopCustomer.goesTo(StorefrontAccountLogin.url());
-        await ShopCustomer.attemptsTo(Register(customer));
-        await ShopCustomer.expects(StorefrontAccount.page.getByText(customer.email, { exact: true })).toBeVisible();
+
+        await test.step('Register with the credentials only', async () => {
+            // The account registration does not ask for the name or an address anymore,
+            // both are collected during the checkout.
+            await StorefrontAccountLogin.registerEmailInput.fill(customer.email);
+            await StorefrontAccountLogin.registerPasswordInput.fill(customer.password);
+            await StorefrontAccountLogin.registerButton.click();
+        });
+
+        await test.step('Validate the customer is logged in', async () => {
+            await ShopCustomer.expects(StorefrontAccount.page.getByText(customer.email, { exact: true })).toBeVisible();
+        });
     },
 );
 
 test(
-    'As a new customer, I should not be able to register with empty postal code when it is required.',
+    'As a new customer, I should not have to provide an address during the registration.',
     {
         tag: [
             '@Registration',
             '@Storefront',
         ],
     },
-    async ({ ShopCustomer, StorefrontAccountLogin, Register, TestDataService, DefaultSalesChannel, InstanceMeta }) => {
-        const country = await TestDataService.createCountry({ postalCodeRequired: true });
-        await TestDataService.assignSalesChannelCountry(DefaultSalesChannel.salesChannel.id, country.id);
-        const customer = { country: country.name, postalCode: '' };
+    async ({ ShopCustomer, StorefrontAccountLogin }) => {
+        await ShopCustomer.goesTo(StorefrontAccountLogin.url());
 
-        await test.step('Attempt to register with missing postal code', async () => {
-            await ShopCustomer.goesTo(StorefrontAccountLogin.url());
-            await ShopCustomer.attemptsTo(Register(customer));
-        });
+        await test.step('Validate the registration form only contains the credentials', async () => {
+            await ShopCustomer.expects(StorefrontAccountLogin.registerEmailInput).toBeVisible();
+            await ShopCustomer.expects(StorefrontAccountLogin.registerPasswordInput).toBeVisible();
 
-        await test.step('Validate registration is blocked due to missing postal code', async () => {
-            await ShopCustomer.expects(StorefrontAccountLogin.page.getByText("I'm a new customer!")).toBeVisible();
-            await ShopCustomer.expects(
-                StorefrontAccountLogin.page.locator('label[for="billingAddressAddressZipcode"]'),
-            ).toContainText('*');
-            await ShopCustomer.expects(StorefrontAccountLogin.postalCodeInput).toHaveCSS('border-color', 'rgb(194, 0, 23)');
-
-            // eslint-disable-next-line playwright/no-conditional-in-test
-            if (!satisfies(InstanceMeta.version, '<6.7')) {
-                await ShopCustomer.expects(StorefrontAccountLogin.page.locator('.invalid-feedback')).toContainText(
-                    'Input should not be empty.',
-                );
-            }
+            // Neither the personal data nor the address forms are rendered on the account registration page,
+            // the (country specific) postal code validation therefore applies to the checkout address only.
+            await ShopCustomer.expects(StorefrontAccountLogin.page.locator('[name^="billingAddress"]')).toHaveCount(0);
+            await ShopCustomer.expects(StorefrontAccountLogin.page.locator('[name^="shippingAddress"]')).toHaveCount(0);
+            await ShopCustomer.expects(StorefrontAccountLogin.personalFormArea).toHaveCount(0);
+            await ShopCustomer.expects(StorefrontAccountLogin.postalCodeInput).toHaveCount(0);
+            await ShopCustomer.expects(StorefrontAccountLogin.differentShippingAddressCheckbox).toHaveCount(0);
         });
     },
 );

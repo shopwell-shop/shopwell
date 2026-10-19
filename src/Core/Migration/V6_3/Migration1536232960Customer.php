@@ -8,6 +8,11 @@ use Shopwell\Core\Framework\Migration\MigrationStep;
 
 /**
  * @internal
+ *
+ * The columns `default_billing_address_id` and `default_shipping_address_id` are nullable, because a
+ * customer may register with email and password only and provide the addresses later during checkout.
+ * In this development baseline the schema is recreated from the migrations
+ * (`system:install --drop-database`), so the nullability is defined here instead of in a separate migration.
  */
 #[Package('framework')]
 class Migration1536232960Customer extends MigrationStep
@@ -28,8 +33,8 @@ class Migration1536232960Customer extends MigrationStep
               `sales_channel_id` BINARY(16) NOT NULL,
               `language_id` BINARY(16) NOT NULL,
               `last_payment_method_id` BINARY(16) NULL,
-              `default_billing_address_id` BINARY(16) NOT NULL,
-              `default_shipping_address_id` BINARY(16) NOT NULL,
+              `default_billing_address_id` BINARY(16) NULL,
+              `default_shipping_address_id` BINARY(16) NULL,
               `customer_number` VARCHAR(255) COLLATE utf8mb4_unicode_ci NOT NULL,
               `salutation_id` BINARY(16) NOT NULL,
               `name` VARCHAR(255) COLLATE utf8mb4_unicode_ci NOT NULL,

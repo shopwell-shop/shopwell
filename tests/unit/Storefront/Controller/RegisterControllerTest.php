@@ -10,6 +10,8 @@ use Shopwell\Core\Checkout\Cart\Cart;
 use Shopwell\Core\Checkout\Cart\LineItem\LineItem;
 use Shopwell\Core\Checkout\Cart\SalesChannel\CartService;
 use Shopwell\Core\Checkout\Customer\Aggregate\CustomerGroup\CustomerGroupEntity;
+use Shopwell\Core\Checkout\Customer\CustomerEntity;
+use Shopwell\Core\Checkout\Customer\SalesChannel\CustomerResponse;
 use Shopwell\Core\Checkout\Customer\SalesChannel\RegisterConfirmRoute;
 use Shopwell\Core\Checkout\Customer\SalesChannel\RegisterRoute;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
@@ -377,6 +379,123 @@ class RegisterControllerTest extends TestCase
 
         static::assertSame('affiliate-code', $dataBag->get('affiliateCode'));
         static::assertSame('affiliate-campaign', $dataBag->get('campaignCode'));
+    }
+
+    public function testRegisterRemovesUntouchedAddressOfCustomerAccount(): void
+    {
+        $context = Generator::generateSalesChannelContext();
+        $context->assign(['customer' => null]);
+
+        $request = $this->createRegisterRequest();
+        $dataBag = new RequestDataBag([
+            'email' => 'foo@bar.de',
+            'password' => 'password',
+            'createCustomerAccount' => true,
+            'billingAddress' => [
+                // the storefront preselects a country, so an untouched address form is not an empty array
+                'name' => 'John Doe',
+                'accountType' => CustomerEntity::ACCOUNT_TYPE_BUSINESS,
+                'countryId' => Uuid::randomHex(),
+                'street' => ' ',
+                'city' => '',
+            ],
+        ]);
+
+        $passedData = null;
+
+        $registerRoute = $this->createMock(RegisterRoute::class);
+        $registerRoute
+            ->expects($this->once())
+            ->method('register')
+            ->willReturnCallback(static function (RequestDataBag $data) use (&$passedData): CustomerResponse {
+                $passedData = clone $data;
+
+                return new CustomerResponse(new CustomerEntity());
+            });
+
+        $controller = $this->createController(registerRoute: $registerRoute);
+        $controller->register($request, $dataBag, $context);
+
+        static::assertInstanceOf(RequestDataBag::class, $passedData);
+        // a customer account can be registered without any address, the address is collected during checkout
+        static::assertFalse($passedData->has('billingAddress'));
+        static::assertFalse($passedData->has('shippingAddress'));
+        // the name and the account type are rendered inside the address form, but belong to the customer
+        static::assertSame('John Doe', $passedData->get('name'));
+        static::assertSame(CustomerEntity::ACCOUNT_TYPE_BUSINESS, $passedData->get('accountType'));
+    }
+
+    public function testRegisterKeepsFilledAddressOfCustomerAccount(): void
+    {
+        $context = Generator::generateSalesChannelContext();
+        $context->assign(['customer' => null]);
+
+        $request = $this->createRegisterRequest();
+        $dataBag = new RequestDataBag([
+            'email' => 'foo@bar.de',
+            'password' => 'password',
+            'createCustomerAccount' => true,
+            'billingAddress' => [
+                'name' => 'John Doe',
+                'countryId' => Uuid::randomHex(),
+                'street' => 'Examplestreet 11',
+                'city' => 'Cologne',
+            ],
+        ]);
+
+        $passedData = null;
+
+        $registerRoute = $this->createMock(RegisterRoute::class);
+        $registerRoute
+            ->expects($this->once())
+            ->method('register')
+            ->willReturnCallback(static function (RequestDataBag $data) use (&$passedData): CustomerResponse {
+                $passedData = clone $data;
+
+                return new CustomerResponse(new CustomerEntity());
+            });
+
+        $controller = $this->createController(registerRoute: $registerRoute);
+        $controller->register($request, $dataBag, $context);
+
+        static::assertInstanceOf(RequestDataBag::class, $passedData);
+        static::assertTrue($passedData->has('billingAddress'));
+    }
+
+    public function testRegisterKeepsUntouchedAddressOfGuest(): void
+    {
+        $context = Generator::generateSalesChannelContext();
+        $context->assign(['customer' => null]);
+
+        $request = $this->createRegisterRequest();
+        $dataBag = new RequestDataBag([
+            'email' => 'foo@bar.de',
+            'createCustomerAccount' => false,
+            'billingAddress' => [
+                'countryId' => Uuid::randomHex(),
+                'street' => '',
+                'city' => '',
+            ],
+        ]);
+
+        $passedData = null;
+
+        $registerRoute = $this->createMock(RegisterRoute::class);
+        $registerRoute
+            ->expects($this->once())
+            ->method('register')
+            ->willReturnCallback(static function (RequestDataBag $data) use (&$passedData): CustomerResponse {
+                $passedData = clone $data;
+
+                return new CustomerResponse(new CustomerEntity());
+            });
+
+        $controller = $this->createController(registerRoute: $registerRoute);
+        $controller->register($request, $dataBag, $context);
+
+        static::assertInstanceOf(RequestDataBag::class, $passedData);
+        // guests order immediately, so an empty address has to end up as a validation error
+        static::assertTrue($passedData->has('billingAddress'));
     }
 
     private function createController(

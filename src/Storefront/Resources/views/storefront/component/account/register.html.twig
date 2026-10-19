@@ -2,6 +2,15 @@
     {% set formAction = path('frontend.account.register.save') %}
 {% endif %}
 
+{#
+    A customer account only requires an email address and a password, the addresses are collected during checkout.
+    Therefore the account registration does not render the personal data (salutation, name, account type, phone
+    number) nor the address forms at all. All other use cases of this template (guest checkout registration,
+    customer group registration, ...) still need the address and the name, which is why the requirement is derived
+    from the current route and can be overwritten by the including template.
+#}
+{% set addressRequired = addressRequired ?? (activeRoute != 'frontend.account.register.page') %}
+
 {% block component_account_register %}
     <div class="card register-card">
         <div class="card-body">
@@ -53,19 +62,23 @@
                             {% endblock %}
 
                             {% block component_account_register_personal_fields %}
-                                {% block component_account_register_personal_address_fields %}
-                                    {% sw_include '@Storefront/storefront/component/address/address-personal.html.twig' with {
-                                        showBirthdayField: config('core.loginRegistration.showBirthdayField'),
-                                        accountType: data.get('accountType')
-                                    } %}
-                                {% endblock %}
+                                {# The account registration only asks for email and password, the personal data is
+                                   collected together with the address during the checkout. #}
+                                {% if addressRequired %}
+                                    {% block component_account_register_personal_address_fields %}
+                                        {% sw_include '@Storefront/storefront/component/address/address-personal.html.twig' with {
+                                            showBirthdayField: config('core.loginRegistration.showBirthdayField'),
+                                            accountType: data.get('accountType')
+                                        } %}
+                                    {% endblock %}
 
-                                {% block component_account_register_company_fields %}
-                                    {% sw_include '@Storefront/storefront/component/address/address-personal-company.html.twig' with {
-                                        prefix: 'billingAddress',
-                                        address: data.get('billingAddress')
-                                    } %}
-                                {% endblock %}
+                                    {% block component_account_register_company_fields %}
+                                        {% sw_include '@Storefront/storefront/component/address/address-personal-company.html.twig' with {
+                                            prefix: 'billingAddress',
+                                            address: data.get('billingAddress')
+                                        } %}
+                                    {% endblock %}
+                                {% endif %}
 
                                 {% set formGroupMail %}
                                     {% block component_account_register_personal_mail %}
@@ -161,116 +174,130 @@
                                 {% endblock %}
 
                                 {% block component_account_register_personal_phone %}
-                                    <div class="row g-2">
-                                        {% block component_account_register_personal_phone_field %}
-                                            {% sw_include '@Storefront/storefront/component/form/form-input.html.twig' with {
-                                                type: 'tel',
-                                                label: 'account.personalPhoneNumberLabel'|trans|sw_sanitize,
-                                                id: 'personalPhoneNumber',
-                                                name: 'phoneNumber',
-                                                value: data.get('phoneNumber'),
-                                                autocomplete: 'section-personal tel',
-                                                violationPath: '/phoneNumber',
-                                                additionalClass: 'col-md-6',
-                                            } %}
-                                        {% endblock %}
-                                    </div>
+                                    {# The phone number belongs to the address form, which is not rendered for an
+                                       account registration, see above. #}
+                                    {% if addressRequired %}
+                                        <div class="row g-2">
+                                            {% block component_account_register_personal_phone_field %}
+                                                {% sw_include '@Storefront/storefront/component/form/form-input.html.twig' with {
+                                                    type: 'tel',
+                                                    label: 'account.personalPhoneNumberLabel'|trans|sw_sanitize,
+                                                    id: 'personalPhoneNumber',
+                                                    name: 'phoneNumber',
+                                                    value: data.get('phoneNumber'),
+                                                    autocomplete: 'section-personal tel',
+                                                    violationPath: '/phoneNumber',
+                                                    additionalClass: 'col-md-6',
+                                                } %}
+                                            {% endblock %}
+                                        </div>
+                                    {% endif %}
                                 {% endblock %}
                             {% endblock %}
                         </fieldset>
                     {% endblock %}
 
                     {% block component_account_register_address %}
-                        <div class="register-address mb-5">
-                            {% block component_account_register_address_fields %}
-                                {% block component_account_register_address_billing %}
-                                    <fieldset class="register-billing">
-                                        {% block component_account_register_address_billing_header %}
-                                            <legend class="card-title">
-                                                {{ 'account.registerAddressBillingHeader'|trans|sw_sanitize }}
-                                            </legend>
-                                        {% endblock %}
+                        {# The address is collected during the checkout, so the account registration only shows a
+                           short hint instead of the whole address form. #}
+                        {% if addressRequired %}
+                            <div class="register-address mb-5">
+                                {% block component_account_register_address_fields %}
+                                    {% block component_account_register_address_billing %}
+                                        <fieldset class="register-billing">
+                                            {% block component_account_register_address_billing_header %}
+                                                <legend class="card-title">
+                                                    {{ 'account.registerAddressBillingHeader'|trans|sw_sanitize }}
+                                                </legend>
+                                            {% endblock %}
 
-                                        {% block component_account_register_address_billing_fields %}
-                                            {% sw_include '@Storefront/storefront/component/address/address-form.html.twig' with {
-                                                prefix: 'billingAddress',
-                                                data: data.get('billingAddress'),
-                                                showNoShippingPostfix: true,
-                                                scopeElementSelector: '.register-billing',
-                                            } %}
-                                        {% endblock %}
-                                    </fieldset>
+                                            {% block component_account_register_address_billing_fields %}
+                                                {% sw_include '@Storefront/storefront/component/address/address-form.html.twig' with {
+                                                    prefix: 'billingAddress',
+                                                    data: data.get('billingAddress'),
+                                                    showNoShippingPostfix: true,
+                                                    scopeElementSelector: '.register-billing',
+                                                } %}
+                                            {% endblock %}
+                                        </fieldset>
+                                    {% endblock %}
+
+                                    {% block component_account_register_address_different_shipping %}
+                                        <div>
+                                            {% block component_account_register_address_different_shipping_control %}
+                                                <div class="form-check register-different-shipping mb-3">
+                                                    {% block component_account_register_address_different_shipping_input %}
+                                                        <input type="checkbox"
+                                                               class="form-check-input js-different-shipping-checkbox"
+                                                               name="differentShippingAddress"
+                                                               value="1"
+                                                               id="differentShippingAddress"
+                                                               {% if data.get('differentShippingAddress') %}checked="checked"{% endif %}
+                                                               data-form-field-toggle="true"
+                                                               data-form-field-toggle-target=".js-form-field-toggle-shipping-address"
+                                                               data-form-field-toggle-value="true"
+                                                               data-form-field-toggle-trigger-nested="true">
+                                                    {% endblock %}
+
+                                                    {% block component_account_register_address_different_shipping_label %}
+                                                        <label class="custom-control-label no-validation"
+                                                               for="differentShippingAddress">
+                                                            {{ 'account.registerDifferentShipping'|trans|sw_sanitize }}
+                                                        </label>
+                                                    {% endblock %}
+                                                </div>
+                                            {% endblock %}
+
+                                            {% block component_account_register_address_shipping %}
+                                                <fieldset class="register-shipping js-form-field-toggle-shipping-address d-none mb-4">
+                                                    {% block component_account_register_address_shipping_header %}
+                                                        <legend class="card-title">
+                                                            {{ 'account.registerAddressShippingHeader'|trans|sw_sanitize }}
+                                                        </legend>
+                                                    {% endblock %}
+
+                                                    {% block component_account_register_address_shipping_fields %}
+                                                        {% block component_account_register_address_shipping_fields_personal %}
+                                                            {% sw_include '@Storefront/storefront/component/address/address-personal.html.twig' with {
+                                                                prefix: 'shippingAddress',
+                                                                data: data.get('shippingAddress'),
+                                                                hideCustomerTypeSelect: false,
+                                                                customToggleTarget: true,
+                                                                accountType: data.get('shippingAddress').get('accountType')
+                                                            } %}
+                                                        {% endblock %}
+
+                                                        {% block component_account_register_address_shipping_fields_company %}
+                                                            {% sw_include '@Storefront/storefront/component/address/address-personal-company.html.twig' with {
+                                                                prefix: 'shippingAddress',
+                                                                customToggleTarget: true,
+                                                                address: data.get('shippingAddress')
+                                                            } %}
+                                                        {% endblock %}
+
+                                                        {% block component_account_register_address_shipping_fields_address %}
+                                                            {% sw_include '@Storefront/storefront/component/address/address-form.html.twig' with {
+                                                                prefix: 'shippingAddress',
+                                                                data: data.get('shippingAddress'),
+                                                                showNoShippingPostfix: true,
+                                                                disableNonShippableCountries: true,
+                                                                scopeElementSelector: '.register-shipping',
+                                                            } %}
+                                                        {% endblock %}
+                                                    {% endblock %}
+                                                </fieldset>
+                                            {% endblock %}
+                                        </div>
+                                    {% endblock %}
                                 {% endblock %}
-
-                                {% block component_account_register_address_different_shipping %}
-                                    <div>
-                                        {% block component_account_register_address_different_shipping_control %}
-                                            <div class="form-check register-different-shipping mb-3">
-                                                {% block component_account_register_address_different_shipping_input %}
-                                                    <input type="checkbox"
-                                                           class="form-check-input js-different-shipping-checkbox"
-                                                           name="differentShippingAddress"
-                                                           value="1"
-                                                           id="differentShippingAddress"
-                                                           {% if data.get('differentShippingAddress') %}checked="checked"{% endif %}
-                                                           data-form-field-toggle="true"
-                                                           data-form-field-toggle-target=".js-form-field-toggle-shipping-address"
-                                                           data-form-field-toggle-value="true"
-                                                           data-form-field-toggle-trigger-nested="true">
-                                                {% endblock %}
-
-                                                {% block component_account_register_address_different_shipping_label %}
-                                                    <label class="custom-control-label no-validation"
-                                                           for="differentShippingAddress">
-                                                        {{ 'account.registerDifferentShipping'|trans|sw_sanitize }}
-                                                    </label>
-                                                {% endblock %}
-                                            </div>
-                                        {% endblock %}
-
-                                        {% block component_account_register_address_shipping %}
-                                            <fieldset class="register-shipping js-form-field-toggle-shipping-address d-none mb-4">
-                                                {% block component_account_register_address_shipping_header %}
-                                                    <legend class="card-title">
-                                                        {{ 'account.registerAddressShippingHeader'|trans|sw_sanitize }}
-                                                    </legend>
-                                                {% endblock %}
-
-                                                {% block component_account_register_address_shipping_fields %}
-                                                    {% block component_account_register_address_shipping_fields_personal %}
-                                                        {% sw_include '@Storefront/storefront/component/address/address-personal.html.twig' with {
-                                                            prefix: 'shippingAddress',
-                                                            data: data.get('shippingAddress'),
-                                                            hideCustomerTypeSelect: false,
-                                                            customToggleTarget: true,
-                                                            accountType: data.get('shippingAddress').get('accountType')
-                                                        } %}
-                                                    {% endblock %}
-
-                                                    {% block component_account_register_address_shipping_fields_company %}
-                                                        {% sw_include '@Storefront/storefront/component/address/address-personal-company.html.twig' with {
-                                                            prefix: 'shippingAddress',
-                                                            customToggleTarget: true,
-                                                            address: data.get('shippingAddress')
-                                                        } %}
-                                                    {% endblock %}
-
-                                                    {% block component_account_register_address_shipping_fields_address %}
-                                                        {% sw_include '@Storefront/storefront/component/address/address-form.html.twig' with {
-                                                            prefix: 'shippingAddress',
-                                                            data: data.get('shippingAddress'),
-                                                            showNoShippingPostfix: true,
-                                                            disableNonShippableCountries: true,
-                                                            scopeElementSelector: '.register-shipping',
-                                                        } %}
-                                                    {% endblock %}
-                                                {% endblock %}
-                                            </fieldset>
-                                        {% endblock %}
-                                    </div>
-                                {% endblock %}
+                            </div>
+                        {% else %}
+                            {% block component_account_register_address_optional_hint %}
+                                <p class="register-address-optional-hint form-text">
+                                    {{ 'account.registerAddressOptionalHint'|trans|sw_sanitize }}
+                                </p>
                             {% endblock %}
-                        </div>
+                        {% endif %}
                     {% endblock %}
 
                     {% block component_account_register_captcha %}

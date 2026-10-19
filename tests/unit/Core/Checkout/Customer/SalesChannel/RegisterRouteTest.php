@@ -1497,6 +1497,52 @@ class RegisterRouteTest extends TestCase
         static::assertSame([], $properties['storefrontUrl'][1]->choices);
     }
 
+    #[TestDox('A customer account can be registered without any address')]
+    public function testRegisterWithoutAnyAddressSkipsAddressValidation(): void
+    {
+        $definition = $this->captureValidationDefinition(
+            $this->createRegistrationConfigService(),
+            false,
+            false,
+            $this->createRegistrationDataWithoutAddress()
+        );
+
+        static::assertArrayNotHasKey('billingAddress', $definition->getSubDefinitions());
+        static::assertArrayNotHasKey('shippingAddress', $definition->getSubDefinitions());
+    }
+
+    #[TestDox('A guest has to provide a billing address during the registration')]
+    public function testGuestRegisterWithoutAnyAddressValidatesBillingAddress(): void
+    {
+        $definition = $this->captureValidationDefinition(
+            $this->createRegistrationConfigService(),
+            true,
+            false,
+            $this->createRegistrationDataWithoutAddress(true)
+        );
+
+        static::assertArrayHasKey('billingAddress', $definition->getSubDefinitions());
+    }
+
+    #[TestDox('A partially filled address form is still validated for customer accounts')]
+    public function testRegisterWithPartiallyFilledAddressFormValidatesAddress(): void
+    {
+        $data = $this->createRegistrationData([
+            'guest' => false,
+            'billingAddress' => [
+                'name' => 'John Doe',
+                'salutationId' => Uuid::randomHex(),
+                'countryId' => Uuid::randomHex(),
+                'street' => 'Examplestreet 11',
+                'city' => '',
+            ],
+        ]);
+
+        $definition = $this->captureValidationDefinition($this->createRegistrationConfigService(), false, false, $data);
+
+        static::assertArrayHasKey('billingAddress', $definition->getSubDefinitions());
+    }
+
     public function testPublishesExtension(): void
     {
         $data = new RequestDataBag();
@@ -1544,6 +1590,18 @@ class RegisterRouteTest extends TestCase
         bool $isGuest,
         bool $validateStorefrontUrl = true
     ): array {
+        return $this->captureValidationDefinition($systemConfigService, $isGuest, $validateStorefrontUrl)->getProperties();
+    }
+
+    /**
+     * @param array<string, mixed>|null $data
+     */
+    private function captureValidationDefinition(
+        StaticSystemConfigService $systemConfigService,
+        bool $isGuest,
+        bool $validateStorefrontUrl = true,
+        ?array $data = null
+    ): DataValidationDefinition {
         $definition = null;
 
         $dataValidator = $this->createMock(DataValidator::class);
@@ -1576,7 +1634,7 @@ class RegisterRouteTest extends TestCase
         $salesChannelContext->getSalesChannel()->setDomains(new SalesChannelDomainCollection());
 
         $registerRoute->register(
-            new RequestDataBag($this->createRegistrationData([
+            new RequestDataBag($data ?? $this->createRegistrationData([
                 'guest' => $isGuest,
                 'storefrontUrl' => 'https://example.com',
             ])),
@@ -1586,7 +1644,28 @@ class RegisterRouteTest extends TestCase
 
         static::assertInstanceOf(DataValidationDefinition::class, $definition);
 
-        return $definition->getProperties();
+        return $definition;
+    }
+
+    private function createRegistrationConfigService(): StaticSystemConfigService
+    {
+        return new StaticSystemConfigService([
+            TestDefaults::SALES_CHANNEL => [
+                'core.loginRegistration.passwordMinLength' => '8',
+            ],
+            'core.systemWideLoginRegistration.isCustomerBoundToSalesChannel' => true,
+        ]);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function createRegistrationDataWithoutAddress(bool $isGuest = false): array
+    {
+        $data = $this->createRegistrationData(['guest' => $isGuest]);
+        unset($data['billingAddress']);
+
+        return $data;
     }
 
     /**
