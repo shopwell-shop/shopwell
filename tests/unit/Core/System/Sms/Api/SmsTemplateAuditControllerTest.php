@@ -146,6 +146,39 @@ class SmsTemplateAuditControllerTest extends TestCase
         ], $this->decode($response));
     }
 
+    public function testAStateTheProviderDoesNotKnowIsASuccessfulAnswerAndNotAFailure(): void
+    {
+        $factory = $this->createFactory();
+        $factory->expects($this->once())
+            ->method('readTemplateApprovalStatus')
+            ->willReturn(new TemplateApprovalReading(
+                status: TemplateApprovalStatus::UNKNOWN,
+                providerStatusCode: 'isv.SMS_TEMPLATE_NOT_EXIST',
+                providerStatusMessage: 'The template does not exist.',
+            ));
+
+        $controller = $this->createController(
+            $factory,
+            $this->createMappingRepository(
+                $this->createMapping(templateCode: 'SMS_123456789', auditStatus: TemplateApprovalStatus::APPROVED),
+                $this->createMapping(templateCode: 'SMS_123456789', auditStatus: TemplateApprovalStatus::UNKNOWN),
+            )
+        );
+
+        $response = $controller->refresh($this->request(), self::MAPPING_ID);
+
+        // the provider answered, so the step succeeded - a template deleted at the console is the
+        // everyday case. The null of a failure means the shop did not talk to the provider at all,
+        // and the two must not be told apart by the null of one and the word of the other.
+        static::assertSame(JsonResponse::HTTP_OK, $response->getStatusCode());
+        static::assertSame([
+            'status' => TemplateApprovalStatus::UNKNOWN,
+            'templateCode' => 'SMS_123456789',
+            'errorCode' => null,
+            'errorMessage' => null,
+        ], $this->decode($response));
+    }
+
     public function testConfirmAnswersTheStateTheOperatorRecorded(): void
     {
         $controller = $this->createController(

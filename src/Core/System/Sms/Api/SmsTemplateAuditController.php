@@ -24,7 +24,8 @@ use Symfony\Component\Routing\Attribute\Route;
  *
  * `status` and `templateCode` are null on a failure, because the shop did not learn them - the row
  * keeps whatever it had, and the administration reloads it. Saying `unknown` would claim the shop
- * looked, which is the one thing it did not do.
+ * looked, which is the one thing it did not do: `unknown` is a state a provider answers with, so it
+ * travels through this controller as the successful answer it is, on a 200 and with no error code.
  *
  * @internal
  */
