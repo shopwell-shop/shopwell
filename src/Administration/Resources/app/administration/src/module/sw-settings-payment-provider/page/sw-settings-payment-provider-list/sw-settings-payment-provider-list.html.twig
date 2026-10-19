@@ -26,66 +26,118 @@
             </mt-card>
             {% endblock %}
 
-            {% block sw_settings_payment_provider_list_cards %}
-            <template v-else>
-                {% block sw_settings_payment_provider_list_card %}
-                <mt-card
-                    v-for="provider in providers"
-                    :key="provider.technicalName"
-                    class="sw-settings-payment-provider-list__card"
-                    position-identifier="sw-settings-payment-provider-list-card"
-                    :title="provider.label"
-                >
-                    <template #headerRight>
-                        {% block sw_settings_payment_provider_list_card_state %}
-                        <mt-badge
-                            v-if="provider.configured"
-                            variant="positive"
-                        >
-                            {{ $t('sw-settings-payment-provider.provider.configured') }}
-                        </mt-badge>
+            {% block sw_settings_payment_provider_list_hint %}
+            <mt-banner
+                v-else
+                class="sw-settings-payment-provider-list__hint"
+                variant="info"
+            >
+                {{ $t('sw-settings-payment-provider.general.codeProvidedHint') }}
+            </mt-banner>
+            {% endblock %}
+
+            {% block sw_settings_payment_provider_list_grid_card %}
+            <mt-card
+                v-if="!isLoading && providers.length > 0"
+                class="sw-settings-payment-provider-list__card"
+                position-identifier="sw-settings-payment-provider-list-grid"
+            >
+                {% block sw_settings_payment_provider_list_grid %}
+                <template #grid>
+                    <sw-data-grid
+                        class="sw-settings-payment-provider-list__grid"
+                        identifier="sw-settings-payment-provider-list"
+                        :data-source="sortedProviders"
+                        :columns="providerColumns"
+                        :full-page="false"
+                        :show-selection="false"
+                        :show-actions="false"
+                        :show-settings="true"
+                        :show-header="true"
+                        :allow-inline-edit="false"
+                        :allow-column-edit="true"
+                    >
+                        {% block sw_settings_payment_provider_list_grid_column_label %}
+                        <template #column-label="{ item }">
+                            <span class="sw-settings-payment-provider-list__label">
+                                {{ item.label }}
+                            </span>
+
+                            <span class="sw-settings-payment-provider-list__technical-name">
+                                {{ item.technicalName }}
+                            </span>
+                        </template>
                         {% endblock %}
-                    </template>
 
-                    <div class="sw-settings-payment-provider-list__card-content">
+                        {% block sw_settings_payment_provider_list_grid_column_status %}
+                        <template #column-configured="{ item }">
+                            <div class="sw-settings-payment-provider-list__status">
+                                <mt-badge :variant="item.configured ? 'positive' : 'neutral'">
+                                    <template v-if="item.configured">
+                                        {{ $t('sw-settings-payment-provider.provider.configured') }}
+                                    </template>
+                                    <template v-else>
+                                        {{ $t('sw-settings-payment-provider.provider.notConfigured') }}
+                                    </template>
+                                </mt-badge>
 
-                        {% block sw_settings_payment_provider_list_card_meta %}
-                        <div class="sw-settings-payment-provider-list__card-meta">
-                            <span class="sw-settings-payment-provider-list__card-channels">
-                                {{ $t('sw-settings-payment-provider.list.channelCount', {
-                                enabled: enabledChannelCount(provider),
-                                total: channelCount(provider),
+                                <mt-switch
+                                    v-model="item.enabled"
+                                    v-tooltip.bottom="$t('sw-settings-payment-provider.provider.enabledHelpText')"
+                                    class="sw-settings-payment-provider-list__switch"
+                                    :label="$t('sw-settings-payment-provider.provider.enabledLabel')"
+                                    :disabled="!canEdit || undefined"
+                                    @update:model-value="onToggleProvider(item)"
+                                />
+                            </div>
+                        </template>
+                        {% endblock %}
+
+                        {% block sw_settings_payment_provider_list_grid_column_credentials %}
+                        <template #column-credentials="{ item }">
+                            <span class="sw-settings-payment-provider-list__count">
+                                {{ $t('sw-settings-payment-provider.list.credentialCount', {
+                                filled: filledCredentialCount(item),
+                                total: requiredCredentialCount(item),
                                 }) }}
                             </span>
-                        </div>
+
+                            <span
+                                v-if="missingCredentialCount(item) > 0"
+                                class="sw-settings-payment-provider-list__attention"
+                            >
+                                {{ $t('sw-settings-payment-provider.list.credentialMissing', {
+                                count: missingCredentialCount(item),
+                                }) }}
+                            </span>
+                        </template>
                         {% endblock %}
 
-                        {% block sw_settings_payment_provider_list_card_link %}
-                        <sw-internal-link
-                            class="sw-settings-payment-provider-list__card-link"
-                            :router-link="{ name: 'sw.settings.payment.provider.detail', params: { id: provider.technicalName } }"
-                            :disabled="!canEdit || undefined"
-                            hide-icon
-                        >
-                            {{ $t('sw-settings-payment-provider.list.editDetails') }}
-                        </sw-internal-link>
+                        {% block sw_settings_payment_provider_list_grid_column_channels %}
+                        <template #column-channels="{ item }">
+                            {{ $t('sw-settings-payment-provider.list.channelCount', {
+                            enabled: enabledChannelCount(item),
+                            total: channelCount(item),
+                            }) }}
+                        </template>
                         {% endblock %}
 
-                        {% block sw_settings_payment_provider_list_card_toggle %}
-                        <mt-switch
-                            v-model="provider.enabled"
-                            class="sw-settings-payment-provider-list__card-toggle"
-                            :disabled="!canEdit || undefined"
-                            :label="$t('sw-settings-payment-provider.provider.enabled')"
-                            :help-text="$t('sw-settings-payment-provider.provider.enabledHelpText')"
-                            @update:model-value="onToggleProvider(provider)"
-                        />
+                        {% block sw_settings_payment_provider_list_grid_column_actions %}
+                        <template #column-actions="{ item }">
+                            <sw-internal-link
+                                class="sw-settings-payment-provider-list__edit-link"
+                                :router-link="{ name: 'sw.settings.payment.provider.detail', params: { id: item.technicalName } }"
+                                :disabled="!canView || undefined"
+                                hide-icon
+                            >
+                                {{ $t('sw-settings-payment-provider.list.editDetails') }}
+                            </sw-internal-link>
+                        </template>
                         {% endblock %}
-
-                    </div>
-                </mt-card>
+                    </sw-data-grid>
+                </template>
                 {% endblock %}
-            </template>
+            </mt-card>
             {% endblock %}
 
             {% block sw_settings_payment_provider_list_extension %}

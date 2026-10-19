@@ -4,36 +4,78 @@
             "mainMenuItemGeneral": "支付接口",
             "description": "配置平台在各支付接口（支付宝、微信支付等）的商户凭据，以及每个接口下开放给应用的支付渠道。",
             "emptyStateTitle": "暂无支付接口",
-            "emptyState": "当前系统没有可配置的支付接口。"
+            "emptyState": "当前安装未提供任何支付接口。",
+            "codeProvidedHint": "支付接口由代码提供，可能来自系统内核，也可能来自插件。安装带支付接口的插件后，它会自动出现在这里；本页只负责配置它的商户凭据与收款渠道。"
         },
         "provider": {
+            "cardTitle": "商户账户与凭据",
             "cardSubtitle": "凭据由支付接口分配，同一接口下的全部渠道共用。保存后不再回显，只显示是否已配置。",
             "enabled": "启用该支付接口",
+            "enabledLabel": "启用",
             "enabledHelpText": "启用后，使用平台凭据的应用才能通过该接口收款。",
             "configured": "已配置",
-            "reset": "清除配置",
+            "notConfigured": "未配置",
+            "reset": "清除凭据",
             "resetModalTitle": "清除接口凭据",
             "resetModalMessage": "确定要清除「{name}」的全部凭据吗？清除后使用平台凭据的应用将无法通过该接口收款。",
             "hint": "凭据在服务端加密存储，页面上不会回显；留空的输入项保持原值不变。启用接口前必须填写全部必填项。"
         },
+        "summary": {
+            "title": "概要",
+            "subtitle": "接口的声明信息，本卡片内容全部只读。",
+            "label": "名称",
+            "technicalName": "技术名",
+            "enabled": "状态",
+            "channels": "收款渠道"
+        },
+        "state": {
+            "enabled": "已启用",
+            "disabled": "未启用"
+        },
         "list": {
-            "channelCount": "渠道：{enabled}/{total} 已启用",
-            "editDetails": "编辑凭据与渠道"
+            "columns": {
+                "label": "接口",
+                "status": "状态",
+                "credentials": "凭据",
+                "channels": "渠道",
+                "actions": "操作"
+            },
+            "credentialCount": "已填 {filled}/{total}",
+            "credentialMissing": "缺 {count} 项必填",
+            "channelCount": "启用 {enabled}/{total}",
+            "editDetails": "配置凭据与渠道"
         },
         "channels": {
-            "title": "支付渠道",
+            "title": "收款渠道",
             "subtitle": "渠道是该接口提供给应用的具体支付方式。未启用的渠道，应用无法开通使用。"
         },
         "channel": {
+            "emptyStateTitle": "未声明收款渠道",
+            "emptyState": "该接口未声明任何收款渠道。这属于接口代码的问题，不是本页可配置的项。",
             "enabled": "启用",
             "enabledHelpText": "关闭后，所有应用都无法再使用该渠道收款。",
             "configured": "已配置",
             "reset": "清除",
             "resetModalTitle": "清除渠道配置",
             "resetModalMessage": "确定要清除「{name}」的渠道参数吗？清除后该渠道将不再对应用开放。",
+            "expand": "展开参数",
+            "collapse": "收起参数",
+            "noParams": "该渠道无需额外参数。",
+            "noRuntimeParams": "无",
+            "columnLabel": "渠道",
+            "columnFlow": "结算流程",
+            "columnCurrencies": "币种",
+            "columnDevices": "终端",
+            "columnRuntimeParams": "运行时参数",
+            "columnConfigured": "配置状态",
+            "columnActions": "操作",
             "allCurrencies": "全部币种",
             "allDevices": "全部终端",
             "runtimeHint": "该渠道下单时还需应用传入运行时参数：{params}。"
+        },
+        "danger": {
+            "title": "危险操作",
+            "description": "清除凭据会移除平台在该接口下的商户账户。在重新填写凭据之前，所有使用平台账户的应用都无法收款。"
         },
         "flow": {
             "redirect": "跳转收银台",

@@ -123,10 +123,12 @@ async function createWrapper({ providers = registryProviders, providerId = 'alip
                 'mt-icon': true,
                 'mt-switch': true,
                 'mt-banner': true,
+                'mt-empty-state': true,
                 'mt-modal-root': { template: '<div><slot></slot></div>' },
                 'mt-modal': { template: '<div><slot></slot><slot name="footer"></slot></div>' },
                 'mt-modal-close': true,
                 'mt-modal-action': true,
+                'sw-discard-changes-modal': true,
             },
             provide: {
                 paymentGatewayService: service,
@@ -251,5 +253,153 @@ describe('module/sw-settings-payment-provider/page/sw-settings-payment-provider-
 
         expect(service.resetProviderChannel).toHaveBeenCalledWith('alipay', 'alipay_mini');
         expect(wrapper.vm.resetTarget).toBeNull();
+    });
+
+    it('should show the declared facts of the interface on the read-only overview card', async () => {
+        const { wrapper } = await createWrapper();
+
+        const summary = wrapper.find('.sw-settings-payment-provider-detail__summary');
+
+        expect(summary.exists()).toBe(true);
+        expect(summary.findAll('.sw-settings-payment-provider-detail__summary-item')).toHaveLength(4);
+        expect(summary.findAll('.sw-settings-payment-provider-detail__code').at(0).text()).toBe('alipay');
+        expect(wrapper.vm.channelCount).toBe(2);
+        expect(wrapper.vm.enabledChannelCount).toBe(1);
+    });
+
+    it('should render one table row per channel and fold the parameters by default', async () => {
+        const { wrapper } = await createWrapper();
+
+        expect(wrapper.findAll('.sw-settings-payment-provider-detail__channel-row')).toHaveLength(2);
+        expect(wrapper.findAll('.sw-settings-payment-provider-detail__channel-row--params')).toHaveLength(0);
+        expect(wrapper.findAll('.sw-payment-config-field-stub')).toHaveLength(3);
+
+        wrapper.vm.provider.channels.forEach((channel) => {
+            expect(wrapper.vm.isChannelExpanded(channel)).toBe(false);
+        });
+    });
+
+    it('should reveal the parameter fields of a channel when its row is expanded', async () => {
+        const { wrapper } = await createWrapper();
+
+        const mini = wrapper.vm.provider.channels[1];
+        wrapper.vm.toggleChannel(mini);
+        await wrapper.vm.$nextTick();
+
+        expect(wrapper.vm.isChannelExpanded(mini)).toBe(true);
+
+        const paramsRows = wrapper.findAll('.sw-settings-payment-provider-detail__channel-row--params');
+        expect(paramsRows).toHaveLength(1);
+
+        // the interface has three credential fields, the expanded channel adds its own one
+        expect(wrapper.findAll('.sw-payment-config-field-stub')).toHaveLength(4);
+    });
+
+    it('should tell that a channel without parameter fields needs no further parameters', async () => {
+        const { wrapper } = await createWrapper();
+
+        wrapper.vm.toggleChannel(wrapper.vm.provider.channels[0]);
+        await wrapper.vm.$nextTick();
+
+        expect(wrapper.find('.sw-settings-payment-provider-detail__channel-params-empty').text()).toBe(
+            'sw-settings-payment-provider.channel.noParams',
+        );
+    });
+
+    it('should fold a channel again when its row is expanded a second time', async () => {
+        const { wrapper } = await createWrapper();
+
+        const mini = wrapper.vm.provider.channels[1];
+        wrapper.vm.toggleChannel(mini);
+        wrapper.vm.toggleChannel(mini);
+        await wrapper.vm.$nextTick();
+
+        expect(wrapper.vm.isChannelExpanded(mini)).toBe(false);
+        expect(wrapper.findAll('.sw-settings-payment-provider-detail__channel-row--params')).toHaveLength(0);
+    });
+
+    it('should offer the danger zone to clear the credentials of the interface', async () => {
+        const { wrapper } = await createWrapper();
+
+        expect(wrapper.find('.sw-settings-payment-provider-detail__danger-card').exists()).toBe(true);
+        expect(wrapper.find('.sw-settings-payment-provider-detail__danger-action').exists()).toBe(true);
+    });
+
+    it('should only be dirty when the interface or one of its channels changed', async () => {
+        const { wrapper } = await createWrapper();
+
+        expect(wrapper.vm.isDirty).toBe(false);
+
+        wrapper.vm.provider.channels[0].enabled = false;
+        expect(wrapper.vm.isDirty).toBe(true);
+
+        wrapper.vm.provider.channels[0].enabled = true;
+        expect(wrapper.vm.isDirty).toBe(false);
+
+        wrapper.vm.provider.credentialInput.app_id = '2021000000000001';
+        expect(wrapper.vm.isDirty).toBe(true);
+    });
+
+    it('should leave the page without asking when nothing changed', async () => {
+        const { wrapper } = await createWrapper();
+
+        const next = jest.fn();
+        wrapper.vm.$options.beforeRouteLeave.call(wrapper.vm, { name: 'sw.settings.payment.provider.index' }, {}, next);
+
+        expect(next).toHaveBeenCalledWith();
+        expect(wrapper.vm.isDisplayingLeavePageWarning).toBe(false);
+    });
+
+    /**
+     * The navigation is suspended, not cancelled - the guard hands the decision to the modal and
+     * keeps `next` until the operator has answered.
+     */
+    it('should suspend the navigation and warn about the unsaved changes', async () => {
+        const { wrapper } = await createWrapper();
+
+        wrapper.vm.provider.credentialInput.app_id = '2021000000000001';
+
+        const next = jest.fn();
+        wrapper.vm.$options.beforeRouteLeave.call(wrapper.vm, { name: 'sw.settings.payment.provider.index' }, {}, next);
+        await wrapper.vm.$nextTick();
+
+        expect(next).not.toHaveBeenCalled();
+        expect(wrapper.vm.isDisplayingLeavePageWarning).toBe(true);
+        expect(wrapper.vm.nextRoute).toBe(next);
+        expect(wrapper.find('sw-discard-changes-modal-stub').exists()).toBe(true);
+    });
+
+    it('should resume the suspended navigation after the changes were discarded', async () => {
+        const { wrapper } = await createWrapper();
+
+        wrapper.vm.provider.credentialInput.app_id = '2021000000000001';
+
+        const next = jest.fn();
+        wrapper.vm.$options.beforeRouteLeave.call(wrapper.vm, { name: 'sw.settings.payment.provider.index' }, {}, next);
+
+        wrapper.vm.onLeaveModalConfirm();
+        await wrapper.vm.$nextTick();
+
+        // the navigation resumes instead of being pushed again, which would run into the guard anew
+        expect(next).toHaveBeenCalledWith();
+        expect(next).toHaveBeenCalledTimes(1);
+        expect(wrapper.vm.isDisplayingLeavePageWarning).toBe(false);
+        expect(wrapper.vm.nextRoute).toBeNull();
+    });
+
+    it('should abort the suspended navigation when the operator keeps editing', async () => {
+        const { wrapper } = await createWrapper();
+
+        wrapper.vm.provider.credentialInput.app_id = '2021000000000001';
+
+        const next = jest.fn();
+        wrapper.vm.$options.beforeRouteLeave.call(wrapper.vm, { name: 'sw.settings.payment.provider.index' }, {}, next);
+
+        wrapper.vm.onLeaveModalClose();
+        await wrapper.vm.$nextTick();
+
+        expect(next).toHaveBeenCalledWith(false);
+        expect(wrapper.vm.isDisplayingLeavePageWarning).toBe(false);
+        expect(wrapper.vm.nextRoute).toBeNull();
     });
 });
