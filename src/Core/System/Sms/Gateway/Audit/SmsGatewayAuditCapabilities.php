@@ -15,11 +15,15 @@ use Shopwell\Core\System\Sms\SmsException;
  * provider that is added by an extension is discovered by the interface it implements, and the core
  * needs no change.
  *
- * @internal
+ * An extension reads a capability here as well instead of probing its own transport, which is why
+ * this is part of the surface the module offers and not an implementation detail.
  */
 #[Package('framework')]
 final class SmsGatewayAuditCapabilities
 {
+    /**
+     * @internal
+     */
     public function __construct(private readonly SmsGatewayRegistry $registry)
     {
     }
