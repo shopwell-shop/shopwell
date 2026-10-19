@@ -19,6 +19,7 @@ final class SmsSegmentCounter
 
     public function count(string $text): int
     {
+        // A message without text is not a billable part, a message with text is at least one.
         if ($text === '') {
             return 0;
         }
@@ -27,6 +28,6 @@ final class SmsSegmentCounter
         $length = $isGsm ? \strlen($text) : mb_strlen($text);
         $perSegment = $isGsm ? self::GSM_CHARS_PER_SEGMENT : self::UNICODE_CHARS_PER_SEGMENT;
 
-        return max(1, (int) ceil($length / $perSegment));
+        return (int) ceil($length / $perSegment);
     }
 }
