@@ -13,18 +13,27 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\PrimaryKey;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\Required;
 use Shopwell\Core\Framework\DataAbstractionLayer\Entity as EntityStruct;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Payment\App\PaymentAppEntity;
 
 /**
- * The gateway channel a checkout payment method collects through, e.g. `alipay` / `alipay_h5`.
+ * The pair a checkout payment method collects through: the app that is charged and one of its channels.
  *
- * It is the edge between the two halves of the platform that have no other connection: a
- * `payment_method` is what the shopper picks in the storefront, a channel is what the gateway knows
- * how to talk to. The binding is one to one in both directions and both directions are enforced by
- * the database, not by the admin - a second channel on the same method and the same channel on a
- * second method are both configuration errors that would silently charge the wrong account.
+ * A `payment_method` is what the shopper picks, a payment order is what the gateway opens - and a
+ * payment order always belongs to an app, because the credentials that are charged belong to it. The
+ * binding therefore names exactly that pair: the collecting app and the channel of it, e.g. the tenant
+ * of the platform and its `alipay_h5`.
  *
- * Only redirect and qr code channels may be bound: a channel that is pulled up by an sdk belongs to
- * an app, which renders it itself.
+ * The interface is deliberately not part of the row. It is not an independent fact: a channel is
+ * declared by one interface and one interface only - {@see \Shopwell\Core\System\Payment\Provider\Channel\PaymentChannelRegistry}
+ * refuses two declarations of the same channel name - so the interface follows from the channel and can
+ * never disagree with it. Storing it as well would only create a second place that can be wrong.
+ *
+ * The binding is one to one in both directions and both directions are enforced by the database, not by
+ * the administration: a second channel on the same method and the same app/channel pair on a second
+ * method are both configuration errors that would silently charge the wrong account.
+ *
+ * Only redirect and qr code channels may be bound: a channel that is pulled up by an sdk belongs to an
+ * app, which renders it itself.
  *
  * @codeCoverageIgnore
  */
@@ -47,15 +56,17 @@ class PaymentMethodGatewayChannelEntity extends EntityStruct
     public string $paymentMethodId;
 
     /**
-     * The interface that is charged, e.g. `alipay`.
+     * The app whose merchant account the payment is collected on - the tenant of the platform for the
+     * shop's own checkout, an onboarded app for a payment method that collects on its own account.
+     * Unique together with the channel: the same pair may not collect for two payment methods.
      */
     #[Required]
-    #[Field(type: FieldType::STRING, api: ['admin-api' => true, 'store-api' => false], maxLength: 64)]
-    public string $providerTechnicalName;
+    #[ForeignKey(entity: 'payment_app', api: ['admin-api' => true, 'store-api' => false])]
+    public string $paymentAppId;
 
     /**
-     * The channel of that interface, e.g. `alipay_h5`. Unique together with the interface, because a
-     * channel that two payment methods point at would make the shopper's choice meaningless.
+     * The channel of that app, e.g. `alipay_h5`. The interface it belongs to is derived from it and is
+     * therefore not stored.
      */
     #[Required]
     #[Field(type: FieldType::STRING, api: ['admin-api' => true, 'store-api' => false], maxLength: 64)]
@@ -68,4 +79,11 @@ class PaymentMethodGatewayChannelEntity extends EntityStruct
      */
     #[ManyToOne(entity: 'payment_method', onDelete: OnDelete::CASCADE, api: ['admin-api' => true, 'store-api' => false])]
     public ?PaymentMethodEntity $paymentMethod = null;
+
+    /**
+     * The app that is charged. Deleted with its app: an app that is gone cannot collect anymore, and a
+     * binding that points at it would be a payment method that fails on selection.
+     */
+    #[ManyToOne(entity: 'payment_app', onDelete: OnDelete::CASCADE, api: ['admin-api' => true, 'store-api' => false])]
+    public ?PaymentAppEntity $paymentApp = null;
 }

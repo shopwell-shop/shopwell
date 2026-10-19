@@ -190,6 +190,181 @@
                 </mt-card>
                 {% endblock %}
 
+                {#
+                Binding a collection channel is what makes a payment method collect through the
+                gateway at all: the account the channel belongs to decides which merchant account the
+                money goes to, and a method without a binding never shows up in the checkout. It is its
+                own card with its own save button because it writes another table than the page's save.
+                #}
+                {% block sw_settings_payment_detail_gateway_channel %}
+                <mt-card
+                    position-identifier="sw-settings-payment-detail-gateway-channel"
+                    class="sw-settings-payment-detail__gateway-channel"
+                    :title="$t('sw-settings-payment.detail.gatewayChannel.title')"
+                    :is-loading="isGatewayLoading"
+                >
+                    {% block sw_settings_payment_detail_gateway_channel_new %}
+                    <mt-banner
+                        v-if="isNewPaymentMethod"
+                        class="sw-settings-payment-detail__gateway-channel-hint sw-settings-payment-detail__gateway-channel-new"
+                        variant="info"
+                    >
+                        {{ $t('sw-settings-payment.detail.gatewayChannel.textNew') }}
+                    </mt-banner>
+                    {% endblock %}
+
+                    <template v-else>
+                        {% block sw_settings_payment_detail_gateway_channel_empty %}
+                        <mt-banner
+                            v-if="!isGatewayLoading && !gatewayHasApps"
+                            class="sw-settings-payment-detail__gateway-channel-hint sw-settings-payment-detail__gateway-channel-empty"
+                            variant="info"
+                        >
+                            <p>{{ $t('sw-settings-payment.detail.gatewayChannel.textNoProviders') }}</p>
+
+                            <router-link :to="{ name: 'sw.settings.payment.provider.index' }">
+                                {{ $t('sw-settings-payment.detail.gatewayChannel.linkToProviders') }}
+                            </router-link>
+                        </mt-banner>
+                        {% endblock %}
+
+                        {% block sw_settings_payment_detail_gateway_channel_no_channels %}
+                        <mt-banner
+                            v-if="!isGatewayLoading && gatewayHasApps && !gatewayHasChannels && !gatewayBinding"
+                            class="sw-settings-payment-detail__gateway-channel-hint sw-settings-payment-detail__gateway-channel-no-channels"
+                            variant="info"
+                        >
+                            <p>{{ $t('sw-settings-payment.detail.gatewayChannel.textNoChannels') }}</p>
+
+                            <router-link :to="{ name: 'sw.settings.payment.provider.index' }">
+                                {{ $t('sw-settings-payment.detail.gatewayChannel.linkToProviders') }}
+                            </router-link>
+                        </mt-banner>
+                        {% endblock %}
+
+                        {% block sw_settings_payment_detail_gateway_channel_unbound %}
+                        <mt-banner
+                            v-if="!isGatewayLoading && gatewayHasApps && gatewayHasChannels && !gatewayBinding"
+                            class="sw-settings-payment-detail__gateway-channel-hint sw-settings-payment-detail__gateway-channel-unbound"
+                            variant="attention"
+                        >
+                            {{ $t('sw-settings-payment.detail.gatewayChannel.textUnbound') }}
+                        </mt-banner>
+                        {% endblock %}
+
+                        {% block sw_settings_payment_detail_gateway_channel_bound %}
+                        <p
+                            v-if="gatewayHasApps && gatewayBinding"
+                            class="sw-settings-payment-detail__gateway-channel-bound"
+                        >
+                            {{ $t('sw-settings-payment.detail.gatewayChannel.textBound', {
+                                app: gatewayBindingAppLabel,
+                                channel: gatewayBindingChannelLabel,
+                            }) }}
+                        </p>
+                        {% endblock %}
+
+                        {% block sw_settings_payment_detail_gateway_channel_selects %}
+                        <sw-container
+                            v-if="gatewayHasApps"
+                            class="sw-settings-payment-detail__gateway-channel-selects"
+                            columns="1fr 1fr"
+                            gap="0px 30px"
+                        >
+                            {% block sw_settings_payment_detail_gateway_channel_select_account %}
+                            {#
+                            The shop collects on the tenant of the platform unless an app was onboarded
+                            for it, so a single account is shown as the fact it is and not as a choice
+                            with exactly one answer.
+                            #}
+                            <div
+                                v-if="gatewaySingleApp"
+                                class="sw-settings-payment-detail__gateway-channel-account"
+                            >
+                                <span class="sw-settings-payment-detail__gateway-channel-account-label">
+                                    {{ $t('sw-settings-payment.detail.gatewayChannel.labelApp') }}
+                                </span>
+
+                                <span class="sw-settings-payment-detail__gateway-channel-account-name">
+                                    {{ gatewaySelectedAppLabel }}
+                                </span>
+                            </div>
+
+                            <mt-select
+                                v-else
+                                v-model="gatewayApp"
+                                class="sw-settings-payment-detail__gateway-channel-app"
+                                name="sw-field--paymentMethod-gateway-channel-app"
+                                value-property="value"
+                                label-property="label"
+                                :label="$t('sw-settings-payment.detail.gatewayChannel.labelApp')"
+                                :placeholder="$t('sw-settings-payment.detail.gatewayChannel.placeholderApp')"
+                                :options="gatewayAppOptions"
+                                :disabled="!acl.can('payment.editor') || undefined"
+                            />
+                            {% endblock %}
+
+                            {% block sw_settings_payment_detail_gateway_channel_select_channel %}
+                            <mt-select
+                                v-model="gatewayChannel"
+                                class="sw-settings-payment-detail__gateway-channel-channel"
+                                name="sw-field--paymentMethod-gateway-channel-channel"
+                                value-property="value"
+                                label-property="label"
+                                :label="$t('sw-settings-payment.detail.gatewayChannel.labelChannel')"
+                                :placeholder="$t('sw-settings-payment.detail.gatewayChannel.placeholderChannel')"
+                                :options="gatewayChannelOptions"
+                                :disabled="!gatewayApp || !gatewayHasChannels || !acl.can('payment.editor') || undefined"
+                            />
+                            {% endblock %}
+                        </sw-container>
+                        {% endblock %}
+
+                        {% block sw_settings_payment_detail_gateway_channel_collect_hint %}
+                        <p
+                            v-if="gatewayHasApps && gatewayShowCollectHint"
+                            class="sw-settings-payment-detail__gateway-channel-hint sw-settings-payment-detail__gateway-channel-collect-hint"
+                        >
+                            {{ $t('sw-settings-payment.detail.gatewayChannel.textCollectHint') }}
+                        </p>
+                        {% endblock %}
+
+                        {% block sw_settings_payment_detail_gateway_channel_actions %}
+                        <div
+                            v-if="gatewayHasApps"
+                            class="sw-settings-payment-detail__gateway-channel-actions"
+                        >
+                            <mt-button
+                                class="sw-settings-payment-detail__gateway-channel-save-action"
+                                variant="primary"
+                                size="small"
+                                :is-loading="isGatewaySaving"
+                                :disabled="gatewaySaveDisabled || !acl.can('payment.editor') || undefined"
+                                @click="onSaveGatewayChannel"
+                            >
+                                {{ $t('sw-settings-payment.detail.gatewayChannel.buttonSave') }}
+                            </mt-button>
+                        </div>
+                        {% endblock %}
+                    </template>
+                </mt-card>
+                {% endblock %}
+
+                {% block sw_settings_payment_detail_gateway_channel_rebind_modal %}
+                {#
+                Re-binding moves the payments of this method to another merchant account, so the
+                click only opens this dialog and the write happens on confirmation.
+                #}
+                <sw-confirm-modal
+                    v-if="showGatewayRebindModal"
+                    :title="$t('sw-settings-payment.detail.gatewayChannel.rebindModalTitle')"
+                    :text="$t('sw-settings-payment.detail.gatewayChannel.rebindModalText')"
+                    @confirm="saveGatewayChannel"
+                    @cancel="showGatewayRebindModal = false"
+                    @close="showGatewayRebindModal = false"
+                />
+                {% endblock %}
+
                 {% block sw_settings_payment_detail_top_rule %}
                 <mt-card
                     class="sw-settings-payment-detail__condition_container"

@@ -64,6 +64,25 @@
         "modal": {
           "textConfirmation": "Do you really want to delete this payment method?"
         }
+      },
+      "gatewayChannel": {
+        "title": "Collection channel",
+        "textNew": "Save this payment method first, then configure the channel it collects through.",
+        "textNoProviders": "There is no collecting account yet.",
+        "textNoChannels": "The selected account does not offer a collection channel that the platform has enabled.",
+        "linkToProviders": "Open the payment interfaces",
+        "textUnbound": "This payment method is not bound to a collection channel yet, so it does not appear in the checkout. It can only collect once a channel is bound.",
+        "textBound": "This payment method collects through {channel} of {app}.",
+        "labelApp": "Collecting account",
+        "placeholderApp": "Select a collecting account...",
+        "labelChannel": "Collection channel",
+        "placeholderChannel": "Select a collection channel...",
+        "optionTakenBy": "{label} (used by {name})",
+        "textCollectHint": "Saving changes this payment method to collect through the selected channel.",
+        "buttonSave": "Save channel",
+        "messageSaveSuccess": "The collection channel has been saved.",
+        "rebindModalTitle": "Change collection channel",
+        "rebindModalText": "Changing the channel moves the payments of this method to the merchant account behind the new channel. Continue?"
       }
     }
   },

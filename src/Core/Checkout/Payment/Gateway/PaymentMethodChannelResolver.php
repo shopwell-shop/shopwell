@@ -42,6 +42,9 @@ final class PaymentMethodChannelResolver
     {
         $criteria = new Criteria();
         $criteria->addFilter(new EqualsFilter('paymentMethodId', $paymentMethodId));
+        // the app comes along: the payment is created for it, and a second read for the very row the
+        // binding already points at would be a query per checkout
+        $criteria->addAssociation('paymentApp');
         $criteria->setLimit(1);
 
         $binding = $this->bindingRepository->search($criteria, $context)->getEntities()->first();

@@ -14,6 +14,7 @@ use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppProvider\PaymentAppProv
 use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppProvider\PaymentAppProviderEntity;
 use Shopwell\Core\System\Payment\App\PaymentAppCollection;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
+use Shopwell\Core\System\Payment\PaymentException as GatewayPaymentException;
 use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
 use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannelRegistry;
 use Shopwell\Core\System\Payment\Provider\PaymentChannelConfigCollection;
@@ -31,12 +32,20 @@ use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;
  * {@see self::TECHNICAL_NAME} and is authorized for the interface of the channel that is actually
  * used, the same way an operator would have done it in the administration.
  *
- * The app itself is written by the payment migration and by nothing else. A row that is missing is a
- * broken installation or a broken upgrade, and it is reported as such: silently writing one here
- * would leave two writers of the same row and make "why is this tenant not the platform one" an
- * unanswerable question. Only the authorizations around it are written lazily, and only when a channel
- * is used - a channel the merchant has not enabled for the platform is never handed out, because the
- * storefront offers what can really be paid, not what could theoretically be installed.
+ * A checkout payment method does not have to collect through that tenant: it collects through whichever
+ * app its binding names, and {@see self::authorizeFor()} answers for that one as well - lazily for the
+ * platform, read only for every other app, whose authorizations a merchant set up on purpose.
+ *
+ * The app itself, and its authorization for the one channel the platform switches on with it, are
+ * written by the payment migration and by nothing else - a fresh installation can collect without
+ * anyone configuring anything. A row that is missing is a broken installation or a broken upgrade,
+ * and it is reported as such: silently writing one here would leave two writers of the same row and
+ * make "why is this tenant not the platform one" an unanswerable question. Only the authorizations
+ * of the other channels are written lazily, and only when such a channel is used - a channel the
+ * merchant has not enabled for the platform is never handed out, because the storefront offers what
+ * can really be paid, not what could theoretically be installed. An authorization that already
+ * exists is respected as it is: the merchant may have switched it off or pointed it at own
+ * credentials, and neither is overwritten here.
  *
  * @internal
  */
@@ -108,28 +117,68 @@ final class PlatformPaymentApp
     }
 
     /**
-     * Hands out the app, authorized for the interface of the channel and offering the channel itself.
-     *
-     * The rows are only written when they are missing: an operator may have authorized the same
-     * interface by hand - an existing authorization is then respected as it is and never silently
-     * rewritten.
+     * Hands out the tenant of the platform, authorized for the interface of the channel and offering
+     * the channel itself.
      *
      * @throws PaymentException when the platform does not offer the channel at all
      */
     public function appForChannel(string $channelTechnicalName): PaymentAppEntity
     {
-        $channel = $this->channels->get($channelTechnicalName);
+        return $this->authorizeFor($this->app(), $this->channels->get($channelTechnicalName));
+    }
 
-        if (!isset($this->enabledChannelConfigs()[$channelTechnicalName])) {
-            throw PaymentException::channelDisabledByPlatform($channelTechnicalName);
+    /**
+     * Hands out the app that collects a payment, authorized for the channel it is about to open.
+     *
+     * The tenant of the platform is authorized lazily, the way it always was: the first payment
+     * authorizes the interface and offers the channel, so the shop's own payments need no onboarding by
+     * hand, and the merchant can still switch a channel off for it - an authorization that exists is
+     * respected as it is.
+     *
+     * Any other app is not authorized here. That app was onboarded by a merchant who decided which
+     * interfaces it may charge and which of their channels it may offer, so writing those rows from the
+     * checkout would be a second writer that overrules that decision without anyone noticing. An app
+     * that does not offer the channel simply cannot collect it, and saying so is the only honest answer
+     * left at that point.
+     *
+     * @throws PaymentException when the platform does not offer the channel at all
+     * @throws GatewayPaymentException when the app does not offer the channel
+     */
+    public function authorizeFor(PaymentAppEntity $app, PaymentChannel $channel): PaymentAppEntity
+    {
+        if ($app->type !== PaymentAppEntity::TYPE_PLATFORM) {
+            if (!$this->offersChannel($app->id, $channel->technicalName)) {
+                /** @phpstan-ignore shopwell.domainException (The error belongs to the payment gateway the checkout wraps.) */
+                throw GatewayPaymentException::channelNotEnabled($channel->technicalName, $app->id);
+            }
+
+            return $app;
         }
 
-        $app = $this->app();
+        if (!isset($this->enabledChannelConfigs()[$channel->technicalName])) {
+            throw PaymentException::channelDisabledByPlatform($channel->technicalName);
+        }
 
         $this->authorizeProvider($app->id, $channel);
         $this->offerChannel($app->id, $channel);
 
         return $app;
+    }
+
+    /**
+     * Whether the app itself offers the channel, i.e. the merchant switched it on for that app.
+     */
+    private function offersChannel(string $appId, string $channelTechnicalName): bool
+    {
+        $criteria = new Criteria();
+        $criteria->addFilter(
+            new EqualsFilter('paymentAppId', $appId),
+            new EqualsFilter('channelTechnicalName', $channelTechnicalName),
+            new EqualsFilter('enabled', true)
+        );
+        $criteria->setLimit(1);
+
+        return $this->appChannelRepository->search($criteria, Context::createDefaultContext())->getEntities()->first() !== null;
     }
 
     /**
@@ -150,6 +199,13 @@ final class PlatformPaymentApp
         return $app;
     }
 
+    /**
+     * The authorization is created for a channel the platform did not have authorized yet - the
+     * interface of the seeded channel is already authorized by the migration.
+     *
+     * Only a missing or a switched-off authorization is written: a row that is enabled stays as it is,
+     * including its mode, because the operator may have pointed it at own credentials on purpose.
+     */
     private function authorizeProvider(string $appId, PaymentChannel $channel): void
     {
         $criteria = new Criteria();
@@ -175,6 +231,11 @@ final class PlatformPaymentApp
         ]], Context::createDefaultContext());
     }
 
+    /**
+     * The channel is offered to the platform tenant the first time it is collected through - the
+     * seeded channel is offered by the migration already, and a row that exists is never touched, so
+     * a channel the merchant switched off stays off.
+     */
     private function offerChannel(string $appId, PaymentChannel $channel): void
     {
         $criteria = new Criteria();

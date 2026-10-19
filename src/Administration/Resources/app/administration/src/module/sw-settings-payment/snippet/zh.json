@@ -64,6 +64,25 @@
         "modal": {
           "textConfirmation": "确定要删除此支付方式吗？"
         }
+      },
+      "gatewayChannel": {
+        "title": "收款渠道",
+        "textNew": "请先保存支付方式，再配置它的收款渠道。",
+        "textNoProviders": "还没有可用的收款账户。",
+        "textNoChannels": "所选收款账户没有平台已启用的收款渠道。",
+        "linkToProviders": "前往支付接口设置",
+        "textUnbound": "此支付方式尚未绑定收款渠道，结算页不会出现；绑定渠道后才能收款。",
+        "textBound": "此支付方式通过 {app} 的 {channel} 收款。",
+        "labelApp": "收款账户",
+        "placeholderApp": "请选择收款账户...",
+        "labelChannel": "收款渠道",
+        "placeholderChannel": "请选择收款渠道...",
+        "optionTakenBy": "{label}（已被 {name} 使用）",
+        "textCollectHint": "保存后此支付方式将改为通过该渠道收款。",
+        "buttonSave": "保存渠道",
+        "messageSaveSuccess": "收款渠道已保存。",
+        "rebindModalTitle": "更换收款渠道",
+        "rebindModalText": "更换渠道后，此支付方式的款项将进入新渠道所属的商户账户。是否继续？"
       }
     }
   },
