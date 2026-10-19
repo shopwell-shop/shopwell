@@ -4,10 +4,14 @@ namespace Shopwell\Core\System\Sms\Template;
 
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Sms\SmsException;
+use Shopwell\Core\System\Sms\Template\Audit\SmsTemplateBodyReader;
 
 /**
  * Renders the body of a template of the free text mode, the providers that require a reported
  * template never reach this class.
+ *
+ * The rendered body is the body of the default language, whatever language the context carries: the
+ * body that was reported at the provider is the body that is sent, so the two cannot differ.
  *
  * @internal
  */
@@ -15,6 +19,10 @@ use Shopwell\Core\System\Sms\SmsException;
 final class SmsTemplateRenderer
 {
     private const PLACEHOLDER = '/\{\{\s*([a-zA-Z0-9_.]+)\s*\}\}/';
+
+    public function __construct(private readonly SmsTemplateBodyReader $bodyReader)
+    {
+    }
 
     /**
      * @param array<string, mixed> $params
@@ -24,9 +32,9 @@ final class SmsTemplateRenderer
     public function render(SmsTemplateEntity $template, array $params): string
     {
         $templateRef = $template->technicalName;
-        $content = $this->content($template);
+        $content = $this->bodyReader->readDefaultContent($template);
 
-        if ($content === null || trim($content) === '') {
+        if (trim($content) === '') {
             throw SmsException::templateContentMissing($templateRef);
         }
 
@@ -52,23 +60,5 @@ final class SmsTemplateRenderer
         }
 
         return $rendered;
-    }
-
-    /**
-     * The body of the language the message goes out in, and the one of the default language for a
-     * language that has no body of its own yet - the translated value of the entity is the one of the
-     * default language, the property holds the language of the context only.
-     */
-    private function content(SmsTemplateEntity $template): ?string
-    {
-        $content = $template->content;
-
-        if ($content !== null && trim($content) !== '') {
-            return $content;
-        }
-
-        $defaultContent = $template->getTranslated()['content'] ?? null;
-
-        return \is_string($defaultContent) && trim($defaultContent) !== '' ? $defaultContent : null;
     }
 }

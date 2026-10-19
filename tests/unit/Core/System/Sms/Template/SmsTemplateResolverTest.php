@@ -15,6 +15,7 @@ use Shopwell\Core\System\Sms\SmsException;
 use Shopwell\Core\System\Sms\Struct\SmsMessageOptions;
 use Shopwell\Core\System\Sms\Template\Aggregate\SmsTemplateMapping\SmsTemplateMappingCollection;
 use Shopwell\Core\System\Sms\Template\Aggregate\SmsTemplateMapping\SmsTemplateMappingEntity;
+use Shopwell\Core\System\Sms\Template\Audit\SmsTemplateBodyReader;
 use Shopwell\Core\System\Sms\Template\SmsParamValidator;
 use Shopwell\Core\System\Sms\Template\SmsTemplateCollection;
 use Shopwell\Core\System\Sms\Template\SmsTemplateEntity;
@@ -260,7 +261,7 @@ class SmsTemplateResolverTest extends TestCase
             $this->createRegistry($factories),
             $gatewayResolver,
             new SmsParamValidator(),
-            new SmsTemplateRenderer(),
+            new SmsTemplateRenderer(new SmsTemplateBodyReader()),
             new PhoneNumberNormalizer(new StaticSystemConfigService()),
         );
     }

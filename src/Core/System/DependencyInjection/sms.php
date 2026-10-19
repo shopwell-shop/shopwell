@@ -20,8 +20,11 @@ use Shopwell\Core\System\Sms\Service\AbstractSmsSender;
 use Shopwell\Core\System\Sms\Service\SmsSender;
 use Shopwell\Core\System\Sms\Subscriber\SmsDeliverySubscriber;
 use Shopwell\Core\System\Sms\Template\Aggregate\SmsTemplateMapping\SmsTemplateMappingEntity;
+use Shopwell\Core\System\Sms\Template\Audit\SmsTemplateAuditService;
+use Shopwell\Core\System\Sms\Template\Audit\SmsTemplateBodyReader;
 use Shopwell\Core\System\Sms\Template\SmsParamValidator;
 use Shopwell\Core\System\Sms\Template\SmsTemplateEntity;
+use Shopwell\Core\System\Sms\Template\SmsTemplateMappingLocator;
 use Shopwell\Core\System\Sms\Template\SmsTemplateRenderer;
 use Shopwell\Core\System\Sms\Template\SmsTemplateResolver;
 use Shopwell\Core\System\Sms\Transport\SmsTransportLoader;
@@ -120,7 +123,30 @@ return static function (ContainerConfigurator $container): void {
 
     // ---- the templates ----
     $services->set(SmsParamValidator::class);
-    $services->set(SmsTemplateRenderer::class);
+
+    // the audit and the renderer read the same body, so a reported template cannot differ from the
+    // one that is sent
+    $services->set(SmsTemplateBodyReader::class);
+
+    $services->set(SmsTemplateRenderer::class)
+        ->args([service(SmsTemplateBodyReader::class)]);
+
+    // the single place that resolves the mapping row of a (template, provider, account) combination
+    $services->set(SmsTemplateMappingLocator::class)
+        ->args([service('sms_template_mapping.repository')]);
+
+    // the audit loop: report a template at the provider, read its state back, confirm it by hand
+    $services->set(SmsTemplateAuditService::class)
+        ->args([
+            service(SmsGatewayAuditCapabilities::class),
+            service('sms_template_mapping.repository'),
+            service('sms_gateway.repository'),
+            service('sms_template.repository'),
+            service(SmsTemplateMappingLocator::class),
+            service(SmsTemplateBodyReader::class),
+            service(Connection::class),
+            service(ClockInterface::class),
+        ]);
 
     $services->set(SmsTemplateResolver::class)
         ->args([

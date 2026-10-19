@@ -16,6 +16,7 @@ use Shopwell\Core\System\Sms\Gateway\Audit\TemplateSubmission;
 use Shopwell\Core\System\Sms\Gateway\Audit\TemplateSubmissionReceipt;
 use Shopwell\Core\System\Sms\Gateway\Log\LogGatewayTransportFactory;
 use Shopwell\Core\System\Sms\Gateway\Null\NullGatewayTransportFactory;
+use Shopwell\Core\System\Sms\Gateway\Null\NullSmsTransport;
 use Shopwell\Core\System\Sms\Gateway\SmsGatewayRegistry;
 use Shopwell\Core\System\Sms\Gateway\SmsGatewayTransportFactoryInterface;
 use Shopwell\Core\System\Sms\SmsException;
@@ -188,7 +189,7 @@ class SmsGatewayAuditCapabilitiesTest extends TestCase
                 array $options,
                 ?EventDispatcherInterface $dispatcher = null,
             ): TransportInterface {
-                throw new \LogicException('this factory is only used to declare capabilities');
+                return new NullSmsTransport($dispatcher);
             }
 
             /**
@@ -216,7 +217,10 @@ class SmsGatewayAuditCapabilitiesTest extends TestCase
                 array $options,
                 TemplateSubmission $submission,
             ): TemplateSubmissionReceipt {
-                throw new \LogicException('this factory is only used to declare capabilities');
+                return new TemplateSubmissionReceipt(
+                    templateCode: 'unused',
+                    status: TemplateApprovalStatus::PENDING,
+                );
             }
 
             public function readTemplateApprovalStatus(
@@ -224,7 +228,11 @@ class SmsGatewayAuditCapabilitiesTest extends TestCase
                 array $options,
                 string $templateCode,
             ): TemplateApprovalReading {
-                throw new \LogicException('this factory is only used to declare capabilities');
+                return new TemplateApprovalReading(
+                    status: TemplateApprovalStatus::UNKNOWN,
+                    providerStatusCode: '',
+                    providerStatusMessage: '',
+                );
             }
         };
     }
