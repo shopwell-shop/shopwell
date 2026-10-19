@@ -30,7 +30,7 @@ final class SmsTemplateRenderer
         $templateRef = $template->technicalName;
         $content = $this->content($template);
 
-        if ($content === null || trim($content) === '') {
+        if ($content === null) {
             throw SmsException::templateContentMissing($templateRef);
         }
 
