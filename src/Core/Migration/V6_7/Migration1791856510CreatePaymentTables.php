@@ -727,10 +727,17 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
     /**
      * The edge between a checkout payment method and the gateway channel it collects through.
      *
+     * A payment method does not point at an interface, it points at the pair a payment really runs
+     * through: the app whose merchant account is charged, and one channel of that app. The interface
+     * is not a column here because it is not a fact of its own - a channel belongs to exactly one
+     * interface and the registry refuses to start when two interfaces name a channel alike, so the
+     * interface is derived from the channel and can never disagree with it.
+     *
      * Both directions are unique and enforced here: one method collects through exactly one channel,
-     * and one channel is claimed by exactly one method. Two methods on the same channel would make the
-     * shopper's choice meaningless, and both would silently charge the same merchant account. The
-     * interface is part of the second key because different interfaces may name a channel alike.
+     * and one channel of an app is claimed by exactly one method. Two methods on the same channel
+     * would make the shopper's choice meaningless, and both would silently charge the same merchant
+     * account. The app is part of the second key because two apps may well offer a channel of the
+     * same name against different accounts.
      */
     private function createPaymentMethodGatewayChannelTable(Connection $connection): void
     {
@@ -738,14 +745,15 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
             'CREATE TABLE IF NOT EXISTS `payment_method_gateway_channel` (
                 `id` BINARY(16) NOT NULL,
                 `payment_method_id` BINARY(16) NOT NULL,
-                `provider_technical_name` VARCHAR(64) NOT NULL,
+                `payment_app_id` BINARY(16) NOT NULL,
                 `channel_technical_name` VARCHAR(64) NOT NULL,
                 `created_at` DATETIME(3) NOT NULL,
                 `updated_at` DATETIME(3) NULL,
                 PRIMARY KEY (`id`),
                 UNIQUE KEY `uniq.payment_method_gateway_channel.payment_method_id` (`payment_method_id`),
-                UNIQUE KEY `uniq.payment_method_gateway_channel.channel` (`provider_technical_name`, `channel_technical_name`),
-                CONSTRAINT `fk.payment_method_gateway_channel.payment_method_id` FOREIGN KEY (`payment_method_id`) REFERENCES `payment_method` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+                UNIQUE KEY `uniq.payment_method_gateway_channel.channel` (`payment_app_id`, `channel_technical_name`),
+                CONSTRAINT `fk.payment_method_gateway_channel.payment_method_id` FOREIGN KEY (`payment_method_id`) REFERENCES `payment_method` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+                CONSTRAINT `fk.payment_method_gateway_channel.payment_app_id` FOREIGN KEY (`payment_app_id`) REFERENCES `payment_app` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;'
         );
     }
