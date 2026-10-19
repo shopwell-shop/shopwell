@@ -59,6 +59,18 @@ Shopwell.Component.register(
 );
 
 /**
+ * The form a provider asks for before it takes a template. It is a component of its own because the
+ * fields are declared by the provider and the grid only opens it for the row it belongs to.
+ *
+ * @sw-package framework
+ * @private
+ */
+Shopwell.Component.register(
+    'sw-settings-sms-template-submission-modal',
+    () => import('./component/sw-settings-sms-template-submission-modal'),
+);
+
+/**
  * @sw-package framework
  * @private
  */

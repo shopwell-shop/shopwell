@@ -27,6 +27,8 @@
       "labelLabelPlaceholder": "例如：阿里云主账号",
       "labelEnabled": "启用该网关",
       "labelEnabledHelpText": "只有启用的网关会被选中来发送短信。",
+      "labelAcceptUnknownRegion": "未识别国家也投递到本网关",
+      "labelAcceptUnknownRegionHelpText": "号码所属国家无法识别时，默认只会路由到声明 GLOBAL 的网关。开启后本网关也会接收这类号码。",
       "labelPriority": "优先级",
       "labelPriorityHelpText": "数字越小越先被选中，故障转移按此顺序尝试。",
       "labelStrategy": "多网关策略",
@@ -58,6 +60,13 @@
       "cardGeneral": "模板",
       "cardContent": "短信内容",
       "cardMapping": "厂商映射",
+      "cardAuditLedger": "厂商送审状态",
+      "cardAuditLedgerHelpText": "各厂商针对本店模板返回的状态。状态由厂商回读，不在这里填写。",
+      "auditLedgerColumnProvider": "厂商",
+      "auditLedgerColumnLastSyncedAt": "最近同步",
+      "auditLedgerEmpty": "该模板还没有映射到任何厂商。",
+      "auditMissingProviderBanner": "以下厂商要求模板审核通过后才能发送，但该模板还没有映射到它们：{providers}",
+      "auditLanguageNote": "送审使用默认语言（{locale}）。",
       "saveFirst": "保存模板后即可配置厂商映射。",
       "columnTechnicalName": "技术名称",
       "columnScene": "场景",
@@ -101,13 +110,19 @@
       "templateCodePlaceholder": "例如：SMS_123456789",
       "signNamePlaceholder": "例如：某某商城",
       "emptyState": "该模板还没有映射到任何厂商，请添加一条。",
-      "auditStatus": {
-        "pending": "待审核",
-        "approved": "已通过",
-        "rejected": "已驳回",
-        "suspended": "已暂停"
-      },
-      "helpText": "厂商模板 ID 与签名由短信厂商分配，审核通过后才可以发送。"
+      "lastSyncedAt": "最近同步",
+      "providerStatusCode": "厂商返回码",
+      "submitAction": "提交送审",
+      "refreshAction": "刷新状态",
+      "confirmAction": "人工确认状态",
+      "submissionModalTitle": "向厂商报备模板",
+      "submissionModalIntro": "以下字段由厂商要求，系统已知的内容已为你填好，其余请自行确认。",
+      "confirmModalTitle": "人工确认审核状态",
+      "confirmModalIntro": "该厂商无法通过接口查询此模板的审核状态，请先在厂商控制台查看，再把结果记录在这里。",
+      "confirmStatusLabel": "审核状态",
+      "confirmNoteLabel": "备注",
+      "confirmNoteHelpText": "备注会写入系统审计日志，不能留空。",
+      "helpText": "厂商模板 ID 与签名由厂商分配。审核状态是厂商返回的结果，审核通过后才可以发送。"
     },
     "delivery": {
       "listTitle": "发送记录",
@@ -140,6 +155,15 @@
     }
   },
   "sms": {
+    "approval": {
+      "status": {
+        "pending": "待审核",
+        "approved": "已通过",
+        "rejected": "已驳回",
+        "suspended": "已暂停",
+        "unknown": "状态未知"
+      }
+    },
     "gateway": {
       "aliyun": "阿里云短信",
       "tencentcloud": "腾讯云短信",
@@ -156,6 +180,28 @@
         "secretKey": "SecretKey",
         "sdkAppId": "短信应用 SdkAppId",
         "region": "地域"
+      }
+    },
+    "submission": {
+      "aliyun": {
+        "templateName": "模板名称",
+        "templateContent": "短信内容",
+        "templateType": {
+          "label": "模板类型",
+          "code": "验证码",
+          "notice": "通知",
+          "promotion": "营销"
+        }
+      },
+      "tencentcloud": {
+        "templateName": "模板名称",
+        "templateContent": "短信内容",
+        "smsType": {
+          "label": "模板类型",
+          "verification": "验证码",
+          "notification": "通知",
+          "marketing": "营销"
+        }
       }
     }
   },

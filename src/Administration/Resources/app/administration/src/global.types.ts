@@ -142,6 +142,7 @@ import type { SwProductDetailStore } from './module/sw-product/page/sw-product-d
 import type { SwProfileStore } from './module/sw-profile/store/sw-profile.store';
 import type OAuth2ChannelService from './module/sw-settings-oauth2-login/service/oauth2-channel.api.service';
 import type SmsGatewayProviderService from './module/sw-settings-sms/service/sms-gateway-provider.service';
+import type SmsTemplateAuditService from './module/sw-settings-sms/service/sms-template-audit.service';
 import type { SwPromotionDetailStore } from './module/sw-promotion-v2/page/sw-promotion-v2-detail/store';
 import type { SwFlowStore } from './module/sw-flow/store/flow.store';
 import type { SwBulkStore } from './app/store/sw-bulk-edit.store';
@@ -301,6 +302,7 @@ declare global {
         searchTypeService: $TSFixMe;
         shopwellDiscountCampaignService: ShopwellDiscountCampaignService;
         smsGatewayProviderService: SmsGatewayProviderService;
+        smsTemplateAuditService: SmsTemplateAuditService;
         snackbarService: SnackbarService;
         shortcutService: $TSFixMe;
         snippetService: SnippetApiService;

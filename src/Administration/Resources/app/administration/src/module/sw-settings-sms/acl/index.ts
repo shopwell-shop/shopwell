@@ -29,6 +29,11 @@ Shopwell.Service('privileges').addPrivilegeMappingEntry({
  * The mapping that lands a logical template on the concrete template of a provider is edited on the
  * template, so its privileges belong to this feature - a role that may change a template may change
  * where it goes.
+ *
+ * The three steps of the audit of a row - report it at the provider, read its state back, record a
+ * state by hand - are a change of that row and of nothing else, so they need no privilege of their
+ * own: the endpoints behind them are guarded with `sms_template_mapping:update`, which the editor of
+ * this key already holds.
  */
 Shopwell.Service('privileges').addPrivilegeMappingEntry({
     category: 'permissions',

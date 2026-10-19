@@ -170,6 +170,15 @@
                     position-identifier="sw-settings-sms-template-detail-mapping"
                     :title="$t('sw-settings-sms.template.cardMapping')"
                 >
+                    {% block sw_settings_sms_template_detail_mapping_note %}
+                    <p
+                        v-if="!isNew && defaultLanguageName"
+                        class="sw-settings-sms-template-detail__audit-language-note"
+                    >
+                        {{ $t('sw-settings-sms.template.auditLanguageNote', { locale: defaultLanguageName }) }}
+                    </p>
+                    {% endblock %}
+
                     {% block sw_settings_sms_template_detail_mapping_grid %}
                     <sw-settings-sms-template-mapping-grid
                         v-if="!isNew"
@@ -177,6 +186,7 @@
                         :providers="providers"
                         :gateways="gateways"
                         :disabled="!acl.can('sms_template.editor') || undefined"
+                        @reload="onMappingChanged"
                     />
                     {% endblock %}
 
@@ -186,6 +196,65 @@
                         class="sw-settings-sms-template-detail__mapping-save-first"
                     >
                         {{ $t('sw-settings-sms.template.saveFirst') }}
+                    </p>
+                    {% endblock %}
+                </mt-card>
+                {% endblock %}
+
+                {% block sw_settings_sms_template_detail_audit_ledger_card %}
+                <mt-card
+                    v-if="!isNew"
+                    position-identifier="sw-settings-sms-template-detail-audit-ledger"
+                    :title="$t('sw-settings-sms.template.cardAuditLedger')"
+                    :subtitle="$t('sw-settings-sms.template.cardAuditLedgerHelpText')"
+                >
+                    {% block sw_settings_sms_template_detail_audit_missing_provider %}
+                    <mt-banner
+                        v-if="providersMissingMapping.length > 0"
+                        class="sw-settings-sms-template-detail__audit-missing-provider"
+                        variant="attention"
+                    >
+                        {{ $t('sw-settings-sms.template.auditMissingProviderBanner', { providers: missingProviderLabel }) }}
+                    </mt-banner>
+                    {% endblock %}
+
+                    {% block sw_settings_sms_template_detail_audit_ledger %}
+                    <sw-data-grid
+                        v-if="auditLedger.length > 0"
+                        class="sw-settings-sms-template-detail__audit-ledger"
+                        :data-source="auditLedger"
+                        :columns="auditLedgerColumns"
+                        :show-selection="false"
+                        :show-actions="false"
+                        :plain-appearance="true"
+                        identifier="sw-settings-sms-template-detail-audit-ledger"
+                    >
+                        {% block sw_settings_sms_template_detail_audit_ledger_column_provider %}
+                        <template #column-providerLabel="{ item }">
+                            {{ item.providerLabel }}
+                        </template>
+                        {% endblock %}
+
+                        {% block sw_settings_sms_template_detail_audit_ledger_column_audit_status %}
+                        <template #column-auditStatusLabel="{ item }">
+                            {{ item.auditStatusLabel }}
+                        </template>
+                        {% endblock %}
+
+                        {% block sw_settings_sms_template_detail_audit_ledger_column_last_synced_at %}
+                        <template #column-lastSyncedAt="{ item }">
+                            {{ item.lastSyncedAt || '—' }}
+                        </template>
+                        {% endblock %}
+                    </sw-data-grid>
+                    {% endblock %}
+
+                    {% block sw_settings_sms_template_detail_audit_ledger_empty %}
+                    <p
+                        v-else
+                        class="sw-settings-sms-template-detail__audit-ledger-empty"
+                    >
+                        {{ $t('sw-settings-sms.template.auditLedgerEmpty') }}
                     </p>
                     {% endblock %}
                 </mt-card>

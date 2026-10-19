@@ -62,18 +62,78 @@
 
     {% block sw_settings_sms_template_mapping_grid_column_audit_status %}
     <template #column-auditStatus="{ item }">
-        <mt-select
-            v-model="item.auditStatus"
-            class="sw-settings-sms-template-mapping-grid__audit-status"
-            name="auditStatus"
-            :options="auditStatusOptions"
-            :disabled="disabled || undefined"
-        />
+        {# The state is what the provider answered, the shop does not type it. #}
+        <div class="sw-settings-sms-template-mapping-grid__audit">
+            <span class="sw-settings-sms-template-mapping-grid__audit-status">
+                {{ auditStatusLabel(item.auditStatus) }}
+            </span>
+
+            {% block sw_settings_sms_template_mapping_grid_column_audit_status_code %}
+            <span
+                v-if="statusCodeOf(item)"
+                class="sw-settings-sms-template-mapping-grid__audit-code"
+            >
+                {{ $t('sw-settings-sms.mapping.providerStatusCode') }}: {{ statusCodeOf(item) }}
+            </span>
+            {% endblock %}
+
+            {% block sw_settings_sms_template_mapping_grid_column_audit_status_message %}
+            <span
+                v-if="statusMessageOf(item)"
+                class="sw-settings-sms-template-mapping-grid__audit-message"
+            >
+                {{ statusMessageOf(item) }}
+            </span>
+            {% endblock %}
+
+            {% block sw_settings_sms_template_mapping_grid_column_audit_last_synced %}
+            <span
+                v-if="lastSyncedAtOf(item)"
+                class="sw-settings-sms-template-mapping-grid__audit-last-synced"
+            >
+                {{ $t('sw-settings-sms.mapping.lastSyncedAt') }}: {{ lastSyncedAtOf(item) }}
+            </span>
+            {% endblock %}
+        </div>
     </template>
     {% endblock %}
 
     {% block sw_settings_sms_template_mapping_grid_actions %}
     <template #actions="{ item }">
+        {% block sw_settings_sms_template_mapping_grid_action_submit %}
+        <sw-context-menu-item
+            v-if="canSubmit(item)"
+            class="sw-settings-sms-template-mapping-grid__submit"
+            :disabled="disabled || isBusy(item) || undefined"
+            @click="onOpenSubmission(item)"
+        >
+            {{ $t('sw-settings-sms.mapping.submitAction') }}
+        </sw-context-menu-item>
+        {% endblock %}
+
+        {% block sw_settings_sms_template_mapping_grid_action_refresh %}
+        <sw-context-menu-item
+            v-if="canReadStatus(item)"
+            class="sw-settings-sms-template-mapping-grid__refresh"
+            :disabled="disabled || isBusy(item) || undefined"
+            @click="onRefresh(item)"
+        >
+            {{ $t('sw-settings-sms.mapping.refreshAction') }}
+        </sw-context-menu-item>
+        {% endblock %}
+
+        {% block sw_settings_sms_template_mapping_grid_action_confirm %}
+        <sw-context-menu-item
+            v-if="canConfirmStatus(item)"
+            class="sw-settings-sms-template-mapping-grid__confirm"
+            :disabled="disabled || isBusy(item) || undefined"
+            @click="onOpenConfirmation(item)"
+        >
+            {{ $t('sw-settings-sms.mapping.confirmAction') }}
+        </sw-context-menu-item>
+        {% endblock %}
+
+        {% block sw_settings_sms_template_mapping_grid_action_remove %}
         <sw-context-menu-item
             class="sw-settings-sms-template-mapping-grid__remove"
             variant="danger"
@@ -82,6 +142,7 @@
         >
             {{ $t('global.default.delete') }}
         </sw-context-menu-item>
+        {% endblock %}
     </template>
     {% endblock %}
 
@@ -111,5 +172,87 @@
 <p class="sw-settings-sms-template-mapping-grid__help">
     {{ $t('sw-settings-sms.mapping.helpText') }}
 </p>
+{% endblock %}
+
+{% block sw_settings_sms_template_mapping_grid_submission_modal %}
+<sw-settings-sms-template-submission-modal
+    v-if="submissionTarget"
+    class="sw-settings-sms-template-mapping-grid__submission"
+    :mapping="submissionTarget"
+    :template="templateEntity"
+    :submission-fields="submissionFields"
+    @modal-close="onCloseSubmission"
+    @submitted="onSubmissionFinished"
+/>
+{% endblock %}
+
+{% block sw_settings_sms_template_mapping_grid_confirmation_modal %}
+<mt-modal-root
+    v-if="confirmationTarget"
+    class="sw-settings-sms-template-mapping-grid__confirmation"
+    is-open
+    @change="onConfirmationModalChange"
+>
+    <mt-modal
+        width="s"
+        :title="$t('sw-settings-sms.mapping.confirmModalTitle')"
+    >
+        {% block sw_settings_sms_template_mapping_grid_confirmation_intro %}
+        <p class="sw-settings-sms-template-mapping-grid__confirmation-intro">
+            {{ $t('sw-settings-sms.mapping.confirmModalIntro') }}
+        </p>
+        {% endblock %}
+
+        {% block sw_settings_sms_template_mapping_grid_confirmation_fields %}
+        <mt-select
+            v-model="confirmationStatus"
+            class="sw-settings-sms-template-mapping-grid__confirmation-status"
+            name="confirmationStatus"
+            required
+            :label="$t('sw-settings-sms.mapping.confirmStatusLabel')"
+            :options="confirmationStatusOptions"
+            :disabled="isConfirming || undefined"
+        />
+
+        <mt-textarea
+            v-model="confirmationNote"
+            class="sw-settings-sms-template-mapping-grid__confirmation-note"
+            name="confirmationNote"
+            required
+            :label="$t('sw-settings-sms.mapping.confirmNoteLabel')"
+            :help-text="$t('sw-settings-sms.mapping.confirmNoteHelpText')"
+            :disabled="isConfirming || undefined"
+        />
+        {% endblock %}
+
+        {% block sw_settings_sms_template_mapping_grid_confirmation_footer %}
+        <template #footer>
+            {% block sw_settings_sms_template_mapping_grid_confirmation_footer_cancel %}
+            <mt-modal-close
+                as="mt-button"
+                variant="secondary"
+                size="small"
+                :disabled="isConfirming || undefined"
+            >
+                {{ $t('global.default.cancel') }}
+            </mt-modal-close>
+            {% endblock %}
+
+            {% block sw_settings_sms_template_mapping_grid_confirmation_footer_confirm %}
+            <mt-modal-action
+                as="mt-button"
+                variant="primary"
+                size="small"
+                :is-loading="isConfirming"
+                :disabled="isConfirming || undefined"
+                @click="onConfirm"
+            >
+                {{ $t('sw-settings-sms.mapping.confirmAction') }}
+            </mt-modal-action>
+            {% endblock %}
+        </template>
+        {% endblock %}
+    </mt-modal>
+</mt-modal-root>
 {% endblock %}
 {% endblock %}

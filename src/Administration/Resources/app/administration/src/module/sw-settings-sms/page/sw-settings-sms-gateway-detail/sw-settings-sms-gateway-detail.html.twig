@@ -137,6 +137,17 @@
                     />
                     {% endblock %}
 
+                    {% block sw_settings_sms_gateway_detail_accept_unknown_region %}
+                    <mt-switch
+                        v-model="acceptUnknownRegion"
+                        class="sw-settings-sms-gateway-detail__accept-unknown-region"
+                        bordered
+                        :disabled="!acl.can('sms_gateway.editor') || undefined"
+                        :label="$t('sw-settings-sms.gateway.labelAcceptUnknownRegion')"
+                        :help-text="$t('sw-settings-sms.gateway.labelAcceptUnknownRegionHelpText')"
+                    />
+                    {% endblock %}
+
                     {% block sw_settings_sms_gateway_detail_capabilities %}
                     <div
                         v-if="provider"
