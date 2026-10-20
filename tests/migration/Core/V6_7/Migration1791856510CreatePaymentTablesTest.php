@@ -399,30 +399,33 @@ class Migration1791856510CreatePaymentTablesTest extends TestCase
         $secret = $this->cipher()->decryptValue((string) $app['app_secret']);
         static::assertMatchesRegularExpression('/^[0-9a-f]{64}$/', $secret);
 
-        // the default app can collect right away: the interface is authorized for it, on the merchant
-        // account of the platform
-        $authorization = $this->connection->fetchAssociative(
+        // the default app can collect right away: the three seeded interfaces are authorized for it,
+        // on the merchant account of the platform
+        $seededProviders = [
+            Migration1791856510CreatePaymentTables::PROVIDER,
+            PaypalApi::PROVIDER,
+            StripeApi::PROVIDER,
+        ];
+
+        $authorizations = $this->connection->fetchAllAssociative(
             'SELECT `provider_technical_name`, `enabled`, `source_app_id` FROM `payment_app_provider` WHERE `payment_app_id` = :app',
             ['app' => $app['id']]
         );
-        static::assertIsArray($authorization);
-        static::assertSame(Migration1791856510CreatePaymentTables::PROVIDER, $authorization['provider_technical_name']);
-        static::assertSame(1, (int) $authorization['enabled']);
-        // the tenant of the platform is the root of the chain and inherits from nobody
-        static::assertNull($authorization['source_app_id']);
+        static::assertSame($seededProviders, array_column($authorizations, 'provider_technical_name'));
 
-        // and exactly that one - a second authorization would mean the switch of the merchant was
-        // bypassed somewhere
-        static::assertSame(1, (int) $this->connection->fetchOne(
-            'SELECT COUNT(*) FROM `payment_app_provider` WHERE `payment_app_id` = :app',
-            ['app' => $app['id']]
-        ));
+        foreach ($authorizations as $authorization) {
+            static::assertSame(1, (int) $authorization['enabled']);
+            // the tenant of the platform is the root of the chain and inherits from nobody
+            static::assertNull($authorization['source_app_id']);
+        }
 
-        // the channel the checkout collects through, and the one the seeded alipay payment method is
+        // the channels the checkout collects through, and the ones the seeded payment methods are
         // bound to - a method whose channel the platform does not offer cannot be collected through
         $offeredChannels = array_unique([
             Migration1791856510CreatePaymentTables::CHANNEL,
             Migration1791856510CreatePaymentTables::PAYMENT_METHOD_ALIPAY_CHANNEL,
+            Migration1791856510CreatePaymentTables::PAYMENT_METHOD_PAYPAL_CHANNEL,
+            Migration1791856510CreatePaymentTables::PAYMENT_METHOD_STRIPE_CHANNEL,
         ]);
 
         foreach ($offeredChannels as $channelTechnicalName) {
@@ -641,9 +644,11 @@ class Migration1791856510CreatePaymentTablesTest extends TestCase
         $offeredChannels = array_unique([
             Migration1791856510CreatePaymentTables::CHANNEL,
             Migration1791856510CreatePaymentTables::PAYMENT_METHOD_ALIPAY_CHANNEL,
+            Migration1791856510CreatePaymentTables::PAYMENT_METHOD_PAYPAL_CHANNEL,
+            Migration1791856510CreatePaymentTables::PAYMENT_METHOD_STRIPE_CHANNEL,
         ]);
 
-        static::assertSame(1, (int) $this->connection->fetchOne(
+        static::assertSame(3, (int) $this->connection->fetchOne(
             'SELECT COUNT(*) FROM `payment_app_provider` WHERE `payment_app_id` = :app',
             ['app' => $appId]
         ));
@@ -652,13 +657,15 @@ class Migration1791856510CreatePaymentTablesTest extends TestCase
             ['app' => $appId]
         ));
 
-        $authorization = $this->connection->fetchAssociative(
+        $authorizations = $this->connection->fetchAllAssociative(
             'SELECT `enabled`, `source_app_id` FROM `payment_app_provider` WHERE `payment_app_id` = :app',
             ['app' => $appId]
         );
-        static::assertIsArray($authorization);
-        static::assertSame(0, (int) $authorization['enabled']);
-        static::assertNull($authorization['source_app_id']);
+
+        foreach ($authorizations as $authorization) {
+            static::assertSame(0, (int) $authorization['enabled']);
+            static::assertNull($authorization['source_app_id']);
+        }
 
         // every offered channel keeps the switch the merchant turned off
         static::assertSame(0, (int) $this->connection->fetchOne(
@@ -678,22 +685,25 @@ class Migration1791856510CreatePaymentTablesTest extends TestCase
      * was configured, the tenant was authorized, and the payment selection of the storefront was still
      * empty until somebody bound a method by hand.
      *
-     * Two methods are seeded now, both collecting on the account of the platform tenant. The channels
-     * are the only non sdk ones that declare both devices a browser can be - `alipay_qr` for alipay and
-     * `wechat_native` for wechat pay - and the two differ in their readiness, which is data and not
-     * code: alipay is switched on and collectable right away, wechat pay waits for the merchant id and
-     * the certificate of this very shop and stays out of the checkout until they exist.
+     * Four methods are seeded now, all of them collecting on the account of the platform tenant. The
+     * channels are the ones a browser can be handed over to - `alipay_qr` for alipay, `wechat_native`
+     * for wechat pay and the redirect checkout of paypal and stripe - and they differ in their
+     * readiness, which is data and not code: alipay, paypal and stripe are switched on and collectable
+     * right away, wechat pay waits for the merchant id and the certificate of this very shop and stays
+     * out of the checkout until they exist.
      *
      * The migration runs on every upgrade, so a second run must change nothing - neither a second
      * method (the technical name is unique) nor a second binding nor a second translation.
      */
-    public function testSeedsTheTwoPaymentMethodsOfTheGateway(): void
+    public function testSeedsTheFourPaymentMethodsOfTheGateway(): void
     {
         $this->connection->executeStatement(
-            'DELETE FROM `payment_method` WHERE `technical_name` IN (:alipay, :wechat)',
+            'DELETE FROM `payment_method` WHERE `technical_name` IN (:alipay, :wechat, :paypal, :stripe)',
             [
                 'alipay' => Migration1791856510CreatePaymentTables::PAYMENT_METHOD_ALIPAY,
                 'wechat' => Migration1791856510CreatePaymentTables::PAYMENT_METHOD_WECHAT,
+                'paypal' => Migration1791856510CreatePaymentTables::PAYMENT_METHOD_PAYPAL,
+                'stripe' => Migration1791856510CreatePaymentTables::PAYMENT_METHOD_STRIPE,
             ]
         );
 
@@ -718,6 +728,18 @@ class Migration1791856510CreatePaymentTablesTest extends TestCase
                 Migration1791856510CreatePaymentTables::PAYMENT_METHOD_WECHAT_CHANNEL,
                 '微信支付',
                 'WeChat Pay',
+            ],
+            Migration1791856510CreatePaymentTables::PAYMENT_METHOD_PAYPAL => [
+                Migration1791856510CreatePaymentTables::PAYMENT_METHOD_PAYPAL_POSITION,
+                Migration1791856510CreatePaymentTables::PAYMENT_METHOD_PAYPAL_CHANNEL,
+                'PayPal',
+                'PayPal',
+            ],
+            Migration1791856510CreatePaymentTables::PAYMENT_METHOD_STRIPE => [
+                Migration1791856510CreatePaymentTables::PAYMENT_METHOD_STRIPE_POSITION,
+                Migration1791856510CreatePaymentTables::PAYMENT_METHOD_STRIPE_CHANNEL,
+                'Stripe',
+                'Stripe',
             ],
         ];
 
@@ -776,22 +798,23 @@ class Migration1791856510CreatePaymentTablesTest extends TestCase
             ));
         }
 
-        // alipay is collectable the moment the installation finishes: the account of the interface is
-        // seeded and the channel the method is bound to is switched on and offered to the tenant
-        static::assertSame(1, (int) $this->connection->fetchOne(
-            'SELECT `enabled` FROM `payment_channel_config` WHERE `provider_technical_name` = :provider AND `channel_technical_name` = :channel',
-            [
-                'provider' => AlipayApi::PROVIDER,
-                'channel' => Migration1791856510CreatePaymentTables::PAYMENT_METHOD_ALIPAY_CHANNEL,
-            ]
-        ));
-        static::assertSame(1, (int) $this->connection->fetchOne(
-            'SELECT `enabled` FROM `payment_app_channel` WHERE `payment_app_id` = :app AND `channel_technical_name` = :channel',
-            [
-                'app' => $platformAppId,
-                'channel' => Migration1791856510CreatePaymentTables::PAYMENT_METHOD_ALIPAY_CHANNEL,
-            ]
-        ));
+        // the three seeded sandbox accounts are collectable the moment the installation finishes: the
+        // account of the interface is seeded and the channel the method is bound to is switched on and
+        // offered to the tenant
+        foreach ([
+            AlipayApi::PROVIDER => Migration1791856510CreatePaymentTables::PAYMENT_METHOD_ALIPAY_CHANNEL,
+            PaypalApi::PROVIDER => Migration1791856510CreatePaymentTables::PAYMENT_METHOD_PAYPAL_CHANNEL,
+            StripeApi::PROVIDER => Migration1791856510CreatePaymentTables::PAYMENT_METHOD_STRIPE_CHANNEL,
+        ] as $provider => $channelTechnicalName) {
+            static::assertSame(1, (int) $this->connection->fetchOne(
+                'SELECT `enabled` FROM `payment_channel_config` WHERE `provider_technical_name` = :provider AND `channel_technical_name` = :channel',
+                ['provider' => $provider, 'channel' => $channelTechnicalName]
+            ), 'the channel of ' . $provider . ' is not switched on');
+            static::assertSame(1, (int) $this->connection->fetchOne(
+                'SELECT `enabled` FROM `payment_app_channel` WHERE `payment_app_id` = :app AND `channel_technical_name` = :channel',
+                ['app' => $platformAppId, 'channel' => $channelTechnicalName]
+            ), 'the channel of ' . $provider . ' is not offered to the tenant');
+        }
 
         // wechat pay is not: its channel is not offered and its interface has no merchant account, so
         // the collectability filter keeps the method out of the checkout instead of failing there
@@ -1065,32 +1088,36 @@ class Migration1791856510CreatePaymentTablesTest extends TestCase
     private function seededPaymentMethodRowCounts(): array
     {
         $names = [
-            Migration1791856510CreatePaymentTables::PAYMENT_METHOD_ALIPAY,
-            Migration1791856510CreatePaymentTables::PAYMENT_METHOD_WECHAT,
+            'alipay' => Migration1791856510CreatePaymentTables::PAYMENT_METHOD_ALIPAY,
+            'wechat' => Migration1791856510CreatePaymentTables::PAYMENT_METHOD_WECHAT,
+            'paypal' => Migration1791856510CreatePaymentTables::PAYMENT_METHOD_PAYPAL,
+            'stripe' => Migration1791856510CreatePaymentTables::PAYMENT_METHOD_STRIPE,
         ];
+
+        $in = 'IN (:alipay, :wechat, :paypal, :stripe)';
 
         return [
             'methods' => (int) $this->connection->fetchOne(
-                'SELECT COUNT(*) FROM `payment_method` WHERE `technical_name` IN (:alipay, :wechat)',
-                ['alipay' => $names[0], 'wechat' => $names[1]]
+                'SELECT COUNT(*) FROM `payment_method` WHERE `technical_name` ' . $in,
+                $names
             ),
             'translations' => (int) $this->connection->fetchOne(
                 'SELECT COUNT(*) FROM `payment_method_translation` `translation`
                     INNER JOIN `payment_method` `method` ON `method`.`id` = `translation`.`payment_method_id`
-                    WHERE `method`.`technical_name` IN (:alipay, :wechat)',
-                ['alipay' => $names[0], 'wechat' => $names[1]]
+                    WHERE `method`.`technical_name` ' . $in,
+                $names
             ),
             'bindings' => (int) $this->connection->fetchOne(
                 'SELECT COUNT(*) FROM `payment_method_gateway_channel` `binding`
                     INNER JOIN `payment_method` `method` ON `method`.`id` = `binding`.`payment_method_id`
-                    WHERE `method`.`technical_name` IN (:alipay, :wechat)',
-                ['alipay' => $names[0], 'wechat' => $names[1]]
+                    WHERE `method`.`technical_name` ' . $in,
+                $names
             ),
             'assignments' => (int) $this->connection->fetchOne(
                 'SELECT COUNT(*) FROM `sales_channel_payment_method` `assignment`
                     INNER JOIN `payment_method` `method` ON `method`.`id` = `assignment`.`payment_method_id`
-                    WHERE `method`.`technical_name` IN (:alipay, :wechat)',
-                ['alipay' => $names[0], 'wechat' => $names[1]]
+                    WHERE `method`.`technical_name` ' . $in,
+                $names
             ),
         ];
     }
