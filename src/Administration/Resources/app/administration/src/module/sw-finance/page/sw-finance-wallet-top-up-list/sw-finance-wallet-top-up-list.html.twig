@@ -1,0 +1,199 @@
+{% block sw_finance_wallet_top_up_list %}
+<sw-page class="sw-finance-wallet-top-up-list">
+    {% block sw_finance_wallet_top_up_list_search_bar %}
+    <template #search-bar>
+        <sw-search-bar
+            initial-search-type="customer_wallet_top_up"
+            :initial-search="term"
+            :placeholder="$t('sw-finance.walletTopUp.list.placeholderSearchBar')"
+            @search="onSearch"
+        />
+    </template>
+    {% endblock %}
+
+    {% block sw_finance_wallet_top_up_list_smart_bar_header %}
+    <template #smart-bar-header>
+        {% block sw_finance_wallet_top_up_list_smart_bar_header_title %}
+        <h2>
+            {% block sw_finance_wallet_top_up_list_smart_bar_header_title_breadcrumb %}
+            <span class="sw-finance-wallet-top-up-list__breadcrumb">
+                {{ $t('sw-finance.general.mainMenuItemGeneral') }}
+            </span>
+
+            <mt-icon
+                name="regular-chevron-right-xs"
+                size="12px"
+            />
+
+            {% block sw_finance_wallet_top_up_list_smart_bar_header_title_text %}
+            {{ $t('sw-finance.walletTopUp.list.title') }}
+            {% endblock %}
+            {% endblock %}
+
+            {% block sw_finance_wallet_top_up_list_smart_bar_header_amount %}
+            <span
+                v-if="!isLoading"
+                class="sw-page__smart-bar-amount"
+            >
+                ({{ total }})
+            </span>
+            {% endblock %}
+        </h2>
+        {% endblock %}
+    </template>
+    {% endblock %}
+
+    {% block sw_finance_wallet_top_up_list_content %}
+    <template #content>
+        {% block sw_finance_wallet_top_up_list_content_inner %}
+        <div class="sw-finance-wallet-top-up-list__content">
+
+            {% block sw_finance_wallet_top_up_list_empty_state %}
+            {#
+            Two empty states, and the difference matters: "nothing exists yet" has to explain where the
+            rows come from (the storefront, not this page), "nothing matches" only reports the filter.
+            `sw-entity-listing` renders nothing at all for an empty result, so both live here.
+            #}
+            <mt-empty-state
+                v-if="!isLoading && !total && !hasActiveSearchOrFilter"
+                centered
+                class="sw-finance-wallet-top-up-list__empty-state"
+                :icon="$route.meta.$module.icon"
+                :headline="$t('sw-finance.walletTopUp.list.emptyHeadline')"
+                :description="$t('sw-finance.walletTopUp.list.emptySubline')"
+            />
+            {% endblock %}
+
+            {% block sw_finance_wallet_top_up_list_empty_state_no_result %}
+            <mt-empty-state
+                v-else-if="!isLoading && !total"
+                centered
+                class="sw-finance-wallet-top-up-list__empty-state"
+                :icon="$route.meta.$module.icon"
+                :headline="$t('sw-finance.walletTopUp.list.noResultTitle')"
+                :description="$t('sw-finance.walletTopUp.list.noResultSubline')"
+            />
+            {% endblock %}
+
+            {% block sw_finance_wallet_top_up_list_grid %}
+            <sw-entity-listing
+                v-else-if="isLoading || topUps"
+                ref="listing"
+                class="sw-finance-wallet-top-up-list__grid"
+                identifier="sw-finance-wallet-top-up-list"
+                :data-source="topUps"
+                :columns="columns"
+                :repository="topUpRepository"
+                :sort-by="sortBy"
+                :sort-direction="sortDirection"
+                :is-loading="isLoading"
+                :full-page="true"
+                :show-selection="false"
+                :show-settings="true"
+                :disable-data-fetching="true"
+                :allow-inline-edit="false"
+                :allow-column-edit="true"
+                :allow-edit="false"
+                :allow-delete="false"
+                :allow-view="false"
+                @page-change="onPageChange"
+                @column-sort="onSortColumn"
+            >
+                {% block sw_finance_wallet_top_up_list_grid_column_customer %}
+                <template #column-customer="{ item }">
+                    <mt-link
+                        v-if="item.customer"
+                        class="sw-finance-wallet-top-up-list__customer-link"
+                        :to="{ name: 'sw.customer.detail', params: { id: item.customerId } }"
+                    >
+                        {{ customerLabel(item) }}
+                    </mt-link>
+
+                    {#
+                    The customer may have been deleted after the top up was booked: the id is the only
+                    thing left then, and hiding it would make the row look broken.
+                    #}
+                    <span v-else>{{ customerLabel(item) }}</span>
+                </template>
+                {% endblock %}
+
+                {% block sw_finance_wallet_top_up_list_grid_column_payment_no %}
+                <template #column-paymentNo="{ item }">
+                    {{ item.paymentNo || '–' }}
+                </template>
+                {% endblock %}
+
+                {% block sw_finance_wallet_top_up_list_grid_column_amount %}
+                <template #column-amount="{ item }">
+                    {{ formatAmount(item) }}
+                </template>
+                {% endblock %}
+
+                {% block sw_finance_wallet_top_up_list_grid_column_state %}
+                <template #column-state="{ item }">
+                    <mt-badge
+                        v-if="item.state"
+                        class="sw-finance-wallet-top-up-list__state"
+                        :variant="stateVariant(item.state)"
+                    >
+                        {{ stateLabel(item.state) }}
+                    </mt-badge>
+                </template>
+                {% endblock %}
+
+                {% block sw_finance_wallet_top_up_list_grid_column_channel %}
+                <template #column-channelTechnicalName="{ item }">
+                    {{ item.channelTechnicalName || '–' }}
+                </template>
+                {% endblock %}
+
+                {% block sw_finance_wallet_top_up_list_grid_column_created_at %}
+                <template #column-createdAt="{ item }">
+                    {{ formatDateOrDash(item.createdAt) }}
+                </template>
+                {% endblock %}
+
+                {% block sw_finance_wallet_top_up_list_grid_column_paid_at %}
+                <template #column-paidAt="{ item }">
+                    {{ formatDateOrDash(item.paidAt) }}
+                </template>
+                {% endblock %}
+
+                {% block sw_finance_wallet_top_up_list_grid_column_credited_at %}
+                <template #column-creditedAt="{ item }">
+                    {{ formatDateOrDash(item.creditedAt) }}
+                </template>
+                {% endblock %}
+            </sw-entity-listing>
+            {% endblock %}
+        </div>
+        {% endblock %}
+    </template>
+    {% endblock %}
+
+    {% block sw_finance_wallet_top_up_list_sidebar %}
+    <template #sidebar>
+        <sw-sidebar class="sw-finance-wallet-top-up-list__sidebar">
+            {% block sw_finance_wallet_top_up_list_sidebar_refresh %}
+            <sw-sidebar-item
+                icon="regular-undo"
+                :title="$t('sw-finance.walletTopUp.list.titleSidebarItemRefresh')"
+                @click="onRefresh"
+            />
+            {% endblock %}
+
+            {% block sw_finance_wallet_top_up_list_sidebar_filter %}
+            <sw-sidebar-filter-panel
+                entity="customer_wallet_top_up"
+                :store-key="storeKey"
+                :filters="listFilters"
+                :defaults="defaultFilters"
+                :active-filter-number="activeFilterNumber"
+                @criteria-changed="updateCriteria"
+            />
+            {% endblock %}
+        </sw-sidebar>
+    </template>
+    {% endblock %}
+</sw-page>
+{% endblock %}

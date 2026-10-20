@@ -100,8 +100,11 @@ use Shopwell\Core\System\Payment\Subscription\PaymentMandateEntity;
 use Shopwell\Core\System\Payment\Subscription\PaymentPlanEntity;
 use Shopwell\Core\System\Payment\Subscription\PaymentSubscriptionCycleEntity;
 use Shopwell\Core\System\Payment\Subscription\PaymentSubscriptionEntity;
+use Shopwell\Core\System\Payment\Transfer\Api\PaymentTransferController;
+use Shopwell\Core\System\Payment\Transfer\Api\PaymentTransferPresenter;
 use Shopwell\Core\System\Payment\Transfer\Notification\PaymentTransferNotificationProcessor;
 use Shopwell\Core\System\Payment\Transfer\Notification\PaymentTransferNotificationVerifierRegistry;
+use Shopwell\Core\System\Payment\Transfer\PaymentTransferBooking;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferEntity;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferRecipientEntity;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferRecipientService;
@@ -647,6 +650,39 @@ return static function (ContainerConfigurator $container): void {
             service(ClockInterface::class),
             service('logger'),
         ]);
+
+    // the administration side of a payout: booking the intent (no channel involved), submitting it
+    // (the one call that moves money out) and abandoning it. The listing of the receivers of a payout
+    // is answered here as well, because the generic entity route would hand out the encrypted identity
+    $services->set(PaymentTransferBooking::class)
+        ->args([
+            service('payment_app.repository'),
+            service(PaymentProviderRegistry::class),
+            service(PaymentTransferRecipientService::class),
+            service(PaymentTransferService::class),
+            service(ClockInterface::class),
+        ]);
+
+    // the payout rules of the interfaces are read from their declarations - the matrix of identity
+    // types, required recipient fields and currencies must exist exactly once, next to the interface
+    $services->set(PaymentTransferPresenter::class)
+        ->args([
+            service(PaymentCredentialCipher::class),
+            tagged_iterator('shopwell.payment.provider'),
+        ]);
+
+    $services->set(PaymentTransferController::class)
+        ->public()
+        ->args([
+            service('payment_app.repository'),
+            service('payment_transfer_recipient.repository'),
+            service(PaymentTransferBooking::class),
+            service(PaymentTransferSubmitter::class),
+            service(PaymentTransferService::class),
+            service(PaymentTransferPresenter::class),
+            service(PaymentProviderRegistry::class),
+        ])
+        ->tag('controller.service_arguments');
 
     // the payout side of the reconciliation: a submission may answer nothing at all, and only a
     // repeating question finds out what became of the money

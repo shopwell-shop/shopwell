@@ -120,7 +120,22 @@ final class PaymentTransferSubmitter
             throw PaymentException::gatewayError($transfer->channel, $exception->getMessage(), $exception);
         }
 
-        $this->apply($model, $transfer, $result);
+        try {
+            $this->apply($model, $transfer, $result);
+        } catch (\Throwable $exception) {
+            // the channel answered, so the request demonstrably reached it - an answer that can not be
+            // booked (a channel naming no object, a state the machine refuses) is "the platform does not
+            // know", never "provably nothing happened". Recording the attempt is the evidence: it is the
+            // only thing the caller compares against, and without it the endpoint would classify this as
+            // a rejection and return a 502 for a payout that may already be on its way.
+            $this->recordUnbookedAnswer($transfer, $exception);
+
+            if ($exception instanceof PaymentException) {
+                throw $exception;
+            }
+
+            throw PaymentException::gatewayError($transfer->channel, $exception->getMessage(), $exception);
+        }
 
         return $result;
     }
@@ -161,6 +176,40 @@ final class PaymentTransferSubmitter
             // is booked and the query of the channel decides
             default => [],
         };
+    }
+
+    /**
+     * Records the attempt of an answer that arrived but could not be booked.
+     *
+     * The row is read again before it is written, and the write happens only while it is still
+     * `created`. `apply()` books multi step answers, so a step can have reached the row before a later
+     * one failed - `markSubmitted()` already counted that attempt, and counting it a second time from
+     * the stale value of this object would both double the audit trail and overwrite the freshly
+     * written counter with a number of its own. A row that is no longer `created` therefore needs no
+     * evidence: the caller sees the state move and never asks about the counter.
+     *
+     * The counter is the only durable proof that the platform tried, so a row that can not even be
+     * read back falls back to the value in memory: over counting can only turn a rejection into an
+     * unknown, never the other way round, and an unknown is the answer that stops a payout from being
+     * sent twice.
+     */
+    private function recordUnbookedAnswer(PaymentTransferEntity $transfer, \Throwable $exception): void
+    {
+        $reason = $exception->getMessage();
+
+        try {
+            $fresh = $this->transferService->getById($transfer->id);
+        } catch (\Throwable) {
+            $this->transferService->recordSubmitAttempt($transfer, $reason);
+
+            return;
+        }
+
+        if ($fresh->statusMachineState?->getTechnicalName() !== PaymentTransferStates::STATE_CREATED) {
+            return;
+        }
+
+        $this->transferService->recordSubmitAttempt($fresh, $reason);
     }
 
     /**

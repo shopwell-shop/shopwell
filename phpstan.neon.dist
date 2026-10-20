@@ -149,6 +149,10 @@ parameters:
           # are only visible through the client's private configuration
             identifier: shopwell.reflectionInUnitTest
             path: tests/unit/Elasticsearch/Framework/ClientFactoryTest.php
+        - # the route table is an attribute of the method, and the signature of the submit endpoint is the
+          # guarantee that it can not name an app - neither is reachable without reflection
+            identifier: shopwell.reflectionInUnitTest
+            path: tests/unit/Core/System/Payment/Transfer/Api/PaymentTransferControllerTest.php
 
         # DefaultsTest explicitly tests that the default values are not changed
         - identifier: staticMethod.alreadyNarrowedType

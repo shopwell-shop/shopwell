@@ -361,6 +361,75 @@ class PaymentTransferSubmitterTest extends TestCase
     }
 
     /**
+     * A channel that answers `processing` without naming the object it created violates its contract,
+     * and booking that answer would produce a payout nobody can ever query.
+     *
+     * The answer itself is still the proof that the request reached the channel, so the attempt has to
+     * be recorded: the counter is the only evidence the submit endpoint compares against, and without
+     * it a payout that may already be on its way is reported as a rejection with a 502 - the one answer
+     * that makes a caller retry a transfer that has already left.
+     */
+    public function testAnAnswerThatCanNotBeBookedStillCountsAsAnAttempt(): void
+    {
+        $written = [];
+
+        try {
+            // `processing` carries an object reference at every interface - this one names none
+            $this->submitter(
+                $this->answeringGateway([], new TransferResult(TransferResult::STATE_PROCESSING)),
+                $this->repositoryReading($written, [$this->createdTransfer()])
+            )->submit($this->app('app-id'), $this->createdTransfer());
+
+            static::fail('an answer without an object reference must not be booked');
+        } catch (PaymentException $exception) {
+            static::assertSame(PaymentException::GATEWAY_ERROR, $exception->getErrorCode());
+        }
+
+        // nothing was booked, so the attempt is the only write - and the row it is counted on is the
+        // one that was read back, not the stale object of the caller
+        static::assertCount(1, $written);
+        static::assertSame('transfer-id', $written[0]['id']);
+        static::assertSame(1, $written[0]['submitAttempts']);
+        static::assertStringContainsString('without an object reference', (string) $written[0]['failureReason']);
+    }
+
+    /**
+     * A multi step answer can break after a step already reached the row: `markSubmitted()` counted the
+     * attempt and moved the state before `markSucceeded()` failed. The attempt must not be counted a
+     * second time - the counter is an audit trail and is compared by the endpoint, and the stale value
+     * of the in memory row would overwrite the one the service just wrote.
+     */
+    public function testAnAnswerThatWasHalfwayBookedIsNotCountedTwice(): void
+    {
+        $written = [];
+
+        try {
+            $this->submitter(
+                $this->answeringGateway([], new TransferResult(TransferResult::STATE_SUCCEEDED, 'order-1')),
+                $this->repositoryReading(
+                    $written,
+                    // the row as `apply()` left it: submitted, and the attempt already counted
+                    [$this->transfer([
+                        'statusMachineState' => $this->stateOf(PaymentTransferStates::STATE_SUBMITTED),
+                        'submitAttempts' => 1,
+                    ])],
+                    // the write of `markSucceeded()` is the one that breaks
+                    2
+                )
+            )->submit($this->app('app-id'), $this->createdTransfer());
+
+            static::fail('a booking that breaks halfway has to surface');
+        } catch (PaymentException $exception) {
+            static::assertSame(PaymentException::GATEWAY_ERROR, $exception->getErrorCode());
+        }
+
+        // the submission was written, the failed step was not - and no second attempt was recorded
+        static::assertCount(1, $written);
+        static::assertSame(1, $written[0]['submitAttempts']);
+        static::assertSame('order-1', $written[0]['providerRef']);
+    }
+
+    /**
      * @param EntityRepository<PaymentTransferCollection>|null $transfers
      */
     private function submitter(?GatewayInterface $gateway = null, ?EntityRepository $transfers = null): PaymentTransferSubmitter
@@ -414,6 +483,50 @@ class PaymentTransferSubmitterTest extends TestCase
             $written[] = $data[0];
 
             return $this->written();
+        });
+
+        return $transfers;
+    }
+
+    /**
+     * A repository that answers the re-read of the row and records every write.
+     *
+     * `$fresh` is what `getById()` has to answer, one row per read, which is how the state of the row
+     * after the answer of the channel is reproduced. `$failAtWrite` makes one write break before it
+     * reaches the store - the way a booking that fails halfway is modelled.
+     *
+     * @param list<array<string, mixed>> $written
+     * @param list<PaymentTransferEntity> $fresh
+     *
+     * @return EntityRepository<PaymentTransferCollection>
+     */
+    private function repositoryReading(array &$written, array $fresh = [], ?int $failAtWrite = null): EntityRepository
+    {
+        $transfers = static::createStub(EntityRepository::class);
+
+        $transfers->method('update')->willReturnCallback(function (array $data) use (&$written, $failAtWrite): EntityWrittenContainerEvent {
+            if ($failAtWrite !== null && \count($written) + 1 === $failAtWrite) {
+                throw new \RuntimeException('the row could not be written');
+            }
+
+            $written[] = $data[0];
+
+            return $this->written();
+        });
+
+        $transfers->method('search')->willReturnCallback(function () use (&$fresh): EntitySearchResult {
+            $entity = array_shift($fresh);
+
+            $collection = new PaymentTransferCollection($entity instanceof PaymentTransferEntity ? [$entity] : []);
+
+            return new EntitySearchResult(
+                PaymentTransferEntity::ENTITY_NAME,
+                $collection->count(),
+                $collection,
+                null,
+                new Criteria(),
+                Context::createDefaultContext()
+            );
         });
 
         return $transfers;

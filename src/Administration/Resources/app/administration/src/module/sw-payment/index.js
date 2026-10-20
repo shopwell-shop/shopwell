@@ -13,8 +13,6 @@ Shopwell.Component.register('sw-payment-order-list', () => import('./page/sw-pay
 Shopwell.Component.register('sw-payment-order-detail', () => import('./page/sw-payment-order-detail'));
 Shopwell.Component.register('sw-payment-refund-list', () => import('./page/sw-payment-refund-list'));
 Shopwell.Component.register('sw-payment-refund-detail', () => import('./page/sw-payment-refund-detail'));
-Shopwell.Component.register('sw-payment-transfer-list', () => import('./page/sw-payment-transfer-list'));
-Shopwell.Component.register('sw-payment-transfer-detail', () => import('./page/sw-payment-transfer-detail'));
 /* eslint-enable sw-deprecation-rules/private-feature-declarations */
 
 // eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
@@ -94,34 +92,6 @@ Module.register('sw-payment', {
                 },
             },
         },
-
-        transfer: {
-            component: 'sw-payment-transfer-list',
-            path: 'transfer',
-            meta: {
-                privilege: 'payment_transfer.viewer',
-                appSystem: {
-                    view: 'list',
-                },
-            },
-        },
-
-        transferDetail: {
-            component: 'sw-payment-transfer-detail',
-            path: 'transfer/detail/:id',
-            meta: {
-                parentPath: 'sw.payment.transfer',
-                privilege: 'payment_transfer.viewer',
-                appSystem: {
-                    view: 'detail',
-                },
-            },
-            props: {
-                default(route) {
-                    return { transferId: route.params.id.toLowerCase() };
-                },
-            },
-        },
     },
 
     navigation: [
@@ -144,12 +114,6 @@ Module.register('sw-payment', {
             label: 'sw-payment.general.mainMenuItemRefunds',
             parent: 'sw-payment',
             privilege: 'payment_refund.viewer',
-        },
-        {
-            path: 'sw.payment.transfer',
-            label: 'sw-payment.general.mainMenuItemTransfers',
-            parent: 'sw-payment',
-            privilege: 'payment_transfer.viewer',
         },
     ],
 });

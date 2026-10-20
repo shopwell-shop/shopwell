@@ -94,6 +94,7 @@ class PaymentException extends HttpException
     public const TRANSFER_IDENTITY_VALUE_TOO_LONG = 'PAYMENT__TRANSFER_IDENTITY_VALUE_TOO_LONG';
     public const TRANSFER_AMOUNT_INVALID = 'PAYMENT__TRANSFER_AMOUNT_INVALID';
     public const TRANSFER_OUT_NO_INVALID = 'PAYMENT__TRANSFER_OUT_NO_INVALID';
+    public const TRANSFER_OUT_NO_TAKEN = 'PAYMENT__TRANSFER_OUT_NO_TAKEN';
     public const TRANSFER_ALREADY_FINALIZED = 'PAYMENT__TRANSFER_ALREADY_FINALIZED';
     public const TRANSFER_FOREIGN_APP = 'PAYMENT__TRANSFER_FOREIGN_APP';
     public const TRANSFER_PROVIDER_REF_MISSING = 'PAYMENT__TRANSFER_PROVIDER_REF_MISSING';
@@ -945,6 +946,42 @@ class PaymentException extends HttpException
             self::TRANSFER_OUT_NO_INVALID,
             'The out number "{{ outNo }}" must consist of 1 to 30 characters of [0-9a-zA-Z].',
             ['outNo' => $outNo]
+        );
+    }
+
+    /**
+     * The out number already names a **different** payout of this app.
+     *
+     * The out number is the idempotency key, so a second booking under it is answered with the payout that
+     * exists - but only when it is the same payout. Reusing the number for another recipient, amount or
+     * currency would make the platform answer "already booked" with a payout the caller never meant, and the
+     * intended money would never move. The conflict is the only answer that lets the caller fix the number.
+     */
+    public static function transferOutNoTaken(string $outNo): self
+    {
+        return new self(
+            Response::HTTP_CONFLICT,
+            self::TRANSFER_OUT_NO_TAKEN,
+            'The out number "{{ outNo }}" is already used by another payout of this app.',
+            ['outNo' => $outNo]
+        );
+    }
+
+    /**
+     * The app a payout is booked for does not exist or is switched off.
+     *
+     * It carries `PAYMENT__APP_NOT_FOUND` on purpose - the code an operator sees should stay the one the
+     * domain already uses for "this app cannot be worked with" - but answers 404 instead of the 401 of
+     * {@see self::appNotFound()}: that one is the answer of the app authentication of the payment api, and a
+     * 401 in the administration would read as "your session expired", which is not what happened.
+     */
+    public static function transferAppNotAvailable(string $appId): self
+    {
+        return new self(
+            Response::HTTP_NOT_FOUND,
+            self::APP_NOT_FOUND,
+            'The payment app "{{ appId }}" does not exist or is not active.',
+            ['appId' => $appId]
         );
     }
 

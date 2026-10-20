@@ -1,0 +1,12 @@
+.sw-finance-transfer-reject-modal {
+    &__hint {
+        margin-bottom: var(--scale-size-24);
+    }
+
+    &__counter {
+        margin-top: var(--scale-size-8);
+        color: var(--color-text-secondary-default);
+        font-size: var(--font-size-xs);
+        text-align: right;
+    }
+}
