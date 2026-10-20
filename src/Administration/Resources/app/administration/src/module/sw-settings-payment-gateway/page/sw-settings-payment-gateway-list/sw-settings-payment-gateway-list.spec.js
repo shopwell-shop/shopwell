@@ -50,7 +50,7 @@ const apps = [
  */
 const dataGridStub = {
     name: 'sw-data-grid',
-    props: ['dataSource', 'columns', 'isLoading'],
+    props: ['dataSource', 'columns', 'isLoading', 'showActions', 'isRecordDisabled'],
     template: `
         <div class="sw-data-grid">
             <div class="sw-data-grid__header">
@@ -241,6 +241,27 @@ describe('module/sw-settings-payment-gateway/page/sw-settings-payment-gateway-li
         expect(externalRow.find('.sw-settings-payment-gateway-list__edit-action').exists()).toBe(true);
         expect(externalRow.find('.sw-settings-payment-gateway-list__delete-action').exists()).toBe(true);
         expect(externalRow.find('.sw-settings-payment-gateway-list__platform-badge').exists()).toBe(false);
+    });
+
+    it('should not offer an actions menu when the only row is the one of the platform', async () => {
+        // the platform row is the only row of a fresh installation and it is read only, so a menu
+        // would open empty - which is what an operator reports as "the click does nothing"
+        const { wrapper } = await createWrapper({ listApps: () => Promise.resolve([apps[2]]) });
+
+        expect(wrapper.vm.hasRowActions).toBe(false);
+        expect(wrapper.findComponent({ name: 'sw-data-grid' }).props('showActions')).toBe(false);
+
+        // the grid is told which rows are read only, so the row of the platform can drop its menu
+        // when other apps exist
+        expect(wrapper.findComponent({ name: 'sw-data-grid' }).props('isRecordDisabled')(apps[2])).toBe(true);
+        expect(wrapper.findComponent({ name: 'sw-data-grid' }).props('isRecordDisabled')(apps[0])).toBe(false);
+    });
+
+    it('should offer an actions menu as soon as one app may be written', async () => {
+        const { wrapper } = await createWrapper();
+
+        expect(wrapper.vm.hasRowActions).toBe(true);
+        expect(wrapper.findComponent({ name: 'sw-data-grid' }).props('showActions')).toBe(true);
     });
 
     it('should route the edit action of an external app to its detail page', async () => {
