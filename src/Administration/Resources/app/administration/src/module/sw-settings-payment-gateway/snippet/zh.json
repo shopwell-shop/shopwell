@@ -22,7 +22,8 @@
     "detail": {
       "createTitle": "新建支付应用",
       "notFound": "找不到该支付应用，它可能已被删除。",
-      "platformReadOnlyNotice": "平台支付应用已激活：平台自身通过此账户收款，无需配置。",
+      "platformAccountNotice": "平台支付应用：平台自身通过此账户收款。应用名称、回调地址与渠道都可以修改；应用标识由安装写入、不可修改，该应用也不可删除。商户账户信息在「支付接口」页面维护。",
+      "platformCredentialHint": "平台商户账户在「支付接口」页面维护，此处只作展示，修改后会影响平台自身的收款：",
       "cardApplicationTitle": "应用信息",
       "cardApplicationSubtitle": "应用标识用于外部应用的身份认证，创建后请谨慎修改。",
       "labelTechnicalName": "应用标识",

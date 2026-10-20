@@ -120,15 +120,17 @@ describe('module/sw-settings-payment-gateway/page/sw-settings-payment-gateway-de
     it('should show the credentials of the app itself and hide them behind a note when it inherits', async () => {
         const { wrapper } = await createWrapper();
 
-        // both interfaces collect on an account of their own, so both render their credential fields
-        expect(wrapper.findAll('.sw-payment-config-field-stub')).toHaveLength(2);
+        const alipayRow = () => wrapper.findAll('.sw-settings-payment-gateway-detail__account').at(0);
+
+        // the interface collects on an account of its own, so it renders the fields of its credentials
+        expect(alipayRow().findAll('.sw-payment-config-field-stub')).toHaveLength(1);
 
         wrapper.vm.providers[0].sourceAppId = 'app-2';
 
         await wrapper.vm.$nextTick();
 
-        // the switch is immediate, only the interface that inherits lost its fields
-        expect(wrapper.findAll('.sw-payment-config-field-stub')).toHaveLength(1);
+        // the switch is immediate, and the interface that inherits loses its fields
+        expect(alipayRow().findAll('.sw-payment-config-field-stub')).toHaveLength(0);
         expect(wrapper.vm.inheritanceText(wrapper.vm.providers[0])).toContain('POS 二号');
         expect(wrapper.vm.inheritanceText(wrapper.vm.providers[0])).toContain('支付宝');
 
@@ -192,7 +194,8 @@ describe('module/sw-settings-payment-gateway/page/sw-settings-payment-gateway-de
                     providerTechnicalName: 'alipay',
                     enabled: true,
                     sourceAppId: null,
-                    credentials: { app_id: '' },
+                    // the values the api handed over are part of the form and go back as they are
+                    credentials: { app_id: '2021000000000000' },
                     settings: {},
                 },
                 {
@@ -207,7 +210,7 @@ describe('module/sw-settings-payment-gateway/page/sw-settings-payment-gateway-de
                 {
                     channelTechnicalName: 'alipay_h5',
                     enabled: true,
-                    params: {},
+                    params: { sign_type: 'RSA2' },
                     settings: {},
                 },
                 {
@@ -250,11 +253,94 @@ describe('module/sw-settings-payment-gateway/page/sw-settings-payment-gateway-de
         expect(wrapper.vm.providers[1].channels[0].technicalName).toBe('stripe_checkout');
     });
 
-    it('should render the tenant of the platform read only', async () => {
+    it('should start the form with the credentials and the parameters the api hands over', async () => {
+        const { wrapper } = await createWrapper();
+
+        // the merchant recognises what is configured instead of retyping a key to find out
+        expect(wrapper.vm.providers[0].credentialInput.app_id).toBe('2021000000000000');
+        expect(wrapper.vm.providers[0].channels[0].paramInput.sign_type).toBe('RSA2');
+
+        // an interface without a stored value still starts empty
+        expect(wrapper.vm.providers[1].credentialInput.secret_key).toBe('');
+    });
+
+    it('should keep the platform app editable apart from its identifier and the delete action', async () => {
         const { wrapper } = await createWrapper({ appId: 'app-platform', app: platformApp });
 
         expect(wrapper.vm.isPlatformTenant).toBe(true);
-        expect(wrapper.vm.isReadOnly).toBe(true);
+        // the platform app is edited on this page like every other one - only the permission decides
+        expect(wrapper.vm.isReadOnly).toBe(false);
+
+        // saving is offered, deleting is offered but refused: the platform collects through this app
+        // and the installation has no second one
+        const save = wrapper.find('.sw-settings-payment-gateway-detail__save-action');
+        const del = wrapper.find('.sw-settings-payment-gateway-detail__delete-action');
+        expect(save.exists()).toBe(true);
+        expect(save.attributes()).not.toHaveProperty('disabled');
+        expect(del.exists()).toBe(true);
+        expect(del.attributes()).toHaveProperty('disabled');
+
+        // the notice explains what is special instead of declaring the page read only
+        const notice = wrapper.find('.sw-settings-payment-gateway-detail__platform-notice');
+        expect(notice.exists()).toBe(true);
+        expect(notice.text()).toBe('sw-settings-payment-gateway.detail.platformAccountNotice');
+        expect(wrapper.vm.providers).toHaveLength(2);
+
+        // the technical name is the identifier the installation gave this row - it is not shown, while
+        // the name of the app is editable because the platform collects under the name of this shop
+        expect(wrapper.find('[name="sw-field--payment-app-technical-name"]').exists()).toBe(false);
+        expect(wrapper.find('[name="sw-field--payment-app-name"]').exists()).toBe(true);
+        expect(wrapper.find('[name="sw-field--payment-app-name"]').attributes('disabled')).toBeUndefined();
+
+        // the merchant account of the platform is maintained on the page of the interface: the values
+        // are shown here and disabled, and the hint links to the page that owns them
+        const accountRow = wrapper.findAll('.sw-settings-payment-gateway-detail__account').at(0);
+        const fields = accountRow.findAll('.sw-payment-config-field-stub');
+        expect(fields.length).toBeGreaterThan(0);
+        fields.forEach((field) => expect(field.attributes('disabled')).toBe('disabled'));
+
+        const hint = accountRow.find('.sw-settings-payment-gateway-detail__platform-credentials-hint');
+        expect(hint.exists()).toBe(true);
+        expect(hint.text()).toContain('sw-settings-payment-gateway.detail.platformCredentialHint');
+
+        // the parameters of a channel are stored on the platform level as well: a write into this row
+        // would never be read by the resolver, so the inputs only display the values
+        const channelRow = wrapper.findAll('.sw-settings-payment-gateway-detail__channel').at(0);
+        const channelParams = channelRow.findAll('.sw-settings-payment-gateway-detail__channel-params')
+            .at(0)
+            .findAll('.sw-payment-config-field-stub');
+        expect(channelParams.length).toBeGreaterThan(0);
+        channelParams.forEach((field) => expect(field.attributes('disabled')).toBe('disabled'));
+
+        // and the same hint sits above them, so the merchant knows where to change them
+        const channelHint = channelRow.find('.sw-settings-payment-gateway-detail__platform-credentials-hint');
+        expect(channelHint.exists()).toBe(true);
+        expect(channelHint.text()).toContain('sw-settings-payment-gateway.detail.platformCredentialHint');
+    });
+
+    it('should keep the save and the delete action for an app of a merchant', async () => {
+        const { wrapper } = await createWrapper();
+
+        expect(wrapper.vm.isPlatformTenant).toBe(false);
+        expect(wrapper.find('.sw-settings-payment-gateway-detail__save-action').exists()).toBe(true);
+        expect(wrapper.find('.sw-settings-payment-gateway-detail__delete-action').exists()).toBe(true);
+        expect(wrapper.find('.sw-settings-payment-gateway-detail__platform-notice').exists()).toBe(false);
+        expect(wrapper.find('.sw-settings-payment-gateway-detail__platform-credentials-hint').exists()).toBe(false);
+        expect(wrapper.find('[name="sw-field--payment-app-technical-name"]').exists()).toBe(true);
+
+        // and the credentials of an interface the merchant is authorized for are the ones it fills in
+        const fields = wrapper.findAll('.sw-settings-payment-gateway-detail__account').at(0)
+            .findAll('.sw-payment-config-field-stub');
+        expect(fields.length).toBeGreaterThan(0);
+        expect(fields.at(0).text()).toBe('app_id');
+        expect(fields.at(0).attributes('disabled')).toBeUndefined();
+
+        // the interface the app is not authorized for keeps its fields disabled - enabling the
+        // interface is the decision that turns them on, not typing into them
+        const unauthorized = wrapper.findAll('.sw-settings-payment-gateway-detail__account').at(1)
+            .findAll('.sw-payment-config-field-stub');
+        expect(unauthorized.at(0).text()).toBe('secret_key');
+        expect(unauthorized.at(0).attributes('disabled')).toBe('disabled');
     });
 
     it('should render the page read only without the editor role', async () => {

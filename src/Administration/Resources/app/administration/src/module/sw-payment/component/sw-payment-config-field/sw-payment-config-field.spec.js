@@ -61,17 +61,20 @@ describe('module/sw-payment/component/sw-payment-config-field', () => {
         expect(wrapper.vm.label).toBe('mch_id');
     });
 
-    it('should explain that an empty secret keeps the stored one', async () => {
+    it('should show the hint the interface declared next to the field', async () => {
+        const wrapper = await createWrapper({
+            field: { name: 'app_id', label: 'APPID', type: 'text', helpText: 'some.help.key', options: {} },
+        });
+
+        expect(wrapper.vm.helpText).toBe('some.help.key');
+    });
+
+    it('should not invent a hint for a secret field that already carries a value', async () => {
         const wrapper = await createWrapper({
             field: { name: 'private_key', label: '应用私钥', type: 'textarea', secret: true, configured: true, options: {} },
         });
 
-        expect(wrapper.vm.helpText).toBe('sw-payment.configField.configuredHint');
-    });
-
-    it('should not explain an empty field that has no stored value', async () => {
-        const wrapper = await createWrapper();
-
+        // the value is part of the form, so "configured" would only repeat what the input shows
         expect(wrapper.vm.helpText).toBeNull();
     });
 

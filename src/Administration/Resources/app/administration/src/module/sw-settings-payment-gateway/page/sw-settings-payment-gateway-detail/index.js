@@ -39,8 +39,13 @@ const OWN_ACCOUNT = '';
  * switch between the third and the fourth: whatever it says decides whether credentials and channel
  * parameters are editable, and it does so immediately instead of after a save.
  *
- * The tenant of the platform is part of the list but is written by the installation and never here, so
- * its whole page is read only.
+ * The credentials are shown, not only counted: the server hands the stored values over with the app, so
+ * the merchant recognises what is configured instead of typing a key again to find out. An empty input
+ * still means "keep what is stored" - a value that is really empty is simply stored empty.
+ *
+ * The tenant of the platform is edited on the same page as every other app: its name, its callbacks and
+ * its channels belong to this shop. Two things are different - its technical name is the identifier the
+ * installation gave it and is not shown, and it cannot be deleted.
  */
 // eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
 export default {
@@ -104,20 +109,21 @@ export default {
         },
 
         /**
-         * The tenant of the platform is the app the shop itself collects through. It is seeded by the
-         * installation and every write to it is refused by the server, so the page shows it instead of
-         * offering changes that would be rejected.
+         * The tenant of the platform is the app the shop itself collects through. It is edited like
+         * every other app, with two exceptions: its technical name is the identifier the installation
+         * gave it (the page does not show it) and the row cannot be deleted, because the platform
+         * collects through it and the installation has no second one.
          */
         isPlatformTenant() {
             return this.app !== null && this.app.type === 'platform';
         },
 
         /**
-         * The single answer to "may this field be changed", so a new control cannot forget one of the
-         * two reasons a page is read only.
+         * The single answer to "may this field be changed". The only reason a page is read only is the
+         * missing permission - the tenant of the platform is edited here just like any other app.
          */
         isReadOnly() {
-            return !this.canEdit || this.isPlatformTenant;
+            return !this.canEdit;
         },
 
         /**
@@ -218,10 +224,14 @@ export default {
                 (item) => item.providerTechnicalName === provider.technicalName,
             );
 
+            // the server hands the stored credentials over, so the form starts with what is configured
+            // instead of with an empty field the merchant would have to retype to find out. An empty
+            // input therefore still means "keep what is stored".
+            const credentials = authorization?.credentials ?? {};
+
             const credentialInput = {};
             (provider.credentialFields || []).forEach((field) => {
-                // the credentials of an app are never echoed back, the form always starts empty
-                credentialInput[field.name] = '';
+                credentialInput[field.name] = credentials[field.name] ?? '';
             });
 
             return {
@@ -242,9 +252,13 @@ export default {
         createChannelState(channel) {
             const assignment = (this.app.channels || []).find((item) => item.channelTechnicalName === channel.channel);
 
+            // the parameters are shown for the same reason the credentials are: a merchant has to see
+            // which appid of the merchant account the channel runs with
+            const params = assignment?.params ?? {};
+
             const paramInput = {};
             (channel.paramFields || []).forEach((field) => {
-                paramInput[field.name] = '';
+                paramInput[field.name] = params[field.name] ?? '';
             });
 
             return {

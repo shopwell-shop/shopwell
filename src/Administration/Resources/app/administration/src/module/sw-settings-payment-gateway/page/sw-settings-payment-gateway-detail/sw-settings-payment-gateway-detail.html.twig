@@ -74,7 +74,7 @@
                     class="sw-settings-payment-gateway-detail__platform-notice"
                     variant="info"
                 >
-                    {{ $t('sw-settings-payment-gateway.detail.platformReadOnlyNotice') }}
+                    {{ $t('sw-settings-payment-gateway.detail.platformAccountNotice') }}
                 </mt-banner>
                 {% endblock %}
 
@@ -91,7 +91,13 @@
                         gap="0px 30px"
                     >
                         {% block sw_settings_payment_gateway_detail_content_application_technical_name %}
+                        <!-- The technical name tells two apps of a merchant apart and is therefore the
+                             field a developer fills in. The row of the platform is written by the
+                             installation and can neither be renamed nor deleted, so its name is always
+                             `platform` and says nothing to an operator - the list already marks that row
+                             with the platform badge, this card would only show the identifier again. -->
                         <mt-text-field
+                            v-if="!isPlatformTenant"
                             v-model="app.technicalName"
                             name="sw-field--payment-app-technical-name"
                             :label="$t('sw-settings-payment-gateway.detail.labelTechnicalName')"
@@ -311,6 +317,21 @@
                         </sw-container>
                         {% endblock %}
 
+                        {% block sw_settings_payment_gateway_detail_content_account_platform_credentials_hint %}
+                        <!-- The merchant account of the platform is the platform level configuration of
+                             the interface, not a row of this app. It is shown here so the merchant sees
+                             what is charged, and edited on the page of the interface. -->
+                        <p
+                            v-if="isPlatformTenant && !isAccountInherited(provider)"
+                            class="sw-settings-payment-gateway-detail__platform-credentials-hint"
+                        >
+                            {{ $t('sw-settings-payment-gateway.detail.platformCredentialHint') }}
+                            <router-link :to="{ name: 'sw.settings.payment.provider.index' }">
+                                {{ $t('sw-settings-payment-provider.general.mainMenuItemGeneral') }}
+                            </router-link>
+                        </p>
+                        {% endblock %}
+
                         {% block sw_settings_payment_gateway_detail_content_account_own_credentials %}
                         <sw-container
                             v-if="!isAccountInherited(provider)"
@@ -324,7 +345,7 @@
                                 v-model="provider.credentialInput[field.name]"
                                 class="sw-settings-payment-gateway-detail__field"
                                 :field="field"
-                                :disabled="isReadOnly || !provider.enabled"
+                                :disabled="isReadOnly || !provider.enabled || isPlatformTenant"
                             />
                         </sw-container>
                         {% endblock %}
@@ -436,6 +457,19 @@
                             {% endblock %}
 
                             {% block sw_settings_payment_gateway_detail_content_channel_params %}
+                            <!-- The parameters of a channel of the platform are stored in the platform
+                                 level configuration of the channel, not in a row of this app, so they are
+                                 only shown here and edited on the page of the interface. -->
+                            <p
+                                v-if="isPlatformTenant && channel.enabled && channel.paramFields.length > 0"
+                                class="sw-settings-payment-gateway-detail__platform-credentials-hint"
+                            >
+                                {{ $t('sw-settings-payment-gateway.detail.platformCredentialHint') }}
+                                <router-link :to="{ name: 'sw.settings.payment.provider.index' }">
+                                    {{ $t('sw-settings-payment-provider.general.mainMenuItemGeneral') }}
+                                </router-link>
+                            </p>
+
                             <sw-container
                                 v-if="!isAccountInherited(provider) && channel.enabled && channel.paramFields.length > 0"
                                 class="sw-settings-payment-gateway-detail__grid sw-settings-payment-gateway-detail__channel-params"
@@ -448,7 +482,7 @@
                                     v-model="channel.paramInput[field.name]"
                                     class="sw-settings-payment-gateway-detail__field"
                                     :field="field"
-                                    :disabled="isReadOnly"
+                                    :disabled="isReadOnly || isPlatformTenant"
                                 />
                             </sw-container>
                             {% endblock %}

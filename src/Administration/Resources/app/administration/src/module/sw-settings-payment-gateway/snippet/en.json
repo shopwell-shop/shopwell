@@ -22,7 +22,8 @@
     "detail": {
       "createTitle": "Create payment app",
       "notFound": "This payment app cannot be found, it may have been deleted.",
-      "platformReadOnlyNotice": "The platform payment app is active: the platform collects through this account itself, there is nothing to configure here.",
+      "platformAccountNotice": "The platform payment app: the platform collects through this account itself. The name, the callbacks and the channels can be changed; the identifier is written by the installation and cannot be changed, and the app cannot be deleted. The merchant account is maintained on the payment providers page.",
+      "platformCredentialHint": "The merchant account of the platform is maintained on the payment providers page. It is only shown here, and changing it affects what the platform itself collects:",
       "cardApplicationTitle": "Application",
       "cardApplicationSubtitle": "The technical name authenticates the app, change it with care.",
       "labelTechnicalName": "Technical name",

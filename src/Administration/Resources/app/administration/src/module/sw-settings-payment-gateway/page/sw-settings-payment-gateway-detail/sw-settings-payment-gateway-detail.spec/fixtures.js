@@ -33,7 +33,19 @@ export const registryProviders = [
                 currencies: ['CNY'],
                 devices: ['wap'],
                 runtimeParams: {},
-                paramFields: [],
+                paramFields: [
+                    {
+                        name: 'sign_type',
+                        label: '签名算法',
+                        type: 'text',
+                        required: false,
+                        secret: false,
+                        options: {},
+                        default: null,
+                        value: null,
+                        configured: false,
+                    },
+                ],
                 enabled: true,
                 configured: true,
                 settings: {},
@@ -77,8 +89,9 @@ export const registryProviders = [
 ];
 
 /**
- * The tenant the platform collects through. It is listed by the api as the first app and every write
- * to it is refused, so the page renders it read only.
+ * The tenant the platform collects through. It is listed by the api as the first app and it is the
+ * only account the platform level configuration writes to, so its credentials and its channel
+ * parameters are shown but never edited here.
  */
 export const platformApp = {
     id: 'app-platform',
@@ -97,11 +110,23 @@ export const platformApp = {
             enabled: true,
             sourceAppId: null,
             sourceAppName: '',
-            hasCredentials: false,
+            hasCredentials: true,
+            // the merchant account of the platform lives on the platform level, the api still hands the
+            // values over so the page can show what is configured
+            credentials: { app_id: '2021000000000000' },
             settings: {},
         },
     ],
-    channels: [],
+    channels: [
+        {
+            channelTechnicalName: 'alipay_h5',
+            enabled: true,
+            hasParams: true,
+            // the parameters of the channel of the platform live on the platform level as well
+            params: { sign_type: 'RSA2' },
+            settings: {},
+        },
+    ],
 };
 
 /**
@@ -158,7 +183,8 @@ export const existingApp = {
             enabled: true,
             sourceAppId: null,
             sourceAppName: '',
-            hasCredentials: false,
+            hasCredentials: true,
+            credentials: { app_id: '2021000000000000' },
             settings: {},
         },
     ],
@@ -166,7 +192,8 @@ export const existingApp = {
         {
             channelTechnicalName: 'alipay_h5',
             enabled: true,
-            hasParams: false,
+            hasParams: true,
+            params: { sign_type: 'RSA2' },
             settings: {},
         },
     ],
