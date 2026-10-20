@@ -86,16 +86,6 @@ export default {
             });
         },
 
-        /**
-         * Only a row that may be written carries an actions menu: the tenant of the platform is read
-         * only and the server refuses every write to it. An installation that has nothing but this row
-         * therefore gets no actions column at all - a menu that opens empty is worse than no menu,
-         * because it looks like a click that was ignored.
-         */
-        hasRowActions() {
-            return this.filteredApps.some((app) => !this.isPlatformApp(app));
-        },
-
         createButtonTooltip() {
             return {
                 message: this.$t('sw-privileges.tooltip.warning'),

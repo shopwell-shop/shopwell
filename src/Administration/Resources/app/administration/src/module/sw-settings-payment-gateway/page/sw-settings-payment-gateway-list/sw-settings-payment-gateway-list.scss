@@ -7,10 +7,4 @@
     &__delete-modal-content {
         margin: 0;
     }
-
-    // the row of the platform is read only, the grid marks it as such - a context button that would
-    // open an empty menu is worse than none, because it looks like a click that was ignored
-    &__grid .sw-data-grid__row.is--disabled .sw-data-grid__cell--actions .sw-context-button {
-        display: none;
-    }
 }

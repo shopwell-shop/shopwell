@@ -215,20 +215,23 @@ describe('module/sw-settings-payment-gateway/page/sw-settings-payment-gateway-li
         );
     });
 
-    it('should give the row of the platform a badge and nothing to click', async () => {
+    it('should give the row of the platform a badge, an edit action and no delete action', async () => {
         const { wrapper } = await createWrapper();
 
         const platformRow = wrapper.findAll('.sw-data-grid__row').at(2);
 
-        expect(platformRow.find('.sw-settings-payment-gateway-list__name-link').exists()).toBe(false);
-        expect(platformRow.find('.sw-settings-payment-gateway-list__name').text()).toBe('平台支付');
+        expect(platformRow.find('.sw-settings-payment-gateway-list__name-link').text()).toBe('平台支付');
 
-        // one badge says why the row carries no actions, it is the only explanation on the page
+        // one badge says why the row cannot be deleted, it is the only explanation on the page
         expect(platformRow.find('.sw-settings-payment-gateway-list__platform-badge').text()).toBe(
             'sw-settings-payment-gateway.list.badgePlatform',
         );
 
-        expect(platformRow.find('.sw-settings-payment-gateway-list__edit-action').exists()).toBe(false);
+        // the row is the account the shop itself collects through, so it is edited like any other app
+        expect(platformRow.find('.sw-settings-payment-gateway-list__name-link').exists()).toBe(true);
+        expect(platformRow.find('.sw-settings-payment-gateway-list__edit-action').exists()).toBe(true);
+
+        // but it is not deletable: the shop would lose the tenant it attributes its payments to
         expect(platformRow.find('.sw-settings-payment-gateway-list__delete-action').exists()).toBe(false);
     });
 
@@ -241,27 +244,6 @@ describe('module/sw-settings-payment-gateway/page/sw-settings-payment-gateway-li
         expect(externalRow.find('.sw-settings-payment-gateway-list__edit-action').exists()).toBe(true);
         expect(externalRow.find('.sw-settings-payment-gateway-list__delete-action').exists()).toBe(true);
         expect(externalRow.find('.sw-settings-payment-gateway-list__platform-badge').exists()).toBe(false);
-    });
-
-    it('should not offer an actions menu when the only row is the one of the platform', async () => {
-        // the platform row is the only row of a fresh installation and it is read only, so a menu
-        // would open empty - which is what an operator reports as "the click does nothing"
-        const { wrapper } = await createWrapper({ listApps: () => Promise.resolve([apps[2]]) });
-
-        expect(wrapper.vm.hasRowActions).toBe(false);
-        expect(wrapper.findComponent({ name: 'sw-data-grid' }).props('showActions')).toBe(false);
-
-        // the grid is told which rows are read only, so the row of the platform can drop its menu
-        // when other apps exist
-        expect(wrapper.findComponent({ name: 'sw-data-grid' }).props('isRecordDisabled')(apps[2])).toBe(true);
-        expect(wrapper.findComponent({ name: 'sw-data-grid' }).props('isRecordDisabled')(apps[0])).toBe(false);
-    });
-
-    it('should offer an actions menu as soon as one app may be written', async () => {
-        const { wrapper } = await createWrapper();
-
-        expect(wrapper.vm.hasRowActions).toBe(true);
-        expect(wrapper.findComponent({ name: 'sw-data-grid' }).props('showActions')).toBe(true);
     });
 
     it('should route the edit action of an external app to its detail page', async () => {
