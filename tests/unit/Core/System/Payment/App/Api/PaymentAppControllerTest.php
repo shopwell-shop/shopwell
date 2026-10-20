@@ -23,6 +23,11 @@ use Shopwell\Core\System\Payment\App\PaymentAppProviderDto;
 use Shopwell\Core\System\Payment\App\PaymentAppProvisioner;
 use Shopwell\Core\System\Payment\PaymentException;
 use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannelRegistry;
+use Shopwell\Core\System\Payment\Provider\PaymentChannelConfigCollection;
+use Shopwell\Core\System\Payment\Provider\PaymentChannelConfigEntity;
+use Shopwell\Core\System\Payment\Provider\PaymentProviderConfigCollection;
+use Shopwell\Core\System\Payment\Provider\PaymentProviderConfigEntity;
+use Shopwell\Core\System\Payment\Provider\PaymentProviderConfigService;
 use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;
 use Shopwell\Tests\Unit\Core\System\Payment\Api\PaymentControllerFixture;
 use Symfony\Component\Clock\NativeClock;
@@ -59,9 +64,73 @@ class PaymentAppControllerTest extends TestCase
         static::assertNull($data['apps'][0]['providers'][0]['sourceAppId']);
         static::assertSame('', $data['apps'][0]['providers'][0]['sourceAppName']);
         static::assertFalse($data['apps'][0]['providers'][0]['hasCredentials']);
+        // nothing stored means nothing to echo: the page gets an empty map, not a `null` it has to
+        // handle separately
+        static::assertSame([], $data['apps'][0]['providers'][0]['credentials']);
         static::assertCount(1, $data['apps'][0]['channels']);
         static::assertSame('alipay_h5', $data['apps'][0]['channels'][0]['channelTechnicalName']);
         static::assertFalse($data['apps'][0]['channels'][0]['hasParams']);
+        static::assertSame([], $data['apps'][0]['channels'][0]['params']);
+    }
+
+    /**
+     * An app that collects on its own account is the ordinary case: the values it typed are stored
+     * sealed in its own authorization, and they are handed back in plain text so the page can render
+     * them and an operator can correct a single one of them.
+     */
+    public function testAnAppThatCollectsOnItsOwnAccountEchoesItsOwnValues(): void
+    {
+        $app = PaymentControllerFixture::app('client-a', 'stored-secret');
+        $app->providers = ['alipay' => PaymentControllerFixture::appProvider($app->id, true, null, ['app_id' => 'client-app', 'private_key' => 'sk'])];
+
+        $channel = PaymentControllerFixture::appChannel($app->id);
+        $channel->params = PaymentControllerFixture::cipher()->encrypt(['appid' => 'wx-client']);
+        $app->channels = ['alipay_h5' => $channel];
+
+        $controller = $this->controller(PaymentControllerFixture::repository(PaymentAppCollection::class, [$app]));
+
+        $data = $this->decode($controller->list());
+
+        static::assertSame(['app_id' => 'client-app', 'private_key' => 'sk'], $data['apps'][0]['providers'][0]['credentials']);
+        static::assertTrue($data['apps'][0]['providers'][0]['hasCredentials']);
+        static::assertSame(['appid' => 'wx-client'], $data['apps'][0]['channels'][0]['params']);
+        static::assertTrue($data['apps'][0]['channels'][0]['hasParams']);
+    }
+
+    /**
+     * The tenant of the platform has no account of its own: its row is seeded by the migration and
+     * everything the shop collects runs on the merchant configuration of the interface. Echoing its
+     * own empty row would present exactly the app an operator looks at first as unconfigured.
+     */
+    public function testThePlatformTenantEchoesThePlatformLevelConfigurationAndIgnoresItsOwnRow(): void
+    {
+        $platform = $this->platformTenant();
+        $platform->providers = ['alipay' => PaymentControllerFixture::appProvider($platform->id)];
+        $platform->channels = ['alipay_h5' => PaymentControllerFixture::appChannel($platform->id)];
+
+        // the seeded row carries no values at all, which is why the controller must not read it
+        static::assertNull($platform->providers['alipay']->credentials);
+        static::assertNull($platform->channels['alipay_h5']->params);
+
+        $channelConfig = PaymentControllerFixture::channelConfig();
+        $channelConfig->params = PaymentControllerFixture::cipher()->encrypt(['appid' => 'wx-platform']);
+
+        $controller = $this->controller(
+            PaymentControllerFixture::repository(PaymentAppCollection::class, [$platform]),
+            null,
+            null,
+            null,
+            [PaymentControllerFixture::providerConfig()],
+            [$channelConfig],
+        );
+
+        $data = $this->decode($controller->list());
+
+        static::assertSame(PaymentAppEntity::TYPE_PLATFORM, $data['apps'][0]['type']);
+        static::assertSame(['app_id' => 'platform-app'], $data['apps'][0]['providers'][0]['credentials']);
+        static::assertTrue($data['apps'][0]['providers'][0]['hasCredentials']);
+        static::assertSame(['appid' => 'wx-platform'], $data['apps'][0]['channels'][0]['params']);
+        static::assertTrue($data['apps'][0]['channels'][0]['hasParams']);
     }
 
     public function testTheListSkipsEntitiesThatAreNotApps(): void
@@ -105,25 +174,6 @@ class PaymentAppControllerTest extends TestCase
         static::assertSame(PaymentAppEntity::TYPE_EXTERNAL, $data['apps'][1]['type']);
     }
 
-    /**
-     * Naming the row is what made the earlier hole possible: the id is enough to reach the write
-     * without ever looking at the kind of tenant it points at.
-     */
-    public function testSavingThePlatformTenantIsRejected(): void
-    {
-        $platform = $this->platformTenant();
-
-        $controller = $this->controller(PaymentControllerFixture::repository(PaymentAppCollection::class, [$platform]));
-
-        $this->expectExceptionObject(PaymentException::platformTenantReadOnly(PaymentAppEntity::PLATFORM_TECHNICAL_NAME));
-
-        $controller->save(new PaymentAppDto(
-            id: $platform->id,
-            technicalName: PaymentAppEntity::PLATFORM_TECHNICAL_NAME,
-            name: 'Renamed',
-        ));
-    }
-
     public function testDeletingThePlatformTenantIsRejected(): void
     {
         $platform = $this->platformTenant();
@@ -134,7 +184,7 @@ class PaymentAppControllerTest extends TestCase
 
         $controller = $this->controller($repository);
 
-        $this->expectExceptionObject(PaymentException::platformTenantReadOnly(PaymentAppEntity::PLATFORM_TECHNICAL_NAME));
+        $this->expectExceptionObject(PaymentException::platformTenantNotDeletable(PaymentAppEntity::PLATFORM_TECHNICAL_NAME));
 
         $controller->delete($platform->id);
     }
@@ -333,12 +383,16 @@ class PaymentAppControllerTest extends TestCase
      * @param EntityRepository<PaymentAppCollection> $appRepository
      * @param EntityRepository<PaymentAppProviderCollection>|null $appProviderRepository
      * @param EntityRepository<PaymentAppChannelCollection>|null $appChannelRepository
+     * @param list<PaymentProviderConfigEntity> $providerConfigs the platform level configuration of an interface
+     * @param list<PaymentChannelConfigEntity> $channelConfigs the platform level parameters of a channel
      */
     private function controller(
         EntityRepository $appRepository,
         ?EntityRepository $appProviderRepository = null,
         ?EntityRepository $appChannelRepository = null,
-        ?PaymentProviderRegistry $providerRegistry = null
+        ?PaymentProviderRegistry $providerRegistry = null,
+        array $providerConfigs = [],
+        array $channelConfigs = []
     ): PaymentAppController {
         $registry = $providerRegistry ?? PaymentControllerFixture::providerRegistry();
 
@@ -352,6 +406,12 @@ class PaymentAppControllerTest extends TestCase
                 $registry,
                 new PaymentChannelRegistry($registry),
                 new NativeClock(),
+            ),
+            PaymentControllerFixture::cipher(),
+            new PaymentProviderConfigService(
+                PaymentControllerFixture::repository(PaymentProviderConfigCollection::class, $providerConfigs),
+                PaymentControllerFixture::repository(PaymentChannelConfigCollection::class, $channelConfigs),
+                PaymentControllerFixture::cipher(),
             ),
         );
     }

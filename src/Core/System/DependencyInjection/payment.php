@@ -199,6 +199,10 @@ return static function (ContainerConfigurator $container): void {
         ->args([
             service('payment_app.repository'),
             service(PaymentAppProvisioner::class),
+            // the answers of the controller carry the merchant account of an app and the parameters of
+            // its channels in plain text, so it has to unseal them itself
+            service(PaymentCredentialCipher::class),
+            service(PaymentProviderConfigService::class),
         ])
         ->call('setContainer', [service('service_container')])
         ->tag('controller.service_arguments');

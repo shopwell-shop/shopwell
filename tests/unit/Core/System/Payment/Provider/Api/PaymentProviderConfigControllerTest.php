@@ -55,9 +55,12 @@ class PaymentProviderConfigControllerTest extends TestCase
         static::assertSame('platform-app', $provider['credentialFields'][0]['value']);
         static::assertTrue($provider['credentialFields'][0]['configured']);
 
-        // the private key is secret, so its value never leaves the server, only that one is set
+        // the private key is secret as well, but it is echoed back like every other field: the form is
+        // the only place an operator can read it, and a value they cannot look up is a value they can
+        // only replace blindly. What is stored stays sealed.
         static::assertSame('private_key', $provider['credentialFields'][1]['name']);
-        static::assertNull($provider['credentialFields'][1]['value']);
+        static::assertTrue($provider['credentialFields'][1]['secret']);
+        static::assertSame('sk', $provider['credentialFields'][1]['value']);
         static::assertTrue($provider['credentialFields'][1]['configured']);
 
         static::assertCount(1, $provider['channels']);
