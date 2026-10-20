@@ -53,11 +53,12 @@ use Shopwell\Core\System\Payment\Subscription\PaymentSubscriptionStates;
  * without anyone creating an app first. An external app is onboarded by an administrator in the
  * administration, never here.
  *
- * Two payment methods are seeded on top of that tenant - alipay and wechat pay - so the selection of
- * the checkout is not empty after the installation and the merchant configures a method that already
- * works instead of assembling one. What the two differ in is their readiness, and that difference is
- * data, not code: alipay collects with the sandbox account seeded below, wechat pay waits for the
- * merchant id and the certificate of *this* merchant and stays out of the checkout until they exist.
+ * Four payment methods are seeded on top of that tenant - alipay, wechat pay, paypal and stripe - so
+ * the selection of the checkout is not empty after the installation and the merchant configures a
+ * method that already works instead of assembling one. What they differ in is their readiness, and
+ * that difference is data, not code: alipay, paypal and stripe collect with the sandbox accounts
+ * seeded below, wechat pay waits for the merchant id and the certificate of *this* merchant and stays
+ * out of the checkout until they exist.
  *
  * The state machines are imported first, because the state fields of the bookkeeping tables reference
  * them.
@@ -108,12 +109,37 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
     final public const PAYMENT_METHOD_WECHAT_CHANNEL = WechatApi::CHANNEL_NATIVE;
 
     /**
+     * The technical name of the paypal payment method a fresh installation offers.
+     */
+    final public const PAYMENT_METHOD_PAYPAL = 'paypal';
+
+    /**
+     * The technical name of the stripe payment method a fresh installation offers.
+     */
+    final public const PAYMENT_METHOD_STRIPE = 'stripe';
+
+    /**
+     * The channel of paypal the method collects through. Paypal declares a single product, and it is
+     * the redirect checkout every browser can follow, so there is nothing to choose from.
+     */
+    final public const PAYMENT_METHOD_PAYPAL_CHANNEL = 'paypal_checkout';
+
+    /**
+     * The channel of stripe the method collects through, the redirect checkout of the stripe account.
+     */
+    final public const PAYMENT_METHOD_STRIPE_CHANNEL = 'stripe_checkout';
+
+    /**
      * The positions the two seeded methods take in the payment selection, right after the four
      * methods of the checkout itself.
      */
     final public const PAYMENT_METHOD_ALIPAY_POSITION = 10;
 
     final public const PAYMENT_METHOD_WECHAT_POSITION = 11;
+
+    final public const PAYMENT_METHOD_PAYPAL_POSITION = 12;
+
+    final public const PAYMENT_METHOD_STRIPE_POSITION = 13;
 
     /**
      * The app id of the sandbox app of the alipay open platform.
@@ -1064,12 +1090,18 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
      * A configured interface does not offer a channel by itself - the platform decides here which of
      * the channels of an interface the shop may collect through at all.
      *
-     * The h5 channel declares no parameter of its own, so switching it on is everything that is needed
-     * for the checkout to work out of the box.
+     * The three seeded accounts are switched on with the channel their payment method is bound to,
+     * because a bound channel that is not switched on is filtered out of the checkout just like a
+     * channel that does not exist. Wechat pay is deliberately not among them: its method is bound, but
+     * the merchant id and the certificate of this very shop do not exist, so the collectability check
+     * keeps it out of the checkout until a merchant fills them in.
      */
     private function seedChannelConfig(Connection $connection, string $now): void
     {
         $this->enableChannel($connection, self::PROVIDER, self::CHANNEL, $now);
+        $this->enableChannel($connection, self::PROVIDER, self::PAYMENT_METHOD_ALIPAY_CHANNEL, $now);
+        $this->enableChannel($connection, PaypalApi::PROVIDER, self::PAYMENT_METHOD_PAYPAL_CHANNEL, $now);
+        $this->enableChannel($connection, StripeApi::PROVIDER, self::PAYMENT_METHOD_STRIPE_CHANNEL, $now);
     }
 
     /**
@@ -1087,11 +1119,6 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
         );
 
         if (\is_string($existing) && $existing !== '') {
-            $connection->update('payment_channel_config', [
-                'enabled' => 1,
-                'updated_at' => $now,
-            ], ['id' => $existing]);
-
             return;
         }
 
@@ -1151,23 +1178,28 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
 
         // an existing tenant is not skipped: the authorizations are what makes it usable, and an
         // installation that ran this migration before seeding them has to get them as well
-        $this->authorizePlatformProvider($connection, $appId, $now);
-        $this->offerPlatformChannel($connection, $appId, $now);
+        foreach ([AlipayApi::PROVIDER, PaypalApi::PROVIDER, StripeApi::PROVIDER] as $provider) {
+            $this->authorizePlatformProvider($connection, $appId, $provider, $now);
+        }
+
+        $this->offerChannel($connection, $appId, self::CHANNEL, $now);
+        $this->offerChannel($connection, $appId, self::PAYMENT_METHOD_PAYPAL_CHANNEL, $now);
+        $this->offerChannel($connection, $appId, self::PAYMENT_METHOD_STRIPE_CHANNEL, $now);
     }
 
     /**
-     * Authorizes the interface of the seeded channel for the platform tenant: the tenant of the
-     * platform is the root of every inheritance chain, it collects on the merchant account that is
-     * configured on the platform level - `source_app_id` stays NULL, there is nobody to inherit from.
+     * Authorizes one interface for the platform tenant: the tenant of the platform is the root of every
+     * inheritance chain, it collects on the merchant account that is configured on the platform level -
+     * `source_app_id` stays NULL, there is nobody to inherit from.
      *
      * An existing row is left exactly as it is - the merchant may have switched the interface off or
      * pointed it at own credentials, and neither is undone here.
      */
-    private function authorizePlatformProvider(Connection $connection, string $appId, string $now): void
+    private function authorizePlatformProvider(Connection $connection, string $appId, string $providerTechnicalName, string $now): void
     {
         $existing = $connection->fetchOne(
             'SELECT `id` FROM `payment_app_provider` WHERE `payment_app_id` = :app AND `provider_technical_name` = :provider',
-            ['app' => $appId, 'provider' => self::PROVIDER]
+            ['app' => $appId, 'provider' => $providerTechnicalName]
         );
 
         if (\is_string($existing) && $existing !== '') {
@@ -1177,21 +1209,11 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
         $connection->insert('payment_app_provider', [
             'id' => Uuid::randomBytes(),
             'payment_app_id' => $appId,
-            'provider_technical_name' => self::PROVIDER,
+            'provider_technical_name' => $providerTechnicalName,
             'source_app_id' => null,
             'enabled' => 1,
             'created_at' => $now,
         ]);
-    }
-
-    /**
-     * Offers the seeded channel to the platform tenant. It is the channel `payment_channel_config`
-     * switches on, so the checkout can pay through it right away; every other channel is offered the
-     * first time it is used and only once the merchant enabled it.
-     */
-    private function offerPlatformChannel(Connection $connection, string $appId, string $now): void
-    {
-        $this->offerChannel($connection, $appId, self::CHANNEL, $now);
     }
 
     /**
@@ -1223,15 +1245,15 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
     }
 
     /**
-     * Seeds the two payment methods a fresh installation offers: alipay and wechat pay.
+     * Seeds the four payment methods a fresh installation offers: alipay, wechat pay, paypal and stripe.
      *
      * A payment method of the gateway is a binding and nothing else. It names the app whose merchant
      * account is charged and one channel of that app - the interface is derived from the channel and
      * the credentials from the app - so everything the method is worth is the row in
-     * `payment_method_gateway_channel`. Seeding the two methods therefore means seeding that binding,
-     * and the method itself on top of it.
+     * `payment_method_gateway_channel`. Seeding a method therefore means seeding that binding, and the
+     * method itself on top of it.
      *
-     * The channels are the only ones that can be handed a shopper in a browser of either kind:
+     * The channels are the ones that can be handed a shopper in a browser of either kind:
      *
      *  - `alipay_qr` is the only non sdk channel of alipay that declares both `web` and `wap`, so the
      *    one method covers a desktop browser and a phone. Binding `alipay_h5` would have hidden it from
@@ -1239,14 +1261,15 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
      *  - `wechat_native` is the only non sdk channel of wechat pay that declares `web`. `wechat_h5` is
      *    wap only and `wechat_jsapi`, `wechat_mini` and `wechat_app` are opened by an sdk, which the
      *    checkout refuses to hand a payer over to.
+     *  - paypal and stripe declare a single product each, the redirect checkout every browser follows.
      *
-     * The two are not equally ready, and the difference is expressed in data instead of code:
+     * They are not equally ready, and the difference is expressed in data instead of code:
      *
-     *  - alipay collects the moment the installation finishes. {@see seedProviderConfig()} seeded the
-     *    sandbox account of the interface, and the channel the method is bound to is switched on here,
-     *    both on the platform level and for the terminal app - a channel that is not switched on, or
-     *    not offered by the app whose account is charged, is not collectable even though the method
-     *    exists.
+     *  - alipay, paypal and stripe collect the moment the installation finishes.
+     *    {@see seedProviderConfig()} and its two siblings seeded the sandbox account of the interface,
+     *    and the channel the method is bound to is switched on here, both on the platform level and for
+     *    the terminal app - a channel that is not switched on, or not offered by the app whose account
+     *    is charged, is not collectable even though the method exists.
      *  - wechat pay is listed in the administration but never offered to a shopper. No
      *    `payment_channel_config` row is written for `wechat_native` and the interface has no
      *    credentials, so {@see \Shopwell\Core\Checkout\Payment\Gateway\PaymentMethodCollectability}
@@ -1255,7 +1278,7 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
      *    a method that throws at the end of the checkout is worse than one that is not offered. The
      *    merchant fills them in on the payment interface page and the method appears by itself.
      *
-     * Both methods are assigned to every sales channel that exists at this point. On a fresh
+     * Every method is assigned to every sales channel that exists at this point. On a fresh
      * installation that is no channel at all - the installer runs this migration before it creates the
      * storefront, and the storefront brings its own selection of methods afterwards, so nothing is
      * missing there. The assignments matter for an instance that is *upgraded*: its sales channels are
@@ -1311,6 +1334,40 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
             ['zh' => '微信支付', 'en' => 'WeChat Pay'],
             $now
         );
+
+        // paypal and stripe are complete on the other hand: the sandbox account of the interface is
+        // seeded, the channel the method is bound to is switched on here and offered to the platform
+        // tenant, so both are collectable the moment the installation is finished - and both are
+        // swapped for a live account by switching `environment` on the interface, not by editing code.
+        $paypalMethodId = $this->seedGatewayPaymentMethod(
+            $connection,
+            $platformAppId,
+            self::PAYMENT_METHOD_PAYPAL,
+            self::PAYMENT_METHOD_PAYPAL_CHANNEL,
+            self::PAYMENT_METHOD_PAYPAL_POSITION,
+            ['zh' => 'PayPal', 'en' => 'PayPal'],
+            $now
+        );
+
+        if ($paypalMethodId !== null) {
+            $this->enableChannel($connection, PaypalApi::PROVIDER, self::PAYMENT_METHOD_PAYPAL_CHANNEL, $now);
+            $this->offerChannel($connection, $platformAppId, self::PAYMENT_METHOD_PAYPAL_CHANNEL, $now);
+        }
+
+        $stripeMethodId = $this->seedGatewayPaymentMethod(
+            $connection,
+            $platformAppId,
+            self::PAYMENT_METHOD_STRIPE,
+            self::PAYMENT_METHOD_STRIPE_CHANNEL,
+            self::PAYMENT_METHOD_STRIPE_POSITION,
+            ['zh' => 'Stripe', 'en' => 'Stripe'],
+            $now
+        );
+
+        if ($stripeMethodId !== null) {
+            $this->enableChannel($connection, StripeApi::PROVIDER, self::PAYMENT_METHOD_STRIPE_CHANNEL, $now);
+            $this->offerChannel($connection, $platformAppId, self::PAYMENT_METHOD_STRIPE_CHANNEL, $now);
+        }
     }
 
     /**
