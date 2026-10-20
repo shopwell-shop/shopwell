@@ -142,34 +142,6 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
     final public const PAYMENT_METHOD_STRIPE_POSITION = 13;
 
     /**
-     * The picture of each seeded method, by the technical name of the method.
-     *
-     * The files are the source of the icons and ship with the payment domain - they are not user
-     * content of an installation. {@see seedPaymentMethodMedia()} copies them into the media of the
-     * shop it installs, because that is where the storefront reads a payment method picture from: a
-     * method without one is listed as its bare name, which is what the four methods looked like
-     * before.
-     */
-    final public const PAYMENT_METHOD_ICONS = [
-        self::PAYMENT_METHOD_ALIPAY => 'payment-alipay.svg',
-        self::PAYMENT_METHOD_WECHAT => 'payment-wechat.svg',
-        self::PAYMENT_METHOD_PAYPAL => 'payment-paypal.svg',
-        self::PAYMENT_METHOD_STRIPE => 'payment-stripe.svg',
-    ];
-
-    /**
-     * The folder of the media library the icons are filed in. It is one of the folders an installation
-     * brings itself, so it is looked up by name; an installation that renamed it still gets the rows,
-     * they just sit at the root of the library.
-     */
-    final public const PAYMENT_METHOD_MEDIA_FOLDER = 'Payment Method Media';
-
-    /**
-     * The directory of the media of the shop the icons are written to, relative to `public`.
-     */
-    final public const PAYMENT_METHOD_MEDIA_DIRECTORY = 'media/payment_method';
-
-    /**
      * The app id of the sandbox app of the alipay open platform.
      */
     final public const SANDBOX_APP_ID = '9021000149657375';
@@ -212,7 +184,7 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
      * The public key of alipay itself, used to verify the notifications: the spki body without the pem
      * envelope.
      */
-    final public const SANDBOX_ALIPAY_PUBLIC_KEY = 'MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAsdTvO+HunAM08DqlNkYv/GWhrtVnb42fDGojIDQCEdUmYe8if/h3Atoo6TD6tMdfhaAls9Lv4WghzSRVi9+nz2iyCyUzonDfRMKnUAk9CW2EMNUzi/lfhvf7atmBbos8FckSfrmtqgtCWaE/XKn1WU8U0Cfvh/vqSfV4ybUx8hF8AJfPcWCNSo2LtUuS5j7bi46cfsZnIPUvr2XWMRVt8r0R67L2SOBAkjYtANu3KWz0qrnKu8NnI34YrLT403XsOPodOadpYgvV2Kn5zUX7/K94rn8j/6L1TBVBA7UnCL3sl9i2/oNZegH6f+aN+vbyNySx1ACPnGBelLQ+lrYmbQIDAQAB';
+    final public const SANDBOX_ALIPAY_PUBLIC_KEY = 'MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA4QFGqrFhDQGlgLwqir7AdHEIfIzXw7vn/WH5xWvL72j0gCygtLUWwrYe2mEtW12KBGu3CG+5kRuHC/ND7WgkhtdpXzMjG8YiVXFHVJqZVzD8DLR0PLC54av2A9QM4R7lcP8TmXMOdnFbeB6pN71u0ipPvNS8q9K4Os+jOZJyJbnjg99UHVkCLAgQ9gQB44A0BLNZ7YHaM7rwkhy8PvOPEBTVACPDjnpIC0Ma/M06OfBj8WeXZJK3pad92BI5wPCL6b61Z9hi2hXnVXNhKIS1dhRUH5fjoPo2nOOTUKV/anY5Xb9lZbDxN5Ypy+8yYMVvIItwPTO1GCffEoXSgHlT9QIDAQAB';
 
     public function getCreationTimestamp(): int
     {
@@ -255,8 +227,7 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
         $this->seedPlatformTenant($connection, $cipher, $now);
 
         // the methods the checkout offers right away - they collect on the tenant seeded above, so
-        // they are written after it, and their pictures are in the media before they are referred to
-        $this->seedPaymentMethodMedia($connection, $now);
+        // they are written after it
         $this->seedGatewayPaymentMethods($connection, $now);
     }
 
@@ -1274,132 +1245,6 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
     }
 
     /**
-     * Writes the picture of every seeded method into the media of the shop that is installed.
-     *
-     * The files ship with the payment domain and are copied into `public/media/payment_method` here,
-     * because they are user content of the installation and not part of a deployment: the storefront
-     * serves them from the media of the shop, the same way it serves the picture a merchant uploaded
-     * for a method of their own.
-     *
-     * A row that is already there is left alone - an operator may have replaced the picture of a
-     * method, or filed it in a folder of their own, and neither is undone by an upgrade. The file is
-     * written either way, so a row whose file went missing heals.
-     *
-     * Neither step is allowed to break the install: a shop whose `public` directory is not writable
-     * still gets the four methods, it gets them without a picture.
-     */
-    private function seedPaymentMethodMedia(Connection $connection, string $now): void
-    {
-        $folderId = $connection->fetchOne(
-            'SELECT `id` FROM `media_folder` WHERE `name` = :name',
-            ['name' => self::PAYMENT_METHOD_MEDIA_FOLDER]
-        );
-        $folderId = \is_string($folderId) && $folderId !== '' ? $folderId : null;
-
-        $publicDirectory = $this->locatePublicDirectory();
-
-        foreach (self::PAYMENT_METHOD_ICONS as $fileName) {
-            $contents = $this->readPaymentMethodIcon($fileName);
-
-            if ($contents === null) {
-                continue;
-            }
-
-            $path = self::PAYMENT_METHOD_MEDIA_DIRECTORY . '/' . $fileName;
-
-            if ($publicDirectory !== null) {
-                $directory = $publicDirectory . '/' . self::PAYMENT_METHOD_MEDIA_DIRECTORY;
-
-                if (!is_dir($directory)) {
-                    @mkdir($directory, 0o775, true);
-                }
-
-                if (is_dir($directory)) {
-                    @file_put_contents($publicDirectory . '/' . $path, $contents);
-                }
-            }
-
-            // the name of a media row carries no extension, the extension is a column of its own
-            $name = substr($fileName, 0, -4);
-
-            $existing = $connection->fetchOne(
-                'SELECT `id` FROM `media` WHERE `file_name` = :name',
-                ['name' => $name]
-            );
-
-            if (\is_string($existing) && $existing !== '') {
-                continue;
-            }
-
-            $connection->insert('media', [
-                'id' => Uuid::randomBytes(),
-                'media_folder_id' => $folderId,
-                'mime_type' => 'image/svg+xml',
-                'file_extension' => 'svg',
-                'file_size' => \strlen($contents),
-                'file_name' => $name,
-                'private' => 0,
-                'uploaded_at' => $now,
-                'created_at' => $now,
-                'path' => $path,
-            ]);
-        }
-    }
-
-    /**
-     * The icon as it ships with the payment domain, or `null` when the file is not deployed.
-     *
-     * The path is resolved from the location of this migration, so it works the same whether the shop
-     * runs the source tree or a package of it.
-     */
-    private function readPaymentMethodIcon(string $fileName): ?string
-    {
-        $file = \dirname(__DIR__, 2) . '/System/Payment/Resources/payment-icons/' . $fileName;
-
-        if (!is_file($file) || !is_readable($file)) {
-            return null;
-        }
-
-        $contents = file_get_contents($file);
-
-        return $contents === false ? null : $contents;
-    }
-
-    /**
-     * The `public` directory of the shop this migration installs into, or `null` when it cannot be
-     * found - a shop that runs its migrations from somewhere else than its own root.
-     *
-     * The directory is not injected: a migration is constructed by the migrator without arguments and
-     * has no container, so the root is looked for where the console of the shop sits.
-     */
-    private function locatePublicDirectory(): ?string
-    {
-        $directory = getcwd();
-
-        if ($directory === false) {
-            return null;
-        }
-
-        for ($depth = 0; $depth < 5; ++$depth) {
-            if (is_file($directory . '/bin/console')) {
-                $public = $directory . '/public';
-
-                return is_dir($public) ? $public : null;
-            }
-
-            $parent = \dirname($directory);
-
-            if ($parent === $directory) {
-                return null;
-            }
-
-            $directory = $parent;
-        }
-
-        return null;
-    }
-
-    /**
      * Seeds the four payment methods a fresh installation offers: alipay, wechat pay, paypal and stripe.
      *
      * A payment method of the gateway is a binding and nothing else. It names the app whose merchant
@@ -1556,8 +1401,6 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
 
         $methodId = \is_string($existing) && $existing !== '' ? $existing : null;
 
-        $mediaId = $this->mediaIdOfPaymentMethod($connection, $technicalName);
-
         if ($methodId === null) {
             $methodId = Uuid::randomBytes();
 
@@ -1570,18 +1413,10 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
                 // a failed payment is retried with the method the shopper picked, not with another one
                 'after_order_enabled' => 0,
                 'plugin_id' => null,
-                'media_id' => $mediaId,
+                'media_id' => null,
                 'availability_rule_id' => null,
                 'created_at' => $now,
             ]);
-        } elseif ($mediaId !== null) {
-            // the method was seeded before it had a picture, so it gets one now - but only while it
-            // has none, because a picture an administrator picked is theirs
-            $connection->executeStatement(
-                'UPDATE `payment_method` SET `media_id` = :media, `updated_at` = :now
-                  WHERE `id` = :id AND `media_id` IS NULL',
-                ['media' => $mediaId, 'now' => $now, 'id' => $methodId]
-            );
         }
 
         $this->seedPaymentMethodTranslations($connection, $methodId, $names, $now);
@@ -1615,26 +1450,6 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
         $this->assignPaymentMethodToSalesChannels($connection, $methodId);
 
         return $methodId;
-    }
-
-    /**
-     * The media row of the icon that belongs to a method, or `null` when this migration brings no
-     * picture for it - or when the file could not be deployed and the row was never written.
-     */
-    private function mediaIdOfPaymentMethod(Connection $connection, string $technicalName): ?string
-    {
-        $icon = self::PAYMENT_METHOD_ICONS[$technicalName] ?? null;
-
-        if ($icon === null) {
-            return null;
-        }
-
-        $mediaId = $connection->fetchOne(
-            'SELECT `id` FROM `media` WHERE `file_name` = :name',
-            ['name' => substr($icon, 0, -4)]
-        );
-
-        return \is_string($mediaId) && $mediaId !== '' ? $mediaId : null;
     }
 
     /**

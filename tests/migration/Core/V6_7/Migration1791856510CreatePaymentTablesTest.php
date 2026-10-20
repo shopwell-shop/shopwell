@@ -757,19 +757,8 @@ class Migration1791856510CreatePaymentTablesTest extends TestCase
             static::assertSame(1, (int) $method['active']);
             static::assertSame(0, (int) $method['after_order_enabled']);
             static::assertNull($method['plugin_id']);
+            static::assertNull($method['media_id']);
             static::assertNull($method['availability_rule_id']);
-
-            // the method carries the picture of its brand, which is a row of the media library like
-            // every picture a merchant uploads there
-            $media = $this->connection->fetchAssociative(
-                'SELECT `file_name`, `path` FROM `media` WHERE `id` = :id',
-                ['id' => $method['media_id']]
-            );
-            static::assertIsArray($media, 'the method ' . $technicalName . ' carries no picture');
-            static::assertSame(
-                substr(Migration1791856510CreatePaymentTables::PAYMENT_METHOD_ICONS[$technicalName], 0, -4),
-                $media['file_name']
-            );
 
             // the binding names the app whose merchant account is charged and one channel of it
             $binding = $this->connection->fetchAssociative(
@@ -842,76 +831,6 @@ class Migration1791856510CreatePaymentTablesTest extends TestCase
         $counts = $this->seededPaymentMethodRowCounts();
         $migration->update($this->connection);
         static::assertSame($counts, $this->seededPaymentMethodRowCounts());
-    }
-
-    /**
-     * The picture of a method is user content of the shop: the files ship with the payment domain and
-     * are put into the media of the installation when it is installed, because the storefront serves
-     * them from there. This is what the seed has to prove - not that a row exists, but that the file
-     * the row points at was actually written.
-     */
-    public function testSeedsTheIconsOfTheMethodsIntoTheMediaOfTheInstallation(): void
-    {
-        $publicDirectory = \dirname(__DIR__, 4) . '/public';
-
-        $fileNames = array_map(
-            static fn (string $icon): string => substr($icon, 0, -4),
-            array_values(Migration1791856510CreatePaymentTables::PAYMENT_METHOD_ICONS)
-        );
-
-        // start from nothing, so the run below has to write both the rows and the files
-        foreach ($fileNames as $fileName) {
-            $this->connection->executeStatement(
-                'DELETE FROM `media` WHERE `file_name` = :name',
-                ['name' => $fileName]
-            );
-        }
-
-        foreach (Migration1791856510CreatePaymentTables::PAYMENT_METHOD_ICONS as $icon) {
-            @unlink($publicDirectory . '/' . Migration1791856510CreatePaymentTables::PAYMENT_METHOD_MEDIA_DIRECTORY . '/' . $icon);
-        }
-
-        (new Migration1791856510CreatePaymentTables())->update($this->connection);
-
-        $folderId = $this->connection->fetchOne(
-            'SELECT `id` FROM `media_folder` WHERE `name` = :name',
-            ['name' => Migration1791856510CreatePaymentTables::PAYMENT_METHOD_MEDIA_FOLDER]
-        );
-
-        foreach (Migration1791856510CreatePaymentTables::PAYMENT_METHOD_ICONS as $technicalName => $icon) {
-            $name = substr($icon, 0, -4);
-
-            $media = $this->connection->fetchAssociative(
-                'SELECT `id`, `path`, `mime_type`, `file_extension`, `file_size`, `media_folder_id`, `private` FROM `media` WHERE `file_name` = :name',
-                ['name' => $name]
-            );
-
-            static::assertIsArray($media, 'no row was written for ' . $name);
-            static::assertSame(
-                Migration1791856510CreatePaymentTables::PAYMENT_METHOD_MEDIA_DIRECTORY . '/' . $icon,
-                $media['path']
-            );
-            static::assertSame('image/svg+xml', $media['mime_type']);
-            static::assertSame('svg', $media['file_extension']);
-            static::assertSame(0, (int) $media['private']);
-
-            // the folder of the payment methods is one an installation brings, so the icon is filed
-            // there and shows up beside the other pictures of the module
-            if (\is_string($folderId) && $folderId !== '') {
-                static::assertSame($folderId, $media['media_folder_id']);
-            }
-
-            // the file is where the row says it is, and the shop can serve it
-            $file = $publicDirectory . '/' . $media['path'];
-            static::assertFileExists($file, 'the icon ' . $icon . ' was not written into the media of the shop');
-            static::assertSame(filesize($file), (int) $media['file_size']);
-
-            // and the method the icon belongs to points at that very row
-            static::assertSame($media['id'], $this->connection->fetchOne(
-                'SELECT `media_id` FROM `payment_method` WHERE `technical_name` = :name',
-                ['name' => $technicalName]
-            ));
-        }
     }
 
     /**
