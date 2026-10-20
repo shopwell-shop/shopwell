@@ -1,0 +1,36 @@
+.sw-finance-transfer-detail {
+    &__breadcrumb {
+        font-weight: var(--font-weight-regular);
+    }
+
+    &__loading-placeholder {
+        min-height: var(--scale-size-160);
+    }
+
+    /**
+     * Numbers that an operator copies - the business number, a channel reference, an error code - are
+     * rendered in a monospaced face so that `0` and `O` can be told apart.
+     */
+    &__mono {
+        font-family: ui-monospace, SFMono-Regular, menlo, monaco, consolas, monospace;
+    }
+
+    &__note {
+        margin: 0;
+        white-space: pre-wrap;
+    }
+
+    &__payload {
+        max-height: 320px;
+        padding: var(--scale-size-16);
+        margin: 0;
+        overflow: auto;
+        font-family: ui-monospace, SFMono-Regular, menlo, monaco, consolas, monospace;
+        font-size: var(--font-size-xs);
+        line-height: var(--font-line-height-s);
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        background: var(--color-background-secondary-default);
+        border-radius: var(--border-radius-xs);
+    }
+}

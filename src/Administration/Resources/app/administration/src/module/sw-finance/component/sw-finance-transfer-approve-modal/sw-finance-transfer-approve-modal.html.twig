@@ -1,0 +1,81 @@
+{% block sw_finance_transfer_approve_modal %}
+<sw-modal
+    class="sw-finance-transfer-approve-modal"
+    :title="$t('sw-finance.transfer.approve.modalTitle')"
+    variant="default"
+    @modal-close="onClose"
+>
+    {% block sw_finance_transfer_approve_modal_summary %}
+    <sw-description-list
+        class="sw-finance-transfer-approve-modal__summary"
+        grid="1fr 2fr"
+    >
+        <dt>{{ $t('sw-finance.transfer.approve.summaryRecipient') }}</dt>
+        <dd>{{ recipientLabel }}</dd>
+
+        <dt>{{ $t('sw-finance.transfer.approve.summaryApp') }}</dt>
+        <dd>{{ appLabel }}</dd>
+
+        <dt>{{ $t('sw-finance.transfer.approve.summaryChannel') }}</dt>
+        <dd>{{ channelLabel }}</dd>
+
+        <dt>{{ $t('sw-finance.transfer.approve.summaryAmount') }}</dt>
+        <dd>{{ amountLabel }}</dd>
+
+        <dt>{{ $t('sw-finance.transfer.approve.summaryOutNo') }}</dt>
+        <dd class="sw-finance-transfer-approve-modal__out-no">
+            {{ transfer.outNo || '–' }}
+        </dd>
+    </sw-description-list>
+    {% endblock %}
+
+    {% block sw_finance_transfer_approve_modal_warning %}
+    <mt-banner
+        class="sw-finance-transfer-approve-modal__warning"
+        variant="attention"
+    >
+        {{ warningText }}
+    </mt-banner>
+    {% endblock %}
+
+    {% block sw_finance_transfer_approve_modal_checkbox %}
+    {#
+    The checkbox is the confirmation, not a decoration: without it the primary button stays disabled.
+    Its label travels as a prop of the component, because the component renders the input itself.
+    #}
+    <mt-checkbox
+        v-model:checked="confirmed"
+        class="sw-finance-transfer-approve-modal__checkbox"
+        :disabled="submitInProgress"
+        :label="$t('sw-finance.transfer.approve.checkbox')"
+    />
+    {% endblock %}
+
+    <template #modal-footer>
+        {% block sw_finance_transfer_approve_modal_footer_cancel %}
+        <mt-button
+            class="sw-finance-transfer-approve-modal__button-cancel"
+            size="default"
+            variant="secondary"
+            :disabled="submitInProgress"
+            @click="onClose"
+        >
+            {{ $t('global.default.cancel') }}
+        </mt-button>
+        {% endblock %}
+
+        {% block sw_finance_transfer_approve_modal_footer_confirm %}
+        <mt-button
+            class="sw-finance-transfer-approve-modal__button-confirm"
+            size="default"
+            variant="critical"
+            :disabled="isConfirmDisabled"
+            :is-loading="submitInProgress"
+            @click="onConfirm"
+        >
+            {{ $t('sw-finance.transfer.approve.buttonConfirm') }}
+        </mt-button>
+        {% endblock %}
+    </template>
+</sw-modal>
+{% endblock %}

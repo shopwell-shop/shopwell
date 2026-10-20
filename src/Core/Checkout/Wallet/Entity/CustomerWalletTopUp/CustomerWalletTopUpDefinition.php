@@ -3,6 +3,7 @@
 namespace Shopwell\Core\Checkout\Wallet\Entity\CustomerWalletTopUp;
 
 use Shopwell\Core\Checkout\Customer\CustomerDefinition;
+use Shopwell\Core\Framework\Api\Context\AdminApiSource;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityDefinition;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\DateTimeField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\FkField;
@@ -72,7 +73,12 @@ class CustomerWalletTopUpDefinition extends EntityDefinition
             (new DateTimeField('paid_at', 'paidAt'))->addFlags(new ApiAware()),
             (new DateTimeField('credited_at', 'creditedAt'))->addFlags(new ApiAware()),
 
-            new ManyToOneAssociationField('customer', 'customer_id', CustomerDefinition::class, 'id', false),
+            // the administration lists a top-up together with the customer it belongs to and searches by
+            // the customer name, and `ApiCriteriaValidator` refuses every association the target is not
+            // api aware for - without the flag each of those requests answers 400 instead of data.
+            // The flag is an exposure marker only: it changes no column and no migration.
+            (new ManyToOneAssociationField('customer', 'customer_id', CustomerDefinition::class, 'id', false))
+                ->addFlags(new ApiAware(AdminApiSource::class)),
         ]);
     }
 }

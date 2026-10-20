@@ -1092,7 +1092,7 @@
       "payment_method": "支付方式 | 支付方式",
       "payment_order": "支付订单 | 支付订单",
       "payment_refund": "退款订单 | 退款订单",
-      "payment_transfer": "打款单 | 打款单",
+      "payment_transfer": "转账申请 | 转账申请",
       "privacy": "隐私政策",
       "plugin_manager": "插件",
       "product": "商品 | 商品",

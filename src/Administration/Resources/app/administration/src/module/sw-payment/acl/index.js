@@ -7,6 +7,10 @@
  * gateway while it talks to a channel, never typed by an administrator. The roles below therefore only
  * decide who may look at them - a role without the privileges gets a 403 from the admin api and the
  * respective menu entry is hidden.
+ *
+ * The transfers are the exception: an administrator books them and releases them, which is why they
+ * carry a creator and an approver role. Their pages live in `sw-finance`; the roles stay here, next to
+ * the entity they grant access to.
  */
 
 Shopwell.Service('privileges')
@@ -64,6 +68,28 @@ Shopwell.Service('privileges')
                     'state_machine_state:read',
                 ],
                 dependencies: [],
+            },
+            /**
+             * Books the intent to pay. Nothing is sent to a channel by this role - the row it creates
+             * waits for an approver, which is what keeps "prepare a payout" and "release a payout" in
+             * two pairs of hands even though one person may hold both roles.
+             */
+            creator: {
+                privileges: [
+                    'payment_transfer:create',
+                    'payment_transfer_recipient:create',
+                ],
+                dependencies: ['payment_transfer.viewer'],
+            },
+            /**
+             * The only role that moves money: submitting hands the payout to the channel, rejecting
+             * ends it with a reason.
+             */
+            approver: {
+                privileges: [
+                    'payment_transfer:update',
+                ],
+                dependencies: ['payment_transfer.viewer'],
             },
         },
     });

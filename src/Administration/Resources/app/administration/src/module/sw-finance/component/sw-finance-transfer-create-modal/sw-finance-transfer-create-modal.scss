@@ -1,0 +1,37 @@
+.sw-finance-transfer-create-modal {
+    &__loading {
+        display: flex;
+        justify-content: center;
+        padding-block: var(--scale-size-48);
+    }
+
+    &__group {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: var(--scale-size-16) var(--scale-size-24);
+        padding-bottom: var(--scale-size-24);
+        margin-bottom: var(--scale-size-24);
+        border-bottom: 1px solid var(--color-border-primary-default);
+
+        &:last-of-type {
+            border-bottom: 0;
+            margin-bottom: 0;
+        }
+    }
+
+    &__group-title {
+        grid-column: 1 / -1;
+        margin: 0 0 var(--scale-size-8);
+        font-size: var(--font-size-s);
+        font-weight: var(--font-weight-semibold);
+    }
+
+    &__field-recipient,
+    &__no-recipients {
+        grid-column: 1 / -1;
+    }
+
+    &__field-note {
+        grid-column: 1 / -1;
+    }
+}

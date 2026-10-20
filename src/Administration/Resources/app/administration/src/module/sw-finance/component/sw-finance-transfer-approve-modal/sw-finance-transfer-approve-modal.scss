@@ -1,0 +1,17 @@
+.sw-finance-transfer-approve-modal {
+    &__summary {
+        margin-bottom: var(--scale-size-24);
+    }
+
+    &__out-no {
+        font-family: ui-monospace, SFMono-Regular, menlo, monaco, consolas, monospace;
+    }
+
+    &__warning {
+        margin-bottom: var(--scale-size-24);
+    }
+
+    &__checkbox {
+        margin-bottom: var(--scale-size-24);
+    }
+}

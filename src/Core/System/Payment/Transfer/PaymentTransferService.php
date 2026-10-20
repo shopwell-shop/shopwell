@@ -323,16 +323,31 @@ final class PaymentTransferService
     /**
      * The payout will not happen: it was withdrawn before the interface finalized it.
      *
+     * The reason is the "reject" of the approval workflow of the administration. It has no column of its
+     * own - `metadata.rejectReason` is where the audit trail lives, exactly like the reason of a return
+     * lives in `failureReason`. An omitted reason writes nothing, so an existing caller that only wants to
+     * abandon a payout keeps its behaviour unchanged.
+     *
      * @throws PaymentException
      */
-    public function cancel(PaymentTransferEntity $transfer): void
+    public function cancel(PaymentTransferEntity $transfer, ?string $reason = null): void
     {
         $this->stateHandler->cancel($transfer->id);
 
-        $this->transferRepository->update([[
+        $row = [
             'id' => $transfer->id,
             'canceledAt' => $this->clock->now(),
-        ]], Context::createDefaultContext());
+        ];
+
+        if ($reason !== null) {
+            $row['metadata'] = array_merge(
+                $transfer->metadata ?? [],
+                // cut like a failure reason: the text comes from an operator and the column is bounded
+                ['rejectReason' => $this->boundedReason($reason)]
+            );
+        }
+
+        $this->transferRepository->update([$row], Context::createDefaultContext());
     }
 
     /**

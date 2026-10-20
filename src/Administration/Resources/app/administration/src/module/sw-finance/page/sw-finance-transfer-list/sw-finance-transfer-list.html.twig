@@ -1,0 +1,260 @@
+{% block sw_finance_transfer_list %}
+<sw-page class="sw-finance-transfer-list">
+    {% block sw_finance_transfer_list_search_bar %}
+    <template #search-bar>
+        <sw-search-bar
+            initial-search-type="payment_transfer"
+            :initial-search="term"
+            :placeholder="$t('sw-finance.transfer.list.placeholderSearchBar')"
+            @search="onSearch"
+        />
+    </template>
+    {% endblock %}
+
+    {% block sw_finance_transfer_list_smart_bar_header %}
+    <template #smart-bar-header>
+        {% block sw_finance_transfer_list_smart_bar_header_title %}
+        <h2>
+            {% block sw_finance_transfer_list_smart_bar_header_title_text %}
+            {{ $t('sw-finance.transfer.list.title') }}
+            {% endblock %}
+
+            {% block sw_finance_transfer_list_smart_bar_header_amount %}
+            <span
+                v-if="!isLoading"
+                class="sw-page__smart-bar-amount"
+            >
+                ({{ total }})
+            </span>
+            {% endblock %}
+        </h2>
+        {% endblock %}
+    </template>
+    {% endblock %}
+
+    <template #smart-bar-actions>
+        {% block sw_finance_transfer_list_smart_bar_actions_create %}
+        {#
+        Booking a request moves no money, which is why this button is bound to the creator role and
+        not to the approver role. It is the only action of the page that is not per row.
+        #}
+        <mt-button
+            v-if="canCreate"
+            variant="primary"
+            size="default"
+            @click="onOpenCreateModal"
+        >
+            {{ $t('sw-finance.transfer.list.buttonCreate') }}
+        </mt-button>
+        {% endblock %}
+    </template>
+
+    {% block sw_finance_transfer_list_content %}
+    <template #content>
+        {% block sw_finance_transfer_list_content_inner %}
+        <div class="sw-finance-transfer-list__content">
+
+            {% block sw_finance_transfer_list_empty_state %}
+            {#
+            Two empty states: "nothing exists yet" invites the operator to create the first request,
+            "nothing matches" only reports the filter. `sw-entity-listing` renders nothing at all for
+            an empty result, so both live here.
+            #}
+            <mt-empty-state
+                v-if="!isLoading && !total && !hasActiveSearchOrFilter"
+                centered
+                class="sw-finance-transfer-list__empty-state"
+                :icon="$route.meta.$module.icon"
+                :headline="$t('sw-finance.transfer.list.messageEmpty')"
+                :description="$t('sw-finance.transfer.list.sublineEmpty')"
+            >
+                <template #button>
+                    <mt-button
+                        v-if="canCreate"
+                        variant="primary"
+                        @click="onOpenCreateModal"
+                    >
+                        {{ $t('sw-finance.transfer.list.buttonCreate') }}
+                    </mt-button>
+                </template>
+            </mt-empty-state>
+            {% endblock %}
+
+            {% block sw_finance_transfer_list_empty_state_no_result %}
+            <mt-empty-state
+                v-else-if="!isLoading && !total"
+                centered
+                class="sw-finance-transfer-list__empty-state"
+                :icon="$route.meta.$module.icon"
+                :headline="$t('sw-finance.transfer.list.messageNoResult')"
+                :description="$t('sw-finance.transfer.list.messageNoResultSubline')"
+            />
+            {% endblock %}
+
+            {% block sw_finance_transfer_list_grid %}
+            <sw-entity-listing
+                v-else-if="isLoading || transfers"
+                ref="listing"
+                class="sw-finance-transfer-list__grid"
+                identifier="sw-finance-transfer-list"
+                :data-source="transfers"
+                :columns="transferColumns"
+                :repository="transferRepository"
+                :sort-by="sortBy"
+                :sort-direction="sortDirection"
+                :is-loading="isLoading"
+                :full-page="true"
+                :show-selection="false"
+                :show-settings="true"
+                :disable-data-fetching="true"
+                :allow-inline-edit="false"
+                :allow-column-edit="true"
+                :allow-edit="false"
+                :allow-delete="false"
+                :allow-view="acl.can('payment_transfer.viewer') || undefined"
+                detail-route="sw.finance.transferDetail"
+                @page-change="onPageChange"
+                @column-sort="onSortColumn"
+            >
+                {% block sw_finance_transfer_list_grid_column_recipient %}
+                <template #column-recipientId="{ item }">
+                    {{ recipientLabel(item) }}
+                </template>
+                {% endblock %}
+
+                {% block sw_finance_transfer_list_grid_column_provider %}
+                <template #column-provider="{ item }">
+                    {{ providerLabel(item.provider) }}
+                </template>
+                {% endblock %}
+
+                {% block sw_finance_transfer_list_grid_column_state %}
+                <template #column-statusId="{ item }">
+                    <mt-badge
+                        v-if="item.statusId"
+                        :variant="transferStateVariant(item.statusId)"
+                    >
+                        {#
+                        The name of the state: the snippet of this module first, the translation of the
+                        state machine only for a state the administration does not know.
+                        #}
+                        {{ transferStateLabel(item.statusId) }}
+                    </mt-badge>
+                </template>
+                {% endblock %}
+
+                {% block sw_finance_transfer_list_grid_column_failure %}
+                <template #column-failureCode="{ item }">
+                    {#
+                    A failure reason is channel output and can be long: the cell truncates it and the
+                    tooltip carries the whole text. Nothing is translated here - a translated error
+                    code can not be searched for in the documentation of the provider.
+                    #}
+                    <mt-tooltip
+                        v-if="failureLabel(item)"
+                        :content="failureLabel(item)"
+                    >
+                        <span class="sw-finance-transfer-list__failure">
+                            {{ failureLabel(item) }}
+                        </span>
+                    </mt-tooltip>
+                </template>
+                {% endblock %}
+
+                {% block sw_finance_transfer_list_grid_column_amount %}
+                <template #column-amount="{ item }">
+                    {{ formatAmount(item.amount, item.currency) }}
+                </template>
+                {% endblock %}
+
+                {% block sw_finance_transfer_list_grid_column_created_at %}
+                <template #column-createdAt="{ item }">
+                    {{ formatDateOrDash(item.createdAt) }}
+                </template>
+                {% endblock %}
+
+                {% block sw_finance_transfer_list_grid_actions %}
+                {#
+                The two money actions of this page. Both are only rendered for a transfer that is
+                still `created` and only for a role that may release money - the endpoint refuses
+                them otherwise, this only keeps the operator from clicking into a 403.
+                #}
+                <template #more-actions="{ item }">
+                    {% block sw_finance_transfer_list_grid_action_submit %}
+                    <sw-context-menu-item
+                        v-if="canDecide(item)"
+                        class="sw-finance-transfer-list__action-submit"
+                        variant="success"
+                        @click="onApprove(item)"
+                    >
+                        {{ $t('sw-finance.transfer.actions.submit') }}
+                    </sw-context-menu-item>
+                    {% endblock %}
+
+                    {% block sw_finance_transfer_list_grid_action_cancel %}
+                    <sw-context-menu-item
+                        v-if="canDecide(item)"
+                        class="sw-finance-transfer-list__action-cancel"
+                        variant="danger"
+                        @click="onReject(item)"
+                    >
+                        {{ $t('sw-finance.transfer.actions.cancel') }}
+                    </sw-context-menu-item>
+                    {% endblock %}
+                </template>
+                {% endblock %}
+            </sw-entity-listing>
+            {% endblock %}
+        </div>
+        {% endblock %}
+    </template>
+    {% endblock %}
+
+    {% block sw_finance_transfer_list_sidebar %}
+    <template #sidebar>
+        <sw-sidebar class="sw-finance-transfer-list__sidebar">
+            {% block sw_finance_transfer_list_sidebar_refresh %}
+            <sw-sidebar-item
+                icon="regular-undo"
+                :title="$t('sw-finance.transfer.list.titleSidebarItemRefresh')"
+                @click="onRefresh"
+            />
+            {% endblock %}
+
+            {% block sw_finance_transfer_list_sidebar_filter %}
+            <sw-sidebar-filter-panel
+                entity="payment_transfer"
+                :store-key="storeKey"
+                :filters="listFilters"
+                :defaults="defaultFilters"
+                :active-filter-number="activeFilterNumber"
+                @criteria-changed="updateCriteria"
+            />
+            {% endblock %}
+        </sw-sidebar>
+    </template>
+    {% endblock %}
+
+    {% block sw_finance_transfer_list_modals %}
+    <sw-finance-transfer-create-modal
+        v-if="showCreateModal"
+        @transfer-created="onTransferCreated"
+        @modal-close="onCloseCreateModal"
+    />
+
+    <sw-finance-transfer-approve-modal
+        v-if="transferToApprove"
+        :transfer="transferToApprove"
+        @transfer-decided="onTransferDecided"
+        @modal-close="onCloseApproveModal"
+    />
+
+    <sw-finance-transfer-reject-modal
+        v-if="transferToReject"
+        :transfer="transferToReject"
+        @transfer-decided="onTransferDecided"
+        @modal-close="onCloseRejectModal"
+    />
+    {% endblock %}
+</sw-page>
+{% endblock %}

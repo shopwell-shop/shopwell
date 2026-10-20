@@ -1,0 +1,258 @@
+{% block sw_finance_transfer_create_modal %}
+<sw-modal
+    class="sw-finance-transfer-create-modal"
+    :title="$t('sw-finance.transfer.create.modalTitle')"
+    variant="default"
+    @modal-close="onClose"
+>
+    {% block sw_finance_transfer_create_modal_loading %}
+    <div
+        v-if="isLoadingOptions"
+        class="sw-finance-transfer-create-modal__loading"
+    >
+        <sw-loader />
+    </div>
+    {% endblock %}
+
+    <template v-else>
+        {% block sw_finance_transfer_create_modal_recipient_group %}
+        <section class="sw-finance-transfer-create-modal__group">
+            <h3 class="sw-finance-transfer-create-modal__group-title">
+                {{ $t('sw-finance.transfer.create.groupRecipient') }}
+            </h3>
+
+            {% block sw_finance_transfer_create_modal_field_app %}
+            <mt-select
+                v-model="paymentAppId"
+                class="sw-finance-transfer-create-modal__field-app"
+                :label="$t('sw-finance.transfer.create.fieldApp')"
+                :placeholder="$t('sw-finance.transfer.create.placeholderApp')"
+                :options="apps.map((app) => ({ value: app.id, label: app.name || app.technicalName || app.id }))"
+                required
+            />
+            {% endblock %}
+
+            {% block sw_finance_transfer_create_modal_field_provider %}
+            <mt-select
+                v-model="provider"
+                class="sw-finance-transfer-create-modal__field-provider"
+                :label="$t('sw-finance.transfer.create.fieldProvider')"
+                :placeholder="$t('sw-finance.transfer.create.placeholderProvider')"
+                :options="providerOptions.map((option) => ({ value: option.technicalName, label: providerOptionLabel(option) }))"
+                :disabled="providerOptions.length === 0 || undefined"
+                required
+            />
+            {% endblock %}
+
+            {% block sw_finance_transfer_create_modal_field_channel %}
+            <mt-select
+                v-model="channel"
+                class="sw-finance-transfer-create-modal__field-channel"
+                :label="$t('sw-finance.transfer.create.fieldChannel')"
+                :placeholder="$t('sw-finance.transfer.create.placeholderChannel')"
+                :options="channelOptions.map((option) => ({ value: option.technicalName, label: optionLabel(option.label, option.technicalName) }))"
+                :disabled="isChannelLocked || channelOptions.length === 0 || undefined"
+                required
+            />
+            {% endblock %}
+
+            {% block sw_finance_transfer_create_modal_field_recipient_source %}
+            <mt-select
+                v-model="recipientSource"
+                class="sw-finance-transfer-create-modal__field-recipient-source"
+                :label="$t('sw-finance.transfer.create.fieldRecipientSource')"
+                :options="[
+                    { value: 'existing', label: $t('sw-finance.transfer.create.fieldRecipientSourceExisting') },
+                    { value: 'new', label: $t('sw-finance.transfer.create.fieldRecipientSourceNew') },
+                ]"
+                required
+            />
+            {% endblock %}
+
+            {% block sw_finance_transfer_create_modal_field_recipient_existing %}
+            <template v-if="recipientSource === 'existing'">
+                <mt-select
+                    v-if="hasPayableRecipients"
+                    v-model="recipientId"
+                    class="sw-finance-transfer-create-modal__field-recipient"
+                    :label="$t('sw-finance.transfer.create.fieldRecipientExisting')"
+                    :placeholder="$t('sw-finance.transfer.create.placeholderRecipient')"
+                    :options="payableRecipients.map((recipient) => ({ value: recipient.id, label: recipientOptionLabel(recipient) }))"
+                    :is-loading="isLoadingRecipients"
+                    required
+                />
+
+                {#
+                Without a payable account the operator is told what to do instead of being shown an
+                empty dropdown - registering a new one is the only way forward.
+                #}
+                <mt-banner
+                    v-else
+                    class="sw-finance-transfer-create-modal__no-recipients"
+                    variant="attention"
+                >
+                    {{ $t('sw-finance.transfer.create.labelNoRecipients') }}
+                </mt-banner>
+            </template>
+            {% endblock %}
+
+            {% block sw_finance_transfer_create_modal_field_identity %}
+            <template v-if="recipientSource === 'new'">
+                <mt-select
+                    v-model="identityType"
+                    class="sw-finance-transfer-create-modal__field-identity-type"
+                    :label="$t('sw-finance.transfer.create.fieldIdentityType')"
+                    :placeholder="$t('sw-finance.transfer.create.placeholderIdentityType')"
+                    :options="identityTypeOptions.map((type) => ({ value: type, label: identityTypeLabel(type) }))"
+                    required
+                />
+
+                <mt-text-field
+                    v-model="identityValue"
+                    class="sw-finance-transfer-create-modal__field-identity-value"
+                    :label="$t('sw-finance.transfer.create.fieldIdentityValue')"
+                    :placeholder="$t('sw-finance.transfer.create.placeholderIdentityValue')"
+                    :help-text="$t('sw-finance.transfer.create.helpIdentityValue')"
+                    :error="isIdentityValueTooLong ? $t('sw-finance.transfer.create.validationIdentityValueTooLong', { limit: 149 }) : null"
+                    required
+                />
+            </template>
+            {% endblock %}
+
+            {% block sw_finance_transfer_create_modal_field_holder_name %}
+            <mt-text-field
+                v-if="recipientSource === 'new' && requiresHolderName"
+                v-model="holderName"
+                class="sw-finance-transfer-create-modal__field-holder-name"
+                :label="$t('sw-finance.transfer.create.fieldHolderName')"
+                :max-length="255"
+                required
+            />
+            {% endblock %}
+
+            {% block sw_finance_transfer_create_modal_field_bank %}
+            <template v-if="recipientSource === 'new' && requiresBankInfo">
+                <mt-select
+                    v-model="bankAccountType"
+                    class="sw-finance-transfer-create-modal__field-bank-account-type"
+                    :label="$t('sw-finance.transfer.create.fieldBankAccountType')"
+                    :options="bankAccountTypes.map((type) => ({
+                        value: type,
+                        label: type === '1'
+                            ? $t('sw-finance.transfer.create.accountTypeBusiness')
+                            : $t('sw-finance.transfer.create.accountTypePersonal'),
+                    }))"
+                    required
+                />
+
+                <mt-text-field
+                    v-model="bankName"
+                    class="sw-finance-transfer-create-modal__field-bank-name"
+                    :label="$t('sw-finance.transfer.create.fieldBankName')"
+                    :max-length="255"
+                />
+
+                <mt-text-field
+                    v-model="bankBranchName"
+                    class="sw-finance-transfer-create-modal__field-bank-branch"
+                    :label="$t('sw-finance.transfer.create.fieldBankBranchName')"
+                    :max-length="255"
+                />
+            </template>
+            {% endblock %}
+        </section>
+        {% endblock %}
+
+        {% block sw_finance_transfer_create_modal_amount_group %}
+        <section class="sw-finance-transfer-create-modal__group">
+            <h3 class="sw-finance-transfer-create-modal__group-title">
+                {{ $t('sw-finance.transfer.create.groupAmount') }}
+            </h3>
+
+            {% block sw_finance_transfer_create_modal_field_amount %}
+            {#
+            The amount stays a string from the input to the request body: `yuanToMinorUnits()` splits
+            the digits the operator typed, so `0.10` becomes exactly 10 fen.
+            #}
+            <mt-text-field
+                v-model="amount"
+                class="sw-finance-transfer-create-modal__field-amount"
+                :label="$t('sw-finance.transfer.create.fieldAmount')"
+                :placeholder="$t('sw-finance.transfer.create.placeholderAmount')"
+                :error="amount !== '' && amountInMinorUnits === null ? $t('sw-finance.transfer.create.validationAmountInvalid') : null"
+                required
+            />
+            {% endblock %}
+
+            {% block sw_finance_transfer_create_modal_field_currency %}
+            <mt-select
+                v-model="currency"
+                class="sw-finance-transfer-create-modal__field-currency"
+                :label="$t('sw-finance.transfer.create.fieldCurrency')"
+                :options="currencyOptions.map((code) => ({ value: code, label: code }))"
+                :disabled="isCurrencyLocked || undefined"
+                required
+            />
+            {% endblock %}
+
+            {% block sw_finance_transfer_create_modal_field_out_no %}
+            <mt-text-field
+                v-model="outNo"
+                class="sw-finance-transfer-create-modal__field-out-no"
+                :label="$t('sw-finance.transfer.create.fieldOutNo')"
+                :placeholder="$t('sw-finance.transfer.create.placeholderOutNo')"
+                :help-text="$t('sw-finance.transfer.create.helpOutNo')"
+                :error="isOutNoInvalid ? $t('sw-finance.transfer.create.validationOutNoInvalid') : null"
+            />
+            {% endblock %}
+        </section>
+        {% endblock %}
+
+        {% block sw_finance_transfer_create_modal_note_group %}
+        <section class="sw-finance-transfer-create-modal__group">
+            <h3 class="sw-finance-transfer-create-modal__group-title">
+                {{ $t('sw-finance.transfer.create.groupNote') }}
+            </h3>
+
+            {% block sw_finance_transfer_create_modal_field_note %}
+            <mt-textarea
+                v-model="note"
+                class="sw-finance-transfer-create-modal__field-note"
+                :label="$t('sw-finance.transfer.create.fieldNote')"
+                :placeholder="$t('sw-finance.transfer.create.placeholderNote')"
+                :max-length="255"
+                :error="isNoteTooLong ? $t('sw-finance.transfer.create.validationNoteTooLong') : null"
+            />
+            {% endblock %}
+        </section>
+        {% endblock %}
+    </template>
+
+    <template #modal-footer>
+        {% block sw_finance_transfer_create_modal_footer_cancel %}
+        <mt-button
+            class="sw-finance-transfer-create-modal__button-cancel"
+            size="default"
+            variant="secondary"
+            :disabled="isSaving"
+            @click="onClose"
+        >
+            {{ $t('global.default.cancel') }}
+        </mt-button>
+        {% endblock %}
+
+        {% block sw_finance_transfer_create_modal_footer_save %}
+        <mt-button
+            class="sw-finance-transfer-create-modal__button-save"
+            size="default"
+            variant="primary"
+            :disabled="isSaveDisabled"
+            :is-loading="isSaving"
+            @click="onSave"
+        >
+            {{ $t('global.default.save') }}
+        </mt-button>
+        {% endblock %}
+    </template>
+</sw-modal>
+{% endblock %}

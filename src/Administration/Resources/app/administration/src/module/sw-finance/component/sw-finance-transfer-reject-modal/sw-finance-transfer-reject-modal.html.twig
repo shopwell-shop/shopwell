@@ -1,0 +1,62 @@
+{% block sw_finance_transfer_reject_modal %}
+<sw-modal
+    class="sw-finance-transfer-reject-modal"
+    :title="$t('sw-finance.transfer.reject.modalTitle')"
+    variant="default"
+    @modal-close="onClose"
+>
+    {% block sw_finance_transfer_reject_modal_hint %}
+    <mt-banner
+        class="sw-finance-transfer-reject-modal__hint"
+        variant="attention"
+    >
+        {{ $t('sw-finance.transfer.reject.hint') }}
+    </mt-banner>
+    {% endblock %}
+
+    {% block sw_finance_transfer_reject_modal_reason %}
+    <mt-textarea
+        v-model="reason"
+        class="sw-finance-transfer-reject-modal__reason"
+        :label="$t('sw-finance.transfer.reject.fieldReason')"
+        :placeholder="$t('sw-finance.transfer.reject.placeholderReason')"
+        :max-length="reasonLimit"
+        :error="isReasonTooLong ? $t('sw-finance.transfer.reject.validationReasonTooLong') : null"
+        required
+    />
+    {% endblock %}
+
+    {% block sw_finance_transfer_reject_modal_counter %}
+    <div class="sw-finance-transfer-reject-modal__counter">
+        {{ reasonLength }} / {{ reasonLimit }}
+    </div>
+    {% endblock %}
+
+    <template #modal-footer>
+        {% block sw_finance_transfer_reject_modal_footer_cancel %}
+        <mt-button
+            class="sw-finance-transfer-reject-modal__button-cancel"
+            size="default"
+            variant="secondary"
+            :disabled="rejectInProgress"
+            @click="onClose"
+        >
+            {{ $t('global.default.cancel') }}
+        </mt-button>
+        {% endblock %}
+
+        {% block sw_finance_transfer_reject_modal_footer_confirm %}
+        <mt-button
+            class="sw-finance-transfer-reject-modal__button-confirm"
+            size="default"
+            variant="critical"
+            :disabled="isConfirmDisabled"
+            :is-loading="rejectInProgress"
+            @click="onConfirm"
+        >
+            {{ $t('sw-finance.transfer.reject.buttonConfirm') }}
+        </mt-button>
+        {% endblock %}
+    </template>
+</sw-modal>
+{% endblock %}

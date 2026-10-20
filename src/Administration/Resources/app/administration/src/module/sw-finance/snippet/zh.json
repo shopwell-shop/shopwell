@@ -1,0 +1,265 @@
+{
+    "sw-finance": {
+        "errors": {
+            "loadFailed": "数据加载失败。"
+        },
+        "general": {
+            "description": "审核转账申请与查看钱包充值流水",
+            "mainMenuItemGeneral": "财务"
+        },
+        "navigation": {
+            "transfer": "转账申请",
+            "walletTopUp": "钱包充值"
+        },
+        "transfer": {
+            "actions": {
+                "cancel": "驳回",
+                "submit": "通过并转账"
+            },
+            "approve": {
+                "buttonConfirm": "确认转账",
+                "checkbox": "我已核对收款信息，并知晓资金将真实转出。",
+                "messageRejected": "转账在送达渠道前被拒绝：{reason}",
+                "messageSubmitFailed": "提交失败。",
+                "modalTitle": "确认转账",
+                "noticeAccepted": "已提交至渠道，当前状态：{state}。",
+                "noticeAcceptedWithoutState": "已提交至渠道，刷新后可查看当前状态。",
+                "noticeFailed": "{provider}拒绝了本次转账：{code} — {reason}",
+                "noticeFailedWithoutReason": "{provider}拒绝了本次转账。",
+                "noticeUnknown": "渠道未返回明确结果，资金可能已转出。请先在渠道后台核对该笔业务单号，确认未出账后再重试。",
+                "summaryAmount": "金额",
+                "summaryApp": "支付应用",
+                "summaryChannel": "服务商与通道",
+                "summaryOutNo": "业务单号",
+                "summaryRecipient": "收款人",
+                "warning": "确认后将立即通过 {provider} 向该收款账号转出 {amount}，操作不可撤回。"
+            },
+            "create": {
+                "accountTypeBusiness": "企业",
+                "accountTypePersonal": "个人",
+                "fieldAmount": "转账金额",
+                "fieldApp": "支付应用",
+                "fieldBankAccountType": "账户类型",
+                "fieldBankBranchName": "开户支行",
+                "fieldBankName": "开户行",
+                "fieldChannel": "转账通道",
+                "fieldCurrency": "币种",
+                "fieldHolderName": "收款人姓名",
+                "fieldIdentityType": "身份类型",
+                "fieldIdentityValue": "身份标识",
+                "fieldNote": "备注",
+                "fieldOutNo": "业务单号",
+                "fieldProvider": "支付服务商",
+                "fieldRecipientExisting": "收款账号",
+                "fieldRecipientSource": "收款账号来源",
+                "fieldRecipientSourceExisting": "已有账号",
+                "fieldRecipientSourceNew": "新建账号",
+                "groupAmount": "金额",
+                "groupNote": "备注",
+                "groupRecipient": "收款信息",
+                "helpIdentityValue": "加密存储，保存后不再回显，列表与详情只显示脱敏标识。",
+                "helpOutNo": "仅字母与数字，最多 30 位。留空由系统生成；同号重复提交不会二次出账。",
+                "identityType": {
+                    "alipay_logon_id": "支付宝账号（手机号/邮箱）",
+                    "alipay_open_id": "支付宝 OpenID",
+                    "alipay_user_id": "支付宝用户 ID",
+                    "bankcard": "银行卡",
+                    "paypal_email": "PayPal 邮箱",
+                    "paypal_payer_id": "PayPal 付款方 ID",
+                    "paypal_phone": "PayPal 手机号",
+                    "stripe_account": "Stripe 账户",
+                    "wechat_open_id": "微信 OpenID"
+                },
+                "labelNoRecipients": "该服务商下还没有可用的收款账号，请改用「新建账号」。",
+                "messageCreated": "转账申请已创建，等待审核。",
+                "messageFailed": "转账申请创建失败。",
+                "messageReplayed": "该业务单号已存在，已打开既有申请。",
+                "modalTitle": "新建转账申请",
+                "placeholderAmount": "0.00",
+                "placeholderApp": "请选择支付应用...",
+                "placeholderChannel": "请选择转账通道...",
+                "placeholderIdentityType": "请选择身份类型...",
+                "placeholderIdentityValue": "例如服务商侧的收款方 id",
+                "placeholderNote": "仅审核人可见，不会下发给渠道",
+                "placeholderOutNo": "留空由系统生成",
+                "placeholderProvider": "请选择支付服务商...",
+                "placeholderRecipient": "请选择收款账号...",
+                "validationAmountInvalid": "金额最多两位小数，例如 120.50。",
+                "validationAmountRequired": "请填写转账金额。",
+                "validationAppRequired": "请选择这笔转账所属的支付应用。",
+                "validationBankRequired": "银行卡转账必须填写开户信息与账户类型。",
+                "validationChannelRequired": "请选择转账通道。",
+                "validationCurrencyRequired": "请选择币种。",
+                "validationHolderNameRequired": "该身份类型必须填写收款人姓名。",
+                "validationIdentityTypeRequired": "请选择身份类型。",
+                "validationIdentityValueRequired": "请填写收款账号的身份标识。",
+                "validationIdentityValueTooLong": "身份标识超过 {limit} 字节。",
+                "validationNoteTooLong": "备注最多 255 个字符。",
+                "validationOutNoInvalid": "仅字母与数字，最多 30 位。",
+                "validationProviderRequired": "请选择支付服务商。",
+                "validationRecipientRequired": "请选择收款账号。"
+            },
+            "detail": {
+                "buttonRefresh": "刷新",
+                "cardChannelRefTitle": "通道引用",
+                "cardConfirmationTitle": "收款方确认",
+                "cardFailureTitle": "失败信息",
+                "cardGeneralTitle": "基本信息",
+                "cardMetadataTitle": "元数据",
+                "cardNoteTitle": "备注",
+                "cardRecipientTitle": "收款信息",
+                "cardTimelineTitle": "时间线",
+                "labelAmount": "金额",
+                "labelCanceledAt": "取消时间",
+                "labelChannel": "转账通道",
+                "labelConfirmation": "确认凭证",
+                "labelCreatedAt": "创建时间",
+                "labelCurrency": "币种",
+                "labelExpireAt": "过期时间",
+                "labelFailureCode": "失败码",
+                "labelFailureReason": "失败原因",
+                "labelIdentityType": "身份类型",
+                "labelMetadata": "元数据",
+                "labelOnboardingStatus": "入驻状态",
+                "labelOutNo": "业务单号",
+                "labelPaymentApp": "支付应用",
+                "labelPayoutEnabled": "可收款",
+                "labelProvider": "支付服务商",
+                "labelProviderAccountId": "通道账户",
+                "labelProviderRef": "通道引用",
+                "labelProviderStageRef": "通道阶段引用",
+                "labelRecipientName": "收款人姓名",
+                "labelRejectReason": "已驳回",
+                "labelReturnedAt": "退回时间",
+                "labelSettledAt": "到账时间",
+                "labelSubmitAttempts": "提交次数",
+                "labelSubmittedAt": "提交时间",
+                "labelTransferNo": "转账单号",
+                "labelVerifiedAt": "认证时间",
+                "messageNoMetadata": "暂无元数据",
+                "messageNoNote": "暂无备注",
+                "title": "转账申请",
+                "valueConfirmationGenerated": "已生成，等待收款方领取",
+                "valueConfirmationMissing": "未生成"
+            },
+            "filters": {
+                "channelFilter": {
+                    "label": "转账通道",
+                    "placeholder": "多个通道用逗号分隔..."
+                },
+                "outNoFilter": {
+                    "label": "业务单号",
+                    "placeholder": "多个单号用逗号分隔..."
+                },
+                "providerFilter": {
+                    "label": "支付服务商",
+                    "placeholder": "多个服务商用逗号分隔..."
+                },
+                "stateFilter": {
+                    "label": "状态",
+                    "placeholder": "全部状态..."
+                },
+                "transferNoFilter": {
+                    "label": "转账单号",
+                    "placeholder": "多个单号用逗号分隔..."
+                }
+            },
+            "list": {
+                "buttonCreate": "新建转账申请",
+                "columnAmount": "金额",
+                "columnChannel": "转账通道",
+                "columnCreatedAt": "创建时间",
+                "columnFailure": "失败原因",
+                "columnOutNo": "业务单号",
+                "columnProvider": "支付服务商",
+                "columnRecipient": "收款人",
+                "columnState": "状态",
+                "columnTransferNo": "转账单号",
+                "messageEmpty": "还没有转账申请",
+                "messageNoResult": "没有符合条件的转账申请",
+                "messageNoResultSubline": "当前搜索或筛选没有匹配的记录，请调整条件后重试。",
+                "placeholderSearchBar": "搜索转账申请...",
+                "sublineEmpty": "点击右上角「新建转账申请」创建第一笔。申请创建后不会立即出账，需要审核通过才会提交给渠道。",
+                "title": "转账申请",
+                "titleSidebarItemRefresh": "刷新列表"
+            },
+            "reject": {
+                "buttonConfirm": "确认驳回",
+                "fieldReason": "驳回原因",
+                "hint": "驳回后该申请不可再提交，如需付款请重新创建。",
+                "messageFailed": "转账申请驳回失败。",
+                "modalTitle": "驳回转账申请",
+                "noticeRejected": "转账申请已驳回。",
+                "placeholderReason": "请说明驳回原因",
+                "validationReasonRequired": "请填写驳回原因，这是该笔驳回唯一的留痕。",
+                "validationReasonTooLong": "驳回原因最多 255 个字符。"
+            },
+            "stateLabel": {
+                "awaiting_user_confirm": "待用户确认",
+                "canceled": "已取消",
+                "created": "待提交",
+                "failed": "失败",
+                "processing": "处理中",
+                "returned": "已退回",
+                "submitted": "已提交",
+                "succeeded": "成功"
+            }
+        },
+        "walletTopUp": {
+            "filters": {
+                "channelFilter": {
+                    "label": "充值渠道",
+                    "placeholder": "多个渠道用逗号分隔..."
+                },
+                "createdFilter": {
+                    "label": "创建时间",
+                    "placeholder": "选择时间范围..."
+                },
+                "paymentNoFilter": {
+                    "label": "充值单号",
+                    "placeholder": "多个单号用逗号分隔..."
+                },
+                "stateFilter": {
+                    "label": "状态",
+                    "placeholder": "全部状态..."
+                }
+            },
+            "general": {
+                "mainMenuItemGeneral": "钱包充值"
+            },
+            "list": {
+                "columnAmount": "金额",
+                "columnChannel": "充值渠道",
+                "columnCreatedAt": "创建时间",
+                "columnCreditedAt": "入账时间",
+                "columnCustomer": "客户",
+                "columnPaidAt": "支付时间",
+                "columnPaymentNo": "充值单号",
+                "columnState": "状态",
+                "emptyHeadline": "还没有充值单",
+                "emptySubline": "充值流水由前台充值产生，客户发起充值后会显示在这里。",
+                "noResultSubline": "当前搜索或筛选没有匹配的记录，请调整条件后重试。",
+                "noResultTitle": "没有符合条件的充值单",
+                "placeholderSearchBar": "搜索客户姓名、客户编号或充值单号...",
+                "title": "钱包充值",
+                "titleSidebarItemRefresh": "刷新列表"
+            },
+            "state": {
+                "credited": "已入账",
+                "failed": "失败",
+                "open": "待支付",
+                "paid": "已支付"
+            }
+        }
+    },
+    "sw-privileges": {
+        "permissions": {
+            "payment_transfer": {
+                "label": "转账申请"
+            },
+            "wallet": {
+                "label": "客户钱包"
+            }
+        }
+    }
+}

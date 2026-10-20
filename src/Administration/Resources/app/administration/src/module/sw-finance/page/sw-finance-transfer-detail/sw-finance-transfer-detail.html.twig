@@ -1,0 +1,327 @@
+{% block sw_finance_transfer_detail %}
+<sw-page class="sw-finance-transfer-detail">
+
+    {% block sw_finance_transfer_detail_smart_bar_header %}
+    <template #smart-bar-header>
+        {% block sw_finance_transfer_detail_smart_bar_header_title %}
+        <h2>
+            {% block sw_finance_transfer_detail_smart_bar_header_breadcrumb %}
+            <mt-link
+                class="sw-finance-transfer-detail__breadcrumb"
+                :to="{ name: 'sw.finance.transfer' }"
+            >
+                {{ $t('sw-finance.transfer.list.title') }}
+            </mt-link>
+
+            <mt-icon
+                name="regular-chevron-right-xs"
+                size="12px"
+            />
+
+            <span>{{ transfer ? transfer.transferNo : $t('sw-finance.transfer.detail.title') }}</span>
+            {% endblock %}
+
+            {% block sw_finance_transfer_detail_smart_bar_header_state %}
+            <mt-badge
+                v-if="transfer && transfer.statusId"
+                :variant="transferStateVariant(transfer.statusId)"
+            >
+                {{ transferStateLabel(transfer.statusId) }}
+            </mt-badge>
+            {% endblock %}
+        </h2>
+        {% endblock %}
+    </template>
+    {% endblock %}
+
+    <template #smart-bar-actions>
+        {% block sw_finance_transfer_detail_smart_bar_actions_cancel %}
+        {#
+        The same two actions as in the list, with the same privilege and the same confirmation: a
+        detail page must not become a shortcut that skips the checkbox.
+        #}
+        <mt-button
+            v-if="canDecide"
+            class="sw-finance-transfer-detail__button-reject"
+            variant="secondary"
+            size="default"
+            @click="onReject"
+        >
+            {{ $t('sw-finance.transfer.actions.cancel') }}
+        </mt-button>
+        {% endblock %}
+
+        {% block sw_finance_transfer_detail_smart_bar_actions_submit %}
+        <mt-button
+            v-if="canDecide"
+            class="sw-finance-transfer-detail__button-submit"
+            variant="primary"
+            size="default"
+            @click="onApprove"
+        >
+            {{ $t('sw-finance.transfer.actions.submit') }}
+        </mt-button>
+        {% endblock %}
+
+        {% block sw_finance_transfer_detail_smart_bar_actions_refresh %}
+        <mt-button
+            v-tooltip.bottom="$t('sw-finance.transfer.detail.buttonRefresh')"
+            variant="secondary"
+            size="default"
+            :disabled="!transfer || undefined"
+            @click="onRefresh"
+        >
+            {{ $t('sw-finance.transfer.detail.buttonRefresh') }}
+        </mt-button>
+        {% endblock %}
+    </template>
+
+    {% block sw_finance_transfer_detail_content %}
+    <template #content>
+        <sw-card-view class="sw-finance-transfer-detail__content">
+            {% block sw_finance_transfer_detail_loading %}
+            <mt-card
+                v-if="!transfer && isLoading"
+                position-identifier="sw-finance-transfer-detail-loading"
+                :is-loading="true"
+            >
+                <div class="sw-finance-transfer-detail__loading-placeholder"></div>
+            </mt-card>
+            {% endblock %}
+
+            {% block sw_finance_transfer_detail_not_found %}
+            <mt-empty-state
+                v-else-if="!transfer"
+                centered
+                icon="regular-money-bill"
+                :headline="$t('sw-finance.transfer.list.messageNoResult')"
+                :description="$t('sw-finance.transfer.list.messageNoResultSubline')"
+            >
+                <template #button>
+                    <mt-button
+                        variant="primary"
+                        @click="$router.push({ name: 'sw.finance.transfer' })"
+                    >
+                        {{ $t('sw-finance.transfer.list.title') }}
+                    </mt-button>
+                </template>
+            </mt-empty-state>
+            {% endblock %}
+
+            <template v-else>
+                {% block sw_finance_transfer_detail_general_card %}
+                <mt-card
+                    position-identifier="sw-finance-transfer-detail-general"
+                    :title="$t('sw-finance.transfer.detail.cardGeneralTitle')"
+                >
+                    <sw-description-list grid="1fr 2fr">
+                        <dt>{{ $t('sw-finance.transfer.detail.labelTransferNo') }}</dt>
+                        <dd>{{ transfer.transferNo }}</dd>
+
+                        <dt>{{ $t('sw-finance.transfer.detail.labelOutNo') }}</dt>
+                        <dd class="sw-finance-transfer-detail__mono">
+                            {{ transfer.outNo }}
+                        </dd>
+
+                        <dt>{{ $t('sw-finance.transfer.detail.labelPaymentApp') }}</dt>
+                        <dd>{{ paymentAppLabel }}</dd>
+
+                        <dt>{{ $t('sw-finance.transfer.detail.labelProvider') }}</dt>
+                        <dd>{{ providerLabel }}</dd>
+
+                        <dt>{{ $t('sw-finance.transfer.detail.labelChannel') }}</dt>
+                        <dd>{{ transfer.channel }}</dd>
+
+                        <dt>{{ $t('sw-finance.transfer.detail.labelAmount') }}</dt>
+                        <dd>{{ formatAmount(transfer.amount, transfer.currency) }}</dd>
+
+                        <dt>{{ $t('sw-finance.transfer.detail.labelCurrency') }}</dt>
+                        <dd>{{ transfer.currency }}</dd>
+
+                        <dt>{{ $t('sw-finance.transfer.detail.labelSubmitAttempts') }}</dt>
+                        <dd>{{ transfer.submitAttempts }}</dd>
+                    </sw-description-list>
+                </mt-card>
+                {% endblock %}
+
+                {% block sw_finance_transfer_detail_recipient_card %}
+                <mt-card
+                    v-if="transfer.recipient"
+                    position-identifier="sw-finance-transfer-detail-recipient"
+                    :title="$t('sw-finance.transfer.detail.cardRecipientTitle')"
+                >
+                    {#
+                    SECURITY: the identity of a recipient is a credential. This page therefore shows
+                    the identity type and the account id the channel knows - never `identityValue`,
+                    not even the ciphertext.
+                    #}
+                    <sw-description-list grid="1fr 2fr">
+                        <dt>{{ $t('sw-finance.transfer.detail.labelRecipientName') }}</dt>
+                        <dd>{{ transfer.recipient.holderName || '–' }}</dd>
+
+                        <dt>{{ $t('sw-finance.transfer.detail.labelIdentityType') }}</dt>
+                        <dd>{{ transfer.recipient.identityType }}</dd>
+
+                        <dt>{{ $t('sw-finance.transfer.detail.labelProviderAccountId') }}</dt>
+                        <dd class="sw-finance-transfer-detail__mono">
+                            {{ transfer.recipient.providerAccountId || '–' }}
+                        </dd>
+
+                        <dt>{{ $t('sw-finance.transfer.detail.labelOnboardingStatus') }}</dt>
+                        <dd>{{ transfer.recipient.onboardingStatus }}</dd>
+
+                        <dt>{{ $t('sw-finance.transfer.detail.labelPayoutEnabled') }}</dt>
+                        <dd>{{ transfer.recipient.payoutEnabled ? $t('global.default.yes') : $t('global.default.no') }}</dd>
+
+                        <dt>{{ $t('sw-finance.transfer.detail.labelVerifiedAt') }}</dt>
+                        <dd>{{ formatDateOrDash(transfer.recipient.verifiedAt) }}</dd>
+                    </sw-description-list>
+                </mt-card>
+                {% endblock %}
+
+                {% block sw_finance_transfer_detail_note_card %}
+                <mt-card
+                    v-if="note"
+                    position-identifier="sw-finance-transfer-detail-note"
+                    :title="$t('sw-finance.transfer.detail.cardNoteTitle')"
+                >
+                    <p class="sw-finance-transfer-detail__note">
+                        {{ note }}
+                    </p>
+                </mt-card>
+                {% endblock %}
+
+                {% block sw_finance_transfer_detail_timeline_card %}
+                <mt-card
+                    position-identifier="sw-finance-transfer-detail-timeline"
+                    :title="$t('sw-finance.transfer.detail.cardTimelineTitle')"
+                >
+                    <sw-description-list grid="1fr 2fr">
+                        <dt>{{ $t('sw-finance.transfer.detail.labelCreatedAt') }}</dt>
+                        <dd>{{ formatDateOrDash(transfer.createdAt) }}</dd>
+
+                        <dt>{{ $t('sw-finance.transfer.detail.labelSubmittedAt') }}</dt>
+                        <dd>{{ formatDateOrDash(transfer.submittedAt) }}</dd>
+
+                        <dt>{{ $t('sw-finance.transfer.detail.labelSettledAt') }}</dt>
+                        <dd>{{ formatDateOrDash(transfer.settledAt) }}</dd>
+
+                        <dt>{{ $t('sw-finance.transfer.detail.labelReturnedAt') }}</dt>
+                        <dd>{{ formatDateOrDash(transfer.returnedAt) }}</dd>
+
+                        <dt>{{ $t('sw-finance.transfer.detail.labelCanceledAt') }}</dt>
+                        <dd>{{ formatDateOrDash(transfer.canceledAt) }}</dd>
+
+                        <dt>{{ $t('sw-finance.transfer.detail.labelExpireAt') }}</dt>
+                        <dd>{{ formatDateOrDash(transfer.expireAt) }}</dd>
+                    </sw-description-list>
+                </mt-card>
+                {% endblock %}
+
+                {% block sw_finance_transfer_detail_channel_ref_card %}
+                <mt-card
+                    position-identifier="sw-finance-transfer-detail-channel-ref"
+                    :title="$t('sw-finance.transfer.detail.cardChannelRefTitle')"
+                >
+                    <sw-description-list grid="1fr 2fr">
+                        <dt>{{ $t('sw-finance.transfer.detail.labelProviderRef') }}</dt>
+                        <dd>{{ transfer.providerRef || '–' }}</dd>
+
+                        <template v-if="transfer.providerStageRef">
+                            <dt>{{ $t('sw-finance.transfer.detail.labelProviderStageRef') }}</dt>
+                            <dd>{{ transfer.providerStageRef }}</dd>
+                        </template>
+                    </sw-description-list>
+                </mt-card>
+                {% endblock %}
+
+                {% block sw_finance_transfer_detail_reject_card %}
+                <mt-card
+                    v-if="rejectReason"
+                    position-identifier="sw-finance-transfer-detail-reject"
+                    :title="$t('sw-finance.transfer.detail.labelRejectReason')"
+                >
+                    <p class="sw-finance-transfer-detail__note">
+                        {{ rejectReason }}
+                    </p>
+                </mt-card>
+                {% endblock %}
+
+                {% block sw_finance_transfer_detail_failure_card %}
+                <mt-card
+                    v-if="hasFailure"
+                    position-identifier="sw-finance-transfer-detail-failure"
+                    :title="$t('sw-finance.transfer.detail.cardFailureTitle')"
+                >
+                    {#
+                    The failure code and reason are the raw answer of the channel. They are shown as
+                    they were received and are never translated - a translated error code can not be
+                    searched for in the documentation of the provider.
+                    #}
+                    <sw-description-list grid="1fr 2fr">
+                        <dt>{{ $t('sw-finance.transfer.detail.labelFailureCode') }}</dt>
+                        <dd class="sw-finance-transfer-detail__mono">
+                            {{ transfer.failureCode || '–' }}
+                        </dd>
+
+                        <dt>{{ $t('sw-finance.transfer.detail.labelFailureReason') }}</dt>
+                        <dd>{{ transfer.failureReason || '–' }}</dd>
+                    </sw-description-list>
+                </mt-card>
+                {% endblock %}
+
+                {% block sw_finance_transfer_detail_confirmation_card %}
+                <mt-card
+                    v-if="isAwaitingUserConfirm"
+                    position-identifier="sw-finance-transfer-detail-confirmation"
+                    :title="$t('sw-finance.transfer.detail.cardConfirmationTitle')"
+                >
+                    {#
+                    SECURITY: the confirmation payload holds the single use value of a wechat transfer.
+                    Whoever knows it can claim the money. This card therefore only reports whether the
+                    payload exists - never render its content, not even in a collapsed debug panel.
+                    #}
+                    <sw-description-list grid="1fr 2fr">
+                        <dt>{{ $t('sw-finance.transfer.detail.labelConfirmation') }}</dt>
+                        <dd>
+                            {{ hasConfirmPayload ? $t('sw-finance.transfer.detail.valueConfirmationGenerated') : $t('sw-finance.transfer.detail.valueConfirmationMissing') }}
+                        </dd>
+                    </sw-description-list>
+                </mt-card>
+                {% endblock %}
+
+                {% block sw_finance_transfer_detail_metadata_card %}
+                <mt-card
+                    position-identifier="sw-finance-transfer-detail-metadata"
+                    :title="$t('sw-finance.transfer.detail.cardMetadataTitle')"
+                >
+                    {#
+                    channelParams is api:false and never part of an admin response, so it is not read
+                    here on purpose.
+                    #}
+                    <pre class="sw-finance-transfer-detail__payload">{{ metadataJson || $t('sw-finance.transfer.detail.messageNoMetadata') }}</pre>
+                </mt-card>
+                {% endblock %}
+            </template>
+        </sw-card-view>
+    </template>
+    {% endblock %}
+
+    {% block sw_finance_transfer_detail_modals %}
+    <sw-finance-transfer-approve-modal
+        v-if="showApproveModal && transfer"
+        :transfer="transfer"
+        @transfer-decided="onTransferDecided"
+        @modal-close="onCloseApproveModal"
+    />
+
+    <sw-finance-transfer-reject-modal
+        v-if="showRejectModal && transfer"
+        :transfer="transfer"
+        @transfer-decided="onTransferDecided"
+        @modal-close="onCloseRejectModal"
+    />
+    {% endblock %}
+
+</sw-page>
+{% endblock %}
