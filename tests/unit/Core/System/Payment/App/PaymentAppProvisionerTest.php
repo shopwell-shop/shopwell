@@ -335,25 +335,29 @@ class PaymentAppProvisionerTest extends TestCase
     }
 
     /**
-     * The tenant of the platform is seeded by the migration and its secret is the one the platform
-     * signs its own notifications with - naming its id must not be enough to rewrite it.
+     * The tenant of the platform is the account the shop itself collects through, so the merchant has
+     * to be able to configure it - the write is not refused. Its technical name is not part of that
+     * configuration: the migration and the seeded rows refer to the app by that name, so the stored
+     * one wins over whatever the payload calls it.
      */
-    public function testSavingThePlatformTenantIsRejected(): void
+    public function testSavingThePlatformTenantKeepsItsStoredTechnicalName(): void
     {
         $platform = $this->platformTenant();
 
         $appRepository = static::createMock(EntityRepository::class);
         $appRepository->method('search')->willReturn($this->appResult($platform));
-        $appRepository->expects($this->never())->method('upsert');
-
-        $this->expectExceptionObject(PaymentException::platformTenantReadOnly(PaymentAppEntity::PLATFORM_TECHNICAL_NAME));
+        $appRepository->expects($this->once())
+            ->method('upsert')
+            ->with(static::callback(
+                static fn (array $write): bool => ($write[0]['technicalName'] ?? null) === PaymentAppEntity::PLATFORM_TECHNICAL_NAME
+                    && ($write[0]['name'] ?? null) === 'Renamed'
+            ));
 
         $this->provisioner($appRepository)->save(new PaymentAppDto(
             id: $platform->id,
-            technicalName: PaymentAppEntity::PLATFORM_TECHNICAL_NAME,
+            technicalName: 'renamed-platform',
             name: 'Renamed',
-            active: false,
-            notifyUrl: 'https://evil.example.com/notify',
+            active: true,
         ));
     }
 
@@ -365,7 +369,7 @@ class PaymentAppProvisionerTest extends TestCase
         $appRepository->method('search')->willReturn($this->appResult($platform));
         $appRepository->expects($this->never())->method('delete');
 
-        $this->expectExceptionObject(PaymentException::platformTenantReadOnly(PaymentAppEntity::PLATFORM_TECHNICAL_NAME));
+        $this->expectExceptionObject(PaymentException::platformTenantNotDeletable(PaymentAppEntity::PLATFORM_TECHNICAL_NAME));
 
         $this->provisioner($appRepository)->delete($platform->id, Context::createDefaultContext());
     }

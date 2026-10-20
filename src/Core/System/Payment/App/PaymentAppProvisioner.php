@@ -88,14 +88,15 @@ final class PaymentAppProvisioner
         $id = $dto->id !== null && $dto->id !== '' ? $dto->id : null;
         $app = $id === null ? null : $this->loadApp($id);
 
-        // being able to name the row is not being allowed to write it: the tenant of the platform is
-        // seeded by the migration and its secret is the one the platform signs its own notifications
-        // with, so it is refused here - the one place every write goes through
-        $this->assertWritable($app);
+        // the tenant of the platform is editable - it is the account the shop itself collects
+        // through, and the merchant has to be able to authorize interfaces on it and switch channels
+        // on. What it cannot be is renamed: its technical name is what the seeded configuration and
+        // the migration refer to, so the stored one wins over the payload.
+        $isPlatformTenant = $app !== null && $app->type === PaymentAppEntity::TYPE_PLATFORM;
 
         $write = [
             'id' => $app->id ?? Uuid::randomHex(),
-            'technicalName' => trim($dto->technicalName),
+            'technicalName' => $isPlatformTenant ? $app->technicalName : trim($dto->technicalName),
             'name' => $dto->name,
             'active' => $dto->active,
             'notifyUrl' => $this->nullableString($dto->notifyUrl),
@@ -163,25 +164,26 @@ final class PaymentAppProvisioner
     {
         $app = $this->loadApp($id);
 
-        $this->assertWritable($app);
+        $this->assertDeletable($app);
 
         $this->appRepository->delete([['id' => $id]], $context);
     }
 
     /**
-     * The tenant of the platform is seeded by the migration and cannot be written through the app
-     * endpoint at all - not its name, not its notify url, not its secret and not its state. It is
-     * listed for the merchant's sake, but every other operation on it is refused.
+     * The tenant of the platform cannot be deleted: the shop would lose the account it attributes its
+     * own payments to, and every platform payment would lose its bookkeeping. Editing it is a
+     * different matter - the merchant configures the interfaces and channels of the shop on it - so
+     * this guard is only asked before a delete.
      *
      * @throws PaymentException
      */
-    private function assertWritable(?PaymentAppEntity $app): void
+    private function assertDeletable(?PaymentAppEntity $app): void
     {
         if ($app === null || $app->type !== PaymentAppEntity::TYPE_PLATFORM) {
             return;
         }
 
-        throw PaymentException::platformTenantReadOnly($app->technicalName);
+        throw PaymentException::platformTenantNotDeletable($app->technicalName);
     }
 
     /**
