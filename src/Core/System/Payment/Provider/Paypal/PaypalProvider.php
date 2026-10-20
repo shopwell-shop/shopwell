@@ -139,6 +139,7 @@ final class PaypalProvider extends AbstractPaymentProvider
                 type: PaymentConfigField::TYPE_SELECT,
                 options: ['sandbox' => 'sandbox', 'live' => 'live'],
                 default: 'sandbox',
+                helpText: '默认 sandbox，走 PayPal 的沙箱环境。上线前改成 live。',
             ),
             new PaymentConfigField(
                 name: 'webhook_id',

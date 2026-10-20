@@ -81,13 +81,19 @@ class AlipayProviderTest extends TestCase
 
         static::assertTrue($fields[0]->required);
         static::assertSame('bool', $fields[1]->type);
-        static::assertSame('0', $fields[1]->default);
+        // the sandbox is the default: the seeded account is a sandbox one
+        static::assertSame('1', $fields[1]->default);
         static::assertTrue($fields[2]->required);
         static::assertTrue($fields[2]->secret, 'The private key must never be echoed back.');
         static::assertSame('textarea', $fields[2]->type);
         static::assertSame(['RSA2' => 'RSA2'], $fields[4]->options);
         static::assertSame('RSA2', $fields[4]->default);
         static::assertSame(AlipayProvider::DEFAULT_GATEWAY_URL, $fields[5]->default);
+
+        // the page has to say which half of the pair is which: the app public key is uploaded to
+        // alipay and never pasted into the shop, the private key is the one that signs
+        static::assertStringContainsString('应用公钥', (string) $fields[2]->helpText);
+        static::assertStringContainsString('不是你的应用公钥', (string) $fields[3]->helpText);
     }
 
     public function testDeclaresTheFiveChannelsOfTheInterface(): void

@@ -146,7 +146,8 @@ final class AlipayProvider extends AbstractPaymentProvider
                 name: 'sandbox',
                 label: '沙箱模式',
                 type: PaymentConfigField::TYPE_BOOL,
-                default: '0',
+                default: '1',
+                helpText: '默认开启，走沙箱网关。上线前关闭并使用正式网关。',
             ),
             new PaymentConfigField(
                 name: 'private_key',
@@ -154,12 +155,14 @@ final class AlipayProvider extends AbstractPaymentProvider
                 type: PaymentConfigField::TYPE_TEXTAREA,
                 required: true,
                 secret: true,
+                helpText: '签名用的那一半。在开放平台「开发设置 → 接口加签方式」里生成，与应用公钥成对；应用公钥只上传给支付宝，不要填在这里。',
             ),
             new PaymentConfigField(
                 name: 'alipay_public_key',
                 label: '支付宝公钥',
                 type: PaymentConfigField::TYPE_TEXTAREA,
                 required: true,
+                helpText: '验签用的那一半，是同一页面里「支付宝公钥」那一栏的值，不是你的应用公钥。',
             ),
             new PaymentConfigField(
                 name: 'sign_type',
