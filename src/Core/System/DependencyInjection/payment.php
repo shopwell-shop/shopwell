@@ -4,6 +4,7 @@ namespace Shopwell\Core\System\DependencyInjection;
 
 use Psr\Clock\ClockInterface;
 use Shopwell\Core\Checkout\Payment\Aggregate\PaymentMethodGatewayChannel\PaymentMethodGatewayChannelEntity;
+use Shopwell\Core\Content\Media\MediaService;
 use Shopwell\Core\System\Payment\Api\NotifyController;
 use Shopwell\Core\System\Payment\Api\PaymentApiRouteScope;
 use Shopwell\Core\System\Payment\Api\PaymentChannelController;
@@ -22,6 +23,7 @@ use Shopwell\Core\System\Payment\App\PaymentSignatureService;
 use Shopwell\Core\System\Payment\Command\PaymentProvidersPruneCommand;
 use Shopwell\Core\System\Payment\Command\PaymentProvidersValidateCommand;
 use Shopwell\Core\System\Payment\Gateway\PaymentCloser;
+use Shopwell\Core\System\Payment\Install\PaymentMethodIconInstaller;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationEntity;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationProcessor;
 use Shopwell\Core\System\Payment\Notification\PaymentNotifyUrlBuilder;
@@ -277,6 +279,20 @@ return static function (ContainerConfigurator $container): void {
             service('payment_app_channel.repository'),
         ])
         ->tag('console.command');
+
+    // ---- the pictures of the methods the gateway seeds ----
+    // The icons are uploaded through the media service when the installation completes, not written
+    // to a path of our own: the service decides where a file ends up and files it in the folder of the
+    // payment methods, which is also where a picture a merchant uploads for a method of their own
+    // lands. A shop that installs gets the icons the same way a shop that uploads them does.
+    $services->set(PaymentMethodIconInstaller::class)
+        ->args([
+            service(MediaService::class),
+            service('payment_method.repository'),
+            service('media.repository'),
+            service('logger'),
+        ])
+        ->tag('kernel.event_listener');
 
     // ---- the resolution of one payment ----
     $services->set(PaymentConfigResolver::class)
