@@ -720,17 +720,17 @@ class PaymentException extends HttpException
     }
 
     /**
-     * The tenant the platform itself collects through is seeded, not onboarded: its secret is the
-     * one the platform signs its own notifications with. Editing or deleting it through the app
-     * endpoint would either lock the platform out of its own payment api or leave the shop without
-     * a tenant to attribute platform payments to.
+     * The tenant the platform itself collects through is seeded, not onboarded, and it cannot be
+     * deleted: the shop would be left without a tenant to attribute platform payments to, and every
+     * platform payment would lose its bookkeeping. It stays editable, because the merchant configures
+     * the interfaces and channels of the shop on it.
      */
-    public static function platformTenantReadOnly(string $technicalName): self
+    public static function platformTenantNotDeletable(string $technicalName): self
     {
         return new self(
             Response::HTTP_BAD_REQUEST,
             self::PLATFORM_TENANT_READ_ONLY,
-            'The payment app "{{ technicalName }}" is the tenant of the platform and cannot be changed or deleted here.',
+            'The payment app "{{ technicalName }}" is the tenant of the platform and cannot be deleted here.',
             ['technicalName' => $technicalName]
         );
     }
