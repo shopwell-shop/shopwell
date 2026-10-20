@@ -13,7 +13,6 @@ use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\System\SystemConfig\SystemConfigService;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 /**
@@ -37,8 +36,6 @@ class LoyaltyPointService
 
     final public const TRANSACTION_TYPE_EXPIRE = 'expire';
 
-    final public const CONFIG_KEY_POINTS_VALIDITY_DAYS = 'core.loyalty.pointsValidityDays';
-
     /**
      * @internal
      *
@@ -47,7 +44,7 @@ class LoyaltyPointService
     public function __construct(
         private readonly EntityRepository $customerLoyaltyRepository,
         private readonly LoyaltyLedger $ledger,
-        private readonly SystemConfigService $systemConfigService,
+        private readonly LoyaltySettings $settings,
         private readonly EventDispatcherInterface $eventDispatcher,
         private readonly ClockInterface $clock,
         private readonly TierResolver $tierResolver
@@ -176,7 +173,7 @@ class LoyaltyPointService
 
     private function resolveExpiresAt(): ?\DateTimeInterface
     {
-        $validityDays = $this->systemConfigService->getInt(self::CONFIG_KEY_POINTS_VALIDITY_DAYS);
+        $validityDays = $this->settings->pointsValidityDays();
 
         if ($validityDays <= 0) {
             return null;

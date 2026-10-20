@@ -10,10 +10,10 @@ use Shopwell\Core\Checkout\Cart\LineItem\LineItem;
 use Shopwell\Core\Checkout\Cart\Price\AbsolutePriceCalculator;
 use Shopwell\Core\Checkout\Cart\Price\Struct\AbsolutePriceDefinition;
 use Shopwell\Core\Checkout\Wallet\Service\WalletService;
+use Shopwell\Core\Checkout\Wallet\Service\WalletSettings;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Struct\ArrayStruct;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
-use Shopwell\Core\System\SystemConfig\SystemConfigService;
 
 /**
  * Materialises the wallet payment requested through the `wallet-payment` cart extension into a server side
@@ -29,14 +29,12 @@ class WalletCartProcessor implements CartProcessorInterface
 
     final public const LINE_ITEM_ID = 'wallet-payment';
 
-    final public const CONFIG_KEY_MAX_PAYMENT_PERCENT = 'core.wallet.maxPaymentPercent';
-
     /**
      * @internal
      */
     public function __construct(
         private readonly AbsolutePriceCalculator $calculator,
-        private readonly SystemConfigService $systemConfigService,
+        private readonly WalletSettings $settings,
         private readonly WalletService $walletService
     ) {
     }
@@ -52,7 +50,7 @@ class WalletCartProcessor implements CartProcessorInterface
 
         $customer = $context->getCustomer();
 
-        if ($requested <= 0.0 || $customer === null) {
+        if ($requested <= 0.0 || $customer === null || !$this->settings->isEnabled($context->getSalesChannelId())) {
             $toCalculate->getLineItems()->remove(self::LINE_ITEM_ID);
 
             return;
@@ -60,7 +58,7 @@ class WalletCartProcessor implements CartProcessorInterface
 
         $currencyId = $context->getCurrency()->getId();
         $balance = $this->walletService->getBalance($customer->getId(), $currencyId, $context->getContext());
-        $maxPercent = $this->systemConfigService->getFloat(self::CONFIG_KEY_MAX_PAYMENT_PERCENT);
+        $maxPercent = $this->settings->maxPaymentPercent($context->getSalesChannelId());
 
         $available = $this->goodsTotal($toCalculate) - $this->otherCreditAmount($toCalculate);
         $amount = min($requested, $balance, max(0.0, $available) * $maxPercent / 100.0);

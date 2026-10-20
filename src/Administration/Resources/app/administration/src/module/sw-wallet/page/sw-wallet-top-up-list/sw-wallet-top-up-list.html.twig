@@ -5,7 +5,7 @@
     <template #search-bar>
         <sw-search-bar
             :initial-search="term"
-            :placeholder="$t('sw-loyalty.topUp.list.placeholderSearchBar')"
+            :placeholder="$t('sw-wallet.topUp.list.placeholderSearchBar')"
             @search="onSearch"
         />
     </template>
@@ -19,7 +19,7 @@
                 name="regular-chevron-right-xs"
                 size="12px"
             />
-            {{ $t('sw-loyalty.topUp.general.mainMenuItemGeneral') }}
+            {{ $t('sw-wallet.topUp.general.mainMenuItemGeneral') }}
 
             <span
                 v-if="!isLoading && total"
@@ -43,7 +43,7 @@
             {% block sw_wallet_top_up_list_card %}
             <mt-card
                 position-identifier="sw-wallet-top-up-list"
-                :title="$t('sw-loyalty.topUp.list.cardTitle')"
+                :title="$t('sw-wallet.topUp.list.cardTitle')"
                 :is-loading="isLoading"
             >
                 {% block sw_wallet_top_up_list_filter %}
@@ -52,7 +52,7 @@
                         v-model="stateFilter"
                         class="sw-wallet-top-up-list__state-filter"
                         :options="stateFilterOptions"
-                        :label="$t('sw-loyalty.topUp.list.labelFilterState')"
+                        :label="$t('sw-wallet.topUp.list.labelFilterState')"
                         size="small"
                         @update:model-value="onFilterChange"
                     />
@@ -122,7 +122,7 @@
                     v-else-if="!isLoading"
                     centered
                     icon="regular-money-transfer"
-                    :headline="$t('sw-loyalty.topUp.list.emptyStateHeadline')"
+                    :headline="$t('sw-wallet.topUp.list.emptyStateHeadline')"
                 />
                 {% endblock %}
                 {% endblock %}

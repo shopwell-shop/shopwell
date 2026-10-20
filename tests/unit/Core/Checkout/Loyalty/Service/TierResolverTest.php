@@ -12,6 +12,7 @@ use Shopwell\Core\Checkout\Loyalty\Entity\CustomerLoyalty\CustomerLoyaltyEntity;
 use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyTier\LoyaltyTierCollection;
 use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyTier\LoyaltyTierEntity;
 use Shopwell\Core\Checkout\Loyalty\Event\LoyaltyTierChangedEvent;
+use Shopwell\Core\Checkout\Loyalty\Service\LoyaltySettings;
 use Shopwell\Core\Checkout\Loyalty\Service\TierResolver;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\Log\Package;
@@ -73,7 +74,7 @@ class TierResolverTest extends TestCase
             $this->tierRepository,
             $this->customerLoyaltyRepository,
             $this->customerRepository,
-            $this->systemConfigService,
+            new LoyaltySettings($this->systemConfigService),
             $this->eventDispatcher,
             $this->clock,
         );
@@ -197,7 +198,7 @@ class TierResolverTest extends TestCase
 
     public function testResolveSyncsCustomerGroupWhenConfigured(): void
     {
-        $this->systemConfigService->set(TierResolver::CONFIG_KEY_TIER_AUTO_GROUP_SYNC, true);
+        $this->systemConfigService->set(LoyaltySettings::CONFIG_KEY_TIER_AUTO_GROUP_SYNC, true);
 
         $this->customerLoyaltyRepository->addSearch(new CustomerLoyaltyCollection([$this->createLoyalty(null)]));
         $this->tierRepository->addSearch(new LoyaltyTierCollection([
@@ -224,7 +225,7 @@ class TierResolverTest extends TestCase
 
     public function testResolveDoesNotSyncCustomerGroupWhenTierHasNone(): void
     {
-        $this->systemConfigService->set(TierResolver::CONFIG_KEY_TIER_AUTO_GROUP_SYNC, true);
+        $this->systemConfigService->set(LoyaltySettings::CONFIG_KEY_TIER_AUTO_GROUP_SYNC, true);
 
         $this->customerLoyaltyRepository->addSearch(new CustomerLoyaltyCollection([$this->createLoyalty(null)]));
         $this->tierRepository->addSearch(new LoyaltyTierCollection([

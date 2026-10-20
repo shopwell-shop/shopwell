@@ -5,6 +5,7 @@ namespace Shopwell\Core\Checkout\Loyalty\Subscriber;
 use Shopwell\Core\Checkout\Cart\LineItem\LineItem;
 use Shopwell\Core\Checkout\Loyalty\Cart\LoyaltyPointCartProcessor;
 use Shopwell\Core\Checkout\Loyalty\Service\LoyaltyPointService;
+use Shopwell\Core\Checkout\Loyalty\Service\LoyaltySettings;
 use Shopwell\Core\Checkout\Loyalty\Service\TierResolver;
 use Shopwell\Core\Checkout\Order\OrderCollection;
 use Shopwell\Core\Checkout\Order\OrderEntity;
@@ -15,7 +16,6 @@ use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\StateMachine\Event\StateMachineTransitionEvent;
-use Shopwell\Core\System\SystemConfig\SystemConfigService;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 /**
@@ -24,10 +24,6 @@ use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 #[Package('checkout')]
 class OrderStateChangeLoyaltySubscriber implements EventSubscriberInterface
 {
-    final public const CONFIG_KEY_POINTS_PER_CURRENCY_UNIT = 'core.loyalty.pointsPerCurrencyUnit';
-
-    final public const CONFIG_KEY_GROWTH_PER_CURRENCY_UNIT = 'core.loyalty.growthPerCurrencyUnit';
-
     /**
      * @param EntityRepository<OrderCollection> $orderRepository
      */
@@ -35,7 +31,7 @@ class OrderStateChangeLoyaltySubscriber implements EventSubscriberInterface
         private readonly EntityRepository $orderRepository,
         private readonly LoyaltyPointService $loyaltyPointService,
         private readonly TierResolver $tierResolver,
-        private readonly SystemConfigService $systemConfigService,
+        private readonly LoyaltySettings $settings,
     ) {
     }
 
@@ -103,10 +99,16 @@ class OrderStateChangeLoyaltySubscriber implements EventSubscriberInterface
 
     private function awardPoints(string $customerId, OrderEntity $order, Context $context): void
     {
+        $salesChannelId = $order->getSalesChannelId();
+
+        if (!$this->settings->isEnabled($salesChannelId)) {
+            return;
+        }
+
         $amountTotal = $order->getAmountTotal();
 
-        $pointsPerUnit = $this->systemConfigService->getInt(self::CONFIG_KEY_POINTS_PER_CURRENCY_UNIT);
-        $growthPerUnit = $this->systemConfigService->getInt(self::CONFIG_KEY_GROWTH_PER_CURRENCY_UNIT);
+        $pointsPerUnit = $this->settings->pointsPerCurrencyUnit($salesChannelId);
+        $growthPerUnit = $this->settings->growthPerCurrencyUnit($salesChannelId);
         $multiplier = $this->tierResolver->getPointsMultiplier($customerId, $context);
 
         $points = (int) floor($amountTotal * $pointsPerUnit * $multiplier);

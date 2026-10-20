@@ -87,34 +87,34 @@ export default defineComponent({
             return [
                 {
                     property: 'customer',
-                    label: 'sw-loyalty.topUp.list.columnCustomer',
+                    label: 'sw-wallet.topUp.list.columnCustomer',
                 },
                 {
                     property: 'amount',
-                    label: 'sw-loyalty.topUp.list.columnAmount',
+                    label: 'sw-wallet.topUp.list.columnAmount',
                 },
                 {
                     property: 'state',
-                    label: 'sw-loyalty.topUp.list.columnState',
+                    label: 'sw-wallet.topUp.list.columnState',
                 },
                 {
                     property: 'channelTechnicalName',
-                    label: 'sw-loyalty.topUp.list.columnChannel',
+                    label: 'sw-wallet.topUp.list.columnChannel',
                 },
                 {
                     property: 'createdAt',
-                    label: 'sw-loyalty.topUp.list.columnCreatedAt',
+                    label: 'sw-wallet.topUp.list.columnCreatedAt',
                 },
                 {
                     property: 'creditedAt',
-                    label: 'sw-loyalty.topUp.list.columnCreditedAt',
+                    label: 'sw-wallet.topUp.list.columnCreditedAt',
                 },
             ];
         },
 
         stateFilterOptions() {
             return [
-                { value: null, label: this.$t('sw-loyalty.topUp.list.filterStateAll') },
+                { value: null, label: this.$t('sw-wallet.topUp.list.filterStateAll') },
                 ...STATES.map((state) => {
                     return { value: state, label: this.getStateLabel(state) };
                 }),
@@ -149,7 +149,7 @@ export default defineComponent({
         },
 
         getStateLabel(state: string): string {
-            return this.$t(`sw-loyalty.topUp.state.${state}`, {}, 0);
+            return this.$t(`sw-wallet.topUp.state.${state}`, {}, 0);
         },
 
         getStateVariant(state: string): string {

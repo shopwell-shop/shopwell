@@ -54,21 +54,27 @@
                             {% endblock %}
 
                             {% block page_account_sidebar_link_loyalty %}
-                                <a href="{{ path('frontend.account.loyalty.page') }}"
-                                   title="{{ 'account.loyaltyLink'|trans|striptags }}"
-                                   class="list-group-item list-group-item-action account-aside-item{% if activeRoute is same as('frontend.account.loyalty.page') %} is-active{% endif %}"
-                                   {% if activeRoute is same as('frontend.account.loyalty.page') %} aria-current="page"{% endif %}>
-                                    {{ 'account.loyaltyLink'|trans|sw_sanitize }}
-                                </a>
+                                {# an unset key means "not switched off", the same default the backend applies #}
+                                {% if config('core.loyalty.enabled') is not same as(false) %}
+                                    <a href="{{ path('frontend.account.loyalty.page') }}"
+                                       title="{{ 'account.loyaltyLink'|trans|striptags }}"
+                                       class="list-group-item list-group-item-action account-aside-item{% if activeRoute is same as('frontend.account.loyalty.page') %} is-active{% endif %}"
+                                       {% if activeRoute is same as('frontend.account.loyalty.page') %} aria-current="page"{% endif %}>
+                                        {{ 'account.loyaltyLink'|trans|sw_sanitize }}
+                                    </a>
+                                {% endif %}
                             {% endblock %}
 
                             {% block page_account_sidebar_link_wallet %}
-                                <a href="{{ path('frontend.account.wallet.page') }}"
-                                   title="{{ 'account.walletLink'|trans|striptags }}"
-                                   class="list-group-item list-group-item-action account-aside-item{% if activeRoute is same as('frontend.account.wallet.page') %} is-active{% endif %}"
-                                   {% if activeRoute is same as('frontend.account.wallet.page') %} aria-current="page"{% endif %}>
-                                    {{ 'account.walletLink'|trans|sw_sanitize }}
-                                </a>
+                                {# an unset key means "not switched off", the same default the backend applies #}
+                                {% if config('core.wallet.enabled') is not same as(false) %}
+                                    <a href="{{ path('frontend.account.wallet.page') }}"
+                                       title="{{ 'account.walletLink'|trans|striptags }}"
+                                       class="list-group-item list-group-item-action account-aside-item{% if activeRoute is same as('frontend.account.wallet.page') %} is-active{% endif %}"
+                                       {% if activeRoute is same as('frontend.account.wallet.page') %} aria-current="page"{% endif %}>
+                                        {{ 'account.walletLink'|trans|sw_sanitize }}
+                                    </a>
+                                {% endif %}
                             {% endblock %}
                         {% endblock %}
                     </nav>

@@ -15,6 +15,16 @@ class WalletException extends HttpException
     final public const WALLET_EXCEEDS_MAX_PAYMENT_CODE = 'CHECKOUT__WALLET_EXCEEDS_MAX_PAYMENT';
     final public const WALLET_TOP_UP_NOT_FOUND_CODE = 'CHECKOUT__WALLET_TOP_UP_NOT_FOUND';
     final public const WALLET_TOP_UP_ABOVE_MAXIMUM_CODE = 'CHECKOUT__WALLET_TOP_UP_ABOVE_MAXIMUM';
+    final public const WALLET_DISABLED_CODE = 'CHECKOUT__WALLET_DISABLED';
+
+    public static function walletDisabled(): self
+    {
+        return new self(
+            Response::HTTP_BAD_REQUEST,
+            self::WALLET_DISABLED_CODE,
+            'The wallet is not enabled for this sales channel.'
+        );
+    }
 
     public static function invalidAmount(float $amount): self
     {

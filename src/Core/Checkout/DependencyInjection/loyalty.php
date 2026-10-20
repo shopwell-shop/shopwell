@@ -23,6 +23,7 @@ use Shopwell\Core\Checkout\Loyalty\ScheduledTask\LoyaltyPointExpirationTask;
 use Shopwell\Core\Checkout\Loyalty\ScheduledTask\LoyaltyPointExpirationTaskHandler;
 use Shopwell\Core\Checkout\Loyalty\Service\LoyaltyLedger;
 use Shopwell\Core\Checkout\Loyalty\Service\LoyaltyPointService;
+use Shopwell\Core\Checkout\Loyalty\Service\LoyaltySettings;
 use Shopwell\Core\Checkout\Loyalty\Service\MembershipService;
 use Shopwell\Core\Checkout\Loyalty\Service\TierResolver;
 use Shopwell\Core\Checkout\Loyalty\Subscriber\LoyaltyMembershipProvisionSubscriber;
@@ -83,11 +84,16 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ])
         ->tag('kernel.event_subscriber');
 
+    $services->set(LoyaltySettings::class)
+        ->args([
+            service(SystemConfigService::class),
+        ]);
+
     $services->set(LoyaltyPointService::class)
         ->args([
             service('customer_loyalty.repository'),
             service(LoyaltyLedger::class),
-            service(SystemConfigService::class),
+            service(LoyaltySettings::class),
             service('event_dispatcher'),
             service(ClockInterface::class),
             service(TierResolver::class),
@@ -98,7 +104,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('loyalty_tier.repository'),
             service('customer_loyalty.repository'),
             service('customer.repository'),
-            service(SystemConfigService::class),
+            service(LoyaltySettings::class),
             service('event_dispatcher'),
             service(ClockInterface::class),
         ]);
@@ -114,7 +120,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('order.repository'),
             service(LoyaltyPointService::class),
             service(TierResolver::class),
-            service(SystemConfigService::class),
+            service(LoyaltySettings::class),
         ])
         ->tag('kernel.event_subscriber');
 
@@ -122,7 +128,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(LoyaltyPointCartProcessor::class)
         ->args([
             service(AbsolutePriceCalculator::class),
-            service(SystemConfigService::class),
+            service(LoyaltySettings::class),
             service(LoyaltyPointService::class),
         ])
         ->tag('shopwell.cart.processor', ['priority' => -1000]);
@@ -142,7 +148,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service('customer_loyalty.repository'),
             service('loyalty_tier.repository'),
-            service(SystemConfigService::class),
+            service(LoyaltySettings::class),
             service(MembershipService::class),
             service(ClockInterface::class),
             service(ExtensionDispatcher::class),
@@ -159,7 +165,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->public()
         ->args([
             service(LoyaltyPointService::class),
-            service(SystemConfigService::class),
+            service(LoyaltySettings::class),
             service(CartService::class),
             service(CartLocker::class),
             service(ExtensionDispatcher::class),

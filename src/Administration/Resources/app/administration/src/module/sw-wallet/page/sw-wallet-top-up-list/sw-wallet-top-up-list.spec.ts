@@ -115,7 +115,7 @@ async function createWrapper(): Promise<TypedWrapper<TopUpListVm>> {
     return wrapper as unknown as TypedWrapper<TopUpListVm>;
 }
 
-describe('src/module/sw-loyalty/page/sw-wallet-top-up-list', () => {
+describe('src/module/sw-wallet/page/sw-wallet-top-up-list', () => {
     beforeEach(() => {
         capturedCriteria = null;
         topUpRepository.search.mockClear();

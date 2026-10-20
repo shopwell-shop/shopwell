@@ -54,6 +54,7 @@ class WalletTopUpCreateRoute
             clientIp: $request->getClientIp(),
             device: $this->deviceOf($request),
             context: $context->getContext(),
+            salesChannelId: $context->getSalesChannelId(),
         );
 
         return new WalletTopUpRouteResponse(new ArrayStruct($result));

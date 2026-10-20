@@ -17,7 +17,6 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\System\Payment\Gateway\Money;
-use Shopwell\Core\System\SystemConfig\SystemConfigService;
 
 /**
  * The top-ups a customer pays online.
@@ -41,12 +40,6 @@ class WalletTopUpService
      */
     final public const ATTACH_PREFIX = 'wallet_top_up:';
 
-    final public const CONFIG_KEY_MAX_TOP_UP_AMOUNT = 'core.wallet.maxTopUpAmount';
-
-    final public const CONFIG_KEY_PRESETS = 'core.wallet.topUpPresets';
-
-    private const DEFAULT_PRESETS = '100,200,500,1000,2000';
-
     /**
      * @internal
      *
@@ -56,7 +49,7 @@ class WalletTopUpService
         private readonly EntityRepository $topUpRepository,
         private readonly WalletService $walletService,
         private readonly StorefrontPaymentService $payments,
-        private readonly SystemConfigService $systemConfigService,
+        private readonly WalletSettings $settings,
         private readonly Connection $connection,
         private readonly ClockInterface $clock,
     ) {
@@ -67,12 +60,12 @@ class WalletTopUpService
      *
      * @return array{min: float, max: float, presets: list<float>, channels: list<array<string, string>>}
      */
-    public function options(string $currency, ?string $device): array
+    public function options(string $currency, ?string $device, ?string $salesChannelId = null): array
     {
         return [
-            'min' => $this->systemConfigService->getFloat(WalletService::CONFIG_KEY_MIN_TOP_UP_AMOUNT),
-            'max' => $this->systemConfigService->getFloat(self::CONFIG_KEY_MAX_TOP_UP_AMOUNT),
-            'presets' => $this->presets(),
+            'min' => $this->settings->minTopUpAmount($salesChannelId),
+            'max' => $this->settings->maxTopUpAmount($salesChannelId),
+            'presets' => $this->settings->topUpPresets($salesChannelId),
             'channels' => $this->payments->channels($currency, $device),
         ];
     }
@@ -94,11 +87,16 @@ class WalletTopUpService
         ?string $clientIp,
         ?string $device,
         Context $context,
+        ?string $salesChannelId = null,
     ): array {
+        if (!$this->settings->isEnabled($salesChannelId)) {
+            throw WalletException::walletDisabled();
+        }
+
         $currency = strtoupper($currency);
         $amount = round($amount, Money::exponent($currency));
 
-        $this->assertAmount($amount);
+        $this->assertAmount($amount, $salesChannelId);
 
         $id = Uuid::randomHex();
 
@@ -250,30 +248,6 @@ class WalletTopUpService
     }
 
     /**
-     * Settles a top-up without waiting for a channel, for development and tests.
-     *
-     * It goes through the very settlement a real payment uses - the ledger, the idempotency and the
-     * state of the top-up are exercised, only the notification is skipped.
-     *
-     * @throws WalletException
-     *
-     * @return array<string, mixed>
-     */
-    public function simulate(string $topUpId, string $customerId, Context $context): array
-    {
-        $status = $this->status($topUpId, $customerId, $context);
-
-        $this->settle(
-            $topUpId,
-            $this->toMinor((float) $status['amount'], (string) $status['currency']),
-            'simulated-' . substr($topUpId, 0, 12),
-            $context
-        );
-
-        return $this->status($topUpId, $customerId, $context);
-    }
-
-    /**
      * @return array<string, mixed>
      */
     private function present(CustomerWalletTopUpEntity $topUp): array
@@ -322,52 +296,23 @@ class WalletTopUpService
     /**
      * @throws WalletException
      */
-    private function assertAmount(float $amount): void
+    private function assertAmount(float $amount, ?string $salesChannelId): void
     {
         if ($amount <= 0.0) {
             throw WalletException::invalidAmount($amount);
         }
 
-        $minimum = $this->systemConfigService->getFloat(WalletService::CONFIG_KEY_MIN_TOP_UP_AMOUNT);
+        $minimum = $this->settings->minTopUpAmount($salesChannelId);
 
         if ($minimum > 0.0 && $amount < $minimum) {
             throw WalletException::belowMinimumTopUp($amount, $minimum);
         }
 
-        $maximum = $this->systemConfigService->getFloat(self::CONFIG_KEY_MAX_TOP_UP_AMOUNT);
+        $maximum = $this->settings->maxTopUpAmount($salesChannelId);
 
         if ($maximum > 0.0 && $amount > $maximum) {
             throw WalletException::topUpAboveMaximum($amount, $maximum);
         }
-    }
-
-    /**
-     * @return list<float>
-     */
-    private function presets(): array
-    {
-        $configured = $this->systemConfigService->getString(self::CONFIG_KEY_PRESETS);
-
-        if (trim($configured) === '') {
-            $configured = self::DEFAULT_PRESETS;
-        }
-
-        $presets = [];
-
-        foreach (explode(',', $configured) as $value) {
-            $value = trim($value);
-
-            if ($value === '' || !is_numeric($value) || (float) $value <= 0.0) {
-                continue;
-            }
-
-            $presets[] = (float) $value;
-        }
-
-        $presets = array_values(array_unique($presets));
-        sort($presets);
-
-        return $presets;
     }
 
     private function toMinor(float $amount, string $currency): int

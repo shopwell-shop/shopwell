@@ -17,6 +17,7 @@ use Shopwell\Core\Checkout\Cart\Tax\Struct\CalculatedTaxCollection;
 use Shopwell\Core\Checkout\Cart\Tax\Struct\TaxRuleCollection;
 use Shopwell\Core\Checkout\Wallet\Cart\WalletCartProcessor;
 use Shopwell\Core\Checkout\Wallet\Service\WalletService;
+use Shopwell\Core\Checkout\Wallet\Service\WalletSettings;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Struct\ArrayStruct;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
@@ -65,6 +66,17 @@ class WalletCartProcessorTest extends TestCase
         static::assertNull($cart->getLineItems()->get(WalletCartProcessor::LINE_ITEM_ID));
     }
 
+    public function testRemovesLineItemWhenTheWalletIsDisabled(): void
+    {
+        $cart = $this->createCart(50.0);
+        $this->walletService->method('getBalance')->willReturn(1000.0);
+
+        $this->createProcessor([WalletSettings::CONFIG_KEY_ENABLED => false])
+            ->process(new CartDataCollection(), new Cart('original'), $cart, $this->createContext(), new CartBehavior());
+
+        static::assertNull($cart->getLineItems()->get(WalletCartProcessor::LINE_ITEM_ID));
+    }
+
     public function testClampsPaymentToCustomerBalance(): void
     {
         $cart = $this->createCart(1000.0);
@@ -88,7 +100,7 @@ class WalletCartProcessorTest extends TestCase
         $cart->setLineItems(new LineItemCollection([$this->createGoodsLineItem(500.0)]));
         $this->walletService->method('getBalance')->willReturn(1000.0);
 
-        $this->createProcessor([WalletCartProcessor::CONFIG_KEY_MAX_PAYMENT_PERCENT => 40.0])
+        $this->createProcessor([WalletSettings::CONFIG_KEY_MAX_PAYMENT_PERCENT => 40.0])
             ->process(new CartDataCollection(), new Cart('original'), $cart, $this->createContext(), new CartBehavior());
 
         $lineItem = $cart->getLineItems()->get(WalletCartProcessor::LINE_ITEM_ID);
@@ -174,12 +186,12 @@ class WalletCartProcessorTest extends TestCase
     private function createProcessor(array $config = []): WalletCartProcessor
     {
         $config = array_merge([
-            WalletCartProcessor::CONFIG_KEY_MAX_PAYMENT_PERCENT => 100.0,
+            WalletSettings::CONFIG_KEY_MAX_PAYMENT_PERCENT => 100.0,
         ], $config);
 
         return new WalletCartProcessor(
             $this->calculator,
-            new StaticSystemConfigService($config),
+            new WalletSettings(new StaticSystemConfigService($config)),
             $this->walletService
         );
     }

@@ -17,6 +17,7 @@ use Shopwell\Core\Checkout\Cart\Tax\Struct\CalculatedTaxCollection;
 use Shopwell\Core\Checkout\Cart\Tax\Struct\TaxRuleCollection;
 use Shopwell\Core\Checkout\Loyalty\Cart\LoyaltyPointCartProcessor;
 use Shopwell\Core\Checkout\Loyalty\Service\LoyaltyPointService;
+use Shopwell\Core\Checkout\Loyalty\Service\LoyaltySettings;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Struct\ArrayStruct;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
@@ -65,11 +66,21 @@ class LoyaltyPointCartProcessorTest extends TestCase
         static::assertNull($cart->getLineItems()->get(LoyaltyPointCartProcessor::LINE_ITEM_ID));
     }
 
+    public function testRemovesLineItemWhenTheMembershipIsDisabled(): void
+    {
+        $cart = $this->createCart(100);
+
+        $this->createProcessor([LoyaltySettings::CONFIG_KEY_ENABLED => false])
+            ->process(new CartDataCollection(), new Cart('original'), $cart, Generator::generateSalesChannelContext(), new CartBehavior());
+
+        static::assertNull($cart->getLineItems()->get(LoyaltyPointCartProcessor::LINE_ITEM_ID));
+    }
+
     public function testRemovesLineItemWhenPointValueIsNotConfigured(): void
     {
         $cart = $this->createCart(1000);
 
-        $this->createProcessor([LoyaltyPointCartProcessor::CONFIG_KEY_POINT_VALUE => 0.0])
+        $this->createProcessor([LoyaltySettings::CONFIG_KEY_POINT_VALUE_IN_CURRENCY => 0.0])
             ->process(new CartDataCollection(), new Cart('original'), $cart, $this->createContext(), new CartBehavior());
 
         static::assertNull($cart->getLineItems()->get(LoyaltyPointCartProcessor::LINE_ITEM_ID));
@@ -81,7 +92,7 @@ class LoyaltyPointCartProcessorTest extends TestCase
         $cart->setLineItems(new LineItemCollection([$this->createGoodsLineItem(1000.0)]));
         $this->loyaltyPointService->method('getBalance')->willReturn(1000);
 
-        $this->createProcessor([LoyaltyPointCartProcessor::CONFIG_KEY_MIN_REDEEMABLE => 100])
+        $this->createProcessor([LoyaltySettings::CONFIG_KEY_MIN_REDEEMABLE_POINTS => 100])
             ->process(new CartDataCollection(), new Cart('original'), $cart, $this->createContext(), new CartBehavior());
 
         static::assertNull($cart->getLineItems()->get(LoyaltyPointCartProcessor::LINE_ITEM_ID));
@@ -110,7 +121,7 @@ class LoyaltyPointCartProcessorTest extends TestCase
         $cart->setLineItems(new LineItemCollection([$this->createGoodsLineItem(500.0)]));
         $this->loyaltyPointService->method('getBalance')->willReturn(1000);
 
-        $this->createProcessor([LoyaltyPointCartProcessor::CONFIG_KEY_MAX_REDEEMABLE_PERCENT => 50.0])
+        $this->createProcessor([LoyaltySettings::CONFIG_KEY_MAX_REDEEMABLE_PERCENT => 50.0])
             ->process(new CartDataCollection(), new Cart('original'), $cart, $this->createContext(), new CartBehavior());
 
         $lineItem = $cart->getLineItems()->get(LoyaltyPointCartProcessor::LINE_ITEM_ID);
@@ -185,14 +196,14 @@ class LoyaltyPointCartProcessorTest extends TestCase
     private function createProcessor(array $config = []): LoyaltyPointCartProcessor
     {
         $config = array_merge([
-            LoyaltyPointCartProcessor::CONFIG_KEY_POINT_VALUE => 1.0,
-            LoyaltyPointCartProcessor::CONFIG_KEY_MIN_REDEEMABLE => 1,
-            LoyaltyPointCartProcessor::CONFIG_KEY_MAX_REDEEMABLE_PERCENT => 100.0,
+            LoyaltySettings::CONFIG_KEY_POINT_VALUE_IN_CURRENCY => 1.0,
+            LoyaltySettings::CONFIG_KEY_MIN_REDEEMABLE_POINTS => 1,
+            LoyaltySettings::CONFIG_KEY_MAX_REDEEMABLE_PERCENT => 100.0,
         ], $config);
 
         return new LoyaltyPointCartProcessor(
             $this->calculator,
-            new StaticSystemConfigService($config),
+            new LoyaltySettings(new StaticSystemConfigService($config)),
             $this->loyaltyPointService
         );
     }

@@ -32,6 +32,7 @@ use Shopwell\Core\Checkout\Customer\Service\SmsLoginService;
 use Shopwell\Core\Checkout\DocumentV2\SalesChannel\DocumentRoute;
 use Shopwell\Core\Checkout\Loyalty\SalesChannel\LoyaltyRedeemRoute;
 use Shopwell\Core\Checkout\Loyalty\SalesChannel\MembershipPurchaseRoute;
+use Shopwell\Core\Checkout\Loyalty\Service\LoyaltySettings;
 use Shopwell\Core\Checkout\Order\SalesChannel\CancelOrderRoute;
 use Shopwell\Core\Checkout\Order\SalesChannel\OrderRoute;
 use Shopwell\Core\Checkout\Order\SalesChannel\OrderService;
@@ -42,6 +43,7 @@ use Shopwell\Core\Checkout\Promotion\Cart\PromotionItemBuilder;
 use Shopwell\Core\Checkout\Wallet\SalesChannel\WalletPaymentRoute;
 use Shopwell\Core\Checkout\Wallet\SalesChannel\WalletTopUpCreateRoute;
 use Shopwell\Core\Checkout\Wallet\SalesChannel\WalletTopUpStatusRoute;
+use Shopwell\Core\Checkout\Wallet\Service\WalletSettings;
 use Shopwell\Core\Content\Category\SalesChannel\CategoryRoute;
 use Shopwell\Core\Content\Category\Service\CategoryUrlGenerator;
 use Shopwell\Core\Content\Cms\SalesChannel\CmsRoute;
@@ -208,6 +210,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(AccountLoyaltyPageLoader::class),
             service(LoyaltyRedeemRoute::class),
             service(MembershipPurchaseRoute::class),
+            service(LoyaltySettings::class),
         ])
         ->call('setContainer', [service('service_container')]);
 
@@ -217,6 +220,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(WalletPaymentRoute::class),
             service(WalletTopUpCreateRoute::class),
             service(WalletTopUpStatusRoute::class),
+            service(WalletSettings::class),
         ])
         ->call('setContainer', [service('service_container')]);
 

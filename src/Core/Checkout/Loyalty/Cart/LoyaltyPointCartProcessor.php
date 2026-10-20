@@ -10,10 +10,10 @@ use Shopwell\Core\Checkout\Cart\LineItem\LineItem;
 use Shopwell\Core\Checkout\Cart\Price\AbsolutePriceCalculator;
 use Shopwell\Core\Checkout\Cart\Price\Struct\AbsolutePriceDefinition;
 use Shopwell\Core\Checkout\Loyalty\Service\LoyaltyPointService;
+use Shopwell\Core\Checkout\Loyalty\Service\LoyaltySettings;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Struct\ArrayStruct;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
-use Shopwell\Core\System\SystemConfig\SystemConfigService;
 
 /**
  * Materialises the points redemption requested through the `loyalty-points` cart extension into a
@@ -30,18 +30,12 @@ class LoyaltyPointCartProcessor implements CartProcessorInterface
 
     final public const LINE_ITEM_ID = 'loyalty-points';
 
-    final public const CONFIG_KEY_POINT_VALUE = 'core.loyalty.pointValueInCurrency';
-
-    final public const CONFIG_KEY_MIN_REDEEMABLE = 'core.loyalty.minRedeemablePoints';
-
-    final public const CONFIG_KEY_MAX_REDEEMABLE_PERCENT = 'core.loyalty.maxRedeemablePercent';
-
     /**
      * @internal
      */
     public function __construct(
         private readonly AbsolutePriceCalculator $calculator,
-        private readonly SystemConfigService $systemConfigService,
+        private readonly LoyaltySettings $settings,
         private readonly LoyaltyPointService $loyaltyPointService
     ) {
     }
@@ -55,15 +49,15 @@ class LoyaltyPointCartProcessor implements CartProcessorInterface
     ): void {
         $points = $this->readRequestedPoints($toCalculate);
 
-        if ($points <= 0) {
+        if ($points <= 0 || !$this->settings->isEnabled($context->getSalesChannelId())) {
             $toCalculate->getLineItems()->remove(self::LINE_ITEM_ID);
 
             return;
         }
 
         $customer = $context->getCustomer();
-        $pointValue = $this->systemConfigService->getFloat(self::CONFIG_KEY_POINT_VALUE);
-        $minimum = $this->systemConfigService->getInt(self::CONFIG_KEY_MIN_REDEEMABLE);
+        $pointValue = $this->settings->pointValueInCurrency($context->getSalesChannelId());
+        $minimum = $this->settings->minRedeemablePoints($context->getSalesChannelId());
 
         if ($customer === null || $pointValue <= 0.0) {
             $toCalculate->getLineItems()->remove(self::LINE_ITEM_ID);
@@ -72,7 +66,7 @@ class LoyaltyPointCartProcessor implements CartProcessorInterface
         }
 
         $balance = $this->loyaltyPointService->getBalance($customer->getId(), $context->getContext());
-        $points = min($points, $balance, $this->maxPointsByOrderTotal($toCalculate, $pointValue));
+        $points = min($points, $balance, $this->maxPointsByOrderTotal($toCalculate, $pointValue, $context));
 
         if ($points < $minimum) {
             $toCalculate->getLineItems()->remove(self::LINE_ITEM_ID);
@@ -113,9 +107,9 @@ class LoyaltyPointCartProcessor implements CartProcessorInterface
      * The points must not cover more than the configured share of the goods subtotal that is not already
      * discounted by another credit line item.
      */
-    private function maxPointsByOrderTotal(Cart $cart, float $pointValue): int
+    private function maxPointsByOrderTotal(Cart $cart, float $pointValue, SalesChannelContext $context): int
     {
-        $maxPercent = $this->systemConfigService->getFloat(self::CONFIG_KEY_MAX_REDEEMABLE_PERCENT);
+        $maxPercent = $this->settings->maxRedeemablePercent($context->getSalesChannelId());
         $available = $this->goodsTotal($cart) - $this->otherCreditAmount($cart);
 
         return (int) floor(max(0.0, $available) * $maxPercent / 100.0 / $pointValue);
