@@ -18,6 +18,8 @@ use Shopwell\Core\System\Payment\App\PaymentCredentialCipher;
 use Shopwell\Core\System\Payment\Order\PaymentOrderStates;
 use Shopwell\Core\System\Payment\Order\Refund\PaymentRefundStates;
 use Shopwell\Core\System\Payment\Provider\Alipay\AlipayApi;
+use Shopwell\Core\System\Payment\Provider\Paypal\PaypalApi;
+use Shopwell\Core\System\Payment\Provider\Stripe\StripeApi;
 use Shopwell\Core\System\Payment\Provider\Wechat\WechatApi;
 use Shopwell\Core\System\Payment\Subscription\PaymentMandateStates;
 use Shopwell\Core\System\Payment\Subscription\PaymentSubscriptionCycleStates;
@@ -487,7 +489,12 @@ class Migration1791856510CreatePaymentTablesTest extends TestCase
 
         $credentials = $this->cipher()->decrypt(json_decode((string) $provider['credentials'], true, 512, \JSON_THROW_ON_ERROR));
         static::assertSame(Migration1791856510CreatePaymentTables::SANDBOX_APP_ID, $credentials[AlipayApi::APP_ID]);
-        static::assertSame(Migration1791856510CreatePaymentTables::SANDBOX_GATEWAY_URL, $credentials[AlipayApi::GATEWAY_URL]);
+        // the sandbox is a flag and not a gateway url: switching it off has to go back to the
+        // configured gateway instead of keeping a sandbox url in the row
+        static::assertSame('1', $credentials[AlipayApi::SANDBOX]);
+        static::assertArrayNotHasKey(AlipayApi::GATEWAY_URL, $credentials);
+        static::assertSame(Migration1791856510CreatePaymentTables::SANDBOX_PRIVATE_KEY, $credentials[AlipayApi::PRIVATE_KEY]);
+        static::assertSame(Migration1791856510CreatePaymentTables::SANDBOX_ALIPAY_PUBLIC_KEY, $credentials[AlipayApi::PUBLIC_KEY]);
 
         static::assertSame(1, (int) $this->connection->fetchOne(
             'SELECT `enabled` FROM `payment_channel_config` WHERE `provider_technical_name` = :provider AND `channel_technical_name` = :channel',
@@ -528,6 +535,72 @@ class Migration1791856510CreatePaymentTablesTest extends TestCase
             'SELECT COUNT(*) FROM `payment_app_channel` WHERE `payment_app_id` = :app AND `channel_technical_name` = :channel',
             ['app' => $app['id'], 'channel' => Migration1791856510CreatePaymentTables::CHANNEL]
         ));
+    }
+
+    /**
+     * The other two interfaces are seeded the way alipay is: paypal with the sandbox app of the
+     * platform, stripe with its test keys. Neither is a production account - paypal names `sandbox` as
+     * its environment and the stripe keys are only valid in the test mode of the account.
+     *
+     * A row that already carries credentials is left alone: it belongs to the merchant, and a
+     * migration run that overwrote a live client id would break a working shop on an upgrade.
+     */
+    public function testSeedsThePaypalAndStripeSandboxAccounts(): void
+    {
+        // the migration tests share one database: the seed is what is asserted here, not a row an
+        // earlier run or an earlier version of this test left behind
+        $this->connection->executeStatement(
+            'DELETE FROM `payment_provider_config` WHERE `provider_technical_name` IN (:paypal, :stripe)',
+            ['paypal' => PaypalApi::PROVIDER, 'stripe' => StripeApi::PROVIDER]
+        );
+
+        (new Migration1791856510CreatePaymentTables())->update($this->connection);
+
+        $paypal = $this->connection->fetchAssociative(
+            'SELECT `id`, `enabled`, `credentials` FROM `payment_provider_config` WHERE `provider_technical_name` = :provider',
+            ['provider' => PaypalApi::PROVIDER]
+        );
+        static::assertIsArray($paypal);
+        static::assertSame(1, (int) $paypal['enabled']);
+
+        $paypalCredentials = $this->cipher()->decrypt(json_decode((string) $paypal['credentials'], true, 512, \JSON_THROW_ON_ERROR));
+        static::assertSame(Migration1791856510CreatePaymentTables::PAYPAL_SANDBOX_CLIENT_ID, $paypalCredentials[PaypalApi::CLIENT_ID]);
+        static::assertSame(Migration1791856510CreatePaymentTables::PAYPAL_SANDBOX_CLIENT_SECRET, $paypalCredentials[PaypalApi::CLIENT_SECRET]);
+        static::assertSame('sandbox', $paypalCredentials[PaypalApi::ENVIRONMENT]);
+
+        $stripe = $this->connection->fetchAssociative(
+            'SELECT `enabled`, `credentials` FROM `payment_provider_config` WHERE `provider_technical_name` = :provider',
+            ['provider' => StripeApi::PROVIDER]
+        );
+        static::assertIsArray($stripe);
+        static::assertSame(1, (int) $stripe['enabled']);
+
+        $stripeCredentials = $this->cipher()->decrypt(json_decode((string) $stripe['credentials'], true, 512, \JSON_THROW_ON_ERROR));
+        static::assertSame(Migration1791856510CreatePaymentTables::STRIPE_TEST_SECRET_KEY, $stripeCredentials[StripeApi::SECRET_KEY]);
+        static::assertSame(Migration1791856510CreatePaymentTables::STRIPE_TEST_PUBLISHABLE_KEY, $stripeCredentials[StripeApi::PUBLISHABLE_KEY]);
+
+        // a merchant who configured paypal himself keeps his row
+        $this->connection->update(
+            'payment_provider_config',
+            ['credentials' => (string) json_encode($this->cipher()->encrypt([PaypalApi::CLIENT_ID => 'a-live-client-id']), \JSON_THROW_ON_ERROR)],
+            ['id' => $paypal['id']]
+        );
+
+        (new Migration1791856510CreatePaymentTables())->update($this->connection);
+
+        // the column is a json column, so the stored payload is compared after opening it and not as
+        // the string it was written as
+        $kept = $this->cipher()->decrypt(json_decode((string) $this->connection->fetchOne(
+            'SELECT `credentials` FROM `payment_provider_config` WHERE `provider_technical_name` = :provider',
+            ['provider' => PaypalApi::PROVIDER]
+        ), true, 512, \JSON_THROW_ON_ERROR));
+        static::assertSame(['client_id' => 'a-live-client-id'], $kept);
+
+        // leave no merchant row behind: the next run of the migration seeds the paypal account again
+        $this->connection->executeStatement(
+            'DELETE FROM `payment_provider_config` WHERE `provider_technical_name` = :provider',
+            ['provider' => PaypalApi::PROVIDER]
+        );
     }
 
     /**

@@ -16,6 +16,8 @@ use Shopwell\Core\System\Payment\App\PaymentCredentialCipher;
 use Shopwell\Core\System\Payment\Order\PaymentOrderStates;
 use Shopwell\Core\System\Payment\Order\Refund\PaymentRefundStates;
 use Shopwell\Core\System\Payment\Provider\Alipay\AlipayApi;
+use Shopwell\Core\System\Payment\Provider\Paypal\PaypalApi;
+use Shopwell\Core\System\Payment\Provider\Stripe\StripeApi;
 use Shopwell\Core\System\Payment\Provider\Wechat\WechatApi;
 use Shopwell\Core\System\Payment\Subscription\PaymentMandateStates;
 use Shopwell\Core\System\Payment\Subscription\PaymentSubscriptionCycleStates;
@@ -60,11 +62,13 @@ use Shopwell\Core\System\Payment\Subscription\PaymentSubscriptionStates;
  * The state machines are imported first, because the state fields of the bookkeeping tables reference
  * them.
  *
- * ⚠️ The seeded credentials below are alipay's *public sandbox* test account: they are deliberately
- * not a secret, but they must be replaced with the real merchant credentials before this channel is
- * used in production. The seeded key pair is a locally generated placeholder: it is complete and
- * signs and verifies against itself, but it belongs to no alipay app, so both keys have to be
- * swapped for the ones of the real sandbox app in the alipay console.
+ * ⚠️ The seeded credentials are sandbox accounts, for all three: alipay is seeded with a sandbox app id
+ * and a locally generated dummy key pair, paypal with the sandbox client id and secret, stripe with the
+ * test keys. The alipay pair is complete and signs and verifies against itself, but it belongs to no
+ * alipay app, so a sandbox request signed with it is rejected - both keys have to be replaced with the
+ * ones of the merchant's own sandbox app in the alipay console. Nothing here is a secret and nothing may
+ * reach production unchanged; `sandbox`/`environment` are on and the stripe keys are `sk_test_`/`pk_test_`,
+ * so going live is a deliberate switch.
  *
  * @internal
  */
@@ -116,6 +120,32 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
      */
     final public const SANDBOX_APP_ID = '9021000149657375';
 
+    /**
+     * The client id of the paypal sandbox app, seeded so the interface is configured out of the box.
+     */
+    final public const PAYPAL_SANDBOX_CLIENT_ID = 'ATLGyYsLAve0DhlI4D_L4BI7Ak8jjtYmNGEjQla4EsExF9Df8FqZY0MDUmjOpSMhZhh4JoWp8xvw8gWn';
+
+    /**
+     * The client secret of the paypal sandbox app.
+     */
+    final public const PAYPAL_SANDBOX_CLIENT_SECRET = 'EDFbGlvazxMwGyNDWkjx8IgHJKArHOymBd2RfTXnlKTrf51DVn3eNfu7Xrl3NjZv0mjYz5QWbHL__o8o';
+
+    /**
+     * The secret key of the stripe test account. Stripe has no sandbox flag: the prefix of the key
+     * decides the environment, `sk_test_` is the test mode the seeded credentials belong to.
+     */
+    final public const STRIPE_TEST_SECRET_KEY = 'sk_test_51UQsKsQM0sYLTkulPaZoETq2ziWyyV8X0TX9327DxBZ979uOlaf9BTDZT5DK3A4ihcbQzR2qXJ4c4MxQ8mIPfxPr00XVLyHE0h';
+
+    /**
+     * The publishable key of the same stripe test account. It is not a secret.
+     */
+    final public const STRIPE_TEST_PUBLISHABLE_KEY = 'pk_test_51UQsKsQM0sYLTkulZTkNnFEpgQKawrIUIXZ6mg4r6grcIlqr8QX8vQwN43WBG2FwCZSpOp4keEwY7KsfNbiOsraL006kbX2Orw';
+
+    /**
+     * The gateway the sandbox of the alipay interface answers on. It is not stored: the api picks it
+     * from the `sandbox` flag, so switching the flag off goes back to the configured gateway instead of
+     * keeping a sandbox url in a row nobody looks at.
+     */
     final public const SANDBOX_GATEWAY_URL = 'https://openapi-sandbox.dl.alipaydev.com';
 
     /**
@@ -165,6 +195,8 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
         $cipher = $this->cipher();
 
         $this->seedProviderConfig($connection, $cipher, $now);
+        $this->seedPaypalProviderConfig($connection, $cipher, $now);
+        $this->seedStripeProviderConfig($connection, $cipher, $now);
         $this->seedChannelConfig($connection, $now);
         $this->seedPlatformTenant($connection, $cipher, $now);
 
@@ -1469,9 +1501,88 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
     {
         return [
             AlipayApi::APP_ID => self::SANDBOX_APP_ID,
+            // the sandbox is the default: the seeded keys belong to a sandbox app only
+            AlipayApi::SANDBOX => '1',
             AlipayApi::PRIVATE_KEY => self::SANDBOX_PRIVATE_KEY,
             AlipayApi::PUBLIC_KEY => self::SANDBOX_ALIPAY_PUBLIC_KEY,
-            AlipayApi::GATEWAY_URL => self::SANDBOX_GATEWAY_URL,
+        ];
+    }
+
+    /**
+     * Seeds the paypal interface with the sandbox app of the platform, so the interface is configured
+     * the moment an operator opens it instead of asking for two values nobody has at hand.
+     *
+     * The row is only written when it does not exist yet: an interface that already carries
+     * credentials belongs to the merchant, and a migration run has no business overwriting a live
+     * client id. The environment is `sandbox` for the same reason the alipay seed is a sandbox one -
+     * going live is a decision, not a default.
+     */
+    private function seedPaypalProviderConfig(Connection $connection, PaymentCredentialCipher $cipher, string $now): void
+    {
+        $existing = $connection->fetchOne(
+            'SELECT `id` FROM `payment_provider_config` WHERE `provider_technical_name` = :provider',
+            ['provider' => PaypalApi::PROVIDER]
+        );
+
+        if (\is_string($existing) && $existing !== '') {
+            return;
+        }
+
+        $connection->insert('payment_provider_config', [
+            'id' => Uuid::randomBytes(),
+            'provider_technical_name' => PaypalApi::PROVIDER,
+            'enabled' => 1,
+            'credentials' => (string) json_encode($cipher->encrypt($this->paypalSandboxCredentials()), \JSON_THROW_ON_ERROR),
+            'settings' => (string) json_encode([], \JSON_THROW_ON_ERROR),
+            'created_at' => $now,
+        ]);
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function paypalSandboxCredentials(): array
+    {
+        return [
+            PaypalApi::CLIENT_ID => self::PAYPAL_SANDBOX_CLIENT_ID,
+            PaypalApi::CLIENT_SECRET => self::PAYPAL_SANDBOX_CLIENT_SECRET,
+            PaypalApi::ENVIRONMENT => 'sandbox',
+        ];
+    }
+
+    /**
+     * Seeds the stripe interface with the test account of the platform, the same way as the other two:
+     * the interface is configured the moment an operator opens it, and an existing row is left alone.
+     */
+    private function seedStripeProviderConfig(Connection $connection, PaymentCredentialCipher $cipher, string $now): void
+    {
+        $existing = $connection->fetchOne(
+            'SELECT `id` FROM `payment_provider_config` WHERE `provider_technical_name` = :provider',
+            ['provider' => StripeApi::PROVIDER]
+        );
+
+        if (\is_string($existing) && $existing !== '') {
+            return;
+        }
+
+        $connection->insert('payment_provider_config', [
+            'id' => Uuid::randomBytes(),
+            'provider_technical_name' => StripeApi::PROVIDER,
+            'enabled' => 1,
+            'credentials' => (string) json_encode($cipher->encrypt($this->stripeTestCredentials()), \JSON_THROW_ON_ERROR),
+            'settings' => (string) json_encode([], \JSON_THROW_ON_ERROR),
+            'created_at' => $now,
+        ]);
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function stripeTestCredentials(): array
+    {
+        return [
+            StripeApi::SECRET_KEY => self::STRIPE_TEST_SECRET_KEY,
+            StripeApi::PUBLISHABLE_KEY => self::STRIPE_TEST_PUBLISHABLE_KEY,
         ];
     }
 
