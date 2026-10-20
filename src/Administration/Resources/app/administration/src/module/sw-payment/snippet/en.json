@@ -8,7 +8,7 @@
             "description": "Payments of external apps through the generic payment gateway"
         },
         "configField": {
-            "configuredHint": "Already configured - an empty input keeps the stored value."
+            "configuredHint": "Configured."
         },
         "order": {
             "list": {

@@ -8,15 +8,14 @@
         },
         "provider": {
             "cardTitle": "Merchant account",
-            "cardSubtitle": "The credentials are issued by the payment provider and shared by all of its channels. They are never echoed back, the form only reports whether a value is stored.",
+            "cardSubtitle": "The credentials are issued by the payment provider and shared by all of its channels.",
             "enabled": "Enable this provider",
             "enabledHelpText": "Apps that pay with the platform credentials can only collect through this provider once it is enabled.",
             "configured": "Configured",
             "notConfigured": "Not configured",
             "reset": "Clear credentials",
             "resetModalTitle": "Clear provider credentials",
-            "resetModalMessage": "Clear all credentials of \u201c{name}\u201d? Apps that pay with the platform credentials will no longer be able to collect through this provider.",
-            "hint": "The credentials are encrypted on the server and never echoed back - an empty input keeps the stored value. Every required field has to be filled before the provider can be enabled.",
+            "resetModalMessage": "Clear all credentials of “{name}”? Apps that pay with the platform credentials will no longer be able to collect through this provider.",
             "alipay": "Alipay",
             "wechat": "WeChat Pay",
             "paypal": "PayPal",
@@ -33,7 +32,7 @@
             "enabledHelpText": "Once switched off, no app can collect through this channel anymore.",
             "reset": "Clear",
             "resetModalTitle": "Clear channel configuration",
-            "resetModalMessage": "Clear the parameters of \u201c{name}\u201d? The channel will no longer be offered to any app.",
+            "resetModalMessage": "Clear the parameters of “{name}”? The channel will no longer be offered to any app.",
             "expand": "Show parameters",
             "collapse": "Hide parameters",
             "noParams": "This channel needs no further parameters.",
@@ -75,7 +74,7 @@
         "notification": {
             "saveSuccess": "The payment provider settings have been saved.",
             "resetSuccess": "The payment provider configuration has been cleared.",
-            "missingFields": "\u201c{name}\u201d is enabled, please fill in every required field first.",
+            "missingFields": "“{name}” is enabled, please fill in every required field first.",
             "nothingToSave": "There is nothing to save."
         },
         "list": {

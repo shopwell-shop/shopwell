@@ -8,7 +8,7 @@
         },
         "provider": {
             "cardTitle": "商户账户",
-            "cardSubtitle": "这些信息由支付接口分配，同一接口下的全部渠道共用。保存后不再回显，只显示是否已配置。",
+            "cardSubtitle": "这些信息由支付接口分配，同一接口下的全部渠道共用。",
             "enabled": "启用该支付接口",
             "enabledHelpText": "启用后，使用平台账户的应用才能通过该接口收款。",
             "configured": "已配置",
@@ -16,7 +16,6 @@
             "reset": "清除账户信息",
             "resetModalTitle": "清除接口账户信息",
             "resetModalMessage": "确定要清除「{name}」的全部账户信息吗？清除后使用平台账户的应用将无法通过该接口收款。",
-            "hint": "账户信息在服务端加密存储，页面上不会回显；留空的输入项保持原值不变。启用接口前必须填写全部必填项。",
             "alipay": "支付宝",
             "wechat": "微信支付",
             "paypal": "PayPal",

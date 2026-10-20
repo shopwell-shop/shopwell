@@ -8,7 +8,7 @@
             "description": "外部应用通过通用支付网关发起的支付"
         },
         "configField": {
-            "configuredHint": "已配置，留空表示保持原值不变。"
+            "configuredHint": "已配置。"
         },
         "order": {
             "list": {
