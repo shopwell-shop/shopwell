@@ -4,6 +4,10 @@
     }
 
     &__input--switch {
-        margin-block-start: var(--scale-size-32, 32px);
+        // a bordered switch is the same 48px control as an input, so it lines up with the input of
+        // the field next to it when it starts below the label: label line-height 16px plus its 8px
+        // margin is the 24px the design system already gives a switch by default - anything else
+        // pushes it out of the row it is visually part of
+        margin-block-start: var(--scale-size-24, 24px);
     }
 }
