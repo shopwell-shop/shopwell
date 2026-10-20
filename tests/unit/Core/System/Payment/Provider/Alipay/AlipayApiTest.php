@@ -125,7 +125,7 @@ class AlipayApiTest extends TestCase
         static::assertSame($configUtil, $api->configUtil());
         static::assertSame('2021000000000000', $configUtil->getAppId());
         static::assertSame("-----BEGIN RSA PRIVATE KEY-----\nRAW-PRIVATE-KEY\n-----END RSA PRIVATE KEY-----", $configUtil->getPrivateKey());
-        static::assertSame('ABCDEFG', $configUtil->getAlipayPublicKey());
+        static::assertSame("-----BEGIN PUBLIC KEY-----\nABCDEFG\n-----END PUBLIC KEY-----", $configUtil->getAlipayPublicKey());
         static::assertSame('RSA', $configUtil->getSignType());
         static::assertSame('https://alipay.example.com', $configUtil->getServerUrl());
         static::assertSame('json', $configUtil->getFormat());
@@ -144,6 +144,35 @@ class AlipayApiTest extends TestCase
             "-----BEGIN PRIVATE KEY-----\nWRAPPED\n-----END PRIVATE KEY-----",
             $api->configUtil()->getPrivateKey()
         );
+    }
+
+    public function testConfigUtilWrapsABareAlipayPublicKey(): void
+    {
+        $api = $this->api(credentials: [
+            AlipayApi::APP_ID => '2021000000000000',
+            AlipayApi::PRIVATE_KEY => 'RAW-PRIVATE-KEY',
+            AlipayApi::PUBLIC_KEY => 'ABCDEFG',
+        ]);
+
+        // the response verification of the sdk hands the key straight to openssl_verify(), which
+        // only coerces a pem string - a bare base64 body is the "cannot be coerced" failure
+        static::assertSame(
+            "-----BEGIN PUBLIC KEY-----\nABCDEFG\n-----END PUBLIC KEY-----",
+            $api->configUtil()->getAlipayPublicKey()
+        );
+    }
+
+    public function testConfigUtilKeepsAnAlreadyWrappedAlipayPublicKey(): void
+    {
+        $wrapped = "-----BEGIN PUBLIC KEY-----\nWRAPPED-KEY\n-----END PUBLIC KEY-----";
+
+        $api = $this->api(credentials: [
+            AlipayApi::APP_ID => '2021000000000000',
+            AlipayApi::PRIVATE_KEY => 'RAW-PRIVATE-KEY',
+            AlipayApi::PUBLIC_KEY => $wrapped,
+        ]);
+
+        static::assertSame($wrapped, $api->configUtil()->getAlipayPublicKey());
     }
 
     public function testConfigurationUsesAndCachesTheGatewayUrl(): void
