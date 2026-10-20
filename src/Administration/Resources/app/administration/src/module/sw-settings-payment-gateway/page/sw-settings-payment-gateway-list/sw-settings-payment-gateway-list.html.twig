@@ -73,8 +73,6 @@
                         :show-selection="false"
                         :show-settings="true"
                         :show-header="true"
-                        :show-actions="hasRowActions"
-                        :is-record-disabled="isPlatformApp"
                         :allow-inline-edit="false"
                         :allow-column-edit="true"
                     >
@@ -82,21 +80,11 @@
                         <template #column-name="{ item }">
                             {% block sw_settings_payment_gateway_list_grid_columns_name_link %}
                             <router-link
-                                v-if="!isPlatformApp(item)"
                                 class="sw-settings-payment-gateway-list__name-link"
                                 :to="{ name: 'sw.settings.payment.gateway.detail', params: { id: item.id } }"
                             >
                                 {{ item.name }}
                             </router-link>
-                            {% endblock %}
-
-                            {% block sw_settings_payment_gateway_list_grid_columns_name_platform %}
-                            <span
-                                v-else
-                                class="sw-settings-payment-gateway-list__name"
-                            >
-                                {{ item.name }}
-                            </span>
                             {% endblock %}
 
                             {% block sw_settings_payment_gateway_list_grid_columns_name_platform_badge %}
@@ -140,7 +128,6 @@
                         <template #actions="{ item }">
                             {% block sw_settings_payment_gateway_list_grid_columns_actions_edit %}
                             <sw-context-menu-item
-                                v-if="!isPlatformApp(item)"
                                 class="sw-settings-payment-gateway-list__edit-action"
                                 :router-link="{ name: 'sw.settings.payment.gateway.detail', params: { id: item.id } }"
                                 :disabled="!acl.can('payment_app.editor') || undefined"
