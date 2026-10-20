@@ -16,10 +16,10 @@ use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
  * Stores the merchant configuration of the payment interfaces: the credentials of an interface and
  * the parameters of its channels.
  *
- * The credentials never leave the server in plain text: everything stored here is sealed with the
- * same cipher the gateway reads with. The values that are not sent stay untouched, which is what
- * makes it possible to edit an interface without typing the secrets again - a field marked as
- * secret is never echoed back to the administration.
+ * Everything stored here is sealed with the same cipher the gateway reads with, so the plain text only
+ * lives in the answer of the endpoints that hand the configuration to the administration. The values
+ * that are not sent stay untouched, which is what makes it possible to edit a single field of an
+ * interface without retyping the rest.
  *
  * An interface or channel that is switched on has to be complete, otherwise the first payment of an
  * app would fail with a message only the log sees.
@@ -175,8 +175,8 @@ final class PaymentProviderConfigService
     }
 
     /**
-     * The values that are not sent stay untouched: an empty input means "keep what is stored", which
-     * is the only way to edit an interface whose secrets are never sent to the browser.
+     * The values that are not sent stay untouched: an empty input means "keep what is stored", so a
+     * form that only changes one field does not have to submit the rest again.
      *
      * @param array<string, mixed> $current
      *

@@ -14,6 +14,8 @@ use Shopwell\Core\System\Payment\App\PaymentAppCollection;
 use Shopwell\Core\System\Payment\App\PaymentAppDto;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
 use Shopwell\Core\System\Payment\App\PaymentAppProvisioner;
+use Shopwell\Core\System\Payment\App\PaymentCredentialCipher;
+use Shopwell\Core\System\Payment\Provider\PaymentProviderConfigService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -33,6 +35,13 @@ use Symfony\Component\Routing\Attribute\Route;
  * when it is created or rotated. Reading an app never returns it - the administration only learns
  * whether one is set.
  *
+ * The credentials and the channel parameters of an app are different: they are echoed back in plain
+ * text, so an operator can read through which merchant account an app collects and correct a single
+ * value without retyping the rest. What is stored stays sealed with the
+ * {@see PaymentCredentialCipher}. The tenant of the platform has no values of its own - it collects on
+ * the merchant configuration of the interface, which lives in the `payment_provider_config` table, so
+ * its rows are filled from there.
+ *
  * The controller only maps the request onto the {@see PaymentAppDto} and its answer back into the
  * response; the writing itself lives in the provisioner.
  *
@@ -47,6 +56,8 @@ class PaymentAppController extends AbstractController
     public function __construct(
         private readonly EntityRepository $appRepository,
         private readonly PaymentAppProvisioner $provisioner,
+        private readonly PaymentCredentialCipher $cipher,
+        private readonly PaymentProviderConfigService $providerConfigService,
     ) {
     }
 
@@ -151,11 +162,18 @@ class PaymentAppController extends AbstractController
      */
     private function present(PaymentAppEntity $app): array
     {
+        // the tenant of the platform collects on the merchant configuration of the interface, its own
+        // authorizations carry no values at all - reading them would present an empty account for the
+        // one row an operator wants to see filled
+        $platformParams = $app->type === PaymentAppEntity::TYPE_PLATFORM ? $this->platformChannelParams($app) : [];
+
         $providers = [];
         foreach ($app->providers ?? [] as $provider) {
             if (!$provider instanceof PaymentAppProviderEntity) {
                 continue;
             }
+
+            $credentials = $this->credentialsOf($app, $provider);
 
             $providers[] = [
                 'providerTechnicalName' => $provider->providerTechnicalName,
@@ -166,9 +184,9 @@ class PaymentAppController extends AbstractController
                 // that is gone leaves the id behind until the next write, and an empty name then
                 'sourceAppId' => $provider->sourceAppId,
                 'sourceAppName' => $provider->sourceApp->name ?? '',
-                // the credentials themselves stay on the server, the administration only renders
-                // "configured / not configured"
-                'hasCredentials' => $provider->credentials !== null && $provider->credentials !== [],
+                // the values are echoed back so the page can render them, what is stored stays sealed
+                'credentials' => $credentials,
+                'hasCredentials' => $credentials !== [],
                 'settings' => $provider->settings ?? [],
             ];
         }
@@ -179,10 +197,15 @@ class PaymentAppController extends AbstractController
                 continue;
             }
 
+            $params = $app->type === PaymentAppEntity::TYPE_PLATFORM
+                ? ($platformParams[$channel->channelTechnicalName] ?? [])
+                : $this->cipher->decrypt($channel->params);
+
             $channels[] = [
                 'channelTechnicalName' => $channel->channelTechnicalName,
                 'enabled' => $channel->enabled,
-                'hasParams' => $channel->params !== null && $channel->params !== [],
+                'params' => $params,
+                'hasParams' => $params !== [],
                 'settings' => $channel->settings ?? [],
             ];
         }
@@ -206,5 +229,51 @@ class PaymentAppController extends AbstractController
             'providers' => $providers,
             'channels' => $channels,
         ];
+    }
+
+    /**
+     * The merchant account one app collects one interface with.
+     *
+     * The tenant of the platform is the exception: its row is seeded by the migration and carries no
+     * credentials of its own, everything it collects runs on the merchant configuration of the
+     * interface. Presenting its own empty values would show an unconfigured account for the very row
+     * an operator looks at first, so the platform level configuration is read instead.
+     *
+     * @return array<string, mixed> the decrypted credentials, empty when none is stored
+     */
+    private function credentialsOf(PaymentAppEntity $app, PaymentAppProviderEntity $provider): array
+    {
+        if ($app->type !== PaymentAppEntity::TYPE_PLATFORM) {
+            return $this->cipher->decrypt($provider->credentials);
+        }
+
+        $config = $this->providerConfigService->findProviderConfig($provider->providerTechnicalName);
+
+        return $config === null ? [] : $this->cipher->decrypt($config->credentials);
+    }
+
+    /**
+     * The channel parameters of the platform level configuration, indexed by channel name.
+     *
+     * Only the app's own authorizations are read: the parameters of a channel of an interface the app
+     * is not authorized for are not part of its answer.
+     *
+     * @return array<string, array<string, mixed>>
+     */
+    private function platformChannelParams(PaymentAppEntity $app): array
+    {
+        $params = [];
+
+        foreach ($app->providers ?? [] as $provider) {
+            if (!$provider instanceof PaymentAppProviderEntity) {
+                continue;
+            }
+
+            foreach ($this->providerConfigService->findChannelConfigs($provider->providerTechnicalName) as $channelName => $config) {
+                $params[$channelName] = $this->cipher->decrypt($config->params);
+            }
+        }
+
+        return $params;
     }
 }
