@@ -7,9 +7,6 @@
             "mainMenuItemTransfers": "Transfers",
             "description": "Payments of external apps through the generic payment gateway"
         },
-        "configField": {
-            "configuredHint": "Configured."
-        },
         "order": {
             "list": {
                 "title": "Payment orders",

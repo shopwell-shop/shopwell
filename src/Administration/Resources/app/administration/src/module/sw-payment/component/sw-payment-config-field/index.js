@@ -12,9 +12,9 @@ import './sw-payment-config-field.scss';
  * `PaymentConfigField`. That is why the component only knows field *types* - adding a field to an
  * interface never touches the administration.
  *
- * A field marked as secret is never handed over with its value, so an empty input does not mean "no
- * value": it means "keep what is stored". The help text says so, which is what makes it safe to save
- * a form without retyping a key.
+ * A field marked as secret is masked by the browser, but its value is handed over like every other one
+ * and is therefore part of the form. Typing nothing keeps what is stored, which is the same rule the
+ * server applies to every field of the interface.
  */
 // eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
 export default {
@@ -104,22 +104,16 @@ export default {
         },
 
         /**
-         * The value of a secret is never sent to the browser, so an empty input is not an error - it
-         * keeps the stored value. Only a field that already has one says so. A field may declare its
-         * own hint in the schema next to it.
+         * A field may declare its own hint in the schema next to it. Nothing is added here: the value of
+         * a secret field is part of the form, so "configured" would describe what the input already
+         * shows.
          */
         helpText() {
-            const hints = [];
-
-            if (this.field.helpText) {
-                hints.push(this.$te(this.field.helpText) ? this.$t(this.field.helpText) : this.field.helpText);
+            if (!this.field.helpText) {
+                return null;
             }
 
-            if (this.field.secret && this.field.configured) {
-                hints.push(this.$t('sw-payment.configField.configuredHint'));
-            }
-
-            return hints.length > 0 ? hints.join(' ') : null;
+            return this.$te(this.field.helpText) ? this.$t(this.field.helpText) : this.field.helpText;
         },
     },
 };

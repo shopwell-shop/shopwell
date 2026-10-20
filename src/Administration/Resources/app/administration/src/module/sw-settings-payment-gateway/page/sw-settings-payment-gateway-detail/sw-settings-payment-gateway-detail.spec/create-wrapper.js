@@ -42,12 +42,17 @@ export async function createWrapper({ appId = 'app-1', app = existingApp, savedA
                 'sw-container': { template: '<div><slot></slot></div>' },
                 'sw-skeleton': true,
                 'sw-payment-config-field': {
-                    props: ['field', 'modelValue'],
-                    template: '<div class="sw-payment-config-field-stub">{{ field.name }}</div>',
+                    props: ['field', 'modelValue', 'disabled'],
+                    // the `disabled` flag is rendered as an attribute so a test can tell an input the
+                    // merchant may fill from one that only displays a value
+                    template: `<div
+                        class="sw-payment-config-field-stub"
+                        :disabled="disabled ? 'disabled' : undefined"
+                    >{{ field.name }}</div>`,
                 },
                 'router-link': { template: '<a><slot></slot></a>' },
                 'mt-card': { template: '<div><slot></slot><slot name="headerRight"></slot></div>' },
-                'mt-button': true,
+                'mt-button': { template: '<button><slot></slot></button>' },
                 'mt-badge': true,
                 'mt-icon': true,
                 'mt-switch': true,
@@ -57,7 +62,7 @@ export async function createWrapper({ appId = 'app-1', app = existingApp, savedA
                 'mt-textarea': true,
                 'mt-url-field': true,
                 'mt-number-field': true,
-                'mt-banner': true,
+                'mt-banner': { template: '<div><slot></slot></div>' },
                 'mt-modal-root': { template: '<div><slot></slot></div>' },
                 'mt-modal': { template: '<div><slot></slot><slot name="footer"></slot></div>' },
                 'mt-modal-close': true,

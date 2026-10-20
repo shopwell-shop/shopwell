@@ -7,9 +7,6 @@
             "mainMenuItemTransfers": "打款",
             "description": "外部应用通过通用支付网关发起的支付"
         },
-        "configField": {
-            "configuredHint": "已配置。"
-        },
         "order": {
             "list": {
                 "title": "支付订单",

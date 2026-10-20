@@ -90,6 +90,13 @@
         margin-block-start: var(--scale-size-8);
     }
 
+    &__platform-credentials-hint {
+        margin: var(--scale-size-8) 0 0;
+        color: var(--color-text-secondary-default);
+        font-size: var(--font-size-xs);
+        line-height: var(--font-line-height-s);
+    }
+
     &__channel-group {
         padding-block: var(--scale-size-16);
 
