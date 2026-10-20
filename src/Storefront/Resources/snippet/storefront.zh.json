@@ -407,7 +407,7 @@
     "convertGuestInfo": "为 <span class=\"account-guest-conversion__subtitle\">%email%</span> 设置密码",
     "privacyNoticeTextModal": "设置密码即表示您已阅读并同意我们的 %privacyModalTagOpen%隐私政策%privacyModalTagClose% 和 %tosModalTagOpen%服务条款%tosModalTagClose%。",
     "convertSucceeded": "账户创建成功，您现在可以登录。",
-    "loyaltyLink": "积分福利",
+    "loyaltyLink": "会员积分",
     "loyaltyTitle": "我的积分",
     "loyaltyMetaTitle": "我的积分",
     "loyaltyWelcome": "查看您的积分余额、成长值与会员权益。",
@@ -1047,6 +1047,22 @@
         "unbindSucceeded": "已解除第三方账号绑定。",
         "unbindFailed": "解除绑定失败，未找到对应的绑定关系。"
       }
+    }
+  },
+  "payment": {
+    "channel": {
+      "alipay_h5": "支付宝（手机网页）",
+      "alipay_web": "支付宝（电脑网页）",
+      "alipay_qr": "支付宝（扫码）",
+      "alipay_app": "支付宝（App）",
+      "alipay_mini": "支付宝（小程序）",
+      "wechat_h5": "微信支付（手机网页）",
+      "wechat_native": "微信支付（扫码）",
+      "wechat_jsapi": "微信支付（公众号）",
+      "wechat_mini": "微信支付（小程序）",
+      "wechat_app": "微信支付（App）",
+      "stripe_checkout": "银行卡支付（Stripe）",
+      "paypal_checkout": "PayPal"
     }
   },
   "theme": {

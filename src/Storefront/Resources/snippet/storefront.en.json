@@ -1049,6 +1049,22 @@
       }
     }
   },
+  "payment": {
+    "channel": {
+      "alipay_h5": "Alipay (mobile web)",
+      "alipay_web": "Alipay (desktop web)",
+      "alipay_qr": "Alipay (scan to pay)",
+      "alipay_app": "Alipay (app)",
+      "alipay_mini": "Alipay (mini program)",
+      "wechat_h5": "WeChat Pay (mobile web)",
+      "wechat_native": "WeChat Pay (scan to pay)",
+      "wechat_jsapi": "WeChat Pay (in-app browser)",
+      "wechat_mini": "WeChat Pay (mini program)",
+      "wechat_app": "WeChat Pay (app)",
+      "stripe_checkout": "Card payment (Stripe)",
+      "paypal_checkout": "PayPal"
+    }
+  },
   "theme": {
     "compilation": {
       "async": {
