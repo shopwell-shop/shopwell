@@ -5,7 +5,6 @@ namespace Shopwell\Core\Checkout\Loyalty\Entity\MembershipPlan\Aggregate\Members
 use Shopwell\Core\Checkout\Loyalty\Entity\MembershipPlan\MembershipPlanDefinition;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityTranslationDefinition;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\ApiAware;
-use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\Required;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\LongTextField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\StringField;
 use Shopwell\Core\Framework\DataAbstractionLayer\FieldCollection;
@@ -47,7 +46,7 @@ class MembershipPlanTranslationDefinition extends EntityTranslationDefinition
     protected function defineFields(): FieldCollection
     {
         return new FieldCollection([
-            (new StringField('name', 'name'))->addFlags(new ApiAware(), new Required()),
+            (new StringField('name', 'name'))->addFlags(new ApiAware()),
             (new LongTextField('description', 'description'))->addFlags(new ApiAware()),
         ]);
     }
