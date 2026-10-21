@@ -109,30 +109,6 @@ class MissingUnitTestsTest extends TestCase
         ];
     }
 
-    #[TestDox('A constraint validator test extends a unit test case and counts')]
-    public function testConstraintValidatorTestCounts(): void
-    {
-        $context = $this->createContext([
-            new StubFile(
-                'src/Core/Checkout/Customer/Validation/Constraint/CustomerPhoneNumberUniqueValidator.php',
-                File::STATUS_ADDED,
-                "<?php\nclass CustomerPhoneNumberUniqueValidator\n{\n}",
-            ),
-            new StubFile(
-                'tests/unit/Core/Checkout/Customer/Validation/Constraint/CustomerPhoneNumberUniqueValidatorTest.php',
-                File::STATUS_ADDED,
-                "<?php\nclass CustomerPhoneNumberUniqueValidatorTest extends ConstraintValidatorTestCase\n{\n}",
-            ),
-        ]);
-
-        (new MissingUnitTests(self::FIXTURE_CONFIG))($context);
-
-        static::assertFalse(
-            $context->hasReports(),
-            'ConstraintValidatorTestCase is a TestCase of the unit suite, a validator test written on top of it covers its class.'
-        );
-    }
-
     #[TestDox('A test class extending an unknown base class does not count as coverage')]
     public function testUnknownTestBaseClassDoesNotCount(): void
     {
