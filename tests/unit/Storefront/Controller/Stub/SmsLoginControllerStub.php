@@ -4,19 +4,27 @@ namespace Shopwell\Tests\Unit\Storefront\Controller\Stub;
 
 use Shopwell\Core\Checkout\Cart\Cart;
 use Shopwell\Core\Framework\Script\Execution\Hook;
+use Shopwell\Core\PlatformRequest;
 use Shopwell\Storefront\Controller\SmsLoginController;
+use Shopwell\Storefront\Framework\Routing\StorefrontRouteScope;
 use Shopwell\Tests\Unit\Storefront\Controller\StorefrontControllerRecorder;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Contracts\Service\ResetInterface;
 
 /**
  * The controller without its container: every seam of the base class is answered by the recorder, so a
  * test reads what the controller decided instead of what the container would have rendered.
  *
+ * The class repeats the route scope of the controller it extends: a route scope is not inherited, so
+ * without it the analyser reads the actions of the base class as actions of this class that nobody
+ * scoped. The stub is not registered as a controller, so the route itself is never exposed.
+ *
  * @internal
  */
+#[Route(defaults: [PlatformRequest::ATTRIBUTE_ROUTE_SCOPE => [StorefrontRouteScope::ID]])]
 class SmsLoginControllerStub extends SmsLoginController implements ResetInterface
 {
     private ?StorefrontControllerRecorder $recorder = null;

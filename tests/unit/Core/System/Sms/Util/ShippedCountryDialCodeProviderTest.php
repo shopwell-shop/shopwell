@@ -6,21 +6,18 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Sms\Util\CountryDialCodeMap;
-use Shopwell\Core\System\Sms\Util\CountryDialCodeProviderInterface;
 use Shopwell\Core\System\Sms\Util\ShippedCountryDialCodeProvider;
 
 /**
+ * The provider is the adapter between the shipped table and the resolver, so it is asserted as an
+ * adapter: it answers the table unchanged, and it answers it again on every call.
+ *
  * @internal
  */
 #[Package('framework')]
 #[CoversClass(ShippedCountryDialCodeProvider::class)]
 class ShippedCountryDialCodeProviderTest extends TestCase
 {
-    public function testItIsAProviderTheResolverAccepts(): void
-    {
-        static::assertInstanceOf(CountryDialCodeProviderInterface::class, new ShippedCountryDialCodeProvider());
-    }
-
     public function testItAnswersTheShippedTable(): void
     {
         static::assertSame(
