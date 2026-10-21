@@ -5,18 +5,18 @@ namespace Shopwell\Tests\Unit\Core\System\Sms\Util;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\System\Sms\Util\CountryDialCodeMap;
 use Shopwell\Core\System\Sms\Util\CountryDialCodeProviderInterface;
 use Shopwell\Core\System\Sms\Util\CountryDialCodeResolver;
 use Shopwell\Core\System\Sms\Util\ShippedCountryDialCodeProvider;
 
 /**
+ * The shipped table and its provider are used as the data of these tests, but they are covered by
+ * their own tests - this file owns the resolver alone.
+ *
  * @internal
  */
 #[Package('framework')]
 #[CoversClass(CountryDialCodeResolver::class)]
-#[CoversClass(ShippedCountryDialCodeProvider::class)]
-#[CoversClass(CountryDialCodeMap::class)]
 class CountryDialCodeResolverTest extends TestCase
 {
     public function testItAnswersBothDirectionsOfTheShippedData(): void

@@ -38,11 +38,14 @@ use Symfony\Component\DependencyInjection\Reference;
  * The container is built here instead of loading `payment.php` so that the container holds *only* the
  * plugin: if the mechanism needed anything from the core configuration, these tests would not compile.
  *
+ * The file owns the compiler pass, because the pass is what turns the tags of an extension into the
+ * chain the container holds; the factory that builds the provider out of that chain has its own test
+ * in `PaymentProviderFactoryTest`, so the covered class here is unambiguous.
+ *
  * @internal
  */
 #[Package('framework')]
 #[CoversClass(PaymentProviderCompilerPass::class)]
-#[CoversClass(PaymentProviderFactory::class)]
 class PaymentDeclarationAcceptanceTest extends TestCase
 {
     /**
