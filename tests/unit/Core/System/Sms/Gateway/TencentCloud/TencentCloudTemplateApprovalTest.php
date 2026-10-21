@@ -210,7 +210,7 @@ class TencentCloudTemplateApprovalTest extends TestCase
     {
         $actions = [];
 
-        $client = $this->createStub(SmsClient::class);
+        $client = static::createStub(SmsClient::class);
         $client->method('__call')->willReturnCallback(function (string $action) use (&$actions): object {
             $actions[] = $action;
 
@@ -358,7 +358,7 @@ class TencentCloudTemplateApprovalTest extends TestCase
 
     private function clientReturning(object $response): SmsClient
     {
-        $client = $this->createStub(SmsClient::class);
+        $client = static::createStub(SmsClient::class);
         $client->method('__call')->willReturn($response);
 
         return $client;
@@ -366,7 +366,7 @@ class TencentCloudTemplateApprovalTest extends TestCase
 
     private function clientThrowing(TencentCloudSDKException $error): SmsClient
     {
-        $client = $this->createStub(SmsClient::class);
+        $client = static::createStub(SmsClient::class);
         $client->method('__call')->willThrowException($error);
 
         return $client;

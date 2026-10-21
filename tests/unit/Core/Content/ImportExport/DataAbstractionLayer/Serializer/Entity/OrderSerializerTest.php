@@ -100,7 +100,11 @@ class OrderSerializerTest extends TestCase
             'entity' => self::createOrderEntity([
                 'lineItems' => new OrderLineItemCollection(),
             ]),
-            'expected' => self::getExpected(),
+            // the serializer joins the line items into one cell, so an order whose collection is
+            // empty but set answers with an empty cell instead of a missing value
+            'expected' => self::getExpected([
+                'lineItems' => '',
+            ]),
         ];
 
         yield 'with order line items' => [
@@ -213,12 +217,19 @@ class OrderSerializerTest extends TestCase
                         'toStateMachineHistoryEntries' => null,
                         'customFields' => null,
                         'translations' => null,
+                        // the reverse sides the payment domain declares on the state machine
+                        'paymentOrders' => null,
+                        'paymentMandates' => null,
+                        'paymentSubscriptions' => null,
+                        'paymentSubscriptionCycles' => null,
+                        'paymentTransfers' => null,
                     ],
                     'captures' => null,
                     'customFields' => null,
                     'id' => 'transaction-1',
                     'validationData' => [],
                     'primaryOrder' => null,
+                    'paymentOrders' => null,
                 ],
             ]),
         ];
@@ -310,12 +321,19 @@ class OrderSerializerTest extends TestCase
                         'toStateMachineHistoryEntries' => null,
                         'customFields' => null,
                         'translations' => null,
+                        // the reverse sides the payment domain declares on the state machine
+                        'paymentOrders' => null,
+                        'paymentMandates' => null,
+                        'paymentSubscriptions' => null,
+                        'paymentSubscriptionCycles' => null,
+                        'paymentTransfers' => null,
                     ],
                     'captures' => null,
                     'customFields' => null,
                     'id' => 'transaction-1',
                     'validationData' => [],
                     'primaryOrder' => null,
+                    'paymentOrders' => null,
                 ],
             ]),
         ];
@@ -522,6 +540,10 @@ class OrderSerializerTest extends TestCase
                 'primaryOrderTransactionId' => null,
                 'primaryOrderDeliveryVersionId' => null,
                 'primaryOrderTransactionVersionId' => null,
+                // the reverse sides of the loyalty, wallet and payment domains
+                'customerPointTransactions' => null,
+                'customerWalletTransactions' => null,
+                'paymentOrders' => null,
             ]
         );
     }
