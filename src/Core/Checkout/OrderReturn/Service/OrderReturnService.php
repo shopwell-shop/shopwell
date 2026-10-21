@@ -85,6 +85,13 @@ class OrderReturnService
      * return - the amount is calculated here and never taken from the request, so a customer can not
      * name a price.
      *
+     * `$onBehalfOfMerchant` is the one rule that differs between the two callers of this method. A
+     * customer may only open a return while the shop offers returns without an account
+     * (`allowGuest`), because that switch is what the storefront offers; an operator acting on the
+     * phone call of a guest can not be blocked by it, so the switch is skipped for them. Every other
+     * rule - the window, the returnable quantity, the reason, the computed amount - stays the same
+     * for both, because a return opened by the shop is the same return.
+     *
      * @param array{
      *     orderId: string,
      *     type: string,
@@ -99,15 +106,19 @@ class OrderReturnService
      *
      * @throws OrderReturnException
      */
-    public function create(array $data, Context $context, ?CustomerEntity $customer): OrderReturnEntity
-    {
+    public function create(
+        array $data,
+        Context $context,
+        ?CustomerEntity $customer,
+        bool $onBehalfOfMerchant = false,
+    ): OrderReturnEntity {
         $type = $data['type'];
 
         if (!\in_array($type, OrderReturnTypes::all(), true)) {
             throw OrderReturnException::invalidType($type);
         }
 
-        $order = $this->loadOrder($data['orderId'], $context);
+        $order = $this->getOrder($data['orderId'], $context);
 
         $salesChannelId = $order->getSalesChannelId();
 
@@ -126,7 +137,7 @@ class OrderReturnService
             throw OrderReturnException::orderNotFinished((string) $order->getOrderNumber());
         }
 
-        if ($customer === null && !$this->settings->allowGuest($salesChannelId)) {
+        if (!$onBehalfOfMerchant && $customer === null && !$this->settings->allowGuest($salesChannelId)) {
             throw OrderReturnException::disabled();
         }
 
@@ -219,7 +230,7 @@ class OrderReturnService
             return $this->get($returnId, $context);
         }
 
-        $this->refundService->refund($orderReturn, $this->loadOrder($orderReturn->orderId, $context), $context);
+        $this->refundService->refund($orderReturn, $this->getOrder($orderReturn->orderId, $context), $context);
 
         return $this->get($returnId, $context);
     }
@@ -299,7 +310,7 @@ class OrderReturnService
         $this->stateHandler->receive($returnId, $context);
 
         $orderReturn = $this->get($returnId, $context);
-        $order = $this->loadOrder($orderReturn->orderId, $context);
+        $order = $this->getOrder($orderReturn->orderId, $context);
 
         if ($this->settings->restockOnReceive($orderReturn->salesChannelId)) {
             $this->stockRestorer->restock($orderReturn, $order, $context);
@@ -327,7 +338,7 @@ class OrderReturnService
             OrderReturnStates::ACTION_REFUND
         );
 
-        $this->refundService->refund($orderReturn, $this->loadOrder($orderReturn->orderId, $context), $context);
+        $this->refundService->refund($orderReturn, $this->getOrder($orderReturn->orderId, $context), $context);
 
         return $this->get($returnId, $context);
     }
@@ -433,6 +444,35 @@ class OrderReturnService
     }
 
     /**
+     * The order a return is opened for, with everything a decision about it reads.
+     *
+     * The associations are the ones this service works with and not the ones of a caller: a refund
+     * needs the currency, a window that counts from the delivery needs the deliveries, and the
+     * administration opens a return for the customer of the order - so the customer is loaded too.
+     *
+     * @throws OrderReturnException
+     */
+    public function getOrder(string $orderId, Context $context): OrderEntity
+    {
+        $criteria = new Criteria([$orderId]);
+        $criteria->addAssociation('lineItems');
+        $criteria->addAssociation('currency');
+        $criteria->addAssociation('stateMachineState');
+        $criteria->addAssociation('deliveries');
+        $criteria->addAssociation('deliveries.stateMachineState');
+        $criteria->addAssociation('orderCustomer');
+        $criteria->addAssociation('orderCustomer.customer');
+
+        $order = $this->orderRepository->search($criteria, $context)->getEntities()->first();
+
+        if (!$order instanceof OrderEntity) {
+            throw OrderReturnException::orderNotFound($orderId);
+        }
+
+        return $order;
+    }
+
+    /**
      * @param list<string> $allowed
      *
      * @throws OrderReturnException
@@ -532,28 +572,6 @@ class OrderReturnService
         }
 
         return mb_strtolower(trim($email));
-    }
-
-    /**
-     * @throws OrderReturnException
-     */
-    private function loadOrder(string $orderId, Context $context): OrderEntity
-    {
-        $criteria = new Criteria([$orderId]);
-        $criteria->addAssociation('lineItems');
-        $criteria->addAssociation('currency');
-        $criteria->addAssociation('stateMachineState');
-        $criteria->addAssociation('deliveries');
-        $criteria->addAssociation('deliveries.stateMachineState');
-        $criteria->addAssociation('orderCustomer');
-
-        $order = $this->orderRepository->search($criteria, $context)->getEntities()->first();
-
-        if (!$order instanceof OrderEntity) {
-            throw OrderReturnException::orderNotFound($orderId);
-        }
-
-        return $order;
     }
 
     private function assertReason(?string $reasonId, Context $context): void

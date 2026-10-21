@@ -16,11 +16,12 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
 /**
- * The decisions a merchant takes on a return.
+ * The two ways a merchant works a return: opening one for an order, and deciding about one.
  *
  * The list and the detail of the administration are plain DAL reads and need no endpoint here - a
  * decision is not: it moves the state machine, may put goods back into the stock and may move money,
- * so it runs through the service and never through a written state id.
+ * so it runs through the service and never through a written state id. Opening a return runs through
+ * the same service for the same reason: the amount is computed from the order, not from the request.
  *
  * Every endpoint answers with the return in its new shape, so the administration renders the result
  * without reloading the whole row.
@@ -123,9 +124,112 @@ class OrderReturnController
         return $this->respond($this->orderReturnService->get($id, $context));
     }
 
+    /**
+     * What an operator needs to open a return for an order: the positions that are still returnable
+     * with the quantity that is left, and the reasons the shop maintains.
+     *
+     * The page renders its form from this, so a merchant never types an amount and never offers a
+     * position the server would reject afterwards - the same contract the storefront uses.
+     */
+    #[Route(
+        path: '/api/_action/order-return/order/{orderId}/positions',
+        name: 'api.action.order-return.positions',
+        defaults: [PlatformRequest::ATTRIBUTE_ACL => ['order_return.viewer']],
+        methods: [Request::METHOD_GET]
+    )]
+    public function positions(string $orderId, Context $context): Response
+    {
+        $order = $this->orderReturnService->getOrder($orderId, $context);
+
+        return new JsonResponse([
+            'orderNumber' => $order->getOrderNumber(),
+            // the form prints the unit price of a position, so it needs the two facts a price is
+            // rendered with - the currency and its decimals
+            'currency' => $order->getCurrency()?->getIsoCode(),
+            'decimals' => $order->getCurrency()?->getItemRounding()->getDecimals() ?? 2,
+            'positions' => $this->orderReturnService->returnablePositions($order, $context),
+            'reasons' => $this->orderReturnService->activeReasons($context),
+        ]);
+    }
+
+    /**
+     * Opens a return on behalf of the customer of an order - the phone call case, and the reason the
+     * order detail has a returns tab.
+     *
+     * It is the same creation the customer would run in the storefront, with the same validation: the
+     * operator names positions and a type, the server computes the amount and starts the case in
+     * `requested`, so the decision about it is still a decision somebody has to take. Only the switch
+     * that offers guest returns to the storefront is skipped here (see
+     * `OrderReturnService::create()`), because an operator is not a guest.
+     */
+    #[Route(
+        path: '/api/_action/order-return/order/{orderId}',
+        name: 'api.action.order-return.create',
+        defaults: [PlatformRequest::ATTRIBUTE_ACL => ['order_return.editor']],
+        methods: [Request::METHOD_POST]
+    )]
+    public function create(string $orderId, Request $request, Context $context): Response
+    {
+        $order = $this->orderReturnService->getOrder($orderId, $context);
+        $orderCustomer = $order->getOrderCustomer();
+
+        $orderReturn = $this->orderReturnService->create(
+            [
+                'orderId' => $orderId,
+                'type' => (string) $request->request->get('type', ''),
+                'positions' => $this->positionsOf($request),
+                'reasonId' => $this->stringOrNull($request, 'reasonId'),
+                'reasonText' => $this->stringOrNull($request, 'reasonText'),
+                'customerNote' => $this->stringOrNull($request, 'customerNote'),
+                // a guest order has no customer to pass, so the address it was placed with proves the
+                // order - exactly the way a guest proves it in the storefront
+                'guestEmail' => $orderCustomer?->getEmail(),
+            ],
+            $context,
+            $orderCustomer?->getCustomer(),
+            true
+        );
+
+        return new JsonResponse(
+            ['orderReturn' => $this->presenter->present($orderReturn)],
+            Response::HTTP_CREATED
+        );
+    }
+
     private function respond(OrderReturnEntity $orderReturn): Response
     {
         return new JsonResponse(['orderReturn' => $this->presenter->present($orderReturn)]);
+    }
+
+    /**
+     * @return array<string, int> order line item id => quantity
+     */
+    private function positionsOf(Request $request): array
+    {
+        $positions = [];
+
+        foreach ($request->request->all('positions') as $position) {
+            if (!\is_array($position)) {
+                continue;
+            }
+
+            $lineItemId = $position['lineItemId'] ?? null;
+
+            if (!\is_string($lineItemId) || $lineItemId === '') {
+                continue;
+            }
+
+            $positions[$lineItemId] = (int) ($position['quantity'] ?? 0);
+        }
+
+        return $positions;
+    }
+
+    private function stringOrNull(Request $request, string $key): ?string
+    {
+        $value = $request->request->get($key);
+
+        return \is_string($value) && trim($value) !== '' ? trim($value) : null;
     }
 
     private function administratorId(Context $context): ?string
