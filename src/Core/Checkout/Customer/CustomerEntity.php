@@ -7,9 +7,14 @@ use Shopwell\Core\Checkout\Customer\Aggregate\CustomerAddress\CustomerAddressEnt
 use Shopwell\Core\Checkout\Customer\Aggregate\CustomerGroup\CustomerGroupEntity;
 use Shopwell\Core\Checkout\Customer\Aggregate\CustomerRecovery\CustomerRecoveryEntity;
 use Shopwell\Core\Checkout\Customer\Aggregate\CustomerWishlist\CustomerWishlistCollection;
+use Shopwell\Core\Checkout\Loyalty\Entity\CustomerLoyalty\CustomerLoyaltyCollection;
+use Shopwell\Core\Checkout\Loyalty\Entity\CustomerPointTransaction\CustomerPointTransactionCollection;
+use Shopwell\Core\Checkout\Loyalty\Entity\MembershipOrder\MembershipOrderCollection;
 use Shopwell\Core\Checkout\Order\Aggregate\OrderCustomer\OrderCustomerCollection;
 use Shopwell\Core\Checkout\Payment\PaymentMethodEntity;
 use Shopwell\Core\Checkout\Promotion\PromotionCollection;
+use Shopwell\Core\Checkout\Wallet\Entity\CustomerWallet\CustomerWalletCollection;
+use Shopwell\Core\Checkout\Wallet\Entity\CustomerWalletTopUp\CustomerWalletTopUpCollection;
 use Shopwell\Core\Content\Product\Aggregate\ProductReview\ProductReviewCollection;
 use Shopwell\Core\Framework\DataAbstractionLayer\Entity;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityCustomFieldsTrait;
@@ -17,6 +22,8 @@ use Shopwell\Core\Framework\DataAbstractionLayer\EntityIdTrait;
 use Shopwell\Core\Framework\Deprecation\BCChange\ParameterTypeWidening;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Language\LanguageEntity;
+use Shopwell\Core\System\Payment\Subscription\PaymentMandateCollection;
+use Shopwell\Core\System\Payment\Subscription\PaymentSubscriptionCollection;
 use Shopwell\Core\System\SalesChannel\SalesChannelEntity;
 use Shopwell\Core\System\Salutation\SalutationEntity;
 use Shopwell\Core\System\Tag\TagCollection;
@@ -158,6 +165,20 @@ class CustomerEntity extends Entity implements \Stringable
     protected ?CustomerRecoveryEntity $recoveryCustomer = null;
 
     protected ?ProductReviewCollection $productReviews = null;
+
+    protected ?CustomerLoyaltyCollection $customerLoyalties = null;
+
+    protected ?CustomerPointTransactionCollection $customerPointTransactions = null;
+
+    protected ?MembershipOrderCollection $membershipOrders = null;
+
+    protected ?CustomerWalletCollection $customerWallets = null;
+
+    protected ?CustomerWalletTopUpCollection $customerWalletTopUps = null;
+
+    protected ?PaymentMandateCollection $paymentMandates = null;
+
+    protected ?PaymentSubscriptionCollection $paymentSubscriptions = null;
 
     protected ?string $remoteAddress = null;
 
@@ -855,5 +876,75 @@ class CustomerEntity extends Entity implements \Stringable
     public function setUpdatedBy(UserEntity $updatedBy): void
     {
         $this->updatedBy = $updatedBy;
+    }
+
+    public function getCustomerLoyalties(): ?CustomerLoyaltyCollection
+    {
+        return $this->customerLoyalties;
+    }
+
+    public function setCustomerLoyalties(CustomerLoyaltyCollection $customerLoyalties): void
+    {
+        $this->customerLoyalties = $customerLoyalties;
+    }
+
+    public function getCustomerPointTransactions(): ?CustomerPointTransactionCollection
+    {
+        return $this->customerPointTransactions;
+    }
+
+    public function setCustomerPointTransactions(CustomerPointTransactionCollection $customerPointTransactions): void
+    {
+        $this->customerPointTransactions = $customerPointTransactions;
+    }
+
+    public function getMembershipOrders(): ?MembershipOrderCollection
+    {
+        return $this->membershipOrders;
+    }
+
+    public function setMembershipOrders(MembershipOrderCollection $membershipOrders): void
+    {
+        $this->membershipOrders = $membershipOrders;
+    }
+
+    public function getCustomerWallets(): ?CustomerWalletCollection
+    {
+        return $this->customerWallets;
+    }
+
+    public function setCustomerWallets(CustomerWalletCollection $customerWallets): void
+    {
+        $this->customerWallets = $customerWallets;
+    }
+
+    public function getCustomerWalletTopUps(): ?CustomerWalletTopUpCollection
+    {
+        return $this->customerWalletTopUps;
+    }
+
+    public function setCustomerWalletTopUps(CustomerWalletTopUpCollection $customerWalletTopUps): void
+    {
+        $this->customerWalletTopUps = $customerWalletTopUps;
+    }
+
+    public function getPaymentMandates(): ?PaymentMandateCollection
+    {
+        return $this->paymentMandates;
+    }
+
+    public function setPaymentMandates(PaymentMandateCollection $paymentMandates): void
+    {
+        $this->paymentMandates = $paymentMandates;
+    }
+
+    public function getPaymentSubscriptions(): ?PaymentSubscriptionCollection
+    {
+        return $this->paymentSubscriptions;
+    }
+
+    public function setPaymentSubscriptions(PaymentSubscriptionCollection $paymentSubscriptions): void
+    {
+        $this->paymentSubscriptions = $paymentSubscriptions;
     }
 }

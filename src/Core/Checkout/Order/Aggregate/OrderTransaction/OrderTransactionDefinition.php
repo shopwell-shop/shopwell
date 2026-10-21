@@ -76,6 +76,9 @@ class OrderTransactionDefinition extends EntityDefinition
             (new ManyToOneAssociationField('paymentMethod', 'payment_method_id', PaymentMethodDefinition::class, 'id', false))->addFlags(new ApiAware())->setDescription('Payment method used for this transaction'),
             (new OneToManyAssociationField('captures', OrderTransactionCaptureDefinition::class, 'order_transaction_id'))->addFlags(new ApiAware(), new CascadeDelete())->setDescription('Payment captures for this transaction'),
             new OneToOneAssociationField('primaryOrder', 'id', 'primary_order_transaction_id', OrderDefinition::class, false),
+
+            // Reverse side of the payment domain
+            (new OneToManyAssociationField('paymentOrders', 'payment_order', 'order_transaction_id'))->addFlags(new CascadeDelete()),
         ]);
     }
 }

@@ -4,6 +4,7 @@ namespace Shopwell\Core\Checkout\Payment;
 
 use Shopwell\Core\Checkout\Customer\CustomerCollection;
 use Shopwell\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionCollection;
+use Shopwell\Core\Checkout\Payment\Aggregate\PaymentMethodGatewayChannel\PaymentMethodGatewayChannelCollection;
 use Shopwell\Core\Checkout\Payment\Aggregate\PaymentMethodTranslation\PaymentMethodTranslationCollection;
 use Shopwell\Core\Content\Media\MediaEntity;
 use Shopwell\Core\Content\Rule\RuleEntity;
@@ -69,6 +70,8 @@ class PaymentMethodEntity extends Entity implements IdAware, RuleIdAware
     protected string $technicalName;
 
     protected ?AppPaymentMethodEntity $appPaymentMethod = null;
+
+    protected ?PaymentMethodGatewayChannelCollection $gatewayChannels = null;
 
     public function getPluginId(): ?string
     {
@@ -288,5 +291,15 @@ class PaymentMethodEntity extends Entity implements IdAware, RuleIdAware
     public function setAppPaymentMethod(?AppPaymentMethodEntity $appPaymentMethod): void
     {
         $this->appPaymentMethod = $appPaymentMethod;
+    }
+
+    public function getGatewayChannels(): ?PaymentMethodGatewayChannelCollection
+    {
+        return $this->gatewayChannels;
+    }
+
+    public function setGatewayChannels(PaymentMethodGatewayChannelCollection $gatewayChannels): void
+    {
+        $this->gatewayChannels = $gatewayChannels;
     }
 }

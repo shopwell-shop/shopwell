@@ -5,6 +5,8 @@ namespace Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyTier;
 use Shopwell\Core\Checkout\Customer\Aggregate\CustomerGroup\CustomerGroupDefinition;
 use Shopwell\Core\Checkout\Loyalty\Entity\CustomerLoyalty\CustomerLoyaltyDefinition;
 use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyTier\Aggregate\LoyaltyTierTranslation\LoyaltyTierTranslationDefinition;
+use Shopwell\Core\Checkout\Loyalty\Entity\MembershipOrder\MembershipOrderDefinition;
+use Shopwell\Core\Checkout\Loyalty\Entity\MembershipPlan\MembershipPlanDefinition;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityDefinition;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\BoolField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\FkField;
@@ -15,6 +17,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\SearchRanking;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\FloatField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\IdField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\IntField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\ManyToOneAssociationField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\OneToManyAssociationField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\StringField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\TranslatedField;
@@ -64,7 +67,10 @@ class LoyaltyTierDefinition extends EntityDefinition
             (new FkField('customer_group_id', 'customerGroupId', CustomerGroupDefinition::class))->addFlags(new ApiAware()),
             (new TranslatedField('name'))->addFlags(new ApiAware(), new SearchRanking(SearchRanking::HIGH_SEARCH_RANKING)),
             (new TranslatedField('description'))->addFlags(new ApiAware()),
+            new ManyToOneAssociationField('customerGroup', 'customer_group_id', CustomerGroupDefinition::class, 'id', false),
             new OneToManyAssociationField('customers', CustomerLoyaltyDefinition::class, 'membership_tier_id', 'id'),
+            new OneToManyAssociationField('membershipPlans', MembershipPlanDefinition::class, 'loyalty_tier_id'),
+            new OneToManyAssociationField('membershipOrders', MembershipOrderDefinition::class, 'loyalty_tier_id'),
             (new TranslationsAssociationField(LoyaltyTierTranslationDefinition::class, 'loyalty_tier_id'))->addFlags(new Required()),
         ]);
     }

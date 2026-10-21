@@ -4,6 +4,7 @@ namespace Shopwell\Core\Checkout\Customer\Aggregate\CustomerGroup;
 
 use Shopwell\Core\Checkout\Customer\Aggregate\CustomerGroupTranslation\CustomerGroupTranslationCollection;
 use Shopwell\Core\Checkout\Customer\CustomerCollection;
+use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyTier\LoyaltyTierCollection;
 use Shopwell\Core\Framework\DataAbstractionLayer\Entity;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityCustomFieldsTrait;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityIdTrait;
@@ -40,6 +41,8 @@ class CustomerGroupEntity extends Entity
     protected ?string $registrationSeoMetaDescription = null;
 
     protected ?SalesChannelCollection $registrationSalesChannels = null;
+
+    protected ?LoyaltyTierCollection $loyaltyTiers = null;
 
     public function getName(): ?string
     {
@@ -149,5 +152,15 @@ class CustomerGroupEntity extends Entity
     public function setRegistrationSalesChannels(SalesChannelCollection $registrationSalesChannels): void
     {
         $this->registrationSalesChannels = $registrationSalesChannels;
+    }
+
+    public function getLoyaltyTiers(): ?LoyaltyTierCollection
+    {
+        return $this->loyaltyTiers;
+    }
+
+    public function setLoyaltyTiers(LoyaltyTierCollection $loyaltyTiers): void
+    {
+        $this->loyaltyTiers = $loyaltyTiers;
     }
 }

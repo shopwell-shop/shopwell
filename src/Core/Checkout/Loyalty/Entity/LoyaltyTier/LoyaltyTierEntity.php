@@ -5,6 +5,8 @@ namespace Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyTier;
 use Shopwell\Core\Checkout\Customer\Aggregate\CustomerGroup\CustomerGroupEntity;
 use Shopwell\Core\Checkout\Loyalty\Entity\CustomerLoyalty\CustomerLoyaltyCollection;
 use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyTier\Aggregate\LoyaltyTierTranslation\LoyaltyTierTranslationCollection;
+use Shopwell\Core\Checkout\Loyalty\Entity\MembershipOrder\MembershipOrderCollection;
+use Shopwell\Core\Checkout\Loyalty\Entity\MembershipPlan\MembershipPlanCollection;
 use Shopwell\Core\Framework\DataAbstractionLayer\Entity;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityIdTrait;
 use Shopwell\Core\Framework\Log\Package;
@@ -42,6 +44,10 @@ class LoyaltyTierEntity extends Entity
     protected ?CustomerLoyaltyCollection $customers = null;
 
     protected ?LoyaltyTierTranslationCollection $translations = null;
+
+    protected ?MembershipPlanCollection $membershipPlans = null;
+
+    protected ?MembershipOrderCollection $membershipOrders = null;
 
     public function getTechnicalName(): string
     {
@@ -171,5 +177,25 @@ class LoyaltyTierEntity extends Entity
     public function setTranslations(LoyaltyTierTranslationCollection $translations): void
     {
         $this->translations = $translations;
+    }
+
+    public function getMembershipPlans(): ?MembershipPlanCollection
+    {
+        return $this->membershipPlans;
+    }
+
+    public function setMembershipPlans(MembershipPlanCollection $membershipPlans): void
+    {
+        $this->membershipPlans = $membershipPlans;
+    }
+
+    public function getMembershipOrders(): ?MembershipOrderCollection
+    {
+        return $this->membershipOrders;
+    }
+
+    public function setMembershipOrders(MembershipOrderCollection $membershipOrders): void
+    {
+        $this->membershipOrders = $membershipOrders;
     }
 }

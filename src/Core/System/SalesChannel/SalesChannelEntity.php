@@ -7,6 +7,7 @@ use Shopwell\Core\Checkout\Customer\Aggregate\CustomerGroup\CustomerGroupEntity;
 use Shopwell\Core\Checkout\Customer\Aggregate\CustomerWishlist\CustomerWishlistCollection;
 use Shopwell\Core\Checkout\Customer\CustomerCollection;
 use Shopwell\Core\Checkout\DocumentV2\Aggregate\DocumentBaseConfig\DocumentBaseConfigDefinition;
+use Shopwell\Core\Checkout\Loyalty\Entity\CustomerPointTransaction\CustomerPointTransactionCollection;
 use Shopwell\Core\Checkout\Order\OrderCollection;
 use Shopwell\Core\Checkout\Payment\PaymentMethodCollection;
 use Shopwell\Core\Checkout\Payment\PaymentMethodEntity;
@@ -37,6 +38,8 @@ use Shopwell\Core\System\Currency\CurrencyEntity;
 use Shopwell\Core\System\Language\LanguageCollection;
 use Shopwell\Core\System\Language\LanguageEntity;
 use Shopwell\Core\System\NumberRange\Aggregate\NumberRangeSalesChannel\NumberRangeSalesChannelCollection;
+use Shopwell\Core\System\Payment\Subscription\PaymentPlanCollection;
+use Shopwell\Core\System\Payment\Subscription\PaymentSubscriptionCollection;
 use Shopwell\Core\System\SalesChannel\Aggregate\SalesChannelAnalytics\SalesChannelAnalyticsEntity;
 use Shopwell\Core\System\SalesChannel\Aggregate\SalesChannelDomain\SalesChannelDomainCollection;
 use Shopwell\Core\System\SalesChannel\Aggregate\SalesChannelDomain\SalesChannelDomainEntity;
@@ -184,6 +187,12 @@ class SalesChannelEntity extends Entity
     protected ?DocumentBaseConfigDefinition $documentBaseConfigSalesChannels = null;
 
     protected ?ProductReviewCollection $productReviews = null;
+
+    protected ?CustomerPointTransactionCollection $customerPointTransactions = null;
+
+    protected ?PaymentPlanCollection $paymentPlans = null;
+
+    protected ?PaymentSubscriptionCollection $paymentSubscriptions = null;
 
     protected ?SeoUrlCollection $seoUrls = null;
 
@@ -1035,5 +1044,35 @@ class SalesChannelEntity extends Entity
     public function setBusinessTimeZone(?string $businessTimeZone): void
     {
         $this->businessTimeZone = $businessTimeZone;
+    }
+
+    public function getCustomerPointTransactions(): ?CustomerPointTransactionCollection
+    {
+        return $this->customerPointTransactions;
+    }
+
+    public function setCustomerPointTransactions(CustomerPointTransactionCollection $customerPointTransactions): void
+    {
+        $this->customerPointTransactions = $customerPointTransactions;
+    }
+
+    public function getPaymentPlans(): ?PaymentPlanCollection
+    {
+        return $this->paymentPlans;
+    }
+
+    public function setPaymentPlans(PaymentPlanCollection $paymentPlans): void
+    {
+        $this->paymentPlans = $paymentPlans;
+    }
+
+    public function getPaymentSubscriptions(): ?PaymentSubscriptionCollection
+    {
+        return $this->paymentSubscriptions;
+    }
+
+    public function setPaymentSubscriptions(PaymentSubscriptionCollection $paymentSubscriptions): void
+    {
+        $this->paymentSubscriptions = $paymentSubscriptions;
     }
 }

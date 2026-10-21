@@ -7,6 +7,7 @@ use Shopwell\Core\Checkout\Customer\Aggregate\CustomerGroupRegistrationSalesChan
 use Shopwell\Core\Checkout\Customer\Aggregate\CustomerWishlist\CustomerWishlistDefinition;
 use Shopwell\Core\Checkout\Customer\CustomerDefinition;
 use Shopwell\Core\Checkout\DocumentV2\Aggregate\DocumentBaseConfigSalesChannel\DocumentBaseConfigSalesChannelDefinition;
+use Shopwell\Core\Checkout\Loyalty\Entity\CustomerPointTransaction\CustomerPointTransactionDefinition;
 use Shopwell\Core\Checkout\Order\OrderDefinition;
 use Shopwell\Core\Checkout\Payment\PaymentMethodDefinition;
 use Shopwell\Core\Checkout\Promotion\Aggregate\PromotionSalesChannel\PromotionSalesChannelDefinition;
@@ -192,6 +193,11 @@ class SalesChannelDefinition extends EntityDefinition
             new ManyToManyAssociationField('landingPages', LandingPageDefinition::class, LandingPageSalesChannelDefinition::class, 'sales_channel_id', 'landing_page_id', 'id', 'id'),
             new OneToManyAssociationField('boundCustomers', CustomerDefinition::class, 'bound_sales_channel_id', 'id'),
             (new OneToManyAssociationField('wishlists', CustomerWishlistDefinition::class, 'sales_channel_id'))->addFlags(new CascadeDelete()),
+
+            // Reverse sides of the loyalty and payment domains
+            new OneToManyAssociationField('customerPointTransactions', CustomerPointTransactionDefinition::class, 'sales_channel_id'),
+            new OneToManyAssociationField('paymentPlans', 'payment_plan', 'sales_channel_id'),
+            new OneToManyAssociationField('paymentSubscriptions', 'payment_subscription', 'sales_channel_id'),
         ]);
 
         return $fields;

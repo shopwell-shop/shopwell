@@ -5,6 +5,7 @@ namespace Shopwell\Core\Checkout\Customer\Aggregate\CustomerGroup;
 use Shopwell\Core\Checkout\Customer\Aggregate\CustomerGroupRegistrationSalesChannel\CustomerGroupRegistrationSalesChannelDefinition;
 use Shopwell\Core\Checkout\Customer\Aggregate\CustomerGroupTranslation\CustomerGroupTranslationDefinition;
 use Shopwell\Core\Checkout\Customer\CustomerDefinition;
+use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyTier\LoyaltyTierDefinition;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityDefinition;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\BoolField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\ApiAware;
@@ -66,6 +67,9 @@ class CustomerGroupDefinition extends EntityDefinition
             (new OneToManyAssociationField('salesChannels', SalesChannelDefinition::class, 'customer_group_id', 'id'))->addFlags(new RestrictDelete()),
             (new TranslationsAssociationField(CustomerGroupTranslationDefinition::class, 'customer_group_id'))->addFlags(new Required()),
             new ManyToManyAssociationField('registrationSalesChannels', SalesChannelDefinition::class, CustomerGroupRegistrationSalesChannelDefinition::class, 'customer_group_id', 'sales_channel_id'),
+
+            // Reverse side of the loyalty domain: the tiers that grant this group its benefits
+            new OneToManyAssociationField('loyaltyTiers', LoyaltyTierDefinition::class, 'customer_group_id'),
         ]);
     }
 }

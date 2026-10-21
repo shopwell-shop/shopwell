@@ -7,10 +7,15 @@ use Shopwell\Core\Checkout\Customer\Aggregate\CustomerGroup\CustomerGroupDefinit
 use Shopwell\Core\Checkout\Customer\Aggregate\CustomerRecovery\CustomerRecoveryDefinition;
 use Shopwell\Core\Checkout\Customer\Aggregate\CustomerTag\CustomerTagDefinition;
 use Shopwell\Core\Checkout\Customer\Aggregate\CustomerWishlist\CustomerWishlistDefinition;
+use Shopwell\Core\Checkout\Loyalty\Entity\CustomerLoyalty\CustomerLoyaltyDefinition;
+use Shopwell\Core\Checkout\Loyalty\Entity\CustomerPointTransaction\CustomerPointTransactionDefinition;
+use Shopwell\Core\Checkout\Loyalty\Entity\MembershipOrder\MembershipOrderDefinition;
 use Shopwell\Core\Checkout\Order\Aggregate\OrderCustomer\OrderCustomerDefinition;
 use Shopwell\Core\Checkout\Payment\PaymentMethodDefinition;
 use Shopwell\Core\Checkout\Promotion\Aggregate\PromotionPersonaCustomer\PromotionPersonaCustomerDefinition;
 use Shopwell\Core\Checkout\Promotion\PromotionDefinition;
+use Shopwell\Core\Checkout\Wallet\Entity\CustomerWallet\CustomerWalletDefinition;
+use Shopwell\Core\Checkout\Wallet\Entity\CustomerWalletTopUp\CustomerWalletTopUpDefinition;
 use Shopwell\Core\Content\Product\Aggregate\ProductReview\ProductReviewDefinition;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityDefinition;
@@ -176,6 +181,17 @@ class CustomerDefinition extends EntityDefinition
             (new UpdatedByField([Context::SYSTEM_SCOPE, Context::CRUD_API_SCOPE]))->addFlags(new ApiAware()),
             new ManyToOneAssociationField('createdBy', 'created_by_id', UserDefinition::class, 'id', false),
             new ManyToOneAssociationField('updatedBy', 'updated_by_id', UserDefinition::class, 'id', false),
+
+            // Reverse sides of the loyalty, wallet and payment domains. They are declared here instead of
+            // in an entity extension, so the DAL knows the children of a customer and the schema builder
+            // never proposes to drop their foreign keys.
+            new OneToManyAssociationField('customerLoyalties', CustomerLoyaltyDefinition::class, 'customer_id'),
+            new OneToManyAssociationField('customerPointTransactions', CustomerPointTransactionDefinition::class, 'customer_id'),
+            new OneToManyAssociationField('membershipOrders', MembershipOrderDefinition::class, 'customer_id'),
+            new OneToManyAssociationField('customerWallets', CustomerWalletDefinition::class, 'customer_id'),
+            new OneToManyAssociationField('customerWalletTopUps', CustomerWalletTopUpDefinition::class, 'customer_id'),
+            new OneToManyAssociationField('paymentMandates', 'payment_mandate', 'customer_id'),
+            new OneToManyAssociationField('paymentSubscriptions', 'payment_subscription', 'customer_id'),
         ]);
     }
 }
