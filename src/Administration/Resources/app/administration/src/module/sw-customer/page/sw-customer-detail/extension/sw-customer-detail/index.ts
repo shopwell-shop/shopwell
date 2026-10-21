@@ -34,8 +34,10 @@ interface SwCustomerDetailThis {
  * `sw_customer_detail_content_tab_after` block, the meteor tabs through the `customerDetailTabs`
  * computed - so they show up regardless of the active major feature flag. Each tab is gated by
  * its own ACL privilege.
+ *
+ * @private
  */
-Component.override('sw-customer-detail', {
+export const customerDetailExtension = {
     template,
 
     computed: {
@@ -81,4 +83,6 @@ Component.override('sw-customer-detail', {
             return tabs;
         },
     },
-});
+};
+
+Component.override('sw-customer-detail', customerDetailExtension);
