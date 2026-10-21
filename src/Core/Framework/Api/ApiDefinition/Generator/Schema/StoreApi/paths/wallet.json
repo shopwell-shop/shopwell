@@ -208,6 +208,205 @@
                     }
                 ]
             }
+        },
+        "/wallet/top-up": {
+            "post": {
+                "tags": [
+                    "Wallet"
+                ],
+                "summary": "Create a wallet top-up and open the payment for it",
+                "description": "Creates a top-up for the authenticated customer and opens the payment of the given channel for it. The top-up is credited once the channel confirmed the payment, not when it was opened, so the response carries the data the payer needs to pay it.",
+                "operationId": "createWalletTopUp",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "amount": {
+                                        "type": "number",
+                                        "description": "The amount to add to the wallet, in the currency of the context. Must be within the minimum and maximum the shop allows."
+                                    },
+                                    "channel": {
+                                        "type": "string",
+                                        "description": "The technical name of the payment channel that collects the money, as listed by the wallet route."
+                                    },
+                                    "returnUrl": {
+                                        "type": "string",
+                                        "description": "Where the payer lands after a redirect channel. The account page of the wallet is used when this is missing."
+                                    },
+                                    "device": {
+                                        "type": "string",
+                                        "description": "The device the payer uses, for channels that render a different interface per device, e.g. `mobile` or `pc`."
+                                    }
+                                },
+                                "required": [
+                                    "amount",
+                                    "channel"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "The created top-up and the payment data of the channel.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "id": {
+                                            "type": "string",
+                                            "description": "The id of the top-up, to read its state with the top-up status route."
+                                        },
+                                        "amount": {
+                                            "type": "number",
+                                            "description": "The amount of the top-up, in the currency of the top-up."
+                                        },
+                                        "currency": {
+                                            "type": "string",
+                                            "description": "The iso code of the currency of the top-up."
+                                        },
+                                        "payment_no": {
+                                            "type": "string",
+                                            "description": "The payment number of the channel."
+                                        },
+                                        "channel": {
+                                            "type": "string",
+                                            "description": "The technical name of the channel that collects the money."
+                                        },
+                                        "params": {
+                                            "type": "object",
+                                            "additionalProperties": true,
+                                            "description": "The data the payer needs to pay, in the form the channel declared it."
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "The wallet is disabled, the amount is out of the allowed range or the channel is unknown.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/failure"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/401",
+                        "description": "The customer is not logged in."
+                    }
+                },
+                "security": [
+                    {
+                        "ApiKey": []
+                    }
+                ]
+            }
+        },
+        "/wallet/top-up/{topUpId}": {
+            "get": {
+                "tags": [
+                    "Wallet"
+                ],
+                "summary": "Fetch the state of a wallet top-up",
+                "description": "Returns the state of a top-up of the authenticated customer. A top-up stays open until the channel confirmed the payment, so a payer who comes back from the channel can poll it until it is credited.",
+                "operationId": "readWalletTopUp",
+                "parameters": [
+                    {
+                        "name": "topUpId",
+                        "in": "path",
+                        "required": true,
+                        "description": "The id of the top-up.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The state of the top-up.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "id": {
+                                            "type": "string"
+                                        },
+                                        "amount": {
+                                            "type": "number",
+                                            "description": "The amount of the top-up, in the currency of the top-up."
+                                        },
+                                        "currency": {
+                                            "type": "string",
+                                            "description": "The iso code of the currency of the top-up."
+                                        },
+                                        "state": {
+                                            "type": "string",
+                                            "description": "The state of the top-up, e.g. `open`, `credited` or `failed`."
+                                        },
+                                        "paymentNo": {
+                                            "type": [
+                                                "string",
+                                                "null"
+                                            ],
+                                            "description": "The payment number of the channel, null while the payment was not opened yet."
+                                        },
+                                        "channel": {
+                                            "type": [
+                                                "string",
+                                                "null"
+                                            ],
+                                            "description": "The technical name of the channel the top-up was opened with."
+                                        },
+                                        "creditedAt": {
+                                            "type": [
+                                                "string",
+                                                "null"
+                                            ],
+                                            "format": "date-time",
+                                            "description": "When the top-up was credited to the wallet, null while it is not."
+                                        },
+                                        "createdAt": {
+                                            "type": [
+                                                "string",
+                                                "null"
+                                            ],
+                                            "format": "date-time",
+                                            "description": "When the top-up was created."
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/401",
+                        "description": "The customer is not logged in."
+                    },
+                    "404": {
+                        "description": "The top-up does not exist or belongs to another customer.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/failure"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "ApiKey": []
+                    }
+                ]
+            }
         }
     }
 }
