@@ -13,6 +13,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\Required;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\IdField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\IntField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\ManyToOneAssociationField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\ReferenceVersionField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\StringField;
 use Shopwell\Core\Framework\DataAbstractionLayer\FieldCollection;
 use Shopwell\Core\Framework\Log\Package;
@@ -57,6 +58,7 @@ class CustomerPointTransactionDefinition extends EntityDefinition
             (new IntField('balance_after', 'balanceAfter'))->addFlags(new ApiAware()),
             (new StringField('idempotency_key', 'idempotencyKey'))->addFlags(new ApiAware()),
             (new FkField('order_id', 'orderId', OrderDefinition::class))->addFlags(new ApiAware()),
+            (new ReferenceVersionField(OrderDefinition::class, 'order_version_id'))->addFlags(new ApiAware()),
             (new FkField('sales_channel_id', 'salesChannelId', SalesChannelDefinition::class))->addFlags(new ApiAware()),
             (new DateTimeField('expires_at', 'expiresAt'))->addFlags(new ApiAware()),
             (new DateTimeField('expired_at', 'expiredAt'))->addFlags(new ApiAware()),
