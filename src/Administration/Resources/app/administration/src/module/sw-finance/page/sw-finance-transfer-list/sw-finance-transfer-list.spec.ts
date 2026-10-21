@@ -118,9 +118,7 @@ async function createWrapper(
 }> {
     const search = jest.fn(() => Promise.resolve(collection<EntityCollection<'payment_transfer'>>(items)));
 
-    const stateSearch = jest.fn(() =>
-        Promise.resolve(collection<EntityCollection<'state_machine_state'>>(transferStates)),
-    );
+    const stateSearch = jest.fn(() => Promise.resolve(collection<EntityCollection<'state_machine_state'>>(transferStates)));
 
     const wrapper = mount(await wrapTestComponent('sw-finance-transfer-list', { sync: true }), {
         global: {
@@ -174,8 +172,7 @@ async function createWrapper(
                 },
                 searchRankingService: {
                     getSearchFieldsByEntity: () => Promise.resolve({}),
-                    buildSearchQueriesForEntity: (_searchFields: unknown, _term: string, criteria: unknown) =>
-                        criteria,
+                    buildSearchQueriesForEntity: (_searchFields: unknown, _term: string, criteria: unknown) => criteria,
                     isValidTerm: (term: string) => Boolean(term) && term.trim().length >= 1,
                 },
             },
@@ -382,9 +379,7 @@ describe('module/sw-finance/page/sw-finance-transfer-list', () => {
         const dateFilter = Shopwell.Filter.getByName('date') as (value: string) => string;
 
         expect(wrapper.vm.formatDateOrDash(null)).toBe('–');
-        expect(wrapper.vm.formatDateOrDash('2026-01-02T03:04:05.000Z')).toBe(
-            dateFilter('2026-01-02T03:04:05.000Z'),
-        );
+        expect(wrapper.vm.formatDateOrDash('2026-01-02T03:04:05.000Z')).toBe(dateFilter('2026-01-02T03:04:05.000Z'));
     });
 
     /**

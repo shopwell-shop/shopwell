@@ -50,7 +50,13 @@ const apps = [
  */
 const dataGridStub = {
     name: 'sw-data-grid',
-    props: ['dataSource', 'columns', 'isLoading', 'showActions', 'isRecordDisabled'],
+    props: [
+        'dataSource',
+        'columns',
+        'isLoading',
+        'showActions',
+        'isRecordDisabled',
+    ],
     template: `
         <div class="sw-data-grid">
             <div class="sw-data-grid__header">
@@ -260,13 +266,14 @@ describe('module/sw-settings-payment-gateway/page/sw-settings-payment-gateway-li
         });
 
         // and the name in the primary column is the entry point for viewers without the editor role
-        const nameLink = wrapper.findAll('.sw-data-grid__row').at(0)
-            .find('.sw-settings-payment-gateway-list__name-link');
+        const nameLink = wrapper.findAll('.sw-data-grid__row').at(0).find('.sw-settings-payment-gateway-list__name-link');
 
-        expect(nameLink.attributes('href')).toBe(JSON.stringify({
-            name: 'sw.settings.payment.gateway.detail',
-            params: { id: 'app-1' },
-        }));
+        expect(nameLink.attributes('href')).toBe(
+            JSON.stringify({
+                name: 'sw.settings.payment.gateway.detail',
+                params: { id: 'app-1' },
+            }),
+        );
     });
 
     it('should open the detail page of a new app from the create action', async () => {

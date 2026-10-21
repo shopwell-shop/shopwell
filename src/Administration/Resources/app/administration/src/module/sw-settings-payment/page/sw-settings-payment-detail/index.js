@@ -13,7 +13,12 @@ const { mapPropertyErrors } = Shopwell.Component.getComponentHelper();
 export default {
     template,
 
-    inject: ['repositoryFactory', 'acl', 'customFieldDataProviderService', 'paymentGatewayService'],
+    inject: [
+        'repositoryFactory',
+        'acl',
+        'customFieldDataProviderService',
+        'paymentGatewayService',
+    ],
 
     mixins: [Mixin.getByName('notification'), Mixin.getByName('placeholder')],
 
@@ -220,10 +225,7 @@ export default {
                     }
 
                     const taken = this.gatewayTaken.find((item) => {
-                        return (
-                            item.paymentAppId === app.id &&
-                            item.channelTechnicalName === channel.channelTechnicalName
-                        );
+                        return item.paymentAppId === app.id && item.channelTechnicalName === channel.channelTechnicalName;
                     });
 
                     return {
@@ -534,7 +536,9 @@ export default {
             this.gatewayCollectThroughGateway = answer.collectThroughGateway !== false;
             this.gatewayApp = this.gatewayBinding
                 ? this.gatewayBinding.paymentAppId
-                : (answer.paymentApp ? answer.paymentApp.id : null);
+                : answer.paymentApp
+                  ? answer.paymentApp.id
+                  : null;
             this.gatewayChannel = this.gatewayBinding ? this.gatewayBinding.channelTechnicalName : null;
         },
 

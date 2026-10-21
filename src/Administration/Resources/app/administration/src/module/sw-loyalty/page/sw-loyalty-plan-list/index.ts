@@ -157,7 +157,12 @@ export default defineComponent({
             const listing = this.$refs.listing as MembershipPlanListingRef;
 
             const criteria = new Criteria(1, this.limit);
-            criteria.addFilter(Criteria.equalsAny('id', Object.values(listing.selection).map((plan) => plan.id)));
+            criteria.addFilter(
+                Criteria.equalsAny(
+                    'id',
+                    Object.values(listing.selection).map((plan) => plan.id),
+                ),
+            );
 
             void this.planRepository.search(criteria).then((response) => {
                 response.forEach((plan) => {

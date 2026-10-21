@@ -18,10 +18,22 @@ const { Module } = Shopwell;
 /* eslint-disable sw-deprecation-rules/private-feature-declarations */
 Shopwell.Component.register('sw-finance-transfer-list', () => import('./page/sw-finance-transfer-list'));
 Shopwell.Component.register('sw-finance-transfer-detail', () => import('./page/sw-finance-transfer-detail'));
-Shopwell.Component.register('sw-finance-wallet-transactions-list', () => import('./page/sw-finance-wallet-transactions-list'));
-Shopwell.Component.register('sw-finance-transfer-create-modal', () => import('./component/sw-finance-transfer-create-modal'));
-Shopwell.Component.register('sw-finance-transfer-approve-modal', () => import('./component/sw-finance-transfer-approve-modal'));
-Shopwell.Component.register('sw-finance-transfer-reject-modal', () => import('./component/sw-finance-transfer-reject-modal'));
+Shopwell.Component.register(
+    'sw-finance-wallet-transactions-list',
+    () => import('./page/sw-finance-wallet-transactions-list'),
+);
+Shopwell.Component.register(
+    'sw-finance-transfer-create-modal',
+    () => import('./component/sw-finance-transfer-create-modal'),
+);
+Shopwell.Component.register(
+    'sw-finance-transfer-approve-modal',
+    () => import('./component/sw-finance-transfer-approve-modal'),
+);
+Shopwell.Component.register(
+    'sw-finance-transfer-reject-modal',
+    () => import('./component/sw-finance-transfer-reject-modal'),
+);
 /* eslint-enable sw-deprecation-rules/private-feature-declarations */
 
 // eslint-disable-next-line sw-deprecation-rules/private-feature-declarations

@@ -165,7 +165,12 @@ export default defineComponent({
         typeFilterOptions() {
             return [
                 { value: null, label: this.$t('sw-customer.detailWallet.filterTypeAll') },
-                ...['top_up', 'consume', 'refund', 'adjust'].map((type) => {
+                ...[
+                    'top_up',
+                    'consume',
+                    'refund',
+                    'adjust',
+                ].map((type) => {
                     return {
                         value: type,
                         label: this.getWalletTransactionTypeLabel(type),
@@ -262,7 +267,12 @@ export default defineComponent({
          * The amounts an operator types most often, so a top up is two clicks instead of keyboard work.
          */
         quickAmounts(): number[] {
-            return [100, 200, 500, 1000];
+            return [
+                100,
+                200,
+                500,
+                1000,
+            ];
         },
 
         currencyFilter() {

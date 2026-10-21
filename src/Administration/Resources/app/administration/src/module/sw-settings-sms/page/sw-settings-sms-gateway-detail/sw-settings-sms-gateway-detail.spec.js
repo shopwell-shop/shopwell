@@ -10,7 +10,12 @@ const credentialProvider = {
     supportsTemplateMode: true,
     credentialDefinitions: [
         { name: 'accessKeyId', type: 'string', required: true, labelSnippet: 'sms.credential.withCredentials.accessKeyId' },
-        { name: 'accessKeySecret', type: 'secret', required: true, labelSnippet: 'sms.credential.withCredentials.accessKeySecret' },
+        {
+            name: 'accessKeySecret',
+            type: 'secret',
+            required: true,
+            labelSnippet: 'sms.credential.withCredentials.accessKeySecret',
+        },
     ],
 };
 

@@ -131,13 +131,14 @@ type TypedWrapper = { vm: CreateModalVm } & VueWrapper;
 
 let activeWrapper: VueWrapper | null = null;
 
-async function createWrapper(overrides: {
-    getOptions?: jest.Mock;
-    getRecipients?: jest.Mock;
-    createTransfer?: jest.Mock;
-} = {}): Promise<{ wrapper: TypedWrapper; notify: jest.Mock<void, [Notification]> }> {
-    const getOptions =
-        overrides.getOptions ?? jest.fn(() => Promise.resolve({ apps, defaultAppId: 'app-1' }));
+async function createWrapper(
+    overrides: {
+        getOptions?: jest.Mock;
+        getRecipients?: jest.Mock;
+        createTransfer?: jest.Mock;
+    } = {},
+): Promise<{ wrapper: TypedWrapper; notify: jest.Mock<void, [Notification]> }> {
+    const getOptions = overrides.getOptions ?? jest.fn(() => Promise.resolve({ apps, defaultAppId: 'app-1' }));
     const getRecipients = overrides.getRecipients ?? jest.fn(() => Promise.resolve(recipients));
     const createTransfer =
         overrides.createTransfer ?? jest.fn(() => Promise.resolve({ transfer: { id: 'transfer-1' }, replayed: false }));

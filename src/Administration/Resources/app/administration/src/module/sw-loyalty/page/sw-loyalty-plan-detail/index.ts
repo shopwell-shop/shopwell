@@ -100,11 +100,7 @@ export default defineComponent({
                 return this.$t('sw-loyalty.plan.detail.placeholderNewPlan');
             }
 
-            return this.placeholder(
-                this.plan,
-                'name',
-                this.$t('sw-loyalty.plan.detail.placeholderNewPlan'),
-            ) as string;
+            return this.placeholder(this.plan, 'name', this.$t('sw-loyalty.plan.detail.placeholderNewPlan')) as string;
         },
 
         tooltipSave() {
@@ -131,7 +127,12 @@ export default defineComponent({
             };
         },
 
-        ...mapPropertyErrors('plan', ['name', 'technicalName', 'price', 'durationDays']),
+        ...mapPropertyErrors('plan', [
+            'name',
+            'technicalName',
+            'price',
+            'durationDays',
+        ]),
 
         allowSave(): boolean {
             if (!this.plan) {

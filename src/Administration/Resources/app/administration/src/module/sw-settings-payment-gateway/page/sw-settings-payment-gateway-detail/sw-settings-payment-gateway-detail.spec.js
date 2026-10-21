@@ -306,7 +306,8 @@ describe('module/sw-settings-payment-gateway/page/sw-settings-payment-gateway-de
         // the parameters of a channel are stored on the platform level as well: a write into this row
         // would never be read by the resolver, so the inputs only display the values
         const channelRow = wrapper.findAll('.sw-settings-payment-gateway-detail__channel').at(0);
-        const channelParams = channelRow.findAll('.sw-settings-payment-gateway-detail__channel-params')
+        const channelParams = channelRow
+            .findAll('.sw-settings-payment-gateway-detail__channel-params')
             .at(0)
             .findAll('.sw-payment-config-field-stub');
         expect(channelParams.length).toBeGreaterThan(0);
@@ -329,7 +330,9 @@ describe('module/sw-settings-payment-gateway/page/sw-settings-payment-gateway-de
         expect(wrapper.find('[name="sw-field--payment-app-technical-name"]').exists()).toBe(true);
 
         // and the credentials of an interface the merchant is authorized for are the ones it fills in
-        const fields = wrapper.findAll('.sw-settings-payment-gateway-detail__account').at(0)
+        const fields = wrapper
+            .findAll('.sw-settings-payment-gateway-detail__account')
+            .at(0)
             .findAll('.sw-payment-config-field-stub');
         expect(fields.length).toBeGreaterThan(0);
         expect(fields.at(0).text()).toBe('app_id');
@@ -337,7 +340,9 @@ describe('module/sw-settings-payment-gateway/page/sw-settings-payment-gateway-de
 
         // the interface the app is not authorized for keeps its fields disabled - enabling the
         // interface is the decision that turns them on, not typing into them
-        const unauthorized = wrapper.findAll('.sw-settings-payment-gateway-detail__account').at(1)
+        const unauthorized = wrapper
+            .findAll('.sw-settings-payment-gateway-detail__account')
+            .at(1)
             .findAll('.sw-payment-config-field-stub');
         expect(unauthorized.at(0).text()).toBe('secret_key');
         expect(unauthorized.at(0).attributes('disabled')).toBe('disabled');

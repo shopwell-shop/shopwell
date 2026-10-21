@@ -84,7 +84,7 @@ export default defineComponent({
                 return '-';
             }
 
-            return this.$te(key) ? (this.$t(key)) : this.providerName;
+            return this.$te(key) ? this.$t(key) : this.providerName;
         },
 
         channelLabel(): string {
@@ -159,7 +159,7 @@ export default defineComponent({
                     const detail = error.response?.data?.errors?.[0]?.detail;
 
                     this.createNotificationError({
-                        message: detail || (this.$t('sw-finance.transfer.approve.messageSubmitFailed')),
+                        message: detail || this.$t('sw-finance.transfer.approve.messageSubmitFailed'),
                     });
                 })
                 .finally(() => {
@@ -193,14 +193,14 @@ export default defineComponent({
                 this.createNotificationError({
                     message:
                         code || reason
-                            ? (this.$t('sw-finance.transfer.approve.noticeFailed', {
+                            ? this.$t('sw-finance.transfer.approve.noticeFailed', {
                                   provider: this.providerLabel,
                                   code,
                                   reason,
-                              }))
-                            : (this.$t('sw-finance.transfer.approve.noticeFailedWithoutReason', {
+                              })
+                            : this.$t('sw-finance.transfer.approve.noticeFailedWithoutReason', {
                                   provider: this.providerLabel,
-                              })),
+                              }),
                 });
 
                 this.$emit('transfer-decided');

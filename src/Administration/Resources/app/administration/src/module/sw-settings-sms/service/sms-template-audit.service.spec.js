@@ -47,11 +47,7 @@ describe('src/module/sw-settings-sms/service/sms-template-audit.service', () => 
 
         const answer = await service.refresh('mapping-1');
 
-        expect(httpClient.post).toHaveBeenCalledWith(
-            '/_action/sms-template-audit/mapping-1/refresh',
-            null,
-            { headers },
-        );
+        expect(httpClient.post).toHaveBeenCalledWith('/_action/sms-template-audit/mapping-1/refresh', null, { headers });
         expect(answer.status).toBe('approved');
     });
 

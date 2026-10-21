@@ -90,7 +90,7 @@ export default defineComponent({
 
             const key = providerLabelKey(provider);
 
-            return this.$te(key) ? (this.$t(key)) : provider;
+            return this.$te(key) ? this.$t(key) : provider;
         },
 
         /**
