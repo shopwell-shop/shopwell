@@ -20,6 +20,9 @@ class MissingUnitTests
         'RuleTestCase',
         'TestCase',
         'MiddlewareTestCase',
+        // Symfony's ConstraintValidatorTestCase is a TestCase that only adds the execution context
+        // double; a validator test written on top of it is a unit test like any other.
+        'ConstraintValidatorTestCase',
     ];
 
     private const IGNORE_SUFFIXES = [
