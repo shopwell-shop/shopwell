@@ -152,5 +152,42 @@ return [
         'REMOVED: Property Shopwell\\\\Core\\\\.*(CustomerEntity|CustomerAddressEntity|OrderCustomerEntity|OrderAddressEntity|UserEntity|NewsletterRecipientEntity|ShopContactFormSettings)#\$(firstName|lastName|firstNameFieldRequired|lastNameFieldRequired) was removed',
         'REMOVED: Method Shopwell\\\\Core\\\\.*(CustomerEntity|CustomerAddressEntity|OrderCustomerEntity|OrderAddressEntity|UserEntity|NewsletterRecipientEntity)#(get|set)(FirstName|LastName)\(\) was removed',
         'CHANGED: Value of constant Shopwell\\\\Core\\\\System\\\\Country\\\\CountryDefinition::DEFAULT_ADDRESS_FORMAT changed',
+
+        // A customer no longer needs an address to be created (registration without name and address,
+        // see RELEASE_INFO-6.7.md), so a customer that has none has no default address either. The
+        // columns are nullable, the accessors only widen their type and every caller that read the id
+        // of a customer with an address sees the same value as before.
+        preg_quote('CHANGED: Type of property Shopwell\Core\Checkout\Customer\CustomerEntity#$defaultBillingAddressId changed from string to string|null', '/'),
+        preg_quote('CHANGED: Type of property Shopwell\Core\Checkout\Customer\CustomerEntity#$defaultShippingAddressId changed from string to string|null', '/'),
+        preg_quote('CHANGED: The return type of Shopwell\Core\Checkout\Customer\CustomerEntity#getDefaultBillingAddressId() changed from string to the non-covariant string|null', '/'),
+        preg_quote('CHANGED: The return type of Shopwell\Core\Checkout\Customer\CustomerEntity#getDefaultBillingAddressId() changed from string to string|null', '/'),
+        preg_quote('CHANGED: The parameter $defaultBillingAddressId of Shopwell\Core\Checkout\Customer\CustomerEntity#setDefaultBillingAddressId() changed from string to string|null', '/'),
+        preg_quote('CHANGED: The return type of Shopwell\Core\Checkout\Customer\CustomerEntity#getDefaultShippingAddressId() changed from string to the non-covariant string|null', '/'),
+        preg_quote('CHANGED: The return type of Shopwell\Core\Checkout\Customer\CustomerEntity#getDefaultShippingAddressId() changed from string to string|null', '/'),
+        preg_quote('CHANGED: The parameter $defaultShippingAddressId of Shopwell\Core\Checkout\Customer\CustomerEntity#setDefaultShippingAddressId() changed from string to string|null', '/'),
+
+        // The wallet, loyalty membership, sms and payout gateway features are still being shaped
+        // before their release (see RELEASE_INFO-6.7.md). Their configuration moved out of constants
+        // on the services into WalletSettings and the loyalty settings, the top-up simulate route was
+        // replaced by the create/status pair, and the strategy/mode/audit markers of the sms and
+        // payment gateway were replaced by the state machines, enums and provider registry of those
+        // domains. The removed symbols were plumbing of an unreleased feature, no published extension
+        // can depend on them, and nothing was shipped that would need a migration path.
+        'REMOVED: Constant Shopwell\\\\Core\\\\(Checkout\\\\Wallet|Checkout\\\\Loyalty)\\\\.*::CONFIG_KEY_[A-Z_]+ was removed',
+        'REMOVED: Constant Shopwell\\\\Core\\\\System\\\\(Sms\\\\Gateway\\\\SmsGatewayEntity|Payment\\\\App\\\\Aggregate\\\\PaymentAppProvider\\\\PaymentAppProviderEntity)::[A-Z_]+ was removed',
+        'REMOVED: Constant Shopwell\\\\Core\\\\System\\\\Sms\\\\Template\\\\Aggregate\\\\SmsTemplateMapping\\\\SmsTemplateMappingEntity::AUDIT_[A-Z_]+ was removed',
+        'REMOVED: Property Shopwell\\\\Core\\\\(Checkout\\\\Payment\\\\Aggregate\\\\PaymentMethodGatewayChannel\\\\PaymentMethodGatewayChannelEntity|System\\\\Sms\\\\Gateway\\\\SmsGatewayEntity|System\\\\Payment\\\\App\\\\Aggregate\\\\PaymentAppProvider\\\\PaymentAppProviderEntity)#\$(providerTechnicalName|strategy|mode) was removed',
+        preg_quote('REMOVED: Method Shopwell\Core\Checkout\Wallet\Service\WalletTopUpService#simulate() was removed', '/'),
+        preg_quote('REMOVED: Class Shopwell\Core\Checkout\Wallet\SalesChannel\WalletTopUpSimulateRoute has been deleted', '/'),
+        preg_quote('REMOVED: Class Shopwell\Core\Checkout\Wallet\Extension\WalletTopUpSimulateRouteExtension has been deleted', '/'),
+
+        // Optional parameters with a null default; existing callers are unaffected
+        preg_quote('ADDED: Parameter salesChannelId was added to Method options() of class Shopwell\Core\Checkout\Wallet\Service\WalletTopUpService', '/'),
+        preg_quote('ADDED: Parameter salesChannelId was added to Method create() of class Shopwell\Core\Checkout\Wallet\Service\WalletTopUpService', '/'),
+
+        // AbstractSmsSender is only extended by the senders of this repository; the parameter is
+        // optional, so a sender that does not implement it keeps working, it only does not see the
+        // country a template was chosen for.
+        preg_quote('ADDED: Parameter countryIso was added to Method sendTemplate() of class Shopwell\Core\System\Sms\Service\AbstractSmsSender', '/'),
     ],
 ];
