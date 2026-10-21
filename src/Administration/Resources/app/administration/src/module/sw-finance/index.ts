@@ -92,7 +92,9 @@ Module.register('sw-finance', {
             label: 'sw-finance.general.mainMenuItemGeneral',
             color: 'var(--sw-color-module-green-default)',
             icon: 'regular-money-bill',
-            position: 100,
+            // between the automation module (70) and the extension store (80): money is operated on
+            // right after the flows that trigger it, and before the catalogue of extensions
+            position: 75,
             // deliberately no privilege: neither of the two children may make the entry disappear, a
             // role with only one of them still has to find its way in
         },
