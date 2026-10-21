@@ -3,7 +3,9 @@
 namespace Shopwell\Tests\Unit\Core\Checkout\Customer\Validation\Constraint;
 
 use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\MockObject\Stub;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Checkout\Customer\CustomerCollection;
 use Shopwell\Core\Checkout\Customer\CustomerEntity;
 use Shopwell\Core\Checkout\Customer\CustomerException;
@@ -19,226 +21,260 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Search\IdSearchResult;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\Validator\Constraints\NotBlank;
-use Symfony\Component\Validator\ConstraintValidatorInterface;
-use Symfony\Component\Validator\Exception\UnexpectedTypeException;
-use Symfony\Component\Validator\Test\ConstraintValidatorTestCase;
+use Symfony\Component\Validator\Context\ExecutionContextInterface;
+use Symfony\Component\Validator\Violation\ConstraintViolationBuilderInterface;
 
 /**
- * @internal
+ * The validator guards the population the login by sms resolves a number against, so the two halves
+ * that matter are the ones a wrong implementation would get wrong: what it does *not* search (a guest,
+ * an inactive account, the customer whose number is being saved) and what it reports when the search
+ * does find somebody.
  *
- * @extends ConstraintValidatorTestCase<CustomerPhoneNumberUniqueValidator>
+ * @internal
  */
 #[Package('checkout')]
 #[CoversClass(CustomerPhoneNumberUniqueValidator::class)]
-class CustomerPhoneNumberUniqueValidatorTest extends ConstraintValidatorTestCase
+class CustomerPhoneNumberUniqueValidatorTest extends TestCase
 {
     /**
-     * @var EntityRepository<CustomerCollection>&Stub
+     * @return iterable<string, array{mixed}>
      */
-    private EntityRepository&Stub $customerRepository;
-
-    protected function setUp(): void
+    public static function ignoredValueProvider(): iterable
     {
-        $this->customerRepository = static::createStub(EntityRepository::class);
-
-        parent::setUp();
+        yield 'null unbinds the number' => [null];
+        yield 'an array is no number' => [['+4912345']];
+        yield 'an empty string' => [''];
+        yield 'spaces only' => ['   '];
+        yield 'a full width space only' => ["\u{3000}"];
     }
 
-    public function testItIgnoresAnEmptyValue(): void
+    #[DataProvider('ignoredValueProvider')]
+    public function testAValueThatCannotCarryANumberIsNotSearched(mixed $value): void
     {
-        $customerRepository = $this->createMock(EntityRepository::class);
-        $customerRepository->expects($this->never())->method('searchIds');
+        $repository = $this->createMock(EntityRepository::class);
+        $repository->expects($this->never())->method('searchIds');
 
-        $this->validateValueThatIsNotChecked($customerRepository, null);
-        $this->assertNoViolation();
+        $context = $this->expectNoViolation();
 
-        $this->validateValueThatIsNotChecked($customerRepository, '');
-        $this->assertNoViolation();
+        $this->validate($repository, $value, $context);
     }
 
-    public function testItIgnoresABlankValue(): void
+    public function testItSearchesTheTrimmedNumberAmongActiveNonGuestCustomers(): void
     {
-        $customerRepository = $this->createMock(EntityRepository::class);
-        $customerRepository->expects($this->never())->method('searchIds');
-
-        $this->validateValueThatIsNotChecked($customerRepository, " \u{3000} ");
-        $this->assertNoViolation();
-    }
-
-    public function testItChecksTheNumberAgainstTheActiveCustomersOfTheNumber(): void
-    {
-        $customerRepository = $this->createMock(EntityRepository::class);
-        $customerRepository->expects($this->once())
+        $repository = $this->createMock(EntityRepository::class);
+        $repository->expects($this->once())
             ->method('searchIds')
-            ->with(
-                static::callback(static function (Criteria $criteria): bool {
-                    static::assertSame(1, $criteria->getLimit());
+            ->with(static::callback(static function (Criteria $criteria): bool {
+                static::assertSame(
+                    [
+                        'phoneNumber' => ['+4912345'],
+                        'active' => [true],
+                        'guest' => [false],
+                    ],
+                    self::equalsFiltersOf($criteria),
+                    'The number is trimmed before it is searched, and only active customers that are no guests can take it.'
+                );
 
-                    $filters = $criteria->getFilters();
-                    static::assertCount(1, $filters);
+                static::assertSame(1, $criteria->getLimit(), 'One conflict is enough to refuse the number.');
 
-                    $filter = $filters[0];
-                    static::assertInstanceOf(MultiFilter::class, $filter);
-                    static::assertSame(MultiFilter::CONNECTION_AND, $filter->getOperator());
+                return true;
+            }))
+            ->willReturn(IdSearchResult::fromIds([], new Criteria(), Context::createDefaultContext()));
 
-                    $expected = [
-                        ['phoneNumber', '0123456789'],
-                        ['active', true],
-                        ['guest', false],
-                    ];
+        $context = $this->expectNoViolation();
 
-                    $queries = $filter->getQueries();
-                    static::assertCount(\count($expected), $queries);
-
-                    foreach ($expected as $index => [$field, $value]) {
-                        $query = $queries[$index];
-                        static::assertInstanceOf(EqualsFilter::class, $query);
-                        static::assertSame($field, $query->getField());
-                        static::assertSame($value, $query->getValue());
-                    }
-
-                    return true;
-                }),
-                static::isInstanceOf(Context::class),
-            )
-            ->willReturn($this->createSearchResult(null));
-
-        $this->validateValue($customerRepository, ' 0123456789 ');
-
-        $this->assertNoViolation();
+        $this->validate($repository, '  +4912345  ', $context);
     }
 
-    public function testItDoesNotConflictWithTheLoggedInCustomerItself(): void
+    public function testTheLoggedInCustomerIsNoConflictWithItself(): void
     {
         $customerId = 'customer-of-the-context';
 
-        $customerRepository = $this->createMock(EntityRepository::class);
-        $customerRepository->expects($this->once())
+        $repository = $this->createMock(EntityRepository::class);
+        $repository->expects($this->once())
             ->method('searchIds')
-            ->with(
-                static::callback(static function (Criteria $criteria) use ($customerId): bool {
-                    $filter = $criteria->getFilters()[0];
-                    static::assertInstanceOf(MultiFilter::class, $filter);
+            ->with(static::callback(static function (Criteria $criteria) use ($customerId): bool {
+                static::assertSame(
+                    [$customerId],
+                    self::excludedIdsOf($criteria),
+                    'Saving the number a customer already owns must not report the customer as its own conflict.'
+                );
 
-                    $queries = $filter->getQueries();
-                    static::assertCount(4, $queries);
+                return true;
+            }))
+            ->willReturn(IdSearchResult::fromIds([], new Criteria(), Context::createDefaultContext()));
 
-                    $exclusion = $queries[3];
-                    static::assertInstanceOf(NotFilter::class, $exclusion);
+        $context = $this->expectNoViolation();
 
-                    $excludedQueries = $exclusion->getQueries();
-                    static::assertCount(1, $excludedQueries);
-                    static::assertInstanceOf(EqualsFilter::class, $excludedQueries[0]);
-                    static::assertSame('id', $excludedQueries[0]->getField());
-                    static::assertSame($customerId, $excludedQueries[0]->getValue());
-
-                    return true;
-                }),
-                static::isInstanceOf(Context::class),
-            )
-            ->willReturn($this->createSearchResult(null));
-
-        $this->validateValue($customerRepository, '0123456789', $customerId);
-
-        $this->assertNoViolation();
+        $this->validate($repository, '+4912345', $context, $customerId);
     }
 
-    public function testItBuildsAViolationWhenTheNumberBelongsToAnotherCustomer(): void
+    public function testWithoutALoggedInCustomerNothingIsExcluded(): void
     {
-        $phoneNumber = '0123456789';
-
-        $customerRepository = $this->createMock(EntityRepository::class);
-        $customerRepository->expects($this->once())
+        $repository = $this->createMock(EntityRepository::class);
+        $repository->expects($this->once())
             ->method('searchIds')
-            ->willReturn($this->createSearchResult('other-customer'));
+            ->with(static::callback(static function (Criteria $criteria): bool {
+                static::assertSame([], self::excludedIdsOf($criteria));
 
-        $constraint = $this->createConstraint();
+                return true;
+            }))
+            ->willReturn(IdSearchResult::fromIds([], new Criteria(), Context::createDefaultContext()));
 
-        $validator = new CustomerPhoneNumberUniqueValidator($customerRepository);
-        $validator->initialize($this->context);
-        $validator->validate($phoneNumber, $constraint);
+        $context = $this->expectNoViolation();
 
-        $violations = $this->context->getViolations();
-        static::assertCount(1, $violations);
-
-        // get() does not return null, the violation list throws for an unknown offset
-        $violation = $violations->get(0);
-        // The storefront translates the message template, so it has to be the snippet key.
-        static::assertSame(CustomerPhoneNumberUnique::CUSTOMER_PHONE_NUMBER_NOT_UNIQUE_CODE, $violation->getMessageTemplate());
-        // The code is the named cause, not the template: the violation exception prefixes VIOLATION::
-        // itself, a template here would end up as VIOLATION::VIOLATION::...
-        static::assertSame(CustomerPhoneNumberUnique::CUSTOMER_PHONE_NUMBER_NOT_UNIQUE, $violation->getCode());
+        $this->validate($repository, '+4912345', $context);
     }
 
-    public function testItRejectsAnUnexpectedConstraintType(): void
+    public function testANumberAnotherCustomerOwnsIsViolatedWithTheNamedCause(): void
     {
-        try {
-            $this->validator->validate('0123456789', new NotBlank());
+        $repository = $this->createMock(EntityRepository::class);
+        $repository->method('searchIds')
+            ->willReturn(IdSearchResult::fromIds(['other-customer'], new Criteria(), Context::createDefaultContext()));
 
-            static::fail('Expected an unexpected constraint type exception.');
-        } catch (\Throwable $exception) {
-            static::assertTrue(
-                $exception instanceof UnexpectedTypeException || $exception instanceof CustomerException,
-                \sprintf('Expected an unexpected constraint type exception, got %s.', $exception::class)
-            );
-        }
+        $builder = $this->createMock(ConstraintViolationBuilderInterface::class);
+        $builder->expects($this->once())
+            ->method('setCode')
+            ->with(CustomerPhoneNumberUnique::CUSTOMER_PHONE_NUMBER_NOT_UNIQUE)
+            ->willReturnSelf();
+        $builder->expects($this->once())->method('addViolation');
+
+        $context = $this->createMock(ExecutionContextInterface::class);
+        $context->expects($this->once())
+            ->method('buildViolation')
+            // the storefront translates the template, so the violation carries the snippet key and the
+            // named cause separately - a template with the cause in it would be prefixed twice
+            ->with(CustomerPhoneNumberUnique::CUSTOMER_PHONE_NUMBER_NOT_UNIQUE_CODE)
+            ->willReturn($builder);
+
+        $this->validate($repository, '+4912345', $context);
     }
 
-    protected function createValidator(): ConstraintValidatorInterface
+    public function testAnUnexpectedConstraintTypeIsRejected(): void
     {
-        return new CustomerPhoneNumberUniqueValidator($this->customerRepository);
+        $repository = $this->createMock(EntityRepository::class);
+        $repository->expects($this->never())->method('searchIds');
+
+        $context = $this->createMock(ExecutionContextInterface::class);
+        $context->expects($this->never())->method('buildViolation');
+
+        $validator = new CustomerPhoneNumberUniqueValidator($repository);
+        $validator->initialize($context);
+
+        $this->expectException(CustomerException::class);
+
+        $validator->validate('+4912345', new NotBlank());
     }
 
     /**
      * @param EntityRepository<CustomerCollection> $customerRepository
      */
-    private function validateValue(EntityRepository $customerRepository, mixed $value, ?string $customerId = null): void
-    {
+    private function validate(
+        EntityRepository $customerRepository,
+        mixed $value,
+        ExecutionContextInterface $context,
+        ?string $loggedInCustomerId = null,
+    ): void {
         $validator = new CustomerPhoneNumberUniqueValidator($customerRepository);
-        $validator->initialize($this->context);
+        $validator->initialize($context);
 
-        $this->setValue($value);
-
-        $validator->validate($value, $this->createConstraint($customerId));
+        $validator->validate($value, $this->createConstraint($loggedInCustomerId));
     }
 
-    /**
-     * Validates a value that must not reach the repository at all.
-     *
-     * @param EntityRepository<CustomerCollection> $customerRepository
-     */
-    private function validateValueThatIsNotChecked(EntityRepository $customerRepository, mixed $value): void
+    private function expectNoViolation(): ExecutionContextInterface&MockObject
     {
-        $validator = new CustomerPhoneNumberUniqueValidator($customerRepository);
-        $validator->initialize($this->context);
+        $context = $this->createMock(ExecutionContextInterface::class);
+        $context->expects($this->never())->method('buildViolation');
 
-        $validator->validate($value, $this->createConstraint());
+        return $context;
     }
 
-    private function createConstraint(?string $customerId = null): CustomerPhoneNumberUnique
+    private function createConstraint(?string $loggedInCustomerId = null): CustomerPhoneNumberUnique
     {
         $customer = null;
 
-        if ($customerId !== null) {
+        if ($loggedInCustomerId !== null) {
             $customer = new CustomerEntity();
-            $customer->setId($customerId);
+            $customer->setId($loggedInCustomerId);
+            $customer->setGuest(false);
         }
 
         $salesChannelContext = static::createStub(SalesChannelContext::class);
-        $salesChannelContext->method('getContext')->willReturn(Context::createDefaultContext());
         $salesChannelContext->method('getCustomer')->willReturn($customer);
+        $salesChannelContext->method('getContext')->willReturn(Context::createDefaultContext());
 
         return new CustomerPhoneNumberUnique($salesChannelContext);
     }
 
-    private function createSearchResult(?string $customerId): IdSearchResult
+    /**
+     * The equals filters of the criteria, keyed by field, so a test reads as the search it describes.
+     *
+     * @return array<string, list<mixed>>
+     */
+    private static function equalsFiltersOf(Criteria $criteria): array
     {
-        $data = [];
+        $collected = [];
 
-        if ($customerId !== null) {
-            $data[$customerId] = ['data' => [], 'primaryKey' => $customerId];
+        foreach (self::flatten($criteria->getFilters()) as $filter) {
+            if (!$filter instanceof EqualsFilter) {
+                continue;
+            }
+
+            $collected[$filter->getField()][] = $filter->getValue();
         }
 
-        return new IdSearchResult(\count($data), $data, new Criteria(), Context::createDefaultContext());
+        return $collected;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private static function excludedIdsOf(Criteria $criteria): array
+    {
+        $excluded = [];
+
+        foreach (self::flatten($criteria->getFilters()) as $filter) {
+            if (!$filter instanceof NotFilter) {
+                continue;
+            }
+
+            foreach (self::flatten($filter->getQueries()) as $query) {
+                if ($query instanceof EqualsFilter && $query->getField() === 'id') {
+                    $excluded[] = $query->getValue();
+                }
+            }
+        }
+
+        return $excluded;
+    }
+
+    /**
+     * @param array<array-key, mixed> $filters
+     *
+     * @return list<object>
+     */
+    private static function flatten(array $filters): array
+    {
+        $flat = [];
+
+        foreach ($filters as $filter) {
+            // a NotFilter is a MultiFilter as well, but it is one statement and not a group: recursing
+            // into it would turn the exclusion into an ordinary equality filter of the search
+            if ($filter instanceof NotFilter) {
+                $flat[] = $filter;
+
+                continue;
+            }
+
+            if ($filter instanceof MultiFilter) {
+                $flat = [...$flat, ...self::flatten($filter->getQueries())];
+
+                continue;
+            }
+
+            $flat[] = $filter;
+        }
+
+        return $flat;
     }
 }
