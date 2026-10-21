@@ -59,7 +59,7 @@ return $config
     ->ignoreErrorsOnPackage('shopwell/conflicts', [ErrorType::UNUSED_DEPENDENCY])
 
     /** Used by 3rd party libraries */
-    ->ignoreErrorsOnExtensions(['ext-pdo_mysql', 'ext-sodium', 'ext-xml'], [ErrorType::UNUSED_DEPENDENCY])
+    ->ignoreErrorsOnExtensions(['ext-pdo_mysql', 'ext-xml'], [ErrorType::UNUSED_DEPENDENCY])
 
     /** Only used if `function_exists` is successful @see \Shopwell\Core\Framework\Plugin\ExtensionExtractor */
     ->ignoreErrorsOnExtension('ext-apcu', [ErrorType::SHADOW_DEPENDENCY])
@@ -82,11 +82,6 @@ return $config
 
     /** Somehow triggered in our CI job and might not be valid locally */
     ->ignoreErrorsOnPackage('symfony/polyfill-php83', [ErrorType::UNUSED_DEPENDENCY])
-    ->ignoreErrorsOnPackages([
-        'symfony/polyfill-mbstring',
-        'symfony/polyfill-php84',
-        'symfony/polyfill-php85',
-    ], [ErrorType::UNUSED_DEPENDENCY])
 
     /** @deprecated tag:v6.8.0 - Remove these dependencies from the composer.json files */
     ->ignoreErrorsOnPackages([
