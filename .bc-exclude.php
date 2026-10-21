@@ -189,5 +189,14 @@ return [
         // optional, so a sender that does not implement it keeps working, it only does not see the
         // country a template was chosen for.
         preg_quote('ADDED: Parameter countryIso was added to Method sendTemplate() of class Shopwell\Core\System\Sms\Service\AbstractSmsSender', '/'),
+
+        // A membership plan may now be created before its name is typed in (the merchant fills it
+        // afterwards), so the name of its translation is nullable. The loyalty domain is still
+        // unreleased (see RELEASE_INFO-6.7.md), the accessors only widen their type, and every
+        // caller that reads a plan with a name sees the same value as before.
+        preg_quote('CHANGED: Type of property Shopwell\Core\Checkout\Loyalty\Entity\MembershipPlan\Aggregate\MembershipPlanTranslation\MembershipPlanTranslationEntity#$name changed from string to string|null', '/'),
+        preg_quote('CHANGED: The return type of Shopwell\Core\Checkout\Loyalty\Entity\MembershipPlan\Aggregate\MembershipPlanTranslation\MembershipPlanTranslationEntity#getName() changed from string to the non-covariant string|null', '/'),
+        preg_quote('CHANGED: The return type of Shopwell\Core\Checkout\Loyalty\Entity\MembershipPlan\Aggregate\MembershipPlanTranslation\MembershipPlanTranslationEntity#getName() changed from string to string|null', '/'),
+        preg_quote('CHANGED: The parameter $name of Shopwell\Core\Checkout\Loyalty\Entity\MembershipPlan\Aggregate\MembershipPlanTranslation\MembershipPlanTranslationEntity#setName() changed from string to string|null', '/'),
     ],
 ];
