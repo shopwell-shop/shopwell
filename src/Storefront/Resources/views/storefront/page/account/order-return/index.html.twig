@@ -34,21 +34,27 @@
                                                 {% block page_account_order_return_table_head_number %}
                                                     <th scope="col">{{ 'account.orderReturnColumnNumber'|trans|sw_sanitize }}</th>
                                                 {% endblock %}
+
                                                 {% block page_account_order_return_table_head_order %}
                                                     <th scope="col">{{ 'account.orderReturnColumnOrder'|trans|sw_sanitize }}</th>
                                                 {% endblock %}
+
                                                 {% block page_account_order_return_table_head_type %}
                                                     <th scope="col">{{ 'account.orderReturnColumnType'|trans|sw_sanitize }}</th>
                                                 {% endblock %}
+
                                                 {% block page_account_order_return_table_head_state %}
                                                     <th scope="col">{{ 'account.orderReturnColumnState'|trans|sw_sanitize }}</th>
                                                 {% endblock %}
+
                                                 {% block page_account_order_return_table_head_amount %}
                                                     <th scope="col" class="text-end">{{ 'account.orderReturnColumnAmount'|trans|sw_sanitize }}</th>
                                                 {% endblock %}
+
                                                 {% block page_account_order_return_table_head_created %}
                                                     <th scope="col">{{ 'account.orderReturnColumnCreatedAt'|trans|sw_sanitize }}</th>
                                                 {% endblock %}
+
                                                 {% block page_account_order_return_table_head_action %}
                                                     <th scope="col"><span class="visually-hidden">{{ 'account.orderReturnOpen'|trans|sw_sanitize }}</span></th>
                                                 {% endblock %}
@@ -65,9 +71,11 @@
                                                     {% block page_account_order_return_table_body_number %}
                                                         <td>{{ orderReturn.returnNumber|sw_sanitize }}</td>
                                                     {% endblock %}
+
                                                     {% block page_account_order_return_table_body_order %}
                                                         <td>{{ orderReturn.orderNumber|default('–')|sw_sanitize }}</td>
                                                     {% endblock %}
+
                                                     {% block page_account_order_return_table_body_type %}
                                                         <td>
                                                             {% if orderReturn.type == 'refund_only' %}
@@ -77,19 +85,23 @@
                                                             {% endif %}
                                                         </td>
                                                     {% endblock %}
+
                                                     {% block page_account_order_return_table_body_state %}
                                                         <td>
                                                             {% sw_include '@Storefront/storefront/page/account/order-return/_state.html.twig' %}
                                                         </td>
                                                     {% endblock %}
+
                                                     {% block page_account_order_return_table_body_amount %}
                                                         <td class="text-end">
                                                             {{ (orderReturn.refundAmount / factor)|currency(orderReturn.currency) }}
                                                         </td>
                                                     {% endblock %}
+
                                                     {% block page_account_order_return_table_body_created %}
                                                         <td>{{ orderReturn.createdAt|date('d.m.Y') }}</td>
                                                     {% endblock %}
+
                                                     {% block page_account_order_return_table_body_action %}
                                                         <td class="text-end">
                                                             <a href="{{ path('frontend.account.order-return.detail', { id: orderReturn.id }) }}"
