@@ -146,7 +146,7 @@ class PaymentTransferBookingTest extends TestCase
     public function testAProviderTheAppDidNotAuthorizeIsRefused(): void
     {
         $app = $this->payableApp();
-        $app->providers = [$this->authorization(self::PROVIDER, false)];
+        $app->providers = [self::PROVIDER => $this->authorization(self::PROVIDER, false)];
 
         $booking = $this->booking($app);
 
@@ -192,7 +192,7 @@ class PaymentTransferBookingTest extends TestCase
     public function testAChannelTheAppSwitchedOffIsRefused(): void
     {
         $app = $this->payableApp();
-        $app->channels = [$this->appChannel(self::CHANNEL, false)];
+        $app->channels = [self::CHANNEL => $this->appChannel(self::CHANNEL, false)];
 
         $booking = $this->booking($app);
 
@@ -209,7 +209,7 @@ class PaymentTransferBookingTest extends TestCase
     public function testAChannelTheInterfaceDoesNotOfferIsRefused(): void
     {
         $app = $this->payableApp();
-        $app->channels = [$this->appChannel('alipay_h5', true)];
+        $app->channels = ['alipay_h5' => $this->appChannel('alipay_h5', true)];
 
         $booking = $this->booking($app);
 
@@ -517,8 +517,8 @@ class PaymentTransferBookingTest extends TestCase
     private function payableApp(): PaymentAppEntity
     {
         $app = $this->app();
-        $app->providers = [$this->authorization(self::PROVIDER, true)];
-        $app->channels = [$this->appChannel(self::CHANNEL, true)];
+        $app->providers = [self::PROVIDER => $this->authorization(self::PROVIDER, true)];
+        $app->channels = [self::CHANNEL => $this->appChannel(self::CHANNEL, true)];
 
         return $app;
     }
@@ -651,7 +651,10 @@ class PaymentTransferBookingTest extends TestCase
  * other search is the idempotency lookup by out number.
  *
  * @internal
+ *
+ * @extends EntityRepository<PaymentTransferCollection>
  */
+// @phpstan-ignore class.extendsFinalByPhpDoc (a test double needs the real type; the service only calls search() and create())
 #[Package('framework')]
 final class RecordingTransferRepository extends EntityRepository
 {
@@ -683,7 +686,7 @@ final class RecordingTransferRepository extends EntityRepository
 
     public function create(array $data, Context $context): EntityWrittenContainerEvent
     {
-        $this->written = $data;
+        $this->written = array_values($data);
 
         return new EntityWrittenContainerEvent($context, new NestedEventCollection([]), []);
     }
