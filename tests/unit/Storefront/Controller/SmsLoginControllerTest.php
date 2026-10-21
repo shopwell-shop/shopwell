@@ -52,8 +52,6 @@ class SmsLoginControllerTest extends TestCase
 
     private SystemConfigService&Stub $systemConfigService;
 
-    private SmsLoginControllerStub $controller;
-
     protected function setUp(): void
     {
         $this->smsLoginService = static::createStub(SmsLoginService::class);
@@ -61,8 +59,6 @@ class SmsLoginControllerTest extends TestCase
         $this->cartFacade = static::createStub(StorefrontCartFacade::class);
         $this->rateLimiter = static::createStub(RateLimiter::class);
         $this->systemConfigService = static::createStub(SystemConfigService::class);
-
-        $this->controller = $this->createController();
     }
 
     public function testASendCodeRequestOfALoggedInCustomerIsAnsweredWithoutANewCode(): void
@@ -91,7 +87,7 @@ class SmsLoginControllerTest extends TestCase
         $smsLoginService->expects($this->never())->method('sendCode');
         $smsLoginService->expects($this->never())->method('acquireSendSlot');
 
-        $systemConfigService = $this->createStub(SystemConfigService::class);
+        $systemConfigService = static::createStub(SystemConfigService::class);
         $systemConfigService->method('get')->willReturn(false);
 
         $controller = $this->createController(
@@ -113,7 +109,7 @@ class SmsLoginControllerTest extends TestCase
         $smsLoginService->method('acquireSendSlot')->willReturn(true);
         $smsLoginService->expects($this->once())->method('sendCode');
 
-        $systemConfigService = $this->createStub(SystemConfigService::class);
+        $systemConfigService = static::createStub(SystemConfigService::class);
         // a fresh installation has no value for the setting, and that must not close the door
         $systemConfigService->method('get')->willReturn(null);
 
@@ -134,7 +130,7 @@ class SmsLoginControllerTest extends TestCase
         $smsLoginService = $this->createMock(SmsLoginService::class);
         $smsLoginService->expects($this->never())->method('sendCode');
 
-        $rateLimiter = $this->createStub(RateLimiter::class);
+        $rateLimiter = static::createStub(RateLimiter::class);
         $rateLimiter->method('ensureAccepted')
             ->willThrowException(new RateLimitExceededException(time() + 30));
 
@@ -168,7 +164,7 @@ class SmsLoginControllerTest extends TestCase
     {
         $context = $this->createContext(null);
 
-        $smsLoginService = $this->createStub(SmsLoginService::class);
+        $smsLoginService = static::createStub(SmsLoginService::class);
         $smsLoginService->method('acquireSendSlot')->willReturn(true);
 
         $controller = $this->createController(smsLoginService: $smsLoginService);
@@ -184,7 +180,7 @@ class SmsLoginControllerTest extends TestCase
     {
         $context = $this->createContext(null);
 
-        $smsLoginService = $this->createStub(SmsLoginService::class);
+        $smsLoginService = static::createStub(SmsLoginService::class);
         $smsLoginService->method('verifyCode')->willReturn(null);
 
         $accountService = $this->createMock(AccountService::class);
@@ -211,7 +207,7 @@ class SmsLoginControllerTest extends TestCase
         $accountService = $this->createMock(AccountService::class);
         $accountService->expects($this->never())->method('loginById');
 
-        $rateLimiter = $this->createStub(RateLimiter::class);
+        $rateLimiter = static::createStub(RateLimiter::class);
         $rateLimiter->method('ensureAccepted')
             ->willThrowException(new RateLimitExceededException(time() + 30));
 
@@ -235,10 +231,10 @@ class SmsLoginControllerTest extends TestCase
         $context = $this->createContext(null);
         $customer = $this->createCustomer();
 
-        $smsLoginService = $this->createStub(SmsLoginService::class);
+        $smsLoginService = static::createStub(SmsLoginService::class);
         $smsLoginService->method('verifyCode')->willReturn($customer);
 
-        $accountService = $this->createStub(AccountService::class);
+        $accountService = static::createStub(AccountService::class);
         $accountService->method('loginById')->willThrowException(new BadCredentialsException());
 
         $controller = $this->createController(
@@ -257,7 +253,7 @@ class SmsLoginControllerTest extends TestCase
         $customer = $this->createCustomer();
         $cart = new Cart('token');
 
-        $smsLoginService = $this->createStub(SmsLoginService::class);
+        $smsLoginService = static::createStub(SmsLoginService::class);
         $smsLoginService->method('verifyCode')->willReturn($customer);
 
         $accountService = $this->createMock(AccountService::class);
@@ -299,13 +295,13 @@ class SmsLoginControllerTest extends TestCase
         $context = $this->createContext(null);
         $customer = $this->createCustomer();
 
-        $smsLoginService = $this->createStub(SmsLoginService::class);
+        $smsLoginService = static::createStub(SmsLoginService::class);
         $smsLoginService->method('verifyCode')->willReturn($customer);
 
-        $accountService = $this->createStub(AccountService::class);
+        $accountService = static::createStub(AccountService::class);
         $accountService->method('loginById')->willReturn('token');
 
-        $cartFacade = $this->createStub(StorefrontCartFacade::class);
+        $cartFacade = static::createStub(StorefrontCartFacade::class);
         $cartFacade->method('get')->willReturn(new Cart('token'));
 
         $controller = $this->createController(
@@ -334,7 +330,7 @@ class SmsLoginControllerTest extends TestCase
     {
         $context = $this->createContext(null);
 
-        $smsLoginService = $this->createStub(SmsLoginService::class);
+        $smsLoginService = static::createStub(SmsLoginService::class);
         $smsLoginService->method('acquireSendSlot')->willReturn(false);
         $smsLoginService->method('resendInterval')->willReturn(30);
 
@@ -357,7 +353,7 @@ class SmsLoginControllerTest extends TestCase
     {
         $context = $this->createContext(null);
 
-        $smsLoginService = $this->createStub(SmsLoginService::class);
+        $smsLoginService = static::createStub(SmsLoginService::class);
         $smsLoginService->method('acquireSendSlot')->willReturn(false);
         $smsLoginService->method('resendInterval')->willReturn(30);
 

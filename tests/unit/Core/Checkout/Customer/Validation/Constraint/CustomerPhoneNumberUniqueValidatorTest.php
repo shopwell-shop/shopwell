@@ -128,7 +128,7 @@ class CustomerPhoneNumberUniqueValidatorTest extends TestCase
 
     public function testANumberAnotherCustomerOwnsIsViolatedWithTheNamedCause(): void
     {
-        $repository = $this->createMock(EntityRepository::class);
+        $repository = static::createStub(EntityRepository::class);
         $repository->method('searchIds')
             ->willReturn(IdSearchResult::fromIds(['other-customer'], new Criteria(), Context::createDefaultContext()));
 
@@ -239,8 +239,14 @@ class CustomerPhoneNumberUniqueValidatorTest extends TestCase
             }
 
             foreach (self::flatten($filter->getQueries()) as $query) {
-                if ($query instanceof EqualsFilter && $query->getField() === 'id') {
-                    $excluded[] = $query->getValue();
+                if (!$query instanceof EqualsFilter || $query->getField() !== 'id') {
+                    continue;
+                }
+
+                // the validator only ever excludes ids, so anything else in the filter is not an id
+                $value = $query->getValue();
+                if (\is_string($value)) {
+                    $excluded[] = $value;
                 }
             }
         }
