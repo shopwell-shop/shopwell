@@ -205,6 +205,33 @@
                 {% endblock %}
             </sw-entity-listing>
             {% endblock %}
+
+            {% block sw_finance_transfer_list_modals %}
+            {#
+            The modals live inside the content slot on purpose: the page component renders named
+            slots only, so a modal placed directly under it would sit in the default slot and never
+            mount - the button would set its flag while nothing appeared.
+            #}
+            <sw-finance-transfer-create-modal
+                v-if="showCreateModal"
+                @transfer-created="onTransferCreated"
+                @modal-close="onCloseCreateModal"
+            />
+
+            <sw-finance-transfer-approve-modal
+                v-if="transferToApprove"
+                :transfer="transferToApprove"
+                @transfer-decided="onTransferDecided"
+                @modal-close="onCloseApproveModal"
+            />
+
+            <sw-finance-transfer-reject-modal
+                v-if="transferToReject"
+                :transfer="transferToReject"
+                @transfer-decided="onTransferDecided"
+                @modal-close="onCloseRejectModal"
+            />
+            {% endblock %}
         </div>
         {% endblock %}
     </template>
@@ -233,28 +260,6 @@
             {% endblock %}
         </sw-sidebar>
     </template>
-    {% endblock %}
-
-    {% block sw_finance_transfer_list_modals %}
-    <sw-finance-transfer-create-modal
-        v-if="showCreateModal"
-        @transfer-created="onTransferCreated"
-        @modal-close="onCloseCreateModal"
-    />
-
-    <sw-finance-transfer-approve-modal
-        v-if="transferToApprove"
-        :transfer="transferToApprove"
-        @transfer-decided="onTransferDecided"
-        @modal-close="onCloseApproveModal"
-    />
-
-    <sw-finance-transfer-reject-modal
-        v-if="transferToReject"
-        :transfer="transferToReject"
-        @transfer-decided="onTransferDecided"
-        @modal-close="onCloseRejectModal"
-    />
     {% endblock %}
 </sw-page>
 {% endblock %}

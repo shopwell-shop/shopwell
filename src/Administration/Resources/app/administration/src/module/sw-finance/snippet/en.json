@@ -4,12 +4,12 @@
             "loadFailed": "The data could not be loaded."
         },
         "general": {
-            "description": "Release transfer requests and review wallet top-ups",
+            "description": "Release transfer requests and review the wallet transactions",
             "mainMenuItemGeneral": "Finance"
         },
         "navigation": {
             "transfer": "Transfer Requests",
-            "walletTopUp": "Wallet Top-ups"
+            "walletTransactions": "Wallet Transactions"
         },
         "transfer": {
             "actions": {
@@ -205,50 +205,40 @@
                 "succeeded": "Succeeded"
             }
         },
-        "walletTopUp": {
+        "walletTransactions": {
             "filters": {
-                "channelFilter": {
-                    "label": "Channel",
-                    "placeholder": "Separate multiple channels with a comma..."
-                },
                 "createdFilter": {
                     "label": "Created at",
                     "placeholder": "Select a period..."
                 },
-                "paymentNoFilter": {
-                    "label": "Top-up no.",
-                    "placeholder": "Separate multiple numbers with a comma..."
-                },
-                "stateFilter": {
-                    "label": "State",
-                    "placeholder": "All states..."
+                "typeFilter": {
+                    "label": "Type",
+                    "placeholder": "All types..."
                 }
             },
             "general": {
-                "mainMenuItemGeneral": "Wallet Top-ups"
+                "mainMenuItemGeneral": "Wallet Transactions"
             },
             "list": {
                 "columnAmount": "Amount",
-                "columnChannel": "Channel",
+                "columnBalanceAfter": "Balance after",
                 "columnCreatedAt": "Created at",
-                "columnCreditedAt": "Credited at",
                 "columnCustomer": "Customer",
-                "columnPaidAt": "Paid at",
-                "columnPaymentNo": "Top-up no.",
-                "columnState": "State",
-                "emptyHeadline": "No top-ups yet",
-                "emptySubline": "Top-ups are created in the storefront. They appear here as soon as a customer starts one.",
-                "noResultSubline": "No top-up matches your search or filter.",
-                "noResultTitle": "No top-up found",
-                "placeholderSearchBar": "Search by customer, customer no. or top-up no....",
-                "title": "Wallet Top-ups",
+                "columnOrder": "Order",
+                "columnType": "Type",
+                "emptyHeadline": "No transactions yet",
+                "emptySubline": "Every top-up, purchase, refund and adjustment of the customer wallets is booked here as soon as the balance moves.",
+                "noResultSubline": "No transaction matches your search or filter.",
+                "noResultTitle": "No transaction found",
+                "placeholderSearchBar": "Search by customer, customer no. or reference...",
+                "title": "Wallet Transactions",
                 "titleSidebarItemRefresh": "Refresh list"
             },
-            "state": {
-                "credited": "Credited",
-                "failed": "Failed",
-                "open": "Awaiting payment",
-                "paid": "Paid"
+            "type": {
+                "adjust": "Adjustment",
+                "consume": "Purchase",
+                "refund": "Refund",
+                "top_up": "Top-up"
             }
         }
     },

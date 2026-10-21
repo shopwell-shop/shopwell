@@ -131,6 +131,12 @@ export default function createSearchTypeService() {
             listingRoute: 'sw.payment.transfer',
             hideOnGlobalSearchBar: true,
         },
+        customer_wallet_transaction: {
+            entityName: 'customer_wallet_transaction',
+            placeholderSnippet: 'sw-finance.walletTransactions.list.placeholderSearchBar',
+            listingRoute: 'sw.finance.walletTransactions',
+            hideOnGlobalSearchBar: true,
+        },
         sms_gateway: {
             entityName: 'sms_gateway',
             placeholderSnippet: 'sw-settings-sms.gateway.placeholderSearchBar',
