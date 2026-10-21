@@ -43,6 +43,7 @@
       "tabGeneral": "通用",
       "tabDetails": "详情",
       "tabDocuments": "单据",
+      "tabReturns": "售后",
       "messageRecalculationError": "计算价格时发生错误：<br>",
       "messageSaveError": "保存时发生错误",
       "messageShippingNotAvailable": "无法配送到目标国家。",
