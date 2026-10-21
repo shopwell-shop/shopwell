@@ -110,12 +110,13 @@ let activeWrapper: VueWrapper | null = null;
 async function createWrapper(
     can: (privilege: string) => boolean = () => true,
     stateLabels: Record<string, string> = {},
+    items: unknown[] = transfers,
 ): Promise<{
     wrapper: TypedWrapper;
     search: jest.Mock;
     stateSearch: jest.Mock;
 }> {
-    const search = jest.fn(() => Promise.resolve(collection<EntityCollection<'payment_transfer'>>(transfers)));
+    const search = jest.fn(() => Promise.resolve(collection<EntityCollection<'payment_transfer'>>(items)));
 
     const stateSearch = jest.fn(() =>
         Promise.resolve(collection<EntityCollection<'state_machine_state'>>(transferStates)),
@@ -153,7 +154,11 @@ async function createWrapper(
                 'mt-badge': true,
                 'mt-icon': true,
                 'mt-tooltip': true,
-                'mt-empty-state': true,
+                // the stub renders the button slot: the empty state carries the second entry point of
+                // the create modal, and the default stub would swallow it
+                'mt-empty-state': {
+                    template: '<div class="mt-empty-state-stub"><slot name="button"></slot></div>',
+                },
             },
             provide: {
                 repositoryFactory: {
@@ -447,5 +452,40 @@ describe('module/sw-finance/page/sw-finance-transfer-list', () => {
 
         wrapper.vm.onReject(created);
         expect(wrapper.vm.transferToReject).toEqual(created);
+    });
+
+    /**
+     * Regression: the modals used to sit directly under `<sw-page>` - in the default slot, which
+     * `sw-page` never renders (it only has named slots). The button set its flag, nothing appeared.
+     * Both entry points of the create modal must mount the modal for real.
+     */
+    it('should mount the create modal when the smart bar button is clicked', async () => {
+        const { wrapper } = await createWrapper();
+
+        expect(wrapper.find('sw-finance-transfer-create-modal-stub').exists()).toBe(false);
+
+        // the smart bar carries the only button while the list has rows - the empty state button only
+        // renders for an empty list
+        const smartBarButtons = wrapper.findAll('mt-button-stub');
+
+        expect(smartBarButtons.length).toBeGreaterThan(0);
+        await smartBarButtons[0].trigger('click');
+
+        expect(wrapper.vm.showCreateModal).toBe(true);
+        expect(wrapper.find('sw-finance-transfer-create-modal-stub').exists()).toBe(true);
+    });
+
+    it('should mount the create modal when the button of the empty state is clicked', async () => {
+        const { wrapper } = await createWrapper(() => true, {}, []);
+
+        expect(wrapper.find('sw-finance-transfer-create-modal-stub').exists()).toBe(false);
+
+        const emptyStateButton = wrapper.find('.sw-finance-transfer-list__empty-state mt-button-stub');
+
+        expect(emptyStateButton.exists()).toBe(true);
+        await emptyStateButton.trigger('click');
+
+        expect(wrapper.vm.showCreateModal).toBe(true);
+        expect(wrapper.find('sw-finance-transfer-create-modal-stub').exists()).toBe(true);
     });
 });

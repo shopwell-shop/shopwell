@@ -4,12 +4,12 @@
             "loadFailed": "数据加载失败。"
         },
         "general": {
-            "description": "审核转账申请与查看钱包充值流水",
+            "description": "审核转账申请与查看钱包流水",
             "mainMenuItemGeneral": "财务"
         },
         "navigation": {
             "transfer": "转账申请",
-            "walletTopUp": "钱包充值"
+            "walletTransactions": "钱包流水"
         },
         "transfer": {
             "actions": {
@@ -205,50 +205,40 @@
                 "succeeded": "成功"
             }
         },
-        "walletTopUp": {
+        "walletTransactions": {
             "filters": {
-                "channelFilter": {
-                    "label": "充值渠道",
-                    "placeholder": "多个渠道用逗号分隔..."
-                },
                 "createdFilter": {
                     "label": "创建时间",
                     "placeholder": "选择时间范围..."
                 },
-                "paymentNoFilter": {
-                    "label": "充值单号",
-                    "placeholder": "多个单号用逗号分隔..."
-                },
-                "stateFilter": {
-                    "label": "状态",
-                    "placeholder": "全部状态..."
+                "typeFilter": {
+                    "label": "类型",
+                    "placeholder": "全部类型..."
                 }
             },
             "general": {
-                "mainMenuItemGeneral": "钱包充值"
+                "mainMenuItemGeneral": "钱包流水"
             },
             "list": {
                 "columnAmount": "金额",
-                "columnChannel": "充值渠道",
+                "columnBalanceAfter": "变动后余额",
                 "columnCreatedAt": "创建时间",
-                "columnCreditedAt": "入账时间",
                 "columnCustomer": "客户",
-                "columnPaidAt": "支付时间",
-                "columnPaymentNo": "充值单号",
-                "columnState": "状态",
-                "emptyHeadline": "还没有充值单",
-                "emptySubline": "充值流水由前台充值产生，客户发起充值后会显示在这里。",
+                "columnOrder": "关联订单",
+                "columnType": "类型",
+                "emptyHeadline": "还没有钱包流水",
+                "emptySubline": "充值、消费、退款与调整都会记入钱包流水，客户余额发生变动后即可在此查看。",
                 "noResultSubline": "当前搜索或筛选没有匹配的记录，请调整条件后重试。",
-                "noResultTitle": "没有符合条件的充值单",
-                "placeholderSearchBar": "搜索客户姓名、客户编号或充值单号...",
-                "title": "钱包充值",
+                "noResultTitle": "没有符合条件的流水记录",
+                "placeholderSearchBar": "搜索客户姓名、客户编号或关联单号...",
+                "title": "钱包流水",
                 "titleSidebarItemRefresh": "刷新列表"
             },
-            "state": {
-                "credited": "已入账",
-                "failed": "失败",
-                "open": "待支付",
-                "paid": "已支付"
+            "type": {
+                "adjust": "调整",
+                "consume": "消费",
+                "refund": "退款",
+                "top_up": "充值"
             }
         }
     },

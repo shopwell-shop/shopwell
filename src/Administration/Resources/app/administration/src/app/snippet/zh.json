@@ -1070,6 +1070,7 @@
       "customer": "客户 | 客户",
       "customer_address": "地址 | 地址",
       "customer_group": "客户组 | 客户组",
+      "customer_wallet_transaction": "钱包流水 | 钱包流水",
       "extension": "扩展 | 扩展",
       "integration": "集成 | 集成",
       "language": "语言 | 语言",

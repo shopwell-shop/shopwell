@@ -5,9 +5,9 @@
  * wallet.
  *
  * It owns no entity of its own - `payment_transfer` stays the entity of the payment gateway and
- * `customer_wallet_top_up` the entity of the checkout. What the module owns is the workspace of the
- * operator who has to decide about that money, which is why the pages live here and the payment orders
- * (bookkeeping, read only) stay in `sw-payment`.
+ * `customer_wallet_transaction` the entity of the wallet ledger. What the module owns is the workspace
+ * of the operator who has to decide about that money, which is why the pages live here and the payment
+ * orders (bookkeeping, read only) stay in `sw-payment`.
  */
 import './acl';
 
@@ -18,7 +18,7 @@ const { Module } = Shopwell;
 /* eslint-disable sw-deprecation-rules/private-feature-declarations */
 Shopwell.Component.register('sw-finance-transfer-list', () => import('./page/sw-finance-transfer-list'));
 Shopwell.Component.register('sw-finance-transfer-detail', () => import('./page/sw-finance-transfer-detail'));
-Shopwell.Component.register('sw-finance-wallet-top-up-list', () => import('./page/sw-finance-wallet-top-up-list'));
+Shopwell.Component.register('sw-finance-wallet-transactions-list', () => import('./page/sw-finance-wallet-transactions-list'));
 Shopwell.Component.register('sw-finance-transfer-create-modal', () => import('./component/sw-finance-transfer-create-modal'));
 Shopwell.Component.register('sw-finance-transfer-approve-modal', () => import('./component/sw-finance-transfer-approve-modal'));
 Shopwell.Component.register('sw-finance-transfer-reject-modal', () => import('./component/sw-finance-transfer-reject-modal'));
@@ -74,9 +74,9 @@ Module.register('sw-finance', {
             },
         },
 
-        walletTopUp: {
-            component: 'sw-finance-wallet-top-up-list',
-            path: 'wallet-top-up',
+        walletTransactions: {
+            component: 'sw-finance-wallet-transactions-list',
+            path: 'wallet-transactions',
             meta: {
                 privilege: 'wallet.viewer',
                 appSystem: {
@@ -106,9 +106,9 @@ Module.register('sw-finance', {
             privilege: 'payment_transfer.viewer',
         },
         {
-            id: 'sw-finance-wallet-top-up',
-            path: 'sw.finance.walletTopUp',
-            label: 'sw-finance.navigation.walletTopUp',
+            id: 'sw-finance-wallet-transactions',
+            path: 'sw.finance.walletTransactions',
+            label: 'sw-finance.navigation.walletTransactions',
             parent: 'sw-finance',
             privilege: 'wallet.viewer',
         },
