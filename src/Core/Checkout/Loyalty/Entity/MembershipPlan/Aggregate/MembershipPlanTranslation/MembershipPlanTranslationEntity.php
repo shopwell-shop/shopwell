@@ -17,7 +17,7 @@ class MembershipPlanTranslationEntity extends TranslationEntity
 
     protected string $membershipPlanId;
 
-    protected string $name;
+    protected ?string $name = null;
 
     protected ?string $description = null;
 
@@ -33,12 +33,12 @@ class MembershipPlanTranslationEntity extends TranslationEntity
         $this->membershipPlanId = $membershipPlanId;
     }
 
-    public function getName(): string
+    public function getName(): ?string
     {
         return $this->name;
     }
 
-    public function setName(string $name): void
+    public function setName(?string $name): void
     {
         $this->name = $name;
     }
