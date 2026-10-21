@@ -195,6 +195,106 @@
                     }
                 ]
             }
+        },
+        "/membership/purchase": {
+            "post": {
+                "tags": [
+                    "Loyalty"
+                ],
+                "summary": "Buy a membership plan and open the payment for it",
+                "description": "Creates a membership order for the authenticated customer and opens the payment of the given channel for it. The membership is activated once the channel confirmed the payment, not when it was opened, so the response carries the data the payer needs to pay it.",
+                "operationId": "purchaseMembership",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "planId": {
+                                        "type": "string",
+                                        "description": "The id of the membership plan to buy. The plan has to be purchasable in the currency of the context."
+                                    },
+                                    "channel": {
+                                        "type": "string",
+                                        "description": "The technical name of the payment channel that collects the money, as listed by the loyalty route."
+                                    },
+                                    "returnUrl": {
+                                        "type": "string",
+                                        "description": "Where the payer lands after a redirect channel. The account page of the loyalty program is used when this is missing."
+                                    },
+                                    "device": {
+                                        "type": "string",
+                                        "description": "The device the payer uses, for channels that render a different interface per device, e.g. `mobile` or `pc`."
+                                    }
+                                },
+                                "required": [
+                                    "planId",
+                                    "channel"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "The created membership order and the payment data of the channel.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "id": {
+                                            "type": "string",
+                                            "description": "The id of the membership order."
+                                        },
+                                        "amount": {
+                                            "type": "number",
+                                            "description": "The price of the plan, in the currency of the order."
+                                        },
+                                        "currency": {
+                                            "type": "string",
+                                            "description": "The iso code of the currency of the order."
+                                        },
+                                        "payment_no": {
+                                            "type": "string",
+                                            "description": "The payment number of the channel."
+                                        },
+                                        "channel": {
+                                            "type": "string",
+                                            "description": "The technical name of the channel that collects the money."
+                                        },
+                                        "params": {
+                                            "type": "object",
+                                            "additionalProperties": true,
+                                            "description": "The data the payer needs to pay, in the form the channel declared it."
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "The loyalty program is disabled, the plan is not purchasable or the channel is unknown.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/failure"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/401",
+                        "description": "The customer is not logged in."
+                    }
+                },
+                "security": [
+                    {
+                        "ApiKey": []
+                    }
+                ]
+            }
         }
     }
 }
