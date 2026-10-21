@@ -46,7 +46,10 @@ test(
             // the (country specific) postal code validation therefore applies to the checkout address only.
             await ShopCustomer.expects(StorefrontAccountLogin.page.locator('[name^="billingAddress"]')).toHaveCount(0);
             await ShopCustomer.expects(StorefrontAccountLogin.page.locator('[name^="shippingAddress"]')).toHaveCount(0);
-            await ShopCustomer.expects(StorefrontAccountLogin.personalFormArea).toHaveCount(0);
+            // The credentials are rendered inside the `register-personal` fieldset, only the personal data
+            // fields (salutation, first and last name, company) are dropped from the form.
+            await ShopCustomer.expects(StorefrontAccountLogin.salutationSelect).toHaveCount(0);
+            await ShopCustomer.expects(StorefrontAccountLogin.nameInput).toHaveCount(0);
             await ShopCustomer.expects(StorefrontAccountLogin.postalCodeInput).toHaveCount(0);
             await ShopCustomer.expects(StorefrontAccountLogin.differentShippingAddressCheckbox).toHaveCount(0);
         });
