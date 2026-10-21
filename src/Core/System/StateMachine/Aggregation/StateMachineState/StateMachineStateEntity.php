@@ -11,6 +11,11 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Entity;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityCustomFieldsTrait;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityIdTrait;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Payment\Order\PaymentOrderCollection;
+use Shopwell\Core\System\Payment\Subscription\PaymentMandateCollection;
+use Shopwell\Core\System\Payment\Subscription\PaymentSubscriptionCollection;
+use Shopwell\Core\System\Payment\Subscription\PaymentSubscriptionCycleCollection;
+use Shopwell\Core\System\Payment\Transfer\PaymentTransferCollection;
 use Shopwell\Core\System\StateMachine\Aggregation\StateMachineHistory\StateMachineHistoryCollection;
 use Shopwell\Core\System\StateMachine\Aggregation\StateMachineTransition\StateMachineTransitionCollection;
 use Shopwell\Core\System\StateMachine\StateMachineEntity;
@@ -51,6 +56,16 @@ class StateMachineStateEntity extends Entity
     protected ?StateMachineHistoryCollection $fromStateMachineHistoryEntries = null;
 
     protected ?StateMachineHistoryCollection $toStateMachineHistoryEntries = null;
+
+    protected ?PaymentOrderCollection $paymentOrders = null;
+
+    protected ?PaymentMandateCollection $paymentMandates = null;
+
+    protected ?PaymentSubscriptionCollection $paymentSubscriptions = null;
+
+    protected ?PaymentSubscriptionCycleCollection $paymentSubscriptionCycles = null;
+
+    protected ?PaymentTransferCollection $paymentTransfers = null;
 
     public function getToStateMachineHistoryEntries(): ?StateMachineHistoryCollection
     {
@@ -190,5 +205,55 @@ class StateMachineStateEntity extends Entity
     public function setOrderDeliveries(OrderDeliveryCollection $orderDeliveries): void
     {
         $this->orderDeliveries = $orderDeliveries;
+    }
+
+    public function getPaymentOrders(): ?PaymentOrderCollection
+    {
+        return $this->paymentOrders;
+    }
+
+    public function setPaymentOrders(PaymentOrderCollection $paymentOrders): void
+    {
+        $this->paymentOrders = $paymentOrders;
+    }
+
+    public function getPaymentMandates(): ?PaymentMandateCollection
+    {
+        return $this->paymentMandates;
+    }
+
+    public function setPaymentMandates(PaymentMandateCollection $paymentMandates): void
+    {
+        $this->paymentMandates = $paymentMandates;
+    }
+
+    public function getPaymentSubscriptions(): ?PaymentSubscriptionCollection
+    {
+        return $this->paymentSubscriptions;
+    }
+
+    public function setPaymentSubscriptions(PaymentSubscriptionCollection $paymentSubscriptions): void
+    {
+        $this->paymentSubscriptions = $paymentSubscriptions;
+    }
+
+    public function getPaymentSubscriptionCycles(): ?PaymentSubscriptionCycleCollection
+    {
+        return $this->paymentSubscriptionCycles;
+    }
+
+    public function setPaymentSubscriptionCycles(PaymentSubscriptionCycleCollection $paymentSubscriptionCycles): void
+    {
+        $this->paymentSubscriptionCycles = $paymentSubscriptionCycles;
+    }
+
+    public function getPaymentTransfers(): ?PaymentTransferCollection
+    {
+        return $this->paymentTransfers;
+    }
+
+    public function setPaymentTransfers(PaymentTransferCollection $paymentTransfers): void
+    {
+        $this->paymentTransfers = $paymentTransfers;
     }
 }

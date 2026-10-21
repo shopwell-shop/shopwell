@@ -94,6 +94,9 @@ class PaymentMethodDefinition extends EntityDefinition
 
             // runtime fields
             (new StringField('short_name', 'shortName'))->addFlags(new ApiAware(), new Runtime()),
+
+            // Reverse side of the gateway channel of the generic payment gateway
+            (new OneToManyAssociationField('gatewayChannels', 'payment_method_gateway_channel', 'payment_method_id'))->addFlags(new CascadeDelete()),
         ]);
     }
 }

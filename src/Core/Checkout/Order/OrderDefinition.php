@@ -3,12 +3,14 @@
 namespace Shopwell\Core\Checkout\Order;
 
 use Shopwell\Core\Checkout\DocumentV2\DocumentDefinition;
+use Shopwell\Core\Checkout\Loyalty\Entity\CustomerPointTransaction\CustomerPointTransactionDefinition;
 use Shopwell\Core\Checkout\Order\Aggregate\OrderAddress\OrderAddressDefinition;
 use Shopwell\Core\Checkout\Order\Aggregate\OrderCustomer\OrderCustomerDefinition;
 use Shopwell\Core\Checkout\Order\Aggregate\OrderDelivery\OrderDeliveryDefinition;
 use Shopwell\Core\Checkout\Order\Aggregate\OrderLineItem\OrderLineItemDefinition;
 use Shopwell\Core\Checkout\Order\Aggregate\OrderTag\OrderTagDefinition;
 use Shopwell\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionDefinition;
+use Shopwell\Core\Checkout\Wallet\Entity\CustomerWalletTransaction\CustomerWalletTransactionDefinition;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityDefinition;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\AutoIncrementField;
@@ -146,6 +148,11 @@ class OrderDefinition extends EntityDefinition
             new ManyToOneAssociationField('updatedBy', 'updated_by_id', UserDefinition::class, 'id', false),
             (new CashRoundingConfigField('item_rounding', 'itemRounding'))->addFlags(new Required())->setDescription('The cash rounding applied on net prices.'),
             (new CashRoundingConfigField('total_rounding', 'totalRounding'))->addFlags(new Required())->setDescription('The cash rounding applied on net prices.'),
+
+            // Reverse sides of the loyalty, wallet and payment domains
+            new OneToManyAssociationField('customerPointTransactions', CustomerPointTransactionDefinition::class, 'order_id'),
+            new OneToManyAssociationField('customerWalletTransactions', CustomerWalletTransactionDefinition::class, 'order_id'),
+            (new OneToManyAssociationField('paymentOrders', 'payment_order', 'order_id'))->addFlags(new CascadeDelete()),
         ]);
     }
 }

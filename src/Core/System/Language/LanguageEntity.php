@@ -5,6 +5,8 @@ namespace Shopwell\Core\System\Language;
 use Shopwell\Core\Checkout\Customer\Aggregate\CustomerGroupTranslation\CustomerGroupTranslationCollection;
 use Shopwell\Core\Checkout\Customer\CustomerCollection;
 use Shopwell\Core\Checkout\Document\Aggregate\DocumentTypeTranslation\DocumentTypeTranslationCollection;
+use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyTier\Aggregate\LoyaltyTierTranslation\LoyaltyTierTranslationCollection;
+use Shopwell\Core\Checkout\Loyalty\Entity\MembershipPlan\Aggregate\MembershipPlanTranslation\MembershipPlanTranslationCollection;
 use Shopwell\Core\Checkout\Order\OrderCollection;
 use Shopwell\Core\Checkout\Payment\Aggregate\PaymentMethodTranslation\PaymentMethodTranslationCollection;
 use Shopwell\Core\Checkout\Promotion\Aggregate\PromotionTranslation\PromotionTranslationCollection;
@@ -224,6 +226,10 @@ class LanguageEntity extends Entity
     protected ?AppFlowActionTranslationCollection $appFlowActionTranslations = null;
 
     protected ?TaxProviderTranslationCollection $taxProviderTranslations = null;
+
+    protected ?LoyaltyTierTranslationCollection $loyaltyTierTranslations = null;
+
+    protected ?MembershipPlanTranslationCollection $membershipPlanTranslations = null;
 
     public function getMailHeaderFooterTranslations(): ?MailHeaderFooterCollection
     {
@@ -958,5 +964,25 @@ class LanguageEntity extends Entity
     public function setTaxProviderTranslations(TaxProviderTranslationCollection $taxProviderTranslations): void
     {
         $this->taxProviderTranslations = $taxProviderTranslations;
+    }
+
+    public function getLoyaltyTierTranslations(): ?LoyaltyTierTranslationCollection
+    {
+        return $this->loyaltyTierTranslations;
+    }
+
+    public function setLoyaltyTierTranslations(LoyaltyTierTranslationCollection $loyaltyTierTranslations): void
+    {
+        $this->loyaltyTierTranslations = $loyaltyTierTranslations;
+    }
+
+    public function getMembershipPlanTranslations(): ?MembershipPlanTranslationCollection
+    {
+        return $this->membershipPlanTranslations;
+    }
+
+    public function setMembershipPlanTranslations(MembershipPlanTranslationCollection $membershipPlanTranslations): void
+    {
+        $this->membershipPlanTranslations = $membershipPlanTranslations;
     }
 }

@@ -2,8 +2,11 @@
 
 namespace Shopwell\Core\System\Currency;
 
+use Shopwell\Core\Checkout\Loyalty\Entity\MembershipPlan\MembershipPlanDefinition;
 use Shopwell\Core\Checkout\Order\OrderDefinition;
 use Shopwell\Core\Checkout\Promotion\Aggregate\PromotionDiscountPrice\PromotionDiscountPriceDefinition;
+use Shopwell\Core\Checkout\Wallet\Entity\CustomerWallet\CustomerWalletDefinition;
+use Shopwell\Core\Checkout\Wallet\Entity\CustomerWalletTransaction\CustomerWalletTransactionDefinition;
 use Shopwell\Core\Content\ProductExport\ProductExportDefinition;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityDefinition;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\BoolField;
@@ -82,6 +85,12 @@ class CurrencyDefinition extends EntityDefinition
             (new CashRoundingConfigField('item_rounding', 'itemRounding'))->addFlags(new ApiAware(), new Required())->setDescription('The cash rounding applied on net prices.'),
             (new CashRoundingConfigField('total_rounding', 'totalRounding'))->addFlags(new ApiAware(), new Required())->setDescription('The cash rounding applied on cart’s total net prices.'),
             (new OneToManyAssociationField('countryRoundings', CurrencyCountryRoundingDefinition::class, 'currency_id'))->addFlags(new CascadeDelete()),
+
+            // Reverse sides of the loyalty, wallet and payment domains
+            new OneToManyAssociationField('membershipPlans', MembershipPlanDefinition::class, 'currency_id'),
+            new OneToManyAssociationField('customerWallets', CustomerWalletDefinition::class, 'currency_id'),
+            new OneToManyAssociationField('customerWalletTransactions', CustomerWalletTransactionDefinition::class, 'currency_id'),
+            new OneToManyAssociationField('paymentPlans', 'payment_plan', 'currency_id'),
         ]);
     }
 }

@@ -2,8 +2,11 @@
 
 namespace Shopwell\Core\System\Currency;
 
+use Shopwell\Core\Checkout\Loyalty\Entity\MembershipPlan\MembershipPlanCollection;
 use Shopwell\Core\Checkout\Order\OrderCollection;
 use Shopwell\Core\Checkout\Promotion\Aggregate\PromotionDiscountPrice\PromotionDiscountPriceCollection;
+use Shopwell\Core\Checkout\Wallet\Entity\CustomerWallet\CustomerWalletCollection;
+use Shopwell\Core\Checkout\Wallet\Entity\CustomerWalletTransaction\CustomerWalletTransactionCollection;
 use Shopwell\Core\Content\ProductExport\ProductExportCollection;
 use Shopwell\Core\Framework\DataAbstractionLayer\Entity;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityCustomFieldsTrait;
@@ -12,6 +15,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Pricing\CashRoundingConfig;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Currency\Aggregate\CurrencyCountryRounding\CurrencyCountryRoundingCollection;
 use Shopwell\Core\System\Currency\Aggregate\CurrencyTranslation\CurrencyTranslationCollection;
+use Shopwell\Core\System\Payment\Subscription\PaymentPlanCollection;
 use Shopwell\Core\System\SalesChannel\Aggregate\SalesChannelDomain\SalesChannelDomainCollection;
 use Shopwell\Core\System\SalesChannel\SalesChannelCollection;
 
@@ -53,6 +57,14 @@ class CurrencyEntity extends Entity
     protected ?ProductExportCollection $productExports = null;
 
     protected ?CurrencyCountryRoundingCollection $countryRoundings = null;
+
+    protected ?MembershipPlanCollection $membershipPlans = null;
+
+    protected ?CustomerWalletCollection $customerWallets = null;
+
+    protected ?CustomerWalletTransactionCollection $customerWalletTransactions = null;
+
+    protected ?PaymentPlanCollection $paymentPlans = null;
 
     protected CashRoundingConfig $itemRounding;
 
@@ -208,6 +220,46 @@ class CurrencyEntity extends Entity
     public function setCountryRoundings(CurrencyCountryRoundingCollection $countryRoundings): void
     {
         $this->countryRoundings = $countryRoundings;
+    }
+
+    public function getMembershipPlans(): ?MembershipPlanCollection
+    {
+        return $this->membershipPlans;
+    }
+
+    public function setMembershipPlans(MembershipPlanCollection $membershipPlans): void
+    {
+        $this->membershipPlans = $membershipPlans;
+    }
+
+    public function getCustomerWallets(): ?CustomerWalletCollection
+    {
+        return $this->customerWallets;
+    }
+
+    public function setCustomerWallets(CustomerWalletCollection $customerWallets): void
+    {
+        $this->customerWallets = $customerWallets;
+    }
+
+    public function getCustomerWalletTransactions(): ?CustomerWalletTransactionCollection
+    {
+        return $this->customerWalletTransactions;
+    }
+
+    public function setCustomerWalletTransactions(CustomerWalletTransactionCollection $customerWalletTransactions): void
+    {
+        $this->customerWalletTransactions = $customerWalletTransactions;
+    }
+
+    public function getPaymentPlans(): ?PaymentPlanCollection
+    {
+        return $this->paymentPlans;
+    }
+
+    public function setPaymentPlans(PaymentPlanCollection $paymentPlans): void
+    {
+        $this->paymentPlans = $paymentPlans;
     }
 
     public function getItemRounding(): CashRoundingConfig

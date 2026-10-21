@@ -6,6 +6,7 @@ use Shopwell\Core\Checkout\Cart\Price\Struct\CalculatedPrice;
 use Shopwell\Core\Checkout\Cart\Price\Struct\CartPrice;
 use Shopwell\Core\Checkout\DocumentV2\DocumentCollection;
 use Shopwell\Core\Checkout\DocumentV2\DocumentSourceEntity;
+use Shopwell\Core\Checkout\Loyalty\Entity\CustomerPointTransaction\CustomerPointTransactionCollection;
 use Shopwell\Core\Checkout\Order\Aggregate\OrderAddress\OrderAddressCollection;
 use Shopwell\Core\Checkout\Order\Aggregate\OrderAddress\OrderAddressEntity;
 use Shopwell\Core\Checkout\Order\Aggregate\OrderCustomer\OrderCustomerEntity;
@@ -14,6 +15,7 @@ use Shopwell\Core\Checkout\Order\Aggregate\OrderDelivery\OrderDeliveryEntity;
 use Shopwell\Core\Checkout\Order\Aggregate\OrderLineItem\OrderLineItemCollection;
 use Shopwell\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionCollection;
 use Shopwell\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
+use Shopwell\Core\Checkout\Wallet\Entity\CustomerWalletTransaction\CustomerWalletTransactionCollection;
 use Shopwell\Core\Framework\DataAbstractionLayer\Entity;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityCustomFieldsTrait;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityIdTrait;
@@ -21,6 +23,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Pricing\CashRoundingConfig;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Currency\CurrencyEntity;
 use Shopwell\Core\System\Language\LanguageEntity;
+use Shopwell\Core\System\Payment\Order\PaymentOrderCollection;
 use Shopwell\Core\System\SalesChannel\SalesChannelEntity;
 use Shopwell\Core\System\StateMachine\Aggregation\StateMachineState\StateMachineStateEntity;
 use Shopwell\Core\System\Tag\TagCollection;
@@ -103,6 +106,12 @@ class OrderEntity extends Entity implements DocumentSourceEntity
     protected ?string $primaryOrderTransactionVersionId = null;
 
     protected ?DocumentCollection $documents = null;
+
+    protected ?CustomerPointTransactionCollection $customerPointTransactions = null;
+
+    protected ?CustomerWalletTransactionCollection $customerWalletTransactions = null;
+
+    protected ?PaymentOrderCollection $paymentOrders = null;
 
     protected ?TagCollection $tags = null;
 
@@ -443,6 +452,36 @@ class OrderEntity extends Entity implements DocumentSourceEntity
     public function setDocuments(DocumentCollection $documents): void
     {
         $this->documents = $documents;
+    }
+
+    public function getCustomerPointTransactions(): ?CustomerPointTransactionCollection
+    {
+        return $this->customerPointTransactions;
+    }
+
+    public function setCustomerPointTransactions(CustomerPointTransactionCollection $customerPointTransactions): void
+    {
+        $this->customerPointTransactions = $customerPointTransactions;
+    }
+
+    public function getCustomerWalletTransactions(): ?CustomerWalletTransactionCollection
+    {
+        return $this->customerWalletTransactions;
+    }
+
+    public function setCustomerWalletTransactions(CustomerWalletTransactionCollection $customerWalletTransactions): void
+    {
+        $this->customerWalletTransactions = $customerWalletTransactions;
+    }
+
+    public function getPaymentOrders(): ?PaymentOrderCollection
+    {
+        return $this->paymentOrders;
+    }
+
+    public function setPaymentOrders(PaymentOrderCollection $paymentOrders): void
+    {
+        $this->paymentOrders = $paymentOrders;
     }
 
     public function getOrderNumber(): ?string
