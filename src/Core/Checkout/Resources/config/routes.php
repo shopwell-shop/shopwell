@@ -26,4 +26,6 @@ return static function (RoutingConfigurator $routes): void {
     $routes->import('../../Wallet/**/*Controller.php', 'attribute');
     $routes->import('../../Loyalty/SalesChannel/**/*Route.php', 'attribute');
     $routes->import('../../Wallet/SalesChannel/**/*Route.php', 'attribute');
+    $routes->import('../../OrderReturn/**/*Controller.php', 'attribute');
+    $routes->import('../../OrderReturn/SalesChannel/**/*Route.php', 'attribute');
 };

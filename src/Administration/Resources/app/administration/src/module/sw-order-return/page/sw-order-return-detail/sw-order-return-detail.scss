@@ -1,0 +1,101 @@
+.sw-order-return-detail {
+    &__state-badge {
+        margin-inline-start: var(--scale-size-8);
+        vertical-align: middle;
+    }
+
+    /**
+     * The facts of the case as a definition list: the label is the question, the value the answer. A
+     * two column grid keeps the answers aligned no matter how long one of them is.
+     */
+    &__facts {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: var(--scale-size-16) var(--scale-size-24);
+        margin: 0;
+    }
+
+    &__fact {
+        display: flex;
+        flex-direction: column;
+        gap: var(--scale-size-2);
+    }
+
+    &__fact-label {
+        color: var(--color-text-secondary-default);
+        font-size: var(--font-size-xs);
+    }
+
+    &__fact-value {
+        color: var(--color-text-primary-default);
+        font-weight: var(--font-weight-semibold);
+        word-break: break-word;
+    }
+
+    &__customer-note {
+        margin-block-start: var(--scale-size-24);
+    }
+
+    /**
+     * A hint is a sentence about the data above it, not a warning - so it is quiet.
+     */
+    &__hint {
+        color: var(--color-text-secondary-default);
+        font-size: var(--font-size-xs);
+        margin-block-start: var(--scale-size-12);
+        margin-block-end: 0;
+    }
+
+    &__message-list {
+        display: flex;
+        flex-direction: column;
+        gap: var(--scale-size-16);
+        list-style: none;
+        margin: 0;
+        padding: 0;
+    }
+
+    &__message {
+        border-inline-start: 2px solid var(--color-border-primary-default);
+        padding-inline-start: var(--scale-size-12);
+    }
+
+    &__message-meta {
+        display: flex;
+        gap: var(--scale-size-8);
+        align-items: baseline;
+    }
+
+    &__message-author {
+        color: var(--color-text-primary-default);
+        font-weight: var(--font-weight-semibold);
+        font-size: var(--font-size-xs);
+    }
+
+    &__message-date {
+        color: var(--color-text-secondary-default);
+        font-size: var(--font-size-xs);
+    }
+
+    &__message-content {
+        margin-block: var(--scale-size-4) 0;
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+
+    &__message-form {
+        display: flex;
+        flex-direction: column;
+        gap: var(--scale-size-12);
+        align-items: flex-start;
+        margin-block-start: var(--scale-size-24);
+    }
+
+    &__message-send {
+        align-self: flex-end;
+    }
+
+    &__empty-state {
+        padding-block: var(--scale-size-48);
+    }
+}

@@ -1,0 +1,33 @@
+{% sw_extends '@Storefront/storefront/page/account/_page.html.twig' %}
+
+{% block page_account_main_content %}
+    {% block page_account_order_return_create %}
+        <div class="account-order-return-create">
+            {% block page_account_order_return_create_header %}
+                <div class="account-welcome">
+                    <h1>{{ 'account.orderReturnCreateTitle'|trans|sw_sanitize }}</h1>
+                    <p>{{ 'account.orderReturnCreateIntro'|trans|sw_sanitize }}</p>
+
+                    {% if page.orderNumber %}
+                        <p class="account-order-return-create-order">
+                            {{ 'account.orderReturnCreateOrderNumber'|trans|sw_sanitize }}: {{ page.orderNumber|sw_sanitize }}
+                        </p>
+                    {% endif %}
+                </div>
+            {% endblock %}
+
+            {% block page_account_order_return_create_body %}
+                {% if page.positions is empty %}
+                    {% sw_include '@Storefront/storefront/utilities/alert.html.twig' with {
+                        type: 'info',
+                        content: 'account.orderReturnCreateNoPositions'|trans|sw_sanitize
+                    } %}
+                {% else %}
+                    {% sw_include '@Storefront/storefront/page/account/order-return/_create-form.html.twig' with {
+                        formAction: 'frontend.account.order-return.create.submit',
+                    } %}
+                {% endif %}
+            {% endblock %}
+        </div>
+    {% endblock %}
+{% endblock %}

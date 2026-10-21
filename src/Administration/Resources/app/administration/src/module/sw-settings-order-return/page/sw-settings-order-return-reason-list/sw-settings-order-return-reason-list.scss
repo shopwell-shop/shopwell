@@ -1,0 +1,11 @@
+.sw-settings-order-return-reason-list {
+    /**
+     * The list is short and lives inside a card, so the grid keeps the height of its rows instead of
+     * stretching over the page.
+     */
+    &__grid {
+        .sw-data-grid__cell--position {
+            color: var(--color-text-secondary-default);
+        }
+    }
+}

@@ -1,0 +1,20 @@
+{% block page_account_order_return_state %}
+    {#
+    The technical name decides the colour, the label is what is printed: a shop may rename its states,
+    and a customer must never read `returning` instead of the translated text.
+    #}
+    {% set stateVariants = {
+        requested: 'bg-warning text-dark',
+        open: 'bg-info text-dark',
+        returning: 'bg-info text-dark',
+        received: 'bg-primary',
+        refunding: 'bg-primary',
+        closed: 'bg-success',
+        declined: 'bg-danger',
+        canceled: 'bg-secondary',
+    } %}
+
+    <span class="badge {{ stateVariants[orderReturn.state]|default('bg-secondary') }}">
+        {{ orderReturn.stateLabel|default(orderReturn.state)|sw_sanitize }}
+    </span>
+{% endblock %}

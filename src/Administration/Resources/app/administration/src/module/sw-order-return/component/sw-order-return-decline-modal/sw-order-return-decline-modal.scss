@@ -1,0 +1,12 @@
+.sw-order-return-decline-modal {
+    &__hint {
+        margin-block-end: var(--scale-size-24);
+    }
+
+    &__counter {
+        color: var(--color-text-secondary-default);
+        font-size: var(--font-size-xs);
+        margin-block-start: var(--scale-size-4);
+        text-align: end;
+    }
+}

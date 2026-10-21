@@ -155,6 +155,18 @@ export default function createSearchTypeService() {
             listingRoute: 'sw.settings.sms.delivery',
             hideOnGlobalSearchBar: true,
         },
+        order_return: {
+            entityName: 'order_return',
+            placeholderSnippet: 'sw-order-return.list.placeholderSearchBar',
+            listingRoute: 'sw.order.return.list',
+            hideOnGlobalSearchBar: true,
+        },
+        order_return_reason: {
+            entityName: 'order_return_reason',
+            placeholderSnippet: 'sw-settings-order-return.reason.placeholderSearchBar',
+            listingRoute: 'sw.settings.order.return.reason',
+            hideOnGlobalSearchBar: true,
+        },
     };
 
     let $typeStore = {};

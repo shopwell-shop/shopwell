@@ -1,0 +1,44 @@
+{% sw_extends '@Storefront/storefront/base.html.twig' %}
+
+{% block base_content %}
+    <div class="container order-return-guest">
+        {% block page_order_return_guest_verify %}
+            <div class="order-return-guest-verify">
+                <h1>{{ 'account.orderReturnGuestTitle'|trans|sw_sanitize }}</h1>
+                <p>{{ 'account.orderReturnGuestIntro'|trans|sw_sanitize }}</p>
+
+                <form action="{{ path('frontend.order-return.guest.verify') }}" method="post">
+                    <div class="mb-3">
+                        <label class="form-label" for="order-return-guest-order-number">
+                            {{ 'account.orderReturnGuestOrderNumber'|trans|sw_sanitize }}
+                        </label>
+                        <input type="text"
+                               class="form-control"
+                               id="order-return-guest-order-number"
+                               name="orderNumber"
+                               autocomplete="off"
+                               maxlength="64"
+                               required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label" for="order-return-guest-email">
+                            {{ 'account.orderReturnGuestEmail'|trans|sw_sanitize }}
+                        </label>
+                        <input type="email"
+                               class="form-control"
+                               id="order-return-guest-email"
+                               name="email"
+                               autocomplete="email"
+                               maxlength="254"
+                               required>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">
+                        {{ 'account.orderReturnGuestVerify'|trans|sw_sanitize }}
+                    </button>
+                </form>
+            </div>
+        {% endblock %}
+    </div>
+{% endblock %}

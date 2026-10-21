@@ -19,6 +19,8 @@ use Shopwell\Core\Checkout\Gateway\SalesChannel\CheckoutGatewayRoute;
 use Shopwell\Core\Checkout\Loyalty\SalesChannel\LoyaltyRoute;
 use Shopwell\Core\Checkout\Order\SalesChannel\OrderRoute;
 use Shopwell\Core\Checkout\Order\SalesChannel\OrderService;
+use Shopwell\Core\Checkout\OrderReturn\SalesChannel\OrderReturnGuestRoute;
+use Shopwell\Core\Checkout\OrderReturn\SalesChannel\OrderReturnRoute;
 use Shopwell\Core\Checkout\Payment\SalesChannel\PaymentMethodRoute;
 use Shopwell\Core\Checkout\Shipping\SalesChannel\ShippingMethodRoute;
 use Shopwell\Core\Checkout\Wallet\SalesChannel\WalletRoute;
@@ -137,6 +139,8 @@ use Shopwell\Storefront\Page\Account\Order\AccountOrderPageLoader;
 use Shopwell\Storefront\Page\Account\Overview\AccountOverviewPageLoader;
 use Shopwell\Storefront\Page\Account\Profile\AccountProfilePageLoader;
 use Shopwell\Storefront\Page\Account\RecoverPassword\AccountRecoverPasswordPageLoader;
+use Shopwell\Storefront\Page\Account\OrderReturn\AccountOrderReturnPageLoader;
+use Shopwell\Storefront\Page\Account\OrderReturn\GuestOrderReturnPageLoader;
 use Shopwell\Storefront\Page\Account\Wallet\AccountWalletPageLoader;
 use Shopwell\Storefront\Page\Address\Detail\AddressDetailPageLoader;
 use Shopwell\Storefront\Page\Address\Listing\AddressListingPageLoader;
@@ -637,6 +641,22 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('event_dispatcher'),
             service(WalletRoute::class),
             service(CurrencyRoute::class),
+            service(Translator::class),
+        ]);
+
+    $services->set(AccountOrderReturnPageLoader::class)
+        ->args([
+            service(GenericPageLoader::class),
+            service('event_dispatcher'),
+            service(OrderReturnRoute::class),
+            service(Translator::class),
+        ]);
+
+    $services->set(GuestOrderReturnPageLoader::class)
+        ->args([
+            service(GenericPageLoader::class),
+            service('event_dispatcher'),
+            service(OrderReturnGuestRoute::class),
             service(Translator::class),
         ]);
 

@@ -1,0 +1,86 @@
+{% sw_extends '@Storefront/storefront/base.html.twig' %}
+
+{% block base_content %}
+    <div class="container order-return-guest">
+        {% block page_order_return_guest_index %}
+            <div class="order-return-guest-index">
+                {% block page_order_return_guest_index_header %}
+                    <h1>{{ 'account.orderReturnGuestTitle'|trans|sw_sanitize }}</h1>
+
+                    {% if page.orderNumber %}
+                        <p class="order-return-guest-index-verified">
+                            {{ 'account.orderReturnGuestVerifiedAs'|trans({ '%orderNumber%': page.orderNumber })|sw_sanitize }}
+                        </p>
+                    {% endif %}
+
+                    <form action="{{ path('frontend.order-return.guest.forget') }}" method="post">
+                        <button type="submit" class="btn btn-link btn-sm">
+                            {{ 'account.orderReturnGuestForget'|trans|sw_sanitize }}
+                        </button>
+                    </form>
+                {% endblock %}
+
+                {% block page_order_return_guest_index_returns %}
+                    {% if page.returns is empty %}
+                        {% sw_include '@Storefront/storefront/utilities/alert.html.twig' with {
+                            type: 'info',
+                            content: 'account.orderReturnGuestNoReturns'|trans|sw_sanitize
+                        } %}
+                    {% else %}
+                        <div class="table-responsive">
+                            <table class="table order-return-guest-table">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">{{ 'account.orderReturnColumnNumber'|trans|sw_sanitize }}</th>
+                                        <th scope="col">{{ 'account.orderReturnColumnType'|trans|sw_sanitize }}</th>
+                                        <th scope="col">{{ 'account.orderReturnColumnState'|trans|sw_sanitize }}</th>
+                                        <th scope="col" class="text-end">{{ 'account.orderReturnColumnAmount'|trans|sw_sanitize }}</th>
+                                        <th scope="col"><span class="visually-hidden">{{ 'account.orderReturnOpen'|trans|sw_sanitize }}</span></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for orderReturn in page.returns %}
+                                        {% set factor = 10 ** (orderReturn.decimals|default(2)) %}
+
+                                        <tr>
+                                            <td>{{ orderReturn.returnNumber|sw_sanitize }}</td>
+                                            <td>
+                                                {% if orderReturn.type == 'refund_only' %}
+                                                    {{ 'account.orderReturnTypeRefundOnly'|trans|sw_sanitize }}
+                                                {% else %}
+                                                    {{ 'account.orderReturnTypeReturnRefund'|trans|sw_sanitize }}
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% sw_include '@Storefront/storefront/page/account/order-return/_state.html.twig' %}
+                                            </td>
+                                            <td class="text-end">
+                                                {{ (orderReturn.refundAmount / factor)|currency(orderReturn.currency) }}
+                                            </td>
+                                            <td class="text-end">
+                                                <a href="{{ path('frontend.order-return.guest.detail', { id: orderReturn.id }) }}"
+                                                   class="btn btn-sm btn-secondary">
+                                                    {{ 'account.orderReturnOpen'|trans|sw_sanitize }}
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% endif %}
+                {% endblock %}
+
+                {% block page_order_return_guest_index_create %}
+                    {% if page.positions is not empty %}
+                        <h2 class="h4 mt-4">{{ 'account.orderReturnGuestCreateTitle'|trans|sw_sanitize }}</h2>
+
+                        {% sw_include '@Storefront/storefront/page/account/order-return/_create-form.html.twig' with {
+                            formAction: 'frontend.order-return.guest.create',
+                        } %}
+                    {% endif %}
+                {% endblock %}
+            </div>
+        {% endblock %}
+    </div>
+{% endblock %}

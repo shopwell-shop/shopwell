@@ -1,0 +1,113 @@
+{
+    "sw-order-return": {
+        "general": {
+            "mainMenuItemGeneral": "Returns",
+            "description": "Work the returns and refunds customers ask for",
+            "placeholderSearchBar": "Search by return or order number…"
+        },
+        "navigation": {
+            "list": "Returns"
+        },
+        "list": {
+            "title": "Returns",
+            "placeholderSearchBar": "Search by return or order number…",
+            "titleSidebarItemRefresh": "Refresh",
+            "textOverdue": "Overdue",
+            "buttonRefresh": "Refresh",
+            "columnReturnNumber": "Return number",
+            "columnOrder": "Order",
+            "columnCustomer": "Customer",
+            "columnType": "Type",
+            "columnState": "State",
+            "columnRefundAmount": "Refund amount",
+            "columnDeadline": "Deadline",
+            "columnCreatedAt": "Submitted at",
+            "messageEmpty": "No returns yet",
+            "messageEmptySubline": "A return shows up here as soon as a customer asks for one.",
+            "messageNoResult": "No returns match the filter",
+            "messageNoResultSubline": "Adjust the search term or the filters.",
+            "filters": {
+                "returnNoFilter": {
+                    "label": "Return number",
+                    "placeholder": "Enter a return number"
+                },
+                "orderNoFilter": {
+                    "label": "Order number",
+                    "placeholder": "Enter an order number"
+                },
+                "stateFilter": {
+                    "label": "State",
+                    "placeholder": "Select a state"
+                }
+            }
+        },
+        "detail": {
+            "cardGeneralTitle": "Return",
+            "cardLineItemsTitle": "Returned items",
+            "cardMessagesTitle": "Conversation",
+            "labelOrderNumber": "Order",
+            "labelCustomer": "Customer",
+            "labelType": "Type",
+            "labelRefundAmount": "Refund amount",
+            "labelReason": "Reason",
+            "labelCreatedAt": "Submitted at",
+            "labelDeadline": "Deadline",
+            "labelTracking": "Return shipment",
+            "labelCustomerNote": "Customer note",
+            "columnProduct": "Product",
+            "columnQuantity": "Quantity",
+            "columnRefundAmount": "Refund amount",
+            "columnAccepted": "Accepted",
+            "columnRestocked": "Restocked",
+            "buttonApprove": "Approve return",
+            "buttonDecline": "Decline return",
+            "buttonCancel": "Close return",
+            "buttonReceive": "Book arrival",
+            "buttonRefund": "Refund",
+            "buttonSendMessage": "Add note",
+            "placeholderMessage": "Write an internal note the customer never sees…",
+            "messageNoEntries": "No entries yet.",
+            "messageEmptyError": "The note can not be empty.",
+            "messageNotFound": "Return not found",
+            "messageNotFoundSubline": "The return may have been deleted, or the link is invalid.",
+            "textRefundOnlyHint": "A refund-only return has no parcel, so \"accepted\" and \"restocked\" do not apply to it.",
+            "textInternalNoteHint": "A note is internal - it is never sent to the customer.",
+            "messageAuthor": {
+                "customer": "Customer",
+                "agent": "Agent",
+                "system": "System"
+            }
+        },
+        "decline": {
+            "modalTitle": "Decline the return",
+            "hint": "Declining closes the return and shows the reason to the customer.",
+            "fieldReason": "Reason",
+            "placeholderReason": "e.g. the return window has passed, or the item is not eligible.",
+            "validationReasonTooLong": "The reason is too long.",
+            "buttonConfirm": "Decline"
+        },
+        "notification": {
+            "approveSuccess": "The return was approved.",
+            "declineSuccess": "The return was declined.",
+            "cancelSuccess": "The return was closed.",
+            "receiveSuccess": "The arrival was booked and the stock restored.",
+            "refundSuccess": "The refund was started.",
+            "messageSuccess": "The note was added.",
+            "actionError": "The action failed, please try again."
+        },
+        "stateLabel": {
+            "requested": "Needs a decision",
+            "open": "Waiting for the parcel",
+            "returning": "On its way back",
+            "received": "Arrived",
+            "refunding": "Refunding",
+            "closed": "Completed",
+            "declined": "Declined",
+            "canceled": "Closed"
+        },
+        "typeLabel": {
+            "refund_only": "Refund only",
+            "return_refund": "Return and refund"
+        }
+    }
+}

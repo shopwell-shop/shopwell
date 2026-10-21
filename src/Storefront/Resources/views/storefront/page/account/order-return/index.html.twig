@@ -1,0 +1,114 @@
+{% sw_extends '@Storefront/storefront/page/account/_page.html.twig' %}
+
+{% block page_account_main_content %}
+    {% block page_account_order_return %}
+        <div class="account-order-return">
+            {% block page_account_order_return_welcome %}
+                <div class="account-welcome">
+                    {% block page_account_order_return_welcome_headline %}
+                        <h1>{{ 'account.orderReturnTitle'|trans|sw_sanitize }}</h1>
+                    {% endblock %}
+
+                    {% block page_account_order_return_welcome_intro %}
+                        <p>{{ 'account.orderReturnWelcome'|trans|sw_sanitize }}</p>
+                    {% endblock %}
+                </div>
+            {% endblock %}
+
+            {% block page_account_order_return_main %}
+                <div class="account-order-return-main">
+                    {% if page.returns is empty %}
+                        {% block page_account_order_return_info_empty %}
+                            {% sw_include '@Storefront/storefront/utilities/alert.html.twig' with {
+                                type: 'info',
+                                content: 'account.orderReturnEmpty'|trans|sw_sanitize
+                            } %}
+                        {% endblock %}
+                    {% else %}
+                        {% block page_account_order_return_overview %}
+                            <div class="table-responsive">
+                                <table class="table account-order-return-table">
+                                    {% block page_account_order_return_table_head %}
+                                        <thead>
+                                            <tr>
+                                                {% block page_account_order_return_table_head_number %}
+                                                    <th scope="col">{{ 'account.orderReturnColumnNumber'|trans|sw_sanitize }}</th>
+                                                {% endblock %}
+                                                {% block page_account_order_return_table_head_order %}
+                                                    <th scope="col">{{ 'account.orderReturnColumnOrder'|trans|sw_sanitize }}</th>
+                                                {% endblock %}
+                                                {% block page_account_order_return_table_head_type %}
+                                                    <th scope="col">{{ 'account.orderReturnColumnType'|trans|sw_sanitize }}</th>
+                                                {% endblock %}
+                                                {% block page_account_order_return_table_head_state %}
+                                                    <th scope="col">{{ 'account.orderReturnColumnState'|trans|sw_sanitize }}</th>
+                                                {% endblock %}
+                                                {% block page_account_order_return_table_head_amount %}
+                                                    <th scope="col" class="text-end">{{ 'account.orderReturnColumnAmount'|trans|sw_sanitize }}</th>
+                                                {% endblock %}
+                                                {% block page_account_order_return_table_head_created %}
+                                                    <th scope="col">{{ 'account.orderReturnColumnCreatedAt'|trans|sw_sanitize }}</th>
+                                                {% endblock %}
+                                                {% block page_account_order_return_table_head_action %}
+                                                    <th scope="col"><span class="visually-hidden">{{ 'account.orderReturnOpen'|trans|sw_sanitize }}</span></th>
+                                                {% endblock %}
+                                            </tr>
+                                        </thead>
+                                    {% endblock %}
+
+                                    {% block page_account_order_return_table_body %}
+                                        <tbody>
+                                            {% for orderReturn in page.returns %}
+                                                {% set factor = 10 ** (orderReturn.decimals|default(2)) %}
+
+                                                <tr>
+                                                    {% block page_account_order_return_table_body_number %}
+                                                        <td>{{ orderReturn.returnNumber|sw_sanitize }}</td>
+                                                    {% endblock %}
+                                                    {% block page_account_order_return_table_body_order %}
+                                                        <td>{{ orderReturn.orderNumber|default('–')|sw_sanitize }}</td>
+                                                    {% endblock %}
+                                                    {% block page_account_order_return_table_body_type %}
+                                                        <td>
+                                                            {% if orderReturn.type == 'refund_only' %}
+                                                                {{ 'account.orderReturnTypeRefundOnly'|trans|sw_sanitize }}
+                                                            {% else %}
+                                                                {{ 'account.orderReturnTypeReturnRefund'|trans|sw_sanitize }}
+                                                            {% endif %}
+                                                        </td>
+                                                    {% endblock %}
+                                                    {% block page_account_order_return_table_body_state %}
+                                                        <td>
+                                                            {% sw_include '@Storefront/storefront/page/account/order-return/_state.html.twig' %}
+                                                        </td>
+                                                    {% endblock %}
+                                                    {% block page_account_order_return_table_body_amount %}
+                                                        <td class="text-end">
+                                                            {{ (orderReturn.refundAmount / factor)|currency(orderReturn.currency) }}
+                                                        </td>
+                                                    {% endblock %}
+                                                    {% block page_account_order_return_table_body_created %}
+                                                        <td>{{ orderReturn.createdAt|date('d.m.Y') }}</td>
+                                                    {% endblock %}
+                                                    {% block page_account_order_return_table_body_action %}
+                                                        <td class="text-end">
+                                                            <a href="{{ path('frontend.account.order-return.detail', { id: orderReturn.id }) }}"
+                                                               class="btn btn-sm btn-secondary"
+                                                               title="{{ 'account.orderReturnOpen'|trans|striptags }}">
+                                                                {{ 'account.orderReturnOpen'|trans|sw_sanitize }}
+                                                            </a>
+                                                        </td>
+                                                    {% endblock %}
+                                                </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    {% endblock %}
+                                </table>
+                            </div>
+                        {% endblock %}
+                    {% endif %}
+                </div>
+            {% endblock %}
+        </div>
+    {% endblock %}
+{% endblock %}

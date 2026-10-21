@@ -1,0 +1,203 @@
+{% set orderReturn = page.current %}
+{% set factor = 10 ** (orderReturn.decimals|default(2)) %}
+
+{% block page_account_order_return_detail %}
+    {% if orderReturn is empty %}
+        {% sw_include '@Storefront/storefront/utilities/alert.html.twig' with {
+            type: 'warning',
+            content: 'account.orderReturnEmpty'|trans|sw_sanitize
+        } %}
+    {% else %}
+        <div class="account-order-return-detail">
+            {% block page_account_order_return_detail_header %}
+                <div class="account-order-return-detail-header">
+                    <h1>
+                        {{ 'account.orderReturnColumnNumber'|trans|sw_sanitize }}
+                        {{ orderReturn.returnNumber|sw_sanitize }}
+                    </h1>
+
+                    {% sw_include '@Storefront/storefront/page/account/order-return/_state.html.twig' %}
+                </div>
+            {% endblock %}
+
+            {% block page_account_order_return_detail_facts %}
+                <dl class="row account-order-return-detail-facts">
+                    <dt class="col-sm-4">{{ 'account.orderReturnColumnOrder'|trans|sw_sanitize }}</dt>
+                    <dd class="col-sm-8">{{ orderReturn.orderNumber|default('–')|sw_sanitize }}</dd>
+
+                    <dt class="col-sm-4">{{ 'account.orderReturnColumnType'|trans|sw_sanitize }}</dt>
+                    <dd class="col-sm-8">
+                        {% if orderReturn.type == 'refund_only' %}
+                            {{ 'account.orderReturnTypeRefundOnly'|trans|sw_sanitize }}
+                        {% else %}
+                            {{ 'account.orderReturnTypeReturnRefund'|trans|sw_sanitize }}
+                        {% endif %}
+                    </dd>
+
+                    <dt class="col-sm-4">{{ 'account.orderReturnDetailRefundAmount'|trans|sw_sanitize }}</dt>
+                    <dd class="col-sm-8">{{ (orderReturn.refundAmount / factor)|currency(orderReturn.currency) }}</dd>
+
+                    <dt class="col-sm-4">{{ 'account.orderReturnDetailReason'|trans|sw_sanitize }}</dt>
+                    <dd class="col-sm-8">
+                        {{ orderReturn.reasonLabel|default(orderReturn.reasonText)|default('–')|sw_sanitize }}
+                    </dd>
+
+                    {% if orderReturn.customerNote %}
+                        <dt class="col-sm-4">{{ 'account.orderReturnDetailCustomerNote'|trans|sw_sanitize }}</dt>
+                        <dd class="col-sm-8">{{ orderReturn.customerNote|nl2br }}</dd>
+                    {% endif %}
+
+                    <dt class="col-sm-4">{{ 'account.orderReturnColumnCreatedAt'|trans|sw_sanitize }}</dt>
+                    <dd class="col-sm-8">{{ orderReturn.createdAt|date('d.m.Y H:i') }}</dd>
+
+                    {% if orderReturn.deadlineAt %}
+                        <dt class="col-sm-4">{{ 'account.orderReturnDetailDeadline'|trans|sw_sanitize }}</dt>
+                        <dd class="col-sm-8">{{ orderReturn.deadlineAt|date('d.m.Y H:i') }}</dd>
+                    {% endif %}
+
+                    {% if orderReturn.trackingCode %}
+                        <dt class="col-sm-4">{{ 'account.orderReturnDetailTracking'|trans|sw_sanitize }}</dt>
+                        <dd class="col-sm-8">
+                            {% if orderReturn.trackingCarrier %}
+                                {{ orderReturn.trackingCarrier|sw_sanitize }} ·
+                            {% endif %}
+                            {{ orderReturn.trackingCode|sw_sanitize }}
+                        </dd>
+                    {% endif %}
+                </dl>
+            {% endblock %}
+
+            {% block page_account_order_return_detail_positions %}
+                <div class="table-responsive">
+                    <table class="table account-order-return-detail-positions">
+                        <thead>
+                            <tr>
+                                <th scope="col">{{ 'account.orderReturnDetailProducts'|trans|sw_sanitize }}</th>
+                                <th scope="col" class="text-end">{{ 'account.orderReturnCreateQuantity'|trans|sw_sanitize }}</th>
+                                <th scope="col" class="text-end">{{ 'account.orderReturnDetailRefundAmount'|trans|sw_sanitize }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for lineItem in orderReturn.lineItems %}
+                                <tr>
+                                    <td>{{ lineItem.label|default('–')|sw_sanitize }}</td>
+                                    <td class="text-end">{{ lineItem.quantity }}</td>
+                                    <td class="text-end">{{ (lineItem.refundAmount / factor)|currency(orderReturn.currency) }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endblock %}
+
+            {% block page_account_order_return_detail_actions %}
+                <div class="account-order-return-detail-actions">
+                    {% if orderReturn.state == 'open' %}
+                        {% block page_account_order_return_detail_ship %}
+                            <form action="{{ path(actionPrefix ~ '.ship', { id: orderReturn.id }) }}"
+                                  method="post"
+                                  class="account-order-return-detail-ship">
+                                <h2 class="h5">{{ 'account.orderReturnDetailShipTitle'|trans|sw_sanitize }}</h2>
+                                <p>{{ 'account.orderReturnDetailShipIntro'|trans|sw_sanitize }}</p>
+
+                                <div class="row g-2 align-items-end">
+                                    <div class="col-sm-4">
+                                        <label class="form-label" for="order-return-carrier">
+                                            {{ 'account.orderReturnDetailCarrier'|trans|sw_sanitize }}
+                                        </label>
+                                        <input type="text"
+                                               class="form-control"
+                                               id="order-return-carrier"
+                                               name="trackingCarrier"
+                                               maxlength="100"
+                                               placeholder="{{ 'account.orderReturnDetailCarrierPlaceholder'|trans|striptags }}">
+                                    </div>
+
+                                    <div class="col-sm-5">
+                                        <label class="form-label" for="order-return-tracking-code">
+                                            {{ 'account.orderReturnDetailTrackingCode'|trans|sw_sanitize }}
+                                        </label>
+                                        <input type="text"
+                                               class="form-control"
+                                               id="order-return-tracking-code"
+                                               name="trackingCode"
+                                               maxlength="100"
+                                               required>
+                                    </div>
+
+                                    <div class="col-sm-3">
+                                        <button type="submit" class="btn btn-primary w-100">
+                                            {{ 'account.orderReturnDetailShipSubmit'|trans|sw_sanitize }}
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        {% endblock %}
+                    {% endif %}
+
+                    {% if orderReturn.state == 'requested' or orderReturn.state == 'open' %}
+                        {% block page_account_order_return_detail_cancel %}
+                            <form action="{{ path(actionPrefix ~ '.cancel', { id: orderReturn.id }) }}"
+                                  method="post"
+                                  class="account-order-return-detail-cancel"
+                                  onsubmit="return confirm('{{ 'account.orderReturnDetailCancelConfirm'|trans|e('js') }}');">
+                                <button type="submit" class="btn btn-link text-danger">
+                                    {{ 'account.orderReturnDetailCancel'|trans|sw_sanitize }}
+                                </button>
+                            </form>
+                        {% endblock %}
+                    {% endif %}
+                </div>
+            {% endblock %}
+
+            {% block page_account_order_return_detail_messages %}
+                <div class="account-order-return-detail-messages">
+                    <h2 class="h5">{{ 'account.orderReturnDetailMessages'|trans|sw_sanitize }}</h2>
+
+                    {% if orderReturn.messages is empty %}
+                        <p class="text-muted">{{ 'account.orderReturnDetailNoMessages'|trans|sw_sanitize }}</p>
+                    {% else %}
+                        <ul class="list-unstyled account-order-return-messages">
+                            {% for message in orderReturn.messages %}
+                                <li class="account-order-return-message account-order-return-message--{{ message.authorRole }}">
+                                    <div class="account-order-return-message-meta">
+                                        <span class="badge bg-secondary">{{ message.authorRole|sw_sanitize }}</span>
+                                        <time datetime="{{ message.createdAt }}">{{ message.createdAt|date('d.m.Y H:i') }}</time>
+                                    </div>
+                                    <div class="account-order-return-message-content">{{ message.content|nl2br }}</div>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+
+                    <form action="{{ path(actionPrefix ~ '.message', { id: orderReturn.id }) }}"
+                          method="post"
+                          class="account-order-return-detail-message-form">
+                        <label class="form-label" for="order-return-message">
+                            {{ 'account.orderReturnDetailMessages'|trans|sw_sanitize }}
+                        </label>
+                        <textarea class="form-control"
+                                  id="order-return-message"
+                                  name="content"
+                                  rows="3"
+                                  maxlength="2000"
+                                  required
+                                  placeholder="{{ 'account.orderReturnDetailMessagePlaceholder'|trans|striptags }}"></textarea>
+
+                        <button type="submit" class="btn btn-secondary mt-2">
+                            {{ 'account.orderReturnDetailSendMessage'|trans|sw_sanitize }}
+                        </button>
+                    </form>
+                </div>
+            {% endblock %}
+
+            {% if backPath is defined %}
+                {% block page_account_order_return_detail_back %}
+                    <a href="{{ backPath }}" class="btn btn-link">
+                        {{ 'account.orderReturnDetailBackToList'|trans|sw_sanitize }}
+                    </a>
+                {% endblock %}
+            {% endif %}
+        </div>
+    {% endif %}
+{% endblock %}

@@ -33,6 +33,7 @@ class Checkout extends Bundle
         $phpLoader->load('customer.php');
         $phpLoader->load('document.php');
         $phpLoader->load('order.php');
+        $phpLoader->load('orderReturn.php');
         $phpLoader->load('payment.php');
         $phpLoader->load('rule.php');
         $phpLoader->load('promotion.php');

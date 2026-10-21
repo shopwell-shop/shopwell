@@ -1139,7 +1139,9 @@
       "flow_sequence": "Flow",
       "sms_gateway": "SMS gateway | SMS gateways",
       "sms_template": "SMS template | SMS templates",
-      "sms_delivery": "Delivery | Deliveries"
+      "sms_delivery": "Delivery | Deliveries",
+      "order_return": "Return | Returns",
+      "order_return_reason": "Return reason | Return reasons"
     },
     "day-of-week": {
       "monday": "Monday",
