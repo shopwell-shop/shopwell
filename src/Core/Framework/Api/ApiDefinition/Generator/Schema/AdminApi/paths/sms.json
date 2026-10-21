@@ -1,0 +1,270 @@
+{
+    "openapi": "3.2.0",
+    "info": [],
+    "paths": {
+        "/_action/sms/gateway-providers": {
+            "get": {
+                "tags": [
+                    "Sms"
+                ],
+                "summary": "List the sms gateway providers",
+                "description": "Answers every registered sms transport with the regions it serves, whether it supports template mode, its credential definitions and what it can do about a template that needs the approval of the provider. The approval states are part of the answer as well, so the administration keeps no list of its own.",
+                "operationId": "listSmsGatewayProviders",
+                "responses": {
+                    "200": {
+                        "description": "The registered sms transports and the approval states a template can be in.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "providers": {
+                                            "type": "array",
+                                            "description": "The registered sms transports.",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "technicalName": {
+                                                        "type": "string"
+                                                    },
+                                                    "labelSnippet": {
+                                                        "type": "string"
+                                                    },
+                                                    "supportedRegions": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "type": "string"
+                                                        }
+                                                    },
+                                                    "supportsTemplateMode": {
+                                                        "type": "boolean"
+                                                    },
+                                                    "credentialDefinitions": {
+                                                        "type": "array",
+                                                        "description": "The credential fields the transport needs.",
+                                                        "items": {
+                                                            "type": "object"
+                                                        }
+                                                    },
+                                                    "audit": {
+                                                        "type": "object",
+                                                        "description": "What the transport can do about a template approval."
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        "approvalStatuses": {
+                                            "type": "array",
+                                            "description": "The approval states with their snippet keys.",
+                                            "items": {
+                                                "type": "object"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/_action/sms-template-audit/{mappingId}/submit": {
+            "post": {
+                "tags": [
+                    "Sms"
+                ],
+                "summary": "Submit a sms template for the approval of the provider",
+                "description": "Hands the template of the mapping to the sms transport so the provider can approve it. The field values of the template are part of the body, because the provider validates the rendered text and not the placeholders.",
+                "operationId": "submitSmsTemplateAudit",
+                "parameters": [
+                    {
+                        "name": "mappingId",
+                        "in": "path",
+                        "description": "The id of the template mapping that is submitted.",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "fieldValues": {
+                                        "type": "object",
+                                        "description": "The values of the placeholders of the template, as the administration holds them."
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "The audit state after the submission.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/smsTemplateAudit"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "The submission of the provider failed, the body names the cause.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/failure"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/_action/sms-template-audit/{mappingId}/refresh": {
+            "post": {
+                "tags": [
+                    "Sms"
+                ],
+                "summary": "Read the approval state of a sms template from the provider",
+                "description": "Asks the provider what it decided about the template of the mapping and stores the answer on the row.",
+                "operationId": "refreshSmsTemplateAudit",
+                "parameters": [
+                    {
+                        "name": "mappingId",
+                        "in": "path",
+                        "description": "The id of the template mapping whose state is read.",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The audit state the provider reported.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/smsTemplateAudit"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "The state could not be read, the body names the cause.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/failure"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/_action/sms-template-audit/{mappingId}/confirm": {
+            "post": {
+                "tags": [
+                    "Sms"
+                ],
+                "summary": "Confirm the approval state of a sms template by hand",
+                "description": "Books the approval state an operator read at the provider, for a transport that can not answer the state itself.",
+                "operationId": "confirmSmsTemplateAudit",
+                "parameters": [
+                    {
+                        "name": "mappingId",
+                        "in": "path",
+                        "description": "The id of the template mapping that is confirmed.",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "status": {
+                                        "type": "string",
+                                        "description": "The approval state the operator read at the provider."
+                                    },
+                                    "note": {
+                                        "type": "string",
+                                        "description": "An optional note about the confirmation."
+                                    }
+                                },
+                                "required": [
+                                    "status"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "The audit state after the confirmation.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/smsTemplateAudit"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "The status is unknown or the transport does not accept a manual confirmation.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/failure"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "smsTemplateAudit": {
+                "type": "object",
+                "description": "The audit state of a sms template. Either the state and the template code, or the error the transport answered.",
+                "properties": {
+                    "status": {
+                        "type": "string",
+                        "nullable": true,
+                        "description": "The approval state of the template."
+                    },
+                    "templateCode": {
+                        "type": "string",
+                        "nullable": true,
+                        "description": "The code the provider knows the template by."
+                    },
+                    "errorCode": {
+                        "type": "string",
+                        "nullable": true,
+                        "description": "The code of the failure, null when the call succeeded."
+                    },
+                    "errorMessage": {
+                        "type": "string",
+                        "nullable": true,
+                        "description": "The rendered message of the failure, null when the call succeeded."
+                    }
+                }
+            }
+        }
+    }
+}
