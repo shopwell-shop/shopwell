@@ -1,0 +1,194 @@
+{
+    "openapi": "3.2.0",
+    "info": [],
+    "paths": {
+        "/_action/loyalty/customer/{customerId}/membership": {
+            "post": {
+                "tags": [
+                    "Loyalty"
+                ],
+                "summary": "Grant a membership to a customer",
+                "description": "Activates a membership of the given tier for the given customer. The operator decides the tier and the duration, for example for a goodwill upgrade, a correction or a membership that was paid outside of the shop. An extension of the same tier continues where the running membership ends instead of restarting today.",
+                "operationId": "grantCustomerMembership",
+                "parameters": [
+                    {
+                        "name": "customerId",
+                        "in": "path",
+                        "description": "The id of the customer the membership is granted to.",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "tierId": {
+                                        "type": "string",
+                                        "description": "The id of the loyalty tier the membership is granted for."
+                                    },
+                                    "durationDays": {
+                                        "type": "integer",
+                                        "description": "How many days the membership lasts. Must be at least one.",
+                                        "minimum": 1
+                                    }
+                                },
+                                "required": [
+                                    "tierId",
+                                    "durationDays"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "The membership was activated. The body carries the period that was written by the ledger.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "startsAt": {
+                                            "type": "string",
+                                            "format": "date-time",
+                                            "description": "The moment the membership starts."
+                                        },
+                                        "expiresAt": {
+                                            "type": "string",
+                                            "format": "date-time",
+                                            "description": "The moment the membership ends."
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "The request is invalid, for example when the duration is below one day or the tier does not exist.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/failure"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/_action/loyalty/customer/{customerId}/transactions": {
+            "get": {
+                "tags": [
+                    "Loyalty"
+                ],
+                "summary": "List the point transactions of a customer",
+                "description": "Answers one page of the point ledger of the given customer, newest first. The balance after each booking is part of the answer, so the administration can show the ledger without recalculating it.",
+                "operationId": "listCustomerPointTransactions",
+                "parameters": [
+                    {
+                        "name": "customerId",
+                        "in": "path",
+                        "description": "The id of the customer whose ledger is read.",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "The page to read, starting at one.",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "default": 1
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "description": "How many transactions one page holds.",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "type",
+                        "in": "query",
+                        "description": "Only list the transactions of this type, for example the bookings of an order.",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "One page of the ledger of the customer.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "total": {
+                                            "type": "integer",
+                                            "description": "How many transactions the customer has in total."
+                                        },
+                                        "transactions": {
+                                            "type": "array",
+                                            "description": "The transactions of this page.",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "string"
+                                                    },
+                                                    "type": {
+                                                        "type": "string"
+                                                    },
+                                                    "points": {
+                                                        "type": "integer"
+                                                    },
+                                                    "balanceAfter": {
+                                                        "type": "integer"
+                                                    },
+                                                    "orderId": {
+                                                        "type": "string",
+                                                        "nullable": true
+                                                    },
+                                                    "comment": {
+                                                        "type": "string",
+                                                        "nullable": true
+                                                    },
+                                                    "expiresAt": {
+                                                        "type": "string",
+                                                        "format": "date-time",
+                                                        "nullable": true
+                                                    },
+                                                    "createdAt": {
+                                                        "type": "string",
+                                                        "format": "date-time",
+                                                        "nullable": true
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
