@@ -5,6 +5,7 @@ namespace Shopwell\Tests\Unit\Core\System\Sms\Api;
 use Doctrine\DBAL\Connection;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\MockObject\Stub;
 use PHPUnit\Framework\TestCase;
 use Psr\Clock\ClockInterface;
 use Shopwell\Core\Framework\Context;
@@ -207,7 +208,7 @@ class SmsTemplateAuditControllerTest extends TestCase
     public function testConfirmOfAProviderThatReportsItsStateItselfIsAnsweredWithTheCodeOfTheReason(): void
     {
         $controller = $this->createController(
-            $this->createFactory(),
+            $this->createFactoryStub(),
             $this->createMappingRepository($this->createMapping())
         );
 
@@ -250,7 +251,7 @@ class SmsTemplateAuditControllerTest extends TestCase
     public function testAnActionWithoutTheContextOfTheMiddlewareIsRefused(): void
     {
         $controller = $this->createController(
-            $this->createFactory(),
+            $this->createFactoryStub(),
             $this->createMappingRepository($this->createMapping())
         );
 
@@ -277,6 +278,25 @@ class SmsTemplateAuditControllerTest extends TestCase
     {
         /** @var SmsGatewayTransportFactoryInterface&SubmitsTemplatesForApprovalInterface&ReadsTemplateApprovalStatusInterface&MockObject $factory */
         $factory = $this->createMockForIntersectionOfInterfaces([
+            SmsGatewayTransportFactoryInterface::class,
+            SubmitsTemplatesForApprovalInterface::class,
+            ReadsTemplateApprovalStatusInterface::class,
+        ]);
+
+        $factory->method('getTechnicalName')->willReturn(self::TECHNICAL_NAME);
+        $factory->method('getLabelSnippet')->willReturn('sms.gateway.aliyun');
+        $factory->method('getTemplateSubmissionFieldDefinitions')->willReturn(self::FIELD_DEFINITIONS);
+
+        return $factory;
+    }
+
+    /**
+     * The same provider for the tests that never look at what it answered.
+     */
+    private function createFactoryStub(): SmsGatewayTransportFactoryInterface&SubmitsTemplatesForApprovalInterface&ReadsTemplateApprovalStatusInterface&Stub
+    {
+        /** @var SmsGatewayTransportFactoryInterface&SubmitsTemplatesForApprovalInterface&ReadsTemplateApprovalStatusInterface&Stub $factory */
+        $factory = static::createStubForIntersectionOfInterfaces([
             SmsGatewayTransportFactoryInterface::class,
             SubmitsTemplatesForApprovalInterface::class,
             ReadsTemplateApprovalStatusInterface::class,

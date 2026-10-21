@@ -6,6 +6,7 @@ use Doctrine\DBAL\Connection;
 use Monolog\Level;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\MockObject\Stub;
 use PHPUnit\Framework\TestCase;
 use Psr\Clock\ClockInterface;
 use Shopwell\Core\Framework\Api\Context\AdminApiSource;
@@ -211,7 +212,7 @@ class SmsTemplateAuditServiceTest extends TestCase
         $mapping = $this->createMapping(gatewayId: null);
         $mappingRepository = $this->createMappingRepository($mapping);
 
-        $service = $this->createService($this->createFactory(), $mappingRepository);
+        $service = $this->createService($this->createFactoryStub(), $mappingRepository);
 
         $this->expectExceptionObject(SmsException::templateAuditAccountRequired(self::TEMPLATE_ID, self::TECHNICAL_NAME));
 
@@ -227,7 +228,7 @@ class SmsTemplateAuditServiceTest extends TestCase
         $gateway->enabled = false;
 
         $service = $this->createService(
-            $this->createFactory(),
+            $this->createFactoryStub(),
             $mappingRepository,
             gatewayRepository: $this->createGatewayRepository($gateway),
         );
@@ -243,7 +244,7 @@ class SmsTemplateAuditServiceTest extends TestCase
         $mappingRepository = $this->createMappingRepository($mapping);
 
         $service = $this->createService(
-            $this->createFactory(),
+            $this->createFactoryStub(),
             $mappingRepository,
             templateRepository: $this->createTemplateRepository($this->createTemplate(null)),
         );
@@ -258,7 +259,7 @@ class SmsTemplateAuditServiceTest extends TestCase
         $mapping = $this->createMapping();
         $mappingRepository = $this->createMappingRepository($mapping);
 
-        $service = $this->createService($this->createFactory(), $mappingRepository);
+        $service = $this->createService($this->createFactoryStub(), $mappingRepository);
 
         $this->expectExceptionObject(SmsException::templateSubmissionInvalid(
             self::TEMPLATE_REF,
@@ -274,7 +275,7 @@ class SmsTemplateAuditServiceTest extends TestCase
         $mapping = $this->createMapping();
         $mappingRepository = $this->createMappingRepository($mapping);
 
-        $service = $this->createService($this->createFactory(), $mappingRepository);
+        $service = $this->createService($this->createFactoryStub(), $mappingRepository);
 
         $this->expectExceptionObject(SmsException::templateSubmissionInvalid(
             self::TEMPLATE_REF,
@@ -325,7 +326,7 @@ class SmsTemplateAuditServiceTest extends TestCase
         $mapping = $this->createMapping(templateCode: 'SMS_123456789', auditStatus: TemplateApprovalStatus::PENDING);
         $mappingRepository = $this->createMappingRepository($mapping);
 
-        $factory = $this->createFactory();
+        $factory = $this->createFactoryStub();
         $factory->method('readTemplateApprovalStatus')
             ->willThrowException(SmsException::providerUnavailable(self::TECHNICAL_NAME, '500', 'the provider is down'));
 
@@ -350,7 +351,7 @@ class SmsTemplateAuditServiceTest extends TestCase
         $mapping = $this->createMapping();
         $mappingRepository = $this->createMappingRepository($mapping);
 
-        $service = $this->createService($this->createFactory(), $mappingRepository);
+        $service = $this->createService($this->createFactoryStub(), $mappingRepository);
 
         $this->expectExceptionObject(SmsException::templateNotConfigured(self::TEMPLATE_ID, self::TECHNICAL_NAME));
 
@@ -442,7 +443,7 @@ class SmsTemplateAuditServiceTest extends TestCase
         $connection = $this->createMock(Connection::class);
         $connection->expects($this->never())->method('insert');
 
-        $service = $this->createService($this->createFactory(), $mappingRepository, connection: $connection);
+        $service = $this->createService($this->createFactoryStub(), $mappingRepository, connection: $connection);
 
         $this->expectExceptionObject(SmsException::templateStatusReadUnsupported(self::TECHNICAL_NAME));
 
@@ -486,7 +487,7 @@ class SmsTemplateAuditServiceTest extends TestCase
         $mapping = $this->createMapping();
         $mappingRepository = $this->createMappingRepository($mapping);
 
-        $service = $this->createService($this->createFactory(), $mappingRepository);
+        $service = $this->createService($this->createFactoryStub(), $mappingRepository);
 
         static::assertSame(
             $mapping,
@@ -500,7 +501,7 @@ class SmsTemplateAuditServiceTest extends TestCase
         $mapping = $this->createMapping();
         $mappingRepository = $this->createMappingRepository(null, $mapping);
 
-        $service = $this->createService($this->createFactory(), $mappingRepository);
+        $service = $this->createService($this->createFactoryStub(), $mappingRepository);
 
         static::assertSame(
             $mapping,
@@ -561,7 +562,7 @@ class SmsTemplateAuditServiceTest extends TestCase
         $mapping = $this->createMapping(templateCode: 'SMS_OLD', auditStatus: TemplateApprovalStatus::REJECTED);
         $mappingRepository = $this->createMappingRepository($mapping, $mapping);
 
-        $factory = $this->createFactory();
+        $factory = $this->createFactoryStub();
         $factory->method('submitTemplate')
             ->willReturn(new TemplateSubmissionReceipt('SMS_123456789', TemplateApprovalStatus::REJECTED));
 
@@ -580,7 +581,7 @@ class SmsTemplateAuditServiceTest extends TestCase
         $mapping = $this->createMapping(templateCode: 'SMS_123456789', auditStatus: TemplateApprovalStatus::PENDING);
         $mappingRepository = $this->createMappingRepository($mapping, $mapping);
 
-        $factory = $this->createFactory();
+        $factory = $this->createFactoryStub();
         $factory->method('readTemplateApprovalStatus')
             ->willReturn(new TemplateApprovalReading(
                 status: TemplateApprovalStatus::APPROVED,
@@ -613,7 +614,7 @@ class SmsTemplateAuditServiceTest extends TestCase
         $mapping = $this->createMapping(templateCode: 'SMS_123456789', auditStatus: TemplateApprovalStatus::PENDING);
         $mappingRepository = $this->createMappingRepository($mapping, $mapping);
 
-        $factory = $this->createFactory();
+        $factory = $this->createFactoryStub();
         $factory->method('readTemplateApprovalStatus')
             ->willReturn(new TemplateApprovalReading(
                 status: TemplateApprovalStatus::PENDING,
@@ -665,7 +666,7 @@ class SmsTemplateAuditServiceTest extends TestCase
         $dispatcher->expects($this->never())->method('dispatch');
 
         // creating the row is no audit result, there is no state to report
-        $this->createService($this->createFactory(), $mappingRepository, eventDispatcher: $dispatcher)
+        $this->createService($this->createFactoryStub(), $mappingRepository, eventDispatcher: $dispatcher)
             ->ensureMapping($this->context, self::TEMPLATE_ID, self::TECHNICAL_NAME, self::GATEWAY_ID);
     }
 
@@ -676,6 +677,25 @@ class SmsTemplateAuditServiceTest extends TestCase
     {
         /** @var SmsGatewayTransportFactoryInterface&SubmitsTemplatesForApprovalInterface&ReadsTemplateApprovalStatusInterface&MockObject $factory */
         $factory = $this->createMockForIntersectionOfInterfaces([
+            SmsGatewayTransportFactoryInterface::class,
+            SubmitsTemplatesForApprovalInterface::class,
+            ReadsTemplateApprovalStatusInterface::class,
+        ]);
+
+        $factory->method('getTechnicalName')->willReturn(self::TECHNICAL_NAME);
+        $factory->method('getLabelSnippet')->willReturn('sms.gateway.aliyun');
+        $factory->method('getTemplateSubmissionFieldDefinitions')->willReturn(self::FIELD_DEFINITIONS);
+
+        return $factory;
+    }
+
+    /**
+     * The same provider for the tests that only need it to be part of the registry.
+     */
+    private function createFactoryStub(): SmsGatewayTransportFactoryInterface&SubmitsTemplatesForApprovalInterface&ReadsTemplateApprovalStatusInterface&Stub
+    {
+        /** @var SmsGatewayTransportFactoryInterface&SubmitsTemplatesForApprovalInterface&ReadsTemplateApprovalStatusInterface&Stub $factory */
+        $factory = static::createStubForIntersectionOfInterfaces([
             SmsGatewayTransportFactoryInterface::class,
             SubmitsTemplatesForApprovalInterface::class,
             ReadsTemplateApprovalStatusInterface::class,
@@ -711,7 +731,7 @@ class SmsTemplateAuditServiceTest extends TestCase
             $templateRepository ?? $this->createTemplateRepository(),
             new SmsTemplateMappingLocator($mappingRepository),
             new SmsTemplateBodyReader(),
-            $connection ?? $this->createMock(Connection::class),
+            $connection ?? static::createStub(Connection::class),
             $clock,
             $eventDispatcher ?? new EventDispatcher(),
         );

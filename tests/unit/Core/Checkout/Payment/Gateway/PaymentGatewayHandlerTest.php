@@ -263,7 +263,7 @@ class PaymentGatewayHandlerTest extends TestCase
      */
     private function paymentOrders(array $orders): EntityRepository
     {
-        $repository = $this->createMock(EntityRepository::class);
+        $repository = static::createStub(EntityRepository::class);
         $repository->method('search')->willReturn(PaymentGatewayFixture::searchResult($orders));
 
         return $repository;

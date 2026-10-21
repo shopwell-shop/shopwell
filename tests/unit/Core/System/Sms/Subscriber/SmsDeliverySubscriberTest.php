@@ -324,7 +324,7 @@ class SmsDeliverySubscriberTest extends TestCase
             new PhoneNumberNormalizer(new CountryDialCodeResolver([new ShippedCountryDialCodeProvider()])),
             new PhoneNumberMasker(),
             new SmsSegmentCounter(),
-            $connection ?? $this->createMock(Connection::class),
+            $connection ?? static::createStub(Connection::class),
             $clock,
             $dispatcher ?? new EventDispatcher(),
         );

@@ -3,7 +3,7 @@
 namespace Shopwell\Tests\Unit\Core\System\Sms\Api;
 
 use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\MockObject\Stub;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Sms\Api\SmsGatewayProviderController;
@@ -202,10 +202,10 @@ class SmsGatewayProviderControllerTest extends TestCase
     /**
      * A provider that declares the whole audit loop.
      */
-    private function auditedFactory(): SmsGatewayTransportFactoryInterface&RequiresTemplateApprovalInterface&SubmitsTemplatesForApprovalInterface&ReadsTemplateApprovalStatusInterface&MockObject
+    private function auditedFactory(): SmsGatewayTransportFactoryInterface&RequiresTemplateApprovalInterface&SubmitsTemplatesForApprovalInterface&ReadsTemplateApprovalStatusInterface&Stub
     {
-        /** @var SmsGatewayTransportFactoryInterface&RequiresTemplateApprovalInterface&SubmitsTemplatesForApprovalInterface&ReadsTemplateApprovalStatusInterface&MockObject $factory */
-        $factory = $this->createMockForIntersectionOfInterfaces([
+        /** @var SmsGatewayTransportFactoryInterface&RequiresTemplateApprovalInterface&SubmitsTemplatesForApprovalInterface&ReadsTemplateApprovalStatusInterface&Stub $factory */
+        $factory = static::createStubForIntersectionOfInterfaces([
             SmsGatewayTransportFactoryInterface::class,
             RequiresTemplateApprovalInterface::class,
             SubmitsTemplatesForApprovalInterface::class,
@@ -230,10 +230,10 @@ class SmsGatewayProviderControllerTest extends TestCase
     /**
      * A provider that reports its templates but cannot be asked for their state.
      */
-    private function submittingOnlyFactory(): SmsGatewayTransportFactoryInterface&SubmitsTemplatesForApprovalInterface&MockObject
+    private function submittingOnlyFactory(): SmsGatewayTransportFactoryInterface&SubmitsTemplatesForApprovalInterface&Stub
     {
-        /** @var SmsGatewayTransportFactoryInterface&SubmitsTemplatesForApprovalInterface&MockObject $factory */
-        $factory = $this->createMockForIntersectionOfInterfaces([
+        /** @var SmsGatewayTransportFactoryInterface&SubmitsTemplatesForApprovalInterface&Stub $factory */
+        $factory = static::createStubForIntersectionOfInterfaces([
             SmsGatewayTransportFactoryInterface::class,
             SubmitsTemplatesForApprovalInterface::class,
         ]);
