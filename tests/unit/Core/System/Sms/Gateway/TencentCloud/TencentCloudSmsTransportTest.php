@@ -184,7 +184,7 @@ class TencentCloudSmsTransportTest extends TestCase
 
     private function createTransport(?SmsClient $client = null, ?string $defaultSignName = null): TencentCloudSmsTransport
     {
-        return new TencentCloudSmsTransport($client ?? $this->createMock(SmsClient::class), '1400006666', $defaultSignName);
+        return new TencentCloudSmsTransport($client ?? static::createStub(SmsClient::class), '1400006666', $defaultSignName);
     }
 
     private function message(): SmsMessage

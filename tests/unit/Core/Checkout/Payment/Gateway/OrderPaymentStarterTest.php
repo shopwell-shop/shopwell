@@ -322,7 +322,7 @@ class OrderPaymentStarterTest extends TestCase
      */
     private function paymentOrdersForCreate(PaymentOrderEntity $created): EntityRepository
     {
-        $repository = $this->createMock(EntityRepository::class);
+        $repository = static::createStub(EntityRepository::class);
         $repository->method('search')->willReturnCallback(
             static function (Criteria $criteria) use ($created): EntitySearchResult {
                 return $criteria->getIds() === []

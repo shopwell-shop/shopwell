@@ -193,7 +193,7 @@ class AliyunSmsTransportTest extends TestCase
 
     private function createTransport(?Dysmsapi $client = null, ?string $defaultSignName = null): AliyunSmsTransport
     {
-        return new AliyunSmsTransport($client ?? $this->createMock(Dysmsapi::class), $defaultSignName);
+        return new AliyunSmsTransport($client ?? static::createStub(Dysmsapi::class), $defaultSignName);
     }
 
     private function message(): SmsMessage
