@@ -29,6 +29,8 @@ class CustomerPointTransactionEntity extends Entity
 
     protected ?string $orderId = null;
 
+    protected ?string $orderVersionId = null;
+
     protected ?string $salesChannelId = null;
 
     protected ?\DateTimeInterface $expiresAt = null;
@@ -103,6 +105,16 @@ class CustomerPointTransactionEntity extends Entity
     public function setOrderId(?string $orderId): void
     {
         $this->orderId = $orderId;
+    }
+
+    public function getOrderVersionId(): ?string
+    {
+        return $this->orderVersionId;
+    }
+
+    public function setOrderVersionId(?string $orderVersionId): void
+    {
+        $this->orderVersionId = $orderVersionId;
     }
 
     public function getSalesChannelId(): ?string
