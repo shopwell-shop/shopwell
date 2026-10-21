@@ -14,6 +14,7 @@ use Shopwell\Core\System\Payment\Gateway\AbstractPaymentAction;
 use Shopwell\Core\System\Payment\Gateway\AbstractPaymentApi;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayFactory;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
+use Shopwell\Core\System\Payment\PaymentException;
 use Shopwell\Core\System\Payment\Provider\AbstractPaymentProvider;
 use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
 use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
@@ -236,11 +237,18 @@ class PaymentTransferPresenterTest extends TestCase
     }
 
     /**
-     * @param array<string, PaymentProvider> $providers
+     * @param list<PaymentProvider> $providers
      */
     private function registry(array $providers): PaymentProviderRegistry
     {
-        return new PaymentProviderRegistry($providers);
+        // the registry is keyed by the technical name of the interface
+        $keyed = [];
+
+        foreach ($providers as $provider) {
+            $keyed[$provider->technicalName] = $provider;
+        }
+
+        return new PaymentProviderRegistry($keyed);
     }
 
     private function declaration(string $name, ?PaymentTransferRules $rules): AbstractPaymentProvider
@@ -274,12 +282,12 @@ class PaymentTransferPresenterTest extends TestCase
 
             public function getCaptureAction(): AbstractPaymentAction
             {
-                throw new \LogicException('a declaration of the presenter test captures nothing');
+                throw PaymentException::invalidProviderDeclaration('a declaration of the presenter test captures nothing');
             }
 
             public function getNotificationExtractor(): PaymentNotificationExtractorInterface
             {
-                throw new \LogicException('a declaration of the presenter test notifies nothing');
+                throw PaymentException::invalidProviderDeclaration('a declaration of the presenter test notifies nothing');
             }
 
             public function getTransferRules(): ?PaymentTransferRules
