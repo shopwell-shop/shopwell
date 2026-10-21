@@ -100,6 +100,54 @@ type OrderReturnResponse = {
 };
 
 /**
+ * A position that may still go back, as the server computes it from the order.
+ *
+ * `returnable` is the number the form must not exceed - it is the ordered quantity minus everything a
+ * running return of the same order already claimed. The amount of a return is never entered: it is
+ * `unitPrice` times the quantity, summed by the server from the order it reads.
+ *
+ * @private
+ */
+export type OrderReturnPosition = {
+    lineItemId: string;
+    label: string;
+    quantity: number;
+    returnable: number;
+    /** The price of one unit, as the order stores it. */
+    unitPrice: number;
+};
+
+/**
+ * What the form of a new return is built from: the positions of the order, the reasons the shop
+ * maintains and the number of the order for the page title.
+ *
+ * @private
+ */
+export type OrderReturnFormData = {
+    orderNumber: string | null;
+    /** The currency of the order, so the form can print the unit price of a position. */
+    currency: string | null;
+    decimals: number;
+    positions: OrderReturnPosition[];
+    reasons: Array<{ id: string; label: string }>;
+};
+
+/**
+ * The payload of a return that is opened by an operator.
+ *
+ * The amount is missing on purpose: it is computed by the server, so a form can not name a price.
+ *
+ * @private
+ */
+export type OrderReturnDraft = {
+    type: string;
+    positions: Array<{ lineItemId: string; quantity: number }>;
+    reasonId?: string | null;
+    reasonText?: string | null;
+    customerNote?: string | null;
+};
+
+/**
  * The snippet key of the name of a return state.
  *
  * The state machine ships its own translations, and those are the words of the customer
@@ -242,6 +290,35 @@ export default class OrderReturnApiService {
      */
     public addMessage(id: string, content: string): Promise<OrderReturnView | null> {
         return this.post(id, 'message', { content });
+    }
+
+    /**
+     * What a return can still be opened with for this order.
+     *
+     * The form is rendered from this and not from the order itself: the server is the one that knows
+     * what a running return already claimed, so the operator never offers a position that would be
+     * rejected afterwards.
+     */
+    public formData(orderId: string): Promise<OrderReturnFormData> {
+        return this.httpClient
+            .get<OrderReturnFormData>(`/_action/order-return/order/${orderId}/positions`, {
+                headers: this.getAuthHeaders(),
+            })
+            .then((response) => response.data);
+    }
+
+    /**
+     * Opens a return on behalf of the customer of an order - the phone call case.
+     *
+     * The return starts in `requested` exactly like a return the customer opened in the storefront, so
+     * the decision about it is still a decision somebody has to take.
+     */
+    public create(orderId: string, draft: OrderReturnDraft): Promise<OrderReturnView | null> {
+        return this.httpClient
+            .post<OrderReturnResponse>(`/_action/order-return/order/${orderId}`, draft, {
+                headers: this.getAuthHeaders(),
+            })
+            .then((response) => response.data.orderReturn || null);
     }
 
     /**

@@ -8,9 +8,10 @@
  * `sw-order`, the refund it triggers stays the row of the payment gateway. What the module owns is the
  * queue of open cases and the settings page that maintains the reasons a return can be opened with.
  *
- * The order detail does not get a tab of its own: a return is a queue of its own, sorted by deadline,
- * and an operator works the queue - not one order at a time. The link runs the other way, from a row of
- * this list into the order.
+ * The queue is the workspace: a return is sorted by deadline and an operator works many of them side by
+ * side, not one order at a time. The order detail then answers the other question - what is running on
+ * *this* order - with a tab of its own (`sw-order-detail-return`). The two entry points exist for two
+ * different jobs and share one service behind them.
  */
 import './acl';
 
@@ -21,6 +22,7 @@ const { Module } = Shopwell;
 /* eslint-disable sw-deprecation-rules/private-feature-declarations */
 Shopwell.Component.register('sw-order-return-list', () => import('./page/sw-order-return-list'));
 Shopwell.Component.register('sw-order-return-detail', () => import('./page/sw-order-return-detail'));
+Shopwell.Component.register('sw-order-detail-return', () => import('./page/sw-order-detail-return'));
 Shopwell.Component.register('sw-order-return-decline-modal', () => import('./component/sw-order-return-decline-modal'));
 /* eslint-enable sw-deprecation-rules/private-feature-declarations */
 
