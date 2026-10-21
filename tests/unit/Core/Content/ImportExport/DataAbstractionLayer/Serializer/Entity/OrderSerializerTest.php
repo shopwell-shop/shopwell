@@ -223,6 +223,8 @@ class OrderSerializerTest extends TestCase
                         'paymentSubscriptions' => null,
                         'paymentSubscriptionCycles' => null,
                         'paymentTransfers' => null,
+                        // and the reverse side the return module declares
+                        'orderReturns' => null,
                     ],
                     'captures' => null,
                     'customFields' => null,
@@ -327,6 +329,8 @@ class OrderSerializerTest extends TestCase
                         'paymentSubscriptions' => null,
                         'paymentSubscriptionCycles' => null,
                         'paymentTransfers' => null,
+                        // and the reverse side the return module declares
+                        'orderReturns' => null,
                     ],
                     'captures' => null,
                     'customFields' => null,
@@ -531,6 +535,7 @@ class OrderSerializerTest extends TestCase
                 ]),
                 'source' => null,
                 'internalComment' => null,
+                'returns' => null,
             ],
             $overrided,
             [
