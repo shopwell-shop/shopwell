@@ -25,6 +25,7 @@ use Shopwell\Core\Checkout\Wallet\Service\WalletTopUpService;
 use Shopwell\Core\Checkout\Wallet\Subscriber\WalletAccountProvisionSubscriber;
 use Shopwell\Core\Checkout\Wallet\Subscriber\WalletOrderSubscriber;
 use Shopwell\Core\Checkout\Wallet\Subscriber\WalletTopUpSettlementSubscriber;
+use Shopwell\Core\Framework\Adapter\Translation\Translator;
 use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\System\Payment\Order\PaymentOrderCapture;
 use Shopwell\Core\System\Payment\Order\PaymentOrderService;
@@ -53,7 +54,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(PlatformPaymentApp::class),
             service(PaymentOrderService::class),
             service(PaymentOrderCapture::class),
-            service('translator'),
+            service(Translator::class),
         ]);
 
     $services->set(WalletLedger::class)
