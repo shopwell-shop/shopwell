@@ -120,6 +120,30 @@ All available Hooks that can be used to load additional data.
 | **Available Services** | [repository](./data-loading-script-services-reference#RepositoryFacade)<br>[config](./miscellaneous-script-services-reference#SystemConfigFacade)<br>[store](./data-loading-script-services-reference#SalesChannelRepositoryFacade)<br>[request](./miscellaneous-script-services-reference#RequestFacade)<br>[acl](./miscellaneous-script-services-reference#AclFacade)<br> |
 | **Stoppable**          | `false`                  |
 
+### account-order-return-page-loaded
+
+| <!-- -->               | <!-- -->                                |
+|:-----------------------|:----------------------------------------|
+| **Name**               | account-order-return-page-loaded                         |
+| **Since**              | 6.7.18.0                        |
+| **Class**              | `Shopwell\Storefront\Page\Account\OrderReturn\AccountOrderReturnPageLoadedHook`                      |
+| **Description**        | Triggered when the AccountOrderReturnPage is loaded<br>                  |
+| **Available Data**     | context: [`Shopwell\Core\Framework\Context`](https://github.com/shopwell-shop/shopwell/blob/trunk/src/Core/Framework/Context.php)<br>page: [`Shopwell\Storefront\Page\Account\OrderReturn\AccountOrderReturnPage`](https://github.com/shopwell-shop/shopwell/blob/trunk/src/Storefront/Page/Account/OrderReturn/AccountOrderReturnPage.php)<br>salesChannelContext: [`Shopwell\Core\System\SalesChannel\SalesChannelContext`](https://github.com/shopwell-shop/shopwell/blob/trunk/src/Core/System/SalesChannel/SalesChannelContext.php)<br>        |
+| **Available Services** | [repository](./data-loading-script-services-reference#RepositoryFacade)<br>[config](./miscellaneous-script-services-reference#SystemConfigFacade)<br>[store](./data-loading-script-services-reference#SalesChannelRepositoryFacade)<br>[request](./miscellaneous-script-services-reference#RequestFacade)<br>[acl](./miscellaneous-script-services-reference#AclFacade)<br> |
+| **Stoppable**          | `false`                  |
+
+### guest-order-return-page-loaded
+
+| <!-- -->               | <!-- -->                                |
+|:-----------------------|:----------------------------------------|
+| **Name**               | guest-order-return-page-loaded                         |
+| **Since**              | 6.7.18.0                        |
+| **Class**              | `Shopwell\Storefront\Page\Account\OrderReturn\GuestOrderReturnPageLoadedHook`                      |
+| **Description**        | Triggered when the GuestOrderReturnPage is loaded<br>                  |
+| **Available Data**     | context: [`Shopwell\Core\Framework\Context`](https://github.com/shopwell-shop/shopwell/blob/trunk/src/Core/Framework/Context.php)<br>page: [`Shopwell\Storefront\Page\Account\OrderReturn\GuestOrderReturnPage`](https://github.com/shopwell-shop/shopwell/blob/trunk/src/Storefront/Page/Account/OrderReturn/GuestOrderReturnPage.php)<br>salesChannelContext: [`Shopwell\Core\System\SalesChannel\SalesChannelContext`](https://github.com/shopwell-shop/shopwell/blob/trunk/src/Core/System/SalesChannel/SalesChannelContext.php)<br>        |
+| **Available Services** | [repository](./data-loading-script-services-reference#RepositoryFacade)<br>[config](./miscellaneous-script-services-reference#SystemConfigFacade)<br>[store](./data-loading-script-services-reference#SalesChannelRepositoryFacade)<br>[request](./miscellaneous-script-services-reference#RequestFacade)<br>[acl](./miscellaneous-script-services-reference#AclFacade)<br> |
+| **Stoppable**          | `false`                  |
+
 ### account-edit-order-page-loaded
 
 | <!-- -->               | <!-- -->                                |
