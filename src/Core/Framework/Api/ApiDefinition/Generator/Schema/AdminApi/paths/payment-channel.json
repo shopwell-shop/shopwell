@@ -127,8 +127,10 @@
                 "description": "The binding of a payment method to a channel of a payment app.",
                 "properties": {
                     "binding": {
-                        "type": "object",
-                        "nullable": true,
+                        "type": [
+                            "object",
+                            "null"
+                        ],
                         "description": "The stored binding, null when the method collects through its own handler.",
                         "properties": {
                             "paymentAppId": {

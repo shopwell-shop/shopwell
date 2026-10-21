@@ -162,22 +162,30 @@
                                                         "type": "integer"
                                                     },
                                                     "orderId": {
-                                                        "type": "string",
-                                                        "nullable": true
+                                                        "type": [
+                                                            "string",
+                                                            "null"
+                                                        ]
                                                     },
                                                     "comment": {
-                                                        "type": "string",
-                                                        "nullable": true
+                                                        "type": [
+                                                            "string",
+                                                            "null"
+                                                        ]
                                                     },
                                                     "expiresAt": {
-                                                        "type": "string",
-                                                        "format": "date-time",
-                                                        "nullable": true
+                                                        "type": [
+                                                            "string",
+                                                            "null"
+                                                        ],
+                                                        "format": "date-time"
                                                     },
                                                     "createdAt": {
-                                                        "type": "string",
-                                                        "format": "date-time",
-                                                        "nullable": true
+                                                        "type": [
+                                                            "string",
+                                                            "null"
+                                                        ],
+                                                        "format": "date-time"
                                                     }
                                                 }
                                             }

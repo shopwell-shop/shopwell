@@ -244,23 +244,31 @@
                 "description": "The audit state of a sms template. Either the state and the template code, or the error the transport answered.",
                 "properties": {
                     "status": {
-                        "type": "string",
-                        "nullable": true,
+                        "type": [
+                            "string",
+                            "null"
+                        ],
                         "description": "The approval state of the template."
                     },
                     "templateCode": {
-                        "type": "string",
-                        "nullable": true,
+                        "type": [
+                            "string",
+                            "null"
+                        ],
                         "description": "The code the provider knows the template by."
                     },
                     "errorCode": {
-                        "type": "string",
-                        "nullable": true,
+                        "type": [
+                            "string",
+                            "null"
+                        ],
                         "description": "The code of the failure, null when the call succeeded."
                     },
                     "errorMessage": {
-                        "type": "string",
-                        "nullable": true,
+                        "type": [
+                            "string",
+                            "null"
+                        ],
                         "description": "The rendered message of the failure, null when the call succeeded."
                     }
                 }
