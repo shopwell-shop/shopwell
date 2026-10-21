@@ -94,6 +94,12 @@ return $config
         'symfony/monolog-bridge',
         'symfony/proxy-manager-bridge',
     ], [ErrorType::UNUSED_DEPENDENCY])
+
+    /**
+     * The Core bundle declares the google provider for the oauth2 client bundle, the root project only
+     * wires the bundle and never names a class of the provider itself.
+     */
+    ->ignoreErrorsOnPackage('league/oauth2-google', [ErrorType::UNUSED_DEPENDENCY])
 ;
 
 function configureImagickSupport(Configuration $config): void
