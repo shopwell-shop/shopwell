@@ -83,6 +83,7 @@ class StateMachineStateDefinition extends EntityDefinition
             new OneToManyAssociationField('paymentSubscriptions', 'payment_subscription', 'status_id'),
             new OneToManyAssociationField('paymentSubscriptionCycles', 'payment_subscription_cycle', 'status_id'),
             new OneToManyAssociationField('paymentTransfers', 'payment_transfer', 'status_id'),
+            new OneToManyAssociationField('orderReturns', 'order_return', 'state_id'),
         ]);
     }
 }

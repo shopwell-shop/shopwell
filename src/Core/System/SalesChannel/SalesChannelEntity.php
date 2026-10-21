@@ -9,6 +9,7 @@ use Shopwell\Core\Checkout\Customer\CustomerCollection;
 use Shopwell\Core\Checkout\DocumentV2\Aggregate\DocumentBaseConfig\DocumentBaseConfigDefinition;
 use Shopwell\Core\Checkout\Loyalty\Entity\CustomerPointTransaction\CustomerPointTransactionCollection;
 use Shopwell\Core\Checkout\Order\OrderCollection;
+use Shopwell\Core\Checkout\OrderReturn\Entity\OrderReturnCollection;
 use Shopwell\Core\Checkout\Payment\PaymentMethodCollection;
 use Shopwell\Core\Checkout\Payment\PaymentMethodEntity;
 use Shopwell\Core\Checkout\Promotion\Aggregate\PromotionSalesChannel\PromotionSalesChannelCollection;
@@ -224,6 +225,8 @@ class SalesChannelEntity extends Entity
     protected ?CustomerCollection $boundCustomers = null;
 
     protected ?CustomerWishlistCollection $wishlists = null;
+
+    protected ?OrderReturnCollection $orderReturns = null;
 
     protected ?LandingPageCollection $landingPages = null;
 
@@ -974,6 +977,16 @@ class SalesChannelEntity extends Entity
     public function setWishlists(CustomerWishlistCollection $wishlists): void
     {
         $this->wishlists = $wishlists;
+    }
+
+    public function getOrderReturns(): ?OrderReturnCollection
+    {
+        return $this->orderReturns;
+    }
+
+    public function setOrderReturns(OrderReturnCollection $orderReturns): void
+    {
+        $this->orderReturns = $orderReturns;
     }
 
     public function getLandingPages(): ?LandingPageCollection

@@ -15,6 +15,7 @@ use Shopwell\Core\Checkout\Order\Aggregate\OrderDelivery\OrderDeliveryEntity;
 use Shopwell\Core\Checkout\Order\Aggregate\OrderLineItem\OrderLineItemCollection;
 use Shopwell\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionCollection;
 use Shopwell\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
+use Shopwell\Core\Checkout\OrderReturn\Entity\OrderReturnCollection;
 use Shopwell\Core\Checkout\Wallet\Entity\CustomerWalletTransaction\CustomerWalletTransactionCollection;
 use Shopwell\Core\Framework\DataAbstractionLayer\Entity;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityCustomFieldsTrait;
@@ -112,6 +113,8 @@ class OrderEntity extends Entity implements DocumentSourceEntity
     protected ?CustomerWalletTransactionCollection $customerWalletTransactions = null;
 
     protected ?PaymentOrderCollection $paymentOrders = null;
+
+    protected ?OrderReturnCollection $returns = null;
 
     protected ?TagCollection $tags = null;
 
@@ -482,6 +485,16 @@ class OrderEntity extends Entity implements DocumentSourceEntity
     public function setPaymentOrders(PaymentOrderCollection $paymentOrders): void
     {
         $this->paymentOrders = $paymentOrders;
+    }
+
+    public function getReturns(): ?OrderReturnCollection
+    {
+        return $this->returns;
+    }
+
+    public function setReturns(OrderReturnCollection $returns): void
+    {
+        $this->returns = $returns;
     }
 
     public function getOrderNumber(): ?string

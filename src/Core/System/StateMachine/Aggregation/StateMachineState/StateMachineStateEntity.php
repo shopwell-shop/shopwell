@@ -7,6 +7,7 @@ use Shopwell\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionColl
 use Shopwell\Core\Checkout\Order\Aggregate\OrderTransactionCapture\OrderTransactionCaptureCollection;
 use Shopwell\Core\Checkout\Order\Aggregate\OrderTransactionCaptureRefund\OrderTransactionCaptureRefundCollection;
 use Shopwell\Core\Checkout\Order\OrderCollection;
+use Shopwell\Core\Checkout\OrderReturn\Entity\OrderReturnCollection;
 use Shopwell\Core\Framework\DataAbstractionLayer\Entity;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityCustomFieldsTrait;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityIdTrait;
@@ -48,6 +49,8 @@ class StateMachineStateEntity extends Entity
     protected ?OrderTransactionCaptureCollection $orderTransactionCaptures = null;
 
     protected ?OrderTransactionCaptureRefundCollection $orderTransactionCaptureRefunds = null;
+
+    protected ?OrderReturnCollection $orderReturns = null;
 
     protected ?OrderTransactionCollection $orderTransactions = null;
 
@@ -185,6 +188,16 @@ class StateMachineStateEntity extends Entity
     public function setOrderTransactionCaptureRefunds(OrderTransactionCaptureRefundCollection $orderTransactionCaptureRefunds): void
     {
         $this->orderTransactionCaptureRefunds = $orderTransactionCaptureRefunds;
+    }
+
+    public function getOrderReturns(): ?OrderReturnCollection
+    {
+        return $this->orderReturns;
+    }
+
+    public function setOrderReturns(OrderReturnCollection $orderReturns): void
+    {
+        $this->orderReturns = $orderReturns;
     }
 
     public function getOrderTransactions(): ?OrderTransactionCollection
