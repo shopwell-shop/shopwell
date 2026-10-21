@@ -170,12 +170,12 @@ class AccountOrderReturnController extends StorefrontController
         ],
         methods: [Request::METHOD_POST]
     )]
-    public function cancel(string $id, SalesChannelContext $context, CustomerEntity $customer): Response
+    public function cancel(string $id, Request $request, SalesChannelContext $context, CustomerEntity $customer): Response
     {
         $this->assertEnabled($context);
 
         try {
-            $this->orderReturnRoute->cancel($id, $context, $customer);
+            $this->orderReturnRoute->cancel($request, $id, $context, $customer);
         } catch (HttpException $exception) {
             return $this->fail($exception, 'frontend.account.order-return.detail', ['id' => $id]);
         }
@@ -200,7 +200,7 @@ class AccountOrderReturnController extends StorefrontController
         $this->assertEnabled($context);
 
         try {
-            $this->orderReturnRoute->ship($id, $request, $context, $customer);
+            $this->orderReturnRoute->ship($request, $id, $context, $customer);
         } catch (HttpException $exception) {
             return $this->fail($exception, 'frontend.account.order-return.detail', ['id' => $id]);
         }
@@ -225,7 +225,7 @@ class AccountOrderReturnController extends StorefrontController
         $this->assertEnabled($context);
 
         try {
-            $this->orderReturnRoute->message($id, $request, $context, $customer);
+            $this->orderReturnRoute->message($request, $id, $context, $customer);
         } catch (HttpException $exception) {
             return $this->fail($exception, 'frontend.account.order-return.detail', ['id' => $id]);
         }
@@ -254,7 +254,10 @@ class AccountOrderReturnController extends StorefrontController
             ];
         }
 
-        return new Request([], [
+        // the api request is a copy of the original one: a fresh Request would lose the attributes
+        // and the context the kernel put on it
+        $apiRequest = $request->duplicate();
+        $apiRequest->request->replace([
             'orderId' => $orderId,
             'type' => (string) $request->request->get('type', ''),
             'positions' => $positions,
@@ -263,6 +266,8 @@ class AccountOrderReturnController extends StorefrontController
             'customerNote' => $request->request->get('customerNote'),
             'evidence' => $this->evidenceLines($request),
         ]);
+
+        return $apiRequest;
     }
 
     /**

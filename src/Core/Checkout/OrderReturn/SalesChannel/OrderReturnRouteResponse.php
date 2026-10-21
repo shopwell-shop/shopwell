@@ -5,6 +5,7 @@ namespace Shopwell\Core\Checkout\OrderReturn\SalesChannel;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Struct\ArrayStruct;
 use Shopwell\Core\System\SalesChannel\StoreApiResponse;
+use Symfony\Component\HttpFoundation\Response;
 
 /**
  * The one shape every return endpoint answers with.
@@ -18,6 +19,16 @@ use Shopwell\Core\System\SalesChannel\StoreApiResponse;
 #[Package('after-sales')]
 class OrderReturnRouteResponse extends StoreApiResponse
 {
+    /**
+     * @param ArrayStruct<array<string, mixed>> $struct
+     */
+    public function __construct(ArrayStruct $struct, int $status = Response::HTTP_OK)
+    {
+        parent::__construct($struct);
+
+        $this->setStatusCode($status);
+    }
+
     public function getResult(): ArrayStruct
     {
         return $this->object;

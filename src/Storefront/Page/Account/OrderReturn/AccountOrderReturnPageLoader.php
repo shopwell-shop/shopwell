@@ -56,7 +56,7 @@ class AccountOrderReturnPageLoader
     {
         $page = $this->load($request, $salesChannelContext, 'account.orderReturnMetaTitle');
 
-        $detail = $this->orderReturnRoute->detail($returnId, $salesChannelContext, $customer)->getObject();
+        $detail = $this->orderReturnRoute->detail($request, $returnId, $salesChannelContext, $customer)->getObject();
 
         /** @var array<string, mixed>|null $orderReturn */
         $orderReturn = $detail->get('orderReturn');
@@ -76,7 +76,7 @@ class AccountOrderReturnPageLoader
     {
         $page = $this->load($request, $salesChannelContext, 'account.orderReturnCreateMetaTitle');
 
-        $positions = $this->orderReturnRoute->positions($orderId, $salesChannelContext, $customer)->getObject();
+        $positions = $this->orderReturnRoute->positions($request, $orderId, $salesChannelContext, $customer)->getObject();
 
         /** @var list<array<string, mixed>> $returnable */
         $returnable = $positions->get('positions') ?? [];

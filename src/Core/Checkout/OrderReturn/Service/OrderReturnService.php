@@ -3,21 +3,21 @@
 namespace Shopwell\Core\Checkout\OrderReturn\Service;
 
 use Psr\Clock\ClockInterface;
-use Shopwell\Core\Checkout\Customer\CustomerEntity;
 use Shopwell\Core\Checkout\Cart\LineItem\LineItem;
+use Shopwell\Core\Checkout\Customer\CustomerEntity;
 use Shopwell\Core\Checkout\Order\Aggregate\OrderLineItem\OrderLineItemEntity;
+use Shopwell\Core\Checkout\Order\OrderCollection;
 use Shopwell\Core\Checkout\Order\OrderEntity;
 use Shopwell\Core\Checkout\Order\OrderStates;
-use Shopwell\Core\Checkout\OrderReturn\Entity\Aggregate\OrderReturnLineItem\OrderReturnLineItemCollection;
 use Shopwell\Core\Checkout\OrderReturn\Entity\Aggregate\OrderReturnMessage\OrderReturnMessageCollection;
 use Shopwell\Core\Checkout\OrderReturn\Entity\Aggregate\OrderReturnReason\OrderReturnReasonCollection;
 use Shopwell\Core\Checkout\OrderReturn\Entity\OrderReturnCollection;
 use Shopwell\Core\Checkout\OrderReturn\Entity\OrderReturnEntity;
+use Shopwell\Core\Checkout\OrderReturn\Event\OrderReturnCreatedEvent;
 use Shopwell\Core\Checkout\OrderReturn\OrderReturnEvents;
 use Shopwell\Core\Checkout\OrderReturn\OrderReturnException;
 use Shopwell\Core\Checkout\OrderReturn\OrderReturnStates;
 use Shopwell\Core\Checkout\OrderReturn\OrderReturnTypes;
-use Shopwell\Core\Checkout\OrderReturn\Event\OrderReturnCreatedEvent;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
@@ -56,13 +56,12 @@ class OrderReturnService
      * @internal
      *
      * @param EntityRepository<OrderReturnCollection> $orderReturnRepository
-     * @param EntityRepository<OrderReturnLineItemCollection> $lineItemRepository
      * @param EntityRepository<OrderReturnMessageCollection> $messageRepository
      * @param EntityRepository<OrderReturnReasonCollection> $reasonRepository
+     * @param EntityRepository<OrderCollection> $orderRepository
      */
     public function __construct(
         private readonly EntityRepository $orderReturnRepository,
-        private readonly EntityRepository $lineItemRepository,
         private readonly EntityRepository $messageRepository,
         private readonly EntityRepository $reasonRepository,
         private readonly EntityRepository $orderRepository,
@@ -120,11 +119,11 @@ class OrderReturnService
 
         if (!$this->ownsOrder($order, $customer, $guestEmail)) {
             // the message must not tell an anonymous visitor whether the order exists
-            throw OrderReturnException::orderNotFound($order->getOrderNumber());
+            throw OrderReturnException::orderNotFound((string) $order->getOrderNumber());
         }
 
         if ($order->getStateMachineState()?->getTechnicalName() === OrderStates::STATE_CANCELLED) {
-            throw OrderReturnException::orderNotFinished($order->getOrderNumber());
+            throw OrderReturnException::orderNotFinished((string) $order->getOrderNumber());
         }
 
         if ($customer === null && !$this->settings->allowGuest($salesChannelId)) {
@@ -180,7 +179,7 @@ class OrderReturnService
             'orderId' => $order->getId(),
             'orderVersionId' => $order->getVersionId(),
             'customerId' => $customer?->getId(),
-            'guestEmail' => $customer === null ? $guestEmail : null,
+            'guestEmail' => $customer === null ? $this->normalizeEmail($guestEmail) : null,
             'guestTokenHash' => $customer === null ? ($data['guestTokenHash'] ?? null) : null,
             'salesChannelId' => $salesChannelId,
             'type' => $type,
@@ -368,7 +367,7 @@ class OrderReturnService
         $positions = [];
 
         foreach ($order->getLineItems() ?? [] as $lineItem) {
-            if (!$lineItem instanceof OrderLineItemEntity || $lineItem->getType() !== LineItem::PRODUCT_LINE_ITEM_TYPE) {
+            if ($lineItem->getType() !== LineItem::PRODUCT_LINE_ITEM_TYPE) {
                 continue;
             }
 
@@ -380,7 +379,7 @@ class OrderReturnService
 
             $positions[] = [
                 'lineItemId' => $lineItem->getId(),
-                'label' => (string) $lineItem->getLabel(),
+                'label' => $lineItem->getLabel(),
                 'quantity' => $lineItem->getQuantity(),
                 'returnable' => $returnable,
                 'unitPrice' => $lineItem->getUnitPrice(),
@@ -434,6 +433,8 @@ class OrderReturnService
     }
 
     /**
+     * @param list<string> $allowed
+     *
      * @throws OrderReturnException
      */
     private function assertState(OrderReturnEntity $orderReturn, array $allowed, string $action): void
@@ -460,13 +461,13 @@ class OrderReturnService
             ? $this->lastDeliveryDate($order)
             : null;
 
-        $start ??= $order->getOrderDate();
+        // an order that was never delivered falls back to its order date, so a window that counts
+        // from the delivery never blocks a customer whose order is still on its way
+        $start = $start ?? $order->getOrderDate();
 
-        if ($start === null) {
-            return;
-        }
+        $immutable = $start instanceof \DateTimeImmutable ? $start : \DateTimeImmutable::createFromInterface($start);
 
-        if ($start->modify('+' . $days . ' days') < $this->clock->now()) {
+        if ($immutable->modify('+' . $days . ' days') < $this->clock->now()) {
             throw OrderReturnException::windowExpired((string) $order->getOrderNumber(), $days);
         }
     }
@@ -516,7 +517,21 @@ class OrderReturnService
 
         // a guest proves the order by the mail address it was placed with; the comparison is case
         // insensitive because no mail address is, in practice, case sensitive
-        return mb_strtolower(trim($guestEmail)) === mb_strtolower((string) $orderCustomer->getEmail());
+        return $this->normalizeEmail($guestEmail) === mb_strtolower($orderCustomer->getEmail());
+    }
+
+    /**
+     * The address is stored the way it is compared: the guest routes find their returns by an exact
+     * match against the address of the token, so an address that keeps its capitals would lock the
+     * customer out of a return they just opened.
+     */
+    private function normalizeEmail(?string $email): ?string
+    {
+        if ($email === null || trim($email) === '') {
+            return null;
+        }
+
+        return mb_strtolower(trim($email));
     }
 
     /**

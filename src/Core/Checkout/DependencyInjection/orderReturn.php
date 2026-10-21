@@ -13,8 +13,8 @@ use Shopwell\Core\Checkout\OrderReturn\SalesChannel\OrderReturnPresenter;
 use Shopwell\Core\Checkout\OrderReturn\SalesChannel\OrderReturnRoute;
 use Shopwell\Core\Checkout\OrderReturn\ScheduledTask\OrderReturnDeadlineTask;
 use Shopwell\Core\Checkout\OrderReturn\ScheduledTask\OrderReturnDeadlineTaskHandler;
-use Shopwell\Core\Checkout\OrderReturn\Service\OrderReturnNumberGenerator;
 use Shopwell\Core\Checkout\OrderReturn\Service\OrderReturnGuestTokenService;
+use Shopwell\Core\Checkout\OrderReturn\Service\OrderReturnNumberGenerator;
 use Shopwell\Core\Checkout\OrderReturn\Service\OrderReturnQuantityGuard;
 use Shopwell\Core\Checkout\OrderReturn\Service\OrderReturnRefundService;
 use Shopwell\Core\Checkout\OrderReturn\Service\OrderReturnService;
@@ -93,7 +93,6 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(OrderReturnService::class)
         ->args([
             service('order_return.repository'),
-            service('order_return_line_item.repository'),
             service('order_return_message.repository'),
             service('order_return_reason.repository'),
             service('order.repository'),
@@ -138,6 +137,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(OrderReturnGuestTokenService::class)
         ->args([
             param('kernel.secret'),
+            service(ClockInterface::class),
         ]);
 
     $services->set(OrderReturnRoute::class)
@@ -159,6 +159,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('order_return.repository'),
             service('order.repository'),
             service(OrderReturnPresenter::class),
+            service(ExtensionDispatcher::class),
         ]);
 
     $services->set(OrderReturnController::class)

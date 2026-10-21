@@ -4,9 +4,9 @@ namespace Shopwell\Core\Checkout\OrderReturn\Subscriber;
 
 use Shopwell\Core\Checkout\OrderReturn\Entity\OrderReturnCollection;
 use Shopwell\Core\Checkout\OrderReturn\Entity\OrderReturnEntity;
+use Shopwell\Core\Checkout\OrderReturn\Event\OrderReturnCompletedEvent;
 use Shopwell\Core\Checkout\OrderReturn\OrderReturnEvents;
 use Shopwell\Core\Checkout\OrderReturn\OrderReturnStates;
-use Shopwell\Core\Checkout\OrderReturn\Event\OrderReturnCompletedEvent;
 use Shopwell\Core\Checkout\OrderReturn\Service\OrderReturnStateHandler;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
@@ -76,7 +76,7 @@ class OrderReturnRefundFinishedSubscriber implements EventSubscriberInterface
     private function findByRefundNo(PaymentRefundFinishedEvent $event): ?OrderReturnEntity
     {
         $criteria = new Criteria();
-        $criteria->addFilter(new EqualsFilter('paymentRefundNo', $event->getPaymentRefund()->getRefundNo()));
+        $criteria->addFilter(new EqualsFilter('paymentRefundNo', $event->getPaymentRefund()->refundNo));
         $criteria->addAssociation('stateMachineState');
         $criteria->addAssociation('lineItems');
         $criteria->setLimit(1);

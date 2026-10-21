@@ -2,6 +2,7 @@
 
 namespace Shopwell\Storefront\Controller;
 
+use Psr\Clock\ClockInterface;
 use Shopwell\Core\Checkout\OrderReturn\OrderReturnException;
 use Shopwell\Core\Checkout\OrderReturn\SalesChannel\OrderReturnGuestRoute;
 use Shopwell\Core\Checkout\OrderReturn\Service\OrderReturnSettings;
@@ -48,6 +49,7 @@ class OrderReturnGuestController extends StorefrontController
         private readonly GuestOrderReturnPageLoader $pageLoader,
         private readonly OrderReturnGuestRoute $guestRoute,
         private readonly OrderReturnSettings $settings,
+        private readonly ClockInterface $clock,
     ) {
     }
 
@@ -238,15 +240,15 @@ class OrderReturnGuestController extends StorefrontController
 
             switch ($action) {
                 case 'cancel':
-                    $this->guestRoute->cancel($id, $guestRequest, $context);
+                    $this->guestRoute->cancel($guestRequest, $id, $context);
 
                     break;
                 case 'ship':
-                    $this->guestRoute->ship($id, $guestRequest, $context);
+                    $this->guestRoute->ship($guestRequest, $id, $context);
 
                     break;
                 case 'message':
-                    $this->guestRoute->message($id, $guestRequest, $context);
+                    $this->guestRoute->message($guestRequest, $id, $context);
 
                     break;
             }
@@ -276,7 +278,8 @@ class OrderReturnGuestController extends StorefrontController
             ];
         }
 
-        return new Request([], [
+        $apiRequest = $request->duplicate(['token' => $token]);
+        $apiRequest->request->replace([
             'token' => $token,
             'type' => (string) $request->request->get('type', ''),
             'positions' => $positions,
@@ -285,6 +288,8 @@ class OrderReturnGuestController extends StorefrontController
             'customerNote' => $request->request->get('customerNote'),
             'evidence' => $this->evidenceLines($request),
         ]);
+
+        return $apiRequest;
     }
 
     /**
@@ -318,7 +323,7 @@ class OrderReturnGuestController extends StorefrontController
         return Cookie::create(
             self::COOKIE_TOKEN,
             $token,
-            time() + self::TOKEN_LIFETIME,
+            $this->clock->now()->getTimestamp() + self::TOKEN_LIFETIME,
             '/order-return',
             null,
             $request->isSecure(),

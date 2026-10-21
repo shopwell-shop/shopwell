@@ -53,7 +53,7 @@ final class OrderReturnDeadlineTaskHandler extends ScheduledTaskHandler
 
     public function run(): void
     {
-        $context = Context::createDefaultContext();
+        $context = Context::createCLIContext();
 
         $criteria = new Criteria();
         $criteria->addFilter(new RangeFilter('deadlineAt', [RangeFilter::LTE => $this->clock->now()->format(Defaults::STORAGE_DATE_TIME_FORMAT)]));
@@ -68,7 +68,7 @@ final class OrderReturnDeadlineTaskHandler extends ScheduledTaskHandler
             try {
                 $this->handle($orderReturn, $context);
             } catch (\Throwable $exception) {
-                $this->logger->error(
+                $this->exceptionLogger->error(
                     'The deadline of the return "{returnNumber}" could not be processed: {message}',
                     [
                         'returnNumber' => $orderReturn->returnNumber,

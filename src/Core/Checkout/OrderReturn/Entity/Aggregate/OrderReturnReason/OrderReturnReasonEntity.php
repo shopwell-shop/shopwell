@@ -6,7 +6,6 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\Entity;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\Field;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\FieldType;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\PrimaryKey;
-use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\Required;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\SearchRanking;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\Translations;
 use Shopwell\Core\Framework\DataAbstractionLayer\Entity as EntityStruct;

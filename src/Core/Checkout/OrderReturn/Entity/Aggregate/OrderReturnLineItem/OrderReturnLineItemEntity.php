@@ -2,8 +2,8 @@
 
 namespace Shopwell\Core\Checkout\OrderReturn\Entity\Aggregate\OrderReturnLineItem;
 
-use Shopwell\Core\Checkout\OrderReturn\Entity\OrderReturnEntity;
 use Shopwell\Core\Checkout\Order\Aggregate\OrderLineItem\OrderLineItemEntity;
+use Shopwell\Core\Checkout\OrderReturn\Entity\OrderReturnEntity;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\Entity;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\Field;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\FieldType;

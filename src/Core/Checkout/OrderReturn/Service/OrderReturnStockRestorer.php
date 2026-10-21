@@ -8,8 +8,8 @@ use Shopwell\Core\Checkout\Order\OrderEntity;
 use Shopwell\Core\Checkout\OrderReturn\Entity\Aggregate\OrderReturnLineItem\OrderReturnLineItemCollection;
 use Shopwell\Core\Checkout\OrderReturn\Entity\Aggregate\OrderReturnLineItem\OrderReturnLineItemEntity;
 use Shopwell\Core\Checkout\OrderReturn\Entity\OrderReturnEntity;
+use Shopwell\Core\Content\Product\Stock\AbstractStockStorage;
 use Shopwell\Core\Content\Product\Stock\StockAlteration;
-use Shopwell\Core\Content\Product\Stock\StockStorage;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\Log\Package;
@@ -37,7 +37,7 @@ class OrderReturnStockRestorer
      */
     public function __construct(
         private readonly EntityRepository $lineItemRepository,
-        private readonly StockStorage $stockStorage,
+        private readonly AbstractStockStorage $stockStorage,
     ) {
     }
 
