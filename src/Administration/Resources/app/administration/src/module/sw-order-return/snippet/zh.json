@@ -1,0 +1,113 @@
+{
+    "sw-order-return": {
+        "general": {
+            "mainMenuItemGeneral": "售后",
+            "description": "处理顾客提交的退货与退款申请",
+            "placeholderSearchBar": "搜索售后单号或订单号…"
+        },
+        "navigation": {
+            "list": "售后单"
+        },
+        "list": {
+            "title": "售后单",
+            "placeholderSearchBar": "搜索售后单号或订单号…",
+            "titleSidebarItemRefresh": "刷新",
+            "textOverdue": "已逾期",
+            "buttonRefresh": "刷新",
+            "columnReturnNumber": "售后单号",
+            "columnOrder": "订单号",
+            "columnCustomer": "顾客",
+            "columnType": "售后类型",
+            "columnState": "状态",
+            "columnRefundAmount": "退款金额",
+            "columnDeadline": "处理期限",
+            "columnCreatedAt": "提交时间",
+            "messageEmpty": "还没有售后单",
+            "messageEmptySubline": "顾客提交退货或退款申请后，会出现在这里。",
+            "messageNoResult": "没有符合条件的售后单",
+            "messageNoResultSubline": "请调整搜索词或筛选条件。",
+            "filters": {
+                "returnNoFilter": {
+                    "label": "售后单号",
+                    "placeholder": "输入售后单号"
+                },
+                "orderNoFilter": {
+                    "label": "订单号",
+                    "placeholder": "输入订单号"
+                },
+                "stateFilter": {
+                    "label": "状态",
+                    "placeholder": "选择状态"
+                }
+            }
+        },
+        "detail": {
+            "cardGeneralTitle": "售后信息",
+            "cardLineItemsTitle": "售后商品",
+            "cardMessagesTitle": "沟通记录",
+            "labelOrderNumber": "订单号",
+            "labelCustomer": "顾客",
+            "labelType": "售后类型",
+            "labelRefundAmount": "退款金额",
+            "labelReason": "售后原因",
+            "labelCreatedAt": "提交时间",
+            "labelDeadline": "处理期限",
+            "labelTracking": "退货物流",
+            "labelCustomerNote": "顾客说明",
+            "columnProduct": "商品",
+            "columnQuantity": "数量",
+            "columnRefundAmount": "退款金额",
+            "columnAccepted": "已受理",
+            "columnRestocked": "已回库",
+            "buttonApprove": "同意售后",
+            "buttonDecline": "拒绝售后",
+            "buttonCancel": "关闭售后",
+            "buttonReceive": "确认收货",
+            "buttonRefund": "发起退款",
+            "buttonSendMessage": "添加备注",
+            "placeholderMessage": "写下内部备注，顾客看不到…",
+            "messageNoEntries": "还没有沟通记录。",
+            "messageEmptyError": "备注内容不能为空。",
+            "messageNotFound": "售后单不存在",
+            "messageNotFoundSubline": "该售后单可能已被删除，或链接无效。",
+            "textRefundOnlyHint": "仅退款申请没有退货物流，因此「已受理」与「已回库」对它不适用。",
+            "textInternalNoteHint": "备注只对内部可见，不会发送给顾客。",
+            "messageAuthor": {
+                "customer": "顾客",
+                "agent": "客服",
+                "system": "系统"
+            }
+        },
+        "decline": {
+            "modalTitle": "拒绝售后",
+            "hint": "拒绝后该售后单将关闭，原因会展示给顾客。",
+            "fieldReason": "拒绝原因",
+            "placeholderReason": "例如：商品已超过售后期限，或不符合退货条件。",
+            "validationReasonTooLong": "拒绝原因过长。",
+            "buttonConfirm": "确认拒绝"
+        },
+        "notification": {
+            "approveSuccess": "已同意该售后申请。",
+            "declineSuccess": "已拒绝该售后申请。",
+            "cancelSuccess": "已关闭该售后单。",
+            "receiveSuccess": "已确认收货，库存已回补。",
+            "refundSuccess": "已发起退款。",
+            "messageSuccess": "备注已添加。",
+            "actionError": "操作失败，请稍后重试。"
+        },
+        "stateLabel": {
+            "requested": "待处理",
+            "open": "待寄回",
+            "returning": "寄回中",
+            "received": "已收货",
+            "refunding": "退款中",
+            "closed": "已完成",
+            "declined": "已拒绝",
+            "canceled": "已关闭"
+        },
+        "typeLabel": {
+            "refund_only": "仅退款",
+            "return_refund": "退货退款"
+        }
+    }
+}

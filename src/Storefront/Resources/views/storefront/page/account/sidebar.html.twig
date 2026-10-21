@@ -53,6 +53,18 @@
                                 </a>
                             {% endblock %}
 
+                            {% block page_account_sidebar_link_order_return %}
+                                {# an unset key means "not switched off", the same default the backend applies #}
+                                {% if config('core.orderReturn.enabled') is not same as(false) %}
+                                    <a href="{{ path('frontend.account.order-return.page') }}"
+                                       title="{{ 'account.orderReturnLink'|trans|striptags }}"
+                                       class="list-group-item list-group-item-action account-aside-item{% if activeRoute starts with('frontend.account.order-return') %} is-active{% endif %}"
+                                       {% if activeRoute is same as('frontend.account.order-return.page') %} aria-current="page"{% endif %}>
+                                        {{ 'account.orderReturnLink'|trans|sw_sanitize }}
+                                    </a>
+                                {% endif %}
+                            {% endblock %}
+
                             {% block page_account_sidebar_link_loyalty %}
                                 {# an unset key means "not switched off", the same default the backend applies #}
                                 {% if config('core.loyalty.enabled') is not same as(false) %}

@@ -1,0 +1,320 @@
+{% block sw_order_return_detail %}
+<sw-page class="sw-order-return-detail">
+    {% block sw_order_return_detail_smart_bar_header %}
+    <template #smart-bar-header>
+        {% block sw_order_return_detail_smart_bar_header_title %}
+        <h2>
+            {% block sw_order_return_detail_smart_bar_header_title_text %}
+            <template v-if="orderReturn">
+                {{ orderReturn.returnNumber }}
+            </template>
+            <sw-skeleton
+                v-else
+                variant="bold"
+            />
+            {% endblock %}
+
+            {% block sw_order_return_detail_smart_bar_header_state %}
+            <mt-badge
+                v-if="orderReturn"
+                class="sw-order-return-detail__state-badge"
+                :variant="stateVariant"
+            >
+                {{ stateLabel }}
+            </mt-badge>
+            {% endblock %}
+        </h2>
+        {% endblock %}
+    </template>
+    {% endblock %}
+
+    {% block sw_order_return_detail_smart_bar_actions %}
+    <template #smart-bar-actions>
+        {% block sw_order_return_detail_actions %}
+        {#
+        Every button of this bar is a decision the server owns. Which of them exist is derived from the
+        state of the return and from the role of the operator - a state that is already decided offers
+        nothing, and a reader never sees a decision at all.
+        #}
+        <template v-if="orderReturn">
+            {% block sw_order_return_detail_action_decline %}
+            <mt-button
+                v-if="availableActions.includes('decline')"
+                class="sw-order-return-detail__action-decline"
+                variant="critical"
+                size="default"
+                :disabled="isSubmitting"
+                @click="onOpenDeclineModal"
+            >
+                {{ $t('sw-order-return.detail.buttonDecline') }}
+            </mt-button>
+            {% endblock %}
+
+            {% block sw_order_return_detail_action_cancel %}
+            <mt-button
+                v-if="availableActions.includes('cancel')"
+                class="sw-order-return-detail__action-cancel"
+                variant="secondary"
+                size="default"
+                :disabled="isSubmitting"
+                @click="onCancel"
+            >
+                {{ $t('sw-order-return.detail.buttonCancel') }}
+            </mt-button>
+            {% endblock %}
+
+            {% block sw_order_return_detail_action_receive %}
+            <mt-button
+                v-if="availableActions.includes('receive')"
+                class="sw-order-return-detail__action-receive"
+                variant="primary"
+                size="default"
+                :disabled="isSubmitting"
+                @click="onReceive"
+            >
+                {{ $t('sw-order-return.detail.buttonReceive') }}
+            </mt-button>
+            {% endblock %}
+
+            {% block sw_order_return_detail_action_refund %}
+            <mt-button
+                v-if="availableActions.includes('refund')"
+                class="sw-order-return-detail__action-refund"
+                variant="primary"
+                size="default"
+                :disabled="isSubmitting"
+                @click="onRefund"
+            >
+                {{ $t('sw-order-return.detail.buttonRefund') }}
+            </mt-button>
+            {% endblock %}
+
+            {% block sw_order_return_detail_action_approve %}
+            <mt-button
+                v-if="availableActions.includes('approve')"
+                class="sw-order-return-detail__action-approve"
+                variant="primary"
+                size="default"
+                :disabled="isSubmitting"
+                @click="onApprove"
+            >
+                {{ $t('sw-order-return.detail.buttonApprove') }}
+            </mt-button>
+            {% endblock %}
+        </template>
+        {% endblock %}
+    </template>
+    {% endblock %}
+
+    {% block sw_order_return_detail_content %}
+    <template #content>
+        {% block sw_order_return_detail_content_inner %}
+        <sw-card-view v-if="orderReturn">
+            {% block sw_order_return_detail_general %}
+            <mt-card
+                class="sw-order-return-detail__general"
+                position-identifier="sw-order-return-detail-general"
+                :title="$t('sw-order-return.detail.cardGeneralTitle')"
+            >
+                {% block sw_order_return_detail_general_facts %}
+                <dl class="sw-order-return-detail__facts">
+                    <div
+                        v-for="fact in generalFacts"
+                        :key="fact.label"
+                        class="sw-order-return-detail__fact"
+                    >
+                        <dt class="sw-order-return-detail__fact-label">
+                            {{ fact.label }}
+                        </dt>
+                        <dd class="sw-order-return-detail__fact-value">
+                            {{ fact.value }}
+                        </dd>
+                    </div>
+                </dl>
+                {% endblock %}
+
+                {% block sw_order_return_detail_general_note %}
+                <template
+                    v-if="orderReturn.customerNote || orderReturn.reasonText"
+                >
+                    <mt-banner
+                        class="sw-order-return-detail__customer-note"
+                        variant="neutral"
+                    >
+                        <strong>{{ $t('sw-order-return.detail.labelCustomerNote') }}</strong>
+                        {{ orderReturn.customerNote || orderReturn.reasonText }}
+                    </mt-banner>
+                </template>
+                {% endblock %}
+            </mt-card>
+            {% endblock %}
+
+            {% block sw_order_return_detail_line_items %}
+            <mt-card
+                class="sw-order-return-detail__line-items"
+                position-identifier="sw-order-return-detail-line-items"
+                :title="$t('sw-order-return.detail.cardLineItemsTitle')"
+            >
+                {% block sw_order_return_detail_line_items_grid %}
+                <sw-data-grid
+                    :data-source="orderReturn.lineItems"
+                    :columns="lineItemColumns"
+                    :show-selection="false"
+                    :show-actions="false"
+                    :allow-inline-edit="false"
+                    :plain-appearance="true"
+                    identifier="sw-order-return-detail-line-items"
+                >
+                    {% block sw_order_return_detail_line_items_column_label %}
+                    <template #column-orderLineItemId="{ item }">
+                        {{ lineItemLabel(item) }}
+                    </template>
+                    {% endblock %}
+
+                    {% block sw_order_return_detail_line_items_column_amount %}
+                    <template #column-refundAmount="{ item }">
+                        {{ formatAmount(item.refundAmount, orderReturn.currency) }}
+                    </template>
+                    {% endblock %}
+
+                    {% block sw_order_return_detail_line_items_column_accepted %}
+                    <template #column-accepted="{ item }">
+                        <mt-icon
+                            :name="item.accepted ? 'regular-checkmark-circle' : 'regular-circle-slash'"
+                            size="var(--scale-size-16)"
+                        />
+                    </template>
+                    {% endblock %}
+
+                    {% block sw_order_return_detail_line_items_column_restocked %}
+                    <template #column-restocked="{ item }">
+                        <mt-icon
+                            :name="item.restocked ? 'regular-checkmark-circle' : 'regular-circle-slash'"
+                            size="var(--scale-size-16)"
+                        />
+                    </template>
+                    {% endblock %}
+                </sw-data-grid>
+                {% endblock %}
+
+                {% block sw_order_return_detail_line_items_hint %}
+                {#
+                A refund-only return has no parcel, so neither "accepted" nor "restocked" says anything
+                about it. The hint keeps an operator from reading the two crossed circles as a problem.
+                #}
+                <p
+                    v-if="isRefundOnly"
+                    class="sw-order-return-detail__hint"
+                >
+                    {{ $t('sw-order-return.detail.textRefundOnlyHint') }}
+                </p>
+                {% endblock %}
+            </mt-card>
+            {% endblock %}
+
+            {% block sw_order_return_detail_messages %}
+            <mt-card
+                class="sw-order-return-detail__messages"
+                position-identifier="sw-order-return-detail-messages"
+                :title="$t('sw-order-return.detail.cardMessagesTitle')"
+            >
+                {% block sw_order_return_detail_messages_empty %}
+                <p
+                    v-if="!orderReturn.messages || !orderReturn.messages.length"
+                    class="sw-order-return-detail__hint"
+                >
+                    {{ $t('sw-order-return.detail.messageNoEntries') }}
+                </p>
+                {% endblock %}
+
+                {% block sw_order_return_detail_messages_list %}
+                <ul class="sw-order-return-detail__message-list">
+                    <li
+                        v-for="message in orderReturn.messages"
+                        :key="message.id"
+                        class="sw-order-return-detail__message"
+                    >
+                        <div class="sw-order-return-detail__message-meta">
+                            <span class="sw-order-return-detail__message-author">
+                                {{ messageAuthor(message) }}
+                            </span>
+                            <span class="sw-order-return-detail__message-date">
+                                {{ formatDateOrDash(message.createdAt) }}
+                            </span>
+                        </div>
+                        <p class="sw-order-return-detail__message-content">
+                            {{ message.content }}
+                        </p>
+                    </li>
+                </ul>
+                {% endblock %}
+
+                {% block sw_order_return_detail_messages_form %}
+                <div
+                    v-if="canDecide"
+                    class="sw-order-return-detail__message-form"
+                >
+                    <mt-textarea
+                        v-model="messageDraft"
+                        :placeholder="$t('sw-order-return.detail.placeholderMessage')"
+                        :max-length="2000"
+                        autocomplete="off"
+                    />
+
+                    <mt-button
+                        class="sw-order-return-detail__message-send"
+                        variant="secondary"
+                        size="default"
+                        :disabled="isSubmitting"
+                        @click="onSendMessage"
+                    >
+                        {{ $t('sw-order-return.detail.buttonSendMessage') }}
+                    </mt-button>
+                </div>
+                {% endblock %}
+
+                {% block sw_order_return_detail_messages_hint %}
+                <p class="sw-order-return-detail__hint">
+                    {{ $t('sw-order-return.detail.textInternalNoteHint') }}
+                </p>
+                {% endblock %}
+            </mt-card>
+            {% endblock %}
+        </sw-card-view>
+        {% endblock %}
+
+        {% block sw_order_return_detail_loading %}
+        <sw-skeleton
+            v-else-if="isLoading"
+            variant="detail"
+        />
+        {% endblock %}
+
+        {% block sw_order_return_detail_empty %}
+        <mt-empty-state
+            v-else
+            centered
+            class="sw-order-return-detail__empty-state"
+            :icon="$route.meta.$module.icon"
+            :headline="$t('sw-order-return.detail.messageNotFound')"
+            :description="$t('sw-order-return.detail.messageNotFoundSubline')"
+        />
+        {% endblock %}
+
+        {% block sw_order_return_detail_modal %}
+        {#
+        The decline modal lives inside the content slot on purpose: the page component renders named
+        slots only, so a modal placed directly under it would sit in the default slot and never mount -
+        the button would set its flag while nothing appeared.
+        #}
+        <sw-order-return-decline-modal
+            v-if="showDeclineModal"
+            :return-number="orderReturn ? orderReturn.returnNumber : ''"
+            @decline="onDecline"
+            @modal-close="onCloseDeclineModal"
+        />
+        {% endblock %}
+    </template>
+    {% endblock %}
+</sw-page>
+{% endblock %}

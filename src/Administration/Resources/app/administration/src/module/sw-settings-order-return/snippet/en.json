@@ -1,0 +1,35 @@
+{
+    "sw-settings-order-return": {
+        "general": {
+            "mainMenuItemGeneral": "Returns",
+            "description": "Configure the return rules and maintain the reasons"
+        },
+        "index": {
+            "cardReasonsTitle": "Return reasons",
+            "textReasons": "A customer picks a reason when opening a return. The reasons are the shop's own data: add, disable or delete them at any time. A reason that is disabled stays on the returns that already picked it.",
+            "buttonManageReasons": "Maintain reasons"
+        },
+        "reason": {
+            "title": "Return reasons",
+            "placeholderSearchBar": "Search return reasons…",
+            "buttonCreate": "Add reason",
+            "columnPosition": "Position",
+            "columnLabel": "Reason",
+            "columnActive": "Active",
+            "modalTitleCreate": "Add a return reason",
+            "modalTitleEdit": "Edit the return reason",
+            "fieldLabel": "Reason",
+            "placeholderLabel": "e.g. the size does not fit",
+            "fieldPosition": "Position",
+            "helpTextPosition": "A lower number is listed first.",
+            "fieldActive": "Active",
+            "helpTextActive": "A disabled reason can not be picked anymore; the returns that already picked it keep it.",
+            "notificationSaveSuccess": "The reason was saved.",
+            "notificationSaveError": "The reason could not be saved."
+        },
+        "notification": {
+            "saveSuccess": "The return settings were saved.",
+            "saveError": "The return settings could not be saved."
+        }
+    }
+}

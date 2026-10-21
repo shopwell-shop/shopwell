@@ -270,6 +270,22 @@
                                         {% endblock %}
                                     </div>
                                 </div>
+
+                                {#
+                                One entry point and no state logic here: whether this order may still be
+                                returned is decided by the page it leads to, which knows the window, the
+                                quantities that are already claimed and the type of every position.
+                                #}
+                                {% block page_account_order_item_detail_order_return %}
+                                    {% if config('core.orderReturn.enabled') is not same as(false) %}
+                                        <div class="order-item-detail-order-return">
+                                            <a href="{{ path('frontend.account.order-return.create', { orderId: order.id }) }}"
+                                               class="btn btn-secondary btn-sm">
+                                                {{ 'account.orderReturnApply'|trans|sw_sanitize }}
+                                            </a>
+                                        </div>
+                                    {% endif %}
+                                {% endblock %}
                             </div>
                         {% endblock %}
                     </div>

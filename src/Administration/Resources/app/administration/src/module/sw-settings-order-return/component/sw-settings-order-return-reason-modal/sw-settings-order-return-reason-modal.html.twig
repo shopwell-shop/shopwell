@@ -1,0 +1,68 @@
+{% block sw_settings_order_return_reason_modal %}
+<sw-modal
+    class="sw-settings-order-return-reason-modal"
+    :title="title"
+    variant="default"
+    @modal-close="onClose"
+>
+    {% block sw_settings_order_return_reason_modal_label %}
+    <mt-text-field
+        v-model="label"
+        class="sw-settings-order-return-reason-modal__label"
+        :label="$t('sw-settings-order-return.reason.fieldLabel')"
+        :placeholder="$t('sw-settings-order-return.reason.placeholderLabel')"
+        :max-length="255"
+        required
+        autocomplete="off"
+    />
+    {% endblock %}
+
+    {% block sw_settings_order_return_reason_modal_position %}
+    <mt-number-field
+        v-model="position"
+        class="sw-settings-order-return-reason-modal__position"
+        :label="$t('sw-settings-order-return.reason.fieldPosition')"
+        :help-text="$t('sw-settings-order-return.reason.helpTextPosition')"
+        number-type="int"
+        autocomplete="off"
+    />
+    {% endblock %}
+
+    {% block sw_settings_order_return_reason_modal_active %}
+    <mt-switch
+        v-model="active"
+        class="sw-settings-order-return-reason-modal__active"
+        :label="$t('sw-settings-order-return.reason.fieldActive')"
+        :help-text="$t('sw-settings-order-return.reason.helpTextActive')"
+        bordered
+    />
+    {% endblock %}
+
+    <template #modal-footer>
+        {% block sw_settings_order_return_reason_modal_footer_cancel %}
+        <mt-button
+            class="sw-settings-order-return-reason-modal__button-cancel"
+            size="default"
+            variant="secondary"
+            :disabled="isSaving"
+            @click="onClose"
+        >
+            {{ $t('global.default.cancel') }}
+        </mt-button>
+        {% endblock %}
+
+        {% block sw_settings_order_return_reason_modal_footer_save %}
+        <mt-button
+            class="sw-settings-order-return-reason-modal__button-save"
+            size="default"
+            variant="primary"
+            :disabled="isSaveDisabled"
+            :is-loading="isSaving"
+            @click="onSave"
+        >
+            {{ $t('global.default.save') }}
+        </mt-button>
+        {% endblock %}
+    </template>
+</sw-modal>
+{% endblock %}

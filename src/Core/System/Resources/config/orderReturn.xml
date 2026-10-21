@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopwell-shop/shopwell/trunk/src/Core/System/SystemConfig/Schema/config.xsd">
+    <card>
+        <title>Returns</title>
+        <title lang="zh-CN">售后</title>
+
+        <input-field type="bool">
+            <name>enabled</name>
+            <defaultValue>true</defaultValue>
+            <label>Enable returns</label>
+            <label lang="zh-CN">启用售后</label>
+            <helpText>When disabled, the storefront offers no return form and no existing return can be opened. The administration keeps working, so a return that is already in progress can still be decided.</helpText>
+            <helpText lang="zh-CN">关闭后门店前台不再显示售后入口，已有的售后单也无法打开；后台不受影响，进行中的售后仍可处理。</helpText>
+        </input-field>
+
+        <input-field type="bool">
+            <name>allowGuest</name>
+            <defaultValue>true</defaultValue>
+            <label>Allow guest returns</label>
+            <label lang="zh-CN">允许游客申请售后</label>
+            <helpText>Guests order without an account. When enabled, they can open a return with their order number and the email address of the order - no account needed.</helpText>
+            <helpText lang="zh-CN">游客下单没有账号。开启后，游客凭订单号和下单邮箱即可提交售后申请，无需注册。</helpText>
+        </input-field>
+
+        <input-field type="int">
+            <name>windowDays</name>
+            <defaultValue>30</defaultValue>
+            <label>Return window in days</label>
+            <label lang="zh-CN">售后申请期限（天）</label>
+            <helpText>How long after the delivery an order may still be returned. 0 closes the window immediately.</helpText>
+            <helpText lang="zh-CN">订单送达后多少天内仍可申请售后。填 0 表示不开放售后申请。</helpText>
+        </input-field>
+
+        <input-field type="bool">
+            <name>windowStartsAtDelivery</name>
+            <defaultValue>true</defaultValue>
+            <label>Start the window at the delivery</label>
+            <label lang="zh-CN">期限从送达时间起算</label>
+            <helpText>When enabled, the window counts from the delivery. When disabled, it counts from the order date - only useful for a shop whose orders are never shipped.</helpText>
+            <helpText lang="zh-CN">开启后按送达时间起算；关闭后按下单时间起算，仅适用于不发货的店铺。</helpText>
+        </input-field>
+
+        <input-field type="int">
+            <name>approvalDeadlineHours</name>
+            <defaultValue>48</defaultValue>
+            <label>Decision deadline in hours</label>
+            <label lang="zh-CN">处理期限（小时）</label>
+            <helpText>A return nobody decided on within this many hours is reported as overdue and, if "approve automatically" is on, approved by the scheduled task.</helpText>
+            <helpText lang="zh-CN">超过该时长仍未处理的售后单会被标记为逾期；若开启「自动同意」，计划任务会自动通过。</helpText>
+        </input-field>
+
+        <input-field type="bool">
+            <name>autoApprove</name>
+            <defaultValue>false</defaultValue>
+            <label>Approve a return that ran out of time automatically</label>
+            <label lang="zh-CN">逾期自动同意售后</label>
+            <helpText>A merchant who does not answer must not keep the goods and the money: with this on, the scheduled task approves an overdue return instead of only reporting it. Auto-declining is deliberately not offered.</helpText>
+            <helpText lang="zh-CN">商家不处理不应既占着货又占着钱：开启后，计划任务会把逾期的售后单自动通过。系统刻意不提供「逾期自动拒绝」。</helpText>
+        </input-field>
+
+        <input-field type="int">
+            <name>returnDeadlineDays</name>
+            <defaultValue>14</defaultValue>
+            <label>Days to ship the parcel back</label>
+            <label lang="zh-CN">退回商品期限（天）</label>
+            <helpText>After an approval of a return-and-refund case, the customer has this many days to hand the parcel to a carrier.</helpText>
+            <helpText lang="zh-CN">退货退款申请通过后，顾客需在该天数内把商品寄出。</helpText>
+        </input-field>
+
+        <input-field type="bool">
+            <name>restockOnReceive</name>
+            <defaultValue>true</defaultValue>
+            <label>Put returned goods back into the stock</label>
+            <label lang="zh-CN">收货后自动回补库存</label>
+            <helpText>When enabled, booking the arrival of a parcel increases the stock of the returned products. Disable it for a shop that inspects goods before they are sellable again.</helpText>
+            <helpText lang="zh-CN">开启后，确认收到退回商品时自动增加对应商品的库存。需要在质检后才可再次销售时请关闭。</helpText>
+        </input-field>
+    </card>
+</config>

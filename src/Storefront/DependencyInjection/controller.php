@@ -37,6 +37,9 @@ use Shopwell\Core\Checkout\Order\SalesChannel\CancelOrderRoute;
 use Shopwell\Core\Checkout\Order\SalesChannel\OrderRoute;
 use Shopwell\Core\Checkout\Order\SalesChannel\OrderService;
 use Shopwell\Core\Checkout\Order\SalesChannel\SetPaymentOrderRoute;
+use Shopwell\Core\Checkout\OrderReturn\SalesChannel\OrderReturnGuestRoute;
+use Shopwell\Core\Checkout\OrderReturn\SalesChannel\OrderReturnRoute;
+use Shopwell\Core\Checkout\OrderReturn\Service\OrderReturnSettings;
 use Shopwell\Core\Checkout\Payment\PaymentProcessor;
 use Shopwell\Core\Checkout\Payment\SalesChannel\HandlePaymentMethodRoute;
 use Shopwell\Core\Checkout\Promotion\Cart\PromotionItemBuilder;
@@ -77,6 +80,7 @@ use Shopwell\Core\System\SystemConfig\SystemConfigService;
 use Shopwell\Storefront\Checkout\Cart\SalesChannel\StorefrontCartFacade;
 use Shopwell\Storefront\Controller\AccountLoyaltyController;
 use Shopwell\Storefront\Controller\AccountOrderController;
+use Shopwell\Storefront\Controller\AccountOrderReturnController;
 use Shopwell\Storefront\Controller\AccountProfileController;
 use Shopwell\Storefront\Controller\AccountWalletController;
 use Shopwell\Storefront\Controller\AddressController;
@@ -100,6 +104,7 @@ use Shopwell\Storefront\Controller\MaintenanceController;
 use Shopwell\Storefront\Controller\NavigationController;
 use Shopwell\Storefront\Controller\NewsletterController;
 use Shopwell\Storefront\Controller\OAuth2LoginController;
+use Shopwell\Storefront\Controller\OrderReturnGuestController;
 use Shopwell\Storefront\Controller\ProductController;
 use Shopwell\Storefront\Controller\RegisterController;
 use Shopwell\Storefront\Controller\RobotsController;
@@ -124,6 +129,8 @@ use Shopwell\Storefront\Page\Account\Order\AccountOrderPageLoader;
 use Shopwell\Storefront\Page\Account\Overview\AccountOverviewPageLoader;
 use Shopwell\Storefront\Page\Account\Profile\AccountProfilePageLoader;
 use Shopwell\Storefront\Page\Account\RecoverPassword\AccountRecoverPasswordPageLoader;
+use Shopwell\Storefront\Page\Account\OrderReturn\AccountOrderReturnPageLoader;
+use Shopwell\Storefront\Page\Account\OrderReturn\GuestOrderReturnPageLoader;
 use Shopwell\Storefront\Page\Account\Wallet\AccountWalletPageLoader;
 use Shopwell\Storefront\Page\Address\Detail\AddressDetailPageLoader;
 use Shopwell\Storefront\Page\Address\Listing\AddressListingPageLoader;
@@ -221,6 +228,22 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(WalletTopUpCreateRoute::class),
             service(WalletTopUpStatusRoute::class),
             service(WalletSettings::class),
+        ])
+        ->call('setContainer', [service('service_container')]);
+
+    $services->set(AccountOrderReturnController::class)
+        ->args([
+            service(AccountOrderReturnPageLoader::class),
+            service(OrderReturnRoute::class),
+            service(OrderReturnSettings::class),
+        ])
+        ->call('setContainer', [service('service_container')]);
+
+    $services->set(OrderReturnGuestController::class)
+        ->args([
+            service(GuestOrderReturnPageLoader::class),
+            service(OrderReturnGuestRoute::class),
+            service(OrderReturnSettings::class),
         ])
         ->call('setContainer', [service('service_container')]);
 

@@ -1,0 +1,88 @@
+{% block sw_settings_order_return_index %}
+<sw-page class="sw-settings-order-return-index">
+    {% block sw_settings_order_return_index_search_bar %}
+    <template #search-bar>
+        <sw-search-bar />
+    </template>
+    {% endblock %}
+
+    {% block sw_settings_order_return_index_smart_bar_header %}
+    <template #smart-bar-header>
+        {% block sw_settings_order_return_index_smart_bar_header_title %}
+        <h2>
+            {% block sw_settings_order_return_index_smart_bar_header_title_text %}
+            {{ $t('sw-settings.index.title') }}
+            <mt-icon
+                name="regular-chevron-right-xs"
+                size="12px"
+            />
+            {{ $t('sw-settings-order-return.general.mainMenuItemGeneral') }}
+            {% endblock %}
+        </h2>
+        {% endblock %}
+    </template>
+    {% endblock %}
+
+    {% block sw_settings_order_return_index_smart_bar_actions %}
+    <template #smart-bar-actions>
+        {% block sw_settings_order_return_index_actions_save %}
+        <sw-button-process
+            class="sw-settings-order-return-index__save-action"
+            :is-loading="isLoading"
+            :process-success="isSaveSuccessful"
+            :disabled="isLoading || !canEdit"
+            variant="primary"
+            @update:process-success="onSaveFinish"
+            @click="onSave"
+        >
+            {{ $t('global.default.save') }}
+        </sw-button-process>
+        {% endblock %}
+    </template>
+    {% endblock %}
+
+    {% block sw_settings_order_return_index_content %}
+    <template #content>
+        <sw-card-view>
+            <sw-skeleton v-if="isLoading" />
+
+            {#
+            v-show is used here as the underlying component influences the loading state and v-if would
+            destroy this behaviour: the config is written back through this very reference.
+            #}
+            <sw-system-config
+                v-show="!isLoading"
+                ref="systemConfig"
+                domain="core.orderReturn"
+                @loading-changed="onLoadingChanged"
+            />
+
+            {% block sw_settings_order_return_index_reasons %}
+            <mt-card
+                class="sw-settings-order-return-index__reasons"
+                position-identifier="sw-settings-order-return-index-reasons"
+                :title="$t('sw-settings-order-return.index.cardReasonsTitle')"
+            >
+                {#
+                The reasons are data, not policy, so they are not a config field - a list a shop grows and
+                shrinks is an entity. The card only points at it, the grid lives on its own route.
+                #}
+                <p class="sw-settings-order-return-index__reasons-text">
+                    {{ $t('sw-settings-order-return.index.textReasons') }}
+                </p>
+
+                <mt-button
+                    class="sw-settings-order-return-index__reasons-button"
+                    variant="secondary"
+                    size="default"
+                    @click="onOpenReasons"
+                >
+                    {{ $t('sw-settings-order-return.index.buttonManageReasons') }}
+                </mt-button>
+            </mt-card>
+            {% endblock %}
+        </sw-card-view>
+    </template>
+    {% endblock %}
+</sw-page>
+{% endblock %}

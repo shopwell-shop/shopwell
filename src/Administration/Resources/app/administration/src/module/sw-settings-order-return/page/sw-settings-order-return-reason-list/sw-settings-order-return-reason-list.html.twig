@@ -1,0 +1,138 @@
+{% block sw_settings_order_return_reason_list %}
+<sw-page class="sw-settings-order-return-reason-list">
+    {% block sw_settings_order_return_reason_list_search_bar %}
+    <template #search-bar>
+        <sw-search-bar
+            initial-search-type="order_return_reason"
+            :initial-search="term"
+            :placeholder="$t('sw-settings-order-return.reason.placeholderSearchBar')"
+            @search="onSearch"
+        />
+    </template>
+    {% endblock %}
+
+    {% block sw_settings_order_return_reason_list_smart_bar_header %}
+    <template #smart-bar-header>
+        {% block sw_settings_order_return_reason_list_smart_bar_header_title %}
+        <h2>
+            {% block sw_settings_order_return_reason_list_smart_bar_header_title_text %}
+            {{ $t('sw-settings.index.title') }}
+            <mt-icon
+                name="regular-chevron-right-xs"
+                size="12px"
+            />
+            {{ $t('sw-settings-order-return.general.mainMenuItemGeneral') }}
+            <mt-icon
+                name="regular-chevron-right-xs"
+                size="12px"
+            />
+            {{ $t('sw-settings-order-return.reason.title') }}
+            {% endblock %}
+
+            {% block sw_settings_order_return_reason_list_smart_bar_header_amount %}
+            <span
+                v-if="!isLoading && reasons && total"
+                class="sw-page__smart-bar-amount"
+            >
+                ({{ total }})
+            </span>
+            {% endblock %}
+        </h2>
+        {% endblock %}
+    </template>
+    {% endblock %}
+
+    {% block sw_settings_order_return_reason_list_language_switch %}
+    <template #language-switch>
+        <sw-language-switch @on-change="onRefresh" />
+    </template>
+    {% endblock %}
+
+    {% block sw_settings_order_return_reason_list_actions %}
+    <template #smart-bar-actions>
+        {% block sw_settings_order_return_reason_list_actions_create %}
+        <mt-button
+            v-tooltip.bottom="{
+                message: $t('sw-privileges.tooltip.warning'),
+                disabled: canEdit,
+                showOnDisabledElements: true
+            }"
+            class="sw-settings-order-return-reason-list__create"
+            variant="primary"
+            size="default"
+            :disabled="!canEdit"
+            @click="onCreate"
+        >
+            {{ $t('sw-settings-order-return.reason.buttonCreate') }}
+        </mt-button>
+        {% endblock %}
+    </template>
+    {% endblock %}
+
+    {% block sw_settings_order_return_reason_list_content %}
+    <template #content>
+        <sw-card-view>
+            {% block sw_settings_order_return_reason_list_card %}
+            <mt-card
+                class="sw-settings-order-return-reason-list__card"
+                position-identifier="sw-settings-order-return-reason-list-content"
+            >
+                {% block sw_settings_order_return_reason_list_grid %}
+                <sw-entity-listing
+                    class="sw-settings-order-return-reason-list__grid"
+                    :repository="reasonRepository"
+                    :is-loading="isLoading"
+                    :data-source="reasons"
+                    :columns="columns"
+                    identifier="sw-settings-order-return-reason-list"
+                    :sort-by="sortBy"
+                    :sort-direction="sortDirection"
+                    :full-page="false"
+                    :show-selection="false"
+                    :disable-data-fetching="true"
+                    :allow-inline-edit="false"
+                    :allow-edit="false"
+                    :allow-view="false"
+                    :allow-delete="canEdit"
+                    @column-sort="onSortColumn"
+                    @page-change="onPageChange"
+                    @delete-item-finish="onRefresh"
+                >
+                    {% block sw_settings_order_return_reason_list_grid_column_active %}
+                    <template #column-active="{ item }">
+                        <mt-icon
+                            :name="item.active ? 'regular-checkmark-circle' : 'regular-circle-slash'"
+                            size="var(--scale-size-16)"
+                        />
+                    </template>
+                    {% endblock %}
+
+                    {% block sw_settings_order_return_reason_list_grid_action_edit %}
+                    <template #more-actions="{ item }">
+                        <sw-context-menu-item
+                            v-if="canEdit"
+                            class="sw-settings-order-return-reason-list__action-edit"
+                            @click="onEdit(item)"
+                        >
+                            {{ $t('global.default.edit') }}
+                        </sw-context-menu-item>
+                    </template>
+                    {% endblock %}
+                </sw-entity-listing>
+                {% endblock %}
+            </mt-card>
+            {% endblock %}
+
+            {% block sw_settings_order_return_reason_list_modal %}
+            <sw-settings-order-return-reason-modal
+                v-if="showModal"
+                :reason="reasonToEdit"
+                @saved="onSaved"
+                @modal-close="onCloseModal"
+            />
+            {% endblock %}
+        </sw-card-view>
+    </template>
+    {% endblock %}
+</sw-page>
+{% endblock %}
