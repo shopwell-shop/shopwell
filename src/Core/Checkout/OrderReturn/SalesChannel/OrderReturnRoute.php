@@ -33,8 +33,9 @@ use Symfony\Component\Routing\Attribute\Route;
  *
  * Each endpoint publishes its {@see OrderReturnRouteExtension} first, so a plugin can answer a
  * request the core refuses or change the list it would return. The published contract always carries
- * the request, even for the endpoints that answer from the path and the context alone - a plugin
- * still has to be able to see what was asked for - but those operations are not handed the request.
+ * the request, the context and the customer - a plugin still has to be able to see what was asked
+ * for - but the id of the path is not part of it: the operation is handed the request and the context
+ * only when it needs the request, and the id always by the endpoint itself.
  */
 #[Package('after-sales')]
 #[Route(defaults: [PlatformRequest::ATTRIBUTE_ROUTE_SCOPE => [StoreApiRouteScope::ID]])]
@@ -161,7 +162,7 @@ class OrderReturnRoute
         return $this->extensions->publish(
             name: OrderReturnRouteExtension::NAME,
             extension: new OrderReturnRouteExtension($request, $context, $customer),
-            function: $this->_ship(...),
+            function: fn (Request $request, SalesChannelContext $context, CustomerEntity $customer): OrderReturnRouteResponse => $this->_ship($request, $id, $context, $customer),
         );
     }
 
@@ -179,7 +180,7 @@ class OrderReturnRoute
         return $this->extensions->publish(
             name: OrderReturnRouteExtension::NAME,
             extension: new OrderReturnRouteExtension($request, $context, $customer),
-            function: $this->_message(...),
+            function: fn (Request $request, SalesChannelContext $context, CustomerEntity $customer): OrderReturnRouteResponse => $this->_message($request, $id, $context, $customer),
         );
     }
 

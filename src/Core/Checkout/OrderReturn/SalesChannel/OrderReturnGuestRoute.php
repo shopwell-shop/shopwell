@@ -36,7 +36,8 @@ use Symfony\Component\Routing\Attribute\Route;
  * address answer the same way.
  *
  * Each endpoint publishes its {@see OrderReturnGuestRouteExtension} first, the same way the routes of
- * a logged in customer do.
+ * a logged in customer do. The published contract carries the request and the context; the id of the
+ * path is handed to the operation by the endpoint itself.
  */
 #[Package('after-sales')]
 #[Route(defaults: [PlatformRequest::ATTRIBUTE_ROUTE_SCOPE => [StoreApiRouteScope::ID]])]
@@ -108,7 +109,7 @@ class OrderReturnGuestRoute
         return $this->extensions->publish(
             name: OrderReturnGuestRouteExtension::NAME,
             extension: new OrderReturnGuestRouteExtension($request, $context),
-            function: $this->_detail(...),
+            function: fn (Request $request, SalesChannelContext $context): OrderReturnRouteResponse => $this->_detail($request, $id, $context),
         );
     }
 
@@ -142,7 +143,7 @@ class OrderReturnGuestRoute
         return $this->extensions->publish(
             name: OrderReturnGuestRouteExtension::NAME,
             extension: new OrderReturnGuestRouteExtension($request, $context),
-            function: $this->_cancel(...),
+            function: fn (Request $request, SalesChannelContext $context): OrderReturnRouteResponse => $this->_cancel($request, $id, $context),
         );
     }
 
@@ -159,7 +160,7 @@ class OrderReturnGuestRoute
         return $this->extensions->publish(
             name: OrderReturnGuestRouteExtension::NAME,
             extension: new OrderReturnGuestRouteExtension($request, $context),
-            function: $this->_ship(...),
+            function: fn (Request $request, SalesChannelContext $context): OrderReturnRouteResponse => $this->_ship($request, $id, $context),
         );
     }
 
@@ -176,14 +177,17 @@ class OrderReturnGuestRoute
         return $this->extensions->publish(
             name: OrderReturnGuestRouteExtension::NAME,
             extension: new OrderReturnGuestRouteExtension($request, $context),
-            function: $this->_message(...),
+            function: fn (Request $request, SalesChannelContext $context): OrderReturnRouteResponse => $this->_message($request, $id, $context),
         );
     }
 
     private function _verify(Request $request, SalesChannelContext $context): OrderReturnRouteResponse
     {
         $orderNumber = trim((string) $request->request->get('orderNumber', ''));
-        $email = trim((string) $request->request->get('email', ''));
+        // the address is normalized before it travels in the token: the return is created with the
+        // address of the token and compared to it later, so one spelling has to win - and the service
+        // stores the lower case one
+        $email = mb_strtolower(trim((string) $request->request->get('email', '')));
 
         if ($orderNumber === '' || $email === '') {
             throw OrderReturnException::orderNotFound($orderNumber);
