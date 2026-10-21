@@ -114,8 +114,17 @@ export default defineComponent({
             return [
                 { property: 'returnNumber', label: 'sw-order-return.orderTab.columnReturnNumber', allowResize: true },
                 { property: 'type', label: 'sw-order-return.orderTab.columnType', allowResize: true },
-                { property: 'stateMachineState.technicalName', label: 'sw-order-return.orderTab.columnState', allowResize: true },
-                { property: 'refundAmount', label: 'sw-order-return.orderTab.columnRefundAmount', align: 'right', allowResize: true },
+                {
+                    property: 'stateMachineState.technicalName',
+                    label: 'sw-order-return.orderTab.columnState',
+                    allowResize: true,
+                },
+                {
+                    property: 'refundAmount',
+                    label: 'sw-order-return.orderTab.columnRefundAmount',
+                    align: 'right',
+                    allowResize: true,
+                },
                 { property: 'deadlineAt', label: 'sw-order-return.orderTab.columnDeadline', allowResize: true },
                 { property: 'createdAt', label: 'sw-order-return.orderTab.columnCreatedAt', allowResize: true },
             ];
@@ -238,7 +247,9 @@ export default defineComponent({
                     await this.loadOrderReturns();
 
                     this.createNotificationSuccess({
-                        message: this.$t('sw-order-return.orderTab.messageCreated', { returnNumber: orderReturn?.returnNumber }),
+                        message: this.$t('sw-order-return.orderTab.messageCreated', {
+                            returnNumber: orderReturn?.returnNumber,
+                        }),
                     });
                 })
                 .catch((error: unknown) => {
@@ -321,7 +332,9 @@ export default defineComponent({
                 return this.formatDateOrDash(item.deadlineAt);
             }
 
-            return deadline < Date.now() ? this.$t('sw-order-return.orderTab.textOverdue') : this.dateFilter(item.deadlineAt as string | Date);
+            return deadline < Date.now()
+                ? this.$t('sw-order-return.orderTab.textOverdue')
+                : this.dateFilter(item.deadlineAt as string | Date);
         },
 
         isOverdue(item: OrderReturn): boolean {
