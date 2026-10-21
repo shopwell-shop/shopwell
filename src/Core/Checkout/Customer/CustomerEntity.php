@@ -11,6 +11,7 @@ use Shopwell\Core\Checkout\Loyalty\Entity\CustomerLoyalty\CustomerLoyaltyCollect
 use Shopwell\Core\Checkout\Loyalty\Entity\CustomerPointTransaction\CustomerPointTransactionCollection;
 use Shopwell\Core\Checkout\Loyalty\Entity\MembershipOrder\MembershipOrderCollection;
 use Shopwell\Core\Checkout\Order\Aggregate\OrderCustomer\OrderCustomerCollection;
+use Shopwell\Core\Checkout\OrderReturn\Entity\OrderReturnCollection;
 use Shopwell\Core\Checkout\Payment\PaymentMethodEntity;
 use Shopwell\Core\Checkout\Promotion\PromotionCollection;
 use Shopwell\Core\Checkout\Wallet\Entity\CustomerWallet\CustomerWalletCollection;
@@ -177,6 +178,8 @@ class CustomerEntity extends Entity implements \Stringable
     protected ?CustomerWalletTopUpCollection $customerWalletTopUps = null;
 
     protected ?PaymentMandateCollection $paymentMandates = null;
+
+    protected ?OrderReturnCollection $orderReturns = null;
 
     protected ?PaymentSubscriptionCollection $paymentSubscriptions = null;
 
@@ -916,6 +919,16 @@ class CustomerEntity extends Entity implements \Stringable
     public function setCustomerWallets(CustomerWalletCollection $customerWallets): void
     {
         $this->customerWallets = $customerWallets;
+    }
+
+    public function getOrderReturns(): ?OrderReturnCollection
+    {
+        return $this->orderReturns;
+    }
+
+    public function setOrderReturns(OrderReturnCollection $orderReturns): void
+    {
+        $this->orderReturns = $orderReturns;
     }
 
     public function getCustomerWalletTopUps(): ?CustomerWalletTopUpCollection

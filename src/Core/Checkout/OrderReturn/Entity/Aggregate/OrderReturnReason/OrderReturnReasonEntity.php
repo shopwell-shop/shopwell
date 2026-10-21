@@ -2,9 +2,12 @@
 
 namespace Shopwell\Core\Checkout\OrderReturn\Entity\Aggregate\OrderReturnReason;
 
+use Shopwell\Core\Checkout\OrderReturn\Entity\OrderReturnEntity;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\Entity;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\Field;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\FieldType;
+use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\OnDelete;
+use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\OneToMany;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\PrimaryKey;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\SearchRanking;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\Translations;
@@ -60,4 +63,13 @@ class OrderReturnReasonEntity extends EntityStruct
      */
     #[Translations]
     public ?array $translations = null;
+
+    /**
+     * The returns that picked this reason. A deleted reason only takes the label away, the returns
+     * stay and lose their reference - exactly like the foreign key of the table does it.
+     *
+     * @var array<string, OrderReturnEntity>|null
+     */
+    #[OneToMany(entity: 'order_return', ref: 'reason_id', onDelete: OnDelete::SET_NULL)]
+    public ?array $returns = null;
 }

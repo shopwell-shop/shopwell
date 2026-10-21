@@ -4,6 +4,7 @@ namespace Shopwell\Core\System\User;
 
 use Shopwell\Core\Checkout\Customer\CustomerCollection;
 use Shopwell\Core\Checkout\Order\OrderCollection;
+use Shopwell\Core\Checkout\OrderReturn\Entity\OrderReturnCollection;
 use Shopwell\Core\Content\ImportExport\Aggregate\ImportExportLog\ImportExportLogCollection;
 use Shopwell\Core\Content\Media\MediaCollection;
 use Shopwell\Core\Content\Media\MediaEntity;
@@ -84,6 +85,8 @@ class UserEntity extends Entity
     protected ?CustomerCollection $createdCustomers = null;
 
     protected ?CustomerCollection $updatedCustomers = null;
+
+    protected ?OrderReturnCollection $orderReturns = null;
 
     protected string $timeZone;
 
@@ -357,6 +360,16 @@ class UserEntity extends Entity
     public function setUpdatedCustomers(CustomerCollection $updatedCustomers): void
     {
         $this->updatedCustomers = $updatedCustomers;
+    }
+
+    public function getOrderReturns(): ?OrderReturnCollection
+    {
+        return $this->orderReturns;
+    }
+
+    public function setOrderReturns(OrderReturnCollection $orderReturns): void
+    {
+        $this->orderReturns = $orderReturns;
     }
 
     public function getLastUpdatedPasswordAt(): ?\DateTimeInterface

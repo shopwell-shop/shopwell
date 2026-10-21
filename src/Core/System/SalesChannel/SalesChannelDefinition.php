@@ -198,6 +198,7 @@ class SalesChannelDefinition extends EntityDefinition
             new OneToManyAssociationField('customerPointTransactions', CustomerPointTransactionDefinition::class, 'sales_channel_id'),
             new OneToManyAssociationField('paymentPlans', 'payment_plan', 'sales_channel_id'),
             new OneToManyAssociationField('paymentSubscriptions', 'payment_subscription', 'sales_channel_id'),
+            (new OneToManyAssociationField('orderReturns', 'order_return', 'sales_channel_id'))->addFlags(new CascadeDelete()),
         ]);
 
         return $fields;

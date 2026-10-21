@@ -207,13 +207,18 @@ class OrderReturnEntity extends EntityStruct
     #[ManyToOne(entity: 'state_machine_state', onDelete: OnDelete::RESTRICT, api: ['admin-api' => true, 'store-api' => true], column: 'state_id')]
     public ?StateMachineStateEntity $stateMachineState = null;
 
-    #[ManyToOne(entity: 'order', onDelete: OnDelete::CASCADE, api: false)]
+    /**
+     * The order the return belongs to. Like on the line item the cascade is declared on the reverse
+     * side, the dal forbids a delete flag on a many to one association - the children are deleted by
+     * the parent, so deleting the order still takes its returns with it.
+     */
+    #[ManyToOne(entity: 'order', api: false)]
     public ?OrderEntity $order = null;
 
-    #[ManyToOne(entity: 'customer', onDelete: OnDelete::CASCADE, api: false)]
+    #[ManyToOne(entity: 'customer', api: false)]
     public ?CustomerEntity $customer = null;
 
-    #[ManyToOne(entity: 'sales_channel', onDelete: OnDelete::CASCADE, api: false)]
+    #[ManyToOne(entity: 'sales_channel', api: false)]
     public ?SalesChannelEntity $salesChannel = null;
 
     #[ManyToOne(entity: 'order_return_reason', onDelete: OnDelete::SET_NULL, api: ['admin-api' => true, 'store-api' => false])]

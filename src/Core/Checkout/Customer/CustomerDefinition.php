@@ -192,6 +192,7 @@ class CustomerDefinition extends EntityDefinition
             new OneToManyAssociationField('customerWalletTopUps', CustomerWalletTopUpDefinition::class, 'customer_id'),
             new OneToManyAssociationField('paymentMandates', 'payment_mandate', 'customer_id'),
             new OneToManyAssociationField('paymentSubscriptions', 'payment_subscription', 'customer_id'),
+            (new OneToManyAssociationField('orderReturns', 'order_return', 'customer_id'))->addFlags(new CascadeDelete()),
         ]);
     }
 }
