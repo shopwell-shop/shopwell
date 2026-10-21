@@ -237,7 +237,12 @@ export default defineComponent({
         typeFilterOptions() {
             return [
                 { value: null, label: this.$t('sw-customer.detailPoints.filterTypeAll') },
-                ...['award', 'redeem', 'adjust', 'expire'].map((type) => {
+                ...[
+                    'award',
+                    'redeem',
+                    'adjust',
+                    'expire',
+                ].map((type) => {
                     return {
                         value: type,
                         label: this.getPointsTransactionTypeLabel(type),
@@ -295,7 +300,12 @@ export default defineComponent({
             this.isLoading = true;
 
             try {
-                await Promise.all([this.loadLoyaltySummary(), this.loadTiers(), this.loadOrders(), this.loadTransactions()]);
+                await Promise.all([
+                    this.loadLoyaltySummary(),
+                    this.loadTiers(),
+                    this.loadOrders(),
+                    this.loadTransactions(),
+                ]);
             } catch {
                 this.createNotificationError({
                     message: this.$t('global.notification.notificationLoadingDataErrorMessage'),

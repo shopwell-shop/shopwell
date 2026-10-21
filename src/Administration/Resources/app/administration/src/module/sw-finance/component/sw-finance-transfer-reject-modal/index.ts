@@ -101,7 +101,7 @@ export default defineComponent({
                     const detail = error.response?.data?.errors?.[0]?.detail;
 
                     this.createNotificationError({
-                        message: detail || (this.$t('sw-finance.transfer.reject.messageFailed')),
+                        message: detail || this.$t('sw-finance.transfer.reject.messageFailed'),
                     });
                 })
                 .finally(() => {

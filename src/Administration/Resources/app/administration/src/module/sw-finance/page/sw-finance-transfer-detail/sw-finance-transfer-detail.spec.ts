@@ -111,9 +111,7 @@ async function createWrapper(
 }> {
     const get = jest.fn(() => Promise.resolve(entity));
 
-    const stateSearch = jest.fn(() =>
-        Promise.resolve(collection<EntityCollection<'state_machine_state'>>(transferStates)),
-    );
+    const stateSearch = jest.fn(() => Promise.resolve(collection<EntityCollection<'state_machine_state'>>(transferStates)));
 
     const wrapper = mount(await wrapTestComponent('sw-finance-transfer-detail', { sync: true }), {
         props: {
@@ -216,9 +214,7 @@ describe('module/sw-finance/page/sw-finance-transfer-detail', () => {
 
         expect(wrapper.vm.formatDateOrDash(null)).toBe('–');
         expect(wrapper.vm.formatDateOrDash(undefined)).toBe('–');
-        expect(wrapper.vm.formatDateOrDash('2026-01-02T03:04:05.000Z')).toBe(
-            dateFilter('2026-01-02T03:04:05.000Z'),
-        );
+        expect(wrapper.vm.formatDateOrDash('2026-01-02T03:04:05.000Z')).toBe(dateFilter('2026-01-02T03:04:05.000Z'));
     });
 
     it('should report the failure of the channel as it came', async () => {

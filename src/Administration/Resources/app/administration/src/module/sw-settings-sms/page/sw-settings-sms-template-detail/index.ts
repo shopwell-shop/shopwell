@@ -176,9 +176,7 @@ export default Shopwell.Component.wrapComponentConfig({
          * The providers of the banner, named the way the rest of the page names them.
          */
         missingProviderLabel(): string {
-            return this.providersMissingMapping
-                .map((provider) => this.providerLabelOf(provider.technicalName))
-                .join(', ');
+            return this.providersMissingMapping.map((provider) => this.providerLabelOf(provider.technicalName)).join(', ');
         },
 
         title(): string {

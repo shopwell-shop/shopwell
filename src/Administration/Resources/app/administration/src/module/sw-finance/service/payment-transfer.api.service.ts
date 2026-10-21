@@ -422,11 +422,7 @@ export default class PaymentTransferApiService {
      */
     public cancelTransfer(id: string, reason: string): Promise<PaymentTransferCancelResult> {
         return this.httpClient
-            .post<CancelResponse>(
-                `/_action/payment/transfers/${id}/cancel`,
-                { reason },
-                { headers: this.getAuthHeaders() },
-            )
+            .post<CancelResponse>(`/_action/payment/transfers/${id}/cancel`, { reason }, { headers: this.getAuthHeaders() })
             .then((response): PaymentTransferCancelResult => {
                 return {
                     outcome: response.data.outcome || OUTCOME.CANCELED,

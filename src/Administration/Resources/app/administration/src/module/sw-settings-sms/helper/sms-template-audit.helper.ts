@@ -102,10 +102,7 @@ export function providerOf(
  *
  * @private
  */
-export function auditOfProvider(
-    providers: SmsGatewayProvider[],
-    technicalName: string | null | undefined,
-): SmsGatewayAudit {
+export function auditOfProvider(providers: SmsGatewayProvider[], technicalName: string | null | undefined): SmsGatewayAudit {
     return providerOf(providers, technicalName)?.audit ?? NO_AUDIT;
 }
 

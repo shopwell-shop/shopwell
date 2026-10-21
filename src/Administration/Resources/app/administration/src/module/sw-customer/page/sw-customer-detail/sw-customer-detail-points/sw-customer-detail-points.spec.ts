@@ -116,9 +116,7 @@ const orderRepository = {
 function createLoyaltyApiService() {
     return {
         getCustomerSummary: jest.fn<Promise<LoyaltySummary>, []>(() => Promise.resolve(loyaltySummary)),
-        getCustomerTransactions: jest.fn<Promise<TransactionPage>, []>(() =>
-            Promise.resolve({ total: 2, transactions }),
-        ),
+        getCustomerTransactions: jest.fn<Promise<TransactionPage>, []>(() => Promise.resolve({ total: 2, transactions })),
         adjustPoints: jest.fn<Promise<void>, []>(() => Promise.resolve()),
         grantMembership: jest.fn<Promise<{ startsAt: string; expiresAt: string }>, []>(() =>
             Promise.resolve({ startsAt: '2024-01-01', expiresAt: '2025-01-01' }),
@@ -267,9 +265,7 @@ describe('src/module/sw-customer/page/sw-customer-detail/sw-customer-detail-poin
 
         expect(wrapper.vm.resolveTypeSnippetKey('top_up')).toBe('topUp');
         expect(wrapper.vm.resolveTypeSnippetKey('award')).toBe('award');
-        expect(wrapper.vm.getOrderStateLabel('activated')).toBe(
-            'sw-customer.detailPoints.membershipOrderState.activated',
-        );
+        expect(wrapper.vm.getOrderStateLabel('activated')).toBe('sw-customer.detailPoints.membershipOrderState.activated');
     });
 
     it('should not be able to adjust points without permission', async () => {
@@ -283,9 +279,7 @@ describe('src/module/sw-customer/page/sw-customer-detail/sw-customer-detail-poin
         const { wrapper } = await createWrapper(['loyalty.editor']);
 
         expect(wrapper.vm.allowAdjustPoints).toBe(true);
-        expect(
-            wrapper.find('.sw-customer-detail-points__adjust-points-action').attributes('disabled'),
-        ).toBeFalsy();
+        expect(wrapper.find('.sw-customer-detail-points__adjust-points-action').attributes('disabled')).toBeFalsy();
     });
 
     it('should book an adjustment and reload the balances', async () => {

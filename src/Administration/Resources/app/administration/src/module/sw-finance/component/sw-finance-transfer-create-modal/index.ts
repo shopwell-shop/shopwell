@@ -236,7 +236,8 @@ export default defineComponent({
                 return declared;
             }
 
-            const channelCurrencies = this.channelOptions.find((option) => option.technicalName === this.channel)?.currencies ?? [];
+            const channelCurrencies =
+                this.channelOptions.find((option) => option.technicalName === this.channel)?.currencies ?? [];
 
             if (channelCurrencies.length > 0) {
                 return channelCurrencies;
@@ -450,7 +451,7 @@ export default defineComponent({
                 return technicalName;
             }
 
-            return this.$te(label) ? (this.$t(label)) : technicalName;
+            return this.$te(label) ? this.$t(label) : technicalName;
         },
 
         providerOptionLabel(option: ProviderOption): string {
@@ -466,7 +467,7 @@ export default defineComponent({
         identityTypeLabel(identityType: string): string {
             const key = `sw-finance.transfer.create.identityType.${identityType}`;
 
-            return this.$te(key) ? (this.$t(key)) : identityType;
+            return this.$te(key) ? this.$t(key) : identityType;
         },
 
         /**
@@ -556,7 +557,7 @@ export default defineComponent({
                     const detail = error.response?.data?.errors?.[0]?.detail;
 
                     this.createNotificationError({
-                        message: detail || (this.$t('sw-finance.transfer.create.messageFailed')),
+                        message: detail || this.$t('sw-finance.transfer.create.messageFailed'),
                     });
                 })
                 .finally(() => {

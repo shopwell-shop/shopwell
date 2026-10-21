@@ -24,7 +24,6 @@ export const PAYMENT_REFUND_STATE_MACHINE = 'payment_refund.state';
  */
 export const PAYMENT_TRANSFER_STATE_MACHINE = 'payment_transfer.status';
 
-
 /**
  * The badge variants of `mt-badge`.
  */

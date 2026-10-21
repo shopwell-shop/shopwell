@@ -62,18 +62,33 @@ describe('module/sw-finance/service/payment-transfer.api.service - yuanToMinorUn
         expect(yuanToMinorUnits(input)).toBeNull();
     });
 
-    it.each([[''], ['   '], [null], [undefined], ['-1'], ['-0.01'], ['abc'], ['1.'], ['.5'], ['1,5'], ['1e3']])(
-        'should refuse %p',
-        (input) => {
-            expect(yuanToMinorUnits(input)).toBeNull();
-        },
-    );
+    it.each([
+        [''],
+        ['   '],
+        [null],
+        [undefined],
+        ['-1'],
+        ['-0.01'],
+        ['abc'],
+        ['1.'],
+        ['.5'],
+        ['1,5'],
+        ['1e3'],
+    ])('should refuse %p', (input) => {
+        expect(yuanToMinorUnits(input)).toBeNull();
+    });
 
     /**
      * Zero is not an amount. The function answers the one question the form has - "is this payable?" - so
      * that no caller has to repeat the comparison and drift from it.
      */
-    it.each([['0'], ['0.00'], ['0.0'], [0], ['00']])('should refuse the empty amount %p', (input) => {
+    it.each([
+        ['0'],
+        ['0.00'],
+        ['0.0'],
+        [0],
+        ['00'],
+    ])('should refuse the empty amount %p', (input) => {
         expect(yuanToMinorUnits(input)).toBeNull();
     });
 

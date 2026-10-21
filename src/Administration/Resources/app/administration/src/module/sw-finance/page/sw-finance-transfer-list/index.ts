@@ -340,9 +340,7 @@ export default defineComponent({
         },
 
         transferStateLabel(stateId: string): string {
-            const state = [...(this.states ?? [])].find((entry) => entry.id === stateId) as
-                | StateMachineState
-                | undefined;
+            const state = [...(this.states ?? [])].find((entry) => entry.id === stateId) as StateMachineState | undefined;
 
             return this.stateLabelOf(state?.technicalName, findPaymentStateLabel(this.states ?? [], stateId) as string);
         },
@@ -365,7 +363,7 @@ export default defineComponent({
             }
 
             const key = providerLabelKey(provider);
-            const translated = this.$te(key) ? (this.$t(key)) : null;
+            const translated = this.$te(key) ? this.$t(key) : null;
 
             return translated || provider;
         },

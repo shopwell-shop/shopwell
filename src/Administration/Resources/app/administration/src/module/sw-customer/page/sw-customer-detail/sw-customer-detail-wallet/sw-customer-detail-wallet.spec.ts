@@ -246,12 +246,7 @@ describe('src/module/sw-customer/page/sw-customer-detail/sw-customer-detail-wall
         wrapper.vm.walletForm.comment = 'paid in the shop';
         await wrapper.vm.onSaveWallet();
 
-        expect(loyaltyApiService.topUpWallet).toHaveBeenCalledWith(
-            'customer-1',
-            'currency-1',
-            50,
-            'paid in the shop',
-        );
+        expect(loyaltyApiService.topUpWallet).toHaveBeenCalledWith('customer-1', 'currency-1', 50, 'paid in the shop');
     });
 
     it('should adjust the wallet balance', async () => {

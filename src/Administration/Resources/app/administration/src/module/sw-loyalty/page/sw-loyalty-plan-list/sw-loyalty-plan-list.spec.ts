@@ -41,10 +41,7 @@ const searchRankingServiceMock = {
     isValidTerm: jest.fn(),
 };
 
-async function createWrapper(
-    privileges: string[] = [],
-    plans: unknown[] = [plan],
-): Promise<TypedWrapper<PlanListVm>> {
+async function createWrapper(privileges: string[] = [], plans: unknown[] = [plan]): Promise<TypedWrapper<PlanListVm>> {
     const wrapper = mount(
         await wrapTestComponent('sw-loyalty-plan-list', {
             sync: true,
@@ -76,7 +73,13 @@ async function createWrapper(
                     },
                     'sw-context-menu-item': true,
                     'sw-entity-listing': {
-                        props: ['items', 'dataSource', 'allowEdit', 'allowDelete', 'detailRoute'],
+                        props: [
+                            'items',
+                            'dataSource',
+                            'allowEdit',
+                            'allowDelete',
+                            'detailRoute',
+                        ],
                         template: `
                     <div>
                         <template v-for="item in (dataSource || items)">

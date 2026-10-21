@@ -52,10 +52,7 @@ const membershipPlanRepository = {
 
 const routerPushMock = jest.fn(() => Promise.resolve());
 
-async function createWrapper(
-    privileges: string[] = [],
-    planId: string | null = '1',
-): Promise<TypedWrapper<PlanDetailVm>> {
+async function createWrapper(privileges: string[] = [], planId: string | null = '1'): Promise<TypedWrapper<PlanDetailVm>> {
     const wrapper = mount(
         await wrapTestComponent('sw-loyalty-plan-detail', {
             sync: true,
