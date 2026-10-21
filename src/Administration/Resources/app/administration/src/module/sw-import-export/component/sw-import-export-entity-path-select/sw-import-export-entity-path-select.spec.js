@@ -1095,6 +1095,8 @@ describe('module/sw-import-export/components/sw-import-export-entity-path-select
             'transactions.orderVersionId',
             'transactions.paymentMethod',
             'transactions.paymentMethodId',
+            // the reverse side of the payment domain, declared on the transaction
+            'transactions.paymentOrders',
             'transactions.primaryOrder',
             'transactions.stateId',
             'transactions.stateMachineState',
