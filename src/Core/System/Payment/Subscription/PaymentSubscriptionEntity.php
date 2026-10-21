@@ -9,6 +9,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\FieldType;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\ForeignKey;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\ManyToOne;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\OnDelete;
+use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\OneToMany;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\PrimaryKey;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\Required;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\State;
@@ -174,4 +175,12 @@ class PaymentSubscriptionEntity extends EntityStruct
      */
     #[ManyToOne(entity: 'state_machine_state', onDelete: OnDelete::RESTRICT, api: ['admin-api' => true, 'store-api' => false], column: 'status_id')]
     public ?StateMachineStateEntity $statusMachineState = null;
+
+    /**
+     * The billing cycles of the subscription, one row per attempt to collect the fee.
+     *
+     * @var array<string, PaymentSubscriptionCycleEntity>|null
+     */
+    #[OneToMany(entity: 'payment_subscription_cycle', ref: 'subscription_id', onDelete: OnDelete::RESTRICT, api: false)]
+    public ?array $cycles = null;
 }
