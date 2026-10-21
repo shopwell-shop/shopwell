@@ -248,7 +248,7 @@ class Migration1792700040AddTransferChannelParamsTest extends TestCase
      * explicit `NULL` attribute of the column as the string "NULL". Both mean the same here - the
      * writer spells the value out and the ddl must not invent one.
      */
-    private function assertNoDefault(string|null $default): void
+    private function assertNoDefault(?string $default): void
     {
         static::assertTrue(
             $default === null || $default === 'NULL',
