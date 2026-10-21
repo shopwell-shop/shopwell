@@ -235,7 +235,7 @@ class OrderReturnGuestControllerTest extends TestCase
 
     private function settings(bool $allowGuest = true): OrderReturnSettings
     {
-        $settings = $this->createMock(OrderReturnSettings::class);
+        $settings = static::createStub(OrderReturnSettings::class);
         $settings->method('isEnabled')->willReturn(true);
         $settings->method('allowGuest')->willReturn($allowGuest);
 

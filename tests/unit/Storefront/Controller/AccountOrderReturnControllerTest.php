@@ -216,7 +216,7 @@ class AccountOrderReturnControllerTest extends TestCase
 
     private function settings(bool $enabled = true): OrderReturnSettings
     {
-        $settings = $this->createMock(OrderReturnSettings::class);
+        $settings = static::createStub(OrderReturnSettings::class);
         $settings->method('isEnabled')->willReturn($enabled);
 
         return $settings;

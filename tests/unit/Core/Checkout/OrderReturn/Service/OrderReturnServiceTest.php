@@ -126,6 +126,44 @@ class OrderReturnServiceTest extends TestCase
         ], $this->context, null);
     }
 
+    public function testAMerchantOpensAReturnForAGuestWhileTheStorefrontOffersNone(): void
+    {
+        $repository = $this->returnRepository();
+
+        $this->service(
+            $this->order([$this->productLineItem('line-item', 10.0)]),
+            settings: $this->settings(allowGuest: false),
+            repository: $repository
+        )->create([
+            'orderId' => 'order-id',
+            'type' => OrderReturnTypes::REFUND_ONLY,
+            'positions' => ['line-item' => 1],
+            'guestEmail' => 'customer@example.com',
+        ], $this->context, null, true);
+
+        $payload = $repository->creates[0][0];
+
+        // the switch offers guest returns to the storefront; an operator acting on a phone call is not
+        // a guest, so the same creation runs while the switch is off
+        static::assertNull($payload['customerId']);
+        static::assertSame('customer@example.com', $payload['guestEmail']);
+    }
+
+    public function testTheGuestSwitchStillKeepsTheStorefrontOut(): void
+    {
+        $this->expectExceptionObject(OrderReturnException::disabled());
+
+        $this->service(
+            $this->order([$this->productLineItem('line-item', 10.0)]),
+            settings: $this->settings(allowGuest: false)
+        )->create([
+            'orderId' => 'order-id',
+            'type' => OrderReturnTypes::REFUND_ONLY,
+            'positions' => ['line-item' => 1],
+            'guestEmail' => 'customer@example.com',
+        ], $this->context, null);
+    }
+
     public function testAnUnknownTypeIsRejected(): void
     {
         $this->expectExceptionObject(OrderReturnException::invalidType('repair'));
@@ -276,11 +314,11 @@ class OrderReturnServiceTest extends TestCase
         return new StaticEntityRepository([new OrderReturnCollection([$orderReturn])]);
     }
 
-    private function settings(bool $enabled = true, int $windowDays = 30): OrderReturnSettings
+    private function settings(bool $enabled = true, int $windowDays = 30, bool $allowGuest = true): OrderReturnSettings
     {
-        $settings = $this->createMock(OrderReturnSettings::class);
+        $settings = static::createStub(OrderReturnSettings::class);
         $settings->method('isEnabled')->willReturn($enabled);
-        $settings->method('allowGuest')->willReturn(true);
+        $settings->method('allowGuest')->willReturn($allowGuest);
         $settings->method('windowDays')->willReturn($windowDays);
         $settings->method('windowStartsAtDelivery')->willReturn(false);
         $settings->method('approvalDeadlineHours')->willReturn(48);
