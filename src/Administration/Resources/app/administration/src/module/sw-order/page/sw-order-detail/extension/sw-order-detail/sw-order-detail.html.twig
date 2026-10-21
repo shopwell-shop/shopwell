@@ -1,0 +1,14 @@
+{% block sw_order_detail_content_tabs_extension %}
+{% parent %}
+
+{% block sw_order_detail_content_tab_returns %}
+<sw-tabs-item
+    v-if="acl.can('order_return.viewer')"
+    class="sw-order-detail__tab-returns"
+    :route="returnTabRoute"
+    :title="$t('sw-order.detail.tabReturns')"
+>
+    {{ $t('sw-order.detail.tabReturns') }}
+</sw-tabs-item>
+{% endblock %}
+{% endblock %}
