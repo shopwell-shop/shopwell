@@ -5,6 +5,10 @@
 import { searchRankingPoint } from 'src/app/service/search-ranking.service';
 import defaultSearchConfiguration from './default-search-configuration';
 
+type SearchRankingPoint = {
+    HIGH_SEARCH_RANKING: number;
+};
+
 describe('src/module/sw-loyalty/default-search-configuration', () => {
     it('is not searchable as a whole', () => {
         expect(defaultSearchConfiguration._searchable).toBe(false);
@@ -12,6 +16,6 @@ describe('src/module/sw-loyalty/default-search-configuration', () => {
 
     it('searches the name of a tier with the high ranking', () => {
         expect(defaultSearchConfiguration.name._searchable).toBe(true);
-        expect(defaultSearchConfiguration.name._score).toBe(searchRankingPoint.HIGH_SEARCH_RANKING);
+        expect(defaultSearchConfiguration.name._score).toBe((searchRankingPoint as SearchRankingPoint).HIGH_SEARCH_RANKING);
     });
 });
