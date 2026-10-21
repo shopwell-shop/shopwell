@@ -61,7 +61,7 @@ class Migration1792700040AddTransferChannelParamsTest extends TestCase
 
         static::assertSame($this->jsonColumnType(), $column['COLUMN_TYPE']);
         static::assertSame('YES', $column['IS_NULLABLE']);
-        static::assertNoDefault($column['COLUMN_DEFAULT']);
+        $this->assertNoDefault($column['COLUMN_DEFAULT']);
         static::assertSame($this->positionOf('currency') + 1, (int) $column['ORDINAL_POSITION']);
     }
 
