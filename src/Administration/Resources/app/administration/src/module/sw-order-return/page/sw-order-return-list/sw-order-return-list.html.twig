@@ -40,8 +40,9 @@
             {% block sw_order_return_list_empty_state %}
             {#
             Two empty states: "nothing exists yet" reports a shop without returns, "nothing matches" only
-            the filter. There is no create button - a return is opened by the customer, not by the
-            operator, and an operator who wants to refund a single item does that on the order.
+            the filter. There is no create button on this page on purpose: a return is opened from the
+            order it belongs to - the order detail has the tab that opens one - because a return needs an
+            order as its context, and a queue is the wrong place to pick that order.
             #}
             <mt-empty-state
                 v-if="!isLoading && !total && !hasActiveSearchOrFilter"

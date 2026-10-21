@@ -32,6 +32,10 @@ Shopwell.Service('privileges').addPrivilegeMappingEntry({
         },
         editor: {
             privileges: [
+                // opening a return for an order writes the case and its line items: a role that may
+                // decide about returns can also book one, because that is the same job at the counter
+                'order_return:create',
+                'order_return_line_item:create',
                 'order_return:update',
                 'order_return_message:create',
                 'order_return_reason:create',

@@ -23,7 +23,7 @@
             "columnDeadline": "处理期限",
             "columnCreatedAt": "提交时间",
             "messageEmpty": "还没有售后单",
-            "messageEmptySubline": "顾客提交退货或退款申请后，会出现在这里。",
+            "messageEmptySubline": "顾客申请退货退款，或你从订单详情代客建单后，会出现在这里。",
             "messageNoResult": "没有符合条件的售后单",
             "messageNoResultSubline": "请调整搜索词或筛选条件。",
             "filters": {
@@ -77,6 +77,30 @@
                 "agent": "客服",
                 "system": "系统"
             }
+        },
+        "orderTab": {
+            "cardTitle": "该订单的售后",
+            "buttonCreate": "新建售后单",
+            "messageEmpty": "该订单还没有售后单",
+            "messageEmptySubline": "顾客申请退货退款，或你在这里代客建单后，会出现在这里。",
+            "messageNoReturnablePositions": "该订单没有可退商品，或剩余数量已被进行中的售后单占用。",
+            "columnReturnNumber": "售后单号",
+            "columnType": "售后类型",
+            "columnState": "状态",
+            "columnRefundAmount": "退款金额",
+            "columnDeadline": "处理期限",
+            "columnCreatedAt": "提交时间",
+            "textOverdue": "已逾期",
+            "textReturnable": "最多可退 {{quantity}} 件",
+            "modalTitle": "新建售后单",
+            "hintAmountComputed": "退款金额由系统按所选商品与数量计算，无需填写。",
+            "headlinePositions": "选择商品与数量",
+            "labelType": "售后类型",
+            "labelReason": "售后原因",
+            "labelNote": "顾客说明",
+            "placeholderNote": "顾客在电话里提到的信息…",
+            "buttonConfirmCreate": "创建售后单",
+            "messageCreated": "已创建售后单 {{returnNumber}}。"
         },
         "decline": {
             "modalTitle": "拒绝售后",

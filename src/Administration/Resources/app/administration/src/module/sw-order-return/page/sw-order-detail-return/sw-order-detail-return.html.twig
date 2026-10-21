@@ -1,0 +1,234 @@
+{% block sw_order_detail_return %}
+<div class="sw-order-detail-return">
+    {% block sw_order_detail_return_toolbar %}
+    <div class="sw-order-detail-return__toolbar">
+        {% block sw_order_detail_return_toolbar_title %}
+        <div class="sw-order-detail-return__title-group">
+            <h3 class="sw-order-detail-return__title">
+                {{ $t('sw-order-return.orderTab.cardTitle') }}
+            </h3>
+
+            <span
+                v-if="!isLoading"
+                class="sw-order-detail-return__amount"
+            >
+                ({{ orderReturns ? orderReturns.total : 0 }})
+            </span>
+        </div>
+        {% endblock %}
+
+        {% block sw_order_detail_return_toolbar_create %}
+        <mt-button
+            v-if="canEdit"
+            class="sw-order-detail-return__button-create"
+            variant="primary"
+            size="small"
+            @click="onOpenCreateModal"
+        >
+            {{ $t('sw-order-return.orderTab.buttonCreate') }}
+        </mt-button>
+        {% endblock %}
+    </div>
+    {% endblock %}
+
+    {% block sw_order_detail_return_empty_state %}
+    <mt-empty-state
+        v-if="!isLoading && (!orderReturns || orderReturns.total === 0)"
+        class="sw-order-detail-return__empty-state"
+        centered
+        icon="regular-undo"
+        :headline="$t('sw-order-return.orderTab.messageEmpty')"
+        :description="$t('sw-order-return.orderTab.messageEmptySubline')"
+    />
+    {% endblock %}
+
+    {% block sw_order_detail_return_grid %}
+    <sw-data-grid
+        v-else
+        class="sw-order-detail-return__grid"
+        identifier="sw-order-detail-return"
+        :data-source="orderReturns"
+        :columns="columns"
+        :show-selection="false"
+        :show-actions="false"
+        :show-settings="false"
+        :allow-inline-edit="false"
+        :allow-column-edit="false"
+        :is-loading="isLoading"
+    >
+        {% block sw_order_detail_return_grid_column_return_number %}
+        <template #column-returnNumber="{ item }">
+            <router-link :to="{ name: 'sw.order.return.detail', params: { id: item.id } }">
+                {{ item.returnNumber }}
+            </router-link>
+        </template>
+        {% endblock %}
+
+        {% block sw_order_detail_return_grid_column_type %}
+        <template #column-type="{ item }">
+            {{ typeLabel(item.type) }}
+        </template>
+        {% endblock %}
+
+        {% block sw_order_detail_return_grid_column_state %}
+        <template #column-stateMachineState.technicalName="{ item }">
+            <mt-badge :variant="stateVariant(item)">
+                {{ stateLabel(item) }}
+            </mt-badge>
+        </template>
+        {% endblock %}
+
+        {% block sw_order_detail_return_grid_column_refund_amount %}
+        <template #column-refundAmount="{ item }">
+            {{ formatAmount(item.refundAmount, item.currency) }}
+        </template>
+        {% endblock %}
+
+        {% block sw_order_detail_return_grid_column_deadline %}
+        <template #column-deadlineAt="{ item }">
+            <span :class="{ 'sw-order-detail-return__overdue': isOverdue(item) }">
+                {{ deadlineLabel(item) }}
+            </span>
+        </template>
+        {% endblock %}
+
+        {% block sw_order_detail_return_grid_column_created_at %}
+        <template #column-createdAt="{ item }">
+            {{ formatDateOrDash(item.createdAt) }}
+        </template>
+        {% endblock %}
+    </sw-data-grid>
+    {% endblock %}
+
+    {% block sw_order_detail_return_create_modal %}
+    <sw-modal
+        v-if="showCreateModal"
+        class="sw-order-detail-return__create-modal"
+        :title="$t('sw-order-return.orderTab.modalTitle')"
+        variant="default"
+        @modal-close="onCloseCreateModal"
+    >
+        {% block sw_order_detail_return_create_modal_loading %}
+        <sw-skeleton v-if="isLoadingForm" />
+        {% endblock %}
+
+        {% block sw_order_detail_return_create_modal_form %}
+        <template v-else>
+            {% block sw_order_detail_return_create_modal_hint %}
+            <mt-banner
+                class="sw-order-detail-return__create-hint"
+                variant="info"
+            >
+                {{ $t('sw-order-return.orderTab.hintAmountComputed') }}
+            </mt-banner>
+            {% endblock %}
+
+            {% block sw_order_detail_return_create_modal_positions %}
+            <div class="sw-order-detail-return__create-section">
+                <h4 class="sw-order-detail-return__create-headline">
+                    {{ $t('sw-order-return.orderTab.headlinePositions') }}
+                </h4>
+
+                {% block sw_order_detail_return_create_modal_no_positions %}
+                <mt-banner
+                    v-if="draftPositions.length === 0"
+                    variant="attention"
+                >
+                    {{ $t('sw-order-return.orderTab.messageNoReturnablePositions') }}
+                </mt-banner>
+                {% endblock %}
+
+                {% block sw_order_detail_return_create_modal_position_rows %}
+                <div
+                    v-for="position in draftPositions"
+                    :key="position.lineItemId"
+                    class="sw-order-detail-return__create-position"
+                >
+                    <mt-checkbox
+                        v-model:checked="position.selected"
+                        class="sw-order-detail-return__create-position-checkbox"
+                        :label="position.label"
+                    />
+
+                    <span class="sw-order-detail-return__create-position-price">
+                        {{ formatUnitPrice(position.unitPrice) }}
+                    </span>
+
+                    <span class="sw-order-detail-return__create-position-returnable">
+                        {{ $t('sw-order-return.orderTab.textReturnable', { quantity: position.returnable }) }}
+                    </span>
+
+                    <mt-number-field
+                        v-model="position.draftQuantity"
+                        class="sw-order-detail-return__create-position-quantity"
+                        number-type="int"
+                        size="small"
+                        :min="1"
+                        :max="position.returnable"
+                        :disabled="!position.selected"
+                        number-align-end
+                    />
+                </div>
+                {% endblock %}
+            </div>
+            {% endblock %}
+
+            {% block sw_order_detail_return_create_modal_type %}
+            <mt-select
+                v-model="draftType"
+                class="sw-order-detail-return__create-type"
+                :label="$t('sw-order-return.orderTab.labelType')"
+                :options="typeOptions"
+                hide-clearable-button
+            />
+            {% endblock %}
+
+            {% block sw_order_detail_return_create_modal_reason %}
+            <mt-select
+                v-model="draftReasonId"
+                class="sw-order-detail-return__create-reason"
+                :label="$t('sw-order-return.orderTab.labelReason')"
+                :options="reasonOptions"
+                hide-clearable-button
+            />
+            {% endblock %}
+
+            {% block sw_order_detail_return_create_modal_note %}
+            <mt-textarea
+                v-model="draftNote"
+                class="sw-order-detail-return__create-note"
+                :label="$t('sw-order-return.orderTab.labelNote')"
+                :placeholder="$t('sw-order-return.orderTab.placeholderNote')"
+            />
+            {% endblock %}
+        </template>
+        {% endblock %}
+
+        <template #modal-footer>
+            {% block sw_order_detail_return_create_modal_footer_cancel %}
+            <mt-button
+                class="sw-order-detail-return__button-cancel"
+                size="default"
+                variant="secondary"
+                @click="onCloseCreateModal"
+            >
+                {{ $t('global.default.cancel') }}
+            </mt-button>
+            {% endblock %}
+
+            {% block sw_order_detail_return_create_modal_footer_confirm %}
+            <mt-button
+                class="sw-order-detail-return__button-confirm"
+                size="default"
+                variant="primary"
+                :disabled="!canSubmit"
+                @click="onSubmit"
+            >
+                {{ $t('sw-order-return.orderTab.buttonConfirmCreate') }}
+            </mt-button>
+            {% endblock %}
+        </template>
+    </sw-modal>
+    {% endblock %}
+</div>
+{% endblock %}

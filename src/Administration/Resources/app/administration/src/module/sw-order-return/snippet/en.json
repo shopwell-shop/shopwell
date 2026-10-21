@@ -23,7 +23,7 @@
             "columnDeadline": "Deadline",
             "columnCreatedAt": "Submitted at",
             "messageEmpty": "No returns yet",
-            "messageEmptySubline": "A return shows up here as soon as a customer asks for one.",
+            "messageEmptySubline": "A return appears here as soon as the customer asks for one, or you open one from the order.",
             "messageNoResult": "No returns match the filter",
             "messageNoResultSubline": "Adjust the search term or the filters.",
             "filters": {
@@ -77,6 +77,30 @@
                 "agent": "Agent",
                 "system": "System"
             }
+        },
+        "orderTab": {
+            "cardTitle": "Returns of this order",
+            "buttonCreate": "New return",
+            "messageEmpty": "No return for this order yet",
+            "messageEmptySubline": "A return shows up here as soon as the customer asks for one, or you open one for them.",
+            "messageNoReturnablePositions": "Nothing on this order can be returned, or the remaining quantity is claimed by a running return.",
+            "columnReturnNumber": "Return",
+            "columnType": "Type",
+            "columnState": "State",
+            "columnRefundAmount": "Refund amount",
+            "columnDeadline": "Deadline",
+            "columnCreatedAt": "Requested at",
+            "textOverdue": "overdue",
+            "textReturnable": "up to {{quantity}}",
+            "modalTitle": "New return",
+            "hintAmountComputed": "The refund amount is calculated from the selected items and quantities - there is nothing to type.",
+            "headlinePositions": "Items and quantities",
+            "labelType": "Type",
+            "labelReason": "Reason",
+            "labelNote": "Note of the customer",
+            "placeholderNote": "What the customer said on the phone...",
+            "buttonConfirmCreate": "Open return",
+            "messageCreated": "Return {{returnNumber}} was opened."
         },
         "decline": {
             "modalTitle": "Decline the return",
