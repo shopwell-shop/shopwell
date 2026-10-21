@@ -9,6 +9,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\FieldType;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\ForeignKey;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\ManyToOne;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\OnDelete;
+use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\OneToMany;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\PrimaryKey;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\Required;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\State;
@@ -167,4 +168,12 @@ class PaymentMandateEntity extends EntityStruct
      */
     #[ManyToOne(entity: 'state_machine_state', onDelete: OnDelete::RESTRICT, api: ['admin-api' => true, 'store-api' => false], column: 'status_id')]
     public ?StateMachineStateEntity $statusMachineState = null;
+
+    /**
+     * The subscriptions that bill through this mandate.
+     *
+     * @var array<string, PaymentSubscriptionEntity>|null
+     */
+    #[OneToMany(entity: 'payment_subscription', ref: 'mandate_id', onDelete: OnDelete::RESTRICT, api: false)]
+    public ?array $subscriptions = null;
 }

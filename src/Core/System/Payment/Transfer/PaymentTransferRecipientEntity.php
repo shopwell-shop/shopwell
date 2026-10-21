@@ -8,6 +8,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\FieldType;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\ForeignKey;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\ManyToOne;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\OnDelete;
+use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\OneToMany;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\PrimaryKey;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\Required;
 use Shopwell\Core\Framework\DataAbstractionLayer\Entity as EntityStruct;
@@ -138,4 +139,12 @@ class PaymentTransferRecipientEntity extends EntityStruct
 
     #[ManyToOne(entity: 'payment_app', onDelete: OnDelete::RESTRICT, api: ['admin-api' => true, 'store-api' => false])]
     public ?PaymentAppEntity $paymentApp = null;
+
+    /**
+     * The transfers that were paid out to this recipient.
+     *
+     * @var array<string, PaymentTransferEntity>|null
+     */
+    #[OneToMany(entity: 'payment_transfer', ref: 'recipient_id', onDelete: OnDelete::RESTRICT, api: ['admin-api' => true, 'store-api' => false])]
+    public ?array $transfers = null;
 }

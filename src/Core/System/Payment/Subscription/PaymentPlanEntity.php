@@ -8,6 +8,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\FieldType;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\ForeignKey;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\ManyToOne;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\OnDelete;
+use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\OneToMany;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\PrimaryKey;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\Required;
 use Shopwell\Core\Framework\DataAbstractionLayer\Entity as EntityStruct;
@@ -136,4 +137,20 @@ class PaymentPlanEntity extends EntityStruct
      */
     #[ManyToOne(entity: 'currency', onDelete: OnDelete::RESTRICT, api: false)]
     public ?CurrencyEntity $currency = null;
+
+    /**
+     * The mandates signed for this plan.
+     *
+     * @var array<string, PaymentMandateEntity>|null
+     */
+    #[OneToMany(entity: 'payment_mandate', ref: 'plan_id', onDelete: OnDelete::RESTRICT, api: false)]
+    public ?array $mandates = null;
+
+    /**
+     * The subscriptions running on this plan.
+     *
+     * @var array<string, PaymentSubscriptionEntity>|null
+     */
+    #[OneToMany(entity: 'payment_subscription', ref: 'plan_id', onDelete: OnDelete::RESTRICT, api: false)]
+    public ?array $subscriptions = null;
 }

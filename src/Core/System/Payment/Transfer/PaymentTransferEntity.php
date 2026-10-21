@@ -8,12 +8,14 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\FieldType;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\ForeignKey;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\ManyToOne;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\OnDelete;
+use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\OneToMany;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\PrimaryKey;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\Required;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\State;
 use Shopwell\Core\Framework\DataAbstractionLayer\Entity as EntityStruct;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
+use Shopwell\Core\System\Payment\Notification\PaymentNotificationEntity;
 use Shopwell\Core\System\StateMachine\Aggregation\StateMachineState\StateMachineStateEntity;
 
 /**
@@ -191,4 +193,12 @@ class PaymentTransferEntity extends EntityStruct
      */
     #[ManyToOne(entity: 'state_machine_state', onDelete: OnDelete::RESTRICT, api: ['admin-api' => true, 'store-api' => false], column: 'status_id')]
     public ?StateMachineStateEntity $statusMachineState = null;
+
+    /**
+     * The notifications the app sent for this transfer, they only exist together with it.
+     *
+     * @var array<string, PaymentNotificationEntity>|null
+     */
+    #[OneToMany(entity: 'payment_notification', ref: 'payment_transfer_id', onDelete: OnDelete::CASCADE, api: ['admin-api' => true, 'store-api' => false])]
+    public ?array $notifications = null;
 }

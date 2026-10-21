@@ -2,6 +2,7 @@
 
 namespace Shopwell\Core\System\Payment\App;
 
+use Shopwell\Core\Checkout\Payment\Aggregate\PaymentMethodGatewayChannel\PaymentMethodGatewayChannelEntity;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\Entity;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\Field;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\FieldType;
@@ -16,6 +17,8 @@ use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppChannel\PaymentAppChannelEntity;
 use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppProvider\PaymentAppProviderEntity;
 use Shopwell\Core\System\Payment\Order\PaymentOrderEntity;
+use Shopwell\Core\System\Payment\Transfer\PaymentTransferEntity;
+use Shopwell\Core\System\Payment\Transfer\PaymentTransferRecipientEntity;
 use Shopwell\Core\System\Payment\Webhook\PaymentWebhookDeliveryEntity;
 
 /**
@@ -158,4 +161,29 @@ class PaymentAppEntity extends EntityStruct
      */
     #[OneToMany(entity: 'payment_webhook_delivery', ref: 'payment_app_id', onDelete: OnDelete::CASCADE, api: ['admin-api' => true, 'store-api' => false])]
     public ?array $webhookDeliveries = null;
+
+    /**
+     * The payees the app may transfer to.
+     *
+     * @var array<string, PaymentTransferRecipientEntity>|null
+     */
+    #[OneToMany(entity: 'payment_transfer_recipient', ref: 'payment_app_id', onDelete: OnDelete::RESTRICT, api: ['admin-api' => true, 'store-api' => false])]
+    public ?array $transferRecipients = null;
+
+    /**
+     * The payouts the app executed. Like the payment orders they are bookkeeping and are never
+     * deleted implicitly, therefore the deletion of the app is restricted as long as they exist.
+     *
+     * @var array<string, PaymentTransferEntity>|null
+     */
+    #[OneToMany(entity: 'payment_transfer', ref: 'payment_app_id', onDelete: OnDelete::RESTRICT, api: ['admin-api' => true, 'store-api' => false])]
+    public ?array $transfers = null;
+
+    /**
+     * The gateway channels the app enabled for the payment methods of the shop.
+     *
+     * @var array<string, PaymentMethodGatewayChannelEntity>|null
+     */
+    #[OneToMany(entity: 'payment_method_gateway_channel', ref: 'payment_app_id', onDelete: OnDelete::CASCADE, api: ['admin-api' => true, 'store-api' => false])]
+    public ?array $gatewayChannels = null;
 }

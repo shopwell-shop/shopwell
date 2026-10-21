@@ -8,7 +8,6 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\Field;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\FieldType;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\ForeignKey;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\ManyToOne;
-use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\OnDelete;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\PrimaryKey;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\Required;
 use Shopwell\Core\Framework\DataAbstractionLayer\Entity as EntityStruct;
@@ -77,13 +76,13 @@ class PaymentMethodGatewayChannelEntity extends EntityStruct
      * the reverse side: a dangling binding would make the next method with the same id collect
      * through a channel nobody configured.
      */
-    #[ManyToOne(entity: 'payment_method', onDelete: OnDelete::CASCADE, api: ['admin-api' => true, 'store-api' => false])]
+    #[ManyToOne(entity: 'payment_method', api: ['admin-api' => true, 'store-api' => false])]
     public ?PaymentMethodEntity $paymentMethod = null;
 
     /**
      * The app that is charged. Deleted with its app: an app that is gone cannot collect anymore, and a
      * binding that points at it would be a payment method that fails on selection.
      */
-    #[ManyToOne(entity: 'payment_app', onDelete: OnDelete::CASCADE, api: ['admin-api' => true, 'store-api' => false])]
+    #[ManyToOne(entity: 'payment_app', api: ['admin-api' => true, 'store-api' => false])]
     public ?PaymentAppEntity $paymentApp = null;
 }
