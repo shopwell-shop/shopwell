@@ -464,7 +464,7 @@
                 ],
                 "summary": "Delete an app of the payment gateway",
                 "description": "Deletes the app together with its interface and channel authorizations. The app can no longer authenticate against the gateway. The deletion is refused while payment orders of the app exist, because they are the bookkeeping of the platform.",
-                "operationId": "deletePaymentApp",
+                "operationId": "removePaymentApp",
                 "parameters": [
                     {
                         "name": "id",
