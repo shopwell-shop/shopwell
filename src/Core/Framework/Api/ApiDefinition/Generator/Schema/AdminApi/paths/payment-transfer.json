@@ -94,7 +94,7 @@
                 ],
                 "summary": "Book a payout",
                 "description": "Books a payout in the state created. No channel is contacted and no money moves - handing the payout to the channel is the submit call. The out number is the idempotency key: posting it twice answers the payout that is already booked with replayed set to true, while a number that is taken by a payout with another recipient, amount or currency is a conflict.",
-                "operationId": "createPaymentTransfer",
+                "operationId": "requestPaymentTransfer",
                 "requestBody": {
                     "required": true,
                     "content": {

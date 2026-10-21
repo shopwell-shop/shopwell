@@ -60,8 +60,10 @@
                                                         "type": "string"
                                                     },
                                                     "icon": {
-                                                        "type": "string",
-                                                        "nullable": true
+                                                        "type": [
+                                                            "string",
+                                                            "null"
+                                                        ]
                                                     },
                                                     "linked": {
                                                         "type": "boolean",
@@ -128,8 +130,10 @@
                         "type": "string"
                     },
                     "icon": {
-                        "type": "string",
-                        "nullable": true
+                        "type": [
+                            "string",
+                            "null"
+                        ]
                     },
                     "startUrl": {
                         "type": "string",
