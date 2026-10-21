@@ -3,6 +3,7 @@
 namespace Shopwell\Core\Checkout\OrderReturn\SalesChannel;
 
 use Shopwell\Core\Checkout\Customer\CustomerEntity;
+use Shopwell\Core\Checkout\Order\OrderCollection;
 use Shopwell\Core\Checkout\Order\OrderEntity;
 use Shopwell\Core\Checkout\OrderReturn\Entity\OrderReturnCollection;
 use Shopwell\Core\Checkout\OrderReturn\Entity\OrderReturnEntity;
@@ -29,6 +30,11 @@ use Symfony\Component\Routing\Attribute\Route;
  * customer before it is used, so one customer can not read or change the return of another by
  * guessing an id. The rules themselves live in {@see OrderReturnService} - this route is the
  * transport and nothing else.
+ *
+ * Each endpoint publishes its {@see OrderReturnRouteExtension} first, so a plugin can answer a
+ * request the core refuses or change the list it would return. The published contract always carries
+ * the request, even for the endpoints that answer from the path and the context alone - a plugin
+ * still has to be able to see what was asked for - but those operations are not handed the request.
  */
 #[Package('after-sales')]
 #[Route(defaults: [PlatformRequest::ATTRIBUTE_ROUTE_SCOPE => [StoreApiRouteScope::ID]])]
@@ -40,6 +46,7 @@ class OrderReturnRoute
      * @internal
      *
      * @param EntityRepository<OrderReturnCollection> $orderReturnRepository
+     * @param EntityRepository<OrderCollection> $orderRepository
      */
     public function __construct(
         private readonly OrderReturnService $orderReturnService,
@@ -56,6 +63,9 @@ class OrderReturnRoute
         defaults: [PlatformRequest::ATTRIBUTE_LOGIN_REQUIRED => true],
         methods: [Request::METHOD_GET]
     )]
+    /**
+     * @throws OrderReturnException
+     */
     public function load(Request $request, SalesChannelContext $context, CustomerEntity $customer): OrderReturnRouteResponse
     {
         return $this->extensions->publish(
@@ -71,15 +81,16 @@ class OrderReturnRoute
         defaults: [PlatformRequest::ATTRIBUTE_LOGIN_REQUIRED => true],
         methods: [Request::METHOD_GET]
     )]
-    public function positions(string $orderId, SalesChannelContext $context, CustomerEntity $customer): OrderReturnRouteResponse
+    /**
+     * @throws OrderReturnException
+     */
+    public function positions(Request $request, string $orderId, SalesChannelContext $context, CustomerEntity $customer): OrderReturnRouteResponse
     {
-        $order = $this->ownedOrder($orderId, $customer, $context);
-
-        return new OrderReturnRouteResponse(new ArrayStruct([
-            'orderNumber' => $order->getOrderNumber(),
-            'positions' => $this->orderReturnService->returnablePositions($order, $context->getContext()),
-            'reasons' => $this->orderReturnService->activeReasons($context->getContext()),
-        ]));
+        return $this->extensions->publish(
+            name: OrderReturnRouteExtension::NAME,
+            extension: new OrderReturnRouteExtension($request, $context, $customer),
+            function: fn (Request $request, SalesChannelContext $context, CustomerEntity $customer): OrderReturnRouteResponse => $this->_positions($orderId, $context, $customer),
+        );
     }
 
     #[Route(
@@ -88,13 +99,16 @@ class OrderReturnRoute
         defaults: [PlatformRequest::ATTRIBUTE_LOGIN_REQUIRED => true],
         methods: [Request::METHOD_GET]
     )]
-    public function detail(string $id, SalesChannelContext $context, CustomerEntity $customer): OrderReturnRouteResponse
+    /**
+     * @throws OrderReturnException
+     */
+    public function detail(Request $request, string $id, SalesChannelContext $context, CustomerEntity $customer): OrderReturnRouteResponse
     {
-        $orderReturn = $this->ownedReturn($id, $customer, $context);
-
-        return new OrderReturnRouteResponse(new ArrayStruct([
-            'orderReturn' => $this->presenter->present($orderReturn),
-        ]));
+        return $this->extensions->publish(
+            name: OrderReturnRouteExtension::NAME,
+            extension: new OrderReturnRouteExtension($request, $context, $customer),
+            function: fn (Request $request, SalesChannelContext $context, CustomerEntity $customer): OrderReturnRouteResponse => $this->_detail($id, $context, $customer),
+        );
     }
 
     #[Route(
@@ -103,6 +117,9 @@ class OrderReturnRoute
         defaults: [PlatformRequest::ATTRIBUTE_LOGIN_REQUIRED => true],
         methods: [Request::METHOD_POST]
     )]
+    /**
+     * @throws OrderReturnException
+     */
     public function create(Request $request, SalesChannelContext $context, CustomerEntity $customer): OrderReturnRouteResponse
     {
         return $this->extensions->publish(
@@ -118,15 +135,16 @@ class OrderReturnRoute
         defaults: [PlatformRequest::ATTRIBUTE_LOGIN_REQUIRED => true],
         methods: [Request::METHOD_POST]
     )]
-    public function cancel(string $id, SalesChannelContext $context, CustomerEntity $customer): OrderReturnRouteResponse
+    /**
+     * @throws OrderReturnException
+     */
+    public function cancel(Request $request, string $id, SalesChannelContext $context, CustomerEntity $customer): OrderReturnRouteResponse
     {
-        $this->ownedReturn($id, $customer, $context);
-
-        $orderReturn = $this->orderReturnService->cancel($id, $context->getContext());
-
-        return new OrderReturnRouteResponse(new ArrayStruct([
-            'orderReturn' => $this->presenter->present($orderReturn),
-        ]));
+        return $this->extensions->publish(
+            name: OrderReturnRouteExtension::NAME,
+            extension: new OrderReturnRouteExtension($request, $context, $customer),
+            function: fn (Request $request, SalesChannelContext $context, CustomerEntity $customer): OrderReturnRouteResponse => $this->_cancel($id, $context, $customer),
+        );
     }
 
     #[Route(
@@ -135,28 +153,16 @@ class OrderReturnRoute
         defaults: [PlatformRequest::ATTRIBUTE_LOGIN_REQUIRED => true],
         methods: [Request::METHOD_POST]
     )]
-    public function ship(string $id, Request $request, SalesChannelContext $context, CustomerEntity $customer): OrderReturnRouteResponse
+    /**
+     * @throws OrderReturnException
+     */
+    public function ship(Request $request, string $id, SalesChannelContext $context, CustomerEntity $customer): OrderReturnRouteResponse
     {
-        $this->ownedReturn($id, $customer, $context);
-
-        $trackingCode = (string) $request->request->get('trackingCode', '');
-
-        if (trim($trackingCode) === '') {
-            throw OrderReturnException::missingTrackingCode();
-        }
-
-        $carrier = $request->request->get('trackingCarrier');
-
-        $orderReturn = $this->orderReturnService->ship(
-            $id,
-            \is_string($carrier) ? $carrier : null,
-            trim($trackingCode),
-            $context->getContext()
+        return $this->extensions->publish(
+            name: OrderReturnRouteExtension::NAME,
+            extension: new OrderReturnRouteExtension($request, $context, $customer),
+            function: $this->_ship(...),
         );
-
-        return new OrderReturnRouteResponse(new ArrayStruct([
-            'orderReturn' => $this->presenter->present($orderReturn),
-        ]));
     }
 
     #[Route(
@@ -165,32 +171,16 @@ class OrderReturnRoute
         defaults: [PlatformRequest::ATTRIBUTE_LOGIN_REQUIRED => true],
         methods: [Request::METHOD_POST]
     )]
-    public function message(string $id, Request $request, SalesChannelContext $context, CustomerEntity $customer): OrderReturnRouteResponse
+    /**
+     * @throws OrderReturnException
+     */
+    public function message(Request $request, string $id, SalesChannelContext $context, CustomerEntity $customer): OrderReturnRouteResponse
     {
-        $this->ownedReturn($id, $customer, $context);
-
-        $content = trim((string) $request->request->get('content', ''));
-
-        if ($content === '') {
-            throw OrderReturnException::emptyMessage();
-        }
-
-        $attachments = $request->request->all('attachments');
-
-        $this->orderReturnService->addMessage(
-            $id,
-            $content,
-            OrderReturnEntity::AUTHOR_CUSTOMER,
-            $customer->getId(),
-            $attachments === [] ? null : array_values(array_filter($attachments, 'is_string')),
-            $context->getContext()
+        return $this->extensions->publish(
+            name: OrderReturnRouteExtension::NAME,
+            extension: new OrderReturnRouteExtension($request, $context, $customer),
+            function: $this->_message(...),
         );
-
-        $orderReturn = $this->orderReturnService->get($id, $context->getContext());
-
-        return new OrderReturnRouteResponse(new ArrayStruct([
-            'orderReturn' => $this->presenter->present($orderReturn),
-        ]));
     }
 
     private function _load(Request $request, SalesChannelContext $context, CustomerEntity $customer): OrderReturnRouteResponse
@@ -206,12 +196,32 @@ class OrderReturnRoute
         $criteria->addAssociation('order.currency');
         $criteria->addAssociation('messages');
         $criteria->addSorting(new FieldSorting('createdAt', FieldSorting::DESCENDING));
-        $criteria->setLimit(self::LIST_LIMIT);
+        $criteria->setLimit(min($request->query->getInt('limit', self::LIST_LIMIT), self::LIST_LIMIT));
 
         $orderReturns = $this->orderReturnRepository->search($criteria, $context->getContext())->getEntities();
 
         return new OrderReturnRouteResponse(new ArrayStruct([
             'orderReturns' => $this->presenter->presentList($orderReturns),
+        ]));
+    }
+
+    private function _positions(string $orderId, SalesChannelContext $context, CustomerEntity $customer): OrderReturnRouteResponse
+    {
+        $order = $this->ownedOrder($orderId, $customer, $context);
+
+        return new OrderReturnRouteResponse(new ArrayStruct([
+            'orderNumber' => $order->getOrderNumber(),
+            'positions' => $this->orderReturnService->returnablePositions($order, $context->getContext()),
+            'reasons' => $this->orderReturnService->activeReasons($context->getContext()),
+        ]));
+    }
+
+    private function _detail(string $id, SalesChannelContext $context, CustomerEntity $customer): OrderReturnRouteResponse
+    {
+        $orderReturn = $this->ownedReturn($id, $customer, $context);
+
+        return new OrderReturnRouteResponse(new ArrayStruct([
+            'orderReturn' => $this->presenter->present($orderReturn),
         ]));
     }
 
@@ -222,9 +232,9 @@ class OrderReturnRoute
                 'orderId' => (string) $request->request->get('orderId', ''),
                 'type' => (string) $request->request->get('type', ''),
                 'positions' => $this->positionsOf($request),
-                'reasonId' => $request->request->get('reasonId'),
-                'reasonText' => $request->request->get('reasonText'),
-                'customerNote' => $request->request->get('customerNote'),
+                'reasonId' => $this->stringOrNull($request, 'reasonId'),
+                'reasonText' => $this->stringOrNull($request, 'reasonText'),
+                'customerNote' => $this->stringOrNull($request, 'customerNote'),
                 'evidence' => $this->stringList($request->request->all('evidence')),
             ],
             $context->getContext(),
@@ -234,6 +244,65 @@ class OrderReturnRoute
         return new OrderReturnRouteResponse(new ArrayStruct([
             'orderReturn' => $this->presenter->present($orderReturn),
         ]), Response::HTTP_CREATED);
+    }
+
+    private function _cancel(string $id, SalesChannelContext $context, CustomerEntity $customer): OrderReturnRouteResponse
+    {
+        $this->ownedReturn($id, $customer, $context);
+
+        $orderReturn = $this->orderReturnService->cancel($id, $context->getContext());
+
+        return new OrderReturnRouteResponse(new ArrayStruct([
+            'orderReturn' => $this->presenter->present($orderReturn),
+        ]));
+    }
+
+    private function _ship(Request $request, string $id, SalesChannelContext $context, CustomerEntity $customer): OrderReturnRouteResponse
+    {
+        $this->ownedReturn($id, $customer, $context);
+
+        $trackingCode = trim((string) $request->request->get('trackingCode', ''));
+
+        if ($trackingCode === '') {
+            throw OrderReturnException::missingTrackingCode();
+        }
+
+        $orderReturn = $this->orderReturnService->ship(
+            $id,
+            $this->stringOrNull($request, 'trackingCarrier'),
+            $trackingCode,
+            $context->getContext()
+        );
+
+        return new OrderReturnRouteResponse(new ArrayStruct([
+            'orderReturn' => $this->presenter->present($orderReturn),
+        ]));
+    }
+
+    private function _message(Request $request, string $id, SalesChannelContext $context, CustomerEntity $customer): OrderReturnRouteResponse
+    {
+        $this->ownedReturn($id, $customer, $context);
+
+        $content = trim((string) $request->request->get('content', ''));
+
+        if ($content === '') {
+            throw OrderReturnException::emptyMessage();
+        }
+
+        $this->orderReturnService->addMessage(
+            $id,
+            $content,
+            OrderReturnEntity::AUTHOR_CUSTOMER,
+            $customer->getId(),
+            $this->stringList($request->request->all('attachments')),
+            $context->getContext()
+        );
+
+        $orderReturn = $this->orderReturnService->get($id, $context->getContext());
+
+        return new OrderReturnRouteResponse(new ArrayStruct([
+            'orderReturn' => $this->presenter->present($orderReturn),
+        ]));
     }
 
     /**
@@ -258,6 +327,13 @@ class OrderReturnRoute
         }
 
         return $positions;
+    }
+
+    private function stringOrNull(Request $request, string $key): ?string
+    {
+        $value = $request->request->get($key);
+
+        return \is_string($value) && trim($value) !== '' ? trim($value) : null;
     }
 
     /**

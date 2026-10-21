@@ -39,6 +39,7 @@ use Shopwell\Core\Checkout\Order\SalesChannel\OrderService;
 use Shopwell\Core\Checkout\Order\SalesChannel\SetPaymentOrderRoute;
 use Shopwell\Core\Checkout\OrderReturn\SalesChannel\OrderReturnGuestRoute;
 use Shopwell\Core\Checkout\OrderReturn\SalesChannel\OrderReturnRoute;
+use Psr\Clock\ClockInterface;
 use Shopwell\Core\Checkout\OrderReturn\Service\OrderReturnSettings;
 use Shopwell\Core\Checkout\Payment\PaymentProcessor;
 use Shopwell\Core\Checkout\Payment\SalesChannel\HandlePaymentMethodRoute;
@@ -244,6 +245,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(GuestOrderReturnPageLoader::class),
             service(OrderReturnGuestRoute::class),
             service(OrderReturnSettings::class),
+            service(ClockInterface::class),
         ])
         ->call('setContainer', [service('service_container')]);
 

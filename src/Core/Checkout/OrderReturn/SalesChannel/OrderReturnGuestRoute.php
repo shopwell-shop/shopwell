@@ -2,6 +2,7 @@
 
 namespace Shopwell\Core\Checkout\OrderReturn\SalesChannel;
 
+use Shopwell\Core\Checkout\Order\OrderCollection;
 use Shopwell\Core\Checkout\Order\OrderEntity;
 use Shopwell\Core\Checkout\OrderReturn\Entity\OrderReturnCollection;
 use Shopwell\Core\Checkout\OrderReturn\Entity\OrderReturnEntity;
@@ -13,6 +14,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Routing\StoreApiRouteScope;
 use Shopwell\Core\Framework\Struct\ArrayStruct;
@@ -32,6 +34,9 @@ use Symfony\Component\Routing\Attribute\Route;
  *
  * Nothing here tells an anonymous visitor whether an order exists: a wrong order number and a wrong
  * address answer the same way.
+ *
+ * Each endpoint publishes its {@see OrderReturnGuestRouteExtension} first, the same way the routes of
+ * a logged in customer do.
  */
 #[Package('after-sales')]
 #[Route(defaults: [PlatformRequest::ATTRIBUTE_ROUTE_SCOPE => [StoreApiRouteScope::ID]])]
@@ -43,6 +48,7 @@ class OrderReturnGuestRoute
      * @internal
      *
      * @param EntityRepository<OrderReturnCollection> $orderReturnRepository
+     * @param EntityRepository<OrderCollection> $orderRepository
      */
     public function __construct(
         private readonly OrderReturnService $orderReturnService,
@@ -51,6 +57,7 @@ class OrderReturnGuestRoute
         private readonly EntityRepository $orderReturnRepository,
         private readonly EntityRepository $orderRepository,
         private readonly OrderReturnPresenter $presenter,
+        private readonly ExtensionDispatcher $extensions,
     ) {
     }
 
@@ -59,7 +66,121 @@ class OrderReturnGuestRoute
         name: 'store-api.order-return.guest.verify',
         methods: [Request::METHOD_POST]
     )]
+    /**
+     * @throws OrderReturnException
+     */
     public function verify(Request $request, SalesChannelContext $context): OrderReturnRouteResponse
+    {
+        return $this->extensions->publish(
+            name: OrderReturnGuestRouteExtension::NAME,
+            extension: new OrderReturnGuestRouteExtension($request, $context),
+            function: $this->_verify(...),
+        );
+    }
+
+    #[Route(
+        path: '/store-api/order-return/guest',
+        name: 'store-api.order-return.guest.load',
+        methods: [Request::METHOD_GET]
+    )]
+    /**
+     * @throws OrderReturnException
+     */
+    public function load(Request $request, SalesChannelContext $context): OrderReturnRouteResponse
+    {
+        return $this->extensions->publish(
+            name: OrderReturnGuestRouteExtension::NAME,
+            extension: new OrderReturnGuestRouteExtension($request, $context),
+            function: $this->_load(...),
+        );
+    }
+
+    #[Route(
+        path: '/store-api/order-return/guest/{id}',
+        name: 'store-api.order-return.guest.detail',
+        methods: [Request::METHOD_GET]
+    )]
+    /**
+     * @throws OrderReturnException
+     */
+    public function detail(Request $request, string $id, SalesChannelContext $context): OrderReturnRouteResponse
+    {
+        return $this->extensions->publish(
+            name: OrderReturnGuestRouteExtension::NAME,
+            extension: new OrderReturnGuestRouteExtension($request, $context),
+            function: $this->_detail(...),
+        );
+    }
+
+    #[Route(
+        path: '/store-api/order-return/guest',
+        name: 'store-api.order-return.guest.create',
+        methods: [Request::METHOD_POST]
+    )]
+    /**
+     * @throws OrderReturnException
+     */
+    public function create(Request $request, SalesChannelContext $context): OrderReturnRouteResponse
+    {
+        return $this->extensions->publish(
+            name: OrderReturnGuestRouteExtension::NAME,
+            extension: new OrderReturnGuestRouteExtension($request, $context),
+            function: $this->_create(...),
+        );
+    }
+
+    #[Route(
+        path: '/store-api/order-return/guest/{id}/cancel',
+        name: 'store-api.order-return.guest.cancel',
+        methods: [Request::METHOD_POST]
+    )]
+    /**
+     * @throws OrderReturnException
+     */
+    public function cancel(Request $request, string $id, SalesChannelContext $context): OrderReturnRouteResponse
+    {
+        return $this->extensions->publish(
+            name: OrderReturnGuestRouteExtension::NAME,
+            extension: new OrderReturnGuestRouteExtension($request, $context),
+            function: $this->_cancel(...),
+        );
+    }
+
+    #[Route(
+        path: '/store-api/order-return/guest/{id}/ship',
+        name: 'store-api.order-return.guest.ship',
+        methods: [Request::METHOD_POST]
+    )]
+    /**
+     * @throws OrderReturnException
+     */
+    public function ship(Request $request, string $id, SalesChannelContext $context): OrderReturnRouteResponse
+    {
+        return $this->extensions->publish(
+            name: OrderReturnGuestRouteExtension::NAME,
+            extension: new OrderReturnGuestRouteExtension($request, $context),
+            function: $this->_ship(...),
+        );
+    }
+
+    #[Route(
+        path: '/store-api/order-return/guest/{id}/message',
+        name: 'store-api.order-return.guest.message',
+        methods: [Request::METHOD_POST]
+    )]
+    /**
+     * @throws OrderReturnException
+     */
+    public function message(Request $request, string $id, SalesChannelContext $context): OrderReturnRouteResponse
+    {
+        return $this->extensions->publish(
+            name: OrderReturnGuestRouteExtension::NAME,
+            extension: new OrderReturnGuestRouteExtension($request, $context),
+            function: $this->_message(...),
+        );
+    }
+
+    private function _verify(Request $request, SalesChannelContext $context): OrderReturnRouteResponse
     {
         $orderNumber = trim((string) $request->request->get('orderNumber', ''));
         $email = trim((string) $request->request->get('email', ''));
@@ -84,12 +205,7 @@ class OrderReturnGuestRoute
         ]));
     }
 
-    #[Route(
-        path: '/store-api/order-return/guest',
-        name: 'store-api.order-return.guest.load',
-        methods: [Request::METHOD_GET]
-    )]
-    public function load(Request $request, SalesChannelContext $context): OrderReturnRouteResponse
+    private function _load(Request $request, SalesChannelContext $context): OrderReturnRouteResponse
     {
         $guest = $this->resolveToken($request);
 
@@ -119,32 +235,16 @@ class OrderReturnGuestRoute
         ]));
     }
 
-    #[Route(
-        path: '/store-api/order-return/guest/{id}',
-        name: 'store-api.order-return.guest.detail',
-        methods: [Request::METHOD_GET]
-    )]
-    public function detail(string $id, Request $request, SalesChannelContext $context): OrderReturnRouteResponse
+    private function _detail(Request $request, string $id, SalesChannelContext $context): OrderReturnRouteResponse
     {
-        $guest = $this->resolveToken($request);
-
-        $orderReturn = $this->orderReturnService->get($id, $context->getContext());
-
-        if ($orderReturn->orderId !== $guest['orderId'] || $orderReturn->guestEmail !== $guest['email']) {
-            throw OrderReturnException::guestAccessDenied();
-        }
+        $orderReturn = $this->assertGuestOwns($id, $request, $context);
 
         return new OrderReturnRouteResponse(new ArrayStruct([
             'orderReturn' => $this->presenter->present($orderReturn),
         ]));
     }
 
-    #[Route(
-        path: '/store-api/order-return/guest',
-        name: 'store-api.order-return.guest.create',
-        methods: [Request::METHOD_POST]
-    )]
-    public function create(Request $request, SalesChannelContext $context): OrderReturnRouteResponse
+    private function _create(Request $request, SalesChannelContext $context): OrderReturnRouteResponse
     {
         $guest = $this->resolveToken($request);
 
@@ -155,9 +255,9 @@ class OrderReturnGuestRoute
                 'orderId' => $guest['orderId'],
                 'type' => (string) $request->request->get('type', ''),
                 'positions' => $this->positionsOf($request),
-                'reasonId' => $request->request->get('reasonId'),
-                'reasonText' => $request->request->get('reasonText'),
-                'customerNote' => $request->request->get('customerNote'),
+                'reasonId' => $this->stringOrNull($request, 'reasonId'),
+                'reasonText' => $this->stringOrNull($request, 'reasonText'),
+                'customerNote' => $this->stringOrNull($request, 'customerNote'),
                 'evidence' => $this->stringList($request->request->all('evidence')),
                 'guestEmail' => $guest['email'],
                 'guestTokenHash' => $this->tokenService->hash($token),
@@ -171,12 +271,7 @@ class OrderReturnGuestRoute
         ]), Response::HTTP_CREATED);
     }
 
-    #[Route(
-        path: '/store-api/order-return/guest/{id}/cancel',
-        name: 'store-api.order-return.guest.cancel',
-        methods: [Request::METHOD_POST]
-    )]
-    public function cancel(string $id, Request $request, SalesChannelContext $context): OrderReturnRouteResponse
+    private function _cancel(Request $request, string $id, SalesChannelContext $context): OrderReturnRouteResponse
     {
         $this->assertGuestOwns($id, $request, $context);
 
@@ -187,12 +282,7 @@ class OrderReturnGuestRoute
         ]));
     }
 
-    #[Route(
-        path: '/store-api/order-return/guest/{id}/ship',
-        name: 'store-api.order-return.guest.ship',
-        methods: [Request::METHOD_POST]
-    )]
-    public function ship(string $id, Request $request, SalesChannelContext $context): OrderReturnRouteResponse
+    private function _ship(Request $request, string $id, SalesChannelContext $context): OrderReturnRouteResponse
     {
         $this->assertGuestOwns($id, $request, $context);
 
@@ -202,11 +292,9 @@ class OrderReturnGuestRoute
             throw OrderReturnException::missingTrackingCode();
         }
 
-        $carrier = $request->request->get('trackingCarrier');
-
         $orderReturn = $this->orderReturnService->ship(
             $id,
-            \is_string($carrier) ? $carrier : null,
+            $this->stringOrNull($request, 'trackingCarrier'),
             $trackingCode,
             $context->getContext()
         );
@@ -216,14 +304,9 @@ class OrderReturnGuestRoute
         ]));
     }
 
-    #[Route(
-        path: '/store-api/order-return/guest/{id}/message',
-        name: 'store-api.order-return.guest.message',
-        methods: [Request::METHOD_POST]
-    )]
-    public function message(string $id, Request $request, SalesChannelContext $context): OrderReturnRouteResponse
+    private function _message(Request $request, string $id, SalesChannelContext $context): OrderReturnRouteResponse
     {
-        $guest = $this->assertGuestOwns($id, $request, $context);
+        $this->assertGuestOwns($id, $request, $context);
 
         $content = trim((string) $request->request->get('content', ''));
 
@@ -231,14 +314,12 @@ class OrderReturnGuestRoute
             throw OrderReturnException::emptyMessage();
         }
 
-        $attachments = $request->request->all('attachments');
-
         $this->orderReturnService->addMessage(
             $id,
             $content,
             OrderReturnEntity::AUTHOR_CUSTOMER,
             null,
-            $attachments === [] ? null : array_values(array_filter($attachments, 'is_string')),
+            $this->stringList($request->request->all('attachments')),
             $context->getContext()
         );
 
@@ -267,7 +348,8 @@ class OrderReturnGuestRoute
     /**
      * @throws OrderReturnException
      */
-    private function findOrder(string $orderNumber, string $email, SalesChannelContext $context): OrderEntity    {
+    private function findOrder(string $orderNumber, string $email, SalesChannelContext $context): OrderEntity
+    {
         $criteria = new Criteria();
         $criteria->addFilter(new EqualsFilter('orderNumber', $orderNumber));
         $criteria->addAssociation('lineItems');
@@ -307,7 +389,7 @@ class OrderReturnGuestRoute
         return $guest;
     }
 
-    private function assertGuestOwns(string $id, Request $request, SalesChannelContext $context): array
+    private function assertGuestOwns(string $id, Request $request, SalesChannelContext $context): OrderReturnEntity
     {
         $guest = $this->resolveToken($request);
         $orderReturn = $this->orderReturnService->get($id, $context->getContext());
@@ -316,7 +398,7 @@ class OrderReturnGuestRoute
             throw OrderReturnException::guestAccessDenied();
         }
 
-        return $guest;
+        return $orderReturn;
     }
 
     private function tokenOf(Request $request): string
@@ -350,6 +432,13 @@ class OrderReturnGuestRoute
         }
 
         return $positions;
+    }
+
+    private function stringOrNull(Request $request, string $key): ?string
+    {
+        $value = $request->request->get($key);
+
+        return \is_string($value) && trim($value) !== '' ? trim($value) : null;
     }
 
     /**

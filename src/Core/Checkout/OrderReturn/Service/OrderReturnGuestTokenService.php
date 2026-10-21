@@ -2,7 +2,9 @@
 
 namespace Shopwell\Core\Checkout\OrderReturn\Service;
 
+use Psr\Clock\ClockInterface;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Util\Hasher;
 
 /**
  * The proof a guest carries between the verification and every later request.
@@ -26,8 +28,10 @@ class OrderReturnGuestTokenService
     /**
      * @internal
      */
-    public function __construct(private readonly string $secret)
-    {
+    public function __construct(
+        private readonly string $secret,
+        private readonly ClockInterface $clock,
+    ) {
     }
 
     public function issue(string $orderId, string $email): string
@@ -35,7 +39,7 @@ class OrderReturnGuestTokenService
         $payload = $this->encode([
             'o' => $orderId,
             'e' => mb_strtolower(trim($email)),
-            'x' => time() + self::TTL_SECONDS,
+            'x' => $this->clock->now()->getTimestamp() + self::TTL_SECONDS,
         ]);
 
         return $payload . '.' . $this->sign($payload);
@@ -68,7 +72,7 @@ class OrderReturnGuestTokenService
             return null;
         }
 
-        if (!\is_int($decoded['x'] ?? null) || $decoded['x'] < time()) {
+        if (!\is_int($decoded['x'] ?? null) || $decoded['x'] < $this->clock->now()->getTimestamp()) {
             return null;
         }
 
@@ -81,7 +85,7 @@ class OrderReturnGuestTokenService
      */
     public function hash(string $token): string
     {
-        return hash('sha256', $token);
+        return Hasher::hash($token, 'sha256');
     }
 
     private function sign(string $payload): string

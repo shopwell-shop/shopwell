@@ -59,12 +59,13 @@ class GuestOrderReturnPageLoader
 
     /**
      * @throws CategoryNotFoundException
+     * @throws OrderReturnException when the token does not cover the return
      */
     public function loadDetail(Request $request, SalesChannelContext $salesChannelContext, string $token, string $returnId): GuestOrderReturnPage
     {
         $page = $this->createPage($request, $salesChannelContext, 'account.orderReturnGuestMetaTitle');
 
-        $detail = $this->guestRoute->detail($returnId, $this->requestWithToken($request, $token), $salesChannelContext)->getObject();
+        $detail = $this->guestRoute->detail($this->requestWithToken($request, $token), $returnId, $salesChannelContext)->getObject();
 
         /** @var array<string, mixed>|null $orderReturn */
         $orderReturn = $detail->get('orderReturn');
@@ -93,6 +94,7 @@ class GuestOrderReturnPageLoader
 
     /**
      * @throws CategoryNotFoundException
+     * @throws OrderReturnException when the token is forged, expired or names another order
      */
     private function fillFromToken(GuestOrderReturnPage $page, Request $request, SalesChannelContext $salesChannelContext, string $token): void
     {

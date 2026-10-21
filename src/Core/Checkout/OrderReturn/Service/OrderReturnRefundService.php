@@ -104,14 +104,14 @@ class OrderReturnRefundService
         // channel confirms finds the return by exactly this number
         $this->orderReturnRepository->update([[
             'id' => $orderReturn->id,
-            'paymentRefundNo' => $refund->getRefundNo(),
+            'paymentRefundNo' => $refund->refundNo,
         ]], $context);
 
         // the return moves to refunding only after the gateway accepted the request, a refused request
         // leaves it where it was so a merchant can correct the amount or the channel and retry
         $this->stateHandler->refund($orderReturn->id, $context);
 
-        if ($refund->getRefundedAt() !== null) {
+        if ($refund->refundedAt !== null) {
             $this->stateHandler->finish($orderReturn->id, $context);
         }
     }
@@ -134,7 +134,7 @@ class OrderReturnRefundService
 
         $paymentOrder = $this->paymentOrderService->findLatestByOrderTransaction($transactionId);
 
-        if (!$paymentOrder instanceof PaymentOrderEntity || $paymentOrder->getPaidAt() === null) {
+        if (!$paymentOrder instanceof PaymentOrderEntity || $paymentOrder->paidAt === null) {
             return null;
         }
 
@@ -143,7 +143,7 @@ class OrderReturnRefundService
 
     private function paymentApp(PaymentOrderEntity $paymentOrder): ?PaymentAppEntity
     {
-        $criteria = new Criteria([$paymentOrder->getPaymentAppId()]);
+        $criteria = new Criteria([$paymentOrder->paymentAppId]);
 
         $app = $this->paymentAppRepository->search($criteria, Context::createDefaultContext())->getEntities()->first();
 
