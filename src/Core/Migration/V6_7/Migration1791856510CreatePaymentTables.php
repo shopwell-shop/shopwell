@@ -229,6 +229,10 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
         // the methods the checkout offers right away - they collect on the tenant seeded above, so
         // they are written after it
         $this->seedGatewayPaymentMethods($connection, $now);
+
+        // the seeded methods are visible to the checkout only after the index they are read through
+        // was rebuilt - the seeding above writes every table that feeds it
+        $this->registerIndexer($connection, 'payment_method.indexer');
     }
 
     public function updateDestructive(Connection $connection): void
