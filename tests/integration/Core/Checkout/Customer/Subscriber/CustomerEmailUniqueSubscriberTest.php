@@ -225,7 +225,7 @@ class CustomerEmailUniqueSubscriberTest extends TestCase
                 'street' => 'Ebbinghoff 10',
                 'city' => 'Schöppingen',
                 'zipcode' => '48624',
-                'salutationId' => $this->getValidSalutationId(),
+                'gender' => $this->getValidGender(),
                 'countryId' => $this->getValidCountryId(),
             ],
             'defaultBillingAddressId' => $addressId,
@@ -235,7 +235,7 @@ class CustomerEmailUniqueSubscriberTest extends TestCase
             'password' => TestDefaults::HASHED_PASSWORD,
             'name' => 'Max Mustermann',
             'guest' => false,
-            'salutationId' => $this->getValidSalutationId(),
+            'gender' => $this->getValidGender(),
             'customerNumber' => Uuid::randomHex(),
         ], $overrides);
     }

@@ -2,6 +2,7 @@
 
 namespace Shopwell\Storefront\DependencyInjection;
 
+use Psr\Clock\ClockInterface;
 use Shopwell\Core\Checkout\Cart\LineItemFactoryHandler\ProductLineItemFactory;
 use Shopwell\Core\Checkout\Cart\LineItemFactoryRegistry;
 use Shopwell\Core\Checkout\Cart\SalesChannel\CartLoadRoute;
@@ -28,19 +29,27 @@ use Shopwell\Core\Checkout\Customer\SalesChannel\RemoveWishlistProductRoute;
 use Shopwell\Core\Checkout\Customer\SalesChannel\ResetPasswordRoute;
 use Shopwell\Core\Checkout\Customer\SalesChannel\SendPasswordRecoveryMailRoute;
 use Shopwell\Core\Checkout\Customer\SalesChannel\UpsertAddressRoute;
+use Shopwell\Core\Checkout\Customer\Service\SmsLoginService;
 use Shopwell\Core\Checkout\DocumentV2\SalesChannel\DocumentRoute;
 use Shopwell\Core\Checkout\Loyalty\SalesChannel\LoyaltyRedeemRoute;
 use Shopwell\Core\Checkout\Loyalty\SalesChannel\MembershipPurchaseRoute;
+use Shopwell\Core\Checkout\Loyalty\Service\LoyaltySettings;
 use Shopwell\Core\Checkout\Order\SalesChannel\CancelOrderRoute;
 use Shopwell\Core\Checkout\Order\SalesChannel\OrderRoute;
 use Shopwell\Core\Checkout\Order\SalesChannel\OrderService;
 use Shopwell\Core\Checkout\Order\SalesChannel\SetPaymentOrderRoute;
+use Shopwell\Core\Checkout\OrderReturn\SalesChannel\OrderReturnGuestRoute;
+use Shopwell\Core\Checkout\OrderReturn\SalesChannel\OrderReturnRoute;
+use Shopwell\Core\Checkout\OrderReturn\Service\OrderReturnSettings;
 use Shopwell\Core\Checkout\Payment\PaymentProcessor;
 use Shopwell\Core\Checkout\Payment\SalesChannel\HandlePaymentMethodRoute;
 use Shopwell\Core\Checkout\Promotion\Cart\PromotionItemBuilder;
 use Shopwell\Core\Checkout\Wallet\SalesChannel\WalletPaymentRoute;
 use Shopwell\Core\Checkout\Wallet\SalesChannel\WalletTopUpCreateRoute;
 use Shopwell\Core\Checkout\Wallet\SalesChannel\WalletTopUpStatusRoute;
+use Shopwell\Core\Checkout\Wallet\Service\WalletSettings;
+use Shopwell\Core\Content\Blog\SalesChannel\Review\BlogCommentRoute;
+use Shopwell\Core\Content\Blog\Service\BlogTypeRegistry;
 use Shopwell\Core\Content\Category\SalesChannel\CategoryRoute;
 use Shopwell\Core\Content\Category\Service\CategoryUrlGenerator;
 use Shopwell\Core\Content\Cms\SalesChannel\CmsRoute;
@@ -64,6 +73,7 @@ use Shopwell\Core\Content\Sitemap\SalesChannel\SitemapFileRoute;
 use Shopwell\Core\Framework\Adapter\Translation\ConstraintViolationTranslator;
 use Shopwell\Core\Framework\App\Api\AppJWTGenerateRoute;
 use Shopwell\Core\Framework\Gateway\Context\SalesChannel\ContextGatewayRoute;
+use Shopwell\Core\Framework\RateLimiter\RateLimiter;
 use Shopwell\Core\Framework\Script\Api\ScriptResponseEncoder;
 use Shopwell\Core\Framework\Sso\Service\OAuth2LoginService;
 use Shopwell\Core\Framework\Util\HtmlSanitizer;
@@ -73,12 +83,14 @@ use Shopwell\Core\System\SystemConfig\SystemConfigService;
 use Shopwell\Storefront\Checkout\Cart\SalesChannel\StorefrontCartFacade;
 use Shopwell\Storefront\Controller\AccountLoyaltyController;
 use Shopwell\Storefront\Controller\AccountOrderController;
+use Shopwell\Storefront\Controller\AccountOrderReturnController;
 use Shopwell\Storefront\Controller\AccountProfileController;
 use Shopwell\Storefront\Controller\AccountWalletController;
 use Shopwell\Storefront\Controller\AddressController;
 use Shopwell\Storefront\Controller\Api\CaptchaController as ApiCaptchaController;
 use Shopwell\Storefront\Controller\AppController;
 use Shopwell\Storefront\Controller\AuthController;
+use Shopwell\Storefront\Controller\BlogController;
 use Shopwell\Storefront\Controller\CaptchaController;
 use Shopwell\Storefront\Controller\CartLineItemController;
 use Shopwell\Storefront\Controller\CheckoutController;
@@ -96,12 +108,14 @@ use Shopwell\Storefront\Controller\MaintenanceController;
 use Shopwell\Storefront\Controller\NavigationController;
 use Shopwell\Storefront\Controller\NewsletterController;
 use Shopwell\Storefront\Controller\OAuth2LoginController;
+use Shopwell\Storefront\Controller\OrderReturnGuestController;
 use Shopwell\Storefront\Controller\ProductController;
 use Shopwell\Storefront\Controller\RegisterController;
 use Shopwell\Storefront\Controller\RobotsController;
 use Shopwell\Storefront\Controller\ScriptController;
 use Shopwell\Storefront\Controller\SearchController;
 use Shopwell\Storefront\Controller\SitemapController;
+use Shopwell\Storefront\Controller\SmsLoginController;
 use Shopwell\Storefront\Controller\StorybookController;
 use Shopwell\Storefront\Controller\VerificationHashController;
 use Shopwell\Storefront\Controller\WellKnownController;
@@ -116,12 +130,15 @@ use Shopwell\Storefront\Page\Account\Loyalty\AccountLoyaltyPageLoader;
 use Shopwell\Storefront\Page\Account\Order\AccountEditOrderPageLoader;
 use Shopwell\Storefront\Page\Account\Order\AccountOrderDetailPageLoader;
 use Shopwell\Storefront\Page\Account\Order\AccountOrderPageLoader;
+use Shopwell\Storefront\Page\Account\OrderReturn\AccountOrderReturnPageLoader;
+use Shopwell\Storefront\Page\Account\OrderReturn\GuestOrderReturnPageLoader;
 use Shopwell\Storefront\Page\Account\Overview\AccountOverviewPageLoader;
 use Shopwell\Storefront\Page\Account\Profile\AccountProfilePageLoader;
 use Shopwell\Storefront\Page\Account\RecoverPassword\AccountRecoverPasswordPageLoader;
 use Shopwell\Storefront\Page\Account\Wallet\AccountWalletPageLoader;
 use Shopwell\Storefront\Page\Address\Detail\AddressDetailPageLoader;
 use Shopwell\Storefront\Page\Address\Listing\AddressListingPageLoader;
+use Shopwell\Storefront\Page\Blog\BlogPageLoader;
 use Shopwell\Storefront\Page\Checkout\Cart\CheckoutCartPageLoader;
 use Shopwell\Storefront\Page\Checkout\Confirm\CheckoutConfirmPageLoader;
 use Shopwell\Storefront\Page\Checkout\Finish\CheckoutFinishPageLoader;
@@ -205,6 +222,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(AccountLoyaltyPageLoader::class),
             service(LoyaltyRedeemRoute::class),
             service(MembershipPurchaseRoute::class),
+            service(LoyaltySettings::class),
         ])
         ->call('setContainer', [service('service_container')]);
 
@@ -214,6 +232,24 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(WalletPaymentRoute::class),
             service(WalletTopUpCreateRoute::class),
             service(WalletTopUpStatusRoute::class),
+            service(WalletSettings::class),
+        ])
+        ->call('setContainer', [service('service_container')]);
+
+    $services->set(AccountOrderReturnController::class)
+        ->args([
+            service(AccountOrderReturnPageLoader::class),
+            service(OrderReturnRoute::class),
+            service(OrderReturnSettings::class),
+        ])
+        ->call('setContainer', [service('service_container')]);
+
+    $services->set(OrderReturnGuestController::class)
+        ->args([
+            service(GuestOrderReturnPageLoader::class),
+            service(OrderReturnGuestRoute::class),
+            service(OrderReturnSettings::class),
+            service(ClockInterface::class),
         ])
         ->call('setContainer', [service('service_container')]);
 
@@ -360,6 +396,15 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ])
         ->call('setContainer', [service('service_container')]);
 
+    $services->set(BlogController::class)
+        ->args([
+            service(BlogPageLoader::class),
+            service(BlogTypeRegistry::class),
+            service(BlogCommentRoute::class),
+            service(ConstraintViolationTranslator::class),
+        ])
+        ->call('setContainer', [service('service_container')]);
+
     $services->set(ProductController::class)
         ->args([
             service(ProductPageLoader::class),
@@ -416,6 +461,16 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service(SitemapPageLoader::class),
             service(SitemapFileRoute::class),
+        ])
+        ->call('setContainer', [service('service_container')]);
+
+    $services->set(SmsLoginController::class)
+        ->args([
+            service(SmsLoginService::class),
+            service(AccountService::class),
+            service(StorefrontCartFacade::class),
+            service(RateLimiter::class),
+            service(SystemConfigService::class),
         ])
         ->call('setContainer', [service('service_container')]);
 

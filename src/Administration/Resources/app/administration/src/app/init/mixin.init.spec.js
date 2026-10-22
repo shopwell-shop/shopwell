@@ -15,7 +15,6 @@ describe('src/app/init/mixin.init.js', () => {
         expect(Shopwell.Mixin.getByName('position')).toBeDefined();
         expect(Shopwell.Mixin.getByName('remove-api-error')).toBeDefined();
         expect(Shopwell.Mixin.getByName('ruleContainer')).toBeDefined();
-        expect(Shopwell.Mixin.getByName('salutation')).toBeDefined();
         expect(Shopwell.Mixin.getByName('sw-inline-snippet')).toBeDefined();
         expect(Shopwell.Mixin.getByName('translate-with-fallback')).toBeDefined();
         expect(Shopwell.Mixin.getByName('user-settings')).toBeDefined();

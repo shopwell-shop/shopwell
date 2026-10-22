@@ -62,4 +62,22 @@ class SmsMessageOptionsTest extends TestCase
         static::assertFalse($options->isTemplateBased());
         static::assertSame(SmsTemplateEntity::SCENE_TRANSACTION, $options->getScene());
     }
+
+    public function testAMessageThatNeverLeftTheShopCarriesTheReasonInCodeAndWords(): void
+    {
+        $options = new SmsMessageOptions(
+            scene: SmsTemplateEntity::SCENE_OTP,
+            templateRef: 'customer.otp.login',
+            undeliverableReason: 'SMS__TEMPLATE_NOT_APPROVED',
+            undeliverableMessage: 'The sms template "customer.otp.login" is "pending" at "aliyun".',
+        );
+
+        static::assertSame('SMS__TEMPLATE_NOT_APPROVED', $options->getUndeliverableReason());
+        static::assertSame(
+            'The sms template "customer.otp.login" is "pending" at "aliyun".',
+            $options->getUndeliverableMessage()
+        );
+        // the reason is bookkeeping of the record and no option of a provider
+        static::assertSame(['scene' => 'otp', 'templateRef' => 'customer.otp.login'], $options->toArray());
+    }
 }

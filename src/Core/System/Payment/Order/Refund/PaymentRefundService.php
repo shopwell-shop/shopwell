@@ -20,6 +20,7 @@ use Shopwell\Core\System\Payment\Order\Event\PaymentRefundFinishedEvent;
 use Shopwell\Core\System\Payment\Order\PaymentOrderEntity;
 use Shopwell\Core\System\Payment\Order\PaymentOrderService;
 use Shopwell\Core\System\Payment\PaymentException;
+use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
 use Shopwell\Core\System\Payment\Provider\PaymentConfigResolver;
 use Shopwell\Core\System\Payment\Webhook\PaymentWebhookDispatcher;
 use Shopwell\Core\System\StateMachine\Loader\InitialStateIdLoader;
@@ -80,10 +81,10 @@ final class PaymentRefundService
             throw PaymentException::refundAmountExceedsOrder($order->paymentNo, $request->amount, $available);
         }
 
-        $refund = $this->create($order, $request);
-
         // a refund runs on the interface alone, but the channel of the order is what was opened - and
-        // its runtime parameters are the ones the order was created with
+        // its runtime parameters are the ones the order was created with. The credentials are resolved
+        // before the refund row is written: a call the declaration already rules out must not leave a
+        // refund behind that no channel ever saw
         $resolved = $this->configResolver->resolve(
             $app,
             $order->channelTechnicalName,
@@ -91,6 +92,30 @@ final class PaymentRefundService
             $order->device,
             $order->channelParams ?? []
         );
+
+        // An interface that never declared a refund cannot give money back. Payum would answer the
+        // refund request with "no action supports this request" inside the gateway, which the catch
+        // below can only report as a channel fault (502) - while the declaration answered the very
+        // same question before a request was signed. The guard reads the resolved provider, so a
+        // plugin that adds a refund action makes refunding reachable for that interface.
+        $provider = $resolved->provider;
+
+        if (!$provider->supports(PaymentCapability::REFUND)) {
+            throw PaymentException::providerLacksCapability($provider->technicalName, PaymentCapability::REFUND->value);
+        }
+
+        // A full refund - the entire amount that is still refundable - is the plain refund action every
+        // interface that can refund at all can do, so `PARTIAL_REFUND` is deliberately not required for
+        // it: an interface that declares `refund` alone must still be able to hand the whole payment
+        // back, otherwise the only way out of a wrong payment would be closed to it. Only "less than
+        // what is left" is the distinct operation some interfaces refuse, and that one has to be
+        // declared. `available` is the remaining amount and not the order amount on purpose: a second
+        // refund of what is left is a full refund again, not a partial one.
+        if ($request->amount < $available && !$provider->supports(PaymentCapability::PARTIAL_REFUND)) {
+            throw PaymentException::providerLacksCapability($provider->technicalName, PaymentCapability::PARTIAL_REFUND->value);
+        }
+
+        $refund = $this->create($order, $request);
 
         $model = PaymentGatewayModel::forRefund($order, $refund);
         $gateway = $resolved->provider->gatewayFactory->createForPayment(

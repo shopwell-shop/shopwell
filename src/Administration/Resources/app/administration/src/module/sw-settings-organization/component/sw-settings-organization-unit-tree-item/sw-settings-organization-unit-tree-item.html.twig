@@ -1,0 +1,104 @@
+{% block sw_settings_organization_unit_tree_item %}
+<div
+    class="sw-settings-organization-unit-tree-item"
+    role="treeitem"
+    :aria-label="unitName"
+    :aria-current="isSelected ? 'page' : undefined"
+    :aria-expanded="childUnits.length > 0 ? (isOpened ? 'true' : 'false') : undefined"
+>
+    {% block sw_settings_organization_unit_tree_item_row %}
+    <div
+        class="sw-settings-organization-unit-tree-item__row"
+        :class="{ 'is--active': isSelected }"
+        role="button"
+        tabindex="0"
+        @click="onSelectUnit"
+        @keydown.enter="onSelectUnit"
+    >
+        {% block sw_settings_organization_unit_tree_item_toggle %}
+        <span
+            v-if="childUnits.length > 0"
+            class="sw-settings-organization-unit-tree-item__toggle"
+            role="button"
+            tabindex="0"
+            :aria-label="$t('sw-settings-organization.detail.toggleUnit', { name: unitName })"
+            @click="onToggleExpand"
+            @keydown.enter="onToggleExpand"
+        >
+            <mt-icon
+                size="12px"
+                :name="isOpened ? 'regular-chevron-down-xxs' : 'regular-chevron-right-xxs'"
+            />
+        </span>
+        <span
+            v-else
+            class="sw-settings-organization-unit-tree-item__leaf"
+        ></span>
+        {% endblock %}
+
+        {% block sw_settings_organization_unit_tree_item_icon %}
+        <mt-icon
+            class="sw-settings-organization-unit-tree-item__icon"
+            name="regular-sitemap"
+            size="16px"
+        />
+        {% endblock %}
+
+        {% block sw_settings_organization_unit_tree_item_name %}
+        <span
+            class="sw-settings-organization-unit-tree-item__name"
+            :class="{ 'is--inactive': !unit.active }"
+            :title="unitName"
+        >{{ unitName }}</span>
+        {% endblock %}
+
+        {% block sw_settings_organization_unit_tree_item_child_count %}
+        <span
+            v-if="childUnits.length > 0"
+            class="sw-settings-organization-unit-tree-item__count"
+        >
+            {{ childUnits.length }}
+        </span>
+        {% endblock %}
+
+        {% block sw_settings_organization_unit_tree_item_add %}
+        <button
+            v-if="acl.can('organization.creator')"
+            class="sw-settings-organization-unit-tree-item__add"
+            type="button"
+            :aria-label="$t('sw-settings-organization.detail.buttonAddChildUnit')"
+            :title="$t('sw-settings-organization.detail.buttonAddChildUnit')"
+            @click="onAddChild"
+        >
+            <mt-icon
+                name="regular-plus-xs"
+                size="16px"
+            />
+        </button>
+        {% endblock %}
+    </div>
+    {% endblock %}
+
+    {% block sw_settings_organization_unit_tree_item_children %}
+    <div
+        v-if="isOpened && childUnits.length > 0"
+        class="sw-settings-organization-unit-tree-item__children"
+        role="group"
+    >
+        <sw-settings-organization-unit-tree-item
+            v-for="child in childUnits"
+            :key="child.id"
+            :unit="child"
+            :unit-tree="unitTree"
+            :filtered-units="filteredUnits"
+            :selected-unit-id="selectedUnitId"
+            :is-searching="isSearching"
+            :expanded-ids="expandedIds"
+            @select-unit="$emit('select-unit', $event)"
+            @add-child="$emit('add-child', $event)"
+            @toggle-expand="$emit('toggle-expand', $event)"
+        />
+    </div>
+    {% endblock %}
+</div>
+{% endblock %}

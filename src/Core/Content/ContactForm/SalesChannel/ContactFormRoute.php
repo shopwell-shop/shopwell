@@ -6,8 +6,6 @@ use Shopwell\Core\Checkout\Customer\Service\EmailIdnConverter;
 use Shopwell\Core\Content\Cms\Service\CmsFormSlotConfigResolver;
 use Shopwell\Core\Content\ContactForm\Event\ContactFormEvent;
 use Shopwell\Core\Content\ContactForm\Extension\ContactFormRouteExtension;
-use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
-use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\Event\EventData\MailRecipientStruct;
 use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Log\Package;
@@ -21,7 +19,6 @@ use Shopwell\Core\Framework\Validation\DataValidator;
 use Shopwell\Core\Framework\Validation\Exception\ConstraintViolationException;
 use Shopwell\Core\PlatformRequest;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
-use Shopwell\Core\System\Salutation\SalutationCollection;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
@@ -32,14 +29,11 @@ class ContactFormRoute extends AbstractContactFormRoute
 {
     /**
      * @internal
-     *
-     * @param EntityRepository<SalutationCollection> $salutationRepository
      */
     public function __construct(
         private readonly DataValidationFactoryInterface $contactFormValidationFactory,
         private readonly DataValidator $validator,
         private readonly EventDispatcherInterface $eventDispatcher,
-        private readonly EntityRepository $salutationRepository,
         private readonly RequestStack $requestStack,
         private readonly RateLimiter $rateLimiter,
         private readonly CmsFormSlotConfigResolver $cmsFormSlotConfigResolver,
@@ -73,13 +67,6 @@ class ContactFormRoute extends AbstractContactFormRoute
         }
 
         $mailConfigs = $this->cmsFormSlotConfigResolver->resolve($context, $data->get('slotId'), $data->get('navigationId'), $data->get('entityName'));
-
-        $salutationCriteria = new Criteria([$data->get('salutationId')]);
-        $salutationSearchResult = $this->salutationRepository->search($salutationCriteria, $context->getContext());
-
-        if ($salutationSearchResult->getEntities()->count() !== 0) {
-            $data->set('salutation', $salutationSearchResult->getEntities()->first());
-        }
 
         $event = new ContactFormEvent(
             $context->getContext(),

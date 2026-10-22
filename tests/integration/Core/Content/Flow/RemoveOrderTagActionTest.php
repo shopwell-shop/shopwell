@@ -173,7 +173,7 @@ class RemoveOrderTagActionTest extends TestCase
             'orderCustomer' => [
                 'customerId' => $this->ids->get('customer'),
                 'email' => 'test@example.com',
-                'salutationId' => $this->getValidSalutationId(),
+                'gender' => $this->getValidGender(),
                 'name' => 'Max Mustermann',
             ],
             'stateId' => $stateId,
@@ -185,7 +185,7 @@ class RemoveOrderTagActionTest extends TestCase
             'addresses' => [
                 [
                     'id' => $billingAddressId,
-                    'salutationId' => $this->getValidSalutationId(),
+                    'gender' => $this->getValidGender(),
                     'name' => 'Max Mustermann',
                     'street' => 'Ebbinghoff 10',
                     'zipcode' => '48624',

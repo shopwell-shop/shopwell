@@ -1,175 +1,8 @@
 /**
  * @sw-package framework
  */
-import { mount } from '@vue/test-utils';
-
-const registryProviders = [
-    {
-        technicalName: 'alipay',
-        label: '支付宝',
-        enabled: true,
-        configured: true,
-        credentialFields: [
-            {
-                name: 'app_id',
-                label: '支付宝应用 APPID',
-                type: 'text',
-                required: true,
-                secret: false,
-                options: {},
-                default: null,
-                value: '2021000000000000',
-                configured: true,
-            },
-        ],
-        settings: {},
-        channels: [
-            {
-                channel: 'alipay_h5',
-                label: '支付宝 手机网站支付',
-                flow: 'redirect',
-                currencies: ['CNY'],
-                devices: ['wap'],
-                runtimeParams: {},
-                paramFields: [],
-                enabled: true,
-                configured: true,
-                settings: {},
-            },
-        ],
-    },
-    {
-        technicalName: 'stripe',
-        label: 'Stripe',
-        enabled: false,
-        configured: false,
-        credentialFields: [
-            {
-                name: 'secret_key',
-                label: 'Secret Key',
-                type: 'password',
-                required: true,
-                secret: true,
-                options: {},
-                default: null,
-                value: null,
-                configured: false,
-            },
-        ],
-        settings: {},
-        channels: [
-            {
-                channel: 'stripe_checkout',
-                label: 'Stripe Checkout',
-                flow: 'redirect',
-                currencies: [],
-                devices: [],
-                runtimeParams: {},
-                paramFields: [],
-                enabled: false,
-                configured: false,
-                settings: {},
-            },
-        ],
-    },
-];
-
-const existingApp = {
-    id: 'app-1',
-    technicalName: 'alipay_sandbox_demo',
-    name: '支付宝沙箱联调应用',
-    active: true,
-    notifyUrl: null,
-    returnUrl: null,
-    allowedIps: ['127.0.0.1'],
-    rateLimit: 60,
-    hasSecret: true,
-    providers: [
-        {
-            providerTechnicalName: 'alipay',
-            enabled: true,
-            mode: 'platform',
-            hasCredentials: false,
-            settings: {},
-        },
-    ],
-    channels: [
-        {
-            channelTechnicalName: 'alipay_h5',
-            enabled: true,
-            hasParams: false,
-            settings: {},
-        },
-    ],
-};
-
-async function createWrapper({ appId = 'app-1', app = existingApp, savedApp = null, appSecret = null } = {}) {
-    const service = {
-        listProviders: jest.fn(() => Promise.resolve(registryProviders)),
-        listApps: jest.fn(() => Promise.resolve(app === null ? [] : [app])),
-        saveApp: jest.fn(() =>
-            Promise.resolve({
-                app: savedApp ?? app,
-                ...(appSecret === null ? {} : { appSecret }),
-            }),
-        ),
-        deleteApp: jest.fn(() => Promise.resolve()),
-    };
-
-    const push = jest.fn();
-    const replace = jest.fn();
-
-    const wrapper = mount(await wrapTestComponent('sw-settings-payment-gateway-detail', { sync: true }), {
-        props: { appId },
-        global: {
-            stubs: {
-                'sw-page': {
-                    template: `
-                        <div>
-                            <slot name="smart-bar-header"></slot>
-                            <slot name="smart-bar-actions"></slot>
-                            <slot name="content"></slot>
-                        </div>`,
-                },
-                'sw-card-view': { template: '<div><slot></slot></div>' },
-                'sw-container': { template: '<div><slot></slot></div>' },
-                'sw-skeleton': true,
-                'sw-payment-config-field': {
-                    props: ['field', 'modelValue'],
-                    template: '<div class="sw-payment-config-field-stub">{{ field.name }}</div>',
-                },
-                'router-link': { template: '<a><slot></slot></a>' },
-                'mt-card': { template: '<div><slot></slot><slot name="headerRight"></slot></div>' },
-                'mt-button': true,
-                'mt-badge': true,
-                'mt-icon': true,
-                'mt-switch': true,
-                'mt-select': true,
-                'mt-text-field': true,
-                'mt-password-field': true,
-                'mt-textarea': true,
-                'mt-url-field': true,
-                'mt-number-field': true,
-                'mt-banner': true,
-                'mt-modal-root': { template: '<div><slot></slot></div>' },
-                'mt-modal': { template: '<div><slot></slot><slot name="footer"></slot></div>' },
-                'mt-modal-close': true,
-                'mt-modal-action': true,
-            },
-            provide: {
-                paymentGatewayService: service,
-            },
-            mocks: {
-                $router: { push, replace },
-                $te: () => false,
-            },
-        },
-    });
-
-    await flushPromises();
-
-    return { wrapper, service, push, replace };
-}
+import { createWrapper } from './sw-settings-payment-gateway-detail.spec/create-wrapper';
+import { existingApp, otherApp, platformApp } from './sw-settings-payment-gateway-detail.spec/fixtures';
 
 describe('module/sw-settings-payment-gateway/page/sw-settings-payment-gateway-detail', () => {
     beforeEach(() => {
@@ -185,16 +18,42 @@ describe('module/sw-settings-payment-gateway/page/sw-settings-payment-gateway-de
         const { wrapper } = await createWrapper();
 
         expect(wrapper.vm.isNew).toBe(false);
-        expect(wrapper.vm.app.technicalName).toBe('alipay_sandbox_demo');
+        expect(wrapper.vm.app.technicalName).toBe('pos');
         expect(wrapper.vm.allowedIpsInput).toBe('127.0.0.1');
 
         expect(wrapper.vm.providers).toHaveLength(2);
         expect(wrapper.vm.providers[0]).toEqual(
-            expect.objectContaining({ technicalName: 'alipay', enabled: true, mode: 'platform' }),
+            expect.objectContaining({ technicalName: 'alipay', enabled: true, sourceAppId: '' }),
         );
         expect(wrapper.vm.providers[1]).toEqual(
-            expect.objectContaining({ technicalName: 'stripe', enabled: false, mode: 'platform' }),
+            expect.objectContaining({ technicalName: 'stripe', enabled: false, sourceAppId: '' }),
         );
+
+        // the account source is an app, the field the page used to offer does not exist anymore
+        expect(wrapper.vm.providers[0]).not.toHaveProperty('mode');
+    });
+
+    it('should keep the account source of an authorization that inherits from another app', async () => {
+        const inheriting = {
+            ...existingApp,
+            providers: [
+                {
+                    providerTechnicalName: 'alipay',
+                    enabled: true,
+                    sourceAppId: 'app-2',
+                    sourceAppName: 'POS 二号',
+                    hasCredentials: false,
+                    settings: {},
+                },
+            ],
+        };
+
+        const { wrapper } = await createWrapper({ app: inheriting });
+
+        expect(wrapper.vm.providers[0].sourceAppId).toBe('app-2');
+        expect(wrapper.vm.isAccountInherited(wrapper.vm.providers[0])).toBe(true);
+        expect(wrapper.vm.sourceAppName(wrapper.vm.providers[0])).toBe('POS 二号');
+        expect(wrapper.vm.sourceAppMissesInterface(wrapper.vm.providers[0])).toBe(false);
     });
 
     it('should nest the channels under their interface and merge the assignment of the app', async () => {
@@ -216,6 +75,7 @@ describe('module/sw-settings-payment-gateway/page/sw-settings-payment-gateway-de
             id: null,
             technicalName: '',
             name: '',
+            type: 'external',
             active: false,
             notifyUrl: null,
             returnUrl: null,
@@ -242,6 +102,69 @@ describe('module/sw-settings-payment-gateway/page/sw-settings-payment-gateway-de
         expect(push).toHaveBeenCalledWith({ name: 'sw.settings.payment.gateway.list' });
     });
 
+    it('should offer the own account and every other app as the account source, the platform tenant first', async () => {
+        const { wrapper } = await createWrapper();
+
+        const options = wrapper.vm.accountSourceOptions();
+
+        expect(options).toEqual([
+            { value: '', label: 'sw-settings-payment-gateway.detail.accountSourceOwn' },
+            { value: 'app-platform', label: 'Platform Payment App' },
+            { value: 'app-2', label: 'POS 二号' },
+        ]);
+
+        // the app of the page is never an account source of its own - that would be a circle
+        expect(options.map((option) => option.value)).not.toContain('app-1');
+    });
+
+    it('should show the credentials of the app itself and hide them behind a note when it inherits', async () => {
+        const { wrapper } = await createWrapper();
+
+        const alipayRow = () => wrapper.findAll('.sw-settings-payment-gateway-detail__account').at(0);
+
+        // the interface collects on an account of its own, so it renders the fields of its credentials
+        expect(alipayRow().findAll('.sw-payment-config-field-stub')).toHaveLength(1);
+
+        wrapper.vm.providers[0].sourceAppId = 'app-2';
+
+        await wrapper.vm.$nextTick();
+
+        // the switch is immediate, and the interface that inherits loses its fields
+        expect(alipayRow().findAll('.sw-payment-config-field-stub')).toHaveLength(0);
+        expect(wrapper.vm.inheritanceText(wrapper.vm.providers[0])).toContain('POS 二号');
+        expect(wrapper.vm.inheritanceText(wrapper.vm.providers[0])).toContain('支付宝');
+
+        // the parameters of a channel belong to the account that is charged, so they are not editable
+        expect(wrapper.vm.channelParamsInheritedText(wrapper.vm.providers[0])).toContain('POS 二号');
+    });
+
+    it('should warn when the app it inherits from is not authorized for the interface', async () => {
+        const { wrapper } = await createWrapper();
+
+        wrapper.vm.apps = [
+            platformApp,
+            existingApp,
+            {
+                ...otherApp,
+                providers: [
+                    {
+                        providerTechnicalName: 'alipay',
+                        enabled: false,
+                        sourceAppId: null,
+                        sourceAppName: '',
+                        hasCredentials: false,
+                        settings: {},
+                    },
+                ],
+            },
+        ];
+
+        wrapper.vm.providers[0].sourceAppId = 'app-2';
+
+        expect(wrapper.vm.sourceAppMissesInterface(wrapper.vm.providers[0])).toBe(true);
+        expect(wrapper.vm.sourceAppWarning(wrapper.vm.providers[0])).toContain('POS 二号');
+    });
+
     it('should send the interfaces and the channels of the app', async () => {
         const { wrapper, service } = await createWrapper();
 
@@ -251,7 +174,6 @@ describe('module/sw-settings-payment-gateway/page/sw-settings-payment-gateway-de
 
         const stripe = wrapper.vm.providers[1];
         stripe.enabled = true;
-        stripe.mode = 'own';
         stripe.credentialInput.secret_key = 'sk_test';
         stripe.channels[0].enabled = true;
 
@@ -259,8 +181,8 @@ describe('module/sw-settings-payment-gateway/page/sw-settings-payment-gateway-de
 
         expect(service.saveApp).toHaveBeenCalledWith({
             id: 'app-1',
-            technicalName: 'alipay_sandbox_demo',
-            name: '支付宝沙箱联调应用',
+            technicalName: 'pos',
+            name: 'POS 收银',
             active: true,
             notifyUrl: null,
             returnUrl: null,
@@ -271,14 +193,15 @@ describe('module/sw-settings-payment-gateway/page/sw-settings-payment-gateway-de
                 {
                     providerTechnicalName: 'alipay',
                     enabled: true,
-                    mode: 'platform',
-                    credentials: { app_id: '' },
+                    sourceAppId: null,
+                    // the values the api handed over are part of the form and go back as they are
+                    credentials: { app_id: '2021000000000000' },
                     settings: {},
                 },
                 {
                     providerTechnicalName: 'stripe',
                     enabled: true,
-                    mode: 'own',
+                    sourceAppId: null,
                     credentials: { secret_key: 'sk_test' },
                     settings: {},
                 },
@@ -287,7 +210,7 @@ describe('module/sw-settings-payment-gateway/page/sw-settings-payment-gateway-de
                 {
                     channelTechnicalName: 'alipay_h5',
                     enabled: true,
-                    params: {},
+                    params: { sign_type: 'RSA2' },
                     settings: {},
                 },
                 {
@@ -298,6 +221,140 @@ describe('module/sw-settings-payment-gateway/page/sw-settings-payment-gateway-de
                 },
             ],
         });
+    });
+
+    it('should send the account source and keep no credentials of its own when it inherits', async () => {
+        const { wrapper, service } = await createWrapper();
+
+        wrapper.vm.providers[0].sourceAppId = 'app-2';
+        wrapper.vm.providers[0].credentialInput.app_id = 'typed-but-not-sent';
+
+        await wrapper.vm.onSave();
+
+        const payload = service.saveApp.mock.calls[0][0];
+
+        expect(payload.providers[0]).toEqual({
+            providerTechnicalName: 'alipay',
+            enabled: true,
+            sourceAppId: 'app-2',
+            credentials: {},
+            settings: {},
+        });
+    });
+
+    it('should rebuild the interfaces from the declaration after a save', async () => {
+        const { wrapper, service } = await createWrapper();
+
+        await wrapper.vm.onSave();
+
+        expect(service.saveApp).toHaveBeenCalled();
+        // a state of the page is not a declaration: the channels keep their technical name
+        expect(wrapper.vm.providers[0].channels[0].technicalName).toBe('alipay_h5');
+        expect(wrapper.vm.providers[1].channels[0].technicalName).toBe('stripe_checkout');
+    });
+
+    it('should start the form with the credentials and the parameters the api hands over', async () => {
+        const { wrapper } = await createWrapper();
+
+        // the merchant recognises what is configured instead of retyping a key to find out
+        expect(wrapper.vm.providers[0].credentialInput.app_id).toBe('2021000000000000');
+        expect(wrapper.vm.providers[0].channels[0].paramInput.sign_type).toBe('RSA2');
+
+        // an interface without a stored value still starts empty
+        expect(wrapper.vm.providers[1].credentialInput.secret_key).toBe('');
+    });
+
+    it('should keep the platform app editable apart from its identifier and the delete action', async () => {
+        const { wrapper } = await createWrapper({ appId: 'app-platform', app: platformApp });
+
+        expect(wrapper.vm.isPlatformTenant).toBe(true);
+        // the platform app is edited on this page like every other one - only the permission decides
+        expect(wrapper.vm.isReadOnly).toBe(false);
+
+        // saving is offered, deleting is offered but refused: the platform collects through this app
+        // and the installation has no second one
+        const save = wrapper.find('.sw-settings-payment-gateway-detail__save-action');
+        const del = wrapper.find('.sw-settings-payment-gateway-detail__delete-action');
+        expect(save.exists()).toBe(true);
+        expect(save.attributes()).not.toHaveProperty('disabled');
+        expect(del.exists()).toBe(true);
+        expect(del.attributes()).toHaveProperty('disabled');
+
+        // the notice explains what is special instead of declaring the page read only
+        const notice = wrapper.find('.sw-settings-payment-gateway-detail__platform-notice');
+        expect(notice.exists()).toBe(true);
+        expect(notice.text()).toBe('sw-settings-payment-gateway.detail.platformAccountNotice');
+        expect(wrapper.vm.providers).toHaveLength(2);
+
+        // the technical name is the identifier the installation gave this row - it is not shown, while
+        // the name of the app is editable because the platform collects under the name of this shop
+        expect(wrapper.find('[name="sw-field--payment-app-technical-name"]').exists()).toBe(false);
+        expect(wrapper.find('[name="sw-field--payment-app-name"]').exists()).toBe(true);
+        expect(wrapper.find('[name="sw-field--payment-app-name"]').attributes('disabled')).toBeUndefined();
+
+        // the merchant account of the platform is maintained on the page of the interface: the values
+        // are shown here and disabled, and the hint links to the page that owns them
+        const accountRow = wrapper.findAll('.sw-settings-payment-gateway-detail__account').at(0);
+        const fields = accountRow.findAll('.sw-payment-config-field-stub');
+        expect(fields.length).toBeGreaterThan(0);
+        fields.forEach((field) => expect(field.attributes('disabled')).toBe('disabled'));
+
+        const hint = accountRow.find('.sw-settings-payment-gateway-detail__platform-credentials-hint');
+        expect(hint.exists()).toBe(true);
+        expect(hint.text()).toContain('sw-settings-payment-gateway.detail.platformCredentialHint');
+
+        // the parameters of a channel are stored on the platform level as well: a write into this row
+        // would never be read by the resolver, so the inputs only display the values
+        const channelRow = wrapper.findAll('.sw-settings-payment-gateway-detail__channel').at(0);
+        const channelParams = channelRow
+            .findAll('.sw-settings-payment-gateway-detail__channel-params')
+            .at(0)
+            .findAll('.sw-payment-config-field-stub');
+        expect(channelParams.length).toBeGreaterThan(0);
+        channelParams.forEach((field) => expect(field.attributes('disabled')).toBe('disabled'));
+
+        // and the same hint sits above them, so the merchant knows where to change them
+        const channelHint = channelRow.find('.sw-settings-payment-gateway-detail__platform-credentials-hint');
+        expect(channelHint.exists()).toBe(true);
+        expect(channelHint.text()).toContain('sw-settings-payment-gateway.detail.platformCredentialHint');
+    });
+
+    it('should keep the save and the delete action for an app of a merchant', async () => {
+        const { wrapper } = await createWrapper();
+
+        expect(wrapper.vm.isPlatformTenant).toBe(false);
+        expect(wrapper.find('.sw-settings-payment-gateway-detail__save-action').exists()).toBe(true);
+        expect(wrapper.find('.sw-settings-payment-gateway-detail__delete-action').exists()).toBe(true);
+        expect(wrapper.find('.sw-settings-payment-gateway-detail__platform-notice').exists()).toBe(false);
+        expect(wrapper.find('.sw-settings-payment-gateway-detail__platform-credentials-hint').exists()).toBe(false);
+        expect(wrapper.find('[name="sw-field--payment-app-technical-name"]').exists()).toBe(true);
+
+        // and the credentials of an interface the merchant is authorized for are the ones it fills in
+        const fields = wrapper
+            .findAll('.sw-settings-payment-gateway-detail__account')
+            .at(0)
+            .findAll('.sw-payment-config-field-stub');
+        expect(fields.length).toBeGreaterThan(0);
+        expect(fields.at(0).text()).toBe('app_id');
+        expect(fields.at(0).attributes('disabled')).toBeUndefined();
+
+        // the interface the app is not authorized for keeps its fields disabled - enabling the
+        // interface is the decision that turns them on, not typing into them
+        const unauthorized = wrapper
+            .findAll('.sw-settings-payment-gateway-detail__account')
+            .at(1)
+            .findAll('.sw-payment-config-field-stub');
+        expect(unauthorized.at(0).text()).toBe('secret_key');
+        expect(unauthorized.at(0).attributes('disabled')).toBe('disabled');
+    });
+
+    it('should render the page read only without the editor role', async () => {
+        global.activeAclRoles = ['payment_app.viewer'];
+
+        const { wrapper } = await createWrapper();
+
+        expect(wrapper.vm.isPlatformTenant).toBe(false);
+        expect(wrapper.vm.isReadOnly).toBe(true);
     });
 
     it('should hand out a generated secret once and clear the input', async () => {

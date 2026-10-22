@@ -299,12 +299,10 @@ class CheckoutFinishPageLoaderTest extends TestCase
         $expectedCriteria = (new Criteria([$criteriaOrderId ?? $orderId]))
             ->addFilter(new EqualsFilter('order.orderCustomer.customerId', Generator::CUSTOMER))
             ->addAssociation('primaryOrderDelivery.shippingMethod')
-            ->addAssociation('primaryOrderDelivery.shippingOrderAddress.salutation')
             ->addAssociation('primaryOrderDelivery.shippingOrderAddress.country')
             ->addAssociation('primaryOrderDelivery.shippingOrderAddress.countryState')
             ->addAssociation('primaryOrderTransaction.paymentMethod')
             ->addAssociation('lineItems.cover')
-            ->addAssociation('billingAddress.salutation')
             ->addAssociation('billingAddress.country')
             ->addAssociation('billingAddress.countryState')
             ->addAssociation('currency');

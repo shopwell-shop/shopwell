@@ -6,6 +6,7 @@ use Shopwell\Core\Checkout\Cart\Cart;
 use Shopwell\Core\Checkout\Customer\CustomerEntity;
 use Shopwell\Core\Checkout\Loyalty\SalesChannel\LoyaltyRedeemRoute;
 use Shopwell\Core\Checkout\Loyalty\SalesChannel\MembershipPurchaseRoute;
+use Shopwell\Core\Checkout\Loyalty\Service\LoyaltySettings;
 use Shopwell\Core\Framework\HttpException;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\PlatformRequest;
@@ -16,6 +17,7 @@ use Shopwell\Storefront\Page\Account\Loyalty\AccountLoyaltyPageLoader;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Attribute\Route;
 
 /**
@@ -33,6 +35,7 @@ class AccountLoyaltyController extends StorefrontController
         private readonly AccountLoyaltyPageLoader $pageLoader,
         private readonly LoyaltyRedeemRoute $loyaltyRedeemRoute,
         private readonly MembershipPurchaseRoute $membershipPurchaseRoute,
+        private readonly LoyaltySettings $settings,
     ) {
     }
 
@@ -48,6 +51,8 @@ class AccountLoyaltyController extends StorefrontController
     )]
     public function index(Request $request, SalesChannelContext $context, CustomerEntity $customer): Response
     {
+        $this->assertLoyaltyEnabled($context);
+
         $page = $this->pageLoader->load($request, $context, $customer);
 
         $this->hook(new AccountLoyaltyPageLoadedHook($page, $context));
@@ -69,6 +74,8 @@ class AccountLoyaltyController extends StorefrontController
     )]
     public function loyaltyJson(Request $request, SalesChannelContext $context, CustomerEntity $customer): JsonResponse
     {
+        $this->assertLoyaltyEnabled($context);
+
         $page = $this->pageLoader->load($request, $context, $customer);
 
         return $this->json(['success' => true, 'loyalty' => $page->getLoyalty()->all()]);
@@ -127,5 +134,16 @@ class AccountLoyaltyController extends StorefrontController
         }
 
         return $this->json(['success' => true, 'order' => $response->getObject()->all()]);
+    }
+
+    /**
+     * A shop that switched the membership off has no membership page either - an existing link or
+     * bookmark answers like any other page that does not exist.
+     */
+    private function assertLoyaltyEnabled(SalesChannelContext $context): void
+    {
+        if (!$this->settings->isEnabled($context->getSalesChannelId())) {
+            throw new NotFoundHttpException();
+        }
     }
 }

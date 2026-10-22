@@ -7,9 +7,15 @@ use Shopwell\Core\Checkout\Customer\Aggregate\CustomerAddress\CustomerAddressEnt
 use Shopwell\Core\Checkout\Customer\Aggregate\CustomerGroup\CustomerGroupEntity;
 use Shopwell\Core\Checkout\Customer\Aggregate\CustomerRecovery\CustomerRecoveryEntity;
 use Shopwell\Core\Checkout\Customer\Aggregate\CustomerWishlist\CustomerWishlistCollection;
+use Shopwell\Core\Checkout\Loyalty\Entity\CustomerLoyalty\CustomerLoyaltyCollection;
+use Shopwell\Core\Checkout\Loyalty\Entity\CustomerPointTransaction\CustomerPointTransactionCollection;
+use Shopwell\Core\Checkout\Loyalty\Entity\MembershipOrder\MembershipOrderCollection;
 use Shopwell\Core\Checkout\Order\Aggregate\OrderCustomer\OrderCustomerCollection;
+use Shopwell\Core\Checkout\OrderReturn\Entity\OrderReturnCollection;
 use Shopwell\Core\Checkout\Payment\PaymentMethodEntity;
 use Shopwell\Core\Checkout\Promotion\PromotionCollection;
+use Shopwell\Core\Checkout\Wallet\Entity\CustomerWallet\CustomerWalletCollection;
+use Shopwell\Core\Checkout\Wallet\Entity\CustomerWalletTopUp\CustomerWalletTopUpCollection;
 use Shopwell\Core\Content\Product\Aggregate\ProductReview\ProductReviewCollection;
 use Shopwell\Core\Framework\DataAbstractionLayer\Entity;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityCustomFieldsTrait;
@@ -17,8 +23,9 @@ use Shopwell\Core\Framework\DataAbstractionLayer\EntityIdTrait;
 use Shopwell\Core\Framework\Deprecation\BCChange\ParameterTypeWidening;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Language\LanguageEntity;
+use Shopwell\Core\System\Payment\Subscription\PaymentMandateCollection;
+use Shopwell\Core\System\Payment\Subscription\PaymentSubscriptionCollection;
 use Shopwell\Core\System\SalesChannel\SalesChannelEntity;
-use Shopwell\Core\System\Salutation\SalutationEntity;
 use Shopwell\Core\System\Tag\TagCollection;
 use Shopwell\Core\System\User\UserEntity;
 
@@ -39,13 +46,19 @@ class CustomerEntity extends Entity implements \Stringable
 
     protected ?string $lastPaymentMethodId = null;
 
-    protected string $defaultBillingAddressId;
+    /**
+     * Optional, as a customer may register without any address and add one during checkout.
+     */
+    protected ?string $defaultBillingAddressId = null;
 
-    protected string $defaultShippingAddressId;
+    /**
+     * Optional, as a customer may register without any address and add one during checkout.
+     */
+    protected ?string $defaultShippingAddressId = null;
 
     protected string $customerNumber;
 
-    protected ?string $salutationId = null;
+    protected ?string $gender = null;
 
     protected string $name;
 
@@ -57,8 +70,6 @@ class CustomerEntity extends Entity implements \Stringable
     protected ?string $password = null;
 
     protected string $email;
-
-    protected ?string $title = null;
 
     protected ?string $phoneNumber = null;
 
@@ -124,8 +135,6 @@ class CustomerEntity extends Entity implements \Stringable
 
     protected ?PaymentMethodEntity $lastPaymentMethod = null;
 
-    protected ?SalutationEntity $salutation = null;
-
     protected ?CustomerAddressEntity $defaultBillingAddress = null;
 
     protected ?CustomerAddressEntity $defaultShippingAddress = null;
@@ -152,6 +161,22 @@ class CustomerEntity extends Entity implements \Stringable
     protected ?CustomerRecoveryEntity $recoveryCustomer = null;
 
     protected ?ProductReviewCollection $productReviews = null;
+
+    protected ?CustomerLoyaltyCollection $customerLoyalties = null;
+
+    protected ?CustomerPointTransactionCollection $customerPointTransactions = null;
+
+    protected ?MembershipOrderCollection $membershipOrders = null;
+
+    protected ?CustomerWalletCollection $customerWallets = null;
+
+    protected ?CustomerWalletTopUpCollection $customerWalletTopUps = null;
+
+    protected ?PaymentMandateCollection $paymentMandates = null;
+
+    protected ?OrderReturnCollection $orderReturns = null;
+
+    protected ?PaymentSubscriptionCollection $paymentSubscriptions = null;
 
     protected ?string $remoteAddress = null;
 
@@ -218,22 +243,22 @@ class CustomerEntity extends Entity implements \Stringable
         $this->lastPaymentMethodId = $lastPaymentMethodId;
     }
 
-    public function getDefaultBillingAddressId(): string
+    public function getDefaultBillingAddressId(): ?string
     {
         return $this->defaultBillingAddressId;
     }
 
-    public function setDefaultBillingAddressId(string $defaultBillingAddressId): void
+    public function setDefaultBillingAddressId(?string $defaultBillingAddressId): void
     {
         $this->defaultBillingAddressId = $defaultBillingAddressId;
     }
 
-    public function getDefaultShippingAddressId(): string
+    public function getDefaultShippingAddressId(): ?string
     {
         return $this->defaultShippingAddressId;
     }
 
-    public function setDefaultShippingAddressId(string $defaultShippingAddressId): void
+    public function setDefaultShippingAddressId(?string $defaultShippingAddressId): void
     {
         $this->defaultShippingAddressId = $defaultShippingAddressId;
     }
@@ -248,14 +273,14 @@ class CustomerEntity extends Entity implements \Stringable
         $this->customerNumber = $customerNumber;
     }
 
-    public function getSalutationId(): ?string
+    public function getGender(): ?string
     {
-        return $this->salutationId;
+        return $this->gender;
     }
 
-    public function setSalutationId(string $salutationId): void
+    public function setGender(?string $gender): void
     {
-        $this->salutationId = $salutationId;
+        $this->gender = $gender;
     }
 
     public function getName(): string
@@ -304,16 +329,6 @@ class CustomerEntity extends Entity implements \Stringable
     public function setEmail(string $email): void
     {
         $this->email = $email;
-    }
-
-    public function getTitle(): ?string
-    {
-        return $this->title;
-    }
-
-    public function setTitle(?string $title): void
-    {
-        $this->title = $title;
     }
 
     public function getPhoneNumber(): ?string
@@ -573,16 +588,6 @@ class CustomerEntity extends Entity implements \Stringable
     public function setLastPaymentMethod(PaymentMethodEntity $lastPaymentMethod): void
     {
         $this->lastPaymentMethod = $lastPaymentMethod;
-    }
-
-    public function getSalutation(): ?SalutationEntity
-    {
-        return $this->salutation;
-    }
-
-    public function setSalutation(SalutationEntity $salutation): void
-    {
-        $this->salutation = $salutation;
     }
 
     public function getDefaultBillingAddress(): ?CustomerAddressEntity
@@ -849,5 +854,85 @@ class CustomerEntity extends Entity implements \Stringable
     public function setUpdatedBy(UserEntity $updatedBy): void
     {
         $this->updatedBy = $updatedBy;
+    }
+
+    public function getCustomerLoyalties(): ?CustomerLoyaltyCollection
+    {
+        return $this->customerLoyalties;
+    }
+
+    public function setCustomerLoyalties(CustomerLoyaltyCollection $customerLoyalties): void
+    {
+        $this->customerLoyalties = $customerLoyalties;
+    }
+
+    public function getCustomerPointTransactions(): ?CustomerPointTransactionCollection
+    {
+        return $this->customerPointTransactions;
+    }
+
+    public function setCustomerPointTransactions(CustomerPointTransactionCollection $customerPointTransactions): void
+    {
+        $this->customerPointTransactions = $customerPointTransactions;
+    }
+
+    public function getMembershipOrders(): ?MembershipOrderCollection
+    {
+        return $this->membershipOrders;
+    }
+
+    public function setMembershipOrders(MembershipOrderCollection $membershipOrders): void
+    {
+        $this->membershipOrders = $membershipOrders;
+    }
+
+    public function getCustomerWallets(): ?CustomerWalletCollection
+    {
+        return $this->customerWallets;
+    }
+
+    public function setCustomerWallets(CustomerWalletCollection $customerWallets): void
+    {
+        $this->customerWallets = $customerWallets;
+    }
+
+    public function getOrderReturns(): ?OrderReturnCollection
+    {
+        return $this->orderReturns;
+    }
+
+    public function setOrderReturns(OrderReturnCollection $orderReturns): void
+    {
+        $this->orderReturns = $orderReturns;
+    }
+
+    public function getCustomerWalletTopUps(): ?CustomerWalletTopUpCollection
+    {
+        return $this->customerWalletTopUps;
+    }
+
+    public function setCustomerWalletTopUps(CustomerWalletTopUpCollection $customerWalletTopUps): void
+    {
+        $this->customerWalletTopUps = $customerWalletTopUps;
+    }
+
+    public function getPaymentMandates(): ?PaymentMandateCollection
+    {
+        return $this->paymentMandates;
+    }
+
+    public function setPaymentMandates(PaymentMandateCollection $paymentMandates): void
+    {
+        $this->paymentMandates = $paymentMandates;
+    }
+
+    public function getPaymentSubscriptions(): ?PaymentSubscriptionCollection
+    {
+        return $this->paymentSubscriptions;
+    }
+
+    public function setPaymentSubscriptions(PaymentSubscriptionCollection $paymentSubscriptions): void
+    {
+        $this->paymentSubscriptions = $paymentSubscriptions;
     }
 }

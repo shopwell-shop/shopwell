@@ -17,11 +17,16 @@ class PaymentException extends HttpException
     public const UNKNOWN_PROVIDER = 'PAYMENT__UNKNOWN_PROVIDER';
     public const UNKNOWN_CHANNEL = 'PAYMENT__UNKNOWN_CHANNEL';
     public const DUPLICATE_CHANNEL = 'PAYMENT__DUPLICATE_CHANNEL';
+    public const DUPLICATE_PROVIDER = 'PAYMENT__DUPLICATE_PROVIDER';
+    public const AMBIGUOUS_PROVIDER_PRIORITY = 'PAYMENT__AMBIGUOUS_PROVIDER_PRIORITY';
+    public const INVALID_PROVIDER_NAME = 'PAYMENT__INVALID_PROVIDER_NAME';
     public const INVALID_PROVIDER_DECLARATION = 'PAYMENT__INVALID_PROVIDER_DECLARATION';
     public const STATE_MACHINE_INVALID = 'PAYMENT__STATE_MACHINE_INVALID';
 
     public const PROVIDER_NOT_ENABLED = 'PAYMENT__PROVIDER_NOT_ENABLED';
     public const PROVIDER_NOT_CONFIGURED = 'PAYMENT__PROVIDER_NOT_CONFIGURED';
+    public const PROVIDER_INHERITANCE_CYCLE = 'PAYMENT__PROVIDER_INHERITANCE_CYCLE';
+    public const PROVIDER_SOURCE_APP_MISSING = 'PAYMENT__PROVIDER_SOURCE_APP_MISSING';
     public const CHANNEL_NOT_ENABLED = 'PAYMENT__CHANNEL_NOT_ENABLED';
     public const CHANNEL_NOT_CONFIGURED = 'PAYMENT__CHANNEL_NOT_CONFIGURED';
     public const CHANNEL_DISABLED = 'PAYMENT__CHANNEL_DISABLED';
@@ -65,9 +70,12 @@ class PaymentException extends HttpException
 
     public const UNSUPPORTED_API = 'PAYMENT__UNSUPPORTED_API';
     public const ACTION_WITHOUT_API = 'PAYMENT__ACTION_WITHOUT_API';
+    public const PROVIDER_LACKS_CAPABILITY = 'PAYMENT__PROVIDER_LACKS_CAPABILITY';
 
     public const PAYMENT_METHOD_CHANNEL_MISSING = 'PAYMENT__PAYMENT_METHOD_CHANNEL_MISSING';
+    public const PAYMENT_METHOD_CHANNEL_TAKEN = 'PAYMENT__PAYMENT_METHOD_CHANNEL_TAKEN';
     public const CHANNEL_NOT_AVAILABLE_IN_STOREFRONT = 'PAYMENT__CHANNEL_NOT_AVAILABLE_IN_STOREFRONT';
+    public const PLATFORM_TENANT_READ_ONLY = 'PAYMENT__PLATFORM_TENANT_READ_ONLY';
 
     public const CYCLE_NOT_EXPRESSIBLE = 'PAYMENT__CYCLE_NOT_EXPRESSIBLE';
     public const INVALID_PERIOD_UNIT = 'PAYMENT__INVALID_PERIOD_UNIT';
@@ -86,6 +94,7 @@ class PaymentException extends HttpException
     public const TRANSFER_IDENTITY_VALUE_TOO_LONG = 'PAYMENT__TRANSFER_IDENTITY_VALUE_TOO_LONG';
     public const TRANSFER_AMOUNT_INVALID = 'PAYMENT__TRANSFER_AMOUNT_INVALID';
     public const TRANSFER_OUT_NO_INVALID = 'PAYMENT__TRANSFER_OUT_NO_INVALID';
+    public const TRANSFER_OUT_NO_TAKEN = 'PAYMENT__TRANSFER_OUT_NO_TAKEN';
     public const TRANSFER_ALREADY_FINALIZED = 'PAYMENT__TRANSFER_ALREADY_FINALIZED';
     public const TRANSFER_FOREIGN_APP = 'PAYMENT__TRANSFER_FOREIGN_APP';
     public const TRANSFER_PROVIDER_REF_MISSING = 'PAYMENT__TRANSFER_PROVIDER_REF_MISSING';
@@ -133,6 +142,72 @@ class PaymentException extends HttpException
         );
     }
 
+    /**
+     * Two implementations of the very same technical name, where the second one is not a decorator.
+     *
+     * A technical name is a foreign key value - `payment_order.provider_technical_name`,
+     * `payment_provider_config.provider_technical_name`, `payment_app_provider.provider_technical_name` -
+     * so a second implementation that silently takes over would make every historic row
+     * uninterpretable. Extending an interface is done by decorating it, replacing it by giving the
+     * replacement a technical name of its own. The container refuses to compile, which is the only
+     * moment the conflict can still be answered with "fix the declaration".
+     */
+    public static function duplicateProvider(string $technicalName, string $firstDeclaration, string $secondDeclaration): self
+    {
+        return new self(
+            Response::HTTP_INTERNAL_SERVER_ERROR,
+            self::DUPLICATE_PROVIDER,
+            'The payment provider "{{ technicalName }}" is declared by "{{ firstDeclaration }}" and by "{{ secondDeclaration }}", but the second one is not a decorator. Declare a technical name of its own or decorate the existing declaration through getDecorated().',
+            ['technicalName' => $technicalName, 'firstDeclaration' => $firstDeclaration, 'secondDeclaration' => $secondDeclaration]
+        );
+    }
+
+    /**
+     * Two declarations of one technical name that carry the very same priority.
+     *
+     * The priority is what orders the decoration chain, so one priority for two declarations means the
+     * order is decided by the container - by the order the services happen to be registered in. That
+     * order changes when an unrelated plugin installs itself, which would silently swap the outermost
+     * decorator, i.e. the instance that represents the interface. Since a chain only has one valid
+     * order, the ambiguity is refused at compile time instead of being resolved by chance.
+     */
+    public static function ambiguousProviderPriority(
+        string $technicalName,
+        int $priority,
+        string $firstDeclaration,
+        string $secondDeclaration,
+    ): self {
+        return new self(
+            Response::HTTP_INTERNAL_SERVER_ERROR,
+            self::AMBIGUOUS_PROVIDER_PRIORITY,
+            'The payment provider "{{ technicalName }}" is declared by "{{ firstDeclaration }}" and by "{{ secondDeclaration }}", both with the priority {{ priority }}. The priority orders the decoration chain, so give them different priorities.',
+            [
+                'technicalName' => $technicalName,
+                'priority' => $priority,
+                'firstDeclaration' => $firstDeclaration,
+                'secondDeclaration' => $secondDeclaration,
+            ]
+        );
+    }
+
+    /**
+     * A technical name that the notify url could not carry.
+     *
+     * The route of the notify endpoint is `/payment-api/v1/notify/{provider}/{paymentNo}` with the
+     * requirement `[A-Za-z0-9_-]+` (`Api/NotifyController`), so a name outside of that character set
+     * would produce an interface whose callbacks can never arrive. It is refused at container compile
+     * time instead of at the first payment.
+     */
+    public static function invalidProviderName(string $technicalName): self
+    {
+        return new self(
+            Response::HTTP_INTERNAL_SERVER_ERROR,
+            self::INVALID_PROVIDER_NAME,
+            'The payment provider technical name "{{ technicalName }}" is invalid, it must match [A-Za-z0-9_-]+ so that the notify url can carry it.',
+            ['technicalName' => $technicalName]
+        );
+    }
+
     public static function stateMachineInvalid(string $stateMachine, string $reason): self
     {
         return new self(
@@ -160,6 +235,36 @@ class PaymentException extends HttpException
             self::PROVIDER_NOT_CONFIGURED,
             'The payment provider "{{ technicalName }}" is enabled but its credentials are not configured.',
             ['technicalName' => $technicalName]
+        );
+    }
+
+    /**
+     * The account sources of an interface run in a circle: app A inherits from app B, app B inherits
+     * from app A again. Neither of them owns an account, so the chain has no end and no credentials -
+     * it is a configuration mistake and is refused instead of being walked until a hop limit hits.
+     */
+    public static function providerInheritanceCycle(string $technicalName, string $appTechnicalName): self
+    {
+        return new self(
+            Response::HTTP_BAD_REQUEST,
+            self::PROVIDER_INHERITANCE_CYCLE,
+            'The account source of the payment provider "{{ technicalName }}" runs in a circle: the app "{{ appTechnicalName }}" inherits it from an app that inherits it from "{{ appTechnicalName }}" again. Exactly one app of the chain has to collect on an account of its own.',
+            ['technicalName' => $technicalName, 'appTechnicalName' => $appTechnicalName]
+        );
+    }
+
+    /**
+     * The account of an interface is inherited from an app that does not exist anymore. The column is
+     * a foreign key with `ON DELETE SET NULL`, so this only happens for a row that was written by
+     * hand or by an import - a clear answer beats walking into "no credentials" without saying why.
+     */
+    public static function providerSourceAppMissing(string $technicalName, string $appTechnicalName, string $sourceAppId): self
+    {
+        return new self(
+            Response::HTTP_BAD_REQUEST,
+            self::PROVIDER_SOURCE_APP_MISSING,
+            'The app "{{ appTechnicalName }}" inherits the account of the payment provider "{{ technicalName }}" from the app "{{ sourceAppId }}", which does not exist.',
+            ['technicalName' => $technicalName, 'appTechnicalName' => $appTechnicalName, 'sourceAppId' => $sourceAppId]
         );
     }
 
@@ -563,6 +668,24 @@ class PaymentException extends HttpException
     }
 
     /**
+     * The caller asked for an operation the interface never declared.
+     *
+     * Payum answers an unsupported request with an error inside the gateway, which the services
+     * around it can only report as a channel fault. That reads as "the interface is down" to whoever
+     * called, when the truth is "this interface cannot do that at all" - a fact the declaration knows
+     * before a single request is signed, and the one answer the caller can act on.
+     */
+    public static function providerLacksCapability(string $technicalName, string $capability): self
+    {
+        return new self(
+            Response::HTTP_BAD_REQUEST,
+            self::PROVIDER_LACKS_CAPABILITY,
+            'The payment provider "{{ technicalName }}" does not support "{{ capability }}".',
+            ['technicalName' => $technicalName, 'capability' => $capability]
+        );
+    }
+
+    /**
      * A checkout payment method without a bound gateway channel cannot collect at all: the shopper
      * picked a method the administration never told how to reach an interface.
      */
@@ -573,6 +696,43 @@ class PaymentException extends HttpException
             self::PAYMENT_METHOD_CHANNEL_MISSING,
             'The payment method "{{ paymentMethodId }}" has no gateway channel bound to it.',
             ['paymentMethodId' => $paymentMethodId]
+        );
+    }
+
+    /**
+     * The app/channel pair that is already bound to another payment method cannot be bound a second
+     * time: the shopper's choice between the two methods would become meaningless and the money of one
+     * of them would land in the account of the other. The database enforces the same rule over
+     * (app, channel), this is the answer that names the method in the way of the one being configured.
+     */
+    public static function paymentMethodChannelTaken(string $paymentAppName, string $channelTechnicalName, string $paymentMethodId, string $paymentMethodName): self
+    {
+        return new self(
+            Response::HTTP_CONFLICT,
+            self::PAYMENT_METHOD_CHANNEL_TAKEN,
+            'The payment app "{{ paymentAppName }}" already collects the channel "{{ channelTechnicalName }}" for the payment method "{{ paymentMethodName }}" ({{ paymentMethodId }}).',
+            [
+                'paymentAppName' => $paymentAppName,
+                'channelTechnicalName' => $channelTechnicalName,
+                'paymentMethodId' => $paymentMethodId,
+                'paymentMethodName' => $paymentMethodName,
+            ]
+        );
+    }
+
+    /**
+     * The tenant the platform itself collects through is seeded, not onboarded, and it cannot be
+     * deleted: the shop would be left without a tenant to attribute platform payments to, and every
+     * platform payment would lose its bookkeeping. It stays editable, because the merchant configures
+     * the interfaces and channels of the shop on it.
+     */
+    public static function platformTenantNotDeletable(string $technicalName): self
+    {
+        return new self(
+            Response::HTTP_BAD_REQUEST,
+            self::PLATFORM_TENANT_READ_ONLY,
+            'The payment app "{{ technicalName }}" is the tenant of the platform and cannot be deleted here.',
+            ['technicalName' => $technicalName]
         );
     }
 
@@ -786,6 +946,42 @@ class PaymentException extends HttpException
             self::TRANSFER_OUT_NO_INVALID,
             'The out number "{{ outNo }}" must consist of 1 to 30 characters of [0-9a-zA-Z].',
             ['outNo' => $outNo]
+        );
+    }
+
+    /**
+     * The out number already names a **different** payout of this app.
+     *
+     * The out number is the idempotency key, so a second booking under it is answered with the payout that
+     * exists - but only when it is the same payout. Reusing the number for another recipient, amount or
+     * currency would make the platform answer "already booked" with a payout the caller never meant, and the
+     * intended money would never move. The conflict is the only answer that lets the caller fix the number.
+     */
+    public static function transferOutNoTaken(string $outNo): self
+    {
+        return new self(
+            Response::HTTP_CONFLICT,
+            self::TRANSFER_OUT_NO_TAKEN,
+            'The out number "{{ outNo }}" is already used by another payout of this app.',
+            ['outNo' => $outNo]
+        );
+    }
+
+    /**
+     * The app a payout is booked for does not exist or is switched off.
+     *
+     * It carries `PAYMENT__APP_NOT_FOUND` on purpose - the code an operator sees should stay the one the
+     * domain already uses for "this app cannot be worked with" - but answers 404 instead of the 401 of
+     * {@see self::appNotFound()}: that one is the answer of the app authentication of the payment api, and a
+     * 401 in the administration would read as "your session expired", which is not what happened.
+     */
+    public static function transferAppNotAvailable(string $appId): self
+    {
+        return new self(
+            Response::HTTP_NOT_FOUND,
+            self::APP_NOT_FOUND,
+            'The payment app "{{ appId }}" does not exist or is not active.',
+            ['appId' => $appId]
         );
     }
 

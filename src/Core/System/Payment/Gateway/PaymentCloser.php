@@ -12,6 +12,7 @@ use Shopwell\Core\System\Payment\Order\Aggregate\PaymentTransaction\PaymentTrans
 use Shopwell\Core\System\Payment\Order\Aggregate\PaymentTransaction\PaymentTransactionEntity;
 use Shopwell\Core\System\Payment\Order\PaymentOrderEntity;
 use Shopwell\Core\System\Payment\PaymentException;
+use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
 use Shopwell\Core\System\Payment\Provider\PaymentConfigResolver;
 
 /**
@@ -65,6 +66,17 @@ final class PaymentCloser
             $order->device,
             $order->channelParams ?? []
         );
+
+        // An interface that never declared a close cannot be asked to close. Payum answers a request
+        // no action of the interface supports with an error *inside* the gateway, so the catch below
+        // could only report it as a channel fault - a 502 "the channel returned an error" for a fact
+        // the declaration knew before a single request was signed. The guard therefore runs here, on
+        // the resolved provider (the end of the decoration chain, whose capabilities are the union of
+        // the whole chain) and before the attempt is booked: a call that can never reach the channel
+        // must not leave a failed transaction behind.
+        if (!$resolved->provider->supports(PaymentCapability::CLOSE)) {
+            throw PaymentException::providerLacksCapability($resolved->provider->technicalName, PaymentCapability::CLOSE->value);
+        }
 
         $model = PaymentGatewayModel::forOrder($order);
         $gateway = $resolved->provider->gatewayFactory->createForPayment($resolved, (string) $order->notifyUrl, (string) $order->returnUrl);

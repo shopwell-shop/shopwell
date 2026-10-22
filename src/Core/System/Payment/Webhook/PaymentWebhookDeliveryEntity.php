@@ -7,7 +7,6 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\Field;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\FieldType;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\ForeignKey;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\ManyToOne;
-use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\OnDelete;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\PrimaryKey;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\Required;
 use Shopwell\Core\Framework\DataAbstractionLayer\Entity as EntityStruct;
@@ -95,9 +94,9 @@ class PaymentWebhookDeliveryEntity extends EntityStruct
      * delivery has nothing left to tell. The reverse sides in PaymentOrderEntity and PaymentAppEntity
      * declare the same intent for the dal.
      */
-    #[ManyToOne(entity: 'payment_order', onDelete: OnDelete::CASCADE, api: ['admin-api' => true, 'store-api' => false])]
+    #[ManyToOne(entity: 'payment_order', api: ['admin-api' => true, 'store-api' => false])]
     public ?PaymentOrderEntity $paymentOrder = null;
 
-    #[ManyToOne(entity: 'payment_app', onDelete: OnDelete::CASCADE, api: ['admin-api' => true, 'store-api' => false])]
+    #[ManyToOne(entity: 'payment_app', api: ['admin-api' => true, 'store-api' => false])]
     public ?PaymentAppEntity $paymentApp = null;
 }

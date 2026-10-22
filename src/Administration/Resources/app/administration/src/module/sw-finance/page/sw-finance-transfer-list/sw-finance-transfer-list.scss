@@ -1,0 +1,23 @@
+.sw-finance-transfer-list {
+    &__content {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+    }
+
+    .mt-empty-state {
+        padding-block: var(--scale-size-48);
+    }
+
+    /**
+     * The failure reason is channel output and can be arbitrarily long. The cell keeps it on one line so
+     * the grid stays readable; the whole text is in the tooltip of the same cell.
+     */
+    &__failure {
+        display: block;
+        max-width: 240px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+}

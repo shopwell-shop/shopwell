@@ -70,7 +70,7 @@ trait OrderActionTrait
                 'street' => 'Musterstraße 1',
                 'city' => 'Schöppingen',
                 'zipcode' => '12345',
-                'salutationId' => $this->getValidSalutationId(),
+                'gender' => $this->getValidGender(),
                 'countryId' => $this->getValidCountryId($this->ids->get('sales-channel')),
             ],
             'defaultBillingAddressId' => $this->ids->get('address'),
@@ -78,7 +78,7 @@ trait OrderActionTrait
             'email' => $email,
             'password' => TestDefaults::HASHED_PASSWORD,
             'name' => 'Max Mustermann',
-            'salutationId' => $this->getValidSalutationId(),
+            'gender' => $this->getValidGender(),
             'customerNumber' => '12345',
             'vatIds' => ['DE123456789'],
             'company' => 'Test',
@@ -184,7 +184,7 @@ trait OrderActionTrait
                 'orderCustomer' => [
                     'customerId' => $customerId,
                     'email' => 'test@example.com',
-                    'salutationId' => $this->getValidSalutationId(),
+                    'gender' => $this->getValidGender(),
                     'name' => 'Max Mustermann',
                 ],
                 'orderNumber' => Uuid::randomHex(),
@@ -197,7 +197,7 @@ trait OrderActionTrait
                 'addresses' => [
                     [
                         'id' => $billingAddressId,
-                        'salutationId' => $this->getValidSalutationId(),
+                        'gender' => $this->getValidGender(),
                         'name' => 'Max Mustermann',
                         'street' => 'Ebbinghoff 10',
                         'zipcode' => '48624',
@@ -207,7 +207,7 @@ trait OrderActionTrait
                     [
                         'id' => $this->ids->create('shipping-address'),
                         'countryId' => $this->getValidCountryId(),
-                        'salutationId' => $this->getValidSalutationId(),
+                        'gender' => $this->getValidGender(),
                         'name' => 'Max Mustermann',
                         'street' => 'Ebbinghoff 10',
                         'zipcode' => '48624',

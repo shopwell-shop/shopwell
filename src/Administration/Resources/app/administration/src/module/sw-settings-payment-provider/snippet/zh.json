@@ -2,38 +2,63 @@
     "sw-settings-payment-provider": {
         "general": {
             "mainMenuItemGeneral": "支付接口",
-            "description": "配置平台在各支付接口（支付宝、微信支付等）的商户凭据，以及每个接口下开放给应用的支付渠道。",
+            "description": "配置平台在各支付接口（支付宝、微信支付等）的商户账户信息，以及每个接口下开放给应用的支付渠道。",
             "emptyStateTitle": "暂无支付接口",
-            "emptyState": "当前系统没有可配置的支付接口。"
+            "emptyState": "当前安装未提供任何支付接口。"
         },
         "provider": {
-            "cardSubtitle": "凭据由支付接口分配，同一接口下的全部渠道共用。保存后不再回显，只显示是否已配置。",
+            "cardTitle": "商户账户",
+            "cardSubtitle": "这些信息由支付接口分配，同一接口下的全部渠道共用。",
             "enabled": "启用该支付接口",
-            "enabledHelpText": "启用后，使用平台凭据的应用才能通过该接口收款。",
+            "enabledHelpText": "启用后，使用平台账户的应用才能通过该接口收款。",
             "configured": "已配置",
-            "reset": "清除配置",
-            "resetModalTitle": "清除接口凭据",
-            "resetModalMessage": "确定要清除「{name}」的全部凭据吗？清除后使用平台凭据的应用将无法通过该接口收款。",
-            "hint": "凭据在服务端加密存储，页面上不会回显；留空的输入项保持原值不变。启用接口前必须填写全部必填项。"
-        },
-        "list": {
-            "channelCount": "渠道：{enabled}/{total} 已启用",
-            "editDetails": "编辑凭据与渠道"
+            "notConfigured": "未配置",
+            "reset": "清除账户信息",
+            "resetModalTitle": "清除接口账户信息",
+            "resetModalMessage": "确定要清除「{name}」的全部账户信息吗？清除后使用平台账户的应用将无法通过该接口收款。",
+            "alipay": "支付宝",
+            "wechat": "微信支付",
+            "paypal": "PayPal",
+            "stripe": "Stripe"
         },
         "channels": {
-            "title": "支付渠道",
+            "title": "收款渠道",
             "subtitle": "渠道是该接口提供给应用的具体支付方式。未启用的渠道，应用无法开通使用。"
         },
         "channel": {
+            "emptyStateTitle": "未声明收款渠道",
+            "emptyState": "该接口未声明任何收款渠道。这属于接口代码的问题，不是本页可配置的项。",
             "enabled": "启用",
             "enabledHelpText": "关闭后，所有应用都无法再使用该渠道收款。",
-            "configured": "已配置",
             "reset": "清除",
             "resetModalTitle": "清除渠道配置",
             "resetModalMessage": "确定要清除「{name}」的渠道参数吗？清除后该渠道将不再对应用开放。",
+            "expand": "展开参数",
+            "collapse": "收起参数",
+            "noParams": "该渠道无需额外参数。",
+            "columnLabel": "渠道",
+            "columnFlow": "结算流程",
+            "columnCurrencies": "币种",
+            "columnDevices": "终端",
             "allCurrencies": "全部币种",
             "allDevices": "全部终端",
-            "runtimeHint": "该渠道下单时还需应用传入运行时参数：{params}。"
+            "runtimeHint": "该渠道下单时还需应用传入运行时参数：{params}。",
+            "alipay_h5": "支付宝 手机网站支付",
+            "alipay_web": "支付宝 电脑网站支付",
+            "alipay_qr": "支付宝 当面付（扫码）",
+            "alipay_app": "支付宝 APP 支付",
+            "alipay_mini": "支付宝 小程序支付",
+            "wechat_h5": "微信支付 H5",
+            "wechat_native": "微信支付 Native（扫码）",
+            "wechat_jsapi": "微信支付 JSAPI（公众号）",
+            "wechat_mini": "微信支付 小程序",
+            "wechat_app": "微信支付 APP",
+            "paypal_checkout": "PayPal 结账",
+            "stripe_checkout": "Stripe Checkout"
+        },
+        "danger": {
+            "title": "危险操作",
+            "description": "清除账户信息会移除平台在该接口下的商户账户。在重新填写账户信息之前，所有使用平台账户的应用都无法收款。"
         },
         "flow": {
             "redirect": "跳转收银台",
@@ -51,6 +76,12 @@
             "resetSuccess": "支付接口配置已清除。",
             "missingFields": "「{name}」已启用，请先填写全部必填项。",
             "nothingToSave": "没有需要保存的改动。"
+        },
+        "list": {
+            "enableModalTitle": "启用支付接口",
+            "enableModalText": "启用后，使用平台账户的应用才能通过该接口收款。",
+            "disableModalTitle": "禁用支付接口",
+            "disableModalText": "禁用后，应用将无法再通过该接口收款。"
         }
     },
     "sw-privileges": {

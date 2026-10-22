@@ -1,0 +1,62 @@
+{% block sw_dashboard_wallet %}
+<mt-card
+    v-if="canViewWallet"
+    class="sw-dashboard-wallet mt-card--future-ignore-max-width"
+    :title="$t('sw-dashboard.wallet.headline')"
+    :is-loading="isLoading"
+    position-identifier="sw-dashboard-wallet"
+>
+    {% block sw_dashboard_wallet_top_up %}
+    <div class="sw-dashboard-wallet__top-up">
+        <span class="sw-dashboard-wallet__top-up-label">{{ $t('sw-dashboard.wallet.topUpToday') }}</span>
+        <span class="sw-dashboard-wallet__top-up-value">{{ currencyFilter(topUpToday, systemCurrencyISOCode, 2) }}</span>
+    </div>
+    {% endblock %}
+
+    {% block sw_dashboard_wallet_transactions %}
+    <ul
+        v-if="hasTransactions"
+        class="sw-dashboard-wallet__list"
+    >
+        {% block sw_dashboard_wallet_transactions_item %}
+        <li
+            v-for="transaction in transactions"
+            :key="transaction.id"
+            class="sw-dashboard-wallet__item"
+        >
+            <component
+                :is="'router-link'"
+                :to="{ name: 'sw.finance.walletTransactions' }"
+                class="sw-dashboard-wallet__item-inner"
+            >
+                <span class="sw-dashboard-wallet__item-customer">{{ customerName(transaction) }}</span>
+                <span class="sw-dashboard-wallet__item-type">{{ typeLabel(transaction) }}</span>
+                <span
+                    class="sw-dashboard-wallet__item-amount"
+                    :class="{ 'is-positive': transaction.amount >= 0 }"
+                >{{ currencyFilter(transaction.amount, systemCurrencyISOCode, 2) }}</span>
+            </component>
+        </li>
+        {% endblock %}
+    </ul>
+
+    {% block sw_dashboard_wallet_empty %}
+    <div
+        v-else
+        class="sw-dashboard-wallet__empty"
+    >
+        {{ $t('sw-dashboard.wallet.empty') }}
+    </div>
+    {% endblock %}
+    {% endblock %}
+
+    {% block sw_dashboard_wallet_footer %}
+    <router-link
+        class="sw-dashboard-wallet__footer-link"
+        :to="{ name: 'sw.finance.walletTransactions' }"
+    >
+        {{ $t('sw-dashboard.wallet.viewAll') }}
+    </router-link>
+    {% endblock %}
+</mt-card>
+{% endblock %}

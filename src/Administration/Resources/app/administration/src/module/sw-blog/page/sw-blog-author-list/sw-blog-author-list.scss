@@ -1,0 +1,71 @@
+.sw-blog-author-list {
+    &__content {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+    }
+
+    .mt-empty-state {
+        padding-block: var(--scale-size-48);
+    }
+
+    &__avatar {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        inline-size: 40px;
+        block-size: 40px;
+        overflow: hidden;
+        background: var(--color-background-tertiary-default);
+        border-radius: 50%;
+    }
+
+    &__avatar-image {
+        inline-size: 100%;
+        block-size: 100%;
+        object-fit: cover;
+    }
+
+    &__avatar-initial {
+        color: var(--color-text-secondary-default);
+        font-weight: var(--font-weight-semibold);
+        font-size: var(--font-size-s);
+        line-height: 1;
+    }
+
+    &__name-cell {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    &__name-text {
+        font-weight: var(--font-weight-semibold);
+    }
+
+    &__name-subline {
+        display: block;
+        overflow: hidden;
+        color: var(--color-text-secondary-default);
+        font-size: var(--font-size-xs);
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    &__entry-count {
+        padding: 0;
+    }
+
+    &__entry-count-empty {
+        color: var(--color-text-secondary-default);
+    }
+
+    &__delete-message {
+        margin: 0;
+        color: var(--color-text-primary-default);
+    }
+
+    &__create-name {
+        margin-block-end: var(--scale-size-16);
+    }
+}

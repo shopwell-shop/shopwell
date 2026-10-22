@@ -57,7 +57,6 @@ final readonly class InvoiceDataProvider extends AbstractDocumentDataProvider
             'currency',
             'language.locale',
             'addresses.country',
-            'addresses.salutation',
             'addresses.countryState',
             'orderCustomer.customer',
             'lineItems.product',

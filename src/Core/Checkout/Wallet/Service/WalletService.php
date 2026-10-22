@@ -12,7 +12,6 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Uuid\Uuid;
-use Shopwell\Core\System\SystemConfig\SystemConfigService;
 
 /**
  * The business rules of a customer wallet: what a booking means, how much may be paid in and when a
@@ -34,10 +33,6 @@ class WalletService
 
     final public const TRANSACTION_TYPE_ADJUST = 'adjust';
 
-    final public const CONFIG_KEY_MIN_TOP_UP_AMOUNT = 'core.wallet.minTopUpAmount';
-
-    final public const CONFIG_KEY_MAX_TOP_UP_AMOUNT = 'core.wallet.maxTopUpAmount';
-
     /**
      * @internal
      *
@@ -46,7 +41,7 @@ class WalletService
     public function __construct(
         private readonly EntityRepository $walletRepository,
         private readonly WalletLedger $ledger,
-        private readonly SystemConfigService $systemConfigService,
+        private readonly WalletSettings $settings,
     ) {
     }
 
@@ -194,7 +189,7 @@ class WalletService
             throw WalletException::invalidAmount($amount);
         }
 
-        $minimum = $this->systemConfigService->getFloat(self::CONFIG_KEY_MIN_TOP_UP_AMOUNT);
+        $minimum = $this->settings->minTopUpAmount();
 
         if ($minimum > 0.0 && $amount < $minimum) {
             throw WalletException::belowMinimumTopUp($amount, $minimum);

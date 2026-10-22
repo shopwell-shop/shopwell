@@ -96,7 +96,7 @@ class PaymentOrderControllerTest extends TestCase
         ]);
 
         $controller = $this->controller($app, PaymentControllerFixture::repository(PaymentOrderCollection::class, [$order]), [
-            'appProviders' => [PaymentControllerFixture::appProvider($app->id)],
+            'appProviders' => [PaymentControllerFixture::appProvider($app->id, credentials: ['app_id' => 'platform-app'])],
             'appChannels' => [PaymentControllerFixture::appChannel($app->id)],
             'channelConfigs' => [PaymentControllerFixture::channelConfig()],
             'providerConfigs' => [PaymentControllerFixture::providerConfig()],
@@ -185,7 +185,7 @@ class PaymentOrderControllerTest extends TestCase
         $request = PaymentControllerFixture::signedRequest('client-a', 'secret-a', Request::METHOD_POST, self::ORDER_PATH . '/close');
 
         $controller = $this->controller($app, PaymentControllerFixture::repository(PaymentOrderCollection::class, [$order]), [
-            'appProviders' => [PaymentControllerFixture::appProvider($app->id)],
+            'appProviders' => [PaymentControllerFixture::appProvider($app->id, credentials: ['app_id' => 'platform-app'])],
             'appChannels' => [PaymentControllerFixture::appChannel($app->id)],
             'channelConfigs' => [PaymentControllerFixture::channelConfig()],
             'providerConfigs' => [PaymentControllerFixture::providerConfig()],

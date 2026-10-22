@@ -5,8 +5,14 @@ namespace Shopwell\Tests\Unit\Core\System\Payment\Provider;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\System\Payment\Provider\PaymentProvider;
+use Shopwell\Core\System\Payment\Provider\AbstractPaymentProvider;
+use Shopwell\Core\System\Payment\Provider\Alipay\AlipayPayParamsDecoder;
+use Shopwell\Core\System\Payment\Provider\Alipay\AlipayProvider;
+use Shopwell\Core\System\Payment\Provider\Paypal\PaypalProvider;
 use Shopwell\Core\System\Payment\Provider\PayParamsDecoderInterface;
+use Shopwell\Core\System\Payment\Provider\Stripe\StripeProvider;
+use Shopwell\Core\System\Payment\Provider\Wechat\WechatPayParamsDecoder;
+use Shopwell\Core\System\Payment\Provider\Wechat\WechatProvider;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
@@ -16,21 +22,23 @@ use Symfony\Component\DependencyInjection\Reference;
 /**
  * Guards the wiring of the shipped pay params decoders.
  *
- * `PaymentProvider::$payParamsDecoder` is optional so that the many places constructing a provider by
- * hand keep working. The price of that is silence: a provider added without a decoder would hand a
- * returning payer to "capture again" without anyone noticing, and a second capture may open a second
- * trade at an interface that is not idempotent on the out trade number. This test turns "someone
- * forgot the decoder" from a silent null into a red build: every provider registered in the system
- * payment configuration either carries a decoder or is named in the whitelist below.
+ * `AbstractPaymentProvider::getPayParamsDecoder()` is optional so that a plugin does not have to
+ * implement it. The price of that is silence: an interface added without a decoder hands a returning
+ * payer to "capture again" without anyone noticing, and a second capture may open a second trade at an
+ * interface that is not idempotent on the out trade number. This test turns "someone forgot the
+ * decoder" from a silent null into a red build: every interface the platform declares either carries a
+ * decoder or is named in the whitelist below.
+ *
+ * It reads the declarations from the service configuration instead of instantiating the declaration
+ * classes, because a declaration takes its actions as constructor arguments - instantiating it here
+ * would mean reproducing the whole gateway assembly.
  *
  * @internal
  */
 #[Package('framework')]
-#[CoversClass(PaymentProvider::class)]
+#[CoversClass(AbstractPaymentProvider::class)]
 class PayParamsDecoderWiringTest extends TestCase
 {
-    private const PROVIDER_SERVICE_PREFIX = 'shopwell.payment.provider.';
-
     /**
      * Interfaces that deliberately ship without a decoder, with the reason a returning payer is
      * captured again instead of being handed to the recorded answer.
@@ -43,93 +51,70 @@ class PayParamsDecoderWiringTest extends TestCase
      *   page that consumes it. There is no browser parameter that survives a reopen, so there is
      *   nothing to hand the payer to.
      *
-     * @var list<string>
+     * @var array<string, class-string<AbstractPaymentProvider>>
      */
-    private const WITHOUT_DECODER = ['paypal', 'stripe'];
+    private const WITHOUT_DECODER = [
+        PaypalProvider::class => PaypalProvider::class,
+        StripeProvider::class => StripeProvider::class,
+    ];
 
-    public function testEveryProviderWithABrowserFlowHasADecoder(): void
+    public function testEveryDeclarationOfThePlatformIsWiredWithItsDecoder(): void
     {
-        $providers = $this->registeredProviders();
+        $declarations = $this->declarationDefinitions();
 
-        static::assertNotSame([], $providers, 'The payment configuration registers no provider at all.');
+        static::assertNotSame([], $declarations, 'The payment configuration declares no interface at all.');
 
         $withDecoder = [];
         $withoutDecoder = [];
 
-        foreach ($providers as $name => $definition) {
-            $decoder = $definition->getArguments()[3] ?? null;
+        foreach ($declarations as $class => $definition) {
+            $decoders = $this->decoderReferencesOf($definition);
 
-            if ($decoder instanceof Reference) {
-                $id = (string) $decoder;
-
-                static::assertTrue(
-                    class_exists($id),
-                    \sprintf('The provider "%s" references the decoder "%s", which is not a class.', $name, $id)
-                );
-                static::assertTrue(
-                    is_subclass_of($id, PayParamsDecoderInterface::class),
-                    \sprintf('The provider "%s" references "%s", which is not a pay params decoder.', $name, $id)
-                );
-
-                $withDecoder[] = $name;
+            if ($decoders === []) {
+                $withoutDecoder[$class] = $class;
 
                 continue;
             }
 
-            static::assertNull(
-                $decoder,
-                \sprintf('The provider "%s" passes something that is neither a decoder nor nothing.', $name)
+            static::assertCount(
+                1,
+                $decoders,
+                \sprintf('The declaration "%s" is wired with more than one pay params decoder.', $class)
             );
 
-            $withoutDecoder[] = $name;
+            $withDecoder[$class] = $decoders[0];
         }
 
-        // the whitelist is a promise about these very providers: a renamed or removed provider must
-        // not silently stay whitelisted, or the guard would protect nothing
         static::assertSame(
-            [],
-            array_values(array_diff($withoutDecoder, self::WITHOUT_DECODER)),
-            'A provider without a pay params decoder must be listed in WITHOUT_DECODER with its reason.'
+            [AlipayProvider::class => AlipayPayParamsDecoder::class, WechatProvider::class => WechatPayParamsDecoder::class],
+            $withDecoder,
+            'The interfaces with a browser flow are expected to hand the returning payer to their own decoder.'
         );
         static::assertSame(
-            [],
-            array_values(array_diff(self::WITHOUT_DECODER, $withoutDecoder)),
-            'The whitelist names a provider that either has a decoder or is not registered at all.'
-        );
-
-        static::assertSame(
-            \count($providers),
-            \count($withDecoder) + \count(self::WITHOUT_DECODER),
-            \sprintf(
-                'Expected every registered provider to carry a decoder except %s.',
-                implode(', ', self::WITHOUT_DECODER)
-            )
+            self::WITHOUT_DECODER,
+            $withoutDecoder,
+            'An interface without a pay params decoder must be listed in WITHOUT_DECODER with its reason.'
         );
     }
 
     /**
-     * A provider that does have a decoder has to decode something: an implementation that always
-     * returns null would satisfy the wiring above and reintroduce the silence.
+     * A decoder that always returns null would satisfy the wiring above and reintroduce the silence,
+     * so the shipped ones have to prove that they decode the answers their capture action records.
      */
     public function testTheShippedDecodersDecodeTheAnswersTheirProviderRecords(): void
     {
-        $decoded = [];
+        $decoders = [
+            AlipayPayParamsDecoder::class,
+            WechatPayParamsDecoder::class,
+        ];
 
-        foreach ($this->registeredProviders() as $name => $definition) {
-            $decoder = $definition->getArguments()[3] ?? null;
-
-            if (!$decoder instanceof Reference) {
-                continue;
-            }
-
-            $class = (string) $decoder;
-            /** @var PayParamsDecoderInterface $instance */
-            $instance = new $class();
+        foreach ($decoders as $class) {
+            $decoder = new $class();
 
             $decodes = false;
 
             foreach ($this->sampleAnswers() as $answer) {
-                if ($instance->payParamsFromResponse($answer) !== null) {
+                if ($decoder->payParamsFromResponse($answer) !== null) {
                     $decodes = true;
 
                     break;
@@ -138,17 +123,9 @@ class PayParamsDecoderWiringTest extends TestCase
 
             static::assertTrue(
                 $decodes,
-                \sprintf('The decoder of the provider "%s" decoded none of the sample answers.', $name)
+                \sprintf('The decoder "%s" decoded none of the sample answers.', $class)
             );
-
-            $decoded[] = $name;
         }
-
-        static::assertSame(
-            ['alipay', 'wechat'],
-            array_values(array_unique($decoded)),
-            'The shipped decoders are expected to decode the redirect or qr answer of alipay and wechat.'
-        );
     }
 
     /**
@@ -170,29 +147,75 @@ class PayParamsDecoderWiringTest extends TestCase
     }
 
     /**
-     * The definitions of the system payment configuration, without compiling a container: the
-     * definition of a provider is the one place that knows which decoder it was wired with.
+     * The declaration services of the system payment configuration, without compiling a container: the
+     * definition of a declaration is the one place that knows which decoder it was wired with.
      *
-     * @return array<string, Definition>
+     * The PHP DSL of Symfony 7 registers a service by id and fills the class afterwards, so a loaded
+     * definition may carry no class at all - the id is the class name then. Both are resolved through
+     * the same method, so the key of the returned array is always the class and never the bare id.
+     *
+     * @return array<class-string, Definition>
      */
-    private function registeredProviders(): array
+    private function declarationDefinitions(): array
     {
         $container = new ContainerBuilder();
         $loader = new PhpFileLoader($container, new FileLocator(__DIR__));
         $loader->load(__DIR__ . '/../../../../../../src/Core/System/DependencyInjection/payment.php');
 
-        $providers = [];
+        $declarations = [];
 
         foreach ($container->getDefinitions() as $id => $definition) {
-            $id = (string) $id;
+            $class = $this->classOf((string) $id, $definition);
 
-            if (!str_starts_with($id, self::PROVIDER_SERVICE_PREFIX)) {
+            if ($class === null || $class === AbstractPaymentProvider::class) {
                 continue;
             }
 
-            $providers[substr($id, \strlen(self::PROVIDER_SERVICE_PREFIX))] = $definition;
+            $declarations[$class] = $definition;
         }
 
-        return $providers;
+        ksort($declarations);
+
+        return $declarations;
+    }
+
+    /**
+     * @return class-string|null
+     */
+    private function classOf(string $id, Definition $definition): ?string
+    {
+        $class = $definition->getClass() ?? $id;
+
+        if (!class_exists($class) || !is_a($class, AbstractPaymentProvider::class, true)) {
+            return null;
+        }
+
+        /** @var class-string<AbstractPaymentProvider> $class */
+        return $class;
+    }
+
+    /**
+     * @return list<class-string<PayParamsDecoderInterface>>
+     */
+    private function decoderReferencesOf(Definition $definition): array
+    {
+        $decoders = [];
+
+        foreach ($definition->getArguments() as $argument) {
+            if (!$argument instanceof Reference) {
+                continue;
+            }
+
+            $id = (string) $argument;
+
+            if (!is_a($id, PayParamsDecoderInterface::class, true)) {
+                continue;
+            }
+
+            /** @var class-string<PayParamsDecoderInterface> $id */
+            $decoders[] = $id;
+        }
+
+        return $decoders;
     }
 }

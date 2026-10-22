@@ -9,7 +9,7 @@ async function createWrapper() {
         attachTo: document.body,
         props: {
             address: {
-                salutation: 'Mr',
+                gender: 'male',
                 title: 'Dr.',
                 name: 'John Doe',
                 company: 'Shopwell AG',

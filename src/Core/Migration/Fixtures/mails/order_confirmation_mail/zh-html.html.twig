@@ -2,7 +2,7 @@
 
     {% set currencyIsoCode = order.currency.isoCode %}
 
-    您好 {% if order.orderCustomer.salutation %}{{ order.orderCustomer.salutation.translated.letterName ~ ' ' }}{% endif %}{{ order.orderCustomer.name }}，<br>
+    您好 {{ order.orderCustomer.name }}，<br>
     <br>
     我们已于 {{ order.orderDateTime|format_datetime('medium', 'short', locale='zh-CN') }} 收到您的订单。<br>
     <br>

@@ -3,9 +3,9 @@
 namespace Shopwell\Core\System\Sms\Transport;
 
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Sms\Exception\SmsUnrecoverableException;
 use Shopwell\Core\System\Sms\Gateway\SmsGatewayResolverInterface;
 use Shopwell\Core\System\Sms\SmsException;
-use Shopwell\Core\System\Sms\SmsUnrecoverableException;
 use Symfony\Component\Notifier\Message\MessageInterface;
 use Symfony\Component\Notifier\Message\SentMessage;
 use Symfony\Component\Notifier\Message\SmsMessage;

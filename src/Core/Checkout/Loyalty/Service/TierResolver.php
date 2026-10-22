@@ -15,7 +15,6 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\System\SystemConfig\SystemConfigService;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 /**
@@ -24,8 +23,6 @@ use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 #[Package('checkout')]
 class TierResolver
 {
-    final public const CONFIG_KEY_TIER_AUTO_GROUP_SYNC = 'core.loyalty.tierAutoGroupSync';
-
     /**
      * @internal
      *
@@ -37,7 +34,7 @@ class TierResolver
         private readonly EntityRepository $tierRepository,
         private readonly EntityRepository $customerLoyaltyRepository,
         private readonly EntityRepository $customerRepository,
-        private readonly SystemConfigService $systemConfigService,
+        private readonly LoyaltySettings $settings,
         private readonly EventDispatcherInterface $eventDispatcher,
         private readonly ClockInterface $clock,
     ) {
@@ -64,7 +61,7 @@ class TierResolver
             'membershipTierId' => $newTierId,
         ]], $context);
 
-        if ($this->systemConfigService->getBool(self::CONFIG_KEY_TIER_AUTO_GROUP_SYNC) && $tier?->getCustomerGroupId() !== null) {
+        if ($this->settings->tierAutoGroupSync() && $tier?->getCustomerGroupId() !== null) {
             $this->customerRepository->update([[
                 'id' => $customerId,
                 'groupId' => $tier->getCustomerGroupId(),

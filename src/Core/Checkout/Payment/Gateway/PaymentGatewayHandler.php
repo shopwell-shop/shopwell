@@ -26,6 +26,7 @@ use Shopwell\Core\System\Payment\Order\PaymentOrderReconciler;
 use Shopwell\Core\System\Payment\Order\PaymentOrderService;
 use Shopwell\Core\System\Payment\Order\Refund\PaymentRefundService;
 use Shopwell\Core\System\Payment\PaymentException;
+use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannelRegistry;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 
@@ -35,7 +36,9 @@ use Symfony\Component\HttpFoundation\Request;
  * The class is the bridge in the other direction of the binding table: a payment method whose
  * `handler_identifier` is this class is bound to a gateway channel, and every lifecycle step of its
  * payments runs through the code of that channel - opening it here, writing the paid state back
- * through the event of the gateway, and refunding it through the refund service.
+ * through the event of the gateway, and refunding it through the refund service. The binding also
+ * names the app the payment is collected on, so the payment order is created for that app and not for
+ * the tenant of the platform by default.
  *
  * The fully qualified class name is persisted as `payment_method.handler_identifier` and the handler
  * registry matches it against the service id exactly. Renaming this class therefore breaks every
@@ -54,6 +57,7 @@ final class PaymentGatewayHandler extends AbstractPaymentHandler
     public function __construct(
         private readonly EntityRepository $orderTransactionRepository,
         private readonly PaymentMethodChannelResolver $channelResolver,
+        private readonly PaymentChannelRegistry $channelRegistry,
         private readonly OrderPaymentStarter $starter,
         private readonly PaymentOrderService $paymentOrderService,
         private readonly PaymentOrderReconciler $reconciler,
@@ -88,12 +92,26 @@ final class PaymentGatewayHandler extends AbstractPaymentHandler
             throw CheckoutPaymentException::invalidOrder($orderTransaction->getOrderId());
         }
 
-        $channel = $this->channelResolver->channelOf($orderTransaction->getPaymentMethodId(), $context);
+        // one read of the binding answers both halves of the decision: the channel that is opened and
+        // the app whose merchant account is charged
+        $binding = $this->channelResolver->resolve($orderTransaction->getPaymentMethodId(), $context);
+
+        $channel = $this->channelRegistry->get($binding->channelTechnicalName);
+        $app = $binding->paymentApp;
+
+        if (!$app instanceof PaymentAppEntity) {
+            // the binding points at an app that is not there: the foreign key cascades delete such a
+            // row, so this is data that escaped the database, and without an account there is nothing
+            // to collect on
+            /** @phpstan-ignore shopwell.domainException (The error belongs to the payment gateway the checkout wraps.) */
+            throw PaymentException::paymentMethodChannelMissing($orderTransaction->getPaymentMethodId());
+        }
 
         $started = $this->starter->start(
             $order,
             $orderTransaction,
             $channel,
+            $app,
             (string) $transaction->getReturnUrl()
         );
 

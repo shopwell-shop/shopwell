@@ -3,13 +3,13 @@
 namespace Shopwell\Core\Checkout\Customer\Validation;
 
 use Shopwell\Core\Checkout\Customer\CustomerDefinition;
-use Shopwell\Core\Framework\DataAbstractionLayer\Validation\EntityExists;
+use Shopwell\Core\Checkout\Customer\Validation\Constraint\CustomerPhoneNumberUnique;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Validation\Constraint\NoHtml;
 use Shopwell\Core\Framework\Validation\DataValidationDefinition;
 use Shopwell\Core\Framework\Validation\DataValidationFactoryInterface;
+use Shopwell\Core\System\Dictionary\Aggregate\DictionaryEntry\DictionaryEntryDefinition;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
-use Shopwell\Core\System\Salutation\SalutationDefinition;
 use Shopwell\Core\System\SystemConfig\SystemConfigService;
 use Symfony\Component\Validator\Constraints\Choice;
 use Symfony\Component\Validator\Constraints\GreaterThanOrEqual;
@@ -35,7 +35,8 @@ class CustomerProfileValidationFactory implements DataValidationFactoryInterface
     {
         $definition = new DataValidationDefinition('customer.profile.create');
 
-        $this->addConstraints($definition, $context);
+        // The registration only requires an email address and a password, the name is collected later.
+        $this->addConstraints($definition, $context, requireName: false);
 
         return $definition;
     }
@@ -44,22 +45,32 @@ class CustomerProfileValidationFactory implements DataValidationFactoryInterface
     {
         $definition = new DataValidationDefinition('customer.profile.update');
 
-        $this->addConstraints($definition, $context);
+        // Updating the profile still requires the name, as the profile page offers it as a mandatory field.
+        $this->addConstraints($definition, $context, requireName: true);
 
         return $definition;
     }
 
-    private function addConstraints(DataValidationDefinition $definition, SalesChannelContext $context): void
+    private function addConstraints(DataValidationDefinition $definition, SalesChannelContext $context, bool $requireName): void
     {
         $definition
-            ->add('salutationId', new EntityExists(entity: SalutationDefinition::ENTITY_NAME, context: $context->getContext()))
-            ->add('title', new Length(max: CustomerDefinition::MAX_LENGTH_TITLE))
-            ->add('name', new NotBlank(), new Length(max: CustomerDefinition::MAX_LENGTH_NAME))
+            ->add('gender', new Choice(choices: [DictionaryEntryDefinition::MALE, DictionaryEntryDefinition::FEMALE, DictionaryEntryDefinition::NOT_SPECIFIED]));
+
+        if ($requireName) {
+            $definition
+                ->add('name', new NotBlank())
+                ->add('name', new Length(max: CustomerDefinition::MAX_LENGTH_NAME));
+        } else {
+            $definition->add('name', new Length(max: CustomerDefinition::MAX_LENGTH_NAME));
+        }
+
+        $definition
             ->add('accountType', new Choice(choices: $this->accountTypes))
             ->add('phoneNumber', new Length(max: CustomerDefinition::MAX_LENGTH_PHONE_NUMBER, exactMessage: 'VIOLATION::PHONE_NUMBER_IS_TOO_LONG'))
-            ->add('title', new NoHtml(message: 'VIOLATION::CONTAINS_HTML_ERROR'))
             ->add('name', new NoHtml(message: 'VIOLATION::CONTAINS_HTML_ERROR'))
-            ->add('phoneNumber', new NoHtml(message: 'VIOLATION::CONTAINS_HTML_ERROR'));
+            ->add('phoneNumber', new NoHtml(message: 'VIOLATION::CONTAINS_HTML_ERROR'))
+            // A number that two customers share would make the login by sms refuse both of them.
+            ->add('phoneNumber', new CustomerPhoneNumberUnique(salesChannelContext: $context));
 
         $salesChannelId = $context->getSalesChannelId();
 

@@ -3,6 +3,7 @@
 namespace Shopwell\Storefront\DependencyInjection;
 
 use Doctrine\DBAL\Connection;
+use Psr\Clock\ClockInterface;
 use Shopwell\Core\Content\Category\CategoryDefinition;
 use Shopwell\Core\Content\Category\Service\CategoryBreadcrumbBuilder;
 use Shopwell\Core\Content\Category\Service\CategoryUrlGenerator;
@@ -25,6 +26,8 @@ use Shopwell\Storefront\Framework\Seo\App\AppSeoUrlRouteProvider;
 use Shopwell\Storefront\Framework\Seo\App\AppSeoUrlSynchronizer;
 use Shopwell\Storefront\Framework\Seo\App\EntitySeoUrlAppFeatureDefinition;
 use Shopwell\Storefront\Framework\Seo\App\SeoUrlAppFeatureDefinition;
+use Shopwell\Storefront\Framework\Seo\SeoUrlRoute\BlogCategorySeoUrlRoute;
+use Shopwell\Storefront\Framework\Seo\SeoUrlRoute\BlogSeoUrlRoute;
 use Shopwell\Storefront\Framework\Seo\SeoUrlRoute\LandingPageSeoUrlRoute;
 use Shopwell\Storefront\Framework\Seo\SeoUrlRoute\NavigationPageSeoUrlRoute;
 use Shopwell\Storefront\Framework\Seo\SeoUrlRoute\ProductPageSeoUrlRoute;
@@ -43,6 +46,26 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service(ProductDefinition::class),
         ])
+        ->tag('shopwell.seo_url.route');
+
+    // The blog routes carry both tags on purpose. `shopwell.entity.seo_url.route` makes them visible to
+    // the entity route resolver and to the per-sales-channel template configuration, which is what a
+    // headless channel reads; `shopwell.seo_url.route` is the storefront registry, which is what the
+    // generator iterates and what resolves an incoming path. Tagging only the second leaves the blog
+    // missing from the headless template configuration, tagging only the first generates nothing.
+    $services->set(BlogSeoUrlRoute::class)
+        ->args([
+            service('blog.definition'),
+            service(ClockInterface::class),
+        ])
+        ->tag('shopwell.entity.seo_url.route')
+        ->tag('shopwell.seo_url.route');
+
+    $services->set(BlogCategorySeoUrlRoute::class)
+        ->args([
+            service('blog_category.definition'),
+        ])
+        ->tag('shopwell.entity.seo_url.route')
         ->tag('shopwell.seo_url.route');
 
     $services->set(NavigationPageSeoUrlRoute::class)

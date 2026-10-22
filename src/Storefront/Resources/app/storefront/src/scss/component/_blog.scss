@@ -1,0 +1,760 @@
+/*
+Blog
+
+@sw-package discovery
+
+Three feed layouts over one card, and a reading column for the detail page.
+
+The reading column is the only typography this feature owns: 720px is roughly 32-38 full width
+chinese characters per line, and 1.8 is the line height a chinese text needs - 1.5 reads as cramped
+because the glyphs are square. Colours come from the theme variables, never from a literal, so a shop
+that re-skins the storefront re-skins the blog with it.
+*/
+
+/*
+Listing
+--------------------------------------------------
+The layout only changes the grid; the card is the same component in all three.
+*/
+/* stylelint-disable selector-class-pattern --
+ * The blog templates address their elements as plain BEM classes (`.blog-card__media`, ...), which
+ * are restyled across modifier blocks and media queries where nesting with "&" is not possible. */
+.blog-index {
+    padding: 32px 0 48px;
+
+    &__title {
+        font-size: clamp(1.75rem, 3.5vw, 2.25rem);
+        margin-bottom: 24px;
+    }
+
+    &__filter {
+        display: flex;
+        gap: 8px;
+        overflow-x: auto;
+        padding-bottom: 8px;
+        margin-bottom: 24px;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: thin;
+    }
+
+    &__chip {
+        flex: 0 0 auto;
+        padding: 6px 14px;
+        border-radius: 999px;
+        border: 1px solid $border-color;
+        font-size: 0.875rem;
+        color: $body-color;
+        white-space: nowrap;
+
+        &--active,
+        &:hover {
+            background: $primary;
+            border-color: $primary;
+            color: #fff;
+        }
+    }
+}
+
+.blog-listing {
+    display: grid;
+    gap: var(--spacer-lg, 24px);
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+
+    &__empty {
+        grid-column: 1 / -1;
+        padding: 64px 0;
+        text-align: center;
+        color: $secondary;
+    }
+
+    &--classic {
+        .blog-card--featured {
+            grid-column: 1 / -1;
+        }
+    }
+
+    &--list {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+/*
+Card
+--------------------------------------------------
+Fixed information order: media, categories, title, teaser, byline. The whole card is clickable
+through a stretched link, so a card is one target and not four.
+*/
+.blog-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    background: #fff;
+    border: 1px solid $border-color;
+    border-radius: $border-radius;
+    overflow: hidden;
+    height: 100%;
+
+    &__media {
+        position: relative;
+        aspect-ratio: 16 / 9;
+        background: rgba($primary, 0.08);
+        overflow: hidden;
+    }
+
+    &__image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.35s ease;
+    }
+
+    &__media-placeholder {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: 100%;
+        font-size: 2rem;
+        font-weight: 600;
+        color: $primary;
+    }
+
+    &__content {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        padding: 16px;
+        flex: 1 1 auto;
+    }
+
+    &__categories {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        position: relative;
+        z-index: 2;
+    }
+
+    &__chip {
+        padding: 2px 10px;
+        border-radius: 999px;
+        background: rgba($primary, 0.1);
+        color: $primary;
+        font-size: 0.75rem;
+
+        &--more {
+            background: transparent;
+            color: $secondary;
+        }
+    }
+
+    &__title {
+        font-size: 1.0625rem;
+        line-height: 1.4;
+        margin: 0;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    &__link {
+        color: inherit;
+        text-decoration: none;
+
+        /* the stretched target: the card is one click area */
+        &::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            z-index: 1;
+        }
+    }
+
+    &__teaser {
+        margin: 0;
+        font-size: 0.9375rem;
+        line-height: 1.6;
+        color: $secondary;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    &__meta {
+        margin-top: auto;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 10px;
+        font-size: 0.8125rem;
+        color: $secondary;
+    }
+
+    &:hover &__image {
+        transform: scale(1.03);
+    }
+
+    &:hover &__link {
+        text-decoration: underline;
+    }
+
+    &--featured {
+        .blog-card__media {
+            aspect-ratio: 21 / 9;
+        }
+
+        .blog-card__title {
+            font-size: clamp(1.375rem, 2.4vw, 1.75rem);
+            -webkit-line-clamp: 2;
+        }
+
+        .blog-card__content {
+            padding: 24px;
+        }
+    }
+
+    &--list {
+        flex-direction: row;
+
+        .blog-card__media {
+            flex: 0 0 33%;
+            max-width: 33%;
+            aspect-ratio: 4 / 3;
+        }
+
+        .blog-card__teaser {
+            -webkit-line-clamp: 2;
+        }
+    }
+}
+
+/*
+Detail
+--------------------------------------------------
+*/
+.blog-detail {
+    padding-bottom: 48px;
+
+    &__progress {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 3px;
+        transform: scaleX(0);
+        transform-origin: 0 50%;
+        background: $primary;
+        z-index: 1050;
+        pointer-events: none;
+    }
+
+    &__breadcrumb {
+        max-width: 720px;
+        margin: 24px auto 0;
+        font-size: $font-size-sm;
+        color: $headings-color;
+
+        a {
+            color: inherit;
+            text-decoration: none;
+
+            &:hover {
+                text-decoration: underline;
+            }
+        }
+    }
+
+    &__breadcrumb-divider {
+        margin-inline: 8px;
+        color: $border-color;
+    }
+
+    &__breadcrumb-current {
+        color: $secondary;
+    }
+
+    &__header {
+        max-width: 720px;
+        margin: 32px auto 24px;
+        text-align: center;
+    }
+
+    &__title {
+        font-size: clamp(1.75rem, 4vw, 2.5rem);
+        line-height: 1.25;
+        margin-bottom: 16px;
+    }
+
+    &__teaser {
+        font-size: 1.0625rem;
+        color: $secondary;
+        margin-bottom: 16px;
+    }
+
+    &__meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        justify-content: center;
+        font-size: 0.875rem;
+        color: $secondary;
+    }
+
+    &__categories {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        justify-content: center;
+        margin-bottom: 12px;
+    }
+
+    &__chip {
+        padding: 2px 10px;
+        border-radius: 999px;
+        background: rgba($primary, 0.1);
+        color: $primary;
+        font-size: 0.8125rem;
+    }
+
+    &__hero {
+        max-width: 960px;
+        margin: 0 auto 32px;
+        aspect-ratio: 16 / 9;
+        overflow: hidden;
+        border-radius: $border-radius;
+        background: rgba($primary, 0.08);
+
+        &-image,
+        &--video video,
+        &--video iframe {
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border: 0;
+        }
+    }
+
+    &__layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: var(--spacer-lg, 32px);
+    }
+
+    &__content {
+        max-width: 720px;
+        margin: 0 auto;
+        min-width: 0;
+    }
+
+    &__text {
+        font-size: 17px;
+        line-height: 1.8;
+
+        p {
+            margin-bottom: 1.6em;
+        }
+
+        h2,
+        h3 {
+            font-size: clamp(1.375rem, 2.5vw, 1.75rem);
+            line-height: 1.35;
+            margin: 2em 0 0.75em;
+            scroll-margin-top: 96px;
+        }
+
+        img {
+            display: block;
+            width: auto;
+            max-width: min(960px, 100%);
+            margin: 2em auto;
+            border-radius: $border-radius;
+        }
+
+        blockquote {
+            margin: 2em 0;
+            padding-left: 16px;
+            border-left: 3px solid $primary;
+            font-style: italic;
+            color: $secondary;
+        }
+    }
+
+    &__related {
+        margin-top: 48px;
+    }
+
+    &__related-title {
+        font-size: 1.25rem;
+        margin-bottom: 16px;
+    }
+
+    &__back {
+        max-width: 720px;
+        margin: 32px auto 0;
+        text-align: center;
+    }
+}
+
+/*
+Sidebar and author card
+*/
+.blog-sidebar {
+    &__heading {
+        font-size: 0.875rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: $secondary;
+        margin-bottom: 8px;
+    }
+
+    &__list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        max-height: 60vh;
+        overflow-y: auto;
+    }
+
+    &__item {
+        padding: 4px 0;
+
+        &--h3 {
+            padding-left: 12px;
+        }
+    }
+
+    &__link {
+        font-size: 0.875rem;
+        color: $secondary;
+
+        &.is-active {
+            color: $primary;
+            font-weight: 500;
+        }
+    }
+
+    &__poster {
+        width: 100%;
+        border-radius: $border-radius;
+    }
+}
+
+.blog-author-card {
+    max-width: 720px;
+    margin: 32px auto 0;
+    padding: 20px;
+    border-radius: $border-radius;
+    background: $gray-100;
+
+    &__heading {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: $secondary;
+        margin-bottom: 4px;
+    }
+
+    &__name {
+        font-weight: 600;
+        margin-bottom: 8px;
+    }
+
+    &__description {
+        margin: 0;
+        font-size: 0.9375rem;
+        line-height: 1.7;
+    }
+}
+
+/*
+Responsive
+--------------------------------------------------
+One breakpoint pair, no per-layout query: the grid already reflows on its own, only the sticky side
+column and the stacked list card need a decision.
+*/
+@media screen and (min-width: 1200px) {
+    .blog-detail__layout {
+        grid-template-columns: minmax(0, 1fr) 240px;
+        align-items: start;
+    }
+
+    .blog-detail__content {
+        margin: 0;
+    }
+
+    .blog-sidebar {
+        position: sticky;
+        top: 96px;
+    }
+}
+
+@media screen and (max-width: 991px) {
+    .blog-listing--classic {
+        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    }
+}
+
+@media screen and (max-width: 767px) {
+    .blog-detail__text {
+        font-size: 16px;
+    }
+
+    .blog-card--list {
+        flex-direction: column;
+
+        .blog-card__media {
+            flex: 0 0 auto;
+            max-width: 100%;
+            aspect-ratio: 16 / 9;
+        }
+    }
+}
+
+/*
+The thread. Indentation is capped at four levels by the node itself (`indentLevel`), so the styles here
+never have to guess how deep a thread is. Deeper replies keep the fourth indent and are told apart by a
+left border and a level badge instead of more whitespace: on a phone a fifth indent would leave a
+column three characters wide.
+*/
+.blog-comments {
+    max-width: 720px;
+    margin: 48px auto 0;
+    padding-top: 32px;
+    border-top: 1px solid rgba($secondary, 0.15);
+
+    &__header {
+        display: flex;
+        align-items: baseline;
+        gap: 12px;
+        margin-bottom: 24px;
+    }
+
+    &__title {
+        font-size: 1.375rem;
+        margin: 0;
+    }
+
+    &__count {
+        font-size: 0.875rem;
+        color: $secondary;
+    }
+
+    &__notice,
+    &__empty {
+        color: $secondary;
+        margin-bottom: 24px;
+    }
+
+    &__list,
+    .blog-comment__children {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+    }
+
+    &__pagination {
+        display: flex;
+        gap: 16px;
+        margin: 24px 0;
+    }
+}
+
+.blog-comment {
+    padding: 16px 0;
+    border-top: 1px solid rgba($secondary, 0.1);
+
+    &:first-child {
+        border-top: 0;
+    }
+
+    /* the indent is a margin and not a padding so the reply keeps the full width of the column */
+    &__children {
+        margin-left: 24px;
+    }
+
+    &--depth-2 &__children {
+        margin-left: 20px;
+    }
+
+    &--depth-3 &__children {
+        margin-left: 16px;
+    }
+
+    &--depth-4 &__children {
+        margin-left: 12px;
+    }
+
+    &--deep {
+        border-left: 2px solid rgba($primary, 0.25);
+        padding-left: 12px;
+    }
+
+    &__header {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: 10px;
+        margin-bottom: 6px;
+    }
+
+    &__author {
+        font-weight: 600;
+    }
+
+    &__date,
+    &__level {
+        font-size: 0.8125rem;
+        color: $secondary;
+    }
+
+    &__level {
+        padding: 1px 8px;
+        border-radius: 999px;
+        background: rgba($secondary, 0.12);
+    }
+
+    &__title {
+        font-size: 1rem;
+        margin: 0 0 6px;
+    }
+
+    &__content {
+        line-height: 1.6;
+        overflow-wrap: anywhere;
+    }
+
+    &__actions {
+        margin-top: 8px;
+    }
+
+    &__reply {
+        padding: 0;
+        border: 0;
+        background: none;
+        color: $primary;
+        font-size: 0.875rem;
+        cursor: pointer;
+    }
+
+    &__more-summary {
+        display: inline-block;
+        padding: 4px 0;
+        color: $primary;
+        font-size: 0.875rem;
+        cursor: pointer;
+    }
+}
+
+.blog-comment-form {
+    margin-top: 32px;
+
+    &__heading {
+        font-size: 1.125rem;
+        margin-bottom: 16px;
+    }
+
+    &__replying {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 12px;
+        padding: 8px 12px;
+        border-radius: 4px;
+        background: rgba($primary, 0.08);
+        font-size: 0.875rem;
+    }
+
+    &__cancel-reply {
+        padding: 0;
+        border: 0;
+        background: none;
+        color: $primary;
+        text-decoration: underline;
+        cursor: pointer;
+    }
+
+    &__field {
+        margin-bottom: 16px;
+    }
+
+    &__label {
+        display: block;
+        margin-bottom: 4px;
+        font-size: 0.875rem;
+    }
+
+    &__input,
+    &__textarea {
+        display: block;
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid rgba($secondary, 0.3);
+        border-radius: 4px;
+        font: inherit;
+    }
+
+    &__help,
+    &__notice {
+        margin: 4px 0 0;
+        font-size: 0.8125rem;
+        color: $secondary;
+    }
+
+    &__notice {
+        margin-bottom: 16px;
+    }
+
+    &__flash {
+        margin-bottom: 16px;
+        padding: 10px 12px;
+        border-radius: 4px;
+        font-size: 0.875rem;
+    }
+
+    &__flash--success {
+        background: rgba($success, 0.12);
+    }
+
+    &__flash--danger {
+        background: rgba($danger, 0.12);
+    }
+
+    &__submit {
+        padding: 10px 20px;
+        border: 0;
+        border-radius: 4px;
+        background: $primary;
+        color: #fff;
+        font: inherit;
+        cursor: pointer;
+    }
+}
+
+@media screen and (max-width: 767px) {
+    .blog-comment__children {
+        margin-left: 12px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .blog-card__image {
+        transition: none;
+    }
+
+    .blog-card:hover .blog-card__image {
+        transform: none;
+    }
+
+    /*
+    The progress bar stays: it is a direct readout of the scroll position and not an animation, and a
+    reader who asked for less motion still wants to know how far into an article they are.
+    */
+    .blog-detail__progress {
+        transition: none;
+    }
+}
+
+/* stylelint-enable selector-class-pattern */

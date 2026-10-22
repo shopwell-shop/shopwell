@@ -4,6 +4,7 @@ namespace Shopwell\Core\System\Sms\Gateway;
 
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Sms\SmsException;
 use Shopwell\Core\System\Sms\Template\SmsTemplateEntity;
 
 /**
@@ -11,8 +12,6 @@ use Shopwell\Core\System\Sms\Template\SmsTemplateEntity;
  *
  * The whole chain lives behind this interface, so an extension can replace the routing as a whole
  * instead of adding a step to it.
- *
- * @internal
  */
 #[Package('framework')]
 interface SmsGatewayResolverInterface
@@ -44,4 +43,27 @@ interface SmsGatewayResolverInterface
         ?string $countryCode = null,
         ?SmsTemplateEntity $template = null,
     ): array;
+
+    /**
+     * Why no gateway was picked for the same arguments, null when one was - so a delivery record can
+     * name the reason instead of claiming that nothing is configured.
+     *
+     * Only the routing knows which gate it was that dropped every candidate, so only the routing can
+     * answer this. A replacement of the routing has to answer it as well: a record that guesses is
+     * worse than no record.
+     *
+     * @param string|null $salesChannelId the channel the resolution is made for, see resolveGatewayIds()
+     * @param string|null $countryCode the ISO code of the recipient, null when it is not known
+     * @param SmsTemplateEntity|null $template the logical template of a template based message
+     *
+     * @return SmsException|null null when a gateway was picked, when the arguments were never able to
+     *                           yield one - a switched off channel, no configured gateway - or when the
+     *                           template was simply never reported to a provider
+     */
+    public function undeliverableReason(
+        Context $context,
+        ?string $salesChannelId = null,
+        ?string $countryCode = null,
+        ?SmsTemplateEntity $template = null,
+    ): ?SmsException;
 }

@@ -4,7 +4,6 @@ namespace Shopwell\Core\System\Sms\Gateway;
 
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Sms\SmsException;
-use Shopwell\Core\System\Sms\SmsUnrecoverableException;
 use Shopwell\Core\System\Sms\Struct\TemplateSmsOptionsInterface;
 use Symfony\Component\Notifier\Message\MessageInterface;
 use Symfony\Component\Notifier\Message\SmsMessage;
@@ -26,8 +25,6 @@ use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
  *
  * The providers talk to their endpoint through the sdk of the provider, which brings its own http
  * stack, so the client of the notifier stays unused.
- *
- * @internal
  */
 #[Package('framework')]
 abstract class AbstractTemplateSmsTransport extends AbstractTransport
@@ -58,7 +55,6 @@ abstract class AbstractTemplateSmsTransport extends AbstractTransport
      * The three things a provider of reported templates needs from a message.
      *
      * @throws SmsException
-     * @throws SmsUnrecoverableException
      *
      * @return array{templateCode: string, signName: string, params: array<array-key, string>}
      */
@@ -79,7 +75,7 @@ abstract class AbstractTemplateSmsTransport extends AbstractTransport
         $signName = $options->getSignName() ?? $this->getDefaultSignName();
 
         if ($signName === null || $signName === '') {
-            throw SmsUnrecoverableException::signNameMissing($this->getTechnicalName());
+            throw SmsException::signNameMissing($this->getTechnicalName());
         }
 
         return [
@@ -115,7 +111,6 @@ abstract class AbstractTemplateSmsTransport extends AbstractTransport
      * @param list<string> $retryablePrefixes
      *
      * @throws SmsException
-     * @throws SmsUnrecoverableException
      */
     final protected function fail(string $providerCode, string $providerMessage, array $retryablePrefixes): never
     {
@@ -125,6 +120,6 @@ abstract class AbstractTemplateSmsTransport extends AbstractTransport
             }
         }
 
-        throw SmsUnrecoverableException::providerRejected($this->getTechnicalName(), $providerCode, $providerMessage);
+        throw SmsException::providerRejected($this->getTechnicalName(), $providerCode, $providerMessage);
     }
 }

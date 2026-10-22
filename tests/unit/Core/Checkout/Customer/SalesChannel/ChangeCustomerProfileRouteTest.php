@@ -5,14 +5,13 @@ namespace Shopwell\Tests\Unit\Core\Checkout\Customer\SalesChannel;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Checkout\Customer\Aggregate\CustomerAddress\CustomerAddressEntity;
+use Shopwell\Core\Checkout\Customer\CustomerCollection;
 use Shopwell\Core\Checkout\Customer\CustomerEntity;
 use Shopwell\Core\Checkout\Customer\Extension\ChangeCustomerProfileRouteExtension;
 use Shopwell\Core\Checkout\Customer\SalesChannel\ChangeCustomerProfileRoute;
 use Shopwell\Core\Checkout\Customer\Validation\CustomerValidationFactory;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
-use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
-use Shopwell\Core\Framework\DataAbstractionLayer\Search\IdSearchResult;
 use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Uuid\Uuid;
@@ -20,6 +19,7 @@ use Shopwell\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopwell\Core\Framework\Validation\DataValidationDefinition;
 use Shopwell\Core\Framework\Validation\DataValidator;
 use Shopwell\Core\System\Country\CountryEntity;
+use Shopwell\Core\System\Dictionary\Aggregate\DictionaryEntry\DictionaryEntryDefinition;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
 use Shopwell\Core\System\SalesChannel\StoreApiCustomFieldMapper;
 use Shopwell\Core\System\SalesChannel\SuccessResponse;
@@ -87,7 +87,6 @@ class ChangeCustomerProfileRouteTest extends TestCase
             $validator,
             $validationFactory,
             static::createStub(StoreApiCustomFieldMapper::class),
-            static::createStub(EntityRepository::class),
             new ExtensionDispatcher(new EventDispatcher()),
         );
 
@@ -95,7 +94,7 @@ class ChangeCustomerProfileRouteTest extends TestCase
             'accountType' => CustomerEntity::ACCOUNT_TYPE_BUSINESS,
             'company' => 'Test Company',
             'name' => 'Max Mustermann',
-            'salutationId' => Uuid::randomHex(),
+            'gender' => 'male',
             'vatIds' => ['de 123456789'],
         ]);
 
@@ -124,7 +123,6 @@ class ChangeCustomerProfileRouteTest extends TestCase
             static::createStub(DataValidator::class),
             static::createStub(CustomerValidationFactory::class),
             $storeApiCustomFieldMapper,
-            static::createStub(EntityRepository::class),
             new ExtensionDispatcher(new EventDispatcher()),
         );
 
@@ -132,7 +130,7 @@ class ChangeCustomerProfileRouteTest extends TestCase
         $customer->setId('customer1');
         $data = new RequestDataBag([
             'customFields' => $customFields,
-            'salutationId' => '1',
+            'gender' => '1',
         ]);
 
         $change->change($data, static::createStub(SalesChannelContext::class), $customer);
@@ -158,7 +156,6 @@ class ChangeCustomerProfileRouteTest extends TestCase
             static::createStub(DataValidator::class),
             static::createStub(CustomerValidationFactory::class),
             static::createStub(StoreApiCustomFieldMapper::class),
-            static::createStub(EntityRepository::class),
             new ExtensionDispatcher(new EventDispatcher()),
         );
 
@@ -166,37 +163,27 @@ class ChangeCustomerProfileRouteTest extends TestCase
         $customer->setId('customer1');
         $data = new RequestDataBag([
             'accountType' => CustomerEntity::ACCOUNT_TYPE_BUSINESS,
-            'salutationId' => '1',
+            'gender' => '1',
         ]);
 
         $change->change($data, static::createStub(SalesChannelContext::class), $customer);
     }
 
-    public function testSalutationIdIsAssignedDefaultValue(): void
+    public function testGenderIsAssignedDefaultValue(): void
     {
-        $salutationId = Uuid::randomHex();
+        $gender = DictionaryEntryDefinition::NOT_SPECIFIED;
 
         $customerRepository = $this->createMock(EntityRepository::class);
         $customerRepository
             ->expects($this->once())
             ->method('update')
-            ->with(static::callback(static function (array $data) use ($salutationId) {
+            ->with(static::callback(static function (array $data) use ($gender) {
                 static::assertCount(1, $data);
                 static::assertIsArray($data[0]);
-                static::assertSame($data[0]['salutationId'], $salutationId);
+                static::assertSame($data[0]['gender'], $gender);
 
                 return true;
             }));
-
-        $idSearchResult = new IdSearchResult(
-            1,
-            [$salutationId => ['data' => [], 'primaryKey' => $salutationId]],
-            new Criteria(),
-            Context::createDefaultContext(),
-        );
-
-        $salutationRepository = static::createStub(EntityRepository::class);
-        $salutationRepository->method('searchIds')->willReturn($idSearchResult);
 
         $change = new ChangeCustomerProfileRoute(
             $customerRepository,
@@ -204,7 +191,6 @@ class ChangeCustomerProfileRouteTest extends TestCase
             static::createStub(DataValidator::class),
             static::createStub(CustomerValidationFactory::class),
             static::createStub(StoreApiCustomFieldMapper::class),
-            $salutationRepository,
             new ExtensionDispatcher(new EventDispatcher())
         );
 
@@ -213,13 +199,93 @@ class ChangeCustomerProfileRouteTest extends TestCase
 
         $data = new RequestDataBag([
             'accountType' => CustomerEntity::ACCOUNT_TYPE_BUSINESS,
-            'salutationId' => '',
+            'gender' => '',
         ]);
 
         $salesChannelContext = static::createStub(SalesChannelContext::class);
         $salesChannelContext->method('getSalesChannelId')->willReturn(TestDefaults::SALES_CHANNEL);
 
         $change->change($data, $salesChannelContext, $customer);
+    }
+
+    public function testPhoneNumberIsPersistedTrimmed(): void
+    {
+        $customerRepository = $this->createMock(EntityRepository::class);
+        $customerRepository
+            ->expects($this->once())
+            ->method('update')
+            ->with(static::callback(static function (array $data) {
+                static::assertIsArray($data[0]);
+                static::assertArrayHasKey('phoneNumber', $data[0]);
+                static::assertSame('0123456789', $data[0]['phoneNumber']);
+
+                return true;
+            }));
+
+        $change = $this->createRoute($customerRepository);
+
+        $customer = new CustomerEntity();
+        $customer->setId('customer1');
+
+        $data = new RequestDataBag([
+            'gender' => '1',
+            'phoneNumber' => " 0123456789\u{3000}",
+        ]);
+
+        $change->change($data, static::createStub(SalesChannelContext::class), $customer);
+    }
+
+    public function testBlankPhoneNumberUnbindsIt(): void
+    {
+        $customerRepository = $this->createMock(EntityRepository::class);
+        $customerRepository
+            ->expects($this->once())
+            ->method('update')
+            ->with(static::callback(static function (array $data) {
+                static::assertIsArray($data[0]);
+                static::assertArrayHasKey('phoneNumber', $data[0]);
+                static::assertNull($data[0]['phoneNumber']);
+
+                return true;
+            }));
+
+        $change = $this->createRoute($customerRepository);
+
+        $customer = new CustomerEntity();
+        $customer->setId('customer1');
+
+        $data = new RequestDataBag([
+            'gender' => '1',
+            'phoneNumber' => "\u{3000} ",
+        ]);
+
+        $change->change($data, static::createStub(SalesChannelContext::class), $customer);
+    }
+
+    public function testPhoneNumberIsLeftUntouchedWhenItIsNotSubmitted(): void
+    {
+        $customerRepository = $this->createMock(EntityRepository::class);
+        $customerRepository
+            ->expects($this->once())
+            ->method('update')
+            ->with(static::callback(static function (array $data) {
+                static::assertIsArray($data[0]);
+                static::assertArrayNotHasKey('phoneNumber', $data[0]);
+
+                return true;
+            }));
+
+        $change = $this->createRoute($customerRepository);
+
+        $customer = new CustomerEntity();
+        $customer->setId('customer1');
+        $customer->setPhoneNumber('0123456789');
+
+        $data = new RequestDataBag([
+            'gender' => '1',
+        ]);
+
+        $change->change($data, static::createStub(SalesChannelContext::class), $customer);
     }
 
     public function testPublishesExtension(): void
@@ -243,10 +309,24 @@ class ChangeCustomerProfileRouteTest extends TestCase
             static::createStub(DataValidator::class),
             static::createStub(CustomerValidationFactory::class),
             static::createStub(StoreApiCustomFieldMapper::class),
-            static::createStub(EntityRepository::class),
             new ExtensionDispatcher($dispatcher),
         );
 
         static::assertSame($response, $route->change($data, $context, $customer));
+    }
+
+    /**
+     * @param EntityRepository<CustomerCollection> $customerRepository
+     */
+    private function createRoute(EntityRepository $customerRepository): ChangeCustomerProfileRoute
+    {
+        return new ChangeCustomerProfileRoute(
+            $customerRepository,
+            new EventDispatcher(),
+            static::createStub(DataValidator::class),
+            static::createStub(CustomerValidationFactory::class),
+            static::createStub(StoreApiCustomFieldMapper::class),
+            new ExtensionDispatcher(new EventDispatcher()),
+        );
     }
 }

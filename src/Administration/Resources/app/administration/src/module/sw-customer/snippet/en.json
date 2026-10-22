@@ -41,14 +41,12 @@
       "tooltipImitateCustomerInactiveSalesChannel": "The customers Sales Channel is not active.",
       "tooltipImitateCustomerNoDomain": "The Sales Channel of the customer has no domain configured.",
       "tooltipImitateCustomerNoStorefront": "The Sales Channel of the customer is not of type Storefront.",
-      "placeholderTitle": "Title",
       "placeholderCompany": "Company",
       "placeholderEmail": "Email address",
       "placeholderPhoneNumber": "Phone number",
       "placeholderNewPassword": "Enter new password...",
       "placeholderNewPasswordConfirm": "Re-enter new password...",
-      "labelSalutation": "Salutation",
-      "labelTitle": "Title",
+      "labelGender": "Gender",
       "labelCompany": "Company",
       "labelEmail": "Email",
       "labelPhoneNumber": "Phone number",
@@ -92,8 +90,7 @@
       "titleSidebarItemFilterRequestedGroup": "Show only customer group requests"
     },
     "baseForm": {
-      "labelSalutation": "Salutation",
-      "labelTitle": "Title",
+      "labelGender": "Gender",
       "labelEmail": "Email address",
       "labelPhoneNumber": "Phone number",
       "labelCompany": "Company",
@@ -105,8 +102,7 @@
       "labelPassword": "Password",
       "placeholderPassword": "Enter password...",
       "helpTextPassword": "After saving the customer the password can only be changed directly by the customer.",
-      "placeholderSalutation": "Select salutation...",
-      "placeholderTitle": "Enter title...",
+      "placeholderGender": "Select gender...",
       "placeholderEmail": "Enter email address...",
       "placeholderPhoneNumber": "Enter phone number...",
       "placeholderCustomerNumber": "Enter customer number...",
@@ -217,8 +213,7 @@
     "addressForm": {
       "labelCompany": "Company",
       "labelDepartment": "Department",
-      "labelSalutation": "Salutation",
-      "labelTitle": "Title",
+      "labelGender": "Gender",
       "labelZipcode": "Postal code",
       "labelStreet": "Street",
       "labelCity": "City",
@@ -231,8 +226,7 @@
       "labelSameBillingAddress": "Same as billing address",
       "placeholderCompany": "Enter company...",
       "placeholderDepartment": "Enter department...",
-      "placeholderSalutation": "Select salutation...",
-      "placeholderTitle": "Enter title...",
+      "placeholderGender": "Select gender...",
       "placeholderZipcode": "Enter postal code...",
       "placeholderStreet": "Enter street...",
       "placeholderCity": "Enter city...",
@@ -373,9 +367,9 @@
         "label": "Customer number",
         "placeholder": "Enter customer number..."
       },
-      "salutation": {
-        "label": "Salutation",
-        "placeholder": "Select salutation..."
+      "gender": {
+        "label": "Gender",
+        "placeholder": "Select gender..."
       },
       "status": {
         "label": "Status",

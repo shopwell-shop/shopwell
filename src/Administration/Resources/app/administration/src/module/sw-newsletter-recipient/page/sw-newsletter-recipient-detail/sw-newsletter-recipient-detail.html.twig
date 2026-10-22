@@ -52,25 +52,16 @@
                     columns="1fr 1fr"
                     gap="10px"
                 >
-                    {% block sw_newsletter_recipient_detail_form_salutation %}
-                    <sw-entity-single-select
-                        v-model:value="newsletterRecipient.salutationId"
+                    {% block sw_newsletter_recipient_detail_form_gender %}
+                    <sw-single-select
+                        v-model:value="newsletterRecipient.gender"
                         :disabled="!acl.can('newsletter_recipient.editor')"
-                        :label="$t('sw-newsletter-recipient.general.salutation')"
-                        label-property="displayName"
-                        entity="salutation"
+                        :label="$t('sw-newsletter-recipient.general.gender')"
+                        :options="genderOptions"
                         show-clearable-button
                     />
                     {% endblock %}
 
-                    {% block sw_newsletter_recipient_detail_form_title %}
-
-                    <mt-text-field
-                        v-model="newsletterRecipient.title"
-                        :label="$t('sw-newsletter-recipient.list.title')"
-                        :disabled="!acl.can('newsletter_recipient.editor')"
-                    />
-                    {% endblock %}
                 </sw-container>
 
                 <sw-container

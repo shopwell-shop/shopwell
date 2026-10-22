@@ -3,7 +3,7 @@
 namespace Shopwell\Core\System\Sms\Message;
 
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\System\Sms\SmsUnrecoverableException;
+use Shopwell\Core\System\Sms\Exception\SmsUnrecoverableException;
 use Shopwell\Core\System\Sms\Transport\SmsTransports;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 use Symfony\Component\Messenger\Exception\UnrecoverableMessageHandlingException;

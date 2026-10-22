@@ -2,7 +2,6 @@
 
 namespace Shopwell\Tests\Integration\Core\Checkout\Customer\SalesChannel;
 
-use Doctrine\DBAL\Connection;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
@@ -10,7 +9,7 @@ use Shopwell\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopwell\Core\Framework\Test\TestCaseBase\SalesChannelApiTestBehaviour;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\PlatformRequest;
-use Shopwell\Core\System\Salutation\SalutationDefinition;
+use Shopwell\Core\System\Dictionary\Aggregate\DictionaryEntry\DictionaryEntryDefinition;
 use Shopwell\Core\Test\Stub\Framework\IdsCollection;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 
@@ -26,8 +25,6 @@ class UpsertAddressTest extends TestCase
 
     private KernelBrowser $browser;
 
-    private Connection $connection;
-
     protected function setUp(): void
     {
         $ids = new IdsCollection();
@@ -35,8 +32,6 @@ class UpsertAddressTest extends TestCase
         $this->browser = $this->createCustomSalesChannelBrowser([
             'id' => $ids->create('sales-channel'),
         ]);
-
-        $this->connection = static::getContainer()->get(Connection::class);
 
         $this->assignSalesChannelContext($this->browser);
 
@@ -61,7 +56,7 @@ class UpsertAddressTest extends TestCase
         $this->browser->setServerParameter('HTTP_SW_CONTEXT_TOKEN', $contextToken);
     }
 
-    public function testUpsertAddressWithExistingNotSpecifiedSalutation(): void
+    public function testUpsertAddressWithSubmittedGender(): void
     {
         $data = [
             'name' => 'Test Test',
@@ -70,9 +65,6 @@ class UpsertAddressTest extends TestCase
             'zipcode' => 'Test',
             'countryId' => $this->getValidCountryId(),
         ];
-
-        $salutations = $this->connection->fetchAllKeyValue('SELECT salutation_key, id FROM salutation');
-        static::assertArrayHasKey(SalutationDefinition::NOT_SPECIFIED, $salutations);
 
         $this->browser
             ->request(
@@ -83,10 +75,10 @@ class UpsertAddressTest extends TestCase
 
         $response = json_decode((string) $this->browser->getResponse()->getContent(), true, 512, \JSON_THROW_ON_ERROR);
 
-        static::assertNotNull($response['salutationId']);
+        static::assertSame(DictionaryEntryDefinition::NOT_SPECIFIED, $response['gender']);
     }
 
-    public function testUpsertAddressToNotSpecifiedWithoutExistingSalutation(): void
+    public function testUpsertAddressToNotSpecifiedWithoutSubmittedGender(): void
     {
         $data = [
             'name' => 'Test Test',
@@ -95,16 +87,6 @@ class UpsertAddressTest extends TestCase
             'zipcode' => 'Test',
             'countryId' => $this->getValidCountryId(),
         ];
-
-        $this->connection->executeStatement(
-            '
-					DELETE FROM salutation WHERE salutation_key = :salutationKey
-				',
-            ['salutationKey' => SalutationDefinition::NOT_SPECIFIED]
-        );
-
-        $salutations = $this->connection->fetchAllKeyValue('SELECT salutation_key, id FROM salutation');
-        static::assertArrayNotHasKey(SalutationDefinition::NOT_SPECIFIED, $salutations);
 
         $this->browser
             ->request(
@@ -115,6 +97,6 @@ class UpsertAddressTest extends TestCase
 
         $response = json_decode((string) $this->browser->getResponse()->getContent(), true, 512, \JSON_THROW_ON_ERROR);
 
-        static::assertNull($response['salutationId']);
+        static::assertSame(DictionaryEntryDefinition::NOT_SPECIFIED, $response['gender']);
     }
 }

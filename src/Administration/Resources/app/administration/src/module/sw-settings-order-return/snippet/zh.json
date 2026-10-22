@@ -1,0 +1,35 @@
+{
+    "sw-settings-order-return": {
+        "general": {
+            "mainMenuItemGeneral": "售后",
+            "description": "配置售后规则并维护售后原因"
+        },
+        "index": {
+            "cardReasonsTitle": "售后原因",
+            "textReasons": "顾客提交售后申请时需要选择原因。原因属于店铺自己的数据，可以随时新增、停用或删除；已停用的原因会继续保留在历史售后单上。",
+            "buttonManageReasons": "维护售后原因"
+        },
+        "reason": {
+            "title": "售后原因",
+            "placeholderSearchBar": "搜索售后原因…",
+            "buttonCreate": "新建原因",
+            "columnPosition": "排序",
+            "columnLabel": "原因名称",
+            "columnActive": "启用",
+            "modalTitleCreate": "新建售后原因",
+            "modalTitleEdit": "编辑售后原因",
+            "fieldLabel": "原因名称",
+            "placeholderLabel": "例如：尺码不合适",
+            "fieldPosition": "排序",
+            "helpTextPosition": "数字越小越靠前。",
+            "fieldActive": "启用",
+            "helpTextActive": "停用后顾客不能再选择该原因，已有的售后单不受影响。",
+            "notificationSaveSuccess": "售后原因已保存。",
+            "notificationSaveError": "售后原因保存失败。"
+        },
+        "notification": {
+            "saveSuccess": "售后设置已保存。",
+            "saveError": "售后设置保存失败。"
+        }
+    }
+}

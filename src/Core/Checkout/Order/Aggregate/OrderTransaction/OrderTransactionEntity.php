@@ -10,6 +10,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Entity;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityCustomFieldsTrait;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityIdTrait;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Payment\Order\PaymentOrderCollection;
 use Shopwell\Core\System\StateMachine\Aggregation\StateMachineState\StateMachineStateEntity;
 
 /**
@@ -38,6 +39,8 @@ class OrderTransactionEntity extends Entity
     protected string $stateId;
 
     protected ?OrderTransactionCaptureCollection $captures = null;
+
+    protected ?PaymentOrderCollection $paymentOrders = null;
 
     protected ?OrderEntity $primaryOrder = null;
 
@@ -160,5 +163,15 @@ class OrderTransactionEntity extends Entity
     public function setPrimaryOrder(?OrderEntity $primaryOrder): void
     {
         $this->primaryOrder = $primaryOrder;
+    }
+
+    public function getPaymentOrders(): ?PaymentOrderCollection
+    {
+        return $this->paymentOrders;
+    }
+
+    public function setPaymentOrders(PaymentOrderCollection $paymentOrders): void
+    {
+        $this->paymentOrders = $paymentOrders;
     }
 }

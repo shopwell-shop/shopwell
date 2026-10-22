@@ -49,7 +49,7 @@ class Migration1792600011CreateMembershipTables extends MigrationStep
             'CREATE TABLE IF NOT EXISTS `membership_plan_translation` (
                 `membership_plan_id` BINARY(16) NOT NULL,
                 `language_id` BINARY(16) NOT NULL,
-                `name` VARCHAR(255) NOT NULL,
+                `name` VARCHAR(255) NULL,
                 `description` LONGTEXT NULL,
                 `created_at` DATETIME(3) NOT NULL,
                 `updated_at` DATETIME(3) NULL,

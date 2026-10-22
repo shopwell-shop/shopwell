@@ -4,7 +4,9 @@
     {% block page_account_overview %}
         <div class="account-overview">
             {% block page_account_overview_shipping_warning %}
-                {% set ableToShipToShippingCountry = context.customer.defaultShippingAddress.country.shippingAvailable %}
+                {# A customer can register without an address and add it later during checkout. #}
+                {% set defaultShippingAddress = context.customer.defaultShippingAddress %}
+                {% set ableToShipToShippingCountry = defaultShippingAddress is null or defaultShippingAddress.country is null or defaultShippingAddress.country.shippingAvailable %}
 
                 {% if not ableToShipToShippingCountry %}
                     {% sw_include '@Storefront/storefront/utilities/alert.html.twig' with {
@@ -52,11 +54,12 @@
 
                                         {% block page_account_overview_profile_content %}
                                             <p>
-                                                {% if context.customer.salutation and context.customer.salutation.salutationKey != 'not_specified' %}
-                                                    {{ context.customer.salutation.translated.displayName }}
-                                                {% endif %}
-                                                {% if context.customer.title %}
-                                                    {{ context.customer.title }}<br>
+                                                {% if context.customer.gender and context.customer.gender != 'not_specified' %}
+                                                    {% for gender in page.genders %}
+                                                        {% if gender.technicalName == context.customer.gender %}
+                                                            {{ gender.translated.label }}
+                                                        {% endif %}
+                                                    {% endfor %}
                                                 {% endif %}
                                                 {{ context.customer.name }}
                                             </p>

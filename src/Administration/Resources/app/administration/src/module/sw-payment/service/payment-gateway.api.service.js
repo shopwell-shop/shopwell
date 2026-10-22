@@ -24,7 +24,6 @@ export const PAYMENT_REFUND_STATE_MACHINE = 'payment_refund.state';
  */
 export const PAYMENT_TRANSFER_STATE_MACHINE = 'payment_transfer.status';
 
-
 /**
  * The badge variants of `mt-badge`.
  */
@@ -289,6 +288,45 @@ export default class PaymentGatewayService {
      */
     deleteApp(id) {
         return this.httpClient.delete(`/_action/payment/apps/${id}`, { headers: this.getAuthHeaders() });
+    }
+
+    /**
+     * The gateway channel a payment method collects through.
+     *
+     * The answer carries four things because the page needs all of them to render one card: the
+     * binding itself (`null` when the method is not bound yet), the account that is charged - the tenant
+     * of the platform when the method is not bound yet -, whether the method currently dispatches on the
+     * gateway handler at all, and the pairs other payment methods already use.
+     *
+     * @returns {Promise<Object>}
+     */
+    getPaymentMethodChannel(paymentMethodId) {
+        return this.httpClient
+            .get(`/_action/payment/methods/${paymentMethodId}/channel`, { headers: this.getAuthHeaders() })
+            .then((response) => response.data);
+    }
+
+    /**
+     * Binds the payment method to the channel, or replaces the channel it collected through so far.
+     *
+     * One call and not two: the binding row and the handler of the payment method only make sense
+     * together, and the handler is not writable through the generic entity endpoints.
+     *
+     * The account may be left out: the tenant of the platform is the account the shop's own checkout
+     * collects on, so an installation with a single tenant sends nothing.
+     *
+     * @returns {Promise<Object>}
+     */
+    savePaymentMethodChannel(paymentMethodId, channelTechnicalName, paymentAppId = null) {
+        const payload = { channelTechnicalName };
+
+        if (paymentAppId) {
+            payload.paymentAppId = paymentAppId;
+        }
+
+        return this.httpClient
+            .put(`/_action/payment/methods/${paymentMethodId}/channel`, payload, { headers: this.getAuthHeaders() })
+            .then((response) => response.data);
     }
 
     getAuthHeaders() {

@@ -10,11 +10,11 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaI
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Routing\RoutingException;
+use Shopwell\Core\System\Dictionary\Aggregate\DictionaryEntry\DictionaryEntryCollection;
+use Shopwell\Core\System\Dictionary\DictionaryTypeDefinition;
+use Shopwell\Core\System\Dictionary\SalesChannel\AbstractDictionaryRoute;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
-use Shopwell\Core\System\Salutation\AbstractSalutationsSorter;
-use Shopwell\Core\System\Salutation\SalesChannel\AbstractSalutationRoute;
-use Shopwell\Core\System\Salutation\SalutationCollection;
-use Shopwell\Storefront\Event\RouteRequest\SalutationRouteRequestEvent;
+use Shopwell\Storefront\Event\RouteRequest\DictionaryRouteRequestEvent;
 use Shopwell\Storefront\Page\GenericPageLoaderInterface;
 use Shopwell\Storefront\Page\MetaInformation;
 use Symfony\Component\HttpFoundation\Request;
@@ -32,8 +32,7 @@ class AccountProfilePageLoader
     public function __construct(
         private readonly GenericPageLoaderInterface $genericLoader,
         private readonly EventDispatcherInterface $eventDispatcher,
-        private readonly AbstractSalutationRoute $salutationRoute,
-        private readonly AbstractSalutationsSorter $salutationsSorter,
+        private readonly AbstractDictionaryRoute $dictionaryRoute,
         private readonly AbstractTranslator $translator
     ) {
     }
@@ -55,7 +54,7 @@ class AccountProfilePageLoader
         $page = AccountProfilePage::createFrom($page);
         $this->setMetaInformation($page);
 
-        $page->setSalutations($this->getSalutations($salesChannelContext, $request));
+        $page->setGenders($this->getGenders($salesChannelContext, $request));
 
         $this->eventDispatcher->dispatch(
             new AccountProfilePageLoadedEvent($page, $salesChannelContext, $request)
@@ -79,15 +78,18 @@ class AccountProfilePageLoader
         );
     }
 
-    private function getSalutations(SalesChannelContext $context, Request $request): SalutationCollection
+    private function getGenders(SalesChannelContext $context, Request $request): DictionaryEntryCollection
     {
-        $event = new SalutationRouteRequestEvent($request, $request->duplicate(), $context, new Criteria());
+        $storeApiRequest = $request->duplicate();
+        // the storefront request does not carry the store-api route parameters, so the dictionary
+        // type has to be attached explicitly - otherwise the route resolves an empty technical name
+        $storeApiRequest->attributes->set('technicalName', DictionaryTypeDefinition::TYPE_GENDER);
+
+        $event = new DictionaryRouteRequestEvent($request, $storeApiRequest, $context, new Criteria());
         $this->eventDispatcher->dispatch($event);
 
-        $salutations = $this->salutationRoute
+        return $this->dictionaryRoute
             ->load($event->getStoreApiRequest(), $context, $event->getCriteria())
-            ->getSalutations();
-
-        return $this->salutationsSorter->sort($salutations);
+            ->getEntries();
     }
 }

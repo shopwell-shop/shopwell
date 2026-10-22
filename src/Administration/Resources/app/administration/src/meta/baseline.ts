@@ -477,7 +477,6 @@ const missingTests = [
     'src/module/sw-settings-product-feature-sets/index.js',
     'src/module/sw-settings-product-feature-sets/service/feature-grid-translation.service.js',
     'src/module/sw-settings-rule/default-search-configuration.js',
-    'src/module/sw-settings-salutation/index.js',
     'src/module/sw-settings-search/index.js',
     'src/module/sw-settings-search/init/services.init.js',
     'src/module/sw-settings-search/service/livesearch.api.service.js',

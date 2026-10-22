@@ -100,6 +100,27 @@ export function getPreviousDay(reference: Date = new Date()): Date {
     return previous;
 }
 
+/**
+ * Start of the local calendar month of the given date as a UTC ISO string,
+ * used by the dashboard to aggregate "this month so far" metrics in the
+ * user timezone the same way the day bounds are derived.
+ */
+export function getMonthStart(reference: Date = new Date()): string {
+    const timeZone = getUserTimeZone();
+    const formatter = new Intl.DateTimeFormat('en-CA', {
+        timeZone,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+    });
+
+    const parts = formatter.formatToParts(reference);
+    const year = parts.find((part) => part.type === 'year')?.value ?? '';
+    const month = parts.find((part) => part.type === 'month')?.value ?? '';
+
+    return zonedTimeToUtc(`${year}-${month}-01T00:00:00.000`, timeZone).toISOString();
+}
+
 export function createOrderDateFilter(bounds: DayBounds, timeframe = 'today'): StoredFilter {
     return {
         value: {

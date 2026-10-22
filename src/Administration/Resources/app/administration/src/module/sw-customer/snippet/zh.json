@@ -41,14 +41,12 @@
       "tooltipImitateCustomerInactiveSalesChannel": "客户的销售渠道未激活。",
       "tooltipImitateCustomerNoDomain": "客户的销售渠道没有域名。",
       "tooltipImitateCustomerNoStorefront": "客户的销售渠道不是店面类型。",
-      "placeholderTitle": "头衔",
       "placeholderCompany": "公司",
       "placeholderEmail": "邮箱地址",
       "placeholderPhoneNumber": "手机号",
       "placeholderNewPassword": "输入新密码 ...",
       "placeholderNewPasswordConfirm": "再次输入新密码 ...",
-      "labelSalutation": "称呼",
-      "labelTitle": "头衔",
+      "labelGender": "性别",
       "labelCompany": "公司",
       "labelEmail": "邮箱地址",
       "labelPhoneNumber": "手机号",
@@ -92,8 +90,7 @@
       "titleSidebarItemFilterRequestedGroup": "仅显示有客户组申请的客户"
     },
     "baseForm": {
-      "labelSalutation": "称呼",
-      "labelTitle": "头衔",
+      "labelGender": "性别",
       "labelEmail": "邮箱地址",
       "labelPhoneNumber": "手机号",
       "labelCompany": "公司",
@@ -105,8 +102,7 @@
       "labelPassword": "密码",
       "placeholderPassword": "输入密码 ...",
       "helpTextPassword": "保存客户后，密码只能由客户本人修改。",
-      "placeholderSalutation": "选择称呼…",
-      "placeholderTitle": "输入头衔 ...",
+      "placeholderGender": "选择性别…",
       "placeholderEmail": "输入邮箱地址 ...",
       "placeholderPhoneNumber": "输入手机号 ...",
       "placeholderCustomerNumber": "输入客户编号 ...",
@@ -217,8 +213,7 @@
     "addressForm": {
       "labelCompany": "公司",
       "labelDepartment": "部门",
-      "labelSalutation": "称呼",
-      "labelTitle": "头衔",
+      "labelGender": "性别",
       "labelZipcode": "邮编",
       "labelStreet": "街道",
       "labelCity": "城市",
@@ -231,8 +226,7 @@
       "labelSameBillingAddress": "与账单地址相同",
       "placeholderCompany": "输入公司名称…",
       "placeholderDepartment": "输入部门 ...",
-      "placeholderSalutation": "选择称呼 ...",
-      "placeholderTitle": "输入头衔…",
+      "placeholderGender": "选择性别…",
       "placeholderZipcode": "输入邮政编码…",
       "placeholderStreet": "输入街道…",
       "placeholderCity": "输入城市…",
@@ -373,9 +367,9 @@
         "label": "客户编号",
         "placeholder": "输入客户编号 ..."
       },
-      "salutation": {
+      "gender": {
         "label": "称呼",
-        "placeholder": "选择称呼…"
+        "placeholder": "选择性别…"
       },
       "status": {
         "label": "状态",

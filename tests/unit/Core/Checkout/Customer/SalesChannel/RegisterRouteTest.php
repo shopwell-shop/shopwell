@@ -39,14 +39,13 @@ use Shopwell\Core\Framework\Validation\Exception\ConstraintViolationException;
 use Shopwell\Core\System\Country\CountryCollection;
 use Shopwell\Core\System\Country\CountryDefinition;
 use Shopwell\Core\System\Country\CountryEntity;
+use Shopwell\Core\System\Dictionary\Aggregate\DictionaryEntry\DictionaryEntryDefinition;
 use Shopwell\Core\System\NumberRange\ValueGenerator\NumberRangeValueGeneratorInterface;
 use Shopwell\Core\System\SalesChannel\Aggregate\SalesChannelDomain\SalesChannelDomainCollection;
 use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextPersister;
 use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextService;
 use Shopwell\Core\System\SalesChannel\Entity\SalesChannelRepository;
 use Shopwell\Core\System\SalesChannel\StoreApiCustomFieldMapper;
-use Shopwell\Core\System\Salutation\SalutationCollection;
-use Shopwell\Core\System\Salutation\SalutationDefinition;
 use Shopwell\Core\System\SystemConfig\SystemConfigService;
 use Shopwell\Core\Test\Generator;
 use Shopwell\Core\Test\Stub\DataAbstractionLayer\StaticEntityRepository;
@@ -390,24 +389,22 @@ class RegisterRouteTest extends TestCase
         $customerEntity->setGuest(false);
         $result->method('getEntities')->willReturn(new CustomerCollection([$customerEntity]));
 
-        $salutationId = Uuid::randomHex();
-        $salutationRepository = StaticEntityRepository::of(SalutationCollection::class, [[$salutationId]], new SalutationDefinition());
+        $gender = DictionaryEntryDefinition::NOT_SPECIFIED;
 
         $customerRepository = $this->createMock(EntityRepository::class);
         $customerRepository->method('search')->willReturn($result);
         $customerRepository
             ->expects($this->once())
             ->method('create')
-            ->willReturnCallback(static function (array $create) use ($salutationId) {
+            ->willReturnCallback(static function (array $create) use ($gender) {
                 static::assertCount(1, $create);
-                static::assertArrayHasKey('salutationId', $create[0]);
-                static::assertSame($create[0]['salutationId'], $salutationId);
+                static::assertArrayHasKey('gender', $create[0]);
+                static::assertSame($create[0]['gender'], $gender);
 
                 return new EntityWrittenContainerEvent(Context::createDefaultContext(), new NestedEventCollection([]), []);
             });
 
         $register = $this->createRegisterRoute(
-            salutationRepository: $salutationRepository,
             systemConfigService: $systemConfigService,
             customerRepository: $customerRepository
         );
@@ -418,7 +415,7 @@ class RegisterRouteTest extends TestCase
                 'countryId' => Uuid::randomHex(),
             ],
             'accountType' => CustomerEntity::ACCOUNT_TYPE_PRIVATE,
-            'salutationId' => '',
+            'gender' => '',
         ];
 
         $salesChannelContext = Generator::generateSalesChannelContext();
@@ -443,30 +440,28 @@ class RegisterRouteTest extends TestCase
         $customerEntity->setGuest(false);
         $result->method('getEntities')->willReturn(new CustomerCollection([$customerEntity]));
 
-        $salutationId = Uuid::randomHex();
-        $salutationRepository = StaticEntityRepository::of(SalutationCollection::class, [[$salutationId]], new SalutationDefinition());
+        $gender = DictionaryEntryDefinition::NOT_SPECIFIED;
 
         $customerRepository = $this->createMock(EntityRepository::class);
         $customerRepository->method('search')->willReturn($result);
         $customerRepository
             ->expects($this->once())
             ->method('create')
-            ->willReturnCallback(static function (array $create) use ($salutationId) {
+            ->willReturnCallback(static function (array $create) use ($gender) {
                 static::assertCount(1, $create);
-                static::assertArrayHasKey('salutationId', $create[0]);
-                static::assertSame($create[0]['salutationId'], $salutationId);
+                static::assertArrayHasKey('gender', $create[0]);
+                static::assertSame($create[0]['gender'], $gender);
                 static::assertIsArray($create[0]['addresses']);
                 static::assertCount(2, $create[0]['addresses']);
                 foreach ($create[0]['addresses'] as $address) {
-                    static::assertArrayHasKey('salutationId', $address);
-                    static::assertSame($address['salutationId'], $salutationId);
+                    static::assertArrayHasKey('gender', $address);
+                    static::assertSame($address['gender'], $gender);
                 }
 
                 return new EntityWrittenContainerEvent(Context::createDefaultContext(), new NestedEventCollection([]), []);
             });
 
         $register = $this->createRegisterRoute(
-            salutationRepository: $salutationRepository,
             systemConfigService: $systemConfigService,
             customerRepository: $customerRepository
         );
@@ -480,7 +475,7 @@ class RegisterRouteTest extends TestCase
                 'countryId' => Uuid::randomHex(),
             ],
             'accountType' => CustomerEntity::ACCOUNT_TYPE_PRIVATE,
-            'salutationId' => '',
+            'gender' => '',
         ];
 
         $salesChannelContext = Generator::generateSalesChannelContext();
@@ -657,23 +652,23 @@ class RegisterRouteTest extends TestCase
                 )
             );
 
-        $salutationId = Uuid::randomHex();
+        $gender = Uuid::randomHex();
 
         $data = [
             'email' => 'test@test.de',
             'billingAddress' => [
                 'countryId' => $countryId,
                 'name' => 'Max Mustermann',
-                'salutationId' => $salutationId,
+                'gender' => $gender,
             ],
             'accountType' => CustomerEntity::ACCOUNT_TYPE_BUSINESS,
             'shippingAddress' => [
                 'countryId' => $countryId,
                 'id' => Uuid::randomHex(),
                 'accountType' => CustomerEntity::ACCOUNT_TYPE_BUSINESS,
-                'salutationId' => $salutationId,
+                'gender' => $gender,
             ],
-            'salutationId' => $salutationId,
+            'gender' => $gender,
             'name' => 'Max Mustermann',
             'vatIds' => ['123'],
             'storefrontUrl' => 'foo',
@@ -723,7 +718,6 @@ class RegisterRouteTest extends TestCase
             static::createStub(Connection::class),
             static::createStub(SalesChannelContextService::class),
             static::createStub(StoreApiCustomFieldMapper::class),
-            static::createStub(EntityRepository::class),
             $definitionFactory,
             $doubleOptInService,
             static::createStub(CustomerNewsletterSalesChannelsUpdater::class),
@@ -804,7 +798,6 @@ class RegisterRouteTest extends TestCase
             static::createStub(Connection::class),
             static::createStub(SalesChannelContextService::class),
             static::createStub(StoreApiCustomFieldMapper::class),
-            static::createStub(EntityRepository::class),
             $customerDefinitionFactory,
             $doubleOptInService,
             static::createStub(CustomerNewsletterSalesChannelsUpdater::class),
@@ -812,16 +805,16 @@ class RegisterRouteTest extends TestCase
             new ExtensionDispatcher(new EventDispatcher()),
         );
 
-        $salutationId = Uuid::randomHex();
+        $gender = Uuid::randomHex();
 
         $data = [
             'email' => 'test@test.de',
             'accountType' => CustomerEntity::ACCOUNT_TYPE_BUSINESS,
             'billingAddress' => [
                 'countryId' => $countryId,
-                'salutationId' => $salutationId,
+                'gender' => $gender,
             ],
-            'salutationId' => $salutationId,
+            'gender' => $gender,
             'firstName' => 'Max',
             'lastName' => 'Mustermann',
         ];
@@ -880,21 +873,21 @@ class RegisterRouteTest extends TestCase
                 )
             );
 
-        $salutationId = Uuid::randomHex();
+        $gender = Uuid::randomHex();
 
         $data = [
             'email' => 'test@test.de',
             'billingAddress' => [
                 'name' => 'Max Mustermann',
-                'salutationId' => $salutationId,
+                'gender' => $gender,
             ],
             'accountType' => CustomerEntity::ACCOUNT_TYPE_BUSINESS,
             'shippingAddress' => [
                 'id' => Uuid::randomHex(),
                 'accountType' => CustomerEntity::ACCOUNT_TYPE_BUSINESS,
-                'salutationId' => $salutationId,
+                'gender' => $gender,
             ],
-            'salutationId' => $salutationId,
+            'gender' => $gender,
             'name' => 'Max Mustermann',
             'storefrontUrl' => 'foo',
         ];
@@ -937,7 +930,6 @@ class RegisterRouteTest extends TestCase
             static::createStub(Connection::class),
             static::createStub(SalesChannelContextService::class),
             static::createStub(StoreApiCustomFieldMapper::class),
-            static::createStub(EntityRepository::class),
             $definitionFactory,
             $doubleOptInService,
             static::createStub(CustomerNewsletterSalesChannelsUpdater::class),
@@ -982,13 +974,13 @@ class RegisterRouteTest extends TestCase
         /** @var StaticSalesChannelRepository<CountryCollection> $countryRepository */
         $countryRepository = new StaticSalesChannelRepository([new CountryCollection([$country])]);
 
-        $salutationId = Uuid::randomHex();
+        $gender = Uuid::randomHex();
 
         $data = [
             'email' => 'test@test.de',
             'billingAddress' => 'Max Mustermanns Address',
             'accountType' => CustomerEntity::ACCOUNT_TYPE_BUSINESS,
-            'salutationId' => $salutationId,
+            'gender' => $gender,
             'name' => 'Max Mustermann',
             'vatIds' => ['123'],
             'storefrontUrl' => 'foo',
@@ -1044,7 +1036,6 @@ class RegisterRouteTest extends TestCase
             static::createStub(Connection::class),
             static::createStub(SalesChannelContextService::class),
             static::createStub(StoreApiCustomFieldMapper::class),
-            static::createStub(EntityRepository::class),
             $definitionFactory,
             static::createStub(DoubleOptInService::class),
             static::createStub(CustomerNewsletterSalesChannelsUpdater::class),
@@ -1214,8 +1205,8 @@ class RegisterRouteTest extends TestCase
                     static fn (array $address): bool => $address['name'] === 'Jane Doe'
                 ))[0];
 
-                static::assertSame('billing-salutation', $billingAddress['salutationId']);
-                static::assertSame('shipping-salutation', $shippingAddress['salutationId']);
+                static::assertSame('billing-salutation', $billingAddress['gender']);
+                static::assertSame('shipping-salutation', $shippingAddress['gender']);
 
                 return new EntityWrittenContainerEvent(Context::createDefaultContext(), new NestedEventCollection([]), []);
             });
@@ -1233,11 +1224,11 @@ class RegisterRouteTest extends TestCase
 
         $registerRoute->register(
             new RequestDataBag($this->createRegistrationData([
-                'salutationId' => 'billing-salutation',
+                'gender' => 'billing-salutation',
                 'shippingAddress' => [
                     'name' => 'Jane Doe',
                     'countryId' => Uuid::randomHex(),
-                    'salutationId' => 'shipping-salutation',
+                    'gender' => 'shipping-salutation',
                 ],
             ])),
             Generator::generateSalesChannelContext(),
@@ -1280,7 +1271,6 @@ class RegisterRouteTest extends TestCase
                     static fn (array $address): bool => $address['city'] === 'Hamburg'
                 ))[0];
 
-                static::assertSame('Dr.', $billingAddress['title']);
                 static::assertSame('Max Mustermann', $billingAddress['name']);
                 static::assertSame('Main Street 1', $billingAddress['street']);
                 static::assertSame('12345', $billingAddress['zipcode']);
@@ -1291,7 +1281,6 @@ class RegisterRouteTest extends TestCase
                 static::assertSame('Line 2', $billingAddress['additionalAddressLine2']);
                 static::assertSame(['note' => '  keep custom field whitespace  '], $billingAddress['customFields']);
 
-                static::assertSame('Ms.', $shippingAddress['title']);
                 static::assertSame('Jane Doe', $shippingAddress['name']);
                 static::assertSame('Side Street 2', $shippingAddress['street']);
                 static::assertSame('54321', $shippingAddress['zipcode']);
@@ -1330,7 +1319,6 @@ class RegisterRouteTest extends TestCase
         $registerRoute->register(
             new RequestDataBag($this->createRegistrationData([
                 'guest' => true,
-                'title' => '  Dr.  ',
                 'name' => "\nMax Mustermann\t",
                 'billingAddress' => [
                     'countryId' => Uuid::randomHex(),
@@ -1347,7 +1335,6 @@ class RegisterRouteTest extends TestCase
                     ],
                 ],
                 'shippingAddress' => [
-                    'title' => "\nMs.\t",
                     'name' => "\tJane Doe\n",
                     'countryId' => Uuid::randomHex(),
                     'street' => "\nSide Street 2           ",
@@ -1497,6 +1484,52 @@ class RegisterRouteTest extends TestCase
         static::assertSame([], $properties['storefrontUrl'][1]->choices);
     }
 
+    #[TestDox('A customer account can be registered without any address')]
+    public function testRegisterWithoutAnyAddressSkipsAddressValidation(): void
+    {
+        $definition = $this->captureValidationDefinition(
+            $this->createRegistrationConfigService(),
+            false,
+            false,
+            $this->createRegistrationDataWithoutAddress()
+        );
+
+        static::assertArrayNotHasKey('billingAddress', $definition->getSubDefinitions());
+        static::assertArrayNotHasKey('shippingAddress', $definition->getSubDefinitions());
+    }
+
+    #[TestDox('A guest has to provide a billing address during the registration')]
+    public function testGuestRegisterWithoutAnyAddressValidatesBillingAddress(): void
+    {
+        $definition = $this->captureValidationDefinition(
+            $this->createRegistrationConfigService(),
+            true,
+            false,
+            $this->createRegistrationDataWithoutAddress(true)
+        );
+
+        static::assertArrayHasKey('billingAddress', $definition->getSubDefinitions());
+    }
+
+    #[TestDox('A partially filled address form is still validated for customer accounts')]
+    public function testRegisterWithPartiallyFilledAddressFormValidatesAddress(): void
+    {
+        $data = $this->createRegistrationData([
+            'guest' => false,
+            'billingAddress' => [
+                'name' => 'John Doe',
+                'gender' => 'male',
+                'countryId' => Uuid::randomHex(),
+                'street' => 'Examplestreet 11',
+                'city' => '',
+            ],
+        ]);
+
+        $definition = $this->captureValidationDefinition($this->createRegistrationConfigService(), false, false, $data);
+
+        static::assertArrayHasKey('billingAddress', $definition->getSubDefinitions());
+    }
+
     public function testPublishesExtension(): void
     {
         $data = new RequestDataBag();
@@ -1525,7 +1558,6 @@ class RegisterRouteTest extends TestCase
             static::createStub(Connection::class),
             static::createStub(SalesChannelContextService::class),
             static::createStub(StoreApiCustomFieldMapper::class),
-            static::createStub(EntityRepository::class),
             static::createStub(DataValidationFactoryInterface::class),
             static::createStub(DoubleOptInService::class),
             static::createStub(CustomerNewsletterSalesChannelsUpdater::class),
@@ -1544,6 +1576,18 @@ class RegisterRouteTest extends TestCase
         bool $isGuest,
         bool $validateStorefrontUrl = true
     ): array {
+        return $this->captureValidationDefinition($systemConfigService, $isGuest, $validateStorefrontUrl)->getProperties();
+    }
+
+    /**
+     * @param array<string, mixed>|null $data
+     */
+    private function captureValidationDefinition(
+        StaticSystemConfigService $systemConfigService,
+        bool $isGuest,
+        bool $validateStorefrontUrl = true,
+        ?array $data = null
+    ): DataValidationDefinition {
         $definition = null;
 
         $dataValidator = $this->createMock(DataValidator::class);
@@ -1576,7 +1620,7 @@ class RegisterRouteTest extends TestCase
         $salesChannelContext->getSalesChannel()->setDomains(new SalesChannelDomainCollection());
 
         $registerRoute->register(
-            new RequestDataBag($this->createRegistrationData([
+            new RequestDataBag($data ?? $this->createRegistrationData([
                 'guest' => $isGuest,
                 'storefrontUrl' => 'https://example.com',
             ])),
@@ -1586,7 +1630,28 @@ class RegisterRouteTest extends TestCase
 
         static::assertInstanceOf(DataValidationDefinition::class, $definition);
 
-        return $definition->getProperties();
+        return $definition;
+    }
+
+    private function createRegistrationConfigService(): StaticSystemConfigService
+    {
+        return new StaticSystemConfigService([
+            TestDefaults::SALES_CHANNEL => [
+                'core.loginRegistration.passwordMinLength' => '8',
+            ],
+            'core.systemWideLoginRegistration.isCustomerBoundToSalesChannel' => true,
+        ]);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function createRegistrationDataWithoutAddress(bool $isGuest = false): array
+    {
+        $data = $this->createRegistrationData(['guest' => $isGuest]);
+        unset($data['billingAddress']);
+
+        return $data;
     }
 
     /**
@@ -1609,7 +1674,6 @@ class RegisterRouteTest extends TestCase
     }
 
     /**
-     * @param EntityRepository<SalutationCollection>|null $salutationRepository
      * @param EntityRepository<CustomerCollection>|StaticEntityRepository<CustomerCollection>|null $customerRepository
      * @param SalesChannelRepository<CountryCollection>|null $countryRepository
      */
@@ -1618,7 +1682,6 @@ class RegisterRouteTest extends TestCase
         ?EventDispatcherInterface $eventDispatcher = null,
         ?DataValidationFactoryInterface $addressValidationFactory = null,
         ?StoreApiCustomFieldMapper $customFieldMapper = null,
-        ?EntityRepository $salutationRepository = null,
         ?StaticSystemConfigService $systemConfigService = null,
         EntityRepository|StaticEntityRepository|null $customerRepository = null,
         ?DataValidationFactoryInterface $accountValidationFactory = null,
@@ -1631,7 +1694,6 @@ class RegisterRouteTest extends TestCase
         $accountValidationFactory ??= static::createStub(DataValidationFactoryInterface::class);
         $addressValidationFactory ??= static::createStub(DataValidationFactoryInterface::class);
         $customFieldMapper ??= static::createStub(StoreApiCustomFieldMapper::class);
-        $salutationRepository ??= static::createStub(EntityRepository::class);
         $systemConfigService ??= new StaticSystemConfigService([
             TestDefaults::SALES_CHANNEL => [
                 'core.loginRegistration.passwordMinLength' => '8',
@@ -1660,7 +1722,6 @@ class RegisterRouteTest extends TestCase
             static::createStub(Connection::class),
             static::createStub(SalesChannelContextService::class),
             $customFieldMapper,
-            $salutationRepository,
             static::createStub(DataValidationFactoryInterface::class),
             $doubleOptInService,
             $customerNewsletterSalesChannelsUpdater,
@@ -1679,7 +1740,7 @@ class RegisterRouteTest extends TestCase
         return array_merge([
             'email' => 'test@example.com',
             'name' => 'John Doe',
-            'salutationId' => Uuid::randomHex(),
+            'gender' => 'male',
             'billingAddress' => [
                 'name' => 'John Doe',
                 'countryId' => Uuid::randomHex(),

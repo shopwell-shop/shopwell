@@ -29,6 +29,8 @@ class CustomerWalletTransactionEntity extends Entity
 
     protected ?string $orderId = null;
 
+    protected ?string $orderVersionId = null;
+
     protected ?string $externalReference = null;
 
     protected ?string $comment = null;
@@ -99,6 +101,16 @@ class CustomerWalletTransactionEntity extends Entity
     public function setOrderId(string $orderId): void
     {
         $this->orderId = $orderId;
+    }
+
+    public function getOrderVersionId(): ?string
+    {
+        return $this->orderVersionId;
+    }
+
+    public function setOrderVersionId(?string $orderVersionId): void
+    {
+        $this->orderVersionId = $orderVersionId;
     }
 
     public function getExternalReference(): ?string

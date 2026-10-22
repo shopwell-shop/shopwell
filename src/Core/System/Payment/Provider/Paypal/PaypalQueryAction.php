@@ -10,6 +10,7 @@ use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
 use Shopwell\Core\System\Payment\Gateway\PaymentQuery;
 use Shopwell\Core\System\Payment\Gateway\QueryResult;
 use Shopwell\Core\System\Payment\PaymentException;
+use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
 
 /**
  * Asks paypal what happened to an order whose notification never arrived.
@@ -26,6 +27,11 @@ use Shopwell\Core\System\Payment\PaymentException;
 final class PaypalQueryAction extends AbstractPaymentAction
 {
     protected string $apiClass = PaypalApi::class;
+
+    public function capability(): PaymentCapability
+    {
+        return PaymentCapability::QUERY;
+    }
 
     public function execute($request): void
     {

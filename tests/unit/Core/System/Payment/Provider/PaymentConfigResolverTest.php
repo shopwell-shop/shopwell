@@ -9,6 +9,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\EntityCollection;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppChannel\PaymentAppChannelCollection;
 use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppChannel\PaymentAppChannelEntity;
@@ -52,6 +53,7 @@ class PaymentConfigResolverTest extends TestCase
         $app = new PaymentAppEntity();
         $app->id = 'app-1';
         $app->technicalName = 'app';
+        $app->type = PaymentAppEntity::TYPE_EXTERNAL;
         $this->app = $app;
     }
 
@@ -187,7 +189,7 @@ class PaymentConfigResolverTest extends TestCase
     public function testResolveRejectsEmptyOwnCredentials(): void
     {
         $resolver = $this->resolver(
-            appProviders: $this->appProviders($this->appProvider(mode: PaymentAppProviderEntity::MODE_OWN, credentials: null)),
+            appProviders: $this->appProviders($this->appProvider(credentials: null)),
             appChannels: $this->appChannels($this->appChannel()),
             channelConfigs: $this->channelConfigs($this->channelConfig())
         );
@@ -201,7 +203,7 @@ class PaymentConfigResolverTest extends TestCase
     {
         $resolver = $this->resolver(
             channel: $this->channel(runtimeParams: ['openid' => true]),
-            appProviders: $this->appProviders($this->appProvider(settings: ['from_app_provider' => 'app'])),
+            appProviders: $this->appProviders($this->appProvider(paymentAppId: 'platform-app-1', settings: ['from_app_provider' => 'app'])),
             appChannels: $this->appChannels($this->appChannel(settings: ['from_app_channel' => 'app'])),
             channelConfigs: $this->channelConfigs($this->channelConfig(
                 params: $this->cipher->encrypt(['appid' => 'wx-platform']),
@@ -212,14 +214,16 @@ class PaymentConfigResolverTest extends TestCase
             ))
         );
 
-        $resolved = $resolver->resolve($this->app, self::CHANNEL, 'CNY', 'web', ['openid' => 'o-1']);
+        $resolved = $resolver->resolve($this->platformApp(), self::CHANNEL, 'CNY', 'web', ['openid' => 'o-1']);
 
         static::assertSame(self::PROVIDER, $resolved->provider->technicalName);
         static::assertSame(self::CHANNEL, $resolved->channel->technicalName);
         static::assertSame(['secret_key' => 'sk_platform'], $resolved->credentials);
         static::assertSame(['appid' => 'wx-platform'], $resolved->params);
         static::assertSame(['openid' => 'o-1'], $resolved->runtimeParams);
-        static::assertSame(PaymentAppProviderEntity::MODE_PLATFORM, $resolved->mode);
+        // the tenant of the platform collects on the platform account, which is its own one
+        static::assertNull($resolved->sourceAppId);
+        static::assertFalse($resolved->isInherited());
         static::assertSame(
             ['from_channel_config' => 'platform', 'from_app_provider' => 'app', 'from_app_channel' => 'app'],
             $resolved->settings
@@ -230,11 +234,10 @@ class PaymentConfigResolverTest extends TestCase
         static::assertSame('o-1', $resolved->runtimeParam('openid'));
     }
 
-    public function testResolveUsesTheOwnCredentialsInOwnMode(): void
+    public function testResolveUsesTheOwnCredentialsOfTheApp(): void
     {
         $resolver = $this->resolver(
             appProviders: $this->appProviders($this->appProvider(
-                mode: PaymentAppProviderEntity::MODE_OWN,
                 credentials: $this->cipher->encrypt(['secret_key' => 'sk_own'])
             )),
             appChannels: $this->appChannels($this->appChannel(
@@ -245,9 +248,142 @@ class PaymentConfigResolverTest extends TestCase
 
         $resolved = $resolver->resolve($this->app, self::CHANNEL, 'CNY');
 
-        static::assertSame(PaymentAppProviderEntity::MODE_OWN, $resolved->mode);
+        static::assertNull($resolved->sourceAppId);
+        static::assertFalse($resolved->isInherited());
         static::assertSame(['secret_key' => 'sk_own'], $resolved->credentials);
         static::assertSame(['appid' => 'wx-own'], $resolved->params);
+    }
+
+    /**
+     * The account of another app is inherited along `sourceAppId`, and the chain ends at the tenant of
+     * the platform - the app collects on the platform account without holding any credentials itself.
+     */
+    public function testResolveInheritsTheAccountOfThePlatformTenant(): void
+    {
+        $platform = $this->platformApp();
+
+        $resolver = $this->resolver(
+            appProviders: $this->appProviders(
+                $this->appProvider(sourceAppId: $platform->id, sourceApp: $platform),
+                $this->appProvider(enabled: true, paymentAppId: $platform->id, providerTechnicalName: self::PROVIDER)
+            ),
+            appChannels: $this->appChannels($this->appChannel()),
+            channelConfigs: $this->channelConfigs($this->channelConfig(
+                params: $this->cipher->encrypt(['appid' => 'wx-platform'])
+            )),
+            providerConfigs: $this->providerConfigs($this->providerConfig(
+                credentials: $this->cipher->encrypt(['secret_key' => 'sk_platform'])
+            ))
+        );
+
+        $resolved = $resolver->resolve($this->app, self::CHANNEL, 'CNY');
+
+        static::assertSame(['secret_key' => 'sk_platform'], $resolved->credentials);
+        static::assertSame(['appid' => 'wx-platform'], $resolved->params);
+        static::assertSame($platform->id, $resolved->sourceAppId);
+        static::assertTrue($resolved->isInherited());
+    }
+
+    /**
+     * Two hops: the app inherits from an app that inherits from the platform tenant again.
+     */
+    public function testResolveWalksTheWholeAccountSourceChain(): void
+    {
+        $platform = $this->platformApp();
+
+        $middle = new PaymentAppEntity();
+        $middle->id = 'app-2';
+        $middle->technicalName = 'middle';
+        $middle->type = PaymentAppEntity::TYPE_EXTERNAL;
+
+        $resolver = $this->resolver(
+            appProviders: $this->appProviders(
+                $this->appProvider(sourceAppId: $middle->id, sourceApp: $middle),
+                $this->appProvider(paymentAppId: $middle->id, sourceAppId: $platform->id, sourceApp: $platform),
+                $this->appProvider(paymentAppId: $platform->id)
+            ),
+            appChannels: $this->appChannels($this->appChannel()),
+            channelConfigs: $this->channelConfigs($this->channelConfig()),
+            providerConfigs: $this->providerConfigs($this->providerConfig(
+                credentials: $this->cipher->encrypt(['secret_key' => 'sk_platform'])
+            ))
+        );
+
+        $resolved = $resolver->resolve($this->app, self::CHANNEL, 'CNY');
+
+        static::assertSame(['secret_key' => 'sk_platform'], $resolved->credentials);
+        static::assertSame($platform->id, $resolved->sourceAppId);
+    }
+
+    /**
+     * A chain that names an app twice has no account at all, so it is refused instead of being walked
+     * to its hop limit.
+     */
+    public function testResolveRejectsAnAccountSourceCircle(): void
+    {
+        $other = new PaymentAppEntity();
+        $other->id = 'app-2';
+        $other->technicalName = 'other';
+        $other->type = PaymentAppEntity::TYPE_EXTERNAL;
+
+        $resolver = $this->resolver(
+            appProviders: $this->appProviders(
+                $this->appProvider(sourceAppId: $other->id, sourceApp: $other),
+                $this->appProvider(paymentAppId: $other->id, sourceAppId: 'app-1')
+            ),
+            appChannels: $this->appChannels($this->appChannel()),
+            channelConfigs: $this->channelConfigs($this->channelConfig())
+        );
+
+        $this->expectExceptionObject(PaymentException::providerInheritanceCycle(self::PROVIDER, 'app'));
+
+        $resolver->resolve($this->app, self::CHANNEL, 'CNY');
+    }
+
+    public function testResolveRejectsAnAppThatInheritsFromItself(): void
+    {
+        $resolver = $this->resolver(
+            appProviders: $this->appProviders($this->appProvider(sourceAppId: 'app-1')),
+            appChannels: $this->appChannels($this->appChannel()),
+            channelConfigs: $this->channelConfigs($this->channelConfig())
+        );
+
+        $this->expectExceptionObject(PaymentException::providerInheritanceCycle(self::PROVIDER, 'app'));
+
+        $resolver->resolve($this->app, self::CHANNEL, 'CNY');
+    }
+
+    public function testResolveRejectsAnAccountSourceThatDoesNotExistAnymore(): void
+    {
+        $resolver = $this->resolver(
+            appProviders: $this->appProviders($this->appProvider(sourceAppId: 'deleted-app')),
+            appChannels: $this->appChannels($this->appChannel()),
+            channelConfigs: $this->channelConfigs($this->channelConfig())
+        );
+
+        $this->expectExceptionObject(PaymentException::providerSourceAppMissing(self::PROVIDER, 'app', 'deleted-app'));
+
+        $resolver->resolve($this->app, self::CHANNEL, 'CNY');
+    }
+
+    public function testResolveRejectsADisabledAuthorizationOnTheWayToThePlatform(): void
+    {
+        $platform = $this->platformApp();
+
+        $resolver = $this->resolver(
+            appProviders: $this->appProviders(
+                $this->appProvider(sourceAppId: $platform->id, sourceApp: $platform),
+                $this->appProvider(paymentAppId: $platform->id, enabled: false)
+            ),
+            appChannels: $this->appChannels($this->appChannel()),
+            channelConfigs: $this->channelConfigs($this->channelConfig())
+        );
+
+        $this->expectExceptionObject(
+            PaymentException::providerNotEnabled(self::PROVIDER, PaymentAppEntity::PLATFORM_TECHNICAL_NAME)
+        );
+
+        $resolver->resolve($this->app, self::CHANNEL, 'CNY');
     }
 
     /**
@@ -258,7 +394,7 @@ class PaymentConfigResolverTest extends TestCase
     public function testResolveProviderCredentialsReturnsTheDecryptedPlatformCredentials(): void
     {
         $resolver = $this->resolver(
-            appProviders: $this->appProviders($this->appProvider()),
+            appProviders: $this->appProviders($this->appProvider(paymentAppId: 'platform-app-1')),
             providerConfigs: $this->providerConfigs($this->providerConfig(
                 credentials: $this->cipher->encrypt(['webhook_secret' => 'whsec_platform'])
             ))
@@ -266,25 +402,48 @@ class PaymentConfigResolverTest extends TestCase
 
         static::assertSame(
             ['webhook_secret' => 'whsec_platform'],
-            $resolver->resolveProviderCredentials($this->app, self::PROVIDER)
+            $resolver->resolveProviderCredentials($this->platformApp(), self::PROVIDER)
         );
     }
 
     /**
-     * The app may run the interface with its own merchant account, and then the notification is signed
-     * with the app's key - the platform credentials would not verify it.
+     * An app that collects on an account of its own signs its notifications with its own keys - the
+     * platform credentials would not verify them.
      */
-    public function testResolveProviderCredentialsUsesTheOwnCredentialsInOwnMode(): void
+    public function testResolveProviderCredentialsUsesTheOwnCredentials(): void
     {
         $resolver = $this->resolver(
             appProviders: $this->appProviders($this->appProvider(
-                mode: PaymentAppProviderEntity::MODE_OWN,
                 credentials: $this->cipher->encrypt(['webhook_secret' => 'whsec_own'])
             ))
         );
 
         static::assertSame(
             ['webhook_secret' => 'whsec_own'],
+            $resolver->resolveProviderCredentials($this->app, self::PROVIDER)
+        );
+    }
+
+    /**
+     * The verification follows the account source like the payment does: an app that inherits the
+     * account of another app is verified with the keys of that app.
+     */
+    public function testResolveProviderCredentialsFollowsTheAccountSourceChain(): void
+    {
+        $platform = $this->platformApp();
+
+        $resolver = $this->resolver(
+            appProviders: $this->appProviders(
+                $this->appProvider(sourceAppId: $platform->id, sourceApp: $platform),
+                $this->appProvider(paymentAppId: $platform->id)
+            ),
+            providerConfigs: $this->providerConfigs($this->providerConfig(
+                credentials: $this->cipher->encrypt(['webhook_secret' => 'whsec_platform'])
+            ))
+        );
+
+        static::assertSame(
+            ['webhook_secret' => 'whsec_platform'],
             $resolver->resolveProviderCredentials($this->app, self::PROVIDER)
         );
     }
@@ -328,7 +487,7 @@ class PaymentConfigResolverTest extends TestCase
     {
         $resolver = $this->resolver(
             channel: $this->channel(runtimeParams: ['openid' => true]),
-            appProviders: $this->appProviders($this->appProvider(mode: PaymentAppProviderEntity::MODE_OWN)),
+            appProviders: $this->appProviders($this->appProvider(sourceAppId: 'platform-app-1')),
             appChannels: $this->appChannels($this->appChannel())
         );
 
@@ -342,7 +501,9 @@ class PaymentConfigResolverTest extends TestCase
                 'currencies' => ['CNY'],
                 'devices' => ['web'],
                 'runtime_params' => ['openid' => true],
-                'mode' => PaymentAppProviderEntity::MODE_OWN,
+                // the app inherits the account of the tenant of the platform for this interface
+                'source_app_id' => 'platform-app-1',
+                'inherited' => true,
             ],
         ], $resolver->enabledFor($this->app));
     }
@@ -395,21 +556,38 @@ class PaymentConfigResolverTest extends TestCase
      */
     private function appProvider(
         bool $enabled = true,
-        string $mode = PaymentAppProviderEntity::MODE_PLATFORM,
+        ?string $sourceAppId = null,
         ?array $credentials = null,
         ?array $settings = null,
-        string $providerTechnicalName = self::PROVIDER
+        string $providerTechnicalName = self::PROVIDER,
+        string $paymentAppId = 'app-1',
+        ?PaymentAppEntity $sourceApp = null
     ): PaymentAppProviderEntity {
         $entity = new PaymentAppProviderEntity();
-        $entity->setUniqueIdentifier('app-provider-1');
-        $entity->paymentAppId = 'app-1';
+        $entity->setUniqueIdentifier('app-provider-' . $paymentAppId);
+        $entity->paymentAppId = $paymentAppId;
         $entity->providerTechnicalName = $providerTechnicalName;
         $entity->enabled = $enabled;
-        $entity->mode = $mode;
+        $entity->sourceAppId = $sourceAppId;
+        $entity->sourceApp = $sourceApp;
         $entity->credentials = $credentials;
         $entity->settings = $settings;
 
         return $entity;
+    }
+
+    /**
+     * The tenant of the platform, the root of every account source chain.
+     */
+    private function platformApp(): PaymentAppEntity
+    {
+        $app = new PaymentAppEntity();
+        $app->id = 'platform-app-1';
+        $app->setUniqueIdentifier($app->id);
+        $app->technicalName = PaymentAppEntity::PLATFORM_TECHNICAL_NAME;
+        $app->type = PaymentAppEntity::TYPE_PLATFORM;
+
+        return $app;
     }
 
     /**
@@ -551,6 +729,38 @@ class PaymentConfigResolverTest extends TestCase
     }
 
     /**
+     * The authorizations are read once per app of an account source chain, so this repository answers
+     * the row of the app the query filtered for instead of always the first one.
+     *
+     * @param EntitySearchResult<PaymentAppProviderCollection> $result
+     *
+     * @return EntityRepository<PaymentAppProviderCollection>
+     */
+    private function appProviderRepository(EntitySearchResult $result): EntityRepository
+    {
+        $repository = static::createStub(EntityRepository::class);
+        $repository->method('search')->willReturnCallback(
+            function (Criteria $criteria) use ($result): EntitySearchResult {
+                $appId = null;
+
+                foreach ($criteria->getFilters() as $filter) {
+                    if ($filter instanceof EqualsFilter && $filter->getField() === 'paymentAppId') {
+                        $appId = $filter->getValue();
+                    }
+                }
+
+                $entities = $result->getEntities()->filter(
+                    static fn (PaymentAppProviderEntity $row): bool => $appId === null || $row->paymentAppId === $appId
+                );
+
+                return $this->searchResult($entities, 'payment_app_provider');
+            }
+        );
+
+        return $repository;
+    }
+
+    /**
      * @param EntitySearchResult<PaymentAppProviderCollection>|null $appProviders
      * @param EntitySearchResult<PaymentProviderConfigCollection>|null $providerConfigs
      * @param EntitySearchResult<PaymentAppChannelCollection>|null $appChannels
@@ -579,7 +789,7 @@ class PaymentConfigResolverTest extends TestCase
         return new PaymentConfigResolver(
             $providers,
             new PaymentChannelRegistry($providers),
-            $this->repository($appProviders ?? $this->appProviders()),
+            $this->appProviderRepository($appProviders ?? $this->appProviders()),
             $this->repository($providerConfigs ?? $this->providerConfigs()),
             $this->repository($appChannels ?? $this->appChannels()),
             $this->repository($channelConfigs ?? $this->channelConfigs()),

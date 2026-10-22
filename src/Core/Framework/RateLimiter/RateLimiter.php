@@ -14,6 +14,16 @@ class RateLimiter
 
     final public const LOGIN_CLIENT = 'login_client';
 
+    /**
+     * The request of a verification code for the login by sms, keyed by the number and the client.
+     */
+    final public const SMS_LOGIN_CODE = 'sms_login_code';
+
+    /**
+     * The answer to a verification code of the login by sms, keyed by the number and the client.
+     */
+    final public const SMS_LOGIN_VERIFY = 'sms_login_verify';
+
     final public const GUEST_LOGIN = 'guest_login';
 
     final public const RESET_PASSWORD = 'reset_password';

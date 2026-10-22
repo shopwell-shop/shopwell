@@ -74,7 +74,7 @@ describe('src/module/sw-settings-sms/page/sw-settings-sms-gateway-list', () => {
 
     it('should load the gateways ordered by priority', async () => {
         const rows = [
-            { id: 'gateway-1', technicalName: 'aliyun', label: 'main', enabled: true, priority: 1, strategy: 'exclusive' },
+            { id: 'gateway-1', technicalName: 'aliyun', label: 'main', enabled: true, priority: 1 },
         ];
         const search = jest.fn(() => Promise.resolve(collection(rows)));
 
@@ -117,12 +117,6 @@ describe('src/module/sw-settings-sms/page/sw-settings-sms-gateway-list', () => {
 
         // the seeded baseline gateway has no name of its own, the provider names it
         expect(wrapper.vm.gatewayName({ technicalName: 'null', label: null })).toBe('sms.gateway.null');
-    });
-
-    it('should show the technical name of a strategy it has no label for', async () => {
-        ({ wrapper } = await createWrapper({ hasSnippet: false }));
-
-        expect(wrapper.vm.strategyLabel('an-unknown-strategy')).toBe('an-unknown-strategy');
     });
 
     it('should search from the first page again', async () => {
@@ -178,7 +172,7 @@ describe('src/module/sw-settings-sms/page/sw-settings-sms-gateway-list', () => {
 
     it('should delete the gateway after the confirmation and load the list again', async () => {
         const rows = [
-            { id: 'gateway-1', technicalName: 'aliyun', enabled: true, priority: 1, strategy: 'exclusive' },
+            { id: 'gateway-1', technicalName: 'aliyun', enabled: true, priority: 1 },
         ];
 
         ({ wrapper, repository } = await createWrapper({ rows }));
@@ -196,7 +190,7 @@ describe('src/module/sw-settings-sms/page/sw-settings-sms-gateway-list', () => {
 
     it('should keep the gateway when the modal is closed instead of confirmed', async () => {
         const rows = [
-            { id: 'gateway-1', technicalName: 'aliyun', enabled: true, priority: 1, strategy: 'exclusive' },
+            { id: 'gateway-1', technicalName: 'aliyun', enabled: true, priority: 1 },
         ];
 
         ({ wrapper, repository } = await createWrapper({ rows }));

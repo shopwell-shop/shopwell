@@ -11,7 +11,6 @@ use Shopwell\Core\Framework\Test\TestCaseBase\KernelLifecycleManager;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\Migration\V6_7\Migration1792500003AddDefaultSmsGateway;
 use Shopwell\Core\System\Sms\Gateway\Null\NullGatewayTransportFactory;
-use Shopwell\Core\System\Sms\Gateway\SmsGatewayEntity;
 
 /**
  * @internal
@@ -44,6 +43,9 @@ class Migration1792500003AddDefaultSmsGatewayTest extends TestCase
     /**
      * The shop is able to send right after the installation: the baseline gateway is active, serves
      * every sales channel and names the provider the component registered.
+     *
+     * The routing of a message is decided by the priority alone, the table carries no strategy
+     * column, so there is nothing else to seed.
      */
     public function testSeedsTheNullGateway(): void
     {
@@ -54,7 +56,6 @@ class Migration1792500003AddDefaultSmsGatewayTest extends TestCase
         static::assertSame(NullGatewayTransportFactory::TECHNICAL_NAME, $gateway['technical_name']);
         static::assertSame(1, (int) $gateway['enabled']);
         static::assertNull($gateway['sales_channel_id']);
-        static::assertSame(SmsGatewayEntity::STRATEGY_EXCLUSIVE, $gateway['strategy']);
         static::assertSame(Migration1792500003AddDefaultSmsGateway::PRIORITY, (int) $gateway['priority']);
     }
 
@@ -107,7 +108,7 @@ class Migration1792500003AddDefaultSmsGatewayTest extends TestCase
     private function nullGateway(): ?array
     {
         $gateway = $this->connection->fetchAssociative(
-            'SELECT `technical_name`, `label`, `enabled`, `sales_channel_id`, `priority`, `strategy`
+            'SELECT `technical_name`, `label`, `enabled`, `sales_channel_id`, `priority`
                 FROM `sms_gateway` WHERE `technical_name` = :technicalName',
             ['technicalName' => Migration1792500003AddDefaultSmsGateway::TECHNICAL_NAME]
         );
@@ -130,7 +131,6 @@ class Migration1792500003AddDefaultSmsGatewayTest extends TestCase
             'technical_name' => $technicalName,
             'enabled' => true,
             'priority' => $priority,
-            'strategy' => SmsGatewayEntity::STRATEGY_EXCLUSIVE,
             'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
         ]);
     }

@@ -1,0 +1,541 @@
+{
+    "openapi": "3.2.0",
+    "info": [],
+    "paths": {
+        "/_action/order-return/{id}/approve": {
+            "post": {
+                "tags": [
+                    "Order Return"
+                ],
+                "summary": "Accept a return",
+                "description": "Moves a return from `requested` to `open`. The goods are expected afterwards for a `return_refund` return, the refund is prepared right away for a `refund_only` return. The server owns the state machine, the administration never writes a state id.",
+                "operationId": "approveOrderReturn",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "The id of the return.",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The return in its new state.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "orderReturn": {
+                                            "$ref": "#/components/schemas/OrderReturn"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/400"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/401"
+                    },
+                    "409": {
+                        "description": "The return is not in a state that allows this decision."
+                    }
+                }
+            }
+        },
+        "/_action/order-return/{id}/decline": {
+            "post": {
+                "tags": [
+                    "Order Return"
+                ],
+                "summary": "Refuse a return",
+                "description": "Moves a return from `requested` to `declined`. A refusal is final and cannot be reopened, which is why the reason is mandatory - it is the only explanation the customer receives.",
+                "operationId": "declineOrderReturn",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "The id of the return.",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "reason": {
+                                        "type": "string",
+                                        "description": "Why the return was refused. It is written into the conversation of the return and shown to the customer."
+                                    }
+                                },
+                                "required": [
+                                    "reason"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "The return in its new state.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "orderReturn": {
+                                            "$ref": "#/components/schemas/OrderReturn"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/400"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/401"
+                    },
+                    "409": {
+                        "description": "The return is not in a state that allows this decision, or the reason is missing."
+                    }
+                }
+            }
+        },
+        "/_action/order-return/{id}/cancel": {
+            "post": {
+                "tags": [
+                    "Order Return"
+                ],
+                "summary": "Cancel a return",
+                "description": "Ends a return before it was decided, from `requested`, `open` or `returning`.",
+                "operationId": "cancelOrderReturn",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "The id of the return.",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "note": {
+                                        "type": ["string", "null"],
+                                        "description": "An optional note that is written into the conversation of the return."
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "The return in its new state.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "orderReturn": {
+                                            "$ref": "#/components/schemas/OrderReturn"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/400"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/401"
+                    },
+                    "409": {
+                        "description": "The return is not in a state that allows this decision."
+                    }
+                }
+            }
+        },
+        "/_action/order-return/{id}/receive": {
+            "post": {
+                "tags": [
+                    "Order Return"
+                ],
+                "summary": "Book the arrival of the goods",
+                "description": "Moves a return from `returning` to `received`: the accepted positions go back into the stock and the refund is started.",
+                "operationId": "receiveOrderReturn",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "The id of the return.",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The return in its new state.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "orderReturn": {
+                                            "$ref": "#/components/schemas/OrderReturn"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/400"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/401"
+                    },
+                    "409": {
+                        "description": "The return is not in a state that allows this decision."
+                    }
+                }
+            }
+        },
+        "/_action/order-return/{id}/refund": {
+            "post": {
+                "tags": [
+                    "Order Return"
+                ],
+                "summary": "Start the refund of a return",
+                "description": "Starts the refund of a return that sits in `received` - the manual way for a parcel that was booked in without a refund, for example after the payment channel was fixed.",
+                "operationId": "refundOrderReturn",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "The id of the return.",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The return in its new state.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "orderReturn": {
+                                            "$ref": "#/components/schemas/OrderReturn"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/400"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/401"
+                    },
+                    "409": {
+                        "description": "The return is not in a state that allows this decision, or the payment is not refundable."
+                    }
+                }
+            }
+        },
+        "/_action/order-return/{id}/message": {
+            "post": {
+                "tags": [
+                    "Order Return"
+                ],
+                "summary": "Write an internal note",
+                "description": "Adds a message with the role `agent` to the conversation of the return. The storefront only renders the messages of the `customer` role, so the customer never reads it.",
+                "operationId": "addOrderReturnMessage",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "The id of the return.",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "content": {
+                                        "type": "string",
+                                        "description": "The text of the note."
+                                    }
+                                },
+                                "required": [
+                                    "content"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "The return with the new message.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "orderReturn": {
+                                            "$ref": "#/components/schemas/OrderReturn"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/400"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/401"
+                    }
+                }
+            }
+        },
+        "/_action/order-return/order/{orderId}/positions": {
+            "get": {
+                "tags": [
+                    "Order Return"
+                ],
+                "summary": "Read what a return can still be opened with",
+                "description": "The form of a new return is built from this: the positions of the order that are still returnable with the quantity that is left, the reasons the shop maintains, and the facts a price is rendered with.",
+                "operationId": "readOrderReturnPositions",
+                "parameters": [
+                    {
+                        "name": "orderId",
+                        "in": "path",
+                        "description": "The id of the order the return is opened for.",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The positions that may still go back and the reasons they may be opened with.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "orderNumber": {
+                                            "type": ["string", "null"],
+                                            "description": "The number of the order, for the title of the form."
+                                        },
+                                        "currency": {
+                                            "type": ["string", "null"],
+                                            "description": "The iso code of the currency of the order."
+                                        },
+                                        "decimals": {
+                                            "type": "integer",
+                                            "description": "The decimals of that currency."
+                                        },
+                                        "positions": {
+                                            "type": "array",
+                                            "description": "The positions of the order that may still go back.",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "lineItemId": {
+                                                        "type": "string",
+                                                        "description": "The id of the order position."
+                                                    },
+                                                    "label": {
+                                                        "type": "string",
+                                                        "description": "Its label."
+                                                    },
+                                                    "quantity": {
+                                                        "type": "integer",
+                                                        "description": "How many of it were ordered."
+                                                    },
+                                                    "returnable": {
+                                                        "type": "integer",
+                                                        "description": "How many of it may still go back - the ordered quantity minus everything a running return of the same order already claimed."
+                                                    },
+                                                    "unitPrice": {
+                                                        "type": "integer",
+                                                        "description": "The price of one unit, in the smallest unit of the currency."
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        "reasons": {
+                                            "type": "array",
+                                            "description": "The reasons the shop currently offers.",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "string",
+                                                        "description": "The id of the reason."
+                                                    },
+                                                    "label": {
+                                                        "type": ["string", "null"],
+                                                        "description": "Its translated label."
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/400"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/401"
+                    },
+                    "404": {
+                        "description": "The order does not exist."
+                    }
+                }
+            }
+        },
+        "/_action/order-return/order/{orderId}": {
+            "post": {
+                "tags": [
+                    "Order Return"
+                ],
+                "summary": "Open a return for an order",
+                "description": "Opens a return on behalf of the customer of an order - the phone call case. The operator names positions and a type, the server computes the amount and starts the case in `requested`, so the decision about it is still a decision somebody has to take. No amount is part of the payload: a form can not name a price.",
+                "operationId": "createOrderReturnForOrder",
+                "parameters": [
+                    {
+                        "name": "orderId",
+                        "in": "path",
+                        "description": "The id of the order the return is opened for.",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "type": {
+                                        "type": "string",
+                                        "description": "`refund_only` for a return without goods coming back, `return_refund` for the goods coming back first."
+                                    },
+                                    "positions": {
+                                        "type": "array",
+                                        "description": "The positions that go back, with the quantity that goes back of each.",
+                                        "items": {
+                                            "type": "object",
+                                            "properties": {
+                                                "lineItemId": {
+                                                    "type": "string",
+                                                    "description": "The id of the order position."
+                                                },
+                                                "quantity": {
+                                                    "type": "integer",
+                                                    "description": "How many of it go back. Must not exceed what is still returnable."
+                                                }
+                                            },
+                                            "required": [
+                                                "lineItemId",
+                                                "quantity"
+                                            ]
+                                        }
+                                    },
+                                    "reasonId": {
+                                        "type": ["string", "null"],
+                                        "description": "The id of the reason the customer picked."
+                                    },
+                                    "reasonText": {
+                                        "type": ["string", "null"],
+                                        "description": "The free text of the customer."
+                                    },
+                                    "customerNote": {
+                                        "type": ["string", "null"],
+                                        "description": "A note the customer added."
+                                    }
+                                },
+                                "required": [
+                                    "type",
+                                    "positions"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "The return that was opened, in the state `requested`.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "orderReturn": {
+                                            "$ref": "#/components/schemas/OrderReturn"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/400"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/401"
+                    },
+                    "404": {
+                        "description": "The order does not exist."
+                    }
+                }
+            }
+        }
+    }
+}

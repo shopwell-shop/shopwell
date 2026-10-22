@@ -1,0 +1,47 @@
+{
+    "openapi": "3.2.0",
+    "info": [],
+    "paths": [],
+    "components": {
+        "schemas": {
+            "DictionaryEntry": {
+                "description": "Added since version: 6.7.0.0",
+                "required": [
+                    "id",
+                    "technicalName",
+                    "label"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "pattern": "^[0-9a-f]{32}$"
+                    },
+                    "dictionaryTypeId": {
+                        "type": "string",
+                        "pattern": "^[0-9a-f]{32}$"
+                    },
+                    "technicalName": {
+                        "description": "Technical name of the entry, unique within its dictionary type. For example: mr",
+                        "type": "string"
+                    },
+                    "position": {
+                        "description": "Numerical value that indicates the order in which the defined entries must be displayed in the frontend.",
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "active": {
+                        "type": "boolean"
+                    },
+                    "label": {
+                        "description": "Human readable label of the dictionary entry.",
+                        "type": "string"
+                    },
+                    "translated": {
+                        "type": "object"
+                    }
+                },
+                "type": "object"
+            }
+        }
+    }
+}

@@ -28,6 +28,7 @@ use Shopwell\Core\System\Payment\Gateway\TransferQueryResult;
 use Shopwell\Core\System\Payment\Gateway\TransferResult;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
 use Shopwell\Core\System\Payment\PaymentException;
+use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
 use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
 use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannelRegistry;
 use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
@@ -68,6 +69,15 @@ class PaymentTransferReconcilerTest extends TestCase
     private const SECRET = 'unit-test-application-secret';
 
     private const NOW = '2026-10-18T09:00:00+00:00';
+
+    /**
+     * What alipay declares for its payouts: it pays out and it answers what became of a payout.
+     */
+    private const TRANSFER_CAPABILITIES = [
+        PaymentCapability::CAPTURE,
+        PaymentCapability::TRANSFER,
+        PaymentCapability::TRANSFER_QUERY,
+    ];
 
     /**
      * A transfer that was only submitted has to reach `processing` by a real transition first: the
@@ -257,6 +267,29 @@ class PaymentTransferReconcilerTest extends TestCase
     public function testAnUnknownAnswerChangesNothing(string $currentState): void
     {
         static::assertSame([], PaymentTransferReconciler::stepNames($this->answer(TransferResult::STATE_UNKNOWN), $currentState));
+    }
+
+    /**
+     * An interface that never declared a payout query is refused before anything is sent: payum would
+     * otherwise fail inside the gateway and the caller would read it as a broken channel (502) instead
+     * of "this interface can never answer what became of a payout".
+     */
+    public function testAnInterfaceWithoutTransferQueryIsRefusedBeforeAnythingIsSent(): void
+    {
+        $gateway = static::createMock(GatewayInterface::class);
+        $gateway->expects($this->never())->method('execute');
+
+        $transfer = $this->transfer([
+            'statusMachineState' => $this->stateOf(PaymentTransferStates::STATE_SUBMITTED),
+            'providerRef' => 'order-1',
+        ]);
+
+        $this->expectExceptionObject(PaymentException::providerLacksCapability('alipay', PaymentCapability::TRANSFER_QUERY->value));
+
+        $this->reconciler(
+            configResolver: $this->resolverFor($gateway, [PaymentCapability::CAPTURE, PaymentCapability::TRANSFER]),
+            transferService: $this->transferService($this->recipientRepository())
+        )->reconcile($this->app('app-id'), $transfer);
     }
 
     /**
@@ -611,8 +644,10 @@ class PaymentTransferReconcilerTest extends TestCase
     /**
      * A resolver that actually resolves: one app, authorized for alipay, with the channel enabled - and
      * the given gateway handed out by the factory of the interface.
+     *
+     * @param list<PaymentCapability> $capabilities
      */
-    private function resolverFor(GatewayInterface $gateway): PaymentConfigResolver
+    private function resolverFor(GatewayInterface $gateway, array $capabilities = self::TRANSFER_CAPABILITIES): PaymentConfigResolver
     {
         $cipher = new PaymentCredentialCipher(self::SECRET);
 
@@ -633,6 +668,7 @@ class PaymentTransferReconcilerTest extends TestCase
             channels: ['alipay_h5' => $channel],
             gatewayFactory: $gatewayFactory,
             notificationExtractor: static::createStub(PaymentNotificationExtractorInterface::class),
+            capabilities: $capabilities,
         );
 
         $providers = new PaymentProviderRegistry([$provider]);
@@ -642,7 +678,6 @@ class PaymentTransferReconcilerTest extends TestCase
         $appProvider->paymentAppId = 'app-id';
         $appProvider->providerTechnicalName = 'alipay';
         $appProvider->enabled = true;
-        $appProvider->mode = PaymentAppProviderEntity::MODE_OWN;
         $appProvider->credentials = $cipher->encrypt(['app_id' => 'own-app-id']);
 
         $appChannel = new PaymentAppChannelEntity();

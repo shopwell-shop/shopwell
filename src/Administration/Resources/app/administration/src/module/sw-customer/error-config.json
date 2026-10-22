@@ -1,7 +1,7 @@
 {
   "sw.customer.detail.base": {
     "customer": [
-      "salutationId",
+      "gender",
       "name",
       "email",
       "groupId",

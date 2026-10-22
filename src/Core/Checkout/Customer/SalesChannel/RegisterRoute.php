@@ -43,6 +43,7 @@ use Shopwell\Core\Framework\Validation\DataValidator;
 use Shopwell\Core\Framework\Validation\Exception\ConstraintViolationException;
 use Shopwell\Core\PlatformRequest;
 use Shopwell\Core\System\Country\CountryCollection;
+use Shopwell\Core\System\Dictionary\Aggregate\DictionaryEntry\DictionaryEntryDefinition;
 use Shopwell\Core\System\NumberRange\ValueGenerator\NumberRangeValueGeneratorInterface;
 use Shopwell\Core\System\SalesChannel\Aggregate\SalesChannelDomain\SalesChannelDomainCollection;
 use Shopwell\Core\System\SalesChannel\Aggregate\SalesChannelDomain\SalesChannelDomainEntity;
@@ -52,8 +53,6 @@ use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextServiceParamete
 use Shopwell\Core\System\SalesChannel\Entity\SalesChannelRepository;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
 use Shopwell\Core\System\SalesChannel\StoreApiCustomFieldMapper;
-use Shopwell\Core\System\Salutation\SalutationCollection;
-use Shopwell\Core\System\Salutation\SalutationDefinition;
 use Shopwell\Core\System\SystemConfig\SystemConfigService;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Validator\Constraints\AtLeastOneOf;
@@ -76,7 +75,6 @@ class RegisterRoute extends AbstractRegisterRoute
      *
      * @param EntityRepository<CustomerCollection> $customerRepository
      * @param SalesChannelRepository<CountryCollection> $countryRepository
-     * @param EntityRepository<SalutationCollection> $salutationRepository
      */
     public function __construct(
         private readonly EventDispatcherInterface $eventDispatcher,
@@ -91,7 +89,6 @@ class RegisterRoute extends AbstractRegisterRoute
         protected Connection $connection,
         private readonly SalesChannelContextServiceInterface $contextService,
         private readonly StoreApiCustomFieldMapper $customFieldMapper,
-        private readonly EntityRepository $salutationRepository,
         private readonly DataValidationFactoryInterface $passwordValidationFactory,
         private readonly DoubleOptInService $doubleOptInService,
         private readonly CustomerNewsletterSalesChannelsUpdater $customerNewsletterSalesChannelsUpdater,
@@ -133,8 +130,8 @@ class RegisterRoute extends AbstractRegisterRoute
             $data->remove('accountType');
         }
 
-        if (!$data->get('salutationId')) {
-            $data->set('salutationId', $this->getDefaultSalutationId($context));
+        if (!$data->get('gender')) {
+            $data->set('gender', DictionaryEntryDefinition::NOT_SPECIFIED);
         }
 
         $billing = $data->get('billingAddress');
@@ -143,10 +140,6 @@ class RegisterRoute extends AbstractRegisterRoute
         if ($billing instanceof DataBag) {
             if ($billing->has('name') && !$data->has('name')) {
                 $data->set('name', $billing->get('name'));
-            }
-
-            if ($data->has('title')) {
-                $billing->set('title', $data->get('title'));
             }
         }
 
@@ -292,11 +285,11 @@ class RegisterRoute extends AbstractRegisterRoute
         $shippingAddress = $data->get('shippingAddress');
         if ($billingAddress instanceof DataBag) {
             $billingAddress->set('name', $data->get('name'));
-            $billingAddress->set('salutationId', $data->get('salutationId'));
+            $billingAddress->set('gender', $data->get('gender'));
         }
 
-        if (($shippingAddress instanceof DataBag) && !$shippingAddress->get('salutationId')) {
-            $shippingAddress->set('salutationId', $data->get('salutationId'));
+        if (($shippingAddress instanceof DataBag) && !$shippingAddress->get('gender')) {
+            $shippingAddress->set('gender', $data->get('gender'));
         }
 
         $definition = $this->getCustomerCreateValidationDefinition($isGuest, $data, $context);
@@ -312,7 +305,8 @@ class RegisterRoute extends AbstractRegisterRoute
 
         $accountType = $data->get('accountType', CustomerEntity::ACCOUNT_TYPE_PRIVATE);
 
-        // The billing address is mandatory.
+        // The billing address is mandatory for guests, as they order immediately. A customer account can be
+        // created without any address, the address is then requested during the checkout.
         // The shipping address is optional but if there is one, a non-array value results in an exception in the validation process.
         $definition->add(
             'billingAddress',
@@ -328,8 +322,11 @@ class RegisterRoute extends AbstractRegisterRoute
 
         // The billing address validation must not be added if the data is neither a data bag nor valid because the validation building will fail.
         // Using a null value must be possible to allow the event based modification (see BuildValidationEvent).
-        if ($billingAddress instanceof DataBag || (!$shippingAddress instanceof DataBag && $billingAddress === null)) {
-            $definition->addSub('billingAddress', $this->getCreateAddressValidationDefinition($data, $accountType, $billingAddress ?? new RequestDataBag(), $context));
+        if ($billingAddress instanceof DataBag) {
+            $definition->addSub('billingAddress', $this->getCreateAddressValidationDefinition($data, $accountType, $billingAddress, $context));
+        } elseif ($isGuest && !$shippingAddress instanceof DataBag) {
+            // Only guests have to provide the billing address during the registration, see above.
+            $definition->addSub('billingAddress', $this->getCreateAddressValidationDefinition($data, $accountType, new RequestDataBag(), $context));
         }
 
         if ($shippingAddress instanceof DataBag) {
@@ -394,10 +391,9 @@ class RegisterRoute extends AbstractRegisterRoute
             'languageId' => $context->getLanguageId(),
             'groupId' => $context->getCustomerGroupId(),
             'requestedGroupId' => $data->get('requestedGroupId', null),
-            'salutationId' => $data->get('salutationId'),
+            'gender' => $data->get('gender'),
             'name' => $data->get('name'),
             'email' => $data->get('email'),
-            'title' => $data->get('title'),
             'phoneNumber' => $data->get('phoneNumber'),
             'affiliateCode' => $data->get(OrderService::AFFILIATE_CODE_KEY),
             'campaignCode' => $data->get(OrderService::CAMPAIGN_CODE_KEY),
@@ -416,9 +412,37 @@ class RegisterRoute extends AbstractRegisterRoute
         $this->eventDispatcher->dispatch($event, CustomerEvents::MAPPING_REGISTER_CUSTOMER);
 
         $customer = $event->getOutput();
+
+        // The name is optional for a customer account, as the registration only requires email and password.
+        // A fallback is used nevertheless, so that admin lists, documents and mails always have something to display.
+        $customer['name'] = $this->resolveCustomerName($customer['name'] ?? null, $customer['email'] ?? null);
         $customer['id'] = Uuid::randomHex();
 
         return $customer;
+    }
+
+    /**
+     * Derives a displayable customer name from the email address as long as the customer did not provide one.
+     */
+    private function resolveCustomerName(mixed $name, mixed $email): ?string
+    {
+        // mb_trim also strips full width spaces, which customers of the Chinese storefront tend to enter
+        $name = \is_string($name) ? mb_trim($name) : '';
+        if ($name !== '') {
+            return $name;
+        }
+
+        $email = \is_string($email) ? mb_trim($email) : '';
+        if ($email === '') {
+            return null;
+        }
+
+        $localPart = strstr($email, '@', true);
+        if ($localPart === false || $localPart === '') {
+            $localPart = $email;
+        }
+
+        return mb_substr($localPart, 0, CustomerDefinition::MAX_LENGTH_NAME);
     }
 
     private function getCreateAddressValidationDefinition(
@@ -477,9 +501,8 @@ class RegisterRoute extends AbstractRegisterRoute
     private function mapAddressData(DataBag $addressData, Context $context, string $eventName): array
     {
         $mappedData = $addressData->only(
-            'title',
             'name',
-            'salutationId',
+            'gender',
             'street',
             'zipcode',
             'city',
@@ -618,14 +641,5 @@ class RegisterRoute extends AbstractRegisterRoute
         }
 
         return $country->get('vatIdRequired');
-    }
-
-    private function getDefaultSalutationId(SalesChannelContext $context): ?string
-    {
-        $criteria = (new Criteria())
-            ->setLimit(1)
-            ->addFilter(new EqualsFilter('salutationKey', SalutationDefinition::NOT_SPECIFIED));
-
-        return $this->salutationRepository->searchIds($criteria, $context->getContext())->firstId();
     }
 }

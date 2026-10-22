@@ -1,0 +1,194 @@
+{
+    "openapi": "3.2.0",
+    "info": [],
+    "paths": {
+        "/_action/payment/methods/{paymentMethodId}/channel": {
+            "get": {
+                "tags": [
+                    "Payment"
+                ],
+                "summary": "Read the gateway channel of a payment method",
+                "description": "Answers which app and which channel the payment method collects through, whether the method collects through the gateway at all, and which channels of the app are already taken by other methods.",
+                "operationId": "readPaymentMethodChannel",
+                "parameters": [
+                    {
+                        "name": "paymentMethodId",
+                        "in": "path",
+                        "description": "The id of the payment method whose binding is read.",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The binding of the payment method and the channels that are taken.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/paymentMethodChannel"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "The payment method does not exist.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/failure"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "Payment"
+                ],
+                "summary": "Bind a payment method to a gateway channel",
+                "description": "Binds the payment method to the channel of an app, or replaces the channel it collected through so far. There is no delete: a method that is bound and has no channel is a state the checkout refuses on every selection, so a method that should stop collecting is deactivated instead of unbound. The handler of the method is changed as part of the write.",
+                "operationId": "savePaymentMethodChannel",
+                "parameters": [
+                    {
+                        "name": "paymentMethodId",
+                        "in": "path",
+                        "description": "The id of the payment method that is bound.",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "channelTechnicalName": {
+                                        "type": "string",
+                                        "description": "The technical name of the channel the method collects through."
+                                    },
+                                    "paymentAppId": {
+                                        "type": "string",
+                                        "description": "The id of the app the channel belongs to. May be omitted, the shop's own account is the default."
+                                    }
+                                },
+                                "required": [
+                                    "channelTechnicalName"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "The binding was written. The body describes the state the write created, not the one the request assumed.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/paymentMethodChannel"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "The app, the interface or the channel is unknown, not configured or already taken by another payment method.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/failure"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "The payment method does not exist.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/failure"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "paymentMethodChannel": {
+                "type": "object",
+                "description": "The binding of a payment method to a channel of a payment app.",
+                "properties": {
+                    "binding": {
+                        "type": [
+                            "object",
+                            "null"
+                        ],
+                        "description": "The stored binding, null when the method collects through its own handler.",
+                        "properties": {
+                            "paymentAppId": {
+                                "type": "string"
+                            },
+                            "channelTechnicalName": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "paymentApp": {
+                        "type": "object",
+                        "description": "The app the method collects through.",
+                        "properties": {
+                            "id": {
+                                "type": "string"
+                            },
+                            "name": {
+                                "type": "string"
+                            },
+                            "technicalName": {
+                                "type": "string"
+                            },
+                            "type": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "collectThroughGateway": {
+                        "type": "boolean",
+                        "description": "Whether the method collects through the gateway handler."
+                    },
+                    "taken": {
+                        "type": "array",
+                        "description": "The channels of the app that other payment methods already collect through.",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "paymentAppId": {
+                                    "type": "string"
+                                },
+                                "paymentAppName": {
+                                    "type": "string"
+                                },
+                                "channelTechnicalName": {
+                                    "type": "string"
+                                },
+                                "paymentMethodId": {
+                                    "type": "string"
+                                },
+                                "paymentMethodName": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

@@ -831,7 +831,7 @@ class ProductControllerTest extends TestCase
                 'street' => 'Musterstraße 1',
                 'city' => 'Schöppingen',
                 'zipcode' => '12345',
-                'salutationId' => $this->getValidSalutationId(),
+                'gender' => $this->getValidGender(),
                 'countryId' => $this->getValidCountryId(),
             ],
             'defaultBillingAddressId' => $addressId,
@@ -839,7 +839,7 @@ class ProductControllerTest extends TestCase
             'email' => $customerId . '@example.com',
             'password' => TestDefaults::HASHED_PASSWORD,
             'name' => 'Max Mustermann',
-            'salutationId' => $this->getValidSalutationId(),
+            'gender' => $this->getValidGender(),
             'customerNumber' => $customerId,
         ];
 

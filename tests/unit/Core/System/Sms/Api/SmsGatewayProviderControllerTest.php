@@ -3,9 +3,14 @@
 namespace Shopwell\Tests\Unit\Core\System\Sms\Api;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\MockObject\Stub;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Sms\Api\SmsGatewayProviderController;
+use Shopwell\Core\System\Sms\Gateway\Audit\ReadsTemplateApprovalStatusInterface;
+use Shopwell\Core\System\Sms\Gateway\Audit\RequiresTemplateApprovalInterface;
+use Shopwell\Core\System\Sms\Gateway\Audit\SmsGatewayAuditCapabilities;
+use Shopwell\Core\System\Sms\Gateway\Audit\SubmitsTemplatesForApprovalInterface;
 use Shopwell\Core\System\Sms\Gateway\SmsGatewayRegistry;
 use Shopwell\Core\System\Sms\Gateway\SmsGatewayTransportFactoryInterface;
 
@@ -16,6 +21,13 @@ use Shopwell\Core\System\Sms\Gateway\SmsGatewayTransportFactoryInterface;
 #[CoversClass(SmsGatewayProviderController::class)]
 class SmsGatewayProviderControllerTest extends TestCase
 {
+    private const NO_AUDIT = [
+        'requiresApproval' => false,
+        'canSubmit' => false,
+        'canReadStatus' => false,
+        'submissionFields' => [],
+    ];
+
     public function testListAnswersEveryProviderOfTheRegistryWithTheShapeOfItsCredentials(): void
     {
         $controller = $this->createController([
@@ -52,6 +64,7 @@ class SmsGatewayProviderControllerTest extends TestCase
                         ['name' => 'accessKeyId', 'type' => 'string', 'required' => true, 'labelSnippet' => 'sms.gateway.aliyun.accessKeyId'],
                         ['name' => 'accessKeySecret', 'type' => 'secret', 'required' => true, 'labelSnippet' => 'sms.gateway.aliyun.accessKeySecret'],
                     ],
+                    'audit' => self::NO_AUDIT,
                 ],
                 [
                     'technicalName' => 'null',
@@ -59,6 +72,7 @@ class SmsGatewayProviderControllerTest extends TestCase
                     'supportedRegions' => [],
                     'supportsTemplateMode' => false,
                     'credentialDefinitions' => [],
+                    'audit' => self::NO_AUDIT,
                 ],
             ],
             json_decode($content, true, 512, \JSON_THROW_ON_ERROR)['providers']
@@ -97,12 +111,71 @@ class SmsGatewayProviderControllerTest extends TestCase
         static::assertArrayNotHasKey('value', $provider['credentialDefinitions'][0]);
     }
 
+    public function testListSaysWhichProviderTakesPartInTheAuditAndWhichFormItDeclares(): void
+    {
+        $controller = $this->createController([
+            $this->auditedFactory(),
+        ]);
+
+        $content = $controller->list()->getContent();
+        static::assertIsString($content);
+
+        $provider = json_decode($content, true, 512, \JSON_THROW_ON_ERROR)['providers'][0];
+
+        static::assertSame([
+            'requiresApproval' => true,
+            'canSubmit' => true,
+            'canReadStatus' => true,
+            'submissionFields' => [
+                [
+                    'name' => 'templateName',
+                    'type' => 'string',
+                    'required' => true,
+                    'labelSnippet' => 'sms.submission.aliyun.templateName',
+                    'prefill' => 'templateName',
+                ],
+            ],
+        ], $provider['audit']);
+    }
+
+    public function testTheAuditBlockSaysWhichHalfOfTheLoopAProviderTakesPartIn(): void
+    {
+        $content = $this->createController([$this->submittingOnlyFactory()])->list()->getContent();
+        static::assertIsString($content);
+
+        $provider = json_decode($content, true, 512, \JSON_THROW_ON_ERROR)['providers'][0];
+
+        // a provider that needs an approved template but can neither report one nor read its state,
+        // which is what the administration shows as "report it at the console"
+        static::assertFalse($provider['audit']['requiresApproval']);
+        static::assertTrue($provider['audit']['canSubmit']);
+        static::assertFalse($provider['audit']['canReadStatus']);
+        static::assertSame([], $provider['audit']['submissionFields']);
+    }
+
+    public function testListAnswersTheStatesAnOperatorMayConfirmWithTheirLabels(): void
+    {
+        $content = $this->createController([])->list()->getContent();
+        static::assertIsString($content);
+
+        // the administration keeps no list of the states, it renders these
+        static::assertSame([
+            ['value' => 'pending', 'labelSnippet' => 'sms.approval.status.pending'],
+            ['value' => 'approved', 'labelSnippet' => 'sms.approval.status.approved'],
+            ['value' => 'rejected', 'labelSnippet' => 'sms.approval.status.rejected'],
+            ['value' => 'suspended', 'labelSnippet' => 'sms.approval.status.suspended'],
+            ['value' => 'unknown', 'labelSnippet' => 'sms.approval.status.unknown'],
+        ], json_decode($content, true, 512, \JSON_THROW_ON_ERROR)['approvalStatuses']);
+    }
+
     /**
      * @param list<SmsGatewayTransportFactoryInterface> $factories
      */
     private function createController(array $factories): SmsGatewayProviderController
     {
-        return new SmsGatewayProviderController(new SmsGatewayRegistry($factories));
+        $registry = new SmsGatewayRegistry($factories);
+
+        return new SmsGatewayProviderController($registry, new SmsGatewayAuditCapabilities($registry));
     }
 
     /**
@@ -122,6 +195,52 @@ class SmsGatewayProviderControllerTest extends TestCase
         $factory->method('getSupportedRegions')->willReturn($supportedRegions);
         $factory->method('supportsTemplateMode')->willReturn($supportsTemplateMode);
         $factory->method('getCredentialDefinitions')->willReturn($credentialDefinitions);
+
+        return $factory;
+    }
+
+    /**
+     * A provider that declares the whole audit loop.
+     */
+    private function auditedFactory(): SmsGatewayTransportFactoryInterface&RequiresTemplateApprovalInterface&SubmitsTemplatesForApprovalInterface&ReadsTemplateApprovalStatusInterface&Stub
+    {
+        /** @var SmsGatewayTransportFactoryInterface&RequiresTemplateApprovalInterface&SubmitsTemplatesForApprovalInterface&ReadsTemplateApprovalStatusInterface&Stub $factory */
+        $factory = static::createStubForIntersectionOfInterfaces([
+            SmsGatewayTransportFactoryInterface::class,
+            RequiresTemplateApprovalInterface::class,
+            SubmitsTemplatesForApprovalInterface::class,
+            ReadsTemplateApprovalStatusInterface::class,
+        ]);
+
+        $factory->method('getTechnicalName')->willReturn('aliyun');
+        $factory->method('getLabelSnippet')->willReturn('sms.gateway.aliyun');
+        $factory->method('getTemplateSubmissionFieldDefinitions')->willReturn([
+            [
+                'name' => 'templateName',
+                'type' => 'string',
+                'required' => true,
+                'labelSnippet' => 'sms.submission.aliyun.templateName',
+                'prefill' => 'templateName',
+            ],
+        ]);
+
+        return $factory;
+    }
+
+    /**
+     * A provider that reports its templates but cannot be asked for their state.
+     */
+    private function submittingOnlyFactory(): SmsGatewayTransportFactoryInterface&SubmitsTemplatesForApprovalInterface&Stub
+    {
+        /** @var SmsGatewayTransportFactoryInterface&SubmitsTemplatesForApprovalInterface&Stub $factory */
+        $factory = static::createStubForIntersectionOfInterfaces([
+            SmsGatewayTransportFactoryInterface::class,
+            SubmitsTemplatesForApprovalInterface::class,
+        ]);
+
+        $factory->method('getTechnicalName')->willReturn('tencentcloud');
+        $factory->method('getLabelSnippet')->willReturn('sms.gateway.tencentcloud');
+        $factory->method('getTemplateSubmissionFieldDefinitions')->willReturn([]);
 
         return $factory;
     }

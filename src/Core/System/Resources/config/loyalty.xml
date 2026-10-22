@@ -3,13 +3,13 @@
         xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopwell-shop/shopwell/trunk/src/Core/System/SystemConfig/Schema/config.xsd">
     <card>
         <title>Loyalty</title>
-        <title lang="zh-CN">会员忠诚度</title>
+        <title lang="zh-CN">会员积分</title>
 
         <input-field type="bool">
             <name>enabled</name>
             <defaultValue>true</defaultValue>
             <label>Enable loyalty program</label>
-            <label lang="zh-CN">启用会员忠诚度计划</label>
+            <label lang="zh-CN">启用会员积分</label>
             <helpText>When enabled, customers earn points and growth value for completed orders and can redeem points for a discount at checkout.</helpText>
             <helpText lang="zh-CN">开启后，顾客在订单完成后可获得积分与成长值，并能在结算时使用积分抵扣。</helpText>
         </input-field>

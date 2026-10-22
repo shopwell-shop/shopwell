@@ -19,9 +19,14 @@ use Shopwell\Core\Checkout\Gateway\SalesChannel\CheckoutGatewayRoute;
 use Shopwell\Core\Checkout\Loyalty\SalesChannel\LoyaltyRoute;
 use Shopwell\Core\Checkout\Order\SalesChannel\OrderRoute;
 use Shopwell\Core\Checkout\Order\SalesChannel\OrderService;
+use Shopwell\Core\Checkout\OrderReturn\SalesChannel\OrderReturnGuestRoute;
+use Shopwell\Core\Checkout\OrderReturn\SalesChannel\OrderReturnRoute;
 use Shopwell\Core\Checkout\Payment\SalesChannel\PaymentMethodRoute;
 use Shopwell\Core\Checkout\Shipping\SalesChannel\ShippingMethodRoute;
 use Shopwell\Core\Checkout\Wallet\SalesChannel\WalletRoute;
+use Shopwell\Core\Content\Blog\Service\BlogDetailReader;
+use Shopwell\Core\Content\Blog\Service\BlogListingReader;
+use Shopwell\Core\Content\Blog\Service\BlogSettings;
 use Shopwell\Core\Content\Category\SalesChannel\CategoryRoute;
 use Shopwell\Core\Content\Category\Service\CategoryBreadcrumbBuilder;
 use Shopwell\Core\Content\Category\Service\NavigationLoader;
@@ -63,12 +68,11 @@ use Shopwell\Core\System\Country\SalesChannel\CountryDistrictRoute;
 use Shopwell\Core\System\Country\SalesChannel\CountryRoute;
 use Shopwell\Core\System\Country\SalesChannel\CountryStateRoute;
 use Shopwell\Core\System\Currency\SalesChannel\CurrencyRoute;
+use Shopwell\Core\System\Dictionary\SalesChannel\DictionaryRoute;
 use Shopwell\Core\System\Language\SalesChannel\LanguageRoute;
 use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextFactory;
 use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextRequestRestorer;
 use Shopwell\Core\System\SalesChannel\SalesChannel\ContextSwitchRoute;
-use Shopwell\Core\System\Salutation\AbstractSalutationsSorter;
-use Shopwell\Core\System\Salutation\SalesChannel\SalutationRoute;
 use Shopwell\Core\System\SystemConfig\SystemConfigService;
 use Shopwell\Storefront\Checkout\Cart\SalesChannel\StorefrontCartFacade;
 use Shopwell\Storefront\Checkout\Customer\CustomerGroupSubscriber;
@@ -134,12 +138,15 @@ use Shopwell\Storefront\Page\Account\Loyalty\AccountLoyaltyPageLoader;
 use Shopwell\Storefront\Page\Account\Order\AccountEditOrderPageLoader;
 use Shopwell\Storefront\Page\Account\Order\AccountOrderDetailPageLoader;
 use Shopwell\Storefront\Page\Account\Order\AccountOrderPageLoader;
+use Shopwell\Storefront\Page\Account\OrderReturn\AccountOrderReturnPageLoader;
+use Shopwell\Storefront\Page\Account\OrderReturn\GuestOrderReturnPageLoader;
 use Shopwell\Storefront\Page\Account\Overview\AccountOverviewPageLoader;
 use Shopwell\Storefront\Page\Account\Profile\AccountProfilePageLoader;
 use Shopwell\Storefront\Page\Account\RecoverPassword\AccountRecoverPasswordPageLoader;
 use Shopwell\Storefront\Page\Account\Wallet\AccountWalletPageLoader;
 use Shopwell\Storefront\Page\Address\Detail\AddressDetailPageLoader;
 use Shopwell\Storefront\Page\Address\Listing\AddressListingPageLoader;
+use Shopwell\Storefront\Page\Blog\BlogPageLoader;
 use Shopwell\Storefront\Page\Checkout\Cart\CheckoutCartPageLoader;
 use Shopwell\Storefront\Page\Checkout\Confirm\CheckoutConfirmPageLoader;
 use Shopwell\Storefront\Page\Checkout\Finish\CheckoutFinishPageLoader;
@@ -555,6 +562,17 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(Translator::class),
         ]);
 
+    // The blog page loader is a storefront service on purpose: it builds a `Page` object and a
+    // `MetaInformation`, both of which live in this package, from the two readers that core ships.
+    $services->set(BlogPageLoader::class)
+        ->args([
+            service(BlogListingReader::class),
+            service(BlogDetailReader::class),
+            service(BlogSettings::class),
+            service(SalesChannelCmsPageLoader::class),
+            service('event_dispatcher'),
+        ]);
+
     $services->set(ProductPageLoader::class)
         ->args([
             service(GenericPageLoader::class),
@@ -618,8 +636,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service(GenericPageLoader::class),
             service('event_dispatcher'),
-            service(SalutationRoute::class),
-            service(AbstractSalutationsSorter::class),
+            service(DictionaryRoute::class),
             service(Translator::class),
         ]);
 
@@ -637,6 +654,22 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('event_dispatcher'),
             service(WalletRoute::class),
             service(CurrencyRoute::class),
+            service(Translator::class),
+        ]);
+
+    $services->set(AccountOrderReturnPageLoader::class)
+        ->args([
+            service(GenericPageLoader::class),
+            service('event_dispatcher'),
+            service(OrderReturnRoute::class),
+            service(Translator::class),
+        ]);
+
+    $services->set(GuestOrderReturnPageLoader::class)
+        ->args([
+            service(GenericPageLoader::class),
+            service('event_dispatcher'),
+            service(OrderReturnGuestRoute::class),
             service(Translator::class),
         ]);
 
@@ -691,8 +724,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(GenericPageLoader::class),
             service('event_dispatcher'),
             service(CountryRoute::class),
-            service(SalutationRoute::class),
-            service(AbstractSalutationsSorter::class),
+            service(DictionaryRoute::class),
             service(Translator::class),
         ]);
 
@@ -723,10 +755,9 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(ListAddressRoute::class),
             service('event_dispatcher'),
             service(CartService::class),
-            service(SalutationRoute::class),
+            service(DictionaryRoute::class),
             service(CountryRoute::class),
             service(Translator::class),
-            service(AbstractSalutationsSorter::class),
         ]);
 
     $services->set(NewsletterSubscribePageLoader::class)
@@ -749,10 +780,9 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service(GenericPageLoader::class),
             service(CountryRoute::class),
-            service(SalutationRoute::class),
+            service(DictionaryRoute::class),
             service('event_dispatcher'),
             service(ListAddressRoute::class),
-            service(AbstractSalutationsSorter::class),
             service(Translator::class),
         ]);
 
@@ -760,12 +790,11 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service(GenericPageLoader::class),
             service(CountryRoute::class),
-            service(SalutationRoute::class),
+            service(DictionaryRoute::class),
             service(ListAddressRoute::class),
             service('event_dispatcher'),
             service(CartService::class),
             service(Translator::class),
-            service(AbstractSalutationsSorter::class),
         ]);
 
     $services->set(SitemapPageLoader::class)

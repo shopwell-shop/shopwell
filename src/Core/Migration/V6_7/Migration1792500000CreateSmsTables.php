@@ -45,7 +45,6 @@ class Migration1792500000CreateSmsTables extends MigrationStep
                 `enabled` TINYINT(1) NOT NULL DEFAULT 0,
                 `sales_channel_id` BINARY(16) NULL,
                 `priority` INT NOT NULL DEFAULT 0,
-                `strategy` VARCHAR(32) NOT NULL DEFAULT \'exclusive\',
                 `credentials` JSON NULL,
                 `options` JSON NULL,
                 `custom_fields` JSON NULL,

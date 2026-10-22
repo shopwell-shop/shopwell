@@ -2,14 +2,15 @@
 
 namespace Shopwell\Core\Content\ContactForm\Validation;
 
-use Shopwell\Core\Framework\DataAbstractionLayer\Validation\EntityExists;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Validation\BuildValidationEvent;
 use Shopwell\Core\Framework\Validation\DataBag\DataBag;
 use Shopwell\Core\Framework\Validation\DataValidationDefinition;
 use Shopwell\Core\Framework\Validation\DataValidationFactoryInterface;
+use Shopwell\Core\System\Dictionary\Aggregate\DictionaryEntry\DictionaryEntryDefinition;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
 use Shopwell\Core\System\SystemConfig\SystemConfigService;
+use Symfony\Component\Validator\Constraints\Choice;
 use Symfony\Component\Validator\Constraints\Email;
 use Symfony\Component\Validator\Constraints\NotBlank;
 use Symfony\Component\Validator\Constraints\Regex;
@@ -47,7 +48,7 @@ class ContactFormValidationFactory implements DataValidationFactoryInterface
         $definition = new DataValidationDefinition($validationName);
 
         $definition
-            ->add('salutationId', new NotBlank(), new EntityExists(entity: 'salutation', context: $context->getContext()))
+            ->add('gender', new NotBlank(), new Choice(choices: [DictionaryEntryDefinition::MALE, DictionaryEntryDefinition::FEMALE, DictionaryEntryDefinition::NOT_SPECIFIED]))
             ->add('email', new NotBlank(), new Email())
             ->add('subject', new NotBlank())
             ->add('comment', new NotBlank())

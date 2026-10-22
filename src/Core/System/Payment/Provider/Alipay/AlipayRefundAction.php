@@ -12,6 +12,7 @@ use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
 use Shopwell\Core\System\Payment\Gateway\RefundResult;
 use Shopwell\Core\System\Payment\Order\Refund\PaymentRefundStates;
 use Shopwell\Core\System\Payment\PaymentException;
+use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
 
 /**
  * Refunds a payment at alipay. Alipay settles a refund synchronously, so the refund is finished right
@@ -23,6 +24,11 @@ use Shopwell\Core\System\Payment\PaymentException;
 final class AlipayRefundAction extends AbstractPaymentAction
 {
     protected string $apiClass = AlipayApi::class;
+
+    public function capability(): PaymentCapability
+    {
+        return PaymentCapability::REFUND;
+    }
 
     public function execute($request): void
     {

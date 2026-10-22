@@ -1,0 +1,354 @@
+{
+    "openapi": "3.2.0",
+    "info": [],
+    "paths": {
+        "/_action/payment/transfers/options": {
+            "get": {
+                "tags": [
+                    "Payment transfer"
+                ],
+                "summary": "Everything the new payout modal renders",
+                "description": "Answers the active apps of the shop, their payout capable interfaces, the channels of those interfaces and the identity rules of each interface. The declarations are read on the server because which identity type an interface can pay out to is a property of the interface - a copy in the administration would be a second truth that rots as soon as a provider is added.",
+                "operationId": "getPaymentTransferOptions",
+                "responses": {
+                    "200": {
+                        "description": "The apps, providers, channels and identity types a payout can be booked with.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "description": "The options of the payout modal, grouped by app and provider."
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/_action/payment/transfers/recipients": {
+            "get": {
+                "tags": [
+                    "Payment transfer"
+                ],
+                "summary": "List the recipients a payout can be booked to",
+                "description": "Answers the payout enabled recipients of one app and one interface. The generic entity route must not be the source of this list: the identity of a recipient is stored encrypted, and this endpoint returns it decrypted and masked while the ciphertext is dropped, so the response never carries an identity value.",
+                "operationId": "listPaymentTransferRecipients",
+                "parameters": [
+                    {
+                        "name": "paymentAppId",
+                        "in": "query",
+                        "description": "The id of the app whose recipients are listed.",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "provider",
+                        "in": "query",
+                        "description": "The payment interface the recipients belong to.",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The recipients of the app and interface, newest first, capped at 500 entries.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "recipients": {
+                                            "type": "array",
+                                            "description": "The payout enabled recipients, with a masked identity.",
+                                            "items": {
+                                                "type": "object",
+                                                "description": "One recipient. The identity value is masked and the ciphertext is not part of the answer."
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "The app or the provider is missing.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/failure"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/_action/payment/transfers": {
+            "post": {
+                "tags": [
+                    "Payment transfer"
+                ],
+                "summary": "Book a payout",
+                "description": "Books a payout in the state created. No channel is contacted and no money moves - handing the payout to the channel is the submit call. The out number is the idempotency key: posting it twice answers the payout that is already booked with replayed set to true, while a number that is taken by a payout with another recipient, amount or currency is a conflict.",
+                "operationId": "requestPaymentTransfer",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "paymentAppId": {
+                                        "type": "string",
+                                        "description": "The id of the app the payout is booked in."
+                                    },
+                                    "provider": {
+                                        "type": "string",
+                                        "description": "The payment interface that pays out."
+                                    },
+                                    "channel": {
+                                        "type": "string",
+                                        "description": "The channel of the interface the payout is booked for."
+                                    },
+                                    "recipientId": {
+                                        "type": "string",
+                                        "description": "An existing recipient to book the payout to. When omitted, the identity fields below describe a new recipient."
+                                    },
+                                    "identityType": {
+                                        "type": "string",
+                                        "description": "The identity type of a new recipient, as the interface declares it."
+                                    },
+                                    "identityValue": {
+                                        "type": "string",
+                                        "description": "The identity of a new recipient. It is trimmed, never rewritten, because the hash and the ciphertext are derived from exactly this value."
+                                    },
+                                    "holderName": {
+                                        "type": "string",
+                                        "maxLength": 255,
+                                        "description": "The name the account is held by."
+                                    },
+                                    "bankInfo": {
+                                        "type": "object",
+                                        "description": "The bank details a card payout needs, as the interface declares them."
+                                    },
+                                    "amount": {
+                                        "type": "integer",
+                                        "description": "The amount in the smallest unit of the currency, for example fen for CNY. A decimal amount is refused instead of being rounded.",
+                                        "minimum": 1,
+                                        "maximum": 10000000000
+                                    },
+                                    "currency": {
+                                        "type": "string",
+                                        "description": "The three letter ISO code of the currency. A lower case code is accepted and stored upper case.",
+                                        "pattern": "^[A-Za-z]{3}$"
+                                    },
+                                    "outNo": {
+                                        "type": "string",
+                                        "description": "The out number of the payout, which is also its idempotency key.",
+                                        "pattern": "^[0-9a-zA-Z]{1,30}$"
+                                    },
+                                    "note": {
+                                        "type": "string",
+                                        "maxLength": 255,
+                                        "description": "A note that is stored in the metadata of the payout."
+                                    }
+                                },
+                                "required": [
+                                    "paymentAppId",
+                                    "provider",
+                                    "channel",
+                                    "amount",
+                                    "currency"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "The payout was booked.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/paymentTransferResult"
+                                }
+                            }
+                        }
+                    },
+                    "200": {
+                        "description": "The out number is already booked with the same recipient, amount and currency. The answer carries the booked payout with replayed set to true.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/paymentTransferResult"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "The out number is already taken by a payout with another recipient, amount or currency.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/failure"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "The payload is invalid, for example when the amount is above the ceiling of a manual payout.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/failure"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/_action/payment/transfers/{id}/submit": {
+            "post": {
+                "tags": [
+                    "Payment transfer"
+                ],
+                "summary": "Hand a booked payout to its channel",
+                "description": "The one call of the platform that moves money out. The body is not read at all: the app is the app the payout was booked for, so a caller that sends an app in the body is not honoured. The answer names what the platform knows - accepted, failed or unknown - and unknown is answered with 200 on purpose, because a 5xx would invite a retry of a payout that may already be paid out.",
+                "operationId": "submitPaymentTransfer",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "The id of the payout that is handed to the channel.",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The answer of the submission. The outcome is accepted, failed, unknown or canceled.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/paymentTransferResult"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "The payout provably never left the platform - only then is the standard error envelope used, and nothing was booked.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/failure"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/_action/payment/transfers/{id}/cancel": {
+            "post": {
+                "tags": [
+                    "Payment transfer"
+                ],
+                "summary": "Abandon a payout that was never handed to a channel",
+                "description": "The reject of the approval flow. The reason is mandatory: a dead row without one can not be told apart from a mistake, and it is the only audit trail a rejection has. Only a payout in the state created can be abandoned - anything else has been submitted, and cancelling it would mean calling the channel.",
+                "operationId": "cancelPaymentTransfer",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "The id of the payout that is abandoned.",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "reason": {
+                                        "type": "string",
+                                        "maxLength": 255,
+                                        "description": "Why the payout is abandoned. It is written to the metadata of the payout."
+                                    }
+                                },
+                                "required": [
+                                    "reason"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "The payout was abandoned. The outcome is canceled.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/paymentTransferResult"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "The reason is missing or the payout is not in the state created anymore.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/failure"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "paymentTransferResult": {
+                "type": "object",
+                "description": "The answer of a payout call: what the platform knows and the payout as the administration renders it.",
+                "properties": {
+                    "outcome": {
+                        "type": "string",
+                        "description": "What the platform learned: accepted, failed, unknown or canceled.",
+                        "enum": [
+                            "accepted",
+                            "failed",
+                            "unknown",
+                            "canceled"
+                        ]
+                    },
+                    "transfer": {
+                        "type": "object",
+                        "description": "The payout after the call, as the administration renders it."
+                    },
+                    "replayed": {
+                        "type": "boolean",
+                        "description": "Whether the booking answered a payout that was already booked with this out number."
+                    },
+                    "message": {
+                        "type": "string",
+                        "description": "A human readable note, present when the platform does not know whether the money moved."
+                    }
+                }
+            }
+        }
+    }
+}

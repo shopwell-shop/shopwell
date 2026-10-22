@@ -134,7 +134,6 @@ class AccountEditOrderPageLoader
         }
 
         $criteria
-            ->addAssociation('primaryOrderDelivery.shippingOrderAddress.salutation')
             ->addAssociation('primaryOrderDelivery.shippingOrderAddress.country')
             ->addAssociation('primaryOrderDelivery.shippingOrderAddress.countryState')
             ->addAssociation('primaryOrderDelivery.stateMachineState')
@@ -142,14 +141,12 @@ class AccountEditOrderPageLoader
             ->addAssociation('lineItems.cover')
             ->addAssociation('transactions.paymentMethod')
             ->addAssociation('deliveries.shippingMethod')
-            ->addAssociation('billingAddress.salutation')
             ->addAssociation('billingAddress.country')
             ->addAssociation('stateMachineState')
             ->addAssociation('billingAddress.countryState');
 
         if (!Feature::isActive('v6.8.0.0')) {
             $criteria
-                ->addAssociation('deliveries.shippingOrderAddress.salutation')
                 ->addAssociation('deliveries.shippingOrderAddress.country')
                 ->addAssociation('deliveries.shippingOrderAddress.countryState')
                 ->addAssociation('deliveries.stateMachineState')

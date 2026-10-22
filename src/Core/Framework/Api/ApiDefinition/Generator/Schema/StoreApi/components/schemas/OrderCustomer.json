@@ -24,10 +24,9 @@
                         "description": "Email address of the customer.",
                         "type": "string"
                     },
-                    "salutationId": {
-                        "description": "Unique identity of salutation.",
-                        "type": "string",
-                        "pattern": "^[0-9a-f]{32}$"
+                    "gender": {
+                        "description": "Gender code of the order customer (dictionary entry technical_name).",
+                        "type": "string"
                     },
                     "name": {
                         "description": "Full name of the customer.",
@@ -35,10 +34,6 @@
                     },
                     "company": {
                         "description": "Name of the company.",
-                        "type": "string"
-                    },
-                    "title": {
-                        "description": "Title name given to the customer like Dr, prof. etc.",
                         "type": "string"
                     },
                     "vatIds": {
@@ -63,9 +58,6 @@
                         "type": "string",
                         "format": "date-time",
                         "readOnly": true
-                    },
-                    "salutation": {
-                        "$ref": "#/components/schemas/Salutation"
                     }
                 },
                 "type": "object"

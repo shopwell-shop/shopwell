@@ -1,0 +1,63 @@
+{% block sw_dashboard_todos %}
+<mt-card
+    class="sw-dashboard-todos mt-card--future-ignore-max-width"
+    :is-loading="isLoading"
+    position-identifier="sw-dashboard-todos"
+>
+    {% block sw_dashboard_todos_title %}
+    <template #title>
+        {{ $t('sw-dashboard.todos.headline') }}
+    </template>
+    {% endblock %}
+
+    {% block sw_dashboard_todos_list %}
+    <ul
+        v-if="hasItems"
+        class="sw-dashboard-todos__list"
+    >
+        {% block sw_dashboard_todos_list_item %}
+        <li
+            v-for="item in items"
+            :key="item.key"
+            class="sw-dashboard-todos__item"
+        >
+            <component
+                :is="item.link ? 'router-link' : 'div'"
+                v-bind="item.link ? { to: item.link } : {}"
+                class="sw-dashboard-todos__item-inner"
+                :class="{ 'is-linked': !!item.link }"
+            >
+                <mt-icon
+                    :name="item.icon"
+                    size="20px"
+                    class="sw-dashboard-todos__item-icon"
+                    :class="`is-${item.variant}`"
+                />
+
+                <span class="sw-dashboard-todos__item-label">{{ item.label }}</span>
+
+                <mt-badge
+                    class="sw-dashboard-todos__item-badge"
+                    :variant="item.variant"
+                >{{ item.count }}</mt-badge>
+            </component>
+        </li>
+        {% endblock %}
+    </ul>
+
+    {% block sw_dashboard_todos_empty %}
+    <div
+        v-else-if="!isLoading"
+        class="sw-dashboard-todos__empty"
+    >
+        <mt-icon
+            name="solid-check-circle"
+            size="24px"
+            class="sw-dashboard-todos__empty-icon"
+        />
+        <span>{{ $t('sw-dashboard.todos.empty') }}</span>
+    </div>
+    {% endblock %}
+    {% endblock %}
+</mt-card>
+{% endblock %}

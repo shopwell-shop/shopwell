@@ -28,6 +28,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\WriteProtected;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\IdField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\JsonField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\ManyToManyAssociationField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\ManyToManyIdField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\ManyToOneAssociationField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\OneToManyAssociationField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\OneToOneAssociationField;
@@ -37,9 +38,13 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Field\TimeZoneField;
 use Shopwell\Core\Framework\DataAbstractionLayer\FieldCollection;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Locale\LocaleDefinition;
+use Shopwell\Core\System\Organization\Aggregate\OrganizationUnit\OrganizationUnitDefinition;
+use Shopwell\Core\System\Position\PositionDefinition;
 use Shopwell\Core\System\StateMachine\Aggregation\StateMachineHistory\StateMachineHistoryDefinition;
 use Shopwell\Core\System\User\Aggregate\UserAccessKey\UserAccessKeyDefinition;
 use Shopwell\Core\System\User\Aggregate\UserConfig\UserConfigDefinition;
+use Shopwell\Core\System\User\Aggregate\UserOrganizationUnit\UserOrganizationUnitDefinition;
+use Shopwell\Core\System\User\Aggregate\UserPosition\UserPositionDefinition;
 use Shopwell\Core\System\User\Aggregate\UserRecovery\UserRecoveryDefinition;
 
 /**
@@ -83,6 +88,11 @@ class UserDefinition extends EntityDefinition
             'admin' => false,
             'timeZone' => self::DEFAULT_TIME_ZONE,
         ];
+    }
+
+    public function hasManyToManyIdFields(): bool
+    {
+        return true;
     }
 
     protected function defineProtections(): EntityProtectionCollection
@@ -130,6 +140,11 @@ class UserDefinition extends EntityDefinition
             new OneToManyAssociationField('updatedOrders', OrderDefinition::class, 'updated_by_id', 'id'),
             new OneToManyAssociationField('createdCustomers', CustomerDefinition::class, 'created_by_id', 'id'),
             new OneToManyAssociationField('updatedCustomers', CustomerDefinition::class, 'updated_by_id', 'id'),
+            (new OneToManyAssociationField('orderReturns', 'order_return', 'administrator_id'))->addFlags(new SetNullOnDelete()),
+            (new ManyToManyAssociationField('organizationUnits', OrganizationUnitDefinition::class, UserOrganizationUnitDefinition::class, 'user_id', 'organization_unit_id'))->addFlags(new ApiAware()),
+            (new ManyToManyIdField('organization_unit_ids', 'organizationUnitIds', 'organizationUnits'))->addFlags(new ApiAware()),
+            (new ManyToManyAssociationField('positions', PositionDefinition::class, UserPositionDefinition::class, 'user_id', 'position_id'))->addFlags(new ApiAware()),
+            (new ManyToManyIdField('position_ids', 'positionIds', 'positions'))->addFlags(new ApiAware()),
         ]);
     }
 }

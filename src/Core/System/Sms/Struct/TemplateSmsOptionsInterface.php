@@ -15,8 +15,6 @@ use Symfony\Component\Notifier\Message\MessageOptionsInterface;
  * All three are nullable or empty tolerant because a free text message carries no template at all -
  * a gateway that requires one rejects it with SmsException::templateModeRequired rather than reading
  * an empty code.
- *
- * @internal
  */
 #[Package('framework')]
 interface TemplateSmsOptionsInterface extends MessageOptionsInterface

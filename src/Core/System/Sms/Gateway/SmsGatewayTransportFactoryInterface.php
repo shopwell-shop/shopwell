@@ -14,7 +14,15 @@ use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
  * administration renders the credential form from getCredentialDefinitions() and the routing and
  * the bookkeeping have nothing provider specific, so adding a provider touches no core code.
  *
- * @internal
+ * The transport a provider builds reports a failure as SmsException. A failure that is worth
+ * trying again - the provider was unreachable, it answered with a rate limit - is thrown as that
+ * class, a failure that will not pass on a second attempt - the credentials are wrong, the
+ * provider rejected the template - is thrown as its SmsUnrecoverableException subclass, which the
+ * send handler turns into a message that is not retried. The factories of the exception pair the
+ * two, so a transport picks the factory and the retry behaviour follows.
+ *
+ * Whether the provider wants its templates reported before they are usable is a separate,
+ * optional contract next to this one - see Gateway\Audit.
  */
 #[Package('framework')]
 interface SmsGatewayTransportFactoryInterface

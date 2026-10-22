@@ -10,6 +10,7 @@ use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
 use Shopwell\Core\System\Payment\Gateway\PaymentTransferRequest;
 use Shopwell\Core\System\Payment\Gateway\TransferResult;
 use Shopwell\Core\System\Payment\PaymentException;
+use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferEntity;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferRecipientEntity;
 
@@ -92,6 +93,20 @@ final class AlipayTransferAction extends AbstractPaymentAction
     {
     }
 
+    public function capability(): PaymentCapability
+    {
+        return PaymentCapability::TRANSFER;
+    }
+
+    /**
+     * A channel failure leaves this method as a {@see PaymentException} of code `GATEWAY_ERROR` - the
+     * request that was sent is recorded on the model before the exception is thrown, so the caller can
+     * persist what left the platform even though the call failed. The exception is documented here
+     * because that is the contract a caller catches by: without the tag the failure looks like a
+     * `RequestNotSupportedException` of the payum interface and nothing else.
+     *
+     * @throws PaymentException
+     */
     public function execute($request): void
     {
         RequestNotSupportedException::assertSupports($this, $request);

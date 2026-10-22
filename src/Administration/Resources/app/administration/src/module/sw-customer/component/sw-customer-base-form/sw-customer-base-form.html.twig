@@ -15,26 +15,15 @@
         />
         {% endblock %}
 
-        {% block sw_customer_base_form_first_salutation_field %}
-        <sw-entity-single-select
-            v-model:value="customer.salutationId"
-            name="sw-field--customer-salutationId"
-            class="sw-customer-base-form__salutation-select"
-            entity="salutation"
-            :label="$t('sw-customer.baseForm.labelSalutation')"
-            :placeholder="$t('sw-customer.baseForm.placeholderSalutation')"
-            :error="customerSalutationIdError"
-            :criteria="salutationCriteria"
-            label-property="displayName"
-        />
-        {% endblock %}
-
-        {% block sw_customer_base_form_title_field %}
-        <mt-text-field
-            v-model="customer.title"
-            name="sw-field--customer-title"
-            :label="$t('sw-customer.baseForm.labelTitle')"
-            :placeholder="$t('sw-customer.baseForm.placeholderTitle')"
+        {% block sw_customer_base_form_first_gender_field %}
+        <sw-single-select
+            v-model:value="customer.gender"
+            name="sw-field--customer-gender"
+            class="sw-customer-base-form__gender-select"
+            :label="$t('sw-customer.baseForm.labelGender')"
+            :placeholder="$t('sw-customer.baseForm.placeholderGender')"
+            :error="customerGenderError"
+            :options="genderOptions"
         />
         {% endblock %}
 

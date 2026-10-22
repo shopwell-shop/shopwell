@@ -13,6 +13,7 @@ use Shopwell\Core\Checkout\Cart\LineItem\LineItem;
 use Shopwell\Core\Checkout\Cart\SalesChannel\AbstractCartLoadRoute;
 use Shopwell\Core\Checkout\Cart\SalesChannel\CartResponse;
 use Shopwell\Core\Checkout\Cart\SalesChannel\CartService;
+use Shopwell\Core\Checkout\Customer\Aggregate\CustomerAddress\CustomerAddressEntity;
 use Shopwell\Core\Checkout\Customer\CustomerEntity;
 use Shopwell\Core\Checkout\Customer\SalesChannel\AbstractLogoutRoute;
 use Shopwell\Core\Checkout\Order\OrderException;
@@ -218,8 +219,9 @@ class CheckoutControllerTest extends TestCase
     {
         $cart = new Cart(Uuid::randomHex());
         $cart->add(new LineItem(Uuid::randomHex(), LineItem::PRODUCT_LINE_ITEM_TYPE));
+
         $context = static::createStub(SalesChannelContext::class);
-        $context->method('getCustomer')->willReturn(new CustomerEntity());
+        $context->method('getCustomer')->willReturn($this->createCustomerWithAddress());
 
         $this->cartServiceMock->method('getCart')->willReturn($cart);
 
@@ -229,12 +231,36 @@ class CheckoutControllerTest extends TestCase
         static::assertSame('', $response->getContent());
     }
 
+    public function testConfirmPageRedirectsToAddressCreationWithoutAddress(): void
+    {
+        $cart = new Cart(Uuid::randomHex());
+        $cart->add(new LineItem(Uuid::randomHex(), LineItem::PRODUCT_LINE_ITEM_TYPE));
+
+        $context = static::createStub(SalesChannelContext::class);
+        // a customer may register without any address, but an order requires a billing address
+        $context->method('getCustomer')->willReturn(new CustomerEntity());
+
+        $this->cartServiceMock->method('getCart')->willReturn($cart);
+
+        $confirmPageLoader = $this->createMock(CheckoutConfirmPageLoader::class);
+        $confirmPageLoader->expects($this->never())->method('load');
+
+        $controller = $this->buildController(confirmPageLoader: $confirmPageLoader);
+
+        $response = $controller->confirmPage(new Request(), $context);
+
+        static::assertInstanceOf(RedirectResponse::class, $response);
+        static::assertSame(Response::HTTP_FOUND, $response->getStatusCode());
+        static::assertSame('frontend.account.address.create.page', $response->getTargetUrl());
+        static::assertSame(['danger' => ['checkout.addressMissingAlert']], $controller->recorder()->flashBag);
+    }
+
     public function testConfirmPageRedirectNotOnNoErrors(): void
     {
         $cart = new Cart(Uuid::randomHex());
         $cart->add(new LineItem(Uuid::randomHex(), LineItem::PRODUCT_LINE_ITEM_TYPE));
         $context = static::createStub(SalesChannelContext::class);
-        $context->method('getCustomer')->willReturn(new CustomerEntity());
+        $context->method('getCustomer')->willReturn($this->createCustomerWithAddress());
 
         $this->cartServiceMock->method('getCart')->willReturn($cart);
 
@@ -260,7 +286,7 @@ class CheckoutControllerTest extends TestCase
         ));
 
         $context = static::createStub(SalesChannelContext::class);
-        $context->method('getCustomer')->willReturn(new CustomerEntity());
+        $context->method('getCustomer')->willReturn($this->createCustomerWithAddress());
 
         $this->cartServiceMock->method('getCart')->willReturn($cart);
 
@@ -284,7 +310,7 @@ class CheckoutControllerTest extends TestCase
         $cart = new Cart(Uuid::randomHex());
         $cart->add(new LineItem(Uuid::randomHex(), LineItem::PRODUCT_LINE_ITEM_TYPE));
         $context = static::createStub(SalesChannelContext::class);
-        $context->method('getCustomer')->willReturn(new CustomerEntity());
+        $context->method('getCustomer')->willReturn($this->createCustomerWithAddress());
 
         $this->cartServiceMock->method('getCart')->willReturn($cart);
 
@@ -682,15 +708,29 @@ class CheckoutControllerTest extends TestCase
         static::assertSame('', $response->getContent());
     }
 
+    private function createCustomerWithAddress(): CustomerEntity
+    {
+        $address = (new CustomerAddressEntity())->assign(['id' => Uuid::randomHex(), 'countryId' => Uuid::randomHex()]);
+
+        $customer = new CustomerEntity();
+        $customer->assign([
+            'activeBillingAddress' => $address,
+            'activeShippingAddress' => $address,
+        ]);
+
+        return $customer;
+    }
+
     private function buildController(
         ?OrderService $orderService = null,
         ?PaymentProcessor $paymentProcessor = null,
         ?AbstractLogoutRoute $logoutRoute = null,
+        ?CheckoutConfirmPageLoader $confirmPageLoader = null,
     ): CheckoutControllerStub {
         return new CheckoutControllerStub(
             $this->cartServiceMock,
             $this->cartPageLoaderMock,
-            $this->confirmPageLoaderMock,
+            $confirmPageLoader ?? $this->confirmPageLoaderMock,
             $this->finishPageLoaderMock,
             $orderService ?? $this->orderServiceMock,
             $paymentProcessor ?? $this->paymentProcessorMock,

@@ -1,0 +1,32 @@
+{% block sw_dashboard_loyalty_distribution %}
+<mt-card
+    v-if="canViewLoyalty"
+    class="sw-dashboard-loyalty-distribution mt-card--future-ignore-max-width"
+    :title="$t('sw-dashboard.loyaltyDistribution.headline')"
+    :is-loading="isLoading"
+    position-identifier="sw-dashboard-loyalty-distribution"
+>
+    {% block sw_dashboard_loyalty_distribution_chart %}
+    <div
+        v-if="hasData"
+        class="sw-dashboard-loyalty-distribution__chart"
+    >
+        <sw-chart
+            type="bar"
+            :series="series"
+            :options="chartOptions"
+            :height="240"
+        />
+    </div>
+
+    {% block sw_dashboard_loyalty_distribution_empty %}
+    <div
+        v-else-if="!isLoading"
+        class="sw-dashboard-loyalty-distribution__empty"
+    >
+        {{ $t('sw-dashboard.loyaltyDistribution.empty') }}
+    </div>
+    {% endblock %}
+    {% endblock %}
+</mt-card>
+{% endblock %}

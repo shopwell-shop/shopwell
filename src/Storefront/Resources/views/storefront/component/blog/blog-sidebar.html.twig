@@ -1,0 +1,44 @@
+{# @sw-package discovery #}
+
+{#
+    The side column of an entry: the table of contents and the author card.
+
+    Expected variables:
+      page       - \Shopwell\Storefront\Page\Blog\BlogDetailPage
+      authorOnly - bool, true when only the author card is wanted (it is also used inside the body)
+#}
+{% block sw_blog_sidebar %}
+    {% if not authorOnly %}
+        <aside class="blog-sidebar">
+            {% block sw_blog_sidebar_toc %}
+                {% if page.toc is not empty %}
+                    <nav class="blog-sidebar__toc" data-blog-toc aria-label="{{ 'blog.detail.toc'|trans|striptags }}">
+                        <p class="blog-sidebar__heading">{{ 'blog.detail.toc'|trans|sw_sanitize }}</p>
+                        <ul class="blog-sidebar__list">
+                            {% for entry in page.toc %}
+                                <li class="blog-sidebar__item blog-sidebar__item--h{{ entry.level }}">
+                                    <a href="#{{ entry.id }}" class="blog-sidebar__link" data-blog-toc-link="{{ entry.id }}">
+                                        {{ entry.title }}
+                                    </a>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </nav>
+                {% endif %}
+            {% endblock %}
+        </aside>
+    {% endif %}
+
+    {% if page.author %}
+        {% block sw_blog_sidebar_author %}
+            <section class="blog-author-card">
+                <p class="blog-author-card__heading">{{ 'blog.detail.authorHeading'|trans|sw_sanitize }}</p>
+                <p class="blog-author-card__name">{{ page.author.name }}</p>
+
+                {% if page.author.description %}
+                    <p class="blog-author-card__description">{{ page.author.description|striptags }}</p>
+                {% endif %}
+            </section>
+        {% endblock %}
+    {% endif %}
+{% endblock %}

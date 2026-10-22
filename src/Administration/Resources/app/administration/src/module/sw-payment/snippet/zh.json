@@ -4,11 +4,7 @@
             "mainMenuItemGeneral": "支付",
             "mainMenuItemPaymentOrders": "支付订单",
             "mainMenuItemRefunds": "退款订单",
-            "mainMenuItemTransfers": "打款",
             "description": "外部应用通过通用支付网关发起的支付"
-        },
-        "configField": {
-            "configuredHint": "已配置，留空表示保持原值不变。"
         },
         "order": {
             "list": {
@@ -194,87 +190,6 @@
                 "labelUpdatedAt": "更新时间",
                 "labelRequestPayload": "请求",
                 "labelResponsePayload": "响应"
-            }
-        },
-        "transfer": {
-            "list": {
-                "title": "打款订单",
-                "placeholderSearchBar": "搜索打款订单...",
-                "titleSidebarItemRefresh": "刷新列表",
-                "columnTransferNo": "平台单号",
-                "columnOutNo": "业务单号",
-                "columnRecipient": "收款方",
-                "columnProvider": "支付服务商",
-                "columnChannel": "支付渠道",
-                "columnAmount": "打款金额",
-                "columnState": "状态",
-                "columnCreatedAt": "创建时间",
-                "messageEmpty": "暂无打款订单",
-                "sublineEmpty": "平台通过支付网关向收款方发起的打款会显示在这里。",
-                "messageNoResult": "未找到该打款订单",
-                "messageNoResultSubline": "该打款订单可能已被删除，或你没有查看权限。"
-            },
-            "filters": {
-                "transferNoFilter": {
-                    "label": "平台单号",
-                    "placeholder": "多个单号用逗号分隔..."
-                },
-                "outNoFilter": {
-                    "label": "业务单号",
-                    "placeholder": "多个单号用逗号分隔..."
-                },
-                "channelFilter": {
-                    "label": "支付渠道",
-                    "placeholder": "多个渠道用逗号分隔..."
-                },
-                "providerFilter": {
-                    "label": "支付服务商",
-                    "placeholder": "多个服务商用逗号分隔..."
-                },
-                "stateFilter": {
-                    "label": "状态",
-                    "placeholder": "全部状态..."
-                }
-            },
-            "detail": {
-                "title": "打款订单",
-                "buttonRefresh": "刷新",
-                "cardGeneralTitle": "基本信息",
-                "cardRecipientTitle": "收款方",
-                "cardTimelineTitle": "时间线",
-                "cardChannelRefTitle": "通道引用",
-                "cardFailureTitle": "失败信息",
-                "cardConfirmationTitle": "微信确认",
-                "cardMetadataTitle": "元数据",
-                "labelTransferNo": "平台单号",
-                "labelOutNo": "业务单号",
-                "labelProvider": "支付服务商",
-                "labelChannel": "支付渠道",
-                "labelAmount": "打款金额",
-                "labelCurrency": "货币",
-                "labelSubmitAttempts": "提交次数",
-                "labelPaymentApp": "所属应用",
-                "labelRecipientName": "持款人姓名",
-                "labelIdentityType": "身份类型",
-                "labelProviderAccountId": "通道账户",
-                "labelOnboardingStatus": "入驻状态",
-                "labelPayoutEnabled": "可打款",
-                "labelVerifiedAt": "认证时间",
-                "labelCreatedAt": "创建时间",
-                "labelSubmittedAt": "提交时间",
-                "labelSettledAt": "到账时间",
-                "labelReturnedAt": "退回时间",
-                "labelCanceledAt": "取消时间",
-                "labelExpireAt": "过期时间",
-                "labelProviderRef": "通道引用",
-                "labelProviderStageRef": "通道阶段引用",
-                "labelFailureCode": "失败码",
-                "labelFailureReason": "失败原因",
-                "labelConfirmation": "确认凭证",
-                "valueConfirmationGenerated": "已生成，等待收款方领取",
-                "valueConfirmationMissing": "未生成",
-                "labelMetadata": "元数据",
-                "messageNoMetadata": "暂无元数据"
             }
         },
         "transactionType": {

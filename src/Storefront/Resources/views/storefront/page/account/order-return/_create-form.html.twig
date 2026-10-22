@@ -1,0 +1,146 @@
+{% block page_account_order_return_create_form %}
+    <form action="{{ path(formAction) }}"
+          method="post"
+          class="account-order-return-create-form"
+          data-order-return-create-form="true">
+        {% block page_account_order_return_create_form_positions %}
+            <div class="table-responsive">
+                <table class="table account-order-return-create-positions">
+                    <thead>
+                        <tr>
+                            <th scope="col">{{ 'account.orderReturnCreateProduct'|trans|sw_sanitize }}</th>
+                            <th scope="col" class="text-end">{{ 'account.orderReturnCreateOrdered'|trans|sw_sanitize }}</th>
+                            <th scope="col" class="text-end">{{ 'account.orderReturnCreateReturnable'|trans|sw_sanitize }}</th>
+                            <th scope="col" class="text-end">{{ 'account.orderReturnCreateQuantity'|trans|sw_sanitize }}</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {% for position in page.positions %}
+                            <tr>
+                                <td>{{ position.label|sw_sanitize }}</td>
+                                <td class="text-end">{{ position.quantity }}</td>
+                                <td class="text-end">{{ position.returnable }}</td>
+                                <td class="text-end">
+                                    <label class="visually-hidden" for="order-return-quantity-{{ position.lineItemId }}">
+                                        {{ 'account.orderReturnCreateQuantity'|trans|sw_sanitize }}
+                                    </label>
+                                    <input type="number"
+                                           class="form-control form-control-sm account-order-return-create-quantity"
+                                           id="order-return-quantity-{{ position.lineItemId }}"
+                                           name="positions[{{ position.lineItemId }}]"
+                                           value="0"
+                                           min="0"
+                                           max="{{ position.returnable }}"
+                                           step="1"
+                                           inputmode="numeric">
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endblock %}
+
+        {% block page_account_order_return_create_form_type %}
+            <fieldset class="account-order-return-create-type">
+                <legend class="form-label">{{ 'account.orderReturnCreateType'|trans|sw_sanitize }}</legend>
+
+                <div class="form-check">
+                    <input type="radio"
+                           class="form-check-input"
+                           id="order-return-type-return-refund"
+                           name="type"
+                           value="return_refund"
+                           checked>
+                    <label class="form-check-label" for="order-return-type-return-refund">
+                        {{ 'account.orderReturnTypeReturnRefund'|trans|sw_sanitize }}
+                    </label>
+                </div>
+
+                <div class="form-check">
+                    <input type="radio"
+                           class="form-check-input"
+                           id="order-return-type-refund-only"
+                           name="type"
+                           value="refund_only">
+                    <label class="form-check-label" for="order-return-type-refund-only">
+                        {{ 'account.orderReturnTypeRefundOnly'|trans|sw_sanitize }}
+                    </label>
+                </div>
+            </fieldset>
+        {% endblock %}
+
+        {% block page_account_order_return_create_form_reason %}
+            <div class="mb-3">
+                <label class="form-label" for="order-return-reason">
+                    {{ 'account.orderReturnCreateReason'|trans|sw_sanitize }}
+                </label>
+                <select class="form-select"
+                        id="order-return-reason"
+                        name="reasonId"
+                        required>
+                    <option value="">{{ 'account.orderReturnCreateReasonPlaceholder'|trans|sw_sanitize }}</option>
+                    {% for reason in page.reasons %}
+                        <option value="{{ reason.id }}">{{ reason.label|sw_sanitize }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label" for="order-return-reason-text">
+                    {{ 'account.orderReturnCreateReasonText'|trans|sw_sanitize }}
+                </label>
+                <textarea class="form-control"
+                          id="order-return-reason-text"
+                          name="reasonText"
+                          rows="3"
+                          maxlength="500"
+                          placeholder="{{ 'account.orderReturnCreateReasonTextPlaceholder'|trans|striptags }}"></textarea>
+            </div>
+        {% endblock %}
+
+        {% block page_account_order_return_create_form_note %}
+            <div class="mb-3">
+                <label class="form-label" for="order-return-note">
+                    {{ 'account.orderReturnCreateNote'|trans|sw_sanitize }}
+                </label>
+                <textarea class="form-control"
+                          id="order-return-note"
+                          name="customerNote"
+                          rows="2"
+                          maxlength="500"></textarea>
+            </div>
+        {% endblock %}
+
+        {% block page_account_order_return_create_form_evidence %}
+            <div class="mb-3">
+                <label class="form-label" for="order-return-evidence">
+                    {{ 'account.orderReturnCreateEvidence'|trans|sw_sanitize }}
+                </label>
+                <textarea class="form-control"
+                          id="order-return-evidence"
+                          name="evidence"
+                          rows="2"
+                          aria-describedby="order-return-evidence-hint"></textarea>
+                <div class="form-text" id="order-return-evidence-hint">
+                    {{ 'account.orderReturnCreateEvidenceHint'|trans|sw_sanitize }}
+                </div>
+            </div>
+        {% endblock %}
+
+        {% block page_account_order_return_create_form_actions %}
+            <div class="account-order-return-create-actions d-flex flex-wrap gap-2">
+                <button type="submit" class="btn btn-primary">
+                    {{ 'account.orderReturnCreateSubmit'|trans|sw_sanitize }}
+                </button>
+
+                {% if backPath is defined %}
+                    <a href="{{ backPath }}" class="btn btn-secondary">
+                        {{ 'account.orderReturnCreateBack'|trans|sw_sanitize }}
+                    </a>
+                {% endif %}
+            </div>
+        {% endblock %}
+    </form>
+{% endblock %}

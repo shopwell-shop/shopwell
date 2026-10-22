@@ -476,6 +476,9 @@ class AlipayTransferActionTest extends TestCase
         ];
     }
 
+    /**
+     * @param array<string, mixed> $answer
+     */
     #[DataProvider('answers')]
     public function testTheAnswerIsNarrowedToWhatTheTransferMeans(
         array $answer,
@@ -522,6 +525,9 @@ class AlipayTransferActionTest extends TestCase
         return ['transfer_scene_name' => '佣金报酬'];
     }
 
+    /**
+     * @param array<string, mixed> $channelParams
+     */
     private function request(array $channelParams = ['transfer_scene_name' => '佣金报酬']): PaymentTransferRequest
     {
         $transfer = $this->transfer();
@@ -558,7 +564,6 @@ class AlipayTransferActionTest extends TestCase
                 params: [],
                 runtimeParams: [],
                 settings: [],
-                mode: 'own',
             ),
             'https://example.com/notify',
             '',

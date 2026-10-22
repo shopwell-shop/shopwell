@@ -121,7 +121,7 @@ export default function createCustomFieldService() {
         'number_range',
         'payment_method',
         'rule',
-        'salutation',
+        'dictionary_entry',
         'shipping_method',
         'tax',
         'unit',

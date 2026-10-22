@@ -11,9 +11,11 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Validation\EntityExists;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Validation\Constraint\NoHtml;
 use Shopwell\Core\System\Country\CountryEntity;
+use Shopwell\Core\System\Dictionary\Aggregate\DictionaryEntry\DictionaryEntryDefinition;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
 use Shopwell\Core\System\SystemConfig\SystemConfigService;
 use Shopwell\Core\Test\Generator;
+use Symfony\Component\Validator\Constraints\Choice;
 use Symfony\Component\Validator\Constraints\Length;
 use Symfony\Component\Validator\Constraints\NotBlank;
 
@@ -55,14 +57,14 @@ class AddressValidationFactoryTest extends TestCase
 
         $this->assertAddressDefinition($definition);
 
-        static::assertCount(14, $definition);
+        static::assertCount(13, $definition);
     }
 
     public function testDefinitionRulesUpdate(): void
     {
         $definition = $this->addressValidationFactory->update($this->salesChannelContext)->getProperties();
 
-        static::assertCount(15, $definition);
+        static::assertCount(14, $definition);
         static::assertArrayHasKey('id', $definition);
 
         static::assertCount(2, $definition['id']);
@@ -72,15 +74,27 @@ class AddressValidationFactoryTest extends TestCase
         $this->assertAddressDefinition($definition);
     }
 
+    public function testNotBlankNormalizerAlsoRemovesFullWidthSpaces(): void
+    {
+        $definition = $this->addressValidationFactory->create($this->salesChannelContext)->getProperties();
+
+        foreach (['name', 'street', 'city'] as $property) {
+            $constraint = $definition[$property][0];
+
+            static::assertInstanceOf(NotBlank::class, $constraint);
+            static::assertNotNull($constraint->normalizer);
+
+            $normalizer = $constraint->normalizer;
+            static::assertSame('', $normalizer(" \u{3000}\t"));
+            static::assertSame('Musterstrasse 13', $normalizer("\u{3000}Musterstrasse 13 "));
+        }
+    }
+
     /**
      * @param array<string, mixed> $definition
      */
     private function assertAddressDefinition(array $definition): void
     {
-        static::assertArrayHasKey('title', $definition);
-        static::assertCount(2, $definition['title']);
-        static::assertInstanceOf(Length::class, $definition['title'][0]);
-        static::assertInstanceOf(NoHtml::class, $definition['title'][1]);
         static::assertArrayHasKey('zipcode', $definition);
         static::assertInstanceOf(Length::class, $definition['zipcode'][0]);
         static::assertCount(3, $definition['name']);
@@ -88,7 +102,7 @@ class AddressValidationFactoryTest extends TestCase
         static::assertInstanceOf(Length::class, $definition['name'][1]);
         static::assertInstanceOf(NoHtml::class, $definition['name'][2]);
 
-        static::assertArrayHasKey('salutationId', $definition);
+        static::assertArrayHasKey('gender', $definition);
         static::assertArrayHasKey('countryId', $definition);
         static::assertArrayHasKey('countryStateId', $definition);
         static::assertArrayHasKey('countryCityId', $definition);
@@ -97,8 +111,9 @@ class AddressValidationFactoryTest extends TestCase
         static::assertArrayHasKey('street', $definition);
         static::assertArrayHasKey('city', $definition);
 
-        static::assertCount(1, $definition['salutationId']);
-        static::assertInstanceOf(EntityExists::class, $definition['salutationId'][0]);
+        static::assertCount(1, $definition['gender']);
+        static::assertInstanceOf(Choice::class, $definition['gender'][0]);
+        static::assertSame([DictionaryEntryDefinition::MALE, DictionaryEntryDefinition::FEMALE, DictionaryEntryDefinition::NOT_SPECIFIED], $definition['gender'][0]->choices);
 
         static::assertCount(3, $definition['countryId']);
         static::assertInstanceOf(EntityExists::class, $definition['countryId'][0]);

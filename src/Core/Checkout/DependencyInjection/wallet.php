@@ -17,14 +17,15 @@ use Shopwell\Core\Checkout\Wallet\Entity\CustomerWalletTransaction\CustomerWalle
 use Shopwell\Core\Checkout\Wallet\SalesChannel\WalletPaymentRoute;
 use Shopwell\Core\Checkout\Wallet\SalesChannel\WalletRoute;
 use Shopwell\Core\Checkout\Wallet\SalesChannel\WalletTopUpCreateRoute;
-use Shopwell\Core\Checkout\Wallet\SalesChannel\WalletTopUpSimulateRoute;
 use Shopwell\Core\Checkout\Wallet\SalesChannel\WalletTopUpStatusRoute;
 use Shopwell\Core\Checkout\Wallet\Service\WalletLedger;
 use Shopwell\Core\Checkout\Wallet\Service\WalletService;
+use Shopwell\Core\Checkout\Wallet\Service\WalletSettings;
 use Shopwell\Core\Checkout\Wallet\Service\WalletTopUpService;
 use Shopwell\Core\Checkout\Wallet\Subscriber\WalletAccountProvisionSubscriber;
 use Shopwell\Core\Checkout\Wallet\Subscriber\WalletOrderSubscriber;
 use Shopwell\Core\Checkout\Wallet\Subscriber\WalletTopUpSettlementSubscriber;
+use Shopwell\Core\Framework\Adapter\Translation\Translator;
 use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\System\Payment\Order\PaymentOrderCapture;
 use Shopwell\Core\System\Payment\Order\PaymentOrderService;
@@ -53,6 +54,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(PlatformPaymentApp::class),
             service(PaymentOrderService::class),
             service(PaymentOrderCapture::class),
+            service(Translator::class),
         ]);
 
     $services->set(WalletLedger::class)
@@ -63,11 +65,16 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('event_dispatcher'),
         ]);
 
+    $services->set(WalletSettings::class)
+        ->args([
+            service(SystemConfigService::class),
+        ]);
+
     $services->set(WalletService::class)
         ->args([
             service('customer_wallet.repository'),
             service(WalletLedger::class),
-            service(SystemConfigService::class),
+            service(WalletSettings::class),
         ]);
 
     $services->set(WalletTopUpService::class)
@@ -75,7 +82,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('customer_wallet_top_up.repository'),
             service(WalletService::class),
             service(StorefrontPaymentService::class),
-            service(SystemConfigService::class),
+            service(WalletSettings::class),
             service(Connection::class),
             service(ClockInterface::class),
         ]);
@@ -103,7 +110,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(WalletCartProcessor::class)
         ->args([
             service(AbsolutePriceCalculator::class),
-            service(SystemConfigService::class),
+            service(WalletSettings::class),
             service(WalletService::class),
         ])
         ->tag('shopwell.cart.processor', ['priority' => -1100]);
@@ -131,13 +138,6 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ]);
 
     $services->set(WalletTopUpStatusRoute::class)
-        ->public()
-        ->args([
-            service(WalletTopUpService::class),
-            service(ExtensionDispatcher::class),
-        ]);
-
-    $services->set(WalletTopUpSimulateRoute::class)
         ->public()
         ->args([
             service(WalletTopUpService::class),

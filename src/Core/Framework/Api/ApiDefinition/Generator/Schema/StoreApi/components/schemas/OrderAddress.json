@@ -66,10 +66,6 @@
                         "description": "Name of the department.",
                         "type": "string"
                     },
-                    "title": {
-                        "description": "Title name given to customer like DR. , Prof., etc.",
-                        "type": "string"
-                    },
                     "phoneNumber": {
                         "description": "Phone number of the customer.",
                         "type": "string"
@@ -115,9 +111,6 @@
                     },
                     "countryDistrict": {
                         "$ref": "#/components/schemas/CountryDistrict"
-                    },
-                    "salutation": {
-                        "$ref": "#/components/schemas/Salutation"
                     }
                 },
                 "type": "object"

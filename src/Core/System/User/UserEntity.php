@@ -4,6 +4,7 @@ namespace Shopwell\Core\System\User;
 
 use Shopwell\Core\Checkout\Customer\CustomerCollection;
 use Shopwell\Core\Checkout\Order\OrderCollection;
+use Shopwell\Core\Checkout\OrderReturn\Entity\OrderReturnCollection;
 use Shopwell\Core\Content\ImportExport\Aggregate\ImportExportLog\ImportExportLogCollection;
 use Shopwell\Core\Content\Media\MediaCollection;
 use Shopwell\Core\Content\Media\MediaEntity;
@@ -13,6 +14,8 @@ use Shopwell\Core\Framework\DataAbstractionLayer\EntityCustomFieldsTrait;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityIdTrait;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Locale\LocaleEntity;
+use Shopwell\Core\System\Organization\Aggregate\OrganizationUnit\OrganizationUnitCollection;
+use Shopwell\Core\System\Position\PositionCollection;
 use Shopwell\Core\System\StateMachine\Aggregation\StateMachineHistory\StateMachineHistoryCollection;
 use Shopwell\Core\System\User\Aggregate\UserAccessKey\UserAccessKeyCollection;
 use Shopwell\Core\System\User\Aggregate\UserConfig\UserConfigCollection;
@@ -85,7 +88,23 @@ class UserEntity extends Entity
 
     protected ?CustomerCollection $updatedCustomers = null;
 
+    protected ?OrderReturnCollection $orderReturns = null;
+
     protected string $timeZone;
+
+    protected ?OrganizationUnitCollection $organizationUnits = null;
+
+    /**
+     * @var array<string>|null
+     */
+    protected ?array $organizationUnitIds = null;
+
+    protected ?PositionCollection $positions = null;
+
+    /**
+     * @var array<string>|null
+     */
+    protected ?array $positionIds = null;
 
     public function getStateMachineHistoryEntries(): ?StateMachineHistoryCollection
     {
@@ -359,6 +378,16 @@ class UserEntity extends Entity
         $this->updatedCustomers = $updatedCustomers;
     }
 
+    public function getOrderReturns(): ?OrderReturnCollection
+    {
+        return $this->orderReturns;
+    }
+
+    public function setOrderReturns(OrderReturnCollection $orderReturns): void
+    {
+        $this->orderReturns = $orderReturns;
+    }
+
     public function getLastUpdatedPasswordAt(): ?\DateTimeInterface
     {
         return $this->lastUpdatedPasswordAt;
@@ -377,5 +406,57 @@ class UserEntity extends Entity
     public function setTimeZone(string $timeZone): void
     {
         $this->timeZone = $timeZone;
+    }
+
+    public function getOrganizationUnits(): ?OrganizationUnitCollection
+    {
+        return $this->organizationUnits;
+    }
+
+    public function setOrganizationUnits(OrganizationUnitCollection $organizationUnits): void
+    {
+        $this->organizationUnits = $organizationUnits;
+    }
+
+    /**
+     * @return array<string>|null
+     */
+    public function getOrganizationUnitIds(): ?array
+    {
+        return $this->organizationUnitIds;
+    }
+
+    /**
+     * @param array<string>|null $organizationUnitIds
+     */
+    public function setOrganizationUnitIds(?array $organizationUnitIds): void
+    {
+        $this->organizationUnitIds = $organizationUnitIds;
+    }
+
+    public function getPositions(): ?PositionCollection
+    {
+        return $this->positions;
+    }
+
+    public function setPositions(PositionCollection $positions): void
+    {
+        $this->positions = $positions;
+    }
+
+    /**
+     * @return array<string>|null
+     */
+    public function getPositionIds(): ?array
+    {
+        return $this->positionIds;
+    }
+
+    /**
+     * @param array<string>|null $positionIds
+     */
+    public function setPositionIds(?array $positionIds): void
+    {
+        $this->positionIds = $positionIds;
     }
 }

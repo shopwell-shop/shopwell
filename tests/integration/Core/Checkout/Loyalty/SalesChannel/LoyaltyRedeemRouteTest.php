@@ -4,8 +4,8 @@ namespace Shopwell\Tests\Integration\Core\Checkout\Loyalty\SalesChannel;
 
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
-use Shopwell\Core\Checkout\Loyalty\Cart\LoyaltyPointCartProcessor;
 use Shopwell\Core\Checkout\Loyalty\LoyaltyException;
+use Shopwell\Core\Checkout\Loyalty\Service\LoyaltySettings;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
@@ -63,7 +63,7 @@ class LoyaltyRedeemRouteTest extends TestCase
     {
         $this->login($this->browser);
 
-        static::getContainer()->get(SystemConfigService::class)->set(LoyaltyPointCartProcessor::CONFIG_KEY_MIN_REDEEMABLE, 10);
+        static::getContainer()->get(SystemConfigService::class)->set(LoyaltySettings::CONFIG_KEY_MIN_REDEEMABLE_POINTS, 10);
 
         $this->browser->request('POST', '/store-api/loyalty/redeem-points', ['points' => 5]);
 
@@ -77,7 +77,7 @@ class LoyaltyRedeemRouteTest extends TestCase
     {
         $customerId = $this->login($this->browser);
 
-        static::getContainer()->get(SystemConfigService::class)->set(LoyaltyPointCartProcessor::CONFIG_KEY_MIN_REDEEMABLE, 1);
+        static::getContainer()->get(SystemConfigService::class)->set(LoyaltySettings::CONFIG_KEY_MIN_REDEEMABLE_POINTS, 1);
 
         $this->setPoints($customerId, 10);
 

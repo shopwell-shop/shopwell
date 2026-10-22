@@ -9,6 +9,10 @@ use Shopwell\Core\System\Sms\SmsException;
  * Renders the body of a template of the free text mode, the providers that require a reported
  * template never reach this class.
  *
+ * It deliberately reads the body of the language the message goes out in rather than the body the
+ * audit reports: a template based gateway sends a code and its parameters, so the body of the
+ * default language never travels to the provider and cannot conflict with this one.
+ *
  * @internal
  */
 #[Package('framework')]
@@ -26,7 +30,7 @@ final class SmsTemplateRenderer
         $templateRef = $template->technicalName;
         $content = $this->content($template);
 
-        if ($content === null || trim($content) === '') {
+        if ($content === null) {
             throw SmsException::templateContentMissing($templateRef);
         }
 

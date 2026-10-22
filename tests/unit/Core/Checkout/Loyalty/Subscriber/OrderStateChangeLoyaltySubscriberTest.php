@@ -7,6 +7,7 @@ use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Checkout\Cart\LineItem\LineItem;
 use Shopwell\Core\Checkout\Loyalty\Cart\LoyaltyPointCartProcessor;
 use Shopwell\Core\Checkout\Loyalty\Service\LoyaltyPointService;
+use Shopwell\Core\Checkout\Loyalty\Service\LoyaltySettings;
 use Shopwell\Core\Checkout\Loyalty\Service\TierResolver;
 use Shopwell\Core\Checkout\Loyalty\Subscriber\OrderStateChangeLoyaltySubscriber;
 use Shopwell\Core\Checkout\Order\Aggregate\OrderCustomer\OrderCustomerEntity;
@@ -151,10 +152,10 @@ class OrderStateChangeLoyaltySubscriberTest extends TestCase
             StaticEntityRepository::of(OrderCollection::class, [[$this->createOrder($customerId, 100.0, [], $orderId)]]),
             $loyaltyPointService,
             $tierResolver,
-            new StaticSystemConfigService([
-                OrderStateChangeLoyaltySubscriber::CONFIG_KEY_POINTS_PER_CURRENCY_UNIT => 2,
-                OrderStateChangeLoyaltySubscriber::CONFIG_KEY_GROWTH_PER_CURRENCY_UNIT => 1,
-            ]),
+            new LoyaltySettings(new StaticSystemConfigService([
+                LoyaltySettings::CONFIG_KEY_POINTS_PER_CURRENCY_UNIT => 2,
+                LoyaltySettings::CONFIG_KEY_GROWTH_PER_CURRENCY_UNIT => 1,
+            ])),
         );
 
         $subscriber->onOrderStateChange($this->createEvent('order', $orderId, OrderStates::STATE_COMPLETED));
@@ -170,10 +171,25 @@ class OrderStateChangeLoyaltySubscriberTest extends TestCase
             $loyaltyPointService,
             [$this->createOrder(Uuid::randomHex(), 100.0, [])],
             [
-                OrderStateChangeLoyaltySubscriber::CONFIG_KEY_POINTS_PER_CURRENCY_UNIT => 0,
-                OrderStateChangeLoyaltySubscriber::CONFIG_KEY_GROWTH_PER_CURRENCY_UNIT => 0,
+                LoyaltySettings::CONFIG_KEY_POINTS_PER_CURRENCY_UNIT => 0,
+                LoyaltySettings::CONFIG_KEY_GROWTH_PER_CURRENCY_UNIT => 0,
             ],
         )->onOrderStateChange($this->createEvent('order', Uuid::randomHex(), OrderStates::STATE_COMPLETED));
+    }
+
+    public function testDoesNotAwardWhenTheMembershipIsDisabled(): void
+    {
+        $customerId = Uuid::randomHex();
+
+        $loyaltyPointService = static::createMock(LoyaltyPointService::class);
+        $loyaltyPointService->expects($this->never())->method('award');
+        $loyaltyPointService->expects($this->never())->method('addGrowthValue');
+
+        $this->createSubscriber(
+            $loyaltyPointService,
+            [$this->createOrder($customerId, 100.0, [])],
+            [LoyaltySettings::CONFIG_KEY_ENABLED => false],
+        )->onOrderStateChange($this->createEvent('order', $customerId, OrderStates::STATE_COMPLETED));
     }
 
     public function testResolvesTheTierWithTheGrowthValueTheLedgerAnswered(): void
@@ -192,9 +208,9 @@ class OrderStateChangeLoyaltySubscriberTest extends TestCase
             StaticEntityRepository::of(OrderCollection::class, [[$this->createOrder($customerId, 100.0, [])]]),
             $loyaltyPointService,
             $tierResolver,
-            new StaticSystemConfigService([
-                OrderStateChangeLoyaltySubscriber::CONFIG_KEY_GROWTH_PER_CURRENCY_UNIT => 1,
-            ]),
+            new LoyaltySettings(new StaticSystemConfigService([
+                LoyaltySettings::CONFIG_KEY_GROWTH_PER_CURRENCY_UNIT => 1,
+            ])),
         );
 
         $subscriber->onOrderStateChange($this->createEvent('order', $customerId, OrderStates::STATE_COMPLETED));
@@ -210,7 +226,7 @@ class OrderStateChangeLoyaltySubscriberTest extends TestCase
             StaticEntityRepository::of(OrderCollection::class, $orders === [] ? [[]] : [$orders]),
             $loyaltyPointService,
             static::createStub(TierResolver::class),
-            new StaticSystemConfigService($config),
+            new LoyaltySettings(new StaticSystemConfigService($config)),
         );
     }
 
@@ -242,6 +258,7 @@ class OrderStateChangeLoyaltySubscriberTest extends TestCase
     {
         $order = new OrderEntity();
         $order->setId($orderId ?? Uuid::randomHex());
+        $order->setSalesChannelId(Uuid::randomHex());
         $order->setAmountTotal($amountTotal);
 
         if ($customerId !== null) {

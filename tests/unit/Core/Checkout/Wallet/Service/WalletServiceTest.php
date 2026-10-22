@@ -9,6 +9,7 @@ use Shopwell\Core\Checkout\Wallet\Entity\CustomerWallet\CustomerWalletCollection
 use Shopwell\Core\Checkout\Wallet\Entity\CustomerWallet\CustomerWalletEntity;
 use Shopwell\Core\Checkout\Wallet\Service\WalletLedger;
 use Shopwell\Core\Checkout\Wallet\Service\WalletService;
+use Shopwell\Core\Checkout\Wallet\Service\WalletSettings;
 use Shopwell\Core\Checkout\Wallet\WalletException;
 use Shopwell\Core\Defaults;
 use Shopwell\Core\Framework\Context;
@@ -55,7 +56,7 @@ class WalletServiceTest extends TestCase
         $this->walletService = new WalletService(
             $this->walletRepository,
             $this->ledger,
-            $this->systemConfigService,
+            new WalletSettings($this->systemConfigService),
         );
     }
 
@@ -115,7 +116,7 @@ class WalletServiceTest extends TestCase
 
     public function testTopUpThrowsWhenBelowConfiguredMinimum(): void
     {
-        $this->systemConfigService->set(WalletService::CONFIG_KEY_MIN_TOP_UP_AMOUNT, 10.0);
+        $this->systemConfigService->set(WalletSettings::CONFIG_KEY_MIN_TOP_UP_AMOUNT, 10.0);
 
         $this->expectExceptionObject(WalletException::belowMinimumTopUp(5.0, 10.0));
 
@@ -145,7 +146,7 @@ class WalletServiceTest extends TestCase
     {
         // the limit may have moved while the payer was in the payment interface, a payment that
         // really happened must still be credited
-        $this->systemConfigService->set(WalletService::CONFIG_KEY_MIN_TOP_UP_AMOUNT, 100.0);
+        $this->systemConfigService->set(WalletSettings::CONFIG_KEY_MIN_TOP_UP_AMOUNT, 100.0);
 
         $ledger = $this->createMock(WalletLedger::class);
         $ledger->expects($this->once())
@@ -288,7 +289,7 @@ class WalletServiceTest extends TestCase
         return new WalletService(
             $this->walletRepository,
             $ledger ?? $this->ledger,
-            $this->systemConfigService,
+            new WalletSettings($this->systemConfigService),
         );
     }
 

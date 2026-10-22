@@ -11,6 +11,7 @@ use Shopwell\Core\System\Payment\Gateway\Money;
 use Shopwell\Core\System\Payment\Gateway\NotificationResult;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
 use Shopwell\Core\System\Payment\PaymentException;
+use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
 
 /**
  * Verifies and reads the asynchronous notification of alipay.
@@ -32,6 +33,11 @@ final class AlipayNotifyAction extends AbstractPaymentAction
     final public const DEFAULT_CURRENCY = 'CNY';
 
     protected string $apiClass = AlipayApi::class;
+
+    public function capability(): PaymentCapability
+    {
+        return PaymentCapability::NOTIFICATION;
+    }
 
     public function execute($request): void
     {

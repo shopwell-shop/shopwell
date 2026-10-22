@@ -43,8 +43,8 @@ final class AlipayApi extends AbstractPaymentApi
     final public const PROVIDER = 'alipay';
 
     /**
-     * The channels of alipay as they are declared in `Resources/config/alipay.xml`. The names are the
-     * contract between the declaration and the capture action, which is the only place a channel
+     * The channels of alipay as they are declared in {@see AlipayProvider::getChannels()}. The names are
+     * the contract between the declaration and the capture action, which is the only place a channel
      * matters - adding a channel means declaring it there and teaching the action to open it.
      */
     final public const CHANNEL_H5 = 'alipay_h5';
@@ -130,7 +130,9 @@ final class AlipayApi extends AbstractPaymentApi
     }
 
     /**
-     * The alipay public key without its pem envelope, the way the sdk expects it.
+     * The alipay public key without its pem envelope, the way the classic signature util expects it
+     * - `rsaCheckV1` wraps the envelope by itself. The response verification of the v3 calls takes
+     * the enveloped shape, which `configUtil()` builds.
      */
     public function publicKey(): string
     {
@@ -146,7 +148,7 @@ final class AlipayApi extends AbstractPaymentApi
         $configUtil = new AlipayConfigUtil();
         $configUtil->setAppId($this->requireCredential(self::APP_ID));
         $configUtil->setPrivateKey(self::wrapPem($this->requireCredential(self::PRIVATE_KEY)));
-        $configUtil->setAlipayPublicKey($this->publicKey());
+        $configUtil->setAlipayPublicKey(self::wrapPublicKeyPem($this->publicKey()));
         $configUtil->setSignType($this->signType());
         $configUtil->setServerUrl($this->gatewayUrl());
         $configUtil->setFormat('json');
@@ -440,6 +442,22 @@ final class AlipayApi extends AbstractPaymentApi
     public static function stripPem(string $key): string
     {
         return trim((string) preg_replace('/-----(BEGIN|END)[A-Z ]*-----[\\r\\n]*/', '', $key));
+    }
+
+    /**
+     * The key as the pem envelope the response verification of the sdk expects: the v3 config util
+     * hands the alipay public key straight to `openssl_verify()`, and openssl only coerces a pem
+     * string - a bare base64 body fails with "cannot be coerced into a public key". The classic
+     * signature util wraps by itself, which is what `stripPem` is for, so the two shapes both exist
+     * and every consumer takes the one its verifier needs.
+     */
+    private static function wrapPublicKeyPem(string $key): string
+    {
+        if (str_contains($key, '-----BEGIN')) {
+            return $key;
+        }
+
+        return "-----BEGIN PUBLIC KEY-----\n" . wordwrap($key, 64, "\n", true) . "\n-----END PUBLIC KEY-----";
     }
 
     /**

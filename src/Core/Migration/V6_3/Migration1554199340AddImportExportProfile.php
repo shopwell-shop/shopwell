@@ -57,7 +57,6 @@ class Migration1554199340AddImportExportProfile extends MigrationStep
             'customerNumber',
             'salesChannelId',
             'birthday',
-            'salutationId',
             'salesChannelId',
             'defaultPaymentMethodId',
             'groupId',
@@ -65,7 +64,6 @@ class Migration1554199340AddImportExportProfile extends MigrationStep
         ];
         $addressFields = [
             'name',
-            'salutationId',
             'street',
             'zipcode',
             'city',
@@ -97,19 +95,6 @@ class Migration1554199340AddImportExportProfile extends MigrationStep
             'mapping' => json_encode($mapping, \JSON_THROW_ON_ERROR),
             'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
         ];
-    }
-
-    /**
-     * @return array<string, string>
-     */
-    private function getSalutationMap(Connection $connection): array
-    {
-        $result = [];
-        foreach ($connection->fetchAllAssociative('SELECT * FROM salutation') as $row) {
-            $result[(string) $row['salutation_key']] = Uuid::fromBytesToHex($row['id']);
-        }
-
-        return $result;
     }
 
     /**
@@ -163,7 +148,6 @@ class Migration1554199340AddImportExportProfile extends MigrationStep
     {
         return match ($propertyName) {
             'groupId' => $this->getCustomerGroupMap(),
-            'defaultBillingAddress.salutationId', 'defaultShippingAddress.salutationId', 'salutationId' => $this->getSalutationMap($connection),
             'defaultPaymentMethodId' => $this->getPaymentMethodMap($connection),
             'salesChannelId' => $this->getSalesChannelMap(),
             'defaultBillingAddress.countryId', 'defaultShippingAddress.countryId' => $this->getCountryMap($connection),

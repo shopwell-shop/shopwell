@@ -76,7 +76,7 @@ class ListAddressRouteTest extends TestCase
         static::assertSame('Schöppingen', $response['elements'][0]['city']);
         static::assertSame('12345', $response['elements'][0]['zipcode']);
         static::assertSame($this->getValidCountryId(), $response['elements'][0]['countryId']);
-        static::assertSame($this->getValidSalutationId(), $response['elements'][0]['salutation']['id']);
+        static::assertSame($this->getValidGender(), $response['elements'][0]['gender']);
         static::assertTrue($response['elements'][0]['isDefaultBillingAddress']);
         static::assertTrue($response['elements'][0]['isDefaultShippingAddress']);
     }
@@ -129,6 +129,6 @@ class ListAddressRouteTest extends TestCase
         static::assertSame('Schöppingen', $response['elements'][0]['city']);
         static::assertSame('12345', $response['elements'][0]['zipcode']);
         static::assertSame($this->getValidCountryId(), $response['elements'][0]['countryId']);
-        static::assertSame($this->getValidSalutationId(), $response['elements'][0]['salutation']['id']);
+        static::assertSame($this->getValidGender(), $response['elements'][0]['gender']);
     }
 }

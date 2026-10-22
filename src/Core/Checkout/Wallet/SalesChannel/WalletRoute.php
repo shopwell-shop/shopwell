@@ -84,7 +84,7 @@ class WalletRoute
             // the account page needs the form and the ledger in one call, so a reloaded page shows
             // a payment that is still open without asking the gateway again
             'topUps' => $this->topUpService->recent($customer->getId(), self::RECENT_TOP_UP_LIMIT, $context->getContext()),
-            'topUpOptions' => $this->topUpService->options($currency, $this->deviceOf($request)),
+            'topUpOptions' => $this->topUpService->options($currency, $this->deviceOf($request), $context->getSalesChannelId()),
         ];
 
         return new WalletRouteResponse(new ArrayStruct($data));

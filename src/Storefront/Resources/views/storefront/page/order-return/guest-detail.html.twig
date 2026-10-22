@@ -1,0 +1,10 @@
+{% sw_extends '@Storefront/storefront/base.html.twig' %}
+
+{% block base_content %}
+    <div class="container order-return-guest">
+        {% sw_include '@Storefront/storefront/page/account/order-return/_detail.html.twig' with {
+            actionPrefix: 'frontend.order-return.guest',
+            backPath: path('frontend.order-return.guest.page'),
+        } %}
+    </div>
+{% endblock %}

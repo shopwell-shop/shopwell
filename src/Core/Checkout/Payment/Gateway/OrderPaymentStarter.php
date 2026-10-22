@@ -9,6 +9,7 @@ use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Currency\CurrencyEntity;
 use Shopwell\Core\System\Payment\Api\Struct\PaymentOrderRequest;
 use Shopwell\Core\System\Payment\Api\Struct\PayParams;
+use Shopwell\Core\System\Payment\App\PaymentAppEntity;
 use Shopwell\Core\System\Payment\Gateway\PayResult;
 use Shopwell\Core\System\Payment\Order\Aggregate\PaymentTransaction\PaymentTransactionEntity;
 use Shopwell\Core\System\Payment\Order\PaymentOrderCapture;
@@ -68,12 +69,13 @@ final class OrderPaymentStarter
         OrderEntity $order,
         OrderTransactionEntity $transaction,
         PaymentChannel $channel,
+        PaymentAppEntity $app,
         string $returnUrl
     ): array {
-        // the platform collects through the very same gateway an app does, with the tenant the
-        // migration seeded for it - the first payment additionally authorizes the interface and
-        // offers the channel, so the shop's own payments need no onboarding by hand
-        $app = $this->platformApp->appForChannel($channel->technicalName);
+        // the app is the one the binding of the payment method names: the money is collected on its
+        // merchant account. For the tenant of the platform the first payment additionally authorizes
+        // the interface and offers the channel, so the shop's own payments need no onboarding by hand
+        $app = $this->platformApp->authorizeFor($app, $channel);
 
         $existing = $this->paymentOrderService->findLatestByOrderTransaction($transaction->getId());
 
@@ -90,7 +92,7 @@ final class OrderPaymentStarter
             }
         }
 
-        // the create is idempotent on (platform app, out trade number): when the order exists but the
+        // the create is idempotent on (app, out trade number): when the order exists but the
         // channel parameters could not be restored, the very same payment order is handed back and
         // only the capture is repeated
         $paymentOrder = $this->paymentOrderService->create(

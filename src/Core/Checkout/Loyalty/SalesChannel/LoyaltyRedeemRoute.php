@@ -10,13 +10,13 @@ use Shopwell\Core\Checkout\Loyalty\Cart\LoyaltyPointCartProcessor;
 use Shopwell\Core\Checkout\Loyalty\Extension\LoyaltyRedeemRouteExtension;
 use Shopwell\Core\Checkout\Loyalty\LoyaltyException;
 use Shopwell\Core\Checkout\Loyalty\Service\LoyaltyPointService;
+use Shopwell\Core\Checkout\Loyalty\Service\LoyaltySettings;
 use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Routing\StoreApiRouteScope;
 use Shopwell\Core\Framework\Struct\ArrayStruct;
 use Shopwell\Core\PlatformRequest;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
-use Shopwell\Core\System\SystemConfig\SystemConfigService;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
 
@@ -29,7 +29,7 @@ class LoyaltyRedeemRoute
      */
     public function __construct(
         private readonly LoyaltyPointService $loyaltyPointService,
-        private readonly SystemConfigService $systemConfigService,
+        private readonly LoyaltySettings $settings,
         private readonly CartService $cartService,
         private readonly CartLocker $cartLocker,
         private readonly ExtensionDispatcher $extensions,
@@ -76,7 +76,7 @@ class LoyaltyRedeemRoute
             return;
         }
 
-        $minimum = $this->systemConfigService->getInt(LoyaltyPointCartProcessor::CONFIG_KEY_MIN_REDEEMABLE, $context->getSalesChannelId());
+        $minimum = $this->settings->minRedeemablePoints($context->getSalesChannelId());
 
         if ($points < $minimum) {
             throw LoyaltyException::belowMinimumPoints($points, $minimum);

@@ -113,7 +113,7 @@ class PlatformPaymentAppTest extends TestCase
             ->appForChannel('alipay_h5');
 
         static::assertCount(1, $providerRepository->upserts);
-        static::assertSame(PaymentAppProviderEntity::MODE_PLATFORM, $providerRepository->upserts[0][0]['mode']);
+        static::assertNull($providerRepository->upserts[0][0]['sourceAppId']);
         static::assertTrue($providerRepository->upserts[0][0]['enabled']);
 
         static::assertCount(1, $channelRepository->creates);
@@ -273,7 +273,7 @@ class PlatformPaymentAppTest extends TestCase
         $provider->paymentAppId = self::APP_ID;
         $provider->providerTechnicalName = 'alipay';
         $provider->enabled = true;
-        $provider->mode = PaymentAppProviderEntity::MODE_PLATFORM;
+        $provider->sourceAppId = null;
         $provider->setUniqueIdentifier($provider->id);
 
         return $provider;

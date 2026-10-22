@@ -1,0 +1,54 @@
+{
+  "sw-settings-organization": {
+    "general": {
+      "mainMenuItemGeneral": "组织机构",
+      "description": "管理组织机构及其单元。",
+      "placeholderSearchBar": "搜索组织机构..."
+    },
+    "list": {
+      "textHeadline": "组织机构",
+      "buttonAddOrganization": "新建机构",
+      "columnName": "名称",
+      "columnUnits": "单元数",
+      "columnActive": "启用",
+      "labelName": "名称",
+      "placeholderName": "请输入名称...",
+      "labelActive": "启用",
+      "modalTitleCreate": "新建机构",
+      "messageEmpty": "暂无组织机构",
+      "messageSaveSuccess": "组织机构「{name}」已保存。",
+      "messageSaveError": "组织机构保存失败。",
+      "messageLoadError": "组织机构加载失败。",
+      "messageDeleteError": "组织机构删除失败，可能仍有用户归属该机构。",
+      "messageNameRequired": "请填写名称。",
+      "textDeleteConfirm": "确定删除组织机构「{name}」吗？其下单元将一并删除。"
+    },
+    "detail": {
+      "labelUnits": "组织单元",
+      "buttonAddUnit": "添加单元",
+      "buttonAddChildUnit": "添加下级单元",
+      "toggleUnit": "展开或收起「{name}」",
+      "labelUnitName": "名称",
+      "placeholderUnitName": "请输入名称...",
+      "labelParentUnit": "上级单元",
+      "placeholderParentUnit": "请选择上级单元...",
+      "helpTextParentUnit": "本单元及其下级单元不在候选之列，单元不会被移动到自身之下。",
+      "labelUnitActive": "启用",
+      "labelDangerZone": "危险操作",
+      "textDangerZone": "删除单元会同时删除其下级单元，归属该单元的用户将失去此归属。",
+      "buttonDeleteUnit": "删除单元",
+      "modalTitleCreateChild": "在「{name}」下添加下级单元",
+      "modalTitleCreateRoot": "添加单元",
+      "placeholderSearchTree": "搜索单元...",
+      "messageEmptyTree": "暂无组织单元",
+      "messageNoUnitSelected": "请选择单元",
+      "messageNoUnitSelectedDescription": "在左侧树中选择一个单元进行编辑。",
+      "messageUnitNameRequired": "请填写名称。",
+      "messageUnitSaveError": "单元保存失败。",
+      "messageUnitDeleteError": "单元删除失败。",
+      "messageLoadError": "组织机构加载失败。",
+      "textDeleteUnitConfirm": "确定删除单元「{name}」吗？其下级单元将一并删除。",
+      "errorCircularParent": "单元不能移动到自身或其下级单元之下。"
+    }
+  }
+}

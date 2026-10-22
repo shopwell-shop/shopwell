@@ -201,7 +201,6 @@ class StripeCaptureActionTest extends TestCase
                 params: [],
                 runtimeParams: [],
                 settings: $settings,
-                mode: 'own',
             ),
             'https://example.com/notify',
             'https://example.com/return',

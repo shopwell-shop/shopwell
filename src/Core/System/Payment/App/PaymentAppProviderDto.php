@@ -9,7 +9,9 @@ use Symfony\Component\Validator\Constraints as Assert;
  * One payment interface an app is authorized for, as sent by the administration.
  *
  * `credentials` are the plain values the app typed; they are sealed by the
- * {@see PaymentAppProvisioner} and never leave the server again.
+ * {@see PaymentAppProvisioner} and never leave the server again. They are only stored for an app that
+ * collects on its own account - `sourceAppId` is what decides that: it names the app whose account is
+ * charged instead, the tenant of the platform in particular, and `null` means "an account of my own".
  *
  * @internal
  */
@@ -24,7 +26,7 @@ readonly class PaymentAppProviderDto
         #[Assert\NotBlank]
         public ?string $providerTechnicalName = null,
         public bool $enabled = false,
-        public ?string $mode = null,
+        public ?string $sourceAppId = null,
         public array $credentials = [],
         public array $settings = [],
     ) {

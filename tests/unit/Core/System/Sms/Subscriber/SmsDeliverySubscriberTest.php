@@ -16,13 +16,17 @@ use Shopwell\Core\System\Sms\Event\SmsFailedEvent;
 use Shopwell\Core\System\Sms\Event\SmsSentEvent;
 use Shopwell\Core\System\Sms\Gateway\SmsGatewayCollection;
 use Shopwell\Core\System\Sms\Gateway\SmsGatewayEntity;
+use Shopwell\Core\System\Sms\SmsException;
 use Shopwell\Core\System\Sms\Struct\SmsMessageOptions;
 use Shopwell\Core\System\Sms\Subscriber\SmsDeliverySubscriber;
 use Shopwell\Core\System\Sms\Template\SmsTemplateCollection;
 use Shopwell\Core\System\Sms\Template\SmsTemplateEntity;
+use Shopwell\Core\System\Sms\Util\CountryDialCodeResolver;
+use Shopwell\Core\System\Sms\Util\PhoneNumberMasker;
 use Shopwell\Core\System\Sms\Util\PhoneNumberNormalizer;
+use Shopwell\Core\System\Sms\Util\ShippedCountryDialCodeProvider;
+use Shopwell\Core\System\Sms\Util\SmsSegmentCounter;
 use Shopwell\Core\Test\Stub\DataAbstractionLayer\StaticEntityRepository;
-use Shopwell\Core\Test\Stub\SystemConfigService\StaticSystemConfigService;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\Notifier\Event\FailedMessageEvent;
 use Symfony\Component\Notifier\Event\SentMessageEvent;
@@ -108,6 +112,26 @@ class SmsDeliverySubscriberTest extends TestCase
         static::assertSame(Hasher::hash('Your code is 123456.'), $record['contentHash']);
     }
 
+    public function testItRecordsAMessageWhoseNumberIsNoE164Number(): void
+    {
+        $gateway = $this->createGateway('log');
+        $deliveryRepository = $this->createDeliveryRepository();
+
+        $subscriber = $this->createSubscriber($deliveryRepository, [$gateway], []);
+
+        $subscriber->onSentMessage(new SentMessageEvent(
+            new SentMessage($this->createMessage($gateway, phone: '123456'), 'log')
+        ));
+
+        $record = $deliveryRepository->creates[0][0];
+
+        // a gateway that only logs takes the number, so the record names it instead of failing the send
+        static::assertSame('***', $record['phoneMasked']);
+        static::assertSame(Hasher::hash('123456'), $record['phoneHash']);
+        static::assertNull($record['countryCode']);
+        static::assertSame('sent', $record['status']);
+    }
+
     public function testItRecordsARefusedMessageAndWritesALogEntry(): void
     {
         $gateway = $this->createGateway('aliyun');
@@ -171,6 +195,57 @@ class SmsDeliverySubscriberTest extends TestCase
         static::assertNull($record['gatewayId']);
         static::assertSame('null', $record['technicalName']);
         static::assertSame('sent', $record['status']);
+    }
+
+    public function testItRecordsAMessageTheSenderCouldNotRouteAsFailed(): void
+    {
+        $gateway = $this->createGateway('null');
+        $deliveryRepository = $this->createDeliveryRepository();
+
+        $subscriber = $this->createSubscriber($deliveryRepository, [$gateway], []);
+
+        // the sender falls back to the null gateway when no gateway of the shop carries the country
+        // of the number, so the record has to say that nothing left the shop
+        $message = (new SmsMessage('+998901234567', 'hello', '', new SmsMessageOptions(
+            undeliverableReason: SmsException::NO_USABLE_GATEWAY,
+        )))->transport($gateway->id);
+
+        $subscriber->onSentMessage(new SentMessageEvent(new SentMessage($message, 'null')));
+
+        $record = $deliveryRepository->creates[0][0];
+
+        static::assertSame('failed', $record['status']);
+        static::assertSame(SmsException::NO_USABLE_GATEWAY, $record['errorCode']);
+        // a reason that names no wording of its own falls back to the sentence of the record
+        static::assertSame('No gateway of the shop accepts the country of the number.', $record['errorMessage']);
+        static::assertNull($record['sentAt']);
+        static::assertNotNull($record['failedAt']);
+        static::assertNull($record['countryCode']);
+    }
+
+    public function testItRecordsTheReasonTheSenderGaveForAMessageThatNeverLeft(): void
+    {
+        $gateway = $this->createGateway('null');
+        $deliveryRepository = $this->createDeliveryRepository();
+
+        $subscriber = $this->createSubscriber($deliveryRepository, [$gateway], []);
+
+        // the sender knew more than the code: the template of the shop is still in the audit of the
+        // provider, and the record must not send an operator looking for a routing problem
+        $reason = 'The sms template "customer.otp.login" is "pending" at "aliyun", only approved templates may be sent.';
+
+        $message = (new SmsMessage('+8613800000000', 'hello', '', new SmsMessageOptions(
+            undeliverableReason: SmsException::TEMPLATE_NOT_APPROVED,
+            undeliverableMessage: $reason,
+        )))->transport($gateway->id);
+
+        $subscriber->onSentMessage(new SentMessageEvent(new SentMessage($message, 'null')));
+
+        $record = $deliveryRepository->creates[0][0];
+
+        static::assertSame('failed', $record['status']);
+        static::assertSame(SmsException::TEMPLATE_NOT_APPROVED, $record['errorCode']);
+        static::assertSame($reason, $record['errorMessage']);
     }
 
     public function testItRecordsAVendorMessageThatCarriesNoOptions(): void
@@ -246,8 +321,10 @@ class SmsDeliverySubscriberTest extends TestCase
             $deliveryRepository,
             StaticEntityRepository::of(SmsGatewayCollection::class, array_fill(0, 4, $gatewayAnswer)),
             StaticEntityRepository::of(SmsTemplateCollection::class, [new SmsTemplateCollection($templates)]),
-            new PhoneNumberNormalizer(new StaticSystemConfigService()),
-            $connection ?? $this->createMock(Connection::class),
+            new PhoneNumberNormalizer(new CountryDialCodeResolver([new ShippedCountryDialCodeProvider()])),
+            new PhoneNumberMasker(),
+            new SmsSegmentCounter(),
+            $connection ?? static::createStub(Connection::class),
             $clock,
             $dispatcher ?? new EventDispatcher(),
         );
@@ -261,14 +338,17 @@ class SmsDeliverySubscriberTest extends TestCase
         return StaticEntityRepository::of(SmsDeliveryCollection::class, []);
     }
 
-    private function createMessage(SmsGatewayEntity $gateway, ?string $templateRef = null): SmsMessage
-    {
+    private function createMessage(
+        SmsGatewayEntity $gateway,
+        ?string $templateRef = null,
+        string $phone = '+8613800000000',
+    ): SmsMessage {
         $options = new SmsMessageOptions(
             scene: SmsTemplateEntity::SCENE_OTP,
             templateRef: $templateRef,
         );
 
-        return (new SmsMessage('+8613800000000', 'Your code is 123456.', '', $options))->transport($gateway->id);
+        return (new SmsMessage($phone, 'Your code is 123456.', '', $options))->transport($gateway->id);
     }
 
     private function createGateway(string $technicalName): SmsGatewayEntity
@@ -278,7 +358,6 @@ class SmsDeliverySubscriberTest extends TestCase
         $gateway->setUniqueIdentifier($gateway->id);
         $gateway->technicalName = $technicalName;
         $gateway->enabled = true;
-        $gateway->strategy = SmsGatewayEntity::STRATEGY_EXCLUSIVE;
 
         return $gateway;
     }

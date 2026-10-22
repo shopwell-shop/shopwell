@@ -90,17 +90,6 @@
                         />
                         {% endblock %}
 
-                        {% block sw_settings_sms_gateway_detail_strategy %}
-                        <mt-select
-                            v-model="gateway.strategy"
-                            class="sw-settings-sms-gateway-detail__strategy"
-                            name="strategy"
-                            :label="$t('sw-settings-sms.gateway.labelStrategy')"
-                            :options="strategyOptions"
-                            :disabled="!acl.can('sms_gateway.editor') || undefined"
-                        />
-                        {% endblock %}
-
                         {% block sw_settings_sms_gateway_detail_priority %}
                         <mt-number-field
                             v-model="gateway.priority"
@@ -134,6 +123,17 @@
                         :disabled="!acl.can('sms_gateway.editor') || undefined"
                         :label="$t('sw-settings-sms.gateway.labelEnabled')"
                         :help-text="$t('sw-settings-sms.gateway.labelEnabledHelpText')"
+                    />
+                    {% endblock %}
+
+                    {% block sw_settings_sms_gateway_detail_accept_unknown_region %}
+                    <mt-switch
+                        v-model="acceptUnknownRegion"
+                        class="sw-settings-sms-gateway-detail__accept-unknown-region"
+                        bordered
+                        :disabled="!acl.can('sms_gateway.editor') || undefined"
+                        :label="$t('sw-settings-sms.gateway.labelAcceptUnknownRegion')"
+                        :help-text="$t('sw-settings-sms.gateway.labelAcceptUnknownRegionHelpText')"
                     />
                     {% endblock %}
 

@@ -89,6 +89,9 @@ async function createWrapper({ featureActive = false } = {}) {
                 feature: {
                     isActive: (feature) => feature === 'v6.8.0.0' && featureActive,
                 },
+                dictionaryService: {
+                    getGenders: jest.fn(() => Promise.resolve([])),
+                },
             },
         },
         props: {
@@ -149,7 +152,7 @@ describe('src/module/sw-order/component/sw-order-address-modal', () => {
                 {
                     id: 'address-id',
                     company: 'Test company',
-                    salutation: null,
+                    gender: null,
                     street: 'Test street',
                     zipcode: '12345',
                     city: 'Test city',

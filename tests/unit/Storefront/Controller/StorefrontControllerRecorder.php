@@ -5,6 +5,7 @@ namespace Shopwell\Tests\Unit\Storefront\Controller;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Script\Execution\Hook;
 use Symfony\Component\HttpFoundation\RedirectResponse;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -49,10 +50,17 @@ final class StorefrontControllerRecorder
      */
     public array $flashBag = [];
 
+    /**
+     * The request the controller answered with an action response instead of a redirect, e.g. a
+     * successful ajax login. Null until the controller takes that branch.
+     */
+    public ?Request $actionResponseRequest = null;
+
     public function reset(): void
     {
         $this->flashBag = [];
         $this->redirected = [];
+        $this->actionResponseRequest = null;
     }
 
     /**
@@ -100,6 +108,13 @@ final class StorefrontControllerRecorder
     public function addFlash(string $type, mixed $message): void
     {
         $this->flashBag[$type][] = $message;
+    }
+
+    public function createActionResponse(Request $request): Response
+    {
+        $this->actionResponseRequest = $request;
+
+        return new Response('action response');
     }
 
     public function generateUrl(string $route): string

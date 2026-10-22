@@ -64,7 +64,8 @@ class PaymentChannelControllerTest extends TestCase
         static::assertSame('alipay_h5', $data['channels'][0]['channel']);
         static::assertSame('alipay', $data['channels'][0]['provider']);
         static::assertSame('redirect', $data['channels'][0]['flow']);
-        static::assertSame('platform', $data['channels'][0]['mode']);
+        static::assertNull($data['channels'][0]['source_app_id']);
+        static::assertFalse($data['channels'][0]['inherited']);
     }
 
     public function testAnInvalidSignatureIsRejected(): void

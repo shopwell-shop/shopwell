@@ -145,7 +145,7 @@ class Migration1589379060AddVariantCharacteristicsToEmailTemplates extends Migra
         return '<div style="font-family:arial; font-size:12px;">
 
 {% set currencyIsoCode = order.currency.isoCode %}
-{{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},<br>
+{{order.orderCustomer.name}},<br>
 <br>
 Thank you for your order at {{ salesChannel.name }} (Number: {{order.orderNumber}}) on {{ order.orderDateTime|date }}.<br>
 <br>
@@ -240,7 +240,7 @@ Thank you for your order at {{ salesChannel.name }} (Number: {{order.orderNumber
     private function getOrderConfirmationPlainTemplateEn(): string
     {
         return '{% set currencyIsoCode = order.currency.isoCode %}
-{{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},
+{{order.orderCustomer.name}},
 
 Thank you for your order at {{ salesChannel.name }} (Number: {{order.orderNumber}}) on {{ order.orderDateTime|date }}.
 
@@ -298,7 +298,7 @@ However, in case you have purchased without a registration or a customer account
         return '<div style="font-family:arial; font-size:12px;">
 
 {% set currencyIsoCode = order.currency.isoCode %}
-您好 {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},<br>
+您好 {{order.orderCustomer.name}},<br>
 <br>
 感谢您在 {{ salesChannel.name }} 下单（订单号：{{order.orderNumber}}），下单时间 {{ order.orderDateTime|date }}。<br>
 <br>
@@ -391,7 +391,7 @@ However, in case you have purchased without a registration or a customer account
     private function getOrderConfirmationPlainTemplateZhCn(): string
     {
         return '{% set currencyIsoCode = order.currency.isoCode %}
-您好 {{order.orderCustomer.salutation.letterName }} {{order.orderCustomer.name}},
+您好 {{order.orderCustomer.name}},
 
 感谢您在 {{ salesChannel.name }} 下单（订单号：{{order.orderNumber}}），下单时间 {{ order.orderDateTime|date }}。
 

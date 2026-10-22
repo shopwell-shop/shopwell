@@ -5,7 +5,6 @@ import errorConfig from '../../error-config.json';
  * @sw-package checkout
  */
 
-const { Defaults } = Shopwell;
 const { mapPropertyErrors } = Shopwell.Component.getComponentHelper();
 const { Criteria } = Shopwell.Data;
 const { CUSTOMER } = Shopwell.Constants;
@@ -14,7 +13,7 @@ const { CUSTOMER } = Shopwell.Constants;
 export default {
     template,
 
-    inject: ['feature'],
+    inject: ['feature', 'dictionaryService'],
 
     emits: ['sales-channel-change'],
 
@@ -25,15 +24,24 @@ export default {
         },
     },
 
+    data() {
+        return {
+            genders: [],
+        };
+    },
+
+    created() {
+        this.createdComponent();
+    },
+
     computed: {
         ...mapPropertyErrors('customer', errorConfig['sw.customer.detail.base'].customer),
 
-        salutationCriteria() {
-            const criteria = new Criteria(1, 25);
-
-            criteria.addFilter(Criteria.not('or', [Criteria.equals('id', Defaults.defaultSalutationId)]));
-
-            return criteria;
+        genderOptions() {
+            return this.genders.map((entry) => ({
+                value: entry.technicalName,
+                label: entry.translated.label,
+            }));
         },
 
         accountTypeOptions() {
@@ -73,6 +81,12 @@ export default {
     },
 
     methods: {
+        createdComponent() {
+            this.dictionaryService.getGenders(true, true).then((entries) => {
+                this.genders = entries;
+            });
+        },
+
         onSalesChannelChange(salesChannelId) {
             this.$emit('sales-channel-change', salesChannelId);
         },

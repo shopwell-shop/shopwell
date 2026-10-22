@@ -9,16 +9,15 @@ import ApiService from '../../../../core/service/api.service';
 
 const { Mixin, Defaults } = Shopwell;
 const { mapPropertyErrors } = Shopwell.Component.getComponentHelper();
-const { Criteria } = Shopwell.Data;
 const { CUSTOMER } = Shopwell.Constants;
 
 // eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
 export default {
     template,
 
-    inject: ['acl', 'contextStoreService', 'repositoryFactory'],
+    inject: ['acl', 'contextStoreService', 'repositoryFactory', 'dictionaryService'],
 
-    mixins: [Mixin.getByName('notification'), Mixin.getByName('salutation')],
+    mixins: [Mixin.getByName('notification')],
 
     props: {
         customer: {
@@ -45,6 +44,7 @@ export default {
         return {
             showImitateCustomerModal: false,
             showConvertCustomerModal: false,
+            genders: [],
         };
     },
 
@@ -70,7 +70,7 @@ export default {
 
         fullName() {
             const name = {
-                name: this.salutation(this.customer),
+                name: this.customer.name,
                 company: this.customer.company,
             };
 
@@ -80,12 +80,11 @@ export default {
                 .trim();
         },
 
-        salutationCriteria() {
-            const criteria = new Criteria(1, 25);
-
-            criteria.addFilter(Criteria.not('or', [Criteria.equals('id', Defaults.defaultSalutationId)]));
-
-            return criteria;
+        genderOptions() {
+            return this.genders.map((entry) => ({
+                value: entry.technicalName,
+                label: entry.translated.label,
+            }));
         },
 
         ...mapPropertyErrors('customer', [...errorConfig['sw.customer.detail.base'].customer]),
@@ -186,7 +185,17 @@ export default {
         },
     },
 
+    created() {
+        this.createdComponent();
+    },
+
     methods: {
+        createdComponent() {
+            this.dictionaryService.getGenders(true, true).then((entries) => {
+                this.genders = entries;
+            });
+        },
+
         getMailTo(mail) {
             return `mailto:${mail}`;
         },

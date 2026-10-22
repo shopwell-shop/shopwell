@@ -23,6 +23,7 @@ use Shopwell\Core\System\Payment\App\PaymentAppEntity;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationEntity;
 use Shopwell\Core\System\Payment\Order\Aggregate\PaymentTransaction\PaymentTransactionEntity;
 use Shopwell\Core\System\Payment\Order\Refund\PaymentRefundEntity;
+use Shopwell\Core\System\Payment\Security\PaymentGatewayTokenEntity;
 use Shopwell\Core\System\Payment\Webhook\PaymentWebhookDeliveryEntity;
 use Shopwell\Core\System\StateMachine\Aggregation\StateMachineState\StateMachineStateEntity;
 
@@ -210,11 +211,20 @@ class PaymentOrderEntity extends EntityStruct
      * The order of the checkout, deleted together with it like its transactions - a payment of a
      * deleted order can no longer be booked anywhere.
      */
-    #[ManyToOne(entity: 'order', onDelete: OnDelete::CASCADE, api: false)]
+    #[ManyToOne(entity: 'order', api: false)]
     public ?OrderEntity $order = null;
 
-    #[ManyToOne(entity: 'order_transaction', onDelete: OnDelete::CASCADE, api: false)]
+    #[ManyToOne(entity: 'order_transaction', api: false)]
     public ?OrderTransactionEntity $orderTransaction = null;
+
+    /**
+     * The access tokens issued for this order. They are deleted together with the order, a credential
+     * that outlives what it grants access to is worse than no credential at all.
+     *
+     * @var array<string, PaymentGatewayTokenEntity>|null
+     */
+    #[OneToMany(entity: 'payment_gateway_token', ref: 'order_id', onDelete: OnDelete::CASCADE, api: false)]
+    public ?array $gatewayTokens = null;
 
     /**
      * The attempts to pay this order, they only exist together with the order.

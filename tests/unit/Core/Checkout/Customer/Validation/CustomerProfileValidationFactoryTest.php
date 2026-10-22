@@ -6,15 +6,15 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Checkout\Customer\CustomerDefinition;
 use Shopwell\Core\Checkout\Customer\CustomerEntity;
+use Shopwell\Core\Checkout\Customer\Validation\Constraint\CustomerPhoneNumberUnique;
 use Shopwell\Core\Checkout\Customer\Validation\CustomerProfileValidationFactory;
 use Shopwell\Core\Defaults;
-use Shopwell\Core\Framework\DataAbstractionLayer\Validation\EntityExists;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Validation\Constraint\NoHtml;
 use Shopwell\Core\Framework\Validation\DataValidationDefinition;
+use Shopwell\Core\System\Dictionary\Aggregate\DictionaryEntry\DictionaryEntryDefinition;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
 use Shopwell\Core\System\SalesChannel\SalesChannelEntity;
-use Shopwell\Core\System\Salutation\SalutationDefinition;
 use Shopwell\Core\System\SystemConfig\SystemConfigService;
 use Shopwell\Core\Test\Generator;
 use Shopwell\Core\Test\Stub\SystemConfigService\StaticSystemConfigService;
@@ -54,7 +54,7 @@ class CustomerProfileValidationFactoryTest extends TestCase
         $salesChannelContext = $this->getSalesChannelContext();
         $actual = $customerProfileValidationFactory->create($salesChannelContext);
         $expected = new DataValidationDefinition('customer.profile.create');
-        $this->addConstraintsSalesChannelContext($expected, $salesChannelContext);
+        $this->addConstraintsSalesChannelContext($expected, $salesChannelContext, requireName: false);
 
         static::assertEquals($expected, $actual);
     }
@@ -73,7 +73,7 @@ class CustomerProfileValidationFactoryTest extends TestCase
         $salesChannelContext = $this->getSalesChannelContext();
         $actual = $customerProfileValidationFactory->create($salesChannelContext);
         $expected = new DataValidationDefinition('customer.profile.create');
-        $this->addConstraintsSalesChannelContext($expected, $salesChannelContext);
+        $this->addConstraintsSalesChannelContext($expected, $salesChannelContext, requireName: false);
 
         static::assertEquals($expected, $actual);
     }
@@ -95,7 +95,7 @@ class CustomerProfileValidationFactoryTest extends TestCase
         $salesChannelContext = $this->getSalesChannelContext();
         $actual = $customerProfileValidationFactory->create($salesChannelContext);
         $expected = new DataValidationDefinition('customer.profile.create');
-        $this->addConstraintsSalesChannelContext($expected, $salesChannelContext);
+        $this->addConstraintsSalesChannelContext($expected, $salesChannelContext, requireName: false);
 
         static::assertEquals($expected, $actual);
     }
@@ -117,7 +117,7 @@ class CustomerProfileValidationFactoryTest extends TestCase
         $salesChannelContext = $this->getSalesChannelContext();
         $actual = $customerProfileValidationFactory->create($salesChannelContext);
         $expected = new DataValidationDefinition('customer.profile.create');
-        $this->addConstraintsSalesChannelContext($expected, $salesChannelContext);
+        $this->addConstraintsSalesChannelContext($expected, $salesChannelContext, requireName: false);
         $this->addConstraintsBirthday($expected);
 
         static::assertEquals($expected, $actual);
@@ -211,7 +211,7 @@ class CustomerProfileValidationFactoryTest extends TestCase
 
         $properties = $customerProfileValidationFactory->create($this->getSalesChannelContext())->getProperties();
 
-        foreach (['title', 'name'] as $field) {
+        foreach (['name'] as $field) {
             static::assertArrayHasKey($field, $properties);
 
             $noHtml = array_values(array_filter($properties[$field], static fn ($constraint) => $constraint instanceof NoHtml));
@@ -219,6 +219,24 @@ class CustomerProfileValidationFactoryTest extends TestCase
             static::assertCount(1, $noHtml, \sprintf('Expected exactly one NoHtml constraint on "%s".', $field));
             static::assertSame('VIOLATION::CONTAINS_HTML_ERROR', $noHtml[0]->getMessage());
         }
+    }
+
+    public function testNameIsOnlyRequiredWhenUpdatingTheProfile(): void
+    {
+        $customerProfileValidationFactory = new CustomerProfileValidationFactory(
+            static::createStub(SystemConfigService::class),
+            $this->accountTypes,
+        );
+
+        $salesChannelContext = $this->getSalesChannelContext();
+
+        // the registration only requires email and password, so the name must not be mandatory
+        $createConstraints = $customerProfileValidationFactory->create($salesChannelContext)->getProperties()['name'];
+        static::assertCount(0, array_filter($createConstraints, static fn ($constraint) => $constraint instanceof NotBlank));
+
+        // the profile page offers the name as a mandatory field, which is why updating still requires it
+        $updateConstraints = $customerProfileValidationFactory->update($salesChannelContext)->getProperties()['name'];
+        static::assertCount(1, array_filter($updateConstraints, static fn ($constraint) => $constraint instanceof NotBlank));
     }
 
     private function getSalesChannelContext(): SalesChannelContext
@@ -232,18 +250,25 @@ class CustomerProfileValidationFactoryTest extends TestCase
         );
     }
 
-    private function addConstraintsSalesChannelContext(DataValidationDefinition $definition, SalesChannelContext $context): void
-    {
+    private function addConstraintsSalesChannelContext(
+        DataValidationDefinition $definition,
+        SalesChannelContext $context,
+        bool $requireName = true
+    ): void {
         $definition
-            ->add('salutationId', new EntityExists(entity: SalutationDefinition::ENTITY_NAME, context: $context->getContext()))
-            ->add('title', new Length(max: CustomerDefinition::MAX_LENGTH_TITLE))
-            ->add('name', new NotBlank())
+            ->add('gender', new Choice(choices: [DictionaryEntryDefinition::MALE, DictionaryEntryDefinition::FEMALE, DictionaryEntryDefinition::NOT_SPECIFIED]));
+
+        if ($requireName) {
+            $definition->add('name', new NotBlank());
+        }
+
+        $definition
             ->add('name', new Length(max: CustomerDefinition::MAX_LENGTH_NAME))
             ->add('accountType', new Choice(choices: $this->accountTypes))
             ->add('phoneNumber', new Length(max: CustomerDefinition::MAX_LENGTH_PHONE_NUMBER, exactMessage: 'VIOLATION::PHONE_NUMBER_IS_TOO_LONG'))
-            ->add('title', new NoHtml(message: 'VIOLATION::CONTAINS_HTML_ERROR'))
             ->add('name', new NoHtml(message: 'VIOLATION::CONTAINS_HTML_ERROR'))
-            ->add('phoneNumber', new NoHtml(message: 'VIOLATION::CONTAINS_HTML_ERROR'));
+            ->add('phoneNumber', new NoHtml(message: 'VIOLATION::CONTAINS_HTML_ERROR'))
+            ->add('phoneNumber', new CustomerPhoneNumberUnique(salesChannelContext: $context));
     }
 
     private function addConstraintsBirthday(DataValidationDefinition $definition): void

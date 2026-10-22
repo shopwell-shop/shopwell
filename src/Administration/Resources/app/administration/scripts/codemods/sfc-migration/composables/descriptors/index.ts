@@ -22,7 +22,6 @@ import PLACEHOLDER_DESCRIPTOR from './placeholder';
 import POSITION_DESCRIPTOR from './position';
 import RULE_BETWEEN_OPERATOR_DESCRIPTOR from './rule-between-operator';
 import RULE_CONTAINER_DESCRIPTOR from './rule-container';
-import SALUTATION_DESCRIPTOR from './salutation';
 import SW_INLINE_SNIPPET_DESCRIPTOR from './sw-inline-snippet';
 import TRANSLATE_WITH_FALLBACK_DESCRIPTOR from './translate-with-fallback';
 import USER_SETTINGS_DESCRIPTOR from './user-settings';
@@ -41,7 +40,6 @@ const COMPOSABLE_DESCRIPTORS: ComposableDescriptor[] = [
     POSITION_DESCRIPTOR,
     RULE_BETWEEN_OPERATOR_DESCRIPTOR,
     RULE_CONTAINER_DESCRIPTOR,
-    SALUTATION_DESCRIPTOR,
     SW_INLINE_SNIPPET_DESCRIPTOR,
     TRANSLATE_WITH_FALLBACK_DESCRIPTOR,
     USER_SETTINGS_DESCRIPTOR,

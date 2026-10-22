@@ -70,13 +70,10 @@ class CustomerBeforeDeleteSubscriber implements EventSubscriberInterface
 
         $criteria = (new Criteria($ids))
             ->addAssociations([
-                'salutation',
                 'defaultBillingAddress.country',
                 'defaultBillingAddress.countryState',
-                'defaultBillingAddress.salutation',
                 'defaultShippingAddress.country',
                 'defaultShippingAddress.countryState',
-                'defaultShippingAddress.salutation',
             ]);
 
         $customers = $this->customerRepository->search($criteria, $context)->getEntities();

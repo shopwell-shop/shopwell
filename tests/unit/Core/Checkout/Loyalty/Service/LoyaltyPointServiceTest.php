@@ -15,6 +15,7 @@ use Shopwell\Core\Checkout\Loyalty\Event\LoyaltyPointsRedeemedEvent;
 use Shopwell\Core\Checkout\Loyalty\LoyaltyException;
 use Shopwell\Core\Checkout\Loyalty\Service\LoyaltyLedger;
 use Shopwell\Core\Checkout\Loyalty\Service\LoyaltyPointService;
+use Shopwell\Core\Checkout\Loyalty\Service\LoyaltySettings;
 use Shopwell\Core\Checkout\Loyalty\Service\TierResolver;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\Log\Package;
@@ -75,14 +76,14 @@ class LoyaltyPointServiceTest extends TestCase
         $this->loyaltyPointService = new LoyaltyPointService(
             $this->customerLoyaltyRepository,
             $this->ledger,
-            $this->systemConfigService,
+            new LoyaltySettings($this->systemConfigService),
             $this->eventDispatcher,
             new MockClock(self::NOW),
             new TierResolver(
                 $this->tierRepository,
                 $this->customerLoyaltyRepository,
                 $this->customerRepository,
-                $this->systemConfigService,
+                new LoyaltySettings($this->systemConfigService),
                 $this->eventDispatcher,
                 new MockClock(self::NOW),
             ),
@@ -176,16 +177,28 @@ class LoyaltyPointServiceTest extends TestCase
         // the booking itself is observed on the local double of capturedExpiresAt()
         $this->ledger->expects($this->never())->method('bookPoints');
 
-        $this->systemConfigService->set(LoyaltyPointService::CONFIG_KEY_POINTS_VALIDITY_DAYS, 30);
+        $this->systemConfigService->set(LoyaltySettings::CONFIG_KEY_POINTS_VALIDITY_DAYS, 30);
 
         // the ledger decides nothing about expiry, the rule is passed in
         $expiresAt = $this->capturedExpiresAt();
         static::assertSame('2025-01-31', $expiresAt?->format('Y-m-d'));
     }
 
+    public function testAwardUsesTheConfiguredValidityWhenTheShopNeverSavedOne(): void
+    {
+        // the settings card shows 365 days, so an unsaved key must expire points after a year and not
+        // silently keep them forever
+        $this->ledger->expects($this->never())->method('bookPoints');
+
+        $expiresAt = $this->capturedExpiresAt();
+        static::assertSame('2026-01-01', $expiresAt?->format('Y-m-d'));
+    }
+
     public function testAwardWithoutValidityDoesNotSetExpiration(): void
     {
         $this->ledger->expects($this->never())->method('bookPoints');
+
+        $this->systemConfigService->set(LoyaltySettings::CONFIG_KEY_POINTS_VALIDITY_DAYS, 0);
 
         static::assertNull($this->capturedExpiresAt());
     }
@@ -318,14 +331,14 @@ class LoyaltyPointServiceTest extends TestCase
         $service = new LoyaltyPointService(
             $this->customerLoyaltyRepository,
             $ledger,
-            $this->systemConfigService,
+            new LoyaltySettings($this->systemConfigService),
             $this->eventDispatcher,
             new MockClock(self::NOW),
             new TierResolver(
                 $this->tierRepository,
                 $this->customerLoyaltyRepository,
                 $this->customerRepository,
-                $this->systemConfigService,
+                new LoyaltySettings($this->systemConfigService),
                 $this->eventDispatcher,
                 new MockClock(self::NOW),
             ),

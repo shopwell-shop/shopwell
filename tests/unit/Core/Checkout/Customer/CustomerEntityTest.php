@@ -22,7 +22,6 @@ use Shopwell\Core\Framework\DataAbstractionLayer\FieldVisibility;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Language\LanguageEntity;
 use Shopwell\Core\System\SalesChannel\SalesChannelEntity;
-use Shopwell\Core\System\Salutation\SalutationEntity;
 use Shopwell\Core\System\Tag\TagCollection;
 use Shopwell\Core\System\User\UserEntity;
 
@@ -46,7 +45,6 @@ class CustomerEntityTest extends TestCase
         $boundSalesChannel = new SalesChannelEntity();
         $language = new LanguageEntity();
         $paymentMethod = new PaymentMethodEntity();
-        $salutation = new SalutationEntity();
         $billingAddress = new CustomerAddressEntity();
         $shippingAddress = new CustomerAddressEntity();
         $activeBillingAddress = new CustomerAddressEntity();
@@ -75,11 +73,10 @@ class CustomerEntityTest extends TestCase
         $customer->setDefaultBillingAddressId('billing-address-id');
         $customer->setDefaultShippingAddressId('shipping-address-id');
         $customer->setCustomerNumber('10001');
-        $customer->setSalutationId('salutation-id');
+        $customer->setGender('female');
         $customer->setName('Ada Lovelace');
         $customer->setCompany('Analytical Engines');
         $customer->setEmail('ada@example.com');
-        $customer->setTitle('Dr.');
         $customer->setVatIds(['DE123456789']);
         $customer->setActive(true);
         $customer->setDoubleOptInRegistration(true);
@@ -98,7 +95,7 @@ class CustomerEntityTest extends TestCase
         $customer->setSalesChannel($salesChannel);
         $customer->setLanguage($language);
         $customer->setLastPaymentMethod($paymentMethod);
-        $customer->setSalutation($salutation);
+        $customer->setGender('female');
         $customer->setDefaultBillingAddress($billingAddress);
         $customer->setDefaultShippingAddress($shippingAddress);
         $customer->setActiveBillingAddress($activeBillingAddress);
@@ -132,12 +129,11 @@ class CustomerEntityTest extends TestCase
         static::assertSame('billing-address-id', $customer->getDefaultBillingAddressId());
         static::assertSame('shipping-address-id', $customer->getDefaultShippingAddressId());
         static::assertSame('10001', $customer->getCustomerNumber());
-        static::assertSame('salutation-id', $customer->getSalutationId());
+        static::assertSame('female', $customer->getGender());
         static::assertSame('Ada Lovelace', $customer->getName());
         static::assertSame('Ada Lovelace', (string) $customer);
         static::assertSame('Analytical Engines', $customer->getCompany());
         static::assertSame('ada@example.com', $customer->getEmail());
-        static::assertSame('Dr.', $customer->getTitle());
         static::assertSame(['DE123456789'], $customer->getVatIds());
         static::assertTrue($customer->getActive());
         static::assertTrue($customer->getDoubleOptInRegistration());
@@ -156,7 +152,6 @@ class CustomerEntityTest extends TestCase
         static::assertSame($salesChannel, $customer->getSalesChannel());
         static::assertSame($language, $customer->getLanguage());
         static::assertSame($paymentMethod, $customer->getLastPaymentMethod());
-        static::assertSame($salutation, $customer->getSalutation());
         static::assertSame($billingAddress, $customer->getDefaultBillingAddress());
         static::assertSame($shippingAddress, $customer->getDefaultShippingAddress());
         static::assertSame($activeBillingAddress, $customer->getActiveBillingAddress());

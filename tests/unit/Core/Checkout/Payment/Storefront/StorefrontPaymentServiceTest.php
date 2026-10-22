@@ -7,6 +7,7 @@ use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Checkout\Payment\PaymentException;
 use Shopwell\Core\Checkout\Payment\Storefront\PlatformPaymentApp;
 use Shopwell\Core\Checkout\Payment\Storefront\StorefrontPaymentService;
+use Shopwell\Core\Framework\Adapter\Translation\AbstractTranslator;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppChannel\PaymentAppChannelCollection;
@@ -95,6 +96,55 @@ class StorefrontPaymentServiceTest extends TestCase
         static::assertSame(PaymentFlow::REDIRECT->value, $channels[0]['flow']);
     }
 
+    public function testAChannelIsNamedInTheLanguageOfTheStorefront(): void
+    {
+        $service = $this->service(
+            $this->appRepository([$this->platformApp()]),
+            translator: $this->translator(['payment.channel.alipay_h5' => '支付宝（手机网页）'])
+        );
+
+        $channels = $service->channels('CNY', PaymentChannel::DEVICE_WEB);
+
+        static::assertSame('支付宝（手机网页）', $channels[0]['label']);
+    }
+
+    /**
+     * A provider names its channels for the administration, where the label is a snippet key of that
+     * interface. A payer must never be shown that key.
+     */
+    public function testAChannelWithoutStorefrontSnippetIsNamedByItsTechnicalName(): void
+    {
+        $this->providers = new PaymentProviderRegistry([
+            new PaymentProvider(
+                technicalName: 'alipay',
+                label: '支付宝',
+                credentials: [],
+                channels: [
+                    'alipay_h5' => new PaymentChannel(
+                        technicalName: 'alipay_h5',
+                        providerTechnicalName: 'alipay',
+                        label: 'sw-settings-payment-provider.channel.alipay_h5',
+                        flow: PaymentFlow::REDIRECT,
+                    ),
+                ],
+                gatewayFactory: static::createStub(PaymentGatewayFactory::class),
+                notificationExtractor: static::createStub(PaymentNotificationExtractorInterface::class),
+            ),
+        ]);
+        $this->channels = new PaymentChannelRegistry($this->providers);
+
+        $channels = $this->service($this->appRepository([$this->platformApp()]))->channels('CNY', PaymentChannel::DEVICE_WEB);
+
+        static::assertSame('Alipay H5', $channels[0]['label']);
+    }
+
+    public function testAProviderThatDeclaredAReadableLabelKeepsIt(): void
+    {
+        $channels = $this->service($this->appRepository([$this->platformApp()]))->channels('CNY', PaymentChannel::DEVICE_WEB);
+
+        static::assertSame('支付宝手机网站', $channels[0]['label']);
+    }
+
     public function testAChannelOfAnotherCurrencyIsNotOffered(): void
     {
         $channels = $this->service(
@@ -146,6 +196,7 @@ class StorefrontPaymentServiceTest extends TestCase
         StaticEntityRepository $appRepository,
         ?StaticEntityRepository $channelConfigRepository = null,
         ?StaticEntityRepository $providerConfigRepository = null,
+        ?AbstractTranslator $translator = null,
     ): StorefrontPaymentService {
         $configResolver = new PaymentConfigResolver(
             $this->providers,
@@ -183,7 +234,24 @@ class StorefrontPaymentServiceTest extends TestCase
                 new PaymentNotifyUrlBuilder(new RequestStack()),
                 new MockClock('2026-06-01 12:00:00'),
             ),
+            $translator ?? $this->translator([]),
         );
+    }
+
+    /**
+     * A translator that knows the keys it is given and answers the key itself for every other one,
+     * the way the storefront catalogue does.
+     *
+     * @param array<string, string> $snippets
+     */
+    private function translator(array $snippets): AbstractTranslator
+    {
+        $translator = static::createStub(AbstractTranslator::class);
+        $translator->method('trans')->willReturnCallback(
+            static fn (string $id): string => $snippets[$id] ?? $id
+        );
+
+        return $translator;
     }
 
     /**

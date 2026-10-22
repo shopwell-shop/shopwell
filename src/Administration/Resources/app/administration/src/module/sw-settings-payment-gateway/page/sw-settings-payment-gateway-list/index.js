@@ -2,8 +2,16 @@
  * @sw-package framework
  */
 import template from './sw-settings-payment-gateway-list.html.twig';
+import './sw-settings-payment-gateway-list.scss';
 
 const { Mixin } = Shopwell;
+
+/**
+ * The kind of row the platform itself collects through. It is seeded by the migration, listed here so
+ * a merchant can see which account the platform is paid to, and read only everywhere: the server
+ * refuses every write to it, this page only renders it.
+ */
+const PLATFORM_TYPE = 'platform';
 
 // eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
 export default {
@@ -33,14 +41,15 @@ export default {
         appColumns() {
             return [
                 {
-                    property: 'technicalName',
-                    label: 'sw-settings-payment-gateway.list.columnTechnicalName',
+                    property: 'name',
+                    label: 'sw-settings-payment-gateway.list.columnName',
                     primary: true,
                     allowResize: true,
                 },
                 {
-                    property: 'name',
-                    label: 'sw-settings-payment-gateway.list.columnName',
+                    property: 'active',
+                    label: 'sw-settings-payment-gateway.list.columnActive',
+                    align: 'center',
                     allowResize: true,
                 },
                 {
@@ -55,15 +64,14 @@ export default {
                     align: 'center',
                     allowResize: true,
                 },
-                {
-                    property: 'active',
-                    label: 'sw-settings-payment-gateway.list.columnActive',
-                    align: 'center',
-                    allowResize: true,
-                },
             ];
         },
 
+        /**
+         * The apps of the endpoint are a plain list, not an entity collection, so the search is done
+         * here. The technical name is searched as well even though it is not displayed: it is the id
+         * an external app identifies itself with, so an operator who has it in hand still finds the row.
+         */
         filteredApps() {
             const term = this.term.trim().toLowerCase();
 
@@ -72,22 +80,18 @@ export default {
             }
 
             return this.apps.filter((app) => {
-                return [app.technicalName, app.name]
+                return [app.name, app.technicalName]
                     .filter((value) => Boolean(value))
                     .some((value) => value.toLowerCase().includes(term));
             });
         },
 
-        canCreate() {
-            return this.acl.can('payment_app.creator');
-        },
-
-        canEdit() {
-            return this.acl.can('payment_app.editor');
-        },
-
-        canDelete() {
-            return this.acl.can('payment_app.deleter');
+        createButtonTooltip() {
+            return {
+                message: this.$t('sw-privileges.tooltip.warning'),
+                disabled: this.acl.can('payment_app.creator'),
+                showOnDisabledElements: true,
+            };
         },
     },
 
@@ -119,19 +123,42 @@ export default {
             this.term = term;
         },
 
-        onRefresh() {
-            return this.loadApps();
+        /**
+         * The row of the platform is read only: it has no detail page to open and no delete action.
+         * The server refuses both as well, so hiding them is what keeps the page honest instead of
+         * letting an operator run into a refusal.
+         */
+        isPlatformApp(app) {
+            return app?.type === PLATFORM_TYPE;
+        },
+
+        /**
+         * An app may be authorized for an interface without offering it, only the switched on ones
+         * are the interfaces the app can really collect through.
+         */
+        enabledProviderCount(app) {
+            return (app?.providers ?? []).filter((provider) => provider.enabled).length;
+        },
+
+        /**
+         * The channels the app offers to its own users - a channel that is not switched on cannot be
+         * chosen when a payment is started.
+         */
+        enabledChannelCount(app) {
+            return (app?.channels ?? []).filter((channel) => channel.enabled).length;
         },
 
         onCreate() {
             void this.$router.push({ name: 'sw.settings.payment.gateway.detail', params: { id: 'new' } });
         },
 
-        onEdit(app) {
-            void this.$router.push({ name: 'sw.settings.payment.gateway.detail', params: { id: app.id } });
-        },
-
         onOpenDeleteModal(app) {
+            // the action is not rendered for the platform row, but a row is also reachable through
+            // other entry points - the guard is what makes "read only" hold for all of them
+            if (this.isPlatformApp(app)) {
+                return;
+            }
+
             this.deleteTarget = app;
         },
 

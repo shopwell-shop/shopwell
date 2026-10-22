@@ -1,0 +1,51 @@
+{% block sw_blog_detail_content_video %}
+<div class="sw-blog-detail-content-video">
+    {% block sw_blog_detail_content_video_empty %}
+    <mt-empty-state
+        v-if="!video"
+        class="sw-blog-detail-content-video__empty"
+        icon="regular-box"
+        :headline="$t('sw-blog.detail.contentEmptyVideo')"
+    />
+    {% endblock %}
+
+    {% block sw_blog_detail_content_video_fields %}
+    <template v-else>
+        <mt-text-field
+            v-model="video.videoUrl"
+            class="sw-blog-detail-content-video__url"
+            :disabled="isDisabled"
+            :label="$t('sw-blog.detail.contentVideoUrl')"
+            :placeholder="$t('sw-blog.detail.contentVideoUrl')"
+        />
+
+        <mt-select
+            v-model:model-value="video.provider"
+            class="sw-blog-detail-content-video__provider"
+            :disabled="isDisabled"
+            :label="$t('sw-blog.detail.contentVideoProvider')"
+            :options="providerOptions"
+        />
+
+        <mt-number-field
+            v-model="video.durationSeconds"
+            class="sw-blog-detail-content-video__duration"
+            :disabled="isDisabled"
+            :label="$t('sw-blog.detail.contentVideoDuration')"
+        />
+
+        {% block sw_blog_detail_content_video_poster %}
+        <sw-media-compact-upload-v2
+            class="sw-blog-detail-content-video__poster"
+            :source="posterSource"
+            :label="$t('sw-blog.detail.contentVideoPoster')"
+            :disabled="isDisabled"
+            :allow-multi-select="false"
+            @selection-change="onPosterSelected"
+            @delete-item="onPosterRemoved"
+        />
+        {% endblock %}
+    </template>
+    {% endblock %}
+</div>
+{% endblock %}

@@ -32,9 +32,9 @@ use Shopwell\Core\Framework\Util\Hasher;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopwell\Core\PlatformRequest;
+use Shopwell\Core\System\Dictionary\Aggregate\DictionaryEntry\DictionaryEntryDefinition;
 use Shopwell\Core\System\SalesChannel\Aggregate\SalesChannelDomain\SalesChannelDomainCollection;
 use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextFactory;
-use Shopwell\Core\System\Salutation\SalutationDefinition;
 use Shopwell\Core\System\SystemConfig\SystemConfigService;
 use Shopwell\Core\Test\Integration\EventDispatcher\EventHookDispatcher;
 use Shopwell\Core\Test\Stub\Framework\IdsCollection;
@@ -1561,8 +1561,80 @@ class RegisterRouteTest extends TestCase
                 json_encode($registrationData, \JSON_THROW_ON_ERROR)
             );
 
+        static::assertSame(200, $this->browser->getResponse()->getStatusCode());
+
+        $response = json_decode((string) $this->browser->getResponse()->getContent(), true, 512, \JSON_THROW_ON_ERROR);
+        static::assertSame('customer', $response['apiAlias']);
+
+        $criteria = new Criteria([$response['id']]);
+        $criteria->addAssociation('addresses');
+
+        $customer = $this->customerRepository->search($criteria, Context::createDefaultContext())->getEntities()->first();
+        static::assertInstanceOf(CustomerEntity::class, $customer);
+
+        // the customer is valid without any address, the addresses are collected during checkout
+        static::assertNull($customer->getDefaultBillingAddressId());
+        static::assertNull($customer->getDefaultShippingAddressId());
+        static::assertNull($customer->getDefaultBillingAddress());
+        static::assertNull($customer->getDefaultShippingAddress());
+
+        $addresses = $customer->getAddresses();
+        static::assertNotNull($addresses);
+        static::assertCount(0, $addresses);
+
+        static::assertSame('Max Mustermann', $customer->getName());
+    }
+
+    public function testRegistrationWithoutAnyAddressAndWithoutName(): void
+    {
+        $registrationData = $this->getRegistrationData();
+        unset($registrationData['billingAddress']);
+        unset($registrationData['shippingAddress']);
+        unset($registrationData['name']);
+
+        $this->browser
+            ->request(
+                'POST',
+                '/store-api/account/register',
+                [],
+                [],
+                ['CONTENT_TYPE' => 'application/json'],
+                json_encode($registrationData, \JSON_THROW_ON_ERROR)
+            );
+
+        static::assertSame(200, $this->browser->getResponse()->getStatusCode());
+
         $response = json_decode((string) $this->browser->getResponse()->getContent(), true, 512, \JSON_THROW_ON_ERROR);
 
+        $criteria = new Criteria([$response['id']]);
+
+        $customer = $this->customerRepository->search($criteria, Context::createDefaultContext())->getEntities()->first();
+        static::assertInstanceOf(CustomerEntity::class, $customer);
+
+        // a customer account only requires email and password, the name falls back to the email local part
+        static::assertSame('teg-reg', $customer->getName());
+    }
+
+    public function testGuestRegistrationWithoutAnyAddress(): void
+    {
+        $registrationData = $this->getRegistrationData();
+        $registrationData['guest'] = true;
+        unset($registrationData['billingAddress']);
+        unset($registrationData['shippingAddress']);
+
+        $this->browser
+            ->request(
+                'POST',
+                '/store-api/account/register',
+                [],
+                [],
+                ['CONTENT_TYPE' => 'application/json'],
+                json_encode($registrationData, \JSON_THROW_ON_ERROR)
+            );
+
+        $response = json_decode((string) $this->browser->getResponse()->getContent(), true, 512, \JSON_THROW_ON_ERROR);
+
+        // guests order immediately, therefore the billing address stays mandatory for them
         static::assertNotCount(0, $response['errors']);
         static::assertSame('VIOLATION::IS_BLANK_ERROR', $response['errors'][0]['code']);
     }
@@ -1635,15 +1707,10 @@ class RegisterRouteTest extends TestCase
         static::assertSame(200, $this->browser->getResponse()->getStatusCode());
     }
 
-    public function testRegistrationWithExistingNotSpecifiedSalutation(): void
+    public function testRegistrationWithDefaultNotSpecifiedGender(): void
     {
-        $connection = static::getContainer()->get(Connection::class);
-
         $registrationData = $this->getRegistrationData();
-        unset($registrationData['salutationId']);
-
-        $salutations = $connection->fetchAllKeyValue('SELECT salutation_key, id FROM salutation');
-        static::assertArrayHasKey(SalutationDefinition::NOT_SPECIFIED, $salutations);
+        unset($registrationData['gender']);
 
         $this->browser
             ->request(
@@ -1657,32 +1724,19 @@ class RegisterRouteTest extends TestCase
 
         $response = json_decode((string) $this->browser->getResponse()->getContent(), true, 512, \JSON_THROW_ON_ERROR);
 
-        $criteria = new Criteria([$response['id']]);
-        $criteria->addAssociation('salutation');
-
-        $customer = $this->customerRepository->search($criteria, Context::createDefaultContext())->getEntities()->first();
+        $customer = $this->customerRepository->search(new Criteria([$response['id']]), Context::createDefaultContext())->getEntities()->first();
 
         static::assertInstanceOf(CustomerEntity::class, $customer);
 
-        static::assertSame($customer->getSalutation()?->getSalutationKey(), SalutationDefinition::NOT_SPECIFIED);
+        static::assertSame($customer->getGender(), DictionaryEntryDefinition::NOT_SPECIFIED);
     }
 
-    public function testRegistrationToNotSpecifiedWithoutExistingSalutation(): void
+    public function testRegistrationToNotSpecifiedWithoutSubmittedGender(): void
     {
         $connection = static::getContainer()->get(Connection::class);
 
         $registrationData = $this->getRegistrationData();
-        unset($registrationData['salutationId']);
-
-        $connection->executeStatement(
-            '
-					DELETE FROM salutation WHERE salutation_key = :salutationKey
-				',
-            ['salutationKey' => SalutationDefinition::NOT_SPECIFIED]
-        );
-
-        $salutations = $connection->fetchAllKeyValue('SELECT salutation_key, id FROM salutation');
-        static::assertArrayNotHasKey(SalutationDefinition::NOT_SPECIFIED, $salutations);
+        unset($registrationData['gender']);
 
         $this->browser
             ->request(
@@ -1696,7 +1750,12 @@ class RegisterRouteTest extends TestCase
 
         $response = json_decode((string) $this->browser->getResponse()->getContent(), true, 512, \JSON_THROW_ON_ERROR);
 
-        static::assertNull($response['salutationId'], (string) $this->browser->getResponse()->getContent());
+        $customerGender = $connection->fetchOne(
+            'SELECT gender FROM customer WHERE id = UNHEX(:customerId)',
+            ['customerId' => $response['id']]
+        );
+
+        static::assertSame(DictionaryEntryDefinition::NOT_SPECIFIED, $customerGender, (string) $this->browser->getResponse()->getContent());
     }
 
     public function testRegistrationWithIdnEmail(): void
@@ -1883,7 +1942,7 @@ class RegisterRouteTest extends TestCase
     private function getRegistrationData(string $storefrontUrl = 'http://localhost'): array
     {
         return [
-            'salutationId' => $this->getValidSalutationId(),
+            'gender' => $this->getValidGender(),
             'name' => 'Max Mustermann',
             'password' => '12345678',
             'email' => 'teg-reg@example.com',
@@ -1904,7 +1963,7 @@ class RegisterRouteTest extends TestCase
                 'additionalAddressLine2' => 'Additional address line 2',
             ],
             'shippingAddress' => [
-                'salutationId' => $this->getValidSalutationId(),
+                'gender' => $this->getValidGender(),
                 'countryId' => $this->getValidCountryId($this->ids->get('sales-channel')),
                 'name' => 'Test 2 Example 2',
                 'title' => 'Prof.',
@@ -1926,7 +1985,7 @@ class RegisterRouteTest extends TestCase
         $customer = [
             'id' => $customerId,
             'number' => '1337',
-            'salutationId' => $this->getValidSalutationId(),
+            'gender' => $this->getValidGender(),
             'name' => 'Max Mustermann',
             'customerNumber' => '1337',
             'email' => $email,
@@ -1941,7 +2000,7 @@ class RegisterRouteTest extends TestCase
                     'id' => $addressId,
                     'customerId' => $customerId,
                     'countryId' => $this->getValidCountryId(),
-                    'salutationId' => $this->getValidSalutationId(),
+                    'gender' => $this->getValidGender(),
                     'name' => 'Max Mustermann',
                     'street' => 'Ebbinghoff 10',
                     'zipcode' => '48624',

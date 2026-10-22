@@ -78,10 +78,6 @@ export default Shopwell.Component.wrapComponentConfig({
                     property: 'priority',
                     label: 'sw-settings-sms.gateway.columnPriority',
                 },
-                {
-                    property: 'strategy',
-                    label: 'sw-settings-sms.gateway.columnStrategy',
-                },
             ];
         },
 
@@ -115,12 +111,6 @@ export default Shopwell.Component.wrapComponentConfig({
          */
         gatewayName(gateway: EntitySchema.Entity<'sms_gateway'>): string {
             return gateway.label || this.providerLabel(gateway.technicalName);
-        },
-
-        strategyLabel(strategy: string): string {
-            const snippet = `sw-settings-sms.gateway.strategy.${strategy}`;
-
-            return this.$te(snippet) ? this.$t(snippet) : strategy;
         },
 
         async getList(): Promise<void> {

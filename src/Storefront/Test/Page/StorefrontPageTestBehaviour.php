@@ -300,7 +300,7 @@ trait StorefrontPageTestBehaviour
                 'street' => 'Musterstraße 1',
                 'city' => 'Schöppingen',
                 'zipcode' => '12345',
-                'salutationId' => $this->getValidSalutationId(),
+                'gender' => $this->getValidGender(),
                 'country' => ['id' => $this->getValidCountryId()],
             ],
             'defaultBillingAddressId' => $addressId,
@@ -308,7 +308,7 @@ trait StorefrontPageTestBehaviour
             'email' => $customerId . '@example.com',
             'password' => 'password',
             'name' => 'Max Mustermann',
-            'salutationId' => $this->getValidSalutationId(),
+            'gender' => $this->getValidGender(),
             'customerNumber' => $customerId,
         ];
 

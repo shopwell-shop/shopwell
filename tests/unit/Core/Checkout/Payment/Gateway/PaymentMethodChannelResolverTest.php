@@ -9,6 +9,8 @@ use Shopwell\Core\Checkout\Payment\Aggregate\PaymentMethodGatewayChannel\Payment
 use Shopwell\Core\Checkout\Payment\Gateway\PaymentMethodChannelResolver;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Payment\PaymentException;
 use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannelRegistry;
@@ -29,6 +31,26 @@ class PaymentMethodChannelResolverTest extends TestCase
         $resolver = $this->resolver(PaymentGatewayFixture::repository([$binding]));
 
         static::assertSame($binding, $resolver->resolve(self::PAYMENT_METHOD_ID, Context::createDefaultContext()));
+    }
+
+    /**
+     * The checkout collects on the account of the app, so the app comes with the binding instead of
+     * being read a second time.
+     */
+    public function testResolveAsksForTheAppOfTheBinding(): void
+    {
+        $repository = static::createStub(EntityRepository::class);
+        $repository->method('search')->willReturnCallback(static function (Criteria $criteria): EntitySearchResult {
+            static::assertArrayHasKey('paymentApp', $criteria->getAssociations());
+
+            return PaymentGatewayFixture::searchResult([]);
+        });
+
+        $resolver = $this->resolver($repository);
+
+        $this->expectExceptionObject(PaymentException::paymentMethodChannelMissing(self::PAYMENT_METHOD_ID));
+
+        $resolver->resolve(self::PAYMENT_METHOD_ID, Context::createDefaultContext());
     }
 
     public function testResolveThrowsWhenThePaymentMethodHasNoChannel(): void
@@ -68,7 +90,7 @@ class PaymentMethodChannelResolverTest extends TestCase
         $binding->id = 'binding-id';
         $binding->setUniqueIdentifier($binding->id);
         $binding->paymentMethodId = self::PAYMENT_METHOD_ID;
-        $binding->providerTechnicalName = PaymentGatewayFixture::PROVIDER;
+        $binding->paymentAppId = PaymentGatewayFixture::PLATFORM_APP_ID;
         $binding->channelTechnicalName = PaymentGatewayFixture::CHANNEL;
 
         return $binding;

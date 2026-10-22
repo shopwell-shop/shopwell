@@ -14,6 +14,7 @@ use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
 use Shopwell\Core\System\Payment\Gateway\RefundResult;
 use Shopwell\Core\System\Payment\Order\Refund\PaymentRefundStates;
 use Shopwell\Core\System\Payment\PaymentException;
+use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
 
 /**
  * Refunds a captured paypal payment.
@@ -34,6 +35,11 @@ final class PaypalRefundAction extends AbstractPaymentAction
     final public const FAILED_STATUSES = [RefundStatus::FAILED, RefundStatus::CANCELLED];
 
     protected string $apiClass = PaypalApi::class;
+
+    public function capability(): PaymentCapability
+    {
+        return PaymentCapability::REFUND;
+    }
 
     public function execute($request): void
     {

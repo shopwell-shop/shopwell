@@ -13,7 +13,6 @@ use Shopwell\Core\System\Country\Aggregate\CountryCity\CountryCityEntity;
 use Shopwell\Core\System\Country\Aggregate\CountryDistrict\CountryDistrictEntity;
 use Shopwell\Core\System\Country\Aggregate\CountryState\CountryStateEntity;
 use Shopwell\Core\System\Country\CountryEntity;
-use Shopwell\Core\System\Salutation\SalutationEntity;
 
 /**
  * @codeCoverageIgnore
@@ -32,7 +31,7 @@ class OrderAddressEntity extends Entity
 
     protected ?string $countryDistrictId = null;
 
-    protected ?string $salutationId = null;
+    protected ?string $gender = null;
 
     protected string $name;
 
@@ -45,8 +44,6 @@ class OrderAddressEntity extends Entity
     protected ?string $company = null;
 
     protected ?string $department = null;
-
-    protected ?string $title = null;
 
     /**
      * @deprecated tag:v6.8.0 - Will be removed
@@ -70,8 +67,6 @@ class OrderAddressEntity extends Entity
     protected ?OrderEntity $order = null;
 
     protected ?OrderEntity $billingAddressOrder = null;
-
-    protected ?SalutationEntity $salutation = null;
 
     protected ?OrderDeliveryCollection $orderDeliveries = null;
 
@@ -121,14 +116,14 @@ class OrderAddressEntity extends Entity
         $this->countryDistrictId = $countryDistrictId;
     }
 
-    public function getSalutationId(): ?string
+    public function getGender(): ?string
     {
-        return $this->salutationId;
+        return $this->gender;
     }
 
-    public function setSalutationId(string $salutationId): void
+    public function setGender(?string $gender): void
     {
-        $this->salutationId = $salutationId;
+        $this->gender = $gender;
     }
 
     public function getName(): string
@@ -189,16 +184,6 @@ class OrderAddressEntity extends Entity
     public function setDepartment(?string $department): void
     {
         $this->department = $department;
-    }
-
-    public function getTitle(): ?string
-    {
-        return $this->title;
-    }
-
-    public function setTitle(?string $title): void
-    {
-        $this->title = $title;
     }
 
     /**
@@ -315,16 +300,6 @@ class OrderAddressEntity extends Entity
     public function setBillingAddressOrder(?OrderEntity $billingAddressOrder): void
     {
         $this->billingAddressOrder = $billingAddressOrder;
-    }
-
-    public function getSalutation(): ?SalutationEntity
-    {
-        return $this->salutation;
-    }
-
-    public function setSalutation(SalutationEntity $salutation): void
-    {
-        $this->salutation = $salutation;
     }
 
     public function getOrderDeliveries(): ?OrderDeliveryCollection

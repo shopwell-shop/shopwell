@@ -8,6 +8,15 @@ import template from './sw-settings-sms-gateway-detail.html.twig';
 const { Mixin } = Shopwell;
 
 /**
+ * The custom field that says a gateway also takes a number whose country the shop does not know.
+ *
+ * It is a custom field and not a column, because it belongs to the routing of one installation the
+ * way the credentials of an account do - and not into the options, which are handed to the provider
+ * as they are.
+ */
+const CUSTOM_FIELD_ACCEPT_UNKNOWN_REGION = 'sms_accept_unknown_region';
+
+/**
  * The form field type of a credential type. What a value is lies with the provider, how it is typed
  * in lies with the administration - a secret is a password input, a structure is a text area.
  */
@@ -50,6 +59,7 @@ export default Shopwell.Component.wrapComponentConfig({
         providers: SmsGatewayProvider[];
         credentialValues: Record<string, string | boolean>;
         optionsText: string;
+        acceptUnknownRegion: boolean;
         isLoading: boolean;
         isSaving: boolean;
     } {
@@ -58,6 +68,7 @@ export default Shopwell.Component.wrapComponentConfig({
             providers: [],
             credentialValues: {},
             optionsText: '',
+            acceptUnknownRegion: false,
             isLoading: true,
             isSaving: false,
         };
@@ -91,15 +102,6 @@ export default Shopwell.Component.wrapComponentConfig({
                 return {
                     value: entry.technicalName,
                     label: this.providerLabel(entry),
-                };
-            });
-        },
-
-        strategyOptions(): Array<{ value: string; label: string }> {
-            return ['exclusive', 'failover', 'round_robin'].map((strategy) => {
-                return {
-                    value: strategy,
-                    label: this.$t(`sw-settings-sms.gateway.strategy.${strategy}`),
                 };
             });
         },
@@ -144,7 +146,6 @@ export default Shopwell.Component.wrapComponentConfig({
                     const gateway = this.gatewayRepository.create();
                     gateway.enabled = true;
                     gateway.priority = 0;
-                    gateway.strategy = 'exclusive';
                     gateway.technicalName = this.providers[0]?.technicalName ?? '';
 
                     this.gateway = gateway;
@@ -173,6 +174,35 @@ export default Shopwell.Component.wrapComponentConfig({
 
             this.gateway = await this.gatewayRepository.get(this.gatewayId, Shopwell.Context.api);
             this.optionsText = this.gateway?.options ? JSON.stringify(this.gateway.options, null, 2) : '';
+            this.acceptUnknownRegion = this.storedAcceptUnknownRegion();
+        },
+
+        /**
+         * The routing flag is kept in the custom fields of the row, which are an opaque bag - a row
+         * that was never saved carries none, and then the gateway does not take unknown countries.
+         */
+        storedAcceptUnknownRegion(): boolean {
+            const customFields = this.gateway?.customFields;
+
+            if (!customFields || typeof customFields !== 'object') {
+                return false;
+            }
+
+            return (customFields as Record<string, unknown>)[CUSTOM_FIELD_ACCEPT_UNKNOWN_REGION] === true;
+        },
+
+        /**
+         * Writes the routing flag into the custom fields and keeps everything else that is in them:
+         * the answers of the audit of this module live there as well.
+         */
+        collectCustomFields(): Record<string, unknown> {
+            const customFields = this.gateway?.customFields;
+            const collected: Record<string, unknown> =
+                customFields && typeof customFields === 'object' ? { ...(customFields as Record<string, unknown>) } : {};
+
+            collected[CUSTOM_FIELD_ACCEPT_UNKNOWN_REGION] = this.acceptUnknownRegion;
+
+            return collected;
         },
 
         /**
@@ -284,6 +314,9 @@ export default Shopwell.Component.wrapComponentConfig({
             try {
                 this.gateway.credentials = this.collectCredentials();
                 this.gateway.options = options;
+                // the routing flag of the shop belongs to the row, not to the connection options the
+                // provider is called with
+                this.gateway.customFields = this.collectCustomFields();
 
                 await this.gatewayRepository.save(this.gateway);
 

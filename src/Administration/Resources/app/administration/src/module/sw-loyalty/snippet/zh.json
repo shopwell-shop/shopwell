@@ -87,39 +87,12 @@
         "activated": "已生效",
         "failed": "失败"
       }
-    },
-    "topUp": {
-      "general": {
-        "mainMenuItemGeneral": "钱包充值单"
-      },
-      "list": {
-        "cardTitle": "钱包充值单",
-        "placeholderSearchBar": "搜索充值单...",
-        "columnCustomer": "客户",
-        "columnAmount": "金额",
-        "columnState": "状态",
-        "columnChannel": "支付通道",
-        "columnCreatedAt": "创建时间",
-        "columnCreditedAt": "入账时间",
-        "labelFilterState": "状态",
-        "filterStateAll": "全部状态",
-        "emptyStateHeadline": "还没有充值单"
-      },
-      "state": {
-        "open": "待支付",
-        "paid": "已支付",
-        "credited": "已入账",
-        "failed": "失败"
-      }
     }
   },
   "sw-privileges": {
     "permissions": {
       "loyalty": {
         "label": "会员积分"
-      },
-      "wallet": {
-        "label": "客户钱包"
       }
     }
   }

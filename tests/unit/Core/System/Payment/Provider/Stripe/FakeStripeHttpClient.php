@@ -10,9 +10,10 @@ use Stripe\HttpClient\ClientInterface;
  * request (method, path, headers, params) and answers from a canned map of path to status and body,
  * so the actions are driven end to end without a network.
  *
- * @internal
+ * It carries logic of its own (the recording, the lookup of an answer, the parsing of a header), so
+ * it is exercised directly by FakeStripeHttpClientTest and must not be excluded from coverage.
  *
- * @codeCoverageIgnore
+ * @internal
  */
 #[Package('framework')]
 final class FakeStripeHttpClient implements ClientInterface
@@ -23,10 +24,23 @@ final class FakeStripeHttpClient implements ClientInterface
     public array $answers = [];
 
     /**
-     * @var list<array{method: string, path: string, headers: list<string>, params: array<string, mixed>}>
+     * @var list<array{method: string, path: string, headers: list<string>, params: array<array-key, mixed>}>
      */
     private array $requests = [];
 
+    /**
+     * Records the request and answers it from {@see self::$answers}.
+     *
+     * @param 'delete'|'get'|'post' $method
+     * @param string $absUrl
+     * @param array<array-key, mixed> $headers
+     * @param array<array-key, mixed> $params
+     * @param bool $hasFile
+     * @param 'v1'|'v2' $apiMode
+     * @param int|null $maxNetworkRetries
+     *
+     * @return array{0: string, 1: int, 2: array<string, list<string>>}
+     */
     public function request($method, $absUrl, $headers, $params, $hasFile, $apiMode = 'v1', $maxNetworkRetries = null)
     {
         $path = (string) (parse_url((string) $absUrl, \PHP_URL_PATH) ?: '');

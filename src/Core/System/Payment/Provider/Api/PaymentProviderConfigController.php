@@ -28,10 +28,10 @@ use Symfony\Component\Routing\Attribute\Route;
  * `payment-provider.xml` of the interface, so an interface of an extension is configurable without
  * touching the administration at all.
  *
- * The credentials never leave the server: a field marked as secret is never echoed back, the endpoint
- * only reports whether a value is stored, and everything it stores is sealed with the same cipher the
- * gateway reads with. Fields that are not secret are echoed back, so an operator can see which merchant
- * account an interface runs on. The sealing and the writing itself live in the
+ * The stored values are echoed back, secret ones included, so an operator can read the merchant
+ * account an interface runs on and correct a single field without retyping the rest. What is stored
+ * stays sealed with the same cipher the gateway reads with: the plain text only exists in the answer
+ * to this endpoint, never in the database. The sealing and the writing itself live in the
  * {@see PaymentProviderConfigService}, this controller only translates between the request and the
  * presentation.
  *
@@ -235,9 +235,10 @@ class PaymentProviderConfigController extends AbstractController
     /**
      * The fields of a configuration as the form renders them.
      *
-     * A secret field is never echoed back - the form starts empty and only learns whether a value is
-     * stored. Every other field is handed over with its stored value, so the operator sees what the
-     * interface runs on.
+     * Every field carries its stored value, secret ones included: the form is a place to read and to
+     * correct, and a field that starts empty forces the operator to retype values they cannot look up
+     * anywhere. `configured` stays, so a field that has no value yet is still distinguishable from one
+     * whose value happens to be empty.
      *
      * @param list<PaymentConfigField> $fields
      * @param array<string, mixed> $values
@@ -253,7 +254,7 @@ class PaymentProviderConfigController extends AbstractController
             $hasValue = \is_scalar($stored) && (string) $stored !== '';
 
             $presented[] = $field->toArray() + [
-                'value' => $field->secret ? null : ($hasValue ? (string) $stored : null),
+                'value' => $hasValue ? (string) $stored : null,
                 'configured' => $hasValue,
             ];
         }

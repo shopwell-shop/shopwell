@@ -13,7 +13,7 @@ use Shopwell\Core\Framework\Log\Package;
 
 /**
  * The platform wide merchant credentials of a payment interface (alipay, wechat pay, …), used by the
- * apps that run in `mode` platform.
+ * apps whose account source is the tenant of the platform - the root of every inheritance chain.
  *
  * One row per payment interface and not per channel: an alipay application covers every product of
  * alipay, so the mobile web payment and the qr code payment share the very same keys. Adding a product

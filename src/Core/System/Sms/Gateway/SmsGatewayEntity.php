@@ -33,10 +33,6 @@ class SmsGatewayEntity extends EntityStruct
 
     final public const ENTITY_NAME = 'sms_gateway';
 
-    final public const STRATEGY_EXCLUSIVE = 'exclusive';
-    final public const STRATEGY_FAILOVER = 'failover';
-    final public const STRATEGY_ROUND_ROBIN = 'round_robin';
-
     #[PrimaryKey]
     #[Field(type: FieldType::UUID, api: ['admin-api' => true, 'store-api' => false])]
     public string $id;
@@ -64,14 +60,11 @@ class SmsGatewayEntity extends EntityStruct
     public ?string $salesChannelId = null;
 
     /**
-     * The order of the candidates during failover, the lower the earlier.
+     * The order of the candidates, the lower the earlier. A message is sent over the first
+     * candidate only, the module does not retry the next one.
      */
     #[Field(type: FieldType::INT, api: ['admin-api' => true, 'store-api' => false])]
     public int $priority = 0;
-
-    #[Required]
-    #[Field(type: FieldType::STRING, api: ['admin-api' => true, 'store-api' => false], maxLength: 32)]
-    public string $strategy = self::STRATEGY_EXCLUSIVE;
 
     /**
      * The credentials of the provider, e.g. ['accessKeyId' => '…', 'accessKeySecret' => '…'].

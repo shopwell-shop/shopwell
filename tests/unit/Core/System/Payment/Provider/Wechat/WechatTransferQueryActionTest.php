@@ -324,7 +324,6 @@ class WechatTransferQueryActionTest extends TestCase
                 params: [WechatApi::PARAM_APP_ID => 'wx-app-id'],
                 runtimeParams: [],
                 settings: [],
-                mode: 'live',
             ),
             '',
             '',

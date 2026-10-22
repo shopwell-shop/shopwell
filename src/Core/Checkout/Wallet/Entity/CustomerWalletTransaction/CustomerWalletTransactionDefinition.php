@@ -12,6 +12,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\Required;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\FloatField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\IdField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\ManyToOneAssociationField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\ReferenceVersionField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\StringField;
 use Shopwell\Core\Framework\DataAbstractionLayer\FieldCollection;
 use Shopwell\Core\Framework\Log\Package;
@@ -59,6 +60,7 @@ class CustomerWalletTransactionDefinition extends EntityDefinition
 
             (new FkField('currency_id', 'currencyId', CurrencyDefinition::class))->addFlags(new ApiAware()),
             (new FkField('order_id', 'orderId', OrderDefinition::class))->addFlags(new ApiAware()),
+            (new ReferenceVersionField(OrderDefinition::class, 'order_version_id'))->addFlags(new ApiAware()),
             (new StringField('external_reference', 'externalReference'))->addFlags(new ApiAware()),
             (new StringField('comment', 'comment'))->addFlags(new ApiAware()),
             (new FkField('administrator_id', 'administratorId', UserDefinition::class))->addFlags(new ApiAware()),

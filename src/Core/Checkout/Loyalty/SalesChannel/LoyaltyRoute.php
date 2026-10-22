@@ -4,12 +4,12 @@ namespace Shopwell\Core\Checkout\Loyalty\SalesChannel;
 
 use Psr\Clock\ClockInterface;
 use Shopwell\Core\Checkout\Customer\CustomerEntity;
-use Shopwell\Core\Checkout\Loyalty\Cart\LoyaltyPointCartProcessor;
 use Shopwell\Core\Checkout\Loyalty\Entity\CustomerLoyalty\CustomerLoyaltyCollection;
 use Shopwell\Core\Checkout\Loyalty\Entity\CustomerLoyalty\CustomerLoyaltyEntity;
 use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyTier\LoyaltyTierCollection;
 use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyTier\LoyaltyTierEntity;
 use Shopwell\Core\Checkout\Loyalty\Extension\LoyaltyRouteExtension;
+use Shopwell\Core\Checkout\Loyalty\Service\LoyaltySettings;
 use Shopwell\Core\Checkout\Loyalty\Service\MembershipService;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
@@ -21,7 +21,6 @@ use Shopwell\Core\Framework\Routing\StoreApiRouteScope;
 use Shopwell\Core\Framework\Struct\ArrayStruct;
 use Shopwell\Core\PlatformRequest;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
-use Shopwell\Core\System\SystemConfig\SystemConfigService;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
 
@@ -40,7 +39,7 @@ class LoyaltyRoute
     public function __construct(
         private readonly EntityRepository $customerLoyaltyRepository,
         private readonly EntityRepository $tierRepository,
-        private readonly SystemConfigService $systemConfigService,
+        private readonly LoyaltySettings $settings,
         private readonly MembershipService $membershipService,
         private readonly ClockInterface $clock,
         private readonly ExtensionDispatcher $extensions,
@@ -76,18 +75,9 @@ class LoyaltyRoute
             // a membership that was bought runs until its end, a tier that was only reached through the
             // growth value has no end - the storefront shows the plans only in the second case as an upgrade
             'membershipActive' => $validUntil !== null && $validUntil > $this->clock->now(),
-            'pointValueInCurrency' => $this->systemConfigService->getFloat(
-                LoyaltyPointCartProcessor::CONFIG_KEY_POINT_VALUE,
-                $context->getSalesChannelId()
-            ),
-            'minRedeemablePoints' => $this->systemConfigService->getInt(
-                LoyaltyPointCartProcessor::CONFIG_KEY_MIN_REDEEMABLE,
-                $context->getSalesChannelId()
-            ),
-            'maxRedeemablePercent' => $this->systemConfigService->getFloat(
-                LoyaltyPointCartProcessor::CONFIG_KEY_MAX_REDEEMABLE_PERCENT,
-                $context->getSalesChannelId()
-            ),
+            'pointValueInCurrency' => $this->settings->pointValueInCurrency($context->getSalesChannelId()),
+            'minRedeemablePoints' => $this->settings->minRedeemablePoints($context->getSalesChannelId()),
+            'maxRedeemablePercent' => $this->settings->maxRedeemablePercent($context->getSalesChannelId()),
             'tiers' => $this->loadTiers($context),
             'plans' => $this->membershipService->plans($context->getCurrency()->getId(), $context->getContext()),
             // the account page is the same on every device, so no device is filtered out here: a plan

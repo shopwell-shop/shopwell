@@ -87,39 +87,12 @@
         "activated": "Active",
         "failed": "Failed"
       }
-    },
-    "topUp": {
-      "general": {
-        "mainMenuItemGeneral": "Wallet top ups"
-      },
-      "list": {
-        "cardTitle": "Wallet top ups",
-        "placeholderSearchBar": "Search top ups...",
-        "columnCustomer": "Customer",
-        "columnAmount": "Amount",
-        "columnState": "State",
-        "columnChannel": "Channel",
-        "columnCreatedAt": "Created at",
-        "columnCreditedAt": "Credited at",
-        "labelFilterState": "State",
-        "filterStateAll": "All states",
-        "emptyStateHeadline": "No top ups yet"
-      },
-      "state": {
-        "open": "Awaiting payment",
-        "paid": "Paid",
-        "credited": "Credited",
-        "failed": "Failed"
-      }
     }
   },
   "sw-privileges": {
     "permissions": {
       "loyalty": {
         "label": "Loyalty"
-      },
-      "wallet": {
-        "label": "Customer wallet"
       }
     }
   }

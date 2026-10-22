@@ -32,7 +32,8 @@ class ResolvedPaymentConfigTest extends TestCase
             params: ['appid' => 'wx-appid'],
             runtimeParams: ['openid' => 'o-1'],
             settings: ['sandbox' => '1'],
-            mode: 'platform',
+            sourceAppId: 'a3f4c1d2e5b6a7c8d9e0f1a2b3c4d5e6',
+            usesPlatformAccount: true,
         );
 
         static::assertSame($provider, $config->provider);
@@ -41,7 +42,12 @@ class ResolvedPaymentConfigTest extends TestCase
         static::assertSame(['appid' => 'wx-appid'], $config->params);
         static::assertSame(['openid' => 'o-1'], $config->runtimeParams);
         static::assertSame(['sandbox' => '1'], $config->settings);
-        static::assertSame('platform', $config->mode);
+        // whose account is charged and where the credentials came from are two different answers: an
+        // app that inherits from the tenant of the platform carries its id *and* is charged on the
+        // configuration of the platform level
+        static::assertSame('a3f4c1d2e5b6a7c8d9e0f1a2b3c4d5e6', $config->sourceAppId);
+        static::assertTrue($config->isInherited());
+        static::assertTrue($config->usesPlatformAccount);
     }
 
     public function testGetReadsACredentialWithAFallback(): void
@@ -115,7 +121,6 @@ class ResolvedPaymentConfigTest extends TestCase
             params: ['appid' => 'wx-appid'],
             runtimeParams: ['openid' => 'o-1'],
             settings: ['sandbox' => '1'],
-            mode: 'own',
         );
 
         static::assertSame('o-1', $config->runtimeParam('openid'));
@@ -140,7 +145,7 @@ class ResolvedPaymentConfigTest extends TestCase
             params: $params,
             runtimeParams: [],
             settings: [],
-            mode: 'platform',
+            usesPlatformAccount: true,
         );
     }
 

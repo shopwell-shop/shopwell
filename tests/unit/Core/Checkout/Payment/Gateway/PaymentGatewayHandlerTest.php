@@ -101,6 +101,19 @@ class PaymentGatewayHandlerTest extends TestCase
         $handler->pay($this->request(), $this->transaction(), Context::createDefaultContext(), null);
     }
 
+    /**
+     * The app is part of the binding: without one there is no merchant account to collect on, and the
+     * checkout says so instead of collecting into nowhere.
+     */
+    public function testPayRefusesABindingWithoutAnApp(): void
+    {
+        $handler = $this->handler($this->orderTransactionRepository(), $this->paymentOrders([]), withApp: false);
+
+        $this->expectExceptionObject(PaymentException::paymentMethodChannelMissing('payment-method-id'));
+
+        $handler->pay($this->request(), $this->transaction(), Context::createDefaultContext(), null);
+    }
+
     public function testFinalizeDoesNothingWhenTheCheckoutNeverOpenedAPayment(): void
     {
         $logger = $this->createMock(LoggerInterface::class);
@@ -168,6 +181,7 @@ class PaymentGatewayHandlerTest extends TestCase
         PaymentFlow $flow = PaymentFlow::REDIRECT,
         ?PaymentConfigResolver $configResolver = null,
         ?LoggerInterface $logger = null,
+        bool $withApp = true,
     ): PaymentGatewayHandler {
         $configResolver ??= PaymentGatewayFixture::configResolver($gateway, $flow);
         $orderService = PaymentGatewayFixture::paymentOrderService($paymentOrderRepository, $configResolver);
@@ -176,8 +190,14 @@ class PaymentGatewayHandlerTest extends TestCase
         $binding->id = 'binding-id';
         $binding->setUniqueIdentifier($binding->id);
         $binding->paymentMethodId = 'payment-method-id';
-        $binding->providerTechnicalName = PaymentGatewayFixture::PROVIDER;
+        $binding->paymentAppId = PaymentGatewayFixture::PLATFORM_APP_ID;
         $binding->channelTechnicalName = PaymentGatewayFixture::CHANNEL;
+
+        if ($withApp) {
+            $binding->paymentApp = PaymentGatewayFixture::platformAppEntity();
+        }
+
+        $channelRegistry = new PaymentChannelRegistry(PaymentGatewayFixture::providerRegistry($flow));
 
         $starter = new OrderPaymentStarter(
             PaymentGatewayFixture::platformApp(),
@@ -197,8 +217,9 @@ class PaymentGatewayHandlerTest extends TestCase
             $orderTransactionRepository,
             new PaymentMethodChannelResolver(
                 PaymentGatewayFixture::repository([$binding]),
-                new PaymentChannelRegistry(PaymentGatewayFixture::providerRegistry($flow))
+                $channelRegistry
             ),
+            $channelRegistry,
             $starter,
             $orderService,
             PaymentGatewayFixture::reconciler($paymentOrderRepository, $orderService, $configResolver),
@@ -242,7 +263,7 @@ class PaymentGatewayHandlerTest extends TestCase
      */
     private function paymentOrders(array $orders): EntityRepository
     {
-        $repository = $this->createMock(EntityRepository::class);
+        $repository = static::createStub(EntityRepository::class);
         $repository->method('search')->willReturn(PaymentGatewayFixture::searchResult($orders));
 
         return $repository;

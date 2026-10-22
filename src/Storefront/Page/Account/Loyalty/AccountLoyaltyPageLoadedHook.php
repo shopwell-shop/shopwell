@@ -10,6 +10,8 @@ use Shopwell\Storefront\Page\PageLoadedHook;
 /**
  * Triggered when the AccountLoyaltyPage is loaded
  *
+ * @since 6.7.18.0
+ *
  * @hook-use-case data_loading
  *
  * @final

@@ -32,7 +32,6 @@ test(
         const product = HomeProduct;
         const currency = await TestDataService.createCurrency({ factor: 2.25555 });
         const country = await TestDataService.createCountry();
-        const salutation = await TestDataService.getSalutation();
         const customer = await TestDataService.createCustomer({
             defaultShippingAddress: {
                 name: 'John Doe',
@@ -40,7 +39,6 @@ test(
                 street: 'Ebbinghoff 10',
                 zipcode: '48624',
                 countryId: country.id,
-                salutationId: salutation.id,
             },
             defaultBillingAddress: {
                 name: 'John Doe',
@@ -48,7 +46,6 @@ test(
                 street: 'Ebbinghoff 10',
                 zipcode: '48624',
                 countryId: country.id,
-                salutationId: salutation.id,
             },
         });
 

@@ -171,7 +171,7 @@ class CreatedByFieldTest extends TestCase
             'orderCustomer' => [
                 'id' => Uuid::randomHex(),
                 'email' => 'test@example.com',
-                'salutationId' => $this->fetchFirstIdFromTable('salutation'),
+                'gender' => $this->getValidGender(),
                 'name' => 'Max Mustermann',
             ],
             'stateId' => $this->fetchOrderStateId(OrderStates::STATE_OPEN),
@@ -183,7 +183,7 @@ class CreatedByFieldTest extends TestCase
             'addresses' => [
                 [
                     'id' => $addressId,
-                    'salutationId' => $this->fetchFirstIdFromTable('salutation'),
+                    'gender' => $this->getValidGender(),
                     'name' => 'Max Mustermann',
                     'street' => 'Ebbinghoff 10',
                     'zipcode' => '48624',

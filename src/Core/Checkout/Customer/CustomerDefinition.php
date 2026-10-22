@@ -7,10 +7,15 @@ use Shopwell\Core\Checkout\Customer\Aggregate\CustomerGroup\CustomerGroupDefinit
 use Shopwell\Core\Checkout\Customer\Aggregate\CustomerRecovery\CustomerRecoveryDefinition;
 use Shopwell\Core\Checkout\Customer\Aggregate\CustomerTag\CustomerTagDefinition;
 use Shopwell\Core\Checkout\Customer\Aggregate\CustomerWishlist\CustomerWishlistDefinition;
+use Shopwell\Core\Checkout\Loyalty\Entity\CustomerLoyalty\CustomerLoyaltyDefinition;
+use Shopwell\Core\Checkout\Loyalty\Entity\CustomerPointTransaction\CustomerPointTransactionDefinition;
+use Shopwell\Core\Checkout\Loyalty\Entity\MembershipOrder\MembershipOrderDefinition;
 use Shopwell\Core\Checkout\Order\Aggregate\OrderCustomer\OrderCustomerDefinition;
 use Shopwell\Core\Checkout\Payment\PaymentMethodDefinition;
 use Shopwell\Core\Checkout\Promotion\Aggregate\PromotionPersonaCustomer\PromotionPersonaCustomerDefinition;
 use Shopwell\Core\Checkout\Promotion\PromotionDefinition;
+use Shopwell\Core\Checkout\Wallet\Entity\CustomerWallet\CustomerWalletDefinition;
+use Shopwell\Core\Checkout\Wallet\Entity\CustomerWalletTopUp\CustomerWalletTopUpDefinition;
 use Shopwell\Core\Content\Product\Aggregate\ProductReview\ProductReviewDefinition;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityDefinition;
@@ -52,7 +57,6 @@ use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Language\LanguageDefinition;
 use Shopwell\Core\System\NumberRange\DataAbstractionLayer\NumberRangeField;
 use Shopwell\Core\System\SalesChannel\SalesChannelDefinition;
-use Shopwell\Core\System\Salutation\SalutationDefinition;
 use Shopwell\Core\System\Tag\TagDefinition;
 use Shopwell\Core\System\User\UserDefinition;
 
@@ -62,7 +66,6 @@ class CustomerDefinition extends EntityDefinition
     public const ENTITY_NAME = 'customer';
 
     public const MAX_LENGTH_NAME = 255;
-    public const MAX_LENGTH_TITLE = 100;
     public const MAX_LENGTH_PHONE_NUMBER = 40;
 
     public function getEntityName(): string
@@ -115,16 +118,18 @@ class CustomerDefinition extends EntityDefinition
             (new FkField('sales_channel_id', 'salesChannelId', SalesChannelDefinition::class))->addFlags(new ApiAware(), new Required())->setDescription('Unique identity of sales channel.'),
             (new FkField('language_id', 'languageId', LanguageDefinition::class))->addFlags(new ApiAware(), new Required())->setDescription('Unique identity of language.'),
             (new FkField('last_payment_method_id', 'lastPaymentMethodId', PaymentMethodDefinition::class))->addFlags(new ApiAware())->setDescription('Unique identity of previous payment method.'),
-            (new FkField('default_billing_address_id', 'defaultBillingAddressId', CustomerAddressDefinition::class))->addFlags(new ApiAware(), new Required(), new NoConstraint())->setDescription('Unique identity of default billing address.'),
-            (new FkField('default_shipping_address_id', 'defaultShippingAddressId', CustomerAddressDefinition::class))->addFlags(new ApiAware(), new Required(), new NoConstraint())->setDescription('Unique identity of default shipping address.'),
+            // Both default addresses are optional, as customers may register with email and password only and
+            // provide their addresses later during checkout. The `NoConstraint` flag is kept, the FK checks
+            // for these columns are handled by the customer address cascade.
+            (new FkField('default_billing_address_id', 'defaultBillingAddressId', CustomerAddressDefinition::class))->addFlags(new ApiAware(), new NoConstraint())->setDescription('Unique identity of default billing address.'),
+            (new FkField('default_shipping_address_id', 'defaultShippingAddressId', CustomerAddressDefinition::class))->addFlags(new ApiAware(), new NoConstraint())->setDescription('Unique identity of default shipping address.'),
             new AutoIncrementField(),
             (new NumberRangeField('customer_number', 'customerNumber', 255))->addFlags(new ApiAware(), new Required(), new SearchRanking(SearchRanking::HIGH_SEARCH_RANKING))->setDescription('Unique  number assigned to identity a customer.'),
-            (new FkField('salutation_id', 'salutationId', SalutationDefinition::class))->addFlags(new ApiAware())->setDescription('Unique identity of salutation.'),
+            (new StringField('gender', 'gender'))->addFlags(new ApiAware())->setDescription('Gender code of the customer (dictionary entry technical_name, e.g. male, female).'),
             (new StringField('name', 'name', self::MAX_LENGTH_NAME))->addFlags(new ApiAware(), new Required(), new SearchRanking(SearchRanking::HIGH_SEARCH_RANKING))->setDescription('Full name of the customer.'),
             (new StringField('company', 'company'))->addFlags(new ApiAware(), new IgnoreInOpenapiSchema(), new SearchRanking(SearchRanking::HIGH_SEARCH_RANKING))->setDescription('Company name of the customer.'),
             (new PasswordField('password', 'password', \PASSWORD_DEFAULT, [], PasswordField::FOR_CUSTOMER))->removeFlag(ApiAware::class),
             (new EmailField('email', 'email'))->addFlags(new ApiAware(), new Required(), new SearchRanking(SearchRanking::MIDDLE_SEARCH_RANKING, false))->setDescription('Email ID of the customer.'),
-            (new StringField('title', 'title', self::MAX_LENGTH_TITLE))->addFlags(new ApiAware())->setDescription('Titles or honorifics like Mr, Mrs, etc.'),
             (new StringField('phone_number', 'phoneNumber', self::MAX_LENGTH_PHONE_NUMBER))->addFlags(new ApiAware())->setDescription('Customer\'s phone number.'),
             (new ListField('vat_ids', 'vatIds', StringField::class))->addFlags(new ApiAware(), new IgnoreInOpenapiSchema())->setDescription('Unique identity of VAT.'),
             (new StringField('affiliate_code', 'affiliateCode'))->addFlags(new ApiAware())->setDescription('An affiliate code is an identification option with which website operators can mark outgoing links.'),
@@ -154,7 +159,6 @@ class CustomerDefinition extends EntityDefinition
             (new ManyToOneAssociationField('activeBillingAddress', 'active_billing_address_id', CustomerAddressDefinition::class, 'id', false))->addFlags(new ApiAware(), new Runtime())->setDescription('Currently active billing address in the session'),
             $defaultShippingAddressAssociation,
             (new ManyToOneAssociationField('activeShippingAddress', 'active_shipping_address_id', CustomerAddressDefinition::class, 'id', false))->addFlags(new ApiAware(), new Runtime())->setDescription('Currently active shipping address in the session'),
-            (new ManyToOneAssociationField('salutation', 'salutation_id', SalutationDefinition::class, 'id', false))->addFlags(new ApiAware())->setDescription('Customer salutation (e.g., Mr., Mrs., Ms.)'),
             (new OneToManyAssociationField('addresses', CustomerAddressDefinition::class, 'customer_id', 'id'))->addFlags(new ApiAware(), new CascadeDelete())->setDescription('All addresses saved for the customer'),
             (new OneToManyAssociationField('orderCustomers', OrderCustomerDefinition::class, 'customer_id', 'id'))->addFlags(new SetNullOnDelete()),
             (new ManyToManyAssociationField('tags', TagDefinition::class, CustomerTagDefinition::class, 'customer_id', 'tag_id'))->addFlags(new SearchRanking(SearchRanking::ASSOCIATION_SEARCH_RANKING), new ApiAware())->setDescription('Tags assigned to the customer for organization and segmentation'),
@@ -173,6 +177,18 @@ class CustomerDefinition extends EntityDefinition
             (new UpdatedByField([Context::SYSTEM_SCOPE, Context::CRUD_API_SCOPE]))->addFlags(new ApiAware()),
             new ManyToOneAssociationField('createdBy', 'created_by_id', UserDefinition::class, 'id', false),
             new ManyToOneAssociationField('updatedBy', 'updated_by_id', UserDefinition::class, 'id', false),
+
+            // Reverse sides of the loyalty, wallet and payment domains. They are declared here instead of
+            // in an entity extension, so the DAL knows the children of a customer and the schema builder
+            // never proposes to drop their foreign keys.
+            new OneToManyAssociationField('customerLoyalties', CustomerLoyaltyDefinition::class, 'customer_id'),
+            new OneToManyAssociationField('customerPointTransactions', CustomerPointTransactionDefinition::class, 'customer_id'),
+            new OneToManyAssociationField('membershipOrders', MembershipOrderDefinition::class, 'customer_id'),
+            new OneToManyAssociationField('customerWallets', CustomerWalletDefinition::class, 'customer_id'),
+            new OneToManyAssociationField('customerWalletTopUps', CustomerWalletTopUpDefinition::class, 'customer_id'),
+            new OneToManyAssociationField('paymentMandates', 'payment_mandate', 'customer_id'),
+            new OneToManyAssociationField('paymentSubscriptions', 'payment_subscription', 'customer_id'),
+            (new OneToManyAssociationField('orderReturns', 'order_return', 'customer_id'))->addFlags(new CascadeDelete()),
         ]);
     }
 }

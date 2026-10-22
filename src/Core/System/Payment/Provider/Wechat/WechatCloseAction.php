@@ -9,6 +9,7 @@ use Shopwell\Core\System\Payment\Gateway\CloseResult;
 use Shopwell\Core\System\Payment\Gateway\PaymentClose;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
 use Shopwell\Core\System\Payment\PaymentException;
+use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
 
 /**
  * Closes a wechat pay trade (api v3), the counterpart of the capture.
@@ -23,6 +24,11 @@ use Shopwell\Core\System\Payment\PaymentException;
 final class WechatCloseAction extends AbstractPaymentAction
 {
     protected string $apiClass = WechatApi::class;
+
+    public function capability(): PaymentCapability
+    {
+        return PaymentCapability::CLOSE;
+    }
 
     public function execute($request): void
     {

@@ -3,19 +3,24 @@
  */
 import { mount } from '@vue/test-utils';
 
-const aliyunProvider = {
-    technicalName: 'aliyun',
-    labelSnippet: 'sms.gateway.aliyun',
+const credentialProvider = {
+    technicalName: 'with-credentials',
+    labelSnippet: 'sms.gateway.withCredentials',
     supportedRegions: ['CN'],
     supportsTemplateMode: true,
     credentialDefinitions: [
-        { name: 'accessKeyId', type: 'string', required: true, labelSnippet: 'sms.credential.aliyun.accessKeyId' },
-        { name: 'accessKeySecret', type: 'secret', required: true, labelSnippet: 'sms.credential.aliyun.accessKeySecret' },
+        { name: 'accessKeyId', type: 'string', required: true, labelSnippet: 'sms.credential.withCredentials.accessKeyId' },
+        {
+            name: 'accessKeySecret',
+            type: 'secret',
+            required: true,
+            labelSnippet: 'sms.credential.withCredentials.accessKeySecret',
+        },
     ],
 };
 
-const nullProvider = {
-    technicalName: 'null',
+const freeTextProvider = {
+    technicalName: 'free-text',
     labelSnippet: 'sms.gateway.null',
     supportedRegions: [],
     supportsTemplateMode: false,
@@ -38,7 +43,7 @@ const formFieldRendererStub = {
     },
 };
 
-async function createWrapper({ providers = [aliyunProvider], gatewayId = null, storedGateway = null } = {}) {
+async function createWrapper({ providers = [credentialProvider], gatewayId = null, storedGateway = null } = {}) {
     const repository = {
         // a row is created with the id it will be stored under, the same way the entity factory does
         create: jest.fn(() => ({ id: 'created-id' })),
@@ -117,12 +122,11 @@ describe('src/module/sw-settings-sms/page/sw-settings-sms-gateway-detail', () =>
     });
 
     it('should start a new gateway on the first provider of the server', async () => {
-        ({ wrapper } = await createWrapper({ providers: [aliyunProvider, nullProvider] }));
+        ({ wrapper } = await createWrapper({ providers: [credentialProvider, freeTextProvider] }));
 
         expect(wrapper.vm.isNew).toBe(true);
-        expect(wrapper.vm.gateway.technicalName).toBe('aliyun');
+        expect(wrapper.vm.gateway.technicalName).toBe('with-credentials');
         expect(wrapper.vm.gateway.enabled).toBe(true);
-        expect(wrapper.vm.gateway.strategy).toBe('exclusive');
         expect(wrapper.vm.credentialFields.map((field) => field.name)).toEqual(['accessKeyId', 'accessKeySecret']);
         expect(wrapper.vm.credentialValues).toEqual({ accessKeyId: '', accessKeySecret: '' });
     });
@@ -131,8 +135,8 @@ describe('src/module/sw-settings-sms/page/sw-settings-sms-gateway-detail', () =>
         ({ wrapper } = await createWrapper());
 
         expect(wrapper.findAll('.sw-form-field-renderer')).toHaveLength(2);
-        expect(wrapper.vm.formFieldType(aliyunProvider.credentialDefinitions[0])).toBe('text');
-        expect(wrapper.vm.formFieldType(aliyunProvider.credentialDefinitions[1])).toBe('password');
+        expect(wrapper.vm.formFieldType(credentialProvider.credentialDefinitions[0])).toBe('text');
+        expect(wrapper.vm.formFieldType(credentialProvider.credentialDefinitions[1])).toBe('password');
     });
 
     it('should show the values that were stored for the fields the provider still declares', async () => {
@@ -140,10 +144,9 @@ describe('src/module/sw-settings-sms/page/sw-settings-sms-gateway-detail', () =>
             gatewayId: 'gateway-1',
             storedGateway: {
                 id: 'gateway-1',
-                technicalName: 'aliyun',
+                technicalName: 'with-credentials',
                 enabled: true,
                 priority: 3,
-                strategy: 'failover',
                 credentials: { accessKeyId: 'the-id', accessKeySecret: 'the-secret', dropped: 'x' },
                 options: { signName: 'Shop' },
             },
@@ -188,7 +191,7 @@ describe('src/module/sw-settings-sms/page/sw-settings-sms-gateway-detail', () =>
 
         expect(repository.save).toHaveBeenCalledWith(
             expect.objectContaining({
-                technicalName: 'aliyun',
+                technicalName: 'with-credentials',
                 credentials: { accessKeyId: 'the-id', accessKeySecret: 'the-secret' },
                 options: null,
             }),
@@ -214,10 +217,9 @@ describe('src/module/sw-settings-sms/page/sw-settings-sms-gateway-detail', () =>
             gatewayId: 'gateway-1',
             storedGateway: {
                 id: 'gateway-1',
-                technicalName: 'aliyun',
+                technicalName: 'with-credentials',
                 enabled: true,
                 priority: 0,
-                strategy: 'exclusive',
                 credentials: { accessKeyId: 'id', accessKeySecret: 'secret' },
                 options: null,
             },
@@ -237,12 +239,61 @@ describe('src/module/sw-settings-sms/page/sw-settings-sms-gateway-detail', () =>
     });
 
     it('should keep a gateway without credentials free of an empty json object', async () => {
-        ({ wrapper, repository } = await createWrapper({ providers: [nullProvider] }));
+        ({ wrapper, repository } = await createWrapper({ providers: [freeTextProvider] }));
 
         expect(wrapper.vm.credentialFields).toHaveLength(0);
 
         await wrapper.vm.onSave();
 
         expect(repository.save).toHaveBeenCalledWith(expect.objectContaining({ credentials: null }));
+    });
+
+    it('should start a gateway that does not take an unknown country', async () => {
+        ({ wrapper } = await createWrapper());
+
+        expect(wrapper.vm.acceptUnknownRegion).toBe(false);
+    });
+
+    it('should show the routing flag that was stored for the gateway', async () => {
+        ({ wrapper } = await createWrapper({
+            gatewayId: 'gateway-1',
+            storedGateway: {
+                id: 'gateway-1',
+                technicalName: 'with-credentials',
+                enabled: true,
+                priority: 0,
+                credentials: { accessKeyId: 'id', accessKeySecret: 'secret' },
+                options: null,
+                customFields: { sms_accept_unknown_region: true },
+            },
+        }));
+
+        expect(wrapper.vm.acceptUnknownRegion).toBe(true);
+    });
+
+    it('should write the routing flag into the custom fields of the row', async () => {
+        ({ wrapper, repository } = await createWrapper({
+            gatewayId: 'gateway-1',
+            storedGateway: {
+                id: 'gateway-1',
+                technicalName: 'with-credentials',
+                enabled: true,
+                priority: 0,
+                credentials: { accessKeyId: 'id', accessKeySecret: 'secret' },
+                options: null,
+                customFields: { sms_accept_unknown_region: false, another_flag: 'kept' },
+            },
+        }));
+
+        wrapper.vm.acceptUnknownRegion = true;
+        await wrapper.vm.onSave();
+
+        // the flag belongs to the row, not to the options the provider is called with
+        expect(repository.save).toHaveBeenCalledWith(
+            expect.objectContaining({
+                options: null,
+                customFields: { sms_accept_unknown_region: true, another_flag: 'kept' },
+            }),
+        );
     });
 });

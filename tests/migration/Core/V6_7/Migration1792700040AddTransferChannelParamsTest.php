@@ -48,6 +48,10 @@ class Migration1792700040AddTransferChannelParamsTest extends TestCase
     /**
      * A JSON column without a default, right after the currency it is sent with: the parameters are
      * input of the submission, not something the platform derives later.
+     *
+     * The column type is asserted per platform: MariaDB has no type of its own for a document, `JSON`
+     * is an alias there and the column is stored as `longtext` with a `json_valid` check. Hardcoding
+     * `json` would therefore fail the MariaDB run of the same test suite.
      */
     public function testTheColumnIsNullableJsonAfterTheCurrency(): void
     {
@@ -55,9 +59,9 @@ class Migration1792700040AddTransferChannelParamsTest extends TestCase
 
         $column = $this->column();
 
-        static::assertSame('json', $column['COLUMN_TYPE']);
+        static::assertSame($this->jsonColumnType(), $column['COLUMN_TYPE']);
         static::assertSame('YES', $column['IS_NULLABLE']);
-        static::assertNull($column['COLUMN_DEFAULT'], 'the writer spells the value out, the ddl must not default it');
+        $this->assertNoDefault($column['COLUMN_DEFAULT']);
         static::assertSame($this->positionOf('currency') + 1, (int) $column['ORDINAL_POSITION']);
     }
 
@@ -221,6 +225,35 @@ class Migration1792700040AddTransferChannelParamsTest extends TestCase
         static::assertCount(1, $columns, 'the column "' . $name . '" does not exist');
 
         return (int) $columns[0]['ORDINAL_POSITION'];
+    }
+
+    /**
+     * The type a column declared as `JSON` is stored with on the tested platform.
+     *
+     * MariaDB knows no document type: `JSON` is an alias for `longtext` there, and the value is kept
+     * well formed by a `json_valid` check instead of by the type. MySQL has a type of its own.
+     */
+    private function jsonColumnType(): string
+    {
+        $version = (string) $this->connection->fetchOne('SELECT VERSION()');
+
+        return stripos($version, 'mariadb') === false ? 'json' : 'longtext';
+    }
+
+    /**
+     * Asserts that the ddl gives the column no default at all.
+     *
+     * A column that is declared nullable and has no `DEFAULT` clause has no default in both systems,
+     * but only MySQL reports that as a real `NULL` in `information_schema`: MariaDB reports the
+     * explicit `NULL` attribute of the column as the string "NULL". Both mean the same here - the
+     * writer spells the value out and the ddl must not invent one.
+     */
+    private function assertNoDefault(?string $default): void
+    {
+        static::assertTrue(
+            $default === null || $default === 'NULL',
+            'the writer spells the value out, the ddl must not default it, got: ' . var_export($default, true)
+        );
     }
 
     private function createdStateId(): string

@@ -89,7 +89,7 @@ class DefinitionValidator
         'productNumber',
         'mediaType',
         'mediaTypeRaw',
-        'salutationKey',
+        'technicalName',
         'scheduledTaskClass',
         'orderDateTime',
         'documentMediaFileId',

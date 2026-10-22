@@ -153,6 +153,8 @@ class ApiRoutesHaveASchemaTest extends TestCase
             '/checkout/cart/line-item',
             '/checkout/cart/line-item',
             '/checkout/cart',
+            '/order-return/guest',
+            '/order-return',
         ], $missingRoutes, 'Routes are missing in the schema');
     }
 

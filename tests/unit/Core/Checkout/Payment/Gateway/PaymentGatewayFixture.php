@@ -131,27 +131,37 @@ final class PaymentGatewayFixture extends TestCase
         );
     }
 
-    public static function channel(PaymentFlow $flow = PaymentFlow::REDIRECT): PaymentChannel
+    /**
+     * @param list<string> $devices
+     */
+    public static function channel(PaymentFlow $flow = PaymentFlow::REDIRECT, array $devices = []): PaymentChannel
     {
         return new PaymentChannel(
             technicalName: self::CHANNEL,
             providerTechnicalName: self::PROVIDER,
             label: 'Alipay H5',
             flow: $flow,
+            devices: $devices,
         );
     }
 
-    public static function channelRegistry(PaymentFlow $flow = PaymentFlow::REDIRECT): PaymentChannelRegistry
+    /**
+     * @param list<string> $devices
+     */
+    public static function channelRegistry(PaymentFlow $flow = PaymentFlow::REDIRECT, array $devices = []): PaymentChannelRegistry
     {
-        return new PaymentChannelRegistry(self::providerRegistry($flow));
+        return new PaymentChannelRegistry(self::providerRegistry($flow, devices: $devices));
     }
 
     /**
      * A provider registry whose only interface hands out the given gateway on every payment.
+     *
+     * @param list<string> $devices
      */
     public static function providerRegistry(
         PaymentFlow $flow = PaymentFlow::REDIRECT,
-        ?GatewayInterface $gateway = null
+        ?GatewayInterface $gateway = null,
+        array $devices = []
     ): PaymentProviderRegistry {
         $gatewayFactory = static::createStub(PaymentGatewayFactory::class);
 
@@ -164,7 +174,7 @@ final class PaymentGatewayFixture extends TestCase
                 technicalName: self::PROVIDER,
                 label: 'Alipay',
                 credentials: [],
-                channels: [self::CHANNEL => self::channel($flow)],
+                channels: [self::CHANNEL => self::channel($flow, $devices)],
                 gatewayFactory: $gatewayFactory,
                 notificationExtractor: static::createStub(PaymentNotificationExtractorInterface::class),
                 payParamsDecoder: new AlipayPayParamsDecoder(),
@@ -204,6 +214,25 @@ final class PaymentGatewayFixture extends TestCase
         return $app;
     }
 
+    /**
+     * An app that was onboarded by the merchant: it collects on its own merchant account and offers
+     * only the channels the merchant switched on for it.
+     */
+    public static function externalApp(string $id = 'external-app-id', bool $active = true): PaymentAppEntity
+    {
+        $app = new PaymentAppEntity();
+        $app->id = $id;
+        $app->setUniqueIdentifier($id);
+        $app->technicalName = 'external-app';
+        $app->name = 'External app';
+        $app->type = PaymentAppEntity::TYPE_EXTERNAL;
+        $app->active = $active;
+        $app->appSecret = self::cipher()->encryptValue('unreadable');
+        $app->settings = [];
+
+        return $app;
+    }
+
     public static function appProvider(): PaymentAppProviderEntity
     {
         $appProvider = new PaymentAppProviderEntity();
@@ -212,7 +241,8 @@ final class PaymentGatewayFixture extends TestCase
         $appProvider->paymentAppId = self::PLATFORM_APP_ID;
         $appProvider->providerTechnicalName = self::PROVIDER;
         $appProvider->enabled = true;
-        $appProvider->mode = PaymentAppProviderEntity::MODE_PLATFORM;
+        // the platform tenant collects on the platform level configuration, it inherits from nobody
+        $appProvider->sourceAppId = null;
 
         return $appProvider;
     }

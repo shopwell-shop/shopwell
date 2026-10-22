@@ -9,13 +9,13 @@ export default {
     template,
     props: ['formSettings'],
     computed: {
-        salutationOptions() {
+        genderOptions() {
             return [
                 {
                     id: 1,
                     value: 'default',
                     disabled: true,
-                    label: this.$t('sw-cms.elements.form.element.label.salutationUndisclosed'),
+                    label: this.$t('sw-cms.elements.form.element.label.genderUndisclosed'),
                 },
             ];
         },

@@ -62,7 +62,6 @@ class ListAddressRoute extends AbstractListAddressRoute
     private function _load(Criteria $criteria, SalesChannelContext $context): ListAddressRouteResponse
     {
         $criteria
-            ->addAssociation('salutation')
             ->addAssociation('country')
             ->addAssociation('countryState')
             ->addAssociation('countryCity')

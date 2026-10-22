@@ -16,7 +16,6 @@ Shopwell.Component.register('sw-loyalty-plan-list', () => import('./page/sw-loya
 Shopwell.Component.register('sw-loyalty-plan-detail', () => import('./page/sw-loyalty-plan-detail'));
 Shopwell.Component.extend('sw-loyalty-plan-create', 'sw-loyalty-plan-detail', () => import('./page/sw-loyalty-plan-create'));
 Shopwell.Component.register('sw-loyalty-order-list', () => import('./page/sw-loyalty-order-list'));
-Shopwell.Component.register('sw-wallet-top-up-list', () => import('./page/sw-wallet-top-up-list'));
 /* eslint-enable sw-deprecation-rules/private-feature-declarations */
 
 // eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
@@ -103,14 +102,6 @@ Module.register('sw-settings-loyalty', {
                 privilege: 'loyalty.viewer',
             },
         },
-        topUps: {
-            component: 'sw-wallet-top-up-list',
-            path: 'top-ups',
-            meta: {
-                parentPath: 'sw.settings.index',
-                privilege: 'wallet.viewer',
-            },
-        },
     },
 
     settingsItem: [
@@ -137,14 +128,6 @@ Module.register('sw-settings-loyalty', {
             icon: 'regular-clipboard',
             privilege: 'loyalty.viewer',
             label: 'sw-loyalty.order.general.mainMenuItemGeneral',
-        },
-        {
-            id: 'sw-settings-wallet-top-ups',
-            group: 'customer',
-            to: 'sw.settings.loyalty.topUps',
-            icon: 'regular-money-transfer',
-            privilege: 'wallet.viewer',
-            label: 'sw-loyalty.topUp.general.mainMenuItemGeneral',
         },
     ],
 

@@ -4,7 +4,7 @@ namespace Shopwell\Storefront\Page\Account\Login;
 
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Country\CountryCollection;
-use Shopwell\Core\System\Salutation\SalutationCollection;
+use Shopwell\Core\System\Dictionary\Aggregate\DictionaryEntry\DictionaryEntryCollection;
 use Shopwell\Storefront\Page\Page;
 
 #[Package('checkout')]
@@ -12,7 +12,7 @@ class AccountLoginPage extends Page
 {
     protected CountryCollection $countries;
 
-    protected SalutationCollection $salutations;
+    protected DictionaryEntryCollection $genders;
 
     public function getCountries(): CountryCollection
     {
@@ -24,13 +24,13 @@ class AccountLoginPage extends Page
         $this->countries = $countries;
     }
 
-    public function getSalutations(): SalutationCollection
+    public function getGenders(): DictionaryEntryCollection
     {
-        return $this->salutations;
+        return $this->genders;
     }
 
-    public function setSalutations(SalutationCollection $salutations): void
+    public function setGenders(DictionaryEntryCollection $genders): void
     {
-        $this->salutations = $salutations;
+        $this->genders = $genders;
     }
 }

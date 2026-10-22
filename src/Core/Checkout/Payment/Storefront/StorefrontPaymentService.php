@@ -2,6 +2,7 @@
 
 namespace Shopwell\Core\Checkout\Payment\Storefront;
 
+use Shopwell\Core\Framework\Adapter\Translation\AbstractTranslator;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Payment\Api\Struct\PaymentOrderRequest;
 use Shopwell\Core\System\Payment\Order\PaymentOrderCapture;
@@ -27,6 +28,7 @@ class StorefrontPaymentService
         private readonly PlatformPaymentApp $platformApp,
         private readonly PaymentOrderService $orderService,
         private readonly PaymentOrderCapture $capture,
+        private readonly AbstractTranslator $translator,
     ) {
     }
 
@@ -35,11 +37,23 @@ class StorefrontPaymentService
      * this device and in this currency. A channel whose merchant account the shop did not open is not
      * offered at all.
      *
+     * The label a provider declares belongs to the administration, where an operator reads it while
+     * configuring the channel. A payer reads the channel at the checkout and in the wallet, so the
+     * name is translated here - see {@see self::channelLabel()}.
+     *
      * @return list<array{channel: string, label: string, provider: string, provider_label: string, flow: string}>
      */
     public function channels(string $currency, ?string $device): array
     {
-        return $this->platformApp->availableChannels($currency, $device);
+        $channels = [];
+
+        foreach ($this->platformApp->availableChannels($currency, $device) as $channel) {
+            $channel['label'] = $this->channelLabel($channel['channel'], $channel['label']);
+
+            $channels[] = $channel;
+        }
+
+        return $channels;
     }
 
     /**
@@ -83,5 +97,30 @@ class StorefrontPaymentService
             'channel' => $channel,
             'params' => $result->params->jsonSerialize(),
         ];
+    }
+
+    /**
+     * The storefront name of a channel, e.g. `payment.channel.wechat_native`.
+     *
+     * A provider names its channels for the administration, where the declared label is a snippet key
+     * of that interface. Printing it in the storefront would show a payer a key or an untranslated
+     * string, so the storefront translates the channel itself. A channel that has no storefront
+     * snippet - typically one a plugin added - is shown as its technical name, and a provider that
+     * declared a readable label instead of a key keeps it.
+     */
+    private function channelLabel(string $technicalName, string $declaredLabel): string
+    {
+        $key = 'payment.channel.' . $technicalName;
+        $label = $this->translator->trans($key);
+
+        if ($label !== $key) {
+            return $label;
+        }
+
+        if (!str_contains($declaredLabel, '.')) {
+            return $declaredLabel;
+        }
+
+        return ucwords(str_replace('_', ' ', $technicalName));
     }
 }

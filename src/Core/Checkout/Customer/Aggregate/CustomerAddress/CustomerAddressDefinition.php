@@ -22,7 +22,6 @@ use Shopwell\Core\System\Country\Aggregate\CountryCity\CountryCityDefinition;
 use Shopwell\Core\System\Country\Aggregate\CountryDistrict\CountryDistrictDefinition;
 use Shopwell\Core\System\Country\Aggregate\CountryState\CountryStateDefinition;
 use Shopwell\Core\System\Country\CountryDefinition;
-use Shopwell\Core\System\Salutation\SalutationDefinition;
 
 #[Package('checkout')]
 class CustomerAddressDefinition extends EntityDefinition
@@ -31,7 +30,6 @@ class CustomerAddressDefinition extends EntityDefinition
 
     public const MAX_LENGTH_PHONE_NUMBER = 40;
     public const MAX_LENGTH_NAME = 255;
-    public const MAX_LENGTH_TITLE = 100;
     public const MAX_LENGTH_ZIPCODE = 50;
 
     public function getEntityName(): string
@@ -71,14 +69,13 @@ class CustomerAddressDefinition extends EntityDefinition
             (new FkField('country_city_id', 'countryCityId', CountryCityDefinition::class))->addFlags(new ApiAware())->setDescription('Unique identity of country\'s city.'),
             (new FkField('country_district_id', 'countryDistrictId', CountryDistrictDefinition::class))->addFlags(new ApiAware())->setDescription('Unique identity of country\'s district.'),
 
-            (new FkField('salutation_id', 'salutationId', SalutationDefinition::class))->addFlags(new ApiAware())->setDescription('Unique identity of salutation.'),
+            (new StringField('gender', 'gender'))->addFlags(new ApiAware())->setDescription('Gender code of the address (dictionary entry technical_name, e.g. male, female).'),
             (new StringField('name', 'name', self::MAX_LENGTH_NAME))->addFlags(new ApiAware(), new Required(), new SearchRanking(SearchRanking::MIDDLE_SEARCH_RANKING))->setDescription('Full name of the customer.'),
             (new StringField('zipcode', 'zipcode', self::MAX_LENGTH_ZIPCODE))->addFlags(new ApiAware())->setDescription('Postal or zip code of customer\'s address.'),
             (new StringField('city', 'city'))->addFlags(new ApiAware(), new Required(), new SearchRanking(SearchRanking::MIDDLE_SEARCH_RANKING))->setDescription('Name of customer\'s city.'),
             (new StringField('company', 'company'))->addFlags(new ApiAware(), new SearchRanking(SearchRanking::MIDDLE_SEARCH_RANKING))->setDescription('Name of customer\'s company.'),
             (new StringField('street', 'street'))->addFlags(new ApiAware(), new Required(), new SearchRanking(SearchRanking::HIGH_SEARCH_RANKING))->setDescription('Name of customer\'s street.'),
             (new StringField('department', 'department'))->addFlags(new ApiAware())->setDescription('Name of customer\'s department.'),
-            (new StringField('title', 'title', self::MAX_LENGTH_TITLE))->addFlags(new ApiAware())->setDescription('Titles given to customer like Dr. , Prof., etc'),
             (new StringField('phone_number', 'phoneNumber', self::MAX_LENGTH_PHONE_NUMBER))->addFlags(new ApiAware())->setDescription('Customer\'s phone number.'),
             (new StringField('additional_address_line1', 'additionalAddressLine1'))->addFlags(new ApiAware(), new SearchRanking(SearchRanking::MIDDLE_SEARCH_RANKING))->setDescription('Additional customer\'s address information.'),
             (new StringField('additional_address_line2', 'additionalAddressLine2'))->addFlags(new ApiAware(), new SearchRanking(SearchRanking::MIDDLE_SEARCH_RANKING))->setDescription('Additional customer\'s address information.'),
@@ -89,7 +86,6 @@ class CustomerAddressDefinition extends EntityDefinition
             (new ManyToOneAssociationField('countryState', 'country_state_id', CountryStateDefinition::class, 'id', false))->addFlags(new ApiAware()),
             (new ManyToOneAssociationField('countryCity', 'country_city_id', CountryCityDefinition::class, 'id', false))->addFlags(new ApiAware()),
             (new ManyToOneAssociationField('countryDistrict', 'country_district_id', CountryDistrictDefinition::class, 'id', false))->addFlags(new ApiAware()),
-            (new ManyToOneAssociationField('salutation', 'salutation_id', SalutationDefinition::class, 'id', false))->addFlags(new ApiAware()),
         ]);
 
         if (Feature::isActive('v6.8.0.0')) {

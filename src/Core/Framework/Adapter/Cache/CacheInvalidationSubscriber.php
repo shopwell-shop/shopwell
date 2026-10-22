@@ -48,6 +48,8 @@ use Shopwell\Core\System\Country\SalesChannel\CountryRoute;
 use Shopwell\Core\System\Country\SalesChannel\CountryStateRoute;
 use Shopwell\Core\System\Currency\CurrencyDefinition;
 use Shopwell\Core\System\Currency\SalesChannel\CurrencyRoute;
+use Shopwell\Core\System\Dictionary\Aggregate\DictionaryEntry\DictionaryEntryDefinition;
+use Shopwell\Core\System\Dictionary\SalesChannel\DictionaryRoute;
 use Shopwell\Core\System\Language\LanguageDefinition;
 use Shopwell\Core\System\Language\SalesChannel\LanguageRoute;
 use Shopwell\Core\System\SalesChannel\Aggregate\SalesChannelCountry\SalesChannelCountryDefinition;
@@ -58,8 +60,6 @@ use Shopwell\Core\System\SalesChannel\Aggregate\SalesChannelShippingMethod\Sales
 use Shopwell\Core\System\SalesChannel\Context\CachedBaseSalesChannelContextFactory;
 use Shopwell\Core\System\SalesChannel\Context\CachedSalesChannelContextFactory;
 use Shopwell\Core\System\SalesChannel\SalesChannelDefinition;
-use Shopwell\Core\System\Salutation\SalesChannel\SalutationRoute;
-use Shopwell\Core\System\Salutation\SalutationDefinition;
 use Shopwell\Core\System\Snippet\SnippetDefinition;
 use Shopwell\Core\System\StateMachine\Loader\InitialStateIdLoader;
 use Shopwell\Core\System\StateMachine\StateMachineDefinition;
@@ -301,10 +301,10 @@ class CacheInvalidationSubscriber
         $this->cacheInvalidator->invalidate($tags);
     }
 
-    public function invalidateSalutationRoute(EntityWrittenContainerEvent $event): void
+    public function invalidateDictionaryRoute(EntityWrittenContainerEvent $event): void
     {
-        // invalidates the salutation route when a salutation changed
-        $this->cacheInvalidator->invalidate([...$this->getChangedSalutations($event)]);
+        // invalidates the dictionary route when a dictionary entry changed
+        $this->cacheInvalidator->invalidate([...$this->getChangedDictionaryEntries($event)]);
     }
 
     public function invalidateNavigationRoute(EntityWrittenContainerEvent $event): void
@@ -639,14 +639,14 @@ class CacheInvalidationSubscriber
     /**
      * @return list<string>
      */
-    private function getChangedSalutations(EntityWrittenContainerEvent $event): array
+    private function getChangedDictionaryEntries(EntityWrittenContainerEvent $event): array
     {
-        $ids = $event->getPrimaryKeys(SalutationDefinition::ENTITY_NAME);
+        $ids = $event->getPrimaryKeys(DictionaryEntryDefinition::ENTITY_NAME);
         if ($ids === []) {
             return [];
         }
 
-        return [SalutationRoute::buildName()];
+        return [DictionaryRoute::buildName()];
     }
 
     /**

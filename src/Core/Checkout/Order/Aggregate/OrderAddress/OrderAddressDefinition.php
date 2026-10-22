@@ -29,7 +29,6 @@ use Shopwell\Core\System\Country\Aggregate\CountryCity\CountryCityDefinition;
 use Shopwell\Core\System\Country\Aggregate\CountryDistrict\CountryDistrictDefinition;
 use Shopwell\Core\System\Country\Aggregate\CountryState\CountryStateDefinition;
 use Shopwell\Core\System\Country\CountryDefinition;
-use Shopwell\Core\System\Salutation\SalutationDefinition;
 
 #[Package('checkout')]
 class OrderAddressDefinition extends EntityDefinition
@@ -77,14 +76,13 @@ class OrderAddressDefinition extends EntityDefinition
             (new FkField('order_id', 'orderId', OrderDefinition::class))->addFlags(new Required())->setDescription('Unique identity of order.'),
             (new ReferenceVersionField(OrderDefinition::class, 'order_version_id'))->addFlags(new Required()),
 
-            (new FkField('salutation_id', 'salutationId', SalutationDefinition::class))->setDescription('Unique identity of salutation.'),
+            (new StringField('gender', 'gender'))->setDescription('Gender code of the order address (dictionary entry technical_name, e.g. male, female).'),
             (new StringField('name', 'name', self::MAX_LENGTH_NAME))->addFlags(new ApiAware(), new Required(), new SearchRanking(SearchRanking::HIGH_SEARCH_RANKING))->setDescription('Full name of the customer.'),
             (new StringField('street', 'street'))->addFlags(new ApiAware(), new Required(), new SearchRanking(SearchRanking::MIDDLE_SEARCH_RANKING))->setDescription('Street address'),
             (new StringField('zipcode', 'zipcode'))->addFlags(new ApiAware(), new SearchRanking(SearchRanking::HIGH_SEARCH_RANKING))->setDescription('Zip code of the country.'),
             (new StringField('city', 'city'))->addFlags(new ApiAware(), new Required(), new SearchRanking(SearchRanking::MIDDLE_SEARCH_RANKING))->setDescription('Name of the city.'),
             (new StringField('company', 'company'))->addFlags(new ApiAware(), new SearchRanking(SearchRanking::HIGH_SEARCH_RANKING))->setDescription('Name of the company.'),
             (new StringField('department', 'department'))->addFlags(new ApiAware())->setDescription('Name of the department.'),
-            (new StringField('title', 'title'))->addFlags(new ApiAware())->setDescription('Title name given to customer like DR. , Prof., etc.'),
             (new StringField('phone_number', 'phoneNumber'))->addFlags(new ApiAware())->setDescription('Phone number of the customer.'),
             (new StringField('additional_address_line1', 'additionalAddressLine1'))->addFlags(new ApiAware(), new SearchRanking(SearchRanking::MIDDLE_SEARCH_RANKING))->setDescription('Additional address input if necessary.'),
             (new StringField('additional_address_line2', 'additionalAddressLine2'))->addFlags(new ApiAware(), new SearchRanking(SearchRanking::MIDDLE_SEARCH_RANKING))->setDescription('Additional address input if necessary.'),
@@ -97,7 +95,6 @@ class OrderAddressDefinition extends EntityDefinition
             (new ManyToOneAssociationField('order', 'order_id', OrderDefinition::class, 'id', false))->addFlags(new RestrictDelete()),
             // We need to cascade delete the order deliveries, because when deleting an order, the cascade delete will be triggered first
             (new OneToManyAssociationField('orderDeliveries', OrderDeliveryDefinition::class, 'shipping_order_address_id', 'id'))->addFlags(new CascadeDelete()),
-            (new ManyToOneAssociationField('salutation', 'salutation_id', SalutationDefinition::class, 'id', false))->addFlags(new ApiAware()),
         ]);
 
         if (!Feature::isActive('v6.8.0.0')) {

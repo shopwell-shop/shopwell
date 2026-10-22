@@ -134,6 +134,14 @@ class CheckoutController extends StorefrontController
             return $this->redirectToRoute('frontend.checkout.cart.page');
         }
 
+        // A customer can register without any address, but an order always needs a billing address.
+        // So the customer is asked to create an address before the checkout can be confirmed.
+        if ($context->getCustomer()->getActiveBillingAddress() === null) {
+            $this->addFlash(self::DANGER, $this->trans('checkout.addressMissingAlert'));
+
+            return $this->redirectToRoute('frontend.account.address.create.page');
+        }
+
         $page = $this->confirmPageLoader->load($request, $context);
         $cart = $page->getCart();
         $cartErrors = $cart->getErrors();

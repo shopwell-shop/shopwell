@@ -21,13 +21,15 @@ use Shopwell\Core\System\Sms\Template\Aggregate\SmsTemplateMapping\SmsTemplateMa
 use Shopwell\Core\System\Sms\Template\SmsParamValidator;
 use Shopwell\Core\System\Sms\Template\SmsTemplateCollection;
 use Shopwell\Core\System\Sms\Template\SmsTemplateEntity;
+use Shopwell\Core\System\Sms\Template\SmsTemplateMappingLocator;
 use Shopwell\Core\System\Sms\Template\SmsTemplateRenderer;
 use Shopwell\Core\System\Sms\Template\SmsTemplateResolver;
 use Shopwell\Core\System\Sms\Transport\SmsTransportLoader;
 use Shopwell\Core\System\Sms\Transport\SmsTransports;
+use Shopwell\Core\System\Sms\Util\CountryDialCodeResolver;
 use Shopwell\Core\System\Sms\Util\PhoneNumberNormalizer;
+use Shopwell\Core\System\Sms\Util\ShippedCountryDialCodeProvider;
 use Shopwell\Core\Test\Stub\DataAbstractionLayer\StaticEntityRepository;
-use Shopwell\Core\Test\Stub\SystemConfigService\StaticSystemConfigService;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Notifier\Message\MessageInterface;
@@ -58,10 +60,46 @@ class SmsSenderTest extends TestCase
     {
         $sender = $this->createSender(resolvedGatewayIds: ['gateway-id'], sendsOver: 'gateway-id');
 
-        $message = $this->createMessage(SmsTemplateEntity::SCENE_OTP, phone: '138 0000 0000');
+        $message = $this->createMessage(SmsTemplateEntity::SCENE_OTP, phone: '+86 138 0000 0000');
         $sender->send($message, Context::createDefaultContext());
 
         static::assertSame('+8613800000000', $message->getPhone());
+    }
+
+    public function testItHandsTheCountryOfTheNumberToTheRouting(): void
+    {
+        $number = '';
+
+        $gatewayResolver = static::createStub(SmsGatewayResolverInterface::class);
+        $gatewayResolver->method('resolveGatewayIds')->willReturnCallback(
+            static function (Context $context, ?string $salesChannelId, ?string $countryIso) use (&$number): array {
+                $number = (string) $countryIso;
+
+                return [];
+            }
+        );
+
+        $sender = $this->createSender(gatewayResolver: $gatewayResolver, sendsOver: SmsGatewayResolverInterface::GATEWAY_NULL);
+
+        $sender->send(
+            $this->createMessage(SmsTemplateEntity::SCENE_OTP, phone: '+998901234567'),
+            Context::createDefaultContext()
+        );
+
+        // a country the dial code data does not list stays unknown and is routed as GLOBAL
+        static::assertSame('', $number);
+    }
+
+    public function testItRefusesANumberThatNamesNoCountry(): void
+    {
+        $sender = $this->createSender();
+
+        $this->expectExceptionObject(SmsException::phoneNumberNotInternational('0170 1234567'));
+
+        $sender->send(
+            $this->createMessage(SmsTemplateEntity::SCENE_OTP, phone: '0170 1234567'),
+            Context::createDefaultContext()
+        );
     }
 
     public function testItFallsBackToTheNullGatewayWhenNothingMatched(): void
@@ -161,9 +199,12 @@ class SmsSenderTest extends TestCase
         array $gateways = [],
         array $resolvedGatewayIds = [],
         ?string $sendsOver = null,
+        ?SmsGatewayResolverInterface $gatewayResolver = null,
     ): SmsSender {
-        $gatewayResolver = static::createStub(SmsGatewayResolverInterface::class);
-        $gatewayResolver->method('resolveGatewayIds')->willReturn($resolvedGatewayIds);
+        if ($gatewayResolver === null) {
+            $gatewayResolver = static::createStub(SmsGatewayResolverInterface::class);
+            $gatewayResolver->method('resolveGatewayIds')->willReturn($resolvedGatewayIds);
+        }
 
         $transportLoader = $this->createMock(SmsTransportLoader::class);
 
@@ -195,22 +236,29 @@ class SmsSenderTest extends TestCase
 
         $templateResolver = new SmsTemplateResolver(
             StaticEntityRepository::of(SmsTemplateCollection::class, [new SmsTemplateCollection($templates)]),
-            StaticEntityRepository::of(SmsTemplateMappingCollection::class, [new SmsTemplateMappingCollection()]),
+            new SmsTemplateMappingLocator(
+                StaticEntityRepository::of(SmsTemplateMappingCollection::class, [new SmsTemplateMappingCollection()])
+            ),
             StaticEntityRepository::of(SmsGatewayCollection::class, [new SmsGatewayCollection($gateways)]),
             new SmsGatewayRegistry($factories),
             $gatewayResolver,
             new SmsParamValidator(),
             new SmsTemplateRenderer(),
-            new PhoneNumberNormalizer(new StaticSystemConfigService()),
+            $this->createNormalizer(),
         );
 
         return new SmsSender(
             new SmsTransports($transportLoader),
             $templateResolver,
             $gatewayResolver,
-            new PhoneNumberNormalizer(new StaticSystemConfigService()),
+            $this->createNormalizer(),
             $bus ?? static::createStub(MessageBusInterface::class),
         );
+    }
+
+    private function createNormalizer(): PhoneNumberNormalizer
+    {
+        return new PhoneNumberNormalizer(new CountryDialCodeResolver([new ShippedCountryDialCodeProvider()]));
     }
 
     private function createMessage(
@@ -248,7 +296,6 @@ class SmsSenderTest extends TestCase
         $gateway->setUniqueIdentifier($gateway->id);
         $gateway->technicalName = $technicalName;
         $gateway->enabled = true;
-        $gateway->strategy = SmsGatewayEntity::STRATEGY_EXCLUSIVE;
         $gateway->credentials = [];
         $gateway->options = [];
 

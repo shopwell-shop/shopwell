@@ -138,26 +138,16 @@
                                 />
                                 {% endblock %}
 
-                                {% block sw_customer_card_metadata_customer_name_editor_salutation %}
-                                <sw-entity-single-select
-                                    v-model:value="customer.salutationId"
-                                    name="sw-field--customer-salutationId"
-                                    class="sw-customer-card__salutation-select"
-                                    entity="salutation"
-                                    label-property="displayName"
-                                    :label="$t('sw-customer.card.labelSalutation')"
-                                    :criteria="salutationCriteria"
+                                {% block sw_customer_card_metadata_customer_name_editor_gender %}
+                                <sw-single-select
+                                    v-model:value="customer.gender"
+                                    name="sw-field--customer-gender"
+                                    class="sw-customer-card__gender-select"
+                                    :label="$t('sw-customer.card.labelGender')"
+                                    :options="genderOptions"
                                 />
                                 {% endblock %}
 
-                                {% block sw_customer_card_metadata_customer_name_editor_title %}
-                                <mt-text-field
-                                    v-model="customer.title"
-                                    name="sw-field--customer-title"
-                                    :label="$t('sw-customer.card.labelTitle')"
-                                    :placeholder="$t('sw-customer.card.placeholderTitle')"
-                                />
-                                {% endblock %}
                             </sw-container>
 
                             <sw-container

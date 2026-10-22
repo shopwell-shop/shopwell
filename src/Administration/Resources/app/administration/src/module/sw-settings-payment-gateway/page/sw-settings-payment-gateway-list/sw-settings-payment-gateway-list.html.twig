@@ -20,14 +20,14 @@
             {{ $t('sw-settings.index.title') }}
             <mt-icon
                 name="regular-chevron-right-xs"
-                size="var(--scale-size-12)"
+                size="12px"
             />
             {{ $t('sw-settings-payment-gateway.general.mainMenuItemGeneral') }}
             {% endblock %}
 
             {% block sw_settings_payment_gateway_list_smart_bar_header_amount %}
             <span
-                v-if="!isLoading"
+                v-if="!isLoading && filteredApps.length > 0"
                 class="sw-page__smart-bar-amount"
             >
                 ({{ filteredApps.length }})
@@ -40,23 +40,13 @@
 
     {% block sw_settings_payment_gateway_list_smart_bar_actions %}
     <template #smart-bar-actions>
-        {% block sw_settings_payment_gateway_list_smart_bar_actions_refresh %}
-        <mt-button
-            class="sw-settings-payment-gateway-list__refresh-action"
-            variant="secondary"
-            size="default"
-            @click="onRefresh"
-        >
-            {{ $t('sw-settings-payment-gateway.list.buttonRefresh') }}
-        </mt-button>
-        {% endblock %}
-
         {% block sw_settings_payment_gateway_list_smart_bar_actions_create %}
         <mt-button
+            v-tooltip.bottom="createButtonTooltip"
             class="sw-settings-payment-gateway-list__create-action"
             variant="primary"
             size="default"
-            :disabled="!canCreate || undefined"
+            :disabled="!acl.can('payment_app.creator') || undefined"
             @click="onCreate"
         >
             {{ $t('sw-settings-payment-gateway.list.buttonCreate') }}
@@ -67,100 +57,130 @@
 
     {% block sw_settings_payment_gateway_list_content %}
     <template #content>
-        <div class="sw-settings-payment-gateway-list__content">
-            {% block sw_settings_payment_gateway_list_empty_state %}
-            <mt-empty-state
-                v-if="!isLoading && filteredApps.length === 0"
-                class="sw-settings-payment-gateway-list__empty-state"
-                centered
-                icon="regular-plug"
-                :headline="term ? $t('sw-settings-payment-gateway.list.messageNoResult') : $t('sw-settings-payment-gateway.list.messageEmpty')"
-                :description="term ? $t('sw-settings-payment-gateway.list.messageNoResultSubline') : $t('sw-settings-payment-gateway.list.sublineEmpty')"
-            >
-                <template #button>
-                    <mt-button
-                        v-if="!term"
-                        variant="primary"
-                        size="small"
-                        :disabled="!canCreate || undefined"
-                        @click="onCreate"
+        <sw-card-view>
+            {% block sw_settings_payment_gateway_list_card %}
+            <mt-card position-identifier="sw-settings-payment-gateway-list">
+                {% block sw_settings_payment_gateway_list_grid %}
+                <template #grid>
+                    <sw-data-grid
+                        v-if="isLoading || filteredApps.length > 0"
+                        class="sw-settings-payment-gateway-list__grid"
+                        identifier="sw-settings-payment-gateway-list"
+                        :data-source="filteredApps"
+                        :columns="appColumns"
+                        :is-loading="isLoading"
+                        :full-page="false"
+                        :show-selection="false"
+                        :show-settings="true"
+                        :show-header="true"
+                        :allow-inline-edit="false"
+                        :allow-column-edit="true"
                     >
-                        {{ $t('sw-settings-payment-gateway.list.buttonCreate') }}
-                    </mt-button>
-                </template>
-            </mt-empty-state>
-            {% endblock %}
+                        {% block sw_settings_payment_gateway_list_grid_columns_name %}
+                        <template #column-name="{ item }">
+                            {% block sw_settings_payment_gateway_list_grid_columns_name_link %}
+                            <router-link
+                                class="sw-settings-payment-gateway-list__name-link"
+                                :to="{ name: 'sw.settings.payment.gateway.detail', params: { id: item.id } }"
+                            >
+                                {{ item.name }}
+                            </router-link>
+                            {% endblock %}
 
-            {% block sw_settings_payment_gateway_list_grid %}
-            <sw-data-grid
-                v-else
-                class="sw-settings-payment-gateway-list__grid"
-                identifier="sw-settings-payment-gateway-list"
-                :data-source="filteredApps"
-                :columns="appColumns"
-                :is-loading="isLoading"
-                :full-page="false"
-                :show-selection="false"
-                :show-settings="true"
-                :show-header="true"
-                :allow-inline-edit="false"
-                :allow-column-edit="true"
-            >
-                {% block sw_settings_payment_gateway_list_grid_column_technical_name %}
-                <template #column-technicalName="{ item }">
-                    <router-link :to="{ name: 'sw.settings.payment.gateway.detail', params: { id: item.id } }">
-                        {{ item.technicalName }}
-                    </router-link>
-                </template>
-                {% endblock %}
+                            {% block sw_settings_payment_gateway_list_grid_columns_name_platform_badge %}
+                            <mt-badge
+                                v-if="isPlatformApp(item)"
+                                class="sw-settings-payment-gateway-list__platform-badge"
+                                variant="info"
+                                size="small"
+                            >
+                                {{ $t('sw-settings-payment-gateway.list.badgePlatform') }}
+                            </mt-badge>
+                            {% endblock %}
+                        </template>
+                        {% endblock %}
 
-                {% block sw_settings_payment_gateway_list_grid_column_providers %}
-                <template #column-providers="{ item }">
-                    {{ (item.providers || []).filter(provider => provider.enabled).length }}
-                </template>
-                {% endblock %}
+                        {% block sw_settings_payment_gateway_list_grid_columns_active %}
+                        <template #column-active="{ item }">
+                            <mt-badge
+                                class="sw-settings-payment-gateway-list__status"
+                                size="small"
+                                :variant="item.active ? 'positive' : 'neutral'"
+                            >
+                                {{ item.active ? $t('sw-settings-payment-gateway.list.labelActive') : $t('sw-settings-payment-gateway.list.labelInactive') }}
+                            </mt-badge>
+                        </template>
+                        {% endblock %}
 
-                {% block sw_settings_payment_gateway_list_grid_column_channels %}
-                <template #column-channels="{ item }">
-                    {{ (item.channels || []).filter(channel => channel.enabled).length }}
-                </template>
-                {% endblock %}
+                        {% block sw_settings_payment_gateway_list_grid_columns_providers %}
+                        <template #column-providers="{ item }">
+                            {{ enabledProviderCount(item) }}
+                        </template>
+                        {% endblock %}
 
-                {% block sw_settings_payment_gateway_list_grid_column_active %}
-                <template #column-active="{ item }">
-                    <mt-badge :variant="item.active ? 'positive' : 'neutral'">
-                        {{ item.active ? $t('sw-settings-payment-gateway.list.labelActive') : $t('sw-settings-payment-gateway.list.labelInactive') }}
-                    </mt-badge>
-                </template>
-                {% endblock %}
+                        {% block sw_settings_payment_gateway_list_grid_columns_channels %}
+                        <template #column-channels="{ item }">
+                            {{ enabledChannelCount(item) }}
+                        </template>
+                        {% endblock %}
 
-                {% block sw_settings_payment_gateway_list_grid_actions %}
-                <template #actions="{ item }">
-                    {% block sw_settings_payment_gateway_list_grid_actions_edit %}
-                    <sw-context-menu-item
-                        class="sw-settings-payment-gateway-list__edit-action"
-                        :disabled="!canEdit || undefined"
-                        @click="onEdit(item)"
+                        {% block sw_settings_payment_gateway_list_grid_columns_actions %}
+                        <template #actions="{ item }">
+                            {% block sw_settings_payment_gateway_list_grid_columns_actions_edit %}
+                            <sw-context-menu-item
+                                class="sw-settings-payment-gateway-list__edit-action"
+                                :router-link="{ name: 'sw.settings.payment.gateway.detail', params: { id: item.id } }"
+                                :disabled="!acl.can('payment_app.editor') || undefined"
+                            >
+                                {{ $t('global.default.edit') }}
+                            </sw-context-menu-item>
+                            {% endblock %}
+
+                            {% block sw_settings_payment_gateway_list_grid_columns_actions_delete %}
+                            <sw-context-menu-item
+                                v-if="!isPlatformApp(item)"
+                                class="sw-settings-payment-gateway-list__delete-action"
+                                variant="danger"
+                                :disabled="!acl.can('payment_app.deleter') || undefined"
+                                @click="onOpenDeleteModal(item)"
+                            >
+                                {{ $t('global.default.delete') }}
+                            </sw-context-menu-item>
+                            {% endblock %}
+                        </template>
+                        {% endblock %}
+                    </sw-data-grid>
+
+                    {% block sw_settings_payment_gateway_list_empty_state %}
+                    <mt-empty-state
+                        v-if="!isLoading && filteredApps.length === 0"
+                        class="sw-settings-payment-gateway-list__empty-state"
+                        centered
+                        :icon="$route.meta.$module.icon"
+                        :headline="term === '' ? $t('sw-settings-payment-gateway.list.messageEmpty') : $t('sw-empty-state.messageNoResultTitle')"
+                        :description="term === '' ? $t('sw-settings-payment-gateway.list.sublineEmpty') : ''"
                     >
-                        {{ $t('global.default.edit') }}
-                    </sw-context-menu-item>
+                        {% block sw_settings_payment_gateway_list_empty_state_button %}
+                        <template
+                            v-if="term === '' && acl.can('payment_app.creator')"
+                            #button
+                        >
+                            <mt-button
+                                variant="primary"
+                                size="default"
+                                @click="onCreate"
+                            >
+                                {{ $t('sw-settings-payment-gateway.list.buttonCreate') }}
+                            </mt-button>
+                        </template>
+                        {% endblock %}
+                    </mt-empty-state>
                     {% endblock %}
-
-                    {% block sw_settings_payment_gateway_list_grid_actions_delete %}
-                    <sw-context-menu-item
-                        class="sw-settings-payment-gateway-list__delete-action"
-                        variant="danger"
-                        :disabled="!canDelete || undefined"
-                        @click="onOpenDeleteModal(item)"
-                    >
-                        {{ $t('global.default.delete') }}
-                    </sw-context-menu-item>
-                    {% endblock %}
                 </template>
                 {% endblock %}
-            </sw-data-grid>
+            </mt-card>
             {% endblock %}
-        </div>
+        </sw-card-view>
 
         {% block sw_settings_payment_gateway_list_delete_modal %}
         <mt-modal-root
@@ -174,7 +194,7 @@
             >
                 {% block sw_settings_payment_gateway_list_delete_modal_content %}
                 <p class="sw-settings-payment-gateway-list__delete-modal-content">
-                    {{ $t('sw-settings-payment-gateway.list.deleteModalMessage', { app: deleteTarget.name || deleteTarget.technicalName }) }}
+                    {{ $t('sw-settings-payment-gateway.list.deleteModalMessage', { app: deleteTarget.name }) }}
                 </p>
                 {% endblock %}
 

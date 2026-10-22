@@ -2,6 +2,8 @@ import './acl';
 
 import './mixin/cart-notification.mixin';
 
+import './page/sw-order-detail/extension/sw-order-detail';
+
 import defaultSearchConfiguration from './default-search-configuration';
 import DocumentV2Service from './service/documentV2.service';
 
@@ -243,6 +245,17 @@ function orderDetailChildren() {
             meta: {
                 parentPath: 'sw.order.index',
                 privilege: 'order.viewer',
+            },
+        },
+        // the returns of an order are worked where the order is read: the same person that answers the
+        // customer about an order decides about its return. The component lives in `sw-order-return`,
+        // the page here only names the route.
+        returns: {
+            component: 'sw-order-detail-return',
+            path: 'returns',
+            meta: {
+                parentPath: 'sw.order.index',
+                privilege: 'order_return.viewer',
             },
         },
     };

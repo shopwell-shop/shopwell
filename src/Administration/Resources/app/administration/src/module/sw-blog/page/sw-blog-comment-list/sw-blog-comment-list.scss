@@ -1,0 +1,23 @@
+.sw-blog-comment-list {
+    &__content {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+    }
+
+    .mt-empty-state {
+        padding-block: var(--scale-size-48);
+    }
+
+    &__title {
+        display: block;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    &__delete-message {
+        margin: 0;
+        color: var(--color-text-primary-default);
+    }
+}

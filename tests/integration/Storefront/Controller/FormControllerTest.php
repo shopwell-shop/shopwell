@@ -3,13 +3,9 @@
 namespace Shopwell\Tests\Integration\Storefront\Controller;
 
 use PHPUnit\Framework\TestCase;
-use Shopwell\Core\Framework\Context;
-use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
-use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Test\TestCaseBase\SalesChannelFunctionalTestBehaviour;
 use Shopwell\Core\Framework\Validation\DataBag\RequestDataBag;
-use Shopwell\Core\System\Salutation\SalutationCollection;
 use Shopwell\Storefront\Controller\FormController;
 use Shopwell\Storefront\Framework\Routing\RequestTransformer;
 use Shopwell\Storefront\Test\Controller\StorefrontControllerTestBehaviour;
@@ -90,17 +86,8 @@ class FormControllerTest extends TestCase
 
     public function testSendContactForm(): void
     {
-        /** @var EntityRepository<SalutationCollection> $salutation */
-        $salutation = static::getContainer()->get('salutation.repository');
-
-        $salutation = $salutation->search(
-            (new Criteria())->setLimit(1),
-            Context::createDefaultContext()
-        )->getEntities()->first();
-        static::assertNotNull($salutation);
-
         $data = [
-            'salutationId' => $salutation->getId(),
+            'gender' => $this->getValidGender(),
             'email' => 'test@example.com',
             'name' => 'John Doe',
             'subject' => 'Lorem ipsum',
@@ -133,7 +120,7 @@ class FormControllerTest extends TestCase
 
     public function testSendContactFormFails(): void
     {
-        // without salutationId and with incorrect email
+        // without gender and with incorrect email
         $data = [
             'email' => 'test@example',
             'name' => 'John Doe',

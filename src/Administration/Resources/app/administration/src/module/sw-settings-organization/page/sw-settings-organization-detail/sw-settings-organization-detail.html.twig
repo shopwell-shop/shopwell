@@ -1,0 +1,240 @@
+{% block sw_settings_organization_detail %}
+<sw-page class="sw-settings-organization-detail">
+
+    {% block sw_settings_organization_detail_smart_bar_header %}
+    <template #smart-bar-header>
+        {% block sw_settings_organization_detail_smart_bar_header_title %}
+        <h2>
+            {% block sw_settings_organization_detail_smart_bar_header_title_text %}
+            {{ $t('sw-settings-organization.list.textHeadline') }}
+            <mt-icon
+                name="regular-chevron-right-xs"
+                size="12px"
+            />
+            {{ organization?.name }}
+            {% endblock %}
+        </h2>
+        {% endblock %}
+    </template>
+    {% endblock %}
+
+    {% block sw_settings_organization_detail_language_switch %}
+    <template #language-switch>
+        <sw-language-switch @on-change="createdComponent" />
+    </template>
+    {% endblock %}
+
+    {% block sw_settings_organization_detail_content %}
+    <template #content>
+        {% block sw_settings_organization_detail_loading %}
+        <sw-skeleton
+            v-if="isLoading && !organization"
+            class="sw-settings-organization-detail__loading"
+            variant="bold"
+        />
+        {% endblock %}
+
+        {% block sw_settings_organization_detail_split %}
+        <sw-container
+            v-else
+            class="sw-settings-organization-detail__split"
+            columns="320px minmax(0, 1fr)"
+        >
+            {% block sw_settings_organization_detail_left %}
+            <div class="sw-settings-organization-detail__tree-panel">
+                {% block sw_settings_organization_detail_left_header %}
+                <div class="sw-settings-organization-detail__tree-header">
+                    <span class="sw-settings-organization-detail__tree-title">
+                        {{ $t('sw-settings-organization.detail.labelUnits') }}
+                    </span>
+                    <mt-button
+                        v-tooltip="{
+                            message: $t('sw-privileges.tooltip.warning'),
+                            disabled: canCreate,
+                            showOnDisabledElements: true
+                        }"
+                        class="sw-settings-organization-detail__add-root-unit"
+                        variant="primary"
+                        size="small"
+                        :disabled="!canCreate || undefined"
+                        @click="onAddRootUnit"
+                    >
+                        {{ $t('sw-settings-organization.detail.buttonAddUnit') }}
+                    </mt-button>
+                </div>
+                {% endblock %}
+
+                {% block sw_settings_organization_detail_tree %}
+                <sw-settings-organization-unit-tree
+                    :units="units"
+                    :selected-unit-id="selectedUnitId"
+                    :is-loading="isLoading"
+                    @select-unit="onSelectUnit"
+                    @add-child="onAddChild"
+                    @add-root-unit="onAddRootUnit"
+                />
+                {% endblock %}
+            </div>
+            {% endblock %}
+
+            {% block sw_settings_organization_detail_right %}
+            <div class="sw-settings-organization-detail__form-panel">
+                {% block sw_settings_organization_detail_no_selection %}
+                <mt-empty-state
+                    v-if="!selectedUnit"
+                    centered
+                    :icon="$route.meta.$module.icon"
+                    :headline="$t('sw-settings-organization.detail.messageNoUnitSelected')"
+                    :description="$t('sw-settings-organization.detail.messageNoUnitSelectedDescription')"
+                />
+                {% endblock %}
+
+                {% block sw_settings_organization_detail_unit_form %}
+                <sw-card-view v-else>
+                    {% block sw_settings_organization_detail_unit_form_card %}
+                    <mt-card
+                        position-identifier="sw-settings-organization-detail-unit"
+                        :title="selectedUnit.translated?.name ?? selectedUnit.name"
+                        :is-loading="isLoading"
+                    >
+                        {% block sw_settings_organization_detail_unit_form_fields %}
+                        <mt-text-field
+                            v-model="selectedUnit.name"
+                            class="sw-settings-organization-detail__unit-name"
+                            required
+                            :disabled="!canEdit"
+                            :label="$t('sw-settings-organization.detail.labelUnitName')"
+                            :placeholder="$t('sw-settings-organization.detail.placeholderUnitName')"
+                            @update:model-value="onUnitFieldChange"
+                        />
+
+                        <mt-select
+                            class="sw-settings-organization-detail__unit-parent"
+                            :model-value="selectedUnit.parentId"
+                            :disabled="!canEdit"
+                            :label="$t('sw-settings-organization.detail.labelParentUnit')"
+                            :placeholder="$t('sw-settings-organization.detail.placeholderParentUnit')"
+                            :options="parentOptions"
+                            :help-text="$t('sw-settings-organization.detail.helpTextParentUnit')"
+                            @update:model-value="onParentChange"
+                        />
+
+                        <mt-switch
+                            v-model="selectedUnit.active"
+                            class="sw-settings-organization-detail__unit-active"
+                            :disabled="!canEdit"
+                            :label="$t('sw-settings-organization.detail.labelUnitActive')"
+                            @update:model-value="onUnitFieldChange"
+                        />
+                        {% endblock %}
+                    </mt-card>
+                    {% endblock %}
+
+                    {% block sw_settings_organization_detail_unit_danger_zone %}
+                    <mt-card
+                        v-if="canDelete"
+                        class="sw-settings-organization-detail__danger-zone"
+                        position-identifier="sw-settings-organization-detail-unit-danger"
+                        :title="$t('sw-settings-organization.detail.labelDangerZone')"
+                    >
+                        <p class="sw-settings-organization-detail__danger-text">
+                            {{ $t('sw-settings-organization.detail.textDangerZone') }}
+                        </p>
+
+                        <mt-button
+                            class="sw-settings-organization-detail__delete-unit"
+                            variant="critical"
+                            ghost
+                            size="small"
+                            @click="onOpenDeleteModal"
+                        >
+                            {{ $t('sw-settings-organization.detail.buttonDeleteUnit') }}
+                        </mt-button>
+                    </mt-card>
+                    {% endblock %}
+                </sw-card-view>
+                {% endblock %}
+            </div>
+            {% endblock %}
+        </sw-container>
+        {% endblock %}
+    </template>
+    {% endblock %}
+
+    {% block sw_settings_organization_detail_create_unit_modal %}
+    <sw-modal
+        v-if="showCreateUnitModal"
+        class="sw-settings-organization-detail__create-unit-modal"
+        :title="newUnitParent ? $t('sw-settings-organization.detail.modalTitleCreateChild', { name: newUnitParent.translated?.name ?? newUnitParent.name }) : $t('sw-settings-organization.detail.modalTitleCreateRoot')"
+        variant="small"
+        @modal-close="onCloseCreateUnitModal"
+    >
+        {% block sw_settings_organization_detail_create_unit_modal_fields %}
+        <mt-text-field
+            v-model="newUnitName"
+            class="sw-settings-organization-detail__create-unit-name"
+            required
+            :label="$t('sw-settings-organization.detail.labelUnitName')"
+            :placeholder="$t('sw-settings-organization.detail.placeholderUnitName')"
+        />
+        {% endblock %}
+
+        {% block sw_settings_organization_detail_create_unit_modal_footer %}
+        <template #modal-footer>
+            <mt-button
+                size="small"
+                variant="secondary"
+                @click="onCloseCreateUnitModal"
+            >
+                {{ $t('global.default.cancel') }}
+            </mt-button>
+
+            <mt-button
+                variant="primary"
+                size="small"
+                @click="onCreateUnitSave"
+            >
+                {{ $t('global.default.save') }}
+            </mt-button>
+        </template>
+        {% endblock %}
+    </sw-modal>
+    {% endblock %}
+
+    {% block sw_settings_organization_detail_delete_unit_modal %}
+    <sw-modal
+        v-if="showDeleteModal && selectedUnit"
+        class="sw-settings-organization-detail__delete-unit-modal"
+        :title="$t('global.default.warning')"
+        variant="small"
+        @modal-close="onCloseDeleteModal"
+    >
+        {% block sw_settings_organization_detail_delete_unit_modal_text %}
+        <p class="sw-settings-organization-detail__delete-text">
+            {{ $t('sw-settings-organization.detail.textDeleteUnitConfirm', { name: selectedUnit.translated?.name ?? selectedUnit.name }, 0) }}
+        </p>
+        {% endblock %}
+
+        {% block sw_settings_organization_detail_delete_unit_modal_footer %}
+        <template #modal-footer>
+            <mt-button
+                size="small"
+                variant="secondary"
+                @click="onCloseDeleteModal"
+            >
+                {{ $t('global.default.cancel') }}
+            </mt-button>
+
+            <mt-button
+                variant="critical"
+                size="small"
+                @click="onConfirmDeleteUnit"
+            >
+                {{ $t('global.default.delete') }}
+            </mt-button>
+        </template>
+        {% endblock %}
+    </sw-modal>
+    {% endblock %}
+</sw-page>
+{% endblock %}

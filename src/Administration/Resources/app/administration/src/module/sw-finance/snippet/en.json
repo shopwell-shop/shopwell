@@ -1,0 +1,255 @@
+{
+    "sw-finance": {
+        "errors": {
+            "loadFailed": "The data could not be loaded."
+        },
+        "general": {
+            "description": "Release transfer requests and review the wallet transactions",
+            "mainMenuItemGeneral": "Finance"
+        },
+        "navigation": {
+            "transfer": "Transfer Requests",
+            "walletTransactions": "Wallet Transactions"
+        },
+        "transfer": {
+            "actions": {
+                "cancel": "Reject",
+                "submit": "Approve and transfer"
+            },
+            "approve": {
+                "buttonConfirm": "Confirm transfer",
+                "checkbox": "I checked the recipient and I am aware that the money will actually be transferred.",
+                "messageRejected": "The transfer was refused before it reached the channel: {reason}",
+                "messageSubmitFailed": "The submission failed.",
+                "modalTitle": "Confirm transfer",
+                "noticeAccepted": "Submitted to the channel. Current state: {state}.",
+                "noticeAcceptedWithoutState": "Submitted to the channel. Refresh to see the current state.",
+                "noticeFailed": "{provider} refused the transfer: {code} - {reason}",
+                "noticeFailedWithoutReason": "{provider} refused the transfer.",
+                "noticeUnknown": "The channel did not answer conclusively - the money may have left the platform. Check this merchant transfer no. in the provider backend first and only submit again after confirming that nothing was sent.",
+                "summaryAmount": "Amount",
+                "summaryApp": "Payment app",
+                "summaryChannel": "Provider and channel",
+                "summaryOutNo": "Merchant transfer no.",
+                "summaryRecipient": "Recipient",
+                "warning": "Confirming transfers {amount} to this account through {provider} right away. The transfer can not be recalled."
+            },
+            "create": {
+                "accountTypeBusiness": "Business",
+                "accountTypePersonal": "Private",
+                "fieldAmount": "Amount",
+                "fieldApp": "Payment app",
+                "fieldBankAccountType": "Account type",
+                "fieldBankBranchName": "Bank branch",
+                "fieldBankName": "Bank",
+                "fieldChannel": "Channel",
+                "fieldCurrency": "Currency",
+                "fieldHolderName": "Account holder",
+                "fieldIdentityType": "Identity type",
+                "fieldIdentityValue": "Identity",
+                "fieldNote": "Note",
+                "fieldOutNo": "Merchant transfer no.",
+                "fieldProvider": "Payment provider",
+                "fieldRecipientExisting": "Account",
+                "fieldRecipientSource": "Recipient account",
+                "fieldRecipientSourceExisting": "Use an existing account",
+                "fieldRecipientSourceNew": "Register a new account",
+                "groupAmount": "Amount",
+                "groupNote": "Note",
+                "groupRecipient": "Recipient",
+                "helpIdentityValue": "Stored encrypted. It is never shown again after saving, only a masked identifier is.",
+                "helpOutNo": "Letters and digits only, at most 30. Leave it empty to let the platform generate one.",
+                "identityType": {
+                    "alipay_logon_id": "Alipay account (phone or e-mail)",
+                    "alipay_open_id": "Alipay open id",
+                    "alipay_user_id": "Alipay user id",
+                    "bankcard": "Bank card",
+                    "paypal_email": "PayPal e-mail",
+                    "paypal_payer_id": "PayPal payer id",
+                    "paypal_phone": "PayPal phone",
+                    "stripe_account": "Stripe account",
+                    "wechat_open_id": "Wechat open id"
+                },
+                "labelNoRecipients": "No payable account of this provider exists yet - register a new one.",
+                "messageCreated": "Transfer request created, waiting for approval.",
+                "messageFailed": "The transfer request could not be created.",
+                "messageReplayed": "This merchant transfer no. is already booked - the existing request was opened.",
+                "modalTitle": "New transfer request",
+                "placeholderAmount": "0.00",
+                "placeholderApp": "Select a payment app...",
+                "placeholderChannel": "Select a channel...",
+                "placeholderIdentityType": "Select an identity type...",
+                "placeholderIdentityValue": "e.g. the payer id at the provider",
+                "placeholderNote": "Visible to the approver only, never sent to the channel",
+                "placeholderOutNo": "Leave empty to generate",
+                "placeholderProvider": "Select a payment provider...",
+                "placeholderRecipient": "Select an account...",
+                "validationAmountInvalid": "Enter the amount with at most two decimals, e.g. 120.50.",
+                "validationAmountRequired": "Enter the amount.",
+                "validationAppRequired": "Select the payment app the transfer is booked for.",
+                "validationBankRequired": "A card payout requires the bank details and the account type.",
+                "validationChannelRequired": "Select the channel.",
+                "validationCurrencyRequired": "Select the currency.",
+                "validationHolderNameRequired": "This identity type requires the name of the account holder.",
+                "validationIdentityTypeRequired": "Select the identity type.",
+                "validationIdentityValueRequired": "Enter the identity of the account.",
+                "validationIdentityValueTooLong": "The identity is longer than {limit} bytes.",
+                "validationNoteTooLong": "The note is longer than 255 characters.",
+                "validationOutNoInvalid": "Only letters and digits, at most 30 characters.",
+                "validationProviderRequired": "Select the payment provider.",
+                "validationRecipientRequired": "Select the account the money goes to."
+            },
+            "detail": {
+                "buttonRefresh": "Refresh",
+                "cardChannelRefTitle": "Channel reference",
+                "cardConfirmationTitle": "Recipient confirmation",
+                "cardFailureTitle": "Failure",
+                "cardGeneralTitle": "General",
+                "cardMetadataTitle": "Metadata",
+                "cardNoteTitle": "Note",
+                "cardRecipientTitle": "Recipient",
+                "cardTimelineTitle": "Timeline",
+                "labelAmount": "Amount",
+                "labelCanceledAt": "Canceled at",
+                "labelChannel": "Channel",
+                "labelConfirmation": "Confirmation payload",
+                "labelCreatedAt": "Created at",
+                "labelCurrency": "Currency",
+                "labelExpireAt": "Expires at",
+                "labelFailureCode": "Failure code",
+                "labelFailureReason": "Failure reason",
+                "labelIdentityType": "Identity type",
+                "labelMetadata": "Metadata",
+                "labelOnboardingStatus": "Onboarding status",
+                "labelOutNo": "Merchant transfer no.",
+                "labelPaymentApp": "Payment app",
+                "labelPayoutEnabled": "Payout enabled",
+                "labelProvider": "Payment provider",
+                "labelProviderAccountId": "Channel account",
+                "labelProviderRef": "Channel reference",
+                "labelProviderStageRef": "Channel stage reference",
+                "labelRecipientName": "Account holder",
+                "labelRejectReason": "Rejected",
+                "labelReturnedAt": "Returned at",
+                "labelSettledAt": "Settled at",
+                "labelSubmitAttempts": "Submit attempts",
+                "labelSubmittedAt": "Submitted at",
+                "labelTransferNo": "Transfer no.",
+                "labelVerifiedAt": "Verified at",
+                "messageNoMetadata": "No metadata",
+                "messageNoNote": "No note",
+                "title": "Transfer request",
+                "valueConfirmationGenerated": "Generated, waiting for the recipient",
+                "valueConfirmationMissing": "Not generated"
+            },
+            "filters": {
+                "channelFilter": {
+                    "label": "Channel",
+                    "placeholder": "Separate multiple channels with a comma..."
+                },
+                "outNoFilter": {
+                    "label": "Merchant transfer no.",
+                    "placeholder": "Separate multiple numbers with a comma..."
+                },
+                "providerFilter": {
+                    "label": "Payment provider",
+                    "placeholder": "Separate multiple providers with a comma..."
+                },
+                "stateFilter": {
+                    "label": "State",
+                    "placeholder": "All states..."
+                },
+                "transferNoFilter": {
+                    "label": "Transfer no.",
+                    "placeholder": "Separate multiple numbers with a comma..."
+                }
+            },
+            "list": {
+                "buttonCreate": "New transfer request",
+                "columnAmount": "Amount",
+                "columnChannel": "Channel",
+                "columnCreatedAt": "Created at",
+                "columnFailure": "Failure reason",
+                "columnOutNo": "Merchant transfer no.",
+                "columnProvider": "Payment provider",
+                "columnRecipient": "Recipient",
+                "columnState": "State",
+                "columnTransferNo": "Transfer no.",
+                "messageEmpty": "No transfer requests yet",
+                "messageNoResult": "No transfer request found",
+                "messageNoResultSubline": "No transfer request matches your search or filter.",
+                "placeholderSearchBar": "Search transfer requests...",
+                "sublineEmpty": "Use \"New transfer request\" to book the first payout. It is not sent to the channel until it is approved.",
+                "title": "Transfer Requests",
+                "titleSidebarItemRefresh": "Refresh list"
+            },
+            "reject": {
+                "buttonConfirm": "Reject",
+                "fieldReason": "Reason",
+                "hint": "The request can not be submitted after it is rejected. Create a new one if the money still has to be sent.",
+                "messageFailed": "The transfer request could not be rejected.",
+                "modalTitle": "Reject transfer request",
+                "noticeRejected": "The transfer request was rejected.",
+                "placeholderReason": "Why is this request rejected?",
+                "validationReasonRequired": "Enter the reason - it is the only record of the rejection.",
+                "validationReasonTooLong": "The reason is longer than 255 characters."
+            },
+            "stateLabel": {
+                "awaiting_user_confirm": "Awaiting recipient",
+                "canceled": "Canceled",
+                "created": "To be submitted",
+                "failed": "Failed",
+                "processing": "Processing",
+                "returned": "Returned",
+                "submitted": "Submitted",
+                "succeeded": "Succeeded"
+            }
+        },
+        "walletTransactions": {
+            "filters": {
+                "createdFilter": {
+                    "label": "Created at",
+                    "placeholder": "Select a period..."
+                },
+                "typeFilter": {
+                    "label": "Type",
+                    "placeholder": "All types..."
+                }
+            },
+            "general": {
+                "mainMenuItemGeneral": "Wallet Transactions"
+            },
+            "list": {
+                "columnAmount": "Amount",
+                "columnBalanceAfter": "Balance after",
+                "columnCreatedAt": "Created at",
+                "columnCustomer": "Customer",
+                "columnOrder": "Order",
+                "columnType": "Type",
+                "emptyHeadline": "No transactions yet",
+                "emptySubline": "Every top-up, purchase, refund and adjustment of the customer wallets is booked here as soon as the balance moves.",
+                "noResultSubline": "No transaction matches your search or filter.",
+                "noResultTitle": "No transaction found",
+                "placeholderSearchBar": "Search by customer, customer no. or reference...",
+                "title": "Wallet Transactions",
+                "titleSidebarItemRefresh": "Refresh list"
+            },
+            "type": {
+                "adjust": "Adjustment",
+                "consume": "Purchase",
+                "refund": "Refund",
+                "top_up": "Top-up"
+            }
+        }
+    },
+    "sw-privileges": {
+        "permissions": {
+            "payment_transfer": {
+                "label": "Transfer requests"
+            },
+            "wallet": {
+                "label": "Customer wallet"
+            }
+        }
+    }
+}

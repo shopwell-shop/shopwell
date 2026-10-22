@@ -9,7 +9,6 @@ use Shopwell\Core\Framework\Rule\RuleComparison;
 use Shopwell\Core\Framework\Rule\RuleConfig;
 use Shopwell\Core\Framework\Rule\RuleConstraints;
 use Shopwell\Core\Framework\Rule\RuleScope;
-use Shopwell\Core\System\Salutation\SalutationDefinition;
 
 /**
  * @final
@@ -20,13 +19,13 @@ class CustomerSalutationRule extends Rule
     final public const RULE_NAME = 'customerSalutation';
 
     /**
-     * @param list<string>|null $salutationIds
+     * @param list<string>|null $genderCodes
      *
      * @internal
      */
     public function __construct(
         public string $operator = self::OPERATOR_EQ,
-        public ?array $salutationIds = null
+        public ?array $genderCodes = null
     ) {
         parent::__construct();
     }
@@ -34,14 +33,14 @@ class CustomerSalutationRule extends Rule
     public function getConstraints(): array
     {
         $constraints = [
-            'operator' => RuleConstraints::uuidOperators(true),
+            'operator' => RuleConstraints::stringOperators(true),
         ];
 
         if ($this->operator === self::OPERATOR_EMPTY) {
             return $constraints;
         }
 
-        $constraints['salutationIds'] = RuleConstraints::uuids();
+        $constraints['genderCodes'] = RuleConstraints::stringArray();
 
         return $constraints;
     }
@@ -55,23 +54,23 @@ class CustomerSalutationRule extends Rule
         if (!$customer = $scope->getCustomer()) {
             return RuleComparison::isNegativeOperator($this->operator);
         }
-        $salutation = $customer->getSalutation();
+        $gender = $customer->getGender();
 
         if ($this->operator === self::OPERATOR_EMPTY) {
-            return $salutation === null;
+            return $gender === null;
         }
 
-        if ($salutation === null) {
+        if ($gender === null) {
             return RuleComparison::isNegativeOperator($this->operator);
         }
 
-        return RuleComparison::uuids([$salutation->getId()], $this->salutationIds, $this->operator);
+        return RuleComparison::stringArray($gender, $this->genderCodes ?? [], $this->operator);
     }
 
     public function getConfig(): RuleConfig
     {
         return (new RuleConfig())
             ->operatorSet(RuleConfig::OPERATOR_SET_STRING, true)
-            ->entitySelectField('salutationIds', SalutationDefinition::ENTITY_NAME, true, ['labelProperty' => 'displayName']);
+            ->stringField('genderCodes');
     }
 }

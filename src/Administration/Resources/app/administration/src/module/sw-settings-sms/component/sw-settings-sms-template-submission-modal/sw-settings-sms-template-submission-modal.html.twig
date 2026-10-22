@@ -1,0 +1,111 @@
+{% block sw_settings_sms_template_submission_modal %}
+<mt-modal-root
+    class="sw-settings-sms-template-submission-modal"
+    is-open
+    @change="onModalChange"
+>
+    <mt-modal
+        width="m"
+        :title="$t('sw-settings-sms.mapping.submissionModalTitle')"
+    >
+        {% block sw_settings_sms_template_submission_modal_intro %}
+        <p class="sw-settings-sms-template-submission-modal__intro">
+            {{ $t('sw-settings-sms.mapping.submissionModalIntro') }}
+        </p>
+        {% endblock %}
+
+        {% block sw_settings_sms_template_submission_modal_fields %}
+        <div class="sw-settings-sms-template-submission-modal__fields">
+            {# Which fields the form has is decided by the provider, the modal only renders them. #}
+            <div
+                v-for="field in fields"
+                :key="field.name"
+                class="sw-settings-sms-template-submission-modal__field"
+            >
+                {% block sw_settings_sms_template_submission_modal_field_select %}
+                <mt-select
+                    v-if="field.type === 'select'"
+                    v-model="fieldValues[field.name]"
+                    :class="`sw-settings-sms-template-submission-modal__field-${field.name}`"
+                    :name="field.name"
+                    :label="fieldLabel(field)"
+                    :help-text="helpTextOf(field)"
+                    :options="optionsOf(field)"
+                    :required="field.required"
+                    :disabled="isSubmitting || undefined"
+                />
+                {% endblock %}
+
+                {% block sw_settings_sms_template_submission_modal_field_int %}
+                <mt-number-field
+                    v-if="field.type === 'int'"
+                    v-model="fieldValues[field.name]"
+                    :class="`sw-settings-sms-template-submission-modal__field-${field.name}`"
+                    :name="field.name"
+                    number-type="int"
+                    :label="fieldLabel(field)"
+                    :help-text="helpTextOf(field)"
+                    :required="field.required"
+                    :disabled="isSubmitting || undefined"
+                />
+                {% endblock %}
+
+                {% block sw_settings_sms_template_submission_modal_field_text %}
+                <mt-textarea
+                    v-if="field.type === 'text'"
+                    v-model="fieldValues[field.name]"
+                    :class="`sw-settings-sms-template-submission-modal__field-${field.name}`"
+                    :name="field.name"
+                    :label="fieldLabel(field)"
+                    :help-text="helpTextOf(field)"
+                    :required="field.required"
+                    :disabled="isSubmitting || undefined"
+                />
+                {% endblock %}
+
+                {% block sw_settings_sms_template_submission_modal_field_string %}
+                <mt-text-field
+                    v-if="field.type === 'string'"
+                    v-model="fieldValues[field.name]"
+                    :class="`sw-settings-sms-template-submission-modal__field-${field.name}`"
+                    :name="field.name"
+                    :label="fieldLabel(field)"
+                    :help-text="helpTextOf(field)"
+                    :required="field.required"
+                    :disabled="isSubmitting || undefined"
+                />
+                {% endblock %}
+            </div>
+        </div>
+        {% endblock %}
+
+        {% block sw_settings_sms_template_submission_modal_footer %}
+        <template #footer>
+            {% block sw_settings_sms_template_submission_modal_footer_cancel %}
+            <mt-modal-close
+                as="mt-button"
+                variant="secondary"
+                size="small"
+                :disabled="isSubmitting || undefined"
+            >
+                {{ $t('global.default.cancel') }}
+            </mt-modal-close>
+            {% endblock %}
+
+            {% block sw_settings_sms_template_submission_modal_footer_submit %}
+            <mt-modal-action
+                as="mt-button"
+                variant="primary"
+                size="small"
+                :is-loading="isSubmitting"
+                :disabled="isSubmitting || undefined"
+                @click="onSubmit"
+            >
+                {{ $t('sw-settings-sms.mapping.submitAction') }}
+            </mt-modal-action>
+            {% endblock %}
+        </template>
+        {% endblock %}
+    </mt-modal>
+</mt-modal-root>
+{% endblock %}

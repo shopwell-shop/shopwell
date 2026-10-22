@@ -57,7 +57,7 @@ class ContactFormServiceTest extends TestCase
 
         $dataBag = new DataBag();
         $dataBag->add([
-            'salutationId' => $this->getValidSalutationId(),
+            'gender' => $this->getValidGender(),
             'name' => 'Firstname Lastname',
             'email' => 'test@shopwell.cn',
             'phone' => '12345/6789',
@@ -87,7 +87,7 @@ class ContactFormServiceTest extends TestCase
 
         $dataBag = new DataBag();
         $dataBag->add([
-            'salutationId' => $this->getValidSalutationId(),
+            'gender' => $this->getValidGender(),
             'name' => '',
             'email' => 'test@shopwell.cn',
             'phone' => '12345/6789',
@@ -110,7 +110,7 @@ class ContactFormServiceTest extends TestCase
 
         $dataBag = new DataBag();
         $dataBag->add([
-            'salutationId' => $this->getValidSalutationId(),
+            'gender' => $this->getValidGender(),
             'name' => 'Firstname Lastname',
             'email' => 'test@shopwell.cn',
             'phone' => '',
@@ -136,7 +136,7 @@ class ContactFormServiceTest extends TestCase
 
         $dataBag = new DataBag();
         $dataBag->add([
-            'salutationId' => $this->getValidSalutationId(),
+            'gender' => $this->getValidGender(),
             'name' => '',
             'email' => 'test@shopwell.cn',
             'phone' => '',

@@ -40,9 +40,16 @@ class OrderAmountServiceTest extends TestCase
     #[DataProvider('loadProvider')]
     public function testLoad(array $orders, array $expected, string $since, bool $paid): void
     {
+        // The state names are not unique over all machines - `paid` exists in the order transaction
+        // machine and in the state machine of a payment order - so the lookup has to name the machine
+        // the id is used for, otherwise the transaction would get the paid state of the other machine.
         $states = static::getContainer()->get(Connection::class)->fetchAllKeyValue(
-            'SELECT technical_name, LOWER(HEX(id)) FROM state_machine_state WHERE technical_name IN (:states)',
-            ['states' => [OrderTransactionStates::STATE_PAID, OrderStates::STATE_OPEN]],
+            'SELECT state.technical_name, LOWER(HEX(state.id))
+                FROM state_machine_state state
+                INNER JOIN state_machine machine ON state.state_machine_id = machine.id
+                WHERE machine.technical_name = :machine
+                    AND state.technical_name IN (:states)',
+            ['machine' => OrderTransactionStates::STATE_MACHINE, 'states' => [OrderTransactionStates::STATE_PAID, OrderStates::STATE_OPEN]],
             ['states' => ArrayParameterType::STRING]
         );
 

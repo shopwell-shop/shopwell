@@ -76,6 +76,14 @@ class StateMachineStateDefinition extends EntityDefinition
             (new TranslatedField('customFields'))->addFlags(new ApiAware()),
             new OneToManyAssociationField('toStateMachineHistoryEntries', StateMachineHistoryDefinition::class, 'to_state_id'),
             new OneToManyAssociationField('fromStateMachineHistoryEntries', StateMachineHistoryDefinition::class, 'from_state_id'),
+
+            // Reverse sides of the payment domain, the state of an entity points into this definition
+            new OneToManyAssociationField('paymentOrders', 'payment_order', 'state_id'),
+            new OneToManyAssociationField('paymentMandates', 'payment_mandate', 'status_id'),
+            new OneToManyAssociationField('paymentSubscriptions', 'payment_subscription', 'status_id'),
+            new OneToManyAssociationField('paymentSubscriptionCycles', 'payment_subscription_cycle', 'status_id'),
+            new OneToManyAssociationField('paymentTransfers', 'payment_transfer', 'status_id'),
+            new OneToManyAssociationField('orderReturns', 'order_return', 'state_id'),
         ]);
     }
 }

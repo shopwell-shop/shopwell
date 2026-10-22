@@ -8,6 +8,11 @@ use Shopwell\Core\Framework\Migration\MigrationStep;
 
 /**
  * @internal
+ *
+ * The columns `default_billing_address_id` and `default_shipping_address_id` are nullable, because a
+ * customer may register with email and password only and provide the addresses later during checkout.
+ * In this development baseline the schema is recreated from the migrations
+ * (`system:install --drop-database`), so the nullability is defined here instead of in a separate migration.
  */
 #[Package('framework')]
 class Migration1536232960Customer extends MigrationStep
@@ -28,17 +33,16 @@ class Migration1536232960Customer extends MigrationStep
               `sales_channel_id` BINARY(16) NOT NULL,
               `language_id` BINARY(16) NOT NULL,
               `last_payment_method_id` BINARY(16) NULL,
-              `default_billing_address_id` BINARY(16) NOT NULL,
-              `default_shipping_address_id` BINARY(16) NOT NULL,
+              `default_billing_address_id` BINARY(16) NULL,
+              `default_shipping_address_id` BINARY(16) NULL,
               `customer_number` VARCHAR(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-              `salutation_id` BINARY(16) NOT NULL,
+              `gender` VARCHAR(255) COLLATE utf8mb4_unicode_ci NULL,
               `name` VARCHAR(255) COLLATE utf8mb4_unicode_ci NOT NULL,
               `company`     VARCHAR(255) COLLATE utf8mb4_unicode_ci NULL,
               `password` VARCHAR(1024) COLLATE utf8mb4_unicode_ci NULL,
               `legacy_password` VARCHAR(255) COLLATE utf8mb4_unicode_ci NULL,
               `legacy_encoder` VARCHAR(255) COLLATE utf8mb4_unicode_ci NULL,
               `email` VARCHAR(254) COLLATE utf8mb4_unicode_ci NOT NULL,
-              `title` VARCHAR(100) COLLATE utf8mb4_unicode_ci NULL,
               `phone_number` VARCHAR(40) COLLATE utf8mb4_unicode_ci NULL,
               `active` TINYINT(1) NOT NULL DEFAULT 1,
               `guest` TINYINT(1) NOT NULL DEFAULT 0,
@@ -65,9 +69,7 @@ class Migration1536232960Customer extends MigrationStep
               CONSTRAINT `fk.customer.last_payment_method_id` FOREIGN KEY (`last_payment_method_id`)
                 REFERENCES `payment_method` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
               CONSTRAINT `fk.customer.sales_channel_id` FOREIGN KEY (`sales_channel_id`)
-                REFERENCES `sales_channel` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
-              CONSTRAINT `fk.customer.salutation_id` FOREIGN KEY (`salutation_id`)
-                REFERENCES `salutation` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE
+                REFERENCES `sales_channel` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE
             ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 SQL;
 

@@ -3,13 +3,9 @@
 namespace Shopwell\Tests\Integration\Storefront\Framework\Captcha;
 
 use PHPUnit\Framework\TestCase;
-use Shopwell\Core\Framework\Context;
-use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
-use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopwell\Core\Framework\Test\TestCaseBase\SalesChannelApiTestBehaviour;
-use Shopwell\Core\System\Salutation\SalutationCollection;
 use Shopwell\Core\System\SystemConfig\SystemConfigService;
 use Shopwell\Storefront\Framework\Captcha\BasicCaptcha;
 use Shopwell\Storefront\Framework\Captcha\GoogleReCaptchaV3;
@@ -38,17 +34,8 @@ class CaptchaRouteListenerTest extends TestCase
             ],
         ]);
 
-        /** @var EntityRepository<SalutationCollection> $repo */
-        $repo = static::getContainer()->get('salutation.repository');
-        $salutation = $repo->search(
-            (new Criteria())->setLimit(1),
-            Context::createDefaultContext()
-        )->getEntities()->first();
-
-        static::assertNotNull($salutation);
-
         $data = [
-            'salutationId' => $salutation->getId(),
+            'gender' => $this->getValidGender(),
             'email' => 'kyln@shopwell.cn',
             'name' => 'Ky Le',
             'subject' => 'Captcha',
@@ -200,7 +187,7 @@ class CaptchaRouteListenerTest extends TestCase
             '/account/register',
             $this->tokenize('frontend.account.register.save', [
                 'errorRoute' => 'frontend.account.register.page',
-                'salutationId' => $this->getValidSalutationId(),
+                'gender' => $this->getValidGender(),
                 'name' => 'Guest Convert',
                 'email' => 'guest-convert@shopwell.cn',
                 'billingAddress' => [

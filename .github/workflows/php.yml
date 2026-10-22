@@ -98,6 +98,14 @@ jobs:
       - name: Lint Snippets
         run: bin/console translation:validate
 
+      # The payment interfaces are declarations: a capability announced without an action, a duplicate
+      # channel name or a payout notification without a verifier is a broken installation that only
+      # shows up at the first payment of a shopper otherwise. The command builds the declarations out of
+      # the container and needs no database (verified against an unreachable DATABASE_URL, it still
+      # answers `[OK]` with exit code 0), so it belongs in this job next to the other console checks.
+      - name: Validate payment interface declarations
+        run: bin/console payment:providers:validate
+
   phpstan:
     needs:
       - markdown-only-changes

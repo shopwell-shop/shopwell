@@ -16,13 +16,12 @@ use Shopwell\Core\System\Country\CountryDefinition;
 use Shopwell\Core\System\Country\CountryEntity;
 use Shopwell\Core\System\Country\SalesChannel\CountryRoute;
 use Shopwell\Core\System\Country\SalesChannel\CountryRouteResponse;
+use Shopwell\Core\System\Dictionary\Aggregate\DictionaryEntry\DictionaryEntryCollection;
+use Shopwell\Core\System\Dictionary\Aggregate\DictionaryEntry\DictionaryEntryDefinition;
+use Shopwell\Core\System\Dictionary\Aggregate\DictionaryEntry\DictionaryEntryEntity;
+use Shopwell\Core\System\Dictionary\SalesChannel\DictionaryRoute;
+use Shopwell\Core\System\Dictionary\SalesChannel\DictionaryRouteResponse;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
-use Shopwell\Core\System\Salutation\SalesChannel\SalutationRoute;
-use Shopwell\Core\System\Salutation\SalesChannel\SalutationRouteResponse;
-use Shopwell\Core\System\Salutation\SalutationCollection;
-use Shopwell\Core\System\Salutation\SalutationDefinition;
-use Shopwell\Core\System\Salutation\SalutationEntity;
-use Shopwell\Core\System\Salutation\SalutationSorter;
 use Shopwell\Core\Test\Stub\EventDispatcher\CollectingEventDispatcher;
 use Shopwell\Storefront\Page\Account\Login\AccountLoginPage;
 use Shopwell\Storefront\Page\Account\Login\AccountLoginPageLoadedEvent;
@@ -43,9 +42,7 @@ class AccountLoginPageLoaderTest extends TestCase
 
     private CountryRoute&Stub $countryRoute;
 
-    private SalutationRoute&Stub $salutationRoute;
-
-    private SalutationSorter&Stub $salutationSorter;
+    private DictionaryRoute&Stub $genderRoute;
 
     private AbstractTranslator&Stub $translator;
 
@@ -56,8 +53,7 @@ class AccountLoginPageLoaderTest extends TestCase
         $this->eventDispatcher = new CollectingEventDispatcher();
 
         $this->countryRoute = static::createStub(CountryRoute::class);
-        $this->salutationRoute = static::createStub(SalutationRoute::class);
-        $this->salutationSorter = static::createStub(SalutationSorter::class);
+        $this->genderRoute = static::createStub(DictionaryRoute::class);
         $this->translator = static::createStub(AbstractTranslator::class);
         $this->genericLoader = static::createStub(GenericPageLoader::class);
     }
@@ -90,38 +86,29 @@ class AccountLoginPageLoaderTest extends TestCase
             ->method('load')
             ->willReturn($countryResponse);
 
-        $salutation = new SalutationEntity();
-        $salutation->setId(Uuid::randomHex());
+        $gender = new DictionaryEntryEntity();
+        $gender->setId(Uuid::randomHex());
 
-        $salutation2Id = Uuid::randomHex();
-        $salutation2 = new SalutationEntity();
-        $salutation2->setId($salutation2Id);
+        $gender2Id = Uuid::randomHex();
+        $gender2 = new DictionaryEntryEntity();
+        $gender2->setId($gender2Id);
 
-        $salutations = new SalutationCollection([$salutation, $salutation2]);
-        $salutationResponse = new SalutationRouteResponse(
-            new EntitySearchResult(
-                SalutationDefinition::ENTITY_NAME,
-                2,
-                $salutations,
-                null,
-                new Criteria(),
-                Context::createDefaultContext()
-            )
-        );
+        $gendersSorted = new DictionaryEntryCollection([$gender2, $gender]);
 
-        $salutationsSorted = new SalutationCollection([$salutation2, $salutation]);
-
-        $salutationRoute = $this->createMock(SalutationRoute::class);
-        $salutationRoute
+        $genderRoute = $this->createMock(DictionaryRoute::class);
+        $genderRoute
             ->expects($this->once())
             ->method('load')
-            ->willReturn($salutationResponse);
-
-        $salutationSorter = $this->createMock(SalutationSorter::class);
-        $salutationSorter
-            ->expects($this->once())
-            ->method('sort')
-            ->willReturn($salutationsSorted);
+            ->willReturn(new DictionaryRouteResponse(
+                new EntitySearchResult(
+                    DictionaryEntryDefinition::ENTITY_NAME,
+                    2,
+                    $gendersSorted,
+                    null,
+                    new Criteria(),
+                    Context::createDefaultContext()
+                )
+            ));
 
         $page = new Page();
         $page->setMetaInformation(new MetaInformation());
@@ -142,15 +129,14 @@ class AccountLoginPageLoaderTest extends TestCase
             $genericLoader,
             $this->eventDispatcher,
             $countryRoute,
-            $salutationRoute,
-            $salutationSorter,
+            $genderRoute,
             $translator
         );
 
         $page = $pageLoader->load(new Request(), static::createStub(SalesChannelContext::class));
 
         static::assertSame($countries, $page->getCountries());
-        static::assertSame($salutationsSorted, $page->getSalutations());
+        static::assertSame($gendersSorted, $page->getGenders());
         $metaInformation = $page->getMetaInformation();
         static::assertNotNull($metaInformation);
         static::assertSame('translated | testshop', $metaInformation->getMetaTitle());
@@ -167,8 +153,7 @@ class AccountLoginPageLoaderTest extends TestCase
             $this->genericLoader,
             $this->eventDispatcher,
             $this->countryRoute,
-            $this->salutationRoute,
-            $this->salutationSorter,
+            $this->genderRoute,
             $this->translator
         );
 

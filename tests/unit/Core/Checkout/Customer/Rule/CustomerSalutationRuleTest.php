@@ -16,9 +16,8 @@ use Shopwell\Core\Framework\Rule\Rule;
 use Shopwell\Core\Framework\Rule\RuleConfig;
 use Shopwell\Core\Framework\Rule\RuleConstraints;
 use Shopwell\Core\Framework\Rule\RuleScope;
-use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\System\Dictionary\Aggregate\DictionaryEntry\DictionaryEntryDefinition;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
-use Shopwell\Core\System\Salutation\SalutationEntity;
 
 /**
  * @internal
@@ -44,32 +43,30 @@ class CustomerSalutationRuleTest extends TestCase
     {
         $constraints = $this->rule->getConstraints();
 
-        static::assertArrayHasKey('salutationIds', $constraints, 'salutation constraint not found');
+        static::assertArrayHasKey('genderCodes', $constraints, 'gender constraint not found');
         static::assertArrayHasKey('operator', $constraints, 'operator constraint not found');
 
-        static::assertEquals(RuleConstraints::uuids(), $constraints['salutationIds']);
-        static::assertEquals(RuleConstraints::uuidOperators(), $constraints['operator']);
+        static::assertEquals(RuleConstraints::stringArray(), $constraints['genderCodes']);
+        static::assertEquals(RuleConstraints::stringOperators(), $constraints['operator']);
     }
 
     /**
-     * @param list<string> $salutationIds
+     * @param list<string> $genderCodes
      */
     #[DataProvider('getMatchCustomerSalutationValues')]
-    public function testCustomerSalutationRuleMatching(bool $expected, ?string $customerSalutationId, array $salutationIds, string $operator): void
+    public function testCustomerSalutationRuleMatching(bool $expected, ?string $customerGender, array $genderCodes, string $operator): void
     {
         $customer = new CustomerEntity();
-        $salutation = new SalutationEntity();
 
-        if ($customerSalutationId) {
-            $salutation->setId($customerSalutationId);
-            $customer->setSalutation($salutation);
+        if ($customerGender) {
+            $customer->setGender($customerGender);
         }
 
         $context = static::createStub(SalesChannelContext::class);
         $context->method('getCustomer')->willReturn($customer);
         $scope = new CheckoutRuleScope($context);
 
-        $this->rule->assign(['salutationIds' => $salutationIds, 'operator' => $operator]);
+        $this->rule->assign(['genderCodes' => $genderCodes, 'operator' => $operator]);
 
         $isMatching = $this->rule->match($scope);
         static::assertSame($expected, $isMatching);
@@ -97,7 +94,7 @@ class CustomerSalutationRuleTest extends TestCase
             static::createStub(SalesChannelContext::class)
         );
 
-        $this->rule->assign(['salutationIds' => [Uuid::randomHex()], 'operator' => Rule::OPERATOR_EQ]);
+        $this->rule->assign(['genderCodes' => [DictionaryEntryDefinition::MALE], 'operator' => Rule::OPERATOR_EQ]);
         static::assertFalse($this->rule->match($scope));
     }
 
@@ -109,7 +106,7 @@ class CustomerSalutationRuleTest extends TestCase
         $context->method('getCustomer')->willReturn($customer);
         $scope = new CheckoutRuleScope($context);
 
-        $this->rule->assign(['salutationIds' => [Uuid::randomHex()], 'operator' => Rule::OPERATOR_EQ]);
+        $this->rule->assign(['genderCodes' => [DictionaryEntryDefinition::MALE], 'operator' => Rule::OPERATOR_EQ]);
 
         static::assertFalse($this->rule->match($scope));
     }
@@ -117,7 +114,7 @@ class CustomerSalutationRuleTest extends TestCase
     public function testInvalidScopeIsFalse(): void
     {
         $invalidScope = static::createStub(RuleScope::class);
-        $this->rule->assign(['salutationIds' => [Uuid::randomHex()], 'operator' => Rule::OPERATOR_EQ]);
+        $this->rule->assign(['genderCodes' => [DictionaryEntryDefinition::MALE], 'operator' => Rule::OPERATOR_EQ]);
         static::assertFalse($this->rule->match($invalidScope));
     }
 
@@ -126,15 +123,15 @@ class CustomerSalutationRuleTest extends TestCase
      */
     public static function getMatchCustomerSalutationValues(): array
     {
-        $id = Uuid::randomHex();
+        $gender = DictionaryEntryDefinition::MALE;
 
         return [
-            'ONE OF - true' => [true, $id, [$id, Uuid::randomHex()], Rule::OPERATOR_EQ],
-            'ONE OF - false' => [false, $id, [Uuid::randomHex()], Rule::OPERATOR_EQ],
-            'NONE OF - true' => [true, $id, [Uuid::randomHex()], Rule::OPERATOR_NEQ],
-            'NONE OF - false' => [false, $id, [$id, Uuid::randomHex()], Rule::OPERATOR_NEQ],
-            'EMPTY - true' => [true, null, [Uuid::randomHex()], Rule::OPERATOR_EMPTY],
-            'EMPTY - false' => [false, $id, [Uuid::randomHex()], Rule::OPERATOR_EMPTY],
+            'ONE OF - true' => [true, $gender, [$gender, DictionaryEntryDefinition::FEMALE], Rule::OPERATOR_EQ],
+            'ONE OF - false' => [false, $gender, [DictionaryEntryDefinition::FEMALE], Rule::OPERATOR_EQ],
+            'NONE OF - true' => [true, $gender, [DictionaryEntryDefinition::FEMALE], Rule::OPERATOR_NEQ],
+            'NONE OF - false' => [false, $gender, [$gender, DictionaryEntryDefinition::FEMALE], Rule::OPERATOR_NEQ],
+            'EMPTY - true' => [true, null, [DictionaryEntryDefinition::MALE], Rule::OPERATOR_EMPTY],
+            'EMPTY - false' => [false, $gender, [DictionaryEntryDefinition::MALE], Rule::OPERATOR_EMPTY],
         ];
     }
 }

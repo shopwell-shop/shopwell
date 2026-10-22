@@ -16,7 +16,7 @@ use Shopwell\Core\Content\Newsletter\SalesChannel\NewsletterUnsubscribeRoute;
 use Shopwell\Core\Content\Newsletter\SalesChannel\SalesChannelNewsletterRecipientDefinition;
 use Shopwell\Core\Content\Newsletter\ScheduledTask\NewsletterRecipientTask;
 use Shopwell\Core\Content\Newsletter\ScheduledTask\NewsletterRecipientTaskHandler;
-use Shopwell\Core\Content\Newsletter\Subscriber\NewsletterRecipientSalutationSubscriber;
+use Shopwell\Core\Content\Newsletter\Subscriber\NewsletterRecipientGenderSubscriber;
 use Shopwell\Core\Framework\DataAbstractionLayer\Dbal\Common\IteratorFactory;
 use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\RateLimiter\RateLimiter;
@@ -54,6 +54,12 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(NewsletterExceptionHandler::class)
         ->tag('shopwell.dal.exception_handler');
+
+    $services->set(NewsletterRecipientGenderSubscriber::class)
+        ->args([
+            service(Connection::class),
+        ])
+        ->tag('kernel.event_subscriber');
 
     $services->set(NewsletterSubscribeRoute::class)
         ->public()
@@ -107,12 +113,6 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(NewsletterRecipientDeletedSubscriber::class)
         ->args([
             service('messenger.default_bus'),
-        ])
-        ->tag('kernel.event_subscriber');
-
-    $services->set(NewsletterRecipientSalutationSubscriber::class)
-        ->args([
-            service(Connection::class),
         ])
         ->tag('kernel.event_subscriber');
 };

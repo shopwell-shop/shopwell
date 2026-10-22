@@ -59,6 +59,18 @@ class RegisterController extends StorefrontController
     public const DOUBLE_SUBMIT_SCOPE = 'storefront-registration';
 
     /**
+     * Address fields a customer has to fill actively. They are used to detect whether the optional address
+     * form of a customer registration was submitted untouched.
+     */
+    private const ADDRESS_IDENTIFYING_FIELDS = ['street', 'city', 'zipcode'];
+
+    /**
+     * Fields of the billing address form which belong to the customer instead of the address. The personal section
+     * renders them with the address prefix, so they have to be kept when an untouched address form is removed.
+     */
+    private const CUSTOMER_FIELDS_IN_ADDRESS_FORM = ['name', 'accountType'];
+
+    /**
      * @internal
      *
      * @param EntityRepository<CustomerCollection> $customerRepository
@@ -221,6 +233,14 @@ class RegisterController extends StorefrontController
                 $data->remove('shippingAddress');
             }
 
+            // A customer account only requires an email address and a password, the address can be added later
+            // during the checkout. The address form is still rendered, so an untouched form submits an array of
+            // empty strings, which is removed here to be treated as "no address provided".
+            if ($data->getBoolean('createCustomerAccount')) {
+                $this->removeUntouchedAddress($data, 'billingAddress', self::CUSTOMER_FIELDS_IN_ADDRESS_FORM);
+                $this->removeUntouchedAddress($data, 'shippingAddress');
+            }
+
             $data->set('storefrontUrl', $this->getConfirmUrl($context, $request));
             $data = $this->prepareAffiliateTracking($data, $request->getSession());
             $data->set('guest', !$data->getBoolean('createCustomerAccount'));
@@ -298,6 +318,48 @@ class RegisterController extends StorefrontController
         }
 
         return $this->redirectToRoute('frontend.account.home.page');
+    }
+
+    /**
+     * Removes an address data bag from the registration data if the customer did not fill in anything address-like.
+     *
+     * The storefront preselects a country and copies the customer name into the address bag, so the address
+     * specific fields are used to decide whether the customer wants to provide an address at all. The fields
+     * given in `$keepFields` are moved to the registration data before the bag is removed.
+     *
+     * @param list<string> $keepFields
+     */
+    private function removeUntouchedAddress(DataBag $data, string $key, array $keepFields = []): void
+    {
+        $address = $data->get($key);
+
+        if (!$address instanceof DataBag) {
+            return;
+        }
+
+        foreach (self::ADDRESS_IDENTIFYING_FIELDS as $field) {
+            $value = $address->get($field);
+
+            if (!\is_string($value) || mb_trim($value) === '') {
+                continue;
+            }
+
+            return;
+        }
+
+        foreach ($keepFields as $field) {
+            if ($data->has($field)) {
+                continue;
+            }
+
+            $value = $address->get($field);
+
+            if (\is_string($value) && mb_trim($value) !== '') {
+                $data->set($field, $value);
+            }
+        }
+
+        $data->remove($key);
     }
 
     private function isDoubleOptIn(DataBag $data, SalesChannelContext $context): bool

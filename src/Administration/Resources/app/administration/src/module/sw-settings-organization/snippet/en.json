@@ -1,0 +1,54 @@
+{
+  "sw-settings-organization": {
+    "general": {
+      "mainMenuItemGeneral": "Organizations",
+      "description": "Manage organizations and their units.",
+      "placeholderSearchBar": "Search organizations..."
+    },
+    "list": {
+      "textHeadline": "Organizations",
+      "buttonAddOrganization": "Add organization",
+      "columnName": "Name",
+      "columnUnits": "Units",
+      "columnActive": "Active",
+      "labelName": "Name",
+      "placeholderName": "Enter name...",
+      "labelActive": "Active",
+      "modalTitleCreate": "Add organization",
+      "messageEmpty": "No organizations yet",
+      "messageSaveSuccess": "Organization \"{name}\" has been saved.",
+      "messageSaveError": "The organization could not be saved.",
+      "messageLoadError": "The organizations could not be loaded.",
+      "messageDeleteError": "The organization could not be deleted. It may still be referenced by users.",
+      "messageNameRequired": "A name is required.",
+      "textDeleteConfirm": "Are you sure you want to delete the organization \"{name}\"? Its units will be deleted as well."
+    },
+    "detail": {
+      "labelUnits": "Organization units",
+      "buttonAddUnit": "Add unit",
+      "buttonAddChildUnit": "Add sub-unit",
+      "toggleUnit": "Expand or collapse \"{name}\"",
+      "labelUnitName": "Name",
+      "placeholderUnitName": "Enter name...",
+      "labelParentUnit": "Parent unit",
+      "placeholderParentUnit": "Select a parent unit...",
+      "helpTextParentUnit": "The unit itself and its sub-units are not offered, so a unit can never be moved below itself.",
+      "labelUnitActive": "Active",
+      "labelDangerZone": "Danger zone",
+      "textDangerZone": "Deleting a unit also deletes its sub-units. Users assigned to the unit lose this assignment.",
+      "buttonDeleteUnit": "Delete unit",
+      "modalTitleCreateChild": "Add sub-unit below \"{name}\"",
+      "modalTitleCreateRoot": "Add unit",
+      "placeholderSearchTree": "Search units...",
+      "messageEmptyTree": "No units yet",
+      "messageNoUnitSelected": "Select a unit",
+      "messageNoUnitSelectedDescription": "Select a unit in the tree on the left to edit it.",
+      "messageUnitNameRequired": "A name is required.",
+      "messageUnitSaveError": "The unit could not be saved.",
+      "messageUnitDeleteError": "The unit could not be deleted.",
+      "messageLoadError": "The organization could not be loaded.",
+      "textDeleteUnitConfirm": "Are you sure you want to delete the unit \"{name}\"? Its sub-units will be deleted as well.",
+      "errorCircularParent": "A unit cannot be moved below itself or one of its sub-units."
+    }
+  }
+}

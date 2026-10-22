@@ -349,7 +349,7 @@ class ContextSwitchRouteTest extends TestCase
                 'street' => 'Musterstraße 1',
                 'city' => 'Schoöppingen',
                 'zipcode' => '12345',
-                'salutationId' => $this->getValidSalutationId(),
+                'gender' => $this->getValidGender(),
                 'countryId' => $this->getValidCountryId(),
             ],
             'defaultBillingAddressId' => $addressId,
@@ -357,7 +357,7 @@ class ContextSwitchRouteTest extends TestCase
             'email' => $email,
             'password' => $password,
             'name' => 'Max Mustermann',
-            'salutationId' => $this->getValidSalutationId(),
+            'gender' => $this->getValidGender(),
             'customerNumber' => '12345',
         ];
 
@@ -376,7 +376,7 @@ class ContextSwitchRouteTest extends TestCase
             'street' => 'Musterstraße 2',
             'city' => 'Cologne',
             'zipcode' => '89563',
-            'salutationId' => $this->getValidSalutationId(),
+            'gender' => $this->getValidGender(),
             'countryId' => $this->getValidCountryId(),
         ];
 

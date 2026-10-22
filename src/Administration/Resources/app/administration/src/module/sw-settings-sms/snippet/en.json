@@ -19,7 +19,6 @@
       "columnLabel": "Name",
       "columnEnabled": "Active",
       "columnPriority": "Priority",
-      "columnStrategy": "Strategy",
       "columnSalesChannel": "Sales channel",
       "labelTechnicalName": "Provider",
       "labelTechnicalNamePlaceholder": "Select a provider",
@@ -27,9 +26,10 @@
       "labelLabelPlaceholder": "e.g. Aliyun main account",
       "labelEnabled": "Activate this gateway",
       "labelEnabledHelpText": "Only an active gateway is picked to send a message.",
+      "labelAcceptUnknownRegion": "Deliver to this gateway even for an unknown country",
+      "labelAcceptUnknownRegionHelpText": "A number of a country the shop does not know is otherwise only routed to a gateway that declares GLOBAL. Turn this on to let this gateway take it as well.",
       "labelPriority": "Priority",
-      "labelPriorityHelpText": "The lower the number, the earlier the gateway is picked and tried on failover.",
-      "labelStrategy": "Strategy across gateways",
+      "labelPriorityHelpText": "The lower the number, the earlier the gateway is picked. A message goes out over one gateway, a failure is not retried on the next one.",
       "labelSalesChannel": "Sales channel",
       "labelSalesChannelHelpText": "Leave empty to make the gateway available in every sales channel.",
       "labelOptions": "Connection options",
@@ -40,11 +40,6 @@
       "regionGlobal": "Global",
       "templateModeRequired": "Reported template required",
       "templateModeFreeText": "Free text",
-      "strategy": {
-        "exclusive": "Exclusive",
-        "failover": "Failover",
-        "round_robin": "Round robin"
-      },
       "emptyStateTitle": "No sms gateway yet",
       "emptyStateDescription": "Create a gateway to let the shop send messages over a provider.",
       "placeholderSearchBar": "Search sms gateways…",
@@ -58,6 +53,13 @@
       "cardGeneral": "Template",
       "cardContent": "Message body",
       "cardMapping": "Provider mapping",
+      "cardAuditLedger": "Audit at the providers",
+      "cardAuditLedgerHelpText": "What each provider answered for the template of this shop. The state is read back from the provider, it is not typed here.",
+      "auditLedgerColumnProvider": "Provider",
+      "auditLedgerColumnLastSyncedAt": "Last sync",
+      "auditLedgerEmpty": "The template is not mapped to a provider yet.",
+      "auditMissingProviderBanner": "These providers only send a message once the template is approved, but the template is not mapped to them: {providers}",
+      "auditLanguageNote": "The template is reported in the default language ({locale}).",
       "saveFirst": "Save the template to map it to a provider.",
       "columnTechnicalName": "Technical name",
       "columnScene": "Scene",
@@ -101,13 +103,19 @@
       "templateCodePlaceholder": "e.g. SMS_123456789",
       "signNamePlaceholder": "e.g. Shopwell",
       "emptyState": "The template is not mapped to a provider yet, add a row.",
-      "auditStatus": {
-        "pending": "Pending",
-        "approved": "Approved",
-        "rejected": "Rejected",
-        "suspended": "Suspended"
-      },
-      "helpText": "The provider template id and the signature are assigned by the provider, a message goes out once the template is approved."
+      "lastSyncedAt": "Last sync",
+      "providerStatusCode": "Provider code",
+      "submitAction": "Submit for review",
+      "refreshAction": "Refresh state",
+      "confirmAction": "Record state by hand",
+      "submissionModalTitle": "Report the template at the provider",
+      "submissionModalIntro": "These are the fields the provider asks for. What the shop already knows about the template is filled in, the rest is up to you.",
+      "confirmModalTitle": "Record the audit state",
+      "confirmModalIntro": "The provider cannot be asked for the state of this template. Look it up at the provider and record what you read here.",
+      "confirmStatusLabel": "Audit state",
+      "confirmNoteLabel": "Note",
+      "confirmNoteHelpText": "The note is written to the audit trail of the shop and cannot be left empty.",
+      "helpText": "The provider template id and the signature are assigned by the provider. The audit state is what the provider answered, a message goes out once the template is approved."
     },
     "delivery": {
       "listTitle": "Send log",
@@ -140,6 +148,15 @@
     }
   },
   "sms": {
+    "approval": {
+      "status": {
+        "pending": "Pending",
+        "approved": "Approved",
+        "rejected": "Rejected",
+        "suspended": "Suspended",
+        "unknown": "Unknown"
+      }
+    },
     "gateway": {
       "aliyun": "Aliyun SMS",
       "tencentcloud": "Tencent Cloud SMS",
@@ -156,6 +173,28 @@
         "secretKey": "SecretKey",
         "sdkAppId": "Sms SdkAppId",
         "region": "Region"
+      }
+    },
+    "submission": {
+      "aliyun": {
+        "templateName": "Template name",
+        "templateContent": "Message body",
+        "templateType": {
+          "label": "Template use",
+          "code": "Verification code",
+          "notice": "Notification",
+          "promotion": "Marketing"
+        }
+      },
+      "tencentcloud": {
+        "templateName": "Template name",
+        "templateContent": "Message body",
+        "smsType": {
+          "label": "Template use",
+          "verification": "Verification code",
+          "notification": "Notification",
+          "marketing": "Marketing"
+        }
       }
     }
   },

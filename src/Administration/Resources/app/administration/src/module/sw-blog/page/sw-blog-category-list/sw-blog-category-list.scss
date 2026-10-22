@@ -1,0 +1,28 @@
+.sw-blog-category-list {
+    &__content {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+    }
+
+    .mt-empty-state {
+        padding-block: var(--scale-size-48);
+    }
+
+    &__delete-message {
+        margin: 0;
+        color: var(--color-text-primary-default);
+    }
+
+    &__entry-count {
+        padding: 0;
+    }
+
+    &__entry-count-empty {
+        color: var(--color-text-secondary-default);
+    }
+
+    &__create-name {
+        margin-block-end: var(--scale-size-16);
+    }
+}

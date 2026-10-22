@@ -135,7 +135,7 @@ class ConvertGuestRouteTest extends TestCase
             'guest' => $guest,
             'email' => $email,
             'name' => 'Max Mustermann',
-            'salutationId' => $this->getValidSalutationId(),
+            'gender' => $this->getValidGender(),
             'storefrontUrl' => 'http://localhost',
             'billingAddress' => [
                 'name' => 'Max Mustermann',
@@ -143,7 +143,7 @@ class ConvertGuestRouteTest extends TestCase
                 'zipcode' => '12345',
                 'city' => 'Schöppingen',
                 'countryId' => $this->getValidCountryId(),
-                'salutationId' => $this->getValidSalutationId(),
+                'gender' => $this->getValidGender(),
             ],
         ];
 

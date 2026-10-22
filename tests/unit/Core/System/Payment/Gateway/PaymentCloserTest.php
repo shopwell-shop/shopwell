@@ -26,6 +26,7 @@ use Shopwell\Core\System\Payment\Order\Aggregate\PaymentTransaction\PaymentTrans
 use Shopwell\Core\System\Payment\Order\Aggregate\PaymentTransaction\PaymentTransactionEntity;
 use Shopwell\Core\System\Payment\Order\PaymentOrderEntity;
 use Shopwell\Core\System\Payment\PaymentException;
+use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
 use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
 use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannelRegistry;
 use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
@@ -34,6 +35,7 @@ use Shopwell\Core\System\Payment\Provider\PaymentConfigResolver;
 use Shopwell\Core\System\Payment\Provider\PaymentProvider;
 use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;
 use Symfony\Component\Clock\MockClock;
+use Symfony\Component\HttpFoundation\Response;
 
 /**
  * @internal
@@ -43,6 +45,16 @@ use Symfony\Component\Clock\MockClock;
 class PaymentCloserTest extends TestCase
 {
     private const NOW = '2024-01-01T00:00:00+00:00';
+
+    /**
+     * What alipay declares: the close is one of its request capabilities.
+     */
+    private const ALIPAY_CAPABILITIES = [PaymentCapability::CAPTURE, PaymentCapability::CLOSE];
+
+    /**
+     * What stripe and paypal declare: they have no close action at all.
+     */
+    private const WITHOUT_CLOSE_CAPABILITIES = [PaymentCapability::CAPTURE, PaymentCapability::REFUND];
 
     public function testItClosesTheTradeByTheMerchantOrderNumberAndKeepsTheAttempt(): void
     {
@@ -163,14 +175,59 @@ class PaymentCloserTest extends TestCase
     }
 
     /**
-     * @param EntityRepository<PaymentTransactionCollection> $transactions
+     * The declaration answers the question before a request is signed: an interface that never declared
+     * a close is refused, and payum never gets the chance to fail inside the gateway - which the caller
+     * would read as a broken channel (502) even though nothing was sent.
      */
-    private function close(EntityRepository $transactions, GatewayInterface $gateway): PaymentCloser
+    public function testAnInterfaceWithoutCloseIsRefusedBeforeAnythingIsSent(): void
     {
-        return new PaymentCloser($transactions, $this->configResolver($gateway), new MockClock(self::NOW));
+        // the attempt must not be booked: a call that cannot reach the channel has no transaction
+        $transactions = static::createMock(EntityRepository::class);
+        $transactions->expects($this->never())->method('create');
+        $transactions->expects($this->never())->method('update');
+
+        $gateway = static::createMock(GatewayInterface::class);
+        $gateway->expects($this->never())->method('execute');
+
+        $this->expectExceptionObject(PaymentException::providerLacksCapability('alipay', PaymentCapability::CLOSE->value));
+
+        $this->close($transactions, $gateway, self::WITHOUT_CLOSE_CAPABILITIES)->close($this->order());
     }
 
-    private function configResolver(GatewayInterface $gateway): PaymentConfigResolver
+    /**
+     * The refusal says what the caller can act on and is not dressed up as a channel fault: a 400 with
+     * its own code, and a message that names the missing capability instead of a broken channel.
+     */
+    public function testTheRefusalIsA400AndDoesNotReadLikeAChannelFault(): void
+    {
+        $transactions = static::createStub(EntityRepository::class);
+        $gateway = static::createStub(GatewayInterface::class);
+
+        try {
+            $this->close($transactions, $gateway, self::WITHOUT_CLOSE_CAPABILITIES)->close($this->order());
+            static::fail('the missing capability has to be reported');
+        } catch (PaymentException $exception) {
+            static::assertSame(Response::HTTP_BAD_REQUEST, $exception->getStatusCode());
+            static::assertSame(PaymentException::PROVIDER_LACKS_CAPABILITY, $exception->getErrorCode());
+            static::assertNotSame(PaymentException::GATEWAY_ERROR, $exception->getErrorCode());
+            static::assertStringContainsString(PaymentCapability::CLOSE->value, $exception->getMessage());
+            static::assertStringNotContainsString('returned an error', $exception->getMessage());
+        }
+    }
+
+    /**
+     * @param EntityRepository<PaymentTransactionCollection> $transactions
+     * @param list<PaymentCapability> $capabilities
+     */
+    private function close(EntityRepository $transactions, GatewayInterface $gateway, array $capabilities = self::ALIPAY_CAPABILITIES): PaymentCloser
+    {
+        return new PaymentCloser($transactions, $this->configResolver($gateway, $capabilities), new MockClock(self::NOW));
+    }
+
+    /**
+     * @param list<PaymentCapability> $capabilities
+     */
+    private function configResolver(GatewayInterface $gateway, array $capabilities = self::ALIPAY_CAPABILITIES): PaymentConfigResolver
     {
         $cipher = new PaymentCredentialCipher('test-secret');
 
@@ -191,6 +248,7 @@ class PaymentCloserTest extends TestCase
             channels: ['alipay_h5' => $channel],
             gatewayFactory: $gatewayFactory,
             notificationExtractor: static::createStub(PaymentNotificationExtractorInterface::class),
+            capabilities: $capabilities,
         );
 
         $providerRegistry = new PaymentProviderRegistry([$provider]);
@@ -200,7 +258,6 @@ class PaymentCloserTest extends TestCase
         $appProvider->paymentAppId = 'app-id';
         $appProvider->providerTechnicalName = 'alipay';
         $appProvider->enabled = true;
-        $appProvider->mode = PaymentAppProviderEntity::MODE_OWN;
         $appProvider->credentials = $cipher->encrypt(['app_id' => 'own-app-id']);
 
         $appChannel = new PaymentAppChannelEntity();

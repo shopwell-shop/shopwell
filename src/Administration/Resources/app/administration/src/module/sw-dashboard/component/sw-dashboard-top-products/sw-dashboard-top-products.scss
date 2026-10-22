@@ -1,0 +1,22 @@
+.sw-dashboard-top-products {
+    &__empty {
+        padding: var(--scale-size-32) 0;
+        color: var(--color-text-secondary-default);
+        font-size: var(--font-size-s);
+        line-height: var(--font-line-height-s);
+        text-align: center;
+    }
+
+    &__footer-link {
+        display: inline-block;
+        margin-top: var(--scale-size-12);
+        color: var(--color-text-brand-default);
+        font-size: var(--font-size-s);
+        line-height: var(--font-line-height-s);
+        text-decoration: none;
+
+        &:hover {
+            text-decoration: underline;
+        }
+    }
+}

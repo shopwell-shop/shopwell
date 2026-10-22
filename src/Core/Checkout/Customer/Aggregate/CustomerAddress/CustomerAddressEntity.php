@@ -11,7 +11,6 @@ use Shopwell\Core\System\Country\Aggregate\CountryCity\CountryCityEntity;
 use Shopwell\Core\System\Country\Aggregate\CountryDistrict\CountryDistrictEntity;
 use Shopwell\Core\System\Country\Aggregate\CountryState\CountryStateEntity;
 use Shopwell\Core\System\Country\CountryEntity;
-use Shopwell\Core\System\Salutation\SalutationEntity;
 
 #[Package('checkout')]
 class CustomerAddressEntity extends Entity
@@ -29,7 +28,7 @@ class CustomerAddressEntity extends Entity
 
     protected ?string $countryDistrictId = null;
 
-    protected ?string $salutationId = null;
+    protected ?string $gender = null;
 
     protected string $name;
 
@@ -40,8 +39,6 @@ class CustomerAddressEntity extends Entity
     protected ?string $company = null;
 
     protected ?string $department = null;
-
-    protected ?string $title = null;
 
     protected string $street;
 
@@ -58,8 +55,6 @@ class CustomerAddressEntity extends Entity
     protected ?CountryCityEntity $countryCity = null;
 
     protected ?CountryDistrictEntity $countryDistrict = null;
-
-    protected ?SalutationEntity $salutation = null;
 
     protected ?CustomerEntity $customer = null;
 
@@ -119,14 +114,14 @@ class CustomerAddressEntity extends Entity
         $this->countryDistrictId = $countryDistrictId;
     }
 
-    public function getSalutationId(): ?string
+    public function getGender(): ?string
     {
-        return $this->salutationId;
+        return $this->gender;
     }
 
-    public function setSalutationId(string $salutationId): void
+    public function setGender(?string $gender): void
     {
-        $this->salutationId = $salutationId;
+        $this->gender = $gender;
     }
 
     public function getName(): string
@@ -177,16 +172,6 @@ class CustomerAddressEntity extends Entity
     public function setDepartment(string $department): void
     {
         $this->department = $department;
-    }
-
-    public function getTitle(): ?string
-    {
-        return $this->title;
-    }
-
-    public function setTitle(string $title): void
-    {
-        $this->title = $title;
     }
 
     public function getStreet(): string
@@ -267,16 +252,6 @@ class CustomerAddressEntity extends Entity
     public function setCountryDistrict(CountryDistrictEntity $countryDistrict): void
     {
         $this->countryDistrict = $countryDistrict;
-    }
-
-    public function getSalutation(): ?SalutationEntity
-    {
-        return $this->salutation;
-    }
-
-    public function setSalutation(SalutationEntity $salutation): void
-    {
-        $this->salutation = $salutation;
     }
 
     public function getCustomer(): ?CustomerEntity

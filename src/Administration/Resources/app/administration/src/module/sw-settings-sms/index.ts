@@ -3,6 +3,7 @@
  */
 import './acl';
 import SmsGatewayProviderService from './service/sms-gateway-provider.service';
+import SmsTemplateAuditService from './service/sms-template-audit.service';
 
 const { Module } = Shopwell;
 
@@ -58,11 +59,37 @@ Shopwell.Component.register(
 );
 
 /**
+ * The form a provider asks for before it takes a template. It is a component of its own because the
+ * fields are declared by the provider and the grid only opens it for the row it belongs to.
+ *
+ * @sw-package framework
+ * @private
+ */
+Shopwell.Component.register(
+    'sw-settings-sms-template-submission-modal',
+    () => import('./component/sw-settings-sms-template-submission-modal'),
+);
+
+/**
  * @sw-package framework
  * @private
  */
 Shopwell.Service().register('smsGatewayProviderService', () => {
     return new SmsGatewayProviderService(
+        Shopwell.Application.getContainer('init').httpClient,
+        Shopwell.Service().get('loginService'),
+    );
+});
+
+/**
+ * The three steps of the audit loop of a mapping row. They are one service because the server
+ * answers them with one shape, and because the screens must not know which provider can do what.
+ *
+ * @sw-package framework
+ * @private
+ */
+Shopwell.Service().register('smsTemplateAuditService', () => {
+    return new SmsTemplateAuditService(
         Shopwell.Application.getContainer('init').httpClient,
         Shopwell.Service().get('loginService'),
     );

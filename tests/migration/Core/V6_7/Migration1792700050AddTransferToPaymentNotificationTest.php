@@ -58,7 +58,7 @@ class Migration1792700050AddTransferToPaymentNotificationTest extends TestCase
 
         static::assertSame('binary(16)', $column['COLUMN_TYPE']);
         static::assertSame('YES', $column['IS_NULLABLE']);
-        static::assertNull($column['COLUMN_DEFAULT'], 'the writer spells the value out, the ddl must not default it');
+        $this->assertNoDefault($column['COLUMN_DEFAULT']);
         static::assertSame($this->positionOf('payment_order_id') + 1, (int) $column['ORDINAL_POSITION']);
     }
 
@@ -220,6 +220,22 @@ class Migration1792700050AddTransferToPaymentNotificationTest extends TestCase
         );
 
         return $columns;
+    }
+
+    /**
+     * Asserts that the ddl gives the column no default at all.
+     *
+     * A column that is declared nullable and has no `DEFAULT` clause has no default in both systems,
+     * but only MySQL reports that as a real `NULL` in `information_schema`: MariaDB reports the
+     * explicit `NULL` attribute of the column as the string "NULL". Both mean the same here - the
+     * writer spells the value out and the ddl must not invent one.
+     */
+    private function assertNoDefault(?string $default): void
+    {
+        static::assertTrue(
+            $default === null || $default === 'NULL',
+            'the writer spells the value out, the ddl must not default it, got: ' . var_export($default, true)
+        );
     }
 
     private function positionOf(string $name): int

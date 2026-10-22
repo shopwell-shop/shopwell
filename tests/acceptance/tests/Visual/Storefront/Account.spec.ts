@@ -15,7 +15,6 @@ test(
         Login,
     }) => {
         const countryId = await DefaultSalesChannel.salesChannel.countryId;
-        const salutationId = await DefaultSalesChannel.salesChannel.salutationId;
         const customer = await TestDataService.createCustomer({
             name: 'John Goldblum',
             customerNumber: '12345',
@@ -28,7 +27,6 @@ test(
                 street: 'Ebbinghoff 10',
                 zipcode: '48624',
                 countryId: countryId,
-                salutationId: salutationId,
             },
             defaultBillingAddress: {
                 name: 'John Doe',
@@ -36,7 +34,6 @@ test(
                 street: 'Ebbinghoff 10',
                 zipcode: '48624',
                 countryId: countryId,
-                salutationId: salutationId,
             },
         });
 

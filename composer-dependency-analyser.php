@@ -59,7 +59,7 @@ return $config
     ->ignoreErrorsOnPackage('shopwell/conflicts', [ErrorType::UNUSED_DEPENDENCY])
 
     /** Used by 3rd party libraries */
-    ->ignoreErrorsOnExtensions(['ext-pdo_mysql', 'ext-sodium', 'ext-xml'], [ErrorType::UNUSED_DEPENDENCY])
+    ->ignoreErrorsOnExtensions(['ext-pdo_mysql', 'ext-xml'], [ErrorType::UNUSED_DEPENDENCY])
 
     /** Only used if `function_exists` is successful @see \Shopwell\Core\Framework\Plugin\ExtensionExtractor */
     ->ignoreErrorsOnExtension('ext-apcu', [ErrorType::SHADOW_DEPENDENCY])
@@ -89,6 +89,12 @@ return $config
         'symfony/monolog-bridge',
         'symfony/proxy-manager-bridge',
     ], [ErrorType::UNUSED_DEPENDENCY])
+
+    /**
+     * The Core bundle declares the google provider for the oauth2 client bundle, the root project only
+     * wires the bundle and never names a class of the provider itself.
+     */
+    ->ignoreErrorsOnPackage('league/oauth2-google', [ErrorType::UNUSED_DEPENDENCY])
 ;
 
 function configureImagickSupport(Configuration $config): void

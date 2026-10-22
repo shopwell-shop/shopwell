@@ -53,6 +53,7 @@ import type Link from '@tiptap/extension-link';
 import type { ComponentConfig } from './core/factory/async-component.factory';
 import type StoreApiService from './core/service/api/store.api.service';
 import type ShopwellDiscountCampaignService from './app/service/discount-campaign.service';
+import type DictionaryService from './app/service/dictionary.service';
 import type AppModulesService from './core/service/api/app-modules.service';
 import type AclService from './app/service/acl.service';
 import type EntityValidationService from './app/service/entity-validation.service';
@@ -64,6 +65,8 @@ import type cmsElementFavoritesService from './module/sw-cms/service/cms-element
 import type cmsBlockFavoritesService from './module/sw-cms/service/cms-block-favorites.service';
 import type CheckoutStoreService from './core/service/api/checkout-store.api.service';
 import type ExtensionHelperService from './app/service/extension-helper.service';
+import type PaymentTransferApiService from './module/sw-finance/service/payment-transfer.api.service';
+import type OrderReturnApiService from './module/sw-order-return/service/order-return.api.service';
 import type AsyncComponentFactory from './core/factory/async-component.factory';
 import type FilterFactory from './core/factory/filter.factory';
 import type StateStyleService from './app/service/state-style.service';
@@ -82,7 +85,6 @@ import type UserSettingsMixin from './app/mixin/user-settings.mixin';
 import type SwInlineSnippetMixin from './app/mixin/sw-inline-snippet.mixin';
 import type TranslateWithFallbackMixin from './app/mixin/translate-with-fallback.mixin';
 import type NotificationTranslationMixin from './app/mixin/notification-translation.mixin';
-import type SalutationMixin from './app/mixin/salutation.mixin';
 import type RuleContainerMixin from './app/mixin/rule-container.mixin';
 import type RemoveApiErrorMixin from './app/mixin/remove-api-error.mixin';
 import type PositionMixin from './app/mixin/position.mixin';
@@ -142,6 +144,7 @@ import type { SwProductDetailStore } from './module/sw-product/page/sw-product-d
 import type { SwProfileStore } from './module/sw-profile/store/sw-profile.store';
 import type OAuth2ChannelService from './module/sw-settings-oauth2-login/service/oauth2-channel.api.service';
 import type SmsGatewayProviderService from './module/sw-settings-sms/service/sms-gateway-provider.service';
+import type SmsTemplateAuditService from './module/sw-settings-sms/service/sms-template-audit.service';
 import type { SwPromotionDetailStore } from './module/sw-promotion-v2/page/sw-promotion-v2-detail/store';
 import type { SwFlowStore } from './module/sw-flow/store/flow.store';
 import type { SwBulkStore } from './app/store/sw-bulk-edit.store';
@@ -164,17 +167,6 @@ export interface SubContainer<ContainerName extends string> {
     $register(Obj: Bottle.IRegisterableObject): this;
     $list(): (keyof Bottle.IContainer[ContainerName])[];
 }
-
-type SalutationFilterEntityType = {
-    salutation: {
-        id: EntityKey<'salutation'>;
-        salutationKey: string;
-        displayName: string;
-    };
-    title: string;
-    name: string;
-    [key: string]: unknown;
-};
 
 // declare global types
 declare global {
@@ -291,6 +283,8 @@ declare global {
         oauth2LoginService: $TSFixMe;
         oauthAuthorizeApiService: OAuthAuthorizeApiService;
         orderStateMachineService: OrderStateMachineApiService;
+        orderReturnApiService: OrderReturnApiService;
+        paymentTransferApiService: PaymentTransferApiService;
         privileges: PrivilegesService;
         productStreamConditionService: $TSFixMe;
         recentlySearchService: $TSFixMe;
@@ -301,6 +295,7 @@ declare global {
         searchTypeService: $TSFixMe;
         shopwellDiscountCampaignService: ShopwellDiscountCampaignService;
         smsGatewayProviderService: SmsGatewayProviderService;
+        smsTemplateAuditService: SmsTemplateAuditService;
         snackbarService: SnackbarService;
         shortcutService: $TSFixMe;
         snippetService: SnippetApiService;
@@ -320,6 +315,7 @@ declare global {
         productTypeService: ProductTypeApiService;
         consentApiService: ConsentApiService;
         validationApiService: ValidationApiService;
+        dictionaryService: DictionaryService;
     }
 
     interface MixinContainer {
@@ -329,7 +325,6 @@ declare global {
         'sw-inline-snippet': typeof SwInlineSnippetMixin;
         'translate-with-fallback': typeof TranslateWithFallbackMixin;
         'notification-translation': typeof NotificationTranslationMixin;
-        salutation: typeof SalutationMixin;
         ruleContainer: typeof RuleContainerMixin;
         'remove-api-error': typeof RemoveApiErrorMixin;
         position: typeof PositionMixin;
@@ -381,7 +376,6 @@ declare global {
         date: (value: string, options?: Intl.DateTimeFormatOptions) => string;
         'file-size': $TSFixMeFunction;
         'media-name': $TSFixMeFunction;
-        salutation: (entity: SalutationFilterEntityType, fallbackSnippet: string) => string;
         'stock-color-variant': $TSFixMeFunction;
         striphtml: (value: string) => string;
         'thumbnail-size': $TSFixMeFunction;

@@ -8,6 +8,7 @@ use Shopwell\Core\Checkout\Order\Aggregate\OrderDeliveryPosition\OrderDeliveryPo
 use Shopwell\Core\Checkout\Order\Aggregate\OrderLineItemDownload\OrderLineItemDownloadCollection;
 use Shopwell\Core\Checkout\Order\Aggregate\OrderTransactionCaptureRefundPosition\OrderTransactionCaptureRefundPositionCollection;
 use Shopwell\Core\Checkout\Order\OrderEntity;
+use Shopwell\Core\Checkout\OrderReturn\Entity\Aggregate\OrderReturnLineItem\OrderReturnLineItemCollection;
 use Shopwell\Core\Checkout\Promotion\PromotionEntity;
 use Shopwell\Core\Content\Media\MediaEntity;
 use Shopwell\Core\Content\Product\ProductEntity;
@@ -94,6 +95,8 @@ class OrderLineItemEntity extends Entity
     protected array $states = [];
 
     protected ?OrderLineItemDownloadCollection $downloads = null;
+
+    protected ?OrderReturnLineItemCollection $orderReturnLineItems = null;
 
     protected ?PromotionEntity $promotion = null;
 
@@ -457,6 +460,16 @@ class OrderLineItemEntity extends Entity
     public function setDownloads(OrderLineItemDownloadCollection $downloads): void
     {
         $this->downloads = $downloads;
+    }
+
+    public function getOrderReturnLineItems(): ?OrderReturnLineItemCollection
+    {
+        return $this->orderReturnLineItems;
+    }
+
+    public function setOrderReturnLineItems(OrderReturnLineItemCollection $orderReturnLineItems): void
+    {
+        $this->orderReturnLineItems = $orderReturnLineItems;
     }
 
     public function getOrderVersionId(): string

@@ -8,6 +8,11 @@ async function createWrapper() {
                 'sw-card-view': await wrapTestComponent('sw-card-view'),
                 'sw-dashboard-metrics': true,
                 'sw-dashboard-statistics': true,
+                'sw-dashboard-todos': true,
+                'sw-dashboard-order-states': true,
+                'sw-dashboard-top-products': true,
+                'sw-dashboard-loyalty-distribution': true,
+                'sw-dashboard-wallet': true,
                 'sw-dashboard-latest-orders': true,
                 'sw-extension-component-section': true,
                 'sw-search-bar': true,
@@ -51,12 +56,23 @@ describe('module/sw-dashboard/page/sw-dashboard-index', () => {
         expect(wrapper.find('sw-dashboard-latest-orders-stub').exists()).toBe(true);
     });
 
-    it('does not render the best-selling products section', async () => {
+    it('renders the new radar sections', async () => {
         const wrapper = await createWrapper();
         await flushPromises();
 
-        expect(wrapper.find('sw-dashboard-top-products-stub').exists()).toBe(false);
-        expect(wrapper.find('.sw-dashboard-index__details').exists()).toBe(false);
+        expect(wrapper.find('sw-dashboard-todos-stub').exists()).toBe(true);
+        expect(wrapper.find('sw-dashboard-order-states-stub').exists()).toBe(true);
+        expect(wrapper.find('sw-dashboard-top-products-stub').exists()).toBe(true);
+        expect(wrapper.find('sw-dashboard-loyalty-distribution-stub').exists()).toBe(true);
+        expect(wrapper.find('sw-dashboard-wallet-stub').exists()).toBe(true);
+    });
+
+    it('pairs the sections in two-column rows', async () => {
+        const wrapper = await createWrapper();
+        await flushPromises();
+
+        expect(wrapper.findAll('.sw-dashboard-index__row--main')).toHaveLength(2);
+        expect(wrapper.findAll('.sw-dashboard-index__row--half')).toHaveLength(1);
     });
 
     it('keeps the extension points around the content', async () => {

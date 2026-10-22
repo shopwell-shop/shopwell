@@ -1,0 +1,21 @@
+{% block sw_cms_element_blog_listing_config %}
+<div class="sw-cms-el-config-blog-listing">
+    {% block sw_cms_element_blog_listing_config_layout %}
+    <sw-cms-inherit-wrapper
+        field="layout"
+        :element="element"
+        :label="$t('sw-cms.elements.blogListing.config.label.layout')"
+    >
+        <template #default="{ isInherited }">
+            <mt-select
+                class="sw-cms-el-config-blog-listing__layout"
+                :model-value="layout"
+                :options="layoutOptions"
+                :disabled="isInherited"
+                @update:model-value="onLayoutChange"
+            />
+        </template>
+    </sw-cms-inherit-wrapper>
+    {% endblock %}
+</div>
+{% endblock %}

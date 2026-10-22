@@ -58,7 +58,7 @@ trait OrderFixture
 
         $paymentMethodId = $salesChannel->getPaymentMethodId();
         $shippingMethodId = $salesChannel->getShippingMethodId();
-        $salutationId = $this->getValidSalutationId();
+        $gender = $this->getValidGender();
         $countryId = $this->getValidCountryId(TestDefaults::SALES_CHANNEL);
 
         $order = [
@@ -85,7 +85,7 @@ trait OrderFixture
                         'shippingDateEarliest' => (new \DateTimeImmutable())->format(Defaults::STORAGE_DATE_FORMAT),
                         'shippingDateLatest' => (new \DateTimeImmutable())->format(Defaults::STORAGE_DATE_FORMAT),
                         'shippingOrderAddress' => [
-                            'salutationId' => $salutationId,
+                            'gender' => $gender,
                             'name' => 'Floy Glover',
                             'zipcode' => '59438-0403',
                             'city' => 'Stellaberg',
@@ -126,7 +126,7 @@ trait OrderFixture
                     'id' => $orderCustomerId,
                     'email' => 'test@example.com',
                     'name' => 'Noe Hill',
-                    'salutationId' => $salutationId,
+                    'gender' => $gender,
                     'title' => 'Doc',
                     'customerNumber' => 'Test',
                     'orderVersionId' => Defaults::LIVE_VERSION,
@@ -134,7 +134,7 @@ trait OrderFixture
                         'id' => $customerId,
                         'email' => 'test@example.com',
                         'name' => 'Noe Hill',
-                        'salutationId' => $salutationId,
+                        'gender' => $gender,
                         'title' => 'Doc',
                         'customerNumber' => 'Test',
                         'guest' => true,
@@ -145,7 +145,7 @@ trait OrderFixture
                         'addresses' => [
                             [
                                 'id' => $addressId,
-                                'salutationId' => $salutationId,
+                                'gender' => $gender,
                                 'name' => 'Floy Glover',
                                 'zipcode' => '59438-0403',
                                 'city' => 'Stellaberg',
@@ -169,7 +169,7 @@ trait OrderFixture
                 'billingAddressId' => $addressId,
                 'addresses' => [
                     [
-                        'salutationId' => $salutationId,
+                        'gender' => $gender,
                         'name' => 'Floy Glover',
                         'zipcode' => '59438-0403',
                         'city' => 'Stellaberg',

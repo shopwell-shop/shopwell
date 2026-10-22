@@ -1,0 +1,171 @@
+{% block sw_order_return_list %}
+<sw-page class="sw-order-return-list">
+    {% block sw_order_return_list_search_bar %}
+    <template #search-bar>
+        <sw-search-bar
+            initial-search-type="order_return"
+            :initial-search="term"
+            :placeholder="$t('sw-order-return.list.placeholderSearchBar')"
+            @search="onSearch"
+        />
+    </template>
+    {% endblock %}
+
+    {% block sw_order_return_list_smart_bar_header %}
+    <template #smart-bar-header>
+        {% block sw_order_return_list_smart_bar_header_title %}
+        <h2>
+            {% block sw_order_return_list_smart_bar_header_title_text %}
+            {{ $t('sw-order-return.list.title') }}
+            {% endblock %}
+
+            {% block sw_order_return_list_smart_bar_header_amount %}
+            <span
+                v-if="!isLoading"
+                class="sw-page__smart-bar-amount"
+            >
+                ({{ total }})
+            </span>
+            {% endblock %}
+        </h2>
+        {% endblock %}
+    </template>
+    {% endblock %}
+
+    {% block sw_order_return_list_content %}
+    <template #content>
+        {% block sw_order_return_list_content_inner %}
+        <div class="sw-order-return-list__content">
+
+            {% block sw_order_return_list_empty_state %}
+            {#
+            Two empty states: "nothing exists yet" reports a shop without returns, "nothing matches" only
+            the filter. There is no create button on this page on purpose: a return is opened from the
+            order it belongs to - the order detail has the tab that opens one - because a return needs an
+            order as its context, and a queue is the wrong place to pick that order.
+            #}
+            <mt-empty-state
+                v-if="!isLoading && !total && !hasActiveSearchOrFilter"
+                centered
+                class="sw-order-return-list__empty-state"
+                :icon="$route.meta.$module.icon"
+                :headline="$t('sw-order-return.list.messageEmpty')"
+                :description="$t('sw-order-return.list.messageEmptySubline')"
+            />
+            {% endblock %}
+
+            {% block sw_order_return_list_empty_state_no_result %}
+            <mt-empty-state
+                v-else-if="!isLoading && !total"
+                centered
+                class="sw-order-return-list__empty-state"
+                :icon="$route.meta.$module.icon"
+                :headline="$t('sw-order-return.list.messageNoResult')"
+                :description="$t('sw-order-return.list.messageNoResultSubline')"
+            />
+            {% endblock %}
+
+            {% block sw_order_return_list_grid %}
+            <sw-entity-listing
+                v-else-if="isLoading || orderReturns"
+                ref="listing"
+                class="sw-order-return-list__grid"
+                identifier="sw-order-return-list"
+                :data-source="orderReturns"
+                :columns="orderReturnColumns"
+                :repository="orderReturnRepository"
+                :sort-by="sortBy"
+                :sort-direction="sortDirection"
+                :is-loading="isLoading"
+                :full-page="true"
+                :show-selection="false"
+                :show-settings="true"
+                :disable-data-fetching="true"
+                :allow-inline-edit="false"
+                :allow-column-edit="true"
+                :allow-edit="false"
+                :allow-delete="false"
+                :allow-view="acl.can('order_return.viewer') || undefined"
+                detail-route="sw.order.return.detail"
+                @page-change="onPageChange"
+                @column-sort="onSortColumn"
+            >
+                {% block sw_order_return_list_grid_column_customer %}
+                <template #column-customerId="{ item }">
+                    {{ customerLabel(item) }}
+                </template>
+                {% endblock %}
+
+                {% block sw_order_return_list_grid_column_type %}
+                <template #column-type="{ item }">
+                    {{ typeLabel(item.type) }}
+                </template>
+                {% endblock %}
+
+                {% block sw_order_return_list_grid_column_state %}
+                <template #column-stateId="{ item }">
+                    <mt-badge
+                        v-if="item.stateId"
+                        :variant="stateVariant(item.stateId)"
+                    >
+                        {#
+                        The name of the state: the snippet of this module first, the translation of the
+                        state machine only for a state the administration does not know.
+                        #}
+                        {{ stateLabel(item.stateId) }}
+                    </mt-badge>
+                </template>
+                {% endblock %}
+
+                {% block sw_order_return_list_grid_column_refund_amount %}
+                <template #column-refundAmount="{ item }">
+                    {{ formatAmount(item.refundAmount, item.currency) }}
+                </template>
+                {% endblock %}
+
+                {% block sw_order_return_list_grid_column_deadline %}
+                <template #column-deadlineAt="{ item }">
+                    <span :class="{ 'sw-order-return-list__overdue': isOverdue(item) }">
+                        {{ deadlineLabel(item) }}
+                    </span>
+                </template>
+                {% endblock %}
+
+                {% block sw_order_return_list_grid_column_created_at %}
+                <template #column-createdAt="{ item }">
+                    {{ formatDateOrDash(item.createdAt) }}
+                </template>
+                {% endblock %}
+            </sw-entity-listing>
+            {% endblock %}
+        </div>
+        {% endblock %}
+    </template>
+    {% endblock %}
+
+    {% block sw_order_return_list_sidebar %}
+    <template #sidebar>
+        <sw-sidebar class="sw-order-return-list__sidebar">
+            {% block sw_order_return_list_sidebar_refresh %}
+            <sw-sidebar-item
+                icon="regular-undo"
+                :title="$t('sw-order-return.list.titleSidebarItemRefresh')"
+                @click="onRefresh"
+            />
+            {% endblock %}
+
+            {% block sw_order_return_list_sidebar_filter %}
+            <sw-sidebar-filter-panel
+                entity="order_return"
+                :store-key="storeKey"
+                :filters="listFilters"
+                :defaults="defaultFilters"
+                :active-filter-number="activeFilterNumber"
+                @criteria-changed="updateCriteria"
+            />
+            {% endblock %}
+        </sw-sidebar>
+    </template>
+    {% endblock %}
+</sw-page>
+{% endblock %}

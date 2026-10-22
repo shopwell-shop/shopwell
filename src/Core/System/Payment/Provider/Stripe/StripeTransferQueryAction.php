@@ -9,6 +9,7 @@ use Shopwell\Core\System\Payment\Gateway\PaymentTransferQuery;
 use Shopwell\Core\System\Payment\Gateway\TransferQueryResult;
 use Shopwell\Core\System\Payment\Gateway\TransferResult;
 use Shopwell\Core\System\Payment\PaymentException;
+use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferRecipientEntity;
 
 /**
@@ -29,6 +30,11 @@ use Shopwell\Core\System\Payment\Transfer\PaymentTransferRecipientEntity;
 final class StripeTransferQueryAction extends AbstractPaymentAction
 {
     protected string $apiClass = StripeApi::class;
+
+    public function capability(): PaymentCapability
+    {
+        return PaymentCapability::TRANSFER_QUERY;
+    }
 
     public function execute($request): void
     {

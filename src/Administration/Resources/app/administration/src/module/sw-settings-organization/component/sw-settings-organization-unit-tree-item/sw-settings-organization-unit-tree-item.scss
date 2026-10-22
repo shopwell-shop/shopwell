@@ -1,0 +1,91 @@
+.sw-settings-organization-unit-tree-item {
+    $indent: var(--scale-size-20);
+
+    &__row {
+        display: flex;
+        align-items: center;
+        gap: var(--scale-size-4);
+        min-height: 32px;
+        padding: var(--scale-size-4) var(--scale-size-8);
+        border-radius: var(--border-radius-xs);
+        cursor: pointer;
+        transition: background-color 150ms ease;
+
+        &:hover {
+            background-color: var(--color-interaction-secondary-hover);
+
+            .sw-settings-organization-unit-tree-item__add {
+                opacity: 1;
+            }
+        }
+
+        &.is--active {
+            background-color: var(--color-interaction-secondary-hover);
+            font-weight: var(--font-weight-semibold);
+        }
+    }
+
+    &__toggle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: var(--scale-size-16);
+        flex-shrink: 0;
+        cursor: pointer;
+    }
+
+    &__leaf {
+        width: var(--scale-size-16);
+        flex-shrink: 0;
+    }
+
+    &__icon {
+        flex-shrink: 0;
+        color: var(--color-text-secondary-default);
+    }
+
+    &__name {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+
+        &.is--inactive {
+            color: var(--color-text-secondary-default);
+            font-style: italic;
+        }
+    }
+
+    &__count {
+        margin-left: auto;
+        min-width: var(--scale-size-24);
+        text-align: center;
+        font-size: var(--font-size-xs);
+        color: var(--color-text-secondary-default);
+    }
+
+    &__add {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 24px;
+        padding: 0;
+        border: none;
+        background: transparent;
+        border-radius: var(--border-radius-xs);
+        color: var(--color-text-primary-default);
+        cursor: pointer;
+        opacity: 0;
+        transition: opacity 150ms ease;
+
+        &:hover {
+            background-color: var(--color-interaction-primary-hover);
+        }
+    }
+
+    &__children {
+        margin-left: var(--scale-size-12);
+        padding-left: var(--scale-size-8);
+        border-left: 1px solid var(--color-border-primary-default);
+    }
+}

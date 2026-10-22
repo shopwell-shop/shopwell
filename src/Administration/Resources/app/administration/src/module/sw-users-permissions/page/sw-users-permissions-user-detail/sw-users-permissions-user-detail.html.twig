@@ -354,6 +354,63 @@
                     />
                 </mt-card>
                 {% endblock %}
+
+                {% block sw_setting_user_detail_card_organization_units %}
+                <mt-card
+                    v-if="user"
+                    class="sw-settings-user-detail__organization-units-card"
+                    position-identifier="sw-users-permissions-user-detail-organization-units"
+                    :title="$t('sw-users-permissions.users.user-detail.cardOrganizationUnits')"
+                    :is-loading="isLoading"
+                >
+                    {% block sw_setting_user_detail_card_organization_units_select %}
+                    <sw-entity-multi-id-select
+                        v-model:value="selectedUnitIds"
+                        class="sw-settings-user-detail__organization-units-select"
+                        :repository="organizationUnitRepository"
+                        :disabled="!acl.can('users_and_permissions.editor') || undefined"
+                        :label="$t('sw-users-permissions.users.user-detail.labelOrganizationUnits')"
+                        :placeholder="$t('sw-users-permissions.users.user-detail.placeholderSelectUnits')"
+                        :help-text="selectedUnitIds.length === 0 ? $t('sw-users-permissions.users.user-detail.helperNoUnit') : ''"
+                    />
+                    {% endblock %}
+
+                    {% block sw_setting_user_detail_card_organization_units_primary %}
+                    <mt-select
+                        v-if="selectedUnitIds.length > 0"
+                        class="sw-settings-user-detail__primary-unit-select"
+                        :model-value="primaryUnitId"
+                        :disabled="!acl.can('users_and_permissions.editor') || undefined"
+                        :label="$t('sw-users-permissions.users.user-detail.labelPrimaryUnit')"
+                        :placeholder="$t('sw-users-permissions.users.user-detail.placeholderSelectPrimaryUnit')"
+                        :help-text="$t('sw-users-permissions.users.user-detail.helperPrimaryUnit')"
+                        :options="selectedUnitOptions"
+                        @update:model-value="onPrimaryUnitChange"
+                    />
+                    {% endblock %}
+                </mt-card>
+                {% endblock %}
+
+                {% block sw_setting_user_detail_card_positions %}
+                <mt-card
+                    v-if="user"
+                    class="sw-settings-user-detail__positions-card"
+                    position-identifier="sw-users-permissions-user-detail-positions"
+                    :title="$t('sw-users-permissions.users.user-detail.cardPositions')"
+                    :is-loading="isLoading"
+                >
+                    {% block sw_setting_user_detail_card_positions_select %}
+                    <sw-entity-multi-id-select
+                        v-model:value="selectedPositionIds"
+                        class="sw-settings-user-detail__positions-select"
+                        :repository="positionRepository"
+                        :disabled="!acl.can('users_and_permissions.editor') || undefined"
+                        :label="$t('sw-users-permissions.users.user-detail.labelPositions')"
+                        :placeholder="$t('sw-users-permissions.users.user-detail.placeholderSelectPositions')"
+                    />
+                    {% endblock %}
+                </mt-card>
+                {% endblock %}
             </div>
 
             <!-- Outside the cards container: its layout containment would trap the fixed-position modal. -->

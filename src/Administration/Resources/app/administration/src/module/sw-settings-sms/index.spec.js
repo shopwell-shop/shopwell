@@ -17,6 +17,7 @@ const COMPONENTS = [
     'sw-settings-sms-template-detail',
     'sw-settings-sms-delivery-list',
     'sw-settings-sms-template-mapping-grid',
+    'sw-settings-sms-template-submission-modal',
 ];
 
 describe('src/module/sw-settings-sms/index.ts', () => {
@@ -77,6 +78,10 @@ describe('src/module/sw-settings-sms/index.ts', () => {
 
     it('should register the service that asks for the providers of the server', () => {
         expect(Shopwell.Service().get('smsGatewayProviderService')).toBeDefined();
+    });
+
+    it('should register the service of the three audit steps', () => {
+        expect(Shopwell.Service().get('smsTemplateAuditService')).toBeDefined();
     });
 
     it('should register the module base information', () => {

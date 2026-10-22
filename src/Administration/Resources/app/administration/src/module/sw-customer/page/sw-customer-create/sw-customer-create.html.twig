@@ -2,7 +2,7 @@
 <sw-page class="sw-customer-create">
     {% block sw_customer_create_header %}
     <template #smart-bar-header>
-        <h2>{{ salutationFilter(customer, $t('sw-customer.general.newCustomer')) }}</h2>
+        <h2>{{ customer.name || $t('sw-customer.general.newCustomer') }}</h2>
     </template>
     {% endblock %}
 

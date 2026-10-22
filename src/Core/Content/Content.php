@@ -40,6 +40,7 @@ class Content extends Bundle
         $phpLoader->load('mail.php');
         $phpLoader->load('mail_template.php');
         $phpLoader->load('delivery_time.php');
+        $phpLoader->load('blog.php');
         $phpLoader->load('import_export.php');
         $phpLoader->load('contact_form.php');
         $phpLoader->load('revocation_request_form.php');

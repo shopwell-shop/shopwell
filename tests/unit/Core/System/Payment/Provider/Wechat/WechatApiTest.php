@@ -33,7 +33,8 @@ class WechatApiTest extends TestCase
 
         static::assertSame('wechat', $api->provider());
         static::assertSame('wechat_h5', $api->channel());
-        static::assertSame('live', $api->mode());
+        static::assertNull($api->sourceAppId());
+        static::assertFalse($api->inherited());
         static::assertSame('wx-app-id', $api->appId());
         static::assertSame('https://example.com/notify', $api->notifyUrl());
         static::assertSame('https://example.com/return', $api->returnUrl());
@@ -296,7 +297,6 @@ class WechatApiTest extends TestCase
                 params: $params,
                 runtimeParams: [],
                 settings: [],
-                mode: 'live',
             ),
             'https://example.com/notify',
             'https://example.com/return',

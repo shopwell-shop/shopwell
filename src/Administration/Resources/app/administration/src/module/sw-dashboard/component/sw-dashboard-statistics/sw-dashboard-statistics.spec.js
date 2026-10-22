@@ -118,14 +118,37 @@ describe('module/sw-dashboard/component/sw-dashboard-statistics', () => {
         expect(wrapper.findAll('.sw-chart')).toHaveLength(1);
     });
 
-    it('offers the metric switcher with revenue and order count', async () => {
+    it('plots the revenue and the order count as two series', async () => {
+        statisticResponse = {
+            paid: [{ date: '2026-06-14', count: 2, amount: 150 }],
+            all: [{ date: '2026-06-14', count: 9, amount: 900 }],
+        };
+
         const wrapper = await createWrapper();
         await flushPromises();
 
-        expect(wrapper.vm.metricOptions).toEqual([
-            { label: 'sw-dashboard.statistics.metricTurnover', value: 'turnover' },
-            { label: 'sw-dashboard.statistics.metricOrderCount', value: 'orderCount' },
+        const today = { x: wrapper.vm.getToday().getTime(), y: 0 };
+
+        expect(wrapper.vm.series[0].name).toBe('sw-dashboard.statistics.metricTurnover');
+        expect(wrapper.vm.series[0].data).toEqual([
+            { x: wrapper.vm.parseDate('2026-06-14'), y: 150 },
+            today,
         ]);
+
+        expect(wrapper.vm.series[1].name).toBe('sw-dashboard.statistics.metricOrderCount');
+        expect(wrapper.vm.series[1].data).toEqual([
+            { x: wrapper.vm.parseDate('2026-06-14'), y: 9 },
+            today,
+        ]);
+    });
+
+    it('formats both y axes, currency left and counts right', async () => {
+        const wrapper = await createWrapper();
+        await flushPromises();
+
+        expect(wrapper.vm.options.yaxis).toHaveLength(2);
+        expect(wrapper.vm.options.yaxis[0].opposite).toBeFalsy();
+        expect(wrapper.vm.options.yaxis[1].opposite).toBe(true);
     });
 
     it('offers all supported ranges', async () => {
@@ -171,14 +194,6 @@ describe('module/sw-dashboard/component/sw-dashboard-statistics', () => {
             { x: wrapper.vm.parseDate('2026-06-14'), y: 150 },
             today,
         ]);
-
-        wrapper.vm.selectedMetric = 'orderCount';
-        await flushPromises();
-
-        expect(wrapper.vm.series[0].data).toEqual([
-            { x: wrapper.vm.parseDate('2026-06-14'), y: 9 },
-            today,
-        ]);
     });
 
     it('appends a zero point for today when there is no data yet', async () => {
@@ -216,16 +231,11 @@ describe('module/sw-dashboard/component/sw-dashboard-statistics', () => {
         expect(wrapper.vm.activeRange.range).toBe(7);
     });
 
-    it('explains the paid only revenue for the revenue metric', async () => {
+    it('explains the paid only revenue', async () => {
         const wrapper = await createWrapper();
         await flushPromises();
 
         expect(wrapper.vm.helpText).toBe('sw-dashboard.statistics.helpText');
-
-        wrapper.vm.selectedMetric = 'orderCount';
-        await flushPromises();
-
-        expect(wrapper.vm.helpText).toBe('');
     });
 
     it('ships the labels of every range', async () => {

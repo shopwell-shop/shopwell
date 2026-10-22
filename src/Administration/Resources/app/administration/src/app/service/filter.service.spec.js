@@ -58,7 +58,7 @@ describe('app/service/filter.service.js', () => {
                         criteria: [
                             {
                                 type: 'equalsAny',
-                                field: 'salutation.id',
+                                field: 'gender.id',
                                 value: '123',
                             },
                         ],
@@ -115,7 +115,7 @@ describe('app/service/filter.service.js', () => {
                 criteria: [
                     {
                         type: 'equalsAny',
-                        field: 'salutation.id',
+                        field: 'gender.id',
                         value: '123',
                     },
                 ],
@@ -187,7 +187,7 @@ describe('app/service/filter.service.js', () => {
 
     it('getStoredCriteria should return correct criteria', async () => {
         const data = await filterService.getStoredCriteria('test');
-        expect(data).toEqual([{ type: 'equalsAny', field: 'salutation.id', value: '123' }]);
+        expect(data).toEqual([{ type: 'equalsAny', field: 'gender.id', value: '123' }]);
     });
 
     it('saveFilters should cache and save data correctly', async () => {
@@ -199,7 +199,7 @@ describe('app/service/filter.service.js', () => {
                 criteria: [
                     {
                         type: 'equalsAny',
-                        field: 'salutation.id',
+                        field: 'gender.id',
                         value: 'filter1',
                     },
                 ],
@@ -209,7 +209,7 @@ describe('app/service/filter.service.js', () => {
                 criteria: [
                     {
                         type: 'equalsAny',
-                        field: 'salutation.id',
+                        field: 'gender.id',
                         value: 'filter2',
                     },
                 ],
@@ -218,8 +218,8 @@ describe('app/service/filter.service.js', () => {
 
         await filterService.saveFilters('test', filters);
         expect(filterService._storedFilters.test).toEqual([
-            { type: 'equalsAny', field: 'salutation.id', value: 'filter1' },
-            { type: 'equalsAny', field: 'salutation.id', value: 'filter2' },
+            { type: 'equalsAny', field: 'gender.id', value: 'filter1' },
+            { type: 'equalsAny', field: 'gender.id', value: 'filter2' },
         ]);
     });
 
@@ -232,7 +232,7 @@ describe('app/service/filter.service.js', () => {
                 criteria: [
                     {
                         type: 'equalsAny',
-                        field: 'salutation.id',
+                        field: 'gender.id',
                         value: 'filter1',
                     },
                 ],
@@ -271,7 +271,7 @@ describe('app/service/filter.service.js', () => {
                 criteria: [
                     {
                         type: 'equalsAny',
-                        field: 'salutation.id',
+                        field: 'gender.id',
                         value: 'filter1',
                     },
                 ],
@@ -288,12 +288,12 @@ describe('app/service/filter.service.js', () => {
         const criteria = new Criteria(1, 25);
         criteria.addFilter({
             type: 'equalsAny',
-            field: 'salutation.id',
+            field: 'gender.id',
             value: 'filter1',
         });
         criteria.addFilter({
             type: 'equalsAny',
-            field: 'salutation.id',
+            field: 'gender.id',
             value: 'filter2',
         });
 

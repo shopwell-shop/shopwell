@@ -27,9 +27,12 @@ abstract class AbstractSmsSender
      * does not carry one, a message of a scene that may be queued is put on the queue and null is
      * returned.
      *
-     * @param string|null $salesChannelId the sales channel the credentials, the default country of the number
-     *                                    and the global settings are read for, null means the installation wide
-     *                                    configuration
+     * The number of the message is canonicalised here, so a caller may hand in the notation the
+     * customer wrote - but the module has no default country of its own, a number without its country
+     * code has to come in international notation.
+     *
+     * @param string|null $salesChannelId the sales channel the credentials and the global settings are
+     *                                    read for, null means the installation wide configuration
      *
      * @throws SmsException
      */
@@ -41,6 +44,9 @@ abstract class AbstractSmsSender
      *
      * @param array<string, mixed> $params
      * @param string|null $salesChannelId see send()
+     * @param string|null $countryIso the ISO code of the country the caller knows, e.g. from the
+     *                                address of the customer, needed for a number written without
+     *                                its country code
      *
      * @throws SmsException
      */
@@ -50,5 +56,6 @@ abstract class AbstractSmsSender
         string $phone,
         ?Context $context = null,
         ?string $salesChannelId = null,
+        ?string $countryIso = null,
     ): ?SentMessage;
 }

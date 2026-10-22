@@ -17,6 +17,12 @@ parameters:
     scanFiles:
         - vendor/symfony/dependency-injection/Loader/Configurator/ContainerConfigurator.php
 
+    # The blog type registry consumes every service tagged with `shopwell.blog_type_handler` as a
+    # BlogTypeHandlerInterface. The interface is the extension point a plugin implements, so it is not
+    # @internal and the tag needs a declared contract instead.
+    shopwellTaggedServiceContractAdditionalTagContracts:
+        shopwell.blog_type_handler: Shopwell\Core\Content\Blog\Service\BlogTypeHandlerInterface
+
     excludePaths:
         # vendor patches over autoload files
         - src/Core/Framework/Adapter/Doctrine/Patch/AbstractAsset.php
@@ -149,6 +155,10 @@ parameters:
           # are only visible through the client's private configuration
             identifier: shopwell.reflectionInUnitTest
             path: tests/unit/Elasticsearch/Framework/ClientFactoryTest.php
+        - # the route table is an attribute of the method, and the signature of the submit endpoint is the
+          # guarantee that it can not name an app - neither is reachable without reflection
+            identifier: shopwell.reflectionInUnitTest
+            path: tests/unit/Core/System/Payment/Transfer/Api/PaymentTransferControllerTest.php
 
         # DefaultsTest explicitly tests that the default values are not changed
         - identifier: staticMethod.alreadyNarrowedType

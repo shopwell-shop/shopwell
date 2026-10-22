@@ -15,7 +15,6 @@ use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Sms\Gateway\Aliyun\AliyunSmsOptions;
 use Shopwell\Core\System\Sms\Gateway\Aliyun\AliyunSmsTransport;
 use Shopwell\Core\System\Sms\SmsException;
-use Shopwell\Core\System\Sms\SmsUnrecoverableException;
 use Symfony\Component\Notifier\Message\MessageInterface;
 use Symfony\Component\Notifier\Message\MessageOptionsInterface;
 use Symfony\Component\Notifier\Message\SmsMessage;
@@ -100,15 +99,23 @@ class AliyunSmsTransportTest extends TestCase
 
     public function testATemplateTheProviderDoesNotKnowIsFinal(): void
     {
-        $this->expectExceptionObject(SmsUnrecoverableException::providerRejected('aliyun', 'isv.SMS_TEMPLATE_ILLEGAL', 'not approved'));
+        $this->expectExceptionObject(SmsException::providerRejected('aliyun', 'isv.SMS_TEMPLATE_ILLEGAL', 'not approved'));
 
         $this->createTransport($this->clientReturning(['code' => 'isv.SMS_TEMPLATE_ILLEGAL', 'message' => 'not approved']))
             ->send($this->message());
     }
 
+    public function testASignatureTheProviderDidNotApproveGetsItsOwnCode(): void
+    {
+        $this->expectExceptionObject(SmsException::signNameNotApproved('aliyun', 'Shopwell', 'isv.SMS_SIGN_ILLEGAL', 'illegal'));
+
+        $this->createTransport($this->clientReturning(['code' => 'isv.SMS_SIGN_ILLEGAL', 'message' => 'illegal']))
+            ->send($this->message());
+    }
+
     public function testAnAcceptedRequestWithoutACodeIsFinal(): void
     {
-        $this->expectExceptionObject(SmsUnrecoverableException::providerRejected('aliyun', '', ''));
+        $this->expectExceptionObject(SmsException::providerRejected('aliyun', '', ''));
 
         $this->createTransport($this->clientReturning([]))->send($this->message());
     }
@@ -138,7 +145,7 @@ class AliyunSmsTransportTest extends TestCase
         $client = static::createStub(Dysmsapi::class);
         $client->method('sendSms')->willThrowException(new ClientException($this->failure('InvalidAccessKeyId.NotFound', 'the key is unknown', 400)));
 
-        $this->expectExceptionObject(SmsUnrecoverableException::providerRejected('aliyun', 'InvalidAccessKeyId.NotFound', 'the key is unknown'));
+        $this->expectExceptionObject(SmsException::providerRejected('aliyun', 'InvalidAccessKeyId.NotFound', 'the key is unknown'));
 
         $this->createTransport($client)->send($this->message());
     }
@@ -168,7 +175,7 @@ class AliyunSmsTransportTest extends TestCase
 
     public function testAGatewayWithoutASignatureCannotSend(): void
     {
-        $this->expectExceptionObject(SmsUnrecoverableException::signNameMissing('aliyun'));
+        $this->expectExceptionObject(SmsException::signNameMissing('aliyun'));
 
         $this->createTransport()->send(new SmsMessage('+8613800000000', 'hello', options: new AliyunSmsOptions('SMS_1', '')));
     }
@@ -186,7 +193,7 @@ class AliyunSmsTransportTest extends TestCase
 
     private function createTransport(?Dysmsapi $client = null, ?string $defaultSignName = null): AliyunSmsTransport
     {
-        return new AliyunSmsTransport($client ?? $this->createMock(Dysmsapi::class), $defaultSignName);
+        return new AliyunSmsTransport($client ?? static::createStub(Dysmsapi::class), $defaultSignName);
     }
 
     private function message(): SmsMessage

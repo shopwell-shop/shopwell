@@ -79,8 +79,8 @@ class UpsertAddressRouteTest extends TestCase
     {
         $data['countryId'] = $this->getValidCountryId();
 
-        if (\array_key_exists('salutationId', $data)) {
-            $data['salutationId'] = $this->getValidSalutationId();
+        if (\array_key_exists('gender', $data)) {
+            $data['gender'] = $this->getValidGender();
         }
 
         $this->browser
@@ -194,7 +194,7 @@ class UpsertAddressRouteTest extends TestCase
         $this->browser->setServerParameter('HTTP_SW_CONTEXT_TOKEN', $contextToken);
 
         $data = [
-            'salutationId' => $this->getValidSalutationId(),
+            'gender' => $this->getValidGender(),
             'name' => 'Test Test',
             'street' => 'Test',
             'city' => 'Test',
@@ -231,9 +231,9 @@ class UpsertAddressRouteTest extends TestCase
 
     public static function addressDataProvider(): \Generator
     {
-        yield 'salutation' => [
+        yield 'gender' => [
             [
-                'salutationId' => '',
+                'gender' => '',
                 'name' => 'Test Test',
                 'street' => 'Test',
                 'city' => 'Test',
@@ -252,7 +252,7 @@ class UpsertAddressRouteTest extends TestCase
 
         yield 'empty-salutation' => [
             [
-                'salutationId' => null,
+                'gender' => null,
                 'name' => 'Test Test',
                 'street' => 'Test',
                 'city' => 'Test',

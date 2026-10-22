@@ -12,4 +12,30 @@
             justify-content: end;
         }
     }
+
+    &__gateway-channel-bound {
+        margin-bottom: var(--scale-size-16);
+        color: var(--color-text-secondary);
+    }
+
+    &__gateway-channel-account {
+        display: flex;
+        flex-direction: column;
+        gap: var(--scale-size-4);
+    }
+
+    &__gateway-channel-account-label {
+        color: var(--color-text-secondary);
+    }
+
+    &__gateway-channel-hint {
+        color: var(--color-text-secondary);
+        margin-top: var(--scale-size-16);
+    }
+
+    &__gateway-channel-actions {
+        display: flex;
+        justify-content: end;
+        margin-top: var(--scale-size-24);
+    }
 }

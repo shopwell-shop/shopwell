@@ -62,22 +62,24 @@ use Shopwell\Core\Checkout\Customer\SalesChannel\UpsertAddressRoute;
 use Shopwell\Core\Checkout\Customer\Service\DoubleOptInService;
 use Shopwell\Core\Checkout\Customer\Service\GuestAuthenticator;
 use Shopwell\Core\Checkout\Customer\Service\ProductReviewCountService;
+use Shopwell\Core\Checkout\Customer\Service\SmsLoginService;
 use Shopwell\Core\Checkout\Customer\Subscriber\AddressHashSubscriber;
 use Shopwell\Core\Checkout\Customer\Subscriber\CustomerAddressSubscriber;
 use Shopwell\Core\Checkout\Customer\Subscriber\CustomerBeforeDeleteSubscriber;
 use Shopwell\Core\Checkout\Customer\Subscriber\CustomerChangePasswordSubscriber;
 use Shopwell\Core\Checkout\Customer\Subscriber\CustomerEmailUniqueSubscriber;
 use Shopwell\Core\Checkout\Customer\Subscriber\CustomerFlowEventsSubscriber;
+use Shopwell\Core\Checkout\Customer\Subscriber\CustomerGenderSubscriber;
 use Shopwell\Core\Checkout\Customer\Subscriber\CustomerLanguageSalesChannelSubscriber;
 use Shopwell\Core\Checkout\Customer\Subscriber\CustomerLogoutSubscriber;
 use Shopwell\Core\Checkout\Customer\Subscriber\CustomerMetaFieldSubscriber;
 use Shopwell\Core\Checkout\Customer\Subscriber\CustomerRemoteAddressSubscriber;
-use Shopwell\Core\Checkout\Customer\Subscriber\CustomerSalutationSubscriber;
 use Shopwell\Core\Checkout\Customer\Subscriber\CustomerTokenSubscriber;
 use Shopwell\Core\Checkout\Customer\Subscriber\ProductReviewSubscriber;
 use Shopwell\Core\Checkout\Customer\Validation\AddressValidationFactory;
 use Shopwell\Core\Checkout\Customer\Validation\Constraint\CustomerEmailUniqueValidator;
 use Shopwell\Core\Checkout\Customer\Validation\Constraint\CustomerPasswordMatchesValidator;
+use Shopwell\Core\Checkout\Customer\Validation\Constraint\CustomerPhoneNumberUniqueValidator;
 use Shopwell\Core\Checkout\Customer\Validation\Constraint\CustomerVatIdentificationValidator;
 use Shopwell\Core\Checkout\Customer\Validation\Constraint\CustomerZipCodeValidator;
 use Shopwell\Core\Checkout\Customer\Validation\CustomerEmailUniqueChecker;
@@ -101,10 +103,14 @@ use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextPersister;
 use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextRestorer;
 use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextService;
 use Shopwell\Core\System\SalesChannel\StoreApiCustomFieldMapper;
+use Shopwell\Core\System\Sms\Service\AbstractSmsSender;
+use Shopwell\Core\System\Sms\Util\PhoneNumberMaskerInterface;
+use Shopwell\Core\System\Sms\Util\PhoneNumberNormalizerInterface;
 use Shopwell\Core\System\SystemConfig\SystemConfigService;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Contracts\Cache\CacheInterface;
 
 use function Symfony\Component\DependencyInjection\Loader\Configurator\env;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\param;
@@ -164,6 +170,19 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(ClockInterface::class),
         ]);
 
+    $services->set(SmsLoginService::class)
+        ->args([
+            service('customer.repository'),
+            service(AbstractSmsSender::class),
+            service(CacheInterface::class),
+            service(PhoneNumberNormalizerInterface::class),
+            service(PhoneNumberMaskerInterface::class),
+            service('logger'),
+            service(ClockInterface::class),
+            param('kernel.secret'),
+            service(SystemConfigService::class),
+        ]);
+
     $services->set(AddressValidationFactory::class)
         ->args([
             service(SystemConfigService::class),
@@ -200,6 +219,12 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(CustomerPasswordMatchesValidator::class)
         ->args([
             service(AccountService::class),
+        ])
+        ->tag('validator.constraint_validator');
+
+    $services->set(CustomerPhoneNumberUniqueValidator::class)
+        ->args([
+            service('customer.repository'),
         ])
         ->tag('validator.constraint_validator');
 
@@ -350,7 +375,6 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(DataValidator::class),
             service(CustomerProfileValidationFactory::class),
             service(StoreApiCustomFieldMapper::class),
-            service('salutation.repository'),
             service(ExtensionDispatcher::class),
         ]);
 
@@ -424,7 +448,6 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(Connection::class),
             service(SalesChannelContextService::class),
             service(StoreApiCustomFieldMapper::class),
-            service('salutation.repository'),
             service(PasswordValidationFactory::class),
             service(DoubleOptInService::class),
             service(CustomerNewsletterSalesChannelsUpdater::class),
@@ -462,7 +485,6 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(AddressValidationFactory::class),
             service(SystemConfigService::class),
             service(StoreApiCustomFieldMapper::class),
-            service('salutation.repository'),
             service(ExtensionDispatcher::class),
         ]);
 
@@ -674,7 +696,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(ExtensionDispatcher::class),
         ]);
 
-    $services->set(CustomerSalutationSubscriber::class)
+    $services->set(CustomerGenderSubscriber::class)
         ->args([
             service(Connection::class),
         ])

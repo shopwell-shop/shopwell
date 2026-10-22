@@ -35,8 +35,8 @@ final class WechatApi extends AbstractPaymentApi
     final public const PROVIDER = 'wechat';
 
     /**
-     * The channels of wechat pay as they are declared in `Resources/config/wechat.xml`. They share the
-     * merchant account and differ in the way the payer is handed over (and in their appid).
+     * The channels of wechat pay as they are declared in {@see WechatProvider::getChannels()}. They share
+     * the merchant account and differ in the way the payer is handed over (and in their appid).
      */
     final public const CHANNEL_H5 = 'wechat_h5';
 

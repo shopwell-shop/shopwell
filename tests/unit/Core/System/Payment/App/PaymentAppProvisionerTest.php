@@ -212,6 +212,8 @@ class PaymentAppProvisionerTest extends TestCase
                 static::assertSame($stored->id, $row['paymentAppId']);
                 static::assertSame('alipay', $row['providerTechnicalName']);
                 static::assertTrue($row['enabled']);
+                // no account source: the app collects on its own merchant account
+                static::assertNull($row['sourceAppId']);
 
                 return true;
             }));
@@ -230,6 +232,162 @@ class PaymentAppProvisionerTest extends TestCase
         ));
 
         static::assertSame($stored, $result['app']);
+    }
+
+    /**
+     * The account source is an app: pointing at the tenant of the platform is what "the platform
+     * collects for me" means, and it stores the app id instead of a mode.
+     */
+    public function testAnAuthorizationMayInheritTheAccountOfAnotherApp(): void
+    {
+        $stored = PaymentControllerFixture::app('client-a', 'stored-secret');
+        $platform = $this->platformTenant();
+
+        $appRepository = static::createStub(EntityRepository::class);
+        $appRepository->method('search')->willReturnCallback(
+            static fn (Criteria $criteria): EntitySearchResult => $criteria->getIds() === [$platform->id]
+                ? new EntitySearchResult('payment_app', 1, new PaymentAppCollection([$platform]), null, new Criteria(), Context::createDefaultContext())
+                : new EntitySearchResult('payment_app', 1, new PaymentAppCollection([$stored]), null, new Criteria(), Context::createDefaultContext())
+        );
+
+        $appProviderRepository = static::createMock(EntityRepository::class);
+        $appProviderRepository->method('search')->willReturn(new EntitySearchResult(
+            'payment_app_provider',
+            0,
+            new PaymentAppProviderCollection([]),
+            null,
+            new Criteria(),
+            Context::createDefaultContext()
+        ));
+        $appProviderRepository->expects($this->once())
+            ->method('upsert')
+            ->with(static::callback(function (array $data) use ($platform): bool {
+                static::assertSame($platform->id, $data[0]['sourceAppId']);
+                // an inheriting authorization carries no credentials of its own
+                static::assertArrayNotHasKey('credentials', $data[0]);
+
+                return true;
+            }));
+
+        $this->provisioner($appRepository, $appProviderRepository, null, $this->alipayRegistry())->save(new PaymentAppDto(
+            id: $stored->id,
+            technicalName: 'client-a',
+            providers: [new PaymentAppProviderDto(
+                providerTechnicalName: 'alipay',
+                enabled: true,
+                sourceAppId: $platform->id,
+            )],
+        ));
+    }
+
+    /**
+     * An app that inherits from itself has no account at all - the shortest circle is refused where
+     * the merchant can still fix it.
+     */
+    public function testAnAuthorizationThatInheritsFromItselfIsRejected(): void
+    {
+        $stored = PaymentControllerFixture::app('client-a', 'stored-secret');
+
+        $this->expectExceptionObject(PaymentException::providerInheritanceCycle('alipay', 'client-a'));
+
+        $this->provisioner(
+            PaymentControllerFixture::repository(PaymentAppCollection::class, [$stored]),
+            null,
+            null,
+            $this->alipayRegistry()
+        )->save(new PaymentAppDto(
+            id: $stored->id,
+            technicalName: 'client-a',
+            providers: [new PaymentAppProviderDto(
+                providerTechnicalName: 'alipay',
+                enabled: true,
+                sourceAppId: $stored->id,
+            )],
+        ));
+    }
+
+    /**
+     * A source app that does not exist would be a chain without a merchant account, so the save is
+     * refused instead of storing an id nothing can resolve.
+     */
+    public function testAnAccountSourceThatDoesNotExistIsRejected(): void
+    {
+        $stored = PaymentControllerFixture::app('client-a', 'stored-secret');
+
+        $appRepository = static::createStub(EntityRepository::class);
+        $appRepository->method('search')->willReturnCallback(
+            static fn (Criteria $criteria): EntitySearchResult => $criteria->getIds() === [$stored->id]
+                ? new EntitySearchResult('payment_app', 1, new PaymentAppCollection([$stored]), null, new Criteria(), Context::createDefaultContext())
+                : new EntitySearchResult('payment_app', 0, new PaymentAppCollection([]), null, new Criteria(), Context::createDefaultContext())
+        );
+
+        $this->expectExceptionObject(PaymentException::providerSourceAppMissing('alipay', 'client-a', 'unknown-app'));
+
+        $this->provisioner($appRepository, null, null, $this->alipayRegistry())->save(new PaymentAppDto(
+            id: $stored->id,
+            technicalName: 'client-a',
+            providers: [new PaymentAppProviderDto(
+                providerTechnicalName: 'alipay',
+                enabled: true,
+                sourceAppId: 'unknown-app',
+            )],
+        ));
+    }
+
+    /**
+     * The tenant of the platform is the account the shop itself collects through, so the merchant has
+     * to be able to configure it - the write is not refused. Its technical name is not part of that
+     * configuration: the migration and the seeded rows refer to the app by that name, so the stored
+     * one wins over whatever the payload calls it.
+     */
+    public function testSavingThePlatformTenantKeepsItsStoredTechnicalName(): void
+    {
+        $platform = $this->platformTenant();
+
+        $appRepository = static::createMock(EntityRepository::class);
+        $appRepository->method('search')->willReturn($this->appResult($platform));
+        $appRepository->expects($this->once())
+            ->method('upsert')
+            ->with(static::callback(
+                static fn (array $write): bool => ($write[0]['technicalName'] ?? null) === PaymentAppEntity::PLATFORM_TECHNICAL_NAME
+                    && ($write[0]['name'] ?? null) === 'Renamed'
+            ));
+
+        $this->provisioner($appRepository)->save(new PaymentAppDto(
+            id: $platform->id,
+            technicalName: 'renamed-platform',
+            name: 'Renamed',
+            active: true,
+        ));
+    }
+
+    public function testDeletingThePlatformTenantIsRejected(): void
+    {
+        $platform = $this->platformTenant();
+
+        $appRepository = static::createMock(EntityRepository::class);
+        $appRepository->method('search')->willReturn($this->appResult($platform));
+        $appRepository->expects($this->never())->method('delete');
+
+        $this->expectExceptionObject(PaymentException::platformTenantNotDeletable(PaymentAppEntity::PLATFORM_TECHNICAL_NAME));
+
+        $this->provisioner($appRepository)->delete($platform->id, Context::createDefaultContext());
+    }
+
+    public function testDeletingAnExternalAppRemovesTheRow(): void
+    {
+        $external = PaymentControllerFixture::app('client-a', 'stored-secret');
+
+        $appRepository = static::createMock(EntityRepository::class);
+        $appRepository->method('search')->willReturn($this->appResult($external));
+        $appRepository->expects($this->once())
+            ->method('delete')
+            ->with(
+                static::callback(static fn (array $data): bool => $data === [['id' => $external->id]]),
+                static::anything()
+            );
+
+        $this->provisioner($appRepository)->delete($external->id, Context::createDefaultContext());
     }
 
     public function testSaveLeavesTheAuthorizationsUntouchedWhenNoProvidersAreGiven(): void
@@ -345,6 +503,25 @@ class PaymentAppProvisionerTest extends TestCase
             new PaymentChannelRegistry($registry),
             new NativeClock(),
         );
+    }
+
+    private function alipayRegistry(): PaymentProviderRegistry
+    {
+        return PaymentControllerFixture::providerRegistry(
+            PaymentControllerFixture::provider('alipay', [PaymentControllerFixture::channel('alipay_h5', 'alipay')])
+        );
+    }
+
+    /**
+     * The row the payment migration seeds: the tenant the platform itself collects through.
+     */
+    private function platformTenant(): PaymentAppEntity
+    {
+        $platform = PaymentControllerFixture::app(PaymentAppEntity::PLATFORM_TECHNICAL_NAME, 'platform-secret');
+        $platform->name = 'Platform Payment App';
+        $platform->type = PaymentAppEntity::TYPE_PLATFORM;
+
+        return $platform;
     }
 
     /**

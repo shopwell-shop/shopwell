@@ -1,0 +1,60 @@
+{% block sw_order_return_decline_modal %}
+<sw-modal
+    class="sw-order-return-decline-modal"
+    :title="$t('sw-order-return.decline.modalTitle')"
+    variant="default"
+    @modal-close="onClose"
+>
+    {% block sw_order_return_decline_modal_hint %}
+    <mt-banner
+        class="sw-order-return-decline-modal__hint"
+        variant="attention"
+    >
+        {{ $t('sw-order-return.decline.hint', { returnNumber }) }}
+    </mt-banner>
+    {% endblock %}
+
+    {% block sw_order_return_decline_modal_reason %}
+    <mt-textarea
+        v-model="reason"
+        class="sw-order-return-decline-modal__reason"
+        :label="$t('sw-order-return.decline.fieldReason')"
+        :placeholder="$t('sw-order-return.decline.placeholderReason')"
+        :max-length="reasonLimit"
+        :error="isReasonTooLong ? $t('sw-order-return.decline.validationReasonTooLong') : null"
+        required
+    />
+    {% endblock %}
+
+    {% block sw_order_return_decline_modal_counter %}
+    <div class="sw-order-return-decline-modal__counter">
+        {{ reasonLength }} / {{ reasonLimit }}
+    </div>
+    {% endblock %}
+
+    <template #modal-footer>
+        {% block sw_order_return_decline_modal_footer_cancel %}
+        <mt-button
+            class="sw-order-return-decline-modal__button-cancel"
+            size="default"
+            variant="secondary"
+            @click="onClose"
+        >
+            {{ $t('global.default.cancel') }}
+        </mt-button>
+        {% endblock %}
+
+        {% block sw_order_return_decline_modal_footer_confirm %}
+        <mt-button
+            class="sw-order-return-decline-modal__button-confirm"
+            size="default"
+            variant="critical"
+            :disabled="isConfirmDisabled"
+            @click="onConfirm"
+        >
+            {{ $t('sw-order-return.decline.buttonConfirm') }}
+        </mt-button>
+        {% endblock %}
+    </template>
+</sw-modal>
+{% endblock %}

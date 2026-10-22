@@ -37,7 +37,6 @@ class AddressHashSubscriber implements EventSubscriberInterface
                 'city' => $address->getCity(),
                 'company' => $address->getCompany(),
                 'department' => $address->getDepartment(),
-                'title' => $address->getTitle(),
                 'street' => $address->getStreet(),
                 'additionalAddressLine1' => $address->getAdditionalAddressLine1(),
                 'additionalAddressLine2' => $address->getAdditionalAddressLine2(),

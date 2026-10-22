@@ -26,13 +26,10 @@ class CustomerProvider extends AbstractProvider
         $criteria = new Criteria([$entityId]);
 
         $criteria->addAssociations([
-            'salutation',
             'defaultBillingAddress.country',
             'defaultBillingAddress.countryState',
-            'defaultBillingAddress.salutation',
             'defaultShippingAddress.country',
             'defaultShippingAddress.countryState',
-            'defaultShippingAddress.salutation',
         ]);
 
         return $criteria;

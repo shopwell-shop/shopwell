@@ -10,16 +10,18 @@ const { Mixin } = Shopwell;
  * Configures one payment interface of the platform.
  *
  * An interface is code, not data: the administration does not know alipay or wechat, it only renders
- * the form the interface declares in its `payment-provider.xml`. That is why the page is built around
- * one loop over the fields the server hands over - an interface of an extension is configurable
- * without the administration being touched at all.
+ * the form the interface declares. That is why the page is built around one loop over the fields the
+ * server hands over - an interface of an extension is configurable without the administration being
+ * touched at all.
  *
  * The page configures the platform side of the two dimensional matrix:
  *
  *  - the credentials belong to the interface and are shared by all of its channels, so they are
- *    edited once, in the first card,
+ *    edited once, in the second card,
  *  - the parameters (`appid` of a wechat channel, for instance) belong to a single channel and are
- *    edited on the channel itself.
+ *    edited on the channel itself. A channel is a row of a table and its form is folded out on
+ *    demand: an interface may declare a dozen channels and every channel may declare a dozen
+ *    fields, so rendering them all at once would turn the page into a wall of inputs.
  *
  * Which app may use which of them is a different page: the credentials here are the merchant account
  * of the platform, an app either pays through it or brings its own.
@@ -44,7 +46,7 @@ export default {
 
     metaInfo() {
         return {
-            title: this.$createTitle(this.provider?.label),
+            title: this.$createTitle(this.provider === null ? '' : this.displayLabel(this.provider.label)),
         };
     },
 
@@ -54,6 +56,9 @@ export default {
             isLoading: true,
             isSaving: false,
             resetTarget: null,
+            expandedChannels: {},
+            isDisplayingLeavePageWarning: false,
+            nextRoute: null,
         };
     },
 
@@ -73,13 +78,65 @@ export default {
         canDeleteChannel() {
             return this.acl.can('payment_channel_config.deleter');
         },
+
+        channelCount() {
+            return this.provider === null ? 0 : this.provider.channels.length;
+        },
+
+        /**
+         * Saving is only worth a click when there is something to save. The two existing helpers
+         * decide per part whether it differs from what the server handed over, the page only
+         * combines them - the interface itself first, then any of its channels.
+         */
+        isDirty() {
+            if (this.provider === null) {
+                return false;
+            }
+
+            if (this.isProviderDirty()) {
+                return true;
+            }
+
+            return this.provider.channels.some((channel) => this.isChannelDirty(channel));
+        },
     },
 
     created() {
         this.createdComponent();
     },
 
+    /**
+     * The navigation is suspended, not cancelled: `next` is kept and called once the operator has
+     * decided. Calling `next(false)` here would end the navigation, and pushing the same route again
+     * from the modal would run into this guard a second time - with `isDirty` still true - so the
+     * page could never be left at all.
+     */
+    beforeRouteLeave(to, from, next) {
+        if (!this.isDirty) {
+            next();
+
+            return;
+        }
+
+        this.nextRoute = next;
+        this.isDisplayingLeavePageWarning = true;
+    },
+
     methods: {
+        /**
+         * The name of an interface and of a channel is a snippet key, not a text: the core ships the
+         * keys of the interfaces it declares in this module's snippets, a plugin ships its own. An
+         * installation that has no entry for a key shows the key itself - ugly, but it tells the
+         * operator that a translation is missing instead of hiding it.
+         */
+        displayLabel(label) {
+            if (!label) {
+                return '';
+            }
+
+            return this.$te(label) ? this.$t(label) : label;
+        },
+
         async createdComponent() {
             this.isLoading = true;
 
@@ -214,6 +271,22 @@ export default {
             });
         },
 
+        /**
+         * A channel starts folded: the operator sees which channels exist and which of them are
+         * configured, and only opens the one whose parameters have to be edited.
+         */
+        isChannelExpanded(channel) {
+            return this.expandedChannels[channel.technicalName] === true;
+        },
+
+        toggleChannel(channel) {
+            // the map is replaced instead of extended, a newly added key would not be reactive
+            this.expandedChannels = {
+                ...this.expandedChannels,
+                [channel.technicalName]: !this.isChannelExpanded(channel),
+            };
+        },
+
         flowLabel(flow) {
             const snippet = `sw-settings-payment-provider.flow.${flow}`;
 
@@ -253,8 +326,57 @@ export default {
             return Object.keys(channel.runtimeParams ?? {}).filter((name) => channel.runtimeParams[name]);
         },
 
+        /**
+         * Whether clearing this channel would remove anything.
+         *
+         * The stored input is what the server handed over, so it answers "has this channel ever been
+         * configured" instead of "is it configured now": a channel whose fields are all empty has
+         * nothing to clear, and the reset action only exists when there is something to clear.
+         */
+        hasStoredParams(channel) {
+            return Object.keys(channel.storedInput ?? {}).some((name) => {
+                const value = channel.storedInput[name];
+
+                return value !== null && value !== undefined && value !== '';
+            });
+        },
+
         onCancel() {
             this.$router.push({ name: 'sw.settings.payment.provider.index' });
+        },
+
+        /**
+         * Keeping the page aborts the suspended navigation, so the operator stays where they are and
+         * the next click on cancel or save starts a fresh one.
+         */
+        onLeaveModalClose() {
+            const next = this.nextRoute;
+
+            this.nextRoute = null;
+            this.isDisplayingLeavePageWarning = false;
+
+            if (typeof next === 'function') {
+                next(false);
+            }
+        },
+
+        /**
+         * Resuming the suspended navigation needs the modal to be gone first, otherwise the page it
+         * leaves is still covered by the warning.
+         */
+        onLeaveModalConfirm() {
+            const next = this.nextRoute;
+
+            this.nextRoute = null;
+            this.isDisplayingLeavePageWarning = false;
+
+            if (typeof next !== 'function') {
+                return;
+            }
+
+            this.$nextTick(() => {
+                next();
+            });
         },
 
         async onSave() {
@@ -266,7 +388,7 @@ export default {
                 this.createNotificationError({
                     title: this.$t('global.default.error'),
                     message: this.$t('sw-settings-payment-provider.notification.missingFields', {
-                        name: this.provider.label,
+                        name: this.displayLabel(this.provider.label),
                     }),
                 });
 
@@ -281,7 +403,7 @@ export default {
                 this.createNotificationError({
                     title: this.$t('global.default.error'),
                     message: this.$t('sw-settings-payment-provider.notification.missingFields', {
-                        name: channelWithInvalidParams.label,
+                        name: this.displayLabel(channelWithInvalidParams.label),
                     }),
                 });
 

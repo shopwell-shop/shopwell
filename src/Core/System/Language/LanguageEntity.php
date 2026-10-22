@@ -5,6 +5,8 @@ namespace Shopwell\Core\System\Language;
 use Shopwell\Core\Checkout\Customer\Aggregate\CustomerGroupTranslation\CustomerGroupTranslationCollection;
 use Shopwell\Core\Checkout\Customer\CustomerCollection;
 use Shopwell\Core\Checkout\Document\Aggregate\DocumentTypeTranslation\DocumentTypeTranslationCollection;
+use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyTier\Aggregate\LoyaltyTierTranslation\LoyaltyTierTranslationCollection;
+use Shopwell\Core\Checkout\Loyalty\Entity\MembershipPlan\Aggregate\MembershipPlanTranslation\MembershipPlanTranslationCollection;
 use Shopwell\Core\Checkout\Order\OrderCollection;
 use Shopwell\Core\Checkout\Payment\Aggregate\PaymentMethodTranslation\PaymentMethodTranslationCollection;
 use Shopwell\Core\Checkout\Promotion\Aggregate\PromotionTranslation\PromotionTranslationCollection;
@@ -54,15 +56,19 @@ use Shopwell\Core\System\Country\Aggregate\CountryStateTranslation\CountryStateT
 use Shopwell\Core\System\Country\Aggregate\CountryTranslation\CountryTranslationCollection;
 use Shopwell\Core\System\Currency\Aggregate\CurrencyTranslation\CurrencyTranslationCollection;
 use Shopwell\Core\System\DeliveryTime\DeliveryTimeCollection;
+use Shopwell\Core\System\Dictionary\Aggregate\DictionaryEntry\Aggregate\DictionaryEntryTranslation\DictionaryEntryTranslationCollection;
+use Shopwell\Core\System\Dictionary\Aggregate\DictionaryTypeTranslation\DictionaryTypeTranslationCollection;
 use Shopwell\Core\System\Locale\Aggregate\LocaleTranslation\LocaleTranslationCollection;
 use Shopwell\Core\System\Locale\LocaleEntity;
 use Shopwell\Core\System\NumberRange\Aggregate\NumberRangeTranslation\NumberRangeTranslationCollection;
 use Shopwell\Core\System\NumberRange\Aggregate\NumberRangeTypeTranslation\NumberRangeTypeTranslationCollection;
+use Shopwell\Core\System\Organization\Aggregate\OrganizationTranslation\OrganizationTranslationCollection;
+use Shopwell\Core\System\Organization\Aggregate\OrganizationUnit\Aggregate\OrganizationUnitTranslation\OrganizationUnitTranslationCollection;
+use Shopwell\Core\System\Position\Aggregate\PositionTranslation\PositionTranslationCollection;
 use Shopwell\Core\System\SalesChannel\Aggregate\SalesChannelDomain\SalesChannelDomainCollection;
 use Shopwell\Core\System\SalesChannel\Aggregate\SalesChannelTranslation\SalesChannelTranslationCollection;
 use Shopwell\Core\System\SalesChannel\Aggregate\SalesChannelTypeTranslation\SalesChannelTypeTranslationCollection;
 use Shopwell\Core\System\SalesChannel\SalesChannelCollection;
-use Shopwell\Core\System\Salutation\Aggregate\SalutationTranslation\SalutationTranslationCollection;
 use Shopwell\Core\System\StateMachine\Aggregation\StateMachineState\StateMachineStateTranslationCollection;
 use Shopwell\Core\System\StateMachine\StateMachineTranslationCollection;
 use Shopwell\Core\System\Tax\Aggregate\TaxRuleTypeTranslation\TaxRuleTypeTranslationCollection;
@@ -140,7 +146,15 @@ class LanguageEntity extends Entity
 
     protected ?SalesChannelTypeTranslationCollection $salesChannelTypeTranslations = null;
 
-    protected ?SalutationTranslationCollection $salutationTranslations = null;
+    protected ?DictionaryEntryTranslationCollection $dictionaryEntryTranslations = null;
+
+    protected ?DictionaryTypeTranslationCollection $dictionaryTypeTranslations = null;
+
+    protected ?OrganizationTranslationCollection $organizationTranslations = null;
+
+    protected ?OrganizationUnitTranslationCollection $organizationUnitTranslations = null;
+
+    protected ?PositionTranslationCollection $positionTranslations = null;
 
     protected ?SalesChannelDomainCollection $salesChannelDomains = null;
 
@@ -224,6 +238,10 @@ class LanguageEntity extends Entity
     protected ?AppFlowActionTranslationCollection $appFlowActionTranslations = null;
 
     protected ?TaxProviderTranslationCollection $taxProviderTranslations = null;
+
+    protected ?LoyaltyTierTranslationCollection $loyaltyTierTranslations = null;
+
+    protected ?MembershipPlanTranslationCollection $membershipPlanTranslations = null;
 
     public function getMailHeaderFooterTranslations(): ?MailHeaderFooterCollection
     {
@@ -505,14 +523,54 @@ class LanguageEntity extends Entity
         $this->salesChannelDefaultAssignments = $salesChannelDefaultAssignments;
     }
 
-    public function getSalutationTranslations(): ?SalutationTranslationCollection
+    public function getDictionaryEntryTranslations(): ?DictionaryEntryTranslationCollection
     {
-        return $this->salutationTranslations;
+        return $this->dictionaryEntryTranslations;
     }
 
-    public function setSalutationTranslations(SalutationTranslationCollection $salutationTranslations): void
+    public function setDictionaryEntryTranslations(DictionaryEntryTranslationCollection $dictionaryEntryTranslations): void
     {
-        $this->salutationTranslations = $salutationTranslations;
+        $this->dictionaryEntryTranslations = $dictionaryEntryTranslations;
+    }
+
+    public function getDictionaryTypeTranslations(): ?DictionaryTypeTranslationCollection
+    {
+        return $this->dictionaryTypeTranslations;
+    }
+
+    public function setDictionaryTypeTranslations(DictionaryTypeTranslationCollection $dictionaryTypeTranslations): void
+    {
+        $this->dictionaryTypeTranslations = $dictionaryTypeTranslations;
+    }
+
+    public function getOrganizationTranslations(): ?OrganizationTranslationCollection
+    {
+        return $this->organizationTranslations;
+    }
+
+    public function setOrganizationTranslations(OrganizationTranslationCollection $organizationTranslations): void
+    {
+        $this->organizationTranslations = $organizationTranslations;
+    }
+
+    public function getOrganizationUnitTranslations(): ?OrganizationUnitTranslationCollection
+    {
+        return $this->organizationUnitTranslations;
+    }
+
+    public function setOrganizationUnitTranslations(OrganizationUnitTranslationCollection $organizationUnitTranslations): void
+    {
+        $this->organizationUnitTranslations = $organizationUnitTranslations;
+    }
+
+    public function getPositionTranslations(): ?PositionTranslationCollection
+    {
+        return $this->positionTranslations;
+    }
+
+    public function setPositionTranslations(PositionTranslationCollection $positionTranslations): void
+    {
+        $this->positionTranslations = $positionTranslations;
     }
 
     public function getPropertyGroupTranslations(): ?PropertyGroupTranslationCollection
@@ -958,5 +1016,25 @@ class LanguageEntity extends Entity
     public function setTaxProviderTranslations(TaxProviderTranslationCollection $taxProviderTranslations): void
     {
         $this->taxProviderTranslations = $taxProviderTranslations;
+    }
+
+    public function getLoyaltyTierTranslations(): ?LoyaltyTierTranslationCollection
+    {
+        return $this->loyaltyTierTranslations;
+    }
+
+    public function setLoyaltyTierTranslations(LoyaltyTierTranslationCollection $loyaltyTierTranslations): void
+    {
+        $this->loyaltyTierTranslations = $loyaltyTierTranslations;
+    }
+
+    public function getMembershipPlanTranslations(): ?MembershipPlanTranslationCollection
+    {
+        return $this->membershipPlanTranslations;
+    }
+
+    public function setMembershipPlanTranslations(MembershipPlanTranslationCollection $membershipPlanTranslations): void
+    {
+        $this->membershipPlanTranslations = $membershipPlanTranslations;
     }
 }

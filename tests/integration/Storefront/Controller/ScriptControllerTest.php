@@ -274,7 +274,7 @@ class ScriptControllerTest extends TestCase
             'accountType' => CustomerEntity::ACCOUNT_TYPE_PRIVATE,
             'email' => 'max.mustermann@example.com',
             'emailConfirmation' => 'max.mustermann@example.com',
-            'salutationId' => $this->getValidSalutationId(),
+            'gender' => $this->getValidGender(),
             'name' => 'Max Mustermann',
             'storefrontUrl' => 'http://localhost',
 

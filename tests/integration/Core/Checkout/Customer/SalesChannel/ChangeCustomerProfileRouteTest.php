@@ -14,11 +14,9 @@ use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
-use Shopwell\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\PlatformRequest;
-use Shopwell\Core\System\Salutation\SalutationDefinition;
 use Shopwell\Core\Test\Integration\PaymentHandler\TestPaymentHandler;
 use Shopwell\Core\Test\Integration\Traits\CustomerTestTrait;
 use Shopwell\Core\Test\Stub\Framework\IdsCollection;
@@ -103,7 +101,7 @@ class ChangeCustomerProfileRouteTest extends TestCase
                 'POST',
                 '/store-api/account/change-profile',
                 [
-                    'salutationId' => $this->getValidSalutationId(),
+                    'gender' => $this->getValidGender(),
                     'name' => 'Max Mustermann',
                 ]
             );
@@ -116,13 +114,13 @@ class ChangeCustomerProfileRouteTest extends TestCase
         $customer = json_decode((string) $this->browser->getResponse()->getContent(), true, 512, \JSON_THROW_ON_ERROR);
 
         static::assertSame('Max Mustermann', $customer['name']);
-        static::assertSame($this->getValidSalutationId(), $customer['salutationId']);
+        static::assertSame($this->getValidGender(), $customer['gender']);
     }
 
     public function testChangeProfileDataWithCommercialAccount(): void
     {
         $changeData = [
-            'salutationId' => $this->getValidSalutationId(),
+            'gender' => $this->getValidGender(),
             'accountType' => CustomerEntity::ACCOUNT_TYPE_BUSINESS,
             'name' => 'Max Mustermann',
             'company' => 'Test Company',
@@ -153,7 +151,7 @@ class ChangeCustomerProfileRouteTest extends TestCase
         $this->setVatIdOfTheCountryToValidateFormat();
 
         $changeData = [
-            'salutationId' => $this->getValidSalutationId(),
+            'gender' => $this->getValidGender(),
             'accountType' => CustomerEntity::ACCOUNT_TYPE_BUSINESS,
             'name' => 'Max Mustermann',
             'company' => 'Test Company',
@@ -182,7 +180,7 @@ class ChangeCustomerProfileRouteTest extends TestCase
         $this->setVatIdOfTheCountryToValidateFormat();
 
         $changeData = [
-            'salutationId' => $this->getValidSalutationId(),
+            'gender' => $this->getValidGender(),
             'accountType' => CustomerEntity::ACCOUNT_TYPE_BUSINESS,
             'name' => 'Max Mustermann',
             'company' => 'Test Company',
@@ -214,7 +212,7 @@ class ChangeCustomerProfileRouteTest extends TestCase
     public function testChangeProfileDataClearVatIds(array $vatIds): void
     {
         $changeData = [
-            'salutationId' => $this->getValidSalutationId(),
+            'gender' => $this->getValidGender(),
             'accountType' => CustomerEntity::ACCOUNT_TYPE_BUSINESS,
             'name' => 'Max Mustermann',
             'company' => 'Test Company',
@@ -250,11 +248,8 @@ class ChangeCustomerProfileRouteTest extends TestCase
         static::assertNull($customer->getVatIds());
     }
 
-    public function testChangeProfileWithExistingNotSpecifiedSalutation(): void
+    public function testChangeProfileWithoutGender(): void
     {
-        $salutations = static::getContainer()->get(Connection::class)->fetchAllKeyValue('SELECT salutation_key, id FROM salutation');
-        static::assertArrayHasKey(SalutationDefinition::NOT_SPECIFIED, $salutations);
-
         $this->browser
             ->request(
                 'POST',
@@ -269,18 +264,8 @@ class ChangeCustomerProfileRouteTest extends TestCase
         static::assertTrue($response['success']);
     }
 
-    public function testChangeProfileToNotSpecifiedWithoutExistingSalutation(): void
+    public function testChangeProfileToNotSpecifiedWithoutSubmittedGender(): void
     {
-        $connection = static::getContainer()->get(Connection::class);
-
-        $connection->executeStatement(
-            'DELETE FROM salutation WHERE salutation_key = :salutationKey',
-            ['salutationKey' => SalutationDefinition::NOT_SPECIFIED]
-        );
-
-        $salutations = $connection->fetchAllKeyValue('SELECT salutation_key, id FROM salutation');
-        static::assertArrayNotHasKey(SalutationDefinition::NOT_SPECIFIED, $salutations);
-
         $this->browser
             ->request(
                 'POST',
@@ -426,7 +411,7 @@ class ChangeCustomerProfileRouteTest extends TestCase
         }
 
         $changeData = [
-            'salutationId' => $this->getValidSalutationId(),
+            'gender' => $this->getValidGender(),
             'accountType' => CustomerEntity::ACCOUNT_TYPE_BUSINESS,
             'name' => 'Max Mustermann',
             'company' => 'Test Company',
@@ -470,7 +455,7 @@ class ChangeCustomerProfileRouteTest extends TestCase
     public function testChangeProfileDataWithPrivateAccount(): void
     {
         $changeData = [
-            'salutationId' => $this->getValidSalutationId(),
+            'gender' => $this->getValidGender(),
             'accountType' => CustomerEntity::ACCOUNT_TYPE_PRIVATE,
             'name' => 'FirstName LastName',
         ];
@@ -524,7 +509,7 @@ class ChangeCustomerProfileRouteTest extends TestCase
                 'POST',
                 '/store-api/account/change-profile',
                 [
-                    'salutationId' => $this->getValidSalutationId(),
+                    'gender' => $this->getValidGender(),
                     'accountType' => CustomerEntity::ACCOUNT_TYPE_PRIVATE,
                     'name' => 'FirstName LastName',
                 ]
@@ -546,7 +531,7 @@ class ChangeCustomerProfileRouteTest extends TestCase
 
         $changeData = [
             'accountType' => $accountType,
-            'salutationId' => $this->getValidSalutationId(),
+            'gender' => $this->getValidGender(),
             'name' => 'Max Mustermann',
             'company' => 'Test Company',
             'vatIds' => [
@@ -571,27 +556,11 @@ class ChangeCustomerProfileRouteTest extends TestCase
 
     public function testProfileCanBeChangedWithEmptyAccountType(): void
     {
-        $customer = $this->getCustomer();
-        $currentSalutationId = $customer->getSalutationId();
-        $salutationIds = $this->getValidSalutationIds();
-        static::assertNotCount(0, $salutationIds);
-
-        $updateSalutationId = null;
-        foreach ($salutationIds as $salutationId) {
-            if ($currentSalutationId === $salutationId) {
-                continue;
-            }
-
-            $updateSalutationId = $salutationId;
-
-            break;
-        }
-
-        static::assertNotNull($updateSalutationId);
+        $updateGender = 'female';
 
         $changeData = [
             'accountType' => '',
-            'salutationId' => $updateSalutationId,
+            'gender' => $updateGender,
             'name' => 'Max Mustermann',
             'company' => 'Test Company',
             'vatIds' => [
@@ -609,7 +578,7 @@ class ChangeCustomerProfileRouteTest extends TestCase
         static::assertTrue($response['success']);
 
         $customer = $this->getCustomer();
-        static::assertSame($updateSalutationId, $customer->getSalutationId());
+        static::assertSame($updateGender, $customer->getGender());
     }
 
     public function testChangeWithWrongAccountType(): void
@@ -619,7 +588,7 @@ class ChangeCustomerProfileRouteTest extends TestCase
         $notAllowedAccountType = implode('', $accountTypes);
         $changeData = [
             'accountType' => $notAllowedAccountType,
-            'salutationId' => $this->getValidSalutationId(),
+            'gender' => $this->getValidGender(),
             'name' => 'Max Mustermann',
             'company' => 'Test Company',
             'vatIds' => [
@@ -644,7 +613,7 @@ class ChangeCustomerProfileRouteTest extends TestCase
     public function testChangeWithoutAccountTypeFallbackToDefaultValue(): void
     {
         $changeData = [
-            'salutationId' => $this->getValidSalutationId(),
+            'gender' => $this->getValidGender(),
             'name' => 'Max Mustermann',
             'company' => 'Test Company',
             'vatIds' => [
@@ -687,7 +656,7 @@ class ChangeCustomerProfileRouteTest extends TestCase
         ], $context);
 
         $changeData = [
-            'salutationId' => $this->getValidSalutationId(),
+            'gender' => $this->getValidGender(),
             'name' => 'Max Mustermann',
             'customFields' => [
                 'randomCustomField' => 'randomValue',
@@ -710,19 +679,6 @@ class ChangeCustomerProfileRouteTest extends TestCase
         $customFields = $this->getCustomer()->getCustomFields();
         static::assertIsArray($customFields);
         static::assertSame('initialValueShouldStay', $customFields['initialCustomField']);
-    }
-
-    /**
-     * @return list<string>
-     */
-    private function getValidSalutationIds(): array
-    {
-        $repository = static::getContainer()->get('salutation.repository');
-
-        $criteria = (new Criteria())
-            ->addSorting(new FieldSorting('salutationKey'));
-
-        return $repository->searchIds($criteria, Context::createDefaultContext())->getIds();
     }
 
     private function createData(): void
@@ -780,7 +736,7 @@ class ChangeCustomerProfileRouteTest extends TestCase
                 'street' => 'Musterstraße 1',
                 'city' => 'Schöppingen',
                 'zipcode' => '12345',
-                'salutationId' => $this->getValidSalutationId(),
+                'gender' => $this->getValidGender(),
                 'countryId' => $this->getValidCountryId($this->ids->create('sales-channel')),
             ],
             'defaultBillingAddressId' => $addressId,
@@ -790,7 +746,7 @@ class ChangeCustomerProfileRouteTest extends TestCase
             'password' => $password,
             'name' => 'Max Mustermann',
             'guest' => $guest,
-            'salutationId' => $this->getValidSalutationId(),
+            'gender' => $this->getValidGender(),
             'customerNumber' => '12345',
         ];
 

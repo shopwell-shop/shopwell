@@ -31,10 +31,13 @@ use Shopwell\Core\Checkout\Payment\DataAbstractionLayer\PaymentDistinguishableNa
 use Shopwell\Core\Checkout\Payment\DataAbstractionLayer\PaymentHandlerIdentifierSubscriber;
 use Shopwell\Core\Checkout\Payment\DataAbstractionLayer\PaymentMethodIndexer;
 use Shopwell\Core\Checkout\Payment\DataAbstractionLayer\PaymentMethodValidator;
+use Shopwell\Core\Checkout\Payment\Gateway\Api\PaymentMethodChannelController;
 use Shopwell\Core\Checkout\Payment\Gateway\OrderPaymentPaidListener;
 use Shopwell\Core\Checkout\Payment\Gateway\OrderPaymentStarter;
 use Shopwell\Core\Checkout\Payment\Gateway\PaymentGatewayHandler;
+use Shopwell\Core\Checkout\Payment\Gateway\PaymentMethodChannelBinder;
 use Shopwell\Core\Checkout\Payment\Gateway\PaymentMethodChannelResolver;
+use Shopwell\Core\Checkout\Payment\Gateway\PaymentMethodCollectability;
 use Shopwell\Core\Checkout\Payment\PaymentMethodDefinition;
 use Shopwell\Core\Checkout\Payment\PaymentProcessor;
 use Shopwell\Core\Checkout\Payment\SalesChannel\HandlePaymentMethodRoute;
@@ -53,6 +56,7 @@ use Shopwell\Core\System\Payment\Order\PaymentOrderReconciler;
 use Shopwell\Core\System\Payment\Order\PaymentOrderService;
 use Shopwell\Core\System\Payment\Order\Refund\PaymentRefundService;
 use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannelRegistry;
+use Shopwell\Core\System\Payment\Provider\PaymentProviderConfigService;
 use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;
 use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextService;
 use Shopwell\Core\System\StateMachine\Loader\InitialStateIdLoader;
@@ -202,6 +206,40 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(PaymentChannelRegistry::class),
         ]);
 
+    // the write side of the binding: an operator picks a channel, and this service makes the method
+    // collect through it - including the gateway handler, which no admin endpoint can write
+    $services->set(PaymentMethodChannelBinder::class)
+        ->args([
+            service('payment_method_gateway_channel.repository'),
+            service('payment_method.repository'),
+            service('payment_app.repository'),
+            service(PaymentChannelRegistry::class),
+            service(PaymentProviderConfigService::class),
+        ]);
+
+    // the read side that the storefront uses to decide what it offers at all: a method that cannot
+    // collect is not a method the shopper may pick
+    $services->set(PaymentMethodCollectability::class)
+        ->args([
+            service('payment_method_gateway_channel.repository'),
+            service('payment_channel_config.repository'),
+            service('payment_provider_config.repository'),
+            service('payment_app.repository'),
+            service('payment_app_channel.repository'),
+            service(PaymentChannelRegistry::class),
+        ]);
+
+    // the administration configures the binding through this one, so it sits behind the admin session
+    // and the acl of the payment method it belongs to
+    $services->set(PaymentMethodChannelController::class)
+        ->public()
+        ->args([
+            service(PaymentMethodChannelBinder::class),
+            service('payment_method.repository'),
+        ])
+        ->call('setContainer', [service('service_container')])
+        ->tag('controller.service_arguments');
+
     // the tenant the shop itself collects through. The row is seeded by the payment migration; only
     // the authorizations around it are written here, for the channel that is actually used
     $services->set(PlatformPaymentApp::class)
@@ -230,6 +268,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service('order_transaction.repository'),
             service(PaymentMethodChannelResolver::class),
+            service(PaymentChannelRegistry::class),
             service(OrderPaymentStarter::class),
             service(PaymentOrderService::class),
             service(PaymentOrderReconciler::class),
@@ -290,6 +329,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(ScriptExecutor::class),
             service(RuleIdMatcher::class),
             service(ExtensionDispatcher::class),
+            service(PaymentMethodCollectability::class),
         ]);
 
     $services->set(HandlePaymentMethodRoute::class)

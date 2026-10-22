@@ -7,8 +7,7 @@ use Shopwell\Core\Content\Cms\DataResolver\CriteriaCollection;
 use Shopwell\Core\Content\Cms\DataResolver\ResolverContext\ResolverContext;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\System\Salutation\AbstractSalutationsSorter;
-use Shopwell\Core\System\Salutation\SalesChannel\AbstractSalutationRoute;
+use Shopwell\Core\System\Dictionary\SalesChannel\AbstractDictionaryRoute;
 use Symfony\Component\HttpFoundation\Request;
 
 #[Package('discovery')]
@@ -18,8 +17,7 @@ class FormCmsElementResolver extends AbstractCmsElementResolver
      * @internal
      */
     public function __construct(
-        private readonly AbstractSalutationRoute $salutationRoute,
-        private readonly AbstractSalutationsSorter $salutationSorter
+        private readonly AbstractDictionaryRoute $dictionaryRoute,
     ) {
     }
 
@@ -37,7 +35,8 @@ class FormCmsElementResolver extends AbstractCmsElementResolver
     {
         $context = $resolverContext->getSalesChannelContext();
 
-        $salutations = $this->salutationRoute->load(new Request(), $context, new Criteria())->getSalutations();
-        $slot->setData($this->salutationSorter->sort($salutations));
+        $request = new Request([], [], ['technicalName' => 'gender']);
+        $entries = $this->dictionaryRoute->load($request, $context, new Criteria())->getEntries();
+        $slot->setData($entries);
     }
 }

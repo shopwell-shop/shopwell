@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Shopwell\Tests\Integration\Core\System\Payment\Api;
 
 use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Symfony\Component\HttpFoundation\Response;
@@ -48,7 +49,13 @@ class PaymentChannelListTest extends TestCase
         static::assertSame('redirect', $channel['flow']);
         static::assertSame(['CNY'], $channel['currencies']);
         static::assertSame(['wap'], $channel['devices']);
-        static::assertSame('platform', $channel['mode']);
+        // whose merchant account the channel is charged on: the contract app inherits the account of
+        // the platform tenant, which is what the retired `mode = 'platform'` used to say. The id is
+        // named instead of a mode, because an app can inherit from any other app and not only from
+        // the platform.
+        static::assertSame($this->platformTenantId(Context::createDefaultContext()), $channel['source_app_id']);
+        static::assertTrue($channel['inherited']);
+        static::assertArrayNotHasKey('mode', $channel);
         static::assertArrayHasKey('channel_label', $channel);
         static::assertArrayHasKey('provider_label', $channel);
         static::assertArrayHasKey('runtime_params', $channel);

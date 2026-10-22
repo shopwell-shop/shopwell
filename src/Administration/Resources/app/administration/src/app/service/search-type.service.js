@@ -55,6 +55,24 @@ export default function createSearchTypeService() {
             listingRoute: 'sw.settings.customer.group.index',
             hideOnGlobalSearchBar: true,
         },
+        dictionary_type: {
+            entityName: 'dictionary_type',
+            placeholderSnippet: 'sw-settings-dictionary.general.placeholderSearchBar',
+            listingRoute: 'sw.settings.dictionary.index',
+            hideOnGlobalSearchBar: true,
+        },
+        organization: {
+            entityName: 'organization',
+            placeholderSnippet: 'sw-settings-organization.general.placeholderSearchBar',
+            listingRoute: 'sw.settings.organization.index',
+            hideOnGlobalSearchBar: true,
+        },
+        position: {
+            entityName: 'position',
+            placeholderSnippet: 'sw-settings-position.general.placeholderSearchBar',
+            listingRoute: 'sw.settings.position.index',
+            hideOnGlobalSearchBar: true,
+        },
         product_manufacturer: {
             entityName: 'product_manufacturer',
             placeholderSnippet: 'sw-manufacturer.general.placeholderSearchBar',
@@ -131,6 +149,12 @@ export default function createSearchTypeService() {
             listingRoute: 'sw.payment.transfer',
             hideOnGlobalSearchBar: true,
         },
+        customer_wallet_transaction: {
+            entityName: 'customer_wallet_transaction',
+            placeholderSnippet: 'sw-finance.walletTransactions.list.placeholderSearchBar',
+            listingRoute: 'sw.finance.walletTransactions',
+            hideOnGlobalSearchBar: true,
+        },
         sms_gateway: {
             entityName: 'sms_gateway',
             placeholderSnippet: 'sw-settings-sms.gateway.placeholderSearchBar',
@@ -147,6 +171,41 @@ export default function createSearchTypeService() {
             entityName: 'sms_delivery',
             placeholderSnippet: 'sw-settings-sms.delivery.placeholderSearchBar',
             listingRoute: 'sw.settings.sms.delivery',
+            hideOnGlobalSearchBar: true,
+        },
+        order_return: {
+            entityName: 'order_return',
+            placeholderSnippet: 'sw-order-return.list.placeholderSearchBar',
+            listingRoute: 'sw.order.return.list',
+            hideOnGlobalSearchBar: true,
+        },
+        order_return_reason: {
+            entityName: 'order_return_reason',
+            placeholderSnippet: 'sw-settings-order-return.reason.placeholderSearchBar',
+            listingRoute: 'sw.settings.order.return.reason',
+            hideOnGlobalSearchBar: true,
+        },
+        blog: {
+            entityName: 'blog',
+            placeholderSnippet: 'sw-blog.list.placeholderSearchBar',
+            listingRoute: 'sw.blog.list',
+        },
+        blog_category: {
+            entityName: 'blog_category',
+            placeholderSnippet: 'sw-blog.list.placeholderSearchBarCategory',
+            listingRoute: 'sw.blog.category.list',
+            hideOnGlobalSearchBar: true,
+        },
+        blog_author: {
+            entityName: 'blog_author',
+            placeholderSnippet: 'sw-blog.author.placeholderSearchBar',
+            listingRoute: 'sw.blog.author.list',
+            hideOnGlobalSearchBar: true,
+        },
+        blog_comment: {
+            entityName: 'blog_comment',
+            placeholderSnippet: 'sw-blog.comment.placeholderSearchBar',
+            listingRoute: 'sw.blog.comment.list',
             hideOnGlobalSearchBar: true,
         },
     };

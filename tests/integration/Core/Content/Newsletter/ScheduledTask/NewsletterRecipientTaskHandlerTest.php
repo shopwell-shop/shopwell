@@ -66,10 +66,6 @@ class NewsletterRecipientTaskHandlerTest extends TestCase
 
     private function installTestData(\DateTimeImmutable $now): void
     {
-        $salutationSql = file_get_contents(__DIR__ . '/../fixtures/salutation.sql');
-        static::assertIsString($salutationSql);
-        static::getContainer()->get(Connection::class)->executeStatement($salutationSql);
-
         $recipientSql = file_get_contents(__DIR__ . '/../fixtures/recipient.sql');
         static::assertIsString($recipientSql);
         $recipientSql = str_replace(':now', $now->format(Defaults::STORAGE_DATE_TIME_FORMAT), $recipientSql);

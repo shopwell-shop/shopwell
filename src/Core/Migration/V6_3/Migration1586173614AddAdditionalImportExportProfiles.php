@@ -54,8 +54,7 @@ class Migration1586173614AddAdditionalImportExportProfiles extends MigrationStep
                 'mapping' => [
                     ['key' => 'id', 'mappedKey' => 'id'],
                     ['key' => 'email', 'mappedKey' => 'email'],
-                    ['key' => 'title', 'mappedKey' => 'title'],
-                    ['key' => 'salutation.salutationKey', 'mappedKey' => 'salutation'],
+                    ['key' => 'gender', 'mappedKey' => 'gender'],
 
                     ['key' => 'name', 'mappedKey' => 'name'],
                     ['key' => 'zipCode', 'mappedKey' => 'zip_code'],

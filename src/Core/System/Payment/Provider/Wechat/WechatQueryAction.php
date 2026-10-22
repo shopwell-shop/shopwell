@@ -9,6 +9,7 @@ use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
 use Shopwell\Core\System\Payment\Gateway\PaymentQuery;
 use Shopwell\Core\System\Payment\Gateway\QueryResult;
 use Shopwell\Core\System\Payment\PaymentException;
+use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
 
 /**
  * Asks wechat pay what happened to a trade whose notification never arrived.
@@ -24,6 +25,11 @@ use Shopwell\Core\System\Payment\PaymentException;
 final class WechatQueryAction extends AbstractPaymentAction
 {
     protected string $apiClass = WechatApi::class;
+
+    public function capability(): PaymentCapability
+    {
+        return PaymentCapability::QUERY;
+    }
 
     public function execute($request): void
     {

@@ -1,0 +1,115 @@
+{
+    "openapi": "3.2.0",
+    "info": [],
+    "paths": {
+        "/_info/oauth2-login-channels": {
+            "get": {
+                "tags": [
+                    "Sso"
+                ],
+                "summary": "List the oauth2 channels the login page offers",
+                "description": "Answers the enabled oauth2 channels with the url that starts their authorization. The route needs no authentication, because it is read by the login page before there is a session.",
+                "operationId": "listOAuth2LoginChannels",
+                "security": [],
+                "responses": {
+                    "200": {
+                        "description": "The enabled oauth2 channels with their start url.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "channels": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/oAuth2Channel"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/oauth2-login/admin/{channel}": {
+            "get": {
+                "tags": [
+                    "Sso"
+                ],
+                "summary": "Start the oauth2 authorization of a channel",
+                "description": "Redirects the browser to the authorization endpoint of the channel. The route needs no authentication, because it is the way into the administration and not a call of it.",
+                "operationId": "startOAuth2AdminLogin",
+                "security": [],
+                "parameters": [
+                    {
+                        "name": "channel",
+                        "in": "path",
+                        "description": "The technical name of the channel the administrator logs in with.",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "302": {
+                        "description": "The browser is sent to the authorization endpoint of the channel."
+                    },
+                    "400": {
+                        "description": "The channel is unknown or not configured. The answer is the error page of the login, not the api error envelope."
+                    }
+                }
+            }
+        },
+        "/oauth2-login/admin/{channel}/callback": {
+            "get": {
+                "tags": [
+                    "Sso"
+                ],
+                "summary": "Answer the oauth2 authorization of the administration login",
+                "description": "Reads the identity the channel answered, resolves the administrator that is bound to it and opens the session. The route needs no authentication, because the session is what it creates.",
+                "operationId": "callbackOAuth2AdminLogin",
+                "security": [],
+                "parameters": [
+                    {
+                        "name": "channel",
+                        "in": "path",
+                        "description": "The technical name of the channel the administrator logs in with.",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "code",
+                        "in": "query",
+                        "description": "The authorization code the channel answered with.",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "state",
+                        "in": "query",
+                        "description": "The state that was sent to the channel and has to come back unchanged.",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "302": {
+                        "description": "The session was opened and the browser is sent to the administration."
+                    },
+                    "400": {
+                        "description": "The answer of the channel is invalid, expired or belongs to no administrator. The answer is the error page of the login, not the api error envelope."
+                    }
+                }
+            }
+        }
+    }
+}

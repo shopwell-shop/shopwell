@@ -165,7 +165,7 @@ async function createWrapper(privileges = [], customPropsData = {}) {
                                     'symbol/dash',
                                     'symbol/comma',
                                     'address/country_state',
-                                    'address/salutation',
+                                    'address/gender',
                                 ],
                             });
                         },

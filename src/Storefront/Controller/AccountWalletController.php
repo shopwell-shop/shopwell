@@ -7,6 +7,7 @@ use Shopwell\Core\Checkout\Customer\CustomerEntity;
 use Shopwell\Core\Checkout\Wallet\SalesChannel\WalletPaymentRoute;
 use Shopwell\Core\Checkout\Wallet\SalesChannel\WalletTopUpCreateRoute;
 use Shopwell\Core\Checkout\Wallet\SalesChannel\WalletTopUpStatusRoute;
+use Shopwell\Core\Checkout\Wallet\Service\WalletSettings;
 use Shopwell\Core\Framework\HttpException;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\PlatformRequest;
@@ -17,6 +18,7 @@ use Shopwell\Storefront\Page\Account\Wallet\AccountWalletPageLoader;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Attribute\Route;
 
 /**
@@ -35,6 +37,7 @@ class AccountWalletController extends StorefrontController
         private readonly WalletPaymentRoute $walletPaymentRoute,
         private readonly WalletTopUpCreateRoute $topUpCreateRoute,
         private readonly WalletTopUpStatusRoute $topUpStatusRoute,
+        private readonly WalletSettings $settings,
     ) {
     }
 
@@ -50,6 +53,8 @@ class AccountWalletController extends StorefrontController
     )]
     public function index(Request $request, SalesChannelContext $context, CustomerEntity $customer): Response
     {
+        $this->assertWalletEnabled($context);
+
         $page = $this->pageLoader->load($request, $context, $customer);
 
         $this->hook(new AccountWalletPageLoadedHook($page, $context));
@@ -71,6 +76,8 @@ class AccountWalletController extends StorefrontController
     )]
     public function walletJson(Request $request, SalesChannelContext $context, CustomerEntity $customer): JsonResponse
     {
+        $this->assertWalletEnabled($context);
+
         $page = $this->pageLoader->load($request, $context, $customer);
 
         return $this->json(['success' => true, 'wallet' => $page->getWallet()->all()]);
@@ -161,5 +168,16 @@ class AccountWalletController extends StorefrontController
         }
 
         return $this->json(['success' => true, 'topUp' => $response->getObject()->all()]);
+    }
+
+    /**
+     * A shop that switched the wallet off has no wallet page either - an existing link or bookmark
+     * answers like any other page that does not exist instead of opening a page without a feature.
+     */
+    private function assertWalletEnabled(SalesChannelContext $context): void
+    {
+        if (!$this->settings->isEnabled($context->getSalesChannelId())) {
+            throw new NotFoundHttpException();
+        }
     }
 }

@@ -12,7 +12,8 @@ use Shopwell\Core\Framework\DataAbstractionLayer\EntityCustomFieldsTrait;
 use Shopwell\Core\Framework\Log\Package;
 
 /**
- * The platform parameters of one payment channel, used by the apps that run in `mode` platform.
+ * The platform parameters of one payment channel, used by the apps whose account source is the tenant
+ * of the platform.
  *
  * A channel may need parameters its interface does not know - the appid of a wechat channel, for
  * instance, which has to be bound to the merchant account and differs between the wechat channels.

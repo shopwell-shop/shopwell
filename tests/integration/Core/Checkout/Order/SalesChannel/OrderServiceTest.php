@@ -594,7 +594,7 @@ class OrderServiceTest extends TestCase
     private function createCustomer(string $name, array $options = []): string
     {
         $customerId = Uuid::randomHex();
-        $salutationId = $this->getValidSalutationId();
+        $gender = $this->getValidGender();
 
         $customer = [
             'id' => $customerId,
@@ -605,7 +605,7 @@ class OrderServiceTest extends TestCase
                 'city' => 'Schöppingen',
                 'street' => 'Ebbinghoff 10',
                 'zipcode' => '48624',
-                'salutationId' => $salutationId,
+                'gender' => $gender,
                 'countryId' => $this->getValidCountryId(),
             ],
             'defaultBillingAddressId' => $customerId,
@@ -613,7 +613,7 @@ class OrderServiceTest extends TestCase
             'email' => Uuid::randomHex() . '@example.com',
             'password' => TestDefaults::HASHED_PASSWORD,
             'name' => $name,
-            'salutationId' => $salutationId,
+            'gender' => $gender,
             'customerNumber' => '12345',
         ];
 

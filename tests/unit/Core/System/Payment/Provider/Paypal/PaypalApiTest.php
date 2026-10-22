@@ -30,7 +30,8 @@ class PaypalApiTest extends TestCase
 
         static::assertSame('paypal', $api->provider());
         static::assertSame('paypal_checkout', $api->channel());
-        static::assertSame('live', $api->mode());
+        static::assertNull($api->sourceAppId());
+        static::assertFalse($api->inherited());
     }
 
     public function testEnvironmentDefaultsToSandbox(): void
@@ -257,7 +258,6 @@ class PaypalApiTest extends TestCase
                 params: [],
                 runtimeParams: [],
                 settings: [],
-                mode: 'live',
             ),
             'https://example.com/notify',
             'https://example.com/return',

@@ -1,0 +1,31 @@
+{% block sw_blog_detail_content %}
+<div class="sw-blog-detail-content">
+    {% block sw_blog_detail_content_type %}
+    {# `$attrs` is the rest of the context - the video row of a video page, for instance. The host
+    forwards it instead of deciding which type needs what, so a type a plugin brings gets the same
+    context as the ones the core ships with. #}
+    <component
+        :is="contentType"
+        v-if="contentType"
+        v-bind="$attrs"
+        :blog="blog"
+        :is-disabled="isDisabled"
+    />
+    {% endblock %}
+
+    {% block sw_blog_detail_content_unknown %}
+    <sw-blog-detail-content-unknown
+        v-else-if="isUnknownType"
+        :blog="blog"
+    />
+    {% endblock %}
+
+    {% block sw_blog_detail_content_loading %}
+    <sw-skeleton
+        v-else
+        class="sw-blog-detail-content__loading"
+        variant="bold"
+    />
+    {% endblock %}
+</div>
+{% endblock %}

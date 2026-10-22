@@ -1,0 +1,19 @@
+.sw-blog-author-detail {
+    &__description {
+        margin-block-start: var(--scale-size-24);
+    }
+
+    &__avatar {
+        margin-block-start: var(--scale-size-24);
+        max-inline-size: 240px;
+    }
+
+    &__entries-empty {
+        padding-block: var(--scale-size-32);
+    }
+
+    &__delete-message {
+        margin: 0;
+        color: var(--color-text-primary-default);
+    }
+}

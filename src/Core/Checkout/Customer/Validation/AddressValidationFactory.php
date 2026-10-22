@@ -8,8 +8,10 @@ use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Validation\Constraint\NoHtml;
 use Shopwell\Core\Framework\Validation\DataValidationDefinition;
 use Shopwell\Core\Framework\Validation\DataValidationFactoryInterface;
+use Shopwell\Core\System\Dictionary\Aggregate\DictionaryEntry\DictionaryEntryDefinition;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
 use Shopwell\Core\System\SystemConfig\SystemConfigService;
+use Symfony\Component\Validator\Constraints\Choice;
 use Symfony\Component\Validator\Constraints\Length;
 use Symfony\Component\Validator\Constraints\NotBlank;
 
@@ -48,7 +50,7 @@ class AddressValidationFactory implements DataValidationFactoryInterface
         $salesChannelId = $context->getSalesChannelId();
 
         $definition
-            ->add('salutationId', new EntityExists(entity: 'salutation', context: $frameworkContext))
+            ->add('gender', new Choice(choices: [DictionaryEntryDefinition::MALE, DictionaryEntryDefinition::FEMALE, DictionaryEntryDefinition::NOT_SPECIFIED]))
             ->add('countryId', new EntityExists(entity: 'country', context: $frameworkContext))
             ->add('countryStateId', new EntityExists(entity: 'country_state', context: $frameworkContext))
             ->add('countryCityId', new EntityExists(entity: 'country_city', context: $frameworkContext))
@@ -58,10 +60,8 @@ class AddressValidationFactory implements DataValidationFactoryInterface
             ->add('city', new NotBlank(message: 'VIOLATION::CITY_IS_BLANK_ERROR', normalizer: $this->trimStringValue(...)))
             ->add('countryId', new NotBlank(message: 'VIOLATION::COUNTRY_IS_BLANK_ERROR'), new EntityExists(entity: 'country', context: $frameworkContext))
             ->add('name', new Length(max: CustomerAddressDefinition::MAX_LENGTH_NAME, exactMessage: 'VIOLATION::NAME_IS_TOO_LONG'))
-            ->add('title', new Length(max: CustomerAddressDefinition::MAX_LENGTH_TITLE, exactMessage: 'VIOLATION::TITLE_IS_TOO_LONG'))
             ->add('zipcode', new Length(max: CustomerAddressDefinition::MAX_LENGTH_ZIPCODE, exactMessage: 'VIOLATION::ZIPCODE_IS_TOO_LONG'))
             ->add('name', new NoHtml(message: 'VIOLATION::CONTAINS_HTML_ERROR'))
-            ->add('title', new NoHtml(message: 'VIOLATION::CONTAINS_HTML_ERROR'))
             ->add('company', new NoHtml(message: 'VIOLATION::CONTAINS_HTML_ERROR'))
             ->add('department', new NoHtml(message: 'VIOLATION::CONTAINS_HTML_ERROR'))
             ->add('street', new NoHtml(message: 'VIOLATION::CONTAINS_HTML_ERROR'))
@@ -97,6 +97,8 @@ class AddressValidationFactory implements DataValidationFactoryInterface
             return $value;
         }
 
-        return trim($value);
+        // mb_trim also removes full width spaces, so an address field which only contains such a space is
+        // still detected as blank by the `NotBlank` constraints above
+        return mb_trim($value);
     }
 }

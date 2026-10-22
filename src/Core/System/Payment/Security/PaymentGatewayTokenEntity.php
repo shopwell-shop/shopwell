@@ -7,7 +7,6 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\Field;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\FieldType;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\ForeignKey;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\ManyToOne;
-use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\OnDelete;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\PrimaryKey;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\Required;
 use Shopwell\Core\Framework\DataAbstractionLayer\Entity as EntityStruct;
@@ -74,6 +73,6 @@ class PaymentGatewayTokenEntity extends EntityStruct
      * The token is deleted together with its order, a credential that outlives what it grants access to
      * is worse than no credential at all.
      */
-    #[ManyToOne(entity: 'payment_order', onDelete: OnDelete::CASCADE, api: false)]
+    #[ManyToOne(entity: 'payment_order', api: false)]
     public ?PaymentOrderEntity $order = null;
 }

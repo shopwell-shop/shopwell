@@ -1,7 +1,6 @@
 {# Provides customer
     type,
-    salutation,
-    title,
+    gender,
     name, and birthday fields for address forms (e.g. registering a user, creating or updating an address)
 #}
 {% block component_address_personal_fields %}
@@ -95,52 +94,30 @@
         {% endif %}
     {% endblock %}
 
-    {% block component_address_personal_fields_salutation_title %}
-        {% if config('core.loginRegistration.showSalutation') or config('core.loginRegistration.showTitleField') %}
+    {% block component_address_personal_fields_gender_title %}
+        {% if config('core.loginRegistration.showSalutation') %}
             <div class="row g-2">
-                {% block component_address_personal_fields_salutation %}
+                {% block component_address_personal_fields_gender %}
                     {% if config('core.loginRegistration.showSalutation') %}
-                        {% set salutationOptions %}
-                            {% for salutation in page.salutations %}
-                                <option {% if salutation.id == data.get('salutationId') %}
+                        {% set genderOptions %}
+                            {% for gender in page.genders %}
+                                <option {% if gender.technicalName == data.get('gender') %}
                                     selected="selected"
                                 {% endif %}
-                                    value="{{ salutation.id }}">
-                                    {{ salutation.translated.displayName }}
+                                    value="{{ gender.technicalName }}">
+                                    {{ gender.translated.label }}
                                 </option>
                             {% endfor %}
                         {% endset %}
 
-                        {% block component_address_personal_fields_salutation_select %}
+                        {% block component_address_personal_fields_gender_select %}
                             {% sw_include '@Storefront/storefront/component/form/form-select.html.twig' with {
-                                label: 'account.personalSalutationLabel'|trans|sw_sanitize,
-                                id: idPrefix ~ prefix ~ 'personalSalutation',
-                                name: prefix ? prefix ~ '[salutationId]' : 'salutationId',
-                                options: salutationOptions,
-                                autocomplete: 'section-personal honorific-prefix',
-                                violationPath: '/salutationId',
-                                additionalClass: 'col-md-3 col-sm-6',
-                            } %}
-                        {% endblock %}
-                    {% endif %}
-                {% endblock %}
-
-                {% block component_address_personal_fields_title %}
-                    {% if config('core.loginRegistration.showTitleField') %}
-                        {% if formViolations.getViolations("/#{prefix}/title") is not empty %}
-                            {% set violationPath = "/#{prefix}/title" %}
-                        {% elseif formViolations.getViolations('/title') is not empty %}
-                            {% set violationPath = '/title' %}
-                        {% endif %}
-
-                        {% block component_address_personal_fields_title_input %}
-                            {% sw_include '@Storefront/storefront/component/form/form-input.html.twig' with {
-                                label: 'account.personalTitleLabel'|trans|sw_sanitize,
-                                id: idPrefix ~ prefix ~ 'personalTitle',
-                                name: prefix ? prefix ~ '[title]' : 'title',
-                                value: data.get('title'),
-                                autocomplete: 'section-personal honorific-prefix',
-                                violationPath: violationPath,
+                                label: 'account.personalGenderLabel'|trans|sw_sanitize,
+                                id: idPrefix ~ prefix ~ 'personalGender',
+                                name: prefix ? prefix ~ '[gender]' : 'gender',
+                                options: genderOptions,
+                                autocomplete: 'section-personal sex',
+                                violationPath: '/gender',
                                 additionalClass: 'col-md-3 col-sm-6',
                             } %}
                         {% endblock %}

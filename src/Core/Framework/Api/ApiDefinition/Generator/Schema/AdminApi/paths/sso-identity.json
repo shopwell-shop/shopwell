@@ -1,0 +1,146 @@
+{
+    "openapi": "3.2.0",
+    "info": [],
+    "paths": {
+        "/_action/sso/oauth2-channels": {
+            "get": {
+                "tags": [
+                    "Sso"
+                ],
+                "summary": "List the oauth2 channels the shop offers",
+                "description": "Answers every oauth2 channel that is configured and enabled, with the snippet of its label and the icon the administration renders.",
+                "operationId": "listOAuth2Channels",
+                "responses": {
+                    "200": {
+                        "description": "The enabled oauth2 channels.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "channels": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/oAuth2Channel"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/_action/sso/oauth2-identities": {
+            "get": {
+                "tags": [
+                    "Sso"
+                ],
+                "summary": "List the oauth2 bindings of the signed in administrator",
+                "description": "Answers one entry per enabled channel and whether the signed in administrator linked an identity of that channel, so the profile page can offer to link or to unlink.",
+                "operationId": "listOAuth2Identities",
+                "responses": {
+                    "200": {
+                        "description": "One binding entry per enabled channel.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "bindings": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "technicalName": {
+                                                        "type": "string"
+                                                    },
+                                                    "labelSnippet": {
+                                                        "type": "string"
+                                                    },
+                                                    "icon": {
+                                                        "type": [
+                                                            "string",
+                                                            "null"
+                                                        ]
+                                                    },
+                                                    "linked": {
+                                                        "type": "boolean",
+                                                        "description": "Whether the signed in administrator linked an identity of this channel."
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/_action/sso/oauth2-identities/{channel}": {
+            "delete": {
+                "tags": [
+                    "Sso"
+                ],
+                "summary": "Remove an oauth2 binding of the signed in administrator",
+                "description": "Removes the identity the signed in administrator linked for one channel. Only the binding of the caller is removed, never the one of another administrator.",
+                "operationId": "removeOAuth2Identity",
+                "parameters": [
+                    {
+                        "name": "channel",
+                        "in": "path",
+                        "description": "The technical name of the channel whose binding is removed.",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "The binding was removed, or there was none."
+                    },
+                    "400": {
+                        "description": "The channel is unknown.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/failure"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "oAuth2Channel": {
+                "type": "object",
+                "description": "An oauth2 channel as the administration renders it.",
+                "properties": {
+                    "technicalName": {
+                        "type": "string"
+                    },
+                    "labelSnippet": {
+                        "type": "string"
+                    },
+                    "icon": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "startUrl": {
+                        "type": "string",
+                        "description": "The url that starts the authorization of this channel."
+                    }
+                }
+            }
+        }
+    }
+}

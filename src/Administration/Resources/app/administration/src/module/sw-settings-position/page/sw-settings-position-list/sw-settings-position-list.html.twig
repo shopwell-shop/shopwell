@@ -1,0 +1,269 @@
+{% block sw_settings_position_list %}
+{% block sw_settings_position_index %}
+<sw-page class="sw-settings-position-list">
+
+    {% block sw_settings_position_list_search_bar %}
+    <template #search-bar>
+        <sw-search-bar
+            initial-search-type="position"
+            :placeholder="$t('sw-settings-position.general.placeholderSearchBar')"
+            :initial-search="term"
+            @search="onSearch"
+        />
+    </template>
+    {% endblock %}
+
+    {% block sw_settings_position_list_smart_bar_header %}
+    <template #smart-bar-header>
+        {% block sw_settings_position_list_smart_bar_header_title %}
+        <h2>
+            {% block sw_settings_position_list_smart_bar_header_title_text %}
+            {{ $t('sw-settings.index.title') }}
+            <mt-icon
+                name="regular-chevron-right-xs"
+                size="12px"
+            /> {{ $t('sw-settings-position.list.textHeadline') }}
+            {% endblock %}
+
+            {% block sw_settings_position_list_smart_bar_header_amount %}
+            <span
+                v-if="!isLoading"
+                class="sw-page__smart-bar-amount"
+            >
+                ({{ total }})
+            </span>
+            {% endblock %}
+        </h2>
+        {% endblock %}
+    </template>
+    {% endblock %}
+
+    {% block sw_settings_position_list_language_switch %}
+    <template #language-switch>
+        <sw-language-switch @on-change="onChangeLanguage" />
+    </template>
+    {% endblock %}
+
+    {% block sw_settings_position_list_smart_bar_actions %}
+    <template #smart-bar-actions>
+        {% block sw_settings_position_list_smart_bar_actions_add %}
+        <mt-button
+            v-tooltip="{
+                message: $t('sw-privileges.tooltip.warning'),
+                disabled: acl.can('position.creator'),
+                showOnDisabledElements: true
+            }"
+            class="sw-settings-position-list__add-position"
+            variant="primary"
+            :disabled="!acl.can('position.creator') || undefined"
+            size="default"
+            @click="onAddPosition"
+        >
+            {{ $t('sw-settings-position.list.buttonAddPosition') }}
+        </mt-button>
+        {% endblock %}
+    </template>
+    {% endblock %}
+
+    {% block sw_settings_position_list_content %}
+    <template #content>
+        <sw-card-view>
+            {% block sw_settings_position_list_content_card %}
+            <mt-card
+                v-if="isLoading || positions"
+                position-identifier="sw-settings-position-list-content"
+            >
+                {% block sw_settings_position_list_grid %}
+                <template #grid>
+                    {% block sw_settings_position_list_grid_inner %}
+                    <sw-entity-listing
+                        ref="swSettingsPositionGrid"
+                        class="sw-settings-position-list-grid"
+                        :data-source="positions"
+                        :columns="positionColumns"
+                        :repository="positionRepository"
+                        :disable-data-fetching="true"
+                        :sort-by="sortBy"
+                        :sort-direction="sortDirection"
+                        :full-page="false"
+                        :show-selection="false"
+                        :is-loading="isLoading"
+                        :allow-edit="acl.can('position.editor') || undefined"
+                        :allow-inline-edit="false"
+                        :allow-delete="acl.can('position.deleter') || undefined"
+                        :allow-view="acl.can('position.viewer') || undefined"
+                        @page-change="onPageChange"
+                        @column-sort="onSortColumn"
+                    >
+                        {% block sw_settings_position_list_grid_columns_active %}
+                        <template #column-active="{ item }">
+                            <mt-switch
+                                v-if="acl.can('position.editor')"
+                                :key="item.id"
+                                :model-value="item.active"
+                                :disabled="undefined"
+                                @change="onActiveChange(item, $event)"
+                            />
+                            <mt-icon
+                                v-else
+                                :name="item.active ? 'regular-checkmark-xs' : 'regular-times-xs'"
+                            />
+                        </template>
+                        {% endblock %}
+
+                        {% block sw_settings_position_list_grid_columns_actions %}
+                        <template #actions="{ item }">
+                            {% block sw_settings_position_list_grid_columns_actions_edit %}
+                            <sw-context-menu-item
+                                class="sw-entity-listing__context-menu-edit-action"
+                                :disabled="!acl.can('position.editor') || undefined"
+                                @click="onEditPosition(item)"
+                            >
+                                {{ $t('global.default.edit') }}
+                            </sw-context-menu-item>
+                            {% endblock %}
+
+                            {% block sw_settings_position_list_grid_columns_actions_delete %}
+                            <sw-context-menu-item
+                                class="sw-entity-listing__context-menu-delete"
+                                variant="danger"
+                                :disabled="!acl.can('position.deleter') || undefined"
+                                @click="onDelete(item.id)"
+                            >
+                                {{ $t('global.default.delete') }}
+                            </sw-context-menu-item>
+                            {% endblock %}
+                        </template>
+                        {% endblock %}
+
+                        {% block sw_settings_position_list_grid_action_modals %}
+                        <template #action-modals="{ item }">
+                            {% block sw_settings_position_list_delete_modal %}
+                            <sw-modal
+                                v-if="showDeleteModal === item.id"
+                                :title="$t('global.default.warning')"
+                                variant="small"
+                                @modal-close="onCloseDeleteModal"
+                            >
+                                {% block sw_settings_position_list_delete_modal_confirm_text %}
+                                <p class="sw-settings-position-list__confirm-delete-text">
+                                    {{ $t('sw-settings-position.list.textDeleteConfirm', { name: item.translated?.name || item.name }, 0) }}
+                                </p>
+                                {% endblock %}
+
+                                {% block sw_settings_position_list_delete_modal_footer %}
+                                <template #modal-footer>
+                                    <mt-button
+                                        size="small"
+                                        variant="secondary"
+                                        @click="onCloseDeleteModal"
+                                    >
+                                        {{ $t('global.default.cancel') }}
+                                    </mt-button>
+
+                                    <mt-button
+                                        variant="critical"
+                                        size="small"
+                                        @click="onConfirmDelete(item.id)"
+                                    >
+                                        {{ $t('global.default.delete') }}
+                                    </mt-button>
+                                </template>
+                                {% endblock %}
+                            </sw-modal>
+                            {% endblock %}
+                        </template>
+                        {% endblock %}
+                    </sw-entity-listing>
+
+                    {% block sw_settings_position_list_empty_message %}
+                    <mt-empty-state
+                        v-if="!isLoading && !total"
+                        centered
+                        :icon="$route.meta.$module.icon"
+                        :headline="isValidTerm(term) ? $t('sw-empty-state.messageNoResultTitle') : $t('sw-settings-position.list.messageEmpty')"
+                        :description="isValidTerm(term) ? $t('sw-empty-state.messageNoResultSublineSimple') : ''"
+                    >
+                        <template
+                            v-if="!isValidTerm(term)"
+                            #button
+                        >
+                            <mt-button
+                                v-tooltip="{
+                                    message: $t('sw-privileges.tooltip.warning'),
+                                    disabled: acl.can('position.creator'),
+                                    showOnDisabledElements: true
+                                }"
+                                variant="primary"
+                                :disabled="!acl.can('position.creator')"
+                                @click="onAddPosition"
+                            >
+                                {{ $t('sw-settings-position.list.buttonAddPosition') }}
+                            </mt-button>
+                        </template>
+                    </mt-empty-state>
+                    {% endblock %}
+                    {% endblock %}
+                </template>
+                {% endblock %}
+            </mt-card>
+            {% endblock %}
+        </sw-card-view>
+    </template>
+    {% endblock %}
+
+    {% block sw_settings_position_edit_modal %}
+    <sw-modal
+        v-if="showEditModal && editedPosition"
+        class="sw-settings-position-list__edit-modal"
+        :title="modalTitle"
+        variant="small"
+        @modal-close="onCloseEditModal"
+    >
+        {% block sw_settings_position_edit_modal_fields %}
+        <mt-text-field
+            v-model="editedPosition.name"
+            class="sw-settings-position-list__edit-name"
+            required
+            :label="$t('sw-settings-position.list.labelName')"
+            :placeholder="$t('sw-settings-position.list.placeholderName')"
+        />
+
+        <mt-number-field
+            v-model="editedPosition.position"
+            class="sw-settings-position-list__edit-position"
+            :label="$t('sw-settings-position.list.columnPosition')"
+            :help-text="$t('sw-settings-position.list.helpTextPosition')"
+        />
+
+        <mt-switch
+            v-model="editedPosition.active"
+            class="sw-settings-position-list__edit-active"
+            :label="$t('sw-settings-position.list.labelActive')"
+        />
+        {% endblock %}
+
+        {% block sw_settings_position_edit_modal_footer %}
+        <template #modal-footer>
+            <mt-button
+                size="small"
+                variant="secondary"
+                @click="onCloseEditModal"
+            >
+                {{ $t('global.default.cancel') }}
+            </mt-button>
+
+            <mt-button
+                variant="primary"
+                size="small"
+                @click="onEditModalSave"
+            >
+                {{ $t('global.default.save') }}
+            </mt-button>
+        </template>
+        {% endblock %}
+    </sw-modal>
+    {% endblock %}
+</sw-page>
+{% endblock %}
+{% endblock %}
