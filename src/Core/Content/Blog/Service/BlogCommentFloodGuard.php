@@ -25,8 +25,6 @@ use Shopwell\Core\Framework\Log\Package;
  *
  * Moderation is not a rate limit and this class does not pretend to be one: a comment that passes here
  * is still held back by `status = false` when the shop has not switched auto publishing on.
- *
- * @final
  */
 #[Package('discovery')]
 final class BlogCommentFloodGuard

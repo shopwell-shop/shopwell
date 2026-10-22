@@ -11,7 +11,6 @@ use Shopwell\Core\Content\ContactForm\SalesChannel\ContactFormRoute;
 use Shopwell\Core\Content\ContactForm\SalesChannel\ContactFormRouteResponse;
 use Shopwell\Core\Content\ContactForm\Validation\ContactFormValidationFactory;
 use Shopwell\Core\Content\Newsletter\Aggregate\NewsletterRecipient\NewsletterRecipientEntity;
-use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\RateLimiter\RateLimiter;
@@ -22,10 +21,10 @@ use Shopwell\Core\Framework\Validation\DataValidationFactoryInterface;
 use Shopwell\Core\Framework\Validation\DataValidator;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\EventDispatcher\EventDispatcher;
-use Symfony\Component\Validator\ConstraintViolationList;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Validator\Constraints\NotBlank;
 use Symfony\Component\Validator\Constraints\Regex;
+use Symfony\Component\Validator\ConstraintViolationList;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 /**
@@ -95,7 +94,7 @@ class ContactFormRouteTest extends TestCase
 
         $response = $contactFormRoute->load($requestData, $this->salesChannelContext);
 
-        static::assertInstanceOf(ContactFormRouteResponse::class, $response);
+        static::assertNotSame('', $response->getResult()->getIndividualSuccessMessage());
     }
 
     public static function validatorDataProvider(): \Generator

@@ -11,6 +11,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Routing\RoutingException;
 use Shopwell\Core\System\Dictionary\Aggregate\DictionaryEntry\DictionaryEntryCollection;
+use Shopwell\Core\System\Dictionary\DictionaryTypeDefinition;
 use Shopwell\Core\System\Dictionary\SalesChannel\AbstractDictionaryRoute;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
 use Shopwell\Storefront\Event\RouteRequest\DictionaryRouteRequestEvent;
@@ -79,7 +80,12 @@ class AccountProfilePageLoader
 
     private function getGenders(SalesChannelContext $context, Request $request): DictionaryEntryCollection
     {
-        $event = new DictionaryRouteRequestEvent($request, $request->duplicate(), $context, new Criteria());
+        $storeApiRequest = $request->duplicate();
+        // the storefront request does not carry the store-api route parameters, so the dictionary
+        // type has to be attached explicitly - otherwise the route resolves an empty technical name
+        $storeApiRequest->attributes->set('technicalName', DictionaryTypeDefinition::TYPE_GENDER);
+
+        $event = new DictionaryRouteRequestEvent($request, $storeApiRequest, $context, new Criteria());
         $this->eventDispatcher->dispatch($event);
 
         return $this->dictionaryRoute

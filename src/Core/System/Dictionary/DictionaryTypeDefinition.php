@@ -26,7 +26,7 @@ class DictionaryTypeDefinition extends EntityDefinition
 {
     final public const ENTITY_NAME = 'dictionary_type';
 
-    final public const TYPE_SALUTATION = 'salutation';
+    final public const TYPE_GENDER = 'gender';
 
     public function getEntityName(): string
     {

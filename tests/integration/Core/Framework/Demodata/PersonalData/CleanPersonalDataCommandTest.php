@@ -34,9 +34,9 @@ use Symfony\Component\Console\Output\BufferedOutput;
 #[Package('framework')]
 class CleanPersonalDataCommandTest extends TestCase
 {
+    use BasicTestDataBehaviour;
     use DatabaseTransactionBehaviour;
     use KernelTestBehaviour;
-    use BasicTestDataBehaviour;
 
     private Connection $connection;
 

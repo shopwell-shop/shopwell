@@ -7,6 +7,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\EntityIdTrait;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Position\Aggregate\PositionTranslation\PositionTranslationCollection;
 use Shopwell\Core\System\User\Aggregate\UserPosition\UserPositionCollection;
+use Shopwell\Core\System\User\UserCollection;
 
 /**
  * @codeCoverageIgnore
@@ -25,6 +26,8 @@ class PositionEntity extends Entity
     protected ?PositionTranslationCollection $translations = null;
 
     protected ?UserPositionCollection $userPositions = null;
+
+    protected ?UserCollection $users = null;
 
     public function getPosition(): int
     {
@@ -74,5 +77,15 @@ class PositionEntity extends Entity
     public function setUserPositions(UserPositionCollection $userPositions): void
     {
         $this->userPositions = $userPositions;
+    }
+
+    public function getUsers(): ?UserCollection
+    {
+        return $this->users;
+    }
+
+    public function setUsers(UserCollection $users): void
+    {
+        $this->users = $users;
     }
 }

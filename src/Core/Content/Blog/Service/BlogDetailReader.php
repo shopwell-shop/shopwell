@@ -318,7 +318,7 @@ class BlogDetailReader
         $result = preg_replace_callback(
             '/<h([23])\b([^>]*)>(.*?)<\/h\1>/is',
             static function (array $match) use (&$index): string {
-                $index++;
+                ++$index;
                 $attributes = $match[2];
 
                 if (preg_match('/\bid\s*=/i', $attributes) === 1) {

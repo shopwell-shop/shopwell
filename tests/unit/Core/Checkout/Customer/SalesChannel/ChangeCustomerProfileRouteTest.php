@@ -3,7 +3,6 @@
 namespace Shopwell\Tests\Unit\Core\Checkout\Customer\SalesChannel;
 
 use PHPUnit\Framework\Attributes\CoversClass;
-use Shopwell\Core\System\Dictionary\Aggregate\DictionaryEntry\DictionaryEntryDefinition;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Checkout\Customer\Aggregate\CustomerAddress\CustomerAddressEntity;
 use Shopwell\Core\Checkout\Customer\CustomerCollection;
@@ -13,8 +12,6 @@ use Shopwell\Core\Checkout\Customer\SalesChannel\ChangeCustomerProfileRoute;
 use Shopwell\Core\Checkout\Customer\Validation\CustomerValidationFactory;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
-use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
-use Shopwell\Core\Framework\DataAbstractionLayer\Search\IdSearchResult;
 use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Uuid\Uuid;
@@ -22,6 +19,7 @@ use Shopwell\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopwell\Core\Framework\Validation\DataValidationDefinition;
 use Shopwell\Core\Framework\Validation\DataValidator;
 use Shopwell\Core\System\Country\CountryEntity;
+use Shopwell\Core\System\Dictionary\Aggregate\DictionaryEntry\DictionaryEntryDefinition;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
 use Shopwell\Core\System\SalesChannel\StoreApiCustomFieldMapper;
 use Shopwell\Core\System\SalesChannel\SuccessResponse;

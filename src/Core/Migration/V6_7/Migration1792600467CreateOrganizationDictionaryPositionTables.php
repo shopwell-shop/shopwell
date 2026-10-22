@@ -57,13 +57,13 @@ class Migration1792600467CreateOrganizationDictionaryPositionTables extends Migr
      * `gender` column (storing the dictionary entry code as a plain string) since their
      * CREATE TABLE (V6_3). No foreign key is required for it.
      */
-
     private function createOrganizationTable(Connection $connection): void
     {
         $connection->executeStatement(
             'CREATE TABLE IF NOT EXISTS `organization` (
                 `id` BINARY(16) NOT NULL,
                 `active` TINYINT(1) NOT NULL DEFAULT 1,
+                `custom_fields` JSON NULL,
                 `created_at` DATETIME(3) NOT NULL,
                 `updated_at` DATETIME(3) NULL,
                 PRIMARY KEY (`id`)
@@ -99,6 +99,7 @@ class Migration1792600467CreateOrganizationDictionaryPositionTables extends Migr
                 `path` LONGTEXT NULL,
                 `child_count` INT UNSIGNED NOT NULL DEFAULT 0,
                 `active` TINYINT(1) NOT NULL DEFAULT 1,
+                `custom_fields` JSON NULL,
                 `created_at` DATETIME(3) NOT NULL,
                 `updated_at` DATETIME(3) NULL,
                 PRIMARY KEY (`id`),

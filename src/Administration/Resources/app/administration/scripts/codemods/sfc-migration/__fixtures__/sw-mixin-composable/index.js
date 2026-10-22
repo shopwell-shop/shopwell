@@ -8,7 +8,7 @@ export default {
 
     mixins: [
         Shopwell.Mixin.getByName('notification'),
-        Shopwell.Mixin.getByName('salutation'),
+        Shopwell.Mixin.getByName('placeholder'),
     ],
 
     props: {

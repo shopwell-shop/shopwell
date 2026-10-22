@@ -25,4 +25,3 @@ Shopwell.Service('privileges').addPrivilegeMappingEntry({
     },
 });
 
-export {};

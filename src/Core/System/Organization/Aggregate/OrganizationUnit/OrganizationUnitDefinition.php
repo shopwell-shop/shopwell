@@ -6,12 +6,14 @@ use Shopwell\Core\Framework\DataAbstractionLayer\EntityDefinition;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\BoolField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\ChildCountField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\ChildrenAssociationField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\CustomFields;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\FkField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\ApiAware;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\PrimaryKey;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\Required;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\SearchRanking;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\IdField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\ManyToManyAssociationField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\ManyToOneAssociationField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\ParentAssociationField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\ParentFkField;
@@ -23,6 +25,8 @@ use Shopwell\Core\Framework\DataAbstractionLayer\FieldCollection;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Organization\Aggregate\OrganizationUnit\Aggregate\OrganizationUnitTranslation\OrganizationUnitTranslationDefinition;
 use Shopwell\Core\System\Organization\OrganizationDefinition;
+use Shopwell\Core\System\User\Aggregate\UserOrganizationUnit\UserOrganizationUnitDefinition;
+use Shopwell\Core\System\User\UserDefinition;
 
 /**
  * @codeCoverageIgnore
@@ -74,6 +78,8 @@ class OrganizationUnitDefinition extends EntityDefinition
             (new ChildrenAssociationField(self::class))->addFlags(new ApiAware())->setDescription('Child organization units within this unit.'),
             new ManyToOneAssociationField('organization', 'organization_id', OrganizationDefinition::class, 'id', false),
             (new TranslationsAssociationField(OrganizationUnitTranslationDefinition::class, 'organization_unit_id'))->addFlags(new ApiAware(), new Required()),
+            new ManyToManyAssociationField('users', UserDefinition::class, UserOrganizationUnitDefinition::class, 'organization_unit_id', 'user_id'),
+            (new CustomFields())->addFlags(new ApiAware())->setDescription('Additional fields that offer a possibility to add own fields for the different program-areas.'),
         ]);
     }
 }

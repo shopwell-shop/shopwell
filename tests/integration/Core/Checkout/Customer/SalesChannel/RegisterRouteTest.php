@@ -1709,8 +1709,6 @@ class RegisterRouteTest extends TestCase
 
     public function testRegistrationWithDefaultNotSpecifiedGender(): void
     {
-        $connection = static::getContainer()->get(Connection::class);
-
         $registrationData = $this->getRegistrationData();
         unset($registrationData['gender']);
 

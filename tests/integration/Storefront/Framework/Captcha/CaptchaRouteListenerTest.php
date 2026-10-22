@@ -3,13 +3,9 @@
 namespace Shopwell\Tests\Integration\Storefront\Framework\Captcha;
 
 use PHPUnit\Framework\TestCase;
-use Shopwell\Core\Framework\Context;
-use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
-use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopwell\Core\Framework\Test\TestCaseBase\SalesChannelApiTestBehaviour;
-use Shopwell\Core\System\Dictionary\Aggregate\DictionaryEntry\DictionaryEntryCollection;
 use Shopwell\Core\System\SystemConfig\SystemConfigService;
 use Shopwell\Storefront\Framework\Captcha\BasicCaptcha;
 use Shopwell\Storefront\Framework\Captcha\GoogleReCaptchaV3;

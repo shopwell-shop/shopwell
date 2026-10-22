@@ -16,6 +16,9 @@ Listing
 --------------------------------------------------
 The layout only changes the grid; the card is the same component in all three.
 */
+/* stylelint-disable selector-class-pattern --
+ * The blog templates address their elements as plain BEM classes (`.blog-card__media`, ...), which
+ * are restyled across modifier blocks and media queries where nesting with "&" is not possible. */
 .blog-index {
     padding: 32px 0 48px;
 
@@ -572,9 +575,17 @@ column three characters wide.
         margin-left: 24px;
     }
 
-    &--depth-2 &__children { margin-left: 20px; }
-    &--depth-3 &__children { margin-left: 16px; }
-    &--depth-4 &__children { margin-left: 12px; }
+    &--depth-2 &__children {
+        margin-left: 20px;
+    }
+
+    &--depth-3 &__children {
+        margin-left: 16px;
+    }
+
+    &--depth-4 &__children {
+        margin-left: 12px;
+    }
 
     &--deep {
         border-left: 2px solid rgba($primary, 0.25);
@@ -745,3 +756,5 @@ column three characters wide.
         transition: none;
     }
 }
+
+/* stylelint-enable selector-class-pattern */

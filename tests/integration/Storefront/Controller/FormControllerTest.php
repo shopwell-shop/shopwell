@@ -3,13 +3,9 @@
 namespace Shopwell\Tests\Integration\Storefront\Controller;
 
 use PHPUnit\Framework\TestCase;
-use Shopwell\Core\Framework\Context;
-use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
-use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Test\TestCaseBase\SalesChannelFunctionalTestBehaviour;
 use Shopwell\Core\Framework\Validation\DataBag\RequestDataBag;
-use Shopwell\Core\System\Dictionary\Aggregate\DictionaryEntry\DictionaryEntryCollection;
 use Shopwell\Storefront\Controller\FormController;
 use Shopwell\Storefront\Framework\Routing\RequestTransformer;
 use Shopwell\Storefront\Test\Controller\StorefrontControllerTestBehaviour;

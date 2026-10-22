@@ -267,6 +267,19 @@ Adapt existing code and integrations:
 - The storefront snippets `snippets/address/first_name.html.twig` and `snippets/address/last_name.html.twig` are replaced by `snippets/address/name.html.twig`.
 - The frontend packages `@shopwell/api-client`, `@shopwell/composables` and `@shopwell/cms-base-layer` carry the same change.
 
+## Salutation is replaced by the `gender` dictionary
+
+The `salutation` entity and the `title` field of `Customer`, `CustomerAddress`, `OrderCustomer`, `OrderAddress` and `NewsletterRecipient` are removed. The entities carry a `gender` column instead, which stores the technical name of a `dictionary` entry of type `gender` (`male`, `female`, `not_specified`). The dictionary is created and seeded (`Male`/`男`, `Female`/`女`, `Not specified`/`未知`) by the V6_3 baseline, so no foreign key is involved.
+
+Adapt existing code and integrations:
+
+- DAL code, criteria, associations and elasticsearch mappings read and write `gender` instead of `salutationId` and `title`.
+- The Store API route `/store-api/salutation` is removed; read the entries from `/store-api/dictionary/gender`.
+- The admin module `sw-settings-salutation` is removed; salutation entries are managed under the dictionary. The customer registration, profile and address request bodies take `gender` instead of `salutationId` and `title`, and the shop setting `showTitleField` is dropped.
+- The cart error classes `SalutationMissingError`, `ShippingAddressSalutationMissingError` and `BillingAddressSalutationMissingError` are removed; the checkout no longer requires a salutation.
+- `Shopwell\Core\Checkout\Customer\Rule\CustomerSalutationRule` matches the `gender` code of the customer instead of a salutation id collection.
+- The storefront pages `AccountLoginPage`, `AccountProfilePage`, `AddressDetailPage`, `AddressListingPage` and `CheckoutRegisterPage` no longer expose a `salutations` collection; templates read the gender entries through the `dictionary` composable or the Store API route above.
+
 # 6.7.15.0
 
 ## Document generation v1 marked for replacement

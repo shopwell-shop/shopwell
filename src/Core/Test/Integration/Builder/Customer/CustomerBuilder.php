@@ -6,9 +6,9 @@ use Doctrine\DBAL\Connection;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Test\TestCaseBase\KernelTestBehaviour;
 use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\System\Dictionary\Aggregate\DictionaryEntry\DictionaryEntryDefinition;
 use Shopwell\Core\Test\Stub\Framework\IdsCollection;
 use Shopwell\Core\Test\TestBuilderTrait;
-use Shopwell\Core\System\Dictionary\Aggregate\DictionaryEntry\DictionaryEntryDefinition;
 use Shopwell\Core\Test\TestDefaults;
 
 /**

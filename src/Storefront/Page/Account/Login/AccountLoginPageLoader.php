@@ -12,6 +12,7 @@ use Shopwell\Core\Framework\Routing\RoutingException;
 use Shopwell\Core\System\Country\CountryCollection;
 use Shopwell\Core\System\Country\SalesChannel\AbstractCountryRoute;
 use Shopwell\Core\System\Dictionary\Aggregate\DictionaryEntry\DictionaryEntryCollection;
+use Shopwell\Core\System\Dictionary\DictionaryTypeDefinition;
 use Shopwell\Core\System\Dictionary\SalesChannel\AbstractDictionaryRoute;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
 use Shopwell\Storefront\Page\GenericPageLoaderInterface;
@@ -78,7 +79,7 @@ class AccountLoginPageLoader
      */
     private function getGenders(SalesChannelContext $salesChannelContext): DictionaryEntryCollection
     {
-        $request = new Request([], [], ['technicalName' => 'gender']);
+        $request = new Request([], [], ['technicalName' => DictionaryTypeDefinition::TYPE_GENDER]);
 
         return $this->dictionaryRoute->load($request, $salesChannelContext, new Criteria())->getEntries();
     }

@@ -8,6 +8,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\EntityIdTrait;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Organization\Aggregate\OrganizationUnit\Aggregate\OrganizationUnitTranslation\OrganizationUnitTranslationCollection;
 use Shopwell\Core\System\Organization\OrganizationEntity;
+use Shopwell\Core\System\User\UserCollection;
 
 /**
  * @codeCoverageIgnore
@@ -39,6 +40,8 @@ class OrganizationUnitEntity extends Entity
     protected ?OrganizationEntity $organization = null;
 
     protected ?OrganizationUnitTranslationCollection $translations = null;
+
+    protected ?UserCollection $users = null;
 
     public function getOrganizationId(): string
     {
@@ -148,5 +151,15 @@ class OrganizationUnitEntity extends Entity
     public function setTranslations(OrganizationUnitTranslationCollection $translations): void
     {
         $this->translations = $translations;
+    }
+
+    public function getUsers(): ?UserCollection
+    {
+        return $this->users;
+    }
+
+    public function setUsers(UserCollection $users): void
+    {
+        $this->users = $users;
     }
 }
