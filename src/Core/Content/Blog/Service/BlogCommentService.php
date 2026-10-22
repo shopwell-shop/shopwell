@@ -32,8 +32,6 @@ use Shopwell\Core\Framework\Uuid\Uuid;
  *
  * `status` is never taken from the request. It comes from {@see BlogSettings::autoPublishComments()},
  * so a shop that moderates cannot be talked into publishing by a crafted payload.
- *
- * @final
  */
 #[Package('discovery')]
 final class BlogCommentService
@@ -147,7 +145,7 @@ final class BlogCommentService
                 break;
             }
 
-            $depth++;
+            ++$depth;
             $parentId = $parent->parentId;
         }
 

@@ -444,7 +444,7 @@
                 ],
                 "summary": "Open a return for an order",
                 "description": "Opens a return on behalf of the customer of an order - the phone call case. The operator names positions and a type, the server computes the amount and starts the case in `requested`, so the decision about it is still a decision somebody has to take. No amount is part of the payload: a form can not name a price.",
-                "operationId": "createOrderReturn",
+                "operationId": "createOrderReturnForOrder",
                 "parameters": [
                     {
                         "name": "orderId",

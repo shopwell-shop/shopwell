@@ -137,7 +137,7 @@ the mixin's `this` semantics:
 - `'x' is assigned to, but the 'y' composable returns it as a constant`, which was a write to the
   instance proxy and has no equivalent against a `const`;
 - `'x' is read in the template and its binding name is already taken`. A script-only read is fixed by
-  renaming the binding (`const { salutation: salutation$1 } = useSalutation()`), but the template
+  renaming the binding (`const { placeholder: placeholder$1 } = usePlaceholder()`), but the template
   cannot be rewritten.
 
 ### Composable imports and extension targets
@@ -145,7 +145,7 @@ the mixin's `this` semantics:
 The Administration and extensions import the composables the same way, from `shopwell:composables`:
 
 ```js
-import { useNotification, useSalutation } from 'shopwell:composables';
+import { useNotification, usePlaceholder } from 'shopwell:composables';
 ```
 
 Which composables it publishes is read from the checked-in `shopwell-modules.json`. One that is not
@@ -163,9 +163,9 @@ its `swDefinePublic` entry. So the draft carries a `VERIFY` TODO directly above 
 the outcome is `partial` until a reader has picked a name:
 
 ```js
-// TODO(sfc-migration) VERIFY: 'salutation' was renamed to 'salutation$1' — its name is already taken by another binding
+// TODO(sfc-migration) VERIFY: 'placeholder' was renamed to 'placeholder$1' — its name is already taken by another binding
 // The draft runs as emitted; a renamed member stays out of swDefinePublic, so rename it and its uses to have it public or prettier
-const { salutation: salutation$1 } = useSalutation();
+const { placeholder: placeholder$1 } = usePlaceholder();
 ```
 
 ### Instance dependencies

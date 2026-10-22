@@ -359,6 +359,14 @@ class CheckoutControllerTest extends TestCase
         static::assertNotNull($paidInAdvancePaymentMethodId, 'Paid in advance payment method not found');
         static::assertNotNull($invoicePaymentMethodId, 'Invoice payment method not found');
 
+        // the installation may ship additional payment methods beyond the three defaults (e.g. a
+        // country baseline adds its local ones) - "every payment method is blocked" only holds if
+        // those are prepared as blocked as well, otherwise the validator still finds a fallback
+        $defaultPaymentMethodIds = [$cashOnDeliveryPaymentMethodId, $paidInAdvancePaymentMethodId, $invoicePaymentMethodId];
+        $additionalPaymentMethodIds = $paymentMethods
+            ->filter(static fn (PaymentMethodEntity $pm) => !\in_array($pm->getId(), $defaultPaymentMethodIds, true))
+            ->getIds();
+
         yield 'single blocked shipping method is switched to the fallback method' => [
             new ErrorCollection(
                 [
@@ -419,6 +427,18 @@ class CheckoutControllerTest extends TestCase
         yield 'blocked payment method remains blocked when every payment method is blocked' => [
             new ErrorCollection(
                 [
+                    // block any additional method first, so the three defaults remain the last ones
+                    // prepared and the final selection is "Cash on delivery" as asserted below
+                    ...array_map(
+                        static fn (string $id) => new PaymentMethodChangedError(
+                            oldPaymentMethodId: $id,
+                            oldPaymentMethodName: 'Additional payment method',
+                            newPaymentMethodId: $paidInAdvancePaymentMethodId,
+                            newPaymentMethodName: 'Paid in advance',
+                            reason: 'bar',
+                        ),
+                        $additionalPaymentMethodIds
+                    ),
                     new PaymentMethodChangedError(
                         oldPaymentMethodId: $paidInAdvancePaymentMethodId,
                         oldPaymentMethodName: 'Paid in advance',

@@ -2,11 +2,6 @@
 
 namespace Shopwell\Core\System\Dictionary\Aggregate\DictionaryEntry;
 
-use Shopwell\Core\Checkout\Customer\Aggregate\CustomerAddress\CustomerAddressCollection;
-use Shopwell\Core\Checkout\Customer\CustomerCollection;
-use Shopwell\Core\Checkout\Order\Aggregate\OrderAddress\OrderAddressCollection;
-use Shopwell\Core\Checkout\Order\Aggregate\OrderCustomer\OrderCustomerCollection;
-use Shopwell\Core\Content\Newsletter\Aggregate\NewsletterRecipient\NewsletterRecipientCollection;
 use Shopwell\Core\Framework\DataAbstractionLayer\Entity;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityIdTrait;
 use Shopwell\Core\Framework\Log\Package;
@@ -34,16 +29,6 @@ class DictionaryEntryEntity extends Entity
     protected ?DictionaryEntryTranslationCollection $translations = null;
 
     protected ?DictionaryTypeEntity $dictionaryType = null;
-
-    protected ?CustomerCollection $customers = null;
-
-    protected ?CustomerAddressCollection $customerAddresses = null;
-
-    protected ?OrderCustomerCollection $orderCustomers = null;
-
-    protected ?OrderAddressCollection $orderAddresses = null;
-
-    protected ?NewsletterRecipientCollection $newsletterRecipients = null;
 
     public function getDictionaryTypeId(): string
     {
@@ -113,55 +98,5 @@ class DictionaryEntryEntity extends Entity
     public function setDictionaryType(DictionaryTypeEntity $dictionaryType): void
     {
         $this->dictionaryType = $dictionaryType;
-    }
-
-    public function getCustomers(): ?CustomerCollection
-    {
-        return $this->customers;
-    }
-
-    public function setCustomers(CustomerCollection $customers): void
-    {
-        $this->customers = $customers;
-    }
-
-    public function getCustomerAddresses(): ?CustomerAddressCollection
-    {
-        return $this->customerAddresses;
-    }
-
-    public function setCustomerAddresses(CustomerAddressCollection $customerAddresses): void
-    {
-        $this->customerAddresses = $customerAddresses;
-    }
-
-    public function getOrderCustomers(): ?OrderCustomerCollection
-    {
-        return $this->orderCustomers;
-    }
-
-    public function setOrderCustomers(OrderCustomerCollection $orderCustomers): void
-    {
-        $this->orderCustomers = $orderCustomers;
-    }
-
-    public function getOrderAddresses(): ?OrderAddressCollection
-    {
-        return $this->orderAddresses;
-    }
-
-    public function setOrderAddresses(OrderAddressCollection $orderAddresses): void
-    {
-        $this->orderAddresses = $orderAddresses;
-    }
-
-    public function getNewsletterRecipients(): ?NewsletterRecipientCollection
-    {
-        return $this->newsletterRecipients;
-    }
-
-    public function setNewsletterRecipients(NewsletterRecipientCollection $newsletterRecipients): void
-    {
-        $this->newsletterRecipients = $newsletterRecipients;
     }
 }

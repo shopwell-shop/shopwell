@@ -158,7 +158,7 @@ class BlogCommentServiceTest extends TestCase
     {
         $chain = [];
 
-        for ($level = 1; $level <= $depth; $level++) {
+        for ($level = 1; $level <= $depth; ++$level) {
             $parentId = $level === 1 ? null : 'l' . ($level - 1);
             $chain['l' . $level] = $this->comment('l' . $level, $parentId, self::BLOG_ID);
         }

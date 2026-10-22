@@ -135,7 +135,7 @@ class BlogCommentTreeTest extends TestCase
         $node = $result->getRoots()[0];
 
         // five steps down from the root: level 6 is the deepest comment of the chain
-        for ($step = 0; $step < 5; $step++) {
+        for ($step = 0; $step < 5; ++$step) {
             $node = $node->getChildren()[0];
         }
 

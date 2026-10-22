@@ -111,6 +111,15 @@ async function createWrapper(propsData, customerResponse = createCustomerMock())
                 'sw-custom-field-set-renderer': true,
             },
             provide: {
+                dictionaryService: {
+                    getGenders: jest.fn(() =>
+                        Promise.resolve([
+                            { technicalName: 'not_specified', translated: { label: 'Not specified' } },
+                            { technicalName: 'male', translated: { label: 'Male' } },
+                            { technicalName: 'female', translated: { label: 'Female' } },
+                        ]),
+                    ),
+                },
                 repositoryFactory: {
                     create: () => ({
                         search: () => {

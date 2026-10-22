@@ -52,6 +52,7 @@ class ContentTest extends TestCase
             'mail.php',
             'mail_template.php',
             'delivery_time.php',
+            'blog.php',
             'import_export.php',
             'contact_form.php',
             'revocation_request_form.php',

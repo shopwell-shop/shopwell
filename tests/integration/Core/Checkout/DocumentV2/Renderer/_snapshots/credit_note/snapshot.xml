@@ -106,7 +106,7 @@
           <ram:PostcodeCode>48624</ram:PostcodeCode>
           <ram:LineOne>Ebbinghoff 10</ram:LineOne>
           <ram:CityName>Schöppingen</ram:CityName>
-          <ram:CountryID>DE</ram:CountryID>
+          <ram:CountryID>CN</ram:CountryID>
         </ram:PostalTradeAddress>
         <ram:URIUniversalCommunication>
           <ram:URIID schemeID="EM">test@example.com</ram:URIID>

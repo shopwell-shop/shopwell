@@ -2,7 +2,6 @@
 
 namespace Shopwell\Core\System\DependencyInjection;
 
-use Doctrine\DBAL\Connection;
 use Shopwell\Core\Framework\DataAbstractionLayer\Dbal\Common\IteratorFactory;
 use Shopwell\Core\Framework\DataAbstractionLayer\Indexing\ChildCountUpdater;
 use Shopwell\Core\Framework\DataAbstractionLayer\Indexing\TreeUpdater;

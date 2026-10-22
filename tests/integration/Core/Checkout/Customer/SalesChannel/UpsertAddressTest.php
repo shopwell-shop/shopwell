@@ -2,7 +2,6 @@
 
 namespace Shopwell\Tests\Integration\Core\Checkout\Customer\SalesChannel;
 
-use Doctrine\DBAL\Connection;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
@@ -26,8 +25,6 @@ class UpsertAddressTest extends TestCase
 
     private KernelBrowser $browser;
 
-    private Connection $connection;
-
     protected function setUp(): void
     {
         $ids = new IdsCollection();
@@ -35,8 +32,6 @@ class UpsertAddressTest extends TestCase
         $this->browser = $this->createCustomSalesChannelBrowser([
             'id' => $ids->create('sales-channel'),
         ]);
-
-        $this->connection = static::getContainer()->get(Connection::class);
 
         $this->assignSalesChannelContext($this->browser);
 

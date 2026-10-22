@@ -72,10 +72,14 @@ use Shopwell\Core\System\Country\Aggregate\CountryTranslation\CountryTranslation
 use Shopwell\Core\System\Currency\Aggregate\CurrencyTranslation\CurrencyTranslationDefinition;
 use Shopwell\Core\System\DeliveryTime\Aggregate\DeliveryTimeTranslation\DeliveryTimeTranslationDefinition;
 use Shopwell\Core\System\Dictionary\Aggregate\DictionaryEntry\Aggregate\DictionaryEntryTranslation\DictionaryEntryTranslationDefinition;
+use Shopwell\Core\System\Dictionary\Aggregate\DictionaryTypeTranslation\DictionaryTypeTranslationDefinition;
 use Shopwell\Core\System\Locale\Aggregate\LocaleTranslation\LocaleTranslationDefinition;
 use Shopwell\Core\System\Locale\LocaleDefinition;
 use Shopwell\Core\System\NumberRange\Aggregate\NumberRangeTranslation\NumberRangeTranslationDefinition;
 use Shopwell\Core\System\NumberRange\Aggregate\NumberRangeTypeTranslation\NumberRangeTypeTranslationDefinition;
+use Shopwell\Core\System\Organization\Aggregate\OrganizationTranslation\OrganizationTranslationDefinition;
+use Shopwell\Core\System\Organization\Aggregate\OrganizationUnit\Aggregate\OrganizationUnitTranslation\OrganizationUnitTranslationDefinition;
+use Shopwell\Core\System\Position\Aggregate\PositionTranslation\PositionTranslationDefinition;
 use Shopwell\Core\System\SalesChannel\Aggregate\SalesChannelDomain\SalesChannelDomainDefinition;
 use Shopwell\Core\System\SalesChannel\Aggregate\SalesChannelLanguage\SalesChannelLanguageDefinition;
 use Shopwell\Core\System\SalesChannel\Aggregate\SalesChannelTranslation\SalesChannelTranslationDefinition;
@@ -165,7 +169,11 @@ class LanguageDefinition extends EntityDefinition
             (new OneToManyAssociationField('salesChannelTranslations', SalesChannelTranslationDefinition::class, 'language_id'))->addFlags(new CascadeDelete()),
             (new OneToManyAssociationField('salesChannelTypeTranslations', SalesChannelTypeTranslationDefinition::class, 'language_id'))->addFlags(new CascadeDelete()),
             (new OneToManyAssociationField('dictionaryEntryTranslations', DictionaryEntryTranslationDefinition::class, 'language_id'))->addFlags(new CascadeDelete()),
+            (new OneToManyAssociationField('dictionaryTypeTranslations', DictionaryTypeTranslationDefinition::class, 'language_id'))->addFlags(new CascadeDelete()),
+            (new OneToManyAssociationField('organizationTranslations', OrganizationTranslationDefinition::class, 'language_id'))->addFlags(new CascadeDelete()),
+            (new OneToManyAssociationField('organizationUnitTranslations', OrganizationUnitTranslationDefinition::class, 'language_id'))->addFlags(new CascadeDelete()),
             (new OneToManyAssociationField('pluginTranslations', PluginTranslationDefinition::class, 'language_id'))->addFlags(new CascadeDelete()),
+            (new OneToManyAssociationField('positionTranslations', PositionTranslationDefinition::class, 'language_id'))->addFlags(new CascadeDelete()),
             (new OneToManyAssociationField('productStreamTranslations', ProductStreamTranslationDefinition::class, 'language_id'))->addFlags(new CascadeDelete()),
             (new OneToManyAssociationField('stateMachineTranslations', StateMachineTranslationDefinition::class, 'language_id'))->addFlags(new CascadeDelete()),
             (new OneToManyAssociationField('stateMachineStateTranslations', StateMachineStateTranslationDefinition::class, 'language_id'))->addFlags(new CascadeDelete()),

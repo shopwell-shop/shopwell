@@ -1,0 +1,576 @@
+{
+    "openapi": "3.2.0",
+    "info": [],
+    "paths": {
+        "/order-return": {
+            "get": {
+                "tags": [
+                    "Order"
+                ],
+                "summary": "List the returns of the logged-in customer",
+                "description": "Returns all order returns of the logged-in customer, newest first. Requires a logged-in customer.",
+                "operationId": "listOrderReturns",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/swLanguageId"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The list of order returns of the customer.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/OrderReturnRouteResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Order"
+                ],
+                "summary": "Create an order return",
+                "description": "Creates a return request for an order of the logged-in customer. The returned amount is computed from the order on the server, the case starts in the `requested` state. Requires a logged-in customer.",
+                "operationId": "createOrderReturn",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/OrderReturnCreateRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "The created order return.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/OrderReturnRouteResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/order-return/positions/{orderId}": {
+            "get": {
+                "tags": [
+                    "Order"
+                ],
+                "summary": "Returnable positions of an order",
+                "description": "Lists the positions of an order that can still be returned, with the quantity that is left and the active return reasons. Renders the return form of the storefront. Requires a logged-in customer.",
+                "operationId": "orderReturnPositions",
+                "parameters": [
+                    {
+                        "name": "orderId",
+                        "in": "path",
+                        "description": "Identifier of the order the return is opened for.",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-f]{32}$"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The returnable positions and the active reasons.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "positions": {
+                                            "type": "array",
+                                            "description": "The positions that can still be returned, each with the remaining quantity."
+                                        },
+                                        "reasons": {
+                                            "type": "array",
+                                            "description": "The active return reasons."
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/order-return/{id}": {
+            "get": {
+                "tags": [
+                    "Order"
+                ],
+                "summary": "Load a single order return",
+                "description": "Returns one order return of the logged-in customer with its positions, messages and state history. Requires a logged-in customer.",
+                "operationId": "orderReturnDetail",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Identifier of the order return.",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-f]{32}$"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The order return.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/OrderReturnRouteResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/order-return/{id}/cancel": {
+            "post": {
+                "tags": [
+                    "Order"
+                ],
+                "summary": "Cancel an order return",
+                "description": "Cancels a return of the logged-in customer. Only possible while the case has not progressed past `requested`. Requires a logged-in customer.",
+                "operationId": "orderReturnCancel",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Identifier of the order return.",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-f]{32}$"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The cancelled order return.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/OrderReturnRouteResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/order-return/{id}/ship": {
+            "post": {
+                "tags": [
+                    "Order"
+                ],
+                "summary": "Mark an order return as shipped",
+                "description": "Confirms that the customer handed the goods over, moving the case into the `in_progress` flow. Requires a logged-in customer.",
+                "operationId": "orderReturnShip",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Identifier of the order return.",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-f]{32}$"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The updated order return.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/OrderReturnRouteResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/order-return/{id}/message": {
+            "post": {
+                "tags": [
+                    "Order"
+                ],
+                "summary": "Add a message to an order return",
+                "description": "Appends a customer message to the conversation of a return. Requires a logged-in customer.",
+                "operationId": "orderReturnMessage",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Identifier of the order return.",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-f]{32}$"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "content"
+                                ],
+                                "properties": {
+                                    "content": {
+                                        "description": "The message text.",
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "The updated order return.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/OrderReturnRouteResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/order-return/guest": {
+            "get": {
+                "tags": [
+                    "Order"
+                ],
+                "summary": "List the returns of a guest order",
+                "description": "Returns the returns belonging to a guest order. The order is proven by the token issued by `/order-return/guest/verify`, sent as the `x-order-return-token` header.",
+                "operationId": "listGuestOrderReturns",
+                "parameters": [
+                    {
+                        "name": "x-order-return-token",
+                        "in": "header",
+                        "description": "The guest return token issued by the verify endpoint.",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The list of returns of the guest order.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/OrderReturnRouteResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Order"
+                ],
+                "summary": "Create a guest order return",
+                "description": "Creates a return for a guest order. The order is proven by the token issued by `/order-return/guest/verify`, sent as the `x-order-return-token` header.",
+                "operationId": "createGuestOrderReturn",
+                "parameters": [
+                    {
+                        "name": "x-order-return-token",
+                        "in": "header",
+                        "description": "The guest return token issued by the verify endpoint.",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/OrderReturnCreateRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "The created order return.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/OrderReturnRouteResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/order-return/guest/verify": {
+            "post": {
+                "tags": [
+                    "Order"
+                ],
+                "summary": "Verify a guest order for returns",
+                "description": "Proves a guest order by order number and email address and issues the `x-order-return-token` used by the other guest endpoints.",
+                "operationId": "verifyGuestOrderReturn",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "orderNumber",
+                                    "email"
+                                ],
+                                "properties": {
+                                    "orderNumber": {
+                                        "description": "The number of the guest order.",
+                                        "type": "string"
+                                    },
+                                    "email": {
+                                        "description": "The email address the guest order was placed with.",
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "The issued guest return token.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "token": {
+                                            "description": "The token to send as `x-order-return-token`.",
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/order-return/guest/{id}": {
+            "get": {
+                "tags": [
+                    "Order"
+                ],
+                "summary": "Load a single guest order return",
+                "description": "Returns one return of a guest order with its positions, messages and state history. The order is proven by the `x-order-return-token` header.",
+                "operationId": "guestOrderReturnDetail",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Identifier of the order return.",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-f]{32}$"
+                        }
+                    },
+                    {
+                        "name": "x-order-return-token",
+                        "in": "header",
+                        "description": "The guest return token issued by the verify endpoint.",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The order return.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/OrderReturnRouteResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/order-return/guest/{id}/cancel": {
+            "post": {
+                "tags": [
+                    "Order"
+                ],
+                "summary": "Cancel a guest order return",
+                "description": "Cancels a return of a guest order. Only possible while the case has not progressed past `requested`. The order is proven by the `x-order-return-token` header.",
+                "operationId": "guestOrderReturnCancel",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Identifier of the order return.",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-f]{32}$"
+                        }
+                    },
+                    {
+                        "name": "x-order-return-token",
+                        "in": "header",
+                        "description": "The guest return token issued by the verify endpoint.",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The cancelled order return.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/OrderReturnRouteResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/order-return/guest/{id}/ship": {
+            "post": {
+                "tags": [
+                    "Order"
+                ],
+                "summary": "Mark a guest order return as shipped",
+                "description": "Confirms that the guest handed the goods over, moving the case into the `in_progress` flow. The order is proven by the `x-order-return-token` header.",
+                "operationId": "guestOrderReturnShip",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Identifier of the order return.",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-f]{32}$"
+                        }
+                    },
+                    {
+                        "name": "x-order-return-token",
+                        "in": "header",
+                        "description": "The guest return token issued by the verify endpoint.",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The updated order return.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/OrderReturnRouteResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/order-return/guest/{id}/message": {
+            "post": {
+                "tags": [
+                    "Order"
+                ],
+                "summary": "Add a message to a guest order return",
+                "description": "Appends a message to the conversation of a guest return. The order is proven by the `x-order-return-token` header.",
+                "operationId": "guestOrderReturnMessage",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Identifier of the order return.",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-f]{32}$"
+                        }
+                    },
+                    {
+                        "name": "x-order-return-token",
+                        "in": "header",
+                        "description": "The guest return token issued by the verify endpoint.",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "content"
+                                ],
+                                "properties": {
+                                    "content": {
+                                        "description": "The message text.",
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "The updated order return.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/OrderReturnRouteResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

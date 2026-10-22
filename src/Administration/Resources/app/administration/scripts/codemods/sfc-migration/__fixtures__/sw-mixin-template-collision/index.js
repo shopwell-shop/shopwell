@@ -1,5 +1,5 @@
 import template from './sw-mixin-template-collision.html.twig';
-import { salutation } from './salutation.helper';
+import { placeholder } from './placeholder.helper';
 
 /**
  * @sw-package framework
@@ -8,7 +8,7 @@ export default {
     template,
 
     mixins: [
-        Shopwell.Mixin.getByName('salutation'),
+        Shopwell.Mixin.getByName('placeholder'),
     ],
 
     props: {
@@ -20,7 +20,7 @@ export default {
 
     methods: {
         shortLabel() {
-            return salutation(this.customer);
+            return placeholder(this.customer, 'name', '');
         },
     },
 };

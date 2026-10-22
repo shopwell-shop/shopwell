@@ -219,25 +219,36 @@ class GenerateThumbnailsHandlerTest extends TestCase
             ->with($testEntities1, $this->context)
             ->willReturn($testEntities1->count());
 
-        $consecutiveUpdateMessageParams = [
-            // For UpdateMessage 1
-            ...array_map(fn ($entity) => [$entity, $this->context, true], array_values($testEntities2->getElements())),
-            // For UpdateMessage 2
-            ...array_map(fn ($entity) => [$entity, $this->context, false], array_values($testEntities3->getElements())),
-        ];
+        // `updateThumbnails()` still reads its `$force` argument from the call arguments until the
+        // parameter becomes part of the signature in v6.8.0 (see the NewOptionalParameter attribute),
+        // so the handler passes it as the fourth argument. The handler searches the entities itself,
+        // so the entity it passes is a different instance than the one collected here - the calls are
+        // compared by media id instead of by object identity.
+        $expectedCalls = [];
+
+        foreach ($testEntities2->getElements() as $entity) {
+            $expectedCalls[$entity->getId()] = [$this->context, true, false];
+        }
+
+        foreach ($testEntities3->getElements() as $entity) {
+            $expectedCalls[$entity->getId()] = [$this->context, false, false];
+        }
 
         $parameters = [];
 
         $thumbnailServiceMock->expects($this->exactly($testEntities2->count() + $testEntities3->count()))
             ->method('updateThumbnails')
             ->willReturnCallback(static function (...$params) use (&$parameters): void {
-                $parameters[] = $params;
+                $parameters[$params[0]->getId()] = [$params[1], $params[2], $params[3] ?? false];
             });
 
         $handler->__invoke($generateMessage);
         $handler->__invoke($updateMessage1);
         $handler->__invoke($updateMessage2);
 
-        static::assertSame($consecutiveUpdateMessageParams, $parameters);
+        ksort($parameters);
+        ksort($expectedCalls);
+
+        static::assertSame($expectedCalls, $parameters);
     }
 }

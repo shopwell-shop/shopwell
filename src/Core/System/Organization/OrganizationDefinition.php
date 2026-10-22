@@ -5,6 +5,7 @@ namespace Shopwell\Core\System\Organization;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityDefinition;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\BoolField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\CreatedAtField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\CustomFields;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\ApiAware;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\CascadeDelete;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\PrimaryKey;
@@ -59,6 +60,7 @@ class OrganizationDefinition extends EntityDefinition
 
             (new OneToManyAssociationField('units', OrganizationUnitDefinition::class, 'organization_id', 'id'))->addFlags(new ApiAware(), new CascadeDelete())->setDescription('Organization units (company/department tree) within this organization.'),
             (new TranslationsAssociationField(OrganizationTranslationDefinition::class, 'organization_id'))->addFlags(new ApiAware(), new Required()),
+            (new CustomFields())->addFlags(new ApiAware())->setDescription('Additional fields that offer a possibility to add own fields for the different program-areas.'),
         ]);
     }
 }

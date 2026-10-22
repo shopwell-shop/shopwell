@@ -198,5 +198,23 @@ return [
         preg_quote('CHANGED: The return type of Shopwell\Core\Checkout\Loyalty\Entity\MembershipPlan\Aggregate\MembershipPlanTranslation\MembershipPlanTranslationEntity#getName() changed from string to the non-covariant string|null', '/'),
         preg_quote('CHANGED: The return type of Shopwell\Core\Checkout\Loyalty\Entity\MembershipPlan\Aggregate\MembershipPlanTranslation\MembershipPlanTranslationEntity#getName() changed from string to string|null', '/'),
         preg_quote('CHANGED: The parameter $name of Shopwell\Core\Checkout\Loyalty\Entity\MembershipPlan\Aggregate\MembershipPlanTranslation\MembershipPlanTranslationEntity#setName() changed from string to string|null', '/'),
+
+        // The salutation entity and the title field are replaced by the generic `gender` dictionary:
+        // customer, address, order and newsletter recipient rows now store the technical name of a
+        // dictionary entry (male/female/not_specified) in their `gender` column, which the V6_3
+        // baseline creates and seeds. The removed entity, route, serializer, cart error classes,
+        // rule, storefront page bindings and accessors are intentional; migration for extensions is
+        // documented in UPGRADE-6.7.md.
+        'REMOVED: Class Shopwell\\\\.*\\\\\w*Salutation\w* has been deleted',
+        'REMOVED: Constant Shopwell\\\\Core\\\\\w+\\\\.*::MAX_LENGTH_TITLE was removed',
+        'REMOVED: Property Shopwell\\\\Core\\\\.*(CustomerEntity|CustomerAddressEntity|OrderAddressEntity|OrderCustomerEntity|NewsletterRecipientEntity)#\$(title|salutation|salutationId) was removed',
+        'REMOVED: Method Shopwell\\\\Core\\\\.*(CustomerEntity|CustomerAddressEntity|OrderAddressEntity|OrderCustomerEntity|NewsletterRecipientEntity)#(get|set)(Title|Salutation|SalutationId)\(\) was removed',
+        'REMOVED: Property Shopwell\\\\Core\\\\Checkout\\\\Customer\\\\Rule\\\\CustomerSalutationRule#\$salutationIds was removed',
+        'REMOVED: Method Shopwell\\\\Core\\\\Framework\\\\Adapter\\\\Cache\\\\CacheInvalidationSubscriber#invalidateSalutationRoute\(\) was removed',
+        'REMOVED: Property Shopwell\\\\Core\\\\System\\\\Language\\\\LanguageEntity#\$salutationTranslations was removed',
+        'REMOVED: Method Shopwell\\\\Core\\\\System\\\\Language\\\\LanguageEntity#(get|set)SalutationTranslations\(\) was removed',
+        'REMOVED: Property Shopwell\\\\Core\\\\System\\\\SystemConfig\\\\SalesChannel\\\\ShopLoginRegistrationSettings#\$showTitleField was removed',
+        'REMOVED: Property Shopwell\\\\Storefront\\\\Page\\\\\w+\\\\\w+\\\\\w+Page#\$salutations was removed',
+        'REMOVED: Method Shopwell\\\\Storefront\\\\Page\\\\\w+\\\\\w+\\\\\w+Page#(get|set)Salutations\(\) was removed',
     ],
 ];

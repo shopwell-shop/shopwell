@@ -1,5 +1,5 @@
 import template from './sw-mixin-collision.html.twig';
-import { salutation } from './salutation.helper';
+import { placeholder } from './placeholder.helper';
 
 /**
  * @sw-package framework
@@ -8,7 +8,7 @@ export default {
     template,
 
     mixins: [
-        Shopwell.Mixin.getByName('salutation'),
+        Shopwell.Mixin.getByName('placeholder'),
     ],
 
     props: {
@@ -22,11 +22,11 @@ export default {
         // The module-level helper and the mixin member share a name, which only `this.` keeps apart
         // here — the composable's binding has to be renamed to stay apart from the helper.
         shortLabel() {
-            return salutation(this.customer);
+            return placeholder(this.customer, 'name', '');
         },
 
         fullLabel() {
-            return this.salutation(this.customer, 'no name');
+            return this.placeholder(this.customer, 'name', 'no name');
         },
     },
 };

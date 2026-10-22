@@ -1,0 +1,74 @@
+{
+    "openapi": "3.2.0",
+    "info": [],
+    "paths": {
+        "/blog/comment": {
+            "post": {
+                "tags": [
+                    "Content"
+                ],
+                "summary": "Submit a comment on a blog entry",
+                "description": "Validates and stores a comment on a blog entry. The comment is not published immediately: it is either held back for moderation or published depending on the shop configuration (`core.blog.autoPublishComments`). Guests must identify themselves with `externalUser` and `externalEmail`, logged-in customers may omit both. Replies below an approved comment can be sent with `parentId`.",
+                "operationId": "saveBlogComment",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/swLanguageId"
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "blogId",
+                                    "content",
+                                    "externalUser",
+                                    "externalEmail"
+                                ],
+                                "properties": {
+                                    "blogId": {
+                                        "description": "Identifier of the blog entry the comment belongs to.",
+                                        "type": "string",
+                                        "pattern": "^[0-9a-f]{32}$"
+                                    },
+                                    "parentId": {
+                                        "description": "Identifier of the approved comment this comment replies to. Required to be a comment of the same entry.",
+                                        "type": "string",
+                                        "pattern": "^[0-9a-f]{32}$"
+                                    },
+                                    "title": {
+                                        "description": "Optional headline of the comment.",
+                                        "type": "string"
+                                    },
+                                    "content": {
+                                        "description": "The comment text, at least 10 characters.",
+                                        "type": "string"
+                                    },
+                                    "externalUser": {
+                                        "description": "Display name of a guest author. Required for guests, ignored for logged-in customers.",
+                                        "type": "string"
+                                    },
+                                    "externalEmail": {
+                                        "description": "Email address of a guest author, used for the flood limit and moderation. Required for guests, ignored for logged-in customers.",
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "204": {
+                        "description": "The comment was accepted and is stored (possibly awaiting moderation)."
+                    }
+                },
+                "security": [
+                    {
+                        "ApiKey": []
+                    }
+                ]
+            }
+        }
+    }
+}

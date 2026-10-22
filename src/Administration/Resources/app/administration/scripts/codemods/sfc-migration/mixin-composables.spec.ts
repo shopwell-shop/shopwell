@@ -135,14 +135,14 @@ describe('scripts/codemods/sfc-migration mixin composables', () => {
 
         expect(result.outcome).toBe('full');
         expect(result.reasons).toEqual([]);
-        expect(result.sfc).toContain("import { useNotification, useSalutation } from 'shopwell:composables';");
+        expect(result.sfc).toContain("import { useNotification, usePlaceholder } from 'shopwell:composables';");
         expect(result.sfc).not.toContain('src/app/composables');
         expect(result.sfc).toContain('const { createNotificationSuccess } = useNotification();');
 
-        // `salutation` appears in the template only, so nothing rewrote a reference to it — the
+        // `placeholder` appears in the template only, so nothing rewrote a reference to it — the
         // declaration exists because the template needs the binding.
-        expect(result.sfc).toContain('const { salutation } = useSalutation();');
-        expect(result.sfc).toContain('salutation,');
+        expect(result.sfc).toContain('const { placeholder } = usePlaceholder();');
+        expect(result.sfc).toContain('placeholder,');
 
         // Members the component never touches are not destructured.
         expect(result.sfc).not.toContain('createNotificationError');
@@ -183,8 +183,8 @@ describe('scripts/codemods/sfc-migration mixin composables', () => {
 
         expect(result.outcome).toBe('full');
         expect(result.reasons).toEqual([]);
-        expect(result.sfc).toContain('const { salutation } = useSalutation();');
-        expect(result.sfc).toContain('const salutationFilter = computed(');
+        expect(result.sfc).toContain('const { getInlineSnippet } = useInlineSnippet();');
+        expect(result.sfc).toContain('const swInlineSnippetFallbackLocale = computed(');
     });
 
     // Which names a component puts on the instance is answered twice: `collectOwnMemberNames()` for
@@ -223,9 +223,9 @@ describe('scripts/codemods/sfc-migration mixin composables', () => {
             'sw-mixin-internal-override',
             "component redefines 'createNotification', which the 'notification' composable calls internally",
         ],
-        ['sw-mixin-unmapped', "'salutationFilter' is read but the 'salutation' composable does not provide it"],
+        ['sw-mixin-unmapped', "'swInlineSnippetLocale' is read but the 'sw-inline-snippet' composable does not provide it"],
         ['sw-mixin-cms-element-service', "'cmsService' is read but the 'cms-element' composable does not provide it"],
-        ['sw-mixin-template-collision', "'salutation' is read in the template and its binding name is already taken"],
+        ['sw-mixin-template-collision', "'placeholder' is read in the template and its binding name is already taken"],
     ])('skips %s, whose mixin members the composable cannot stand in for', async (name, reason) => {
         const result = await convertFixture(name);
 
@@ -238,17 +238,17 @@ describe('scripts/codemods/sfc-migration mixin composables', () => {
         // The generated name is the codemod's, not the developer's, so the draft asks for a look.
         expect(result.outcome).toBe('partial');
         expect(result.reasons).toEqual([
-            "'salutation' was renamed to 'salutation$1' — its name is already taken by another binding",
+            "'placeholder' was renamed to 'placeholder$1' — its name is already taken by another binding",
         ]);
-        expect(result.sfc).toContain('const { salutation: salutation$1 } = useSalutation();');
+        expect(result.sfc).toContain('const { placeholder: placeholder$1 } = usePlaceholder();');
 
-        // The module-level helper keeps every bare reference; only `this.salutation` moves.
-        expect(result.sfc).toContain('return salutation(props.customer);');
-        expect(result.sfc).toContain("return salutation$1(props.customer, 'no name');");
+        // The module-level helper keeps every bare reference; only `this.placeholder` moves.
+        expect(result.sfc).toContain("return placeholder(props.customer, 'name', '');");
+        expect(result.sfc).toContain("return placeholder$1(props.customer, 'name', 'no name');");
 
         // swDefinePublic takes shorthand bindings only, so the renamed member stays private
         // instead of being published under the generated name.
-        expect(result.sfc).not.toContain('salutation$1,');
+        expect(result.sfc).not.toContain('placeholder$1,');
     });
 
     // The rename is a local decision about one declaration, so the TODO sits with it instead of in
@@ -258,9 +258,9 @@ describe('scripts/codemods/sfc-migration mixin composables', () => {
 
         expect(result.sfc).toContain(
             [
-                "// TODO(sfc-migration) VERIFY: 'salutation' was renamed to 'salutation$1' — its name is already taken by another binding",
+                "// TODO(sfc-migration) VERIFY: 'placeholder' was renamed to 'placeholder$1' — its name is already taken by another binding",
                 '// The draft runs as emitted; a renamed member stays out of swDefinePublic, so rename it and its uses to have it public or prettier',
-                'const { salutation: salutation$1 } = useSalutation();',
+                'const { placeholder: placeholder$1 } = usePlaceholder();',
             ].join('\n'),
         );
     });

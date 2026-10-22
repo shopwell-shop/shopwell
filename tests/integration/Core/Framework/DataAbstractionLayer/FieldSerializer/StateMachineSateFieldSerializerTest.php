@@ -28,9 +28,9 @@ use Shopwell\Core\Test\TestDefaults;
 #[Package('framework')]
 class StateMachineSateFieldSerializerTest extends TestCase
 {
+    use BasicTestDataBehaviour;
     use DatabaseTransactionBehaviour;
     use KernelTestBehaviour;
-    use BasicTestDataBehaviour;
 
     /**
      * @var EntityRepository<OrderCollection>

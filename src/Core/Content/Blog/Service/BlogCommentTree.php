@@ -32,8 +32,6 @@ use Shopwell\Core\Framework\Log\Package;
  *
  * Pagination counts roots only. A page that cut replies apart from their parent would be unreadable,
  * so a page is ten roots including every reply they carry.
- *
- * @final
  */
 #[Package('discovery')]
 final class BlogCommentTree
@@ -45,9 +43,6 @@ final class BlogCommentTree
      */
     final public const MAX_COMMENTS = 2000;
 
-    /**
-     * @return BlogCommentTreeResult
-     */
     public function build(
         BlogCommentCollection $comments,
         int $page = 1,

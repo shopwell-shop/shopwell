@@ -12,6 +12,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\Required;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\SearchRanking;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\IdField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\IntField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\ManyToManyAssociationField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\OneToManyAssociationField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\TranslatedField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\TranslationsAssociationField;
@@ -20,6 +21,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\FieldCollection;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Position\Aggregate\PositionTranslation\PositionTranslationDefinition;
 use Shopwell\Core\System\User\Aggregate\UserPosition\UserPositionDefinition;
+use Shopwell\Core\System\User\UserDefinition;
 
 /**
  * @codeCoverageIgnore
@@ -70,6 +72,7 @@ class PositionDefinition extends EntityDefinition
 
             (new TranslationsAssociationField(PositionTranslationDefinition::class, 'position_id'))->addFlags(new ApiAware(), new Required()),
             (new OneToManyAssociationField('userPositions', UserPositionDefinition::class, 'position_id', 'id'))->addFlags(new CascadeDelete()),
+            new ManyToManyAssociationField('users', UserDefinition::class, UserPositionDefinition::class, 'position_id', 'user_id'),
         ]);
     }
 }

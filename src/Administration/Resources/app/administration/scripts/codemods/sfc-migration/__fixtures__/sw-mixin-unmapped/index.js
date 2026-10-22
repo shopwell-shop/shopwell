@@ -7,20 +7,14 @@ export default {
     template,
 
     mixins: [
-        Shopwell.Mixin.getByName('salutation'),
+        Shopwell.Mixin.getByName('sw-inline-snippet'),
     ],
 
-    data() {
-        return {
-            customer: null,
-        };
-    },
-
     methods: {
-        // `salutationFilter` is the mixin's own computed; the composable inlines it and returns only
-        // the formatting helper, so this read has nothing to resolve against after the migration.
+        // `swInlineSnippetLocale` is the mixin's own computed; the composable inlines it and returns
+        // only the formatting helper, so this read has nothing to resolve against after the migration.
         formatShort() {
-            return this.salutationFilter(this.customer, '');
+            return this.swInlineSnippetLocale;
         },
     },
 };

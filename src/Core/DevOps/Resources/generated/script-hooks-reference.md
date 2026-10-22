@@ -48,30 +48,6 @@ All available Hooks that can be used to load additional data.
 | **Available Services** | [repository](./data-loading-script-services-reference#RepositoryFacade)<br>[config](./miscellaneous-script-services-reference#SystemConfigFacade)<br>[store](./data-loading-script-services-reference#SalesChannelRepositoryFacade)<br>[acl](./miscellaneous-script-services-reference#AclFacade)<br> |
 | **Stoppable**          | `false`                  |
 
-### blog-detail-page-loaded
-
-| <!-- -->               | <!-- -->                                |
-|:-----------------------|:----------------------------------------|
-| **Name**               | blog-detail-page-loaded                         |
-| **Since**              | 6.7.18.0                        |
-| **Class**              | `Shopwell\Core\Content\Blog\SalesChannel\BlogDetailPageLoadedHook`                      |
-| **Description**        | Triggered when a blog detail page is loaded<br>                  |
-| **Available Data**     | context: [`Shopwell\Core\Framework\Context`](https://github.com/shopwell-shop/shopwell/blob/trunk/src/Core/Framework/Context.php)<br>page: [`Shopwell\Core\Content\Blog\SalesChannel\BlogDetailPage`](https://github.com/shopwell-shop/shopwell/blob/trunk/src/Core/Content/Blog/SalesChannel/BlogDetailPage.php)<br>salesChannelContext: [`Shopwell\Core\System\SalesChannel\SalesChannelContext`](https://github.com/shopwell-shop/shopwell/blob/trunk/src/Core/System/SalesChannel/SalesChannelContext.php)<br>        |
-| **Available Services** | [repository](./data-loading-script-services-reference#RepositoryFacade)<br>[config](./miscellaneous-script-services-reference#SystemConfigFacade)<br>[store](./data-loading-script-services-reference#SalesChannelRepositoryFacade)<br>[request](./miscellaneous-script-services-reference#RequestFacade)<br>[acl](./miscellaneous-script-services-reference#AclFacade)<br> |
-| **Stoppable**          | `false`                  |
-
-### blog-page-loaded
-
-| <!-- -->               | <!-- -->                                |
-|:-----------------------|:----------------------------------------|
-| **Name**               | blog-page-loaded                         |
-| **Since**              | 6.7.18.0                        |
-| **Class**              | `Shopwell\Core\Content\Blog\SalesChannel\BlogPageLoadedHook`                      |
-| **Description**        | Triggered when the blog listing page is loaded<br>                  |
-| **Available Data**     | context: [`Shopwell\Core\Framework\Context`](https://github.com/shopwell-shop/shopwell/blob/trunk/src/Core/Framework/Context.php)<br>page: [`Shopwell\Core\Content\Blog\SalesChannel\BlogPage`](https://github.com/shopwell-shop/shopwell/blob/trunk/src/Core/Content/Blog/SalesChannel/BlogPage.php)<br>salesChannelContext: [`Shopwell\Core\System\SalesChannel\SalesChannelContext`](https://github.com/shopwell-shop/shopwell/blob/trunk/src/Core/System/SalesChannel/SalesChannelContext.php)<br>        |
-| **Available Services** | [repository](./data-loading-script-services-reference#RepositoryFacade)<br>[config](./miscellaneous-script-services-reference#SystemConfigFacade)<br>[store](./data-loading-script-services-reference#SalesChannelRepositoryFacade)<br>[request](./miscellaneous-script-services-reference#RequestFacade)<br>[acl](./miscellaneous-script-services-reference#AclFacade)<br> |
-| **Stoppable**          | `false`                  |
-
 ### cookie-group-collect
 
 | <!-- -->               | <!-- -->                                |
@@ -297,6 +273,30 @@ All available Hooks that can be used to load additional data.
 | **Class**              | `Shopwell\Storefront\Page\Address\Listing\AddressListingPageLoadedHook`                      |
 | **Description**        | Triggered when the AddressListingPage is loaded<br>                  |
 | **Available Data**     | context: [`Shopwell\Core\Framework\Context`](https://github.com/shopwell-shop/shopwell/blob/trunk/src/Core/Framework/Context.php)<br>page: [`Shopwell\Storefront\Page\Address\Listing\AddressListingPage`](https://github.com/shopwell-shop/shopwell/blob/trunk/src/Storefront/Page/Address/Listing/AddressListingPage.php)<br>salesChannelContext: [`Shopwell\Core\System\SalesChannel\SalesChannelContext`](https://github.com/shopwell-shop/shopwell/blob/trunk/src/Core/System/SalesChannel/SalesChannelContext.php)<br>        |
+| **Available Services** | [repository](./data-loading-script-services-reference#RepositoryFacade)<br>[config](./miscellaneous-script-services-reference#SystemConfigFacade)<br>[store](./data-loading-script-services-reference#SalesChannelRepositoryFacade)<br>[request](./miscellaneous-script-services-reference#RequestFacade)<br>[acl](./miscellaneous-script-services-reference#AclFacade)<br> |
+| **Stoppable**          | `false`                  |
+
+### blog-detail-page-loaded
+
+| <!-- -->               | <!-- -->                                |
+|:-----------------------|:----------------------------------------|
+| **Name**               | blog-detail-page-loaded                         |
+| **Since**              | 6.7.18.0                        |
+| **Class**              | `Shopwell\Storefront\Page\Blog\BlogDetailPageLoadedHook`                      |
+| **Description**        | Triggered when a blog detail page is loaded<br>                  |
+| **Available Data**     | context: [`Shopwell\Core\Framework\Context`](https://github.com/shopwell-shop/shopwell/blob/trunk/src/Core/Framework/Context.php)<br>page: [`Shopwell\Storefront\Page\Blog\BlogDetailPage`](https://github.com/shopwell-shop/shopwell/blob/trunk/src/Storefront/Page/Blog/BlogDetailPage.php)<br>salesChannelContext: [`Shopwell\Core\System\SalesChannel\SalesChannelContext`](https://github.com/shopwell-shop/shopwell/blob/trunk/src/Core/System/SalesChannel/SalesChannelContext.php)<br>        |
+| **Available Services** | [repository](./data-loading-script-services-reference#RepositoryFacade)<br>[config](./miscellaneous-script-services-reference#SystemConfigFacade)<br>[store](./data-loading-script-services-reference#SalesChannelRepositoryFacade)<br>[request](./miscellaneous-script-services-reference#RequestFacade)<br>[acl](./miscellaneous-script-services-reference#AclFacade)<br> |
+| **Stoppable**          | `false`                  |
+
+### blog-page-loaded
+
+| <!-- -->               | <!-- -->                                |
+|:-----------------------|:----------------------------------------|
+| **Name**               | blog-page-loaded                         |
+| **Since**              | 6.7.18.0                        |
+| **Class**              | `Shopwell\Storefront\Page\Blog\BlogPageLoadedHook`                      |
+| **Description**        | Triggered when the blog listing page is loaded<br>                  |
+| **Available Data**     | context: [`Shopwell\Core\Framework\Context`](https://github.com/shopwell-shop/shopwell/blob/trunk/src/Core/Framework/Context.php)<br>page: [`Shopwell\Storefront\Page\Blog\BlogPage`](https://github.com/shopwell-shop/shopwell/blob/trunk/src/Storefront/Page/Blog/BlogPage.php)<br>salesChannelContext: [`Shopwell\Core\System\SalesChannel\SalesChannelContext`](https://github.com/shopwell-shop/shopwell/blob/trunk/src/Core/System/SalesChannel/SalesChannelContext.php)<br>        |
 | **Available Services** | [repository](./data-loading-script-services-reference#RepositoryFacade)<br>[config](./miscellaneous-script-services-reference#SystemConfigFacade)<br>[store](./data-loading-script-services-reference#SalesChannelRepositoryFacade)<br>[request](./miscellaneous-script-services-reference#RequestFacade)<br>[acl](./miscellaneous-script-services-reference#AclFacade)<br> |
 | **Stoppable**          | `false`                  |
 
