@@ -183,7 +183,7 @@ class AccountNewsletterRecipientRouteTest extends TestCase
     {
         return [
             'guest' => true,
-            'salutationId' => $this->getValidSalutationId(),
+            'gender' => $this->getValidGender(),
             'name' => 'Max Mustermann',
             'email' => 'teg-reg@example.com',
             'storefrontUrl' => $storefrontUrl,
@@ -195,7 +195,7 @@ class AccountNewsletterRecipientRouteTest extends TestCase
             ],
             'shippingAddress' => [
                 'countryId' => $this->getValidCountryId(),
-                'salutationId' => $this->getValidSalutationId(),
+                'gender' => $this->getValidGender(),
                 'name' => 'Test 2 Example 2',
                 'street' => 'Examplestreet 111',
                 'zipcode' => '12341',

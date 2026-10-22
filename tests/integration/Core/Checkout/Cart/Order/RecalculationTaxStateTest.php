@@ -147,7 +147,7 @@ class RecalculationTaxStateTest extends TestCase
             'defaultBillingAddressId' => $defaultAddress['id'],
             'defaultShippingAddressId' => $defaultAddress['id'],
             'customerNumber' => 'CUSTOMER-1',
-            'salutationId' => $this->getValidSalutationId(),
+            'gender' => $this->getValidGender(),
             'name' => 'Max Mustermann',
             'email' => $customerId . '@example.com',
             'password' => TestDefaults::HASHED_PASSWORD,
@@ -193,7 +193,7 @@ class RecalculationTaxStateTest extends TestCase
                 'customerId' => $customerId,
                 'email' => 'test@example.com',
                 'name' => 'Max Mustermann',
-                'salutationId' => $this->getValidSalutationId(),
+                'gender' => $this->getValidGender(),
             ],
             'lineItems' => [[
                 'id' => $lineItemId,
@@ -227,7 +227,7 @@ class RecalculationTaxStateTest extends TestCase
     {
         return [
             'id' => $id,
-            'salutationId' => $this->getValidSalutationId(),
+            'gender' => $this->getValidGender(),
             'name' => 'Max Mustermann',
             'company' => 'Shopwell',
             'street' => $street,

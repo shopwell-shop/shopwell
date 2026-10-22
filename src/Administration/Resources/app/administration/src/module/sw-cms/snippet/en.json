@@ -111,6 +111,8 @@
           "page": "Shop page",
           "productList": "Listing page",
           "productDetail": "Product page",
+          "blogDetail": "Article page",
+          "blogListing": "Article listing page",
           "customEntityDetail": "Content layout",
           "customEntityList": "Content listing page"
         },
@@ -549,8 +551,8 @@
             "newsletterSubmit": "Continue",
             "phone": "Phone number*",
             "privacy": "Privacy*",
-            "salutation": "Salutation*",
-            "salutationUndisclosed": "Prefer not to disclose",
+            "gender": "Gender*",
+            "genderUndisclosed": "Prefer not to disclose",
             "subject": "Subject line*",
             "subscribeToNewsletter": "Subscribe to newsletter",
             "contractNumber": "Contract number (order number, subscription number, ...)*    ",
@@ -571,7 +573,7 @@
           "newsletter": {
             "label": {
               "name": "Name",
-              "salutation": "Salutation"
+              "gender": "Gender"
             }
           }
         },
@@ -656,6 +658,17 @@
         "labelContent": "Content",
         "config": {
           "warning": "Unfiltered HTML code can lead to security risks. Please only insert HTML code from trusted sources and test your changes before publishing them."
+        }
+      },
+      "blogListing": {
+        "label": "Article listing",
+        "config": {
+          "label": {
+            "layout": "Listing layout",
+            "layoutClassic": "Classic",
+            "layoutGrid": "Grid",
+            "layoutList": "List"
+          }
         }
       }
     },

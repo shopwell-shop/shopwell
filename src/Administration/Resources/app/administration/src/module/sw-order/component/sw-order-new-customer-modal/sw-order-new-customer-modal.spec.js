@@ -50,6 +50,9 @@ async function createWrapper({
                 'sw-loader': true,
             },
             provide: {
+                dictionaryService: {
+                    getGenders: jest.fn(() => Promise.resolve([])),
+                },
                 repositoryFactory: {
                     create: (entity) => {
                         if (entity === 'customer') {
@@ -84,16 +87,6 @@ async function createWrapper({
                                     Promise.resolve({
                                         total: 1,
                                         data: ['1'],
-                                    }),
-                            };
-                        }
-
-                        if (entity === 'salutation') {
-                            return {
-                                searchIds: () =>
-                                    Promise.resolve({
-                                        total: 1,
-                                        data: ['salutationId'],
                                     }),
                             };
                         }
@@ -393,8 +386,8 @@ describe('src/module/sw-order/component/sw-order-new-customer-modal', () => {
         expect(swBillingAddressTab.find('.mt-icon').exists()).toBe(false);
     });
 
-    it('should get default salutation is value not specified', async () => {
-        expect(wrapper.vm.customer.salutationId).toBe('salutationId');
+    it('should set the default gender to not_specified', async () => {
+        expect(wrapper.vm.customer.gender).toBe('not_specified');
     });
 
     it('should set defaultShippingAddressId to defaultBillingAddressId when newValue is true', async () => {
@@ -449,8 +442,7 @@ describe('src/module/sw-order/component/sw-order-new-customer-modal', () => {
 
         expect(wrapper.vm.customer.defaultShippingAddressId).toBe('new-shipping-address-id');
         expect(wrapper.vm.customer.addresses.has('new-shipping-address-id')).toBe(true);
-        expect(wrapper.vm.defaultSalutationId).toBe('salutationId');
-        expect(wrapper.vm.customer.addresses.get('new-shipping-address-id').salutationId).toBe('salutationId');
+        expect(wrapper.vm.customer.addresses.get('new-shipping-address-id').gender).toBe('not_specified');
     });
 
     it('should does not change defaultShippingAddressId if newValue is the same as isSameBilling', async () => {

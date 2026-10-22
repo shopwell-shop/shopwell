@@ -189,7 +189,7 @@ class SetPaymentOrderRouteTest extends TestCase
     {
         $id1 = Uuid::randomHex();
 
-        $salutationId = $this->getValidSalutationId();
+        $gender = $this->getValidGender();
 
         $this->customerRepository->create([[
             'id' => $id1,
@@ -200,7 +200,7 @@ class SetPaymentOrderRouteTest extends TestCase
                 'city' => 'not',
                 'street' => 'not',
                 'zipcode' => 'not',
-                'salutationId' => $salutationId,
+                'gender' => $gender,
                 'country' => ['name' => 'not'],
             ],
             'defaultBillingAddressId' => $id1,
@@ -208,7 +208,7 @@ class SetPaymentOrderRouteTest extends TestCase
             'email' => Uuid::randomHex() . '@example.com',
             'password' => 'not12345',
             'name' => 'First name',
-            'salutationId' => $salutationId,
+            'gender' => $gender,
             'customerNumber' => 'not',
         ]], Context::createDefaultContext());
 

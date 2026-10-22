@@ -1,0 +1,9 @@
+.sw-dashboard-loyalty-distribution {
+    &__empty {
+        padding: var(--scale-size-32) 0;
+        color: var(--color-text-secondary-default);
+        font-size: var(--font-size-s);
+        line-height: var(--font-line-height-s);
+        text-align: center;
+    }
+}

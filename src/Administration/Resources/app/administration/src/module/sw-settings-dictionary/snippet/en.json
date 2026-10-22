@@ -1,0 +1,54 @@
+{
+  "sw-settings-dictionary": {
+    "general": {
+      "mainMenuItemGeneral": "Dictionaries",
+      "description": "Manage reusable data dictionaries like salutations.",
+      "placeholderSearchBar": "Search dictionary types...",
+      "treeHeadline": "Dictionaries"
+    },
+    "list": {
+      "textHeadline": "Dictionaries"
+    },
+    "typeList": {
+      "buttonAddType": "Add type",
+      "columnLabel": "Name",
+      "columnTechnicalName": "Technical name",
+      "columnEntries": "Entries",
+      "columnActive": "Active",
+      "labelName": "Name",
+      "placeholderName": "Enter name...",
+      "placeholderTechnicalName": "e.g. salutation",
+      "helpTextTechnicalName": "Unique technical name. It cannot be changed later, because storefronts and integrations reference it.",
+      "labelActive": "Active",
+      "modalTitleCreate": "Add dictionary type",
+      "messageEmpty": "No dictionary types yet",
+      "messageSaveSuccess": "Dictionary type \"{name}\" has been saved.",
+      "messageSaveError": "The dictionary type could not be saved.",
+      "messageLoadError": "The dictionary types could not be loaded.",
+      "messageDeleteError": "The dictionary type could not be deleted. It may still be in use.",
+      "messageTechnicalNameRequired": "A technical name is required.",
+      "textDeleteConfirm": "Are you sure you want to delete the dictionary type \"{name}\"? Its entries will be deleted as well."
+    },
+    "entryList": {
+      "buttonAddEntry": "Add entry",
+      "columnLabel": "Name",
+      "columnTechnicalName": "Technical value",
+      "columnPosition": "Sort order",
+      "columnActive": "Active",
+      "labelActive": "Active",
+      "placeholderLabel": "Enter name...",
+      "placeholderTechnicalName": "e.g. mr",
+      "helpTextTechnicalName": "Unique within this dictionary type. It cannot be changed later, because customers and orders reference it.",
+      "modalTitleCreate": "Add entry",
+      "messageEmpty": "This dictionary type has no entries yet",
+      "messageSaveSuccess": "Entry \"{name}\" has been saved.",
+      "messageSaveError": "The entry could not be saved.",
+      "messageLoadError": "The entries could not be loaded.",
+      "messageDeleteError": "The entry could not be deleted. It may still be referenced by customers or orders. Deactivate it instead.",
+      "messageLabelRequired": "A name is required.",
+      "messageTechnicalNameRequired": "A technical value is required.",
+      "messageTechnicalNameDuplicate": "This technical value already exists in this dictionary type.",
+      "textDeleteConfirm": "Are you sure you want to delete the entry \"{name}\"?"
+    }
+  }
+}

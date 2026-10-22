@@ -49,6 +49,7 @@ import CustomEntityDefinitionService from 'src/app/service/custom-entity-definit
 import FileValidationService from 'src/app/service/file-validation.service';
 import SnackbarService from 'src/app/service/snackbar.service';
 import CacheService from 'src/app/service/cache.service';
+import DictionaryService from 'src/app/service/dictionary.service';
 
 /** Import Feature */
 import Feature from 'src/core/feature';
@@ -223,6 +224,9 @@ Application.addServiceProvider('feature', () => {
     })
     .addServiceProvider('shopwellDiscountCampaignService', () => {
         return new ShopwellDiscountCampaignService();
+    })
+    .addServiceProvider('dictionaryService', () => {
+        return new DictionaryService();
     })
     .addServiceProvider('searchRankingService', () => {
         return new SearchRankingService();

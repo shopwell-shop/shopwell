@@ -419,7 +419,7 @@ class DocumentGeneratorControllerTest extends TestCase
             'orderCustomer' => [
                 'customerId' => $customerId,
                 'email' => 'test@example.com',
-                'salutationId' => $this->getValidSalutationId(),
+                'gender' => $this->getValidGender(),
                 'name' => 'Max Mustermann',
             ],
             'stateId' => $stateId,
@@ -431,7 +431,7 @@ class DocumentGeneratorControllerTest extends TestCase
             'addresses' => [
                 [
                     'id' => $billingAddressId,
-                    'salutationId' => $this->getValidSalutationId(),
+                    'gender' => $this->getValidGender(),
                     'name' => 'Max Mustermann',
                     'street' => 'Ebbinghoff 10',
                     'zipcode' => '48624',

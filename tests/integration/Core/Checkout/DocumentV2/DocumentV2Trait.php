@@ -83,7 +83,7 @@ trait DocumentV2Trait
         return [
             'id' => $addressId,
             'countryId' => $this->getValidCountryId(),
-            'salutationId' => $this->getValidSalutationId(),
+            'gender' => $this->getValidGender(),
             'name' => 'john doe',
             'street' => 'example street 11',
             'zipcode' => '12345',

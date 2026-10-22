@@ -673,7 +673,7 @@ class CartRestorerTest extends TestCase
                 'street' => 'Musterstraße 1',
                 'city' => 'Schöppingen',
                 'zipcode' => '12345',
-                'salutationId' => $this->getValidSalutationId(),
+                'gender' => $this->getValidGender(),
                 'countryId' => $this->getValidCountryId(),
             ],
             'defaultBillingAddressId' => $addressId,
@@ -681,7 +681,7 @@ class CartRestorerTest extends TestCase
             'email' => 'foo@bar.de',
             'password' => 'password',
             'name' => 'Max Mustermann',
-            'salutationId' => $this->getValidSalutationId(),
+            'gender' => $this->getValidGender(),
             'customerNumber' => '12345',
         ];
 

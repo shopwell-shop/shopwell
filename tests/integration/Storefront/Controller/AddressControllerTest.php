@@ -212,7 +212,7 @@ class AddressControllerTest extends TestCase
                 'street' => 'Musterstraße 1',
                 'city' => 'Schöppingen',
                 'zipcode' => '12345',
-                'salutationId' => $this->getValidSalutationId(),
+                'gender' => $this->getValidGender(),
                 'countryId' => $this->getValidCountryId(),
             ],
         ]);
@@ -729,7 +729,7 @@ class AddressControllerTest extends TestCase
                 'street' => 'Musterstraße 1',
                 'city' => 'Schöppingen',
                 'zipcode' => '12345',
-                'salutationId' => $this->getValidSalutationId(),
+                'gender' => $this->getValidGender(),
                 'countryId' => $this->getValidCountryId(),
             ],
             'defaultBillingAddressId' => $this->addressId,
@@ -737,7 +737,7 @@ class AddressControllerTest extends TestCase
             'email' => 'test@example.com',
             'password' => 'test12345',
             'name' => 'Max Mustermann',
-            'salutationId' => $this->getValidSalutationId(),
+            'gender' => $this->getValidGender(),
             'customerNumber' => '12345',
         ];
 
@@ -765,7 +765,7 @@ class AddressControllerTest extends TestCase
         $id1 = Uuid::randomHex();
         $id2 = Uuid::randomHex();
 
-        $salutationId = $this->getValidSalutationId();
+        $gender = $this->getValidGender();
 
         $customers = [
             [
@@ -777,7 +777,7 @@ class AddressControllerTest extends TestCase
                     'city' => 'not',
                     'street' => 'not',
                     'zipcode' => 'not',
-                    'salutationId' => $salutationId,
+                    'gender' => $gender,
                     'country' => ['name' => 'not'],
                 ],
                 'defaultBillingAddressId' => $id1,
@@ -785,7 +785,7 @@ class AddressControllerTest extends TestCase
                 'email' => Uuid::randomHex() . '@example.com',
                 'password' => 'not12345',
                 'name' => 'First name',
-                'salutationId' => $salutationId,
+                'gender' => $gender,
                 'customerNumber' => 'not',
             ],
             [
@@ -797,7 +797,7 @@ class AddressControllerTest extends TestCase
                     'city' => 'not',
                     'street' => 'not',
                     'zipcode' => 'not',
-                    'salutationId' => $salutationId,
+                    'gender' => $gender,
                     'country' => ['name' => 'not'],
                 ],
                 'defaultBillingAddressId' => $id2,
@@ -805,7 +805,7 @@ class AddressControllerTest extends TestCase
                 'email' => Uuid::randomHex() . '@example.com',
                 'password' => 'not12345',
                 'name' => 'First name',
-                'salutationId' => $salutationId,
+                'gender' => $gender,
                 'customerNumber' => 'not',
             ],
         ];
@@ -827,7 +827,7 @@ class AddressControllerTest extends TestCase
                 'street' => 'Musterstraße 1',
                 'city' => 'Schöppingen',
                 'zipcode' => '12345',
-                'salutationId' => $this->getValidSalutationId(),
+                'gender' => $this->getValidGender(),
                 'countryId' => $this->getValidCountryId(),
             ],
         ], Context::createDefaultContext());

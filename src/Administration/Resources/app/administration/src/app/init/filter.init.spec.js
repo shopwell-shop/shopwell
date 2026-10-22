@@ -14,7 +14,6 @@ describe('src/app/init/filter.init.js', () => {
         'date',
         'fileSize',
         'mediaName',
-        'salutation',
         'stockColorVariant',
         'striphtml',
         'thumbnailSize',

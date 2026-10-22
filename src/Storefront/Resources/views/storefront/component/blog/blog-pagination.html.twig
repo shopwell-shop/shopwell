@@ -1,0 +1,19 @@
+{# @sw-package discovery #}
+
+{#
+    Page links of the listing. The window logic lives in the shared pagination component, this wrapper
+    only hands it the two numbers the blog page already knows.
+
+    Expected variables: page (BlogPage), categoryId (string|null)
+#}
+{% block sw_blog_pagination %}
+    {% if page.totalPages > 1 %}
+        <div class="blog-pagination" data-blog-pagination>
+            {% sw_include '@Storefront/storefront/component/pagination.html.twig' with {
+                currentPage: page.pageNumber,
+                totalPages: page.totalPages,
+                paginationLocation: 'blog',
+            } only %}
+        </div>
+    {% endif %}
+{% endblock %}

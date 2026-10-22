@@ -1,0 +1,23 @@
+.sw-settings-organization-unit-tree {
+    display: flex;
+    flex-direction: column;
+    gap: var(--scale-size-8);
+    height: 100%;
+
+    &__search {
+        padding: 0 var(--scale-size-4);
+    }
+
+    &__content {
+        overflow: auto;
+    }
+
+    &__empty {
+        padding: var(--scale-size-16);
+        text-align: center;
+    }
+
+    &__empty-text {
+        color: var(--color-text-secondary-default);
+    }
+}

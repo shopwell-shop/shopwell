@@ -247,7 +247,7 @@ class AdministrationControllerTest extends TestCase
                 'street' => 'Musterstraße 1',
                 'city' => 'Schöppingen',
                 'zipcode' => '12345',
-                'salutationId' => $this->getValidSalutationId(),
+                'gender' => $this->getValidGender(),
                 'countryId' => $this->getValidCountryId(),
             ],
             'defaultBillingAddressId' => $addressId,
@@ -256,7 +256,7 @@ class AdministrationControllerTest extends TestCase
             'password' => TestDefaults::HASHED_PASSWORD,
             'name' => 'Max Mustermann',
             'guest' => false,
-            'salutationId' => $this->getValidSalutationId(),
+            'gender' => $this->getValidGender(),
             'customerNumber' => '12345',
         ], $overrideData);
 

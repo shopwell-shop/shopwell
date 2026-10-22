@@ -198,6 +198,16 @@
         },
         "mcpAllowlistTitle": "MCP 工具白名单",
         "mcpAllowlistSaveError": "MCP 白名单无法保存。",
+        "cardOrganizationUnits": "所属组织单元",
+        "labelOrganizationUnits": "组织单元",
+        "placeholderSelectUnits": "搜索并选择组织单元...",
+        "helperNoUnit": "未分配组织单元。",
+        "labelPrimaryUnit": "主归属单元",
+        "placeholderSelectPrimaryUnit": "请选择主归属单元...",
+        "helperPrimaryUnit": "主归属单元标识用户的主要隶属关系，用于统计与汇报线。",
+        "cardPositions": "岗位",
+        "labelPositions": "岗位",
+        "placeholderSelectPositions": "搜索并选择岗位...",
         "notification": {
           "saveError": {
             "message": "用户 \"{name}\" 无法保存。"

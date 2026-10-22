@@ -60,7 +60,7 @@ class DeleteAddressRouteTest extends TestCase
     {
         // Create
         $data = [
-            'salutationId' => $this->getValidSalutationId(),
+            'gender' => $this->getValidGender(),
             'name' => 'Test Test',
             'street' => 'Test',
             'city' => 'Test',
@@ -148,7 +148,7 @@ class DeleteAddressRouteTest extends TestCase
     public function testDeleteActiveAddress(): void
     {
         $data = [
-            'salutationId' => $this->getValidSalutationId(),
+            'gender' => $this->getValidGender(),
             'name' => 'Test Test',
             'street' => 'Test',
             'city' => 'Test',
@@ -201,7 +201,7 @@ class DeleteAddressRouteTest extends TestCase
 
         // Create
         $data = [
-            'salutationId' => $this->getValidSalutationId(),
+            'gender' => $this->getValidGender(),
             'name' => 'Test Test',
             'street' => 'Test',
             'city' => 'Test',

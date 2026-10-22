@@ -3,21 +3,21 @@
 namespace Shopwell\Storefront\Page\Account\Profile;
 
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\System\Salutation\SalutationCollection;
+use Shopwell\Core\System\Dictionary\Aggregate\DictionaryEntry\DictionaryEntryCollection;
 use Shopwell\Storefront\Page\Page;
 
 #[Package('checkout')]
 class AccountProfilePage extends Page
 {
-    protected SalutationCollection $salutations;
+    protected DictionaryEntryCollection $genders;
 
-    public function getSalutations(): SalutationCollection
+    public function getGenders(): DictionaryEntryCollection
     {
-        return $this->salutations;
+        return $this->genders;
     }
 
-    public function setSalutations(SalutationCollection $salutations): void
+    public function setGenders(DictionaryEntryCollection $genders): void
     {
-        $this->salutations = $salutations;
+        $this->genders = $genders;
     }
 }

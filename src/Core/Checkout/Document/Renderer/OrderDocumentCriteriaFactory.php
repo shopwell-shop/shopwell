@@ -43,7 +43,6 @@ final class OrderDocumentCriteriaFactory
             'currency',
             'language.locale',
             'addresses.country',
-            'addresses.salutation',
             'addresses.countryState',
             'addresses.countryCity',
             'addresses.countryDistrict',
@@ -54,7 +53,6 @@ final class OrderDocumentCriteriaFactory
             'deliveries.shippingOrderAddress.countryCity',
             'deliveries.shippingOrderAddress.countryDistrict',
             'orderCustomer.customer',
-            'orderCustomer.salutation',
         ]);
 
         if (!Feature::isActive('v6.8.0.0')) {

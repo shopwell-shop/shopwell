@@ -1,0 +1,38 @@
+{% block sw_blog_detail_content_unknown %}
+<div class="sw-blog-detail-content-unknown">
+    {% block sw_blog_detail_content_unknown_banner %}
+    <mt-banner
+        class="sw-blog-detail-content-unknown__banner"
+        variant="attention"
+        :title="$t('sw-blog.detail.unknownTitle')"
+    >
+        {{ description }}
+    </mt-banner>
+    {% endblock %}
+
+    {% block sw_blog_detail_content_unknown_fields %}
+    <dl class="sw-blog-detail-content-unknown__fields">
+        <dt class="sw-blog-detail-content-unknown__label">
+            {{ $t('sw-blog.detail.unknownLabelType') }}
+        </dt>
+        <dd class="sw-blog-detail-content-unknown__value">
+            {{ type }}
+        </dd>
+
+        <dt class="sw-blog-detail-content-unknown__label">
+            {{ $t('sw-blog.detail.unknownLabelId') }}
+        </dt>
+        <dd class="sw-blog-detail-content-unknown__value">
+            {{ blog.id }}
+        </dd>
+
+        <dt class="sw-blog-detail-content-unknown__label">
+            {{ $t('sw-blog.detail.unknownLabelPublishedAt') }}
+        </dt>
+        <dd class="sw-blog-detail-content-unknown__value">
+            {{ blog.publishedAt || '–' }}
+        </dd>
+    </dl>
+    {% endblock %}
+</div>
+{% endblock %}

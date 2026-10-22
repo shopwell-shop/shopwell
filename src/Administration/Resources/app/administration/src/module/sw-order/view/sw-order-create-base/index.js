@@ -55,7 +55,6 @@ export default {
         customerAddressCriteria() {
             const criteria = new Criteria(1, 25);
 
-            criteria.addAssociation('salutation');
             criteria.addAssociation('country');
             criteria.addAssociation('countryState');
 
@@ -67,15 +66,12 @@ export default {
             criteria
                 .addAssociation('addresses')
                 .addAssociation('group')
-                .addAssociation('salutation')
                 .addAssociation('salesChannel')
                 .addAssociation('lastPaymentMethod')
                 .addAssociation('defaultBillingAddress.country')
                 .addAssociation('defaultBillingAddress.countryState')
-                .addAssociation('defaultBillingAddress.salutation')
                 .addAssociation('defaultShippingAddress.country')
                 .addAssociation('defaultShippingAddress.countryState')
-                .addAssociation('defaultShippingAddress.salutation')
                 .addAssociation('tags');
 
             return criteria;

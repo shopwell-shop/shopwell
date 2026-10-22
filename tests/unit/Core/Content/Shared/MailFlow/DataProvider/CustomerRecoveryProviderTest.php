@@ -32,6 +32,6 @@ class CustomerRecoveryProviderTest extends AbstractProviderTestCase
 
     protected function getExpectedAssociations(): array
     {
-        return ['customer.salutation'];
+        return [];
     }
 }

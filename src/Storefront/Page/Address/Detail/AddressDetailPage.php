@@ -5,7 +5,7 @@ namespace Shopwell\Storefront\Page\Address\Detail;
 use Shopwell\Core\Checkout\Customer\Aggregate\CustomerAddress\CustomerAddressEntity;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Country\CountryCollection;
-use Shopwell\Core\System\Salutation\SalutationCollection;
+use Shopwell\Core\System\Dictionary\Aggregate\DictionaryEntry\DictionaryEntryCollection;
 use Shopwell\Storefront\Page\Page;
 
 #[Package('checkout')]
@@ -13,7 +13,7 @@ class AddressDetailPage extends Page
 {
     protected ?CustomerAddressEntity $address = null;
 
-    protected SalutationCollection $salutations;
+    protected DictionaryEntryCollection $genders;
 
     protected CountryCollection $countries;
 
@@ -27,14 +27,14 @@ class AddressDetailPage extends Page
         $this->address = $address;
     }
 
-    public function getSalutations(): SalutationCollection
+    public function getGenders(): DictionaryEntryCollection
     {
-        return $this->salutations;
+        return $this->genders;
     }
 
-    public function setSalutations(SalutationCollection $salutations): void
+    public function setGenders(DictionaryEntryCollection $genders): void
     {
-        $this->salutations = $salutations;
+        $this->genders = $genders;
     }
 
     public function getCountries(): CountryCollection

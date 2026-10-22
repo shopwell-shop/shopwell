@@ -59,10 +59,9 @@
                         "description": "Unique  number assigned to identity a customer.",
                         "type": "string"
                     },
-                    "salutationId": {
-                        "description": "Unique identity of salutation.",
-                        "type": "string",
-                        "pattern": "^[0-9a-f]{32}$"
+                    "gender": {
+                        "description": "Gender code of the customer (dictionary entry technical_name).",
+                        "type": "string"
                     },
                     "name": {
                         "description": "Full name of the customer.",
@@ -213,10 +212,6 @@
                     "activeShippingAddress": {
                         "$ref": "#/components/schemas/CustomerAddress",
                         "description": "Currently active shipping address in the session"
-                    },
-                    "salutation": {
-                        "$ref": "#/components/schemas/Salutation",
-                        "description": "Customer salutation (e.g., Mr., Mrs., Ms.)"
                     },
                     "addresses": {
                         "description": "All addresses saved for the customer",

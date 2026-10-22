@@ -441,7 +441,7 @@ class SmsLoginControllerTest extends TestCase
                 'street' => 'Musterstraße 1',
                 'city' => 'Schöppingen',
                 'zipcode' => '12345',
-                'salutationId' => $this->getValidSalutationId(),
+                'gender' => $this->getValidGender(),
                 'countryId' => $this->getValidCountryId(),
             ],
             'defaultBillingAddressId' => $addressId,
@@ -451,7 +451,7 @@ class SmsLoginControllerTest extends TestCase
             'name' => 'Max Mustermann',
             'phoneNumber' => $phoneNumber,
             'active' => true,
-            'salutationId' => $this->getValidSalutationId(),
+            'gender' => $this->getValidGender(),
             'customerNumber' => 'SW' . Uuid::randomHex(),
             'guest' => false,
         ];

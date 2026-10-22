@@ -15,6 +15,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Pricing\CashRoundingConfig;
 use Shopwell\Core\Framework\Demodata\PersonalData\CleanPersonalDataCommand;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Test\TestCaseBase\BasicTestDataBehaviour;
 use Shopwell\Core\Framework\Test\TestCaseBase\DatabaseTransactionBehaviour;
 use Shopwell\Core\Framework\Test\TestCaseBase\KernelTestBehaviour;
 use Shopwell\Core\Framework\Util\Random;
@@ -35,6 +36,7 @@ class CleanPersonalDataCommandTest extends TestCase
 {
     use DatabaseTransactionBehaviour;
     use KernelTestBehaviour;
+    use BasicTestDataBehaviour;
 
     private Connection $connection;
 
@@ -229,7 +231,7 @@ class CleanPersonalDataCommandTest extends TestCase
             'orderCustomer' => [
                 'customerId' => $customerId,
                 'email' => 'test@example.com',
-                'salutationId' => $this->fetchFirstIdFromTable('salutation'),
+                'gender' => $this->getValidGender(),
                 'name' => 'Max Mustermann',
             ],
             'stateId' => $this->fetchFirstIdFromTable('state_machine_state'),
@@ -241,7 +243,7 @@ class CleanPersonalDataCommandTest extends TestCase
             'addresses' => [
                 [
                     'id' => $addressId,
-                    'salutationId' => $this->fetchFirstIdFromTable('salutation'),
+                    'gender' => $this->getValidGender(),
                     'name' => 'Max Mustermann',
                     'street' => 'Ebbinghoff 10',
                     'zipcode' => '48624',
@@ -266,14 +268,14 @@ class CleanPersonalDataCommandTest extends TestCase
     private function createGuest(bool $isGuest = true): string
     {
         $id = Uuid::randomHex();
-        $salutation = $this->fetchFirstIdFromTable('salutation');
+        $salutation = $this->getValidGender();
 
         $address = [
             'name' => 'not not',
             'city' => 'not',
             'street' => 'not',
             'zipcode' => 'not',
-            'salutationId' => $salutation,
+            'gender' => $salutation,
             'country' => ['name' => 'not'],
         ];
 
@@ -284,7 +286,7 @@ class CleanPersonalDataCommandTest extends TestCase
             'groupId' => TestDefaults::FALLBACK_CUSTOMER_GROUP,
             'email' => Uuid::randomHex() . '@example.com',
             'name' => Random::getAlphanumericString(20),
-            'salutationId' => $salutation,
+            'gender' => $salutation,
             'customerNumber' => 'not',
             'guest' => $isGuest,
         ];

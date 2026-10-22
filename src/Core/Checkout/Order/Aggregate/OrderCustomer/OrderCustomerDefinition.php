@@ -21,7 +21,6 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Field\StringField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\VersionField;
 use Shopwell\Core\Framework\DataAbstractionLayer\FieldCollection;
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\System\Salutation\SalutationDefinition;
 
 /**
  * @codeCoverageIgnore
@@ -67,7 +66,7 @@ class OrderCustomerDefinition extends EntityDefinition
             (new ReferenceVersionField(OrderDefinition::class))->addFlags(new Required()),
 
             (new StringField('email', 'email'))->addFlags(new ApiAware(), new Required(), new SearchRanking(SearchRanking::HIGH_SEARCH_RANKING))->setDescription('Email address of the customer.'),
-            (new FkField('salutation_id', 'salutationId', SalutationDefinition::class))->addFlags(new ApiAware())->setDescription('Unique identity of salutation.'),
+            (new StringField('gender', 'gender'))->addFlags(new ApiAware())->setDescription('Gender code of the order customer (dictionary entry technical_name, e.g. male, female).'),
             (new StringField('name', 'name'))->addFlags(new ApiAware(), new Required(), new SearchRanking(SearchRanking::HIGH_SEARCH_RANKING))->setDescription('Full name of the customer.'),
             (new StringField('company', 'company'))->addFlags(new ApiAware(), new SearchRanking(SearchRanking::MIDDLE_SEARCH_RANKING))->setDescription('Name of the company.'),
             (new StringField('title', 'title'))->addFlags(new ApiAware())->setDescription('Title name given to the customer like Dr, prof. etc.'),
@@ -76,7 +75,6 @@ class OrderCustomerDefinition extends EntityDefinition
             (new CustomFields())->addFlags(new ApiAware())->setDescription('Additional fields that offer a possibility to add own fields for the different program-areas.'),
             new OneToOneAssociationField('order', 'order_id', 'id', OrderDefinition::class, false),
             (new ManyToOneAssociationField('customer', 'customer_id', CustomerDefinition::class, 'id', false))->addFlags(new SearchRanking(0.5)),
-            (new ManyToOneAssociationField('salutation', 'salutation_id', SalutationDefinition::class, 'id', false))->addFlags(new ApiAware()),
             (new RemoteAddressField('remote_address', 'remoteAddress'))->setDescription('Anonymous IP address of the customer for last session.'),
         ]);
     }

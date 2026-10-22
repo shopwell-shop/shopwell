@@ -43,7 +43,7 @@ class DocumentConfigValidationTest extends TestCase
             ->addAddress('billing_address', [
                 'id' => $ids->get('billing_address'),
                 'country' => ['id' => $this->getValidCountryId()],
-                'salutationId' => $this->getValidSalutationId(),
+                'gender' => $this->getValidGender(),
             ])
             ->orderCustomer('Customer', 'customer')
             ->addTransaction('transaction')

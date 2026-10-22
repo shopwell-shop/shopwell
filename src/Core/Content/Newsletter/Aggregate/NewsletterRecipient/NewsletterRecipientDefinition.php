@@ -19,7 +19,6 @@ use Shopwell\Core\Framework\DataAbstractionLayer\FieldCollection;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Language\LanguageDefinition;
 use Shopwell\Core\System\SalesChannel\SalesChannelDefinition;
-use Shopwell\Core\System\Salutation\SalutationDefinition;
 use Shopwell\Core\System\Tag\TagDefinition;
 
 /**
@@ -67,11 +66,10 @@ class NewsletterRecipientDefinition extends EntityDefinition
                 NewsletterSubscribeRoute::STATUS_DIRECT,
             ]))->setDescription('When status is set, the NewsletterRecipient is made visible.'),
             (new StringField('hash', 'hash'))->addFlags(new Required())->setDescription('Random string for the subscribe URL if opt-in is used.'),
+            (new StringField('gender', 'gender'))->setDescription('Gender code of the newsletter recipient (dictionary entry technical_name, e.g. male, female).'),
             (new CustomFields())->setDescription('Additional fields that offer a possibility to add own fields for the different program-areas.'),
             (new DateTimeField('confirmed_at', 'confirmedAt'))->setDescription('Date and time when the Newsletter was received.'),
             new ManyToManyAssociationField('tags', TagDefinition::class, NewsletterRecipientTagDefinition::class, 'newsletter_recipient_id', 'tag_id'),
-            (new FkField('salutation_id', 'salutationId', SalutationDefinition::class))->setDescription('Unique identity of salutation.'),
-            new ManyToOneAssociationField('salutation', 'salutation_id', SalutationDefinition::class, 'id', false),
 
             (new FkField('language_id', 'languageId', LanguageDefinition::class))->addFlags(new Required())->setDescription('Unique identity of language.'),
             new ManyToOneAssociationField('language', 'language_id', LanguageDefinition::class, 'id', false),

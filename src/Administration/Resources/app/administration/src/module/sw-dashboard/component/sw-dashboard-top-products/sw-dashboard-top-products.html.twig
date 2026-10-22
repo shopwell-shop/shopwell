@@ -1,0 +1,41 @@
+{% block sw_dashboard_top_products %}
+<mt-card
+    v-if="canViewOrders"
+    class="sw-dashboard-top-products mt-card--future-ignore-max-width"
+    :title="$t('sw-dashboard.topProducts.headline')"
+    :is-loading="isLoading"
+    position-identifier="sw-dashboard-top-products"
+>
+    {% block sw_dashboard_top_products_chart %}
+    <div
+        v-if="hasData"
+        class="sw-dashboard-top-products__chart"
+    >
+        <sw-chart
+            type="bar"
+            :series="series"
+            :options="chartOptions"
+            :height="240"
+        />
+    </div>
+
+    {% block sw_dashboard_top_products_empty %}
+    <div
+        v-else-if="!isLoading"
+        class="sw-dashboard-top-products__empty"
+    >
+        {{ $t('sw-dashboard.topProducts.empty') }}
+    </div>
+    {% endblock %}
+
+    {% block sw_dashboard_top_products_footer %}
+    <router-link
+        class="sw-dashboard-top-products__footer-link"
+        :to="{ name: 'sw.order.index' }"
+    >
+        {{ $t('sw-dashboard.topProducts.viewOrders') }}
+    </router-link>
+    {% endblock %}
+    {% endblock %}
+</mt-card>
+{% endblock %}

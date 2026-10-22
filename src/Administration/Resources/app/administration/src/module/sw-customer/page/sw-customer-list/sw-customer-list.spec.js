@@ -88,6 +88,20 @@ async function createWrapper(privileges = []) {
                         return term && term.trim().length >= 1;
                     },
                 },
+                dictionaryService: {
+                    getGenders: () => {
+                        return Promise.resolve([
+                            {
+                                technicalName: 'male',
+                                translated: { label: 'Male' },
+                            },
+                            {
+                                technicalName: 'female',
+                                translated: { label: 'Female' },
+                            },
+                        ]);
+                    },
+                },
             },
             stubs: {
                 'sw-page': {

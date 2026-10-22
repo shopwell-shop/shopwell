@@ -353,7 +353,7 @@ class RateLimiterTest extends TestCase
                     'POST',
                     '/store-api/contact-form',
                     [
-                        'salutationId' => $this->getValidSalutationId(),
+                        'gender' => $this->getValidGender(),
                         'name' => 'John Doe',
                         'email' => 'test@example.com',
                         'phone' => '+49123456789',

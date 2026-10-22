@@ -9,7 +9,7 @@ const allowUrlList = [
     '/search/product-review',
     '/search/property-group',
     '/search/newsletter-recipient',
-    '/search/salutation',
+    '/search/dictionary-entry',
     '/search/product-search-config',
     '/search/product-search-config-field',
     '_action/system-config',

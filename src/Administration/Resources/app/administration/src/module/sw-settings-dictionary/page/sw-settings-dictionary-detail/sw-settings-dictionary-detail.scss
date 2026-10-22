@@ -1,0 +1,21 @@
+.sw-settings-dictionary-detail {
+    &__back-link {
+        color: inherit;
+        text-decoration: none;
+
+        &:hover {
+            text-decoration: underline;
+        }
+    }
+
+    &__technical-name {
+        font-family: var(--font-family-monospace, monospace);
+        font-size: var(--font-size-xs);
+        color: var(--color-text-secondary-default);
+    }
+
+    &__label-inactive {
+        color: var(--color-text-secondary-default);
+        font-style: italic;
+    }
+}

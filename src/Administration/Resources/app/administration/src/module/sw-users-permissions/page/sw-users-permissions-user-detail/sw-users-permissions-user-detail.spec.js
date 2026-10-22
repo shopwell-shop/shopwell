@@ -107,6 +107,21 @@ async function createWrapper(
                                 };
                             }
 
+                            if (entityName === 'user_organization_unit') {
+                                return {
+                                    search: () => Promise.resolve([]),
+                                    save: () => Promise.resolve(),
+                                    delete: () => Promise.resolve(),
+                                    create: () => ({}),
+                                };
+                            }
+
+                            if (entityName === 'organization_unit' || entityName === 'position') {
+                                return {
+                                    search: () => Promise.resolve([]),
+                                };
+                            }
+
                             return {};
                         },
                     },

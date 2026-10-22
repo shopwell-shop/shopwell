@@ -1,0 +1,353 @@
+{% block sw_blog_list %}
+<sw-page
+    class="sw-blog-list"
+    position-identifier="sw-blog-list"
+>
+    {% block sw_blog_list_search_bar %}
+    <template #search-bar>
+        <sw-search-bar
+            initial-search-type="blog"
+            :initial-search="term"
+            :placeholder="$t('sw-blog.list.placeholderSearchBar')"
+            @search="onSearch"
+        />
+    </template>
+    {% endblock %}
+
+    {% block sw_blog_list_smart_bar_header %}
+    <template #smart-bar-header>
+        {% block sw_blog_list_smart_bar_header_title %}
+        <h2>
+            {% block sw_blog_list_smart_bar_header_title_text %}
+            {{ $t('sw-blog.list.title') }}
+            {% endblock %}
+
+            {% block sw_blog_list_smart_bar_header_amount %}
+            <span
+                v-if="!isLoading"
+                class="sw-page__smart-bar-amount"
+            >
+                ({{ total }})
+            </span>
+            {% endblock %}
+        </h2>
+        {% endblock %}
+    </template>
+    {% endblock %}
+
+    {% block sw_blog_list_smart_bar_actions %}
+    <template #smart-bar-actions>
+        {% block sw_blog_list_smart_bar_actions_comments %}
+        <mt-button
+            class="sw-blog-list__button-comments"
+            variant="secondary"
+            size="default"
+            @click="onOpenCommentList"
+        >
+            {{ $t('sw-blog.list.textCommentPending') }}
+            <mt-badge
+                v-if="pendingCommentCount > 0"
+                class="sw-blog-list__comment-count"
+                variant="attention"
+                size="small"
+            >
+                {{ pendingCommentCount }}
+            </mt-badge>
+        </mt-button>
+        {% endblock %}
+
+        {% block sw_blog_list_smart_bar_actions_add %}
+        <mt-button
+            class="sw-blog-list__button-create"
+            variant="primary"
+            size="default"
+            :disabled="!canCreate || undefined"
+            @click="onOpenCreateModal"
+        >
+            {{ $t('sw-blog.list.buttonCreate') }}
+        </mt-button>
+        {% endblock %}
+    </template>
+    {% endblock %}
+
+    {% block sw_blog_list_content %}
+    <template #content>
+        {% block sw_blog_list_content_inner %}
+        <div class="sw-blog-list__content">
+            {% block sw_blog_list_preset_author %}
+            <div
+                v-if="presetAuthorId"
+                class="sw-blog-list__preset"
+            >
+                <span class="sw-blog-list__preset-label">
+                    {{ $t('sw-blog.list.filterAuthor') }}:
+                </span>
+
+                <mt-badge
+                    class="sw-blog-list__preset-badge"
+                    variant="neutral"
+                    size="small"
+                >
+                    {{ presetAuthorName || presetAuthorId }}
+                </mt-badge>
+
+                <mt-button
+                    class="sw-blog-list__preset-reset"
+                    variant="tertiary"
+                    size="x-small"
+                    @click="onResetFilters"
+                >
+                    {{ $t('sw-blog.list.filterReset') }}
+                </mt-button>
+            </div>
+            {% endblock %}
+
+            {% block sw_blog_list_empty_state %}
+            {#
+            Two empty states: "nothing was written yet" is a shop without content, "nothing matches"
+            is the filter. Showing the first one after a filter would tell the merchant the shop is
+            empty when it only answered the question they asked.
+            #}
+            <mt-empty-state
+                v-if="!isLoading && !total && !hasActiveSearchOrFilter"
+                centered
+                class="sw-blog-list__empty-state"
+                icon="regular-image-text"
+                :headline="$t('sw-blog.list.messageEmpty')"
+                :description="$t('sw-blog.list.messageEmptySubline')"
+            />
+            {% endblock %}
+
+            {% block sw_blog_list_empty_state_filtered %}
+            <mt-empty-state
+                v-else-if="!isLoading && !total"
+                centered
+                class="sw-blog-list__empty-state"
+                icon="regular-search"
+                :headline="$t('sw-blog.list.messageEmptyFiltered')"
+                :description="$t('sw-blog.list.messageEmptyFilteredSubline')"
+            />
+            {% endblock %}
+
+            {% block sw_blog_list_grid %}
+            <sw-entity-listing
+                v-else
+                ref="listing"
+                class="sw-blog-list__grid"
+                identifier="sw-blog-list"
+                :data-source="blogs"
+                :columns="columns"
+                :repository="blogRepository"
+                :sort-by="sortBy"
+                :sort-direction="sortDirection"
+                :is-loading="isLoading"
+                :full-page="true"
+                :show-selection="false"
+                :show-settings="true"
+                :disable-data-fetching="true"
+                :allow-inline-edit="canEdit"
+                :allow-column-edit="true"
+                :allow-edit="canEdit"
+                :allow-delete="canDelete"
+                :allow-view="canEdit"
+                detail-route="sw.blog.detail"
+                @page-change="onPageChange"
+                @column-sort="onSortColumn"
+                @inline-edit-save="onInlineEditSave"
+            >
+                {% block sw_blog_list_grid_column_cover %}
+                <template #column-coverMediaId="{ item }">
+                    <sw-media-preview-v2
+                        v-if="item.coverMediaId"
+                        class="sw-blog-list__cover"
+                        :source="item.coverMediaId"
+                    />
+
+                    <div
+                        v-else
+                        class="sw-blog-list__cover-placeholder"
+                    />
+                </template>
+                {% endblock %}
+
+                {% block sw_blog_list_grid_column_title %}
+                <template #column-title="{ item, isInlineEdit }">
+                    {#
+                    The two renderings live in one block on purpose: the rebuilt template wraps
+                    every block in its own component, and a v-else after a block boundary loses
+                    its v-if.
+                    #}
+                    <mt-text-field
+                        v-if="isInlineEdit"
+                        v-model="item.title"
+                    />
+
+                    <div
+                        v-else
+                        class="sw-blog-list__title-cell"
+                    >
+                        <span class="sw-blog-list__title-text">{{ item.title }}</span>
+
+                        <span class="sw-blog-list__title-subline">
+                            {{ item.author?.name || $t('sw-blog.detail.textNoAuthor') }} ·
+                            {{ item.publishedAt || $t('sw-blog.list.textUnscheduled') }}
+                        </span>
+                    </div>
+                </template>
+                {% endblock %}
+
+                {% block sw_blog_list_grid_column_categories %}
+                <template #column-categories="{ item }">
+                    <div
+                        v-if="categoryNamesOf(item).length > 0"
+                        class="sw-blog-list__categories"
+                    >
+                        <mt-badge
+                            v-for="name in categoryNamesOf(item).slice(0, 2)"
+                            :key="name"
+                            variant="neutral"
+                            size="small"
+                        >
+                            {{ name }}
+                        </mt-badge>
+
+                        <span
+                            v-if="categoryNamesOf(item).length > 2"
+                            class="sw-blog-list__categories-more"
+                        >
+                            +{{ categoryNamesOf(item).length - 2 }}
+                        </span>
+                    </div>
+
+                    <span
+                        v-else
+                        class="sw-blog-list__categories-empty"
+                    >
+                        {{ $t('sw-blog.list.textNoCategories') }}
+                    </span>
+                </template>
+                {% endblock %}
+
+                {% block sw_blog_list_grid_column_status %}
+                <template #column-status="{ item }">
+                    <sw-blog-status-badge :published-at="item.publishedAt" />
+                </template>
+                {% endblock %}
+
+                {% block sw_blog_list_grid_column_updated_at %}
+                <template #column-updatedAt="{ item }">
+                    <sw-time-ago :date="item.updatedAt" />
+                </template>
+                {% endblock %}
+            </sw-entity-listing>
+            {% endblock %}
+        </div>
+        {% endblock %}
+
+        {% block sw_blog_list_create_modal %}
+        <sw-modal
+            v-if="showCreateModal"
+            class="sw-blog-list__create-modal"
+            variant="small"
+            :title="$t('sw-blog.list.buttonCreate')"
+            @modal-close="onCloseCreateModal"
+        >
+            <mt-text-field
+                v-model="newBlogTitle"
+                class="sw-blog-list__create-title"
+                required
+                :label="$t('sw-blog.detail.labelTitle')"
+                :placeholder="$t('sw-blog.detail.placeholderTitle')"
+            />
+
+            <template #modal-footer>
+                <mt-button
+                    variant="secondary"
+                    size="small"
+                    @click="onCloseCreateModal"
+                >
+                    {{ $t('global.default.cancel') }}
+                </mt-button>
+
+                <mt-button
+                    variant="primary"
+                    size="small"
+                    :disabled="isCreateDisabled || undefined"
+                    :is-loading="isCreating"
+                    @click="onCreateBlog"
+                >
+                    {{ $t('global.default.add') }}
+                </mt-button>
+            </template>
+        </sw-modal>
+        {% endblock %}
+
+        {% block sw_blog_list_delete_modal %}
+        <sw-modal
+            v-if="deleteTarget"
+            class="sw-blog-list__delete-modal"
+            variant="small"
+            :title="$t('sw-blog.list.titleDeleteBlog')"
+            @modal-close="onCloseDeleteModal"
+        >
+            <p class="sw-blog-list__delete-message">
+                {{ deleteMessage }}
+            </p>
+
+            <template #modal-footer>
+                <mt-button
+                    variant="secondary"
+                    size="small"
+                    @click="onCloseDeleteModal"
+                >
+                    {{ $t('global.default.cancel') }}
+                </mt-button>
+
+                <mt-button
+                    variant="critical"
+                    size="small"
+                    @click="onConfirmDelete"
+                >
+                    {{ $t('global.default.delete') }}
+                </mt-button>
+            </template>
+        </sw-modal>
+        {% endblock %}
+    </template>
+    {% endblock %}
+
+    {% block sw_blog_list_sidebar %}
+    <template #sidebar>
+        <sw-sidebar class="sw-blog-list__sidebar">
+            {% block sw_blog_list_sidebar_refresh %}
+            <sw-sidebar-item
+                icon="regular-undo"
+                :title="$t('sw-blog.list.buttonRefresh')"
+                @click="onRefresh"
+            />
+            {% endblock %}
+
+            {% block sw_blog_list_sidebar_filter %}
+            <sw-sidebar-filter-panel
+                ref="filterPanel"
+                entity="blog"
+                :store-key="storeKey"
+                :filters="listFilters"
+                :defaults="defaultFilters"
+                :active-filter-number="activeFilterNumber"
+                @criteria-changed="updateCriteria"
+            />
+            {% endblock %}
+
+            {% block sw_blog_list_sidebar_categories %}
+            <sw-sidebar-item
+                icon="regular-image-text"
+                :title="$t('sw-blog.list.buttonManageCategories')"
+                @click="onOpenCategoryList"
+            />
+            {% endblock %}
+        </sw-sidebar>
+    </template>
+    {% endblock %}
+</sw-page>
+{% endblock %}

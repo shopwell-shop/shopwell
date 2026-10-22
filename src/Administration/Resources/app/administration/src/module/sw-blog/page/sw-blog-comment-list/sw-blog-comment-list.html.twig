@@ -1,0 +1,208 @@
+{% block sw_blog_comment_list %}
+<sw-page
+    class="sw-blog-comment-list"
+    position-identifier="sw-blog-comment-list"
+>
+    {% block sw_blog_comment_list_search_bar %}
+    <template #search-bar>
+        <sw-search-bar
+            initial-search-type="blog_comment"
+            :initial-search="term"
+            :placeholder="$t('sw-blog.comment.placeholderSearchBar')"
+            @search="onSearch"
+        />
+    </template>
+    {% endblock %}
+
+    {% block sw_blog_comment_list_smart_bar_header %}
+    <template #smart-bar-header>
+        {% block sw_blog_comment_list_smart_bar_header_title %}
+        <h2>
+            {% block sw_blog_comment_list_smart_bar_header_title_text %}
+            {{ $t('sw-blog.comment.title') }}
+            {% endblock %}
+
+            {% block sw_blog_comment_list_smart_bar_header_amount %}
+            <span
+                v-if="!isLoading"
+                class="sw-page__smart-bar-amount"
+            >
+                ({{ total }})
+            </span>
+            {% endblock %}
+        </h2>
+        {% endblock %}
+    </template>
+    {% endblock %}
+
+    {% block sw_blog_comment_list_smart_bar_actions %}
+    <template #smart-bar-actions>
+        {% block sw_blog_comment_list_smart_bar_actions_entries %}
+        <mt-button
+            class="sw-blog-comment-list__button-entries"
+            variant="secondary"
+            size="default"
+            @click="onOpenBlogList"
+        >
+            {{ $t('sw-blog.comment.buttonEntries') }}
+        </mt-button>
+        {% endblock %}
+    </template>
+    {% endblock %}
+
+    {% block sw_blog_comment_list_content %}
+    <template #content>
+        {% block sw_blog_comment_list_content_inner %}
+        <div class="sw-blog-comment-list__content">
+            {% block sw_blog_comment_list_filter %}
+            <div class="sw-blog-comment-list__filter">
+                <mt-select
+                    v-model:model-value="statusFilter"
+                    class="sw-blog-comment-list__filter-status"
+                    :label="$t('sw-blog.comment.filterStatus')"
+                    :options="statusOptions"
+                    @update:model-value="onChangeStatusFilter"
+                />
+            </div>
+            {% endblock %}
+
+            {% block sw_blog_comment_list_empty_state %}
+            <mt-empty-state
+                v-if="!isLoading && !total"
+                centered
+                class="sw-blog-comment-list__empty-state"
+                icon="regular-comments"
+                :headline="$t('sw-blog.comment.messageEmpty')"
+                :description="$t('sw-blog.comment.messageEmptySubline')"
+            />
+            {% endblock %}
+
+            {% block sw_blog_comment_list_grid %}
+            <sw-entity-listing
+                v-else
+                ref="listing"
+                class="sw-blog-comment-list__grid"
+                identifier="sw-blog-comment-list"
+                :data-source="comments"
+                :columns="columns"
+                :repository="commentRepository"
+                :sort-by="sortBy"
+                :sort-direction="sortDirection"
+                :is-loading="isLoading"
+                :full-page="true"
+                :show-selection="false"
+                :show-settings="true"
+                :disable-data-fetching="true"
+                :allow-inline-edit="false"
+                :allow-column-edit="false"
+                :allow-edit="false"
+                :allow-delete="canDelete"
+                :allow-view="canEdit"
+                @page-change="onPageChange"
+                @column-sort="onSortColumn"
+            >
+                {% block sw_blog_comment_list_grid_column_author %}
+                <template #column-author="{ item }">
+                    {{ authorOf(item) }}
+                </template>
+                {% endblock %}
+
+                {% block sw_blog_comment_list_grid_column_content %}
+                <template #column-content="{ item }">
+                    <mt-tooltip
+                        v-if="item.content"
+                        :width="360"
+                        :content="item.content"
+                    >
+                        {{ excerptOf(item) }}
+                    </mt-tooltip>
+                </template>
+                {% endblock %}
+
+                {% block sw_blog_comment_list_grid_column_blog %}
+                <template #column-blog="{ item }">
+                    <router-link :to="{ name: 'sw.blog.detail', params: { id: item.blogId } }">
+                        {{ blogTitleOf(item) }}
+                    </router-link>
+                </template>
+                {% endblock %}
+
+                {% block sw_blog_comment_list_grid_column_status %}
+                <template #column-status="{ item }">
+                    {% block sw_blog_comment_list_grid_column_status_switch %}
+                    <mt-switch
+                        v-if="canEdit"
+                        v-model="item.status"
+                        @change="onChangeStatus(item)"
+                    />
+                    {% endblock %}
+
+                    {% block sw_blog_comment_list_grid_column_status_readonly %}
+                    <sw-data-grid-column-boolean
+                        v-else
+                        :value="item.status"
+                        :is-inline-edit="false"
+                    />
+                    {% endblock %}
+                </template>
+                {% endblock %}
+
+                {% block sw_blog_comment_list_grid_column_created_at %}
+                <template #column-createdAt="{ item }">
+                    <sw-time-ago :date="item.createdAt" />
+                </template>
+                {% endblock %}
+            </sw-entity-listing>
+            {% endblock %}
+        </div>
+        {% endblock %}
+
+        {% block sw_blog_comment_list_delete_modal %}
+        <sw-modal
+            v-if="deleteTarget"
+            class="sw-blog-comment-list__delete-modal"
+            variant="small"
+            :title="$t('sw-blog.comment.titleDelete')"
+            @modal-close="onCloseDeleteModal"
+        >
+            <p class="sw-blog-comment-list__delete-message">
+                {{ deleteMessage }}
+            </p>
+
+            <template #modal-footer>
+                <mt-button
+                    variant="secondary"
+                    size="small"
+                    @click="onCloseDeleteModal"
+                >
+                    {{ $t('global.default.cancel') }}
+                </mt-button>
+
+                <mt-button
+                    variant="critical"
+                    size="small"
+                    @click="onConfirmDelete"
+                >
+                    {{ $t('global.default.delete') }}
+                </mt-button>
+            </template>
+        </sw-modal>
+        {% endblock %}
+    </template>
+    {% endblock %}
+
+    {% block sw_blog_comment_list_sidebar %}
+    <template #sidebar>
+        <sw-sidebar class="sw-blog-comment-list__sidebar">
+            {% block sw_blog_comment_list_sidebar_refresh %}
+            <sw-sidebar-item
+                icon="regular-undo"
+                :title="$t('sw-blog.list.buttonRefresh')"
+                @click="onRefresh"
+            />
+            {% endblock %}
+        </sw-sidebar>
+    </template>
+    {% endblock %}
+</sw-page>
+{% endblock %}

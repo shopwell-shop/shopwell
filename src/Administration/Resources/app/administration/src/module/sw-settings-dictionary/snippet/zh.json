@@ -1,0 +1,54 @@
+{
+  "sw-settings-dictionary": {
+    "general": {
+      "mainMenuItemGeneral": "数据字典",
+      "description": "管理称谓等可复用的数据字典。",
+      "placeholderSearchBar": "搜索字典类型...",
+      "treeHeadline": "数据字典"
+    },
+    "list": {
+      "textHeadline": "数据字典"
+    },
+    "typeList": {
+      "buttonAddType": "新建类型",
+      "columnLabel": "名称",
+      "columnTechnicalName": "技术标识",
+      "columnEntries": "条目数",
+      "columnActive": "启用",
+      "labelName": "名称",
+      "placeholderName": "请输入名称...",
+      "placeholderTechnicalName": "如：salutation",
+      "helpTextTechnicalName": "全局唯一的技术标识。保存后不可修改，店面与集成接口均通过它引用。",
+      "labelActive": "启用",
+      "modalTitleCreate": "新建字典类型",
+      "messageEmpty": "暂无字典类型",
+      "messageSaveSuccess": "字典类型「{name}」已保存。",
+      "messageSaveError": "字典类型保存失败。",
+      "messageLoadError": "字典类型加载失败。",
+      "messageDeleteError": "字典类型删除失败，可能仍被使用中。",
+      "messageTechnicalNameRequired": "请填写技术标识。",
+      "textDeleteConfirm": "确定删除字典类型「{name}」吗？其下条目将一并删除。"
+    },
+    "entryList": {
+      "buttonAddEntry": "添加条目",
+      "columnLabel": "名称",
+      "columnTechnicalName": "技术值",
+      "columnPosition": "排序值",
+      "columnActive": "启用",
+      "labelActive": "启用",
+      "placeholderLabel": "请输入名称...",
+      "placeholderTechnicalName": "如：mr",
+      "helpTextTechnicalName": "在同一字典类型内唯一。保存后不可修改，客户与订单数据通过它引用。",
+      "modalTitleCreate": "添加条目",
+      "messageEmpty": "该字典类型暂无条目",
+      "messageSaveSuccess": "条目「{name}」已保存。",
+      "messageSaveError": "条目保存失败。",
+      "messageLoadError": "条目加载失败。",
+      "messageDeleteError": "条目删除失败，可能仍被客户或订单引用，建议改为停用。",
+      "messageLabelRequired": "请填写名称。",
+      "messageTechnicalNameRequired": "请填写技术值。",
+      "messageTechnicalNameDuplicate": "该技术值在此字典类型中已存在。",
+      "textDeleteConfirm": "确定删除条目「{name}」吗？"
+    }
+  }
+}

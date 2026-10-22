@@ -211,7 +211,7 @@ class OrderRepositoryTest extends TestCase
         $customer = [
             'id' => $customerId,
             'number' => '1337',
-            'salutationId' => $this->getValidSalutationId(),
+            'gender' => $this->getValidGender(),
             'name' => 'Max Mustermann',
             'customerNumber' => '1337',
             'email' => Uuid::randomHex() . '@example.com',
@@ -225,7 +225,7 @@ class OrderRepositoryTest extends TestCase
                     'id' => $addressId,
                     'customerId' => $customerId,
                     'countryId' => $this->getValidCountryId(),
-                    'salutationId' => $this->getValidSalutationId(),
+                    'gender' => $this->getValidGender(),
                     'name' => 'Max Mustermann',
                     'street' => 'Ebbinghoff 10',
                     'zipcode' => '48624',
@@ -247,7 +247,7 @@ class OrderRepositoryTest extends TestCase
         $addressId = Uuid::randomHex();
         $orderLineItemId = Uuid::randomHex();
         $countryStateId = Uuid::randomHex();
-        $salutation = $this->getValidSalutationId();
+        $salutation = $this->getValidGender();
 
         $order = [
             [
@@ -270,7 +270,7 @@ class OrderRepositoryTest extends TestCase
                         'shippingDateEarliest' => date(\DATE_ATOM),
                         'shippingDateLatest' => date(\DATE_ATOM),
                         'shippingOrderAddress' => [
-                            'salutationId' => $salutation,
+                            'gender' => $salutation,
                             'name' => 'Floy Glover',
                             'zipcode' => '59438-0403',
                             'city' => 'Stellaberg',
@@ -304,13 +304,13 @@ class OrderRepositoryTest extends TestCase
                 'orderCustomer' => [
                     'email' => 'test@example.com',
                     'name' => 'Noe Hill',
-                    'salutationId' => $salutation,
+                    'gender' => $salutation,
                     'title' => 'Doc',
                     'customerNumber' => 'Test',
                     'customer' => [
                         'email' => 'test@example.com',
                         'name' => 'Noe Hill',
-                        'salutationId' => $salutation,
+                        'gender' => $salutation,
                         'title' => 'Doc',
                         'customerNumber' => 'Test',
                         'guest' => true,
@@ -321,7 +321,7 @@ class OrderRepositoryTest extends TestCase
                         'addresses' => [
                             [
                                 'id' => $addressId,
-                                'salutationId' => $salutation,
+                                'gender' => $salutation,
                                 'name' => 'Floy Glover',
                                 'zipcode' => '59438-0403',
                                 'city' => 'Stellaberg',
@@ -345,7 +345,7 @@ class OrderRepositoryTest extends TestCase
                 'billingAddressId' => $addressId,
                 'addresses' => [
                     [
-                        'salutationId' => $salutation,
+                        'gender' => $salutation,
                         'name' => 'Floy Glover',
                         'zipcode' => '59438-0403',
                         'city' => 'Stellaberg',

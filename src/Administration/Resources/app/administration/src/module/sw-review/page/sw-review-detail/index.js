@@ -12,7 +12,7 @@ export default {
 
     inject: ['repositoryFactory', 'acl', 'customFieldDataProviderService'],
 
-    mixins: ['placeholder', 'notification', 'salutation'],
+    mixins: ['placeholder', 'notification'],
 
     shortcuts: {
         'SYSTEMKEY+S': {

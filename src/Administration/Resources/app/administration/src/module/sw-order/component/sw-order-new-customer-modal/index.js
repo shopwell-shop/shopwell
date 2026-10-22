@@ -32,7 +32,6 @@ export default {
             customer: null,
             isLoading: false,
             customerNumberPreview: '',
-            defaultSalutationId: null,
             activeTab: 'details',
         };
     },
@@ -127,7 +126,7 @@ export default {
                 }
 
                 const shippingAddress = this.addressRepository.create();
-                shippingAddress.salutationId = this.defaultSalutationId;
+                shippingAddress.gender = 'not_specified';
 
                 this.customer.addresses.add(shippingAddress);
                 this.customer.defaultShippingAddressId = shippingAddress.id;
@@ -159,17 +158,6 @@ export default {
             return this.loadLanguage(this.customer.salesChannelId);
         },
 
-        salutationRepository() {
-            return this.repositoryFactory.create('salutation');
-        },
-
-        salutationCriteria() {
-            const criteria = new Criteria(1, 1);
-
-            criteria.addFilter(Criteria.equals('salutationKey', 'not_specified'));
-
-            return criteria;
-        },
     },
 
     watch: {
@@ -198,10 +186,8 @@ export default {
         async createdComponent() {
             this.customer = this.customerRepository.create();
 
-            this.defaultSalutationId = await this.getDefaultSalutationId();
-
             const billingAddress = this.addressRepository.create();
-            billingAddress.salutationId = this.defaultSalutationId;
+            billingAddress.gender = 'not_specified';
 
             this.customer.addresses.add(billingAddress);
 
@@ -209,7 +195,7 @@ export default {
             this.customer.defaultBillingAddressId = billingAddress.id;
             this.customer.accountType = CUSTOMER.ACCOUNT_TYPE_PRIVATE;
             this.customer.vatIds = [];
-            this.customer.salutationId = this.defaultSalutationId;
+            this.customer.gender = 'not_specified';
         },
 
         async onSave() {
@@ -358,12 +344,6 @@ export default {
             }
 
             return res.data[0];
-        },
-
-        async getDefaultSalutationId() {
-            const res = await this.salutationRepository.searchIds(this.salutationCriteria);
-
-            return res.data?.[0];
         },
     },
 };

@@ -73,7 +73,7 @@ use Shopwell\Core\Checkout\Customer\Subscriber\CustomerLanguageSalesChannelSubsc
 use Shopwell\Core\Checkout\Customer\Subscriber\CustomerLogoutSubscriber;
 use Shopwell\Core\Checkout\Customer\Subscriber\CustomerMetaFieldSubscriber;
 use Shopwell\Core\Checkout\Customer\Subscriber\CustomerRemoteAddressSubscriber;
-use Shopwell\Core\Checkout\Customer\Subscriber\CustomerSalutationSubscriber;
+use Shopwell\Core\Checkout\Customer\Subscriber\CustomerGenderSubscriber;
 use Shopwell\Core\Checkout\Customer\Subscriber\CustomerTokenSubscriber;
 use Shopwell\Core\Checkout\Customer\Subscriber\ProductReviewSubscriber;
 use Shopwell\Core\Checkout\Customer\Validation\AddressValidationFactory;
@@ -375,7 +375,6 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(DataValidator::class),
             service(CustomerProfileValidationFactory::class),
             service(StoreApiCustomFieldMapper::class),
-            service('salutation.repository'),
             service(ExtensionDispatcher::class),
         ]);
 
@@ -449,7 +448,6 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(Connection::class),
             service(SalesChannelContextService::class),
             service(StoreApiCustomFieldMapper::class),
-            service('salutation.repository'),
             service(PasswordValidationFactory::class),
             service(DoubleOptInService::class),
             service(CustomerNewsletterSalesChannelsUpdater::class),
@@ -487,7 +485,6 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(AddressValidationFactory::class),
             service(SystemConfigService::class),
             service(StoreApiCustomFieldMapper::class),
-            service('salutation.repository'),
             service(ExtensionDispatcher::class),
         ]);
 
@@ -699,7 +696,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(ExtensionDispatcher::class),
         ]);
 
-    $services->set(CustomerSalutationSubscriber::class)
+    $services->set(CustomerGenderSubscriber::class)
         ->args([
             service(Connection::class),
         ])

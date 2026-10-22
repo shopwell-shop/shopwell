@@ -3,6 +3,7 @@
  */
 
 import './buy-box';
+import './blog-listing';
 import './category-name';
 import './cross-selling';
 import './form';

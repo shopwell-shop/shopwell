@@ -108,7 +108,11 @@ async function createWrapper(
         global: {
             stubs: {
                 'sw-data-grid': true,
-                'sw-skeleton': true,
+                'sw-loader': true,
+                // the card passes its body through the `grid` slot, so the stub has to render both -
+                // otherwise the grid and the toolbar would never reach the template under test
+                'mt-card': { template: '<div class="mt-card-stub"><slot></slot><slot name="grid"></slot></div>' },
+                'sw-card-section': { template: '<div><slot></slot></div>' },
                 'sw-modal': {
                     template: '<div class="sw-modal-stub"><slot></slot><slot name="modal-footer"></slot></div>',
                 },
@@ -196,6 +200,16 @@ describe('src/module/sw-order-return/page/sw-order-detail-return', () => {
         // the reason is the vocabulary a return is opened with, so the first arranged one is preselected
         expect(wrapper.vm.draftReasonId).toBe('reason-1');
         expect(wrapper.vm.canSubmit).toBe(false);
+    });
+
+    it('renders one row per returnable position in the create modal', async () => {
+        const { wrapper } = await createWrapper();
+
+        await wrapper.vm.onOpenCreateModal();
+        await flushPromises();
+
+        // one row per product, and no row when the server offered none - the empty case is a banner
+        expect(wrapper.findAll('.sw-order-detail-return__position')).toHaveLength(1);
     });
 
     it('opens no modal when the positions can not be read', async () => {

@@ -22,9 +22,8 @@
                         "type": "string",
                         "pattern": "^[0-9a-f]{32}$"
                     },
-                    "salutationId": {
-                        "type": "string",
-                        "pattern": "^[0-9a-f]{32}$"
+                    "gender": {
+                        "type": "string"
                     },
                     "name": { "type": "string" },
                     "zipcode": {
@@ -64,8 +63,7 @@
                     "country": { "$ref": "#/components/schemas/Country" },
                     "countryState": {
                         "$ref": "#/components/schemas/CountryState"
-                    },
-                    "salutation": { "$ref": "#/components/schemas/Salutation" }
+                    }
                 },
                 "allOf": [
                     {

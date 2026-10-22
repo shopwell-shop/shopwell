@@ -198,6 +198,16 @@
                 },
                 "mcpAllowlistTitle": "MCP tool allowlist",
                 "mcpAllowlistSaveError": "The MCP allowlist could not be saved.",
+                "cardOrganizationUnits": "Organization units",
+                "labelOrganizationUnits": "Organization units",
+                "placeholderSelectUnits": "Search and select organization units...",
+                "helperNoUnit": "No organization unit assigned.",
+                "labelPrimaryUnit": "Primary organization unit",
+                "placeholderSelectPrimaryUnit": "Select the primary unit...",
+                "helperPrimaryUnit": "The primary unit marks the main affiliation, e.g. for reporting.",
+                "cardPositions": "Positions",
+                "labelPositions": "Positions",
+                "placeholderSelectPositions": "Search and select positions...",
                 "notification": {
                     "saveError": {
                         "message": "The user \"{name}\" could not be saved."

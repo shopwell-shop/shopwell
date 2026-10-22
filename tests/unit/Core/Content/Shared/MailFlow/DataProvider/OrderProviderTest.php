@@ -37,7 +37,6 @@ class OrderProviderTest extends AbstractProviderTestCase
             'primaryOrderDelivery',
             'primaryOrderTransaction',
             'orderCustomer',
-            'orderCustomer.salutation',
             'lineItems.downloads.media',
             'lineItems.cover',
             'deliveries.shippingMethod',

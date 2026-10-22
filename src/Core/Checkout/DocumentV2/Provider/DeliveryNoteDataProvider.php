@@ -35,7 +35,6 @@ final readonly class DeliveryNoteDataProvider extends AbstractDocumentDataProvid
             'currency',
             'language.locale',
             'addresses.country',
-            'addresses.salutation',
             'addresses.countryState',
             'orderCustomer',
             'orderCustomer.customer',

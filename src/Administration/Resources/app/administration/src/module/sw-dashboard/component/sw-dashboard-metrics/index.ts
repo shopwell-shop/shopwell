@@ -6,6 +6,7 @@ import {
     buildFilteredOrderListLink,
     getDayBounds,
     getDayKeys,
+    getMonthStart,
     getPreviousDay,
     type StateSelection,
 } from '../../helper/order-list-filter';
@@ -23,6 +24,8 @@ type Metrics = {
     paidOrders: number;
     orders: number;
     newCustomers: number;
+    walletBalance: number;
+    monthlyPoints: number;
 };
 
 type Delta = {
@@ -42,6 +45,11 @@ type MetricCard = {
     unit: string;
     delta: Delta | null;
     link: OrderListLink | null;
+    /**
+     * Stock-level cards have no meaningful "compared to yesterday" baseline,
+     * so they suppress the comparison hint entirely.
+     */
+    showComparison?: boolean;
 };
 
 const EMPTY_METRICS: Metrics = {
@@ -49,6 +57,8 @@ const EMPTY_METRICS: Metrics = {
     paidOrders: 0,
     orders: 0,
     newCustomers: 0,
+    walletBalance: 0,
+    monthlyPoints: 0,
 };
 
 /**
@@ -94,6 +104,22 @@ export default Shopwell.Component.wrapComponentConfig({
 
         canViewCustomers(): boolean {
             return this.acl.can('customer.viewer');
+        },
+
+        canViewWallet(): boolean {
+            return this.acl.can('wallet.viewer');
+        },
+
+        canViewLoyalty(): boolean {
+            return this.acl.can('loyalty.viewer');
+        },
+
+        walletRepository(): unknown {
+            return this.repositoryFactory.create('customer_wallet');
+        },
+
+        pointTransactionRepository(): unknown {
+            return this.repositoryFactory.create('customer_point_transaction');
         },
 
         currencyFilter(): (value: number, isoCode: string, decimals: number) => string {
@@ -151,6 +177,30 @@ export default Shopwell.Component.wrapComponentConfig({
                 });
             }
 
+            if (this.canViewWallet) {
+                cards.push({
+                    key: 'walletBalance',
+                    label: this.$t('sw-dashboard.metrics.walletBalance'),
+                    value: this.currencyFilter(this.currentMetrics.walletBalance, this.systemCurrencyISOCode, 2),
+                    unit: '',
+                    delta: null,
+                    link: { name: 'sw.finance.walletTransactions', query: {} },
+                    showComparison: false,
+                });
+            }
+
+            if (this.canViewLoyalty) {
+                cards.push({
+                    key: 'monthlyPoints',
+                    label: this.$t('sw-dashboard.metrics.monthlyPoints'),
+                    value: this.currentMetrics.monthlyPoints.toLocaleString(),
+                    unit: this.$t('sw-dashboard.metrics.pointsUnit'),
+                    delta: null,
+                    link: { name: 'sw.settings.loyalty.orders', query: {} },
+                    showComparison: false,
+                });
+            }
+
             return cards;
         },
 
@@ -175,6 +225,8 @@ export default Shopwell.Component.wrapComponentConfig({
 
             const dayKeys = getDayKeys();
 
+            const monthStart = getMonthStart();
+
             try {
                 const [
                     paidBuckets,
@@ -182,6 +234,8 @@ export default Shopwell.Component.wrapComponentConfig({
                     newCustomers,
                     previousNewCustomers,
                     paidState,
+                    walletBalance,
+                    monthlyPoints,
                 ] = await Promise.all([
                     this.fetchOrderAmount(dayKeys.yesterday, true),
                     this.fetchOrderAmount(dayKeys.yesterday, false),
@@ -190,6 +244,8 @@ export default Shopwell.Component.wrapComponentConfig({
                     // comparison would include today's customers as well.
                     this.fetchNewCustomerCount(getDayBounds(getPreviousDay()).from, getDayBounds(new Date()).from),
                     this.fetchPaidState(),
+                    this.fetchWalletBalance(),
+                    this.fetchMonthlyPoints(monthStart),
                 ]);
 
                 this.paidState = paidState;
@@ -199,6 +255,8 @@ export default Shopwell.Component.wrapComponentConfig({
                     paidOrders: this.getBucket(paidBuckets, dayKeys.today).count,
                     orders: this.getBucket(allBuckets, dayKeys.today).count,
                     newCustomers,
+                    walletBalance,
+                    monthlyPoints,
                 };
 
                 this.previousMetrics = {
@@ -248,6 +306,47 @@ export default Shopwell.Component.wrapComponentConfig({
             return (this.customerRepository as { search: (c: unknown) => Promise<{ total: number }> })
                 .search(criteria)
                 .then((result) => result.total)
+                .catch(() => 0);
+        },
+
+        /**
+         * The total balance the shop is holding for its customers, resolved as a
+         * single sum aggregation instead of reading the wallets themselves.
+         */
+        fetchWalletBalance(): Promise<number> {
+            if (!this.canViewWallet) {
+                return Promise.resolve(0);
+            }
+
+            const criteria = new Criteria(1, 1);
+            criteria.addAggregation(Criteria.sum('walletBalance', 'balance'));
+
+            return (this.walletRepository as {
+                search: (c: unknown) => Promise<{ aggregations: Record<string, { sum?: number }> }>;
+            })
+                .search(criteria)
+                .then((result) => result.aggregations?.walletBalance?.sum ?? 0)
+                .catch(() => 0);
+        },
+
+        /**
+         * Points granted since the start of the current month, so the card reads
+         * "issued this month so far" in the user timezone.
+         */
+        fetchMonthlyPoints(since: string): Promise<number> {
+            if (!this.canViewLoyalty) {
+                return Promise.resolve(0);
+            }
+
+            const criteria = new Criteria(1, 1);
+            criteria.addFilter(Criteria.range('createdAt', { gte: since }));
+            criteria.addAggregation(Criteria.sum('monthlyPoints', 'points'));
+
+            return (this.pointTransactionRepository as {
+                search: (c: unknown) => Promise<{ aggregations: Record<string, { sum?: number }> }>;
+            })
+                .search(criteria)
+                .then((result) => result.aggregations?.monthlyPoints?.sum ?? 0)
                 .catch(() => 0);
         },
 

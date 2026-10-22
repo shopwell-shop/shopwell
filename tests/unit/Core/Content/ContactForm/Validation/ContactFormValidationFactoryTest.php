@@ -6,11 +6,12 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Content\ContactForm\Validation\ContactFormValidationFactory;
-use Shopwell\Core\Framework\DataAbstractionLayer\Validation\EntityExists;
+use Shopwell\Core\System\Dictionary\Aggregate\DictionaryEntry\DictionaryEntryDefinition;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Validation\DataValidationDefinition;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
 use Shopwell\Core\System\SystemConfig\SystemConfigService;
+use Symfony\Component\Validator\Constraints\Choice;
 use Symfony\Component\Validator\Constraints\Email;
 use Symfony\Component\Validator\Constraints\NotBlank;
 use Symfony\Component\Validator\Constraints\Regex;
@@ -47,9 +48,9 @@ class ContactFormValidationFactoryTest extends TestCase
             true,
             static function (DataValidationDefinition $definition, SalesChannelContext $context): void {
                 static::assertEquals($definition->getProperties(), [
-                    'salutationId' => [
+                    'gender' => [
                         new NotBlank(),
-                        new EntityExists(entity: 'salutation', context: $context->getContext()),
+                        new Choice(choices: [DictionaryEntryDefinition::MALE, DictionaryEntryDefinition::FEMALE, DictionaryEntryDefinition::NOT_SPECIFIED]),
                     ],
                     'email' => [new NotBlank(), new Email()],
                     'subject' => [new NotBlank()],
@@ -67,9 +68,9 @@ class ContactFormValidationFactoryTest extends TestCase
             false,
             static function (DataValidationDefinition $definition, SalesChannelContext $context): void {
                 static::assertEquals($definition->getProperties(), [
-                    'salutationId' => [
+                    'gender' => [
                         new NotBlank(),
-                        new EntityExists(entity: 'salutation', context: $context->getContext()),
+                        new Choice(choices: [DictionaryEntryDefinition::MALE, DictionaryEntryDefinition::FEMALE, DictionaryEntryDefinition::NOT_SPECIFIED]),
                     ],
                     'email' => [new NotBlank(), new Email()],
                     'subject' => [new NotBlank()],

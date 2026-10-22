@@ -112,12 +112,10 @@ class CheckoutFinishPageLoader
         $criteria = (new Criteria([$orderId]))
             ->addFilter(new EqualsFilter('order.orderCustomer.customerId', $customer->getId()))
             ->addAssociation('primaryOrderDelivery.shippingMethod')
-            ->addAssociation('primaryOrderDelivery.shippingOrderAddress.salutation')
             ->addAssociation('primaryOrderDelivery.shippingOrderAddress.country')
             ->addAssociation('primaryOrderDelivery.shippingOrderAddress.countryState')
             ->addAssociation('primaryOrderTransaction.paymentMethod')
             ->addAssociation('lineItems.cover')
-            ->addAssociation('billingAddress.salutation')
             ->addAssociation('billingAddress.country')
             ->addAssociation('billingAddress.countryState')
             ->addAssociation('currency');
@@ -126,7 +124,6 @@ class CheckoutFinishPageLoader
             $criteria
                 ->addAssociation('transactions.paymentMethod')
                 ->addAssociation('deliveries.shippingMethod')
-                ->addAssociation('deliveries.shippingOrderAddress.salutation')
                 ->addAssociation('deliveries.shippingOrderAddress.country')
                 ->addAssociation('deliveries.shippingOrderAddress.countryState');
 

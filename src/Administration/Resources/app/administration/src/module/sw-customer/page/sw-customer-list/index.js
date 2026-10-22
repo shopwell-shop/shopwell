@@ -12,9 +12,9 @@ const { Criteria } = Shopwell.Data;
 export default {
     template,
 
-    inject: ['repositoryFactory', 'acl', 'filterFactory'],
+    inject: ['repositoryFactory', 'acl', 'filterFactory', 'dictionaryService'],
 
-    mixins: [Mixin.getByName('notification'), Mixin.getByName('salutation'), Mixin.getByName('listing')],
+    mixins: [Mixin.getByName('notification'), Mixin.getByName('listing')],
 
     data() {
         return {
@@ -37,12 +37,13 @@ export default {
              */
             availableCampaignCodes: [],
             filterCriteria: [],
+            genders: [],
             defaultFilters: [
                 'customer-number-filter',
                 'affiliate-code-filter',
                 'campaign-code-filter',
                 'customer-group-request-filter',
-                'salutation-filter',
+                'gender-filter',
                 'account-status-filter',
                 'default-payment-method-filter',
                 'group-filter',
@@ -148,11 +149,15 @@ export default {
                     optionHasCriteria: this.$t('sw-customer.filter.customerGroupRequest.textHasCriteria'),
                     optionNoCriteria: this.$t('sw-customer.filter.customerGroupRequest.textNoCriteria'),
                 },
-                'salutation-filter': {
-                    property: 'salutation',
-                    label: this.$t('sw-customer.filter.salutation.label'),
-                    placeholder: this.$t('sw-customer.filter.salutation.placeholder'),
-                    labelProperty: 'displayName',
+                'gender-filter': {
+                    property: 'gender',
+                    type: 'multi-select-filter',
+                    label: this.$t('sw-customer.filter.gender.label'),
+                    placeholder: this.$t('sw-customer.filter.gender.placeholder'),
+                    options: this.genderOptions,
+                    valueProperty: 'value',
+                    labelProperty: 'label',
+                    criteriaFilterType: 'equalsAny',
                 },
                 'account-status-filter': {
                     property: 'active',
@@ -192,6 +197,13 @@ export default {
             return Shopwell.Filter.getByName('asset');
         },
 
+        genderOptions() {
+            return this.genders.map((entry) => ({
+                value: entry.technicalName,
+                label: entry.translated.label,
+            }));
+        },
+
         emailIdnFilter() {
             return Shopwell.Filter.getByName('decode-idn-email');
         },
@@ -214,6 +226,10 @@ export default {
          * @deprecated tag:v6.8.0 - will be removed without replacement
          */
         createdComponent() {
+            this.dictionaryService.getGenders().then((entries) => {
+                this.genders = entries;
+            });
+
             return Promise.resolve();
         },
 
@@ -221,7 +237,11 @@ export default {
             promise
                 .then(() => {
                     this.createNotificationSuccess({
-                        message: this.$t('sw-customer.detail.messageSaveSuccess', { name: this.salutation(customer) }, 0),
+                        message: this.$t(
+                            'sw-customer.detail.messageSaveSuccess',
+                            { name: [customer.title, customer.name].filter(Boolean).join(' ') },
+                            0,
+                        ),
                     });
                 })
                 .catch(() => {

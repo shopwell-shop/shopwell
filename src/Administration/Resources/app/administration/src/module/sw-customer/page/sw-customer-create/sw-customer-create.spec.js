@@ -27,6 +27,9 @@ async function createWrapper({ customerRepositorySaveMock, languageRepositorySea
                 'router-link': true,
             },
             provide: {
+                dictionaryService: {
+                    getGenders: jest.fn(() => Promise.resolve([])),
+                },
                 numberRangeService: {},
                 systemConfigApiService: {
                     getValues: () =>
@@ -34,7 +37,9 @@ async function createWrapper({ customerRepositorySaveMock, languageRepositorySea
                             'core.register.minPasswordLength': 8,
                         }),
                 },
-                customerValidationService: {},
+                customerValidationService: {
+                    checkCustomerEmail: () => Promise.resolve(true),
+                },
                 repositoryFactory: {
                     create: (entity) => {
                         if (entity === 'customer') {
@@ -64,16 +69,6 @@ async function createWrapper({ customerRepositorySaveMock, languageRepositorySea
                                             total: 1,
                                             data: ['1'],
                                         })),
-                            };
-                        }
-
-                        if (entity === 'salutation') {
-                            return {
-                                searchIds: () =>
-                                    Promise.resolve({
-                                        total: 1,
-                                        data: ['salutationId'],
-                                    }),
                             };
                         }
 
@@ -141,6 +136,10 @@ describe('module/sw-customer/page/sw-customer-create', () => {
         const customerRepositorySaveMock = jest.fn((customer, context) => Promise.resolve(context));
         const wrapper = await createWrapper({ customerRepositorySaveMock });
         wrapper.vm.validateEmail = jest.fn().mockImplementation(() => Promise.resolve({ isValid: true }));
+
+        // Let the async createdComponent() finish before overriding data,
+        // otherwise it replaces the customer entity after setData.
+        await flushPromises();
 
         expect(await wrapper.vm.languageId).toEqual(Shopwell.Context.api.languageId);
 
@@ -247,12 +246,12 @@ describe('module/sw-customer/page/sw-customer-create', () => {
         expect(wrapper.vm.customer.languageId).toBe(Shopwell.Context.api.languageId);
     });
 
-    it('should get default salutation is value not specified', async () => {
+    it('should set the default gender to not_specified', async () => {
         const wrapper = await createWrapper();
         await flushPromises();
 
-        expect(wrapper.vm.customer.salutationId).toBe('salutationId');
-        expect(wrapper.vm.address.salutationId).toBe('salutationId');
+        expect(wrapper.vm.customer.gender).toBe('not_specified');
+        expect(wrapper.vm.address.gender).toBe('not_specified');
     });
 
     it('should not render sw-customer-base-form and sw-customer-address-form if customer is null', async () => {

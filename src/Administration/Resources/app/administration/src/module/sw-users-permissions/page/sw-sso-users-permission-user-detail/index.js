@@ -25,7 +25,7 @@ export default {
         'userService',
     ],
 
-    mixins: [Mixin.getByName('notification'), Mixin.getByName('salutation')],
+    mixins: [Mixin.getByName('notification')],
 
     shortcuts: {
         'SYSTEMKEY+S': 'onSave',
@@ -57,7 +57,10 @@ export default {
 
     computed: {
         fullName() {
-            return this.salutation(this.user, this.$t('sw-users-permissions.users.user-detail.labelNewUser'));
+            return (
+                [this.user.title, this.user.name].filter(Boolean).join(' ') ||
+                this.$t('sw-users-permissions.users.user-detail.labelNewUser')
+            );
         },
 
         tooltipCancel() {

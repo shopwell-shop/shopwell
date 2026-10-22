@@ -237,7 +237,7 @@ class CartOrderEventSubscriberTest extends TestCase
             'street' => 'Additional Street 2',
             'city' => 'Additional City',
             'zipcode' => '54321',
-            'salutationId' => $this->getValidSalutationId(),
+            'gender' => $this->getValidGender(),
             'countryId' => $this->getValidCountryId($this->ids->get('sales-channel')),
         ];
 

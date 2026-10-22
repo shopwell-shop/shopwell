@@ -12,7 +12,7 @@ use Shopwell\Core\Framework\Uuid\Uuid;
  *     id: non-empty-string,
  *     company?: non-empty-string,
  *     department?: non-empty-string,
- *     salutationId?: non-empty-string,
+ *     gender?: non-empty-string,
  *     title?: non-empty-string,
  *     name?: non-empty-string,
  *     street?: non-empty-string,
@@ -59,7 +59,7 @@ class AddressTransformer
         $addressArray = array_filter([
             'company' => $address->getCompany(),
             'department' => $address->getDepartment(),
-            'salutationId' => $address->getSalutationId(),
+            'gender' => $address->getGender(),
             'title' => $address->getTitle(),
             'name' => $address->getName(),
             'street' => $address->getStreet(),

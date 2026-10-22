@@ -874,7 +874,7 @@ class CheckoutControllerTest extends TestCase
         }
 
         $this->customerId = Uuid::randomHex();
-        $salutationId = $this->getValidSalutationId();
+        $gender = $this->getValidGender();
 
         $customer = [
             'id' => $this->customerId,
@@ -885,7 +885,7 @@ class CheckoutControllerTest extends TestCase
                 'city' => 'Schöppingen',
                 'street' => 'Ebbinghoff 10',
                 'zipcode' => '48624',
-                'salutationId' => $salutationId,
+                'gender' => $gender,
                 'countryId' => $this->getValidCountryId(),
             ],
             'defaultBillingAddressId' => $this->customerId,
@@ -893,7 +893,7 @@ class CheckoutControllerTest extends TestCase
             'email' => Uuid::randomHex() . '@example.com',
             'password' => 'not12345',
             'name' => self::CUSTOMER_NAME,
-            'salutationId' => $salutationId,
+            'gender' => $gender,
             'customerNumber' => '12345',
         ];
 

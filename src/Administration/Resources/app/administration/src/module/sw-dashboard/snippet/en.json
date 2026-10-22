@@ -2,7 +2,7 @@
     "sw-dashboard": {
         "general": {
             "mainMenuItemGeneral": "Dashboard",
-            "descriptionTextModule": "Business overview, sales trend and latest orders"
+            "descriptionTextModule": "Business overview, sales trend, todos and latest orders"
         },
         "metrics": {
             "headline": "Today",
@@ -10,8 +10,11 @@
             "orders": "Orders today",
             "newCustomers": "New customers",
             "averageOrderValue": "Average order value",
+            "walletBalance": "Wallet balance",
+            "monthlyPoints": "Points issued this month",
             "ordersUnit": "orders",
             "customersUnit": "customers",
+            "pointsUnit": "pts",
             "comparedToYesterday": "vs. yesterday",
             "noComparison": "No data for yesterday",
             "paidOnlyHint": "Revenue and average order value only count paid orders"
@@ -27,6 +30,42 @@
                 "7Days": "Last 7 days",
                 "24Hours": "Last 24 hours",
                 "yesterday": "Since yesterday"
+            }
+        },
+        "todos": {
+            "headline": "Needs your attention",
+            "returnRequests": "Return requests to review",
+            "ordersToShip": "Orders waiting for shipment",
+            "reviewsWaiting": "Reviews to moderate",
+            "outOfStock": "Out-of-stock items",
+            "empty": "Nothing to do - everything is on track."
+        },
+        "orderStates": {
+            "headline": "Order states (last 30 days)",
+            "empty": "No orders in this period."
+        },
+        "topProducts": {
+            "headline": "Top products (last 30 days)",
+            "seriesName": "Units sold",
+            "empty": "No product sales in this period.",
+            "viewOrders": "View orders"
+        },
+        "loyaltyDistribution": {
+            "headline": "Members by tier",
+            "seriesName": "Members",
+            "empty": "No loyalty members yet."
+        },
+        "wallet": {
+            "headline": "Wallet",
+            "topUpToday": "Topped up today",
+            "unknownCustomer": "Unknown customer",
+            "empty": "No wallet movements yet.",
+            "viewAll": "View all transactions",
+            "types": {
+                "top_up": "Top up",
+                "consume": "Spent",
+                "refund": "Refund",
+                "adjust": "Adjustment"
             }
         },
         "latestOrders": {

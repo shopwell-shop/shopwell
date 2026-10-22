@@ -1111,7 +1111,11 @@
       "rule_condition": "Condition | Conditions",
       "sales_channel": "Sales Channel | Sales Channels",
       "sales_channel_type": "Sales Channel type | Sales Channel types",
-      "salutation": "Salutation | Salutations",
+      "dictionary_type": "Dictionary type | Dictionary types",
+      "dictionary_entry": "Dictionary entry | Dictionary entries",
+      "organization": "Organization | Organizations",
+      "organization_unit": "Organization unit | Organization units",
+      "position": "Position | Positions",
       "seo_url": "SEO URL | SEO URLs",
       "shipping_method": "Shipping method | Shipping methods",
       "snippet": "Snippet | Snippets",
@@ -1141,7 +1145,12 @@
       "sms_template": "SMS template | SMS templates",
       "sms_delivery": "Delivery | Deliveries",
       "order_return": "Return | Returns",
-      "order_return_reason": "Return reason | Return reasons"
+      "order_return_reason": "Return reason | Return reasons",
+      "blog": "Article | Articles",
+      "blog_category": "Article category | Article categories",
+      "blog_author": "Author | Authors",
+      "blog_comment": "Comment | Comments",
+      "blog_video": "Video | Videos"
     },
     "day-of-week": {
       "monday": "Monday",

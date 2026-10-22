@@ -122,7 +122,7 @@ class RemoteAddressFieldTest extends TestCase
             'orderCustomer' => [
                 'customerId' => $customerId,
                 'email' => 'test@example.com',
-                'salutationId' => $this->getValidSalutationId(),
+                'gender' => $this->getValidGender(),
                 'name' => 'Max Mustermann',
                 'remoteAddress' => $remoteAddress,
             ],
@@ -135,7 +135,7 @@ class RemoteAddressFieldTest extends TestCase
             'addresses' => [
                 [
                     'id' => $addressId,
-                    'salutationId' => $this->getValidSalutationId(),
+                    'gender' => $this->getValidGender(),
                     'name' => 'Max Mustermann',
                     'street' => 'Ebbinghoff 10',
                     'zipcode' => '48624',
@@ -162,7 +162,7 @@ class RemoteAddressFieldTest extends TestCase
         $customer = [
             'id' => $customerId,
             'customerNumber' => '1337',
-            'salutationId' => $this->getValidSalutationId(),
+            'gender' => $this->getValidGender(),
             'name' => 'Max Mustermann',
             'email' => 'test@example.com',
             'password' => TestDefaults::HASHED_PASSWORD,
@@ -176,7 +176,7 @@ class RemoteAddressFieldTest extends TestCase
                     'id' => $addressId,
                     'customerId' => $customerId,
                     'countryId' => $this->getValidCountryId(),
-                    'salutationId' => $this->getValidSalutationId(),
+                    'gender' => $this->getValidGender(),
                     'name' => 'Max Mustermann',
                     'street' => 'Ebbinghoff 10',
                     'zipcode' => '48624',

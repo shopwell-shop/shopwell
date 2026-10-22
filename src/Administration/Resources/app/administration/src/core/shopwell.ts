@@ -276,7 +276,6 @@ class ShopwellClass implements CustomShopwellProperties {
         productComparisonTypeId: 'ed535e5722134ac1aa6524f73e26881b' as EntityKey<'sales_channel_type'>,
         apiSalesChannelTypeId: 'f183ee5650cf4bdb8a774337575067a6' as EntityKey<'sales_channel_type'>,
         agenticCommerceTypeId: '5e29f9890c4d4d519a1c7f9d5c24b7c1' as EntityKey<'sales_channel_type'>,
-        defaultSalutationId: 'ed643807c9f84cc8b50132ea3ccb1c3b' as EntityKey<'salutation'>,
     };
 
     public Data = data;

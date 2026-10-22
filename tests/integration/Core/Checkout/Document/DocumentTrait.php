@@ -63,7 +63,7 @@ trait DocumentTrait
         $customer = [
             'id' => $customerId,
             'number' => '1337',
-            'salutationId' => $this->getValidSalutationId(),
+            'gender' => $this->getValidGender(),
             'name' => 'Max Mustermann',
             'customerNumber' => '1337',
             'languageId' => Defaults::LANGUAGE_SYSTEM,
@@ -79,7 +79,7 @@ trait DocumentTrait
                     'id' => $addressId,
                     'customerId' => $customerId,
                     'countryId' => $this->getValidCountryId(),
-                    'salutationId' => $this->getValidSalutationId(),
+                    'gender' => $this->getValidGender(),
                     'name' => 'Max Mustermann',
                     'street' => 'Ebbinghoff 10',
                     'zipcode' => '48624',

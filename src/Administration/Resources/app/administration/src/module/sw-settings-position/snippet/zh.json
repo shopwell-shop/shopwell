@@ -1,0 +1,29 @@
+{
+  "sw-settings-position": {
+    "general": {
+      "mainMenuItemGeneral": "岗位",
+      "description": "管理用户在组织机构中可担任的岗位。",
+      "placeholderSearchBar": "搜索岗位..."
+    },
+    "list": {
+      "textHeadline": "岗位",
+      "buttonAddPosition": "新建岗位",
+      "columnName": "名称",
+      "columnPosition": "排序值",
+      "columnActive": "启用",
+      "labelName": "名称",
+      "placeholderName": "请输入名称...",
+      "labelActive": "启用",
+      "helpTextPosition": "排序值越小，在选择列表中越靠前。",
+      "modalTitleCreate": "新建岗位",
+      "modalTitleEdit": "编辑岗位",
+      "messageEmpty": "暂无岗位",
+      "messageSaveSuccess": "岗位已保存。",
+      "messageSaveError": "岗位保存失败。",
+      "messageLoadError": "岗位加载失败。",
+      "messageDeleteError": "岗位删除失败，可能仍有用户担任该岗位，建议改为停用。",
+      "messageNameRequired": "请填写名称。",
+      "textDeleteConfirm": "确定删除岗位「{name}」吗？"
+    }
+  }
+}

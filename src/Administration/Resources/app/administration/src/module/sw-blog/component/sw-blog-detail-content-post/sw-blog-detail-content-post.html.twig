@@ -1,0 +1,15 @@
+{% block sw_blog_detail_content_post %}
+<div class="sw-blog-detail-content-post">
+    {% block sw_blog_detail_content_post_body %}
+    <sw-text-editor
+        v-model:value="blog.content"
+        class="sw-blog-detail-content-post__body"
+        sanitize-input
+        sanitize-field-name="blog_translation.content"
+        :disabled="isDisabled"
+        :label="$t('sw-blog.detail.contentLabelBody')"
+        :placeholder="$t('sw-blog.detail.contentPlaceholderBody')"
+    />
+    {% endblock %}
+</div>
+{% endblock %}

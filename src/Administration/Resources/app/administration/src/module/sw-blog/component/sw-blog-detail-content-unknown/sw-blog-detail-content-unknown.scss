@@ -1,0 +1,23 @@
+.sw-blog-detail-content-unknown {
+    &__banner {
+        margin-block-end: var(--scale-size-16);
+    }
+
+    &__fields {
+        display: grid;
+        grid-template-columns: max-content 1fr;
+        gap: var(--scale-size-8) var(--scale-size-16);
+        margin: 0;
+    }
+
+    &__label {
+        color: var(--color-text-secondary-default);
+        font-weight: var(--font-weight-semibold);
+    }
+
+    &__value {
+        margin: 0;
+        color: var(--color-text-primary-default);
+        word-break: break-all;
+    }
+}

@@ -217,7 +217,7 @@ class HandlePaymentMethodRouteResponseTest extends TestCase
             'orderCustomer' => [
                 'customerId' => $customerId,
                 'email' => 'test@example.com',
-                'salutationId' => $this->getValidSalutationId(),
+                'gender' => $this->getValidGender(),
                 'name' => 'Max Mustermann',
             ],
             'stateId' => $stateId,
@@ -229,7 +229,7 @@ class HandlePaymentMethodRouteResponseTest extends TestCase
             'addresses' => [
                 [
                     'id' => $addressId,
-                    'salutationId' => $this->getValidSalutationId(),
+                    'gender' => $this->getValidGender(),
                     'name' => 'Max Mustermann',
                     'street' => 'Ebbinghoff 10',
                     'zipcode' => '48624',

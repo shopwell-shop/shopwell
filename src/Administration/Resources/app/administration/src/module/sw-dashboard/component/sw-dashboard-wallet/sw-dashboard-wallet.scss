@@ -1,0 +1,94 @@
+.sw-dashboard-wallet {
+    &__top-up {
+        display: flex;
+        align-items: baseline;
+        gap: var(--scale-size-8);
+        margin-bottom: var(--scale-size-16);
+    }
+
+    &__top-up-label {
+        color: var(--color-text-secondary-default);
+        font-size: var(--font-size-s);
+        line-height: var(--font-line-height-s);
+    }
+
+    &__top-up-value {
+        color: var(--color-text-primary-default);
+        font-size: var(--font-size-l);
+        font-weight: var(--font-weight-semibold);
+        line-height: var(--font-line-height-l);
+        font-variant-numeric: tabular-nums;
+    }
+
+    &__list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+    }
+
+    &__item {
+        &:not(:last-child) {
+            border-bottom: 1px solid var(--color-border-secondary-default);
+        }
+    }
+
+    &__item-inner {
+        display: flex;
+        align-items: center;
+        gap: var(--scale-size-12);
+        min-height: var(--scale-size-40);
+        padding: var(--scale-size-4) 0;
+        color: inherit;
+        text-decoration: none;
+        font-size: var(--font-size-s);
+        line-height: var(--font-line-height-s);
+
+        &:hover {
+            background-color: var(--color-elevation-surface-hover);
+        }
+    }
+
+    &__item-customer {
+        flex: 1 1 auto;
+        color: var(--color-text-primary-default);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    &__item-type {
+        flex: 0 0 auto;
+        color: var(--color-text-secondary-default);
+    }
+
+    &__item-amount {
+        flex: 0 0 auto;
+        color: var(--color-text-primary-default);
+        font-variant-numeric: tabular-nums;
+
+        &.is-positive {
+            color: var(--color-text-positive-default);
+        }
+    }
+
+    &__empty {
+        padding: var(--scale-size-16) 0;
+        color: var(--color-text-secondary-default);
+        font-size: var(--font-size-s);
+        line-height: var(--font-line-height-s);
+        text-align: center;
+    }
+
+    &__footer-link {
+        display: inline-block;
+        margin-top: var(--scale-size-12);
+        color: var(--color-text-brand-default);
+        font-size: var(--font-size-s);
+        line-height: var(--font-line-height-s);
+        text-decoration: none;
+
+        &:hover {
+            text-decoration: underline;
+        }
+    }
+}

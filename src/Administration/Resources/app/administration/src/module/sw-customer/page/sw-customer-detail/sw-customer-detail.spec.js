@@ -102,6 +102,9 @@ async function createWrapper(
                     },
                 },
                 provide: {
+                    dictionaryService: {
+                        getGenders: jest.fn(() => Promise.resolve([])),
+                    },
                     repositoryFactory: {
                         create: () => {
                             return {
@@ -255,10 +258,10 @@ describe('module/sw-customer/page/sw-customer-detail', () => {
         wrapperWithPrivileges.vm.createNotificationError.mockRestore();
     });
 
-    it('should get default salutation is value not specified', async () => {
+    it('should set the default gender to not_specified when missing', async () => {
         await flushPromises();
 
-        expect(wrapper.vm.customer.salutationId).toBe('1');
+        expect(wrapper.vm.customer.gender).toBe('not_specified');
     });
 
     it('should redirect to the customer listing when the customer does not exist', async () => {

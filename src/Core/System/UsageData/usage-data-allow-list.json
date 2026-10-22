@@ -489,20 +489,6 @@
     "createdAt",
     "updatedAt"
   ],
-  "salutation": [
-    "id",
-    "salutationKey",
-    "createdAt",
-    "updatedAt"
-  ],
-  "salutation_translation": [
-    "displayName",
-    "letterName",
-    "createdAt",
-    "updatedAt",
-    "salutationId",
-    "languageId"
-  ],
   "tax": [
     "id",
     "taxRate",
@@ -818,8 +804,7 @@
     "stock",
     "createdAt",
     "updatedAt",
-    "subscriptionPlans",
-    "warehouseGroups"
+    "subscriptionPlans"
   ],
   "product_configurator_setting": [
     "id",
@@ -1002,7 +987,7 @@
     "status",
     "confirmedAt",
     "tags",
-    "salutationId",
+    "gender",
     "languageId",
     "salesChannelId",
     "createdAt",
@@ -1343,7 +1328,7 @@
     "defaultShippingAddressId",
     "autoIncrement",
     "customerNumber",
-    "salutationId",
+    "gender",
     "affiliateCode",
     "campaignCode",
     "active",
@@ -1385,7 +1370,7 @@
     "customerId",
     "countryId",
     "countryStateId",
-    "salutationId",
+    "gender",
     "city",
     "createdAt",
     "updatedAt"
@@ -1498,7 +1483,7 @@
     "countryId",
     "countryStateId",
     "orderId",
-    "salutationId",
+    "gender",
     "city",
     "createdAt",
     "updatedAt"
@@ -1507,7 +1492,7 @@
     "id",
     "customerId",
     "orderId",
-    "salutationId",
+    "gender",
     "customerNumber",
     "remoteAddress",
     "createdAt",
@@ -1845,7 +1830,7 @@
     "countryId",
     "subscriptionId",
     "countryStateId",
-    "salutationId",
+    "gender",
     "createdAt",
     "updatedAt"
   ],
@@ -1853,7 +1838,7 @@
     "id",
     "subscriptionId",
     "customerId",
-    "salutationId",
+    "gender",
     "remoteAddress",
     "createdAt",
     "updatedAt"
@@ -1894,50 +1879,6 @@
     "expired",
     "delaySequenceId",
     "stored",
-    "createdAt",
-    "updatedAt"
-  ],
-  "warehouse": [
-    "id",
-    "name",
-    "description",
-    "groups",
-    "createdAt",
-    "updatedAt"
-  ],
-  "warehouse_group": [
-    "id",
-    "name",
-    "description",
-    "priority",
-    "ruleId",
-    "warehouses",
-    "products",
-    "createdAt",
-    "updatedAt"
-  ],
-  "product_warehouse": [
-    "id",
-    "productId",
-    "warehouseId",
-    "stock",
-    "createdAt",
-    "updatedAt"
-  ],
-  "order_warehouse_group": [
-    "id",
-    "orderId",
-    "warehouseGroupId",
-    "createdAt",
-    "updatedAt"
-  ],
-  "order_product_warehouse": [
-    "id",
-    "orderId",
-    "productId",
-    "warehouseId",
-    "quantity",
-    "warehouses",
     "createdAt",
     "updatedAt"
   ],

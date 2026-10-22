@@ -6,7 +6,7 @@ import './sw-customer-address-form.scss';
  * @sw-package checkout
  */
 
-const { Defaults, EntityDefinition } = Shopwell;
+const { EntityDefinition } = Shopwell;
 const { Criteria } = Shopwell.Data;
 const { mapPropertyErrors } = Shopwell.Component.getComponentHelper();
 
@@ -21,7 +21,7 @@ const MANAGED_REQUIRED_FIELDS = ['company', ...Object.keys(COUNTRY_DEPENDENT_FIE
 export default {
     template,
 
-    inject: ['repositoryFactory'],
+    inject: ['repositoryFactory', 'dictionaryService'],
 
     props: {
         customer: {
@@ -48,6 +48,7 @@ export default {
         return {
             country: null,
             states: [],
+            genders: [],
         };
     },
 
@@ -67,7 +68,7 @@ export default {
         ...mapPropertyErrors('address', [
             'company',
             'department',
-            'salutationId',
+            'gender',
             'title',
             'name',
             'street',
@@ -109,12 +110,11 @@ export default {
             return criteria;
         },
 
-        salutationCriteria() {
-            const criteria = new Criteria(1, 25);
-
-            criteria.addFilter(Criteria.not('or', [Criteria.equals('id', Defaults.defaultSalutationId)]));
-
-            return criteria;
+        genderOptions() {
+            return this.genders.map((entry) => ({
+                value: entry.technicalName,
+                label: entry.translated.label,
+            }));
         },
 
         hasStates() {
@@ -183,7 +183,17 @@ export default {
         MANAGED_REQUIRED_FIELDS.forEach((field) => this.setFieldRequired(field, false));
     },
 
+    created() {
+        this.createdComponent();
+    },
+
     methods: {
+        createdComponent() {
+            this.dictionaryService.getGenders(true, true).then((entries) => {
+                this.genders = entries;
+            });
+        },
+
         setFieldRequired(field, isRequired) {
             const property = EntityDefinition.get(this.address.getEntityName()).properties[field];
 

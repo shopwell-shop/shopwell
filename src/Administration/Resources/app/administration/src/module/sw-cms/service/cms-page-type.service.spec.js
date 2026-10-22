@@ -33,6 +33,20 @@ const expectedTypes = {
         class: ['sw-cms-create-wizard__page-type-product-detail'],
         hideInList: false,
     },
+    blog_detail: {
+        name: 'blog_detail',
+        icon: 'regular-image-text',
+        title: 'sw-cms.detail.label.pageType.blogDetail',
+        class: ['sw-cms-create-wizard__page-type-blog-detail'],
+        hideInList: false,
+    },
+    blog_listing: {
+        name: 'blog_listing',
+        icon: 'regular-image-text',
+        title: 'sw-cms.detail.label.pageType.blogListing',
+        class: ['sw-cms-create-wizard__page-type-blog-listing'],
+        hideInList: false,
+    },
 };
 
 const mockType = {
@@ -59,17 +73,17 @@ describe('module/sw-cms/service/cms-page-type.service.ts', () => {
 
     it('should return all types', () => {
         const types = cmsPageTypeService.getTypes();
-        expect(types).toHaveLength(5);
+        expect(types).toHaveLength(7);
     });
 
     it('should return all visible types', () => {
         const types = cmsPageTypeService.getVisibleTypes();
-        expect(types).toHaveLength(4);
+        expect(types).toHaveLength(6);
     });
 
     it('should return all type names', () => {
         const typeNames = cmsPageTypeService.getTypeNames();
-        expect(typeNames).toHaveLength(5);
+        expect(typeNames).toHaveLength(7);
     });
 
     it('should throw an error, when an existing page type is added again', () => {

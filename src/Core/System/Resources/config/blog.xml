@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopwell-shop/shopwell/trunk/src/Core/System/SystemConfig/Schema/config.xsd">
+    <card>
+        <title>Articles</title>
+        <title lang="zh-CN">文章</title>
+
+        <input-field type="int">
+            <name>postsPerPage</name>
+            <defaultValue>12</defaultValue>
+            <label>Entries per page</label>
+            <label lang="zh-CN">每页文章数</label>
+            <helpText>How many entries one listing page shows. Values below 1 fall back to the default of 12.</helpText>
+            <helpText lang="zh-CN">列表页每页显示的文章数量。小于 1 的值会回落到默认的 12。</helpText>
+        </input-field>
+
+        <input-field type="bool">
+            <name>showAuthor</name>
+            <defaultValue>true</defaultValue>
+            <label>Show the author</label>
+            <label lang="zh-CN">显示作者</label>
+            <helpText>Shows the byline on the cards and the author card below an article.</helpText>
+            <helpText lang="zh-CN">在卡片上显示署名，并在文章末尾显示作者卡。</helpText>
+        </input-field>
+
+        <input-field type="bool">
+            <name>showReadingTime</name>
+            <defaultValue>true</defaultValue>
+            <label>Show the reading time</label>
+            <label lang="zh-CN">显示阅读时长</label>
+            <helpText>The estimate is computed from the body of the entry: latin words and chinese characters are counted separately.</helpText>
+            <helpText lang="zh-CN">阅读时长由正文估算，拉丁词与中文字符分别计数。</helpText>
+        </input-field>
+
+        <input-field type="int">
+            <name>relatedPostsCount</name>
+            <defaultValue>3</defaultValue>
+            <label>Related entries below an article</label>
+            <label lang="zh-CN">文末相关文章数</label>
+            <helpText>Entries from the same categories are preferred, the block is topped up with the newest entries. 0 switches the block off.</helpText>
+            <helpText lang="zh-CN">优先取同分类的文章，不足时用最新文章补齐。填 0 表示关闭该区块。</helpText>
+        </input-field>
+
+        <input-field type="bool">
+            <name>tocEnabled</name>
+            <defaultValue>true</defaultValue>
+            <label>Table of contents</label>
+            <label lang="zh-CN">显示目录</label>
+            <helpText>The table of contents is built from the h2 and h3 headings of the body on the server, so it also works without javascript.</helpText>
+            <helpText lang="zh-CN">目录由正文里的 h2、h3 在服务端生成，不依赖 JavaScript 也能显示。</helpText>
+        </input-field>
+
+        <input-field type="bool">
+            <name>commentsEnabled</name>
+            <defaultValue>true</defaultValue>
+            <label>Comments below an article</label>
+            <label lang="zh-CN">文章评论</label>
+            <helpText>Switches the whole comment thread off: no thread, no form and the write route refuses new comments.</helpText>
+            <helpText lang="zh-CN">关闭后既不显示评论区也不显示表单，写入接口同样会拒绝新评论。</helpText>
+        </input-field>
+
+        <input-field type="bool">
+            <name>autoPublishComments</name>
+            <defaultValue>false</defaultValue>
+            <label>Show new comments without moderation</label>
+            <label lang="zh-CN">新评论免审核直接显示</label>
+            <helpText>Off by default. When off, every comment waits for a moderator in the administration before a visitor can read it.</helpText>
+            <helpText lang="zh-CN">默认关闭。关闭时每条评论都要在后台审核通过后访客才能看到。</helpText>
+        </input-field>
+
+        <input-field type="int">
+            <name>commentsPerPage</name>
+            <defaultValue>10</defaultValue>
+            <label>Comments per page</label>
+            <label lang="zh-CN">每页评论数</label>
+            <helpText>How many top level comments one page of a thread shows. Replies travel with their parent and do not count against this number.</helpText>
+            <helpText lang="zh-CN">评论区每页显示的顶层评论数；回复跟随父评论一起显示，不占用这个数量。</helpText>
+        </input-field>
+    </card>
+</config>

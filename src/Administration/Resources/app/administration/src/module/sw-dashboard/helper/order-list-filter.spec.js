@@ -10,6 +10,7 @@ import {
     createStateFilter,
     getDayBounds,
     getDayKeys,
+    getMonthStart,
     getPreviousDay,
     getUserTimeZoneDate,
 } from './order-list-filter';
@@ -62,6 +63,18 @@ describe('module/sw-dashboard/helper/order-list-filter', () => {
                 from: '2026-10-02T16:00:00.000Z',
                 to: '2026-10-03T15:59:59.000Z',
             });
+        });
+
+        it('starts the month at the local first of the month', () => {
+            setTimeZone('Asia/Shanghai');
+
+            // 2026-10-02T16:31Z is already the 3rd of October in Shanghai, so
+            // the month starts at the 1st of October local time.
+            expect(getMonthStart(reference)).toBe('2026-09-30T16:00:00.000Z');
+        });
+
+        it('starts the month at the first of the month for an utc user', () => {
+            expect(getMonthStart(reference)).toBe('2026-10-01T00:00:00.000Z');
         });
 
         it('does not shift the day for an utc user', () => {

@@ -10,7 +10,7 @@
       "defaultBillingAddress": {
         "name": "Max Mustermann",
         "city": "Bielefeld",
-        "salutationId": "{salutation}",
+        "gender": "{gender}",
         "street": "Buchenweg 5",
         "zipcode": "33062",
         "countryId": "{country}",
@@ -23,13 +23,13 @@
         "default-address": {
           "name": "Max Mustermann",
           "city": "Bielefeld",
-          "salutationId": "{salutation}",
+          "gender": "{gender}",
           "street": "Buchenweg 5",
           "zipcode": "33062",
           "countryId": "{country}"
         }
       },
-      "salutationId": "{salutation}"
+      "gender": "{gender}"
     }
   ]
 }

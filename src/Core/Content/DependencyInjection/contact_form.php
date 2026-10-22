@@ -28,7 +28,6 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(ContactFormValidationFactory::class),
             service(DataValidator::class),
             service('event_dispatcher'),
-            service('salutation.repository'),
             service(RequestStack::class),
             service('shopwell.rate_limiter'),
             service(CmsFormSlotConfigResolver::class),

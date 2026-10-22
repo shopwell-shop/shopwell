@@ -170,7 +170,7 @@ class NewsletterSubscribeRoute extends AbstractNewsletterSubscribeRoute
             'zipCode',
             'city',
             'street',
-            'salutationId',
+            'gender',
             'option',
             'storefrontUrl',
             'customFields'
@@ -334,7 +334,6 @@ class NewsletterSubscribeRoute extends AbstractNewsletterSubscribeRoute
         $criteria = new Criteria();
         $criteria->addFilter(new EqualsFilter('email', $email));
         $criteria->addFilter(new EqualsFilter('salesChannelId', $context->getSalesChannelId()));
-        $criteria->addAssociation('salutation');
         $criteria->setLimit(1);
 
         $newsletterRecipient = $this->newsletterRecipientRepository->search($criteria, $context->getContext())->getEntities()->first();

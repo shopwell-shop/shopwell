@@ -1,0 +1,7 @@
+.sw-settings-dictionary-list {
+    &__technical-name {
+        font-family: var(--font-family-monospace, monospace);
+        font-size: var(--font-size-xs);
+        color: var(--color-text-secondary-default);
+    }
+}

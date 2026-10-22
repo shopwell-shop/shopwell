@@ -1,0 +1,121 @@
+.sw-blog-detail {
+    &__header {
+        display: flex;
+        gap: var(--scale-size-12);
+        align-items: center;
+    }
+
+    &__header-status {
+        flex: none;
+    }
+
+    /**
+     * Canvas and rail.
+     *
+     * The rail sticks: the publication date stays reachable while the body grows, which is the whole
+     * point of putting the settings beside the canvas instead of below it.
+     */
+    &__layout {
+        display: grid;
+        grid-template-columns: minmax(0, 8fr) minmax(280px, 4fr);
+        gap: var(--scale-size-24);
+        align-items: start;
+        padding: var(--scale-size-24);
+        overflow-y: auto;
+    }
+
+    &__main {
+        display: flex;
+        flex-direction: column;
+        gap: var(--scale-size-24);
+        min-width: 0;
+    }
+
+    &__rail {
+        position: sticky;
+        top: 0;
+        display: flex;
+        flex-direction: column;
+        gap: var(--scale-size-16);
+        min-width: 0;
+    }
+
+    &__field-stack {
+        display: flex;
+        flex-direction: column;
+        gap: var(--scale-size-16);
+    }
+
+    &__rail-content {
+        display: flex;
+        flex-direction: column;
+        gap: var(--scale-size-12);
+    }
+
+    &__publish-state {
+        display: flex;
+    }
+
+    &__publish-actions {
+        display: flex;
+        gap: var(--scale-size-8);
+        flex-wrap: wrap;
+    }
+
+    &__category-list {
+        display: flex;
+        flex-direction: column;
+        gap: var(--scale-size-8);
+        max-block-size: 220px;
+        overflow-y: auto;
+    }
+
+    &__category-empty {
+        margin: 0;
+        color: var(--color-text-secondary-default);
+        font-size: var(--font-size-xs);
+    }
+
+    &__add-category,
+    &__add-author {
+        margin-block-start: var(--scale-size-12);
+    }
+
+    &__comment-hint {
+        margin: 0;
+        color: var(--color-text-secondary-default);
+        font-size: var(--font-size-xs);
+    }
+
+    &__comment-count {
+        margin-inline-start: var(--scale-size-8);
+    }
+
+    &__cms-page-form {
+        margin-block-start: var(--scale-size-24);
+    }
+
+    &__delete-message {
+        margin: 0;
+        color: var(--color-text-primary-default);
+    }
+
+    &__category-name,
+    &__author-name {
+        margin-block-end: var(--scale-size-16);
+    }
+
+    /**
+     * A narrow administration (tablet, split screen) stacks the rail under the canvas: two columns of
+     * which one is 280px wide leave the body unreadable.
+     */
+    @media screen and (max-width: 1024px) {
+        &__layout {
+            grid-template-columns: minmax(0, 1fr);
+        }
+
+        &__rail {
+            position: static;
+        }
+    }
+}

@@ -18,7 +18,6 @@ import usePlaceholder from './use-placeholder';
 import usePosition from './use-position';
 import useRuleBetweenOperator from './use-rule-between-operator';
 import useRuleContainer from './use-rule-container';
-import useSalutation from './use-salutation';
 import useTranslateWithFallback from './use-translate-with-fallback';
 import useUserSettings from './use-user-settings';
 import useValidation from './use-validation';
@@ -38,7 +37,6 @@ export default {
     usePosition,
     useRuleBetweenOperator,
     useRuleContainer,
-    useSalutation,
     useTranslateWithFallback,
     useUserSettings,
     useValidation,

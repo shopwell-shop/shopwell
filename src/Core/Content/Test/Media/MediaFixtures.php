@@ -195,11 +195,11 @@ trait MediaFixtures
                             'orderCustomer' => [
                                 'email' => 'test@example.com',
                                 'name' => 'Max Mustermann',
-                                'salutationId' => $this->getValidSalutationId(),
+                                'gender' => $this->getValidGender(),
                                 'customerNumber' => '1337',
                             ],
                             'billingAddress' => [
-                                'salutationId' => $this->getValidSalutationId(),
+                                'gender' => $this->getValidGender(),
                                 'name' => 'Max Mustermann',
                                 'street' => 'Ebbinghoff 10',
                                 'zipcode' => '48624',

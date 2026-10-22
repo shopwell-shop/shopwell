@@ -28,19 +28,17 @@
         />
         {% endblock %}
 
-        {% block sw_customer_address_form_salutation_title_container %}
-        {% block sw_customer_address_form_salutation_field %}
-        <sw-entity-single-select
-            v-model:value="address.salutationId"
-            name="sw-field--address-salutationId"
-            class="sw-customer-address-form__salutation-select"
-            entity="salutation"
-            :label="$t('sw-customer.addressForm.labelSalutation')"
-            :placeholder="$t('sw-customer.addressForm.placeholderSalutation')"
-            :error="disabled ? null : addressSalutationIdError"
+        {% block sw_customer_address_form_gender_title_container %}
+        {% block sw_customer_address_form_gender_field %}
+        <sw-single-select
+            v-model:value="address.gender"
+            name="sw-field--address-gender"
+            class="sw-customer-address-form__gender-select"
+            :label="$t('sw-customer.addressForm.labelGender')"
+            :placeholder="$t('sw-customer.addressForm.placeholderGender')"
+            :error="disabled ? null : addressGenderError"
             :disabled="disabled"
-            :criteria="salutationCriteria"
-            label-property="displayName"
+            :options="genderOptions"
         />
         {% endblock %}
 

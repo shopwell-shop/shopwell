@@ -3,7 +3,6 @@
  */
 import { mount } from '@vue/test-utils';
 import 'src/app/mixin/placeholder.mixin';
-import 'src/app/mixin/salutation.mixin';
 
 async function createWrapper(reviewOverrides = {}, stubOverrides = {}) {
     return mount(await wrapTestComponent('sw-review-detail', { sync: true }), {
@@ -20,7 +19,6 @@ async function createWrapper(reviewOverrides = {}, stubOverrides = {}) {
                 },
                 date: () => {},
                 placeholder: () => {},
-                salutation: () => {},
             },
             provide: {
                 repositoryFactory: {

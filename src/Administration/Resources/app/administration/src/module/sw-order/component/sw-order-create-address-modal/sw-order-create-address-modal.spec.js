@@ -40,6 +40,9 @@ async function createWrapper() {
                     'sw-entity-single-select': true,
                 },
                 provide: {
+                    dictionaryService: {
+                        getGenders: jest.fn(() => Promise.resolve([])),
+                    },
                     repositoryFactory: {
                         create: () => ({
                             search: () => {

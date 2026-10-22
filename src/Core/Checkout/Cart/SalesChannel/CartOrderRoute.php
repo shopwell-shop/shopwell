@@ -119,7 +119,6 @@ class CartOrderRoute extends AbstractCartOrderRoute
                 ->addAssociation('primaryOrderDelivery')
                 ->addAssociation('primaryOrderTransaction')
                 ->addAssociation('orderCustomer.customer')
-                ->addAssociation('orderCustomer.salutation')
                 ->addAssociation('deliveries.shippingMethod')
                 ->addAssociation('deliveries.shippingOrderAddress.country')
                 ->addAssociation('deliveries.shippingOrderAddress.countryState')

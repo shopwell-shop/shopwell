@@ -209,7 +209,6 @@ class OrderStateChangeEventListener implements EventSubscriberInterface
     {
         $criteria = (new Criteria([$orderId]))
             ->addAssociations([
-                'orderCustomer.salutation',
                 'orderCustomer.customer',
                 'stateMachineState',
                 'deliveries.shippingMethod',

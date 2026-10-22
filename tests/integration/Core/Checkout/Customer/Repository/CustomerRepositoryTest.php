@@ -73,13 +73,13 @@ class CustomerRepositoryTest extends TestCase
         $recordC = Uuid::randomHex();
         $recordD = Uuid::randomHex();
 
-        $salutation = $this->getValidSalutationId();
+        $salutation = $this->getValidGender();
         $address = [
             'name' => 'not not',
             'city' => 'not',
             'street' => 'not',
             'zipcode' => 'not',
-            'salutationId' => $salutation,
+            'gender' => $salutation,
             'country' => ['name' => 'not'],
         ];
 
@@ -99,7 +99,7 @@ class CustomerRepositoryTest extends TestCase
                 'email' => Uuid::randomHex() . '@example.com',
                 'password' => TestDefaults::HASHED_PASSWORD,
                 'name' => 'not',
-                'salutationId' => $salutation,
+                'gender' => $salutation,
                 'customerNumber' => 'not',
             ],
             [
@@ -110,7 +110,7 @@ class CustomerRepositoryTest extends TestCase
                 'email' => Uuid::randomHex() . '@example.com',
                 'password' => TestDefaults::HASHED_PASSWORD,
                 'name' => $matchTerm,
-                'salutationId' => $salutation,
+                'gender' => $salutation,
                 'customerNumber' => 'not',
             ],
             [
@@ -121,7 +121,7 @@ class CustomerRepositoryTest extends TestCase
                 'email' => Uuid::randomHex() . '@example.com',
                 'password' => TestDefaults::HASHED_PASSWORD,
                 'name' => 'not',
-                'salutationId' => $salutation,
+                'gender' => $salutation,
                 'customerNumber' => $matchTerm,
             ],
             [
@@ -132,7 +132,7 @@ class CustomerRepositoryTest extends TestCase
                 'email' => $matchTerm . '@example.com',
                 'password' => TestDefaults::HASHED_PASSWORD,
                 'name' => 'not',
-                'salutationId' => $salutation,
+                'gender' => $salutation,
                 'customerNumber' => 'not',
             ],
         ];
@@ -174,7 +174,7 @@ class CustomerRepositoryTest extends TestCase
     public function testDeleteCustomerWithTags(): void
     {
         $customerId = Uuid::randomHex();
-        $salutation = $this->getValidSalutationId();
+        $salutation = $this->getValidGender();
         $customer = [
             'id' => $customerId,
             'salesChannelId' => TestDefaults::SALES_CHANNEL,
@@ -183,14 +183,14 @@ class CustomerRepositoryTest extends TestCase
                 'city' => 'not',
                 'street' => 'not',
                 'zipcode' => 'not',
-                'salutationId' => $salutation,
+                'gender' => $salutation,
                 'country' => ['name' => 'not'],
             ],
             'groupId' => TestDefaults::FALLBACK_CUSTOMER_GROUP,
             'email' => 'test@example.com',
             'password' => TestDefaults::HASHED_PASSWORD,
             'name' => 'test',
-            'salutationId' => $salutation,
+            'gender' => $salutation,
             'customerNumber' => 'not',
             'tags' => [['name' => 'testTag']],
         ];
@@ -221,7 +221,7 @@ class CustomerRepositoryTest extends TestCase
                 'street' => 'Musterstraße 1',
                 'city' => 'Schöppingen',
                 'zipcode' => '12345',
-                'salutationId' => $this->getValidSalutationId(),
+                'gender' => $this->getValidGender(),
                 'countryId' => $this->getValidCountryId(),
             ],
             'defaultBillingAddressId' => $addressId,
@@ -229,7 +229,7 @@ class CustomerRepositoryTest extends TestCase
             'email' => 'foo@bar.de',
             'password' => TestDefaults::HASHED_PASSWORD,
             'name' => 'Max Mustermann',
-            'salutationId' => $this->getValidSalutationId(),
+            'gender' => $this->getValidGender(),
             'customerNumber' => '12345',
         ];
 

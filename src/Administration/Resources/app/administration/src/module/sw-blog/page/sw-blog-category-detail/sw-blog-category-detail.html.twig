@@ -1,0 +1,202 @@
+{% block sw_blog_category_detail %}
+<sw-page
+    class="sw-blog-category-detail"
+    position-identifier="sw-blog-category-detail"
+>
+    {% block sw_blog_category_detail_smart_bar_header %}
+    <template #smart-bar-header>
+        {% block sw_blog_category_detail_smart_bar_header_title %}
+        <h2>
+            {% block sw_blog_category_detail_smart_bar_header_title_text %}
+            <template v-if="category">
+                {{ name }}
+            </template>
+            <sw-skeleton
+                v-else
+                variant="bold"
+            />
+            {% endblock %}
+        </h2>
+        {% endblock %}
+    </template>
+    {% endblock %}
+
+    {% block sw_blog_category_detail_language_switch %}
+    <template #language-switch>
+        <sw-language-switch
+            class="sw-blog-category-detail__language-switch"
+            :disabled="!category"
+            :save-changes-function="saveOnLanguageChange"
+            :abort-change-function="abortOnLanguageChange"
+            @on-change="onChangeLanguage"
+        />
+    </template>
+    {% endblock %}
+
+    {% block sw_blog_category_detail_smart_bar_actions %}
+    <template #smart-bar-actions>
+        {% block sw_blog_category_detail_actions_cancel %}
+        <mt-button
+            class="sw-blog-category-detail__action-cancel"
+            variant="secondary"
+            size="default"
+            @click="onCancel"
+        >
+            {{ $t('global.default.cancel') }}
+        </mt-button>
+        {% endblock %}
+
+        {% block sw_blog_category_detail_actions_delete %}
+        <mt-button
+            v-if="category && canDelete"
+            class="sw-blog-category-detail__action-delete"
+            variant="critical"
+            size="default"
+            @click="onOpenDeleteModal"
+        >
+            {{ $t('global.default.delete') }}
+        </mt-button>
+        {% endblock %}
+
+        {% block sw_blog_category_detail_actions_save %}
+        <mt-button
+            v-if="category"
+            class="sw-blog-category-detail__action-save"
+            variant="primary"
+            size="default"
+            :disabled="!canEdit || undefined"
+            :is-loading="isSaving"
+            @click="onSave()"
+        >
+            {{ $t('global.default.save') }}
+        </mt-button>
+        {% endblock %}
+    </template>
+    {% endblock %}
+
+    {% block sw_blog_category_detail_content %}
+    <template #content>
+        {% block sw_blog_category_detail_content_loading %}
+        <sw-skeleton
+            v-if="!category"
+            class="sw-blog-category-detail__loading"
+            variant="bold"
+        />
+        {% endblock %}
+
+        {% block sw_blog_category_detail_content_card_view %}
+        <sw-card-view
+            v-else
+            class="sw-blog-category-detail__card-view"
+        >
+            {% block sw_blog_category_detail_content_general %}
+            <mt-card
+                class="sw-blog-category-detail__general"
+                position-identifier="sw-blog-category-detail-general"
+                :title="$t('sw-blog.detail.cardGeneral')"
+                :is-loading="isLoading"
+            >
+                {% block sw_blog_category_detail_content_general_fields %}
+                <sw-container
+                    columns="1fr 1fr"
+                    gap="0 var(--scale-size-32)"
+                >
+                    <mt-text-field
+                        v-model="category.name"
+                        class="sw-blog-category-detail__name"
+                        required
+                        :disabled="!canEdit"
+                        :label="$t('sw-blog.detail.labelName')"
+                        :placeholder="$t('sw-blog.detail.placeholderName')"
+                    />
+
+                    <mt-text-field
+                        v-model="category.slug"
+                        class="sw-blog-category-detail__slug"
+                        required
+                        :disabled="!canEdit"
+                        :label="$t('sw-blog.detail.labelSlug')"
+                        :placeholder="$t('sw-blog.detail.placeholderSlugCategory')"
+                        :help-text="$t('sw-blog.detail.helpTextSlug')"
+                    />
+
+                    <mt-switch
+                        v-model="category.active"
+                        class="sw-blog-category-detail__active"
+                        bordered
+                        :disabled="!canEdit"
+                        :label="$t('sw-blog.detail.labelActive')"
+                    />
+                </sw-container>
+                {% endblock %}
+
+                {% block sw_blog_category_detail_content_general_description %}
+                <mt-textarea
+                    v-model="category.description"
+                    class="sw-blog-category-detail__description"
+                    :disabled="!canEdit"
+                    :label="$t('sw-blog.detail.labelDescription')"
+                />
+                {% endblock %}
+            </mt-card>
+            {% endblock %}
+
+            {% block sw_blog_category_detail_content_layout %}
+            <mt-card
+                class="sw-blog-category-detail__layout"
+                position-identifier="sw-blog-category-detail-layout"
+                :title="$t('sw-blog.detail.cardLayout')"
+                :is-loading="isLoading"
+            >
+                {% block sw_blog_category_detail_content_layout_select %}
+                <sw-entity-single-select
+                    v-model:value="category.cmsPageId"
+                    class="sw-blog-category-detail__cms-page"
+                    entity="cms_page"
+                    :criteria="cmsPageOptionsCriteria"
+                    :disabled="!canEdit"
+                    :label="$t('sw-blog.detail.labelCmsPage')"
+                    :placeholder="$t('sw-blog.detail.placeholderCmsPage')"
+                    @update:value="onCmsPageChanged"
+                />
+                {% endblock %}
+            </mt-card>
+            {% endblock %}
+    {% block sw_blog_category_detail_delete_modal %}
+            <sw-modal
+                v-if="showDeleteModal"
+                class="sw-blog-category-detail__delete-modal"
+                variant="small"
+                :title="$t('sw-blog.list.titleDeleteCategory')"
+                @modal-close="onCloseDeleteModal"
+            >
+                <p class="sw-blog-category-detail__delete-message">
+                    {{ deleteMessage }}
+                </p>
+
+                <template #modal-footer>
+                    <mt-button
+                        variant="secondary"
+                        size="small"
+                        @click="onCloseDeleteModal"
+                    >
+                        {{ $t('global.default.cancel') }}
+                    </mt-button>
+
+                    <mt-button
+                        variant="critical"
+                        size="small"
+                        @click="onDelete"
+                    >
+                        {{ $t('global.default.delete') }}
+                    </mt-button>
+                </template>
+            </sw-modal>
+    {% endblock %}
+        </sw-card-view>
+        {% endblock %}
+    </template>
+    {% endblock %}
+
+</sw-page>
+{% endblock %}

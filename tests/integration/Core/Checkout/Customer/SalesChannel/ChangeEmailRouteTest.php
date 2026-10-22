@@ -341,7 +341,7 @@ class ChangeEmailRouteTest extends TestCase
                 'street' => 'Musterstraße 1',
                 'city' => 'Schoöppingen',
                 'zipcode' => '12345',
-                'salutationId' => $this->getValidSalutationId(),
+                'gender' => $this->getValidGender(),
                 'countryId' => $this->getValidCountryId(),
             ],
             'defaultBillingAddressId' => $addressId,
@@ -350,7 +350,7 @@ class ChangeEmailRouteTest extends TestCase
             'email' => $email,
             'password' => $password,
             'name' => 'Max Mustermann',
-            'salutationId' => $this->getValidSalutationId(),
+            'gender' => $this->getValidGender(),
             'customerNumber' => $customerId,
         ];
 
@@ -367,7 +367,7 @@ class ChangeEmailRouteTest extends TestCase
         $customer = [
             'id' => $customerId,
             'number' => $customerId,
-            'salutationId' => $this->getValidSalutationId(),
+            'gender' => $this->getValidGender(),
             'name' => 'Max Mustermann',
             'customerNumber' => $customerId,
             'email' => $email,
@@ -381,7 +381,7 @@ class ChangeEmailRouteTest extends TestCase
                     'id' => $addressId,
                     'customerId' => $customerId,
                     'countryId' => $this->getValidCountryId(),
-                    'salutationId' => $this->getValidSalutationId(),
+                    'gender' => $this->getValidGender(),
                     'name' => 'Max Mustermann',
                     'street' => 'Ebbinghoff 10',
                     'zipcode' => '48624',

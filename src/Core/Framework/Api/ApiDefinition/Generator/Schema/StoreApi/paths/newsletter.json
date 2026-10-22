@@ -96,10 +96,9 @@
                                         "description": "Url of the storefront of the shop. This will be used for generating the link to the /newsletter/confirm inside the confirm email. The value has to match one of the domains configured for the sales channel, otherwise the request is rejected. When the `core.newsletter.doubleOptInDomain` setting is filled, the sent value is replaced by that domain and not validated.",
                                         "type": "string"
                                     },
-                                    "salutationId": {
-                                        "description": "Identifier of the salutation.",
-                                        "type": "string",
-                                        "pattern": "^[0-9a-f]{32}$"
+                                    "gender": {
+                                        "description": "Gender code of the newsletter recipient.",
+                                        "type": "string"
                                     },
                                     "name": {
                                         "description": "Full name",

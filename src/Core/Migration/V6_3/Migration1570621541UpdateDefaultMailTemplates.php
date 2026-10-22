@@ -276,7 +276,7 @@ class Migration1570621541UpdateDefaultMailTemplates extends MigrationStep
         return '<div style="font-family:arial; font-size:12px;">
 
 {% set currencyIsoCode = order.currency.isoCode %}
-{{order.orderCustomer.salutation.translated.letterName }} {{order.orderCustomer.name}},<br>
+{{order.orderCustomer.name}},<br>
 <br>
 Thank you for your order at {{ salesChannel.translated.name }} (Number: {{order.orderNumber}}) on {{ order.orderDateTime|date }}.<br>
 <br>
@@ -359,7 +359,7 @@ Thank you for your order at {{ salesChannel.translated.name }} (Number: {{order.
     private function getOrderConfirmationPlainTemplateEn(): string
     {
         return '{% set currencyIsoCode = order.currency.isoCode %}
-{{order.orderCustomer.salutation.translated.letterName }} {{order.orderCustomer.name}},
+{{order.orderCustomer.name}},
 
 Thank you for your order at {{ salesChannel.translated.name }} (Number: {{order.orderNumber}}) on {{ order.orderDateTime|date }}.
 
@@ -418,7 +418,7 @@ If you have any questions, do not hesitate to contact us.
         return '<div style="font-family:arial; font-size:12px;">
 
 {% set currencyIsoCode = order.currency.isoCode %}
-您好 {{order.orderCustomer.salutation.translated.letterName }} {{order.orderCustomer.name}},<br>
+您好 {{order.orderCustomer.name}},<br>
 <br>
 感谢您在 {{ salesChannel.translated.name }} 下单（订单号：{{order.orderNumber}}），下单时间 {{ order.orderDateTime|date }}。<br>
 <br>
@@ -502,7 +502,7 @@ If you have any questions, do not hesitate to contact us.
     private function getOrderConfirmationPlainTemplateZhCn(): string
     {
         return '{% set currencyIsoCode = order.currency.isoCode %}
-您好 {{order.orderCustomer.salutation.translated.letterName }} {{order.orderCustomer.name}},
+您好 {{order.orderCustomer.name}},
 
 感谢您在 {{ salesChannel.translated.name }} 下单（订单号：{{order.orderNumber}}），下单时间 {{ order.orderDateTime|date }}。
 
@@ -560,7 +560,7 @@ If you have any questions, do not hesitate to contact us.
     {
         return '<div style="font-family:arial; font-size:12px;">
             <p>
-                {{ customer.salutation.translated.letterName }} {{ customer.name }},<br/>
+                {{ customer.name }},<br/>
                 <br/>
                 thank you for your signing up with our Shop.<br/>
                 You will gain access via the email address <strong>{{ customer.email }}</strong> and the password you have chosen.<br/>
@@ -571,7 +571,7 @@ If you have any questions, do not hesitate to contact us.
 
     private function getRegistrationPlainTemplateEn(): string
     {
-        return '{{ customer.salutation.translated.letterName }} {{ customer.name }},
+        return '{{ customer.name }},
 
                 thank you for your signing up with our Shop.
                 You will gain access via the email address {{ customer.email }} and the password you have chosen.
@@ -583,7 +583,7 @@ If you have any questions, do not hesitate to contact us.
     {
         return '<div style="font-family:arial; font-size:12px;">
             <p>
-                您好 {{ customer.salutation.translated.letterName }} {{ customer.name }}，<br/>
+                您好 {{ customer.name }}，<br/>
                 <br/>
                 感谢您注册我们的商城。<br/>
                 您可以使用邮箱 <strong>{{ customer.email }}</strong> 和您设置的密码登录。<br/>
@@ -594,7 +594,7 @@ If you have any questions, do not hesitate to contact us.
 
     private function getRegistrationPlainTemplateZhCn(): string
     {
-        return '您好 {{ customer.salutation.translated.letterName }} {{ customer.name }}，
+        return '您好 {{ customer.name }}，
 
                 感谢您注册我们的商城。
                 您可以使用邮箱 {{ customer.email }} 和您设置的密码登录。
@@ -606,7 +606,7 @@ If you have any questions, do not hesitate to contact us.
     {
         return '<div style="font-family:arial; font-size:12px;">
     <p>
-        {{ customer.salutation.translated.letterName }} {{ customer.name }},<br/>
+        {{ customer.name }},<br/>
         <br/>
         there has been a request to reset you Password in the Shop {{ salesChannel.translated.name }}
         Please confirm the link below to specify a new password.<br/>
@@ -622,7 +622,7 @@ If you have any questions, do not hesitate to contact us.
     private function getPasswordChangePlainTemplateEn(): string
     {
         return '
-        {{ customer.salutation.translated.letterName }} {{ customer.name }},
+        {{ customer.name }},
 
         there has been a request to reset you Password in the Shop {{ salesChannel.translated.name }}
         Please confirm the link below to specify a new password.
@@ -638,7 +638,7 @@ If you have any questions, do not hesitate to contact us.
     {
         return '<div style="font-family:arial; font-size:12px;">
     <p>
-        您好 {{ customer.salutation.translated.letterName }} {{ customer.name }}，<br/>
+        您好 {{ customer.name }}，<br/>
         <br/>
         有人请求在 {{ salesChannel.translated.name }} 商城重置您的密码。
         请点击下方链接设置新密码。<br/>
@@ -654,7 +654,7 @@ If you have any questions, do not hesitate to contact us.
     private function getPasswordChangePlainTemplateZhCn(): string
     {
         return '
-        您好 {{ customer.salutation.translated.letterName }} {{ customer.name }}，
+        您好 {{ customer.name }}，
 
         有人请求在 {{ salesChannel.translated.name }} 商城重置您的密码。
         请点击下方链接设置新密码。

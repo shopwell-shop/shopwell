@@ -38,7 +38,7 @@
             </span>
 
             <span
-                v-else
+                v-else-if="card.showComparison !== false"
                 class="sw-dashboard-metrics__delta is-none"
             >
                 {{ $t('sw-dashboard.metrics.noComparison') }}

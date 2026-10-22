@@ -200,7 +200,7 @@ class RegisterControllerTest extends TestCase
         static::assertStringNotContainsString('name="shippingAddress[', $content);
         static::assertStringNotContainsString('differentShippingAddress', $content);
         static::assertStringNotContainsString('name="phoneNumber"', $content);
-        static::assertStringNotContainsString('name="salutationId"', $content);
+        static::assertStringNotContainsString('name="gender"', $content);
         static::assertStringNotContainsString('name="accountType"', $content);
         static::assertStringNotContainsString('register-billing', $content);
         static::assertStringNotContainsString('register-shipping', $content);
@@ -222,7 +222,7 @@ class RegisterControllerTest extends TestCase
         static::assertStringNotContainsString('name="shippingAddress[', $content);
         static::assertStringNotContainsString('differentShippingAddress', $content);
         static::assertStringNotContainsString('name="phoneNumber"', $content);
-        static::assertStringNotContainsString('name="salutationId"', $content);
+        static::assertStringNotContainsString('name="gender"', $content);
         static::assertStringNotContainsString('register-billing', $content);
     }
 
@@ -800,7 +800,7 @@ class RegisterControllerTest extends TestCase
             'accountType' => CustomerEntity::ACCOUNT_TYPE_PRIVATE,
             'email' => $email,
             'emailConfirmation' => $email,
-            'salutationId' => $this->getValidSalutationId(),
+            'gender' => $this->getValidGender(),
             'name' => 'Max Mustermann',
             'storefrontUrl' => 'http://localhost',
             'billingAddress' => [

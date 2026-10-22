@@ -180,7 +180,6 @@ export default {
             criteria
                 .addAssociation('currency')
                 .addAssociation('orderCustomer.customer')
-                .addAssociation('orderCustomer.salutation')
                 .addAssociation('language');
 
             criteria

@@ -63,21 +63,6 @@ export default {
             return this.loadLanguage(this.customer?.salesChannelId);
         },
 
-        salutationRepository() {
-            return this.repositoryFactory.create('salutation');
-        },
-
-        salutationCriteria() {
-            const criteria = new Criteria(1, 1);
-
-            criteria.addFilter(Criteria.equals('salutationKey', 'not_specified'));
-
-            return criteria;
-        },
-
-        salutationFilter() {
-            return Shopwell.Filter.getByName('salutation');
-        },
     },
 
     watch: {
@@ -120,8 +105,6 @@ export default {
 
     methods: {
         async createdComponent() {
-            const defaultSalutationId = await this.getDefaultSalutation();
-
             Shopwell.Store.get('context').resetLanguageToDefault();
             this.customer = this.customerRepository.create();
 
@@ -138,9 +121,9 @@ export default {
             this.customer.defaultShippingAddressId = this.address.id;
             this.customer.password = '';
             this.customer.vatIds = [];
-            this.customer.salutationId = defaultSalutationId;
+            this.customer.gender = 'not_specified';
             this.customer.languageId = Shopwell.Context.api.languageId;
-            this.address.salutationId = defaultSalutationId;
+            this.address.gender = 'not_specified';
         },
 
         saveFinish() {
@@ -266,12 +249,6 @@ export default {
             }
 
             return res.data[0];
-        },
-
-        async getDefaultSalutation() {
-            const res = await this.salutationRepository.searchIds(this.salutationCriteria);
-
-            return res.data?.[0];
         },
     },
 };

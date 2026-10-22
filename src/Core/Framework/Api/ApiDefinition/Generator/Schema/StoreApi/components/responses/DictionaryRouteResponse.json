@@ -1,0 +1,34 @@
+{
+    "openapi": "3.2.0",
+    "info": [],
+    "paths": [],
+    "components": {
+        "responses": {
+            "DictionaryRouteResponse": {
+                "description": "Entity search result containing dictionary entries.",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "properties": {
+                                        "elements": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/DictionaryEntry"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                },
+                                {
+                                    "$ref": "#/components/schemas/EntitySearchResult"
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

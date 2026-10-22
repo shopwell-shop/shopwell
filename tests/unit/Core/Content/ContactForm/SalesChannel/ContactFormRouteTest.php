@@ -12,10 +12,6 @@ use Shopwell\Core\Content\ContactForm\SalesChannel\ContactFormRouteResponse;
 use Shopwell\Core\Content\ContactForm\Validation\ContactFormValidationFactory;
 use Shopwell\Core\Content\Newsletter\Aggregate\NewsletterRecipient\NewsletterRecipientEntity;
 use Shopwell\Core\Framework\Context;
-use Shopwell\Core\Framework\DataAbstractionLayer\EntityCollection;
-use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
-use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
-use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
 use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\RateLimiter\RateLimiter;
@@ -26,6 +22,7 @@ use Shopwell\Core\Framework\Validation\DataValidationFactoryInterface;
 use Shopwell\Core\Framework\Validation\DataValidator;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\EventDispatcher\EventDispatcher;
+use Symfony\Component\Validator\ConstraintViolationList;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Validator\Constraints\NotBlank;
 use Symfony\Component\Validator\Constraints\Regex;
@@ -60,24 +57,24 @@ class ContactFormRouteTest extends TestCase
         $newsletterRecipientEntity->setId(Uuid::randomHex());
         $newsletterRecipientEntity->setConfirmedAt(new \DateTime());
 
-        $salutationEntitySearchResult = new EntitySearchResult(
-            'salutation',
-            1,
-            new EntityCollection([]),
-            null,
-            new Criteria(),
-            Context::createDefaultContext()
-        );
+        $validationFactory = static::createStub(DataValidationFactoryInterface::class);
+        $validationFactory->method('create')->willReturnCallback(static function () use ($properties, $constraints): DataValidationDefinition {
+            $definition = new DataValidationDefinition('contact_form.create');
+            foreach (array_keys($properties) as $propertyName) {
+                $definition->add($propertyName, ...$constraints);
+            }
 
-        $entityRepository = $this->createMock(EntityRepository::class);
-        $entityRepository->expects($this->once())->method('search')->willReturn($salutationEntitySearchResult);
+            return $definition;
+        });
 
         $mock = static::createStub(DataValidator::class);
-        $mock->method('validate')->willReturnCallback(static function (array $data, DataValidationDefinition $definition) use ($properties, $constraints): void {
+        $mock->method('getViolations')->willReturnCallback(static function (array $data, DataValidationDefinition $definition) use ($properties, $constraints): ConstraintViolationList {
             foreach ($properties as $propertyName => $value) {
                 static::assertSame($value, $data[$propertyName] ?? null);
-                static::assertSame($definition->getProperties()[$propertyName] ?? null, $constraints);
+                static::assertSame($constraints, $definition->getProperties()[$propertyName] ?? null);
             }
+
+            return new ConstraintViolationList();
         });
 
         $slotConfigResolverMock = static::createStub(CmsFormSlotConfigResolver::class);
@@ -87,17 +84,18 @@ class ContactFormRouteTest extends TestCase
         ]);
 
         $contactFormRoute = new ContactFormRoute(
-            static::createStub(DataValidationFactoryInterface::class),
+            $validationFactory,
             $mock,
             static::createStub(EventDispatcherInterface::class),
-            $entityRepository,
             static::createStub(RequestStack::class),
             static::createStub(RateLimiter::class),
             $slotConfigResolverMock,
             new ExtensionDispatcher(new EventDispatcher()),
         );
 
-        $contactFormRoute->load($requestData, $this->salesChannelContext);
+        $response = $contactFormRoute->load($requestData, $this->salesChannelContext);
+
+        static::assertInstanceOf(ContactFormRouteResponse::class, $response);
     }
 
     public static function validatorDataProvider(): \Generator
@@ -107,7 +105,7 @@ class ContactFormRouteTest extends TestCase
                 'email' => 'test@example.com',
                 'option' => 'direct',
                 'name' => 'Y http://localhost Tran http://localhost',
-                'salutationId' => Uuid::randomHex(),
+                'gender' => 'male',
             ],
             ['name' => 'Y http://localhost Tran http://localhost'],
             [
@@ -121,7 +119,7 @@ class ContactFormRouteTest extends TestCase
                 'email' => 'test@example.com',
                 'option' => 'direct',
                 'name' => 'Y Tran',
-                'salutationId' => Uuid::randomHex(),
+                'gender' => 'male',
             ],
             ['name' => 'Y Tran'],
             [
@@ -148,7 +146,6 @@ class ContactFormRouteTest extends TestCase
             static::createStub(DataValidationFactoryInterface::class),
             static::createStub(DataValidator::class),
             static::createStub(EventDispatcherInterface::class),
-            static::createStub(EntityRepository::class),
             static::createStub(RequestStack::class),
             static::createStub(RateLimiter::class),
             static::createStub(CmsFormSlotConfigResolver::class),

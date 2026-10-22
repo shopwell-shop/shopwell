@@ -207,7 +207,7 @@ class OrderTransactionStateHandlerTest extends TestCase
             'orderCustomer' => [
                 'customerId' => $customerId,
                 'email' => 'test@example.com',
-                'salutationId' => $this->getValidSalutationId(),
+                'gender' => $this->getValidGender(),
                 'name' => 'Max Mustermann',
             ],
             'stateId' => $stateId,
@@ -219,7 +219,7 @@ class OrderTransactionStateHandlerTest extends TestCase
             'addresses' => [
                 [
                     'id' => $billingAddressId,
-                    'salutationId' => $this->getValidSalutationId(),
+                    'gender' => $this->getValidGender(),
                     'name' => 'Max Mustermann',
                     'street' => 'Ebbinghoff 10',
                     'zipcode' => '48624',
@@ -247,7 +247,7 @@ class OrderTransactionStateHandlerTest extends TestCase
         $customer = [
             'id' => $customerId,
             'customerNumber' => '1337',
-            'salutationId' => $this->getValidSalutationId(),
+            'gender' => $this->getValidGender(),
             'name' => 'Max Mustermann',
             'email' => Uuid::randomHex() . '@example.com',
             'password' => TestDefaults::HASHED_PASSWORD,
@@ -260,7 +260,7 @@ class OrderTransactionStateHandlerTest extends TestCase
                     'id' => $addressId,
                     'customerId' => $customerId,
                     'countryId' => $this->getValidCountryId(),
-                    'salutationId' => $this->getValidSalutationId(),
+                    'gender' => $this->getValidGender(),
                     'name' => 'Max Mustermann',
                     'street' => 'Ebbinghoff 10',
                     'zipcode' => '48624',

@@ -141,7 +141,7 @@
   "sw-custom-snippet": {
     "address": {
       "countryState": "State",
-      "salutation": "Salutation",
+      "gender": "Gender",
       "country": "Country",
       "zipcode": "Postal code",
       "name": "Name",

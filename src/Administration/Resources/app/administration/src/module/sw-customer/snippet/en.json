@@ -47,7 +47,7 @@
       "placeholderPhoneNumber": "Phone number",
       "placeholderNewPassword": "Enter new password...",
       "placeholderNewPasswordConfirm": "Re-enter new password...",
-      "labelSalutation": "Salutation",
+      "labelGender": "Gender",
       "labelTitle": "Title",
       "labelCompany": "Company",
       "labelEmail": "Email",
@@ -92,7 +92,7 @@
       "titleSidebarItemFilterRequestedGroup": "Show only customer group requests"
     },
     "baseForm": {
-      "labelSalutation": "Salutation",
+      "labelGender": "Gender",
       "labelTitle": "Title",
       "labelEmail": "Email address",
       "labelPhoneNumber": "Phone number",
@@ -105,7 +105,7 @@
       "labelPassword": "Password",
       "placeholderPassword": "Enter password...",
       "helpTextPassword": "After saving the customer the password can only be changed directly by the customer.",
-      "placeholderSalutation": "Select salutation...",
+      "placeholderGender": "Select gender...",
       "placeholderTitle": "Enter title...",
       "placeholderEmail": "Enter email address...",
       "placeholderPhoneNumber": "Enter phone number...",
@@ -217,7 +217,7 @@
     "addressForm": {
       "labelCompany": "Company",
       "labelDepartment": "Department",
-      "labelSalutation": "Salutation",
+      "labelGender": "Gender",
       "labelTitle": "Title",
       "labelZipcode": "Postal code",
       "labelStreet": "Street",
@@ -231,7 +231,7 @@
       "labelSameBillingAddress": "Same as billing address",
       "placeholderCompany": "Enter company...",
       "placeholderDepartment": "Enter department...",
-      "placeholderSalutation": "Select salutation...",
+      "placeholderGender": "Select gender...",
       "placeholderTitle": "Enter title...",
       "placeholderZipcode": "Enter postal code...",
       "placeholderStreet": "Enter street...",
@@ -373,9 +373,9 @@
         "label": "Customer number",
         "placeholder": "Enter customer number..."
       },
-      "salutation": {
-        "label": "Salutation",
-        "placeholder": "Select salutation..."
+      "gender": {
+        "label": "Gender",
+        "placeholder": "Select gender..."
       },
       "status": {
         "label": "Status",

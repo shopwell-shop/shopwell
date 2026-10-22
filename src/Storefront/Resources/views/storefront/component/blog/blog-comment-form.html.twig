@@ -1,0 +1,123 @@
+{# @sw-package discovery #}
+
+{#
+    The form below a thread.
+
+    It posts to a storefront route and not to the store-api one: a storefront form without javascript
+    has to survive a redirect, and the store-api route answers a plain request with a json body. The
+    storefront action forwards to the same route object, so the validation lives in exactly one place.
+
+    The reply state is markup first. `parentId` is a hidden field that is empty until somebody presses
+    "reply"; the header that says who is being answered is hidden until then as well, and the reset
+    button clears the field. Everything the script does is a shortcut for that, so a visitor without
+    javascript still answers a root comment correctly.
+
+    Expected variables: page (\Shopwell\Storefront\Page\Blog\BlogDetailPage)
+#}
+{% block sw_blog_comment_form %}
+    <form class="blog-comment-form"
+          id="blog-comment-form"
+          action="{{ path('frontend.blog.comment.save') }}"
+          method="post"
+          data-blog-comment-form
+          data-auto-publish="{{ page.commentsAutoPublish ? 'true' : 'false' }}"
+          data-replying-template="{{ 'blog.comments.replyingTo'|trans|striptags }}">
+        {% block sw_blog_comment_form_flash %}
+            {% for type, messages in app.flashes %}
+                {% for message in messages %}
+                    <div class="blog-comment-form__flash blog-comment-form__flash--{{ type }}" role="status">
+                        {{ message|trans|sw_sanitize }}
+                    </div>
+                {% endfor %}
+            {% endfor %}
+        {% endblock %}
+
+        <h3 class="blog-comment-form__heading">{{ 'blog.comments.form.heading'|trans|sw_sanitize }}</h3>
+
+        {% block sw_blog_comment_form_blog_id %}
+            <input type="hidden" name="blogId" value="{{ page.blog.id }}">
+        {% endblock %}
+
+        {% block sw_blog_comment_form_parent %}
+            <input type="hidden" name="parentId" value="" data-blog-comment-parent>
+        {% endblock %}
+
+        {% block sw_blog_comment_form_replying_to %}
+            <div class="blog-comment-form__replying" data-blog-comment-replying hidden>
+                <span data-blog-comment-replying-label></span>
+                <button type="button" class="blog-comment-form__cancel-reply" data-blog-comment-cancel-reply>
+                    {{ 'blog.comments.cancelReply'|trans|sw_sanitize }}
+                </button>
+            </div>
+        {% endblock %}
+
+        {% block sw_blog_comment_form_fields %}
+            <div class="blog-comment-form__field">
+                <label class="blog-comment-form__label" for="blog-comment-author">
+                    {{ 'blog.comments.form.name'|trans|sw_sanitize }}
+                </label>
+                <input class="blog-comment-form__input"
+                       id="blog-comment-author"
+                       name="externalUser"
+                       type="text"
+                       maxlength="255"
+                       autocomplete="name"
+                       value="{{ context.customer ? context.customer.firstName ~ ' ' ~ context.customer.lastName : '' }}"
+                       required>
+            </div>
+
+            <div class="blog-comment-form__field">
+                <label class="blog-comment-form__label" for="blog-comment-email">
+                    {{ 'blog.comments.form.email'|trans|sw_sanitize }}
+                </label>
+                <input class="blog-comment-form__input"
+                       id="blog-comment-email"
+                       name="externalEmail"
+                       type="email"
+                       maxlength="255"
+                       autocomplete="email"
+                       value="{{ context.customer ? context.customer.email : '' }}"
+                       aria-describedby="blog-comment-email-help"
+                       required>
+                <p class="blog-comment-form__help" id="blog-comment-email-help">
+                    {{ 'blog.comments.form.emailHelp'|trans|sw_sanitize }}
+                </p>
+            </div>
+
+            <div class="blog-comment-form__field">
+                <label class="blog-comment-form__label" for="blog-comment-title">
+                    {{ 'blog.comments.form.title'|trans|sw_sanitize }}
+                </label>
+                <input class="blog-comment-form__input"
+                       id="blog-comment-title"
+                       name="title"
+                       type="text"
+                       maxlength="255">
+            </div>
+
+            <div class="blog-comment-form__field">
+                <label class="blog-comment-form__label" for="blog-comment-content">
+                    {{ 'blog.comments.form.content'|trans|sw_sanitize }}
+                </label>
+                <textarea class="blog-comment-form__textarea"
+                          id="blog-comment-content"
+                          name="content"
+                          rows="5"
+                          minlength="10"
+                          required></textarea>
+            </div>
+        {% endblock %}
+
+        {% block sw_blog_comment_form_moderation %}
+            {% if not page.commentsAutoPublish %}
+                <p class="blog-comment-form__notice">{{ 'blog.comments.form.moderation'|trans|sw_sanitize }}</p>
+            {% endif %}
+        {% endblock %}
+
+        {% block sw_blog_comment_form_submit %}
+            <button type="submit" class="blog-comment-form__submit">
+                {{ 'blog.comments.form.submit'|trans|sw_sanitize }}
+            </button>
+        {% endblock %}
+    </form>
+{% endblock %}

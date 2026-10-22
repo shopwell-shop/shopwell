@@ -21,7 +21,7 @@
                         "application/json": {
                             "schema": {
                                 "required": [
-                                    "salutationId",
+                                    "gender",
                                     "email",
                                     "subject",
                                     "comment",
@@ -29,8 +29,8 @@
                                     "phone"
                                 ],
                                 "properties": {
-                                    "salutationId": {
-                                        "description": "Identifier of the salutation. Use `/api/salutation` endpoint to fetch possible values. This field is always required and cannot be disabled by a system setting.",
+                                    "gender": {
+                                        "description": "Gender code. Use `/store-api/dictionary/gender` endpoint to fetch possible values. This field is always required and cannot be disabled by a system setting.",
                                         "type": "string",
                                         "pattern": "^[0-9a-f]{32}$"
                                     },

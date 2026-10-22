@@ -50,7 +50,7 @@ class ContactFormRouteTest extends TestCase
             'POST',
             '/store-api/contact-form',
             [
-                'salutationId' => $this->getValidSalutationId(),
+                'gender' => $this->getValidGender(),
                 'name' => 'Firstname Lastname',
                 'email' => 'test@shäpware.com',
                 'phone' => '12345/6789',
@@ -82,7 +82,7 @@ class ContactFormRouteTest extends TestCase
             'POST',
             '/store-api/contact-form',
             [
-                'salutationId' => $this->getValidSalutationId(),
+                'gender' => $this->getValidGender(),
                 'navigationId' => $navigationId,
                 'slotId' => $slotId,
                 'entityName' => LandingPageDefinition::ENTITY_NAME,
@@ -114,7 +114,7 @@ class ContactFormRouteTest extends TestCase
             'POST',
             '/store-api/contact-form',
             [
-                'salutationId' => $this->getValidSalutationId(),
+                'gender' => $this->getValidGender(),
                 'name' => $name,
                 'email' => 'test@shopwell.cn',
                 'phone' => '12345/6789',

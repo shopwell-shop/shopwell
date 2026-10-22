@@ -1,0 +1,56 @@
+{# @sw-package discovery #}
+
+{#
+    The feed itself. The layout only changes the container class and which entry is promoted, the card
+    stays the same template - that is the whole trick behind "three layouts, one listing".
+
+    The template is deliberately self contained: it works when it is handed a whole BlogPage, and it
+    works when a cms element hands it a collection, a set of covers and a layout. Nothing here reads a
+    shop wide setting, which is what makes `layout` an attribute of the element that renders the list
+    instead of a global switch.
+
+    Expected variables, all optional:
+      page            - \Shopwell\Storefront\Page\Blog\BlogPage, the source of the defaults
+      blogs           - BlogCollection, defaults to page.blogs
+      coverMedia      - MediaCollection, defaults to page.coverMedia
+      readingTimes    - array<string, int>, defaults to page.readingTimes
+      showAuthor      - bool, defaults to page.showAuthor
+      showReadingTime - bool, defaults to page.showReadingTime
+      layout          - 'classic' | 'grid' | 'list', defaults to 'classic'
+#}
+{% block sw_blog_listing %}
+    {% set layout = layout|default('classic') %}
+    {% set blogs = blogs|default(page is defined ? page.blogs : null) %}
+    {% set coverMedia = coverMedia|default(page is defined ? page.coverMedia : null) %}
+    {% set readingTimes = readingTimes|default(page is defined ? page.readingTimes : {}) %}
+    {% set showAuthor = showAuthor|default(page is defined ? page.showAuthor : true) %}
+    {% set showReadingTime = showReadingTime|default(page is defined ? page.showReadingTime : true) %}
+
+    {% if blogs is null or blogs is empty %}
+        {% block sw_blog_listing_empty %}
+            <div class="blog-listing__empty">
+                {{ 'blog.listing.empty'|trans|sw_sanitize }}
+            </div>
+        {% endblock %}
+    {% else %}
+        <div class="blog-listing blog-listing--{{ layout }}">
+            {% block sw_blog_listing_items %}
+                {% for blog in blogs %}
+                    {% block sw_blog_listing_item %}
+                        {% set cover = coverMedia and blog.coverMediaId ? coverMedia.get(blog.coverMediaId) : null %}
+
+                        {% sw_include '@Storefront/storefront/component/blog/blog-card.html.twig' with {
+                            blog: blog,
+                            cover: cover,
+                            layout: layout,
+                            featured: layout == 'classic' and loop.first,
+                            showAuthor: showAuthor,
+                            showReadingTime: showReadingTime,
+                            readingTime: readingTimes[blog.id] ?? 0,
+                        } only %}
+                    {% endblock %}
+                {% endfor %}
+            {% endblock %}
+        </div>
+    {% endif %}
+{% endblock %}

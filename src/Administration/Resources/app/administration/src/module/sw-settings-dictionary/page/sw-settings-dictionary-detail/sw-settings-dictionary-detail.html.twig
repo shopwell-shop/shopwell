@@ -1,0 +1,274 @@
+{% block sw_settings_dictionary_detail %}
+<sw-page class="sw-settings-dictionary-detail">
+
+    {% block sw_settings_dictionary_detail_smart_bar_header %}
+    <template #smart-bar-header>
+        {% block sw_settings_dictionary_detail_smart_bar_header_title %}
+        <h2>
+            {% block sw_settings_dictionary_detail_smart_bar_header_title_text %}
+            {{ $t('sw-settings.index.title') }}
+            <mt-icon
+                name="regular-chevron-right-xs"
+                size="12px"
+            />
+            <router-link
+                class="sw-settings-dictionary-detail__back-link"
+                :to="{ name: 'sw.settings.dictionary.index' }"
+            >
+                {{ $t('sw-settings-dictionary.list.textHeadline') }}
+            </router-link>
+            <mt-icon
+                name="regular-chevron-right-xs"
+                size="12px"
+            />
+            {{ dictionaryType?.translated?.label || dictionaryType?.technicalName }}
+            {% endblock %}
+        </h2>
+        {% endblock %}
+    </template>
+    {% endblock %}
+
+    {% block sw_settings_dictionary_detail_language_switch %}
+    <template #language-switch>
+        <sw-language-switch @on-change="onChangeLanguage" />
+    </template>
+    {% endblock %}
+
+    {% block sw_settings_dictionary_detail_smart_bar_actions %}
+    <template #smart-bar-actions>
+        {% block sw_settings_dictionary_detail_smart_bar_actions_add %}
+        <mt-button
+            v-tooltip="{
+                message: $t('sw-privileges.tooltip.warning'),
+                disabled: acl.can('dictionary.creator'),
+                showOnDisabledElements: true
+            }"
+            class="sw-settings-dictionary-detail__add-entry"
+            variant="primary"
+            :disabled="!acl.can('dictionary.creator') || undefined"
+            size="default"
+            @click="onAddEntry"
+        >
+            {{ $t('sw-settings-dictionary.entryList.buttonAddEntry') }}
+        </mt-button>
+        {% endblock %}
+    </template>
+    {% endblock %}
+
+    {% block sw_settings_dictionary_detail_content %}
+    <template #content>
+        <sw-card-view>
+            {% block sw_settings_dictionary_detail_content_card %}
+            <mt-card
+                v-if="isLoading || entries"
+                position-identifier="sw-settings-dictionary-detail-content"
+            >
+                {% block sw_settings_dictionary_detail_grid %}
+                <template #grid>
+                    {% block sw_settings_dictionary_detail_grid_inner %}
+                    <sw-entity-listing
+                        ref="swSettingsDictionaryEntryGrid"
+                        class="sw-settings-dictionary-detail-grid"
+                        :data-source="entries"
+                        :columns="entryColumns"
+                        :repository="entryRepository"
+                        :disable-data-fetching="true"
+                        :full-page="false"
+                        :show-selection="false"
+                        :is-loading="isLoading"
+                        :allow-edit="acl.can('dictionary.editor') || undefined"
+                        :allow-inline-edit="acl.can('dictionary.editor') || undefined"
+                        :allow-delete="acl.can('dictionary.deleter') || undefined"
+                        :allow-view="acl.can('dictionary.viewer') || undefined"
+                        @inline-edit-save="onInlineEditSave"
+                    >
+                        {% block sw_settings_dictionary_detail_grid_columns_label %}
+                        <template #column-label="{ item, isInlineEdit }">
+                            <mt-text-field
+                                v-if="isInlineEdit"
+                                v-model="item.label"
+                                class="sw-settings-dictionary-detail__inline-edit"
+                            />
+                            <span
+                                v-else-if="!item.active"
+                                class="sw-settings-dictionary-detail__label-inactive"
+                                :title="item.translated?.label"
+                            >{{ item.translated?.label }}</span>
+                            <span
+                                v-else
+                                :title="item.translated?.label"
+                            >{{ item.translated?.label }}</span>
+                        </template>
+                        {% endblock %}
+
+                        {% block sw_settings_dictionary_detail_grid_columns_technical_name %}
+                        <template #column-technicalName="{ item }">
+                            <span class="sw-settings-dictionary-detail__technical-name">{{ item.technicalName }}</span>
+                        </template>
+                        {% endblock %}
+
+                        {% block sw_settings_dictionary_detail_grid_columns_active %}
+                        <template #column-active="{ item }">
+                            <mt-switch
+                                v-if="acl.can('dictionary.editor')"
+                                :key="item.id"
+                                :model-value="item.active"
+                                :disabled="undefined"
+                                @change="onEntryActiveChange(item, $event)"
+                            />
+                            <mt-icon
+                                v-else
+                                :name="item.active ? 'regular-checkmark-xs' : 'regular-times-xs'"
+                            />
+                        </template>
+                        {% endblock %}
+
+                        {% block sw_settings_dictionary_detail_grid_columns_actions %}
+                        <template #actions="{ item }">
+                            {% block sw_settings_dictionary_detail_grid_columns_actions_delete %}
+                            <sw-context-menu-item
+                                class="sw-entity-listing__context-menu-delete"
+                                variant="danger"
+                                :disabled="!acl.can('dictionary.deleter') || undefined"
+                                @click="onDelete(item.id)"
+                            >
+                                {{ $t('global.default.delete') }}
+                            </sw-context-menu-item>
+                            {% endblock %}
+                        </template>
+                        {% endblock %}
+
+                        {% block sw_settings_dictionary_detail_grid_action_modals %}
+                        <template #action-modals="{ item }">
+                            {% block sw_settings_dictionary_detail_delete_modal %}
+                            <sw-modal
+                                v-if="showDeleteModal === item.id"
+                                :title="$t('global.default.warning')"
+                                variant="small"
+                                @modal-close="onCloseDeleteModal"
+                            >
+                                {% block sw_settings_dictionary_detail_delete_modal_confirm_text %}
+                                <p class="sw-settings-dictionary-detail__confirm-delete-text">
+                                    {{ $t('sw-settings-dictionary.entryList.textDeleteConfirm', { name: item.translated?.label || item.technicalName }, 0) }}
+                                </p>
+                                {% endblock %}
+
+                                {% block sw_settings_dictionary_detail_delete_modal_footer %}
+                                <template #modal-footer>
+                                    <mt-button
+                                        size="small"
+                                        variant="secondary"
+                                        @click="onCloseDeleteModal"
+                                    >
+                                        {{ $t('global.default.cancel') }}
+                                    </mt-button>
+
+                                    <mt-button
+                                        variant="critical"
+                                        size="small"
+                                        @click="onConfirmDelete(item.id)"
+                                    >
+                                        {{ $t('global.default.delete') }}
+                                    </mt-button>
+                                </template>
+                                {% endblock %}
+                            </sw-modal>
+                            {% endblock %}
+                        </template>
+                        {% endblock %}
+                    </sw-entity-listing>
+
+                    {% block sw_settings_dictionary_detail_empty_message %}
+                    <mt-empty-state
+                        v-if="!isLoading && (!entries || entries.length === 0)"
+                        centered
+                        :icon="$route.meta.$module.icon"
+                        :headline="$t('sw-settings-dictionary.entryList.messageEmpty')"
+                    >
+                        <template #button>
+                            <mt-button
+                                v-tooltip="{
+                                    message: $t('sw-privileges.tooltip.warning'),
+                                    disabled: acl.can('dictionary.creator'),
+                                    showOnDisabledElements: true
+                                }"
+                                variant="primary"
+                                :disabled="!acl.can('dictionary.creator')"
+                                @click="onAddEntry"
+                            >
+                                {{ $t('sw-settings-dictionary.entryList.buttonAddEntry') }}
+                            </mt-button>
+                        </template>
+                    </mt-empty-state>
+                    {% endblock %}
+                    {% endblock %}
+                </template>
+                {% endblock %}
+            </mt-card>
+            {% endblock %}
+        </sw-card-view>
+    </template>
+    {% endblock %}
+
+    {% block sw_settings_dictionary_detail_create_modal %}
+    <sw-modal
+        v-if="showCreateModal && newEntry"
+        class="sw-settings-dictionary-detail__create-modal"
+        :title="$t('sw-settings-dictionary.entryList.modalTitleCreate')"
+        variant="small"
+        @modal-close="onCloseCreateModal"
+    >
+        {% block sw_settings_dictionary_detail_create_modal_fields %}
+        <mt-text-field
+            v-model="newEntry.label"
+            class="sw-settings-dictionary-detail__create-label"
+            required
+            :label="$t('sw-settings-dictionary.entryList.columnLabel')"
+            :placeholder="$t('sw-settings-dictionary.entryList.placeholderLabel')"
+        />
+
+        <mt-text-field
+            v-model="newEntry.technicalName"
+            class="sw-settings-dictionary-detail__create-technical-name"
+            required
+            :help-text="$t('sw-settings-dictionary.entryList.helpTextTechnicalName')"
+            :label="$t('sw-settings-dictionary.entryList.columnTechnicalName')"
+            :placeholder="$t('sw-settings-dictionary.entryList.placeholderTechnicalName')"
+        />
+
+        <mt-number-field
+            v-model="newEntry.position"
+            class="sw-settings-dictionary-detail__create-position"
+            :label="$t('sw-settings-dictionary.entryList.columnPosition')"
+        />
+
+        <mt-switch
+            v-model="newEntry.active"
+            class="sw-settings-dictionary-detail__create-active"
+            :label="$t('sw-settings-dictionary.entryList.columnActive')"
+        />
+        {% endblock %}
+
+        {% block sw_settings_dictionary_detail_create_modal_footer %}
+        <template #modal-footer>
+            <mt-button
+                size="small"
+                variant="secondary"
+                @click="onCloseCreateModal"
+            >
+                {{ $t('global.default.cancel') }}
+            </mt-button>
+
+            <mt-button
+                variant="primary"
+                size="small"
+                @click="onCreateSave"
+            >
+                {{ $t('global.default.save') }}
+            </mt-button>
+        </template>
+        {% endblock %}
+    </sw-modal>
+    {% endblock %}
+</sw-page>
+{% endblock %}

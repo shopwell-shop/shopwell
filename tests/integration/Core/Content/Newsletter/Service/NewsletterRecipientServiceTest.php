@@ -34,7 +34,7 @@ class NewsletterRecipientServiceTest extends TestCase
     use IntegrationTestBehaviour;
 
     /**
-     * @param array{email: string|null, salutationId: string|null, option: string|null} $testData
+     * @param array{email: string|null, gender: string|null, option: string|null} $testData
      */
     #[DataProvider('dataProvider_testSubscribeNewsletterExpectsConstraintViolationException')]
     public function testSubscribeNewsletterExpectsConstraintViolationException(array $testData): void
@@ -52,28 +52,28 @@ class NewsletterRecipientServiceTest extends TestCase
     }
 
     /**
-     * @return list<array{array{email: string|null, salutationId: string|null, option: string|null}}>
+     * @return list<array{array{email: string|null, gender: string|null, option: string|null}}>
      */
     public static function dataProvider_testSubscribeNewsletterExpectsConstraintViolationException(): array
     {
-        $testData1 = ['email' => null, 'salutationId' => null, 'option' => null];
-        $testData2 = ['email' => '', 'salutationId' => null, 'option' => null];
-        $testData3 = ['email' => '', 'salutationId' => '', 'option' => null];
-        $testData4 = ['email' => '', 'salutationId' => '', 'option' => null];
-        $testData5 = ['email' => '', 'salutationId' => '', 'option' => ''];
+        $testData1 = ['email' => null, 'gender' => null, 'option' => null];
+        $testData2 = ['email' => '', 'gender' => null, 'option' => null];
+        $testData3 = ['email' => '', 'gender' => '', 'option' => null];
+        $testData4 = ['email' => '', 'gender' => '', 'option' => null];
+        $testData5 = ['email' => '', 'gender' => '', 'option' => ''];
 
         // test Not Valid Email
-        $testDataEmail1 = ['email' => '', 'salutationId' => 'ad165c1faac14059832b6258ac0a7339', 'option' => 'subscribe'];
-        $testDataEmail2 = ['email' => 'notValid', 'salutationId' => 'ad165c1faac14059832b6258ac0a7339', 'option' => 'subscribe'];
-        $testDataEmail3 = ['email' => 'notValid@', 'salutationId' => 'ad165c1faac14059832b6258ac0a7339', 'option' => 'subscribe'];
-        $testDataEmail4 = ['email' => 'notValid@foo', 'salutationId' => 'ad165c1faac14059832b6258ac0a7339', 'option' => 'subscribe'];
-        $testDataEmail5 = ['email' => 'notValid@foo.', 'salutationId' => 'ad165c1faac14059832b6258ac0a7339', 'option' => 'subscribe'];
+        $testDataEmail1 = ['email' => '', 'gender' => 'ad165c1faac14059832b6258ac0a7339', 'option' => 'subscribe'];
+        $testDataEmail2 = ['email' => 'notValid', 'gender' => 'ad165c1faac14059832b6258ac0a7339', 'option' => 'subscribe'];
+        $testDataEmail3 = ['email' => 'notValid@', 'gender' => 'ad165c1faac14059832b6258ac0a7339', 'option' => 'subscribe'];
+        $testDataEmail4 = ['email' => 'notValid@foo', 'gender' => 'ad165c1faac14059832b6258ac0a7339', 'option' => 'subscribe'];
+        $testDataEmail5 = ['email' => 'notValid@foo.', 'gender' => 'ad165c1faac14059832b6258ac0a7339', 'option' => 'subscribe'];
 
         // test not valid option
-        $testDataOption1 = ['email' => 'valid@email.foo', 'salutationId' => 'ad165c1faac14059832b6258ac0a7339', 'option' => ''];
-        $testDataOption2 = ['email' => 'valid@email.foo', 'salutationId' => 'ad165c1faac14059832b6258ac0a7339', 'option' => 'notValid'];
-        $testDataOption3 = ['email' => 'valid@email.foo', 'salutationId' => 'ad165c1faac14059832b6258ac0a7339', 'option' => 'unitTest'];
-        $testDataOption4 = ['email' => 'valid@email.foo', 'salutationId' => 'ad165c1faac14059832b6258ac0a7339', 'option' => 'otherValue'];
+        $testDataOption1 = ['email' => 'valid@email.foo', 'gender' => 'ad165c1faac14059832b6258ac0a7339', 'option' => ''];
+        $testDataOption2 = ['email' => 'valid@email.foo', 'gender' => 'ad165c1faac14059832b6258ac0a7339', 'option' => 'notValid'];
+        $testDataOption3 = ['email' => 'valid@email.foo', 'gender' => 'ad165c1faac14059832b6258ac0a7339', 'option' => 'unitTest'];
+        $testDataOption4 = ['email' => 'valid@email.foo', 'gender' => 'ad165c1faac14059832b6258ac0a7339', 'option' => 'otherValue'];
 
         return [
             [$testData1],
@@ -100,7 +100,7 @@ class NewsletterRecipientServiceTest extends TestCase
         $dataBag = new RequestDataBag([
             'storefrontUrl' => '',
             'email' => $email,
-            'salutationId' => 'ad165c1faac14059832b6258ac0a7339',
+            'gender' => 'ad165c1faac14059832b6258ac0a7339',
             'baseUrl' => '',
             'option' => 'subscribe',
             'name' => 'max mustermann',
@@ -220,7 +220,7 @@ class NewsletterRecipientServiceTest extends TestCase
         $email = 'not@existend.email';
         $dataBag = new RequestDataBag([
             'email' => $email,
-            'salutationId' => 'ad165c1faac14059832b6258ac0a7339',
+            'gender' => 'ad165c1faac14059832b6258ac0a7339',
             'option' => 'unsubscribe',
         ]);
 
@@ -240,7 +240,7 @@ class NewsletterRecipientServiceTest extends TestCase
         $email = 'unit@test.foo';
         $dataBag = new RequestDataBag([
             'email' => $email,
-            'salutationId' => 'AD165C1FAAC14059832B6258AC0A7339',
+            'gender' => 'AD165C1FAAC14059832B6258AC0A7339',
             'option' => 'unsubscribe',
         ]);
 
@@ -272,10 +272,6 @@ class NewsletterRecipientServiceTest extends TestCase
 
     private function installTestData(): void
     {
-        $salutationSql = file_get_contents(__DIR__ . '/../fixtures/salutation.sql');
-        static::assertIsString($salutationSql);
-        static::getContainer()->get(Connection::class)->executeStatement($salutationSql);
-
         $recipientSql = file_get_contents(__DIR__ . '/../fixtures/recipient.sql');
         static::assertIsString($recipientSql);
         $recipientSql = str_replace(':now', (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT), $recipientSql);

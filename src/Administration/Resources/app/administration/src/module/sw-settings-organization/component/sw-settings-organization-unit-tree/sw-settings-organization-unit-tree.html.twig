@@ -1,0 +1,56 @@
+{% block sw_settings_organization_unit_tree %}
+<div class="sw-settings-organization-unit-tree">
+    {% block sw_settings_organization_unit_tree_search %}
+    <div class="sw-settings-organization-unit-tree__search">
+        <mt-text-field
+            :model-value="searchTerm ?? ''"
+            name="sw-field--organization-unit-tree-search"
+            :placeholder="$t('sw-settings-organization.detail.placeholderSearchTree')"
+            size="small"
+            @update:model-value="onSearch"
+        >
+            <template #prefix>
+                <mt-icon name="regular-search" />
+            </template>
+        </mt-text-field>
+    </div>
+    {% endblock %}
+
+    {% block sw_settings_organization_unit_tree_content %}
+    <div
+        class="sw-settings-organization-unit-tree__content"
+        role="tree"
+        :aria-label="$t('sw-settings-organization.detail.labelUnits')"
+    >
+        {% block sw_settings_organization_unit_tree_items %}
+        <template v-if="rootUnits.length > 0">
+            <sw-settings-organization-unit-tree-item
+                v-for="unit in rootUnits"
+                :key="unit.id"
+                :unit="unit"
+                :unit-tree="unitById"
+                :filtered-units="filteredUnits"
+                :selected-unit-id="selectedUnitId"
+                :is-searching="isSearching"
+                :expanded-ids="expandedIds"
+                @select-unit="onSelectUnit"
+                @add-child="onAddChild"
+                @toggle-expand="toggleExpand"
+            />
+        </template>
+
+        {% block sw_settings_organization_unit_tree_empty %}
+        <div
+            v-else-if="!isLoading"
+            class="sw-settings-organization-unit-tree__empty"
+        >
+            <p class="sw-settings-organization-unit-tree__empty-text">
+                {{ isSearching ? $t('sw-empty-state.messageNoResultTitle') : $t('sw-settings-organization.detail.messageEmptyTree') }}
+            </p>
+        </div>
+        {% endblock %}
+        {% endblock %}
+    </div>
+    {% endblock %}
+</div>
+{% endblock %}

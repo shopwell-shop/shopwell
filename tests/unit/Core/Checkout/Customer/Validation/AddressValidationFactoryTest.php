@@ -8,6 +8,8 @@ use Shopwell\Core\Checkout\Customer\Aggregate\CustomerAddress\CustomerAddressEnt
 use Shopwell\Core\Checkout\Customer\CustomerEntity;
 use Shopwell\Core\Checkout\Customer\Validation\AddressValidationFactory;
 use Shopwell\Core\Framework\DataAbstractionLayer\Validation\EntityExists;
+use Shopwell\Core\System\Dictionary\Aggregate\DictionaryEntry\DictionaryEntryDefinition;
+use Symfony\Component\Validator\Constraints\Choice;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Validation\Constraint\NoHtml;
 use Shopwell\Core\System\Country\CountryEntity;
@@ -104,7 +106,7 @@ class AddressValidationFactoryTest extends TestCase
         static::assertInstanceOf(Length::class, $definition['name'][1]);
         static::assertInstanceOf(NoHtml::class, $definition['name'][2]);
 
-        static::assertArrayHasKey('salutationId', $definition);
+        static::assertArrayHasKey('gender', $definition);
         static::assertArrayHasKey('countryId', $definition);
         static::assertArrayHasKey('countryStateId', $definition);
         static::assertArrayHasKey('countryCityId', $definition);
@@ -113,8 +115,9 @@ class AddressValidationFactoryTest extends TestCase
         static::assertArrayHasKey('street', $definition);
         static::assertArrayHasKey('city', $definition);
 
-        static::assertCount(1, $definition['salutationId']);
-        static::assertInstanceOf(EntityExists::class, $definition['salutationId'][0]);
+        static::assertCount(1, $definition['gender']);
+        static::assertInstanceOf(Choice::class, $definition['gender'][0]);
+        static::assertSame([DictionaryEntryDefinition::MALE, DictionaryEntryDefinition::FEMALE, DictionaryEntryDefinition::NOT_SPECIFIED], $definition['gender'][0]->choices);
 
         static::assertCount(3, $definition['countryId']);
         static::assertInstanceOf(EntityExists::class, $definition['countryId'][0]);

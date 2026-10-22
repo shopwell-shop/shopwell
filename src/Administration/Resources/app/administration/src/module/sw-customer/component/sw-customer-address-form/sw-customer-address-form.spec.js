@@ -39,19 +39,15 @@ async function createWrapper() {
             }),
         },
         global: {
-            stubs: {
-                'sw-container': await wrapTestComponent('sw-container'),
-                'sw-contextual-field': await wrapTestComponent('sw-contextual-field'),
-                'sw-block-field': await wrapTestComponent('sw-block-field'),
-                'sw-base-field': await wrapTestComponent('sw-base-field'),
-                'sw-field-error': await wrapTestComponent('sw-field-error'),
-                'sw-entity-single-select': true,
-                'sw-inheritance-switch': true,
-                'sw-field-copyable': true,
-                'sw-ai-copilot-badge': true,
-                'sw-help-text': true,
-            },
             provide: {
+                dictionaryService: {
+                    getGenders: jest.fn(() =>
+                        Promise.resolve([
+                            { technicalName: 'female', translated: { label: 'Female' } },
+                            { technicalName: 'male', translated: { label: 'Male' } },
+                        ]),
+                    ),
+                },
                 validationService: {},
                 repositoryFactory: {
                     create: (entity) => {
@@ -87,6 +83,18 @@ async function createWrapper() {
                     },
                 },
             },
+            stubs: {
+                'sw-container': await wrapTestComponent('sw-container'),
+                'sw-contextual-field': await wrapTestComponent('sw-contextual-field'),
+                'sw-block-field': await wrapTestComponent('sw-block-field'),
+                'sw-base-field': await wrapTestComponent('sw-base-field'),
+                'sw-field-error': await wrapTestComponent('sw-field-error'),
+                'sw-single-select': true,
+                'sw-inheritance-switch': true,
+                'sw-field-copyable': true,
+                'sw-ai-copilot-badge': true,
+                'sw-help-text': true,
+            },
         },
     });
 }
@@ -114,22 +122,15 @@ describe('module/sw-customer/page/sw-customer-address-form', () => {
         Shopwell.Store.get('error').resetApiErrors();
     });
 
-    it('should exclude the default salutation from selectable salutations', async () => {
+    it('should load the gender entries without the default entry for the select', async () => {
         const wrapper = await createWrapper();
-        const criteria = wrapper.vm.salutationCriteria;
-        const expectedCriteria = {
-            type: 'not',
-            operator: 'or',
-            queries: [
-                {
-                    field: 'id',
-                    type: 'equals',
-                    value: 'ed643807c9f84cc8b50132ea3ccb1c3b',
-                },
-            ],
-        };
 
-        expect(criteria.filters).toContainEqual(expectedCriteria);
+        await flushPromises();
+
+        expect(wrapper.vm.genderOptions).toEqual([
+            { value: 'female', label: 'Female' },
+            { value: 'male', label: 'Male' },
+        ]);
     });
 
     it('should hide state field if country dont have states', async () => {

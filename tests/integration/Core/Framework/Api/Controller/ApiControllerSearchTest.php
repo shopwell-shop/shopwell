@@ -862,7 +862,7 @@ class ApiControllerSearchTest extends TestCase
         $data = [
             'id' => $ids->get('customer'),
             'number' => '1337',
-            'salutationId' => $this->getValidSalutationId(),
+            'gender' => $this->getValidGender(),
             'name' => 'Max Mustermann',
             'customerNumber' => '1337',
             'email' => $ids->get('email') . '@example.com',
@@ -876,7 +876,7 @@ class ApiControllerSearchTest extends TestCase
                     'id' => $ids->get('address'),
                     'customerId' => $ids->get('customer'),
                     'countryId' => $this->getValidCountryId(),
-                    'salutationId' => $this->getValidSalutationId(),
+                    'gender' => $this->getValidGender(),
                     'name' => 'Max Mustermann',
                     'street' => 'Ebbinghoff 10',
                     'zipcode' => '48624',

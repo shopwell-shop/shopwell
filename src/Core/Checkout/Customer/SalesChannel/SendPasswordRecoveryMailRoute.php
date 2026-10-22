@@ -101,7 +101,7 @@ class SendPasswordRecoveryMailRoute extends AbstractSendPasswordRecoveryMailRout
 
         $customerIdCriteria = new Criteria();
         $customerIdCriteria->addFilter(new EqualsFilter('customerId', $customerId));
-        $customerIdCriteria->addAssociation('customer.salutation');
+        $customerIdCriteria->addAssociation('customer');
 
         $repoContext = $context->getContext();
 

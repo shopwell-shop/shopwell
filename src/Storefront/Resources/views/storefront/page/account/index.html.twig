@@ -54,8 +54,12 @@
 
                                         {% block page_account_overview_profile_content %}
                                             <p>
-                                                {% if context.customer.salutation and context.customer.salutation.salutationKey != 'not_specified' %}
-                                                    {{ context.customer.salutation.translated.displayName }}
+                                                {% if context.customer.gender and context.customer.gender != 'not_specified' %}
+                                                    {% for gender in page.genders %}
+                                                        {% if gender.technicalName == context.customer.gender %}
+                                                            {{ gender.translated.label }}
+                                                        {% endif %}
+                                                    {% endfor %}
                                                 {% endif %}
                                                 {% if context.customer.title %}
                                                     {{ context.customer.title }}<br>

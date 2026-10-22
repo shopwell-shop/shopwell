@@ -1,0 +1,43 @@
+{# @sw-package discovery #}
+
+{#
+    The head of a blog page. The og tags are set here and not in the global meta template so an entry
+    that is shared to a chat reads like an article and not like the shop front page.
+
+    Expected variables: page (BlogPage | BlogDetailPage)
+#}
+{% sw_extends '@Storefront/storefront/layout/meta.html.twig' %}
+
+{% block layout_head_meta_tags_opengraph %}
+    {% set blog = page.blog ?? null %}
+
+    <meta property="og:type" content="article">
+    <meta property="og:site_name" content="{{ config('core.basicInformation.shopName') }}">
+    <meta property="og:title" content="{{ page.metaInformation.metaTitle }}">
+
+    {% if page.metaInformation.metaDescription %}
+        <meta property="og:description" content="{{ page.metaInformation.metaDescription }}">
+    {% endif %}
+
+    {% if blog %}
+        <meta property="og:url" content="{{ seoUrl('frontend.blog.detail', { blogId: blog.id }) }}">
+
+        {% if blog.publishedAt %}
+            <meta property="article:published_time" content="{{ blog.publishedAt|date('c') }}">
+        {% endif %}
+
+        {% if page.coverMedia %}
+            <meta property="og:image" content="{{ page.coverMedia.url }}">
+        {% endif %}
+    {% else %}
+        <meta property="og:url" content="{{ seoUrl('frontend.blog.index') }}">
+    {% endif %}
+{% endblock %}
+
+{% block layout_head_json_ld %}
+    {% if feature('JSON_LD_DATA') and page.blog %}
+        {% set jsonLdWebPageType = 'ItemPage' %}
+        {% sw_include '@Storefront/storefront/layout/structured-data/json-ld-webpage.html.twig' %}
+        {% sw_include '@Storefront/storefront/layout/structured-data/json-ld-blog.html.twig' %}
+    {% endif %}
+{% endblock %}

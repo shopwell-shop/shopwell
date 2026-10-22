@@ -110,6 +110,26 @@ export default defineComponent({
             return this.acl.can('order_return.editor');
         },
 
+        /**
+         * The number the card states above the list. The list is loaded on its own, so the count has to
+         * survive the first render, where there is no collection yet.
+         */
+        totalCount(): number {
+            return this.orderReturns?.total ?? 0;
+        },
+
+        /**
+         * An empty list is not rendered as a grid without rows but as the empty state of the module -
+         * the operator should read what has to happen before the first return shows up.
+         */
+        hasReturns(): boolean {
+            return this.totalCount > 0;
+        },
+
+        isEmptyList(): boolean {
+            return this.totalCount === 0;
+        },
+
         columns(): Array<Record<string, unknown>> {
             return [
                 { property: 'returnNumber', label: 'sw-order-return.orderTab.columnReturnNumber', allowResize: true },
@@ -144,6 +164,20 @@ export default defineComponent({
 
         selectedPositions(): DraftPosition[] {
             return this.draftPositions.filter((position) => position.selected && position.draftQuantity > 0);
+        },
+
+        /**
+         * The form of a new return is either a table of positions or a note that there are none - and
+         * while the positions are on their way, neither. The conditions are kept here instead of in the
+         * template because the admin template pipeline hands v-if expressions to the Vue compiler as is,
+         * and an operator may hit every branch of them.
+         */
+        hasDraftPositions(): boolean {
+            return this.draftPositions.length > 0;
+        },
+
+        noReturnablePositions(): boolean {
+            return !this.isLoadingForm && this.draftPositions.length === 0;
         },
 
         /**

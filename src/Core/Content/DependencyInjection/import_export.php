@@ -19,7 +19,6 @@ use Shopwell\Core\Content\ImportExport\DataAbstractionLayer\Serializer\Entity\Or
 use Shopwell\Core\Content\ImportExport\DataAbstractionLayer\Serializer\Entity\ProductCrossSellingSerializer;
 use Shopwell\Core\Content\ImportExport\DataAbstractionLayer\Serializer\Entity\ProductSerializer;
 use Shopwell\Core\Content\ImportExport\DataAbstractionLayer\Serializer\Entity\PromotionIndividualCodeSerializer;
-use Shopwell\Core\Content\ImportExport\DataAbstractionLayer\Serializer\Entity\SalutationSerializer;
 use Shopwell\Core\Content\ImportExport\DataAbstractionLayer\Serializer\Field\CustomFieldsSerializer;
 use Shopwell\Core\Content\ImportExport\DataAbstractionLayer\Serializer\Field\FieldSerializer;
 use Shopwell\Core\Content\ImportExport\DataAbstractionLayer\Serializer\Field\PriceSerializer;
@@ -229,13 +228,6 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(MediaSerializer::class),
         ])
         ->tag('kernel.event_subscriber');
-
-    $services->set(SalutationSerializer::class)
-        ->args([
-            service('salutation.repository'),
-        ])
-        ->tag('shopwell.import_export.entity_serializer', ['priority' => -400])
-        ->tag('kernel.reset', ['method' => 'reset']);
 
     $services->set(CountrySerializer::class)
         ->args([

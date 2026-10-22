@@ -1,0 +1,32 @@
+{% block sw_dashboard_order_states %}
+<mt-card
+    v-if="canViewOrders"
+    class="sw-dashboard-order-states mt-card--future-ignore-max-width"
+    :title="$t('sw-dashboard.orderStates.headline')"
+    :is-loading="isLoading"
+    position-identifier="sw-dashboard-order-states"
+>
+    {% block sw_dashboard_order_states_chart %}
+    <div
+        v-if="hasData"
+        class="sw-dashboard-order-states__chart"
+    >
+        <sw-chart
+            type="donut"
+            :series="series"
+            :options="chartOptions"
+            :height="240"
+        />
+    </div>
+
+    {% block sw_dashboard_order_states_empty %}
+    <div
+        v-else-if="!isLoading"
+        class="sw-dashboard-order-states__empty"
+    >
+        {{ $t('sw-dashboard.orderStates.empty') }}
+    </div>
+    {% endblock %}
+    {% endblock %}
+</mt-card>
+{% endblock %}

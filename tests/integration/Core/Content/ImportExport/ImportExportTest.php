@@ -361,18 +361,10 @@ class ImportExportTest extends AbstractImportExportTestCase
     public function testNewsletterRecipient(): void
     {
         $filesystem = static::getContainer()->get('shopwell.filesystem.private');
+
         $testData = [
             'id' => Uuid::randomHex(),
-            'salutation' => [
-                'id' => Uuid::randomHex(),
-                'salutationKey' => 'test',
-                'translations' => [
-                    Defaults::LANGUAGE_SYSTEM => [
-                        'displayName' => 'test display name',
-                        'letterName' => 'test letter name',
-                    ],
-                ],
-            ],
+            'gender' => 'male',
             'email' => 'foo.bar@example.test',
             'title' => 'dr.',
             'name' => 'Max Mustermann',

@@ -19,6 +19,14 @@ async function createWrapper() {
         },
         global: {
             provide: {
+                dictionaryService: {
+                    getGenders: jest.fn(() =>
+                        Promise.resolve([
+                            { technicalName: 'female', translated: { label: 'Female' } },
+                            { technicalName: 'male', translated: { label: 'Male' } },
+                        ]),
+                    ),
+                },
                 contextStoreService: {},
             },
             stubs: {
@@ -48,22 +56,15 @@ async function createWrapper() {
 }
 
 describe('module/sw-customer/page/sw-customer-card', () => {
-    it('should exclude the default salutation from selectable salutations', async () => {
+    it('should load the gender entries without the default entry for the select', async () => {
         const wrapper = await createWrapper();
-        const criteria = wrapper.vm.salutationCriteria;
-        const expectedCriteria = {
-            type: 'not',
-            operator: 'or',
-            queries: [
-                {
-                    field: 'id',
-                    type: 'equals',
-                    value: 'ed643807c9f84cc8b50132ea3ccb1c3b',
-                },
-            ],
-        };
 
-        expect(criteria.filters).toContainEqual(expectedCriteria);
+        await flushPromises();
+
+        expect(wrapper.vm.genderOptions).toEqual([
+            { value: 'female', label: 'Female' },
+            { value: 'male', label: 'Male' },
+        ]);
     });
 
     it('should display the account type switcher', async () => {

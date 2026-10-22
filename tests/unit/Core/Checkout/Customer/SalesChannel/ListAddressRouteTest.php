@@ -76,8 +76,7 @@ class ListAddressRouteTest extends TestCase
             ->method('search')
             ->with(
                 static::callback(static function (Criteria $criteria) {
-                    return $criteria->hasAssociation('salutation')
-                        && $criteria->hasAssociation('country')
+                    return $criteria->hasAssociation('country')
                         && $criteria->hasAssociation('countryState');
                 }),
                 $context

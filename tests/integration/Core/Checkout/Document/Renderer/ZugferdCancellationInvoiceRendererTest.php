@@ -55,7 +55,7 @@ class ZugferdCancellationInvoiceRendererTest extends TestCase
         $additionalShippingAddress = [
             'id' => $shippingAddressId,
             'countryId' => $this->getValidCountryId(),
-            'salutationId' => $this->getValidSalutationId(),
+            'gender' => $this->getValidGender(),
             'name' => 'Maximilian Musterfrau',
             'street' => 'Ebbinghoff 10a',
             'zipcode' => '48624',

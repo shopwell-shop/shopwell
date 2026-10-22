@@ -60,7 +60,7 @@ class DeliveryNoteDataProviderTest extends TestCase
 
         static::assertArrayHasKey('locale', $criteria->getAssociation('language')->getAssociations());
         static::assertSame(
-            ['country', 'salutation', 'countryState'],
+            ['country', 'countryState'],
             \array_keys($criteria->getAssociation('addresses')->getAssociations()),
         );
         static::assertArrayHasKey('shippingMethod', $criteria->getAssociation('deliveries')->getAssociations());

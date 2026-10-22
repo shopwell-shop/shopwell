@@ -15,8 +15,6 @@ type DateRange = {
     aggregate: 'hour' | 'day';
 };
 
-type Metric = 'turnover' | 'orderCount';
-
 type SelectOption = {
     label: string;
     value: string;
@@ -36,14 +34,12 @@ export default Shopwell.Component.wrapComponentConfig({
         paidBuckets: OrderAmountBucket[];
         allBuckets: OrderAmountBucket[];
         selectedRange: string;
-        selectedMetric: Metric;
         isLoading: boolean;
     } {
         return {
             paidBuckets: [],
             allBuckets: [],
             selectedRange: '30Days',
-            selectedMetric: 'turnover',
             isLoading: true,
         };
     },
@@ -101,19 +97,6 @@ export default Shopwell.Component.wrapComponentConfig({
             });
         },
 
-        metricOptions(): SelectOption[] {
-            return [
-                {
-                    label: this.$t('sw-dashboard.statistics.metricTurnover'),
-                    value: 'turnover',
-                },
-                {
-                    label: this.$t('sw-dashboard.statistics.metricOrderCount'),
-                    value: 'orderCount',
-                },
-            ];
-        },
-
         canViewOrders(): boolean {
             return this.acl.can('order.viewer');
         },
@@ -127,27 +110,38 @@ export default Shopwell.Component.wrapComponentConfig({
         },
 
         series(): Array<{ name: string; data: Array<{ x: number; y: number }> }> {
-            const buckets = this.selectedMetric === 'turnover' ? this.paidBuckets : this.allBuckets;
             const today = this.getToday().getTime();
 
-            const data = buckets.map((bucket) => {
+            const turnoverData = this.paidBuckets.map((bucket) => {
                 return {
                     x: this.parseDate(bucket.date),
-                    y: this.selectedMetric === 'turnover' ? bucket.amount : bucket.count,
+                    y: bucket.amount,
                 };
             });
 
-            if (!data.some((point) => point.x === today)) {
-                data.push({ x: today, y: 0 });
+            if (!turnoverData.some((point) => point.x === today)) {
+                turnoverData.push({ x: today, y: 0 });
+            }
+
+            const orderCountData = this.allBuckets.map((bucket) => {
+                return {
+                    x: this.parseDate(bucket.date),
+                    y: bucket.count,
+                };
+            });
+
+            if (!orderCountData.some((point) => point.x === today)) {
+                orderCountData.push({ x: today, y: 0 });
             }
 
             return [
                 {
-                    name:
-                        this.selectedMetric === 'turnover'
-                            ? this.$t('sw-dashboard.statistics.metricTurnover')
-                            : this.$t('sw-dashboard.statistics.metricOrderCount'),
-                    data,
+                    name: this.$t('sw-dashboard.statistics.metricTurnover'),
+                    data: turnoverData,
+                },
+                {
+                    name: this.$t('sw-dashboard.statistics.metricOrderCount'),
+                    data: orderCountData,
                 },
             ];
         },
@@ -164,19 +158,29 @@ export default Shopwell.Component.wrapComponentConfig({
                         enabled: false,
                     },
                 },
-                yaxis: {
-                    min: 0,
-                    tickAmount: 3,
-                    labels: {
-                        formatter: (value: string) => {
-                            if (this.selectedMetric === 'turnover') {
+                yaxis: [
+                    {
+                        seriesName: this.$t('sw-dashboard.statistics.metricTurnover'),
+                        min: 0,
+                        tickAmount: 3,
+                        labels: {
+                            formatter: (value: string) => {
                                 return this.currencyFilter(Number.parseFloat(value), this.systemCurrencyISOCode, 0);
-                            }
-
-                            return parseInt(value, 10).toString();
+                            },
                         },
                     },
-                },
+                    {
+                        seriesName: this.$t('sw-dashboard.statistics.metricOrderCount'),
+                        opposite: true,
+                        min: 0,
+                        tickAmount: 3,
+                        labels: {
+                            formatter: (value: string) => {
+                                return parseInt(value, 10).toString();
+                            },
+                        },
+                    },
+                ],
                 tooltip: {
                     x: {
                         format: 'dd MMM',
@@ -186,7 +190,7 @@ export default Shopwell.Component.wrapComponentConfig({
         },
 
         helpText(): string {
-            return this.selectedMetric === 'turnover' ? this.$t('sw-dashboard.statistics.helpText') : '';
+            return this.$t('sw-dashboard.statistics.helpText');
         },
     },
 

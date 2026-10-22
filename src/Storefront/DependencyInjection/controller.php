@@ -48,6 +48,8 @@ use Shopwell\Core\Checkout\Wallet\SalesChannel\WalletPaymentRoute;
 use Shopwell\Core\Checkout\Wallet\SalesChannel\WalletTopUpCreateRoute;
 use Shopwell\Core\Checkout\Wallet\SalesChannel\WalletTopUpStatusRoute;
 use Shopwell\Core\Checkout\Wallet\Service\WalletSettings;
+use Shopwell\Core\Content\Blog\SalesChannel\Review\BlogCommentRoute;
+use Shopwell\Core\Content\Blog\Service\BlogTypeRegistry;
 use Shopwell\Core\Content\Category\SalesChannel\CategoryRoute;
 use Shopwell\Core\Content\Category\Service\CategoryUrlGenerator;
 use Shopwell\Core\Content\Cms\SalesChannel\CmsRoute;
@@ -88,6 +90,7 @@ use Shopwell\Storefront\Controller\AddressController;
 use Shopwell\Storefront\Controller\Api\CaptchaController as ApiCaptchaController;
 use Shopwell\Storefront\Controller\AppController;
 use Shopwell\Storefront\Controller\AuthController;
+use Shopwell\Storefront\Controller\BlogController;
 use Shopwell\Storefront\Controller\CaptchaController;
 use Shopwell\Storefront\Controller\CartLineItemController;
 use Shopwell\Storefront\Controller\CheckoutController;
@@ -135,6 +138,7 @@ use Shopwell\Storefront\Page\Account\RecoverPassword\AccountRecoverPasswordPageL
 use Shopwell\Storefront\Page\Account\Wallet\AccountWalletPageLoader;
 use Shopwell\Storefront\Page\Address\Detail\AddressDetailPageLoader;
 use Shopwell\Storefront\Page\Address\Listing\AddressListingPageLoader;
+use Shopwell\Storefront\Page\Blog\BlogPageLoader;
 use Shopwell\Storefront\Page\Checkout\Cart\CheckoutCartPageLoader;
 use Shopwell\Storefront\Page\Checkout\Confirm\CheckoutConfirmPageLoader;
 use Shopwell\Storefront\Page\Checkout\Finish\CheckoutFinishPageLoader;
@@ -389,6 +393,15 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(NewsletterSubscribePageLoader::class),
             service(NewsletterConfirmRoute::class),
             service(NewsletterAccountPageletLoader::class),
+        ])
+        ->call('setContainer', [service('service_container')]);
+
+    $services->set(BlogController::class)
+        ->args([
+            service(BlogPageLoader::class),
+            service(BlogTypeRegistry::class),
+            service(BlogCommentRoute::class),
+            service(ConstraintViolationTranslator::class),
         ])
         ->call('setContainer', [service('service_container')]);
 

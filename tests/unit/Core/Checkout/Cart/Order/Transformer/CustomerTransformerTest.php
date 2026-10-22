@@ -27,7 +27,7 @@ class CustomerTransformerTest extends TestCase
             'customerId' => $customerId,
             'email' => 'test@example.org',
             'name' => 'Max Smith',
-            'salutationId' => null,
+            'gender' => null,
             'title' => 'Dr.',
             'vatIds' => null,
             'company' => 'Acme Inc.',

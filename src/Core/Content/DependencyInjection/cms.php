@@ -25,8 +25,7 @@ use Shopwell\Core\Framework\Adapter\Cache\CacheTagCollector;
 use Shopwell\Core\Framework\DataAbstractionLayer\DefinitionInstanceRegistry;
 use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Util\HtmlSanitizer;
-use Shopwell\Core\System\Salutation\AbstractSalutationsSorter;
-use Shopwell\Core\System\Salutation\SalesChannel\SalutationRoute;
+use Shopwell\Core\System\Dictionary\SalesChannel\DictionaryRoute;
 use Shopwell\Core\System\SystemConfig\SystemConfigService;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
@@ -74,8 +73,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(FormCmsElementResolver::class)
         ->args([
-            service(SalutationRoute::class),
-            service(AbstractSalutationsSorter::class),
+            service(DictionaryRoute::class),
         ])
         ->tag('shopwell.cms.data_resolver');
 

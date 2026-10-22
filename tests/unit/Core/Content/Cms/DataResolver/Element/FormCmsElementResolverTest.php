@@ -13,12 +13,11 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Uuid\Uuid;
-use Shopwell\Core\System\Salutation\AbstractSalutationsSorter;
-use Shopwell\Core\System\Salutation\SalesChannel\AbstractSalutationRoute;
-use Shopwell\Core\System\Salutation\SalesChannel\SalutationRouteResponse;
-use Shopwell\Core\System\Salutation\SalutationCollection;
-use Shopwell\Core\System\Salutation\SalutationDefinition;
-use Shopwell\Core\System\Salutation\SalutationEntity;
+use Shopwell\Core\System\Dictionary\Aggregate\DictionaryEntry\DictionaryEntryCollection;
+use Shopwell\Core\System\Dictionary\Aggregate\DictionaryEntry\DictionaryEntryDefinition;
+use Shopwell\Core\System\Dictionary\Aggregate\DictionaryEntry\DictionaryEntryEntity;
+use Shopwell\Core\System\Dictionary\SalesChannel\AbstractDictionaryRoute;
+use Shopwell\Core\System\Dictionary\SalesChannel\DictionaryRouteResponse;
 use Shopwell\Core\Test\Generator;
 use Symfony\Component\HttpFoundation\Request;
 
@@ -32,19 +31,16 @@ class FormCmsElementResolverTest extends TestCase
     public function testType(): void
     {
         $formCmsElementResolver = new FormCmsElementResolver(
-            static::createStub(AbstractSalutationRoute::class),
-            static::createStub(AbstractSalutationsSorter::class)
+            static::createStub(AbstractDictionaryRoute::class)
         );
 
         static::assertSame('form', $formCmsElementResolver->getType());
     }
 
-    public function testResolverUsesAbstractSalutationsRouteToEnrichSlot(): void
+    public function testResolverUsesAbstractDictionaryRouteToEnrichSlot(): void
     {
-        $salutationCollection = $this->getSalutationCollection();
-        $sorter = static::createStub(AbstractSalutationsSorter::class);
-        $sorter->method('sort')->willReturnArgument(0);
-        $formCmsElementResolver = new FormCmsElementResolver($this->getSalutationRoute($salutationCollection), $sorter);
+        $salutationCollection = $this->getDictionaryEntryCollection();
+        $formCmsElementResolver = new FormCmsElementResolver($this->getDictionaryRoute($salutationCollection));
 
         $formElement = $this->getCmsFormElement();
         $context = new ResolverContext(Generator::generateSalesChannelContext(), new Request());
@@ -58,39 +54,13 @@ class FormCmsElementResolverTest extends TestCase
         static::assertSame($formElement->getData(), $salutationCollection);
     }
 
-    public function testResolverDelegatesToSalutationsSorter(): void
-    {
-        $salutationCollection = $this->getSalutationCollection();
-        $sortedCollection = new SalutationCollection();
-
-        $sorter = $this->createMock(AbstractSalutationsSorter::class);
-        $sorter->expects($this->once())
-            ->method('sort')
-            ->with($salutationCollection)
-            ->willReturn($sortedCollection);
-
-        $formCmsElementResolver = new FormCmsElementResolver($this->getSalutationRoute($salutationCollection), $sorter);
-
-        $formElement = $this->getCmsFormElement();
-        $context = new ResolverContext(Generator::generateSalesChannelContext(), new Request());
-
-        $formCmsElementResolver->enrich(
-            $formElement,
-            $context,
-            new ElementDataCollection()
-        );
-
-        static::assertSame($sortedCollection, $formElement->getData());
-    }
-
     public function testCollectReturnsNull(): void
     {
         $context = new ResolverContext(Generator::generateSalesChannelContext(), new Request());
-        $salutationRoute = static::createStub(AbstractSalutationRoute::class);
+        $salutationRoute = static::createStub(AbstractDictionaryRoute::class);
 
         $formCmsElementResolver = new FormCmsElementResolver(
-            $salutationRoute,
-            static::createStub(AbstractSalutationsSorter::class)
+            $salutationRoute
         );
         $actual = $formCmsElementResolver->collect(new CmsSlotEntity(), $context);
 
@@ -106,32 +76,32 @@ class FormCmsElementResolverTest extends TestCase
         return $slot;
     }
 
-    private function getSalutationCollection(): SalutationCollection
+    private function getDictionaryEntryCollection(): DictionaryEntryCollection
     {
-        return new SalutationCollection([
-            $this->createSalutationWithSalutationKey('c'),
-            $this->createSalutationWithSalutationKey('a'),
-            $this->createSalutationWithSalutationKey('d'),
-            $this->createSalutationWithSalutationKey('b'),
+        return new DictionaryEntryCollection([
+            $this->createSalutationWithTechnicalName('c'),
+            $this->createSalutationWithTechnicalName('a'),
+            $this->createSalutationWithTechnicalName('d'),
+            $this->createSalutationWithTechnicalName('b'),
         ]);
     }
 
-    private function createSalutationWithSalutationKey(string $salutationKey): SalutationEntity
+    private function createSalutationWithTechnicalName(string $technicalName): DictionaryEntryEntity
     {
-        return (new SalutationEntity())->assign([
+        return (new DictionaryEntryEntity())->assign([
             'id' => Uuid::randomHex(),
-            'salutationKey' => $salutationKey,
+            'technicalName' => $technicalName,
         ]);
     }
 
-    private function getSalutationRoute(SalutationCollection $salutationCollection): AbstractSalutationRoute
+    private function getDictionaryRoute(DictionaryEntryCollection $salutationCollection): AbstractDictionaryRoute
     {
-        $salutationRoute = $this->createMock(AbstractSalutationRoute::class);
+        $salutationRoute = $this->createMock(AbstractDictionaryRoute::class);
         $salutationRoute->expects($this->once())
             ->method('load')
-            ->willReturn(new SalutationRouteResponse(
+            ->willReturn(new DictionaryRouteResponse(
                 new EntitySearchResult(
-                    SalutationDefinition::ENTITY_NAME,
+                    DictionaryEntryDefinition::ENTITY_NAME,
                     $salutationCollection->count(),
                     $salutationCollection,
                     null,

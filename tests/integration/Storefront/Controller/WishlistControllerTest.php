@@ -333,7 +333,7 @@ class WishlistControllerTest extends TestCase
                 'street' => 'Musterstraße 1',
                 'city' => 'Schöppingen',
                 'zipcode' => '12345',
-                'salutationId' => $this->getValidSalutationId(),
+                'gender' => $this->getValidGender(),
                 'countryId' => $this->getValidCountryId(),
             ],
             'defaultBillingAddressId' => $addressId,
@@ -341,7 +341,7 @@ class WishlistControllerTest extends TestCase
             'email' => $this->customerId . '@example.com',
             'password' => TestDefaults::HASHED_PASSWORD,
             'name' => 'Max Mustermann',
-            'salutationId' => $this->getValidSalutationId(),
+            'gender' => $this->getValidGender(),
             'customerNumber' => $this->customerId,
         ];
 
@@ -385,7 +385,7 @@ class WishlistControllerTest extends TestCase
                 'accountType' => CustomerEntity::ACCOUNT_TYPE_PRIVATE,
                 'email' => 'max.mustermann@example.com',
                 'emailConfirmation' => 'max.mustermann@example.com',
-                'salutationId' => $this->getValidSalutationId(),
+                'gender' => $this->getValidGender(),
                 'name' => 'Max Mustermann',
                 'storefrontUrl' => 'http://localhost',
                 'guest' => true,

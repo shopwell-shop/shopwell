@@ -89,9 +89,9 @@ parameters:
         - Shopwell\Core\System\Country\SalesChannel\CountryRoute::load
         - Shopwell\Core\System\Country\SalesChannel\CountryStateRoute::load
         - Shopwell\Core\System\Currency\SalesChannel\CurrencyRoute::load
+        - Shopwell\Core\System\Dictionary\SalesChannel\DictionaryRoute::load
         - Shopwell\Core\System\Language\SalesChannel\LanguageRoute::load
         - Shopwell\Core\System\SalesChannel\SalesChannel\ContextRoute::load
         - Shopwell\Core\System\SalesChannel\SalesChannel\ContextSwitchRoute::switchContext
-        - Shopwell\Core\System\Salutation\SalesChannel\SalutationRoute::load
         - Shopwell\Core\System\Snippet\SalesChannel\SnippetRoute::load
         - Shopwell\Core\System\SystemConfig\SalesChannel\ShopSettingsRoute::load

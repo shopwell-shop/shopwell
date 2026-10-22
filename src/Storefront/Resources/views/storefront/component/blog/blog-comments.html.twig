@@ -1,0 +1,75 @@
+{# @sw-package discovery #}
+
+{#
+    The comment thread of an entry.
+
+    Only approved comments reach this template - the loader already dropped everything else, and a
+    reply whose parent was hidden disappeared with it. The row therefore renders what it is given and
+    never asks for a status itself: a template that filters is a template you have to audit twice.
+
+    The empty state renders the form only. A "no comments yet" line above an empty list is a heading
+    for nothing; the form is the whole content of an empty thread.
+
+    Expected variables: page (\Shopwell\Storefront\Page\Blog\BlogDetailPage)
+#}
+{% block sw_blog_comments %}
+    {% if page.commentsEnabled %}
+        <section class="blog-comments"
+                 id="comments"
+                 data-blog-comments
+                 data-comment-page="{{ page.comments.page }}"
+                 data-comment-total-pages="{{ page.comments.totalPages }}">
+            {% block sw_blog_comments_header %}
+                <header class="blog-comments__header">
+                    <h2 class="blog-comments__title">{{ 'blog.comments.heading'|trans|sw_sanitize }}</h2>
+
+                    {% if page.comments.total > 0 %}
+                        <span class="blog-comments__count">
+                            {{ 'blog.comments.count'|trans({ '%count%': page.comments.total })|sw_sanitize }}
+                        </span>
+                    {% endif %}
+                </header>
+            {% endblock %}
+
+            {% block sw_blog_comments_truncated %}
+                {% if page.comments.truncated %}
+                    <p class="blog-comments__notice">{{ 'blog.comments.truncated'|trans|sw_sanitize }}</p>
+                {% endif %}
+            {% endblock %}
+
+            {% block sw_blog_comments_list %}
+                {% if page.comments.isEmpty %}
+                    <p class="blog-comments__empty">{{ 'blog.comments.empty'|trans|sw_sanitize }}</p>
+                {% else %}
+                    <ol class="blog-comments__list">
+                        {% for node in page.comments.roots %}
+                            {% sw_include '@Storefront/storefront/component/blog/blog-comment.html.twig' with { node: node } only %}
+                        {% endfor %}
+                    </ol>
+                {% endif %}
+            {% endblock %}
+
+            {% block sw_blog_comments_pagination %}
+                {% if page.comments.totalPages > 1 %}
+                    <nav class="blog-comments__pagination">
+                        {% if page.comments.hasPreviousPage %}
+                            <a href="{{ seoUrl('frontend.blog.detail', { blogId: page.blog.id }) }}?comments={{ page.comments.page - 1 }}#comments">
+                                {{ 'general.pagination.previous'|trans|sw_sanitize }}
+                            </a>
+                        {% endif %}
+
+                        {% if page.comments.hasNextPage %}
+                            <a href="{{ seoUrl('frontend.blog.detail', { blogId: page.blog.id }) }}?comments={{ page.comments.page + 1 }}#comments">
+                                {{ 'general.pagination.next'|trans|sw_sanitize }}
+                            </a>
+                        {% endif %}
+                    </nav>
+                {% endif %}
+            {% endblock %}
+
+            {% block sw_blog_comments_form %}
+                {% sw_include '@Storefront/storefront/component/blog/blog-comment-form.html.twig' with { page: page } only %}
+            {% endblock %}
+        </section>
+    {% endif %}
+{% endblock %}

@@ -298,13 +298,13 @@ class PaymentMethodRouteTest extends TestCase
             'orderCustomer' => [
                 'customerId' => $customerId,
                 'email' => 'test@example.com',
-                'salutationId' => $this->getValidSalutationId(),
+                'gender' => $this->getValidGender(),
                 'name' => 'Max Mustermann',
             ],
             'billingAddressId' => $billingAddressId,
             'addresses' => [[
                 'id' => $billingAddressId,
-                'salutationId' => $this->getValidSalutationId(),
+                'gender' => $this->getValidGender(),
                 'name' => 'Max Mustermann',
                 'street' => 'Ebbinghoff 10',
                 'zipcode' => '48624',

@@ -120,7 +120,7 @@ class ApiControllerDetailTest extends TestCase
         $data = [
             'id' => $ids->get('customer'),
             'number' => '1337',
-            'salutationId' => $this->getValidSalutationId(),
+            'gender' => $this->getValidGender(),
             'name' => 'Max Mustermann',
             'customerNumber' => '1337',
             'email' => $ids->get('email') . '@example.com',
@@ -134,7 +134,7 @@ class ApiControllerDetailTest extends TestCase
                     'id' => $ids->get('address'),
                     'customerId' => $ids->get('customer'),
                     'countryId' => $this->getValidCountryId(),
-                    'salutationId' => $this->getValidSalutationId(),
+                    'gender' => $this->getValidGender(),
                     'name' => 'Max Mustermann',
                     'street' => 'Ebbinghoff 10',
                     'zipcode' => '48624',
@@ -144,7 +144,7 @@ class ApiControllerDetailTest extends TestCase
                     'id' => $ids->get('address2'),
                     'customerId' => $ids->get('customer'),
                     'countryId' => $this->getValidCountryId(),
-                    'salutationId' => $this->getValidSalutationId(),
+                    'gender' => $this->getValidGender(),
                     'name' => 'Peter Pan',
                     'street' => 'Musterstraße 10',
                     'zipcode' => '12345',
@@ -168,7 +168,7 @@ class ApiControllerDetailTest extends TestCase
             ->add('billingAddressId', $ids->get('billing-address'))
             ->addAddress('billing-address', [
                 'id' => $ids->get('billing-address'),
-                'salutationId' => $this->getValidSalutationId(),
+                'gender' => $this->getValidGender(),
                 'name' => 'Max Mustermann',
                 'street' => 'Ebbinghoff 10',
                 'zipcode' => '48624',
@@ -177,7 +177,7 @@ class ApiControllerDetailTest extends TestCase
             ])
             ->addAddress('shipping-address', [
                 'id' => $ids->get('shipping-address'),
-                'salutationId' => $this->getValidSalutationId(),
+                'gender' => $this->getValidGender(),
                 'name' => 'Peter Pan',
                 'street' => 'Musterstraße 10',
                 'zipcode' => '12345',

@@ -1,28 +1,23 @@
 {% block sw_order_detail_return %}
 <div class="sw-order-detail-return">
-    {% block sw_order_detail_return_toolbar %}
-    <div class="sw-order-detail-return__toolbar">
-        {% block sw_order_detail_return_toolbar_title %}
-        <div class="sw-order-detail-return__title-group">
+    {% block sw_order_detail_return_header %}
+    <div class="sw-order-detail-return__header">
+        <div class="sw-order-detail-return__heading">
             <h3 class="sw-order-detail-return__title">
                 {{ $t('sw-order-return.orderTab.cardTitle') }}
             </h3>
 
-            <span
-                v-if="!isLoading"
-                class="sw-order-detail-return__amount"
-            >
-                ({{ orderReturns ? orderReturns.total : 0 }})
+            <span class="sw-order-detail-return__count">
+                ({{ totalCount }})
             </span>
         </div>
-        {% endblock %}
 
-        {% block sw_order_detail_return_toolbar_create %}
+        {% block sw_order_detail_return_header_create %}
         <mt-button
             v-if="canEdit"
             class="sw-order-detail-return__button-create"
-            variant="primary"
             size="small"
+            variant="secondary"
             @click="onOpenCreateModal"
         >
             {{ $t('sw-order-return.orderTab.buttonCreate') }}
@@ -31,30 +26,19 @@
     </div>
     {% endblock %}
 
-    {% block sw_order_detail_return_empty_state %}
-    <mt-empty-state
-        v-if="!isLoading && (!orderReturns || orderReturns.total === 0)"
-        class="sw-order-detail-return__empty-state"
-        centered
-        icon="regular-undo"
-        :headline="$t('sw-order-return.orderTab.messageEmpty')"
-        :description="$t('sw-order-return.orderTab.messageEmptySubline')"
-    />
-    {% endblock %}
-
     {% block sw_order_detail_return_grid %}
     <sw-data-grid
-        v-else
+        v-if="hasReturns"
         class="sw-order-detail-return__grid"
         identifier="sw-order-detail-return"
         :data-source="orderReturns"
         :columns="columns"
+        :is-loading="isLoading"
         :show-selection="false"
         :show-actions="false"
         :show-settings="false"
         :allow-inline-edit="false"
         :allow-column-edit="false"
-        :is-loading="isLoading"
     >
         {% block sw_order_detail_return_grid_column_return_number %}
         <template #column-returnNumber="{ item }">
@@ -97,7 +81,29 @@
             {{ formatDateOrDash(item.createdAt) }}
         </template>
         {% endblock %}
+
+        {% block sw_order_detail_return_grid_empty_state %}
+        <template #empty-state>
+            <mt-empty-state
+                centered
+                icon="regular-undo"
+                :headline="$t('sw-order-return.orderTab.messageEmpty')"
+                :description="$t('sw-order-return.orderTab.messageEmptySubline')"
+            />
+        </template>
+        {% endblock %}
     </sw-data-grid>
+    {% endblock %}
+
+    {% block sw_order_detail_return_empty_state %}
+    <mt-empty-state
+        v-if="!isLoading && isEmptyList"
+        class="sw-order-detail-return__empty-state"
+        centered
+        icon="regular-undo"
+        :headline="$t('sw-order-return.orderTab.messageEmpty')"
+        :description="$t('sw-order-return.orderTab.messageEmptySubline')"
+    />
     {% endblock %}
 
     {% block sw_order_detail_return_create_modal %}
@@ -105,15 +111,18 @@
         v-if="showCreateModal"
         class="sw-order-detail-return__create-modal"
         :title="$t('sw-order-return.orderTab.modalTitle')"
-        variant="default"
+        variant="large"
         @modal-close="onCloseCreateModal"
     >
         {% block sw_order_detail_return_create_modal_loading %}
-        <sw-skeleton v-if="isLoadingForm" />
+        <sw-loader
+            v-if="isLoadingForm"
+            class="sw-order-detail-return__create-loader"
+        />
         {% endblock %}
 
         {% block sw_order_detail_return_create_modal_form %}
-        <template v-else>
+        <div class="sw-order-detail-return__create">
             {% block sw_order_detail_return_create_modal_hint %}
             <mt-banner
                 class="sw-order-detail-return__create-hint"
@@ -124,14 +133,14 @@
             {% endblock %}
 
             {% block sw_order_detail_return_create_modal_positions %}
-            <div class="sw-order-detail-return__create-section">
-                <h4 class="sw-order-detail-return__create-headline">
+            <section class="sw-order-detail-return__section">
+                <h4 class="sw-order-detail-return__section-title">
                     {{ $t('sw-order-return.orderTab.headlinePositions') }}
                 </h4>
 
                 {% block sw_order_detail_return_create_modal_no_positions %}
                 <mt-banner
-                    v-if="draftPositions.length === 0"
+                    v-if="noReturnablePositions"
                     variant="attention"
                 >
                     {{ $t('sw-order-return.orderTab.messageNoReturnablePositions') }}
@@ -140,68 +149,92 @@
 
                 {% block sw_order_detail_return_create_modal_position_rows %}
                 <div
-                    v-for="position in draftPositions"
-                    :key="position.lineItemId"
-                    class="sw-order-detail-return__create-position"
+                    v-if="hasDraftPositions"
+                    class="sw-order-detail-return__positions"
                 >
-                    <mt-checkbox
-                        v-model:checked="position.selected"
-                        class="sw-order-detail-return__create-position-checkbox"
-                        :label="position.label"
-                    />
+                    {% block sw_order_detail_return_create_modal_position_head %}
+                    <div class="sw-order-detail-return__position-head">
+                        <span>{{ $t('sw-order-return.orderTab.columnProduct') }}</span>
+                        <span class="sw-order-detail-return__align-end">{{ $t('sw-order-return.orderTab.columnUnitPrice') }}</span>
+                        <span>{{ $t('sw-order-return.orderTab.columnReturnable') }}</span>
+                        <span class="sw-order-detail-return__align-end">{{ $t('sw-order-return.orderTab.columnQuantity') }}</span>
+                    </div>
+                    {% endblock %}
 
-                    <span class="sw-order-detail-return__create-position-price">
-                        {{ formatUnitPrice(position.unitPrice) }}
-                    </span>
+                    <div
+                        v-for="position in draftPositions"
+                        :key="position.lineItemId"
+                        class="sw-order-detail-return__position"
+                    >
+                        <mt-checkbox
+                            v-model:checked="position.selected"
+                            class="sw-order-detail-return__position-product"
+                            :label="position.label"
+                        />
 
-                    <span class="sw-order-detail-return__create-position-returnable">
-                        {{ $t('sw-order-return.orderTab.textReturnable', { quantity: position.returnable }) }}
-                    </span>
+                        <span class="sw-order-detail-return__position-unit-price">
+                            {{ formatUnitPrice(position.unitPrice) }}
+                        </span>
 
-                    <mt-number-field
-                        v-model="position.draftQuantity"
-                        class="sw-order-detail-return__create-position-quantity"
-                        number-type="int"
-                        size="small"
-                        :min="1"
-                        :max="position.returnable"
-                        :disabled="!position.selected"
-                        number-align-end
-                    />
+                        <span class="sw-order-detail-return__position-returnable">
+                            {{ position.returnable }}
+                        </span>
+
+                        <mt-number-field
+                            v-model="position.draftQuantity"
+                            class="sw-order-detail-return__position-quantity"
+                            number-type="int"
+                            size="small"
+                            :min="1"
+                            :max="position.returnable"
+                            :disabled="!position.selected"
+                            number-align-end
+                        />
+                    </div>
                 </div>
                 {% endblock %}
-            </div>
+            </section>
             {% endblock %}
 
-            {% block sw_order_detail_return_create_modal_type %}
-            <mt-select
-                v-model="draftType"
-                class="sw-order-detail-return__create-type"
-                :label="$t('sw-order-return.orderTab.labelType')"
-                :options="typeOptions"
-                hide-clearable-button
-            />
-            {% endblock %}
+            {% block sw_order_detail_return_create_modal_details %}
+            <section class="sw-order-detail-return__section">
+                <h4 class="sw-order-detail-return__section-title">
+                    {{ $t('sw-order-return.orderTab.headlineDetails') }}
+                </h4>
 
-            {% block sw_order_detail_return_create_modal_reason %}
-            <mt-select
-                v-model="draftReasonId"
-                class="sw-order-detail-return__create-reason"
-                :label="$t('sw-order-return.orderTab.labelReason')"
-                :options="reasonOptions"
-                hide-clearable-button
-            />
-            {% endblock %}
+                <div class="sw-order-detail-return__details">
+                    {% block sw_order_detail_return_create_modal_type %}
+                    <mt-select
+                        v-model="draftType"
+                        class="sw-order-detail-return__create-type"
+                        :label="$t('sw-order-return.orderTab.labelType')"
+                        :options="typeOptions"
+                        hide-clearable-button
+                    />
+                    {% endblock %}
 
-            {% block sw_order_detail_return_create_modal_note %}
-            <mt-textarea
-                v-model="draftNote"
-                class="sw-order-detail-return__create-note"
-                :label="$t('sw-order-return.orderTab.labelNote')"
-                :placeholder="$t('sw-order-return.orderTab.placeholderNote')"
-            />
+                    {% block sw_order_detail_return_create_modal_reason %}
+                    <mt-select
+                        v-model="draftReasonId"
+                        class="sw-order-detail-return__create-reason"
+                        :label="$t('sw-order-return.orderTab.labelReason')"
+                        :options="reasonOptions"
+                        hide-clearable-button
+                    />
+                    {% endblock %}
+                </div>
+
+                {% block sw_order_detail_return_create_modal_note %}
+                <mt-textarea
+                    v-model="draftNote"
+                    class="sw-order-detail-return__create-note"
+                    :label="$t('sw-order-return.orderTab.labelNote')"
+                    :placeholder="$t('sw-order-return.orderTab.placeholderNote')"
+                />
+                {% endblock %}
+            </section>
             {% endblock %}
-        </template>
+        </div>
         {% endblock %}
 
         <template #modal-footer>

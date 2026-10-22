@@ -91,6 +91,9 @@ async function createWrapper() {
                 },
 
                 provide: {
+                    dictionaryService: {
+                        getGenders: jest.fn(() => Promise.resolve([])),
+                    },
                     customFieldDataProviderService: { getCustomFieldSets: () => Promise.resolve([]) },
                     repositoryFactory: {
                         create: () => {
@@ -166,11 +169,10 @@ describe('module/sw-customer/view/sw-customer-detail-addresses.spec.js', () => {
         expect(nameCell.find('a').text()).toContain('Quynh Nguyen');
     });
 
-    it('should set not_specified salutation key when creating a new address', async () => {
+    it('should set the default gender to not_specified when creating a new address', async () => {
         await wrapper.setProps({
             customerEditMode: true,
         });
-        wrapper.vm.salutationRepository.searchIds = jest.fn(() => Promise.resolve({ data: ['1'] }));
 
         expect(wrapper.vm.currentAddress).toBeNull();
 
@@ -178,7 +180,7 @@ describe('module/sw-customer/view/sw-customer-detail-addresses.spec.js', () => {
         await swButton.trigger('click');
         await flushPromises();
 
-        expect(wrapper.vm.currentAddress.salutationId).toBe('1');
+        expect(wrapper.vm.currentAddress.gender).toBe('not_specified');
     });
 
     it('should dispatch error/addApiError when the form has invalid field errors', async () => {

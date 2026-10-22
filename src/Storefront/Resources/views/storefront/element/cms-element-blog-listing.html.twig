@@ -1,0 +1,29 @@
+{# @sw-package discovery #}
+
+{#
+    The `blog-listing` cms element.
+
+    It is the same template the listing page uses, which is the point: a merchant who restyles the
+    listing restyles the element too, and a change to the card never has to be made twice.
+
+    The element carries no chrome of its own - no headline, no filter bar. A landing page that wants a
+    "Latest" heading places a text element above it, which is how every other listing element behaves.
+
+    Expected variables: element (\Shopwell\Core\Content\Cms\Aggregate\CmsSlot\CmsSlotEntity)
+#}
+{% block cms_element_blog_listing %}
+    {% set listing = element.data %}
+
+    {% if listing %}
+        <div class="cms-element-blog-listing" data-cms-element-blog-listing>
+            {% sw_include '@Storefront/storefront/component/blog/blog-listing.html.twig' with {
+                blogs: listing.blogs,
+                coverMedia: listing.coverMedia,
+                readingTimes: listing.readingTimes,
+                showAuthor: listing.showAuthor,
+                showReadingTime: listing.showReadingTime,
+                layout: listing.layout,
+            } only %}
+        </div>
+    {% endif %}
+{% endblock %}

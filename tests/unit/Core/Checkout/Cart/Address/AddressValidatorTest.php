@@ -8,7 +8,7 @@ use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Checkout\Cart\Address\AddressValidator;
 use Shopwell\Core\Checkout\Cart\Address\Error\BillingAddressCountryRegionMissingError;
 use Shopwell\Core\Checkout\Cart\Address\Error\BillingAddressMissingError;
-use Shopwell\Core\Checkout\Cart\Address\Error\BillingAddressSalutationMissingError;
+use Shopwell\Core\Checkout\Cart\Address\Error\BillingAddressGenderMissingError;
 use Shopwell\Core\Checkout\Cart\Address\Error\ShippingAddressCountryRegionMissingError;
 use Shopwell\Core\Checkout\Cart\Address\Error\ShippingAddressMissingError;
 use Shopwell\Core\Checkout\Cart\Cart;
@@ -221,7 +221,7 @@ class AddressValidatorTest extends TestCase
         $this->validator->validate($cart, $errorCollection, $context);
 
         static::assertCount(1, $errorCollection);
-        static::assertInstanceOf(BillingAddressSalutationMissingError::class, $errorCollection->first());
+        static::assertInstanceOf(BillingAddressGenderMissingError::class, $errorCollection->first());
     }
 
     public function testValidateAddressWithoutState(): void
@@ -256,7 +256,7 @@ class AddressValidatorTest extends TestCase
         $customerAddress->setCountryId($country->getId());
         $customerAddress->setName('John Doe');
         $customerAddress->setCity('ExampleCity');
-        $customerAddress->setSalutationId(Uuid::randomHex());
+        $customerAddress->setGender(Uuid::randomHex());
         $customerAddress->setCountry($country);
 
         $customer = new CustomerEntity();
@@ -317,7 +317,7 @@ class AddressValidatorTest extends TestCase
         $customerAddress->setCountryId($country->getId());
         $customerAddress->setName('John Doe');
         $customerAddress->setCity('ExampleCity');
-        $customerAddress->setSalutationId(Uuid::randomHex());
+        $customerAddress->setGender(Uuid::randomHex());
         $customerAddress->setCountry($country);
         $customerAddress->setCountryState($countryState);
 
@@ -435,7 +435,7 @@ class AddressValidatorTest extends TestCase
         $address->setCountry($country);
         $address->setName('John Doe');
         $address->setCity('ExampleCity');
-        $address->setSalutationId(Uuid::randomHex());
+        $address->setGender(Uuid::randomHex());
 
         return $address;
     }

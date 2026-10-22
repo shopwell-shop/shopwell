@@ -1220,12 +1220,29 @@
       "name": "Default group"
     }
   ],
-  "salutation": [
+  "dictionary_type": [
     {
-      "id": "{salutation}",
-      "salutationKey": "salutation",
-      "displayName": "test",
-      "letterName": "test"
+      "id": "{gender-dict-type}",
+      "technicalName": "gender",
+      "translations": {
+        "{language}": {
+          "label": "test"
+        }
+      }
+    }
+  ],
+  "dictionary_entry": [
+    {
+      "id": "{gender}",
+      "dictionaryTypeId": "{gender-dict-type}",
+      "technicalName": "male",
+      "position": 1,
+      "active": true,
+      "translations": {
+        "{language}": {
+          "label": "test"
+        }
+      }
     }
   ],
   "sales_channel": [

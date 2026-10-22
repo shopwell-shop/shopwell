@@ -558,7 +558,7 @@ class OrderRouteTest extends TestCase
         $addressId = Uuid::randomHex();
         $orderLineItemId = Uuid::randomHex();
         $transactionId = Uuid::randomHex();
-        $salutation = $this->getValidSalutationId();
+        $salutation = $this->getValidGender();
 
         $order = [
             [
@@ -597,7 +597,7 @@ class OrderRouteTest extends TestCase
                         'shippingDateEarliest' => date(\DATE_ATOM),
                         'shippingDateLatest' => date(\DATE_ATOM),
                         'shippingOrderAddress' => [
-                            'salutationId' => $salutation,
+                            'gender' => $salutation,
                             'name' => 'Floy Glover',
                             'zipcode' => '59438-0403',
                             'city' => 'Stellaberg',
@@ -631,7 +631,7 @@ class OrderRouteTest extends TestCase
                 'orderCustomer' => [
                     'email' => 'test@example.com',
                     'name' => 'Noe Hill',
-                    'salutationId' => $salutation,
+                    'gender' => $salutation,
                     'title' => 'Doc',
                     'customerNumber' => 'Test',
                     'customer' => [
@@ -643,7 +643,7 @@ class OrderRouteTest extends TestCase
                             'street' => 'Musterstraße 1',
                             'city' => 'Schoöppingen',
                             'zipcode' => '12345',
-                            'salutationId' => $this->getValidSalutationId(),
+                            'gender' => $this->getValidGender(),
                             'countryId' => $this->getValidCountryId(),
                         ],
                         'defaultBillingAddressId' => $addressId,
@@ -651,14 +651,14 @@ class OrderRouteTest extends TestCase
                         'email' => $email,
                         'password' => TestDefaults::HASHED_PASSWORD,
                         'name' => 'Max Mustermann',
-                        'salutationId' => $this->getValidSalutationId(),
+                        'gender' => $this->getValidGender(),
                         'customerNumber' => '12345',
                     ],
                 ],
                 'billingAddressId' => $addressId,
                 'addresses' => [
                     [
-                        'salutationId' => $salutation,
+                        'gender' => $salutation,
                         'name' => 'Floy Glover',
                         'zipcode' => '59438-0403',
                         'city' => 'Stellaberg',

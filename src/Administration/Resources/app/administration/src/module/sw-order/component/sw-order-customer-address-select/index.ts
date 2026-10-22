@@ -87,7 +87,6 @@ export default Component.wrapComponentConfig({
 
         addressCriteria(): CriteriaType {
             const criteria = new Criteria(1, null);
-            criteria.addAssociation('salutation');
             criteria.addAssociation('country');
             criteria.addAssociation('countryState');
 

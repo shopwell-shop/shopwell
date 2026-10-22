@@ -2,10 +2,14 @@
 
 namespace Shopwell\Core\System\DependencyInjection;
 
+use Doctrine\DBAL\Connection;
 use Psr\Clock\ClockInterface;
 use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextService;
 use Shopwell\Core\System\User\Aggregate\UserAccessKey\UserAccessKeyDefinition;
 use Shopwell\Core\System\User\Aggregate\UserConfig\UserConfigDefinition;
+use Shopwell\Core\System\User\Aggregate\UserOrganizationUnit\UserOrganizationUnitDefinition;
+use Shopwell\Core\System\User\Aggregate\UserOrganizationUnit\UserOrganizationUnitPrimarySubscriber;
+use Shopwell\Core\System\User\Aggregate\UserPosition\UserPositionDefinition;
 use Shopwell\Core\System\User\Aggregate\UserRecovery\UserRecoveryDefinition;
 use Shopwell\Core\System\User\Api\UserRecoveryController;
 use Shopwell\Core\System\User\Api\UserValidationController;
@@ -20,6 +24,12 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services = $containerConfigurator->services();
 
     $services->set(UserDefinition::class)
+        ->tag('shopwell.entity.definition');
+
+    $services->set(UserOrganizationUnitDefinition::class)
+        ->tag('shopwell.entity.definition');
+
+    $services->set(UserPositionDefinition::class)
         ->tag('shopwell.entity.definition');
 
     $services->set(UserConfigDefinition::class)
@@ -65,4 +75,10 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->call('setContainer', [
             service('service_container'),
         ]);
+
+    $services->set(UserOrganizationUnitPrimarySubscriber::class)
+        ->args([
+            service(Connection::class),
+        ])
+        ->tag('kernel.event_subscriber');
 };

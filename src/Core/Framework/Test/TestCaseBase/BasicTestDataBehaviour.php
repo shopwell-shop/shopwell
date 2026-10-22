@@ -18,8 +18,8 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\System\Country\CountryCollection;
+use Shopwell\Core\System\Dictionary\Aggregate\DictionaryEntry\DictionaryEntryDefinition;
 use Shopwell\Core\System\Language\LanguageCollection;
-use Shopwell\Core\System\Salutation\SalutationCollection;
 use Shopwell\Core\System\Snippet\Aggregate\SnippetSet\SnippetSetCollection;
 use Shopwell\Core\System\StateMachine\Aggregation\StateMachineState\StateMachineStateCollection;
 use Shopwell\Core\System\Tax\TaxCollection;
@@ -150,19 +150,9 @@ trait BasicTestDataBehaviour
         throw new \LogicException('No available ShippingMethod configured');
     }
 
-    protected function getValidSalutationId(): string
+    protected function getValidGender(): string
     {
-        /** @var EntityRepository<SalutationCollection> $repository */
-        $repository = static::getContainer()->get('salutation.repository');
-
-        $criteria = (new Criteria())
-            ->setLimit(1)
-            ->addSorting(new FieldSorting('salutationKey'));
-
-        $id = $repository->searchIds($criteria, Context::createDefaultContext())->firstId();
-        \assert($id !== null);
-
-        return $id;
+        return DictionaryEntryDefinition::MALE;
     }
 
     protected function getLocaleIdOfSystemLanguage(): string

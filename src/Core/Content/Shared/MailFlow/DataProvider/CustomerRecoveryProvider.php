@@ -24,8 +24,7 @@ class CustomerRecoveryProvider extends AbstractProvider
     protected function constructCriteria(string $entityId): Criteria
     {
         $criteria = new Criteria([$entityId]);
-
-        $criteria->addAssociation('customer.salutation');
+        $criteria->addAssociation('customer');
 
         return $criteria;
     }

@@ -8,7 +8,6 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Entity;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityCustomFieldsTrait;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityIdTrait;
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\System\Salutation\SalutationEntity;
 
 /**
  * @codeCoverageIgnore
@@ -23,7 +22,7 @@ class OrderCustomerEntity extends Entity
 
     protected string $orderId;
 
-    protected ?string $salutationId = null;
+    protected ?string $gender = null;
 
     protected string $name;
 
@@ -42,8 +41,6 @@ class OrderCustomerEntity extends Entity
 
     protected ?CustomerEntity $customer = null;
 
-    protected ?SalutationEntity $salutation = null;
-
     protected ?OrderEntity $order = null;
 
     protected ?string $remoteAddress = null;
@@ -60,14 +57,14 @@ class OrderCustomerEntity extends Entity
         $this->email = $email;
     }
 
-    public function getSalutationId(): ?string
+    public function getGender(): ?string
     {
-        return $this->salutationId;
+        return $this->gender;
     }
 
-    public function setSalutationId(string $salutationId): void
+    public function setGender(?string $gender): void
     {
-        $this->salutationId = $salutationId;
+        $this->gender = $gender;
     }
 
     public function getName(): string
@@ -144,16 +141,6 @@ class OrderCustomerEntity extends Entity
     public function setOrder(OrderEntity $order): void
     {
         $this->order = $order;
-    }
-
-    public function getSalutation(): ?SalutationEntity
-    {
-        return $this->salutation;
-    }
-
-    public function setSalutation(SalutationEntity $salutation): void
-    {
-        $this->salutation = $salutation;
     }
 
     public function getOrderId(): string

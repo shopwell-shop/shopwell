@@ -12,7 +12,7 @@ Shopwell.Service('privileges').addPrivilegeMappingEntry({
                 'customer:read',
                 'customer_address:read',
                 'customer_group:read',
-                'salutation:read',
+                'dictionary_entry:read',
                 'sales_channel:read',
                 'sales_channel_domain:read',
                 'sales_channel_tracking_customer:read',

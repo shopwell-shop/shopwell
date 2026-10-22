@@ -240,7 +240,7 @@ trait SalesChannelApiTestBehaviour
                 'street' => 'Musterstraße 1',
                 'city' => 'Schöppingen',
                 'zipcode' => '12345',
-                'salutationId' => $this->getValidSalutationId(),
+                'gender' => $this->getValidGender(),
                 'countryId' => $this->getValidCountryId(),
             ],
             'defaultBillingAddressId' => $addressId,
@@ -249,7 +249,7 @@ trait SalesChannelApiTestBehaviour
             'password' => TestDefaults::HASHED_PASSWORD,
             'name' => 'Max Mustermann',
             'guest' => $guest,
-            'salutationId' => $this->getValidSalutationId(),
+            'gender' => $this->getValidGender(),
             'customerNumber' => '12345',
         ], $customerOverride);
 

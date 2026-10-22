@@ -181,7 +181,7 @@ class CustomerAdminSearchIndexerTest extends TestCase
                     'affiliateCode' => null,
                     'campaignCode' => null,
                     'groupId' => 'aabbccdd11223344556677889900aabb',
-                    'salutationId' => null,
+                    'gender' => null,
                     'boundSalesChannelId' => null,
                     'requestedGroupId' => null,
                     'defaultBillingAddressId' => 'bb11223344556677889900aabbccddee',

@@ -27,7 +27,7 @@ export default {
         'feature',
     ],
 
-    mixins: [Mixin.getByName('notification'), Mixin.getByName('salutation')],
+    mixins: [Mixin.getByName('notification')],
 
     shortcuts: {
         'SYSTEMKEY+S': 'onSave',
@@ -61,6 +61,10 @@ export default {
             // Only edited for the own user — the theme select & module icon colors select are hidden otherwise.
             userThemeSelection: null,
             userModuleIconColorsSelection: null,
+            selectedUnitIds: [],
+            selectedPositionIds: [],
+            primaryUnitId: null,
+            unitMappings: [],
         };
     },
 
@@ -104,11 +108,39 @@ export default {
         },
 
         fullName() {
-            return this.salutation(this.user, this.$t('sw-users-permissions.users.user-detail.labelNewUser'));
+            return (
+                [this.user.title, this.user.name].filter(Boolean).join(' ') ||
+                this.$t('sw-users-permissions.users.user-detail.labelNewUser')
+            );
         },
 
         userRepository() {
             return this.repositoryFactory.create('user');
+        },
+
+        organizationUnitRepository() {
+            return this.repositoryFactory.create('organization_unit');
+        },
+
+        positionRepository() {
+            return this.repositoryFactory.create('position');
+        },
+
+        userOrganizationUnitRepository() {
+            return this.repositoryFactory.create('user_organization_unit');
+        },
+
+        selectedUnitOptions() {
+            const names = {};
+
+            (this.user?.organizationUnits ?? []).forEach((unit) => {
+                names[unit.id] = unit.translated?.name ?? unit.name ?? unit.id;
+            });
+
+            return this.selectedUnitIds.map((unitId) => ({
+                value: unitId,
+                label: names[unitId] ?? unitId,
+            }));
         },
 
         userCriteria() {
@@ -117,6 +149,8 @@ export default {
             criteria.addAssociation('accessKeys');
             criteria.addAssociation('locale');
             criteria.addAssociation('aclRoles');
+            criteria.addAssociation('organizationUnits');
+            criteria.addAssociation('positions');
 
             return criteria;
         },
@@ -314,7 +348,7 @@ export default {
         loadUser() {
             this.userId = this.$route.params.id?.toLowerCase();
 
-            return this.userRepository.get(this.userId, Shopwell.Context.api, this.userCriteria).then((user) => {
+            return this.userRepository.get(this.userId, Shopwell.Context.api, this.userCriteria).then(async (user) => {
                 this.user = user;
 
                 if (this.user.avatarId) {
@@ -323,7 +357,86 @@ export default {
 
                 this.keyRepository = this.repositoryFactory.create(user.accessKeys.entity, this.user.accessKeys.source);
                 this.loadKeys();
+                await this.loadAssignments();
             });
+        },
+
+        /**
+         * The unit assignment lives in `user_organization_unit` rows, not on the user: the rows
+         * carry the `is_primary` flag, so they are what the page reads and diffs.
+         */
+        async loadAssignments() {
+            const criteria = new Criteria(1, 500);
+
+            criteria.addFilter(Criteria.equals('userId', this.userId));
+
+            const mappings = await this.userOrganizationUnitRepository.search(criteria);
+
+            this.unitMappings = [...mappings];
+            this.selectedUnitIds = this.unitMappings.map((mapping) => mapping.organizationUnitId);
+            this.primaryUnitId = this.unitMappings.find((mapping) => mapping.isPrimary)?.organizationUnitId ?? null;
+            this.selectedPositionIds = [...(this.user.positionIds ?? [])];
+        },
+
+        onPrimaryUnitChange(unitId) {
+            this.primaryUnitId = unitId;
+        },
+
+        /**
+         * Diffs the mapping rows against the selection: removed assignments are deleted, added
+         * ones are created, and the primary flag moves with the primary select - the same
+         * diff-not-replace pattern the blog detail uses for its category assignments.
+         */
+        async syncAssignments() {
+            const selectedIds = [...new Set(this.selectedUnitIds)];
+
+            if (selectedIds.length > 0 && !selectedIds.includes(this.primaryUnitId)) {
+                this.primaryUnitId = selectedIds[0];
+            }
+
+            const mappingsById = {};
+
+            this.unitMappings.forEach((mapping) => {
+                mappingsById[mapping.organizationUnitId] = mapping;
+            });
+
+            const idsToRemove = this.unitMappings
+                .filter((mapping) => !selectedIds.includes(mapping.organizationUnitId))
+                .map((mapping) => mapping.id);
+
+            const idsToAssign = selectedIds.filter((unitId) => !mappingsById[unitId]);
+
+            for (const mappingId of idsToRemove) {
+                await this.userOrganizationUnitRepository.delete(mappingId);
+            }
+
+            for (const unitId of idsToAssign) {
+                const mapping = this.userOrganizationUnitRepository.create();
+
+                mapping.userId = this.userId;
+                mapping.organizationUnitId = unitId;
+                mapping.isPrimary = unitId === this.primaryUnitId;
+
+                await this.userOrganizationUnitRepository.save(mapping);
+            }
+
+            for (const unitId of selectedIds.filter((unitId) => unitId in mappingsById)) {
+                const mapping = mappingsById[unitId];
+                const shouldBePrimary = unitId === this.primaryUnitId;
+
+                if (mapping.isPrimary !== shouldBePrimary) {
+                    mapping.isPrimary = shouldBePrimary;
+
+                    await this.userOrganizationUnitRepository.save(mapping);
+                }
+            }
+
+            // the positions ride on the user entity itself
+            this.user.positionIds = [...new Set(this.selectedPositionIds)];
+
+            await this.userRepository.save(this.user);
+
+            await this.loadAssignments();
         },
 
         loadCurrentUser() {
@@ -455,6 +568,7 @@ export default {
                 }
 
                 await this.userRepository.save(this.user, context);
+                await this.syncAssignments();
 
                 if (this.currentUser.id === this.user.id) {
                     if (this.user.password) {

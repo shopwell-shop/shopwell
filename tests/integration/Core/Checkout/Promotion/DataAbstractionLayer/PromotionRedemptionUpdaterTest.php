@@ -202,7 +202,7 @@ class PromotionRedemptionUpdaterTest extends TestCase
                 'orderCustomer' => [
                     'customerId' => $secondCustomer,
                     'email' => 'test@example.com',
-                    'salutationId' => $this->fetchFirstIdFromTable('salutation'),
+                    'gender' => $this->getValidGender(),
                     'name' => 'Max Mustermann',
                 ],
                 'stateId' => $this->fetchFirstIdFromTable('state_machine_state'),
@@ -214,7 +214,7 @@ class PromotionRedemptionUpdaterTest extends TestCase
                 'addresses' => [
                     [
                         'id' => Uuid::randomHex(),
-                        'salutationId' => $this->fetchFirstIdFromTable('salutation'),
+                        'gender' => $this->getValidGender(),
                         'name' => 'Max Mustermann',
                         'street' => 'Ebbinghoff 10',
                         'zipcode' => '48624',
@@ -450,7 +450,7 @@ class PromotionRedemptionUpdaterTest extends TestCase
                 'orderCustomer' => [
                     'customerId' => $customerId,
                     'email' => 'test@example.com',
-                    'salutationId' => $this->fetchFirstIdFromTable('salutation'),
+                    'gender' => $this->getValidGender(),
                     'name' => 'Max Mustermann',
                 ],
                 'stateId' => $this->fetchFirstIdFromTable('state_machine_state'),
@@ -462,7 +462,7 @@ class PromotionRedemptionUpdaterTest extends TestCase
                 'addresses' => [
                     [
                         'id' => Uuid::randomHex(),
-                        'salutationId' => $this->fetchFirstIdFromTable('salutation'),
+                        'gender' => $this->getValidGender(),
                         'name' => 'Max Mustermann',
                         'street' => 'Ebbinghoff 10',
                         'zipcode' => '48624',

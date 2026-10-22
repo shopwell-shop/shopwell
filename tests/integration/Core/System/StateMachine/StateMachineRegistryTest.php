@@ -300,7 +300,7 @@ EOF;
             'orderCustomer' => [
                 'customerId' => $this->createCustomer(),
                 'email' => 'test@example.com',
-                'salutationId' => $this->fetchFirstIdFromTable('salutation'),
+                'gender' => $this->getValidGender(),
                 'name' => 'Max Mustermann',
             ],
             'orderNumber' => Uuid::randomHex(),
@@ -313,7 +313,7 @@ EOF;
             'addresses' => [
                 [
                     'id' => $addressId,
-                    'salutationId' => $this->fetchFirstIdFromTable('salutation'),
+                    'gender' => $this->getValidGender(),
                     'name' => 'Max Mustermann',
                     'street' => 'Ebbinghoff 10',
                     'zipcode' => '48624',
@@ -342,7 +342,7 @@ EOF;
                     'shippingDateLatest' => date(\DATE_ATOM),
                     'stateId' => $returnedPartially,
                     'shippingOrderAddress' => [
-                        'salutationId' => $this->getValidSalutationId(),
+                        'gender' => $this->getValidGender(),
                         'name' => 'Floy Glover',
                         'zipcode' => '59438-0403',
                         'city' => 'Stellaberg',
@@ -411,7 +411,7 @@ EOF;
         $customer = [
             'id' => $customerId,
             'number' => '1337',
-            'salutationId' => $this->getValidSalutationId(),
+            'gender' => $this->getValidGender(),
             'name' => 'Max Mustermann',
             'customerNumber' => '1337',
             'email' => Uuid::randomHex() . '@example.com',
@@ -425,7 +425,7 @@ EOF;
                     'id' => $addressId,
                     'customerId' => $customerId,
                     'countryId' => $this->getValidCountryId(),
-                    'salutationId' => $this->getValidSalutationId(),
+                    'gender' => $this->getValidGender(),
                     'name' => 'Max Mustermann',
                     'street' => 'Ebbinghoff 10',
                     'zipcode' => '48624',

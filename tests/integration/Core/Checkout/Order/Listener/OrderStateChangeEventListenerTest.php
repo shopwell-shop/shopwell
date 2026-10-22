@@ -135,7 +135,7 @@ class OrderStateChangeEventListenerTest extends TestCase
             'ruleIds' => [$ids->get('rule')],
             'orderCustomer' => [
                 'id' => $ids->get('order_customer'),
-                'salutationId' => $this->getValidSalutationId(),
+                'gender' => $this->getValidGender(),
                 'email' => 'test',
                 'name' => 'test test',
                 'customerId' => $ids->get('customer'),
@@ -144,7 +144,7 @@ class OrderStateChangeEventListenerTest extends TestCase
                 [
                     'id' => $ids->create('billing-address'),
                     'countryId' => $this->getValidCountryId(),
-                    'salutationId' => $this->getValidSalutationId(),
+                    'gender' => $this->getValidGender(),
                     'name' => 'asd asd',
                     'street' => 'asd',
                     'zipcode' => 'asd',
@@ -153,7 +153,7 @@ class OrderStateChangeEventListenerTest extends TestCase
                 [
                     'id' => $ids->create('shipping-address'),
                     'countryId' => $this->getValidCountryId(),
-                    'salutationId' => $this->getValidSalutationId(),
+                    'gender' => $this->getValidGender(),
                     'name' => 'asd asd',
                     'street' => 'asd',
                     'zipcode' => 'asd',
@@ -211,7 +211,7 @@ class OrderStateChangeEventListenerTest extends TestCase
         $customer = [
             'id' => $ids->get('customer'),
             'number' => '1337',
-            'salutationId' => $this->getValidSalutationId(),
+            'gender' => $this->getValidGender(),
             'name' => 'Max Mustermann',
             'customerNumber' => '1337',
             'email' => Uuid::randomHex() . '@example.com',
@@ -225,7 +225,7 @@ class OrderStateChangeEventListenerTest extends TestCase
                     'id' => $addressId,
                     'customerId' => $ids->get('customer'),
                     'countryId' => $this->getValidCountryId(),
-                    'salutationId' => $this->getValidSalutationId(),
+                    'gender' => $this->getValidGender(),
                     'name' => 'Max Mustermann',
                     'street' => 'Ebbinghoff 10',
                     'zipcode' => '48624',

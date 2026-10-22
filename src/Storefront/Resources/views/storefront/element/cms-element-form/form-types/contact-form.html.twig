@@ -9,8 +9,8 @@
           aria-label="{{ element.config.title.value ? element.config.title.value : 'contact.headline'|trans }}">
         <div class="form-content">
         <div class="row g-2">
-            {% block cms_form_contact_select_salutation %}
-                {% sw_include '@Storefront/storefront/element/cms-element-form/form-components/cms-element-form-select-salutation.html.twig'
+            {% block cms_form_contact_select_gender %}
+                {% sw_include '@Storefront/storefront/element/cms-element-form/form-components/cms-element-form-select-gender.html.twig'
                     with {
                     additionalClass: 'col-md-4',
                     required: true

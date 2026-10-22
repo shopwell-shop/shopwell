@@ -787,7 +787,7 @@ class MediaRepositoryTest extends TestCase
         $addressId = Uuid::randomHex();
         $orderLineItemId = Uuid::randomHex();
         $countryStateId = Uuid::randomHex();
-        $salutation = $this->getValidSalutationId();
+        $salutation = $this->getValidGender();
 
         return [
             'id' => $orderId,
@@ -809,7 +809,7 @@ class MediaRepositoryTest extends TestCase
                     'shippingDateEarliest' => date(\DATE_ATOM),
                     'shippingDateLatest' => date(\DATE_ATOM),
                     'shippingOrderAddress' => [
-                        'salutationId' => $salutation,
+                        'gender' => $salutation,
                         'name' => 'Floy Glover',
                         'zipcode' => '59438-0403',
                         'city' => 'Stellaberg',
@@ -844,13 +844,13 @@ class MediaRepositoryTest extends TestCase
             'orderCustomer' => [
                 'email' => 'test@example.com',
                 'name' => 'Noe Hill',
-                'salutationId' => $salutation,
+                'gender' => $salutation,
                 'title' => 'Doc',
                 'customerNumber' => 'Test',
                 'customer' => [
                     'email' => 'test@example.com',
                     'name' => 'Noe Hill',
-                    'salutationId' => $salutation,
+                    'gender' => $salutation,
                     'title' => 'Doc',
                     'customerNumber' => 'Test',
                     'guest' => true,
@@ -861,7 +861,7 @@ class MediaRepositoryTest extends TestCase
                     'addresses' => [
                         [
                             'id' => $addressId,
-                            'salutationId' => $salutation,
+                            'gender' => $salutation,
                             'name' => 'Floy Glover',
                             'zipcode' => '59438-0403',
                             'city' => 'Stellaberg',
@@ -885,7 +885,7 @@ class MediaRepositoryTest extends TestCase
             'billingAddressId' => $addressId,
             'addresses' => [
                 [
-                    'salutationId' => $salutation,
+                    'gender' => $salutation,
                     'name' => 'Floy Glover',
                     'zipcode' => '59438-0403',
                     'city' => 'Stellaberg',

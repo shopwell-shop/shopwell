@@ -1,0 +1,95 @@
+{# @sw-package discovery #}
+
+{#
+    One entry as a card. The three layouts share this template and only differ in the grid container
+    and in the classes handed in, so a theme that restyles the card restyles all three.
+
+    Expected variables:
+      blog            - \Shopwell\Core\Content\Blog\BlogEntity
+      cover           - \Shopwell\Core\Content\Media\MediaEntity|null
+      layout          - 'classic' | 'grid' | 'list'
+      featured        - bool, only the classic layout promotes the first entry
+      showAuthor      - bool
+      showReadingTime - bool
+      readingTime     - int, minutes
+#}
+{% block sw_blog_card %}
+    <article class="blog-card blog-card--{{ layout }}{% if featured %} blog-card--featured{% endif %}">
+        {% block sw_blog_card_inner %}
+            {% block sw_blog_card_media %}
+                <div class="blog-card__media">
+                    {% if cover %}
+                        <img src="{{ cover.url }}"
+                             class="blog-card__image"
+                             alt="{{ blog.title }}"
+                             {% if cover.width and cover.height %}width="{{ cover.width }}" height="{{ cover.height }}"{% endif %}
+                             {% if featured %}loading="eager" fetchpriority="high"{% else %}loading="lazy" decoding="async"{% endif %}>
+                    {% else %}
+                        <div class="blog-card__media-placeholder" aria-hidden="true">
+                            {{ blog.title|slice(0, 1) }}
+                        </div>
+                    {% endif %}
+                </div>
+            {% endblock %}
+
+            {% block sw_blog_card_content %}
+                <div class="blog-card__content">
+                    {% block sw_blog_card_categories %}
+                        {% if blog.categories is not empty %}
+                            <div class="blog-card__categories">
+                                {% set shownCategories = 0 %}
+                                {% for assignment in blog.categories %}
+                                    {% if shownCategories < 2 and assignment.blogCategory %}
+                                        <a href="{{ seoUrl('frontend.blog.index', { category: assignment.blogCategoryId }) }}"
+                                           class="blog-card__chip">{{ assignment.blogCategory.name }}</a>
+                                        {% set shownCategories = shownCategories + 1 %}
+                                    {% endif %}
+                                {% endfor %}
+                                {% if blog.categories|length > 2 %}
+                                    <span class="blog-card__chip blog-card__chip--more">+{{ blog.categories|length - 2 }}</span>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    {% endblock %}
+
+                    {% block sw_blog_card_title %}
+                        <h3 class="blog-card__title">
+                            <a href="{{ seoUrl('frontend.blog.detail', { blogId: blog.id }) }}"
+                               class="blog-card__link">{{ blog.title }}</a>
+                        </h3>
+                    {% endblock %}
+
+                    {% block sw_blog_card_teaser %}
+                        {% if blog.teaser %}
+                            <p class="blog-card__teaser">{{ blog.teaser|striptags|u.truncate(layout == 'list' ? 120 : 180, '…') }}</p>
+                        {% endif %}
+                    {% endblock %}
+
+                    {% block sw_blog_card_meta %}
+                        <div class="blog-card__meta">
+                            {% if showAuthor and blog.author %}
+                                {% block sw_blog_card_author %}
+                                    <span class="blog-card__author">{{ blog.author.name }}</span>
+                                {% endblock %}
+                            {% endif %}
+
+                            {% if blog.publishedAt %}
+                                <time class="blog-card__date" datetime="{{ blog.publishedAt|date('c') }}">
+                                    {{ blog.publishedAt|date('Y-m-d') }}
+                                </time>
+                            {% endif %}
+
+                            {% if showReadingTime and readingTime > 0 %}
+                                {% block sw_blog_card_reading_time %}
+                                    <span class="blog-card__reading-time">
+                                        {{ 'blog.card.readingTime'|trans({ '%minutes%': readingTime })|sw_sanitize }}
+                                    </span>
+                                {% endblock %}
+                            {% endif %}
+                        </div>
+                    {% endblock %}
+                </div>
+            {% endblock %}
+        {% endblock %}
+    </article>
+{% endblock %}

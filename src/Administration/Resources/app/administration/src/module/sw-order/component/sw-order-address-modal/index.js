@@ -89,10 +89,6 @@ export default {
             return this.repositoryFactory.create('custom_field_set');
         },
 
-        salutationFilter() {
-            return Shopwell.Filter.getByName('salutation');
-        },
-
         addressModalTabs() {
             return [
                 {

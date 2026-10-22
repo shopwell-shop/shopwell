@@ -142,7 +142,7 @@ class LoginWithInvalidDefaultAddressTest extends TestCase
             'street' => 'Musterstraße 2',
             'city' => 'Schöppingen',
             'zipcode' => '12345',
-            'salutationId' => $this->getValidSalutationId(),
+            'gender' => $this->getValidGender(),
             'countryId' => $this->getValidCountryId($this->ids->get('sales-channel')),
         ]);
         static::assertSame(200, $this->browser->getResponse()->getStatusCode());
@@ -240,7 +240,7 @@ class LoginWithInvalidDefaultAddressTest extends TestCase
             'street' => 'Musterstraße 1',
             'city' => 'Schöppingen',
             'zipcode' => '12345',
-            'salutationId' => $this->getValidSalutationId(),
+            'gender' => $this->getValidGender(),
             'countryId' => $this->getValidCountryId($this->ids->get('sales-channel')),
         ];
 
@@ -253,7 +253,7 @@ class LoginWithInvalidDefaultAddressTest extends TestCase
             'email' => $this->email,
             'password' => 'shopwell',
             'name' => 'Max Mustermann',
-            'salutationId' => $this->getValidSalutationId(),
+            'gender' => $this->getValidGender(),
             'customerNumber' => '12345',
         ]], Context::createDefaultContext());
     }

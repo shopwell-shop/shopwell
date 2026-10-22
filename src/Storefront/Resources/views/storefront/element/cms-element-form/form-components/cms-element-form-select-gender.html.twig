@@ -1,0 +1,26 @@
+{% block cms_form_select_gender_content %}
+    {% set genderOptions %}
+        {% if not data.get('gender') %}
+            <option disabled="disabled" selected="selected" value="">
+                {{ 'account.personalGenderPlaceholder'|trans }}
+            </option>
+        {% endif %}
+
+        {% for gender in element.data %}
+            <option value="{{ gender.technicalName }}">
+                {{ gender.translated.label }}
+            </option>
+        {% endfor %}
+    {% endset %}
+
+    {% sw_include '@Storefront/storefront/component/form/form-select.html.twig' with {
+        label: 'account.personalGenderLabel'|trans|sw_sanitize,
+        id: formPrefix ~ '-form-Gender',
+        name: 'gender',
+        options: genderOptions,
+        violationPath: '/gender',
+        validationRules: required ? 'required',
+        additionalClass: additionalClass,
+        additionalSelectClass: 'contact-select',
+    } %}
+{% endblock %}

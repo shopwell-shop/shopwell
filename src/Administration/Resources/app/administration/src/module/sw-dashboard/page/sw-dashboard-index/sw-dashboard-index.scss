@@ -3,4 +3,34 @@
     .sw-dashboard__after-content {
         margin-bottom: var(--scale-size-24);
     }
+
+    // The dashboard reads as a radar, not as a report: KPIs run the full
+    // width, everything below pairs a primary block with its companion so
+    // trend and todo, states and top products, orders and members sit side
+    // by side and can be compared without scrolling.
+    &__row {
+        display: grid;
+        gap: var(--scale-size-24);
+        margin-bottom: var(--scale-size-24);
+        align-items: start;
+
+        &--main {
+            grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+        }
+
+        &--half {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        @media screen and (max-width: 62rem) {
+            &--main,
+            &--half {
+                grid-template-columns: minmax(0, 1fr);
+            }
+        }
+    }
+
+    &__row-cell {
+        min-width: 0;
+    }
 }

@@ -25,15 +25,6 @@
     <template #headerRight>
         <div class="sw-dashboard-statistics__header">
             <mt-select
-                v-model="selectedMetric"
-                class="sw-dashboard-statistics__metric-select"
-                name="sw-field--selectedMetric"
-                small
-                :options="metricOptions"
-                hide-clearable-button
-            />
-
-            <mt-select
                 v-model="selectedRange"
                 class="sw-dashboard-statistics__range-select"
                 name="sw-field--selectedRange"

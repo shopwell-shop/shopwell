@@ -16,10 +16,9 @@ use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Routing\RoutingException;
 use Shopwell\Core\System\Country\CountryCollection;
 use Shopwell\Core\System\Country\SalesChannel\AbstractCountryRoute;
+use Shopwell\Core\System\Dictionary\Aggregate\DictionaryEntry\DictionaryEntryCollection;
+use Shopwell\Core\System\Dictionary\SalesChannel\AbstractDictionaryRoute;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
-use Shopwell\Core\System\Salutation\AbstractSalutationsSorter;
-use Shopwell\Core\System\Salutation\SalesChannel\AbstractSalutationRoute;
-use Shopwell\Core\System\Salutation\SalutationCollection;
 use Shopwell\Storefront\Page\GenericPageLoaderInterface;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpFoundation\Request;
@@ -33,12 +32,11 @@ class AddressListingPageLoader
     public function __construct(
         private readonly GenericPageLoaderInterface $genericLoader,
         private readonly AbstractCountryRoute $countryRoute,
-        private readonly AbstractSalutationRoute $salutationRoute,
+        private readonly AbstractDictionaryRoute $dictionaryRoute,
         private readonly AbstractListAddressRoute $listAddressRoute,
         private readonly EventDispatcherInterface $eventDispatcher,
         private readonly CartService $cartService,
         private readonly AbstractTranslator $translator,
-        private readonly AbstractSalutationsSorter $salutationsSorter
     ) {
     }
 
@@ -55,7 +53,7 @@ class AddressListingPageLoader
         $page = AddressListingPage::createFrom($page);
         $this->setMetaInformation($page);
 
-        $page->setSalutations($this->getSalutations($salesChannelContext));
+        $page->setGenders($this->getGenders($salesChannelContext));
 
         $page->setCountries($this->getCountries($salesChannelContext));
 
@@ -87,11 +85,11 @@ class AddressListingPageLoader
     /**
      * @throws InconsistentCriteriaIdsException
      */
-    private function getSalutations(SalesChannelContext $context): SalutationCollection
+    private function getGenders(SalesChannelContext $context): DictionaryEntryCollection
     {
-        $salutations = $this->salutationRoute->load(new Request(), $context, new Criteria())->getSalutations();
+        $request = new Request([], [], ['technicalName' => 'gender']);
 
-        return $this->salutationsSorter->sort($salutations);
+        return $this->dictionaryRoute->load($request, $context, new Criteria())->getEntries();
     }
 
     /**
