@@ -2,7 +2,7 @@
     "sw-dashboard": {
         "general": {
             "mainMenuItemGeneral": "主页",
-            "descriptionTextModule": "经营概览、销售趋势与最新订单"
+            "descriptionTextModule": "经营概览、销售趋势、待办事项与最新订单"
         },
         "metrics": {
             "headline": "今日经营",
@@ -10,8 +10,11 @@
             "orders": "今日订单",
             "newCustomers": "今日新增客户",
             "averageOrderValue": "客单价",
+            "walletBalance": "钱包总余额",
+            "monthlyPoints": "本月积分发放",
             "ordersUnit": "笔",
             "customersUnit": "位",
+            "pointsUnit": "分",
             "comparedToYesterday": "较昨日",
             "noComparison": "昨日无对比数据",
             "paidOnlyHint": "营业额与客单价只统计已付款订单"
@@ -27,6 +30,42 @@
                 "7Days": "最近 7 天",
                 "24Hours": "最近 24 小时",
                 "yesterday": "自昨天起"
+            }
+        },
+        "todos": {
+            "headline": "需要你处理",
+            "returnRequests": "待审核退货",
+            "ordersToShip": "待发货订单",
+            "reviewsWaiting": "待审核评价",
+            "outOfStock": "缺货商品",
+            "empty": "暂无待办，一切正常。"
+        },
+        "orderStates": {
+            "headline": "订单状态分布（近 30 天）",
+            "empty": "该时间段暂无订单。"
+        },
+        "topProducts": {
+            "headline": "热销商品（近 30 天）",
+            "seriesName": "销量",
+            "empty": "该时间段暂无商品销量。",
+            "viewOrders": "查看订单"
+        },
+        "loyaltyDistribution": {
+            "headline": "会员等级分布",
+            "seriesName": "会员数",
+            "empty": "暂无会员数据。"
+        },
+        "wallet": {
+            "headline": "钱包速览",
+            "topUpToday": "今日充值",
+            "unknownCustomer": "未知客户",
+            "empty": "暂无钱包流水。",
+            "viewAll": "查看全部流水",
+            "types": {
+                "top_up": "充值",
+                "consume": "消费",
+                "refund": "退款",
+                "adjust": "调整"
             }
         },
         "latestOrders": {

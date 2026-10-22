@@ -157,7 +157,7 @@ abstract class AbstractAppPaymentHandlerTestCase extends TestCase
                 'id' => $addressId,
                 'customerId' => $customerId,
                 'countryId' => $this->getValidCountryId(),
-                'salutationId' => $this->getValidSalutationId(),
+                'gender' => $this->getValidGender(),
                 'name' => 'Max Mustermann',
                 'street' => 'Ebbinghoff 10',
                 'zipcode' => '48624',
@@ -191,7 +191,7 @@ abstract class AbstractAppPaymentHandlerTestCase extends TestCase
             ->add('orderCustomer', [
                 'customerId' => $customerId,
                 'email' => 'test@example.com',
-                'salutationId' => $this->getValidSalutationId(),
+                'gender' => $this->getValidGender(),
                 'name' => 'Max Mustermann',
             ])
             ->add('stateId', $stateId)
@@ -201,7 +201,7 @@ abstract class AbstractAppPaymentHandlerTestCase extends TestCase
             ->add('salesChannelId', TestDefaults::SALES_CHANNEL)
             ->addAddress('address', [
                 'id' => $addressId,
-                'salutationId' => $this->getValidSalutationId(),
+                'gender' => $this->getValidGender(),
                 'name' => 'Max Mustermann',
                 'street' => 'Ebbinghoff 10',
                 'zipcode' => '48624',

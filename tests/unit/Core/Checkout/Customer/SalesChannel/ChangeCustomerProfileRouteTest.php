@@ -3,6 +3,7 @@
 namespace Shopwell\Tests\Unit\Core\Checkout\Customer\SalesChannel;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use Shopwell\Core\System\Dictionary\Aggregate\DictionaryEntry\DictionaryEntryDefinition;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Checkout\Customer\Aggregate\CustomerAddress\CustomerAddressEntity;
 use Shopwell\Core\Checkout\Customer\CustomerCollection;
@@ -88,7 +89,6 @@ class ChangeCustomerProfileRouteTest extends TestCase
             $validator,
             $validationFactory,
             static::createStub(StoreApiCustomFieldMapper::class),
-            static::createStub(EntityRepository::class),
             new ExtensionDispatcher(new EventDispatcher()),
         );
 
@@ -96,7 +96,7 @@ class ChangeCustomerProfileRouteTest extends TestCase
             'accountType' => CustomerEntity::ACCOUNT_TYPE_BUSINESS,
             'company' => 'Test Company',
             'name' => 'Max Mustermann',
-            'salutationId' => Uuid::randomHex(),
+            'gender' => 'male',
             'vatIds' => ['de 123456789'],
         ]);
 
@@ -125,7 +125,6 @@ class ChangeCustomerProfileRouteTest extends TestCase
             static::createStub(DataValidator::class),
             static::createStub(CustomerValidationFactory::class),
             $storeApiCustomFieldMapper,
-            static::createStub(EntityRepository::class),
             new ExtensionDispatcher(new EventDispatcher()),
         );
 
@@ -133,7 +132,7 @@ class ChangeCustomerProfileRouteTest extends TestCase
         $customer->setId('customer1');
         $data = new RequestDataBag([
             'customFields' => $customFields,
-            'salutationId' => '1',
+            'gender' => '1',
         ]);
 
         $change->change($data, static::createStub(SalesChannelContext::class), $customer);
@@ -159,7 +158,6 @@ class ChangeCustomerProfileRouteTest extends TestCase
             static::createStub(DataValidator::class),
             static::createStub(CustomerValidationFactory::class),
             static::createStub(StoreApiCustomFieldMapper::class),
-            static::createStub(EntityRepository::class),
             new ExtensionDispatcher(new EventDispatcher()),
         );
 
@@ -167,37 +165,27 @@ class ChangeCustomerProfileRouteTest extends TestCase
         $customer->setId('customer1');
         $data = new RequestDataBag([
             'accountType' => CustomerEntity::ACCOUNT_TYPE_BUSINESS,
-            'salutationId' => '1',
+            'gender' => '1',
         ]);
 
         $change->change($data, static::createStub(SalesChannelContext::class), $customer);
     }
 
-    public function testSalutationIdIsAssignedDefaultValue(): void
+    public function testGenderIsAssignedDefaultValue(): void
     {
-        $salutationId = Uuid::randomHex();
+        $gender = DictionaryEntryDefinition::NOT_SPECIFIED;
 
         $customerRepository = $this->createMock(EntityRepository::class);
         $customerRepository
             ->expects($this->once())
             ->method('update')
-            ->with(static::callback(static function (array $data) use ($salutationId) {
+            ->with(static::callback(static function (array $data) use ($gender) {
                 static::assertCount(1, $data);
                 static::assertIsArray($data[0]);
-                static::assertSame($data[0]['salutationId'], $salutationId);
+                static::assertSame($data[0]['gender'], $gender);
 
                 return true;
             }));
-
-        $idSearchResult = new IdSearchResult(
-            1,
-            [$salutationId => ['data' => [], 'primaryKey' => $salutationId]],
-            new Criteria(),
-            Context::createDefaultContext(),
-        );
-
-        $salutationRepository = static::createStub(EntityRepository::class);
-        $salutationRepository->method('searchIds')->willReturn($idSearchResult);
 
         $change = new ChangeCustomerProfileRoute(
             $customerRepository,
@@ -205,7 +193,6 @@ class ChangeCustomerProfileRouteTest extends TestCase
             static::createStub(DataValidator::class),
             static::createStub(CustomerValidationFactory::class),
             static::createStub(StoreApiCustomFieldMapper::class),
-            $salutationRepository,
             new ExtensionDispatcher(new EventDispatcher())
         );
 
@@ -214,7 +201,7 @@ class ChangeCustomerProfileRouteTest extends TestCase
 
         $data = new RequestDataBag([
             'accountType' => CustomerEntity::ACCOUNT_TYPE_BUSINESS,
-            'salutationId' => '',
+            'gender' => '',
         ]);
 
         $salesChannelContext = static::createStub(SalesChannelContext::class);
@@ -243,7 +230,7 @@ class ChangeCustomerProfileRouteTest extends TestCase
         $customer->setId('customer1');
 
         $data = new RequestDataBag([
-            'salutationId' => '1',
+            'gender' => '1',
             'phoneNumber' => " 0123456789\u{3000}",
         ]);
 
@@ -270,7 +257,7 @@ class ChangeCustomerProfileRouteTest extends TestCase
         $customer->setId('customer1');
 
         $data = new RequestDataBag([
-            'salutationId' => '1',
+            'gender' => '1',
             'phoneNumber' => "\u{3000} ",
         ]);
 
@@ -297,7 +284,7 @@ class ChangeCustomerProfileRouteTest extends TestCase
         $customer->setPhoneNumber('0123456789');
 
         $data = new RequestDataBag([
-            'salutationId' => '1',
+            'gender' => '1',
         ]);
 
         $change->change($data, static::createStub(SalesChannelContext::class), $customer);
@@ -324,7 +311,6 @@ class ChangeCustomerProfileRouteTest extends TestCase
             static::createStub(DataValidator::class),
             static::createStub(CustomerValidationFactory::class),
             static::createStub(StoreApiCustomFieldMapper::class),
-            static::createStub(EntityRepository::class),
             new ExtensionDispatcher($dispatcher),
         );
 
@@ -342,7 +328,6 @@ class ChangeCustomerProfileRouteTest extends TestCase
             static::createStub(DataValidator::class),
             static::createStub(CustomerValidationFactory::class),
             static::createStub(StoreApiCustomFieldMapper::class),
-            static::createStub(EntityRepository::class),
             new ExtensionDispatcher(new EventDispatcher()),
         );
     }

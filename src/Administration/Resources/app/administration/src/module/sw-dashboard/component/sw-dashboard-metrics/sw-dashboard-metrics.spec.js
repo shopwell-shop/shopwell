@@ -124,6 +124,51 @@ describe('module/sw-dashboard/component/sw-dashboard-metrics', () => {
         expect(wrapper.vm.metricCards.at(-1).key).toBe('newCustomers');
     });
 
+    it('adds the wallet balance card with wallet permission', async () => {
+        const walletSearch = jest.fn().mockResolvedValue({
+            aggregations: { walletBalance: { sum: 1234.5 } },
+        });
+        const factory = createRepositoryFactory({
+            customer_wallet: { search: walletSearch },
+        });
+
+        const wrapper = await createWrapper(['order.viewer', 'wallet.viewer'], factory);
+        await flushPromises();
+
+        const walletCard = wrapper.vm.metricCards.find((card) => card.key === 'walletBalance');
+        expect(walletCard.value).toContain('1,234.50');
+        expect(walletCard.showComparison).toBe(false);
+        expect(walletCard.link.name).toBe('sw.finance.walletTransactions');
+        expect(walletSearch).toHaveBeenCalledTimes(1);
+    });
+
+    it('adds the monthly points card with loyalty permission', async () => {
+        const pointsSearch = jest.fn().mockResolvedValue({
+            aggregations: { monthlyPoints: { sum: 4200 } },
+        });
+        const factory = createRepositoryFactory({
+            customer_point_transaction: { search: pointsSearch },
+        });
+
+        const wrapper = await createWrapper(['order.viewer', 'loyalty.viewer'], factory);
+        await flushPromises();
+
+        const pointsCard = wrapper.vm.metricCards.find((card) => card.key === 'monthlyPoints');
+        expect(pointsCard.value).toBe('4,200');
+        expect(pointsCard.showComparison).toBe(false);
+        expect(pointsCard.link.name).toBe('sw.settings.loyalty.orders');
+        expect(wrapper.vm.currentMetrics.monthlyPoints).toBe(4200);
+    });
+
+    it('hides the stock cards without their permissions', async () => {
+        const wrapper = await createWrapper(['order.viewer', 'customer.viewer']);
+        await flushPromises();
+
+        const keys = wrapper.vm.metricCards.map((card) => card.key);
+        expect(keys).not.toContain('walletBalance');
+        expect(keys).not.toContain('monthlyPoints');
+    });
+
     it('uses paid orders for revenue and all orders for the order count', async () => {
         statisticResponse = {
             paid: [{ date: TODAY, count: 2, amount: 100 }],
@@ -138,6 +183,8 @@ describe('module/sw-dashboard/component/sw-dashboard-metrics', () => {
             paidOrders: 2,
             orders: 5,
             newCustomers: 0,
+            walletBalance: 0,
+            monthlyPoints: 0,
         });
     });
 

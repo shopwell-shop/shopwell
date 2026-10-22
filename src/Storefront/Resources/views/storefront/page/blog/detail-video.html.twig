@@ -1,0 +1,57 @@
+{% sw_extends '@Storefront/storefront/page/blog/detail.html.twig' %}
+
+{#
+    A video entry. Everything around the body - breadcrumb, headline block, author card, related
+    entries - is inherited unchanged from detail.html.twig; only the media at the top of the body is
+    replaced by the player.
+
+    The player is a plain <video> element for a self hosted file and an <iframe> for a platform url. It
+    never autoplays: a browser blocks it outside of a muted context anyway, and an autoplaying video is
+    the fastest way to lose a reader on a slow connection.
+#}
+{% block sw_blog_detail_hero %}
+    {% set video = page.video %}
+
+    {% if video %}
+        <figure class="blog-detail__hero blog-detail__hero--video">
+            {% if video.provider in ['youtube', 'vimeo'] %}
+                <div class="blog-detail__video-embed">
+                    <iframe src="{{ video.videoUrl }}"
+                            class="blog-detail__video-frame"
+                            title="{{ page.blog.title }}"
+                            loading="lazy"
+                            allow="accelerometer; encrypted-media; gyroscope; picture-in-picture"
+                            allowfullscreen></iframe>
+                </div>
+            {% else %}
+                <video class="blog-detail__video"
+                       controls
+                       preload="metadata"
+                       playsinline
+                       {% if page.coverMedia %}poster="{{ page.coverMedia.url }}"{% endif %}
+                       {% if page.blog.title %}aria-label="{{ page.blog.title }}"{% endif %}>
+                    <source src="{{ video.videoUrl }}">
+                    {{ 'blog.video.unsupported'|trans|sw_sanitize }}
+                </video>
+            {% endif %}
+        </figure>
+    {% else %}
+        {{ parent() }}
+    {% endif %}
+{% endblock %}
+
+{# a video page has no table of contents: its body is a description, not a structured article #}
+{% block sw_blog_detail_sidebar %}
+    <aside class="blog-sidebar">
+        {% if page.coverMedia %}
+            {% block sw_blog_detail_video_poster %}
+                <img src="{{ page.coverMedia.url }}"
+                     class="blog-sidebar__poster"
+                     alt="{{ page.blog.title }}"
+                     {% if page.coverMedia.width and page.coverMedia.height %}width="{{ page.coverMedia.width }}" height="{{ page.coverMedia.height }}"{% endif %}
+                     loading="lazy"
+                     decoding="async">
+            {% endblock %}
+        {% endif %}
+    </aside>
+{% endblock %}

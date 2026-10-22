@@ -33,13 +33,10 @@ class CustomerProviderTest extends AbstractProviderTestCase
     protected function getExpectedAssociations(): array
     {
         return [
-            'salutation',
             'defaultBillingAddress.country',
             'defaultBillingAddress.countryState',
-            'defaultBillingAddress.salutation',
             'defaultShippingAddress.country',
             'defaultShippingAddress.countryState',
-            'defaultShippingAddress.salutation',
         ];
     }
 }

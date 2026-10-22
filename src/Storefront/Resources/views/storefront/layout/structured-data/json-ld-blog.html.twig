@@ -1,0 +1,56 @@
+{% block layout_structured_data_blog %}
+    {#
+        The article as structured data.
+
+        Expected variables: page (\Shopwell\Storefront\Page\Blog\BlogDetailPage)
+
+        A video entry gets the same node as a text entry: it is an article of the blog either way,
+        and the video itself is visible on the page but not a playable object the search engine
+        indexes separately.
+    #}
+    {% set blog = page.blog %}
+    {% set blogUrl = seoUrl('frontend.blog.detail', { blogId: blog.id }) %}
+
+    {% set blogData = {
+        '@context': 'https://schema.org',
+        '@type': 'BlogPosting',
+        '@id': blogUrl ~ '#blogposting',
+        url: blogUrl,
+        headline: blog.translated.title,
+        datePublished: (blog.publishedAt ?? blog.createdAt)|date('c'),
+        dateModified: blog.updatedAt is defined and blog.updatedAt ? blog.updatedAt|date('c') : null,
+        mainEntityOfPage: { '@type': 'WebPage', '@id': blogUrl }
+    } %}
+
+    {% if blog.translated.teaser %}
+        {% set blogData = blogData|merge({ description: blog.translated.teaser|striptags }) %}
+    {% endif %}
+
+    {% if page.coverMedia %}
+        {% set blogData = blogData|merge({ image: [page.coverMedia.url] }) %}
+    {% endif %}
+
+    {% if page.author %}
+        {% set blogData = blogData|merge({
+            author: {
+                '@type': 'Person',
+                name: page.author.name
+            }
+        }) %}
+    {% endif %}
+
+    {% set blogData = blogData|merge({
+        publisher: {
+            '@type': 'Organization',
+            name: config('core.basicInformation.shopName')
+        },
+        inLanguage: context.language.translationCode.code
+    }) %}
+
+    {% block layout_structured_data_blog_script %}
+        <script type="application/ld+json">
+        {# ludtwig-ignore twig-json-encode-escape-js #}
+        {{ blogData|json_encode(jsonLdFlags)|raw }}
+        </script>
+    {% endblock %}
+{% endblock %}

@@ -66,13 +66,13 @@ class OrderAddressServiceTest extends TestCase
         // Create customer address
         $customerAddressId = Uuid::randomHex();
         $countryId = $this->getValidCountryId();
-        $salutationId = $this->getValidSalutationId();
+        $gender = $this->getValidGender();
         $this->customerAddressRepository->create([
             [
                 'id' => $customerAddressId,
                 'customerId' => $orderData[0]['orderCustomer']['customer']['id'],
                 'countryId' => $countryId,
-                'salutationId' => $salutationId,
+                'gender' => $gender,
                 'name' => 'Max Mustermann',
                 'zipcode' => '12345',
                 'city' => 'Musterstadt',
@@ -98,7 +98,7 @@ class OrderAddressServiceTest extends TestCase
 
         static::assertNotNull($billingAddress);
         static::assertSame($countryId, $billingAddress->getCountryId());
-        static::assertSame($salutationId, $billingAddress->getSalutationId());
+        static::assertSame($gender, $billingAddress->getGender());
         static::assertSame('Max Mustermann', $billingAddress->getName());
         static::assertSame('12345', $billingAddress->getZipcode());
         static::assertSame('Musterstadt', $billingAddress->getCity());
@@ -112,7 +112,7 @@ class OrderAddressServiceTest extends TestCase
 
         static::assertNotNull($shippingAddress);
         static::assertSame($orderData[0]['deliveries'][0]['shippingOrderAddress']['country']['id'], $shippingAddress->getCountryId());
-        static::assertSame($orderData[0]['deliveries'][0]['shippingOrderAddress']['salutationId'], $shippingAddress->getSalutationId());
+        static::assertSame($orderData[0]['deliveries'][0]['shippingOrderAddress']['gender'], $shippingAddress->getGender());
         static::assertSame($orderData[0]['deliveries'][0]['shippingOrderAddress']['name'], $shippingAddress->getName());
         static::assertSame($orderData[0]['deliveries'][0]['shippingOrderAddress']['zipcode'], $shippingAddress->getZipcode());
         static::assertSame($orderData[0]['deliveries'][0]['shippingOrderAddress']['city'], $shippingAddress->getCity());
@@ -137,13 +137,13 @@ class OrderAddressServiceTest extends TestCase
         // Create customer address
         $customerAddressId = Uuid::randomHex();
         $countryId = $this->getValidCountryId();
-        $salutationId = $this->getValidSalutationId();
+        $gender = $this->getValidGender();
         $this->customerAddressRepository->create([
             [
                 'id' => $customerAddressId,
                 'customerId' => $orderData[0]['orderCustomer']['customer']['id'],
                 'countryId' => $countryId,
-                'salutationId' => $salutationId,
+                'gender' => $gender,
                 'name' => 'Max Mustermann',
                 'zipcode' => '12345',
                 'city' => 'Musterstadt',
@@ -173,7 +173,7 @@ class OrderAddressServiceTest extends TestCase
 
         static::assertNotNull($shippingAddress);
         static::assertSame($countryId, $shippingAddress->getCountryId());
-        static::assertSame($salutationId, $shippingAddress->getSalutationId());
+        static::assertSame($gender, $shippingAddress->getGender());
         static::assertSame('Max Mustermann', $shippingAddress->getName());
         static::assertSame('12345', $shippingAddress->getZipcode());
         static::assertSame('Musterstadt', $shippingAddress->getCity());
@@ -184,7 +184,7 @@ class OrderAddressServiceTest extends TestCase
 
         static::assertNotNull($billingAddress);
         static::assertSame($orderData[0]['addresses'][0]['countryId'], $billingAddress->getCountryId());
-        static::assertSame($orderData[0]['addresses'][0]['salutationId'], $billingAddress->getSalutationId());
+        static::assertSame($orderData[0]['addresses'][0]['gender'], $billingAddress->getGender());
         static::assertSame($orderData[0]['addresses'][0]['name'], $billingAddress->getName());
         static::assertSame($orderData[0]['addresses'][0]['zipcode'], $billingAddress->getZipcode());
         static::assertSame($orderData[0]['addresses'][0]['city'], $billingAddress->getCity());
@@ -209,13 +209,13 @@ class OrderAddressServiceTest extends TestCase
         // Create customer address
         $customerAddressId = Uuid::randomHex();
         $countryId = $this->getValidCountryId();
-        $salutationId = $this->getValidSalutationId();
+        $gender = $this->getValidGender();
         $this->customerAddressRepository->create([
             [
                 'id' => $customerAddressId,
                 'customerId' => $orderData[0]['orderCustomer']['customer']['id'],
                 'countryId' => $countryId,
-                'salutationId' => $salutationId,
+                'gender' => $gender,
                 'name' => 'Max Mustermann',
                 'zipcode' => '12345',
                 'city' => 'Musterstadt',
@@ -249,7 +249,7 @@ class OrderAddressServiceTest extends TestCase
 
         static::assertNotNull($shippingAddress);
         static::assertSame($countryId, $shippingAddress->getCountryId());
-        static::assertSame($salutationId, $shippingAddress->getSalutationId());
+        static::assertSame($gender, $shippingAddress->getGender());
         static::assertSame('Max Mustermann', $shippingAddress->getName());
         static::assertSame('12345', $shippingAddress->getZipcode());
         static::assertSame('Musterstadt', $shippingAddress->getCity());
@@ -260,7 +260,7 @@ class OrderAddressServiceTest extends TestCase
 
         static::assertNotNull($billingAddress);
         static::assertSame($countryId, $billingAddress->getCountryId());
-        static::assertSame($salutationId, $billingAddress->getSalutationId());
+        static::assertSame($gender, $billingAddress->getGender());
         static::assertSame('Max Mustermann', $billingAddress->getName());
         static::assertSame('12345', $billingAddress->getZipcode());
         static::assertSame('Musterstadt', $billingAddress->getCity());
@@ -299,13 +299,13 @@ class OrderAddressServiceTest extends TestCase
         // Create a new customer address
         $customerAddressId = Uuid::randomHex();
         $countryId = $this->getValidCountryId();
-        $salutationId = $this->getValidSalutationId();
+        $gender = $this->getValidGender();
         $this->customerAddressRepository->create([
             [
                 'id' => $customerAddressId,
                 'customerId' => $orderData[0]['orderCustomer']['customer']['id'],
                 'countryId' => $countryId,
-                'salutationId' => $salutationId,
+                'gender' => $gender,
                 'name' => 'Max Mustermann',
                 'zipcode' => '12345',
                 'city' => 'Musterstadt',
@@ -337,7 +337,7 @@ class OrderAddressServiceTest extends TestCase
 
         static::assertNotNull($billingAddress);
         static::assertSame($countryId, $billingAddress->getCountryId());
-        static::assertSame($salutationId, $billingAddress->getSalutationId());
+        static::assertSame($gender, $billingAddress->getGender());
         static::assertSame('Max Mustermann', $billingAddress->getName());
         static::assertSame('12345', $billingAddress->getZipcode());
         static::assertSame('Musterstadt', $billingAddress->getCity());
@@ -351,7 +351,7 @@ class OrderAddressServiceTest extends TestCase
 
         static::assertNotNull($shippingAddress);
         static::assertSame($orderData[0]['addresses'][0]['countryId'], $shippingAddress->getCountryId());
-        static::assertSame($orderData[0]['addresses'][0]['salutationId'], $shippingAddress->getSalutationId());
+        static::assertSame($orderData[0]['addresses'][0]['gender'], $shippingAddress->getGender());
         static::assertSame($orderData[0]['addresses'][0]['name'], $shippingAddress->getName());
         static::assertSame($orderData[0]['addresses'][0]['zipcode'], $shippingAddress->getZipcode());
         static::assertSame($orderData[0]['addresses'][0]['city'], $shippingAddress->getCity());
@@ -390,13 +390,13 @@ class OrderAddressServiceTest extends TestCase
         // Create a new customer address
         $customerAddressId = Uuid::randomHex();
         $countryId = $this->getValidCountryId();
-        $salutationId = $this->getValidSalutationId();
+        $gender = $this->getValidGender();
         $this->customerAddressRepository->create([
             [
                 'id' => $customerAddressId,
                 'customerId' => $orderData[0]['orderCustomer']['customer']['id'],
                 'countryId' => $countryId,
-                'salutationId' => $salutationId,
+                'gender' => $gender,
                 'name' => 'Max Mustermann',
                 'zipcode' => '12345',
                 'city' => 'Musterstadt',
@@ -433,7 +433,7 @@ class OrderAddressServiceTest extends TestCase
 
         static::assertNotNull($shippingAddress);
         static::assertSame($countryId, $shippingAddress->getCountryId());
-        static::assertSame($salutationId, $shippingAddress->getSalutationId());
+        static::assertSame($gender, $shippingAddress->getGender());
         static::assertSame('Max Mustermann', $shippingAddress->getName());
         static::assertSame('12345', $shippingAddress->getZipcode());
         static::assertSame('Musterstadt', $shippingAddress->getCity());
@@ -444,7 +444,7 @@ class OrderAddressServiceTest extends TestCase
 
         static::assertNotNull($billingAddress);
         static::assertSame($orderData[0]['addresses'][0]['countryId'], $billingAddress->getCountryId());
-        static::assertSame($orderData[0]['addresses'][0]['salutationId'], $billingAddress->getSalutationId());
+        static::assertSame($orderData[0]['addresses'][0]['gender'], $billingAddress->getGender());
         static::assertSame($orderData[0]['addresses'][0]['name'], $billingAddress->getName());
         static::assertSame($orderData[0]['addresses'][0]['zipcode'], $billingAddress->getZipcode());
         static::assertSame($orderData[0]['addresses'][0]['city'], $billingAddress->getCity());
@@ -482,13 +482,13 @@ class OrderAddressServiceTest extends TestCase
         // Create a new customer address
         $customerAddressId = Uuid::randomHex();
         $countryId = $this->getValidCountryId();
-        $salutationId = $this->getValidSalutationId();
+        $gender = $this->getValidGender();
         $this->customerAddressRepository->create([
             [
                 'id' => $customerAddressId,
                 'customerId' => $orderData[0]['orderCustomer']['customer']['id'],
                 'countryId' => $countryId,
-                'salutationId' => $salutationId,
+                'gender' => $gender,
                 'name' => 'Max Mustermann',
                 'zipcode' => '12345',
                 'city' => 'Musterstadt',
@@ -528,7 +528,7 @@ class OrderAddressServiceTest extends TestCase
 
         static::assertNotNull($shippingAddress);
         static::assertSame($countryId, $shippingAddress->getCountryId());
-        static::assertSame($salutationId, $shippingAddress->getSalutationId());
+        static::assertSame($gender, $shippingAddress->getGender());
         static::assertSame('Max Mustermann', $shippingAddress->getName());
         static::assertSame('12345', $shippingAddress->getZipcode());
         static::assertSame('Musterstadt', $shippingAddress->getCity());
@@ -539,7 +539,7 @@ class OrderAddressServiceTest extends TestCase
 
         static::assertNotNull($billingAddress);
         static::assertSame($countryId, $billingAddress->getCountryId());
-        static::assertSame($salutationId, $billingAddress->getSalutationId());
+        static::assertSame($gender, $billingAddress->getGender());
         static::assertSame('Max Mustermann', $billingAddress->getName());
         static::assertSame('12345', $billingAddress->getZipcode());
         static::assertSame('Musterstadt', $billingAddress->getCity());
@@ -575,13 +575,13 @@ class OrderAddressServiceTest extends TestCase
         // Create a new customer address
         $customerAddressId = Uuid::randomHex();
         $countryId = $this->getValidCountryId();
-        $salutationId = $this->getValidSalutationId();
+        $gender = $this->getValidGender();
         $this->customerAddressRepository->create([
             [
                 'id' => $customerAddressId,
                 'customerId' => $orderData[0]['orderCustomer']['customer']['id'],
                 'countryId' => $countryId,
-                'salutationId' => $salutationId,
+                'gender' => $gender,
                 'name' => 'Max Mustermann',
                 'zipcode' => '12345',
                 'city' => 'Musterstadt',
@@ -627,7 +627,7 @@ class OrderAddressServiceTest extends TestCase
             $shippingAddress = $orderDelivery->getShippingOrderAddress();
             static::assertNotNull($shippingAddress);
             static::assertSame($countryId, $shippingAddress->getCountryId());
-            static::assertSame($salutationId, $shippingAddress->getSalutationId());
+            static::assertSame($gender, $shippingAddress->getGender());
             static::assertSame('Max Mustermann', $shippingAddress->getName());
             static::assertSame('12345', $shippingAddress->getZipcode());
             static::assertSame('Musterstadt', $shippingAddress->getCity());
@@ -639,7 +639,7 @@ class OrderAddressServiceTest extends TestCase
 
         static::assertNotNull($billingAddress);
         static::assertSame($countryId, $billingAddress->getCountryId());
-        static::assertSame($salutationId, $billingAddress->getSalutationId());
+        static::assertSame($gender, $billingAddress->getGender());
         static::assertSame('Max Mustermann', $billingAddress->getName());
         static::assertSame('12345', $billingAddress->getZipcode());
         static::assertSame('Musterstadt', $billingAddress->getCity());
@@ -682,13 +682,13 @@ class OrderAddressServiceTest extends TestCase
         // Create a new customer address
         $customerAddressId = Uuid::randomHex();
         $countryId = $this->getValidCountryId();
-        $salutationId = $this->getValidSalutationId();
+        $gender = $this->getValidGender();
         $this->customerAddressRepository->create([
             [
                 'id' => $customerAddressId,
                 'customerId' => $orderData[0]['orderCustomer']['customer']['id'],
                 'countryId' => $countryId,
-                'salutationId' => $salutationId,
+                'gender' => $gender,
                 'name' => 'Max Mustermann',
                 'zipcode' => '12345',
                 'city' => 'Musterstadt',
@@ -734,7 +734,7 @@ class OrderAddressServiceTest extends TestCase
             $shippingAddress = $orderDelivery->getShippingOrderAddress();
             static::assertNotNull($shippingAddress);
             static::assertSame($countryId, $shippingAddress->getCountryId());
-            static::assertSame($salutationId, $shippingAddress->getSalutationId());
+            static::assertSame($gender, $shippingAddress->getGender());
             static::assertSame('Max Mustermann', $shippingAddress->getName());
             static::assertSame('12345', $shippingAddress->getZipcode());
             static::assertSame('Musterstadt', $shippingAddress->getCity());
@@ -746,7 +746,7 @@ class OrderAddressServiceTest extends TestCase
 
         static::assertNotNull($billingAddress);
         static::assertSame($countryId, $billingAddress->getCountryId());
-        static::assertSame($salutationId, $billingAddress->getSalutationId());
+        static::assertSame($gender, $billingAddress->getGender());
         static::assertSame('Max Mustermann', $billingAddress->getName());
         static::assertSame('12345', $billingAddress->getZipcode());
         static::assertSame('Musterstadt', $billingAddress->getCity());
@@ -788,13 +788,13 @@ class OrderAddressServiceTest extends TestCase
         // Create a new customer address
         $customerAddressId = Uuid::randomHex();
         $countryId = $this->getValidCountryId();
-        $salutationId = $this->getValidSalutationId();
+        $gender = $this->getValidGender();
         $this->customerAddressRepository->create([
             [
                 'id' => $customerAddressId,
                 'customerId' => $orderData[0]['orderCustomer']['customer']['id'],
                 'countryId' => $countryId,
-                'salutationId' => $salutationId,
+                'gender' => $gender,
                 'name' => 'Max Mustermann',
                 'zipcode' => '12345',
                 'city' => 'Musterstadt',
@@ -805,13 +805,13 @@ class OrderAddressServiceTest extends TestCase
         // Create a new customer address
         $customerAddressId2 = Uuid::randomHex();
         $countryId2 = $this->getValidCountryId();
-        $salutationId2 = $this->getValidSalutationId();
+        $gender2 = $this->getValidGender();
         $this->customerAddressRepository->create([
             [
                 'id' => $customerAddressId2,
                 'customerId' => $orderData[0]['orderCustomer']['customer']['id'],
                 'countryId' => $countryId2,
-                'salutationId' => $salutationId2,
+                'gender' => $gender2,
                 'name' => 'Tom Smith',
                 'zipcode' => '45678',
                 'city' => 'Berlin',
@@ -858,7 +858,7 @@ class OrderAddressServiceTest extends TestCase
         $shippingAddress = $orderDelivery1?->getShippingOrderAddress();
         static::assertNotNull($shippingAddress);
         static::assertSame($countryId, $shippingAddress->getCountryId());
-        static::assertSame($salutationId, $shippingAddress->getSalutationId());
+        static::assertSame($gender, $shippingAddress->getGender());
         static::assertSame('Max Mustermann', $shippingAddress->getName());
         static::assertSame('12345', $shippingAddress->getZipcode());
         static::assertSame('Musterstadt', $shippingAddress->getCity());
@@ -869,7 +869,7 @@ class OrderAddressServiceTest extends TestCase
         $shippingAddress = $orderDelivery2?->getShippingOrderAddress();
         static::assertNotNull($shippingAddress);
         static::assertSame($countryId2, $shippingAddress->getCountryId());
-        static::assertSame($salutationId2, $shippingAddress->getSalutationId());
+        static::assertSame($gender2, $shippingAddress->getGender());
         static::assertSame('Tom Smith', $shippingAddress->getName());
         static::assertSame('45678', $shippingAddress->getZipcode());
         static::assertSame('Berlin', $shippingAddress->getCity());
@@ -880,7 +880,7 @@ class OrderAddressServiceTest extends TestCase
 
         static::assertNotNull($billingAddress);
         static::assertSame($countryId, $billingAddress->getCountryId());
-        static::assertSame($salutationId, $billingAddress->getSalutationId());
+        static::assertSame($gender, $billingAddress->getGender());
         static::assertSame('Max Mustermann', $billingAddress->getName());
         static::assertSame('12345', $billingAddress->getZipcode());
         static::assertSame('Musterstadt', $billingAddress->getCity());
@@ -916,13 +916,13 @@ class OrderAddressServiceTest extends TestCase
         // Create a new customer address
         $customerAddressId = Uuid::randomHex();
         $countryId = $this->getValidCountryId();
-        $salutationId = $this->getValidSalutationId();
+        $gender = $this->getValidGender();
         $this->customerAddressRepository->create([
             [
                 'id' => $customerAddressId,
                 'customerId' => $orderData[0]['orderCustomer']['customer']['id'],
                 'countryId' => $countryId,
-                'salutationId' => $salutationId,
+                'gender' => $gender,
                 'name' => 'Max Mustermann',
                 'zipcode' => '12345',
                 'city' => 'Musterstadt',
@@ -965,7 +965,7 @@ class OrderAddressServiceTest extends TestCase
             $shippingAddress = $orderDelivery->getShippingOrderAddress();
             static::assertNotNull($shippingAddress);
             static::assertSame($countryId, $shippingAddress->getCountryId());
-            static::assertSame($salutationId, $shippingAddress->getSalutationId());
+            static::assertSame($gender, $shippingAddress->getGender());
             static::assertSame('Max Mustermann', $shippingAddress->getName());
             static::assertSame('12345', $shippingAddress->getZipcode());
             static::assertSame('Musterstadt', $shippingAddress->getCity());
@@ -977,7 +977,7 @@ class OrderAddressServiceTest extends TestCase
 
         static::assertNotNull($billingAddress);
         static::assertSame($orderData[0]['addresses'][0]['countryId'], $billingAddress->getCountryId());
-        static::assertSame($orderData[0]['addresses'][0]['salutationId'], $billingAddress->getSalutationId());
+        static::assertSame($orderData[0]['addresses'][0]['gender'], $billingAddress->getGender());
         static::assertSame($orderData[0]['addresses'][0]['name'], $billingAddress->getName());
         static::assertSame($orderData[0]['addresses'][0]['zipcode'], $billingAddress->getZipcode());
         static::assertSame($orderData[0]['addresses'][0]['city'], $billingAddress->getCity());
@@ -1013,13 +1013,13 @@ class OrderAddressServiceTest extends TestCase
         // Create a new customer address
         $customerAddressId = Uuid::randomHex();
         $countryId = $this->getValidCountryId();
-        $salutationId = $this->getValidSalutationId();
+        $gender = $this->getValidGender();
         $this->customerAddressRepository->create([
             [
                 'id' => $customerAddressId,
                 'customerId' => $orderData[0]['orderCustomer']['customer']['id'],
                 'countryId' => $countryId,
-                'salutationId' => $salutationId,
+                'gender' => $gender,
                 'name' => 'Max Mustermann',
                 'zipcode' => '12345',
                 'city' => 'Musterstadt',
@@ -1055,7 +1055,7 @@ class OrderAddressServiceTest extends TestCase
 
         static::assertNotNull($shippingAddress);
         static::assertSame($countryId, $shippingAddress->getCountryId());
-        static::assertSame($salutationId, $shippingAddress->getSalutationId());
+        static::assertSame($gender, $shippingAddress->getGender());
         static::assertSame('Max Mustermann', $shippingAddress->getName());
         static::assertSame('12345', $shippingAddress->getZipcode());
         static::assertSame('Musterstadt', $shippingAddress->getCity());
@@ -1069,7 +1069,7 @@ class OrderAddressServiceTest extends TestCase
 
         static::assertNotNull($shippingAddress);
         static::assertSame($orderData[0]['deliveries'][1]['shippingOrderAddress']['country']['id'], $shippingAddress->getCountryId());
-        static::assertSame($orderData[0]['deliveries'][1]['shippingOrderAddress']['salutationId'], $shippingAddress->getSalutationId());
+        static::assertSame($orderData[0]['deliveries'][1]['shippingOrderAddress']['gender'], $shippingAddress->getGender());
         static::assertSame($orderData[0]['deliveries'][1]['shippingOrderAddress']['name'], $shippingAddress->getName());
         static::assertSame($orderData[0]['deliveries'][1]['shippingOrderAddress']['zipcode'], $shippingAddress->getZipcode());
         static::assertSame($orderData[0]['deliveries'][1]['shippingOrderAddress']['city'], $shippingAddress->getCity());
@@ -1080,7 +1080,7 @@ class OrderAddressServiceTest extends TestCase
 
         static::assertNotNull($billingAddress);
         static::assertSame($orderData[0]['addresses'][0]['countryId'], $billingAddress->getCountryId());
-        static::assertSame($orderData[0]['addresses'][0]['salutationId'], $billingAddress->getSalutationId());
+        static::assertSame($orderData[0]['addresses'][0]['gender'], $billingAddress->getGender());
         static::assertSame($orderData[0]['addresses'][0]['name'], $billingAddress->getName());
         static::assertSame($orderData[0]['addresses'][0]['zipcode'], $billingAddress->getZipcode());
         static::assertSame($orderData[0]['addresses'][0]['city'], $billingAddress->getCity());

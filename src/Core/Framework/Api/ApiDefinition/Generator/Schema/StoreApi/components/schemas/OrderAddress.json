@@ -115,9 +115,6 @@
                     },
                     "countryDistrict": {
                         "$ref": "#/components/schemas/CountryDistrict"
-                    },
-                    "salutation": {
-                        "$ref": "#/components/schemas/Salutation"
                     }
                 },
                 "type": "object"

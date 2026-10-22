@@ -820,7 +820,7 @@ class AuthControllerTest extends TestCase
                 'accountType' => CustomerEntity::ACCOUNT_TYPE_PRIVATE,
                 'email' => 'test@example.com',
                 'emailConfirmation' => 'test@example.com',
-                'salutationId' => $this->getValidSalutationId(),
+                'gender' => $this->getValidGender(),
                 'name' => 'Max Mustermann',
                 'storefrontUrl' => 'http://localhost',
 
@@ -850,7 +850,7 @@ class AuthControllerTest extends TestCase
                 'street' => 'Musterstraße 1',
                 'city' => 'Schöppingen',
                 'zipcode' => '12345',
-                'salutationId' => $this->getValidSalutationId(),
+                'gender' => $this->getValidGender(),
                 'countryId' => $this->getValidCountryId(),
             ],
             'doubleOptInRegistration' => $doubleOptInReg,
@@ -860,7 +860,7 @@ class AuthControllerTest extends TestCase
             'password' => 'test12345',
             'name' => 'Max Mustermann',
             'active' => $active,
-            'salutationId' => $this->getValidSalutationId(),
+            'gender' => $this->getValidGender(),
             'customerNumber' => '12345',
             'guest' => $guest,
         ];

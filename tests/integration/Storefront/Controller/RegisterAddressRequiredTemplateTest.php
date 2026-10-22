@@ -101,7 +101,7 @@ class RegisterAddressRequiredTemplateTest extends TestCase
         static::assertStringNotContainsString('name="shippingAddress[', $content);
         static::assertStringNotContainsString('differentShippingAddress', $content);
         static::assertStringNotContainsString('register-billing', $content);
-        static::assertStringNotContainsString('name="salutationId"', $content);
+        static::assertStringNotContainsString('name="gender"', $content);
         static::assertStringNotContainsString('name="phoneNumber"', $content);
     }
 

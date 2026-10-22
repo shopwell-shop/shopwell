@@ -1111,7 +1111,11 @@
       "rule_condition": "条件 | 条件",
       "sales_channel": "销售渠道 | 销售渠道",
       "sales_channel_type": "销售渠道类型 | 销售渠道类型",
-      "salutation": "称呼 | 称呼",
+      "dictionary_type": "字典类型 | 字典类型",
+      "dictionary_entry": "字典条目 | 字典条目",
+      "organization": "组织机构 | 组织机构",
+      "organization_unit": "组织单元 | 组织单元",
+      "position": "岗位 | 岗位",
       "seo_url": "SEO URL | SEO URL",
       "shipping_method": "配送方式 | 配送方式",
       "snippet": "文本模块 | 文本模块",
@@ -1141,7 +1145,12 @@
       "sms_template": "短信模板 | 短信模板",
       "sms_delivery": "发送记录 | 发送记录",
       "order_return": "售后单 | 售后单",
-      "order_return_reason": "售后原因 | 售后原因"
+      "order_return_reason": "售后原因 | 售后原因",
+      "blog": "文章 | 文章",
+      "blog_category": "文章分类 | 文章分类",
+      "blog_author": "作者 | 作者",
+      "blog_comment": "评论 | 评论",
+      "blog_video": "视频 | 视频"
     },
     "day-of-week": {
       "monday": "星期一",

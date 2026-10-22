@@ -146,7 +146,7 @@ class CustomerChangePasswordSubscriberTest extends TestCase
                 'street' => 'Musterstraße 1',
                 'city' => 'Schoöppingen',
                 'zipcode' => '12345',
-                'salutationId' => $this->getValidSalutationId(),
+                'gender' => $this->getValidGender(),
                 'countryId' => $this->getValidCountryId(),
             ],
             'defaultBillingAddressId' => $addressId,
@@ -156,7 +156,7 @@ class CustomerChangePasswordSubscriberTest extends TestCase
             'legacyPassword' => Hasher::hash($password, 'md5'),
             'legacyEncoder' => 'Md5',
             'name' => 'encryption Mustermann',
-            'salutationId' => $this->getValidSalutationId(),
+            'gender' => $this->getValidGender(),
             'customerNumber' => '12345',
         ];
 

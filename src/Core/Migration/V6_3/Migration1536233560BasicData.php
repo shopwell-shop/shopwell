@@ -59,7 +59,7 @@ class Migration1536233560BasicData extends MigrationStep
         $this->createLocale($connection);
 
         $this->createDocumentTypes($connection);
-        $this->createSalutation($connection);
+        $this->createDictionary($connection);
         $this->createCountry($connection);
         $this->createCurrency($connection);
         $this->createCustomerGroup($connection);
@@ -1747,73 +1747,64 @@ class Migration1536233560BasicData extends MigrationStep
         $connection->update('state_machine', ['initial_state_id' => $openId], ['id' => $stateMachineId]);
     }
 
-    private function createSalutation(Connection $connection): void
+    /**
+     * Seeds the generic data dictionary with the gender type - the replacement of the former
+     * salutation entity. Customers, addresses and newsletter recipients store the technical name
+     * (the code) of one of these entries in their `gender` column.
+     */
+    private function createDictionary(Connection $connection): void
     {
         $languageEn = Uuid::fromHexToBytes(Defaults::LANGUAGE_SYSTEM);
         $languageZh = Uuid::fromHexToBytes($this->getZhCnLanguageId());
 
-        $mr = Uuid::randomBytes();
-        $connection->insert('salutation', [
-            'id' => $mr,
-            'salutation_key' => 'mr',
+        $typeId = Uuid::randomBytes();
+        $connection->insert('dictionary_type', [
+            'id' => $typeId,
+            'technical_name' => 'gender',
             'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
         ]);
-        $connection->insert('salutation_translation', [
-            'salutation_id' => $mr,
+        $connection->insert('dictionary_type_translation', [
+            'dictionary_type_id' => $typeId,
             'language_id' => $languageEn,
-            'display_name' => 'Mr.',
-            'letter_name' => 'Dear Mr.',
+            'label' => 'Gender',
             'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
         ]);
-        $connection->insert('salutation_translation', [
-            'salutation_id' => $mr,
+        $connection->insert('dictionary_type_translation', [
+            'dictionary_type_id' => $typeId,
             'language_id' => $languageZh,
-            'display_name' => '先生',
-            'letter_name' => '您好',
+            'label' => '性别',
             'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
         ]);
 
-        $mrs = Uuid::randomBytes();
-        $connection->insert('salutation', [
-            'id' => $mrs,
-            'salutation_key' => 'mrs',
-            'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
-        ]);
-        $connection->insert('salutation_translation', [
-            'salutation_id' => $mrs,
-            'language_id' => $languageEn,
-            'display_name' => 'Mrs.',
-            'letter_name' => 'Dear Mrs.',
-            'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
-        ]);
-        $connection->insert('salutation_translation', [
-            'salutation_id' => $mrs,
-            'language_id' => $languageZh,
-            'display_name' => '女士',
-            'letter_name' => '您好',
-            'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
-        ]);
+        $entries = [
+            ['technical_name' => 'male', 'position' => 1, 'en' => 'Male', 'zh' => '男'],
+            ['technical_name' => 'female', 'position' => 10, 'en' => 'Female', 'zh' => '女'],
+            ['technical_name' => 'not_specified', 'position' => 100, 'en' => 'Not specified', 'zh' => '未知'],
+        ];
 
-        $notSpecified = Uuid::randomBytes();
-        $connection->insert('salutation', [
-            'id' => $notSpecified,
-            'salutation_key' => 'not_specified',
-            'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
-        ]);
-        $connection->insert('salutation_translation', [
-            'salutation_id' => $notSpecified,
-            'language_id' => $languageEn,
-            'display_name' => 'Not specified',
-            'letter_name' => ' ',
-            'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
-        ]);
-        $connection->insert('salutation_translation', [
-            'salutation_id' => $notSpecified,
-            'language_id' => $languageZh,
-            'display_name' => '未指定',
-            'letter_name' => ' ',
-            'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
-        ]);
+        foreach ($entries as $entry) {
+            $entryId = Uuid::randomBytes();
+            $connection->insert('dictionary_entry', [
+                'id' => $entryId,
+                'dictionary_type_id' => $typeId,
+                'technical_name' => $entry['technical_name'],
+                'position' => $entry['position'],
+                'active' => 1,
+                'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
+            ]);
+            $connection->insert('dictionary_entry_translation', [
+                'dictionary_entry_id' => $entryId,
+                'language_id' => $languageEn,
+                'label' => $entry['en'],
+                'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
+            ]);
+            $connection->insert('dictionary_entry_translation', [
+                'dictionary_entry_id' => $entryId,
+                'language_id' => $languageZh,
+                'label' => $entry['zh'],
+                'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
+            ]);
+        }
     }
 
     private function createDeliveryTimes(Connection $connection): string
@@ -2806,7 +2797,7 @@ class Migration1536233560BasicData extends MigrationStep
         return '<div style="font-family:arial; font-size:12px;">
 
 {% set currencyIsoCode = order.currency.isoCode %}
-Dear {{order.orderCustomer.salutation.displayName }} {{order.orderCustomer.name}},<br>
+Dear {{order.orderCustomer.name}},<br>
 <br>
 Thank you for your order at {{ salesChannel.name }} (Number: {{order.orderNumber}}) on {{ order.orderDateTime|date }}.<br>
 <br>
@@ -2889,7 +2880,7 @@ Thank you for your order at {{ salesChannel.name }} (Number: {{order.orderNumber
     private function getPlainTemplateEn(): string
     {
         return '{% set currencyIsoCode = order.currency.isoCode %}
-Dear {{order.orderCustomer.salutation.displayName }} {{order.orderCustomer.name}},
+Dear {{order.orderCustomer.name}},
 
 Thank you for your order at {{ salesChannel.name }} (Number: {{order.orderNumber}}) on {{ order.orderDateTime|date }}.
 
@@ -2948,7 +2939,7 @@ If you have any questions, do not hesitate to contact us.
         return '<div style="font-family:arial; font-size:12px;">
 
 {% set currencyIsoCode = order.currency.isoCode %}
-您好 {{order.orderCustomer.salutation.displayName }} {{order.orderCustomer.name}}，<br>
+您好 {{order.orderCustomer.name}}，<br>
 <br>
 感谢您在 {{ salesChannel.name }} 下单（订单号：{{order.orderNumber}}），下单时间 {{ order.orderDateTime|date }}。<br>
 <br>
@@ -3031,7 +3022,7 @@ If you have any questions, do not hesitate to contact us.
     private function getPlainTemplateZhCn(): string
     {
         return '{% set currencyIsoCode = order.currency.isoCode %}
-您好 {{order.orderCustomer.salutation.displayName }} {{order.orderCustomer.name}}，
+您好 {{order.orderCustomer.name}}，
 
 感谢您在 {{ salesChannel.name }} 下单（订单号：{{order.orderNumber}}），下单时间 {{ order.orderDateTime|date }}。
 
@@ -3088,7 +3079,7 @@ If you have any questions, do not hesitate to contact us.
     {
         return '<div style="font-family:arial; font-size:12px;">
             <p>
-                Dear {{ customer.salutation.displayName }} {{ customer.name }},<br/>
+                Dear {{ customer.name }},<br/>
                 <br/>
                 thank you for your registration with our Shop.<br/>
                 You will gain access via the email address <strong>{{ customer.email }}</strong> and the password you have chosen.<br/>
@@ -3099,7 +3090,7 @@ If you have any questions, do not hesitate to contact us.
 
     private function getRegistrationPlainTemplateEn(): string
     {
-        return 'Dear {{ customer.salutation.displayName }} {{ customer.name }},
+        return 'Dear {{ customer.name }},
 
                 thank you for your registration with our Shop.
                 You will gain access via the email address {{ customer.email }} and the password you have chosen.
@@ -3111,7 +3102,7 @@ If you have any questions, do not hesitate to contact us.
     {
         return '<div style="font-family:arial; font-size:12px;">
             <p>
-                您好 {{ customer.salutation.displayName }} {{ customer.name }}，<br/>
+                您好 {{ customer.name }}，<br/>
                 <br/>
                 感谢您在我们商城注册。<br/>
                 您可以使用邮箱 <strong>{{ customer.email }}</strong> 和您设置的密码登录。<br/>
@@ -3122,7 +3113,7 @@ If you have any questions, do not hesitate to contact us.
 
     private function getRegistrationPlainTemplateZhCn(): string
     {
-        return '您好 {{ customer.salutation.displayName }} {{ customer.name }}，
+        return '您好 {{ customer.name }}，
 
                 感谢您在我们商城注册。
                 您可以使用邮箱 {{ customer.email }} 和您设置的密码登录。
@@ -3134,7 +3125,7 @@ If you have any questions, do not hesitate to contact us.
     {
         return '<div style="font-family:arial; font-size:12px;">
     <p>
-        Dear {{ customer.salutation.displayName }} {{ customer.name }},<br/>
+        Dear {{ customer.name }},<br/>
         <br/>
         there has been a request to reset you Password in the Shop {{ salesChannel.name }}
         Please confirm the link below to specify a new password.<br/>
@@ -3150,7 +3141,7 @@ If you have any questions, do not hesitate to contact us.
     private function getPasswordChangePlainTemplateEn(): string
     {
         return '
-        Dear {{ customer.salutation.displayName }} {{ customer.name }},
+        Dear {{ customer.name }},
 
         there has been a request to reset you Password in the Shop {{ salesChannel.name }}
         Please confirm the link below to specify a new password.
@@ -3166,7 +3157,7 @@ If you have any questions, do not hesitate to contact us.
     {
         return '<div style="font-family:arial; font-size:12px;">
     <p>
-        您好 {{ customer.salutation.displayName }} {{ customer.name }}，<br/>
+        您好 {{ customer.name }}，<br/>
         <br/>
         有人请求在 {{ salesChannel.name }} 商城重置您的密码。
         请点击下方链接设置新密码。<br/>
@@ -3182,7 +3173,7 @@ If you have any questions, do not hesitate to contact us.
     private function getPasswordChangePlainTemplateZhCn(): string
     {
         return '
-        您好 {{ customer.salutation.displayName }} {{ customer.name }}，
+        您好 {{ customer.name }}，
 
         有人请求在 {{ salesChannel.name }} 商城重置您的密码。
         请点击下方链接设置新密码。

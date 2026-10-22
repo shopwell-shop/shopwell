@@ -5,7 +5,7 @@
 {#
     A customer account only requires an email address and a password, the addresses are collected during checkout.
     Therefore neither the account registration nor the registration card of the login page renders the personal data
-    (salutation, name, account type, phone number) or the address forms at all - the login page renders this component
+    (gender, name, account type, phone number) or the address forms at all - the login page renders this component
     as well. All other use cases (guest checkout registration, customer group registration, ...) still need the address
     and the name, which is why the requirement is derived from the current route and can be overwritten by the
     including template.

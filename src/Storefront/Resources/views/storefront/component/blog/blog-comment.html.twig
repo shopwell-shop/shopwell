@@ -1,0 +1,99 @@
+{# @sw-package discovery #}
+
+{#
+    One comment and everything that answers it.
+
+    The template includes itself for every reply, so the depth of a thread is a property of the data
+    and not of the markup: nothing here decides that there are two levels. The indentation is capped by
+    the node itself (`indentLevel`), while `depth` keeps counting - a level seven reply is rendered at
+    the fourth indent and marked with its level instead of being pushed off the screen.
+
+    Replies beyond the third are folded into a <details>. That is a native element, so the fold works
+    without javascript and a search engine still sees the text.
+
+    Expected variables: node (\Shopwell\Core\Content\Blog\Service\BlogCommentNode)
+#}
+{% block sw_blog_comment %}
+    <li class="blog-comment blog-comment--depth-{{ node.indentLevel }}{% if node.depth > node.indentLevel %} blog-comment--deep{% endif %}"
+        id="comment-{{ node.comment.id }}"
+        data-blog-comment
+        data-comment-id="{{ node.comment.id }}"
+        data-comment-author="{{ node.comment.externalUser }}"
+        data-comment-level="{{ node.depth }}">
+        {% block sw_blog_comment_inner %}
+            <article class="blog-comment__body">
+                {% block sw_blog_comment_header %}
+                    <header class="blog-comment__header">
+                        <span class="blog-comment__author">{{ node.comment.externalUser }}</span>
+
+                        {% if node.comment.createdAt %}
+                            <time class="blog-comment__date" datetime="{{ node.comment.createdAt|date('c') }}">
+                                {{ node.comment.createdAt|date('Y-m-d H:i') }}
+                            </time>
+                        {% endif %}
+
+                        {% if node.depth > node.indentLevel %}
+                            {% block sw_blog_comment_level %}
+                                <span class="blog-comment__level">
+                                    {{ 'blog.comments.level'|trans({ '%level%': node.depth })|sw_sanitize }}
+                                </span>
+                            {% endblock %}
+                        {% endif %}
+                    </header>
+                {% endblock %}
+
+                {% block sw_blog_comment_title %}
+                    {% if node.comment.title %}
+                        <h3 class="blog-comment__title">{{ node.comment.title }}</h3>
+                    {% endif %}
+                {% endblock %}
+
+                {% block sw_blog_comment_content %}
+                    <div class="blog-comment__content">{{ node.comment.content|nl2br }}</div>
+                {% endblock %}
+
+                {% block sw_blog_comment_actions %}
+                    <div class="blog-comment__actions">
+                        <button type="button"
+                                class="blog-comment__reply"
+                                data-blog-comment-reply
+                                data-comment-id="{{ node.comment.id }}"
+                                data-comment-author="{{ node.comment.externalUser }}">
+                            {{ 'blog.comments.reply'|trans|sw_sanitize }}
+                        </button>
+                    </div>
+                {% endblock %}
+            </article>
+        {% endblock %}
+
+        {% block sw_blog_comment_children %}
+            {% if node.hasChildren %}
+                <ol class="blog-comment__children">
+                    {% block sw_blog_comment_children_visible %}
+                        {% for child in node.visibleChildren %}
+                            {% sw_include '@Storefront/storefront/component/blog/blog-comment.html.twig' with { node: child } only %}
+                        {% endfor %}
+                    {% endblock %}
+
+                    {% block sw_blog_comment_children_collapsed %}
+                        {% if node.hasCollapsedChildren %}
+                            <li class="blog-comment__more">
+                                <details>
+                                    <summary class="blog-comment__more-summary">
+                                        {{ 'blog.comments.showMore'|trans({ '%count%': node.collapsedCount })|sw_sanitize }}
+                                    </summary>
+
+                                    <ol class="blog-comment__children">
+                                        {% for child in node.collapsedChildren %}
+                                            {% sw_include '@Storefront/storefront/component/blog/blog-comment.html.twig' with { node: child } only %}
+                                        {% endfor %}
+                                    </ol>
+                                </details>
+                            </li>
+                        {% endif %}
+                    {% endblock %}
+                </ol>
+            {% endif %}
+        {% endblock %}
+    </li>
+{% endblock %}

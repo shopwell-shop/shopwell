@@ -318,7 +318,7 @@ class DeleteUnusedGuestCustomerServiceTest extends TestCase
                 'email' => $customer['email'],
                 'name' => $customer['name'],
                 'customerNumber' => $customer['customerNumber'],
-                'salutationId' => $customer['salutationId'] ?? $this->getValidSalutationId(),
+                'gender' => $customer['gender'] ?? $this->getValidGender(),
                 'customerId' => $customer['id'],
             ],
             'billingAddressId' => $customer['defaultBillingAddressId'],

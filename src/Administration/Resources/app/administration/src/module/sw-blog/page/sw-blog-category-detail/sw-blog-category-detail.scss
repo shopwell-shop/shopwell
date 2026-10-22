@@ -1,0 +1,15 @@
+.sw-blog-category-detail {
+    &__card-view {
+        display: flex;
+        flex-direction: column;
+    }
+
+    &__description {
+        margin-block-start: var(--scale-size-16);
+    }
+
+    &__delete-message {
+        margin: 0;
+        color: var(--color-text-primary-default);
+    }
+}

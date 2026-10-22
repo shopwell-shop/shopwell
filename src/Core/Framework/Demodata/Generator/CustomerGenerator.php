@@ -17,6 +17,7 @@ use Shopwell\Core\Framework\Demodata\DemodataGeneratorInterface;
 use Shopwell\Core\Framework\Demodata\DemodataService;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\System\Dictionary\Aggregate\DictionaryEntry\DictionaryEntryDefinition;
 use Shopwell\Core\System\NumberRange\ValueGenerator\NumberRangeValueGeneratorInterface;
 use Shopwell\Core\Test\TestDefaults;
 
@@ -26,11 +27,6 @@ use Shopwell\Core\Test\TestDefaults;
 #[Package('checkout')]
 class CustomerGenerator implements DemodataGeneratorInterface
 {
-    /**
-     * @var non-empty-list<string>
-     */
-    private array $salutationIds;
-
     private Generator $faker;
 
     /**
@@ -83,7 +79,7 @@ class CustomerGenerator implements DemodataGeneratorInterface
         $id = Uuid::randomHex();
         $shippingAddressId = Uuid::randomHex();
         $billingAddressId = Uuid::randomHex();
-        $salutationId = Uuid::fromBytesToHex($this->getRandomSalutationId());
+        $gender = $this->getRandomGender();
         $countries = $this->connection->fetchFirstColumn('SELECT id FROM country WHERE active = 1');
         if ($countries === []) {
             throw DemodataException::wrongExecutionOrder();
@@ -96,7 +92,7 @@ class CustomerGenerator implements DemodataGeneratorInterface
         $customer = [
             'id' => $id,
             'customerNumber' => '1337',
-            'salutationId' => $salutationId,
+            'gender' => $gender,
             'name' => 'Max Mustermann',
             'email' => 'test@example.com',
             'password' => 'shopwell',
@@ -110,7 +106,7 @@ class CustomerGenerator implements DemodataGeneratorInterface
                     'id' => $shippingAddressId,
                     'customerId' => $id,
                     'countryId' => Uuid::fromBytesToHex($countries[array_rand($countries)]),
-                    'salutationId' => $salutationId,
+                    'gender' => $gender,
                     'name' => 'Max Mustermann',
                     'street' => 'Ebbinghoff 10',
                     'zipcode' => '48624',
@@ -120,7 +116,7 @@ class CustomerGenerator implements DemodataGeneratorInterface
                     'id' => $billingAddressId,
                     'customerId' => $id,
                     'countryId' => Uuid::fromBytesToHex($countries[array_rand($countries)]),
-                    'salutationId' => $salutationId,
+                    'gender' => $gender,
                     'name' => 'Max Mustermann',
                     'street' => 'Bahnhofstraße 27',
                     'zipcode' => '10332',
@@ -155,7 +151,7 @@ class CustomerGenerator implements DemodataGeneratorInterface
             $randomDate = $context->getFaker()->dateTimeBetween('-2 years');
             $id = Uuid::randomHex();
             $name = $context->getFaker()->format('name');
-            $salutationId = Uuid::fromBytesToHex($this->getRandomSalutationId());
+            $gender = $this->getRandomGender();
             $title = $this->getRandomTitle();
 
             $addresses = [];
@@ -165,7 +161,7 @@ class CustomerGenerator implements DemodataGeneratorInterface
                 $addresses[] = [
                     'id' => Uuid::randomHex(),
                     'countryId' => Uuid::fromBytesToHex($context->getFaker()->randomElement($countries)),
-                    'salutationId' => $salutationId,
+                    'gender' => $gender,
                     'title' => $title,
                     'name' => $name,
                     'street' => $context->getFaker()->format('streetName'),
@@ -178,7 +174,7 @@ class CustomerGenerator implements DemodataGeneratorInterface
             $customer = [
                 'id' => $id,
                 'customerNumber' => $this->numberRangeValueGenerator->getValue('customer', $context->getContext(), null),
-                'salutationId' => $salutationId,
+                'gender' => $gender,
                 'title' => $title,
                 'name' => $name,
                 'email' => $id . $context->getFaker()->format('safeEmail'),
@@ -253,16 +249,10 @@ class CustomerGenerator implements DemodataGeneratorInterface
         return $this->connection->fetchFirstColumn('SELECT LOWER(HEX(id)) as id FROM tag LIMIT 500');
     }
 
-    private function getRandomSalutationId(): string
+    private function getRandomGender(): string
     {
-        if (!isset($this->salutationIds)) {
-            $salutationIds = $this->connection->fetchFirstColumn('SELECT id FROM salutation');
-            if ($salutationIds === []) {
-                throw DemodataException::wrongExecutionOrder();
-            }
-            $this->salutationIds = $salutationIds;
-        }
+        $genders = [DictionaryEntryDefinition::MALE, DictionaryEntryDefinition::FEMALE, DictionaryEntryDefinition::NOT_SPECIFIED];
 
-        return $this->salutationIds[array_rand($this->salutationIds)];
+        return $genders[array_rand($genders)];
     }
 }

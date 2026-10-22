@@ -14,7 +14,7 @@ const recipientMock = [
         status: 'direct',
         hash: 'c225f2cc023946679c4e0d9189375402',
         confirmedAt: null,
-        salutationId: 'fd04f0ca555143ab9f28294699f7384b',
+        gender: 'male',
         languageId: '2fbb5fe2e29a4d70aa5854ce7ce3e20b',
         salesChannelId: '7b872c384b254613b5a4bd5c8b965bab',
         createdAt: '2020-09-23T11:42:12.104+00:00',
@@ -50,6 +50,10 @@ async function createWrapper() {
                         template: '<div class="sw-field"></div>',
                         props: ['disabled'],
                     },
+                    'sw-single-select': {
+                        template: '<div class="sw-field"></div>',
+                        props: ['disabled'],
+                    },
                     'sw-text-field': {
                         template: '<div class="sw-field"></div>',
                         props: ['disabled'],
@@ -68,6 +72,9 @@ async function createWrapper() {
                     'sw-button-process': true,
                 },
                 provide: {
+                    dictionaryService: {
+                        getGenders: jest.fn(() => Promise.resolve([])),
+                    },
                     stateStyleDataProviderService: {},
                     repositoryFactory: {
                         create: () => ({

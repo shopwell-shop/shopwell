@@ -11,6 +11,8 @@ export default Object.freeze({
         LANDING: 'landingpage',
         LISTING: 'product_list',
         PRODUCT_DETAIL: 'product_detail',
+        BLOG_DETAIL: 'blog_detail',
+        BLOG_LISTING: 'blog_listing',
     },
     TYPE_MAPPING_ENTITIES: {
         product_detail: {
@@ -19,6 +21,16 @@ export default Object.freeze({
         },
         product_list: {
             entity: 'category',
+            mode: 'single',
+        },
+        // a blog layout is written for one entry, so the demo data of the preview is one entry
+        blog_detail: {
+            entity: 'blog',
+            mode: 'single',
+        },
+        // the listing layout has no entry of its own, so the preview falls back to one category
+        blog_listing: {
+            entity: 'blog_category',
             mode: 'single',
         },
     },

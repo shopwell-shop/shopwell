@@ -27,7 +27,7 @@ class Migration1536233000OrderCustomer extends MigrationStep
               `order_id` BINARY(16) NOT NULL,
               `order_version_id` BINARY(16) NOT NULL,
               `email` VARCHAR(254) COLLATE utf8mb4_unicode_ci NOT NULL,
-              `salutation_id` BINARY(16) NOT NULL,
+              `gender` VARCHAR(255) COLLATE utf8mb4_unicode_ci NULL,
               `name` VARCHAR(255) COLLATE utf8mb4_unicode_ci NOT NULL,
               `title` VARCHAR(100) COLLATE utf8mb4_unicode_ci NULL,
               `customer_number` VARCHAR(255) COLLATE utf8mb4_unicode_ci NULL,
@@ -39,9 +39,7 @@ class Migration1536233000OrderCustomer extends MigrationStep
               CONSTRAINT `fk.order_customer.customer_id` FOREIGN KEY (`customer_id`)
                 REFERENCES `customer` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
               CONSTRAINT `fk.order_customer.order_id` FOREIGN KEY (`order_id`, `order_version_id`)
-                REFERENCES `order` (`id`, `version_id`) ON DELETE CASCADE ON UPDATE CASCADE,
-              CONSTRAINT `fk.order_customer.salutation_id` FOREIGN KEY (`salutation_id`)
-                REFERENCES `salutation` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE
+                REFERENCES `order` (`id`, `version_id`) ON DELETE CASCADE ON UPDATE CASCADE
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
         ');
     }

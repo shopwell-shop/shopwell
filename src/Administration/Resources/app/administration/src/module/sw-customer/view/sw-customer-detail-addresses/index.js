@@ -9,7 +9,6 @@ import './sw-customer-detail-addresses.scss';
 
 const { ShopwellError } = Shopwell.Classes;
 const { Mixin, EntityDefinition } = Shopwell;
-const { Criteria } = Shopwell.Data;
 
 // eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
 export default {
@@ -97,17 +96,6 @@ export default {
             return this.activeCustomer.addresses;
         },
 
-        salutationRepository() {
-            return this.repositoryFactory.create('salutation');
-        },
-
-        salutationCriteria() {
-            const criteria = new Criteria(1, 1);
-
-            criteria.addFilter(Criteria.equals('salutationKey', 'not_specified'));
-
-            return criteria;
-        },
     },
 
     watch: {
@@ -216,11 +204,9 @@ export default {
         },
 
         async createNewCustomerAddress() {
-            const defaultSalutationId = await this.getDefaultSalutation();
-
             const newAddress = this.addressRepository.create();
             newAddress.customerId = this.activeCustomer.id;
-            newAddress.salutationId = defaultSalutationId;
+            newAddress.gender = 'not_specified';
 
             this.currentAddress = newAddress;
         },
@@ -415,12 +401,6 @@ export default {
             const preFix = string.replace(replace, '');
 
             return `${preFix.charAt(0).toUpperCase()}${preFix.slice(1)}`;
-        },
-
-        async getDefaultSalutation() {
-            const res = await this.salutationRepository.searchIds(this.salutationCriteria);
-
-            return res.data?.[0];
         },
     },
 };

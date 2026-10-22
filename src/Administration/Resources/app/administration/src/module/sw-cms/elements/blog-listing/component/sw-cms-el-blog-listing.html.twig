@@ -1,0 +1,50 @@
+{% block sw_cms_element_blog_listing %}
+<div
+    class="sw-cms-el-blog-listing"
+    :class="`sw-cms-el-blog-listing--${layout}`"
+>
+    {% block sw_cms_element_blog_listing_items %}
+    <div class="sw-cms-el-blog-listing__items">
+        {% block sw_cms_element_blog_listing_items_resolved %}
+        <template v-if="hasBlogs">
+            <article
+                v-for="blog in blogs"
+                :key="blog.id"
+                class="sw-cms-el-blog-listing__item"
+            >
+                {% block sw_cms_element_blog_listing_item_title %}
+                <h3 class="sw-cms-el-blog-listing__title">
+                    {{ blog.title }}
+                </h3>
+                {% endblock %}
+
+                {% block sw_cms_element_blog_listing_item_teaser %}
+                <p
+                    v-if="blog.teaser"
+                    class="sw-cms-el-blog-listing__teaser"
+                >
+                    {{ blog.teaser }}
+                </p>
+                {% endblock %}
+            </article>
+        </template>
+        {% endblock %}
+
+        {% block sw_cms_element_blog_listing_items_placeholder %}
+        <template v-else>
+            <article
+                v-for="index in placeholderCount"
+                :key="index"
+                class="sw-cms-el-blog-listing__item sw-cms-el-blog-listing__item--placeholder"
+            >
+                <div class="sw-cms-el-blog-listing__cover"></div>
+
+                <div class="sw-cms-el-blog-listing__placeholder-line"></div>
+                <div class="sw-cms-el-blog-listing__placeholder-line sw-cms-el-blog-listing__placeholder-line--short"></div>
+            </article>
+        </template>
+        {% endblock %}
+    </div>
+    {% endblock %}
+</div>
+{% endblock %}

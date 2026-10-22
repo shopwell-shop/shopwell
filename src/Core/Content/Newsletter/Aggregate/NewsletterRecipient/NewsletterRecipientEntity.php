@@ -8,7 +8,6 @@ use Shopwell\Core\Framework\DataAbstractionLayer\EntityIdTrait;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Language\LanguageEntity;
 use Shopwell\Core\System\SalesChannel\SalesChannelEntity;
-use Shopwell\Core\System\Salutation\SalutationEntity;
 use Shopwell\Core\System\Tag\TagCollection;
 
 /**
@@ -36,9 +35,7 @@ class NewsletterRecipientEntity extends Entity
 
     protected string $hash;
 
-    protected ?string $salutationId = null;
-
-    protected ?SalutationEntity $salutation = null;
+    protected ?string $gender = null;
 
     protected string $languageId;
 
@@ -132,24 +129,14 @@ class NewsletterRecipientEntity extends Entity
         $this->hash = $hash;
     }
 
-    public function getSalutationId(): ?string
+    public function getGender(): ?string
     {
-        return $this->salutationId;
+        return $this->gender;
     }
 
-    public function setSalutationId(string $salutationId): void
+    public function setGender(?string $gender): void
     {
-        $this->salutationId = $salutationId;
-    }
-
-    public function getSalutation(): ?SalutationEntity
-    {
-        return $this->salutation;
-    }
-
-    public function setSalutation(SalutationEntity $salutation): void
-    {
-        $this->salutation = $salutation;
+        $this->gender = $gender;
     }
 
     public function getLanguageId(): string

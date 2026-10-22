@@ -21,6 +21,6 @@ describe('module/sw-cms/service/cms-page-type.service.ts', () => {
 
         initCmsPageTypes();
 
-        expect(types).toHaveLength(4);
+        expect(types).toHaveLength(6);
     });
 });

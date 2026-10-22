@@ -15,7 +15,7 @@ import './sw-user-card.scss';
  *     email: 'test@example.com',
  *     active: true,
  *     addresses: [{
- *         salutation: 'Mister',
+ *         gender: 'male',
  *         title: 'Doctor',
  *         name: 'John Doe',
  *         street: 'Main St 123',
@@ -23,7 +23,7 @@ import './sw-user-card.scss';
  *         city: 'Anytown',
  *         country: { name: 'Germany' }
  *     }],
- *     salutation: 'Mister',
+ *     gender: 'male',
  *     title: 'Doctor',
  *     name: 'John Doe',
  *     street: 'Main St 123',
@@ -83,10 +83,6 @@ export default {
                 return '';
             }
             return this.$route.meta.$module.color;
-        },
-
-        salutationFilter() {
-            return Shopwell.Filter.getByName('salutation');
         },
     },
 };

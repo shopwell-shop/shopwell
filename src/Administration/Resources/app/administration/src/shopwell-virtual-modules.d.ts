@@ -421,7 +421,6 @@ declare module 'shopwell:composables' {
     export const usePosition: (typeof members)['usePosition'];
     export const useRuleBetweenOperator: (typeof members)['useRuleBetweenOperator'];
     export const useRuleContainer: (typeof members)['useRuleContainer'];
-    export const useSalutation: (typeof members)['useSalutation'];
     export const useTranslateWithFallback: (typeof members)['useTranslateWithFallback'];
     export const useUserSettings: (typeof members)['useUserSettings'];
     export const useValidation: (typeof members)['useValidation'];
@@ -537,15 +536,6 @@ declare module 'shopwell:composables/useRuleContainer' {
 }
 
 /** @experimental stableVersion:v6.9.0 feature:ADMIN_MIXIN_COMPOSABLES */
-declare module 'shopwell:composables/useSalutation' {
-    import type branch from 'src/app/composables/index';
-
-    const member: (typeof branch)['useSalutation'];
-
-    export default member;
-}
-
-/** @experimental stableVersion:v6.9.0 feature:ADMIN_MIXIN_COMPOSABLES */
 declare module 'shopwell:composables/useTranslateWithFallback' {
     import type branch from 'src/app/composables/index';
 
@@ -619,13 +609,6 @@ declare module 'shopwell:mixins/translate-with-fallback' {
 /** @experimental stableVersion:v6.8.0 */
 declare module 'shopwell:mixins/notification-translation' {
     const mixin: MixinContainer['notification-translation'];
-
-    export default mixin;
-}
-
-/** @experimental stableVersion:v6.8.0 */
-declare module 'shopwell:mixins/salutation' {
-    const mixin: MixinContainer['salutation'];
 
     export default mixin;
 }

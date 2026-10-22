@@ -1,5 +1,5 @@
 {% set currencyIsoCode = order.currency.isoCode %}
-您好 {% if order.orderCustomer.salutation %}{{ order.orderCustomer.salutation.translated.letterName ~ ' ' }}{% endif %}{{ order.orderCustomer.name }}，
+您好 {{ order.orderCustomer.name }}，
 
 我们已收到您的付款，现在将开始处理订单。
 

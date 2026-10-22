@@ -167,7 +167,7 @@ class OrderRecalculationControllerTest extends TestCase
             'shippingDateEarliest' => (new \DateTimeImmutable())->format(Defaults::STORAGE_DATE_FORMAT),
             'shippingDateLatest' => (new \DateTimeImmutable())->format(Defaults::STORAGE_DATE_FORMAT),
             'shippingOrderAddress' => [
-                'salutationId' => $this->getValidSalutationId(),
+                'gender' => $this->getValidGender(),
                 'name' => 'Floy Glover',
                 'zipcode' => '59438-0403',
                 'city' => 'Stellaberg',

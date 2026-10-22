@@ -1,25 +1,32 @@
 .sw-order-detail-return {
-    &__toolbar {
+    background: var(--color-background-primary-default);
+    border: 1px solid var(--color-border-primary-default);
+    border-radius: var(--border-radius-m);
+    overflow: hidden;
+
+    &__header {
         align-items: center;
+        border-block-end: 1px solid var(--color-border-primary-default);
         display: flex;
         gap: var(--scale-size-16);
         justify-content: space-between;
-        margin-block-end: var(--scale-size-16);
+        padding: var(--scale-size-16) var(--scale-size-20);
     }
 
-    &__title-group {
+    &__heading {
         align-items: baseline;
         display: flex;
         gap: var(--scale-size-8);
+        min-width: 0;
     }
 
     &__title {
-        font-size: var(--font-size-m);
+        font-size: var(--font-size-s);
         font-weight: var(--font-weight-semibold);
         margin: 0;
     }
 
-    &__amount {
+    &__count {
         color: var(--color-text-secondary-default);
         font-size: var(--font-size-xs);
     }
@@ -29,44 +36,89 @@
     }
 
     &__create-hint {
-        margin-block-end: var(--scale-size-16);
-    }
-
-    &__create-section {
         margin-block-end: var(--scale-size-24);
     }
 
-    &__create-headline {
-        font-size: var(--font-size-s);
-        font-weight: var(--font-weight-semibold);
-        margin-block-end: var(--scale-size-8);
+    &__section {
+        & + & {
+            margin-block-start: var(--scale-size-32);
+        }
     }
 
-    &__create-position {
+    &__section-title {
+        color: var(--color-text-primary-default);
+        font-size: var(--font-size-s);
+        font-weight: var(--font-weight-semibold);
+        margin: 0 0 var(--scale-size-12);
+    }
+
+    // The positions are a small editable table, not a data grid: each row is a product the operator
+    // puts into the return, with the quantity that may still be taken back. Head and rows share the
+    // columns, so long product names do not push the numbers apart.
+    &__positions {
+        border: 1px solid var(--color-border-primary-default);
+        border-radius: var(--border-radius-s);
+        overflow: hidden;
+    }
+
+    &__position-head,
+    &__position {
         align-items: center;
-        border-block-end: 1px solid var(--color-border-primary-default);
         display: grid;
-        gap: var(--scale-size-12);
-        grid-template-columns: 1fr auto auto 100px;
+        gap: var(--scale-size-16);
+        grid-template-columns: minmax(0, 1fr) 96px 120px 96px;
+        padding-inline: var(--scale-size-16);
+    }
+
+    &__position-head {
+        background: var(--color-background-secondary-default);
+        color: var(--color-text-secondary-default);
+        font-size: var(--font-size-xs);
+        font-weight: var(--font-weight-semibold);
         padding-block: var(--scale-size-8);
     }
 
-    &__create-position-price {
+    &__position {
+        & + & {
+            border-block-start: 1px solid var(--color-border-primary-default);
+        }
+
+        padding-block: var(--scale-size-12);
+    }
+
+    &__position-product {
+        min-width: 0;
+    }
+
+    &__position-unit-price {
+        font-variant-numeric: tabular-nums;
+        text-align: end;
+        white-space: nowrap;
+    }
+
+    &__position-returnable {
         color: var(--color-text-secondary-default);
         font-size: var(--font-size-xs);
         white-space: nowrap;
     }
 
-    &__create-position-returnable {
-        color: var(--color-text-secondary-default);
-        font-size: var(--font-size-xs);
-        white-space: nowrap;
+    &__align-end {
+        text-align: end;
     }
 
-    &__create-type,
-    &__create-reason,
+    &__details {
+        display: grid;
+        gap: var(--scale-size-24);
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        margin-block-end: var(--scale-size-16);
+    }
+
     &__create-note {
         display: block;
-        margin-block-end: var(--scale-size-16);
+    }
+
+    &__create-loader {
+        display: block;
+        margin-block: var(--scale-size-48);
     }
 }

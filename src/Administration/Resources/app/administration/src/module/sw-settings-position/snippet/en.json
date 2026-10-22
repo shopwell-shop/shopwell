@@ -1,0 +1,29 @@
+{
+  "sw-settings-position": {
+    "general": {
+      "mainMenuItemGeneral": "Positions",
+      "description": "Manage the positions users can hold in your organization.",
+      "placeholderSearchBar": "Search positions..."
+    },
+    "list": {
+      "textHeadline": "Positions",
+      "buttonAddPosition": "Add position",
+      "columnName": "Name",
+      "columnPosition": "Sort order",
+      "columnActive": "Active",
+      "labelName": "Name",
+      "placeholderName": "Enter name...",
+      "labelActive": "Active",
+      "helpTextPosition": "Positions with a lower sort order are shown first in selection lists.",
+      "modalTitleCreate": "Add position",
+      "modalTitleEdit": "Edit position",
+      "messageEmpty": "No positions yet",
+      "messageSaveSuccess": "The position has been saved.",
+      "messageSaveError": "The position could not be saved.",
+      "messageLoadError": "The positions could not be loaded.",
+      "messageDeleteError": "The position could not be deleted. It may still be assigned to users. Deactivate it instead.",
+      "messageNameRequired": "A name is required.",
+      "textDeleteConfirm": "Are you sure you want to delete the position \"{name}\"?"
+    }
+  }
+}

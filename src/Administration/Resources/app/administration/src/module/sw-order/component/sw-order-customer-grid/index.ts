@@ -95,15 +95,12 @@ export default Component.wrapComponentConfig({
             criteria
                 .addAssociation('addresses')
                 .addAssociation('group')
-                .addAssociation('salutation')
                 .addAssociation('salesChannel.languages')
                 .addAssociation('lastPaymentMethod')
                 .addAssociation('defaultBillingAddress.country')
                 .addAssociation('defaultBillingAddress.countryState')
-                .addAssociation('defaultBillingAddress.salutation')
                 .addAssociation('defaultShippingAddress.country')
                 .addAssociation('defaultShippingAddress.countryState')
-                .addAssociation('defaultShippingAddress.salutation')
                 .addAssociation('tags')
                 .addAssociation('boundSalesChannel');
 

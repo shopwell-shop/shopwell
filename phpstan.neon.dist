@@ -17,6 +17,12 @@ parameters:
     scanFiles:
         - vendor/symfony/dependency-injection/Loader/Configurator/ContainerConfigurator.php
 
+    # The blog type registry consumes every service tagged with `shopwell.blog_type_handler` as a
+    # BlogTypeHandlerInterface. The interface is the extension point a plugin implements, so it is not
+    # @internal and the tag needs a declared contract instead.
+    shopwellTaggedServiceContractAdditionalTagContracts:
+        shopwell.blog_type_handler: Shopwell\Core\Content\Blog\Service\BlogTypeHandlerInterface
+
     excludePaths:
         # vendor patches over autoload files
         - src/Core/Framework/Adapter/Doctrine/Patch/AbstractAsset.php

@@ -86,7 +86,9 @@ class EntityGroupResolver
         'currency' => 'system',
         'language' => 'system',
         'locale' => 'system',
-        'salutation' => 'system',
+        'dictionary' => 'system',   // dictionary_type*/dictionary_entry*
+        'organization' => 'system', // organization*/organization_unit*
+        'position' => 'system',     // position*
         'tax' => 'system',
         'unit' => 'system',
         'delivery' => 'system',       // delivery_time*

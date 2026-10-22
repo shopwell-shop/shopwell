@@ -17,15 +17,8 @@ interface CountryState {
     };
 }
 
-interface Salutation {
-    displayName: string;
-    translated?: {
-        displayName: string;
-    };
-}
-
 interface Address {
-    salutation?: Salutation;
+    gender?: string;
     title?: string;
     name: string;
     street: string;

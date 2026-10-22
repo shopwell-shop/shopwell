@@ -1,0 +1,297 @@
+{% block sw_blog_author_list %}
+<sw-page
+    class="sw-blog-author-list"
+    position-identifier="sw-blog-author-list"
+>
+    {% block sw_blog_author_list_search_bar %}
+    <template #search-bar>
+        <sw-search-bar
+            initial-search-type="blog_author"
+            :initial-search="term"
+            :placeholder="$t('sw-blog.author.placeholderSearchBar')"
+            @search="onSearch"
+        />
+    </template>
+    {% endblock %}
+
+    {% block sw_blog_author_list_smart_bar_header %}
+    <template #smart-bar-header>
+        {% block sw_blog_author_list_smart_bar_header_title %}
+        <h2>
+            {% block sw_blog_author_list_smart_bar_header_title_text %}
+            {{ $t('sw-blog.author.title') }}
+            {% endblock %}
+
+            {% block sw_blog_author_list_smart_bar_header_amount %}
+            <span
+                v-if="!isLoading"
+                class="sw-page__smart-bar-amount"
+            >
+                ({{ total }})
+            </span>
+            {% endblock %}
+        </h2>
+        {% endblock %}
+    </template>
+    {% endblock %}
+
+    {% block sw_blog_author_list_smart_bar_actions %}
+    <template #smart-bar-actions>
+        {% block sw_blog_author_list_smart_bar_actions_entries %}
+        <mt-button
+            class="sw-blog-author-list__button-entries"
+            variant="secondary"
+            size="default"
+            @click="onOpenBlogList"
+        >
+            {{ $t('sw-blog.author.buttonEntries') }}
+        </mt-button>
+        {% endblock %}
+
+        {% block sw_blog_author_list_smart_bar_actions_add %}
+        <mt-button
+            class="sw-blog-author-list__button-create"
+            variant="primary"
+            size="default"
+            :disabled="!canCreate || undefined"
+            @click="onOpenCreateModal"
+        >
+            {{ $t('sw-blog.author.buttonCreate') }}
+        </mt-button>
+        {% endblock %}
+    </template>
+    {% endblock %}
+
+    {% block sw_blog_author_list_content %}
+    <template #content>
+        {% block sw_blog_author_list_content_inner %}
+        <div class="sw-blog-author-list__content">
+            {% block sw_blog_author_list_empty_state %}
+            <mt-empty-state
+                v-if="!isLoading && !total"
+                centered
+                class="sw-blog-author-list__empty-state"
+                icon="regular-avatar"
+                :headline="$t('sw-blog.author.messageEmpty')"
+                :description="$t('sw-blog.author.messageEmptySubline')"
+            />
+            {% endblock %}
+
+            {% block sw_blog_author_list_grid %}
+            <sw-entity-listing
+                v-else
+                ref="listing"
+                class="sw-blog-author-list__grid"
+                identifier="sw-blog-author-list"
+                :data-source="authors"
+                :columns="columns"
+                :repository="authorRepository"
+                :sort-by="sortBy"
+                :sort-direction="sortDirection"
+                :is-loading="isLoading"
+                :full-page="true"
+                :show-selection="false"
+                :show-settings="true"
+                :disable-data-fetching="true"
+                :allow-inline-edit="canEdit"
+                :allow-column-edit="true"
+                :allow-edit="canEdit"
+                :allow-delete="canDelete"
+                :allow-view="canEdit"
+                detail-route="sw.blog.author.detail"
+                @page-change="onPageChange"
+                @column-sort="onSortColumn"
+                @inline-edit-save="onInlineEditSave"
+            >
+                {% block sw_blog_author_list_grid_column_avatar %}
+                <template #column-mediaId="{ item }">
+                    <div class="sw-blog-author-list__avatar">
+                        <sw-media-preview-v2
+                            v-if="item.mediaId"
+                            class="sw-blog-author-list__avatar-image"
+                            :source="item.mediaId"
+                        />
+
+                        <span
+                            v-else
+                            class="sw-blog-author-list__avatar-initial"
+                        >
+                            {{ initialOf(item) }}
+                        </span>
+                    </div>
+                </template>
+                {% endblock %}
+
+                {% block sw_blog_author_list_grid_column_name %}
+                <template #column-name="{ item, isInlineEdit }">
+                    {#
+                    Both renderings live in one block: the rebuilt template wraps every block in its
+                    own component, and a v-else across a block boundary loses its v-if.
+                    #}
+                    <mt-text-field
+                        v-if="isInlineEdit"
+                        v-model="item.name"
+                    />
+
+                    <div
+                        v-else
+                        class="sw-blog-author-list__name-cell"
+                    >
+                        <span class="sw-blog-author-list__name-text">{{ item.name }}</span>
+
+                        <span
+                            v-if="item.description"
+                            class="sw-blog-author-list__name-subline"
+                        >
+                            {{ item.description }}
+                        </span>
+                    </div>
+                </template>
+                {% endblock %}
+
+                {% block sw_blog_author_list_grid_column_email %}
+                <template #column-email="{ item }">
+                    <template v-if="item.email">
+                        {{ item.email }}
+                    </template>
+
+                    <template v-else>
+                        {{ $t('sw-blog.author.textNoEmail') }}
+                    </template>
+                </template>
+                {% endblock %}
+
+                {% block sw_blog_author_list_grid_column_entries %}
+                <template #column-entries="{ item }">
+                    <mt-button
+                        v-if="entryCountOf(item) > 0"
+                        class="sw-blog-author-list__entry-count"
+                        variant="tertiary"
+                        size="x-small"
+                        @click="onOpenAuthorEntries(item)"
+                    >
+                        {{ entryCountOf(item) }}
+                    </mt-button>
+
+                    <span
+                        v-else
+                        class="sw-blog-author-list__entry-count-empty"
+                    >
+                        {{ 0 }}
+                    </span>
+                </template>
+                {% endblock %}
+
+                {% block sw_blog_author_list_grid_column_active %}
+                <template #column-active="{ item }">
+                    <mt-switch
+                        v-model="item.active"
+                        :disabled="!canEdit"
+                        @change="onChangeActive(item)"
+                    />
+                </template>
+                {% endblock %}
+            </sw-entity-listing>
+            {% endblock %}
+        </div>
+        {% endblock %}
+
+        {% block sw_blog_author_list_create_modal %}
+        <sw-modal
+            v-if="showCreateModal"
+            class="sw-blog-author-list__create-modal"
+            variant="small"
+            :title="$t('sw-blog.author.buttonCreate')"
+            @modal-close="onCloseCreateModal"
+        >
+            <mt-text-field
+                v-model="newAuthorName"
+                class="sw-blog-author-list__create-name"
+                required
+                :label="$t('sw-blog.author.labelName')"
+                :placeholder="$t('sw-blog.author.placeholderName')"
+            />
+
+            <template #modal-footer>
+                <mt-button
+                    variant="secondary"
+                    size="small"
+                    @click="onCloseCreateModal"
+                >
+                    {{ $t('global.default.cancel') }}
+                </mt-button>
+
+                <mt-button
+                    variant="primary"
+                    size="small"
+                    :disabled="isCreateDisabled || undefined"
+                    :is-loading="isCreating"
+                    @click="onCreateAuthor"
+                >
+                    {{ $t('global.default.add') }}
+                </mt-button>
+            </template>
+        </sw-modal>
+        {% endblock %}
+
+        {% block sw_blog_author_list_delete_modal %}
+        <sw-modal
+            v-if="deleteTarget"
+            class="sw-blog-author-list__delete-modal"
+            variant="small"
+            :title="$t('sw-blog.author.titleDelete')"
+            @modal-close="onCloseDeleteModal"
+        >
+            <p class="sw-blog-author-list__delete-message">
+                {{ deleteMessage }}
+            </p>
+
+            <template #modal-footer>
+                <mt-button
+                    variant="secondary"
+                    size="small"
+                    @click="onCloseDeleteModal"
+                >
+                    {{ $t('global.default.cancel') }}
+                </mt-button>
+
+                <mt-button
+                    v-if="isDeleteBlocked"
+                    class="sw-blog-author-list__delete-deactivate"
+                    variant="primary"
+                    size="small"
+                    @click="onDeactivateInstead"
+                >
+                    {{ $t('sw-blog.author.buttonDeactivate') }}
+                </mt-button>
+
+                <mt-button
+                    v-else
+                    class="sw-blog-author-list__delete-confirm"
+                    variant="critical"
+                    size="small"
+                    @click="onConfirmDelete"
+                >
+                    {{ $t('global.default.delete') }}
+                </mt-button>
+            </template>
+        </sw-modal>
+        {% endblock %}
+    </template>
+    {% endblock %}
+
+    {% block sw_blog_author_list_sidebar %}
+    <template #sidebar>
+        <sw-sidebar class="sw-blog-author-list__sidebar">
+            {% block sw_blog_author_list_sidebar_refresh %}
+            <sw-sidebar-item
+                icon="regular-undo"
+                :title="$t('sw-blog.list.buttonRefresh')"
+                @click="onRefresh"
+            />
+            {% endblock %}
+        </sw-sidebar>
+    </template>
+    {% endblock %}
+</sw-page>
+{% endblock %}

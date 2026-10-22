@@ -56,6 +56,7 @@ use Shopwell\Core\System\Country\Aggregate\CountryStateTranslation\CountryStateT
 use Shopwell\Core\System\Country\Aggregate\CountryTranslation\CountryTranslationCollection;
 use Shopwell\Core\System\Currency\Aggregate\CurrencyTranslation\CurrencyTranslationCollection;
 use Shopwell\Core\System\DeliveryTime\DeliveryTimeCollection;
+use Shopwell\Core\System\Dictionary\Aggregate\DictionaryEntry\Aggregate\DictionaryEntryTranslation\DictionaryEntryTranslationCollection;
 use Shopwell\Core\System\Locale\Aggregate\LocaleTranslation\LocaleTranslationCollection;
 use Shopwell\Core\System\Locale\LocaleEntity;
 use Shopwell\Core\System\NumberRange\Aggregate\NumberRangeTranslation\NumberRangeTranslationCollection;
@@ -64,7 +65,6 @@ use Shopwell\Core\System\SalesChannel\Aggregate\SalesChannelDomain\SalesChannelD
 use Shopwell\Core\System\SalesChannel\Aggregate\SalesChannelTranslation\SalesChannelTranslationCollection;
 use Shopwell\Core\System\SalesChannel\Aggregate\SalesChannelTypeTranslation\SalesChannelTypeTranslationCollection;
 use Shopwell\Core\System\SalesChannel\SalesChannelCollection;
-use Shopwell\Core\System\Salutation\Aggregate\SalutationTranslation\SalutationTranslationCollection;
 use Shopwell\Core\System\StateMachine\Aggregation\StateMachineState\StateMachineStateTranslationCollection;
 use Shopwell\Core\System\StateMachine\StateMachineTranslationCollection;
 use Shopwell\Core\System\Tax\Aggregate\TaxRuleTypeTranslation\TaxRuleTypeTranslationCollection;
@@ -142,7 +142,7 @@ class LanguageEntity extends Entity
 
     protected ?SalesChannelTypeTranslationCollection $salesChannelTypeTranslations = null;
 
-    protected ?SalutationTranslationCollection $salutationTranslations = null;
+    protected ?DictionaryEntryTranslationCollection $dictionaryEntryTranslations = null;
 
     protected ?SalesChannelDomainCollection $salesChannelDomains = null;
 
@@ -511,14 +511,14 @@ class LanguageEntity extends Entity
         $this->salesChannelDefaultAssignments = $salesChannelDefaultAssignments;
     }
 
-    public function getSalutationTranslations(): ?SalutationTranslationCollection
+    public function getDictionaryEntryTranslations(): ?DictionaryEntryTranslationCollection
     {
-        return $this->salutationTranslations;
+        return $this->dictionaryEntryTranslations;
     }
 
-    public function setSalutationTranslations(SalutationTranslationCollection $salutationTranslations): void
+    public function setDictionaryEntryTranslations(DictionaryEntryTranslationCollection $dictionaryEntryTranslations): void
     {
-        $this->salutationTranslations = $salutationTranslations;
+        $this->dictionaryEntryTranslations = $dictionaryEntryTranslations;
     }
 
     public function getPropertyGroupTranslations(): ?PropertyGroupTranslationCollection

@@ -3,6 +3,7 @@
 namespace Shopwell\Tests\Unit\Core\Checkout\Customer\SalesChannel;
 
 use Doctrine\DBAL\Connection;
+use Shopwell\Core\System\Dictionary\Aggregate\DictionaryEntry\DictionaryEntryDefinition;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Checkout\Customer\Aggregate\CustomerAddress\CustomerAddressCollection;
@@ -82,7 +83,6 @@ class UpsertAddressRouteTest extends TestCase
             static::createStub(DataValidationFactoryInterface::class),
             $systemConfigService,
             $customFieldMapper,
-            static::createStub(EntityRepository::class),
             new ExtensionDispatcher(new EventDispatcher()),
         );
 
@@ -94,7 +94,7 @@ class UpsertAddressRouteTest extends TestCase
 
         $data = new RequestDataBag([
             'accountType' => CustomerEntity::ACCOUNT_TYPE_BUSINESS,
-            'salutationId' => '1',
+            'gender' => '1',
             'customFields' => [
                 'test' => '1',
                 'mapped' => '1',
@@ -107,16 +107,16 @@ class UpsertAddressRouteTest extends TestCase
     public function testAddressStringFieldsAreTrimmedBeforeUpsert(): void
     {
         $countryId = Uuid::randomHex();
-        $salutationId = Uuid::randomHex();
+        $gender = Uuid::randomHex();
         $customerId = Uuid::randomHex();
 
         $addressRepository = $this->createMock(EntityRepository::class);
         $addressRepository
             ->expects($this->once())
             ->method('upsert')
-            ->willReturnCallback(static function (array $data) use ($countryId, $salutationId, $customerId) {
+            ->willReturnCallback(static function (array $data) use ($countryId, $gender, $customerId) {
                 static::assertCount(1, $data);
-                static::assertSame($salutationId, $data[0]['salutationId']);
+                static::assertSame($gender, $data[0]['gender']);
                 static::assertSame('Max Mustermann', $data[0]['name']);
                 static::assertSame('Main Street 1', $data[0]['street']);
                 static::assertSame('12345', $data[0]['zipcode']);
@@ -169,7 +169,6 @@ class UpsertAddressRouteTest extends TestCase
             $addressValidationFactory,
             static::createStub(SystemConfigService::class),
             $customFieldMapper,
-            static::createStub(EntityRepository::class),
             new ExtensionDispatcher(new EventDispatcher()),
         );
 
@@ -178,7 +177,7 @@ class UpsertAddressRouteTest extends TestCase
 
         $data = new RequestDataBag([
             'accountType' => CustomerEntity::ACCOUNT_TYPE_PRIVATE,
-            'salutationId' => $salutationId,
+            'gender' => $gender,
             'name' => "\nMax Mustermann\t",
             'street' => "\t Main Street 1 \n",
             'zipcode' => "    12345\t",
@@ -199,25 +198,25 @@ class UpsertAddressRouteTest extends TestCase
         $upsert->upsert(null, $data, Generator::generateSalesChannelContext(), $customer);
     }
 
-    public function testSalutationIdIsAssignedDefaultValue(): void
+    public function testGenderIsAssignedDefaultValue(): void
     {
-        $salutationId = Uuid::randomHex();
+        $gender = DictionaryEntryDefinition::NOT_SPECIFIED;
 
         $addressRepository = $this->createMock(EntityRepository::class);
         $addressRepository
             ->expects($this->once())
             ->method('upsert')
-            ->with(static::callback(static function (array $data) use ($salutationId) {
+            ->with(static::callback(static function (array $data) use ($gender) {
                 static::assertCount(1, $data);
                 static::assertIsArray($data[0]);
-                static::assertSame($data[0]['salutationId'], $salutationId);
+                static::assertSame($data[0]['gender'], $gender);
 
                 return true;
             }));
 
         $address = new CustomerAddressEntity();
         $address->setId(Uuid::randomHex());
-        $address->setSalutationId($salutationId);
+        $address->setGender($gender);
 
         $salesChannelAddressRepository = $this->createMock(SalesChannelRepository::class);
         $salesChannelAddressRepository->expects($this->once())->method('search')->willReturn(
@@ -231,16 +230,6 @@ class UpsertAddressRouteTest extends TestCase
             )
         );
 
-        $idSearchResult = new IdSearchResult(
-            1,
-            [$salutationId => ['data' => [], 'primaryKey' => $salutationId]],
-            new Criteria(),
-            Context::createDefaultContext(),
-        );
-
-        $salutationRepository = static::createStub(EntityRepository::class);
-        $salutationRepository->method('searchIds')->willReturn($idSearchResult);
-
         $systemConfigService = static::createStub(SystemConfigService::class);
 
         $upsert = new UpsertAddressRoute(
@@ -251,7 +240,6 @@ class UpsertAddressRouteTest extends TestCase
             static::createStub(DataValidationFactoryInterface::class),
             $systemConfigService,
             static::createStub(StoreApiCustomFieldMapper::class),
-            $salutationRepository,
             new ExtensionDispatcher(new EventDispatcher())
         );
 
@@ -260,7 +248,7 @@ class UpsertAddressRouteTest extends TestCase
 
         $data = new RequestDataBag([
             'accountType' => CustomerEntity::ACCOUNT_TYPE_BUSINESS,
-            'salutationId' => '',
+            'gender' => '',
         ]);
 
         $upsert->upsert(null, $data, static::createStub(SalesChannelContext::class), $customer);
@@ -290,7 +278,6 @@ class UpsertAddressRouteTest extends TestCase
             static::createStub(DataValidationFactoryInterface::class),
             static::createStub(SystemConfigService::class),
             static::createStub(StoreApiCustomFieldMapper::class),
-            static::createStub(EntityRepository::class),
             new ExtensionDispatcher($dispatcher),
         );
 

@@ -15,12 +15,44 @@
             <sw-dashboard-metrics />
             {% endblock %}
 
-            {% block sw_dashboard_index_content_statistics %}
-            <sw-dashboard-statistics />
+            {% block sw_dashboard_index_content_main %}
+            <div class="sw-dashboard-index__row sw-dashboard-index__row--main">
+                {% block sw_dashboard_index_content_statistics %}
+                <sw-dashboard-statistics class="sw-dashboard-index__row-cell" />
+                {% endblock %}
+
+                {% block sw_dashboard_index_content_todos %}
+                <sw-dashboard-todos class="sw-dashboard-index__row-cell" />
+                {% endblock %}
+            </div>
             {% endblock %}
 
-            {% block sw_dashboard_index_content_latest_orders %}
-            <sw-dashboard-latest-orders />
+            {% block sw_dashboard_index_content_charts %}
+            <div class="sw-dashboard-index__row sw-dashboard-index__row--half">
+                {% block sw_dashboard_index_content_order_states %}
+                <sw-dashboard-order-states class="sw-dashboard-index__row-cell" />
+                {% endblock %}
+
+                {% block sw_dashboard_index_content_top_products %}
+                <sw-dashboard-top-products class="sw-dashboard-index__row-cell" />
+                {% endblock %}
+            </div>
+            {% endblock %}
+
+            {% block sw_dashboard_index_content_orders_and_loyalty %}
+            <div class="sw-dashboard-index__row sw-dashboard-index__row--main">
+                {% block sw_dashboard_index_content_latest_orders %}
+                <sw-dashboard-latest-orders class="sw-dashboard-index__row-cell" />
+                {% endblock %}
+
+                {% block sw_dashboard_index_content_loyalty %}
+                <sw-dashboard-loyalty-distribution class="sw-dashboard-index__row-cell" />
+                {% endblock %}
+            </div>
+            {% endblock %}
+
+            {% block sw_dashboard_index_content_wallet %}
+            <sw-dashboard-wallet />
             {% endblock %}
 
             <sw-extension-component-section

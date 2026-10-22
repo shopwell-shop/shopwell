@@ -11,10 +11,9 @@ use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Routing\RoutingException;
 use Shopwell\Core\System\Country\CountryCollection;
 use Shopwell\Core\System\Country\SalesChannel\AbstractCountryRoute;
+use Shopwell\Core\System\Dictionary\Aggregate\DictionaryEntry\DictionaryEntryCollection;
+use Shopwell\Core\System\Dictionary\SalesChannel\AbstractDictionaryRoute;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
-use Shopwell\Core\System\Salutation\AbstractSalutationsSorter;
-use Shopwell\Core\System\Salutation\SalesChannel\AbstractSalutationRoute;
-use Shopwell\Core\System\Salutation\SalutationCollection;
 use Shopwell\Storefront\Page\GenericPageLoaderInterface;
 use Shopwell\Storefront\Page\MetaInformation;
 use Symfony\Component\HttpFoundation\Request;
@@ -33,8 +32,7 @@ class AccountLoginPageLoader
         private readonly GenericPageLoaderInterface $genericLoader,
         private readonly EventDispatcherInterface $eventDispatcher,
         private readonly AbstractCountryRoute $countryRoute,
-        private readonly AbstractSalutationRoute $salutationRoute,
-        private readonly AbstractSalutationsSorter $salutationsSorter,
+        private readonly AbstractDictionaryRoute $dictionaryRoute,
         private readonly AbstractTranslator $translator
     ) {
     }
@@ -53,7 +51,7 @@ class AccountLoginPageLoader
 
         $page->setCountries($this->getCountries($salesChannelContext));
 
-        $page->setSalutations($this->getSalutations($salesChannelContext));
+        $page->setGenders($this->getGenders($salesChannelContext));
 
         $this->eventDispatcher->dispatch(
             new AccountLoginPageLoadedEvent($page, $salesChannelContext, $request)
@@ -78,11 +76,11 @@ class AccountLoginPageLoader
     /**
      * @throws InconsistentCriteriaIdsException
      */
-    private function getSalutations(SalesChannelContext $salesChannelContext): SalutationCollection
+    private function getGenders(SalesChannelContext $salesChannelContext): DictionaryEntryCollection
     {
-        $salutations = $this->salutationRoute->load(new Request(), $salesChannelContext, new Criteria())->getSalutations();
+        $request = new Request([], [], ['technicalName' => 'gender']);
 
-        return $this->salutationsSorter->sort($salutations);
+        return $this->dictionaryRoute->load($request, $salesChannelContext, new Criteria())->getEntries();
     }
 
     private function getCountries(SalesChannelContext $salesChannelContext): CountryCollection

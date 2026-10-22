@@ -4,14 +4,12 @@ namespace Shopwell\Core\Checkout\Customer\Validation;
 
 use Shopwell\Core\Checkout\Customer\CustomerDefinition;
 use Shopwell\Core\Checkout\Customer\Validation\Constraint\CustomerPhoneNumberUnique;
-use Shopwell\Core\Framework\DataAbstractionLayer\Validation\EntityExists;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Validation\Constraint\NoHtml;
 use Shopwell\Core\Framework\Validation\DataValidationDefinition;
 use Shopwell\Core\Framework\Validation\DataValidationFactoryInterface;
-use Shopwell\Core\System\SalesChannel\SalesChannelContext;
-use Shopwell\Core\System\Salutation\SalutationDefinition;
-use Shopwell\Core\System\SystemConfig\SystemConfigService;
+use Shopwell\Core\System\Dictionary\Aggregate\DictionaryEntry\DictionaryEntryDefinition;
+use Shopwell\Core\System\SalesChannel\SalesChannelContext;use Shopwell\Core\System\SystemConfig\SystemConfigService;
 use Symfony\Component\Validator\Constraints\Choice;
 use Symfony\Component\Validator\Constraints\GreaterThanOrEqual;
 use Symfony\Component\Validator\Constraints\Length;
@@ -55,7 +53,7 @@ class CustomerProfileValidationFactory implements DataValidationFactoryInterface
     private function addConstraints(DataValidationDefinition $definition, SalesChannelContext $context, bool $requireName): void
     {
         $definition
-            ->add('salutationId', new EntityExists(entity: SalutationDefinition::ENTITY_NAME, context: $context->getContext()))
+            ->add('gender', new Choice(choices: [DictionaryEntryDefinition::MALE, DictionaryEntryDefinition::FEMALE, DictionaryEntryDefinition::NOT_SPECIFIED]))
             ->add('title', new Length(max: CustomerDefinition::MAX_LENGTH_TITLE));
 
         if ($requireName) {

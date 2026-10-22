@@ -392,7 +392,7 @@ class ZugferdBuilderTest extends TestCase
         $address = new OrderAddressEntity();
         $address->setId('order-address-id');
         $address->setVersionId('order-address-version-id');
-        $address->setSalutationId('order-address-salutation-id');
+        $address->setGender('order-address-salutation-id');
         $address->setName('order-address-first-name order-address-last-name');
         $address->setStreet('order-address-street');
         $address->setZipcode('order-address-zipcode');

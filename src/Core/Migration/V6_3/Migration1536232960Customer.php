@@ -36,7 +36,7 @@ class Migration1536232960Customer extends MigrationStep
               `default_billing_address_id` BINARY(16) NULL,
               `default_shipping_address_id` BINARY(16) NULL,
               `customer_number` VARCHAR(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-              `salutation_id` BINARY(16) NOT NULL,
+              `gender` VARCHAR(255) COLLATE utf8mb4_unicode_ci NULL,
               `name` VARCHAR(255) COLLATE utf8mb4_unicode_ci NOT NULL,
               `company`     VARCHAR(255) COLLATE utf8mb4_unicode_ci NULL,
               `password` VARCHAR(1024) COLLATE utf8mb4_unicode_ci NULL,
@@ -70,9 +70,7 @@ class Migration1536232960Customer extends MigrationStep
               CONSTRAINT `fk.customer.last_payment_method_id` FOREIGN KEY (`last_payment_method_id`)
                 REFERENCES `payment_method` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
               CONSTRAINT `fk.customer.sales_channel_id` FOREIGN KEY (`sales_channel_id`)
-                REFERENCES `sales_channel` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
-              CONSTRAINT `fk.customer.salutation_id` FOREIGN KEY (`salutation_id`)
-                REFERENCES `salutation` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE
+                REFERENCES `sales_channel` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE
             ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 SQL;
 

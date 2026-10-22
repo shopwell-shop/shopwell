@@ -26,7 +26,6 @@ use Shopwell\Core\System\Language\LanguageEntity;
 use Shopwell\Core\System\Payment\Subscription\PaymentMandateCollection;
 use Shopwell\Core\System\Payment\Subscription\PaymentSubscriptionCollection;
 use Shopwell\Core\System\SalesChannel\SalesChannelEntity;
-use Shopwell\Core\System\Salutation\SalutationEntity;
 use Shopwell\Core\System\Tag\TagCollection;
 use Shopwell\Core\System\User\UserEntity;
 
@@ -59,7 +58,7 @@ class CustomerEntity extends Entity implements \Stringable
 
     protected string $customerNumber;
 
-    protected ?string $salutationId = null;
+    protected ?string $gender = null;
 
     protected string $name;
 
@@ -137,8 +136,6 @@ class CustomerEntity extends Entity implements \Stringable
     protected ?LanguageEntity $language = null;
 
     protected ?PaymentMethodEntity $lastPaymentMethod = null;
-
-    protected ?SalutationEntity $salutation = null;
 
     protected ?CustomerAddressEntity $defaultBillingAddress = null;
 
@@ -278,14 +275,14 @@ class CustomerEntity extends Entity implements \Stringable
         $this->customerNumber = $customerNumber;
     }
 
-    public function getSalutationId(): ?string
+    public function getGender(): ?string
     {
-        return $this->salutationId;
+        return $this->gender;
     }
 
-    public function setSalutationId(string $salutationId): void
+    public function setGender(?string $gender): void
     {
-        $this->salutationId = $salutationId;
+        $this->gender = $gender;
     }
 
     public function getName(): string
@@ -603,16 +600,6 @@ class CustomerEntity extends Entity implements \Stringable
     public function setLastPaymentMethod(PaymentMethodEntity $lastPaymentMethod): void
     {
         $this->lastPaymentMethod = $lastPaymentMethod;
-    }
-
-    public function getSalutation(): ?SalutationEntity
-    {
-        return $this->salutation;
-    }
-
-    public function setSalutation(SalutationEntity $salutation): void
-    {
-        $this->salutation = $salutation;
     }
 
     public function getDefaultBillingAddress(): ?CustomerAddressEntity

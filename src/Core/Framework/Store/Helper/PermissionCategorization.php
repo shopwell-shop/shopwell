@@ -132,8 +132,13 @@ use Shopwell\Core\System\SalesChannel\Aggregate\SalesChannelTranslation\SalesCha
 use Shopwell\Core\System\SalesChannel\Aggregate\SalesChannelType\SalesChannelTypeDefinition;
 use Shopwell\Core\System\SalesChannel\Aggregate\SalesChannelTypeTranslation\SalesChannelTypeTranslationDefinition;
 use Shopwell\Core\System\SalesChannel\SalesChannelDefinition;
-use Shopwell\Core\System\Salutation\Aggregate\SalutationTranslation\SalutationTranslationDefinition;
-use Shopwell\Core\System\Salutation\SalutationDefinition;
+use Shopwell\Core\System\Dictionary\Aggregate\DictionaryEntry\Aggregate\DictionaryEntryTranslation\DictionaryEntryTranslationDefinition;
+use Shopwell\Core\System\Dictionary\Aggregate\DictionaryEntry\DictionaryEntryDefinition;
+use Shopwell\Core\System\Dictionary\DictionaryTypeDefinition;
+use Shopwell\Core\System\Dictionary\Aggregate\DictionaryTypeTranslation\DictionaryTypeTranslationDefinition;
+use Shopwell\Core\System\Organization\OrganizationDefinition;
+use Shopwell\Core\System\Organization\Aggregate\OrganizationUnit\OrganizationUnitDefinition;
+use Shopwell\Core\System\Position\PositionDefinition;
 use Shopwell\Core\System\StateMachine\Aggregation\StateMachineHistory\StateMachineHistoryDefinition;
 use Shopwell\Core\System\StateMachine\Aggregation\StateMachineState\StateMachineStateDefinition;
 use Shopwell\Core\System\StateMachine\Aggregation\StateMachineState\StateMachineStateTranslationDefinition;
@@ -374,8 +379,13 @@ class PermissionCategorization
             NumberRangeSalesChannelDefinition::ENTITY_NAME,
             NumberRangeStateDefinition::ENTITY_NAME,
             NumberRangeTypeDefinition::ENTITY_NAME,
-            SalutationDefinition::ENTITY_NAME,
-            SalutationTranslationDefinition::ENTITY_NAME,
+            DictionaryEntryDefinition::ENTITY_NAME,
+            DictionaryEntryTranslationDefinition::ENTITY_NAME,
+            DictionaryTypeDefinition::ENTITY_NAME,
+            DictionaryTypeTranslationDefinition::ENTITY_NAME,
+            OrganizationDefinition::ENTITY_NAME,
+            OrganizationUnitDefinition::ENTITY_NAME,
+            PositionDefinition::ENTITY_NAME,
             SeoUrlDefinition::ENTITY_NAME,
             SeoUrlTemplateDefinition::ENTITY_NAME,
             StateMachineDefinition::ENTITY_NAME,

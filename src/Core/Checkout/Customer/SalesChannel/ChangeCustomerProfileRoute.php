@@ -11,8 +11,6 @@ use Shopwell\Core\Checkout\Customer\Extension\ChangeCustomerProfileRouteExtensio
 use Shopwell\Core\Checkout\Customer\Validation\Constraint\CustomerVatIdentification;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
-use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
-use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopwell\Core\Framework\Event\DataMappingEvent;
 use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Log\Package;
@@ -25,11 +23,10 @@ use Shopwell\Core\Framework\Validation\DataValidationDefinition;
 use Shopwell\Core\Framework\Validation\DataValidationFactoryInterface;
 use Shopwell\Core\Framework\Validation\DataValidator;
 use Shopwell\Core\PlatformRequest;
+use Shopwell\Core\System\Dictionary\Aggregate\DictionaryEntry\DictionaryEntryDefinition;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
 use Shopwell\Core\System\SalesChannel\StoreApiCustomFieldMapper;
 use Shopwell\Core\System\SalesChannel\SuccessResponse;
-use Shopwell\Core\System\Salutation\SalutationCollection;
-use Shopwell\Core\System\Salutation\SalutationDefinition;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Validator\Constraints\NotBlank;
@@ -51,7 +48,6 @@ class ChangeCustomerProfileRoute extends AbstractChangeCustomerProfileRoute
      * @internal
      *
      * @param EntityRepository<CustomerCollection> $customerRepository
-     * @param EntityRepository<SalutationCollection> $salutationRepository
      */
     public function __construct(
         private readonly EntityRepository $customerRepository,
@@ -59,7 +55,6 @@ class ChangeCustomerProfileRoute extends AbstractChangeCustomerProfileRoute
         private readonly DataValidator $validator,
         private readonly DataValidationFactoryInterface $customerProfileValidationFactory,
         private readonly StoreApiCustomFieldMapper $storeApiCustomFieldMapper,
-        private readonly EntityRepository $salutationRepository,
         private readonly ExtensionDispatcher $extensions,
     ) {
     }
@@ -112,8 +107,8 @@ class ChangeCustomerProfileRoute extends AbstractChangeCustomerProfileRoute
             $data->set('vatIds', $vatIds === [] ? null : $vatIds);
         }
 
-        if (!$data->get('salutationId')) {
-            $data->set('salutationId', $this->getDefaultSalutationId($context));
+        if (!$data->get('gender')) {
+            $data->set('gender', DictionaryEntryDefinition::NOT_SPECIFIED);
         }
 
         // The number the login by sms resolves is read here and not only by the form, so a blank
@@ -131,7 +126,7 @@ class ChangeCustomerProfileRoute extends AbstractChangeCustomerProfileRoute
 
         $this->validator->validate($data->all(), $validation);
 
-        $customerData = $data->only('name', 'salutationId', 'title', 'company', 'accountType', 'phoneNumber');
+        $customerData = $data->only('name', 'gender', 'title', 'company', 'accountType', 'phoneNumber');
 
         $vatIds = $data->get('vatIds');
 
@@ -222,14 +217,5 @@ class ChangeCustomerProfileRoute extends AbstractChangeCustomerProfileRoute
             $birthdayMonth,
             $birthdayDay
         ));
-    }
-
-    private function getDefaultSalutationId(SalesChannelContext $context): ?string
-    {
-        $criteria = (new Criteria())
-            ->setLimit(1)
-            ->addFilter(new EqualsFilter('salutationKey', SalutationDefinition::NOT_SPECIFIED));
-
-        return $this->salutationRepository->searchIds($criteria, $context->getContext())->firstId();
     }
 }

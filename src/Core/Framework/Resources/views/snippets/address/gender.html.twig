@@ -1,0 +1,8 @@
+{# @internal #}
+{% block sw_snippet_element_gender %}
+    {% if address.gender and address.gender != 'not_specified' %}
+        {% block component_address_gender %}
+            {{ address.genderLabel|default(address.gender) }}
+        {% endblock %}
+    {% endif %}
+{% endblock %}

@@ -620,14 +620,14 @@ class SalesChannelContextTest extends TestCase
         bool $isGuest = false
     ): void {
         $customerRepository = static::getContainer()->get('customer.repository');
-        $salutationId = $this->getValidSalutationId();
+        $gender = $this->getValidGender();
 
         $billingAddress = [
             'name' => 'Max Mustermann',
             'street' => 'Musterstraße 1',
             'city' => 'Schöppingen',
             'zipcode' => '12345',
-            'salutationId' => $salutationId,
+            'gender' => $gender,
             'country' => ['id' => $billingCountryId ?? Uuid::randomHex(), 'name' => 'Germany'],
         ];
 
@@ -636,7 +636,7 @@ class SalesChannelContextTest extends TestCase
             'street' => 'Musterstraße 1',
             'city' => 'Schöppingen',
             'zipcode' => '12345',
-            'salutationId' => $salutationId,
+            'gender' => $gender,
             'country' => ['id' => $shippingCountryId ?? Uuid::randomHex(), 'name' => 'Germany'],
         ];
 
@@ -655,7 +655,7 @@ class SalesChannelContextTest extends TestCase
             'guest' => $isGuest,
             'password' => '$password',
             'name' => 'Max Mustermann',
-            'salutationId' => $salutationId,
+            'gender' => $gender,
             'customerNumber' => '12345',
         ];
 

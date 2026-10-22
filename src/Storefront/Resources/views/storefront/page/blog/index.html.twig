@@ -1,0 +1,65 @@
+{% sw_extends '@Storefront/storefront/base.html.twig' %}
+
+{# @var page \Shopwell\Storefront\Page\Blog\BlogPage #}
+{% block base_head %}
+    {% sw_include '@Storefront/storefront/page/blog/meta.html.twig' %}
+{% endblock %}
+
+{% block base_content %}
+    {% block sw_blog_index %}
+        <div class="blog-index">
+            <div class="container">
+                {% block sw_blog_index_header %}
+                    <header class="blog-index__header">
+                        <h1 class="blog-index__title">{{ 'blog.listing.title'|trans|sw_sanitize }}</h1>
+                    </header>
+                {% endblock %}
+
+                {% block sw_blog_index_filter %}
+                    {% if page.categories is not empty %}
+                        <nav class="blog-index__filter" aria-label="{{ 'blog.listing.filterLabel'|trans|striptags }}">
+                            {% block sw_blog_index_filter_all %}
+                                <a href="{{ seoUrl('frontend.blog.index') }}"
+                                   class="blog-index__chip{% if not page.activeCategoryId %} blog-index__chip--active{% endif %}">
+                                    {{ 'blog.listing.filterAll'|trans|sw_sanitize }}
+                                </a>
+                            {% endblock %}
+
+                            {% block sw_blog_index_filter_categories %}
+                                {% for category in page.categories %}
+                                    <a href="{{ seoUrl('frontend.blog.index', { category: category.id }) }}"
+                                       class="blog-index__chip{% if page.activeCategoryId == category.id %} blog-index__chip--active{% endif %}">
+                                        {{ category.name }}
+                                    </a>
+                                {% endfor %}
+                            {% endblock %}
+                        </nav>
+                    {% endif %}
+                {% endblock %}
+
+                {% block sw_blog_index_listing %}
+                    {#
+                        The layout of the category wins over the twig listing. The merchant built it in
+                        the administration for exactly this page, so rendering the default next to it
+                        would make the setting look broken.
+                    #}
+                    {% if page.cmsPage %}
+                        {% block sw_blog_index_cms %}
+                            <div class="cms-page blog-index__cms">
+                                {% sw_include '@Storefront/storefront/page/content/detail.html.twig' with { cmsPage: page.cmsPage } only %}
+                            </div>
+                        {% endblock %}
+                    {% else %}
+                        {% sw_include '@Storefront/storefront/component/blog/blog-listing.html.twig' with { page: page } only %}
+                    {% endif %}
+                {% endblock %}
+
+                {% block sw_blog_index_pagination %}
+                    {% if not page.cmsPage %}
+                        {% sw_include '@Storefront/storefront/component/blog/blog-pagination.html.twig' with { page: page } only %}
+                    {% endif %}
+                {% endblock %}
+            </div>
+        </div>
+    {% endblock %}
+{% endblock %}

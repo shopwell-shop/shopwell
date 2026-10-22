@@ -26,7 +26,6 @@ export default {
 
     mixins: [
         Mixin.getByName('notification'),
-        Mixin.getByName('salutation'),
         Mixin.getByName('discard-detail-page-changes')('customer'),
     ],
 
@@ -67,7 +66,7 @@ export default {
 
     computed: {
         identifier() {
-            return this.customer !== null ? this.salutation(this.customer) : '';
+            return this.customer !== null ? [this.customer.title, this.customer.name].filter(Boolean).join(' ') : '';
         },
 
         customerRepository() {
@@ -95,16 +94,13 @@ export default {
             criteria
                 .addAssociation('addresses')
                 .addAssociation('group')
-                .addAssociation('salutation')
                 .addAssociation('salesChannel.domains')
                 .addAssociation('boundSalesChannel.domains')
                 .addAssociation('lastPaymentMethod')
                 .addAssociation('defaultBillingAddress.country')
                 .addAssociation('defaultBillingAddress.countryState')
-                .addAssociation('defaultBillingAddress.salutation')
                 .addAssociation('defaultShippingAddress.country')
                 .addAssociation('defaultShippingAddress.countryState')
-                .addAssociation('defaultShippingAddress.salutation')
                 .addAssociation('tags')
                 .addAssociation('requestedGroup')
                 .addAssociation('boundSalesChannel');
@@ -180,17 +176,6 @@ export default {
                 : true;
         },
 
-        salutationRepository() {
-            return this.repositoryFactory.create('salutation');
-        },
-
-        salutationCriteria() {
-            const criteria = new Criteria(1, 1);
-
-            criteria.addFilter(Criteria.equals('salutationKey', 'not_specified'));
-
-            return criteria;
-        },
 
         ...mapPageErrors(errorConfig),
     },
@@ -235,15 +220,13 @@ export default {
                     return;
                 }
 
-                const defaultSalutationId = await this.getDefaultSalutation();
-
-                if (!this.customer.salutationId) {
-                    this.customer.salutationId = defaultSalutationId;
+                if (!this.customer.gender) {
+                    this.customer.gender = 'not_specified';
                 }
 
                 this.customer.addresses?.map((address) => {
-                    if (!address.salutationId) {
-                        address.salutationId = defaultSalutationId;
+                    if (!address.gender) {
+                        address.gender = 'not_specified';
                     }
 
                     return address;
@@ -455,12 +438,6 @@ export default {
                     code: 'c1051bb4-d103-4f74-8988-acbcafc7fdc3',
                 }),
             });
-        },
-
-        async getDefaultSalutation() {
-            const res = await this.salutationRepository.searchIds(this.salutationCriteria);
-
-            return res.data?.[0];
         },
     },
 };

@@ -234,7 +234,6 @@ class SalesChannelContextFactory extends AbstractSalesChannelContextFactory
 
         $criteria = new Criteria([$customerId]);
         $criteria->setTitle('context-factory::customer');
-        $criteria->addAssociation('salutation');
 
         $source = $context->getSource();
         \assert($source instanceof SalesChannelApiSource);
@@ -265,7 +264,6 @@ class SalesChannelContextFactory extends AbstractSalesChannelContextFactory
         if ($addressIds !== []) {
             $criteria = new Criteria($addressIds);
             $criteria->setTitle('context-factory::addresses');
-            $criteria->addAssociation('salutation');
             $criteria->addAssociation('country');
             $criteria->addAssociation('countryState');
             $criteria->addAssociation('countryCity');

@@ -186,11 +186,6 @@ class Migration1620634856UpdateRolePrivileges extends MigrationStep
             'user_config:create',
             'user_config:update',
         ],
-        'salutation.viewer' => [
-            'custom_field_set:read',
-            'custom_field:read',
-            'custom_field_set_relation:read',
-        ],
         'shipping.viewer' => [
             'custom_field_set:read',
             'custom_field:read',

@@ -187,7 +187,7 @@ class NewsletterControllerTest extends TestCase
                 'street' => 'Musterstraße 1',
                 'city' => 'Schöppingen',
                 'zipcode' => '12345',
-                'salutationId' => $this->getValidSalutationId(),
+                'gender' => $this->getValidGender(),
                 'countryId' => $this->getValidCountryId(),
             ],
             'defaultBillingAddressId' => $addressId,
@@ -196,7 +196,7 @@ class NewsletterControllerTest extends TestCase
             'password' => TestDefaults::HASHED_PASSWORD,
             'title' => 'Dr.',
             'name' => 'Max Mustermann',
-            'salutationId' => $this->getValidSalutationId(),
+            'gender' => $this->getValidGender(),
             'customerNumber' => '12345',
         ];
 
@@ -215,7 +215,7 @@ class NewsletterControllerTest extends TestCase
     private function validateRecipientData(NewsletterRecipientEntity $recipientEntry): void
     {
         static::assertSame($this->customerData['email'], $recipientEntry->getEmail());
-        static::assertSame($this->customerData['salutationId'], $recipientEntry->getSalutationId());
+        static::assertSame($this->customerData['gender'], $recipientEntry->getGender());
         static::assertSame($this->customerData['title'], $recipientEntry->getTitle());
         static::assertSame($this->customerData['name'], $recipientEntry->getName());
         static::assertSame($this->customerData['defaultShippingAddress']['zipcode'], $recipientEntry->getZipCode());

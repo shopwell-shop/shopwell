@@ -16,6 +16,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Pricing\CashRoundingConfig;
 use Shopwell\Core\Framework\DataAbstractionLayer\Write\WriteException;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Test\TestCaseBase\BasicTestDataBehaviour;
 use Shopwell\Core\Framework\Test\TestCaseBase\DatabaseTransactionBehaviour;
 use Shopwell\Core\Framework\Test\TestCaseBase\KernelTestBehaviour;
 use Shopwell\Core\Framework\Uuid\Uuid;
@@ -29,6 +30,7 @@ class StateMachineSateFieldSerializerTest extends TestCase
 {
     use DatabaseTransactionBehaviour;
     use KernelTestBehaviour;
+    use BasicTestDataBehaviour;
 
     /**
      * @var EntityRepository<OrderCollection>
@@ -87,7 +89,7 @@ class StateMachineSateFieldSerializerTest extends TestCase
             'orderCustomer' => [
                 'id' => Uuid::randomHex(),
                 'email' => 'test@example.com',
-                'salutationId' => $this->fetchFirstIdFromTable('salutation'),
+                'gender' => $this->getValidGender(),
                 'name' => 'Max Mustermann',
             ],
             'stateId' => $this->fetchOrderStateId(OrderStates::STATE_OPEN),
@@ -99,7 +101,7 @@ class StateMachineSateFieldSerializerTest extends TestCase
             'addresses' => [
                 [
                     'id' => $addressId,
-                    'salutationId' => $this->fetchFirstIdFromTable('salutation'),
+                    'gender' => $this->getValidGender(),
                     'name' => 'Max Mustermann',
                     'street' => 'Ebbinghoff 10',
                     'zipcode' => '48624',

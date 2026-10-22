@@ -29,9 +29,9 @@ use Shopwell\Core\Framework\Test\TestCaseBase\SalesChannelApiTestBehaviour;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopwell\Core\PlatformRequest;
+use Shopwell\Core\System\Dictionary\Aggregate\DictionaryEntry\DictionaryEntryDefinition;
 use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextService;
 use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextServiceParameters;
-use Shopwell\Core\System\Salutation\SalutationDefinition;
 use Shopwell\Core\System\TaxProvider\TaxProviderCollection;
 use Shopwell\Core\Test\Integration\EventDispatcher\EventHookDispatcher;
 use Shopwell\Core\Test\Integration\PaymentHandler\TestPaymentHandler;
@@ -89,7 +89,7 @@ class CartOrderRouteTest extends TestCase
         $this->productRepository = static::getContainer()->get('product.repository');
         $this->customerRepository = static::getContainer()->get('customer.repository');
         $this->taxProviderRepository = static::getContainer()->get('tax_provider.repository');
-        $this->validSalutationId = $this->getValidSalutationId();
+        $this->validSalutationId = $this->getValidGender();
         $this->validCountryId = $this->getValidCountryId($this->ids->get('sales-channel'));
 
         $this->createTestData();
@@ -479,26 +479,13 @@ class CartOrderRouteTest extends TestCase
         $response = \json_decode($this->browser->getResponse()->getContent(), true, 512, \JSON_THROW_ON_ERROR);
 
         static::assertNotNull($response['orderCustomer']);
-        static::assertNotNull($response['orderCustomer']['salutation']);
-        static::assertSame($response['orderCustomer']['salutation']['salutationKey'], SalutationDefinition::NOT_SPECIFIED);
+        static::assertSame($response['orderCustomer']['gender'], DictionaryEntryDefinition::NOT_SPECIFIED);
     }
 
-    public function testOrderToNotSpecifiedWithoutExistingSalutation(): void
+    public function testOrderToNotSpecifiedWithoutSubmittedGender(): void
     {
-        $connection = static::getContainer()->get(Connection::class);
-
         $email = Uuid::randomHex() . '@example.com';
         $password = 'shopwell';
-
-        $connection->executeStatement(
-            '
-					DELETE FROM salutation WHERE salutation_key = :salutationKey
-				',
-            ['salutationKey' => SalutationDefinition::NOT_SPECIFIED]
-        );
-
-        $salutations = $connection->fetchAllKeyValue('SELECT salutation_key, id FROM salutation');
-        static::assertArrayNotHasKey(SalutationDefinition::NOT_SPECIFIED, $salutations);
 
         $this->createCustomerAndLogin($email, $password, true);
         $this->addProductToCart();
@@ -514,7 +501,7 @@ class CartOrderRouteTest extends TestCase
         $response = \json_decode($this->browser->getResponse()->getContent(), true, 512, \JSON_THROW_ON_ERROR);
 
         static::assertNotNull($response['orderCustomer']);
-        static::assertNull($response['orderCustomer']['salutationId']);
+        static::assertSame($response['orderCustomer']['gender'], DictionaryEntryDefinition::NOT_SPECIFIED);
     }
 
     public function testOrderLockedWhenAlreadyInProgress(): void
@@ -659,7 +646,7 @@ class CartOrderRouteTest extends TestCase
                     'street' => 'Musterstraße 1',
                     'city' => 'Schöppingen',
                     'zipcode' => '12345',
-                    'salutationId' => $validSalutationId ?? $this->getValidSalutationId(),
+                    'gender' => $validSalutationId ?? $this->getValidGender(),
                     'countryId' => $validCountryId ?? $this->getValidCountryId($this->ids->get('sales-channel')),
                 ],
                 'defaultBillingAddressId' => $addressId,
@@ -679,7 +666,7 @@ class CartOrderRouteTest extends TestCase
                 'email' => $email,
                 'password' => $password,
                 'name' => 'Max Mustermann',
-                'salutationId' => ($invalidSalutaionId ? null : $validSalutationId ?? $this->getValidSalutationId()),
+                'gender' => ($invalidSalutaionId ? null : $validSalutationId ?? $this->getValidGender()),
                 'customerNumber' => '12345',
             ],
         ], Context::createDefaultContext());

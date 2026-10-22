@@ -29,7 +29,7 @@ class Migration1536232970CustomerAddress extends MigrationStep
               `country_district_id` BINARY(16) NULL,
               `company` VARCHAR(255) COLLATE utf8mb4_unicode_ci NULL,
               `department` VARCHAR(35) COLLATE utf8mb4_unicode_ci NULL,
-              `salutation_id` BINARY(16) NOT NULL,
+              `gender` VARCHAR(255) COLLATE utf8mb4_unicode_ci NULL,
               `title` VARCHAR(100) COLLATE utf8mb4_unicode_ci NULL,
               `name` VARCHAR(255) COLLATE utf8mb4_unicode_ci NOT NULL,
               `street` VARCHAR(255) COLLATE utf8mb4_unicode_ci NULL,
@@ -53,9 +53,7 @@ class Migration1536232970CustomerAddress extends MigrationStep
                CONSTRAINT `fk.customer_address.country_district_id` FOREIGN KEY (`country_district_id`)
                  REFERENCES `country_district` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
                CONSTRAINT `fk.customer_address.customer_id` FOREIGN KEY (`customer_id`)
-                 REFERENCES `customer` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-               CONSTRAINT `fk.customer_address.salutation_id` FOREIGN KEY (`salutation_id`)
-                 REFERENCES `salutation` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE
+                 REFERENCES `customer` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
         ');
     }

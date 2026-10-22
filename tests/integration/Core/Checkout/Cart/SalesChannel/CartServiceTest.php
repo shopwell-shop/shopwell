@@ -483,7 +483,7 @@ class CartServiceTest extends TestCase
                 'street' => 'test',
                 'city' => 'not',
                 'zipcode' => 'not',
-                'salutationId' => $this->getValidSalutationId(),
+                'gender' => $this->getValidGender(),
                 'countryId' => $this->getValidCountryId(),
             ],
             'defaultBillingAddressId' => $addressId,
@@ -491,7 +491,7 @@ class CartServiceTest extends TestCase
             'email' => $mail,
             'password' => $password,
             'name' => 'match',
-            'salutationId' => $this->getValidSalutationId(),
+            'gender' => $this->getValidGender(),
             'customerNumber' => 'not',
         ];
 

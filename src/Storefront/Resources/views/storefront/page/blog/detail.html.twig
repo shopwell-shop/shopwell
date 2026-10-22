@@ -1,0 +1,161 @@
+{% sw_extends '@Storefront/storefront/base.html.twig' %}
+
+{# @var page \Shopwell\Storefront\Page\Blog\BlogDetailPage #}
+{% block base_head %}
+    {% sw_include '@Storefront/storefront/page/blog/meta.html.twig' %}
+{% endblock %}
+
+{% block base_content %}
+    {% block sw_blog_detail %}
+        {% set blog = page.blog %}
+
+        <div class="blog-detail" data-blog-reading>
+            {% block sw_blog_detail_progress %}
+                <div class="blog-detail__progress" data-blog-reading-progress aria-hidden="true"></div>
+            {% endblock %}
+
+            <div class="container">
+                {% block sw_blog_detail_breadcrumb %}
+                    <nav class="blog-detail__breadcrumb" aria-label="{{ 'blog.detail.breadcrumbLabel'|trans|striptags }}">
+                        <a href="{{ seoUrl('frontend.blog.index') }}">{{ 'blog.listing.title'|trans|sw_sanitize }}</a>
+                        <span class="blog-detail__breadcrumb-divider" aria-hidden="true">/</span>
+                        <span class="blog-detail__breadcrumb-current" aria-current="page">{{ blog.title }}</span>
+                    </nav>
+                {% endblock %}
+
+                {% block sw_blog_detail_header %}
+                    <header class="blog-detail__header">
+                        {% block sw_blog_detail_categories %}
+                            {% if blog.categories is not empty %}
+                                <div class="blog-detail__categories">
+                                    {% for assignment in blog.categories %}
+                                        {% if assignment.blogCategory %}
+                                            <a href="{{ seoUrl('frontend.blog.index', { category: assignment.blogCategoryId }) }}"
+                                               class="blog-detail__chip">{{ assignment.blogCategory.name }}</a>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        {% endblock %}
+
+                        {% block sw_blog_detail_title %}
+                            <h1 class="blog-detail__title">{{ blog.title }}</h1>
+                        {% endblock %}
+
+                        {% block sw_blog_detail_teaser %}
+                            {% if blog.teaser %}
+                                <p class="blog-detail__teaser">{{ blog.teaser|striptags }}</p>
+                            {% endif %}
+                        {% endblock %}
+
+                        {% block sw_blog_detail_meta %}
+                            <div class="blog-detail__meta">
+                                {% if page.showAuthor and page.author %}
+                                    <span class="blog-detail__author">{{ page.author.name }}</span>
+                                {% endif %}
+
+                                {% if blog.publishedAt %}
+                                    <time datetime="{{ blog.publishedAt|date('c') }}">{{ blog.publishedAt|date('Y-m-d') }}</time>
+                                {% endif %}
+
+                                {% if page.showReadingTime %}
+                                    <span class="blog-detail__reading-time">
+                                        {{ 'blog.detail.readingTime'|trans({ '%minutes%': page.readingTimeMinutes })|sw_sanitize }}
+                                    </span>
+                                {% endif %}
+                            </div>
+                        {% endblock %}
+                    </header>
+                {% endblock %}
+
+                {% block sw_blog_detail_hero %}
+                    {% if page.coverMedia %}
+                        <figure class="blog-detail__hero">
+                            <img src="{{ page.coverMedia.url }}"
+                                 class="blog-detail__hero-image"
+                                 alt="{{ blog.title }}"
+                                 {% if page.coverMedia.width and page.coverMedia.height %}width="{{ page.coverMedia.width }}" height="{{ page.coverMedia.height }}"{% endif %}
+                                 loading="eager"
+                                 fetchpriority="high">
+                        </figure>
+                    {% endif %}
+                {% endblock %}
+
+                {% block sw_blog_detail_body %}
+                    <div class="blog-detail__layout">
+                        {% block sw_blog_detail_content %}
+                            <div class="blog-detail__content">
+                                {% block sw_blog_detail_content_text %}
+                                    {#
+                                        The layout of the entry replaces the body and nothing else: the
+                                        headline, the byline, the table of contents and the comment
+                                        thread stay, because a merchant who builds an article layout
+                                        decides how the article looks, not whether readers may answer it.
+                                    #}
+                                    {% if page.cmsPage %}
+                                        {% block sw_blog_detail_content_cms %}
+                                            <div class="cms-page blog-detail__cms">
+                                                {% sw_include '@Storefront/storefront/page/content/detail.html.twig' with { cmsPage: page.cmsPage } only %}
+                                            </div>
+                                        {% endblock %}
+                                    {% else %}
+                                        <div class="blog-detail__text">{{ page.content|raw }}</div>
+                                    {% endif %}
+                                {% endblock %}
+
+                                {% block sw_blog_detail_author %}
+                                    {% if page.showAuthor and page.author %}
+                                        {% sw_include '@Storefront/storefront/component/blog/blog-sidebar.html.twig' with {
+                                            page: page,
+                                            authorOnly: true,
+                                        } only %}
+                                    {% endif %}
+                                {% endblock %}
+
+                                {% block sw_blog_detail_related %}
+                                    {% if page.relatedBlogs is not empty %}
+                                        <section class="blog-detail__related">
+                                            <h2 class="blog-detail__related-title">{{ 'blog.detail.related'|trans|sw_sanitize }}</h2>
+                                            <div class="blog-listing blog-listing--grid">
+                                                {% for related in page.relatedBlogs %}
+                                                    {% sw_include '@Storefront/storefront/component/blog/blog-card.html.twig' with {
+                                                        blog: related,
+                                                        cover: null,
+                                                        feedLayout: 'grid',
+                                                        featured: false,
+                                                        showAuthor: page.showAuthor,
+                                                        showReadingTime: page.showReadingTime,
+                                                        readingTime: 0,
+                                                    } only %}
+                                                {% endfor %}
+                                            </div>
+                                        </section>
+                                    {% endif %}
+                                {% endblock %}
+                            </div>
+                        {% endblock %}
+
+                        {% block sw_blog_detail_sidebar %}
+                            {% if page.tocEnabled and page.toc is not empty %}
+                                {% sw_include '@Storefront/storefront/component/blog/blog-sidebar.html.twig' with {
+                                    page: page,
+                                    authorOnly: false,
+                                } only %}
+                            {% endif %}
+                        {% endblock %}
+                    </div>
+                {% endblock %}
+
+                {% block sw_blog_detail_comments %}
+                    {% sw_include '@Storefront/storefront/component/blog/blog-comments.html.twig' with { page: page } only %}
+                {% endblock %}
+
+                {% block sw_blog_detail_back %}
+                    <p class="blog-detail__back">
+                        <a href="{{ seoUrl('frontend.blog.index') }}">{{ 'blog.detail.backToList'|trans|sw_sanitize }}</a>
+                    </p>
+                {% endblock %}
+            </div>
+        </div>
+    {% endblock %}
+{% endblock %}

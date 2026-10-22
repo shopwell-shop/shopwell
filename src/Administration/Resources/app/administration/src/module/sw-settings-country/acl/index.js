@@ -18,7 +18,7 @@ Shopwell.Service('privileges').addPrivilegeMappingEntry({
                 'currency:read',
                 'user_config:read',
                 'customer:read',
-                'salutation:read',
+                'dictionary_entry:read',
                 'customer_address:read',
             ],
             dependencies: [],

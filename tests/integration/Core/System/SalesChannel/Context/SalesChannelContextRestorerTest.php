@@ -116,7 +116,7 @@ class SalesChannelContextRestorerTest extends TestCase
 
         $ids = new IdsCollection();
         $shippingAddress = [
-            'salutationId' => $this->getValidSalutationId(),
+            'gender' => $this->getValidGender(),
             'name' => 'Max Mustermann',
             'street' => 'Ebbinghoff 10',
             'zipcode' => '48624',
@@ -189,7 +189,7 @@ class SalesChannelContextRestorerTest extends TestCase
     {
         $orderCustomer = [
             'id' => $ids->get('customer'),
-            'salutationId' => $this->getValidSalutationId(),
+            'gender' => $this->getValidGender(),
             'email' => 'test',
             'name' => 'test test',
         ];
@@ -222,7 +222,7 @@ class SalesChannelContextRestorerTest extends TestCase
                 [
                     'id' => $ids->create('billing-address'),
                     'countryId' => $this->getValidCountryId(),
-                    'salutationId' => $this->getValidSalutationId(),
+                    'gender' => $this->getValidGender(),
                     'name' => 'asd asd',
                     'street' => 'asd',
                     'zipcode' => 'asd',
@@ -231,7 +231,7 @@ class SalesChannelContextRestorerTest extends TestCase
                 $shippingAddress ?? [
                     'id' => $ids->create('shipping-address'),
                     'countryId' => $this->getValidCountryId(),
-                    'salutationId' => $this->getValidSalutationId(),
+                    'gender' => $this->getValidGender(),
                     'name' => 'asd asd',
                     'street' => 'asd',
                     'zipcode' => 'asd',
@@ -335,7 +335,7 @@ class SalesChannelContextRestorerTest extends TestCase
                 'street' => 'Musterstraße 1',
                 'city' => 'Schöppingen',
                 'zipcode' => '12345',
-                'salutationId' => $this->getValidSalutationId(),
+                'gender' => $this->getValidGender(),
                 'countryId' => $this->getValidCountryId(),
             ],
             'defaultBillingAddressId' => $addressId,
@@ -343,7 +343,7 @@ class SalesChannelContextRestorerTest extends TestCase
             'email' => 'foo@bar.de',
             'password' => TestDefaults::HASHED_PASSWORD,
             'name' => 'Max Mustermann',
-            'salutationId' => $this->getValidSalutationId(),
+            'gender' => $this->getValidGender(),
             'customerNumber' => '12345',
         ];
 

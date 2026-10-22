@@ -1,0 +1,20 @@
+{% block sw_cms_element_blog_listing_preview %}
+<div class="sw-cms-el-preview-blog-listing">
+    {% block sw_cms_element_blog_listing_preview_items %}
+    <div
+        v-for="index in 3"
+        :key="index"
+        class="sw-cms-el-preview-blog-listing__item"
+    >
+        {% block sw_cms_element_blog_listing_preview_item_cover %}
+        <div class="sw-cms-el-preview-blog-listing__cover"></div>
+        {% endblock %}
+
+        {% block sw_cms_element_blog_listing_preview_item_lines %}
+        <div class="sw-cms-el-preview-blog-listing__line"></div>
+        <div class="sw-cms-el-preview-blog-listing__line sw-cms-el-preview-blog-listing__line--short"></div>
+        {% endblock %}
+    </div>
+    {% endblock %}
+</div>
+{% endblock %}

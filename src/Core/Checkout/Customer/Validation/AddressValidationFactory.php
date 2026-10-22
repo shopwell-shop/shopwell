@@ -8,8 +8,10 @@ use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Validation\Constraint\NoHtml;
 use Shopwell\Core\Framework\Validation\DataValidationDefinition;
 use Shopwell\Core\Framework\Validation\DataValidationFactoryInterface;
+use Shopwell\Core\System\Dictionary\Aggregate\DictionaryEntry\DictionaryEntryDefinition;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
 use Shopwell\Core\System\SystemConfig\SystemConfigService;
+use Symfony\Component\Validator\Constraints\Choice;
 use Symfony\Component\Validator\Constraints\Length;
 use Symfony\Component\Validator\Constraints\NotBlank;
 
@@ -48,7 +50,7 @@ class AddressValidationFactory implements DataValidationFactoryInterface
         $salesChannelId = $context->getSalesChannelId();
 
         $definition
-            ->add('salutationId', new EntityExists(entity: 'salutation', context: $frameworkContext))
+            ->add('gender', new Choice(choices: [DictionaryEntryDefinition::MALE, DictionaryEntryDefinition::FEMALE, DictionaryEntryDefinition::NOT_SPECIFIED]))
             ->add('countryId', new EntityExists(entity: 'country', context: $frameworkContext))
             ->add('countryStateId', new EntityExists(entity: 'country_state', context: $frameworkContext))
             ->add('countryCityId', new EntityExists(entity: 'country_city', context: $frameworkContext))

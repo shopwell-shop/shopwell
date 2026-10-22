@@ -223,7 +223,7 @@ describe('components/sw-filter-panel', () => {
                 criteria: [
                     {
                         type: 'equalsAny',
-                        field: 'salutation.id',
+                        field: 'gender.id',
                         value: '5e59f3ea47a342dd8ff1a0af2cda475',
                     },
                 ],

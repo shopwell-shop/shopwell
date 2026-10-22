@@ -30,7 +30,7 @@ class Migration1536233430NewsletterRecipient extends MigrationStep
               `street` VARCHAR(255) COLLATE utf8mb4_unicode_ci NULL,
               `status` VARCHAR(255) COLLATE utf8mb4_unicode_ci NOT NULL,
               `hash` VARCHAR(255) COLLATE utf8mb4_unicode_ci NOT NULL UNIQUE,
-              `salutation_id` BINARY(16) NULL,
+              `gender` VARCHAR(255) COLLATE utf8mb4_unicode_ci NULL,
               `language_id` BINARY(16) NOT NULL,
               `sales_channel_id` BINARY(16) NOT NULL,
               `custom_fields` JSON NULL,
@@ -39,8 +39,6 @@ class Migration1536233430NewsletterRecipient extends MigrationStep
               `updated_at` DATETIME(3) NULL,
               PRIMARY KEY (`id`),
               CONSTRAINT `json.newsletter_recipient.custom_fields` CHECK (JSON_VALID(`custom_fields`)),
-              CONSTRAINT `fk.newsletter_recipient.salutation_id` FOREIGN KEY (`salutation_id`)
-                REFERENCES `salutation` (`id`) ON DELETE RESTRICT,
               CONSTRAINT `fk.newsletter_recipient.language_id` FOREIGN KEY (`language_id`)
                 REFERENCES `language` (`id`) ON DELETE RESTRICT,
               CONSTRAINT `fk.newsletter_recipient.sales_channel_id` FOREIGN KEY (`sales_channel_id`)

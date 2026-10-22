@@ -12,7 +12,7 @@ import './sw-address.scss';
  * @example-type static
  * @component-example
  * <sw-address headline="Billing address" :address="{
- *     salutation: 'Mister',
+ *     gender: 'male',
  *     title: 'Doctor',
  *     name: 'John Doe',
  *     street: 'Main St 123',
@@ -29,12 +29,7 @@ export default Shopwell.Component.wrapComponentConfig({
             type: Object as PropType<Address>,
             default(): Address {
                 return {
-                    salutation: {
-                        displayName: '',
-                        translated: {
-                            displayName: '',
-                        },
-                    },
+                    gender: '',
                     title: '',
                     name: '',
                     street: '',

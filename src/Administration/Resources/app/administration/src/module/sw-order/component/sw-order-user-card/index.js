@@ -5,7 +5,6 @@ import './sw-order-user-card.scss';
  * @sw-package checkout
  */
 
-const { Mixin } = Shopwell;
 const { Criteria } = Shopwell.Data;
 const ApiService = Shopwell.Classes.ApiService;
 const format = Shopwell.Utils.format;
@@ -14,7 +13,7 @@ const format = Shopwell.Utils.format;
 export default {
     template,
 
-    inject: ['customSnippetApiService', 'orderService', 'repositoryFactory'],
+    inject: ['customSnippetApiService', 'orderService', 'repositoryFactory', 'dictionaryService'],
 
     emits: [
         'error',
@@ -22,8 +21,6 @@ export default {
         'onEditDeliveryAddress',
         'order-reset',
     ],
-
-    mixins: [Mixin.getByName('salutation')],
 
     props: {
         currentOrder: {
@@ -115,7 +112,9 @@ export default {
 
         fullName() {
             const name = {
-                name: this.salutation(this.currentOrder.orderCustomer),
+                name: [this.currentOrder.orderCustomer.title, this.currentOrder.orderCustomer.name]
+                    .filter(Boolean)
+                    .join(' '),
                 company: this.currentOrder.orderCustomer.company,
             };
 
@@ -141,11 +140,17 @@ export default {
         },
 
         renderFormattingAddress() {
-            this.customSnippetApiService
-                .render(this.billingAddress, this.billingAddress.country?.addressFormat)
-                .then((res) => {
+            this.dictionaryService.getGenders().then((entries) => {
+                const address = {
+                    ...this.billingAddress,
+                    genderLabel: entries.find((entry) => entry.technicalName === this.billingAddress.gender)?.translated
+                        .label,
+                };
+
+                this.customSnippetApiService.render(address, this.billingAddress.country?.addressFormat).then((res) => {
                     this.formattingAddress = res.rendered;
                 });
+            });
         },
 
         reload() {

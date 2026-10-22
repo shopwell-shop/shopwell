@@ -2,6 +2,8 @@ import './acl';
 
 import './mixin/cart-notification.mixin';
 
+import './page/sw-order-detail/extension/sw-order-detail';
+
 import defaultSearchConfiguration from './default-search-configuration';
 import DocumentV2Service from './service/documentV2.service';
 

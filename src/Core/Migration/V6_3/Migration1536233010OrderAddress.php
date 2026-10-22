@@ -31,7 +31,7 @@ class Migration1536233010OrderAddress extends MigrationStep
               `order_version_id` BINARY(16) NOT NULL,
               `company` VARCHAR(255) COLLATE utf8mb4_unicode_ci NULL,
               `department` VARCHAR(35) COLLATE utf8mb4_unicode_ci NULL,
-              `salutation_id` BINARY(16) NOT NULL,
+              `gender` VARCHAR(255) COLLATE utf8mb4_unicode_ci NULL,
               `title` VARCHAR(100) COLLATE utf8mb4_unicode_ci NULL,
               `name` VARCHAR(255) COLLATE utf8mb4_unicode_ci NOT NULL,
               `street` VARCHAR(255) COLLATE utf8mb4_unicode_ci NOT NULL,
@@ -55,9 +55,7 @@ class Migration1536233010OrderAddress extends MigrationStep
               CONSTRAINT `fk.order_address.country_district_id` FOREIGN KEY (`country_district_id`)
                 REFERENCES `country_district` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
               CONSTRAINT `fk.order_address.order_id` FOREIGN KEY (`order_id`, `order_version_id`)
-                REFERENCES `order` (`id`, `version_id`) ON DELETE CASCADE ON UPDATE CASCADE,
-              CONSTRAINT `fk.order_address.salutation_id` FOREIGN KEY (`salutation_id`)
-                REFERENCES `salutation` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE
+                REFERENCES `order` (`id`, `version_id`) ON DELETE CASCADE ON UPDATE CASCADE
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
         ');
     }

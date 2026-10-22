@@ -8,6 +8,7 @@ use Shopwell\Core\Framework\Test\TestCaseBase\KernelTestBehaviour;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\Test\Stub\Framework\IdsCollection;
 use Shopwell\Core\Test\TestBuilderTrait;
+use Shopwell\Core\System\Dictionary\Aggregate\DictionaryEntry\DictionaryEntryDefinition;
 use Shopwell\Core\Test\TestDefaults;
 
 /**
@@ -51,10 +52,7 @@ class CustomerBuilder
      */
     protected array $group = [];
 
-    /**
-     * @var array<string, mixed>
-     */
-    protected array $salutation = [];
+    protected string $gender;
 
     public function __construct(
         IdsCollection $ids,
@@ -67,7 +65,7 @@ class CustomerBuilder
         $this->ids = $ids;
         $this->id = $ids->create($customerNumber);
         $this->email = $this->id . '@example.com';
-        $this->salutation = self::salutation($ids);
+        $this->gender = DictionaryEntryDefinition::NOT_SPECIFIED;
 
         $this->customerGroup($customerGroup);
         $this->defaultBillingAddress($billingAddress);
@@ -133,7 +131,7 @@ class CustomerBuilder
         $address = \array_replace([
             'name' => $this->name,
             'city' => 'Bielefeld',
-            'salutation' => self::salutation($this->ids),
+            'gender' => $this->gender,
             'street' => 'Buchenweg 5',
             'zipcode' => '33062',
             'countryId' => $this->getCountry(),
@@ -142,19 +140,6 @@ class CustomerBuilder
         $this->addresses[$key] = $address;
 
         return $this;
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private static function salutation(IdsCollection $ids): array
-    {
-        return [
-            'id' => $ids->get('salutation'),
-            'salutationKey' => 'salutation',
-            'displayName' => 'test',
-            'letterName' => 'test',
-        ];
     }
 
     private static function connection(): Connection

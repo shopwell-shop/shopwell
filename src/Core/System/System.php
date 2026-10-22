@@ -41,7 +41,9 @@ class System extends Bundle
         $phpLoader->load('custom_entity.php');
         $phpLoader->load('locale.php');
         $phpLoader->load('snippet.php');
-        $phpLoader->load('salutation.php');
+        $phpLoader->load('dictionary.php');
+        $phpLoader->load('organization.php');
+        $phpLoader->load('position.php');
         $phpLoader->load('tax.php');
         $phpLoader->load('tax_provider.php');
         $phpLoader->load('unit.php');

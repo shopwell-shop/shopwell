@@ -10,19 +10,19 @@ const { Criteria } = Shopwell.Data;
 export default {
     template,
 
-    inject: ['repositoryFactory', 'acl', 'customFieldDataProviderService'],
+    inject: ['repositoryFactory', 'acl', 'customFieldDataProviderService', 'dictionaryService'],
 
-    mixins: ['notification', 'salutation'],
+    mixins: ['notification'],
 
     data() {
         return {
             newsletterRecipient: null,
-            salutations: [],
             languages: [],
             salesChannels: [],
             isLoading: false,
             isSaveSuccessful: false,
             customFieldSets: null,
+            genders: [],
         };
     },
 
@@ -34,11 +34,22 @@ export default {
 
     computed: {
         identifier() {
-            return this.newsletterRecipient !== null ? this.salutation(this.newsletterRecipient) : '';
+            if (this.newsletterRecipient === null) {
+                return '';
+            }
+
+            return [this.newsletterRecipient.title, this.newsletterRecipient.name].filter(Boolean).join(' ');
         },
 
         newsletterRecipientStore() {
             return this.repositoryFactory.create('newsletter_recipient');
+        },
+
+        genderOptions() {
+            return this.genders.map((entry) => ({
+                value: entry.technicalName,
+                label: entry.translated.label,
+            }));
         },
     },
 
@@ -49,6 +60,10 @@ export default {
     methods: {
         createdComponent() {
             this.isLoading = true;
+
+            this.dictionaryService.getGenders().then((entries) => {
+                this.genders = entries;
+            });
 
             Shopwell.ExtensionAPI.publishData({
                 id: 'sw-newsletter-recipient-detail__newsletterRecipient',

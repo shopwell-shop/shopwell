@@ -111,7 +111,7 @@ class AccountProfileControllerTest extends TestCase
                 'street' => 'Test Street 1',
                 'city' => 'Test City',
                 'zipcode' => '12345',
-                'salutationId' => $this->getValidSalutationId(),
+                'gender' => $this->getValidGender(),
                 'country' => ['name' => 'Germany'],
             ],
             'defaultBillingAddressId' => $addressId,
@@ -119,7 +119,7 @@ class AccountProfileControllerTest extends TestCase
             'email' => 'private.customer@test.com',
             'password' => TestDefaults::HASHED_PASSWORD,
             'name' => 'John Doe',
-            'salutationId' => $this->getValidSalutationId(),
+            'gender' => $this->getValidGender(),
             'customerNumber' => '54321',
         ];
 
@@ -156,7 +156,7 @@ class AccountProfileControllerTest extends TestCase
             '/account/profile',
             $this->tokenize('frontend.account.profile.save', [
                 'accountType' => CustomerEntity::ACCOUNT_TYPE_PRIVATE,
-                'salutationId' => $this->getValidSalutationId(),
+                'gender' => $this->getValidGender(),
                 'name' => 'John Doe',
                 'email' => 'private.customer@test.com',
             ])
@@ -242,7 +242,7 @@ class AccountProfileControllerTest extends TestCase
                 'street' => 'Musterstraße 1',
                 'city' => 'Schöppingen',
                 'zipcode' => '12345',
-                'salutationId' => $this->getValidSalutationId(),
+                'gender' => $this->getValidGender(),
                 'country' => ['name' => 'Germany'],
             ],
             'defaultBillingAddressId' => $addressId,
@@ -250,7 +250,7 @@ class AccountProfileControllerTest extends TestCase
             'email' => 'test@example.com',
             'password' => TestDefaults::HASHED_PASSWORD,
             'name' => 'Max Mustermann',
-            'salutationId' => $this->getValidSalutationId(),
+            'gender' => $this->getValidGender(),
             'customerNumber' => '12345',
         ];
 
@@ -283,7 +283,7 @@ class AccountProfileControllerTest extends TestCase
                 'city' => 'Schöppingen',
                 'zipcode' => '12345',
                 'company' => 'Shopwell',
-                'salutationId' => $this->getValidSalutationId(),
+                'gender' => $this->getValidGender(),
                 'country' => ['name' => 'VAT Test Country', 'vatIdRequired' => $vatIdRequired],
             ],
             'defaultBillingAddressId' => $addressId,
@@ -291,7 +291,7 @@ class AccountProfileControllerTest extends TestCase
             'email' => 'business.customer@test.com',
             'password' => TestDefaults::HASHED_PASSWORD,
             'name' => 'Max Mustermann',
-            'salutationId' => $this->getValidSalutationId(),
+            'gender' => $this->getValidGender(),
             'customerNumber' => '12345',
         ];
 

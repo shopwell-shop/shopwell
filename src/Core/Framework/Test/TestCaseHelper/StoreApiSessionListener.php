@@ -23,7 +23,7 @@ use Symfony\Component\HttpKernel\KernelEvents;
  *
  * @codeCoverageIgnore
  *
- * @see \Shopwell\Tests\Integration\Core\System\Salutation\SalesChannel\SalutationRouteTest
+ * @see \Shopwell\Tests\Integration\Core\System\Dictionary\SalesChannel\DictionaryRouteTest
  */
 #[Package('framework')]
 class StoreApiSessionListener implements EventSubscriberInterface

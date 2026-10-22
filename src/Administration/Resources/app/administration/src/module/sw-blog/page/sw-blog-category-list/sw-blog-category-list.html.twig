@@ -1,0 +1,226 @@
+{% block sw_blog_category_list %}
+<sw-page
+    class="sw-blog-category-list"
+    position-identifier="sw-blog-category-list"
+>
+    {% block sw_blog_category_list_search_bar %}
+    <template #search-bar>
+        <sw-search-bar
+            initial-search-type="blog_category"
+            :initial-search="term"
+            :placeholder="$t('sw-blog.list.placeholderSearchBarCategory')"
+            @search="onSearch"
+        />
+    </template>
+    {% endblock %}
+
+    {% block sw_blog_category_list_smart_bar_header %}
+    <template #smart-bar-header>
+        {% block sw_blog_category_list_smart_bar_header_title %}
+        <h2>
+            {% block sw_blog_category_list_smart_bar_header_title_text %}
+            {{ $t('sw-blog.list.categoryTitle') }}
+            {% endblock %}
+
+            {% block sw_blog_category_list_smart_bar_header_amount %}
+            <span
+                v-if="!isLoading"
+                class="sw-page__smart-bar-amount"
+            >
+                ({{ total }})
+            </span>
+            {% endblock %}
+        </h2>
+        {% endblock %}
+    </template>
+    {% endblock %}
+
+    {% block sw_blog_category_list_smart_bar_actions %}
+    <template #smart-bar-actions>
+        {% block sw_blog_category_list_smart_bar_actions_back %}
+        <mt-button
+            class="sw-blog-category-list__button-back"
+            variant="secondary"
+            size="default"
+            @click="onOpenBlogList"
+        >
+            {{ $t('sw-blog.list.title') }}
+        </mt-button>
+        {% endblock %}
+
+        {% block sw_blog_category_list_smart_bar_actions_add %}
+        <mt-button
+            class="sw-blog-category-list__button-create"
+            variant="primary"
+            size="default"
+            :disabled="!canCreate || undefined"
+            @click="onOpenCreateModal"
+        >
+            {{ $t('sw-blog.list.buttonCreateCategory') }}
+        </mt-button>
+        {% endblock %}
+    </template>
+    {% endblock %}
+
+    {% block sw_blog_category_list_content %}
+    <template #content>
+        {% block sw_blog_category_list_content_inner %}
+        <div class="sw-blog-category-list__content">
+            {% block sw_blog_category_list_empty_state %}
+            <mt-empty-state
+                v-if="!isLoading && !total"
+                centered
+                class="sw-blog-category-list__empty-state"
+                icon="regular-image-text"
+                :headline="$t('sw-blog.list.messageEmptyCategory')"
+                :description="$t('sw-blog.list.messageEmptyCategorySubline')"
+            />
+            {% endblock %}
+
+            {% block sw_blog_category_list_grid %}
+            <sw-entity-listing
+                v-else
+                ref="listing"
+                class="sw-blog-category-list__grid"
+                identifier="sw-blog-category-list"
+                :data-source="categories"
+                :columns="columns"
+                :repository="categoryRepository"
+                :sort-by="sortBy"
+                :sort-direction="sortDirection"
+                :is-loading="isLoading"
+                :full-page="true"
+                :show-selection="false"
+                :show-settings="true"
+                :disable-data-fetching="true"
+                :allow-inline-edit="canEdit"
+                :allow-column-edit="true"
+                :allow-edit="canEdit"
+                :allow-delete="canDelete"
+                :allow-view="canEdit"
+                detail-route="sw.blog.category.detail"
+                @page-change="onPageChange"
+                @column-sort="onSortColumn"
+                @inline-edit-save="onInlineEditSave"
+            >
+                {% block sw_blog_category_list_grid_column_active %}
+                <template #column-active="{ item, isInlineEdit }">
+                    <mt-checkbox
+                        v-if="isInlineEdit && canEdit"
+                        v-model:checked="item.active"
+                    />
+
+                    <template v-else>
+                        <mt-icon
+                            v-if="item.active"
+                            name="regular-checkmark-xs"
+                            size="12px"
+                            class="is--active"
+                        />
+                        <mt-icon
+                            v-else
+                            name="regular-times-s"
+                            size="12px"
+                            class="is--inactive"
+                        />
+                    </template>
+                </template>
+                {% endblock %}
+
+                {% block sw_blog_category_list_grid_column_assignments %}
+                <template #column-assignments="{ item }">
+                    {{ item.assignments ? item.assignments.length : 0 }}
+                </template>
+                {% endblock %}
+            </sw-entity-listing>
+            {% endblock %}
+        </div>
+        {% endblock %}
+
+        {% block sw_blog_category_list_create_modal %}
+        <sw-modal
+            v-if="showCreateModal"
+            class="sw-blog-category-list__create-modal"
+            variant="small"
+            :title="$t('sw-blog.list.buttonCreateCategory')"
+            @modal-close="onCloseCreateModal"
+        >
+            <mt-text-field
+                v-model="newCategoryName"
+                class="sw-blog-category-list__create-name"
+                required
+                :label="$t('sw-blog.detail.labelName')"
+                :placeholder="$t('sw-blog.detail.placeholderName')"
+            />
+
+            <template #modal-footer>
+                <mt-button
+                    variant="secondary"
+                    size="small"
+                    @click="onCloseCreateModal"
+                >
+                    {{ $t('global.default.cancel') }}
+                </mt-button>
+
+                <mt-button
+                    variant="primary"
+                    size="small"
+                    :disabled="isCreateDisabled || undefined"
+                    :is-loading="isCreating"
+                    @click="onCreateCategory"
+                >
+                    {{ $t('global.default.add') }}
+                </mt-button>
+            </template>
+        </sw-modal>
+        {% endblock %}
+
+        {% block sw_blog_category_list_delete_modal %}
+        <sw-modal
+            v-if="deleteTarget"
+            class="sw-blog-category-list__delete-modal"
+            variant="small"
+            :title="$t('sw-blog.list.titleDeleteCategory')"
+            @modal-close="onCloseDeleteModal"
+        >
+            <p class="sw-blog-category-list__delete-message">
+                {{ deleteMessage }}
+            </p>
+
+            <template #modal-footer>
+                <mt-button
+                    variant="secondary"
+                    size="small"
+                    @click="onCloseDeleteModal"
+                >
+                    {{ $t('global.default.cancel') }}
+                </mt-button>
+
+                <mt-button
+                    variant="critical"
+                    size="small"
+                    @click="onConfirmDelete"
+                >
+                    {{ $t('global.default.delete') }}
+                </mt-button>
+            </template>
+        </sw-modal>
+        {% endblock %}
+    </template>
+    {% endblock %}
+
+    {% block sw_blog_category_list_sidebar %}
+    <template #sidebar>
+        <sw-sidebar class="sw-blog-category-list__sidebar">
+            {% block sw_blog_category_list_sidebar_refresh %}
+            <sw-sidebar-item
+                icon="regular-undo"
+                :title="$t('sw-blog.list.buttonRefresh')"
+                @click="onRefresh"
+            />
+            {% endblock %}
+        </sw-sidebar>
+    </template>
+    {% endblock %}
+</sw-page>
+{% endblock %}

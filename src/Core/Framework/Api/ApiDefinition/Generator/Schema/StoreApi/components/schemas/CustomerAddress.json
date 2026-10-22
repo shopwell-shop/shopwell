@@ -44,10 +44,9 @@
                         "type": "string",
                         "pattern": "^[0-9a-f]{32}$"
                     },
-                    "salutationId": {
-                        "description": "Unique identity of salutation.",
-                        "type": "string",
-                        "pattern": "^[0-9a-f]{32}$"
+                    "gender": {
+                        "description": "Gender code of the address (dictionary entry technical_name).",
+                        "type": "string"
                     },
                     "name": {
                         "description": "Full name of the customer.",
@@ -125,9 +124,6 @@
                     },
                     "countryDistrict": {
                         "$ref": "#/components/schemas/CountryDistrict"
-                    },
-                    "salutation": {
-                        "$ref": "#/components/schemas/Salutation"
                     }
                 },
                 "type": "object"

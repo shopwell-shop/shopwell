@@ -30,7 +30,6 @@ class OrderProvider extends AbstractProvider
             'primaryOrderDelivery',
             'primaryOrderTransaction',
             'orderCustomer',
-            'orderCustomer.salutation',
             'lineItems.downloads.media',
             'lineItems.cover',
             'deliveries.shippingMethod',

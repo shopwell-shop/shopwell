@@ -4,7 +4,7 @@
       "description": "Manage newsletter recipients here.",
       "information": "Information",
       "language": "Language",
-      "salutation": "Salutation",
+      "gender": "Gender",
       "salesChannel": "Sales Channel",
       "mainMenuItemGeneral": "Newsletter recipients",
       "placeholderSearchBarSnippets": "Search all newsletter recipients...",

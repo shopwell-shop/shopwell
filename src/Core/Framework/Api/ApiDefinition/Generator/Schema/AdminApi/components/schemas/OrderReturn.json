@@ -1,0 +1,176 @@
+{
+    "openapi": "3.2.0",
+    "info": [],
+    "paths": [],
+    "components": {
+        "schemas": {
+            "OrderReturn": {
+                "description": "A return as the administration reads it: the case, its positions and its conversation. All amounts are integers in the smallest unit of the currency, `decimals` is what a template needs to render them.",
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "description": "The id of the return."
+                    },
+                    "returnNumber": {
+                        "type": "string",
+                        "description": "The number a customer, a parcel and an operator quote. It is unique and never reused."
+                    },
+                    "orderId": {
+                        "type": "string",
+                        "description": "The id of the order the goods of this return belong to."
+                    },
+                    "orderNumber": {
+                        "type": ["string", "null"],
+                        "description": "The number of that order, null when the caller did not load it."
+                    },
+                    "type": {
+                        "type": "string",
+                        "description": "`refund_only` for a return without goods coming back, `return_refund` for the goods coming back first."
+                    },
+                    "state": {
+                        "type": ["string", "null"],
+                        "description": "The technical name of the state of the return, e.g. `requested`."
+                    },
+                    "stateLabel": {
+                        "type": ["string", "null"],
+                        "description": "The translated name of that state."
+                    },
+                    "refundAmount": {
+                        "type": "integer",
+                        "description": "The amount that goes back, the sum of the positions."
+                    },
+                    "decimals": {
+                        "type": "integer",
+                        "description": "The decimals of the currency, so an amount can be rendered."
+                    },
+                    "currency": {
+                        "type": "string",
+                        "description": "The iso code of the currency of the order."
+                    },
+                    "reasonId": {
+                        "type": ["string", "null"],
+                        "description": "The reason the customer picked, null when none was picked or it was deleted."
+                    },
+                    "reasonLabel": {
+                        "type": ["string", "null"],
+                        "description": "The translated label of that reason."
+                    },
+                    "reasonText": {
+                        "type": ["string", "null"],
+                        "description": "The free text of the customer, kept even when a reason was picked."
+                    },
+                    "customerNote": {
+                        "type": ["string", "null"],
+                        "description": "The note the customer added when opening the return."
+                    },
+                    "evidence": {
+                        "type": "array",
+                        "description": "The uploaded evidence, a list of media ids or urls.",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "trackingCode": {
+                        "type": ["string", "null"],
+                        "description": "The tracking number the customer typed in."
+                    },
+                    "trackingCarrier": {
+                        "type": ["string", "null"],
+                        "description": "The carrier the parcel travels with."
+                    },
+                    "createdAt": {
+                        "type": ["string", "null"],
+                        "format": "date-time",
+                        "description": "When the customer opened the return."
+                    },
+                    "returnedAt": {
+                        "type": ["string", "null"],
+                        "format": "date-time",
+                        "description": "When the customer announced the return."
+                    },
+                    "receivedAt": {
+                        "type": ["string", "null"],
+                        "format": "date-time",
+                        "description": "When the goods arrived at the shop."
+                    },
+                    "deadlineAt": {
+                        "type": ["string", "null"],
+                        "format": "date-time",
+                        "description": "The moment the current state has to be left, null when the state has no deadline."
+                    },
+                    "lineItems": {
+                        "type": "array",
+                        "description": "The positions of the return.",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "id": {
+                                    "type": "string",
+                                    "description": "The id of the position."
+                                },
+                                "orderLineItemId": {
+                                    "type": "string",
+                                    "description": "The position of the order this one points into."
+                                },
+                                "label": {
+                                    "type": ["string", "null"],
+                                    "description": "The label of that order position."
+                                },
+                                "quantity": {
+                                    "type": "integer",
+                                    "description": "How many of it go back."
+                                },
+                                "refundAmount": {
+                                    "type": "integer",
+                                    "description": "The amount that goes back for this position."
+                                },
+                                "accepted": {
+                                    "type": "boolean",
+                                    "description": "Whether the shop accepted the goods of this position."
+                                },
+                                "restocked": {
+                                    "type": "boolean",
+                                    "description": "Whether the goods of this position were booked back into the stock."
+                                }
+                            }
+                        }
+                    },
+                    "messages": {
+                        "type": "array",
+                        "description": "The conversation about the return.",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "id": {
+                                    "type": "string",
+                                    "description": "The id of the message."
+                                },
+                                "authorRole": {
+                                    "type": "string",
+                                    "description": "Who wrote it: `customer`, `agent` or `system`."
+                                },
+                                "content": {
+                                    "type": "string",
+                                    "description": "The text of the message."
+                                },
+                                "attachments": {
+                                    "type": "array",
+                                    "description": "The media ids or urls attached to it.",
+                                    "items": {
+                                        "type": "string"
+                                    }
+                                },
+                                "createdAt": {
+                                    "type": ["string", "null"],
+                                    "format": "date-time",
+                                    "description": "When it was written."
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

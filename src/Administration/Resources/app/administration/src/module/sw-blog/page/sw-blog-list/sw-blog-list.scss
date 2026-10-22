@@ -1,0 +1,90 @@
+.sw-blog-list {
+    &__content {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+    }
+
+    &__preset {
+        display: flex;
+        gap: var(--scale-size-8);
+        align-items: center;
+        padding: var(--scale-size-12) var(--scale-size-24);
+        border-bottom: 1px solid var(--color-border-primary-default);
+    }
+
+    &__preset-label {
+        color: var(--color-text-secondary-default);
+        font-size: var(--font-size-xs);
+    }
+
+    &__preset-reset {
+        margin-inline-start: auto;
+    }
+
+    &__comment-count {
+        margin-inline-start: var(--scale-size-8);
+    }
+
+    &__cover {
+        width: 48px;
+        height: 32px;
+        border-radius: var(--border-radius-s);
+        overflow: hidden;
+    }
+
+    &__cover-placeholder {
+        width: 48px;
+        height: 32px;
+        background: var(--color-background-tertiary-default);
+        border-radius: var(--border-radius-s);
+    }
+
+    &__categories {
+        display: flex;
+        gap: var(--scale-size-4);
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    &__categories-more,
+    &__categories-empty {
+        color: var(--color-text-secondary-default);
+        font-size: var(--font-size-xs);
+    }
+
+    &__title-cell {
+        display: flex;
+        flex-direction: column;
+        gap: var(--scale-size-4);
+        min-width: 0;
+    }
+
+    &__title-text {
+        overflow: hidden;
+        color: var(--color-text-primary-default);
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    &__title-subline {
+        overflow: hidden;
+        color: var(--color-text-secondary-default);
+        font-size: var(--font-size-xs);
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .mt-empty-state {
+        padding-block: var(--scale-size-48);
+    }
+
+    &__delete-message {
+        margin: 0;
+        color: var(--color-text-primary-default);
+    }
+
+    &__create-title {
+        margin-block-end: var(--scale-size-16);
+    }
+}

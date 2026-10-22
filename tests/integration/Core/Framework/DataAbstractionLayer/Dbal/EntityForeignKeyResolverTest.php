@@ -249,7 +249,7 @@ class EntityForeignKeyResolverTest extends TestCase
             'shippingCosts' => new CalculatedPrice(0, 0, new CalculatedTaxCollection(), new TaxRuleCollection()),
             'orderCustomer' => [
                 'id' => $ids->get('customer' . $i),
-                'salutationId' => $this->getValidSalutationId(),
+                'gender' => $this->getValidGender(),
                 'email' => 'test',
                 'name' => 'test test',
             ],
@@ -257,7 +257,7 @@ class EntityForeignKeyResolverTest extends TestCase
                 [
                     'id' => $ids->create('billing-address' . $i),
                     'countryId' => $this->getValidCountryId(),
-                    'salutationId' => $this->getValidSalutationId(),
+                    'gender' => $this->getValidGender(),
                     'name' => 'asd asd',
                     'street' => 'asd',
                     'zipcode' => 'asd',
@@ -266,7 +266,7 @@ class EntityForeignKeyResolverTest extends TestCase
                 [
                     'id' => $ids->create('shipping-address' . $i),
                     'countryId' => $this->getValidCountryId(),
-                    'salutationId' => $this->getValidSalutationId(),
+                    'gender' => $this->getValidGender(),
                     'name' => 'asd asd',
                     'street' => 'asd',
                     'zipcode' => 'asd',
