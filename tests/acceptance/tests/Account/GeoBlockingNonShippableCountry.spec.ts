@@ -23,7 +23,6 @@ test(
         await TestDataService.assignSalesChannelCountry(DefaultSalesChannel.salesChannel.id, nonShippableCountry.id);
         const shippableCountry = await TestDataService.getCountry(getCountryCodeFromLocale());
         const registrationData = {
-            salutation: 'Mr.',
             name: 'Jeff Goldblum',
             email: `${IdProvider.getIdPair().uuid}@test.com`,
             password: 'shopwell',
@@ -43,8 +42,6 @@ test(
         });
 
         await test.step('Customer submits the registration form successfully with a shippable country', async () => {
-            await ShopCustomer.presses(StorefrontAccountLogin.salutationSelect);
-            await StorefrontAccountLogin.salutationSelect.selectOption(registrationData.salutation);
             await ShopCustomer.fillsIn(StorefrontAccountLogin.nameInput, registrationData.name);
             await ShopCustomer.fillsIn(StorefrontAccountLogin.registerEmailInput, customer.email);
             await ShopCustomer.fillsIn(StorefrontAccountLogin.registerPasswordInput, registrationData.password);
@@ -54,8 +51,6 @@ test(
             await ShopCustomer.presses(StorefrontAccountLogin.countryInput);
             await StorefrontAccountLogin.countryInput.selectOption({ label: shippableCountry.name });
             await ShopCustomer.presses(StorefrontAccountLogin.differentShippingAddressCheckbox);
-            await ShopCustomer.presses(StorefrontAccountLogin.shippingAddressSalutationSelect);
-            await StorefrontAccountLogin.shippingAddressSalutationSelect.selectOption(registrationData.salutation);
             await ShopCustomer.fillsIn(StorefrontAccountLogin.shippingAddressNameInput, registrationData.name);
             await ShopCustomer.fillsIn(StorefrontAccountLogin.shippingAddressStreetAddressInput, registrationData.street);
             await ShopCustomer.fillsIn(StorefrontAccountLogin.shippingAddressPostalCodeInput, registrationData.postalCode);

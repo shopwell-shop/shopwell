@@ -1,5 +1,5 @@
 import { test, expect } from '@fixtures/AcceptanceTest';
-import { getCountryId, getSalutationId, setOrderStatus } from '@shopwell-ag/acceptance-test-suite';
+import { getCountryId, setOrderStatus } from '@shopwell-ag/acceptance-test-suite';
 
 test(
     'As an admin user, I want that certain actions get executed based on the flow, so that I can automate the processes.',
@@ -20,7 +20,6 @@ test(
         const tagFalse = await TestDataService.createTag('Probably Not Santa');
         const product = await TestDataService.createBasicProduct();
         const countryId = await getCountryId('CX', AdminApiContext);
-        const salutationId = await getSalutationId('mr', AdminApiContext);
         const customerOverrides = {
             defaultBillingAddress: {
                 name: 'Santa Claus',
@@ -28,7 +27,6 @@ test(
                 street: 'Seaview Drive 1',
                 zipcode: '6798',
                 countryId: countryId,
-                salutationId: salutationId,
             },
         };
         const customer = await TestDataService.createCustomer(customerOverrides);

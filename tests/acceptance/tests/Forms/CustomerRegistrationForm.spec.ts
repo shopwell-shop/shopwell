@@ -126,7 +126,6 @@ test.describe('Customer Registration Form', () => {
             const addressData = getAddressDataFromLocale(locale);
 
             const customer = {
-                salutation: 'Mr.',
                 name: 'Jeff Goldblum',
                 email: `${IdProvider.getIdPair().uuid}@test.com`,
                 password: 'shopwell',
@@ -138,7 +137,6 @@ test.describe('Customer Registration Form', () => {
 
             await ShopCustomer.goesTo(StorefrontAccountLogin.url());
 
-            await StorefrontAccountLogin.salutationSelect.selectOption(customer.salutation);
             await StorefrontAccountLogin.nameInput.fill(customer.name);
             await StorefrontAccountLogin.registerEmailInput.fill(customer.email);
             await StorefrontAccountLogin.registerPasswordInput.fill(customer.password);
@@ -170,7 +168,6 @@ test.describe('Customer Registration Form', () => {
             const addressData = getAddressDataFromLocale(locale);
 
             const customer = {
-                salutation: 'Mr.',
                 // name is missing intentionally
                 email: `${IdProvider.getIdPair().uuid}@test.com`,
                 password: 'shopwell',
@@ -182,7 +179,6 @@ test.describe('Customer Registration Form', () => {
 
             await ShopCustomer.goesTo(StorefrontAccountLogin.url());
 
-            await StorefrontAccountLogin.salutationSelect.selectOption(customer.salutation);
             await StorefrontAccountLogin.registerEmailInput.fill(customer.email);
             await StorefrontAccountLogin.registerPasswordInput.fill(customer.password);
 
