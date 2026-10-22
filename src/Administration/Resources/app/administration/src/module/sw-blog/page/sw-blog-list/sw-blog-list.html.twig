@@ -76,19 +76,17 @@
         <div class="sw-blog-list__content">
             {% block sw_blog_list_preset_author %}
             <div
-                v-if="presetAuthorId"
+                v-if="presetChips.length > 0"
                 class="sw-blog-list__preset"
             >
-                <span class="sw-blog-list__preset-label">
-                    {{ $t('sw-blog.list.filterAuthor') }}:
-                </span>
-
                 <mt-badge
+                    v-for="chip in presetChips"
+                    :key="chip.type"
                     class="sw-blog-list__preset-badge"
                     variant="neutral"
                     size="small"
                 >
-                    {{ presetAuthorName || presetAuthorId }}
+                    {{ chip.label }}
                 </mt-badge>
 
                 <mt-button
@@ -166,7 +164,7 @@
                     <div
                         v-else
                         class="sw-blog-list__cover-placeholder"
-                    />
+                    ></div>
                 </template>
                 {% endblock %}
 
@@ -242,44 +240,6 @@
             </sw-entity-listing>
             {% endblock %}
         </div>
-        {% endblock %}
-
-        {% block sw_blog_list_create_modal %}
-        <sw-modal
-            v-if="showCreateModal"
-            class="sw-blog-list__create-modal"
-            variant="small"
-            :title="$t('sw-blog.list.buttonCreate')"
-            @modal-close="onCloseCreateModal"
-        >
-            <mt-text-field
-                v-model="newBlogTitle"
-                class="sw-blog-list__create-title"
-                required
-                :label="$t('sw-blog.detail.labelTitle')"
-                :placeholder="$t('sw-blog.detail.placeholderTitle')"
-            />
-
-            <template #modal-footer>
-                <mt-button
-                    variant="secondary"
-                    size="small"
-                    @click="onCloseCreateModal"
-                >
-                    {{ $t('global.default.cancel') }}
-                </mt-button>
-
-                <mt-button
-                    variant="primary"
-                    size="small"
-                    :disabled="isCreateDisabled || undefined"
-                    :is-loading="isCreating"
-                    @click="onCreateBlog"
-                >
-                    {{ $t('global.default.add') }}
-                </mt-button>
-            </template>
-        </sw-modal>
         {% endblock %}
 
         {% block sw_blog_list_delete_modal %}

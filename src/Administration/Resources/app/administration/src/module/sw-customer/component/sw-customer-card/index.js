@@ -70,7 +70,7 @@ export default {
 
         fullName() {
             const name = {
-                name: [this.customer.title, this.customer.name].filter(Boolean).join(' '),
+                name: this.customer.name,
                 company: this.customer.company,
             };
 

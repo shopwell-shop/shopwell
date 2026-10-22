@@ -9,7 +9,6 @@ use Shopwell\Core\Checkout\Customer\CustomerEntity;
 use Shopwell\Core\Checkout\Customer\Validation\Constraint\CustomerPhoneNumberUnique;
 use Shopwell\Core\Checkout\Customer\Validation\CustomerProfileValidationFactory;
 use Shopwell\Core\Defaults;
-use Shopwell\Core\Framework\DataAbstractionLayer\Validation\EntityExists;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Validation\Constraint\NoHtml;
 use Shopwell\Core\Framework\Validation\DataValidationDefinition;
@@ -212,7 +211,7 @@ class CustomerProfileValidationFactoryTest extends TestCase
 
         $properties = $customerProfileValidationFactory->create($this->getSalesChannelContext())->getProperties();
 
-        foreach (['title', 'name'] as $field) {
+        foreach (['name'] as $field) {
             static::assertArrayHasKey($field, $properties);
 
             $noHtml = array_values(array_filter($properties[$field], static fn ($constraint) => $constraint instanceof NoHtml));
@@ -257,8 +256,7 @@ class CustomerProfileValidationFactoryTest extends TestCase
         bool $requireName = true
     ): void {
         $definition
-            ->add('gender', new Choice(choices: [DictionaryEntryDefinition::MALE, DictionaryEntryDefinition::FEMALE, DictionaryEntryDefinition::NOT_SPECIFIED]))
-            ->add('title', new Length(max: CustomerDefinition::MAX_LENGTH_TITLE));
+            ->add('gender', new Choice(choices: [DictionaryEntryDefinition::MALE, DictionaryEntryDefinition::FEMALE, DictionaryEntryDefinition::NOT_SPECIFIED]));
 
         if ($requireName) {
             $definition->add('name', new NotBlank());
@@ -268,7 +266,6 @@ class CustomerProfileValidationFactoryTest extends TestCase
             ->add('name', new Length(max: CustomerDefinition::MAX_LENGTH_NAME))
             ->add('accountType', new Choice(choices: $this->accountTypes))
             ->add('phoneNumber', new Length(max: CustomerDefinition::MAX_LENGTH_PHONE_NUMBER, exactMessage: 'VIOLATION::PHONE_NUMBER_IS_TOO_LONG'))
-            ->add('title', new NoHtml(message: 'VIOLATION::CONTAINS_HTML_ERROR'))
             ->add('name', new NoHtml(message: 'VIOLATION::CONTAINS_HTML_ERROR'))
             ->add('phoneNumber', new NoHtml(message: 'VIOLATION::CONTAINS_HTML_ERROR'))
             ->add('phoneNumber', new CustomerPhoneNumberUnique(salesChannelContext: $context));

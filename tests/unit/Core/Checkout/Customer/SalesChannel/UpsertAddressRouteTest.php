@@ -3,7 +3,6 @@
 namespace Shopwell\Tests\Unit\Core\Checkout\Customer\SalesChannel;
 
 use Doctrine\DBAL\Connection;
-use Shopwell\Core\System\Dictionary\Aggregate\DictionaryEntry\DictionaryEntryDefinition;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Checkout\Customer\Aggregate\CustomerAddress\CustomerAddressCollection;
@@ -19,7 +18,6 @@ use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Event\EntityWrittenContainerEvent;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
-use Shopwell\Core\Framework\DataAbstractionLayer\Search\IdSearchResult;
 use Shopwell\Core\Framework\Event\NestedEventCollection;
 use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Log\Package;
@@ -28,6 +26,7 @@ use Shopwell\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopwell\Core\Framework\Validation\DataValidationDefinition;
 use Shopwell\Core\Framework\Validation\DataValidationFactoryInterface;
 use Shopwell\Core\Framework\Validation\DataValidator;
+use Shopwell\Core\System\Dictionary\Aggregate\DictionaryEntry\DictionaryEntryDefinition;
 use Shopwell\Core\System\SalesChannel\Entity\SalesChannelRepository;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
 use Shopwell\Core\System\SalesChannel\StoreApiCustomFieldMapper;
@@ -123,7 +122,6 @@ class UpsertAddressRouteTest extends TestCase
                 static::assertSame('Berlin', $data[0]['city']);
                 static::assertSame('Shopwell', $data[0]['company']);
                 static::assertSame('Core', $data[0]['department']);
-                static::assertSame('Dr.', $data[0]['title']);
                 static::assertSame('123456', $data[0]['phoneNumber']);
                 static::assertSame('Line 1', $data[0]['additionalAddressLine1']);
                 static::assertSame('Line 2', $data[0]['additionalAddressLine2']);
@@ -186,7 +184,6 @@ class UpsertAddressRouteTest extends TestCase
             'countryStateId' => '',
             'company' => "\tShopwell ",
             'department' => "\nCore    ",
-            'title' => "\tDr.\n",
             'phoneNumber' => "\t123456\n",
             'additionalAddressLine1' => '        Line 1         ',
             'additionalAddressLine2' => "    Line 2\r",

@@ -71,10 +71,6 @@
                         "description": "Email ID of the customer.",
                         "type": "string"
                     },
-                    "title": {
-                        "description": "Titles or honorifics like Mr, Mrs, etc.",
-                        "type": "string"
-                    },
                     "phoneNumber": {
                         "description": "Customer's phone number.",
                         "type": "string"

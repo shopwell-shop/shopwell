@@ -27,15 +27,6 @@
         />
         {% endblock %}
 
-        {% block sw_customer_base_form_title_field %}
-        <mt-text-field
-            v-model="customer.title"
-            name="sw-field--customer-title"
-            :label="$t('sw-customer.baseForm.labelTitle')"
-            :placeholder="$t('sw-customer.baseForm.placeholderTitle')"
-        />
-        {% endblock %}
-
         {% block sw_customer_base_form_name_field %}
         <mt-text-field
             v-model="customer.name"

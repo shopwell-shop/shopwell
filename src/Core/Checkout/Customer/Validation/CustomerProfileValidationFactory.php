@@ -9,7 +9,8 @@ use Shopwell\Core\Framework\Validation\Constraint\NoHtml;
 use Shopwell\Core\Framework\Validation\DataValidationDefinition;
 use Shopwell\Core\Framework\Validation\DataValidationFactoryInterface;
 use Shopwell\Core\System\Dictionary\Aggregate\DictionaryEntry\DictionaryEntryDefinition;
-use Shopwell\Core\System\SalesChannel\SalesChannelContext;use Shopwell\Core\System\SystemConfig\SystemConfigService;
+use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+use Shopwell\Core\System\SystemConfig\SystemConfigService;
 use Symfony\Component\Validator\Constraints\Choice;
 use Symfony\Component\Validator\Constraints\GreaterThanOrEqual;
 use Symfony\Component\Validator\Constraints\Length;
@@ -53,8 +54,7 @@ class CustomerProfileValidationFactory implements DataValidationFactoryInterface
     private function addConstraints(DataValidationDefinition $definition, SalesChannelContext $context, bool $requireName): void
     {
         $definition
-            ->add('gender', new Choice(choices: [DictionaryEntryDefinition::MALE, DictionaryEntryDefinition::FEMALE, DictionaryEntryDefinition::NOT_SPECIFIED]))
-            ->add('title', new Length(max: CustomerDefinition::MAX_LENGTH_TITLE));
+            ->add('gender', new Choice(choices: [DictionaryEntryDefinition::MALE, DictionaryEntryDefinition::FEMALE, DictionaryEntryDefinition::NOT_SPECIFIED]));
 
         if ($requireName) {
             $definition
@@ -67,7 +67,6 @@ class CustomerProfileValidationFactory implements DataValidationFactoryInterface
         $definition
             ->add('accountType', new Choice(choices: $this->accountTypes))
             ->add('phoneNumber', new Length(max: CustomerDefinition::MAX_LENGTH_PHONE_NUMBER, exactMessage: 'VIOLATION::PHONE_NUMBER_IS_TOO_LONG'))
-            ->add('title', new NoHtml(message: 'VIOLATION::CONTAINS_HTML_ERROR'))
             ->add('name', new NoHtml(message: 'VIOLATION::CONTAINS_HTML_ERROR'))
             ->add('phoneNumber', new NoHtml(message: 'VIOLATION::CONTAINS_HTML_ERROR'))
             // A number that two customers share would make the login by sms refuse both of them.

@@ -194,7 +194,6 @@ class NewsletterControllerTest extends TestCase
             'groupId' => TestDefaults::FALLBACK_CUSTOMER_GROUP,
             'email' => 'nltest@example.com',
             'password' => TestDefaults::HASHED_PASSWORD,
-            'title' => 'Dr.',
             'name' => 'Max Mustermann',
             'gender' => $this->getValidGender(),
             'customerNumber' => '12345',
@@ -216,7 +215,6 @@ class NewsletterControllerTest extends TestCase
     {
         static::assertSame($this->customerData['email'], $recipientEntry->getEmail());
         static::assertSame($this->customerData['gender'], $recipientEntry->getGender());
-        static::assertSame($this->customerData['title'], $recipientEntry->getTitle());
         static::assertSame($this->customerData['name'], $recipientEntry->getName());
         static::assertSame($this->customerData['defaultShippingAddress']['zipcode'], $recipientEntry->getZipCode());
         static::assertSame($this->customerData['defaultShippingAddress']['city'], $recipientEntry->getCity());

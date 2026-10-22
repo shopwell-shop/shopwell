@@ -239,7 +239,7 @@ export default {
                     this.createNotificationSuccess({
                         message: this.$t(
                             'sw-customer.detail.messageSaveSuccess',
-                            { name: [customer.title, customer.name].filter(Boolean).join(' ') },
+                            { name: customer.name },
                             0,
                         ),
                     });

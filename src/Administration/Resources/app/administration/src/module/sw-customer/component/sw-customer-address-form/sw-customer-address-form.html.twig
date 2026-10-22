@@ -42,16 +42,6 @@
         />
         {% endblock %}
 
-        {% block sw_customer_address_form_title_field %}
-        <mt-text-field
-            v-model="address.title"
-            name="sw-field--address-title"
-            :label="$t('sw-customer.addressForm.labelTitle')"
-            :placeholder="$t('sw-customer.addressForm.placeholderTitle')"
-            :error="disabled ? null : addressTitleError"
-            :disabled="disabled"
-        />
-        {% endblock %}
         {% endblock %}
 
         {% block sw_customer_address_form_name_field %}

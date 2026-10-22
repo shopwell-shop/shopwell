@@ -112,9 +112,7 @@ export default {
 
         fullName() {
             const name = {
-                name: [this.currentOrder.orderCustomer.title, this.currentOrder.orderCustomer.name]
-                    .filter(Boolean)
-                    .join(' '),
+                name: this.currentOrder.orderCustomer.name,
                 company: this.currentOrder.orderCustomer.company,
             };
 

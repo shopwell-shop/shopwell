@@ -21,8 +21,6 @@ class NewsletterRecipientEntity extends Entity
 
     protected string $email;
 
-    protected ?string $title = null;
-
     protected ?string $name = null;
 
     protected ?string $zipCode = null;
@@ -57,16 +55,6 @@ class NewsletterRecipientEntity extends Entity
     public function setEmail(string $email): void
     {
         $this->email = $email;
-    }
-
-    public function getTitle(): ?string
-    {
-        return $this->title;
-    }
-
-    public function setTitle(string $title): void
-    {
-        $this->title = $title;
     }
 
     public function getName(): ?string

@@ -1271,7 +1271,6 @@ class RegisterRouteTest extends TestCase
                     static fn (array $address): bool => $address['city'] === 'Hamburg'
                 ))[0];
 
-                static::assertSame('Dr.', $billingAddress['title']);
                 static::assertSame('Max Mustermann', $billingAddress['name']);
                 static::assertSame('Main Street 1', $billingAddress['street']);
                 static::assertSame('12345', $billingAddress['zipcode']);
@@ -1282,7 +1281,6 @@ class RegisterRouteTest extends TestCase
                 static::assertSame('Line 2', $billingAddress['additionalAddressLine2']);
                 static::assertSame(['note' => '  keep custom field whitespace  '], $billingAddress['customFields']);
 
-                static::assertSame('Ms.', $shippingAddress['title']);
                 static::assertSame('Jane Doe', $shippingAddress['name']);
                 static::assertSame('Side Street 2', $shippingAddress['street']);
                 static::assertSame('54321', $shippingAddress['zipcode']);
@@ -1321,7 +1319,6 @@ class RegisterRouteTest extends TestCase
         $registerRoute->register(
             new RequestDataBag($this->createRegistrationData([
                 'guest' => true,
-                'title' => '  Dr.  ',
                 'name' => "\nMax Mustermann\t",
                 'billingAddress' => [
                     'countryId' => Uuid::randomHex(),
@@ -1338,7 +1335,6 @@ class RegisterRouteTest extends TestCase
                     ],
                 ],
                 'shippingAddress' => [
-                    'title' => "\nMs.\t",
                     'name' => "\tJane Doe\n",
                     'countryId' => Uuid::randomHex(),
                     'street' => "\nSide Street 2           ",

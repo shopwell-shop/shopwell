@@ -23,7 +23,6 @@ class Migration1536233430NewsletterRecipient extends MigrationStep
             CREATE TABLE `newsletter_recipient` (
               `id` BINARY(16) NOT NULL,
               `email` VARCHAR(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-              `title` VARCHAR(255) COLLATE utf8mb4_unicode_ci NULL,
               `name` VARCHAR(255) COLLATE utf8mb4_unicode_ci NULL,
               `zip_code` VARCHAR(255) COLLATE utf8mb4_unicode_ci NULL,
               `city` VARCHAR(255) COLLATE utf8mb4_unicode_ci NULL,

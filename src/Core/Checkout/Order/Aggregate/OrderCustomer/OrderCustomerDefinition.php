@@ -69,7 +69,6 @@ class OrderCustomerDefinition extends EntityDefinition
             (new StringField('gender', 'gender'))->addFlags(new ApiAware())->setDescription('Gender code of the order customer (dictionary entry technical_name, e.g. male, female).'),
             (new StringField('name', 'name'))->addFlags(new ApiAware(), new Required(), new SearchRanking(SearchRanking::HIGH_SEARCH_RANKING))->setDescription('Full name of the customer.'),
             (new StringField('company', 'company'))->addFlags(new ApiAware(), new SearchRanking(SearchRanking::MIDDLE_SEARCH_RANKING))->setDescription('Name of the company.'),
-            (new StringField('title', 'title'))->addFlags(new ApiAware())->setDescription('Title name given to the customer like Dr, prof. etc.'),
             (new ListField('vat_ids', 'vatIds', StringField::class))->addFlags(new ApiAware())->setDescription('Unique identity of VAT.'),
             (new StringField('customer_number', 'customerNumber'))->addFlags(new ApiAware(), new SearchRanking(SearchRanking::HIGH_SEARCH_RANKING))->setDescription('Unique number assigned to the customer.'),
             (new CustomFields())->addFlags(new ApiAware())->setDescription('Additional fields that offer a possibility to add own fields for the different program-areas.'),

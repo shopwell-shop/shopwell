@@ -40,8 +40,6 @@ class CustomerAddressEntity extends Entity
 
     protected ?string $department = null;
 
-    protected ?string $title = null;
-
     protected string $street;
 
     protected ?string $phoneNumber = null;
@@ -174,16 +172,6 @@ class CustomerAddressEntity extends Entity
     public function setDepartment(string $department): void
     {
         $this->department = $department;
-    }
-
-    public function getTitle(): ?string
-    {
-        return $this->title;
-    }
-
-    public function setTitle(string $title): void
-    {
-        $this->title = $title;
     }
 
     public function getStreet(): string

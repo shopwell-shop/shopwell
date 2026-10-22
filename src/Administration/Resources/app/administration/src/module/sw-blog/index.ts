@@ -3,11 +3,12 @@
  *
  * The blog module: the editorial content of the shop.
  *
- * The module owns three things a merchant maintains - the entry, the category it is filed under and
- * the comments below it - and nothing else. What an entry *looks like* is not decided here: the
- * detail page asks the type registry for the component of `blog.type`, so a plugin that brings its
- * own type is edited in the same screen as an article or a video page. A type nobody registered does
- * not white-screen, it renders the unknown component and keeps its fields untouched.
+ * The module owns four things a merchant maintains - the entry, the category it is filed under, the
+ * author it is signed with and the comments below it - and nothing else. What an entry *looks like*
+ * is not decided here: the detail page asks the type registry for the component of `blog.type`, so a
+ * plugin that brings its own type is edited in the same screen as an article or a video page. A type
+ * nobody registered does not white-screen, it renders the unknown component and keeps its fields
+ * untouched.
  *
  * Two decisions are worth knowing when reading the pages:
  *
@@ -17,9 +18,9 @@
  * - The categories are a list of assignment rows, not of categories. Filing an entry writes a row of
  *   `blog_category_assignment`; the category itself is never edited from the entry.
  *
- * The categories get a menu entry of their own next to the entries - a merchant reworking the
- * taxonomy browses the categories directly instead of first finding the button on the entry list.
- * The comments get one as well: approving what readers wrote is its own sitting, not a detour
+ * The categories, the authors and the comments get a menu entry of their own next to the entries: a
+ * merchant reworking the taxonomy browses the categories directly, a byline is maintained where the
+ * people behind them live, and approving what readers wrote is its own sitting rather than a detour
  * through every article.
  */
 import privileges from './acl';
@@ -50,13 +51,13 @@ Shopwell.Component.register('sw-blog-category-detail', () => import('./page/sw-b
 Shopwell.Component.register('sw-blog-author-list', () => import('./page/sw-blog-author-list'));
 Shopwell.Component.register('sw-blog-author-detail', () => import('./page/sw-blog-author-detail'));
 Shopwell.Component.register('sw-blog-comment-list', () => import('./page/sw-blog-comment-list'));
+Shopwell.Component.register('sw-blog-comment-detail', () => import('./page/sw-blog-comment-detail'));
 
 Shopwell.Component.register('sw-blog-status-badge', () => import('./component/sw-blog-status-badge'));
 Shopwell.Component.register('sw-blog-detail-content', () => import('./component/sw-blog-detail-content'));
 Shopwell.Component.register('sw-blog-detail-content-post', () => import('./component/sw-blog-detail-content-post'));
 Shopwell.Component.register('sw-blog-detail-content-video', () => import('./component/sw-blog-detail-content-video'));
 Shopwell.Component.register('sw-blog-detail-content-unknown', () => import('./component/sw-blog-detail-content-unknown'));
-Shopwell.Component.register('sw-blog-detail-comments', () => import('./component/sw-blog-detail-comments'));
 /* eslint-enable sw-deprecation-rules/private-feature-declarations */
 
 // eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
@@ -95,6 +96,25 @@ Module.register('sw-blog', {
                 privilege: privileges.blog.viewer,
                 appSystem: {
                     view: 'list',
+                },
+            },
+        },
+
+        // declared before the `:id` route: a static segment wins over the parameter, and this one has
+        // to, otherwise `/create` is read as an entry with the id "create"
+        create: {
+            component: 'sw-blog-detail',
+            path: 'create',
+            meta: {
+                parentPath: 'sw.blog.list',
+                privilege: privileges.blog.creator,
+                appSystem: {
+                    view: 'create',
+                },
+            },
+            props: {
+                default: () => {
+                    return { blogId: null };
                 },
             },
         },
@@ -179,6 +199,23 @@ Module.register('sw-blog', {
                 privilege: privileges.blog.viewer,
                 appSystem: {
                     view: 'list',
+                },
+            },
+        },
+
+        'comment.detail': {
+            component: 'sw-blog-comment-detail',
+            path: 'comment/:id',
+            meta: {
+                parentPath: 'sw.blog.comment.list',
+                privilege: privileges.blog.viewer,
+                appSystem: {
+                    view: 'detail',
+                },
+            },
+            props: {
+                default(route: { params: Record<string, string> }) {
+                    return { commentId: route.params.id.toLowerCase() };
                 },
             },
         },

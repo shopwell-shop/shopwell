@@ -38,7 +38,7 @@ export default {
                 return '';
             }
 
-            return [this.newsletterRecipient.title, this.newsletterRecipient.name].filter(Boolean).join(' ');
+            return this.newsletterRecipient.name ?? '';
         },
 
         newsletterRecipientStore() {

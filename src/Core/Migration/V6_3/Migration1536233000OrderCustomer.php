@@ -29,7 +29,6 @@ class Migration1536233000OrderCustomer extends MigrationStep
               `email` VARCHAR(254) COLLATE utf8mb4_unicode_ci NOT NULL,
               `gender` VARCHAR(255) COLLATE utf8mb4_unicode_ci NULL,
               `name` VARCHAR(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-              `title` VARCHAR(100) COLLATE utf8mb4_unicode_ci NULL,
               `customer_number` VARCHAR(255) COLLATE utf8mb4_unicode_ci NULL,
               `custom_fields` JSON NULL,
               `created_at` DATETIME(3) NOT NULL,

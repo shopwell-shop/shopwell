@@ -109,7 +109,7 @@ describe('src/module/sw-newsletter-recipient/page/sw-newsletter-recipient-detail
 
         const mtFields = wrapper.findAllComponents('.mt-field');
         const swFields = wrapper.findAllComponents('.sw-field');
-        expect(mtFields.length + swFields.length).toBe(10);
+        expect(mtFields.length + swFields.length).toBe(9);
 
         expect(mtFields.every((field) => field.props('disabled'))).toBe(true);
         expect(swFields.every((field) => field.props('disabled'))).toBe(true);
@@ -124,9 +124,9 @@ describe('src/module/sw-newsletter-recipient/page/sw-newsletter-recipient-detail
 
         const mtFields = wrapper.findAllComponents('.mt-field');
         const swFields = wrapper.findAllComponents('.sw-field');
-        expect(mtFields.length + swFields.length).toBe(10);
+        expect(mtFields.length + swFields.length).toBe(9);
 
-        expect(mtFields.filter((field) => !field.props('disabled'))).toHaveLength(6);
+        expect(mtFields.filter((field) => !field.props('disabled'))).toHaveLength(5);
         expect(swFields.filter((field) => !field.props('disabled'))).toHaveLength(3);
 
         expect(wrapper.getComponent('[label="sw-newsletter-recipient.general.salesChannel"]').props('disabled')).toBe(true);

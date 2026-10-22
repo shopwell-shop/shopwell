@@ -467,7 +467,6 @@ class OrderConverter
             'city' => $orderAddress->getCity(),
             'company' => $orderAddress->getCompany(),
             'department' => $orderAddress->getDepartment(),
-            'title' => $orderAddress->getTitle(),
             'street' => $orderAddress->getStreet(),
             'phoneNumber' => $orderAddress->getPhoneNumber(),
             'additionalAddressLine1' => $orderAddress->getAdditionalAddressLine1(),

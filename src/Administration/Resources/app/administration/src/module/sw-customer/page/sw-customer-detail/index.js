@@ -66,7 +66,7 @@ export default {
 
     computed: {
         identifier() {
-            return this.customer !== null ? [this.customer.title, this.customer.name].filter(Boolean).join(' ') : '';
+            return this.customer !== null ? this.customer.name : '';
         },
 
         customerRepository() {

@@ -26,8 +26,6 @@ class OrderCustomerEntity extends Entity
 
     protected string $name;
 
-    protected ?string $title = null;
-
     /**
      * @var list<string>|null
      */
@@ -75,16 +73,6 @@ class OrderCustomerEntity extends Entity
     public function setName(string $name): void
     {
         $this->name = $name;
-    }
-
-    public function getTitle(): ?string
-    {
-        return $this->title;
-    }
-
-    public function setTitle(string $title): void
-    {
-        $this->title = $title;
     }
 
     /**

@@ -9,7 +9,7 @@
         <h2 class="sw-blog-detail__header">
             {% block sw_blog_detail_smart_bar_header_title_text %}
             <template v-if="blog">
-                {{ title }}
+                {{ headerTitle }}
             </template>
             <sw-skeleton
                 v-else
@@ -19,7 +19,7 @@
 
             {% block sw_blog_detail_smart_bar_header_status %}
             <sw-blog-status-badge
-                v-if="blog"
+                v-if="blog && !isNew"
                 class="sw-blog-detail__header-status"
                 :published-at="blog.publishedAt"
             />
@@ -234,7 +234,17 @@
                     {% block sw_blog_detail_sidebar_publish_content %}
                     <div class="sw-blog-detail__rail-content">
                         <div class="sw-blog-detail__publish-state">
-                            <sw-blog-status-badge :published-at="blog.publishedAt" />
+                            <sw-blog-status-badge
+                                v-if="!isNew"
+                                :published-at="blog.publishedAt"
+                            />
+
+                            <span
+                                v-else
+                                class="sw-blog-detail__publish-hint"
+                            >
+                                {{ $t('sw-blog.detail.textNotSavedYet') }}
+                            </span>
                         </div>
 
                         <mt-datepicker

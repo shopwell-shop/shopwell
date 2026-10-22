@@ -40,6 +40,7 @@ export default defineComponent({
 
     data(): {
         category: BlogCategory | null;
+        entries: EntityCollection<'blog'> | null;
         cmsPage: CmsPage | null;
         isLoading: boolean;
         isSaving: boolean;
@@ -47,6 +48,7 @@ export default defineComponent({
     } {
         return {
             category: null,
+            entries: null,
             cmsPage: null,
             isLoading: false,
             isSaving: false,
@@ -57,6 +59,10 @@ export default defineComponent({
     computed: {
         categoryRepository(): RepositoryType<'blog_category'> {
             return this.repositoryFactory.create('blog_category');
+        },
+
+        blogRepository(): RepositoryType<'blog'> {
+            return this.repositoryFactory.create('blog');
         },
 
         cmsPageRepository(): RepositoryType<'cms_page'> {
@@ -101,10 +107,27 @@ export default defineComponent({
         isSlugMissing(): boolean {
             return this.slug.trim() === '';
         },
+
+        /**
+         * How many entries are filed here - the number the list column shows as well, read from the
+         * rows themselves: a category has dozens of entries, not thousands.
+         */
+        entryCount(): number {
+            return this.entries?.length ?? 0;
+        },
+
+        entriesColumns(): Array<Record<string, unknown>> {
+            return [
+                { property: 'title', label: 'sw-blog.author.columnEntryTitle', primary: true },
+                { property: 'publishedAt', label: 'sw-blog.author.columnEntryPublishedAt', width: '180px' },
+                { property: 'updatedAt', label: 'sw-blog.list.columnUpdatedAt', width: '140px' },
+            ];
+        },
     },
 
     created() {
         void this.loadCategory();
+        void this.loadEntries();
     },
 
     methods: {
@@ -147,6 +170,20 @@ export default defineComponent({
             if (active === null || active === undefined) {
                 this.category.active = true;
             }
+        },
+
+        /**
+         * The entries filed here, read through the assignment rows.
+         *
+         * The page answers "what is in this category", which is the question the entry count of the
+         * list raises and leaves unanswered.
+         */
+        async loadEntries(): Promise<void> {
+            const criteria = blogApi(this).entriesOfCategoryCriteria(this.categoryId);
+
+            await this.blogRepository.search(criteria).then((result) => {
+                this.entries = result;
+            });
         },
 
         async loadCmsPage(): Promise<void> {

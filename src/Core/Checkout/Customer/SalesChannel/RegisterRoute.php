@@ -141,10 +141,6 @@ class RegisterRoute extends AbstractRegisterRoute
             if ($billing->has('name') && !$data->has('name')) {
                 $data->set('name', $billing->get('name'));
             }
-
-            if ($data->has('title')) {
-                $billing->set('title', $data->get('title'));
-            }
         }
 
         $this->validateRegistrationData($data, $isGuest, $context, $additionalValidationDefinitions, $validateStorefrontUrl);
@@ -398,7 +394,6 @@ class RegisterRoute extends AbstractRegisterRoute
             'gender' => $data->get('gender'),
             'name' => $data->get('name'),
             'email' => $data->get('email'),
-            'title' => $data->get('title'),
             'phoneNumber' => $data->get('phoneNumber'),
             'affiliateCode' => $data->get(OrderService::AFFILIATE_CODE_KEY),
             'campaignCode' => $data->get(OrderService::CAMPAIGN_CODE_KEY),
@@ -506,7 +501,6 @@ class RegisterRoute extends AbstractRegisterRoute
     private function mapAddressData(DataBag $addressData, Context $context, string $eventName): array
     {
         $mappedData = $addressData->only(
-            'title',
             'name',
             'gender',
             'street',

@@ -83,7 +83,6 @@ class OrderAddressDefinition extends EntityDefinition
             (new StringField('city', 'city'))->addFlags(new ApiAware(), new Required(), new SearchRanking(SearchRanking::MIDDLE_SEARCH_RANKING))->setDescription('Name of the city.'),
             (new StringField('company', 'company'))->addFlags(new ApiAware(), new SearchRanking(SearchRanking::HIGH_SEARCH_RANKING))->setDescription('Name of the company.'),
             (new StringField('department', 'department'))->addFlags(new ApiAware())->setDescription('Name of the department.'),
-            (new StringField('title', 'title'))->addFlags(new ApiAware())->setDescription('Title name given to customer like DR. , Prof., etc.'),
             (new StringField('phone_number', 'phoneNumber'))->addFlags(new ApiAware())->setDescription('Phone number of the customer.'),
             (new StringField('additional_address_line1', 'additionalAddressLine1'))->addFlags(new ApiAware(), new SearchRanking(SearchRanking::MIDDLE_SEARCH_RANKING))->setDescription('Additional address input if necessary.'),
             (new StringField('additional_address_line2', 'additionalAddressLine2'))->addFlags(new ApiAware(), new SearchRanking(SearchRanking::MIDDLE_SEARCH_RANKING))->setDescription('Additional address input if necessary.'),

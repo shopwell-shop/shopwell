@@ -67,12 +67,6 @@
         </input-field>
 
         <input-field type="bool">
-            <name>showTitleField</name>
-            <label>Show title</label>
-            <label lang="zh-CN">显示头衔</label>
-        </input-field>
-
-        <input-field type="bool">
             <name>requireEmailConfirmation</name>
             <label>Email address must be entered twice</label>
             <label lang="zh-CN">邮箱地址需重复输入</label>

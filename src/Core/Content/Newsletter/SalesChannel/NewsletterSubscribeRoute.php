@@ -165,7 +165,6 @@ class NewsletterSubscribeRoute extends AbstractNewsletterSubscribeRoute
 
         $data = $dataBag->only(
             'email',
-            'title',
             'name',
             'zipCode',
             'city',

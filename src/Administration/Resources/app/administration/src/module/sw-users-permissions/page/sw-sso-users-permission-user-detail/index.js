@@ -57,10 +57,7 @@ export default {
 
     computed: {
         fullName() {
-            return (
-                [this.user.title, this.user.name].filter(Boolean).join(' ') ||
-                this.$t('sw-users-permissions.users.user-detail.labelNewUser')
-            );
+            return this.user.name || this.$t('sw-users-permissions.users.user-detail.labelNewUser');
         },
 
         tooltipCancel() {

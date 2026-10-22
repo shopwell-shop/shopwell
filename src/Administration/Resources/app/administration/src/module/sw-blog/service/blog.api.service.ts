@@ -334,17 +334,27 @@ export default class BlogApiService {
     }
 
     /**
-     * Every comment of the shop, newest first, narrowed to one moderation state.
+     * Every comment of the shop, narrowed to one moderation state.
      *
-     * The entry and the customer ride along as associations: the list shows which article a comment
-     * belongs to and who wrote it, and both are names the moderator needs before reading the text.
+     * The entry rides along as an association, together with its author: the row shows which article
+     * a comment belongs to and who signed it, and both are names the moderator needs before reading
+     * the text.
+     *
+     * The customer does *not* ride along. `blog_comment` keeps `customerId` as a plain foreign key -
+     * the definition must not grow a reverse one-to-many on `customer` - so asking for the
+     * association here would be rejected by the api instead of leaving the column empty. The names
+     * are read with {@see customerCriteria} in a second request, which is what `authorNameOf`
+     * expects.
+     *
+     * No sorting is added: the list sorts by the column the merchant clicked, and a criteria that
+     * already carries one arrives at the grid with two.
+     *
      * `null` reads both states, the way the review list treats its status filter.
      */
     public commentListCriteria(page: number, limit: number, status: boolean | null, term: string | null = null): CriteriaType {
         const criteria = new Criteria(page, limit);
         criteria.addAssociation('blog');
-        criteria.addAssociation('customer');
-        criteria.addSorting(Criteria.sort('createdAt', 'DESC'));
+        criteria.addAssociation('blog.author');
 
         if (status !== null) {
             criteria.addFilter(Criteria.equals('status', status));
@@ -353,6 +363,34 @@ export default class BlogApiService {
         if (term) {
             criteria.setTerm(term);
         }
+
+        return criteria;
+    }
+
+    /**
+     * How many comments of the whole shop still wait, for the badge in the header of the entry list.
+     *
+     * A count and not a list: the request asks for one row and reads `total`, and it asks for no
+     * association at all because nothing of a row is rendered.
+     */
+    public pendingCommentsCriteria(): CriteriaType {
+        const criteria = new Criteria(1, 1);
+        criteria.addFilter(Criteria.equals('status', false));
+
+        return criteria;
+    }
+
+    /**
+     * One comment as the detail page reads it: the text, its state, the entry it belongs to.
+     *
+     * The language rides along because the page offers it as a select, and a select whose value has
+     * no label shows an id.
+     */
+    public commentDetailCriteria(commentId: string): CriteriaType {
+        const criteria = new Criteria(1, 1);
+        criteria.setIds([commentId]);
+        criteria.addAssociation('blog');
+        criteria.addAssociation('blog.author');
 
         return criteria;
     }
