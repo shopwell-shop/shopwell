@@ -24,8 +24,6 @@ use Shopwell\Core\Framework\Log\Package;
  */
 #[Package('discovery')]
 #[CoversClass(BlogCommentTree::class)]
-#[CoversClass(BlogCommentNode::class)]
-#[CoversClass(BlogCommentTreeResult::class)]
 class BlogCommentTreeTest extends TestCase
 {
     private BlogCommentTree $tree;

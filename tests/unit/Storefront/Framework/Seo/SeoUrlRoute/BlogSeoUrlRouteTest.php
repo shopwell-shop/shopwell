@@ -15,7 +15,6 @@ use Shopwell\Core\Framework\DataAbstractionLayer\FieldCollection;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\SalesChannel\SalesChannelEntity;
-use Shopwell\Storefront\Framework\Seo\SeoUrlRoute\BlogCategorySeoUrlRoute;
 use Shopwell\Storefront\Framework\Seo\SeoUrlRoute\BlogSeoUrlRoute;
 use Symfony\Component\Clock\MockClock;
 use Symfony\Component\HttpFoundation\Response;
@@ -30,7 +29,6 @@ use Symfony\Component\HttpFoundation\Response;
  */
 #[Package('discovery')]
 #[CoversClass(BlogSeoUrlRoute::class)]
-#[CoversClass(BlogCategorySeoUrlRoute::class)]
 class BlogSeoUrlRouteTest extends TestCase
 {
     public function testTheEntryRouteIsTheRouteTheControllerServes(): void
@@ -69,26 +67,6 @@ class BlogSeoUrlRouteTest extends TestCase
         static::assertCount(1, $criteria->getFilters());
     }
 
-    public function testTheCategoryRouteIsItsOwnRouteAndNotAQueryParameter(): void
-    {
-        $config = (new BlogCategorySeoUrlRoute(new BlogCategoryRouteTestDefinition()))->getConfig();
-
-        static::assertSame('frontend.blog.category', $config->getRouteName());
-        static::assertSame('blog_category', $config->getDefinition()->getEntityName());
-        static::assertStringContainsString('blogCategory.translated.slug', $config->getTemplate());
-        static::assertSame(['blogCategoryId' => 'abc123'], $config->getPrimaryKeyParameter('abc123'));
-    }
-
-    public function testOnlyOfferedCategoriesGetAUrl(): void
-    {
-        $route = new BlogCategorySeoUrlRoute(new BlogCategoryRouteTestDefinition());
-        $criteria = new Criteria();
-
-        $route->prepareCriteria($criteria, new SalesChannelEntity());
-
-        static::assertCount(1, $criteria->getFilters());
-    }
-
     /**
      * The generator renders the template against the array returned here. A wrong key does not fail -
      * the template renders an empty path, the url is dropped as invalid and the entry silently loses
@@ -110,22 +88,6 @@ class BlogSeoUrlRouteTest extends TestCase
         static::assertArrayHasKey('blog', $mapping->getSeoPathInfoContext());
         static::assertSame($blog, $mapping->getEntity());
         static::assertNull($mapping->getError());
-    }
-
-    public function testTheCategoryMappingProvidesWhatTheTemplateReads(): void
-    {
-        $route = new BlogCategorySeoUrlRoute(new BlogCategoryRouteTestDefinition());
-
-        $category = new BlogCategoryEntity();
-        $category->id = '01a15db17866710bba3c7cf35fb81593';
-        $category->name = 'Guides';
-        $category->slug = 'guides';
-        $category->setUniqueIdentifier($category->id);
-
-        $mapping = $route->getMapping($category, new SalesChannelEntity());
-
-        static::assertSame(['blogCategoryId' => $category->id], $mapping->getInfoPathContext());
-        static::assertArrayHasKey('blogCategory', $mapping->getSeoPathInfoContext());
     }
 
     /**
@@ -161,26 +123,6 @@ class BlogSeoUrlRouteTest extends TestCase
 class BlogRouteTestDefinition extends EntityDefinition
 {
     public const ENTITY_NAME = 'blog';
-
-    public function getEntityName(): string
-    {
-        return self::ENTITY_NAME;
-    }
-
-    protected function defineFields(): FieldCollection
-    {
-        return new FieldCollection([
-            (new IdField('id', 'id'))->addFlags(new PrimaryKey(), new Required()),
-        ]);
-    }
-}
-
-/**
- * @internal
- */
-class BlogCategoryRouteTestDefinition extends EntityDefinition
-{
-    public const ENTITY_NAME = 'blog_category';
 
     public function getEntityName(): string
     {
