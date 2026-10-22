@@ -1,0 +1,209 @@
+{% block sw_blog_comment_detail %}
+<sw-page
+    class="sw-blog-comment-detail"
+    position-identifier="sw-blog-comment-detail"
+>
+    {% block sw_blog_comment_detail_header %}
+    <template #smart-bar-header>
+        {% block sw_blog_comment_detail_header_title %}
+        <h2 class="sw-blog-comment-detail__header">
+            {% block sw_blog_comment_detail_header_title_text %}
+            {{ headerTitle }}
+            {% endblock %}
+
+            {% block sw_blog_comment_detail_header_status %}
+            <mt-badge
+                v-if="comment"
+                class="sw-blog-comment-detail__header-status"
+                :variant="comment.status ? 'positive' : 'attention'"
+                size="small"
+            >
+                {{ statusLabel }}
+            </mt-badge>
+            {% endblock %}
+        </h2>
+        {% endblock %}
+    </template>
+    {% endblock %}
+
+    {% block sw_blog_comment_detail_actions %}
+    <template #smart-bar-actions>
+        {% block sw_blog_comment_detail_actions_cancel %}
+        <mt-button
+            class="sw-blog-comment-detail__action-cancel"
+            variant="secondary"
+            size="default"
+            @click="onCancel"
+        >
+            {{ $t('global.default.cancel') }}
+        </mt-button>
+        {% endblock %}
+
+        {% block sw_blog_comment_detail_actions_save %}
+        <mt-button
+            class="sw-blog-comment-detail__action-save"
+            variant="primary"
+            size="default"
+            :disabled="!canEdit || undefined"
+            :is-loading="isSaving"
+            @click="onSave"
+        >
+            {{ $t('global.default.save') }}
+        </mt-button>
+        {% endblock %}
+    </template>
+    {% endblock %}
+
+    {% block sw_blog_comment_detail_content %}
+    <template #content>
+        {% block sw_blog_comment_detail_content_loading %}
+        <sw-skeleton
+            v-if="isLoading && !comment"
+            class="sw-blog-comment-detail__loading"
+            variant="detail-bold"
+        />
+        {% endblock %}
+
+        {% block sw_blog_comment_detail_content_body %}
+        {#
+        The two cards of a review: what was written, and the two properties that decide about it.
+        The text is read-only on purpose - a comment is what a reader said, and an administration
+        that rewrites it hands the author words they never wrote.
+        #}
+        <div
+            v-else-if="comment"
+            class="sw-blog-comment-detail__body"
+        >
+            {% block sw_blog_comment_detail_content_info %}
+            <mt-card
+                class="sw-blog-comment-detail__info"
+                position-identifier="sw-blog-comment-detail-info"
+                :title="$t('sw-blog.comment.cardTitleInfo')"
+            >
+                {% block sw_blog_comment_detail_content_info_text %}
+                <div class="sw-blog-comment-detail__text">
+                    <p
+                        v-if="comment.title"
+                        class="sw-blog-comment-detail__text-title"
+                    >
+                        {{ comment.title }}
+                    </p>
+
+                    <p class="sw-blog-comment-detail__text-body">
+                        {{ comment.content }}
+                    </p>
+                </div>
+                {% endblock %}
+
+                {% block sw_blog_comment_detail_content_info_metadata %}
+                <div class="sw-blog-comment-detail__metadata">
+                    <sw-container
+                        class="sw-blog-comment-detail__metadata-columns"
+                        columns="repeat(auto-fit, minmax(250px, 1fr))"
+                        gap="0 var(--scale-size-16)"
+                    >
+                        {% block sw_blog_comment_detail_content_info_created_at %}
+                        <sw-description-list>
+                            <dt class="sw-blog-comment-detail__metadata-label">
+                                {{ $t('sw-blog.comment.labelCreatedAt') }}
+                            </dt>
+
+                            <dd>
+                                <sw-time-ago
+                                    :date="comment.createdAt"
+                                    :date-time-format="{ month: '2-digit', day: '2-digit' }"
+                                />
+                            </dd>
+                        </sw-description-list>
+                        {% endblock %}
+
+                        {% block sw_blog_comment_detail_content_info_blog %}
+                        <sw-description-list>
+                            <dt class="sw-blog-comment-detail__metadata-label">
+                                {{ $t('sw-blog.comment.columnBlog') }}
+                            </dt>
+
+                            <dd>
+                                <a
+                                    class="sw-blog-comment-detail__blog-link"
+                                    role="button"
+                                    tabindex="0"
+                                    @click="onOpenBlog"
+                                    @keydown.enter="onOpenBlog"
+                                >
+                                    {{ blogTitle }}
+                                </a>
+                            </dd>
+                        </sw-description-list>
+                        {% endblock %}
+
+                        {% block sw_blog_comment_detail_content_info_author %}
+                        <sw-description-list>
+                            <dt class="sw-blog-comment-detail__metadata-label">
+                                {{ $t('sw-blog.comment.columnAuthor') }}
+                            </dt>
+
+                            <dd>{{ authorName }}</dd>
+                        </sw-description-list>
+                        {% endblock %}
+
+                        {% block sw_blog_comment_detail_content_info_email %}
+                        <sw-description-list>
+                            <dt class="sw-blog-comment-detail__metadata-label">
+                                {{ $t('sw-blog.comment.labelEmail') }}
+                            </dt>
+
+                            <dd>{{ authorEmail }}</dd>
+                        </sw-description-list>
+                        {% endblock %}
+                    </sw-container>
+                </div>
+                {% endblock %}
+            </mt-card>
+            {% endblock %}
+
+            {% block sw_blog_comment_detail_content_properties %}
+            <mt-card
+                class="sw-blog-comment-detail__properties"
+                position-identifier="sw-blog-comment-detail-properties"
+                :title="$t('sw-blog.comment.cardTitleProperties')"
+            >
+                <sw-container
+                    class="sw-blog-comment-detail__properties-fields"
+                    columns="1fr 1fr"
+                    align="end"
+                    gap="var(--scale-size-16)"
+                >
+                    {% block sw_blog_comment_detail_content_properties_language %}
+                    <sw-entity-single-select
+                        v-model:value="comment.languageId"
+                        class="sw-blog-comment-detail__language"
+                        entity="language"
+                        name="sw-field--comment-languageId"
+                        required
+                        show-clearable-button
+                        :criteria="languageCriteria"
+                        :disabled="!canEdit"
+                        :label="$t('sw-blog.comment.labelLanguage')"
+                    />
+                    {% endblock %}
+
+                    {% block sw_blog_comment_detail_content_properties_status %}
+                    <mt-switch
+                        v-model="comment.status"
+                        class="sw-blog-comment-detail__status"
+                        name="sw-field--comment-status"
+                        bordered
+                        :disabled="!canEdit"
+                        :label="$t('sw-blog.comment.labelStatus')"
+                    />
+                    {% endblock %}
+                </sw-container>
+            </mt-card>
+            {% endblock %}
+        </div>
+        {% endblock %}
+    </template>
+    {% endblock %}
+</sw-page>
+{% endblock %}
