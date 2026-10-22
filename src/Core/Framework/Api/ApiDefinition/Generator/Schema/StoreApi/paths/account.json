@@ -95,10 +95,6 @@
                                         "description": "Gender code of the customer account. Fetch options using `/store-api/dictionary/gender` endpoint.",
                                         "type": "string"
                                     },
-                                    "title": {
-                                        "description": "(Academic) title of the customer",
-                                        "type": "string"
-                                    },
                                     "name": {
                                         "description": "Customer name. Value will be reused for shipping and billing address if not provided explicitly.",
                                         "type": "string"
@@ -1182,10 +1178,6 @@
                                     "birthdayYear": {
                                         "description": "Birthday year",
                                         "type": "integer"
-                                    },
-                                    "title": {
-                                        "description": "(Academic) title of the customer",
-                                        "type": "string"
                                     },
                                     "phoneNumber": {
                                         "description": "Phone number of the customer",

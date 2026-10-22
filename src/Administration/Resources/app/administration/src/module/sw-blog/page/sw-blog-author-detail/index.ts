@@ -3,7 +3,6 @@
  */
 import { defineComponent } from 'vue';
 import type { PropType } from 'vue';
-import type CriteriaType from 'src/core/data/criteria.data';
 import type RepositoryType from 'src/core/data/repository.data';
 import template from './sw-blog-author-detail.html.twig';
 import './sw-blog-author-detail.scss';

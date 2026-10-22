@@ -8,14 +8,14 @@ use Shopwell\Core\Checkout\Customer\Aggregate\CustomerAddress\CustomerAddressEnt
 use Shopwell\Core\Checkout\Customer\CustomerEntity;
 use Shopwell\Core\Checkout\Customer\Validation\AddressValidationFactory;
 use Shopwell\Core\Framework\DataAbstractionLayer\Validation\EntityExists;
-use Shopwell\Core\System\Dictionary\Aggregate\DictionaryEntry\DictionaryEntryDefinition;
-use Symfony\Component\Validator\Constraints\Choice;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Validation\Constraint\NoHtml;
 use Shopwell\Core\System\Country\CountryEntity;
+use Shopwell\Core\System\Dictionary\Aggregate\DictionaryEntry\DictionaryEntryDefinition;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
 use Shopwell\Core\System\SystemConfig\SystemConfigService;
 use Shopwell\Core\Test\Generator;
+use Symfony\Component\Validator\Constraints\Choice;
 use Symfony\Component\Validator\Constraints\Length;
 use Symfony\Component\Validator\Constraints\NotBlank;
 
@@ -57,14 +57,14 @@ class AddressValidationFactoryTest extends TestCase
 
         $this->assertAddressDefinition($definition);
 
-        static::assertCount(14, $definition);
+        static::assertCount(13, $definition);
     }
 
     public function testDefinitionRulesUpdate(): void
     {
         $definition = $this->addressValidationFactory->update($this->salesChannelContext)->getProperties();
 
-        static::assertCount(15, $definition);
+        static::assertCount(14, $definition);
         static::assertArrayHasKey('id', $definition);
 
         static::assertCount(2, $definition['id']);
@@ -95,10 +95,6 @@ class AddressValidationFactoryTest extends TestCase
      */
     private function assertAddressDefinition(array $definition): void
     {
-        static::assertArrayHasKey('title', $definition);
-        static::assertCount(2, $definition['title']);
-        static::assertInstanceOf(Length::class, $definition['title'][0]);
-        static::assertInstanceOf(NoHtml::class, $definition['title'][1]);
         static::assertArrayHasKey('zipcode', $definition);
         static::assertInstanceOf(Length::class, $definition['zipcode'][0]);
         static::assertCount(3, $definition['name']);

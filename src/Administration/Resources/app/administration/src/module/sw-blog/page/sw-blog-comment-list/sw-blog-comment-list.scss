@@ -5,15 +5,15 @@
         height: 100%;
     }
 
-    &__filter {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr);
-        gap: var(--scale-size-16);
-        padding: 0 var(--scale-size-24) var(--scale-size-16);
-    }
-
     .mt-empty-state {
         padding-block: var(--scale-size-48);
+    }
+
+    &__title {
+        display: block;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
 
     &__delete-message {

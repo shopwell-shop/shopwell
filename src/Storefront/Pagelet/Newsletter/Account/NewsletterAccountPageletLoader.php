@@ -213,7 +213,6 @@ class NewsletterAccountPageletLoader
     {
         $dataBag->set('email', $customer->getEmail());
         $dataBag->set('gender', $customer->getGender());
-        $dataBag->set('title', $customer->getTitle());
         $dataBag->set('name', $customer->getName());
         $dataBag->set(
             'zipCode',

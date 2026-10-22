@@ -62,14 +62,6 @@
                     />
                     {% endblock %}
 
-                    {% block sw_newsletter_recipient_detail_form_title %}
-
-                    <mt-text-field
-                        v-model="newsletterRecipient.title"
-                        :label="$t('sw-newsletter-recipient.list.title')"
-                        :disabled="!acl.can('newsletter_recipient.editor')"
-                    />
-                    {% endblock %}
                 </sw-container>
 
                 <sw-container

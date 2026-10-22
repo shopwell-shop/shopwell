@@ -21,7 +21,7 @@ class Migration1614240671AddVatIdsToOrderCustomer extends MigrationStep
     {
         $connection->executeStatement('
             ALTER TABLE `order_customer`
-            ADD COLUMN `vat_ids` JSON NULL DEFAULT NULL AFTER `title`;
+            ADD COLUMN `vat_ids` JSON NULL DEFAULT NULL AFTER `name`;
         ');
     }
 

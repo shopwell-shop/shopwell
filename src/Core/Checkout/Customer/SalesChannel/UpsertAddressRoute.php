@@ -129,7 +129,6 @@ class UpsertAddressRoute extends AbstractUpsertAddressRoute
             'countryDistrictId' => $data->get('countryDistrictId') ?: null,
             'company' => $data->get('company'),
             'department' => $data->get('department'),
-            'title' => $data->get('title'),
             'phoneNumber' => $data->get('phoneNumber'),
             'additionalAddressLine1' => $data->get('additionalAddressLine1'),
             'additionalAddressLine2' => $data->get('additionalAddressLine2'),

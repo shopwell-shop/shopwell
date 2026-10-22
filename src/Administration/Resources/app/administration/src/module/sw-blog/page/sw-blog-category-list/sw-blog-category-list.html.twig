@@ -129,7 +129,22 @@
 
                 {% block sw_blog_category_list_grid_column_assignments %}
                 <template #column-assignments="{ item }">
-                    {{ item.assignments ? item.assignments.length : 0 }}
+                    <mt-button
+                        v-if="item.assignments && item.assignments.length > 0"
+                        class="sw-blog-category-list__entry-count"
+                        variant="tertiary"
+                        size="x-small"
+                        @click="onOpenCategoryEntries(item)"
+                    >
+                        {{ item.assignments.length }}
+                    </mt-button>
+
+                    <span
+                        v-else
+                        class="sw-blog-category-list__entry-count-empty"
+                    >
+                        {{ 0 }}
+                    </span>
                 </template>
                 {% endblock %}
             </sw-entity-listing>

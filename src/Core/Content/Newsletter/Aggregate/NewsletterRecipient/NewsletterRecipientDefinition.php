@@ -54,7 +54,6 @@ class NewsletterRecipientDefinition extends EntityDefinition
         return new FieldCollection([
             (new IdField('id', 'id'))->addFlags(new PrimaryKey(), new Required())->setDescription('Unique identity of newsletter recipient.'),
             (new StringField('email', 'email'))->addFlags(new Required())->setDescription('Email of the recipient.'),
-            (new StringField('title', 'title'))->setDescription('Title of the recipient\'s newsletter.'),
             (new StringField('name', 'name'))->setDescription('Full name of the recipient.'),
             (new StringField('zip_code', 'zipCode'))->setDescription('Zipcode of the recipient\'s address.'),
             (new StringField('city', 'city'))->setDescription('City of the recipient.'),

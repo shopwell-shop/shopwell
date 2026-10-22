@@ -1,269 +1,13 @@
 /**
  * @sw-package discovery
  */
-import { flushPromises, mount } from '@vue/test-utils';
-import type { VueWrapper } from '@vue/test-utils';
-import BlogApiService from '../../service/blog.api.service';
-
-type Association = { association: string; criteria: { associations: Association[] } };
-
-/**
- * The names of the associations a criteria reads. `addAssociation` stores an association object, not
- * the bare name, and a nested path becomes a nested association.
- */
-function associationNames(criteria: { associations: unknown }, prefix: string = ''): string[] {
-    return (criteria.associations as Association[]).flatMap((association) => {
-        const name = `${prefix}${association.association}`;
-
-        return [name, ...associationNames(association.criteria, `${name}.`)];
-    });
-}
-
-type DetailVm = {
-    blog: Record<string, unknown> | null;
-    video: Record<string, unknown> | null;
-    cmsPage: Record<string, unknown> | null;
-    assignments: Array<{ id: string; blogCategoryId: string | null }>;
-    selectedCategoryIds: string[];
-    categories: unknown[];
-    pendingCommentCount: number;
-    isLoading: boolean;
-    isSaving: boolean;
-    showDeleteModal: boolean;
-    showCategoryModal: boolean;
-    showAuthorModal: boolean;
-    newCategoryName: string;
-    newAuthorName: string;
-    canEdit: boolean;
-    canDelete: boolean;
-    isTitleMissing: boolean;
-    isCreateCategoryDisabled: boolean;
-    isCreateAuthorDisabled: boolean;
-    title: string;
-    loadBlog: () => Promise<void>;
-    ensureVideo: () => void;
-    isCategorySelected: (categoryId: string) => boolean;
-    onToggleCategory: (categoryId: string) => void;
-    onOpenCategoryModal: () => void;
-    onCreateCategory: () => void;
-    onOpenAuthorModal: () => void;
-    onCreateAuthor: () => void;
-    onPublishNow: () => void;
-    onClearSchedule: () => void;
-    onCoverSelected: (media: Array<{ id: string }>) => void;
-    onCoverRemoved: () => void;
-    onSave: (redirect?: boolean) => Promise<void>;
-    onCancel: () => void;
-    onOpenDeleteModal: () => void;
-    onCloseDeleteModal: () => void;
-    onDelete: () => void;
-    abortOnLanguageChange: () => boolean;
-    saveOnLanguageChange: () => Promise<void>;
-    onChangeLanguage: (languageId: string) => void;
-};
-
-type TypedWrapper = { vm: DetailVm } & VueWrapper;
-
-function collection<T>(items: unknown[]): T {
-    return Object.assign([...items], { total: items.length }) as unknown as T;
-}
-
-const blog = {
-    id: 'blog-1',
-    type: 'post',
-    title: 'Autumn guide',
-    slug: 'autumn-guide',
-    teaser: 'Teaser',
-    content: '<p>Body</p>',
-    metaTitle: null,
-    metaDescription: null,
-    publishedAt: null,
-    authorId: 'author-1',
-    coverMediaId: null,
-    cmsPageId: 'page-1',
-    categories: [],
-    videos: [],
-};
-
-const assignments = [{ id: 'assignment-1', blogId: 'blog-1', blogCategoryId: 'category-1' }];
-
-let activeWrapper: VueWrapper | null = null;
-
-async function createWrapper(
-    options: {
-        can?: (privilege: string) => boolean;
-        entry?: Record<string, unknown>;
-        hasChanges?: boolean;
-    } = {},
-): Promise<{
-    wrapper: TypedWrapper;
-    getBlog: jest.Mock;
-    saveBlog: jest.Mock;
-    deleteBlog: jest.Mock;
-    saveVideo: jest.Mock;
-    saveAssignment: jest.Mock;
-    deleteAssignment: jest.Mock;
-    push: jest.Mock;
-}> {
-    const { can = () => true, entry = blog, hasChanges = false } = options;
-
-    const saveBlog = jest.fn(() => Promise.resolve());
-    const deleteBlog = jest.fn(() => Promise.resolve());
-    const getBlog = jest.fn(() => Promise.resolve({ ...entry }));
-    const saveVideo = jest.fn(() => Promise.resolve());
-    const saveAssignment = jest.fn(() => Promise.resolve());
-    const deleteAssignment = jest.fn(() => Promise.resolve());
-    const push = jest.fn(() => Promise.resolve());
-
-    const blogRepository = {
-        get: getBlog,
-        save: saveBlog,
-        delete: deleteBlog,
-        hasChanges: jest.fn(() => hasChanges),
-        create: () => {
-            return { ...blog };
-        },
-    };
-
-    const videoRepository = {
-        get: jest.fn(() => Promise.resolve(null)),
-        save: saveVideo,
-        delete: jest.fn(() => Promise.resolve()),
-        create: () => {
-            return {
-                id: 'video-new',
-                blogId: null,
-                videoUrl: '',
-                durationSeconds: null,
-                posterMediaId: null,
-                provider: null,
-            };
-        },
-    };
-
-    const assignmentRepository = {
-        search: jest.fn(() => Promise.resolve(collection<EntityCollection<'blog_category_assignment'>>(assignments))),
-        save: saveAssignment,
-        delete: deleteAssignment,
-        create: () => {
-            return { id: 'assignment-new', blogId: null, blogCategoryId: null };
-        },
-    };
-
-    const cmsPageRepository = {
-        get: jest.fn(() => Promise.resolve({ id: 'page-1', versionId: 'version-1' })),
-        search: jest.fn(() => Promise.resolve(collection<EntityCollection<'cms_page'>>([]))),
-    };
-
-    const categoryRepository = {
-        search: jest.fn(() => Promise.resolve(collection<EntityCollection<'blog_category'>>([]))),
-        save: jest.fn(() => Promise.resolve()),
-        create: () => {
-            return { id: 'category-new', name: null, slug: null, active: true };
-        },
-    };
-
-    const authorRepository = {
-        search: jest.fn(() => Promise.resolve(collection<EntityCollection<'blog_author'>>([]))),
-        save: jest.fn(() => Promise.resolve()),
-        create: () => {
-            return { id: 'author-new', name: null, active: true };
-        },
-    };
-
-    const commentRepository = {
-        search: jest.fn(() => Promise.resolve(Object.assign([], { total: 2 }))),
-    };
-
-    const wrapper = mount(await wrapTestComponent('sw-blog-detail', { sync: true }), {
-        props: { blogId: 'blog-1' },
-        global: {
-            stubs: {
-                'sw-page': { template: '<div><slot name="content"></slot><slot name="sidebar"></slot><slot></slot></div>' },
-                'sw-card-view': { template: '<div><slot></slot></div>' },
-                'mt-card': { template: '<div><slot name="toolbar"></slot><slot></slot></div>' },
-                'sw-container': { template: '<div><slot></slot></div>' },
-                'sw-sidebar': { template: '<div><slot></slot></div>' },
-                'sw-sidebar-item': { template: '<div><slot></slot></div>' },
-                'sw-skeleton': true,
-                'sw-modal': { template: '<div class="modal"><slot></slot><slot name="modal-footer"></slot></div>' },
-                'sw-language-switch': true,
-                'sw-media-compact-upload-v2': true,
-                'sw-entity-single-select': true,
-                'sw-entity-multi-id-select': true,
-                'sw-cms-page-form': true,
-                'sw-blog-detail-content': true,
-                'sw-blog-detail-comments': true,
-                'sw-blog-status-badge': true,
-                'mt-text-field': true,
-                'mt-textarea': true,
-                'mt-select': true,
-                'mt-switch': true,
-                'mt-checkbox': true,
-                'mt-badge': true,
-                'mt-datepicker': true,
-                'mt-button': true,
-            },
-            provide: {
-                repositoryFactory: {
-                    create: (entityName: string) => {
-                        if (entityName === 'blog_video') {
-                            return videoRepository;
-                        }
-
-                        if (entityName === 'blog_category_assignment') {
-                            return assignmentRepository;
-                        }
-
-                        if (entityName === 'cms_page') {
-                            return cmsPageRepository;
-                        }
-
-                        if (entityName === 'blog_category') {
-                            return categoryRepository;
-                        }
-
-                        if (entityName === 'blog_author') {
-                            return authorRepository;
-                        }
-
-                        if (entityName === 'blog_comment') {
-                            return commentRepository;
-                        }
-
-                        return blogRepository;
-                    },
-                },
-                acl: { can },
-                blogApiService: new BlogApiService(),
-            },
-            mocks: {
-                $route: { name: 'sw.blog.detail', meta: { $module: { icon: 'regular-image-text' } } },
-                $router: { push, replace: jest.fn(() => Promise.resolve()) },
-                $t: (key: string) => key,
-                $te: () => false,
-            },
-        },
-    });
-
-    activeWrapper = wrapper;
-
-    return {
-        wrapper: wrapper as unknown as TypedWrapper,
-        getBlog,
-        saveBlog,
-        deleteBlog,
-        saveVideo,
-        saveAssignment,
-        deleteAssignment,
-        push,
-    };
-}
+import { flushPromises } from '@vue/test-utils';
+import { associationNames, createWrapper, unmountActiveWrapper } from './sw-blog-detail.spec/create-wrapper';
+import { blog } from './sw-blog-detail.spec/fixtures';
 
 describe('src/module/sw-blog/page/sw-blog-detail', () => {
     afterEach(() => {
-        activeWrapper?.unmount();
-        activeWrapper = null;
+        unmountActiveWrapper();
         jest.clearAllMocks();
     });
 
@@ -274,18 +18,52 @@ describe('src/module/sw-blog/page/sw-blog-detail', () => {
         const criteria = (getBlog.mock.calls as unknown as Array<[string, unknown, { associations: unknown[] }]>)[0][2];
 
         expect(associationNames(criteria)).toEqual(
-            expect.arrayContaining([
-                'author',
-                'categories',
-                'categories.blogCategory',
-                'videos',
-            ]),
+            expect.arrayContaining(['author', 'categories', 'categories.blogCategory', 'videos']),
         );
         expect(wrapper.vm.blog?.title).toBe('Autumn guide');
         expect(wrapper.vm.assignments).toHaveLength(1);
         expect(wrapper.vm.selectedCategoryIds).toEqual(['category-1']);
         expect(wrapper.vm.cmsPage?.id).toBe('page-1');
         expect(wrapper.vm.isLoading).toBe(false);
+    });
+
+    it('creates the entry on the page instead of in a dialog on the list', async () => {
+        const { wrapper, getBlog } = await createWrapper({ blogId: null });
+        await flushPromises();
+
+        expect(wrapper.vm.blog).toEqual(expect.objectContaining({ type: 'post', title: '' }));
+        // nothing exists yet, so nothing is read
+        expect(getBlog).not.toHaveBeenCalled();
+        expect(wrapper.vm.isNew).toBe(true);
+    });
+
+    it('gives a new entry its url name from the title on the first save and fixes the address', async () => {
+        const { wrapper, saveBlog, replace, push } = await createWrapper({ blogId: null });
+        await flushPromises();
+
+        if (wrapper.vm.blog) {
+            wrapper.vm.blog.title = 'Autumn Guide';
+            wrapper.vm.blog.slug = '';
+        }
+
+        await wrapper.vm.onSave();
+        await flushPromises();
+
+        const saved = (saveBlog.mock.calls as unknown as Array<[{ slug: string }]>)[0][0];
+
+        expect(saved.slug).toMatch(/^autumn-guide-/);
+        expect(replace).toHaveBeenCalledWith({ name: 'sw.blog.detail', params: { id: 'blog-new' } });
+        expect(push).not.toHaveBeenCalled();
+    });
+
+    it('asks for the title before anything is written', async () => {
+        const { wrapper, saveBlog } = await createWrapper({ blogId: null });
+        await flushPromises();
+
+        await wrapper.vm.onSave();
+
+        expect(wrapper.vm.isTitleMissing).toBe(true);
+        expect(saveBlog).not.toHaveBeenCalled();
     });
 
     it('creates the video row of a video entry that has none yet', async () => {
@@ -343,9 +121,9 @@ describe('src/module/sw-blog/page/sw-blog-detail', () => {
         wrapper.vm.onPublishNow();
         await flushPromises();
 
-        expect(saveBlog).toHaveBeenCalledWith(
-            expect.objectContaining({ publishedAt: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/) }),
-        );
+        const saved = (saveBlog.mock.calls as unknown as Array<[{ publishedAt: string }]>)[0][0];
+
+        expect(saved.publishedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
         expect(push).not.toHaveBeenCalled();
     });
 

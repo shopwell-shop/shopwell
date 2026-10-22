@@ -71,8 +71,6 @@ class CustomerEntity extends Entity implements \Stringable
 
     protected string $email;
 
-    protected ?string $title = null;
-
     protected ?string $phoneNumber = null;
 
     /**
@@ -331,16 +329,6 @@ class CustomerEntity extends Entity implements \Stringable
     public function setEmail(string $email): void
     {
         $this->email = $email;
-    }
-
-    public function getTitle(): ?string
-    {
-        return $this->title;
-    }
-
-    public function setTitle(?string $title): void
-    {
-        $this->title = $title;
     }
 
     public function getPhoneNumber(): ?string

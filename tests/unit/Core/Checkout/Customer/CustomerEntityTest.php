@@ -77,7 +77,6 @@ class CustomerEntityTest extends TestCase
         $customer->setName('Ada Lovelace');
         $customer->setCompany('Analytical Engines');
         $customer->setEmail('ada@example.com');
-        $customer->setTitle('Dr.');
         $customer->setVatIds(['DE123456789']);
         $customer->setActive(true);
         $customer->setDoubleOptInRegistration(true);
@@ -135,7 +134,6 @@ class CustomerEntityTest extends TestCase
         static::assertSame('Ada Lovelace', (string) $customer);
         static::assertSame('Analytical Engines', $customer->getCompany());
         static::assertSame('ada@example.com', $customer->getEmail());
-        static::assertSame('Dr.', $customer->getTitle());
         static::assertSame(['DE123456789'], $customer->getVatIds());
         static::assertTrue($customer->getActive());
         static::assertTrue($customer->getDoubleOptInRegistration());

@@ -30,7 +30,6 @@ class Migration1536232970CustomerAddress extends MigrationStep
               `company` VARCHAR(255) COLLATE utf8mb4_unicode_ci NULL,
               `department` VARCHAR(35) COLLATE utf8mb4_unicode_ci NULL,
               `gender` VARCHAR(255) COLLATE utf8mb4_unicode_ci NULL,
-              `title` VARCHAR(100) COLLATE utf8mb4_unicode_ci NULL,
               `name` VARCHAR(255) COLLATE utf8mb4_unicode_ci NOT NULL,
               `street` VARCHAR(255) COLLATE utf8mb4_unicode_ci NULL,
               `zipcode` VARCHAR(50) COLLATE utf8mb4_unicode_ci NOT NULL,

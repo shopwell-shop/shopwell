@@ -14,6 +14,14 @@
         color: var(--color-text-primary-default);
     }
 
+    &__entry-count {
+        padding: 0;
+    }
+
+    &__entry-count-empty {
+        color: var(--color-text-secondary-default);
+    }
+
     &__create-name {
         margin-block-end: var(--scale-size-16);
     }

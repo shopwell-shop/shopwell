@@ -54,18 +54,6 @@
     <template #content>
         {% block sw_blog_comment_list_content_inner %}
         <div class="sw-blog-comment-list__content">
-            {% block sw_blog_comment_list_filter %}
-            <div class="sw-blog-comment-list__filter">
-                <mt-select
-                    v-model:model-value="statusFilter"
-                    class="sw-blog-comment-list__filter-status"
-                    :label="$t('sw-blog.comment.filterStatus')"
-                    :options="statusOptions"
-                    @update:model-value="onChangeStatusFilter"
-                />
-            </div>
-            {% endblock %}
-
             {% block sw_blog_comment_list_empty_state %}
             <mt-empty-state
                 v-if="!isLoading && !total"
@@ -79,10 +67,11 @@
 
             {% block sw_blog_comment_list_grid %}
             <sw-entity-listing
-                v-else
+                v-else-if="isLoading || comments"
                 ref="listing"
                 class="sw-blog-comment-list__grid"
                 identifier="sw-blog-comment-list"
+                detail-route="sw.blog.comment.detail"
                 :data-source="comments"
                 :columns="columns"
                 :repository="commentRepository"
@@ -90,20 +79,25 @@
                 :sort-direction="sortDirection"
                 :is-loading="isLoading"
                 :full-page="true"
-                :show-selection="false"
+                :show-selection="canEdit"
                 :show-settings="true"
                 :disable-data-fetching="true"
                 :allow-inline-edit="false"
-                :allow-column-edit="false"
+                :allow-column-edit="true"
                 :allow-edit="false"
-                :allow-delete="canDelete"
                 :allow-view="canEdit"
+                :allow-delete="canDelete"
                 @page-change="onPageChange"
                 @column-sort="onSortColumn"
             >
-                {% block sw_blog_comment_list_grid_column_author %}
-                <template #column-author="{ item }">
-                    {{ authorOf(item) }}
+                {% block sw_blog_comment_list_grid_column_title %}
+                <template #column-title="{ item }">
+                    <router-link
+                        class="sw-blog-comment-list__title"
+                        :to="{ name: 'sw.blog.comment.detail', params: { id: item.id } }"
+                    >
+                        {{ titleOf(item) }}
+                    </router-link>
                 </template>
                 {% endblock %}
 
@@ -127,29 +121,80 @@
                 </template>
                 {% endblock %}
 
+                {% block sw_blog_comment_list_grid_column_author %}
+                <template #column-author="{ item }">
+                    {{ authorOf(item) }}
+                </template>
+                {% endblock %}
+
                 {% block sw_blog_comment_list_grid_column_status %}
                 <template #column-status="{ item }">
-                    {% block sw_blog_comment_list_grid_column_status_switch %}
-                    <mt-switch
-                        v-if="canEdit"
-                        v-model="item.status"
-                        @change="onChangeStatus(item)"
-                    />
-                    {% endblock %}
-
-                    {% block sw_blog_comment_list_grid_column_status_readonly %}
-                    <sw-data-grid-column-boolean
-                        v-else
-                        :value="item.status"
-                        :is-inline-edit="false"
-                    />
-                    {% endblock %}
+                    <mt-badge
+                        class="sw-blog-comment-list__status"
+                        :variant="item.status ? 'positive' : 'attention'"
+                        size="small"
+                    >
+                        {{ item.status ? $t('sw-blog.comment.filterApproved') : $t('sw-blog.comment.filterPending') }}
+                    </mt-badge>
                 </template>
                 {% endblock %}
 
                 {% block sw_blog_comment_list_grid_column_created_at %}
                 <template #column-createdAt="{ item }">
                     <sw-time-ago :date="item.createdAt" />
+                </template>
+                {% endblock %}
+
+                {% block sw_blog_comment_list_grid_more_actions %}
+                {#
+                The decision is an action of the row, not a switch inside the column: a switch reads
+                as "this is a setting", and approving a reader's comment is a moderation step with
+                two named outcomes.
+                #}
+                <template #more-actions="{ item }">
+                    <sw-context-menu-item
+                        v-if="canEdit && !item.status"
+                        class="sw-blog-comment-list__action-approve"
+                        @click="onApprove(item)"
+                    >
+                        {{ $t('sw-blog.detail.commentsApprove') }}
+                    </sw-context-menu-item>
+
+                    <sw-context-menu-item
+                        v-if="canEdit && item.status"
+                        class="sw-blog-comment-list__action-hide"
+                        @click="onHide(item)"
+                    >
+                        {{ $t('sw-blog.detail.commentsHide') }}
+                    </sw-context-menu-item>
+                </template>
+                {% endblock %}
+
+                {% block sw_blog_comment_list_grid_bulk_actions %}
+                <template #bulk-additional="{ selectionCount }">
+                    <template v-if="selectionCount > 0">
+                        <a
+                            v-if="canEdit"
+                            class="link link-primary sw-blog-comment-list__bulk-approve"
+                            role="button"
+                            tabindex="0"
+                            @click="onBulkApprove"
+                            @keydown.enter="onBulkApprove"
+                        >
+                            {{ $t('sw-blog.detail.commentsApprove') }} ({{ selectionCount }})
+                        </a>
+
+                        <a
+                            v-if="canEdit"
+                            class="link link-secondary sw-blog-comment-list__bulk-hide"
+                            role="button"
+                            tabindex="0"
+                            @click="onBulkHide"
+                            @keydown.enter="onBulkHide"
+                        >
+                            {{ $t('sw-blog.detail.commentsHide') }} ({{ selectionCount }})
+                        </a>
+                    </template>
                 </template>
                 {% endblock %}
             </sw-entity-listing>
@@ -199,6 +244,18 @@
                 icon="regular-undo"
                 :title="$t('sw-blog.list.buttonRefresh')"
                 @click="onRefresh"
+            />
+            {% endblock %}
+
+            {% block sw_blog_comment_list_sidebar_filter %}
+            <sw-sidebar-filter-panel
+                ref="filterPanel"
+                entity="blog_comment"
+                :store-key="storeKey"
+                :filters="listFilters"
+                :defaults="defaultFilters"
+                :active-filter-number="activeFilterNumber"
+                @criteria-changed="updateCriteria"
             />
             {% endblock %}
         </sw-sidebar>

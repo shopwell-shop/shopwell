@@ -15,6 +15,7 @@ type BlogCategory = EntitySchema.Entity<'blog_category'>;
 type DeleteTarget = {
     id: EntitySchema.EntityKey<'blog_category'>;
     name: string | null;
+    entryCount: number;
 };
 
 /**
@@ -123,6 +124,14 @@ export default defineComponent({
         },
 
         deleteMessage(): string {
+            const entryCount = this.deleteTarget?.entryCount ?? 0;
+
+            if (entryCount > 0) {
+                return this.$t('sw-blog.category.textDeleteInUse', {
+                    count: entryCount,
+                });
+            }
+
             return this.$t('sw-blog.list.textDeleteCategory', { name: this.deleteName });
         },
 
@@ -213,7 +222,11 @@ export default defineComponent({
         },
 
         onDelete(category: BlogCategory): void {
-            this.deleteTarget = { id: category.id, name: category.name };
+            this.deleteTarget = {
+                id: category.id,
+                name: category.name,
+                entryCount: category.assignments?.length ?? 0,
+            };
         },
 
         onCloseDeleteModal(): void {
@@ -234,6 +247,17 @@ export default defineComponent({
 
         onOpenBlogList(): void {
             void this.$router.push({ name: 'sw.blog.list' });
+        },
+
+        /**
+         * The count in the column is a door: a merchant who reads "5 articles" wants to see them,
+         * not to reconstruct the same question as a filter on another page.
+         */
+        onOpenCategoryEntries(category: BlogCategory): void {
+            void this.$router.push({
+                name: 'sw.blog.list',
+                query: { categoryId: category.id },
+            });
         },
     },
 });

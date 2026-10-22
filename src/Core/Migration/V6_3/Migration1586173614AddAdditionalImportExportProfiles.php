@@ -54,7 +54,6 @@ class Migration1586173614AddAdditionalImportExportProfiles extends MigrationStep
                 'mapping' => [
                     ['key' => 'id', 'mappedKey' => 'id'],
                     ['key' => 'email', 'mappedKey' => 'email'],
-                    ['key' => 'title', 'mappedKey' => 'title'],
                     ['key' => 'gender', 'mappedKey' => 'gender'],
 
                     ['key' => 'name', 'mappedKey' => 'name'],

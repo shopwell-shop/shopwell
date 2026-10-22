@@ -72,10 +72,6 @@
                         "description": "Name of customer's department.",
                         "type": "string"
                     },
-                    "title": {
-                        "description": "Titles given to customer like Dr. , Prof., etc",
-                        "type": "string"
-                    },
                     "phoneNumber": {
                         "description": "Customer's phone number.",
                         "type": "string"

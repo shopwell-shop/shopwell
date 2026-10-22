@@ -46,7 +46,6 @@
                     },
                     "street": { "type": "string" },
                     "department": { "type": "string" },
-                    "title": { "type": "string" },
                     "phoneNumber": {
                         "description": "Phone number. Required when the `core.loginRegistration.showPhoneNumberField` and `core.loginRegistration.phoneNumberFieldRequired` settings are both enabled. Both are off by default.",
                         "type": "string"

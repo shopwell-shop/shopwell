@@ -69,7 +69,6 @@ export default {
             'company',
             'department',
             'gender',
-            'title',
             'name',
             'street',
             'additionalAddressLine1',

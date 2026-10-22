@@ -45,8 +45,6 @@ class OrderAddressEntity extends Entity
 
     protected ?string $department = null;
 
-    protected ?string $title = null;
-
     /**
      * @deprecated tag:v6.8.0 - Will be removed
      */
@@ -186,16 +184,6 @@ class OrderAddressEntity extends Entity
     public function setDepartment(?string $department): void
     {
         $this->department = $department;
-    }
-
-    public function getTitle(): ?string
-    {
-        return $this->title;
-    }
-
-    public function setTitle(?string $title): void
-    {
-        $this->title = $title;
     }
 
     /**

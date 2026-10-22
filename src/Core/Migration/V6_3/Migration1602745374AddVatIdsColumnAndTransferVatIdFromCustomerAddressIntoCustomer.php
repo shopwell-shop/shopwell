@@ -21,7 +21,7 @@ class Migration1602745374AddVatIdsColumnAndTransferVatIdFromCustomerAddressIntoC
     {
         $connection->executeStatement('
             ALTER TABLE `customer`
-            ADD COLUMN `vat_ids` JSON NULL DEFAULT NULL AFTER `title`;
+            ADD COLUMN `vat_ids` JSON NULL DEFAULT NULL AFTER `name`;
         ');
 
         $this->addInsertTrigger($connection);

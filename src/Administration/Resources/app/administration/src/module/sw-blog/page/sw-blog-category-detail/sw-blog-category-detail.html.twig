@@ -162,6 +162,111 @@
                 {% endblock %}
             </mt-card>
             {% endblock %}
+
+            {% block sw_blog_category_detail_content_seo %}
+            {#
+            The three seo fields exist on the entity and are what the category page of the storefront
+            renders into its head - a category without them falls back to its name, which is why the
+            form has to offer them.
+            #}
+            <mt-card
+                class="sw-blog-category-detail__seo"
+                position-identifier="sw-blog-category-detail-seo"
+                :title="$t('sw-blog.detail.cardSeo')"
+                :is-loading="isLoading"
+            >
+                {% block sw_blog_category_detail_content_seo_fields %}
+                <sw-container
+                    columns="1fr"
+                    gap="var(--scale-size-16) 0"
+                >
+                    <mt-text-field
+                        v-model="category.metaTitle"
+                        class="sw-blog-category-detail__meta-title"
+                        :disabled="!canEdit"
+                        :label="$t('sw-blog.detail.labelMetaTitle')"
+                        :placeholder="$t('sw-blog.detail.placeholderMetaTitle')"
+                    />
+
+                    <mt-textarea
+                        v-model="category.metaDescription"
+                        class="sw-blog-category-detail__meta-description"
+                        :disabled="!canEdit"
+                        :label="$t('sw-blog.detail.labelMetaDescription')"
+                        :placeholder="$t('sw-blog.detail.placeholderMetaDescription')"
+                    />
+
+                    <mt-text-field
+                        v-model="category.keywords"
+                        class="sw-blog-category-detail__keywords"
+                        :disabled="!canEdit"
+                        :label="$t('sw-blog.detail.labelKeywords')"
+                        :placeholder="$t('sw-blog.detail.placeholderKeywords')"
+                    />
+                </sw-container>
+                {% endblock %}
+            </mt-card>
+            {% endblock %}
+
+            {% block sw_blog_category_detail_content_entries %}
+            <mt-card
+                class="sw-blog-category-detail__entries"
+                position-identifier="sw-blog-category-detail-entries"
+                :title="$t('sw-blog.category.cardEntries')"
+                :is-loading="isLoading"
+            >
+                {% block sw_blog_category_detail_content_entries_empty %}
+                <mt-empty-state
+                    v-if="!entryCount"
+                    class="sw-blog-category-detail__entries-empty"
+                    icon="regular-image-text"
+                    :headline="$t('sw-blog.category.messageNoEntries')"
+                    :description="$t('sw-blog.category.messageNoEntriesSubline')"
+                />
+                {% endblock %}
+
+                {% block sw_blog_category_detail_content_entries_grid %}
+                <sw-data-grid
+                    v-else
+                    class="sw-blog-category-detail__entries-grid"
+                    :data-source="entries"
+                    :columns="entriesColumns"
+                    :show-selection="false"
+                    :show-settings="false"
+                    :allow-inline-edit="false"
+                    :allow-column-edit="false"
+                    :plain-appearance="true"
+                >
+                    {% block sw_blog_category_detail_content_entries_grid_column_title %}
+                    <template #column-title="{ item }">
+                        <router-link :to="{ name: 'sw.blog.detail', params: { id: item.id } }">
+                            {{ item.title }}
+                        </router-link>
+                    </template>
+                    {% endblock %}
+
+                    {% block sw_blog_category_detail_content_entries_grid_column_published_at %}
+                    <template #column-publishedAt="{ item }">
+                        <sw-blog-status-badge
+                            v-if="item.publishedAt"
+                            :published-at="item.publishedAt"
+                        />
+                        <sw-time-ago
+                            v-else
+                            :date="item.createdAt"
+                        />
+                    </template>
+                    {% endblock %}
+
+                    {% block sw_blog_category_detail_content_entries_grid_column_updated_at %}
+                    <template #column-updatedAt="{ item }">
+                        <sw-time-ago :date="item.updatedAt" />
+                    </template>
+                    {% endblock %}
+                </sw-data-grid>
+                {% endblock %}
+            </mt-card>
+            {% endblock %}
     {% block sw_blog_category_detail_delete_modal %}
             <sw-modal
                 v-if="showDeleteModal"

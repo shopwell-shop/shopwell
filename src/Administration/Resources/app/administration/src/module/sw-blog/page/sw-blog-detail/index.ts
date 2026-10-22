@@ -17,8 +17,6 @@ type BlogVideo = EntitySchema.Entity<'blog_video'>;
 
 type BlogCategory = EntitySchema.Entity<'blog_category'>;
 
-type BlogAuthor = EntitySchema.Entity<'blog_author'>;
-
 type CmsPage = EntitySchema.Entity<'cms_page'>;
 
 /**
@@ -48,9 +46,17 @@ export default defineComponent({
     mixins: [Shopwell.Mixin.getByName('notification')],
 
     props: {
+        /**
+         * The entry to edit, or `null` for a new one.
+         *
+         * A new entry is created on this page and not in a dialog on the list: the page is where a
+         * headline is written, and a dialog that asks for it first is a step that teaches nothing.
+         * Nothing is written to the api until the merchant saves - an abandoned draft leaves no row.
+         */
         blogId: {
-            type: String as unknown as PropType<EntitySchema.EntityKey<'blog'>>,
-            required: true,
+            type: String as unknown as PropType<EntitySchema.EntityKey<'blog'> | null>,
+            required: false,
+            default: null,
         },
     },
 
@@ -99,6 +105,17 @@ export default defineComponent({
             return this.repositoryFactory.create('blog');
         },
 
+        /**
+         * The id the page works on: the prop, or the id the new entry got from its first save.
+         */
+        effectiveId(): EntitySchema.EntityKey<'blog'> | null {
+            return this.blog?.id ?? this.blogId ?? null;
+        },
+
+        isNew(): boolean {
+            return this.blogId === null;
+        },
+
         videoRepository(): RepositoryType<'blog_video'> {
             return this.repositoryFactory.create('blog_video');
         },
@@ -145,6 +162,14 @@ export default defineComponent({
 
         title(): string {
             return this.blog?.title ?? '';
+        },
+
+        /**
+         * What the header says while the entry has no headline yet: an empty header on a new entry
+         * reads like a page that failed to load.
+         */
+        headerTitle(): string {
+            return this.title.trim() === '' ? this.$t('sw-blog.list.defaultTitle') : this.title;
         },
 
         isTitleMissing(): boolean {
@@ -196,12 +221,33 @@ export default defineComponent({
     },
 
     methods: {
+        /**
+         * A new entry: nothing is written until the merchant saves, so an abandoned draft leaves no
+         * row behind. The type is preset because the editor of the body is chosen by it.
+         */
+        createBlog(): Blog {
+            const blog = this.blogRepository.create();
+
+            blog.type = 'post';
+
+            return blog;
+        },
+
         async loadBlog(): Promise<void> {
             this.isLoading = true;
 
             try {
-                const criteria = blogApi(this).detailCriteria(this.blogId);
-                const blog = await this.blogRepository.get(this.blogId, Shopwell.Context.api, criteria);
+                const id = this.effectiveId;
+
+                if (!id) {
+                    this.blog = this.createBlog();
+                    this.ensureVideo();
+
+                    return;
+                }
+
+                const criteria = blogApi(this).detailCriteria(id);
+                const blog = await this.blogRepository.get(id, Shopwell.Context.api, criteria);
 
                 this.blog = blog ?? null;
 
@@ -220,7 +266,16 @@ export default defineComponent({
          * writing a row, and the row is what the page adds and removes.
          */
         async loadAssignments(): Promise<void> {
-            const criteria: CriteriaType = blogApi(this).assignmentsOfBlogCriteria(this.blogId);
+            const id = this.effectiveId;
+
+            if (!id) {
+                this.assignments = [];
+                this.selectedCategoryIds = [];
+
+                return;
+            }
+
+            const criteria: CriteriaType = blogApi(this).assignmentsOfBlogCriteria(id);
             const result = await this.assignmentRepository.search(criteria);
 
             this.assignments = [...result];
@@ -246,7 +301,15 @@ export default defineComponent({
          * How many comments of this entry still wait, for the door to the queue.
          */
         async loadPendingCommentCount(): Promise<void> {
-            const criteria = blogApi(this).pendingCommentsOfBlogCriteria(this.blogId);
+            const id = this.effectiveId;
+
+            if (!id) {
+                this.pendingCommentCount = 0;
+
+                return;
+            }
+
+            const criteria = blogApi(this).pendingCommentsOfBlogCriteria(id);
 
             await this.commentRepository.search(criteria).then((result) => {
                 this.pendingCommentCount = result.total ?? 0;
@@ -412,7 +475,7 @@ export default defineComponent({
         createVideo(): BlogVideo {
             const video = this.videoRepository.create();
 
-            video.blogId = this.blogId;
+            video.blogId = this.effectiveId as EntitySchema.EntityKey<'blog'>;
             video.videoUrl = '';
             video.provider = 'youtube';
 
@@ -516,9 +579,15 @@ export default defineComponent({
             }
 
             if (this.isSlugMissing) {
-                this.createNotificationError({ message: this.$t('sw-blog.detail.messageSlugRequired') });
+                // a new entry gets its url name from its headline: asking for both before the entry
+                // even exists is what the create dialog used to do, and it is why it was removed
+                if (!this.isNew) {
+                    this.createNotificationError({ message: this.$t('sw-blog.detail.messageSlugRequired') });
 
-                return;
+                    return;
+                }
+
+                this.blog.slug = blogApi(this).slugFor(this.title, this.$t('sw-blog.list.defaultSlug'));
             }
 
             this.isSaving = true;
@@ -541,6 +610,12 @@ export default defineComponent({
                     return;
                 }
 
+                // a new entry now has an id, and the address bar has to say so: a reload of
+                // `/create` would open an empty page over content that exists
+                if (this.isNew) {
+                    await this.$router.replace({ name: 'sw.blog.detail', params: { id: this.blog.id } });
+                }
+
                 // reload, so the saved state - and the status badge derived from it - is what the
                 // page shows, not the values that were typed
                 await this.loadBlog();
@@ -552,6 +627,12 @@ export default defineComponent({
         },
 
         async syncCategories(): Promise<void> {
+            const blogId = this.effectiveId;
+
+            if (!blogId) {
+                return;
+            }
+
             const idsToRemove = blogApi(this).assignmentIdsToRemove(this.assignments, this.selectedCategoryIds);
             const idsToAssign = blogApi(this).categoryIdsToAssign(this.assignments, this.selectedCategoryIds);
 
@@ -562,7 +643,7 @@ export default defineComponent({
             for (const categoryId of idsToAssign) {
                 const assignment = this.assignmentRepository.create();
 
-                assignment.blogId = this.blogId;
+                assignment.blogId = blogId;
                 assignment.blogCategoryId = categoryId;
 
                 await this.assignmentRepository.save(assignment);
@@ -588,8 +669,14 @@ export default defineComponent({
         onDelete(): void {
             this.showDeleteModal = false;
 
+            const id = this.effectiveId;
+
+            if (!id) {
+                return;
+            }
+
             void this.blogRepository
-                .delete(this.blogId)
+                .delete(id)
                 .then(() => {
                     this.createNotificationSuccess({ message: this.$t('sw-blog.detail.messageDeleteSuccess') });
 

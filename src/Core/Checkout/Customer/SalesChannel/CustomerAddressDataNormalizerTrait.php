@@ -11,7 +11,6 @@ trait CustomerAddressDataNormalizerTrait
      * @var list<string>
      */
     private const ADDRESS_FIELDS_TO_TRIM = [
-        'title',
         'name',
         'street',
         'zipcode',

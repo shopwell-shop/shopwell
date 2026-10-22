@@ -227,7 +227,7 @@ describe('module/sw-customer/page/sw-customer-address-form', () => {
 
         await flushPromises();
 
-        const nameField = wrapper.findAll('.mt-field').at(3);
+        const nameField = wrapper.findAll('.mt-field').at(2);
 
         expect(wrapper.vm.disabled).toBe(false);
         expect(nameField.classes()).toContain('has--error');

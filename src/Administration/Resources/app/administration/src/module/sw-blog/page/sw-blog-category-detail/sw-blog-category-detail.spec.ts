@@ -45,6 +45,11 @@ const category = {
     cmsPageId: 'page-1',
 };
 
+const entries = [
+    { id: 'blog-1', title: 'Autumn guide', publishedAt: null, updatedAt: '2026-10-01T10:00:00.000Z' },
+    { id: 'blog-2', title: 'Behind the scenes', publishedAt: '2026-10-02T10:00:00.000Z', updatedAt: '2026-10-02T10:00:00.000Z' },
+];
+
 let activeWrapper: VueWrapper | null = null;
 
 async function createWrapper(
@@ -84,6 +89,10 @@ async function createWrapper(
         search: jest.fn(() => Promise.resolve(collection<EntityCollection<'cms_page'>>([]))),
     };
 
+    const blogRepository = {
+        search: jest.fn(() => Promise.resolve(collection<EntityCollection<'blog'>>(entries))),
+    };
+
     const wrapper = mount(await wrapTestComponent('sw-blog-category-detail', { sync: true }), {
         props: { categoryId: 'category-1' },
         global: {
@@ -104,7 +113,15 @@ async function createWrapper(
             provide: {
                 repositoryFactory: {
                     create: (entityName: string) => {
-                        return entityName === 'cms_page' ? cmsPageRepository : categoryRepository;
+                        if (entityName === 'cms_page') {
+                            return cmsPageRepository;
+                        }
+
+                        if (entityName === 'blog') {
+                            return blogRepository;
+                        }
+
+                        return categoryRepository;
                     },
                 },
                 acl: { can },
@@ -150,8 +167,8 @@ describe('src/module/sw-blog/page/sw-blog-category-detail', () => {
         expect(wrapper.vm.isLoading).toBe(false);
     });
 
-    it('saves the category with the version of its layout and returns to the list', async () => {
-        const { wrapper, saveCategory, push } = await createWrapper();
+    it('saves the category with the version of its layout and stays on the page', async () => {
+        const { wrapper, saveCategory, getCategory, push } = await createWrapper();
         await flushPromises();
 
         await wrapper.vm.onSave();
@@ -160,7 +177,10 @@ describe('src/module/sw-blog/page/sw-blog-category-detail', () => {
         expect(saveCategory).toHaveBeenCalledWith(
             expect.objectContaining({ id: 'category-1', cmsPageVersionId: 'version-1' }),
         );
-        expect(push).toHaveBeenCalledWith({ name: 'sw.blog.category.list' });
+
+        // the page reloads the saved state instead of returning to the list
+        expect(getCategory).toHaveBeenCalledTimes(2);
+        expect(push).not.toHaveBeenCalled();
     });
 
     it('gives a new category the active default the definition requires', async () => {

@@ -29,19 +29,15 @@ type BlogListVm = {
     presetAuthorId: string | null;
     hasActiveSearchOrFilter: boolean;
     deleteTarget: { id: string; name: string | null } | null;
-    showCreateModal: boolean;
-    newBlogTitle: string;
     canCreate: boolean;
     canDelete: boolean;
     canEdit: boolean;
-    isCreateDisabled: boolean;
     getList: () => Promise<void>;
     loadCategories: () => Promise<void>;
     loadAuthors: () => Promise<void>;
     updateCriteria: (filters: unknown[]) => void;
     onRefresh: () => void;
     onOpenCreateModal: () => void;
-    onCreateBlog: () => void;
     onInlineEditSave: (blog: BlogRow) => void;
     onDelete: (blog: BlogRow) => void;
     onConfirmDelete: () => void;
@@ -284,33 +280,14 @@ describe('src/module/sw-blog/page/sw-blog-list', () => {
         expect(wrapper.vm.canEdit).toBe(false);
     });
 
-    it('creates an entry with a generated slug and opens it', async () => {
-        const { wrapper, save, push } = await createWrapper();
+    it('opens the create page instead of asking for a title in a dialog', async () => {
+        const { wrapper, push, save } = await createWrapper();
 
         wrapper.vm.onOpenCreateModal();
-        wrapper.vm.newBlogTitle = 'Autumn Guide';
-
-        expect(wrapper.vm.isCreateDisabled).toBe(false);
-
-        wrapper.vm.onCreateBlog();
         await flushPromises();
 
-        const created = callArgument<{ slug: string; type: string; title: string }>(save);
-
-        expect(created.title).toBe('Autumn Guide');
-        expect(created.type).toBe('post');
-        expect(created.slug).toMatch(/^autumn-guide-[a-z0-9]+$/);
-        expect(push).toHaveBeenCalledWith({ name: 'sw.blog.detail', params: { id: 'blog-new' } });
-    });
-
-    it('refuses to create an entry without a title', async () => {
-        const { wrapper, save } = await createWrapper();
-
-        wrapper.vm.onOpenCreateModal();
-        wrapper.vm.newBlogTitle = '   ';
-        wrapper.vm.onCreateBlog();
-
-        expect(wrapper.vm.isCreateDisabled).toBe(true);
+        expect(push).toHaveBeenCalledWith({ name: 'sw.blog.create' });
+        // nothing is written before the entry page is saved
         expect(save).not.toHaveBeenCalled();
     });
 

@@ -101,7 +101,6 @@
                         "passwordMinLength",
                         "createCustomerAccountDefault",
                         "showSalutation",
-                        "showTitleField",
                         "requireEmailConfirmation",
                         "requirePasswordConfirmation",
                         "doubleOptInRegistration",
@@ -135,10 +134,6 @@
                         "showSalutation": {
                           "type": "boolean",
                           "description": "Whether the salutation field is shown in registration and address forms"
-                        },
-                        "showTitleField": {
-                          "type": "boolean",
-                          "description": "Whether the title field is shown in registration and address forms"
                         },
                         "requireEmailConfirmation": {
                           "type": "boolean",

@@ -30,7 +30,6 @@ class CustomerAddressDefinition extends EntityDefinition
 
     public const MAX_LENGTH_PHONE_NUMBER = 40;
     public const MAX_LENGTH_NAME = 255;
-    public const MAX_LENGTH_TITLE = 100;
     public const MAX_LENGTH_ZIPCODE = 50;
 
     public function getEntityName(): string
@@ -77,7 +76,6 @@ class CustomerAddressDefinition extends EntityDefinition
             (new StringField('company', 'company'))->addFlags(new ApiAware(), new SearchRanking(SearchRanking::MIDDLE_SEARCH_RANKING))->setDescription('Name of customer\'s company.'),
             (new StringField('street', 'street'))->addFlags(new ApiAware(), new Required(), new SearchRanking(SearchRanking::HIGH_SEARCH_RANKING))->setDescription('Name of customer\'s street.'),
             (new StringField('department', 'department'))->addFlags(new ApiAware())->setDescription('Name of customer\'s department.'),
-            (new StringField('title', 'title', self::MAX_LENGTH_TITLE))->addFlags(new ApiAware())->setDescription('Titles given to customer like Dr. , Prof., etc'),
             (new StringField('phone_number', 'phoneNumber', self::MAX_LENGTH_PHONE_NUMBER))->addFlags(new ApiAware())->setDescription('Customer\'s phone number.'),
             (new StringField('additional_address_line1', 'additionalAddressLine1'))->addFlags(new ApiAware(), new SearchRanking(SearchRanking::MIDDLE_SEARCH_RANKING))->setDescription('Additional customer\'s address information.'),
             (new StringField('additional_address_line2', 'additionalAddressLine2'))->addFlags(new ApiAware(), new SearchRanking(SearchRanking::MIDDLE_SEARCH_RANKING))->setDescription('Additional customer\'s address information.'),

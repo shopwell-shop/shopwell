@@ -38,7 +38,6 @@ class ShopSettingsRouteTest extends TestCase
                 'core.loginRegistration.passwordMinLength' => '12',
                 'core.loginRegistration.createCustomerAccountDefault' => true,
                 'core.loginRegistration.showSalutation' => true,
-                'core.loginRegistration.showTitleField' => true,
                 'core.loginRegistration.requireEmailConfirmation' => true,
                 'core.loginRegistration.requirePasswordConfirmation' => true,
                 'core.loginRegistration.doubleOptInRegistration' => true,
@@ -107,7 +106,6 @@ class ShopSettingsRouteTest extends TestCase
         static::assertSame(12, $loginRegistration->passwordMinLength);
         static::assertTrue($loginRegistration->createCustomerAccountDefault);
         static::assertTrue($loginRegistration->showSalutation);
-        static::assertTrue($loginRegistration->showTitleField);
         static::assertTrue($loginRegistration->requireEmailConfirmation);
         static::assertTrue($loginRegistration->requirePasswordConfirmation);
         static::assertTrue($loginRegistration->doubleOptInRegistration);
