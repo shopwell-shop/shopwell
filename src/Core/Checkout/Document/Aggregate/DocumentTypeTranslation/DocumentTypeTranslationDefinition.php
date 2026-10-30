@@ -9,17 +9,24 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\ApiAware;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\Required;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\StringField;
 use Shopwell\Core\Framework\DataAbstractionLayer\FieldCollection;
+use Shopwell\Core\Framework\Feature;
 use Shopwell\Core\Framework\Log\Package;
 
 /**
  * @codeCoverageIgnore
  *
- * @deprecated tag:v6.9.0 reason:remove-entity - Will be removed
+ * @deprecated tag:v6.9.0 - Will be removed
  */
 #[Package('after-sales')]
 class DocumentTypeTranslationDefinition extends EntityTranslationDefinition
 {
     final public const ENTITY_NAME = 'document_type_translation';
+
+    // @phpstan-ignore shopwell.internalMethod (Preserve the inherited public constructor contract.)
+    public function __construct()
+    {
+        Feature::throwIfActive('v6.9.0.0', Feature::deprecatedClassMessage(self::class, 'v6.9.0.0'));
+    }
 
     public function getEntityName(): string
     {

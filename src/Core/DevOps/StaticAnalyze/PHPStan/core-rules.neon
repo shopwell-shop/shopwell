@@ -12,6 +12,7 @@ parametersSchema:
     shopwellTaggedServiceContractAdditionalTagContracts: arrayOf(anyOf(string(), listOf(string())), string())
 
 rules:
+    - Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\Deprecation\DeprecatedEntityConstructionRule
     - Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\Deprecation\DeprecatedServiceDefinitionFeatureTagRule
     - Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\Deprecation\DeprecatedServiceFeatureTagRule
     - Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\FeatureFlagVersionRule

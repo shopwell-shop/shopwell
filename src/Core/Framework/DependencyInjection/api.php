@@ -52,6 +52,7 @@ use Shopwell\Core\Framework\Api\Cors\CorsHeaderProviderInterface;
 use Shopwell\Core\Framework\Api\EventListener\Authentication\ApiAuthenticationListener;
 use Shopwell\Core\Framework\Api\EventListener\Authentication\SalesChannelAuthenticationListener;
 use Shopwell\Core\Framework\Api\EventListener\Authentication\UserCredentialsChangedSubscriber;
+use Shopwell\Core\Framework\Api\EventListener\CompressedCriteriaRequestListener;
 use Shopwell\Core\Framework\Api\EventListener\CorsListener;
 use Shopwell\Core\Framework\Api\EventListener\ExpectationSubscriber;
 use Shopwell\Core\Framework\Api\EventListener\JsonRequestTransformerListener;
@@ -85,6 +86,7 @@ use Shopwell\Core\Framework\App\ShopId\ShopIdProvider;
 use Shopwell\Core\Framework\DataAbstractionLayer\DefinitionInstanceRegistry;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityProtection\EntityProtectionValidator;
 use Shopwell\Core\Framework\DataAbstractionLayer\Indexing\EntityIndexerRegistry;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\CompressedCriteriaDecoder;
 use Shopwell\Core\Framework\Event\BusinessEventCollector;
 use Shopwell\Core\Framework\Feature\FeatureFlagRegistry;
 use Shopwell\Core\Framework\MessageQueue\Stats\StatsService;
@@ -441,6 +443,12 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ]);
 
     $services->set(JsonRequestTransformerListener::class)
+        ->tag('kernel.event_subscriber');
+
+    $services->set(CompressedCriteriaRequestListener::class)
+        ->args([
+            service(CompressedCriteriaDecoder::class),
+        ])
         ->tag('kernel.event_subscriber');
 
     $services->set(ExpectationSubscriber::class)
