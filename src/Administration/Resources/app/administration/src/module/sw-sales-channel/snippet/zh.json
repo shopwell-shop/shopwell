@@ -416,6 +416,7 @@
       },
       "productAssignmentModal": {
         "title": "添加商品",
+        "buttonAddProducts": "最多添加 {productCount} 个商品 | 最多添加 {productCount} 个商品",
         "singleProducts": "选择商品",
         "singleProductsEmptyState": "未找到更多商品",
         "categories": {
