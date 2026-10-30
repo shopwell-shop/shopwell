@@ -18,5 +18,6 @@ module.exports = {
         'require-global-default-use': require(path.resolve(__dirname, 'require-global-default-use.js')),
         'valid-shopwell-setup': require(path.resolve(__dirname, 'valid-shopwell-setup.js')),
         'native-setup-filename': require(path.resolve(__dirname, 'native-setup-filename.js')),
+        'no-swallowed-errors': require(path.resolve(__dirname, 'no-swallowed-errors.js')),
     },
 };

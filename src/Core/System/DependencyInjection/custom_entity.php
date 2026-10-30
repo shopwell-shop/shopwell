@@ -5,6 +5,7 @@ namespace Shopwell\Core\System\DependencyInjection;
 use Doctrine\DBAL\Connection;
 use Psr\Clock\ClockInterface;
 use Shopwell\Core\Framework\Api\Acl\AclCriteriaValidator;
+use Shopwell\Core\Framework\Api\Acl\AclVersionMergeValidator;
 use Shopwell\Core\Framework\DataAbstractionLayer\DefinitionInstanceRegistry;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityProtection\EntityProtectionValidator;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\RequestCriteriaBuilder;
@@ -64,6 +65,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(RequestCriteriaBuilder::class),
             service(EntityProtectionValidator::class),
             service(AclCriteriaValidator::class),
+            service(AclVersionMergeValidator::class),
         ])
         ->call('setContainer', [
             service('service_container'),

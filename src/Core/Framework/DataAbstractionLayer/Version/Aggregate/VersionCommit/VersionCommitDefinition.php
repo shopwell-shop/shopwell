@@ -3,7 +3,10 @@
 namespace Shopwell\Core\Framework\DataAbstractionLayer\Version\Aggregate\VersionCommit;
 
 use Shopwell\Core\Defaults;
+use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityDefinition;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityProtection\EntityProtectionCollection;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityProtection\WriteProtection;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\AutoIncrementField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\BoolField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\FkField;
@@ -65,6 +68,11 @@ class VersionCommitDefinition extends EntityDefinition
     protected function getParentDefinitionClass(): ?string
     {
         return VersionDefinition::class;
+    }
+
+    protected function defineProtections(): EntityProtectionCollection
+    {
+        return new EntityProtectionCollection([new WriteProtection(Context::SYSTEM_SCOPE, Context::USER_SCOPE)]);
     }
 
     protected function defineFields(): FieldCollection
