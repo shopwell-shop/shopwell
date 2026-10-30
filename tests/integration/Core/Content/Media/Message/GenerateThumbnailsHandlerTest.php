@@ -238,8 +238,8 @@ class GenerateThumbnailsHandlerTest extends TestCase
 
         $thumbnailServiceMock->expects($this->exactly($testEntities2->count() + $testEntities3->count()))
             ->method('updateThumbnails')
-            ->willReturnCallback(static function (...$params) use (&$parameters): void {
-                $parameters[$params[0]->getId()] = [$params[1], $params[2], $params[3] ?? false];
+            ->willReturnCallback(static function (MediaEntity $media, Context $context, bool $strict, ?bool $force = null) use (&$parameters): void {
+                $parameters[$media->getId()] = [$context, $strict, $force ?? false];
             });
 
         $handler->__invoke($generateMessage);
