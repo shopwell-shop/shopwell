@@ -68,9 +68,9 @@ jobs:
       - id: sts-major
         if: steps.detect-major.outputs.labels != ''
         continue-on-error: true
-        uses: shopwell/octo-sts-action@main
+        uses: shopwell-shop/octo-sts-action@main
         with:
-          scope: shopwell
+          scope: shopwell-shop
           identity: CreatePR
       - if: steps.detect-major.outputs.labels != ''
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
