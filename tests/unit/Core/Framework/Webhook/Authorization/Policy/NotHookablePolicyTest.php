@@ -10,7 +10,8 @@ use Shopwell\Core\Content\MailTemplate\Service\Event\MailBeforeSentEvent;
 use Shopwell\Core\Content\MailTemplate\Service\Event\MailBeforeValidateEvent;
 use Shopwell\Core\Content\MailTemplate\Service\Event\MailSentEvent;
 use Shopwell\Core\Framework\Api\Acl\AclRoles;
-use Shopwell\Core\Framework\Api\Acl\ApiCallerType;
+use Shopwell\Core\Framework\Api\Acl\ApiCaller;
+use Shopwell\Core\Framework\Api\Context\AdminApiSource;
 use Shopwell\Core\Framework\App\Manifest\Manifest;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\Event\BusinessEventRegistry;
@@ -80,7 +81,10 @@ class NotHookablePolicyTest extends TestCase
     #[DisabledFeatures(['v6.8.0.0'])]
     public function testApiSubscriptionIsDeniedEvenBeforeTheNextMajor(): void
     {
-        static::assertFalse($this->createPolicy()->permitsSubscription(UserRecoveryRequestEvent::EVENT_NAME, Subscriber::api(ApiCallerType::User)));
+        $caller = ApiCaller::of(new AdminApiSource('user-id'));
+        static::assertNotNull($caller);
+
+        static::assertFalse($this->createPolicy()->permitsSubscription(UserRecoveryRequestEvent::EVENT_NAME, Subscriber::api($caller)));
     }
 
     /**

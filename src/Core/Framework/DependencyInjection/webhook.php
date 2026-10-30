@@ -17,6 +17,7 @@ use Shopwell\Core\Framework\App\Payload\AppPayloadServiceHelper;
 use Shopwell\Core\Framework\DataAbstractionLayer\DefinitionInstanceRegistry;
 use Shopwell\Core\Framework\Event\BusinessEventCollector;
 use Shopwell\Core\Framework\Event\BusinessEventRegistry;
+use Shopwell\Core\Framework\Webhook\Authorization\EventLog\RestrictEventLogReadSubscriber;
 use Shopwell\Core\Framework\Webhook\Authorization\Ownership\AppIntegrationChangeSubscriber;
 use Shopwell\Core\Framework\Webhook\Authorization\Ownership\RecordOwnerSubscriber;
 use Shopwell\Core\Framework\Webhook\Authorization\Policy\AppEventPolicy;
@@ -276,6 +277,11 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(RestrictWriteSubscriber::class)
         ->args([service(WriteAuthorizer::class)])
         ->tag('kernel.event_subscriber');
+
+    $services->set(RestrictEventLogReadSubscriber::class)
+        ->args([service('webhook.repository')])
+        ->tag('kernel.event_subscriber')
+        ->tag('kernel.reset', ['method' => 'reset']);
 
     $services->set(WebhookEventLogDefinition::class)
         ->tag('shopwell.entity.definition');

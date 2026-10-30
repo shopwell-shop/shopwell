@@ -6,7 +6,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Api\Acl\AclRoleLoader;
 use Shopwell\Core\Framework\Api\Acl\AclRoles;
-use Shopwell\Core\Framework\Api\Acl\ApiCallerType;
+use Shopwell\Core\Framework\Api\Acl\ApiCaller;
 use Shopwell\Core\Framework\Api\Context\AdminApiSource;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\Write\Command\DeleteCommand;
@@ -224,13 +224,16 @@ class WriteAuthorizerTest extends TestCase
             'role-b' => new AclPrivilegeCollection(['order:read', 'customer:read']),
         ]);
 
+        $caller = ApiCaller::of(new AdminApiSource('user-id'));
+        static::assertNotNull($caller);
+
         $this->validator = $this->createMock(SubscriptionValidator::class);
         $this->validator->expects($this->once())
             ->method('validate')
             ->with(
                 [$insert->getDecodedPrimaryKey()['id'] => 'product.written'],
                 [$insert->getDecodedPrimaryKey()['id'] => ['product:read', 'order:read', 'customer:read']],
-                Subscriber::api(ApiCallerType::User),
+                Subscriber::api($caller),
             )
             ->willReturn(new SubscriptionRefusals());
 
