@@ -197,6 +197,10 @@ export default {
             return Shopwell.Store.get('swProductDetail').productType;
         },
 
+        isUploadedFileRequired() {
+            return this.productType === 'digital' && !Shopwell.Store.get('swProductDetail').isDownloadExternallyManaged;
+        },
+
         ...mapPageErrors(errorConfiguration),
 
         identifier() {
@@ -829,6 +833,7 @@ export default {
                         product.properties = result;
                     }
 
+                    Shopwell.Store.get('swProductDetail').isDownloadExternallyManaged = !product.downloads?.length;
                     Shopwell.Store.get('swProductDetail').product = product;
 
                     if (this.product.parentId) {
@@ -1118,11 +1123,12 @@ export default {
         },
 
         customValidate(errors, product) {
-            if (this.productType === 'digital') {
-                // custom download product validation
-                if (product.downloads === undefined || product.downloads.length < 1) {
-                    errors.push(EntityValidationService.createRequiredError('/0/downloads'));
-                }
+            if (this.isUploadedFileRequired && (product.downloads === undefined || product.downloads.length < 1)) {
+                errors.push({
+                    ...EntityValidationService.createRequiredError('/0/downloads'),
+                    code: 'SW_PRODUCT_DOWNLOADS_EXTERNAL_MANAGEMENT_REQUIRED',
+                    detail: this.$t('sw-product.detailBase.downloadsExternalManagementRequired'),
+                });
             }
 
             return errors;
