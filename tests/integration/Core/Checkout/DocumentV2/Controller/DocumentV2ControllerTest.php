@@ -16,6 +16,7 @@ use Shopwell\Core\Checkout\DocumentV2\DocumentV2Exception;
 use Shopwell\Core\Checkout\DocumentV2\Generation\DocumentPersister;
 use Shopwell\Core\Checkout\Order\OrderCollection;
 use Shopwell\Core\Content\Media\MediaService;
+use Shopwell\Core\Framework\Api\Exception\MissingPrivilegeException;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
@@ -377,6 +378,7 @@ class DocumentV2ControllerTest extends TestCase
             'document:read',
             'document_file:create',
             'document_file:read',
+            'media:read',
         ]);
 
         $browser->jsonRequest(
@@ -399,6 +401,38 @@ class DocumentV2ControllerTest extends TestCase
         static::assertSame(DocumentV2Exception::MEDIA_NOT_FOUND, $payload['errors'][0]['code'] ?? null);
     }
 
+    public function testUploadRejectsReferencedMediaWithoutMediaReadPermission(): void
+    {
+        $orderId = $this->createDraftOrder();
+        $orderVersionId = $this->orderRepository->createVersion($orderId, $this->context, 'DRAFT');
+
+        $browser = $this->getBrowser(true, [], [
+            'document:create',
+            'document:read',
+            'document_file:create',
+            'document_file:read',
+        ]);
+
+        $browser->jsonRequest(
+            'POST',
+            '/api/_action/order/document-v2/upload',
+            [
+                'documentType' => DocumentType::INVOICE->value,
+                'format' => DocumentFormat::PDF->value,
+                'orderId' => $orderId,
+                'orderVersionId' => $orderVersionId,
+                'mediaId' => Uuid::randomHex(),
+                'documentNumber' => '1009-' . Uuid::randomHex(),
+            ],
+        );
+
+        $response = $browser->getResponse();
+        static::assertSame(Response::HTTP_FORBIDDEN, $response->getStatusCode(), (string) $response->getContent());
+
+        $payload = json_decode((string) $response->getContent(), true, 512, \JSON_THROW_ON_ERROR);
+        static::assertSame(MissingPrivilegeException::MISSING_PRIVILEGE_ERROR, $payload['errors'][0]['code'] ?? null);
+    }
+
     public function testUploadAcceptsMediaFromTheDocumentFolder(): void
     {
         $orderId = $this->createDraftOrder();
@@ -412,6 +446,7 @@ class DocumentV2ControllerTest extends TestCase
             'document:read',
             'document_file:create',
             'document_file:read',
+            'media:read',
         ]);
 
         $browser->jsonRequest(
@@ -455,6 +490,7 @@ class DocumentV2ControllerTest extends TestCase
             'document:read',
             'document_file:create',
             'document_file:read',
+            'media:read',
         ]);
 
         $browser->jsonRequest(
@@ -497,6 +533,7 @@ class DocumentV2ControllerTest extends TestCase
             'document:read',
             'document_file:create',
             'document_file:read',
+            'media:read',
         ]);
 
         $browser->jsonRequest(
