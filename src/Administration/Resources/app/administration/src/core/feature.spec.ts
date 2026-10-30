@@ -8,11 +8,13 @@ import { parse } from 'yaml';
 
 import Feature, { UNREGISTERED_UPCOMING_MAJORS } from 'src/core/feature';
 import normalizeFeatureFlag from 'test/_helper_/normalizeFeatureFlag';
+import { useProductionDeprecationGuard } from 'test/_helper_/deprecations';
 
 describe('src/core/feature', () => {
     const originalFlags = { ...Feature.flags };
 
     beforeEach(() => {
+        useProductionDeprecationGuard();
         Feature.init({ V7_0_0_0: false });
     });
 
@@ -86,6 +88,23 @@ describe('src/core/feature', () => {
                 ['[Deprecation]', 'firstMethod() is deprecated.'],
                 ['[Deprecation]', 'secondMethod() is deprecated.'],
             ]);
+        });
+
+        it('warns once per message, whoever it blames', () => {
+            const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
+
+            Feature.triggerDeprecationOrThrow('V7_0_0_0', 'blamedMethod() is deprecated.', { _blame: 'author' });
+            Feature.triggerDeprecationOrThrow('V7_0_0_0', 'blamedMethod() is deprecated.');
+
+            expect(warn.mock.calls).toEqual([['[Deprecation]', 'blamedMethod() is deprecated.']]);
+        });
+
+        it('throws once the major flag is active, whoever it blames', () => {
+            Feature.init({ V7_0_0_0: true });
+
+            expect(() =>
+                Feature.triggerDeprecationOrThrow('V7_0_0_0', 'blamedMethod() is deprecated.', { _blame: 'author' }),
+            ).toThrow('Tried to access deprecated functionality: blamedMethod() is deprecated.');
         });
     });
 });
