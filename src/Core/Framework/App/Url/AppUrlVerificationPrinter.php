@@ -2,8 +2,6 @@
 
 namespace Shopwell\Core\Framework\App\Url;
 
-use Shopwell\Core\Framework\App\ShopId\Fingerprint\AppUrl;
-use Shopwell\Core\Framework\App\ShopId\ShopIdProvider;
 use Shopwell\Core\Framework\Log\Package;
 use Symfony\Component\Console\Style\SymfonyStyle;
 use Symfony\Component\Console\Terminal;
@@ -14,17 +12,11 @@ use Symfony\Component\Console\Terminal;
 #[Package('framework')]
 class AppUrlVerificationPrinter
 {
-    public function __construct(
-        private readonly ShopIdProvider $shopIdProvider,
-    ) {
-    }
-
     public function print(SymfonyStyle $io, VerificationState $state, bool $manual = false): void
     {
         $io->title('App URL Verification Status');
 
-        $shopId = $this->shopIdProvider->getShopId();
-        $io->writeln(\sprintf("<info>APP URL: %s</info>\n", $shopId->getFingerprint(AppUrl::IDENTIFIER)));
+        $io->writeln(\sprintf("<info>APP URL: %s</info>\n", $state->appUrl));
 
         $io->definitionList(
             ['Result' => match ($state->status) {

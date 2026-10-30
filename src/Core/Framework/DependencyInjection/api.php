@@ -82,7 +82,9 @@ use Shopwell\Core\Framework\Api\Serializer\JsonApiDecoder;
 use Shopwell\Core\Framework\Api\Serializer\JsonApiEncoder;
 use Shopwell\Core\Framework\Api\Serializer\JsonEntityEncoder;
 use Shopwell\Core\Framework\Api\Sync\SyncService;
+use Shopwell\Core\Framework\App\ActiveAppsLoader;
 use Shopwell\Core\Framework\App\ShopId\ShopIdProvider;
+use Shopwell\Core\Framework\App\Url\AppUrlVerifier;
 use Shopwell\Core\Framework\DataAbstractionLayer\DefinitionInstanceRegistry;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityProtection\EntityProtectionValidator;
 use Shopwell\Core\Framework\DataAbstractionLayer\Indexing\EntityIndexerRegistry;
@@ -105,7 +107,6 @@ use Shopwell\Core\Framework\Store\InAppPurchase;
 use Shopwell\Core\Framework\SystemCheck\SystemChecker;
 use Shopwell\Core\Framework\Validation\DataValidator;
 use Shopwell\Core\Framework\Validation\HappyPathValidator;
-use Shopwell\Core\Maintenance\System\Service\AppUrlVerifier;
 use Shopwell\Core\System\SalesChannel\Api\StructEncoder;
 use Shopwell\Core\System\SalesChannel\Entity\SalesChannelDefinitionInstanceRegistry;
 use Shopwell\Core\System\SystemConfig\SystemConfigService;
@@ -328,6 +329,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('shopwell.increment.gateway.registry'),
             service(MigrationInfo::class),
             service(AppUrlVerifier::class),
+            service(ActiveAppsLoader::class),
             service(FlowActionCollector::class),
             service(SystemConfigService::class),
             service(ApiRouteInfoResolver::class),
