@@ -15,6 +15,7 @@ use Shopwell\Core\Framework\App\Hmac\Guzzle\AuthMiddleware;
 use Shopwell\Core\Framework\App\Http\AppSystemHttpMiddleware;
 use Shopwell\Core\Framework\App\Payload\AppPayloadServiceHelper;
 use Shopwell\Core\Framework\DataAbstractionLayer\DefinitionInstanceRegistry;
+use Shopwell\Core\Framework\DataAbstractionLayer\Write\Validation\WriteOutcome;
 use Shopwell\Core\Framework\Event\BusinessEventCollector;
 use Shopwell\Core\Framework\Event\BusinessEventRegistry;
 use Shopwell\Core\Framework\Webhook\Authorization\EventLog\RestrictEventLogReadSubscriber;
@@ -264,8 +265,8 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(WriteAuthorizer::class)
         ->args([
             service(SubscriptionValidator::class),
-            service(WebhookLoader::class),
             service(AclRoleLoader::class),
+            service(WriteOutcome::class),
         ]);
 
     $services->set(SubscriptionValidator::class)

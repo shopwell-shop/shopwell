@@ -2,14 +2,10 @@
 
 namespace Shopwell\Core\Framework\Webhook\Service;
 
-use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Connection;
 use Shopwell\Core\Framework\Api\Acl\AclRoleLoader;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Util\Json;
-use Shopwell\Core\Framework\Uuid\Uuid;
-use Shopwell\Core\Framework\Webhook\Authorization\Subscription\SubscriberType;
-use Shopwell\Core\Framework\Webhook\Authorization\WebhookSubscription;
 use Shopwell\Core\Framework\Webhook\Webhook;
 
 /**
@@ -26,58 +22,6 @@ class WebhookLoader
         private readonly Connection $connection,
         private readonly AclRoleLoader $aclRoleLoader,
     ) {
-    }
-
-    /**
-     * @param list<string> $webhookIds
-     *
-     * @return array<string, WebhookSubscription> keyed by webhook id, without webhooks that have neither an app nor an owner
-     */
-    public function getSubscriptions(array $webhookIds): array
-    {
-        if ($webhookIds === []) {
-            return [];
-        }
-
-        $rows = $this->connection->fetchAllAssociative(
-            <<<'SQL'
-                SELECT
-                    LOWER(HEX(`id`)) as webhookId,
-                    LOWER(HEX(`app_id`)) as appId,
-                    LOWER(HEX(`owner_user_id`)) as ownerUserId,
-                    LOWER(HEX(`owner_integration_id`)) as ownerIntegrationId,
-                    `event_name` as eventName,
-                    `acl_role_ids` as aclRoleIds
-                FROM `webhook`
-                WHERE `id` IN (:webhookIds)
-            SQL,
-            ['webhookIds' => Uuid::fromHexToBytesList($webhookIds)],
-            ['webhookIds' => ArrayParameterType::BINARY]
-        );
-
-        $subscriptions = [];
-        foreach ($rows as $row) {
-            $ownerType = match (true) {
-                $row['appId'] !== null => SubscriberType::App,
-                $row['ownerIntegrationId'] !== null => SubscriberType::Integration,
-                $row['ownerUserId'] !== null => SubscriberType::User,
-                default => null,
-            };
-
-            if ($ownerType === null) {
-                continue;
-            }
-
-            $subscriptions[$row['webhookId']] = new WebhookSubscription(
-                $row['webhookId'],
-                $ownerType,
-                $row['appId'] ?? $row['ownerIntegrationId'] ?? $row['ownerUserId'],
-                $row['eventName'],
-                $row['aclRoleIds'] !== null ? Json::decodeToList($row['aclRoleIds']) : null,
-            );
-        }
-
-        return $subscriptions;
     }
 
     /**
