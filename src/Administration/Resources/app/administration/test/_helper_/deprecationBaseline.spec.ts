@@ -2,16 +2,19 @@
  * @sw-package framework
  */
 
+import { baselineDeprecation, currentRun, isBaselined, resetBaseline, type DeprecationRun } from './deprecationBaseline';
+import { allowDeprecation, deprecations, endDeprecationLog } from './deprecations';
 import {
-    baselineDeprecation,
-    currentRun,
-    deprecationBaselineKey,
-    isBaselined,
-    resetBaseline,
-    type DeprecationRun,
-} from './deprecationBaseline';
-import { deprecations } from './deprecations';
-import { failureOfEndDeprecationLog, oldFunctionMessage } from './deprecations.spec/deprecations-test-setup';
+    failureOfEndDeprecationLog,
+    ignoreBaselineUpdateRun,
+    oldFunctionMessage,
+    useBaselineUpdateRun,
+} from './deprecations.spec/deprecations-test-setup';
+import {
+    startCollectingUsedBaselineEntries,
+    stopCollectingUsedBaselineEntries,
+    usedBaselineEntries,
+} from './usedBaselineEntries';
 import oldFunction from './_fixtures/deprecations/oldFunction';
 
 const message = oldFunctionMessage;
@@ -19,7 +22,15 @@ const spec = 'test/_helper_/deprecationBaseline.spec.ts';
 const otherRun: DeprecationRun = currentRun() === 'major' ? 'default' : 'major';
 
 describe('test/_helper_/deprecationBaseline', () => {
-    beforeEach(resetBaseline);
+    beforeEach(() => {
+        resetBaseline();
+        // Keeps the used entries of these specs away from the run's reporter, and its update mode away from these specs.
+        ignoreBaselineUpdateRun();
+        startCollectingUsedBaselineEntries();
+    });
+
+    // The setup's `afterEach` records the used entries of a test after the hooks of this file ran.
+    afterAll(stopCollectingUsedBaselineEntries);
 
     describe('in a test', () => {
         it('lets a usage listed for the current run pass without an assertion', () => {
@@ -55,6 +66,81 @@ describe('test/_helper_/deprecationBaseline', () => {
         });
     });
 
+    describe('for the reporter', () => {
+        it('counts a listed usage the test did not assert as used, once', () => {
+            baselineDeprecation({ message, callSites: { [spec]: [currentRun()] } });
+
+            oldFunction();
+            oldFunction();
+            endDeprecationLog();
+
+            expect(usedBaselineEntries()).toEqual([[message, spec]]);
+        });
+
+        it('counts a listed usage the test asserted as used', () => {
+            baselineDeprecation({ message, callSites: { [spec]: [currentRun()] } });
+
+            oldFunction();
+            expect(deprecations).toHaveTriggered(message);
+            endDeprecationLog();
+
+            expect(usedBaselineEntries()).toEqual([[message, spec]]);
+        });
+
+        it('counts a listed usage the test allowed as used', () => {
+            baselineDeprecation({ message, callSites: { [spec]: [currentRun()] } });
+            allowDeprecation(message);
+
+            oldFunction();
+            endDeprecationLog();
+
+            expect(usedBaselineEntries()).toEqual([[message, spec]]);
+        });
+
+        it('counts a listed usage the deprecation plugin appended its component path to under its baseline key', () => {
+            baselineDeprecation({ message, callSites: { [spec]: [currentRun()] } });
+
+            Shopwell.Feature.triggerDeprecationOrThrow('V6_9_0_0', `${message}\nUsed in: sw-app > sw-page`);
+            endDeprecationLog();
+
+            expect(usedBaselineEntries()).toEqual([[message, spec]]);
+        });
+
+        it('does not count an entry listed only for the other run as used, even when the test asserts it', () => {
+            baselineDeprecation({ message, callSites: { [spec]: [otherRun] } });
+
+            oldFunction();
+            expect(deprecations).toHaveTriggered(message);
+            endDeprecationLog();
+
+            expect(usedBaselineEntries()).toEqual([]);
+        });
+
+        it('lets every usage pass with DEPRECATION_BASELINE=update, counting the ones the test neither asserted nor allowed as used', () => {
+            useBaselineUpdateRun();
+            allowDeprecation('allowed()');
+
+            oldFunction();
+            Shopwell.Feature.triggerDeprecationOrThrow('V6_9_0_0', 'asserted() is deprecated.');
+            Shopwell.Feature.triggerDeprecationOrThrow('V6_9_0_0', 'allowed() is deprecated.');
+            expect(deprecations).toHaveTriggered('asserted()');
+
+            expect(failureOfEndDeprecationLog()).toBe('');
+            expect(usedBaselineEntries()).toEqual([[message, spec]]);
+        });
+
+        it('still counts a listed usage the test asserted as used with DEPRECATION_BASELINE=update', () => {
+            useBaselineUpdateRun();
+            baselineDeprecation({ message, callSites: { [spec]: [currentRun()] } });
+
+            oldFunction();
+            expect(deprecations).toHaveTriggered(message);
+            endDeprecationLog();
+
+            expect(usedBaselineEntries()).toEqual([[message, spec]]);
+        });
+    });
+
     describe('isBaselined', () => {
         it('matches a message the deprecation plugin appended its component path to', () => {
             baselineDeprecation({ message, callSites: { 'sw-page > sw-old': ['default', 'major'] } });
@@ -70,14 +156,6 @@ describe('test/_helper_/deprecationBaseline', () => {
             resetBaseline();
 
             expect(isBaselined({ message, usageSite: spec })).toBe(false);
-        });
-    });
-
-    describe('deprecationBaselineKey', () => {
-        it('drops the component path the deprecation plugin appends', () => {
-            expect(deprecationBaselineKey('The component "sw-x" is deprecated.\nUsed in: sw-page > sw-x')).toBe(
-                'The component "sw-x" is deprecated.',
-            );
         });
     });
 

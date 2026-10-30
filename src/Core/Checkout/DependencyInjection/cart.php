@@ -110,6 +110,7 @@ use Shopwell\Core\Content\Product\Cart\ProductCartProcessor;
 use Shopwell\Core\Content\Product\Cart\ProductFeatureBuilder;
 use Shopwell\Core\Content\Product\Cart\ProductGateway;
 use Shopwell\Core\Content\Product\Cart\ProductLineItemValidator;
+use Shopwell\Core\Content\Product\Garan\GaranLabelResolver;
 use Shopwell\Core\Content\Product\SalesChannel\Price\ProductPriceCalculator;
 use Shopwell\Core\Framework\Adapter\Cache\RedisConnectionFactory;
 use Shopwell\Core\Framework\Adapter\Redis\RedisConnectionProvider;
@@ -545,6 +546,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(EntityCacheKeyGenerator::class),
             service(Connection::class),
             service('event_dispatcher'),
+            service(GaranLabelResolver::class),
         ])
         ->tag('shopwell.cart.processor', ['priority' => 5000])
         ->tag('shopwell.cart.collector', ['priority' => 5000]);
