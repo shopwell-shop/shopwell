@@ -10,8 +10,6 @@ const { Criteria } = Shopwell.Data;
 export default Component.wrapComponentConfig({
     template,
 
-    compatConfig: Shopwell.compatConfig,
-
     inject: ['repositoryFactory', 'acl'],
 
     mixins: [Mixin.getByName('notification')],
