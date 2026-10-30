@@ -107,11 +107,23 @@ The new `bin/console sales-channel:file:enable [ids...] [--all]` command switche
 It only creates missing files, so a file switched off in the Administration stays off, and a second run changes nothing.
 The command always exits with `0`, which makes it suitable for install hooks in `.shopwell-project.yml`.
 
-### Public constant for the MCP connect-URL toolset selection
+### Order placement no longer rebuilds the per-customer redemption counter
 
-`McpToolsetRegistry::QUERY_PARAMETER` now names the `toolsets` query parameter that selects toolsets in the MCP connect URL, on `/api/_mcp` and `/store-api/_mcp`. The parameter exists since 6.7.15.0, the constant since 6.7.16.0. Code that also supports 6.7.15 detects the parameter with `\defined(McpToolsetRegistry::class . '::ALL_TOOLSETS')` and uses the literal `'toolsets'`. Do not probe the internal `McpRequestedToolsetResolver` class, which can be renamed without notice.
+Placing an order or deleting a promotion line item updates only the entries of the affected customers in `promotion.orders_per_customer_count`, so its cost no longer grows with the number of customers who redeemed the promotion before.
+`promotion.order_count` now also counts orders whose customer was deleted.
+The cart checks `maxRedemptionsPerCustomer` against the customer's orders and no longer reads `orders_per_customer_count`, which is still maintained.
+Saving a promotion no longer recounts its redemptions; `bin/console dal:refresh:index --only=promotion.indexer` rebuilds them.
 
-`shopwell-toolsets-list` now reports the toolsets selected in the connect URL as enabled. A tool group named `all` now belongs to the `other` toolset, because `?toolsets=all` selects every toolset. `McpToolsetRegistry::advertisedTools()` resolves `all` the same way as `advertisedToolsForNames()`.
+### Deprecated the per-customer redemption counter of promotions
+
+The per-customer redemption counter of promotions is deprecated and will be removed with Shopwell 6.8:
+
+- DAL and Admin API: the promotion field `ordersPerCustomerCount` and its column `promotion.orders_per_customer_count`.
+- `Shopwell\Core\Checkout\Promotion\PromotionEntity`: `getOrdersPerCustomerCount()`, `setOrdersPerCustomerCount()` and `isOrderCountPerCustomerCountValid()`.
+
+To find out how often a customer redeemed a promotion, count the customer's orders that contain a line item of the promotion, for example with the filters `orderCustomer.customerId` and `lineItems.promotionId` on the `order` repository.
+Set `PROMOTION_REDEMPTION_OPTIMIZATION=1` to switch to the 6.8 behavior already: the counter is no longer written and `ordersPerCustomerCount` is removed from the promotion entity.
+When `V6_8_0_0=1`, the flag activates unless explicitly disabled.
 
 ### `NotFilter` negates a single filter
 
@@ -167,9 +179,26 @@ When a document cannot be generated because its number is already taken, the err
 The order document card in the Administration names the document type as well.
 `DocumentException::documentNumberAlreadyExistsException()` is deprecated for v6.8.0, use `DocumentException::documentNumberAlreadyExistsExceptionForType()` instead.
 
+### Tax-free detection of new sales channel contexts matches the cart
+
+New sales channel contexts now decide tax-free delivery like the cart (`TaxDetector::isNetDelivery()`):
+commercial customers only get "Tax-free (B2B)", all other customers only "Tax-free (B2C)".
+Cart and order taxes stay the same, but Rule Builder conditions like "Cart amount" can match differently than before for customers who only met the other setting.
+
 ### Retired services are uninstalled by the daily service reconcile
 
 Shops now uninstall a service once the service registry lists it as `retired` in `GET /api/service/v2`. This happens in the daily service install task, on `bin/console services:install` and on `system:update:finish`, so a retired service no longer stays installed until the shop's next update. A service that is merely missing from the registry's service list is no longer uninstalled on `system:update:finish`; only an explicit `retired` status removes it. Shops now read the service list only from `GET /api/service/v2` and install and update only services listed as `active`; a status they don't know is left alone.
+
+### Extension events are only dispatched when something listens
+
+`ExtensionDispatcher::publish()` now dispatches each of an extension's `.pre`, `.post` and `.error` events only when it has a listener.
+Existing extension listeners keep working unchanged.
+Code that observes every dispatched event, such as APM tracing or a decorator of `event_dispatcher`, no longer sees extension events nobody listens to.
+Unit tests that pass a mocked `EventDispatcherInterface` to `ExtensionDispatcher` and expect `dispatch()` calls need the mock's `hasListeners()` to return `true`.
+
+### Live state transition retries
+
+Live state transitions batch history and state writes. `EntityWriteEvent` subscribers can receive multiple entities: filter with `getCommandsForEntity()` and make pre-write work idempotent or compensate it through `addError()`. `WriteCommandExceptionEvent` and error callbacks can run before SQL executes, and each failed attempt runs its error callbacks before it is retried. Retries stop once success callbacks or written listeners begin, or compensation fails. MariaDB error `1020` is now retryable.
 
 ## API
 
@@ -315,13 +344,15 @@ Repeated `Component.build()` calls no longer remove methods, props or other opti
 Assigning products to a sales channel through the "Categories" or "Product group selection" tab of the product assignment modal now adds every matching product.
 Previously only the first 500 products were assigned, without any notice.
 The Administration sends the selected categories and product groups to the new product assignment route instead of loading the products itself, and shows the number of assigned products afterwards.
+### More Administration components declare their emitted events
 
-### Extension events are only dispatched when something listens
+About 30 Administration components now list the events they emit in `emits`, for example `sw-datepicker`, `sw-password-field`, `sw-url-field`, `sw-textarea-field` and `sw-string-filter`.
+Listeners for these events are no longer part of the component's `$attrs`, so they fire once per event instead of twice.
+If you override the template of one of these components and render your own field with `v-bind="$attrs"`, forward `update:modelValue` explicitly:
 
-`ExtensionDispatcher::publish()` now dispatches each of an extension's `.pre`, `.post` and `.error` events only when it has a listener.
-Existing extension listeners keep working unchanged.
-Code that observes every dispatched event, such as APM tracing or a decorator of `event_dispatcher`, no longer sees extension events nobody listens to.
-Unit tests that pass a mocked `EventDispatcherInterface` to `ExtensionDispatcher` and expect `dispatch()` calls need the mock's `hasListeners()` to return `true`.
+```html
+<mt-text-field v-bind="$attrs" @update:model-value="$emit('update:modelValue', $event)" />
+```
 
 ### Known core deprecations log an error in next-major mode
 
@@ -545,72 +576,6 @@ If you used "Is equal to 0" to target line items without a list price, use "Is e
 
 ## Features
 
-### `sales-channel:file:enable` switches on `llms.txt` and `AGENTS.md`
-
-The new `bin/console sales-channel:file:enable [ids...] [--all]` command switches on `llms.txt` and `AGENTS.md` for Storefront and Headless sales channels.
-It only creates missing files, so a file switched off in the Administration stays off, and a second run changes nothing.
-The command always exits with `0`, which makes it suitable for install hooks in `.shopwell-project.yml`.
-
-### Customer and user phone numbers
-
-The `customer` and `user` entities have a new optional `phoneNumber` attribute, exposed through the Admin API and, for customers, through the Store API. Customer registration accepts `phoneNumber` and the storefront registration form collects it, and the Administration shows the field on the customer and user detail pages. Extensions can read the new attribute from both entities.
-
-### Customer and order list default columns
-
-The customer list provides a `phoneNumber` column, which is hidden by default. In the same list the billing address columns (`street`, `zipcode` and `city`) are hidden by default as well, as is the delivery address column in the order list. All of these columns remain available and can be enabled in the grid column settings.
-
-### Order line items of older orders get their product type
-
-This release fills `payload.productType` for every product and custom order line item that does not have it yet, based on the line item's deprecated `states`.
-The update to 6.7.7.0 only filled it for the first 5000 digital and 5000 physical line items, so most line items of older orders had no product type.
-Values that are already set are kept.
-Extensions and integrations that read the product type of older order line items can use `payload.productType` instead of `states`, which is removed in 6.8.
-
-## API
-
-### Criteria on fields the API does not expose is a bad request
-
-A criteria that filters, sorts, queries or aggregates by a field the API does not expose (`FRAMEWORK__ACCESSOR_NOT_ALLOWED`) or by a runtime field (`FRAMEWORK__RUNTIME_FIELD_IN_CRITERIA`) is now answered with `400 Bad Request` instead of `500 Internal Server Error`.
-
-# 6.7.16.0
-
-## Critical Fixes
-
-### Theme configuration updates reach all descendants
-
-Saving a base theme now updates inherited runtime configuration and recompiles assigned descendant themes at every inheritance level.
-Child and grandchild themes no longer require a separate save after changing their base theme, and descendant-specific overrides are preserved.
-Deactivating or uninstalling a base theme is also blocked while any descendant theme or theme copy is assigned to a sales channel.
-The error identifies the affected themes and sales channels; remove or replace those assignments before removing the base theme.
-
-### Content Security Policy for static HTML and SVG assets on Apache
-
-The Apache `.htaccess.dist` template now sends `script-src 'none'; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'` for existing `.html` files under `public/media` and `public/thumbnail`, and for SVG files.
-Application-rendered HTML and bundled HTML applications retain their existing behavior.
-Ensure your deployed `.htaccess` contains the updated Shopwell section; installations without the Shopwell update markers must merge it manually.
-Custom static documents must work without scripts, embedded documents, base URL overrides or form submissions; images and styles remain permitted.
-
-### Sales channel contexts expose the default currency again
-
-`SalesChannelContext::getSalesChannel()->getCurrency()` returns the sales channel's default currency again, including when another currency is selected for the context. This restores the behavior before 6.7.15.0 for extensions that read the default currency. Use `SalesChannelContext::getCurrency()` for the currently selected currency.
-
-### Line item conditions evaluate line items by the data they carry
-
-Since 6.7.14.0, most line item conditions of the Rule Builder evaluated only line items of the type `product`. Custom and credit line items and line items that extensions add to the cart no longer matched them, and a single custom line item could hide shipping methods or block promotions under a negated condition such as "Item with tag / All / Are none of".
-
-The conditions now evaluate a line item by the data it carries instead of by its type, so line items of any type work with the built-in conditions again, with no change needed in extensions.
-
-### "Item with price/list price ratio" no longer matches line items without a list price
-
-Since 6.7.9.0, the Rule Builder condition "Item with price/list price ratio" treated line items without a list price as having a ratio of `0`.
-Conditions such as "Is less than 1" therefore also matched every line item without a list price,
-so promotions meant for reduced products applied to all products.
-
-Line items without a list price no longer have a ratio, so only the operators "Is not equal to" and "Is empty" match them.
-If you used "Is equal to 0" to target line items without a list price, use "Is empty" instead.
-
-## Features
-
 ### Digital products can use external file assignment
 
 In the Administration, digital products can be saved without uploaded files when file assignment is handled externally. When editing a product, the option is enabled by default if it has no downloads and disabled if it has downloads.
@@ -626,16 +591,16 @@ With the newly added tabs feature, plugin developers can now add another layer o
     <tab>
         <name>product</name>
         <title>Product</title>
-        <title lang="zh-CN">商品</title>
+        <title lang="de-DE">Produkt</title>
 
         <card>
             <title>Listing settings</title>
-            <title lang="zh-CN">列表设置</title>
+            <title lang="de-DE">Listing-Einstellungen</title>
 
             <input-field type="bool">
                 <name>allowBuyInListing</name>
                 <label>Display buy buttons in listings</label>
-                <label lang="zh-CN">在商品列表中显示购买按钮</label>
+                <label lang="de-DE">Kaufen-Buttons in Produktlistings anzeigen</label>
             </input-field>
         </card>
     </tab>
@@ -643,16 +608,16 @@ With the newly added tabs feature, plugin developers can now add another layer o
     <tab>
         <name>cart</name>
         <title>Cart</title>
-        <title lang="zh-CN">购物车</title>
+        <title lang="de-DE">Warenkorb</title>
 
         <card>
             <title>Cart settings</title>
-            <title lang="zh-CN">购物车设置</title>
+            <title lang="de-DE">Warenkorbeinstellungen</title>
 
             <input-field type="bool">
                 <name>allowBuyInCart</name>
                 <label>Display buy buttons in cart</label>
-                <label lang="zh-CN">在购物车中显示购买按钮</label>
+                <label lang="de-DE">Kaufen-Buttons im Warenkorb anzeigen</label>
             </input-field>
         </card>
     </tab>
@@ -784,26 +749,6 @@ monolog:
 ### Feed sales channels are saved without a currency list again
 
 Sales channels of types other than storefront and headless, such as product comparison, Agentic Commerce and types added by extensions, are no longer rejected with `SYSTEM__NO_GIVEN_DEFAULT_CURRENCY_ID` when their default currency is missing from their currency list, as they were since 6.7.15.0. Storefront and headless sales channels still need their default currency in their currency list.
-
-### Shipped default languages are `en-GB` and `zh-CN`
-
-Shopwell ships `en-GB` and Simplified Chinese (`zh-CN`) as its default languages. German (`de-DE`) is no longer one of the shipped default languages.
-
-The translation assets that were previously shipped for German now exist for Chinese:
-
-* Storefront snippet set: `src/Storefront/Resources/snippet/storefront.zh.json`
-* Administration snippet set: `src/Administration/Resources/app/administration/src/app/snippet/zh.json`
-* Installer translations: `src/Core/Installer/Resources/translations/translations/messages.zh.yaml`
-
-New installations therefore create a `zh-CN` language, a `zh` snippet set with `messages.zh` as its base file, and the `CHN` country row. The installer lists `zh-CN` both as an installer UI language and as a selectable system default language, and preselects `CNY` as its currency. `bin/console theme:create --with-snippets` now scaffolds `storefront.zh-CN.json` next to `storefront.en-GB.json`, and the storefront date picker renders the Chinese date format for `zh`.
-
-Extensions that relied on a `de-DE` snippet set being present out of the box must ship their German snippets as a plugin- or theme-provided snippet file themselves.
-
-### New users default to the `Asia/Shanghai` timezone
-
-Administration users now start with `Asia/Shanghai` as their timezone instead of `UTC`, and the default of the `user.time_zone` column changed with it. The administration falls back to `Asia/Shanghai` as well when no user timezone is available.
-
-The timezone of an existing user is not changed by an update. Set it per user in the profile settings.
 
 ### Filtered listings show the main variant only if it matches the active filters
 
@@ -1105,20 +1050,37 @@ Both are experimental and become stable with 6.8.0.
 ### GLB uploads with external references are rejected
 
 GLB files are now validated on upload. A file is rejected with `CONTENT__MEDIA_INVALID_FILE` if it is not a valid binary glTF 2.0 container or if the `uri` of a buffer or image points to something other than an embedded `data:` URI. Self-contained models, which keep their buffers and textures in the binary chunk, are not affected and URLs in other fields such as `extras` or `asset.copyright` are still allowed.
-
-### Customer, user and address names are merged into `name`
-
-`Customer`, `CustomerAddress`, `OrderCustomer`, `OrderAddress`, `User` and `NewsletterRecipient` carry the full name in a single `name` field. `firstName` and `lastName` are gone from the entities, from the Admin API and Store API schemas and from the search indexes.
-
-The customer facing request bodies keep their shape apart from the name: registration, profile update, the contact form, newsletter subscription and the revocation request form send `name` and return it. The shop settings `firstNameFieldRequired` and `lastNameFieldRequired` are merged into `nameFieldRequired`.
-
-The newsletter and contact form elements render a single name input, and `useOrderDetails()` returns the customer's `name` in the personal details.
-
 ### `ProductCartDataContextHashEvent` for state that product cart data depends on
 
 The data context hash of the cart products only covers the sales channel context and the tax rules.
 The cart reloads product data only when this hash changes, so extensions whose product data or prices depend on other state get stale cart data.
 Listeners can add parts to this event to include additional state in the hash for every state outside the sales channel context to force a reload of product data when that state changes.
+
+### Apps without permissions can't declare required privileges for MCP tools
+
+An app's MCP tool may only list `<required-privileges>` in `mcp.xml` that the app declares in the `<permissions>` of its manifest, because the tool's script runs with the app's integration role. Apps without a `<permissions>` block skipped this check, although they have no privileges at all. They are now checked like every other app, so such an app fails to install or update with the message naming the missing permission. Add the permissions to the manifest, or remove the required privileges from the tool.
+
+### `AssertValuesTrait` deprecated in favour of `ArrayValues`
+
+The test helper trait `\Shopwell\Core\Framework\Test\Api\Serializer\AssertValuesTrait` is deprecated and will be removed in 6.8. Its `assertValues()` method now triggers a deprecation, and throws when the `v6.8.0.0` flag is active. Extension tests that use the trait should call `\Shopwell\Core\Test\Assert\ArrayValues::assertValues($expected, $actual)` instead; the comparison is unchanged.
+
+### `PromotionItemBuilder::buildPlaceholderItem()` is deprecated
+
+`PromotionItemBuilder::buildPlaceholderItem()` is deprecated and will be removed in 6.8.0.0, because `PromotionLineItemFactory::create()` builds the same promotion placeholder line item.
+Create the placeholder through the `LineItemFactoryRegistry` with the `promotion` type instead, as the Storefront and the order recalculation now do:
+
+```php
+$lineItem = $lineItemFactoryRegistry->create([
+    'type' => LineItem::PROMOTION_LINE_ITEM_TYPE,
+    'referencedId' => $code,
+], $salesChannelContext);
+```
+
+### Public constant for the MCP connect-URL toolset selection
+
+`McpToolsetRegistry::QUERY_PARAMETER` now names the `toolsets` query parameter that selects toolsets in the MCP connect URL, on `/api/_mcp` and `/store-api/_mcp`. The parameter exists since 6.7.15.0, the constant since 6.7.16.0. Code that also supports 6.7.15 detects the parameter with `\defined(McpToolsetRegistry::class . '::ALL_TOOLSETS')` and uses the literal `'toolsets'`. Do not probe the internal `McpRequestedToolsetResolver` class, which can be renamed without notice.
+
+`shopwell-toolsets-list` now reports the toolsets selected in the connect URL as enabled. A tool group named `all` now belongs to the `other` toolset, because `?toolsets=all` selects every toolset. `McpToolsetRegistry::advertisedTools()` resolves `all` the same way as `advertisedToolsForNames()`.
 
 ## API
 
