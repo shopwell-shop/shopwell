@@ -61,7 +61,7 @@ final class PaymentTransferService
      * interface keeps the derivation an identity, which is the only form that survives a notification
      * that carries the derived id and not the out number.
      */
-    private const OUT_NO_PATTERN = '/^[0-9a-zA-Z]{1,30}$/';
+    private const OUT_NO_PATTERN = '/^[0-9a-zA-Z]{1,30}\z/';
 
     /**
      * The width of `payment_transfer.failure_reason`. Channel messages are not bounded by us, so every

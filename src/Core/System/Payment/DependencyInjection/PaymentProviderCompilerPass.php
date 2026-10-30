@@ -69,7 +69,7 @@ final class PaymentProviderCompilerPass implements CompilerPassInterface
     /**
      * The character set the notify url route accepts for the provider segment.
      */
-    private const NAME_PATTERN = '/^[A-Za-z0-9_-]+$/';
+    private const NAME_PATTERN = '/^[A-Za-z0-9_-]+\z/';
 
     public function process(ContainerBuilder $container): void
     {

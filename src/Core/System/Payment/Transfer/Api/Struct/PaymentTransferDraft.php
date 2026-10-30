@@ -38,7 +38,7 @@ final readonly class PaymentTransferDraft
      * The out number is the idempotency key and every interface caps it; see
      * {@see \Shopwell\Core\System\Payment\Transfer\PaymentTransferService}.
      */
-    final public const OUT_NO_PATTERN = '/^[0-9a-zA-Z]{1,30}$/';
+    final public const OUT_NO_PATTERN = '/^[0-9a-zA-Z]{1,30}\z/';
 
     /**
      * @param array<string, mixed>|null $bankInfo alipay's `bankcard_ext_info`, only a card payout needs it
@@ -66,7 +66,7 @@ final readonly class PaymentTransferDraft
         #[Assert\NotBlank]
         // the operator types a code, the platform stores it upper case: normalising before the check
         // keeps a lower case `cny` a usable input instead of a validation error
-        #[Assert\Regex(pattern: '/^[A-Z]{3}$/', normalizer: 'strtoupper')]
+        #[Assert\Regex(pattern: '/^[A-Z]{3}\z/', normalizer: 'strtoupper')]
         public ?string $currency = null,
         #[Assert\Regex(pattern: self::OUT_NO_PATTERN)]
         public ?string $outNo = null,
