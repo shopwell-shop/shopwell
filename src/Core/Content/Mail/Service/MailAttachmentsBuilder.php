@@ -7,6 +7,7 @@ use Shopwell\Core\Checkout\Document\Service\DocumentGenerator;
 use Shopwell\Core\Checkout\DocumentV2\DocumentCollection;
 use Shopwell\Core\Checkout\DocumentV2\DocumentEntity;
 use Shopwell\Core\Checkout\DocumentV2\DocumentFormat;
+use Shopwell\Core\Checkout\DocumentV2\Service\DocumentMediaGuard;
 use Shopwell\Core\Content\MailTemplate\MailTemplateEntity;
 use Shopwell\Core\Content\MailTemplate\Subscriber\MailSendSubscriberConfig;
 use Shopwell\Core\Content\Media\MediaCollection;
@@ -36,7 +37,8 @@ class MailAttachmentsBuilder
         private readonly DocumentGenerator $documentGenerator,
         private readonly EntityRepository $documentRepository,
         private readonly LoggerInterface $logger,
-        private readonly DocumentResolver $documentResolver
+        private readonly DocumentResolver $documentResolver,
+        private readonly DocumentMediaGuard $documentMediaGuard,
     ) {
     }
 
@@ -170,6 +172,12 @@ class MailAttachmentsBuilder
 
                 $media = $documentFile->getMedia();
 
+                if (!$this->documentMediaGuard->isServable($media, $context)) {
+                    $this->logSkippedDocumentMedia($documentId, $documentFile->getId(), $media->getId());
+
+                    continue;
+                }
+
                 $content = $context->scope(
                     Context::SYSTEM_SCOPE,
                     fn (Context $scopedContext): string => $this->mediaService->loadFile($media->getId(), $scopedContext)
@@ -211,6 +219,18 @@ class MailAttachmentsBuilder
                 'documentId' => $documentId,
                 'requestedFormats' => $requestedFormats,
                 'availableFormats' => $availableFormats,
+            ]
+        );
+    }
+
+    private function logSkippedDocumentMedia(string $documentId, string $documentFileId, string $mediaId): void
+    {
+        $this->logger->warning(
+            'The document file is linked to private media outside the document folder, so no attachment was added for it.',
+            [
+                'documentId' => $documentId,
+                'documentFileId' => $documentFileId,
+                'mediaId' => $mediaId,
             ]
         );
     }

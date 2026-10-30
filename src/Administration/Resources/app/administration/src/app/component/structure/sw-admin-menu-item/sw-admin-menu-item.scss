@@ -299,46 +299,58 @@ $nesting-line-indent: 36px;
     color: var(--color-icon-primary-default);
 }
 
-.sw-admin-menu .navigation-list-item__level-1 > .sw-admin-menu__navigation-item-row > .sw-admin-menu__navigation-link.router-link-active,
-.sw-admin-menu .navigation-list-item__level-1.is--module-colored > .sw-admin-menu__navigation-item-row
-> .sw-admin-menu__navigation-link.router-link-active {
-    background: var(--color-background-brand-default);
-    color: var(--color-text-brand-default);
-    font-weight: var(--font-weight-medium);
+/* stylelint-disable max-nesting-depth */
+.sw-admin-menu {
+    .navigation-list-item__level-1,
+    .navigation-list-item__level-1.is--module-colored {
+        > .sw-admin-menu__navigation-item-row {
+            > .sw-admin-menu__navigation-link.router-link-active {
+                background: var(--color-background-brand-default);
+                color: var(--color-text-brand-default);
+                font-weight: var(--font-weight-medium);
 
-    .collapsible-text {
-        color: var(--color-text-brand-default);
+                .collapsible-text {
+                    color: var(--color-text-brand-default);
+                }
+
+                .sw-admin-menu__navigation-link-icon {
+                    color: var(--color-icon-brand-default);
+                }
+
+                // 3px accent bar, the usual Chinese console marker for the current entry.
+                &::before {
+                    content: "";
+                    position: absolute;
+                    left: 0;
+                    top: var(--scale-size-8);
+                    bottom: var(--scale-size-8);
+                    width: 3px;
+                    border-radius: 0 3px 3px 0;
+                    background: var(--color-icon-brand-default);
+                }
+            }
+        }
     }
 
-    .sw-admin-menu__navigation-link-icon {
-        color: var(--color-icon-brand-default);
-    }
+    // Active sub entries share the same tint instead of the neutral module grey.
+    .navigation-list-item__level-1.is--module-colored {
+        .navigation-list-item--nested {
+            > .sw-admin-menu__navigation-item-row {
+                > .sw-admin-menu__navigation-link.router-link-active {
+                    background: var(--color-background-brand-default);
+                    color: var(--color-text-brand-default);
 
-    // 3px accent bar, the usual Chinese console marker for the current entry.
-    &::before {
-        content: "";
-        position: absolute;
-        left: 0;
-        top: var(--scale-size-8);
-        bottom: var(--scale-size-8);
-        width: 3px;
-        border-radius: 0 3px 3px 0;
-        background: var(--color-icon-brand-default);
+                    .collapsible-text {
+                        color: var(--color-text-brand-default);
+                    }
+
+                    &::after {
+                        background: var(--color-icon-brand-default);
+                        outline-color: var(--color-background-brand-default);
+                    }
+                }
+            }
+        }
     }
 }
-
-// Active sub entries share the same tint instead of the neutral module grey.
-.sw-admin-menu .navigation-list-item__level-1.is--module-colored .navigation-list-item--nested
-> .sw-admin-menu__navigation-item-row > .sw-admin-menu__navigation-link.router-link-active {
-    background: var(--color-background-brand-default);
-    color: var(--color-text-brand-default);
-
-    .collapsible-text {
-        color: var(--color-text-brand-default);
-    }
-
-    &::after {
-        background: var(--color-icon-brand-default);
-        outline-color: var(--color-background-brand-default);
-    }
-}
+/* stylelint-enable max-nesting-depth */

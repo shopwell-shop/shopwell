@@ -10,8 +10,14 @@
 // Light-theme only, so an explicit [data-theme="dark"] keeps its own palette.
 :root:not([data-theme="dark"]) {
     // CJK-first font stack: Chinese labels no longer fall back to a latin-only face.
-    --font-family-body: -apple-system, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei",
-        "Helvetica Neue", arial, sans-serif;
+    --font-family-body:
+        -apple-system,
+        "PingFang SC",
+        "Hiragino Sans GB",
+        "Microsoft YaHei",
+        "Helvetica Neue",
+        arial,
+        sans-serif;
 
     // Slightly smaller type scale, closer to a dense data surface.
     --font-size-xs: 0.8125rem;
@@ -128,6 +134,7 @@ body {
  * -------------------------------------------------------------------------- */
 
 .mt-card.mt-card {
+    max-width: 72rem;
     margin-bottom: var(--scale-size-16);
     border-radius: var(--border-radius-card);
 
@@ -146,6 +153,15 @@ body {
     .mt-card__footer {
         --mt-card-footer-padding: var(--scale-size-12) var(--scale-size-16);
     }
+}
+
+/* The wider default must not shrink the explicit card variants. */
+.mt-card.mt-card.mt-card--large {
+    max-width: 83.125rem;
+}
+
+.mt-card.mt-card.mt-card--future-ignore-max-width {
+    max-width: none;
 }
 
 /* --------------------------------------------------------------------------

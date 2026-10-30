@@ -13,13 +13,16 @@ use Shopwell\Core\Checkout\DocumentV2\DocumentV2Exception;
 use Shopwell\Core\Checkout\DocumentV2\Generation\DocumentArchiveGenerator;
 use Shopwell\Core\Checkout\DocumentV2\Renderer\DocumentRendererRegistry;
 use Shopwell\Core\Checkout\DocumentV2\Service\DocumentFileNameBuilder;
+use Shopwell\Core\Checkout\DocumentV2\Service\DocumentMediaGuard;
 use Shopwell\Core\Checkout\DocumentV2\Struct\RenderedDocument;
 use Shopwell\Core\Checkout\Order\OrderEntity;
+use Shopwell\Core\Content\Media\Aggregate\MediaFolder\MediaFolderCollection;
 use Shopwell\Core\Content\Media\MediaEntity;
 use Shopwell\Core\Content\Media\MediaService;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\Test\Stub\DataAbstractionLayer\StaticEntityRepository;
 use Shopwell\Tests\Unit\Core\Checkout\DocumentV2\Fixtures\StaticDocumentRenderer;
 use Symfony\Component\Clock\MockClock;
 use Symfony\Component\Filesystem\Filesystem;
@@ -456,6 +459,7 @@ class DocumentArchiveGeneratorTest extends TestCase
                 new StaticDocumentRenderer('custom_format', fileExtension: 'custom'),
             ]),
             new DocumentFileNameBuilder(new MockClock(self::DOWNLOAD_DATE . ' 10:00:00')),
+            new DocumentMediaGuard(StaticEntityRepository::of(MediaFolderCollection::class, [[]])),
         );
     }
 
