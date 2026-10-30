@@ -14,6 +14,7 @@ use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Test\TestCaseBase\AdminApiTestBehaviour;
 use Shopwell\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\System\Dictionary\Aggregate\DictionaryEntry\DictionaryEntryDefinition;
 use Shopwell\Core\Test\Integration\Traits\OrderFixture;
 
 /**
@@ -149,9 +150,7 @@ class OrderAddressServiceTest extends TestCase
                 'id' => $customerAddressId,
                 'customerId' => $orderData[0]['orderCustomer']['customer']['id'],
                 'countryId' => $this->getValidCountryId(),
-                'salutationId' => $this->getValidSalutationId(),
-                'firstName' => 'Max',
-                'lastName' => 'Mustermann',
+                'name' => 'Max Mustermann',
                 'city' => 'Musterstadt',
                 'street' => 'Musterstraße 1',
             ],
@@ -170,7 +169,8 @@ class OrderAddressServiceTest extends TestCase
         static::assertSame('Musterstraße 1', $billingAddress->getStreet());
         static::assertNull($billingAddress->getCompany());
         static::assertNull($billingAddress->getDepartment());
-        static::assertNull($billingAddress->getGender());
+        // Shopwell keeps the gender as a dictionary code, so an address without an explicit gender gets the default entry
+        static::assertSame(DictionaryEntryDefinition::NOT_SPECIFIED, $billingAddress->getGender());
         static::assertNull($billingAddress->getPhoneNumber());
         static::assertNull($billingAddress->getAdditionalAddressLine1());
         static::assertNull($billingAddress->getAdditionalAddressLine2());
