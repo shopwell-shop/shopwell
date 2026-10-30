@@ -450,9 +450,7 @@ class PromotionRedemptionUpdaterTest extends TestCase
                 'orderCustomer' => [
                     'customerId' => $customerId,
                     'email' => 'test@example.com',
-                    'salutationId' => $this->fetchFirstIdFromTable('salutation'),
-                    'firstName' => 'Max',
-                    'lastName' => 'Mustermann',
+                    'name' => 'Max Mustermann',
                 ],
                 'stateId' => $this->fetchFirstIdFromTable('state_machine_state'),
                 'paymentMethodId' => $this->fetchFirstIdFromTable('payment_method'),
@@ -463,9 +461,7 @@ class PromotionRedemptionUpdaterTest extends TestCase
                 'addresses' => [
                     [
                         'id' => Uuid::randomHex(),
-                        'salutationId' => $this->fetchFirstIdFromTable('salutation'),
-                        'firstName' => 'Max',
-                        'lastName' => 'Mustermann',
+                        'name' => 'Max Mustermann',
                         'street' => 'Ebbinghoff 10',
                         'zipcode' => '48624',
                         'city' => 'Schöppingen',
@@ -559,9 +555,7 @@ class PromotionRedemptionUpdaterTest extends TestCase
                 'orderCustomer' => [
                     'customerId' => $customerId,
                     'email' => 'test@example.com',
-                    'salutationId' => $this->fetchFirstIdFromTable('salutation'),
-                    'firstName' => 'Max',
-                    'lastName' => 'Mustermann',
+                    'name' => 'Max Mustermann',
                 ],
                 'stateId' => $this->fetchFirstIdFromTable('state_machine_state'),
                 'paymentMethodId' => $this->fetchFirstIdFromTable('payment_method'),
@@ -572,9 +566,7 @@ class PromotionRedemptionUpdaterTest extends TestCase
                 'addresses' => [
                     [
                         'id' => Uuid::randomHex(),
-                        'salutationId' => $this->fetchFirstIdFromTable('salutation'),
-                        'firstName' => 'Max',
-                        'lastName' => 'Mustermann',
+                        'name' => 'Max Mustermann',
                         'street' => 'Ebbinghoff 10',
                         'zipcode' => '48624',
                         'city' => 'Schöppingen',
