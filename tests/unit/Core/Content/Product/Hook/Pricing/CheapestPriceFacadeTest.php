@@ -12,6 +12,7 @@ use Shopwell\Core\Checkout\Cart\Price\CashRounding;
 use Shopwell\Core\Checkout\Cart\Price\GrossPriceCalculator;
 use Shopwell\Core\Checkout\Cart\Price\NetPriceCalculator;
 use Shopwell\Core\Checkout\Cart\Price\PercentagePriceCalculator;
+use Shopwell\Core\Checkout\Cart\Price\PriceSelector;
 use Shopwell\Core\Checkout\Cart\Price\QuantityPriceCalculator;
 use Shopwell\Core\Checkout\Cart\Price\Struct\CalculatedPrice;
 use Shopwell\Core\Checkout\Cart\Price\Struct\CartPrice;
@@ -27,10 +28,12 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Entity;
 use Shopwell\Core\Framework\DataAbstractionLayer\Pricing\CashRoundingConfig;
 use Shopwell\Core\Framework\DataAbstractionLayer\Pricing\Price;
 use Shopwell\Core\Framework\DataAbstractionLayer\Pricing\PriceCollection;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
 use Shopwell\Core\Test\Stub\Framework\IdsCollection;
+use Symfony\Component\EventDispatcher\EventDispatcher;
 
 /**
  * @internal
@@ -134,6 +137,7 @@ class CheapestPriceFacadeTest extends TestCase
             static::createStub(Connection::class),
             $quantityCalculator,
             new PercentagePriceCalculator(new CashRounding(), $quantityCalculator, new PercentageTaxRuleBuilder()),
+            new PriceSelector(new TaxCalculator(), new ExtensionDispatcher(new EventDispatcher())),
         );
 
         $entity->assign(['calculatedPrice' => new CalculatedPrice(10, 10, new CalculatedTaxCollection(), new TaxRuleCollection())]);

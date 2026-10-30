@@ -61,6 +61,7 @@ use Shopwell\Core\Checkout\Cart\Price\CurrencyPriceCalculator;
 use Shopwell\Core\Checkout\Cart\Price\GrossPriceCalculator;
 use Shopwell\Core\Checkout\Cart\Price\NetPriceCalculator;
 use Shopwell\Core\Checkout\Cart\Price\PercentagePriceCalculator;
+use Shopwell\Core\Checkout\Cart\Price\PriceSelector;
 use Shopwell\Core\Checkout\Cart\Price\QuantityPriceCalculator;
 use Shopwell\Core\Checkout\Cart\PriceActionController;
 use Shopwell\Core\Checkout\Cart\PriceDefinitionFactory;
@@ -363,6 +364,13 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service(QuantityPriceCalculator::class),
             service(PercentageTaxRuleBuilder::class),
+            service(PriceSelector::class),
+        ]);
+
+    $services->set(PriceSelector::class)
+        ->args([
+            service(TaxCalculator::class),
+            service(ExtensionDispatcher::class),
         ]);
 
     $services->set(CartContextHasher::class)
@@ -473,6 +481,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(QuantityPriceCalculator::class),
             service(PercentageTaxRuleBuilder::class),
             service(CashRounding::class),
+            service(PriceSelector::class),
         ]);
 
     $services->set(PriceActionController::class)
@@ -558,6 +567,8 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(LanguageLocaleCodeProvider::class),
             service(DefinitionInstanceRegistry::class),
             service(Translator::class),
+            service(PriceSelector::class),
+            service(QuantityPriceCalculator::class),
         ]);
 
     $services->set(TransactionProcessor::class);
@@ -721,6 +732,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(Connection::class),
             service(QuantityPriceCalculator::class),
             service(PercentagePriceCalculator::class),
+            service(PriceSelector::class),
         ])
         ->tag('kernel.reset', ['method' => 'reset']);
 
