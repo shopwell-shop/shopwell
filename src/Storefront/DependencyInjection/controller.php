@@ -43,7 +43,6 @@ use Shopwell\Core\Checkout\OrderReturn\SalesChannel\OrderReturnRoute;
 use Shopwell\Core\Checkout\OrderReturn\Service\OrderReturnSettings;
 use Shopwell\Core\Checkout\Payment\PaymentProcessor;
 use Shopwell\Core\Checkout\Payment\SalesChannel\HandlePaymentMethodRoute;
-use Shopwell\Core\Checkout\Promotion\Cart\PromotionItemBuilder;
 use Shopwell\Core\Checkout\Wallet\SalesChannel\WalletPaymentRoute;
 use Shopwell\Core\Checkout\Wallet\SalesChannel\WalletTopUpCreateRoute;
 use Shopwell\Core\Checkout\Wallet\SalesChannel\WalletTopUpStatusRoute;
@@ -294,7 +293,6 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(CartLineItemController::class)
         ->args([
             service(CartService::class),
-            service(PromotionItemBuilder::class),
             service(ProductLineItemFactory::class),
             service(HtmlSanitizer::class),
             service(ProductListRoute::class),
