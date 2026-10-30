@@ -5,6 +5,7 @@ namespace Shopwell\Core\Content\DependencyInjection;
 use Doctrine\DBAL\Connection;
 use Psr\Clock\ClockInterface;
 use Shopwell\Core\Checkout\Document\Service\DocumentGenerator;
+use Shopwell\Core\Checkout\DocumentV2\Service\DocumentMediaGuard;
 use Shopwell\Core\Content\Mail\Message\SendMailHandler;
 use Shopwell\Core\Content\Mail\Payload\MailPayloadFactory;
 use Shopwell\Core\Content\Mail\Service\MailAttachmentsBuilder;
@@ -107,6 +108,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('document.repository'),
             service('monolog.logger.business_events'),
             service(DocumentResolver::class),
+            service(DocumentMediaGuard::class),
         ]);
 
     $services->set(MailPayloadFactory::class);
