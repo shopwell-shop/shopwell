@@ -4,6 +4,7 @@ namespace Shopwell\Core\Framework\DataAbstractionLayer\Exception;
 
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\ShopwellHttpException;
+use Symfony\Component\HttpFoundation\Response;
 
 /**
  * @codeCoverageIgnore
@@ -22,5 +23,10 @@ class ApiProtectionException extends ShopwellHttpException
     public function getErrorCode(): string
     {
         return 'FRAMEWORK__ACCESSOR_NOT_ALLOWED';
+    }
+
+    public function getStatusCode(): int
+    {
+        return Response::HTTP_BAD_REQUEST;
     }
 }

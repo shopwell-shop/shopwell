@@ -11,6 +11,7 @@ const { globSync } = require('glob');
 const shopwellVersions = [
     '6.6',
     '6.7',
+    '6.8',
 ];
 
 // Command options
@@ -97,7 +98,7 @@ const sections = [
 
     const shopwellVersion = options['shopwell-version'];
     if (shopwellVersion && !shopwellVersions.includes(shopwellVersion)) {
-        console.error(colors.red('Invalid Shopwell version. Available: 6.6, 6.7'));
+        console.error(colors.red(`Invalid Shopwell version. Available: ${shopwellVersions.join(', ')}`));
         process.exit(1);
     }
 
@@ -240,6 +241,10 @@ async function lintFiles(filePaths, fix, shopwellVersion) {
     const twigVuePlugin = require('eslint-plugin-twig-vue');
     const vueParser = require('vue-eslint-parser');
 
+    const vite8Rules = isVersionNewerOrSame(shopwellVersion, '6.8')
+        ? { 'sw-deprecation-rules/no-import-meta-glob-extglob': 'error' }
+        : {};
+
     // Base plugins/parsers come from eslint.config.ts; these entries only add the codemod-specific rules
     // and the twig processor for plugin files that live outside src/ (not covered by eslint.config.ts).
     const overrideConfig = [
@@ -311,6 +316,7 @@ async function lintFiles(filePaths, fix, shopwellVersion) {
                 'vue/no-deprecated-props-default-this': 'error',
                 'sw-deprecation-rules/no-compat-conditions': ['error'],
                 'sw-deprecation-rules/no-empty-listeners': ['error'],
+                ...vite8Rules,
                 'sw-core-rules/require-explicit-emits': 'error',
                 'sw-core-rules/require-package-annotation': 'off',
                 'sw-deprecation-rules/private-feature-declarations': 'off',
@@ -337,6 +343,7 @@ async function lintFiles(filePaths, fix, shopwellVersion) {
             rules: {
                 'sw-deprecation-rules/no-compat-conditions': ['error'],
                 'sw-deprecation-rules/no-empty-listeners': ['error'],
+                ...vite8Rules,
                 'sw-core-rules/require-explicit-emits': 'error',
                 'sw-core-rules/require-package-annotation': 'off',
                 'sw-deprecation-rules/private-feature-declarations': 'off',

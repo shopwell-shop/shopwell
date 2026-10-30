@@ -70,6 +70,7 @@ use Shopwell\Core\Checkout\Customer\Subscriber\CustomerChangePasswordSubscriber;
 use Shopwell\Core\Checkout\Customer\Subscriber\CustomerEmailUniqueSubscriber;
 use Shopwell\Core\Checkout\Customer\Subscriber\CustomerFlowEventsSubscriber;
 use Shopwell\Core\Checkout\Customer\Subscriber\CustomerGenderSubscriber;
+use Shopwell\Core\Checkout\Customer\Subscriber\CustomerGroupRegistrationSeoUrlSubscriber;
 use Shopwell\Core\Checkout\Customer\Subscriber\CustomerLanguageSalesChannelSubscriber;
 use Shopwell\Core\Checkout\Customer\Subscriber\CustomerLogoutSubscriber;
 use Shopwell\Core\Checkout\Customer\Subscriber\CustomerMetaFieldSubscriber;
@@ -89,6 +90,7 @@ use Shopwell\Core\Checkout\Customer\Validation\PasswordValidationFactory;
 use Shopwell\Core\Content\Media\File\DownloadResponseGenerator;
 use Shopwell\Core\Content\Newsletter\DataAbstractionLayer\Indexing\CustomerNewsletterSalesChannelsUpdater;
 use Shopwell\Core\Content\Product\SalesChannel\ProductCloseoutFilterFactory;
+use Shopwell\Core\Content\Seo\SeoUrlPersister;
 use Shopwell\Core\Framework\Api\Serializer\JsonEntityEncoder;
 use Shopwell\Core\Framework\DataAbstractionLayer\Dbal\Common\IteratorFactory;
 use Shopwell\Core\Framework\DataAbstractionLayer\Indexing\ManyToManyIdFieldUpdater;
@@ -278,6 +280,16 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(Connection::class),
             service('request_stack'),
             service(SystemConfigService::class),
+        ])
+        ->tag('kernel.event_subscriber');
+
+    $services->set(CustomerGroupRegistrationSeoUrlSubscriber::class)
+        ->args([
+            service('customer_group.repository'),
+            service('seo_url.repository'),
+            service('language.repository'),
+            service(SeoUrlPersister::class),
+            service('slugify'),
         ])
         ->tag('kernel.event_subscriber');
 

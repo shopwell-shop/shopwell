@@ -29,6 +29,10 @@
                                         "url": {
                                             "description": "Experimental: Contains the return url for the Shopwell SSO login.",
                                             "type": "string"
+                                        },
+                                        "passwordRecoveryEnabled": {
+                                            "description": "Experimental: Indicates whether the Administration user password recovery flow is enabled (shopwell.api.user_recovery.enabled).",
+                                            "type": "boolean"
                                         }
                                     },
                                     "type": "object"

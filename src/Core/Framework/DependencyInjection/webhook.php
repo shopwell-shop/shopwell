@@ -7,6 +7,7 @@ use GuzzleHttp\Client;
 use GuzzleHttp\HandlerStack;
 use Psr\Clock\ClockInterface;
 use Shopwell\Core\Content\Media\File\TrustedUrlResolver;
+use Shopwell\Core\Framework\Api\Acl\AclRoleLoader;
 use Shopwell\Core\Framework\Api\Serializer\JsonEntityEncoder;
 use Shopwell\Core\Framework\App\AppLocaleProvider;
 use Shopwell\Core\Framework\App\DeletedApps\DeletedAppsGateway;
@@ -16,10 +17,15 @@ use Shopwell\Core\Framework\App\Payload\AppPayloadServiceHelper;
 use Shopwell\Core\Framework\DataAbstractionLayer\DefinitionInstanceRegistry;
 use Shopwell\Core\Framework\Event\BusinessEventCollector;
 use Shopwell\Core\Framework\Event\BusinessEventRegistry;
+use Shopwell\Core\Framework\Webhook\Authorization\Ownership\AppIntegrationChangeSubscriber;
+use Shopwell\Core\Framework\Webhook\Authorization\Ownership\RecordOwnerSubscriber;
 use Shopwell\Core\Framework\Webhook\Authorization\Policy\AppEventPolicy;
 use Shopwell\Core\Framework\Webhook\Authorization\Policy\NotHookablePolicy;
 use Shopwell\Core\Framework\Webhook\Authorization\Policy\PolicyRegistry;
 use Shopwell\Core\Framework\Webhook\Authorization\Policy\PrivilegePolicy;
+use Shopwell\Core\Framework\Webhook\Authorization\RestrictWriteSubscriber;
+use Shopwell\Core\Framework\Webhook\Authorization\Subscription\SubscriptionValidator;
+use Shopwell\Core\Framework\Webhook\Authorization\WriteAuthorizer;
 use Shopwell\Core\Framework\Webhook\BusinessEventEncoder;
 use Shopwell\Core\Framework\Webhook\Command\WebhookDrainToAsyncCommand;
 use Shopwell\Core\Framework\Webhook\EventLog\WebhookEventLogDefinition;
@@ -73,6 +79,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(WebhookLoader::class)
         ->args([
             service(Connection::class),
+            service(AclRoleLoader::class),
         ]);
 
     $services->set('shopwell.webhook.guzzle', Client::class)
@@ -217,7 +224,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->tag('shopwell.webhook.policy');
 
     $services->set(PrivilegePolicy::class)
-        ->args([service(WebhookLoader::class)])
+        ->args([service(AclRoleLoader::class)])
         ->tag('shopwell.webhook.policy')
         ->tag('kernel.event_subscriber')
         ->tag('kernel.reset', ['method' => 'reset']);
@@ -243,6 +250,32 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(WebhookDefinition::class)
         ->tag('shopwell.entity.definition');
+
+    $services->set(RecordOwnerSubscriber::class)
+        ->tag('kernel.event_subscriber');
+
+    $services->set(AppIntegrationChangeSubscriber::class)
+        ->args([
+            service(Connection::class),
+        ])
+        ->tag('kernel.event_subscriber');
+
+    $services->set(WriteAuthorizer::class)
+        ->args([
+            service(SubscriptionValidator::class),
+            service(WebhookLoader::class),
+            service(AclRoleLoader::class),
+        ]);
+
+    $services->set(SubscriptionValidator::class)
+        ->args([
+            service(HookableEventCollector::class),
+            service(PolicyRegistry::class),
+        ]);
+
+    $services->set(RestrictWriteSubscriber::class)
+        ->args([service(WriteAuthorizer::class)])
+        ->tag('kernel.event_subscriber');
 
     $services->set(WebhookEventLogDefinition::class)
         ->tag('shopwell.entity.definition');

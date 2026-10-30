@@ -4,6 +4,8 @@ namespace Shopwell\Tests\Unit\Core\Service;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Framework\Api\Acl\AclRoles;
+use Shopwell\Core\Framework\Api\Acl\ApiCallerType;
 use Shopwell\Core\Framework\App\ActiveAppsLoader;
 use Shopwell\Core\Framework\App\Manifest\Manifest;
 use Shopwell\Core\Framework\App\Manifest\Xml\Meta\Metadata;
@@ -63,7 +65,7 @@ class ServiceWebhookPolicyTest extends TestCase
 
     public function testASubscriberWithoutAManifestMayNotSubscribe(): void
     {
-        static::assertFalse($this->createPolicy()->permitsSubscription(CommercialLicenseProvidedEvent::NAME, Subscriber::user()));
+        static::assertFalse($this->createPolicy()->permitsSubscription(CommercialLicenseProvidedEvent::NAME, Subscriber::api(ApiCallerType::User)));
     }
 
     private function createPolicy(bool $appIsSelfManaged = false): ServiceWebhookPolicy
@@ -93,7 +95,7 @@ class ServiceWebhookPolicyTest extends TestCase
             appActive: true,
             appVersion: null,
             appSecret: null,
-            appAclRoleId: null,
+            roles: new AclRoles(false, []),
         );
     }
 
