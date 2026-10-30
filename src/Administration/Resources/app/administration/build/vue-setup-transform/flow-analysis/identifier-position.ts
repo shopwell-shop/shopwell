@@ -117,7 +117,7 @@ function isValueReadPosition(node: BabelNode, parent: BabelNode | null): boolean
  * it when it hands over the `ObjectProperty` as the parent instead of the `AssignmentPattern`.
  */
 function isShorthandPropertyValue(node: Identifier, parent: BabelNode | null): boolean {
-    if (parent?.type !== 'ObjectProperty' || parent.shorthand !== true) {
+    if (parent?.type !== 'ObjectProperty' || !parent.shorthand) {
         return false;
     }
 

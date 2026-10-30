@@ -29,6 +29,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\EntityWriteResult;
 use Shopwell\Core\Framework\DataAbstractionLayer\Event\EntityWrittenEvent;
 use Shopwell\Core\Framework\DataAbstractionLayer\Pricing\CashRoundingConfig;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\Feature;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopwell\Core\Framework\Uuid\Uuid;
@@ -64,6 +65,8 @@ class PromotionRedemptionUpdaterTest extends TestCase
 
     public function testPromotionRedemptionUpdaterUpdateViaIndexer(): void
     {
+        Feature::skipTestIfActive('PROMOTION_REDEMPTION_OPTIMIZATION', $this);
+
         $this->createPromotionsAndOrder();
 
         $updater = static::getContainer()->get(PromotionRedemptionUpdater::class);
@@ -82,6 +85,8 @@ class PromotionRedemptionUpdaterTest extends TestCase
 
     public function testPromotionRedemptionUpdaterUpdateViaEntityWrittenEvent(): void
     {
+        Feature::skipTestIfActive('PROMOTION_REDEMPTION_OPTIMIZATION', $this);
+
         $this->createPromotionsAndOrder();
 
         $criteria = new Criteria([$this->ids->get('order')]);
@@ -154,7 +159,7 @@ class PromotionRedemptionUpdaterTest extends TestCase
         );
 
         $customer = $connection->fetchAllAssociative(
-            'SELECT `id`, `name` FROM customer WHERE `id` = :id',
+            'SELECT `id`, `first_name`, `last_name` FROM customer WHERE `id` = :id',
             ['id' => Uuid::fromHexToBytes($this->ids->get('customer'))]
         );
 
@@ -182,82 +187,28 @@ class PromotionRedemptionUpdaterTest extends TestCase
 
     public function testRemoveItemMultipleOrders(): void
     {
+        Feature::skipTestIfActive('PROMOTION_REDEMPTION_OPTIMIZATION', $this);
+
         $this->createPromotionsAndOrder();
         $firstCustomer = $this->ids->get('customer');
 
         $this->ids->set('customer', $this->createCustomer('second@example.com'));
 
         $secondCustomer = $this->ids->get('customer');
-        $secondOrderLineItemId = Uuid::randomHex();
-
-        // Create second order with different customer
-        static::getContainer()->get('order.repository')->create(
-            [[
-                'id' => Uuid::randomHex(),
-                'itemRounding' => json_decode(json_encode(new CashRoundingConfig(2, 0.01, true), \JSON_THROW_ON_ERROR), true, 512, \JSON_THROW_ON_ERROR),
-                'totalRounding' => json_decode(json_encode(new CashRoundingConfig(2, 0.01, true), \JSON_THROW_ON_ERROR), true, 512, \JSON_THROW_ON_ERROR),
-                'orderDateTime' => (new \DateTimeImmutable())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
-                'price' => new CartPrice(10, 10, 10, new CalculatedTaxCollection(), new TaxRuleCollection(), CartPrice::TAX_STATE_NET),
-                'shippingCosts' => new CalculatedPrice(10, 10, new CalculatedTaxCollection(), new TaxRuleCollection()),
-                'orderCustomer' => [
-                    'customerId' => $secondCustomer,
-                    'email' => 'test@example.com',
-                    'gender' => $this->getValidGender(),
-                    'name' => 'Max Mustermann',
-                ],
-                'stateId' => $this->fetchFirstIdFromTable('state_machine_state'),
-                'paymentMethodId' => $this->fetchFirstIdFromTable('payment_method'),
-                'currencyId' => Defaults::CURRENCY,
-                'currencyFactor' => 1.0,
-                'salesChannelId' => TestDefaults::SALES_CHANNEL,
-                'billingAddressId' => Uuid::randomHex(),
-                'addresses' => [
-                    [
-                        'id' => Uuid::randomHex(),
-                        'gender' => $this->getValidGender(),
-                        'name' => 'Max Mustermann',
-                        'street' => 'Ebbinghoff 10',
-                        'zipcode' => '48624',
-                        'city' => 'Schöppingen',
-                        'countryId' => $this->fetchFirstIdFromTable('country'),
-                    ],
-                ],
-                'lineItems' => [
-                    [
-                        'id' => $secondOrderLineItemId,
-                        'type' => LineItem::PROMOTION_LINE_ITEM_TYPE,
-                        'code' => '',
-                        'identifier' => $this->ids->get('voucherA'),
-                        'quantity' => 1,
-                        'payload' => [
-                            'promotionId' => $this->ids->get('voucherA'),
-                            'code' => '',
-                            'promotionCodeType' => 'global',
-                        ],
-                        'promotionId' => $this->ids->get('voucherA'),
-                        'label' => 'label',
-                        'price' => new CalculatedPrice(200, 200, new CalculatedTaxCollection(), new TaxRuleCollection()),
-                        'priceDefinition' => new QuantityPriceDefinition(200, new TaxRuleCollection(), 2),
-                    ],
-                ],
-                'deliveries' => [],
-                'context' => '{}',
-                'payload' => '{}',
-            ]],
-            Context::createDefaultContext()
-        );
+        $secondOrderLineItemId = $this->createOrderWithPromotion($secondCustomer, $this->ids->get('voucherA'));
 
         $promotionRepository = static::getContainer()->get('promotion.repository');
 
         $promotionA = $promotionRepository->search(new Criteria([$this->ids->get('voucherA')]), Context::createDefaultContext())->getEntities()->first();
 
         static::assertInstanceOf(PromotionEntity::class, $promotionA);
-        static::assertIsArray($promotionA->getOrdersPerCustomerCount());
-        static::assertArrayHasKey($firstCustomer, $promotionA->getOrdersPerCustomerCount());
-        static::assertArrayHasKey($secondCustomer, $promotionA->getOrdersPerCustomerCount());
+        $customerCounts = Feature::silent('v6.8.0.0', static fn (): ?array => $promotionA->getOrdersPerCustomerCount());
+        static::assertIsArray($customerCounts);
+        static::assertArrayHasKey($firstCustomer, $customerCounts);
+        static::assertArrayHasKey($secondCustomer, $customerCounts);
         static::assertSame(2, $promotionA->getOrderCount());
-        static::assertSame(1, $promotionA->getOrdersPerCustomerCount()[$firstCustomer]);
-        static::assertSame(1, $promotionA->getOrdersPerCustomerCount()[$secondCustomer]);
+        static::assertSame(1, $customerCounts[$firstCustomer]);
+        static::assertSame(1, $customerCounts[$secondCustomer]);
 
         static::getContainer()
             ->get('order_line_item.repository')
@@ -266,10 +217,11 @@ class PromotionRedemptionUpdaterTest extends TestCase
         $promotionALater = $promotionRepository->search(new Criteria([$this->ids->get('voucherA')]), Context::createDefaultContext())->getEntities()->first();
 
         static::assertInstanceOf(PromotionEntity::class, $promotionALater);
-        static::assertIsArray($promotionALater->getOrdersPerCustomerCount());
-        static::assertArrayNotHasKey($firstCustomer, $promotionALater->getOrdersPerCustomerCount());
-        static::assertArrayHasKey($secondCustomer, $promotionALater->getOrdersPerCustomerCount());
-        static::assertSame(1, $promotionALater->getOrdersPerCustomerCount()[$secondCustomer]);
+        $customerCounts = Feature::silent('v6.8.0.0', static fn (): ?array => $promotionALater->getOrdersPerCustomerCount());
+        static::assertIsArray($customerCounts);
+        static::assertArrayNotHasKey($firstCustomer, $customerCounts);
+        static::assertArrayHasKey($secondCustomer, $customerCounts);
+        static::assertSame(1, $customerCounts[$secondCustomer]);
         static::assertSame(1, $promotionALater->getOrderCount());
 
         static::getContainer()
@@ -280,7 +232,7 @@ class PromotionRedemptionUpdaterTest extends TestCase
 
         static::assertInstanceOf(PromotionEntity::class, $promotionAEvenLater);
         static::assertSame(0, $promotionAEvenLater->getOrderCount());
-        static::assertNull($promotionAEvenLater->getOrdersPerCustomerCount());
+        static::assertNull(Feature::silent('v6.8.0.0', static fn (): ?array => $promotionAEvenLater->getOrdersPerCustomerCount()));
     }
 
     public function testLineItemOfAnotherTypeCountsTowardsRedemptions(): void
@@ -313,6 +265,54 @@ class PromotionRedemptionUpdaterTest extends TestCase
             ->delete([['id' => $lineItemId]], Context::createDefaultContext());
 
         static::assertSame(0, $this->fetchPromotion($promotionId)->getOrderCount());
+    }
+
+    public function testPlacingAnOrderOnlyUpdatesTheEntryOfItsCustomer(): void
+    {
+        Feature::skipTestIfActive('PROMOTION_REDEMPTION_OPTIMIZATION', $this);
+
+        $this->createPromotionsAndOrder();
+        $firstCustomer = $this->ids->get('customer');
+
+        // not backed by any order, so only a recount of every customer would drop it
+        $otherCustomer = Uuid::randomHex();
+        $this->connection->executeStatement(
+            'UPDATE promotion SET orders_per_customer_count = JSON_SET(orders_per_customer_count, :path, 5) WHERE id = :id',
+            ['path' => '$."' . $otherCustomer . '"', 'id' => Uuid::fromHexToBytes($this->ids->get('voucherA'))]
+        );
+
+        $secondCustomer = $this->createCustomer('second@example.com');
+        $this->createOrderWithPromotion($secondCustomer, $this->ids->get('voucherA'));
+
+        $promotion = $this->fetchPromotion($this->ids->get('voucherA'));
+        static::assertSame(2, $promotion->getOrderCount());
+
+        $customerCounts = Feature::silent('v6.8.0.0', static fn (): ?array => $promotion->getOrdersPerCustomerCount());
+        static::assertIsArray($customerCounts);
+        static::assertCount(3, $customerCounts);
+        static::assertSame(1, $customerCounts[$firstCustomer]);
+        static::assertSame(1, $customerCounts[$secondCustomer]);
+        static::assertSame(5, $customerCounts[$otherCustomer]);
+    }
+
+    public function testOrdersOfDeletedCustomersCountTowardsTheRedemptions(): void
+    {
+        $this->createPromotionsAndOrder();
+
+        // what deleting the customer leaves behind
+        $this->connection->executeStatement(
+            'UPDATE order_customer SET customer_id = NULL WHERE order_id = :orderId',
+            ['orderId' => Uuid::fromHexToBytes($this->ids->get('order'))]
+        );
+
+        $this->createOrderWithPromotion($this->createCustomer('second@example.com'), $this->ids->get('voucherA'));
+
+        static::assertSame(2, $this->fetchPromotion($this->ids->get('voucherA'))->getOrderCount());
+
+        static::getContainer()->get(PromotionRedemptionUpdater::class)
+            ->update([$this->ids->get('voucherA')], Context::createDefaultContext());
+
+        static::assertSame(2, $this->fetchPromotion($this->ids->get('voucherA'))->getOrderCount());
     }
 
     private function fetchPromotion(string $promotionId): PromotionEntity
@@ -421,7 +421,7 @@ class PromotionRedemptionUpdaterTest extends TestCase
         return [
             'orderId' => $orderId,
             'customerId' => Uuid::fromBytesToHex($customer['id']),
-            'customerName' => $customer['name'],
+            'customerName' => $customer['first_name'] . ' ' . $customer['last_name'],
         ];
     }
 
@@ -450,8 +450,9 @@ class PromotionRedemptionUpdaterTest extends TestCase
                 'orderCustomer' => [
                     'customerId' => $customerId,
                     'email' => 'test@example.com',
-                    'gender' => $this->getValidGender(),
-                    'name' => 'Max Mustermann',
+                    'salutationId' => $this->fetchFirstIdFromTable('salutation'),
+                    'firstName' => 'Max',
+                    'lastName' => 'Mustermann',
                 ],
                 'stateId' => $this->fetchFirstIdFromTable('state_machine_state'),
                 'paymentMethodId' => $this->fetchFirstIdFromTable('payment_method'),
@@ -462,8 +463,9 @@ class PromotionRedemptionUpdaterTest extends TestCase
                 'addresses' => [
                     [
                         'id' => Uuid::randomHex(),
-                        'gender' => $this->getValidGender(),
-                        'name' => 'Max Mustermann',
+                        'salutationId' => $this->fetchFirstIdFromTable('salutation'),
+                        'firstName' => 'Max',
+                        'lastName' => 'Mustermann',
                         'street' => 'Ebbinghoff 10',
                         'zipcode' => '48624',
                         'city' => 'Schöppingen',
@@ -540,6 +542,71 @@ class PromotionRedemptionUpdaterTest extends TestCase
             ]],
             Context::createDefaultContext()
         );
+    }
+
+    private function createOrderWithPromotion(string $customerId, string $promotionId): string
+    {
+        $lineItemId = Uuid::randomHex();
+
+        static::getContainer()->get('order.repository')->create(
+            [[
+                'id' => Uuid::randomHex(),
+                'itemRounding' => json_decode(json_encode(new CashRoundingConfig(2, 0.01, true), \JSON_THROW_ON_ERROR), true, 512, \JSON_THROW_ON_ERROR),
+                'totalRounding' => json_decode(json_encode(new CashRoundingConfig(2, 0.01, true), \JSON_THROW_ON_ERROR), true, 512, \JSON_THROW_ON_ERROR),
+                'orderDateTime' => (new \DateTimeImmutable())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
+                'price' => new CartPrice(10, 10, 10, new CalculatedTaxCollection(), new TaxRuleCollection(), CartPrice::TAX_STATE_NET),
+                'shippingCosts' => new CalculatedPrice(10, 10, new CalculatedTaxCollection(), new TaxRuleCollection()),
+                'orderCustomer' => [
+                    'customerId' => $customerId,
+                    'email' => 'test@example.com',
+                    'salutationId' => $this->fetchFirstIdFromTable('salutation'),
+                    'firstName' => 'Max',
+                    'lastName' => 'Mustermann',
+                ],
+                'stateId' => $this->fetchFirstIdFromTable('state_machine_state'),
+                'paymentMethodId' => $this->fetchFirstIdFromTable('payment_method'),
+                'currencyId' => Defaults::CURRENCY,
+                'currencyFactor' => 1.0,
+                'salesChannelId' => TestDefaults::SALES_CHANNEL,
+                'billingAddressId' => Uuid::randomHex(),
+                'addresses' => [
+                    [
+                        'id' => Uuid::randomHex(),
+                        'salutationId' => $this->fetchFirstIdFromTable('salutation'),
+                        'firstName' => 'Max',
+                        'lastName' => 'Mustermann',
+                        'street' => 'Ebbinghoff 10',
+                        'zipcode' => '48624',
+                        'city' => 'Schöppingen',
+                        'countryId' => $this->fetchFirstIdFromTable('country'),
+                    ],
+                ],
+                'lineItems' => [
+                    [
+                        'id' => $lineItemId,
+                        'type' => LineItem::PROMOTION_LINE_ITEM_TYPE,
+                        'code' => '',
+                        'identifier' => $promotionId,
+                        'quantity' => 1,
+                        'payload' => [
+                            'promotionId' => $promotionId,
+                            'code' => '',
+                            'promotionCodeType' => 'global',
+                        ],
+                        'promotionId' => $promotionId,
+                        'label' => 'label',
+                        'price' => new CalculatedPrice(200, 200, new CalculatedTaxCollection(), new TaxRuleCollection()),
+                        'priceDefinition' => new QuantityPriceDefinition(200, new TaxRuleCollection(), 2),
+                    ],
+                ],
+                'deliveries' => [],
+                'context' => '{}',
+                'payload' => '{}',
+            ]],
+            Context::createDefaultContext()
+        );
+
+        return $lineItemId;
     }
 
     private function fetchFirstIdFromTable(string $table): string
