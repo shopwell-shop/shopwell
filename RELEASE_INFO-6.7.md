@@ -325,7 +325,7 @@ Unit tests that pass a mocked `EventDispatcherInterface` to `ExtensionDispatcher
 
 ### Known core deprecations log an error in next-major mode
 
-Core usages that are not migrated yet are listed in `src/Administration/Resources/app/administration/src/meta/deprecation-baseline.json`.
+Core usages that are not migrated yet are listed in `src/Administration/Resources/app/administration/src/core/deprecation-baseline.json`.
 In next-major mode, a deprecation with a listed message logs a console error instead of throwing, so the Administration stays usable.
 Any other deprecation still throws.
 
