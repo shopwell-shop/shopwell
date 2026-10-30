@@ -13,6 +13,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Entity;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityCustomFieldsTrait;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityIdTrait;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Webhook\WebhookCollection;
 use Shopwell\Core\System\Locale\LocaleEntity;
 use Shopwell\Core\System\Organization\Aggregate\OrganizationUnit\OrganizationUnitCollection;
 use Shopwell\Core\System\Position\PositionCollection;
