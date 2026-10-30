@@ -161,6 +161,19 @@ Shops now uninstall a service once the service registry lists it as `retired` in
 
 A criteria that filters, sorts, queries or aggregates by a field the API does not expose (`FRAMEWORK__ACCESSOR_NOT_ALLOWED`) or by a runtime field (`FRAMEWORK__RUNTIME_FIELD_IN_CRITERIA`) is now answered with `400 Bad Request` instead of `500 Internal Server Error`.
 
+### Assign products to a sales channel by product group or category
+
+`POST /api/_action/sales-channel/{salesChannelId}/product-assignment` makes products visible in a sales channel.
+Products are given by `productIds`, by `productStreamIds` (dynamic product groups) or by `categoryIds`, and the matching products are resolved on the server.
+Products that are already visible in the sales channel are skipped, and the response reports the number of newly assigned products as `assigned`.
+A single call writes up to 5000 products and answers with `complete: false` when products are left.
+Repeat the same request until `complete` is `true`, every call continues with the products that are not visible yet.
+The optional `visibility` (`10`, `20` or `30`, default `30`) is applied to every assigned product.
+The route requires the `product_visibility:create` and `product:read` privileges, plus `product_stream:read` when `productStreamIds` is given and `category:read` when `categoryIds` is given.
+
+```json
+{ "productStreamIds": ["0193b1c2d3e47f5a8b9c0d1e2f3a4b5c"], "categoryIds": [], "productIds": [] }
+```
 ### Profile updates without `accountType` keep the account type
 
 `/store-api/account/change-profile` now keeps the customer's current account type when the request doesn't contain `accountType`.
@@ -232,6 +245,12 @@ They additionally react to domain changes:
 toggling the external storefront flag of a domain (or adding/removing domains) creates or removes the affected rows without re-saving the customer group.
 The storefront rows are untouched by this and keep being maintained by the Storefront bundle.
 
+### Sales channel product assignment is no longer capped at 500 products
+
+Assigning products to a sales channel through the "Categories" or "Product group selection" tab of the product assignment modal now adds every matching product.
+Previously only the first 500 products were assigned, without any notice.
+The Administration sends the selected categories and product groups to the new product assignment route instead of loading the products itself, and shows the number of assigned products afterwards.
+
 ### Known core deprecations log an error in next-major mode
 
 Core usages that are not migrated yet are listed in `src/Administration/Resources/app/administration/src/meta/deprecation-baseline.json`.
@@ -252,6 +271,10 @@ If your Jest setup uses `babel-plugin-shopwell-vite-meta-glob`, update it to 0.0
 For the other changes, see "Administration build updated to Vite 8" in `UPGRADE-6.8.md`.
 
 ## Storefront
+
+### Deprecation of unused custom `$offcanvas-zindex` SCSS variable
+
+The custom offcanvas z-index SCSS variable `$offcanvas-zindex` is not used anymore and is therefore deprecated. To override the offcanvas z-index or calculate your own z-index based on it, use the bootstrap variable `$zindex-offcanvas` instead. The deprecated `$offcanvas-zindex` SCSS variable and its respective `--offcanvas-zindex` CSS root variable now reflect the actual Bootstrap offcanvas z-index (`1045` instead of `1050`). Additionally, a new `--offcanvas-backdrop-zindex` CSS root variable has been added.
 
 ### Theme compilation completion is notified once
 
