@@ -6,6 +6,7 @@ use Doctrine\DBAL\Connection;
 use Shopwell\Core\Framework\Api\Acl\AclAnnotationValidator;
 use Shopwell\Core\Framework\Api\Acl\AclCriteriaValidator;
 use Shopwell\Core\Framework\Api\Acl\AclRoleLoader;
+use Shopwell\Core\Framework\Api\Acl\AclVersionMergeValidator;
 use Shopwell\Core\Framework\Api\Acl\AclWriteValidator;
 use Shopwell\Core\Framework\Api\Acl\Role\AclRoleDefinition;
 use Shopwell\Core\Framework\Api\Acl\Role\AclUserRoleDefinition;
@@ -45,6 +46,11 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(AclCriteriaValidator::class)
         ->public()
+        ->args([
+            service(DefinitionInstanceRegistry::class),
+        ]);
+
+    $services->set(AclVersionMergeValidator::class)
         ->args([
             service(DefinitionInstanceRegistry::class),
         ]);

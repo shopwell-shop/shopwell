@@ -145,6 +145,12 @@ That route now validates `vatIds` against the country of the active billing addr
 Headless clients find that address as `customer.activeBillingAddress` in `/store-api/context`.
 The Storefront profile page marks the VAT ID field as required based on the same country.
 
+### Product search and suggest extensions before the criteria are resolved
+
+`ProductSearchResolveCriteriaExtension` (`product-search-route.resolve-criteria`) and `ProductSuggestResolveCriteriaExtension` (`product-suggest-route.resolve-criteria`) wrap the whole product search and suggest, before the listing criteria are resolved from the request.
+
+To work on the resolved criteria instead, use `ProductSearchRouteExtension` and `ProductSuggestRouteExtension`, which run inside these extensions. A result set in `onPre()` skips the listing processing, so it carries no sortings or current filters; to only change the products, use `ProductSearchRouteExtension` instead.
+
 ### Remote thumbnails skip SVGs
 
 With `shopwell.media.remote_thumbnails.enable`, SVGs now have an empty `thumbnails` collection, as in local mode.
@@ -261,6 +267,14 @@ The headless rows are maintained by the Core (`CustomerGroupRegistrationSeoUrlSu
 They additionally react to domain changes:
 toggling the external storefront flag of a domain (or adding/removing domains) creates or removes the affected rows without re-saving the customer group.
 The storefront rows are untouched by this and keep being maintained by the Storefront bundle.
+
+### Rule Builder: free-text list conditions use `sw-multi-tag-select`
+
+Rule conditions with the field type `tagged` (`RuleConfig::taggedField()`) and the zip code conditions for billing and shipping addresses now render `sw-multi-tag-select` instead of `sw-tagged-field`, as dynamic product groups already do.
+Multi-select values in the Rule Builder now wrap and the condition row grows with them instead of scrolling horizontally.
+A value that was typed but not confirmed with Enter is now added when the field loses focus.
+A component set via `componentName` in the field config of `RuleConfig::taggedField()` is kept.
+If your extension overrides the Twig blocks `sw_condition_billing_zip_code_field_zip_codes` or `sw_condition_shipping_zip_code_field_zip_codes`, or styles `.sw-tagged-field` in these conditions, check your customization.
 
 ### Overrides keep their own methods and props across component builds
 
