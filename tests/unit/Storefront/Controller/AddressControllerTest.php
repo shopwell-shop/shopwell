@@ -737,10 +737,8 @@ class AddressControllerTest extends TestCase
         static::assertSame([
             'accountType' => 'business',
             'company' => 'Acme GmbH',
-            'salutationId' => $savedAddress->getSalutationId(),
-            'title' => 'Dr.',
-            'firstName' => 'Erika',
-            'lastName' => 'Mustermann',
+            'gender' => $savedAddress->getGender(),
+            'name' => 'Erika Mustermann',
             'vatIds' => ['DE123456789'],
             'birthdayDay' => 9,
             'birthdayMonth' => 4,
@@ -888,10 +886,8 @@ class AddressControllerTest extends TestCase
     {
         $address = new CustomerAddressEntity();
         $address->setId(Uuid::randomHex());
-        $address->setSalutationId(Uuid::randomHex());
-        $address->setTitle('Dr.');
-        $address->setFirstName('Erika');
-        $address->setLastName('Mustermann');
+        $address->setGender('female');
+        $address->setName('Erika Mustermann');
         $address->setCompany('Acme GmbH');
 
         return $address;

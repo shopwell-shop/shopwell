@@ -170,7 +170,7 @@ class OrderAddressServiceTest extends TestCase
         static::assertSame('Musterstraße 1', $billingAddress->getStreet());
         static::assertNull($billingAddress->getCompany());
         static::assertNull($billingAddress->getDepartment());
-        static::assertNull($billingAddress->getTitle());
+        static::assertNull($billingAddress->getGender());
         static::assertNull($billingAddress->getPhoneNumber());
         static::assertNull($billingAddress->getAdditionalAddressLine1());
         static::assertNull($billingAddress->getAdditionalAddressLine2());

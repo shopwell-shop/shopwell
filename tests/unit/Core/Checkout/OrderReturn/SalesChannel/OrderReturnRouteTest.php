@@ -236,6 +236,8 @@ class OrderReturnRouteTest extends TestCase
         $service->method('get')->willReturn($orderReturn);
 
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
+        // ExtensionDispatcher only dispatches when the event has listeners.
+        $eventDispatcher->method('hasListeners')->willReturn(true);
         $eventDispatcher->expects($this->exactly(2))
             ->method('dispatch')
             ->with(static::isInstanceOf(OrderReturnRouteExtension::class));

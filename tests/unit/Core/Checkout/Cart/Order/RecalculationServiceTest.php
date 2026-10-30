@@ -955,8 +955,7 @@ class RecalculationServiceTest extends TestCase
 
         $customerAddress = new CustomerAddressEntity();
         $customerAddress->setId(Uuid::randomHex());
-        $customerAddress->setFirstName('Max');
-        $customerAddress->setLastName('Mustermann');
+        $customerAddress->setName('Max Mustermann');
         $customerAddress->setStreet('Musterstraße 1');
         $customerAddress->setCity('Musterstadt');
         $customerAddress->setCountryId(Uuid::randomHex());
