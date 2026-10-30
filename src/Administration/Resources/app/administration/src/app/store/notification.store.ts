@@ -311,7 +311,7 @@ const notificationStore = Shopwell.Store.register({
 
             this.upsertNotification(mergedUpdate);
 
-            if (notificationUpdate.growl !== undefined && notificationUpdate.growl === true) {
+            if (notificationUpdate.growl) {
                 this.createGrowlNotification(mergedUpdate);
             }
 
