@@ -16,7 +16,7 @@ runs:
       run: echo 'DPkg::Lock::Timeout "300";' | sudo tee /etc/apt/apt.conf.d/99-dpkg-lock-timeout
 
     - name: Install Playwright Browsers
-      uses: shopwell/github-actions/npm-ci-retry@main
+      uses: shopwell-shop/github-actions/npm-ci-retry@main
       with:
         working-directory: ${{ inputs.working-directory }}
         # A stalled apt mirror hangs without failing, so the retry loop never fires; time each attempt out so it can retry (normal runtime is ~2 minutes).
