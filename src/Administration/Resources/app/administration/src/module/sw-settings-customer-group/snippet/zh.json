@@ -7,17 +7,32 @@
     },
     "list": {
       "columnName": "名称",
-      "columnDisplayGross": "税额显示"
+      "columnDisplayGross": "税率显示",
+      "columnPriceBasis": "价格基准",
+      "columnRegistrationActive": "自定义注册表单"
     },
     "detail": {
       "cardTitle": "客户组",
       "fieldNameLabel": "名称",
-      "fieldDisplayGrossLabel": "税额显示",
-      "fieldDisplayGrossValues": "含税 | 不含税",
       "placeholderName": "输入名称...",
       "placeholderNewCustomerGroup": "新建客户组",
       "notificationErrorMessage": "保存客户组时出错。",
-      "registrationForm": "自定义注册表单"
+      "registrationFormTitle": "注册表单",
+      "registrationForm": "自定义注册表单",
+      "taxDisplay": {
+        "label": "税率显示",
+        "grossLabel": "含税",
+        "grossDescription": "显示的价格包含税。",
+        "netLabel": "不含税",
+        "netDescription": "显示的价格不含税。"
+      },
+      "priceBasis": {
+        "label": "价格基准",
+        "grossLabel": "含税价保持不变",
+        "grossDescription": "税率变化时含税价保持不变。使用不含税显示时，不含税价按客户所在国家的税率推导。免税订单始终按不含税价收取。",
+        "netLabel": "不含税价保持不变",
+        "netDescription": "税率变化时不含税价保持不变。含税价按客户所在国家的税率推导，可能出现未取整的金额（不含税 10.00 € 在 19% 税率下显示为 11.90 €，20% 税率下为 12.00 €）。"
+      }
     },
     "registration": {
       "formTitle": "注册表单",

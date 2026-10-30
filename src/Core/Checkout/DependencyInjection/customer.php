@@ -68,6 +68,7 @@ use Shopwell\Core\Checkout\Customer\Subscriber\CustomerAddressSubscriber;
 use Shopwell\Core\Checkout\Customer\Subscriber\CustomerBeforeDeleteSubscriber;
 use Shopwell\Core\Checkout\Customer\Subscriber\CustomerChangePasswordSubscriber;
 use Shopwell\Core\Checkout\Customer\Subscriber\CustomerEmailUniqueSubscriber;
+use Shopwell\Core\Checkout\Customer\Subscriber\CustomerGroupPriceBasisSubscriber;
 use Shopwell\Core\Checkout\Customer\Subscriber\CustomerFlowEventsSubscriber;
 use Shopwell\Core\Checkout\Customer\Subscriber\CustomerGenderSubscriber;
 use Shopwell\Core\Checkout\Customer\Subscriber\CustomerGroupRegistrationSeoUrlSubscriber;
@@ -714,6 +715,10 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(Connection::class),
         ])
         ->tag('kernel.event_subscriber');
+
+    $services->set(CustomerGroupPriceBasisSubscriber::class)
+        ->tag('kernel.event_subscriber')
+        ->tag('shopwell.inactiveFeature', ['flag' => 'v6.8.0.0']);
 
     $services->set(CustomerAddressSubscriber::class)
         ->tag('kernel.event_subscriber');
