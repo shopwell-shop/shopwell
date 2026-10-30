@@ -5,6 +5,7 @@ namespace Shopwell\Core\Checkout\DependencyInjection;
 use Doctrine\DBAL\Connection;
 use Psr\Clock\ClockInterface;
 use Shopwell\Core\Checkout\Cart\Address\AddressValidator;
+use Shopwell\Core\Checkout\Cart\Address\VatIdValidator;
 use Shopwell\Core\Checkout\Cart\CachedRuleLoader;
 use Shopwell\Core\Checkout\Cart\Calculator;
 use Shopwell\Core\Checkout\Cart\CartCalculator;
@@ -513,6 +514,9 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ])
         ->tag('shopwell.cart.validator')
         ->tag('kernel.reset', ['method' => 'reset']);
+
+    $services->set(VatIdValidator::class)
+        ->tag('shopwell.cart.validator');
 
     $services->set(Validator::class)
         ->args([

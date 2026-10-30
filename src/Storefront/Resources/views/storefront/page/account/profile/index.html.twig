@@ -72,6 +72,12 @@
                                         {% endblock %}
                                     {% endblock %}
 
+                                    {% block page_account_profile_personal_redirect %}
+                                        {% if redirectTo %}
+                                            <input type="hidden" name="redirectTo" value="{{ redirectTo }}">
+                                        {% endif %}
+                                    {% endblock %}
+
                                     {% block page_account_profile_personal_required %}
                                         <p class="account-profile-required-info required-fields">
                                             {{ 'global.default.noteRequiredFields'|trans|sw_sanitize }}
@@ -149,7 +155,8 @@
                     {% endif %}
                 {% endblock %}
 
-                {% block page_account_profile_credentials %}
+                {% if not context.customer.guest %}
+                    {% block page_account_profile_credentials %}
                     <div class="card account-profile-credentials mb-4">
                         <div class="card-body">
                             {% block page_account_profile_credentials_header %}
@@ -457,6 +464,7 @@
                         </div>
                     {% endif %}
                 {% endblock %}
+                {% endif %}
             {% endblock %}
         </div>
     {% endblock %}

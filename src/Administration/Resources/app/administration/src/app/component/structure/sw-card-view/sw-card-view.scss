@@ -1,8 +1,6 @@
 @import "~scss/variables";
 
 .sw-card-view {
-    // Grey canvas with white cards, the usual Chinese console hierarchy.
-    background: var(--color-elevation-surface-sunken);
     position: absolute;
     width: 100%;
     height: 100%;
@@ -22,7 +20,7 @@
     .sw-card-view__content {
         width: 100%;
         height: 100%;
-        padding: var(--scale-size-16);
+        padding: 40px 16px;
         overflow-x: hidden;
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
