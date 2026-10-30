@@ -383,7 +383,8 @@
       "messageEmptySubline": "单据管理",
       "notificationDeleteErrorMessage": "单据无法删除。",
       "error": {
-        "DOCUMENT__NUMBER_ALREADY_EXISTS": "单据编号 {number} 已在使用中。",
+        "DOCUMENT__NUMBER_ALREADY_EXISTS": "单据号 {number} 已被单据类型 {documentType} 使用。请检查为该单据类型和销售渠道配置的编号范围。",
+        "duplicateDocumentNumber": "单据号 \"{documentNumber}\" 的单据已存在于单据类型 \"{documentType}\" 中。",
         "createDocument": "单据创建失败。",
         "downloadDocument": "单据下载失败。",
         "downloadDocumentArchive": "单据压缩包下载失败。",

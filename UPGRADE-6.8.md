@@ -1473,6 +1473,18 @@ If your extension extends or decorates `\Shopwell\Core\System\NumberRange\ValueG
 
 The method must raise the stored increment state to at least the given value without lowering an existing higher state.
 
+## Removed `DocumentException::documentNumberAlreadyExistsException()`
+
+`Shopwell\Core\Checkout\Document\DocumentException::documentNumberAlreadyExistsException()` was removed. Use `documentNumberAlreadyExistsExceptionForType()`, which also names the document type:
+
+```php
+// Before
+throw DocumentException::documentNumberAlreadyExistsException($number);
+
+// After
+throw DocumentException::documentNumberAlreadyExistsExceptionForType($number, $documentType);
+```
+
 ## Removal of `SalesChannelContextRestorer::restoreByOrder()`
 
 `\Shopwell\Core\System\SalesChannel\Context\SalesChannelContextRestorer::restoreByOrder()` and `\Shopwell\Core\System\SalesChannel\Event\SalesChannelContextRestorerOrderCriteriaEvent` were removed. Load the order with the `orderCustomer`, `transactions.stateMachineState` and `primaryOrderDelivery` associations and pass it to `\Shopwell\Core\Checkout\Cart\Order\OrderConverter::assembleSalesChannelContext()`. Add associations you used to add through `SalesChannelContextRestorerOrderCriteriaEvent` to that criteria directly.
