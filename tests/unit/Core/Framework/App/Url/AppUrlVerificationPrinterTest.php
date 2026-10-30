@@ -4,9 +4,6 @@ namespace Shopwell\Tests\Unit\Core\Framework\App\Url;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
-use Shopwell\Core\Framework\App\ShopId\Fingerprint\AppUrl as AppUrlFingerprint;
-use Shopwell\Core\Framework\App\ShopId\ShopId;
-use Shopwell\Core\Framework\App\ShopId\ShopIdProvider;
 use Shopwell\Core\Framework\App\Url\AppUrlVerificationPrinter;
 use Shopwell\Core\Framework\App\Url\VerificationState;
 use Shopwell\Core\Framework\App\Url\VerificationStatus;
@@ -24,21 +21,18 @@ class AppUrlVerificationPrinterTest extends TestCase
 {
     public function testPrintsPassBasic(): void
     {
-        $shopId = ShopId::v2('shop-id', [AppUrlFingerprint::IDENTIFIER => 'https://example.com']);
-
-        $shopIdProvider = static::createStub(ShopIdProvider::class);
-        $shopIdProvider->method('getShopId')->willReturn($shopId);
-
-        $printer = new AppUrlVerificationPrinter($shopIdProvider);
+        $printer = new AppUrlVerificationPrinter();
 
         $output = new BufferedOutput();
         $io = new SymfonyStyle(new ArrayInput([]), $output);
 
         $state = new VerificationState(
+            'https://example.com',
             VerificationStatus::PASS,
             1,
             new \DateTimeImmutable('2024-01-01 12:00:00'),
             null,
+            statusCode: null,
         );
 
         $printer->print($io, $state, false);
@@ -60,20 +54,18 @@ class AppUrlVerificationPrinterTest extends TestCase
 
     public function testPrintsManualAttemptAndTimestamp(): void
     {
-        $shopId = ShopId::v2('shop-id', [AppUrlFingerprint::IDENTIFIER => 'https://example.org']);
-        $shopIdProvider = static::createStub(ShopIdProvider::class);
-        $shopIdProvider->method('getShopId')->willReturn($shopId);
-
-        $printer = new AppUrlVerificationPrinter($shopIdProvider);
+        $printer = new AppUrlVerificationPrinter();
 
         $output = new BufferedOutput();
         $io = new SymfonyStyle(new ArrayInput([]), $output);
 
         $state = new VerificationState(
+            'https://example.org',
             VerificationStatus::SOFT_FAIL,
             3,
             new \DateTimeImmutable('2025-01-01 12:00:00'),
             'Temporary error',
+            statusCode: null,
         );
 
         $printer->print($io, $state, true);

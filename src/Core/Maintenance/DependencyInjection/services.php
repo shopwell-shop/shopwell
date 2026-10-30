@@ -3,7 +3,6 @@
 namespace Shopwell\Core\Maintenance\DependencyInjection;
 
 use Doctrine\DBAL\Connection;
-use GuzzleHttp\Client;
 use Psr\Clock\ClockInterface;
 use Shopwell\Core\Framework\Adapter\Cache\CacheClearer;
 use Shopwell\Core\Framework\App\ShopId\ShopIdProvider;
@@ -32,7 +31,6 @@ use Shopwell\Core\Maintenance\System\Command\SystemIsInstalledCommand;
 use Shopwell\Core\Maintenance\System\Command\SystemSetupCommand;
 use Shopwell\Core\Maintenance\System\Command\SystemUpdateFinishCommand;
 use Shopwell\Core\Maintenance\System\Command\SystemUpdatePrepareCommand;
-use Shopwell\Core\Maintenance\System\Service\AppUrlVerifier;
 use Shopwell\Core\Maintenance\System\Service\DatabaseConnectionFactory;
 use Shopwell\Core\Maintenance\System\Service\SetupDatabaseAdapter;
 use Shopwell\Core\Maintenance\System\Service\ShopConfigurator;
@@ -46,14 +44,10 @@ use Symfony\Component\Dotenv\Command\DotenvDumpCommand;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpKernel\KernelInterface;
 
-use function Symfony\Component\DependencyInjection\Loader\Configurator\env;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\param;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
 
 return static function (ContainerConfigurator $containerConfigurator): void {
-    $containerConfigurator->parameters()
-        ->set('env(APP_URL_CHECK_DISABLED)', 'false');
-
     $services = $containerConfigurator->services();
 
     $services->set(DatabaseConnectionFactory::class);
@@ -125,16 +119,6 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(CacheClearer::class),
         ])
         ->tag('console.command');
-
-    $services->set(AppUrlVerifier::class)
-        ->args([
-            service('shopwell.maintenance.client'),
-            service(Connection::class),
-            param('kernel.environment'),
-            env('APP_URL_CHECK_DISABLED')->bool(),
-        ]);
-
-    $services->set('shopwell.maintenance.client', Client::class);
 
     $services->set(ShopConfigurator::class)
         ->args([

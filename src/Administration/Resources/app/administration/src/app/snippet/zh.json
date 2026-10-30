@@ -1655,6 +1655,7 @@
         "detectedChanges": "检测到以下更改：",
         "success": "商城 ID 更新成功。",
         "error": "商城 ID 更新失败。",
+        "noStrategySelected": "请先选择一个选项。",
         "oldValue": "旧值",
         "newValue": "新值",
         "remindMeLater": "稍后提醒",
@@ -1688,10 +1689,15 @@
         }
       },
       "sw-app-wrong-app-url-modal": {
-        "title": "APP_URL 配置错误",
-        "explanationHeader": "连接你的扩展时出错。",
-        "explanation": "由于系统配置错误，扩展无法连接到你的商城。",
-        "textDetails": "技术详情：APP_URL 配置有误。",
+        "title": "APP_URL 验证失败",
+        "explanation": "Shopwell 无法确认 APP_URL 能访问本商城，因此应用可能无法正常工作。",
+        "labelReason": "原因",
+        "reasonStatusCode": "APP_URL 对验证请求返回了 HTTP {statusCode}。",
+        "reasonUnknown": "运行下方命令查看详情。",
+        "checkIntro": "请检查：",
+        "checkPointsToShop": "APP_URL 是否指向本商城",
+        "checkNotBlocked": "对 /api/app-system/shop/verify 的请求是否被拦截（防火墙、HTTP 认证、IP 白名单）",
+        "checkAgain": "如果在不修改 APP_URL 的情况下解决了问题，请运行以下命令移除此警告：",
         "labelLearnMoreButton": "了解更多",
         "linkToDocsArticle": "https://docs.shopwell.cn/zh/shopwell-6-zh/tutorials-and-faq/notes-to-the-APP-URL"
       }
