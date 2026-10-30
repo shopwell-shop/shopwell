@@ -4,6 +4,7 @@ namespace Shopwell\Tests\Integration\Storefront\Framework\HealthCheck;
 
 use Doctrine\DBAL\Connection;
 use PHPUnit\Framework\TestCase;
+use Shopwell\Administration\Framework\SystemCheck\AdministrationReadinessCheck;
 use Shopwell\Core\Checkout\Cart\CartRuleLoader;
 use Shopwell\Core\Content\Product\ProductCollection;
 use Shopwell\Core\Content\Test\Product\ProductBuilder;
@@ -18,11 +19,15 @@ use Shopwell\Core\Framework\Test\TestCaseBase\CacheTestBehaviour;
 use Shopwell\Core\Framework\Test\TestCaseBase\DatabaseTransactionBehaviour;
 use Shopwell\Core\Framework\Test\TestCaseBase\KernelTestBehaviour;
 use Shopwell\Core\Framework\Test\TestCaseBase\SalesChannelApiTestBehaviour;
+use Shopwell\Core\SalesChannelRequest;
 use Shopwell\Core\System\SalesChannel\Event\SalesChannelProcessCriteriaEvent;
 use Shopwell\Core\System\SystemConfig\SystemConfigService;
 use Shopwell\Core\Test\Integration\EventDispatcher\EventHookDispatcher;
 use Shopwell\Core\Test\Stub\Framework\IdsCollection;
 use Shopwell\Storefront\Framework\SystemCheck\ProductDetailReadinessCheck;
+use Shopwell\Storefront\Page\Product\ProductPageLoadedEvent;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\RequestStack;
 
 /**
  * @internal
@@ -72,6 +77,46 @@ class ProductDetailReadinessCheckTest extends TestCase
 
         static::assertTrue($result->healthy);
         static::assertSame(Status::SKIPPED, $result->status);
+    }
+
+    public function testAdvancedPricesAreHealthyAfterAdministrationReadinessInsideAnApiRequest(): void
+    {
+        $products = [];
+        foreach (['sales-channel-1', 'sales-channel-2'] as $salesChannelKey) {
+            $products[] = (new ProductBuilder($this->ids, 'tiered-' . $salesChannelKey))
+                ->name('Tiered product')
+                ->price(10)
+                ->prices('tier-rule', gross: 10, start: 1, valid: true)
+                ->prices('tier-rule', gross: 8, start: 10, valid: true)
+                ->manufacturer('manufacturer')
+                ->tax('tax')
+                ->visibility($this->ids->get($salesChannelKey))
+                ->build();
+        }
+        $this->productRepository->create($products, Context::createDefaultContext());
+
+        $priceCounts = [];
+        EventHookDispatcher::fromContainer(static::getContainer())->on(
+            ProductPageLoadedEvent::class,
+            static function (ProductPageLoadedEvent $event) use (&$priceCounts): void {
+                $priceCounts[] = $event->getPage()->getProduct()->getCalculatedPrices()->count();
+            }
+        );
+
+        $requestStack = static::getContainer()->get(RequestStack::class);
+        $outerRequest = Request::create('http://localhost/api/_info/system-health-check');
+        $requestStack->push($outerRequest);
+        try {
+            static::getContainer()->get(AdministrationReadinessCheck::class)->run();
+            $result = $this->createCheck()->run();
+
+            static::assertTrue($result->healthy, json_encode($result->extra, \JSON_THROW_ON_ERROR));
+            static::assertSame([2, 2], $priceCounts);
+            static::assertSame($outerRequest, $requestStack->getCurrentRequest());
+            static::assertNull($outerRequest->attributes->get(SalesChannelRequest::ATTRIBUTE_IS_SALES_CHANNEL_REQUEST));
+        } finally {
+            $requestStack->pop();
+        }
     }
 
     public function testCheckIsHealthyWhenAllProductsAreRestrictedByAnExtension(): void
