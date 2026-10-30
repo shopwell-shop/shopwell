@@ -3166,16 +3166,6 @@
       "count": 1
     }
   },
-  "src/app/mixin/salutation.mixin.spec.js": {
-    "sw-test-rules/no-vm-access": {
-      "count": 2
-    }
-  },
-  "src/app/mixin/salutation.mixin.ts": {
-    "sw-core-rules/no-new-mixins": {
-      "count": 1
-    }
-  },
   "src/app/mixin/sw-inline-snippet.mixin.spec.js": {
     "sw-test-rules/no-vm-access": {
       "count": 5
@@ -12191,40 +12181,6 @@
   "src/module/sw-settings-rule/view/sw-settings-rule-detail-base/sw-settings-rule-detail-base.spec.js": {
     "sw-test-rules/no-vm-access": {
       "count": 2
-    }
-  },
-  "src/module/sw-settings-salutation/acl/index.js": {
-    "filename-rules/not-match": {
-      "count": 1
-    }
-  },
-  "src/module/sw-settings-salutation/index.js": {
-    "@eslint-community/eslint-comments/require-description": {
-      "count": 2
-    },
-    "filename-rules/not-match": {
-      "count": 1
-    }
-  },
-  "src/module/sw-settings-salutation/page/sw-settings-salutation-detail/index.js": {
-    "@eslint-community/eslint-comments/require-description": {
-      "count": 1
-    },
-    "filename-rules/not-match": {
-      "count": 1
-    }
-  },
-  "src/module/sw-settings-salutation/page/sw-settings-salutation-detail/sw-settings-salutation-detail.spec.js": {
-    "sw-test-rules/no-vm-access": {
-      "count": 3
-    }
-  },
-  "src/module/sw-settings-salutation/page/sw-settings-salutation-list/index.js": {
-    "@eslint-community/eslint-comments/require-description": {
-      "count": 1
-    },
-    "filename-rules/not-match": {
-      "count": 1
     }
   },
   "src/module/sw-settings-search/acl/index.js": {
