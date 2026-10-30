@@ -422,7 +422,7 @@
         "title": "生成变体",
         "uploadAllButton": "为所有数字变体上传文件",
         "uploadCardDescription": "所有数字变体至少需要一个文件才能保存。",
-        "uploadCardExternalManagementDescription": "未上传文件的数字变体也可以保存，因为文件分配由外部处理。",
+        "uploadCardExternalManagementDescription": "数字变体无需上传文件即可保存，因为已启用“文件非必填或由外部提供”。",
         "uploadCardSearchPlaceholder": "搜索变体 ...",
         "uploadInfoBoxHeader": "以下操作将按当前配置执行：",
         "uploadInfoBoxCount": "{count} 个变体",

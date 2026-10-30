@@ -111,6 +111,13 @@ Simplified Chinese (`zh`) is the second built-in language next to English. Write
 
 Snippet files are named by language, not locale: `en.json` / `zh.json` in the Administration, `storefront.en.json` / `storefront.zh.json` in the Storefront. Locale-specific names such as `en-GB.json` or `storefront.zh-CN.json` are the legacy scheme; do not create them, and do not use them in tests, fixtures, or examples unless the test deliberately covers the legacy loader.
 
+Pluralized snippets use two forms, `singular | plural`, when the zero case reads the same as the plural case.
+Only add the explicit three-form `zero | singular | plural` variant when the zero case needs its own wording (for example "No products"). Chinese snippets stay single-form.
+
+```json
+"buttonAddProducts": "Add {count} product | Add {count} products"
+```
+
 ## File Linting
 
 **MANDATORY**: All code must be linted according to the following table.

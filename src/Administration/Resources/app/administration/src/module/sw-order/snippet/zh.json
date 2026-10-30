@@ -395,8 +395,7 @@
         "openDocument": "打开所选单据失败。",
         "loadDocumentTypes": "可用单据类型加载失败。",
         "missingCompanyInformation": "公司信息（设置 > 基本信息）中的字段 \"{field}\" 为空。请在生成单据前确保填写该字段。",
-        "noUnprocessedCreditLineItems": "该订单的所有贷项均已生成贷项单据。",
-        "duplicateDocumentNumber": "编号为 \"{documentNumber}\" 的单据已存在。"
+        "noUnprocessedCreditLineItems": "该订单的所有贷项均已生成贷项单据。"
       },
       "info": {
         "DOCUMENT__NUMBER_WAS_CHANGED": "单据编号重复。已自动分配相应编号范围内的后继编号。"

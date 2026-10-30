@@ -422,7 +422,7 @@
         "title": "Generate variants",
         "uploadAllButton": "Upload file to all digital variants",
         "uploadCardDescription": "All digital variants must have at least one file in order to be saved.",
-        "uploadCardExternalManagementDescription": "Digital variants without uploaded files can be saved because file assignment is handled externally.",
+        "uploadCardExternalManagementDescription": "Digital variants can be saved without uploaded files because \"File not required or provided externally\" is enabled.",
         "uploadCardSearchPlaceholder": "Search variants...",
         "uploadInfoBoxHeader": "Actions performed according to current configuration:",
         "uploadInfoBoxCount": "{count} variant | {count} variants",
