@@ -16,6 +16,23 @@ import { error, warn } from 'src/core/service/utils/debug.utils';
 export const UNREGISTERED_UPCOMING_MAJORS = ['V6_9_0_0'];
 
 /**
+ * Who is at fault for a deprecation, read only by the Jest deprecation recorder to name the usage site.
+ * Production ignores it.
+ *
+ * @private
+ * @example
+ * Shopwell.Feature.triggerDeprecationOrThrow('V6_8_0_0', 'The component "sw-old" is deprecated.', { _blame: 'author' });
+ */
+export type DeprecationOptions = {
+    /**
+     * `'caller'` (default): the code that calls the deprecated API: the running component, else the calling file.
+     * `'author'`: the template that renders the deprecated component or passes the deprecated prop. Only the
+     * deprecation plugin passes it.
+     */
+    _blame?: 'author' | 'caller';
+};
+
+/**
  * A static registry containing a list of all registered flags and the associated activation state
  */
 // eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
@@ -53,6 +70,18 @@ export default class Feature {
     }
 
     /**
+     * Whether `triggerDeprecationOrThrow` reports a deprecation for `majorFlag` as regular instead of as a typo:
+     * the flag is registered, or an upcoming major the backend does not register yet.
+     *
+     * @private
+     * @example
+     * Feature.isKnownMajor('V6_9_0_0'); // true, upcoming
+     */
+    static isKnownMajor(majorFlag: string): boolean {
+        return this.isRegistered(majorFlag) || UNREGISTERED_UPCOMING_MAJORS.includes(majorFlag.toUpperCase());
+    }
+
+    /**
      * Guards a deprecated API where it is used, like the PHP `Feature::triggerDeprecationOrThrow()`:
      * warns while `majorFlag` is inactive, throws once it is active. An unregistered flag can never
      * become active, so it logs an error instead, unless it is an upcoming major the backend does not register yet.
@@ -60,7 +89,8 @@ export default class Feature {
      * @example
      * Shopwell.Feature.triggerDeprecationOrThrow('V6_8_0_0', 'oldMethod() is deprecated. Use newMethod() instead.');
      */
-    static triggerDeprecationOrThrow(majorFlag: string, message: string): void {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars -- only the Jest deprecation recorder reads `options`
+    static triggerDeprecationOrThrow(majorFlag: string, message: string, options?: DeprecationOptions): void {
         if (this.isActive(majorFlag)) {
             throw new Error(`Tried to access deprecated functionality: ${message}`);
         }
@@ -72,7 +102,7 @@ export default class Feature {
 
         this.reportedDeprecations.add(message);
 
-        if (this.isRegistered(majorFlag) || UNREGISTERED_UPCOMING_MAJORS.includes(majorFlag.toUpperCase())) {
+        if (this.isKnownMajor(majorFlag)) {
             warn('Deprecation', message);
         } else {
             error(
