@@ -94,6 +94,7 @@ use Shopwell\Core\Content\Seo\SeoUrlPersister;
 use Shopwell\Core\Framework\Api\Serializer\JsonEntityEncoder;
 use Shopwell\Core\Framework\DataAbstractionLayer\Dbal\Common\IteratorFactory;
 use Shopwell\Core\Framework\DataAbstractionLayer\Indexing\ManyToManyIdFieldUpdater;
+use Shopwell\Core\Framework\DataAbstractionLayer\Write\Validation\WriteOutcome;
 use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\RateLimiter\RateLimiter;
 use Shopwell\Core\Framework\Routing\SessionContextTokenAccessor;
@@ -695,8 +696,8 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(CustomerEmailUniqueSubscriber::class)
         ->args([
-            service(Connection::class),
             service(CustomerEmailUniqueChecker::class),
+            service(WriteOutcome::class),
         ])
         ->tag('kernel.event_subscriber');
 
