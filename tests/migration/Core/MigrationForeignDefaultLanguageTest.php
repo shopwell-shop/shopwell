@@ -9,6 +9,7 @@ use PHPUnit\Framework\TestCase;
 use Psr\Clock\ClockInterface;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use Shopwell\Core\Defaults;
+use Shopwell\Core\Framework\Adapter\Database\MySQLFactory;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Migration\MigrationCollection;
 use Shopwell\Core\Framework\Migration\MigrationCollectionLoader;
@@ -506,6 +507,8 @@ class MigrationForeignDefaultLanguageTest extends TestCase
 
         $orgConnection->executeStatement('DROP DATABASE IF EXISTS `' . $databaseName . '`');
         $orgConnection->executeStatement('CREATE DATABASE `' . $databaseName . '` DEFAULT CHARACTER SET utf8mb4 DEFAULT COLLATE utf8mb4_unicode_ci');
+
+        $orgConnection = MySQLFactory::createMigrationConnection($orgConnection);
 
         $this->replayConnection = new Connection(
             array_merge($orgConnection->getParams(), ['dbname' => $databaseName]),

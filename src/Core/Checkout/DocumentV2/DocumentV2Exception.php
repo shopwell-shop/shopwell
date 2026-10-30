@@ -2,9 +2,11 @@
 
 namespace Shopwell\Core\Checkout\DocumentV2;
 
+use Shopwell\Core\Framework\Api\Exception\MissingPrivilegeException;
 use Shopwell\Core\Framework\Feature;
 use Shopwell\Core\Framework\HttpException;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\ShopwellHttpException;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -103,6 +105,14 @@ class DocumentV2Exception extends HttpException
      * @deprecated tag:v6.9.0 - Remove with the `app_provided` sentinel once `document.document_type_id` is dropped.
      */
     public const DOCUMENT_TYPE_RESERVED_IDENTIFIER = 'DOCUMENT_V2__DOCUMENT_TYPE_RESERVED_IDENTIFIER';
+
+    /**
+     * @param list<string> $privileges
+     */
+    public static function missingPrivileges(array $privileges): ShopwellHttpException
+    {
+        return new MissingPrivilegeException($privileges);
+    }
 
     public static function unknownRenderData(string $key, string $expectedClass): self
     {
