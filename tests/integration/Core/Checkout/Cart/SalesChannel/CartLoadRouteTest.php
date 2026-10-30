@@ -23,6 +23,7 @@ use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Rule\Rule;
 use Shopwell\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopwell\Core\Framework\Test\TestCaseBase\SalesChannelApiTestBehaviour;
+use Shopwell\Core\Framework\Util\Base64;
 use Shopwell\Core\System\SalesChannel\Context\AbstractSalesChannelContextFactory;
 use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextFactory;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
@@ -87,6 +88,19 @@ class CartLoadRouteTest extends TestCase
         static::assertSame('cart', $response['apiAlias']);
         static::assertSame(0, $response['price']['totalPrice']);
         static::assertCount(0, $response['errors']);
+    }
+
+    public function testIncludesOfTheCompressedCriteriaAreApplied(): void
+    {
+        $compressed = gzencode(json_encode(['includes' => ['cart' => ['token']]], \JSON_THROW_ON_ERROR));
+        static::assertNotFalse($compressed, 'Gzip compressing failed');
+
+        $this->browser->request('GET', '/store-api/checkout/cart', ['_criteria' => Base64::urlEncode($compressed)]);
+
+        $response = json_decode((string) $this->browser->getResponse()->getContent(), true, 512, \JSON_THROW_ON_ERROR);
+
+        static::assertArrayHasKey('token', $response);
+        static::assertArrayNotHasKey('price', $response, 'The includes of the compressed criteria are applied');
     }
 
     /**

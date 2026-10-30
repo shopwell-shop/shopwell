@@ -4,7 +4,6 @@ namespace Shopwell\Core\System\SalesChannel\Api;
 
 use Shopwell\Core\Content\Media\MediaUrlPlaceholderHandlerInterface;
 use Shopwell\Core\Content\Seo\SeoUrlPlaceholderHandlerInterface;
-use Shopwell\Core\Framework\Adapter\Request\RequestParamHelper;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\PlatformRequest;
@@ -56,10 +55,7 @@ class StoreApiResponseListener implements EventSubscriberInterface
         if ($criteria instanceof Criteria) {
             $fields = new ResponseFields($criteria->getIncludes(), $criteria->getExcludes());
         } else {
-            $fields = new ResponseFields(
-                RequestParamHelper::get($request, 'includes', []),
-                RequestParamHelper::get($request, 'excludes', []),
-            );
+            $fields = ResponseFields::fromRequest($request);
         }
 
         $encoded = $this->encoder->encode($response->getObject(), $fields);

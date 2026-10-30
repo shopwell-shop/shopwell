@@ -5,10 +5,11 @@ namespace Shopwell\Core\Content\ImportExport;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityTranslationDefinition;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\StringField;
 use Shopwell\Core\Framework\DataAbstractionLayer\FieldCollection;
+use Shopwell\Core\Framework\Feature;
 use Shopwell\Core\Framework\Log\Package;
 
 /**
- * @deprecated tag:v6.8.0 - reason:remove-entity - Will be removed
+ * @deprecated tag:v6.8.0 - Will be removed
  *
  * @codeCoverageIgnore
  */
@@ -16,6 +17,12 @@ use Shopwell\Core\Framework\Log\Package;
 class ImportExportProfileTranslationDefinition extends EntityTranslationDefinition
 {
     final public const ENTITY_NAME = ImportExportProfileDefinition::ENTITY_NAME . '_translation';
+
+    // @phpstan-ignore shopwell.internalMethod (Preserve the inherited public constructor contract.)
+    public function __construct()
+    {
+        Feature::throwIfActive('v6.8.0.0', Feature::deprecatedClassMessage(self::class, 'v6.8.0.0'));
+    }
 
     public function getEntityName(): string
     {

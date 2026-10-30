@@ -22,6 +22,7 @@ use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\System\SalesChannel\SalesChannelCollection;
 use Shopwell\Core\System\SystemConfig\SystemConfigService;
 use Shopwell\Core\Test\Annotation\DisabledFeatures;
+use Shopwell\Core\Test\Stub\DataAbstractionLayer\StaticEntityRepository;
 use Shopwell\Core\Test\Stub\SystemConfigService\StaticSystemConfigService;
 use Shopwell\Core\Test\TestDefaults;
 use Shopwell\Storefront\Theme\ConfigLoader\AbstractConfigLoader;
@@ -710,8 +711,10 @@ class ThemeServiceTest extends TestCase
                 [
                     'id' => $themeId,
                     'saleschannelId' => TestDefaults::SALES_CHANNEL,
-                    'dependentId' => $dependentThemeId,
-                    'dsaleschannelId' => TestDefaults::SALES_CHANNEL,
+                ],
+                [
+                    'id' => $dependentThemeId,
+                    'saleschannelId' => TestDefaults::SALES_CHANNEL,
                 ],
             ]
         );
@@ -750,8 +753,10 @@ class ThemeServiceTest extends TestCase
                 [
                     'id' => $themeId,
                     'saleschannelId' => TestDefaults::SALES_CHANNEL,
-                    'dependentId' => $dependentThemeId,
-                    'dsaleschannelId' => TestDefaults::SALES_CHANNEL,
+                ],
+                [
+                    'id' => $dependentThemeId,
+                    'saleschannelId' => TestDefaults::SALES_CHANNEL,
                 ],
             ]
         );
@@ -799,8 +804,10 @@ class ThemeServiceTest extends TestCase
                 [
                     'id' => $themeId,
                     'saleschannelId' => TestDefaults::SALES_CHANNEL,
-                    'dependentId' => $dependentThemeId,
-                    'dsaleschannelId' => TestDefaults::SALES_CHANNEL,
+                ],
+                [
+                    'id' => $dependentThemeId,
+                    'saleschannelId' => TestDefaults::SALES_CHANNEL,
                 ],
             ]
         );
@@ -869,8 +876,10 @@ class ThemeServiceTest extends TestCase
                 [
                     'id' => $themeId,
                     'saleschannelId' => TestDefaults::SALES_CHANNEL,
-                    'dependentId' => $dependentThemeId,
-                    'dsaleschannelId' => TestDefaults::SALES_CHANNEL,
+                ],
+                [
+                    'id' => $dependentThemeId,
+                    'saleschannelId' => TestDefaults::SALES_CHANNEL,
                 ],
             ]
         );
@@ -967,6 +976,32 @@ class ThemeServiceTest extends TestCase
         $themeCompiler->expects($this->never())->method('compileTheme');
 
         $this->getThemeService(themeCompiler: $themeCompiler)->updateTheme($themeId, null, null, $this->context);
+    }
+
+    public function testUpdateThemeRefreshesRuntimeAfterWritingUnassignedTheme(): void
+    {
+        $themeId = Uuid::randomHex();
+        $theme = new ThemeEntity();
+        $theme->setId($themeId);
+        $theme->setSalesChannels(new SalesChannelCollection());
+        $repository = new StaticEntityRepository([new ThemeCollection([$theme])]);
+        $this->mergedConfigBuilderMock->method('getPlainThemeConfiguration')->willReturn([
+            'fields' => ['sw-color-brand-primary' => ['type' => 'color', 'value' => '#0000ff']],
+        ]);
+        $runtime = $this->createMock(ThemeRuntimeConfigService::class);
+        $runtime->expects($this->once())->method('refreshConfigValues')->with($themeId, $this->context)
+            ->willReturnCallback(static function () use ($repository, $themeId): void {
+                static::assertSame([[
+                    ['id' => $themeId, 'configValues' => ['sw-color-brand-primary' => ['value' => '#00ff00']]],
+                ]], $repository->updates);
+            });
+
+        $this->getThemeService(themeRepository: $repository, runtimeConfigService: $runtime)->updateTheme(
+            $themeId,
+            ['sw-color-brand-primary' => ['value' => '#00ff00']],
+            null,
+            $this->context,
+        );
     }
 
     public function testUpdateThemeNoTheme(): void

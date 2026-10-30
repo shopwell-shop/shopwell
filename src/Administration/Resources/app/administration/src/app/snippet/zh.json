@@ -1399,6 +1399,10 @@
       "messagePlaceholder": "发生错误。页面无法加载。"
     }
   },
+  "sw-not-found": {
+    "title": "页面未找到",
+    "description": "无法找到您访问的页面。它可能已被移动或已不存在。"
+  },
   "sw-property-search": {
     "placeholderSearch": "搜索变体 ...",
     "selected": "已选 {count} 个规格 | 已选 {count} 个变体",

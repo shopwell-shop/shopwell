@@ -105,6 +105,7 @@
       "labelInputCurrency": "货币",
       "labelInputLanguage": "语言",
       "labelInputSnippet": "文本模块集",
+      "snippetSetGroupOther": "其他文本模块集",
       "labelIsExternalStorefront": "外部店铺前台",
       "helpTextIsExternalStorefront": "仅为指向外部店铺的域名生成 SEO URL。每种语言下，单个销售渠道只能设置一个外部店铺。",
       "buttonDeleteDomain": "删除域名",
