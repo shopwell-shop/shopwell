@@ -50,6 +50,7 @@ use Shopwell\Core\Checkout\Wallet\SalesChannel\WalletTopUpStatusRoute;
 use Shopwell\Core\Checkout\Wallet\Service\WalletSettings;
 use Shopwell\Core\Content\Blog\SalesChannel\Review\BlogCommentRoute;
 use Shopwell\Core\Content\Blog\Service\BlogTypeRegistry;
+use Shopwell\Core\Content\Breadcrumb\SalesChannel\BreadcrumbRoute;
 use Shopwell\Core\Content\Category\SalesChannel\CategoryRoute;
 use Shopwell\Core\Content\Category\Service\CategoryUrlGenerator;
 use Shopwell\Core\Content\Cms\SalesChannel\CmsRoute;
@@ -87,6 +88,7 @@ use Shopwell\Storefront\Controller\AccountOrderReturnController;
 use Shopwell\Storefront\Controller\AccountProfileController;
 use Shopwell\Storefront\Controller\AccountWalletController;
 use Shopwell\Storefront\Controller\AddressController;
+use Shopwell\Storefront\Controller\AnalyticsController;
 use Shopwell\Storefront\Controller\Api\CaptchaController as ApiCaptchaController;
 use Shopwell\Storefront\Controller\AppController;
 use Shopwell\Storefront\Controller\AuthController;
@@ -167,6 +169,7 @@ use Shopwell\Storefront\Pagelet\Menu\Offcanvas\MenuOffcanvasPageletLoader;
 use Shopwell\Storefront\Pagelet\Newsletter\Account\NewsletterAccountPageletLoader;
 use Shopwell\Storefront\Pagelet\Wishlist\GuestWishlistPageletLoader;
 use Shopwell\Storefront\Storybook\StorybookService;
+use Shopwell\Storefront\System\SalesChannel\SalesChannelAnalyticsLoader;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
 use function Symfony\Component\DependencyInjection\Loader\Configurator\param;
@@ -320,6 +323,13 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service(ContextGatewayRoute::class),
             service(CartService::class),
+        ])
+        ->call('setContainer', [service('service_container')]);
+
+    $services->set(AnalyticsController::class)
+        ->args([
+            service(BreadcrumbRoute::class),
+            service(SalesChannelAnalyticsLoader::class),
         ])
         ->call('setContainer', [service('service_container')]);
 
