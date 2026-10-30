@@ -27,6 +27,8 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\RateLimiter\Exception\RateLimitExceededException;
+use Shopwell\Core\Framework\RateLimiter\RateLimiterException;
 use Shopwell\Core\Framework\Util\HtmlSanitizer;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\Framework\Validation\DataBag\RequestDataBag;
@@ -596,6 +598,32 @@ class CartLineItemControllerTest extends TestCase
 
         $controller = $this->getController(cartService: $cartService);
         $controller->addPromotion($cart, $request, $context);
+    }
+
+    public function testAddPromotionRateLimitShowsWaitingTime(): void
+    {
+        $session = new Session(new MockArraySessionStorage());
+        $requestStack = new RequestStack();
+        $request = new Request([], ['code' => 'example-code']);
+        $request->setSession($session);
+        $requestStack->push($request);
+        $exception = RateLimiterException::limitExceeded(time() + 30);
+        static::assertInstanceOf(RateLimitExceededException::class, $exception);
+        $this->cartService->method('add')->willThrowException($exception);
+
+        $translator = $this->createMock(TranslatorInterface::class);
+        $translator->expects($this->once())->method('trans')
+            ->with('error.rateLimitExceeded', ['%seconds%' => $exception->getWaitTime()], null)
+            ->willReturn('Please wait before submitting another code.');
+        $this->container->method('get')->willReturnMap([
+            ['translator', ContainerInterface::EXCEPTION_ON_INVALID_REFERENCE, $translator],
+            ['request_stack', ContainerInterface::EXCEPTION_ON_INVALID_REFERENCE, $requestStack],
+        ]);
+
+        $response = $this->controller->addPromotion(new Cart('test'), $request, static::createStub(SalesChannelContext::class));
+
+        static::assertSame(200, $response->getStatusCode());
+        static::assertSame(['info' => ['Please wait before submitting another code.']], $session->getFlashBag()->all());
     }
 
     public function testAddPromotionNoCode(): void
