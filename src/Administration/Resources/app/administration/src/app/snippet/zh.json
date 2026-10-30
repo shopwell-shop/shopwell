@@ -1855,16 +1855,17 @@
     "nextButton": "继续",
     "finishButton": "完成",
     "seenSaveError": "你的选择无法保存。此对话框可能会再次显示。",
+    "profileSettingsLink": "你的个人资料设置",
     "pages": {
       "adminNavigation": {
         "headline": "更清晰、更易浏览的导航",
-        "description": "随着 Shopwell 后台不断发展，功能和导航项也越来越多。因此我们重新设计了导航，提供更好的概览、更清晰的选中状态、更流畅的子菜单动画、更好的可读性，以及更完善的键盘操作体验。"
+        "description": "随着 Shopwell 后台不断发展，功能和导航项也越来越多。因此我们重新设计了导航，提供更好的概览、更清晰的选中状态、更流畅的子菜单动画、更好的可读性，以及更完善的键盘操作体验。",
+        "moduleColorsHint": "更喜欢彩色的模块图标？你可随时在{profileSettingsLink}中将\"模块颜色\"改回\"彩色\"。"
       },
       "darkMode": {
         "headline": "深色外观",
         "badge": "实验性",
         "description": "后台现提供深色界面，以提升可访问性并契合你的个人喜好。",
-        "profileSettingsLink": "你的个人资料设置",
         "themeSelectLabel": "外观",
         "themeSelectHint": "你可随时在 {profileSettingsLink} 中修改此设置。",
         "themeSaveError": "外观无法保存。"
