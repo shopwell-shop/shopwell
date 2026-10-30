@@ -421,7 +421,7 @@
         "uploadCardDescription": "All digital variants must have at least one file in order to be saved.",
         "uploadCardSearchPlaceholder": "Search variants...",
         "uploadInfoBoxHeader": "Actions performed according to current configuration:",
-        "uploadInfoBoxCount": "{count} variants | {count} variant | {count} variants",
+        "uploadInfoBoxCount": "{count} variant | {count} variants",
         "uploadInfoBoxCreateLabel": "will be added,",
         "uploadInfoBoxDeleteLabel": "will be deleted.",
         "selectOptions": "Value selection",
