@@ -4,6 +4,7 @@ namespace Shopwell\Tests\Unit\Core\Content\Flow\Dispatching;
 
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Driver\PDO\Exception as DbalPdoException;
+use Doctrine\DBAL\Exception\DeadlockException;
 use Doctrine\DBAL\Exception\TableNotFoundException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -16,9 +17,11 @@ use Shopwell\Core\Checkout\Cart\Cart;
 use Shopwell\Core\Checkout\Customer\CustomerEntity;
 use Shopwell\Core\Checkout\Customer\Rule\CustomerRequestedGroupRule;
 use Shopwell\Core\Checkout\Order\OrderEntity;
+use Shopwell\Core\Checkout\Order\SalesChannel\OrderService;
 use Shopwell\Core\Content\Flow\Dispatching\Action\AddCustomerTagAction;
 use Shopwell\Core\Content\Flow\Dispatching\Action\AddOrderTagAction;
 use Shopwell\Core\Content\Flow\Dispatching\Action\FlowAction;
+use Shopwell\Core\Content\Flow\Dispatching\Action\SetOrderStateAction;
 use Shopwell\Core\Content\Flow\Dispatching\Action\StopFlowAction;
 use Shopwell\Core\Content\Flow\Dispatching\FlowExecutor;
 use Shopwell\Core\Content\Flow\Dispatching\FlowState;
@@ -39,6 +42,7 @@ use Shopwell\Core\Content\Flow\Telemetry\FlowMetricsInstrumentor;
 use Shopwell\Core\Content\Flow\Telemetry\TriggerGroupResolver;
 use Shopwell\Core\Content\Rule\RuleCollection;
 use Shopwell\Core\Content\Rule\RuleEntity;
+use Shopwell\Core\Defaults;
 use Shopwell\Core\Framework\App\Event\AppFlowActionEvent;
 use Shopwell\Core\Framework\App\Flow\Action\AppFlowActionProvider;
 use Shopwell\Core\Framework\Context;
@@ -54,6 +58,7 @@ use Shopwell\Core\Framework\Telemetry\Telemetry;
 use Shopwell\Core\Framework\Test\TestCaseHelper\CallableClass;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+use Shopwell\Core\System\StateMachine\Aggregation\StateMachineState\StateMachineStateEntity;
 use Shopwell\Core\System\Tag\TagCollection;
 use Shopwell\Core\System\Tag\TagEntity;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
@@ -708,6 +713,62 @@ class FlowExecutorTest extends TestCase
         $this->flowExecutor->executeAction($actionSequence, $flow);
 
         static::assertTrue($stubFlowAction->handled);
+    }
+
+    #[DataProvider('stateActionRetryProvider')]
+    public function testOnlyCoreLiveStateActionsRetryContention(string $versionId, bool $customAction, int $expectedAttempts): void
+    {
+        $this->eventDispatcherMock->expects($this->never())->method('dispatch');
+        $this->appFlowActionProviderMock->expects($this->never())->method('getWebhookPayloadAndHeaders');
+        $this->ruleLoaderMock->expects($this->never())->method('load');
+        $this->loggerMock->expects($this->never())->method('error');
+        $this->connectionMock->expects($this->exactly($expectedAttempts))->method('transactional');
+
+        $orderId = Uuid::randomHex();
+        $context = Context::createCLIContext()->createWithVersionId($versionId);
+        $failure = new DeadlockException(new DbalPdoException('Deadlock found', '40001', 1213), null);
+        $attempts = $this->exactly($expectedAttempts);
+        $orderService = $this->createMock(OrderService::class);
+        $orderService->expects($attempts)
+            ->method('orderStateTransition')
+            ->with($orderId, 'cancel', static::anything(), $context)
+            ->willReturnCallback(static function () use ($attempts, $failure): StateMachineStateEntity {
+                if ($attempts->numberOfInvocations() === 1) {
+                    throw $failure;
+                }
+
+                return new StateMachineStateEntity();
+            });
+
+        $actionConnection = static::createStub(Connection::class);
+        $actionConnection->method('fetchOne')->willReturn(false);
+        $action = $customAction
+            ? new class($actionConnection, $orderService) extends SetOrderStateAction {}
+        : new SetOrderStateAction($actionConnection, $orderService);
+
+        $sequence = new ActionSequence();
+        $sequence->sequenceId = 'set-order-state';
+        $sequence->action = SetOrderStateAction::getName();
+        $sequence->config = ['order' => 'cancel'];
+        $flow = new StorableFlow('some-flow', $context);
+        $flow->setFlowState(new FlowState());
+        $flow->setData(OrderAware::ORDER_ID, $orderId);
+
+        if ($expectedAttempts === 1) {
+            $this->expectExceptionObject(FlowException::transactionFailed($failure));
+        }
+
+        $this->createFlowExecutor([SetOrderStateAction::getName() => $action])->executeAction($sequence, $flow);
+    }
+
+    /**
+     * @return iterable<string, array{string, bool, int}>
+     */
+    public static function stateActionRetryProvider(): iterable
+    {
+        yield 'core live-state action retries' => [Defaults::LIVE_VERSION, false, 2];
+        yield 'versioned core action does not retry' => ['11111111111111111111111111111111', false, 1];
+        yield 'custom state action does not retry' => [Defaults::LIVE_VERSION, true, 1];
     }
 
     public function testTransactionCommitFailureExceptionIsWrapped(): void

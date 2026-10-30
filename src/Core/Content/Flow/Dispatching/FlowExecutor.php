@@ -8,6 +8,7 @@ use Shopwell\Core\Checkout\Cart\AbstractRuleLoader;
 use Shopwell\Core\Checkout\Customer\CustomerEntity;
 use Shopwell\Core\Checkout\Order\OrderEntity;
 use Shopwell\Core\Content\Flow\Dispatching\Action\FlowAction;
+use Shopwell\Core\Content\Flow\Dispatching\Action\SetOrderStateAction;
 use Shopwell\Core\Content\Flow\Dispatching\Struct\ActionSequence;
 use Shopwell\Core\Content\Flow\Dispatching\Struct\Flow;
 use Shopwell\Core\Content\Flow\Dispatching\Struct\IfSequence;
@@ -18,9 +19,11 @@ use Shopwell\Core\Content\Flow\FlowException;
 use Shopwell\Core\Content\Flow\Rule\CustomerRuleScope;
 use Shopwell\Core\Content\Flow\Rule\FlowRuleScopeBuilder;
 use Shopwell\Core\Content\Flow\Telemetry\FlowMetricsInstrumentor;
+use Shopwell\Core\Defaults;
 use Shopwell\Core\Framework\App\Event\AppFlowActionEvent;
 use Shopwell\Core\Framework\App\Flow\Action\AppFlowActionProvider;
 use Shopwell\Core\Framework\DataAbstractionLayer\Doctrine\RetryableTransaction;
+use Shopwell\Core\Framework\DataAbstractionLayer\Doctrine\RetryableWriteTransaction;
 use Shopwell\Core\Framework\Event\CustomerAware;
 use Shopwell\Core\Framework\Event\OrderAware;
 use Shopwell\Core\Framework\Event\SalesChannelContextAware;
@@ -228,9 +231,17 @@ class FlowExecutor
         }
 
         try {
-            RetryableTransaction::transactional($this->connection, static function () use ($action, $event): void {
+            $handle = static function () use ($action, $event): void {
                 $action->handleFlow($event);
-            });
+            };
+
+            // Only the core live-state action participates in the write callback retry boundary.
+            // Subclasses and decorators may add side effects that cannot safely be replayed.
+            if ($action::class === SetOrderStateAction::class && $event->getContext()->getVersionId() === Defaults::LIVE_VERSION) {
+                RetryableWriteTransaction::retryable($this->connection, $handle);
+            } else {
+                RetryableTransaction::transactional($this->connection, $handle);
+            }
         } catch (\Throwable $e) {
             throw FlowException::transactionFailed($e);
         }
