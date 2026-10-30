@@ -215,7 +215,7 @@ final class PaymentTransferBooking
      */
     private function assertCurrency(PaymentProvider $provider, string $channelName, string $currency): void
     {
-        if (\preg_match('/^[A-Z]{3}$/', $currency) !== 1) {
+        if (\preg_match('/^[A-Z]{3}\z/', $currency) !== 1) {
             throw PaymentException::currencyNotSupported($channelName, $currency);
         }
 

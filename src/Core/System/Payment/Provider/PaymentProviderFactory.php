@@ -45,7 +45,7 @@ final class PaymentProviderFactory
     /**
      * The technical names the notify url can carry, see `Api/NotifyController`.
      */
-    private const NAME_PATTERN = '/^[A-Za-z0-9_-]+$/';
+    private const NAME_PATTERN = '/^[A-Za-z0-9_-]+\z/';
 
     /**
      * A declaration that decorates itself would make the chain walk below endless.

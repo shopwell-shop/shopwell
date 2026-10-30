@@ -473,7 +473,7 @@ final class PaymentCycleService
      */
     private function rotateOutTradeNo(string $outTradeNo, int $attemptCount): string
     {
-        $base = (string) \preg_replace('/-r\d+$/', '', $outTradeNo);
+        $base = (string) \preg_replace('/-r\d+\z/', '', $outTradeNo);
 
         return $base . '-r' . ($attemptCount + 1);
     }

@@ -28,7 +28,7 @@ final readonly class PhoneNumber
     private const MIN_DIGITS = 7;
     private const MAX_DIGITS = 15;
 
-    private const ISO_PATTERN = '/^[A-Z]{2}$/';
+    private const ISO_PATTERN = '/^[A-Z]{2}\z/';
 
     private function __construct(
         private string $e164,
