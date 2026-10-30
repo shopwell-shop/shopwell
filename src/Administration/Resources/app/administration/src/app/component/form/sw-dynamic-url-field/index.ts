@@ -17,6 +17,8 @@ export default Shopwell.Component.wrapComponentConfig({
 
     inject: ['repositoryFactory'],
 
+    emits: ['update:value'],
+
     props: {
         value: {
             type: String,

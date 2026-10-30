@@ -16,6 +16,8 @@ export default Shopwell.Component.wrapComponentConfig({
 
     inject: ['systemConfigApiService', 'shopwellExtensionService', 'storeService'],
 
+    emits: ['logout-success', 'login-success'],
+
     mixins: [Mixin.getByName('notification')],
 
     data(): {
