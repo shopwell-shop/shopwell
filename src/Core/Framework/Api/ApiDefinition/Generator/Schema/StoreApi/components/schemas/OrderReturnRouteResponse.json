@@ -1,0 +1,207 @@
+{
+    "openapi": "3.2.0",
+    "info": [],
+    "paths": [],
+    "components": {
+        "schemas": {
+            "OrderReturnRouteResponse": {
+                "description": "A return read as a whole. Each endpoint answers with the subset of these properties that it produces: the list endpoint with `orderReturns`, the detail, create, cancel, ship and message endpoints with `orderReturn`, and the positions endpoint with `orderNumber`, `positions` and `reasons`.",
+                "type": "object",
+                "properties": {
+                    "orderReturn": {
+                        "description": "The assembled return, as the storefront reads it.",
+                        "type": "object",
+                        "properties": {
+                            "id": {
+                                "type": "string"
+                            },
+                            "returnNumber": {
+                                "type": "string"
+                            },
+                            "orderId": {
+                                "type": "string"
+                            },
+                            "orderNumber": {
+                                "description": "Null when the caller did not load the order association.",
+                                "type": ["string", "null"]
+                            },
+                            "type": {
+                                "type": "string"
+                            },
+                            "state": {
+                                "description": "The technical name of the state machine state.",
+                                "type": ["string", "null"]
+                            },
+                            "stateLabel": {
+                                "description": "The translated state machine state name.",
+                                "type": ["string", "null"]
+                            },
+                            "refundAmount": {
+                                "description": "The refunded amount in the smallest unit of the currency.",
+                                "type": "number"
+                            },
+                            "decimals": {
+                                "description": "The decimals a template needs to turn the amounts back into the number a customer reads.",
+                                "type": "integer"
+                            },
+                            "currency": {
+                                "type": "string"
+                            },
+                            "reasonId": {
+                                "type": ["string", "null"]
+                            },
+                            "reasonLabel": {
+                                "type": ["string", "null"]
+                            },
+                            "reasonText": {
+                                "type": ["string", "null"]
+                            },
+                            "customerNote": {
+                                "type": ["string", "null"]
+                            },
+                            "evidence": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            },
+                            "trackingCode": {
+                                "type": ["string", "null"]
+                            },
+                            "trackingCarrier": {
+                                "type": ["string", "null"]
+                            },
+                            "createdAt": {
+                                "type": "string",
+                                "format": "date-time"
+                            },
+                            "returnedAt": {
+                                "type": ["string", "null"],
+                                "format": "date-time"
+                            },
+                            "receivedAt": {
+                                "type": ["string", "null"],
+                                "format": "date-time"
+                            },
+                            "deadlineAt": {
+                                "type": ["string", "null"],
+                                "format": "date-time"
+                            },
+                            "lineItems": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "id": {
+                                            "type": "string"
+                                        },
+                                        "orderLineItemId": {
+                                            "type": "string"
+                                        },
+                                        "label": {
+                                            "type": ["string", "null"]
+                                        },
+                                        "quantity": {
+                                            "type": "integer"
+                                        },
+                                        "refundAmount": {
+                                            "type": "number"
+                                        },
+                                        "accepted": {
+                                            "type": ["boolean", "null"]
+                                        },
+                                        "restocked": {
+                                            "type": ["boolean", "null"]
+                                        }
+                                    },
+                                    "additionalProperties": true
+                                }
+                            },
+                            "messages": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "id": {
+                                            "type": "string"
+                                        },
+                                        "authorRole": {
+                                            "type": "string"
+                                        },
+                                        "content": {
+                                            "type": "string"
+                                        },
+                                        "attachments": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string"
+                                            }
+                                        },
+                                        "createdAt": {
+                                            "type": ["string", "null"],
+                                            "format": "date-time"
+                                        }
+                                    },
+                                    "additionalProperties": true
+                                }
+                            }
+                        },
+                        "additionalProperties": true
+                    },
+                    "orderReturns": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "orderNumber": {
+                        "type": "string"
+                    },
+                    "positions": {
+                        "description": "The order line items that may still be returned, with the quantity that is still open.",
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "lineItemId": {
+                                    "type": "string"
+                                },
+                                "label": {
+                                    "type": ["string", "null"]
+                                },
+                                "quantity": {
+                                    "type": "integer"
+                                },
+                                "returnable": {
+                                    "type": "integer"
+                                },
+                                "unitPrice": {
+                                    "type": "number"
+                                }
+                            },
+                            "additionalProperties": true
+                        }
+                    },
+                    "reasons": {
+                        "description": "The return reasons a customer may pick from.",
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "id": {
+                                    "type": "string"
+                                },
+                                "label": {
+                                    "type": "string"
+                                }
+                            },
+                            "additionalProperties": true
+                        }
+                    }
+                },
+                "additionalProperties": true
+            }
+        }
+    }
+}
