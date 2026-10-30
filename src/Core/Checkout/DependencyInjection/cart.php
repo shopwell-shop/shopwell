@@ -105,7 +105,6 @@ use Shopwell\Core\Checkout\Order\OrderAddressService;
 use Shopwell\Core\Checkout\Order\SalesChannel\OrderRoute;
 use Shopwell\Core\Checkout\Payment\PaymentProcessor;
 use Shopwell\Core\Checkout\Payment\SalesChannel\PaymentMethodRoute;
-use Shopwell\Core\Checkout\Promotion\Cart\PromotionItemBuilder;
 use Shopwell\Core\Checkout\Shipping\SalesChannel\ShippingMethodRoute;
 use Shopwell\Core\Content\Product\Cart\ProductCartProcessor;
 use Shopwell\Core\Content\Product\Cart\ProductFeatureBuilder;
@@ -606,7 +605,6 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('order_delivery.repository'),
             service(Processor::class),
             service(CartRuleLoader::class),
-            service(PromotionItemBuilder::class),
             service(LineItemFactoryRegistry::class),
         ]);
 

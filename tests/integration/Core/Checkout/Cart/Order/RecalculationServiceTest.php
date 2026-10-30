@@ -16,6 +16,7 @@ use Shopwell\Core\Checkout\Cart\Delivery\Struct\ShippingLocation;
 use Shopwell\Core\Checkout\Cart\LineItem\LineItem;
 use Shopwell\Core\Checkout\Cart\LineItem\LineItemCollection;
 use Shopwell\Core\Checkout\Cart\LineItemFactoryHandler\ProductLineItemFactory;
+use Shopwell\Core\Checkout\Cart\LineItemFactoryHandler\PromotionLineItemFactory;
 use Shopwell\Core\Checkout\Cart\Order\OrderConverter;
 use Shopwell\Core\Checkout\Cart\Order\OrderPersister;
 use Shopwell\Core\Checkout\Cart\Order\RecalculationService;
@@ -37,7 +38,6 @@ use Shopwell\Core\Checkout\Order\OrderEntity;
 use Shopwell\Core\Checkout\Order\OrderException;
 use Shopwell\Core\Checkout\Promotion\Aggregate\PromotionDiscount\PromotionDiscountEntity;
 use Shopwell\Core\Checkout\Promotion\Cart\Error\PromotionDiscountUnknownConditionError;
-use Shopwell\Core\Checkout\Promotion\Cart\PromotionItemBuilder;
 use Shopwell\Core\Checkout\Promotion\Cart\PromotionProcessor;
 use Shopwell\Core\Checkout\Shipping\Aggregate\ShippingMethodPrice\ShippingMethodPriceCollection;
 use Shopwell\Core\Checkout\Shipping\ShippingMethodCollection;
@@ -959,7 +959,7 @@ class RecalculationServiceTest extends TestCase
         // checkout an order with a 100% shipping discount promotion (shipping delivery + discount delivery)
         $this->createShippingDiscount(100, 'FREESHIP');
         $cart = $this->generateDemoCart();
-        $cart->add(static::getContainer()->get(PromotionItemBuilder::class)->buildPlaceholderItem('FREESHIP'));
+        $cart->add((new PromotionLineItemFactory())->create(['referencedId' => 'FREESHIP'], $this->salesChannelContext));
         $cart = static::getContainer()->get(Processor::class)->process($cart, $this->salesChannelContext, new CartBehavior());
         $orderId = $this->persistCart($cart)['orderId'];
 

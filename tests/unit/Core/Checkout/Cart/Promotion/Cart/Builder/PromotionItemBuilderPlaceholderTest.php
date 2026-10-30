@@ -10,12 +10,16 @@ use Shopwell\Core\Checkout\Promotion\Cart\PromotionItemBuilder;
 use Shopwell\Core\Checkout\Promotion\Cart\PromotionProcessor;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\Test\Annotation\DisabledFeatures;
 
 /**
  * @internal
+ *
+ * @deprecated tag:v6.8.0 - Will be removed together with PromotionItemBuilder::buildPlaceholderItem, covered by PromotionLineItemFactoryTest
  */
 #[Package('checkout')]
 #[CoversClass(PromotionItemBuilder::class)]
+#[DisabledFeatures(['v6.8.0.0'])]
 class PromotionItemBuilderPlaceholderTest extends TestCase
 {
     /**

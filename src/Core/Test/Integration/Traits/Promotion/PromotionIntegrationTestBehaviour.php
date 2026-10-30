@@ -5,8 +5,8 @@ namespace Shopwell\Core\Test\Integration\Traits\Promotion;
 use Shopwell\Core\Checkout\Cart\Cart;
 use Shopwell\Core\Checkout\Cart\CartException;
 use Shopwell\Core\Checkout\Cart\LineItemFactoryHandler\ProductLineItemFactory;
+use Shopwell\Core\Checkout\Cart\LineItemFactoryHandler\PromotionLineItemFactory;
 use Shopwell\Core\Checkout\Cart\SalesChannel\CartService;
-use Shopwell\Core\Checkout\Promotion\Cart\PromotionItemBuilder;
 use Shopwell\Core\Checkout\Promotion\Cart\PromotionProcessor;
 use Shopwell\Core\Checkout\Promotion\Subscriber\Storefront\StorefrontCartSubscriber;
 use Shopwell\Core\Framework\Log\Package;
@@ -54,10 +54,7 @@ trait PromotionIntegrationTestBehaviour
      */
     public function addPromotionCode(string $code, Cart $cart, CartService $cartService, SalesChannelContext $context): Cart
     {
-        $itemBuilder = new PromotionItemBuilder();
-
-        // ??? currencyPrecision is unused
-        $lineItem = $itemBuilder->buildPlaceholderItem($code);
+        $lineItem = (new PromotionLineItemFactory())->create(['referencedId' => $code], $context);
 
         $cart = $cartService->add($cart, $lineItem, $context);
 
