@@ -22,6 +22,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\ApiAware;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\CascadeDelete;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\PrimaryKey;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\Required;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\RestrictDelete;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\SearchRanking;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\SetNullOnDelete;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\WriteProtected;
@@ -131,6 +132,8 @@ class UserDefinition extends EntityDefinition
             (new OneToManyAssociationField('media', MediaDefinition::class, 'user_id'))->addFlags(new SetNullOnDelete()),
             (new OneToManyAssociationField('accessKeys', UserAccessKeyDefinition::class, 'user_id', 'id'))->addFlags(new CascadeDelete()),
             (new OneToManyAssociationField('configs', UserConfigDefinition::class, 'user_id', 'id'))->addFlags(new CascadeDelete()),
+            // a user that still owns webhooks cannot be deleted, so its webhooks are not lost unnoticed
+            (new OneToManyAssociationField('webhooks', WebhookDefinition::class, 'owner_user_id', 'id'))->removeFlag(ApiAware::class)->addFlags(new RestrictDelete()),
             new OneToManyAssociationField('stateMachineHistoryEntries', StateMachineHistoryDefinition::class, 'user_id', 'id'),
             (new OneToManyAssociationField('importExportLogEntries', ImportExportLogDefinition::class, 'user_id', 'id'))->addFlags(new SetNullOnDelete()),
             new ManyToManyAssociationField('aclRoles', AclRoleDefinition::class, AclUserRoleDefinition::class, 'user_id', 'acl_role_id'),
