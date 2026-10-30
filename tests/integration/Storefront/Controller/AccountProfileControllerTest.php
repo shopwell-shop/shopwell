@@ -219,15 +219,14 @@ class AccountProfileControllerTest extends TestCase
         $browser->request('GET', $_SERVER['APP_URL'] . '/account/profile?redirectTo=frontend.checkout.confirm.page');
         static::assertSame(Response::HTTP_OK, $browser->getResponse()->getStatusCode());
 
-        $browser->request('POST', $_SERVER['APP_URL'] . '/account/profile', [
-            'salutationId' => $this->getValidSalutationId(),
-            'firstName' => 'Max',
-            'lastName' => 'Mustermann',
+        $browser->request('POST', $_SERVER['APP_URL'] . '/account/profile', $this->tokenize('frontend.account.profile.save', [
+            'name' => 'Max Mustermann',
+            'gender' => $this->getValidGender(),
             'accountType' => CustomerEntity::ACCOUNT_TYPE_BUSINESS,
             'company' => 'Shopwell',
             'vatIds' => ['DE123456789'],
             'redirectTo' => 'frontend.checkout.confirm.page',
-        ]);
+        ]));
 
         $response = $browser->getResponse();
         static::assertTrue($response->isRedirect('/checkout/confirm'), (string) $response->getContent());
@@ -256,15 +255,15 @@ class AccountProfileControllerTest extends TestCase
     {
         $browser = KernelLifecycleManager::createBrowser($this->getKernel());
         $browser->request('POST', $_SERVER['APP_URL'] . '/account/register', [
+            'guest' => true,
             'accountType' => CustomerEntity::ACCOUNT_TYPE_BUSINESS,
             'company' => 'Shopwell',
             'email' => $email,
-            'salutationId' => $this->getValidSalutationId(),
-            'firstName' => 'Max',
-            'lastName' => 'Mustermann',
+            'name' => 'Max Mustermann',
+            'gender' => $this->getValidGender(),
             'billingAddress' => [
-                'firstName' => 'Max',
-                'lastName' => 'Mustermann',
+                'name' => 'Max Mustermann',
+                'gender' => $this->getValidGender(),
                 'countryId' => $this->getValidCountryId(),
                 'street' => 'Musterstraße 1',
                 'zipcode' => '12345',

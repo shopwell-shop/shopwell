@@ -729,9 +729,7 @@ class AddressControllerTest extends TestCase
             'address' => [
                 'accountType' => CustomerEntity::ACCOUNT_TYPE_BUSINESS,
                 'company' => 'Acme GmbH',
-                'salutationId' => $this->getValidSalutationId(),
-                'firstName' => 'Erika',
-                'lastName' => 'Mustermann',
+                'name' => 'Erika Mustermann',
                 'street' => 'Musterstraße 1',
                 'city' => 'Schöppingen',
                 'zipcode' => '12345',

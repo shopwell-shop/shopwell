@@ -859,12 +859,10 @@ class ChangeCustomerProfileRouteTest extends TestCase
         static::getContainer()->get('customer_address.repository')->create([[
             'id' => $addressId,
             'customerId' => $this->customerId,
-            'firstName' => 'Max',
-            'lastName' => 'Mustermann',
+            'name' => 'Max Mustermann',
             'street' => 'Teststraße 1',
             'city' => 'Wien',
             'zipcode' => '1010',
-            'salutationId' => $this->getValidSalutationId(),
             'country' => ['name' => 'VAT Test Country', ...$country],
         ]], Context::createDefaultContext());
 

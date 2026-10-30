@@ -3,8 +3,8 @@
 namespace Shopwell\Tests\Migration\Core;
 
 use Doctrine\DBAL\Connection;
+use PHPUnit\Framework\Attributes\After;
 use PHPUnit\Framework\Attributes\CoversNothing;
-use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 use PHPUnit\Framework\TestCase;
 use Psr\Clock\ClockInterface;
 use Psr\EventDispatcher\EventDispatcherInterface;
@@ -13,14 +13,12 @@ use Shopwell\Core\Framework\Adapter\Database\MySQLFactory;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Migration\MigrationCollection;
 use Shopwell\Core\Framework\Migration\MigrationCollectionLoader;
-use Shopwell\Core\Framework\Test\TestCaseBase\DatabaseTransactionBehaviour;
 use Shopwell\Core\Framework\Test\TestCaseBase\KernelTestBehaviour;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\Maintenance\System\Service\ShopConfigurator;
 use Shopwell\Core\Migration\V6_3\Migration1536233560BasicData;
 use Shopwell\Core\Migration\V6_3\Migration1589357321AddCountries;
 use Shopwell\Core\Migration\V6_4\Migration1636964297AddDefaultTaxRate;
-use Shopwell\Tests\Migration\MigrationUntouchedDbTestTrait;
 
 /**
  * @internal
@@ -30,20 +28,16 @@ use Shopwell\Tests\Migration\MigrationUntouchedDbTestTrait;
  * valid target here; the replayed migrations must not receive smoke-level attribution either.
  */
 #[Package('framework')]
-#[RunTestsInSeparateProcesses]
 #[CoversNothing]
 class MigrationForeignDefaultLanguageTest extends TestCase
 {
-    use DatabaseTransactionBehaviour;
     use KernelTestBehaviour;
-    use MigrationUntouchedDbTestTrait;
+
+    private ?Connection $replayConnection = null;
 
     public function testFreshInstallationUsesChineseDefaults(): void
     {
-        $orgConnection = static::getContainer()->get(Connection::class);
-        $orgConnection->rollBack();
-
-        $connection = $this->setupDB($orgConnection);
+        $connection = $this->setupDB();
 
         foreach ($this->collectMigrations()->getMigrationSteps() as $className => $migration) {
             $migration->update($connection);
@@ -211,8 +205,6 @@ class MigrationForeignDefaultLanguageTest extends TestCase
             Uuid::fromBytesToHex($zeroTaxId),
             json_decode($defaultTaxConfig, true, 512, \JSON_THROW_ON_ERROR)['_value']
         );
-
-        $orgConnection->beginTransaction();
     }
 
     /**
@@ -290,8 +282,6 @@ class MigrationForeignDefaultLanguageTest extends TestCase
 
         static::assertIsArray($templateZhCn);
         static::assertSame('密码找回', $templateZhCn['subject']);
-
-        $orgConnection->beginTransaction();
     }
 
     /**
