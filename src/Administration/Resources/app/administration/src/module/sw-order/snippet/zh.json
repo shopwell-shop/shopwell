@@ -513,6 +513,7 @@
       "tabOptions": "选项",
       "tabCredit": "贷项通知单",
       "buttonPreviewOrder": "预览",
+      "messageCancelCartError": "无法放弃该购物车。",
       "customerGrid": {
         "buttonAddNewCustomer": "新建客户",
         "placeholderSearchCustomer": "输入客户名称 ...",
