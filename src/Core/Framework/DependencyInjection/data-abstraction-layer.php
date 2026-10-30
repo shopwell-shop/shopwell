@@ -38,6 +38,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Dbal\FieldResolver\ManyToOneAss
 use Shopwell\Core\Framework\DataAbstractionLayer\Dbal\FieldResolver\OneToManyAssociationFieldResolver;
 use Shopwell\Core\Framework\DataAbstractionLayer\Dbal\FieldResolver\TranslationFieldResolver;
 use Shopwell\Core\Framework\DataAbstractionLayer\Dbal\JoinGroupBuilder;
+use Shopwell\Core\Framework\DataAbstractionLayer\Dbal\RowLoader;
 use Shopwell\Core\Framework\DataAbstractionLayer\Dbal\SchemaBuilder;
 use Shopwell\Core\Framework\DataAbstractionLayer\DefinitionInstanceRegistry;
 use Shopwell\Core\Framework\DataAbstractionLayer\DefinitionValidator;
@@ -134,6 +135,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Write\EntityWriteResultFactory;
 use Shopwell\Core\Framework\DataAbstractionLayer\Write\Validation\ConstraintBuilder;
 use Shopwell\Core\Framework\DataAbstractionLayer\Write\Validation\LockValidator;
 use Shopwell\Core\Framework\DataAbstractionLayer\Write\Validation\ParentRelationValidator;
+use Shopwell\Core\Framework\DataAbstractionLayer\Write\Validation\WriteOutcome;
 use Shopwell\Core\Framework\DataAbstractionLayer\Write\WriteCommandExtractor;
 use Shopwell\Core\Framework\Migration\IndexerQueuer;
 use Shopwell\Core\Framework\Rule\Collector\RuleConditionRegistry;
@@ -422,7 +424,14 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('event_dispatcher'),
             service(ExceptionHandlerRegistry::class),
             service(DefinitionInstanceRegistry::class),
+            service(RowLoader::class),
         ]);
+
+    $services->set(RowLoader::class)
+        ->args([service(Connection::class)]);
+
+    $services->set(WriteOutcome::class)
+        ->args([service(RowLoader::class)]);
 
     $services->set(ConstraintBuilder::class);
 

@@ -151,6 +151,12 @@ With `shopwell.media.remote_thumbnails.enable`, SVGs now have an empty `thumbnai
 Before, their `srcset` claimed widths that the returned original file did not have, so browsers rendered small SVG logos far too small.
 Media loaded without the `mediaType` field keep their thumbnail URLs, as the type can't be checked.
 
+### Duplicate document number errors name the document type
+
+When a document cannot be generated because its number is already taken, the error now names the document type, for example `Document number 1000 has already been allocated for document type "invoice".`, and carries `number` and `documentType` as parameters.
+The order document card in the Administration names the document type as well.
+`DocumentException::documentNumberAlreadyExistsException()` is deprecated for v6.8.0, use `DocumentException::documentNumberAlreadyExistsExceptionForType()` instead.
+
 ### Retired services are uninstalled by the daily service reconcile
 
 Shops now uninstall a service once the service registry lists it as `retired` in `GET /api/service/v2`. This happens in the daily service install task, on `bin/console services:install` and on `system:update:finish`, so a retired service no longer stays installed until the shop's next update. A service that is merely missing from the registry's service list is no longer uninstalled on `system:update:finish`; only an explicit `retired` status removes it. Shops now read the service list only from `GET /api/service/v2` and install and update only services listed as `active`; a status they don't know is left alone.
@@ -180,6 +186,17 @@ The route requires the `product_visibility:create` and `product:read` privileges
 For a business customer, `company` and `vatIds` are then only changed when the request contains them, and they are validated as for `business`.
 Before, such a request cleared both, while the customer stayed a business customer.
 Requests that send `accountType` behave as before.
+
+### Check a document number range pattern for collisions
+
+The new experimental route `GET /api/_action/order/document-v2/number-range-pattern-collisions?numberRangeTypeId=…&pattern=…&numberRangeId=…` returns the number ranges of the given document number range type that use the given pattern, as `{"collisions": [{"id": "…", "name": "…"}]}`.
+Such ranges, for example two `document_invoice` ranges assigned to different sales channels, generate the same document numbers and document generation fails once they meet.
+`numberRangeId` is optional and leaves that number range out of the result, for example to check an existing number range against all others.
+Non-document number range types never collide and return an empty list.
+The route requires the `number_range:read` privilege.
+
+The number range detail page in the Administration uses it to show a warning when it loads or saves a number range with a colliding pattern.
+Saving is not blocked.
 
 ## Features
 

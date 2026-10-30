@@ -383,7 +383,8 @@
       "messageEmptySubline": "Manage documents here.",
       "notificationDeleteErrorMessage": "The document could not be deleted.",
       "error": {
-        "DOCUMENT__NUMBER_ALREADY_EXISTS": "Document number {number} has already been allocated.",
+        "DOCUMENT__NUMBER_ALREADY_EXISTS": "Document number {number} has already been allocated for document type {documentType}. Check the number range configured for this document type and sales channel.",
+        "duplicateDocumentNumber": "A document with the document number \"{documentNumber}\" already exists for document type \"{documentType}\".",
         "createDocument": "Failed to create the document.",
         "downloadDocument": "Failed to download the document.",
         "downloadDocumentArchive": "Failed to download the document archive.",
