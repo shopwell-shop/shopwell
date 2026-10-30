@@ -35,6 +35,10 @@ use Shopwell\Core\Checkout\Cart\SalesChannel\CartService;
 use Shopwell\Core\Checkout\Cart\Tax\Struct\CalculatedTaxCollection;
 use Shopwell\Core\Checkout\Cart\Tax\Struct\TaxRuleCollection;
 use Shopwell\Core\Checkout\CheckoutPermissions;
+use Shopwell\Core\Checkout\Customer\Aggregate\CustomerAddress\CustomerAddressCollection;
+use Shopwell\Core\Checkout\Customer\Aggregate\CustomerAddress\CustomerAddressEntity;
+use Shopwell\Core\Checkout\Order\Aggregate\OrderAddress\OrderAddressCollection;
+use Shopwell\Core\Checkout\Order\Aggregate\OrderAddress\OrderAddressEntity;
 use Shopwell\Core\Checkout\Order\Aggregate\OrderDelivery\OrderDeliveryCollection;
 use Shopwell\Core\Checkout\Order\Aggregate\OrderDelivery\OrderDeliveryEntity;
 use Shopwell\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionCollection;
@@ -930,6 +934,48 @@ class RecalculationServiceTest extends TestCase
         );
 
         $recalculationService->addCustomLineItem($order->getId(), new LineItem(Uuid::randomHex(), LineItem::CUSTOM_LINE_ITEM_TYPE), $this->context);
+    }
+
+    public function testReplaceOrderAddressWithCustomerAddressClearsFieldsTheCustomerAddressLeavesEmpty(): void
+    {
+        $orderAddress = new OrderAddressEntity();
+        $orderAddress->setId(Uuid::randomHex());
+        $orderAddress->setVersionId(Uuid::randomHex());
+        $orderAddress->setCompany('ACME Corp');
+
+        $customerAddress = new CustomerAddressEntity();
+        $customerAddress->setId(Uuid::randomHex());
+        $customerAddress->setFirstName('Max');
+        $customerAddress->setLastName('Mustermann');
+        $customerAddress->setStreet('Musterstraße 1');
+        $customerAddress->setCity('Musterstadt');
+        $customerAddress->setCountryId(Uuid::randomHex());
+
+        $orderAddressRepository = new StaticEntityRepository([new OrderAddressCollection([$orderAddress])]);
+
+        $recalculationService = new RecalculationService(
+            static::createStub(EntityRepository::class),
+            $this->orderConverter,
+            static::createStub(CartService::class),
+            static::createStub(EntityRepository::class),
+            $orderAddressRepository,
+            new StaticEntityRepository([new CustomerAddressCollection([$customerAddress])]),
+            static::createStub(EntityRepository::class),
+            static::createStub(EntityRepository::class),
+            static::createStub(Processor::class),
+            $this->cartRuleLoader,
+            $this->lineItemFactoryRegistry()
+        );
+
+        $recalculationService->replaceOrderAddressWithCustomerAddress($orderAddress->getId(), $customerAddress->getId(), $this->context);
+
+        static::assertCount(1, $orderAddressRepository->upserts);
+        $upsert = $orderAddressRepository->upserts[0][0];
+        static::assertIsArray($upsert);
+        static::assertSame($orderAddress->getId(), $upsert['id']);
+        static::assertSame('Musterstraße 1', $upsert['street']);
+        static::assertArrayHasKey('company', $upsert);
+        static::assertNull($upsert['company']);
     }
 
     /**
