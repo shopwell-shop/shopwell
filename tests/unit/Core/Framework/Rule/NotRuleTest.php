@@ -11,7 +11,9 @@ use Shopwell\Core\Framework\Rule\Container\NotRule;
 use Shopwell\Core\Framework\Rule\Exception\UnsupportedValueException;
 use Shopwell\Core\Framework\Rule\RuleException;
 use Shopwell\Core\Framework\Rule\SimpleRule;
+use Shopwell\Core\Framework\Rule\UnknownConditionRule;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+use Shopwell\Core\Test\Assert\Serialization;
 
 /**
  * @internal
@@ -20,6 +22,25 @@ use Shopwell\Core\System\SalesChannel\SalesChannelContext;
 #[CoversClass(NotRule::class)]
 class NotRuleTest extends TestCase
 {
+    public function testMissingConditionAfterUnserializationDoesNotMatch(): void
+    {
+        $original = new NotRule([new SimpleRule()]);
+
+        // Replace the class name with an unavailable name of the same length to keep the serialized data valid.
+        $serialized = str_replace(SimpleRule::class, 'Shopwell\Core\Framework\Rule\AbsentRule', serialize($original));
+        $rule = Serialization::assertUnserializedInstanceOf(NotRule::class, $serialized);
+        static::assertInstanceOf(UnknownConditionRule::class, $rule->getRules()[0]);
+
+        static::assertFalse($rule->match(new CheckoutRuleScope(static::createStub(SalesChannelContext::class))));
+    }
+
+    public function testUnknownConditionDoesNotMatch(): void
+    {
+        $rule = new NotRule([new UnknownConditionRule(['_name' => 'unknownPluginRule'])]);
+
+        static::assertFalse($rule->match(new CheckoutRuleScope(static::createStub(SalesChannelContext::class))));
+    }
+
     public function testUnsupportedValue(): void
     {
         if (!Feature::isActive('v6.8.0.0')) {

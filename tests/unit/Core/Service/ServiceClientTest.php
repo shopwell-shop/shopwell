@@ -10,6 +10,7 @@ use Shopwell\Core\Service\Requirement\ServiceConsentRequirement;
 use Shopwell\Core\Service\ServiceClient;
 use Shopwell\Core\Service\ServiceException;
 use Shopwell\Core\Service\ServiceRegistry\ServiceEntry;
+use Shopwell\Core\Service\ServiceRegistry\ServiceStatus;
 use Symfony\Component\HttpClient\MockHttpClient;
 use Symfony\Component\HttpClient\Response\JsonMockResponse;
 use Symfony\Component\HttpClient\Response\MockResponse;
@@ -78,7 +79,7 @@ class ServiceClientTest extends TestCase
         $client = new ServiceClient(
             $httpClient,
             '6.6.0.0',
-            new ServiceEntry('MyCoolService', 'MyCoolService', 'https://example.com', '/app-endpoint')
+            new ServiceEntry('MyCoolService', 'MyCoolService', 'https://example.com', '/app-endpoint', true, ServiceStatus::ACTIVE)
         );
         $client->latestAppInfo();
     }
@@ -96,7 +97,7 @@ class ServiceClientTest extends TestCase
         $client = new ServiceClient(
             $httpClient,
             '6.6.0.0',
-            new ServiceEntry('MyCoolService', 'MyCoolService', 'https://example.com', '/app-endpoint')
+            new ServiceEntry('MyCoolService', 'MyCoolService', 'https://example.com', '/app-endpoint', true, ServiceStatus::ACTIVE)
         );
         $client->latestAppInfo();
     }
@@ -111,7 +112,7 @@ class ServiceClientTest extends TestCase
         $client = new ServiceClient(
             $httpClient,
             '6.6.0.0',
-            new ServiceEntry('MyCoolService', 'MyCoolService', 'https://example.com', '/app-endpoint')
+            new ServiceEntry('MyCoolService', 'MyCoolService', 'https://example.com', '/app-endpoint', true, ServiceStatus::ACTIVE)
         );
 
         $client->latestAppInfo();
@@ -133,7 +134,7 @@ class ServiceClientTest extends TestCase
         $client = new ServiceClient(
             $httpClient,
             '6.6.0.0',
-            new ServiceEntry('MyCoolService', 'MyCoolService', 'https://example.com', '/app-endpoint')
+            new ServiceEntry('MyCoolService', 'MyCoolService', 'https://example.com', '/app-endpoint', true, ServiceStatus::ACTIVE)
         );
 
         $appInfo = $client->latestAppInfo();
@@ -161,7 +162,7 @@ class ServiceClientTest extends TestCase
         $client = new ServiceClient(
             $httpClient,
             '6.6.0.0',
-            new ServiceEntry('MyCoolService', 'MyCoolService', 'https://example.com', '/app-endpoint')
+            new ServiceEntry('MyCoolService', 'MyCoolService', 'https://example.com', '/app-endpoint', true, ServiceStatus::ACTIVE)
         );
 
         $appInfo = $client->latestAppInfo();

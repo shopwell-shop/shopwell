@@ -6,7 +6,8 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Api\Acl\AclRoleLoader;
 use Shopwell\Core\Framework\Api\Acl\AclRoles;
-use Shopwell\Core\Framework\Api\Acl\ApiCallerType;
+use Shopwell\Core\Framework\Api\Acl\ApiCaller;
+use Shopwell\Core\Framework\Api\Context\AdminApiSource;
 use Shopwell\Core\Framework\App\Event\AppPermissionsUpdated;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Webhook\AclPrivilegeCollection;
@@ -34,8 +35,11 @@ class PrivilegePolicyTest extends TestCase
     {
         $policy = new PrivilegePolicy(static::createStub(AclRoleLoader::class));
 
+        $caller = ApiCaller::of(new AdminApiSource('user-id'));
+        static::assertNotNull($caller);
+
         static::assertTrue($policy->handles('product.written'));
-        static::assertTrue($policy->permitsSubscription('product.written', Subscriber::api(ApiCallerType::User)));
+        static::assertTrue($policy->permitsSubscription('product.written', Subscriber::api($caller)));
     }
 
     public function testUnrestrictedRolesAreNotChecked(): void

@@ -2,7 +2,7 @@
 
 namespace Shopwell\Core\Framework\Webhook\Authorization\Subscription;
 
-use Shopwell\Core\Framework\Api\Acl\ApiCallerType;
+use Shopwell\Core\Framework\Api\Acl\ApiCaller;
 use Shopwell\Core\Framework\App\Manifest\Manifest;
 use Shopwell\Core\Framework\Log\Package;
 
@@ -32,7 +32,7 @@ final class Subscriber
     /**
      * A user or integration creating a webhook through the Admin API.
      */
-    public static function api(ApiCallerType $caller): self
+    public static function api(ApiCaller $caller): self
     {
         return new self(SubscriberType::of($caller), null);
     }

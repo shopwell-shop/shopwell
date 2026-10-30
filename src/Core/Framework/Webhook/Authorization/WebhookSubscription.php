@@ -2,7 +2,7 @@
 
 namespace Shopwell\Core\Framework\Webhook\Authorization;
 
-use Shopwell\Core\Framework\Api\Acl\ApiCallerType;
+use Shopwell\Core\Framework\Api\Acl\ApiCaller;
 use Shopwell\Core\Framework\Api\Context\AdminApiSource;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Webhook\Authorization\Subscription\SubscriberType;
@@ -35,8 +35,8 @@ final readonly class WebhookSubscription
 
     public function isOwnedBy(AdminApiSource $source): bool
     {
-        $caller = ApiCallerType::of($source);
+        $caller = ApiCaller::of($source);
 
-        return $this->ownerType === SubscriberType::of($caller) && $this->ownerId === $caller->idOf($source);
+        return $caller !== null && $this->ownerType === SubscriberType::of($caller) && $this->ownerId === $caller->id;
     }
 }
