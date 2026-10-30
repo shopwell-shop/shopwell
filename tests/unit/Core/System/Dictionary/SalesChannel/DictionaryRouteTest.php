@@ -3,6 +3,7 @@
 namespace Shopwell\Tests\Unit\Core\System\Dictionary\SalesChannel;
 
 use Doctrine\DBAL\Connection;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Adapter\Cache\CacheTagCollector;
@@ -31,6 +32,7 @@ use Symfony\Component\HttpFoundation\Request;
  */
 #[Package('fundamentals@discovery')]
 #[CoversClass(DictionaryRoute::class)]
+#[AllowMockObjectsWithoutExpectations]
 class DictionaryRouteTest extends TestCase
 {
     public function testTheRouteIsNamedAndRefusesToBeDecorated(): void

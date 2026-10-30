@@ -2,6 +2,7 @@
 
 namespace Shopwell\Tests\Unit\Core\System\Organization\Aggregate\OrganizationUnit\DataAbstractionLayer;
 
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Context;
@@ -29,6 +30,7 @@ use Shopwell\Core\System\Organization\Aggregate\OrganizationUnit\OrganizationUni
  */
 #[Package('fundamentals@discovery')]
 #[CoversClass(OrganizationUnitIndexer::class)]
+#[AllowMockObjectsWithoutExpectations]
 class OrganizationUnitIndexerTest extends TestCase
 {
     public function testTheIndexerIsNamedAndOffersBothUpdaters(): void

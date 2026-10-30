@@ -2,6 +2,7 @@
 
 namespace Shopwell\Tests\Unit\Core\Content\Blog\Service;
 
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Content\Blog\Aggregate\BlogAuthor\BlogAuthorEntity;
@@ -39,6 +40,7 @@ use Symfony\Component\HttpFoundation\Request;
 #[CoversClass(BlogDetailReader::class)]
 class BlogDetailReaderTest extends TestCase
 {
+    #[AllowMockObjectsWithoutExpectations]
     public function testAMissingEntryIsAnsweredWithNotFound(): void
     {
         $reader = $this->reader(
@@ -51,6 +53,7 @@ class BlogDetailReaderTest extends TestCase
         $reader->read('missing-id', new Request(), Generator::generateSalesChannelContext());
     }
 
+    #[AllowMockObjectsWithoutExpectations]
     public function testAScheduledEntryIsAnsweredWithTheSameNotFoundAsAMissingOne(): void
     {
         $blog = $this->blog('blog-id');
@@ -134,6 +137,7 @@ class BlogDetailReaderTest extends TestCase
         static::assertSame(0, $comments->getTotal());
     }
 
+    #[AllowMockObjectsWithoutExpectations]
     public function testTheTocNumbersItsSectionsInDocumentOrderAndKeepsAnExistingAnchor(): void
     {
         $blog = $this->blog('blog-id');
