@@ -300,6 +300,7 @@ In next-major mode, a deprecation with a listed message logs a console error ins
 Any other deprecation still throws.
 
 ## API
+
 To try the experimental [bundled dev mode](https://vite.dev/blog/announcing-vite8-1#experimental-bundled-dev-mode) of Vite 8, also set `SHOPWELL_ADMIN_BUNDLED_DEV=1`.
 It bundles the Administration and its plugins, but not apps.
 Changes to plugin files reload the page instead of using HMR.
@@ -313,6 +314,21 @@ If your Jest setup uses `babel-plugin-shopwell-vite-meta-glob`, update it to 0.0
 For the other changes, see "Administration build updated to Vite 8" in `UPGRADE-6.8.md`.
 
 ## Storefront
+
+### Deprecation of `ListingPlugin` properties
+
+The Storefront listing plugin now supports updating multiple filter panels on the same page. Due to these changes, the following properties of the `ListingPlugin` class in `listing.plugin.js` carrying single elements have been deprecated and are replaced respectively by new properties carrying `NodeList`s:
+
+- `_filterPanel` → `_filterPanels`
+- `activeFilterContainer` → `activeFilterContainers`
+- `ariaLiveContainer` → `ariaLiveContainers`
+
+Listing result counts now update only one accessible live region to avoid duplicate screen-reader announcements across filter panels.
+While the mobile filter dialog is open, its live region is preferred over background regions.
+
+`ListingPlugin.createResetAllButton(activeFilterContainer)` now accepts the target active-filter container as an argument.
+Update custom calls and overrides to pass this argument, including calls to `super.createResetAllButton(activeFilterContainer)`.
+Omitting the argument still falls back to `this.activeFilterContainer` in 6.7, but this fallback is deprecated and will be removed in 6.8.
 
 ### Deprecation of unused custom `$offcanvas-zindex` SCSS variable
 
@@ -343,6 +359,7 @@ The `ProductDetailReadiness` and `ProductListingReadiness` system checks only pr
 Pages that extensions such as Dynamic Access restrict by rules no longer fail `bin/console system:check --context=pre_rollout`.
 If a sales channel has no visible page, the check reports `SKIPPED`.
 A sales channel whose domain cannot be resolved is now reported as its own failure, and the other sales channels are still checked.
+
 ### App registration requires a verified `APP_URL`
 
 Shopwell now verifies that `APP_URL` reaches this installation before it registers the shop with an app server, including the Shopwell service registry. This applies in every environment and to every app server. The shop must be able to reach itself under `APP_URL`, including `/api/app-system/shop/verify` when it sits behind HTTP authentication or an IP allowlist. If the verification fails, the app installation, update or secret rotation is aborted with the reason. The error code `FRAMEWORK__APP_URL_FAILED_VERIFICATION` (HTTP 502) means the verification request did not reach this installation; `FRAMEWORK__APP_URL_VERIFICATION_UNAVAILABLE` (HTTP 503) means it failed temporarily, for example on a timeout or rate limit, and can be retried. The shop ID change strategies `move-shop-permanently` and `reinstall-apps` verify the new `APP_URL` first, and leave the shop ID unchanged when it fails. Run `bin/console app:url:verify` to check the configuration.
