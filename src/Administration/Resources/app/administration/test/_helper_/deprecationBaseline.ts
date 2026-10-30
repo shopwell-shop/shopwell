@@ -3,7 +3,10 @@
  * @private
  */
 import deprecationBaseline from 'src/meta/deprecation-baseline.json';
+import { deprecationBaselineKey } from 'src/core/feature';
+import { isBaselineUpdateRun } from './isBaselineUpdateRun';
 import { isMajorRun, loadFeatureConfig } from './majorFeatureFlags';
+import { recordUsedBaselineEntry as recordUsedEntry } from './usedBaselineEntries';
 import type { RecordedDeprecation } from './deprecations';
 
 /**
@@ -17,7 +20,7 @@ import type { RecordedDeprecation } from './deprecations';
 export type DeprecationRun = 'default' | 'major';
 
 /**
- * The known usages of a deprecated API, per usage site the runs that hit it.
+ * The known usages of a deprecated API, per usage site the runs that use it.
  *
  * @private
  * @example
@@ -33,18 +36,6 @@ const checkedInBaseline = JSON.stringify(deprecationBaseline);
 let baseline = JSON.parse(checkedInBaseline) as Record<string, BaselinedUsages>;
 
 /**
- * The key of a deprecation in the baseline: the message without the component path the deprecation plugin
- * appends (`Used in: …`), so one key covers every place the deprecated API is used.
- *
- * @private
- * @example
- * deprecationBaselineKey('The component "sw-x" is deprecated.\nUsed in: sw-page > sw-x'); // 'The component "sw-x" is deprecated.'
- */
-export function deprecationBaselineKey(message: string): string {
-    return message.split('\nUsed in: ')[0];
-}
-
-/**
  * The run this Jest worker belongs to, from the feature flags its environment activates.
  *
  * @private
@@ -56,14 +47,38 @@ export function currentRun(): DeprecationRun {
 }
 
 /**
- * Whether the baseline lists the usage site of `entry` as a known usage of its deprecation in the current run.
+ * Whether the baseline lists the usage site of `entry` as a known usage of its deprecation in the current run,
+ * also with `DEPRECATION_BASELINE=update`.
+ *
+ * @private
+ * @example
+ * isListed({ message: 'oldFunction() is deprecated.', usageSite: 'src/app/main.ts' }); // false
+ */
+export function isListed({ message, usageSite }: Pick<RecordedDeprecation, 'message' | 'usageSite'>): boolean {
+    return baseline[deprecationBaselineKey(message)]?.[usageSite]?.includes(currentRun()) ?? false;
+}
+
+/**
+ * Whether the baseline lets the usage of `entry` pass without an assertion: it is listed for the current run.
+ * With `DEPRECATION_BASELINE=update`, every usage is, as the run rewrites the baseline from them.
  *
  * @private
  * @example
  * isBaselined({ message: 'oldFunction() is deprecated.', usageSite: 'src/app/main.ts' }); // false
  */
-export function isBaselined({ message, usageSite }: Pick<RecordedDeprecation, 'message' | 'usageSite'>): boolean {
-    return baseline[deprecationBaselineKey(message)]?.[usageSite]?.includes(currentRun()) ?? false;
+export function isBaselined(entry: Pick<RecordedDeprecation, 'message' | 'usageSite'>): boolean {
+    return isBaselineUpdateRun() || isListed(entry);
+}
+
+/**
+ * Tells `deprecationBaselineReporter.js` that the baseline let the usage of `entry` pass, under its baseline key.
+ *
+ * @private
+ * @example
+ * recordUsedBaselineEntry({ message: 'oldFunction() is deprecated.', usageSite: 'src/app/main.ts' });
+ */
+export function recordUsedBaselineEntry({ message, usageSite }: Pick<RecordedDeprecation, 'message' | 'usageSite'>): void {
+    recordUsedEntry({ message: deprecationBaselineKey(message), usageSite });
 }
 
 /**

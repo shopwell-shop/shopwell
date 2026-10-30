@@ -12,6 +12,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\System\SalesChannel\Entity\SalesChannelRepository;
+use Shopwell\Core\System\SalesChannel\SalesChannelContext;
 use Shopwell\Core\Test\Generator;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
@@ -32,15 +33,7 @@ class ProductGatewayTest extends TestCase
         $context = Generator::generateSalesChannelContext();
 
         $repository = static::createStub(SalesChannelRepository::class);
-        $emptySearchResult = new EntitySearchResult(
-            'product',
-            0,
-            new ProductCollection(),
-            null,
-            new Criteria(),
-            $context->getContext()
-        );
-        $repository->method('search')->willReturn($emptySearchResult);
+        $repository->method('search')->willReturn(self::createEmptySearchResult($context));
 
         $validator = static::callback(static fn ($subject) => $subject instanceof ProductGatewayCriteriaEvent);
 
@@ -53,5 +46,28 @@ class ProductGatewayTest extends TestCase
         );
 
         $gateway->get($ids, $context);
+    }
+
+    public function testLoadsTheManufacturerForTheGaranLabel(): void
+    {
+        $context = Generator::generateSalesChannelContext();
+
+        $repository = $this->createMock(SalesChannelRepository::class);
+        $repository->expects($this->once())
+            ->method('search')
+            ->with(static::callback(static fn (Criteria $criteria): bool => $criteria->hasAssociation('manufacturer')))
+            ->willReturn(self::createEmptySearchResult($context));
+
+        $gateway = new ProductGateway($repository, static::createStub(EventDispatcherInterface::class));
+
+        $gateway->get([Uuid::randomHex()], $context);
+    }
+
+    /**
+     * @return EntitySearchResult<ProductCollection>
+     */
+    private static function createEmptySearchResult(SalesChannelContext $context): EntitySearchResult
+    {
+        return new EntitySearchResult('product', 0, new ProductCollection(), null, new Criteria(), $context->getContext());
     }
 }
