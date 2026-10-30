@@ -13,6 +13,7 @@ use Shopwell\Core\Checkout\Shipping\SalesChannel\ShippingMethodRoute;
 use Shopwell\Core\Checkout\Shipping\ShippingMethodDefinition;
 use Shopwell\Core\Checkout\Shipping\Validator\ShippingMethodValidator;
 use Shopwell\Core\Framework\Adapter\Cache\CacheTagCollector;
+use Shopwell\Core\Framework\DataAbstractionLayer\Write\Validation\WriteOutcome;
 use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Rule\RuleIdMatcher;
 use Shopwell\Core\Framework\Script\Execution\ScriptExecutor;
@@ -54,6 +55,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(ShippingMethodValidator::class)
         ->args([
             service(Connection::class),
+            service(WriteOutcome::class),
         ])
         ->tag('kernel.event_subscriber');
 

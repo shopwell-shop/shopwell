@@ -10,6 +10,7 @@ use Shopwell\Core\Checkout\Shipping\Aggregate\ShippingMethodPrice\ShippingMethod
 use Shopwell\Core\Checkout\Shipping\ShippingMethodDefinition;
 use Shopwell\Core\Checkout\Shipping\Validator\ShippingMethodValidator;
 use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\Dbal\RowLoader;
 use Shopwell\Core\Framework\DataAbstractionLayer\Write\Command\DeleteCommand;
 use Shopwell\Core\Framework\DataAbstractionLayer\Write\Command\InsertCommand;
 use Shopwell\Core\Framework\DataAbstractionLayer\Write\Command\UpdateCommand;
@@ -17,6 +18,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Write\Command\WriteCommand;
 use Shopwell\Core\Framework\DataAbstractionLayer\Write\EntityExistence;
 use Shopwell\Core\Framework\DataAbstractionLayer\Write\EntityWriteGatewayInterface;
 use Shopwell\Core\Framework\DataAbstractionLayer\Write\Validation\PreWriteValidationEvent;
+use Shopwell\Core\Framework\DataAbstractionLayer\Write\Validation\WriteOutcome;
 use Shopwell\Core\Framework\DataAbstractionLayer\Write\WriteContext;
 use Shopwell\Core\Framework\DataAbstractionLayer\Write\WriteException;
 use Shopwell\Core\Framework\Log\Package;
@@ -92,7 +94,7 @@ class ShippingMethodValidatorTest extends TestCase
         $fakeConnection = new FakeConnection([]);
 
         $event = new PreWriteValidationEvent($this->context, $commands);
-        $validator = new ShippingMethodValidator($fakeConnection);
+        $validator = new ShippingMethodValidator($fakeConnection, new WriteOutcome(new RowLoader($fakeConnection)));
         $validator->preValidate($event);
 
         static::assertCount(0, $event->getExceptions()->getExceptions());
@@ -122,7 +124,7 @@ class ShippingMethodValidatorTest extends TestCase
         $fakeConnection = new FakeConnection([]);
 
         $event = new PreWriteValidationEvent($this->context, $commands);
-        $validator = new ShippingMethodValidator($fakeConnection);
+        $validator = new ShippingMethodValidator($fakeConnection, new WriteOutcome(new RowLoader($fakeConnection)));
         $validator->preValidate($event);
 
         $exception = null;
@@ -592,7 +594,7 @@ class ShippingMethodValidatorTest extends TestCase
 
         $event = new PreWriteValidationEvent($this->context, $commands);
 
-        (new ShippingMethodValidator($connection))->preValidate($event);
+        (new ShippingMethodValidator($connection, new WriteOutcome(new RowLoader($connection))))->preValidate($event);
 
         foreach ($event->getExceptions()->getExceptions() as $exception) {
             if (!$exception instanceof WriteConstraintViolationException) {
