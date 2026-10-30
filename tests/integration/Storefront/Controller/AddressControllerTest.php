@@ -752,7 +752,7 @@ class AddressControllerTest extends TestCase
         static::assertSame(CustomerEntity::ACCOUNT_TYPE_BUSINESS, $guest->getAccountType());
         static::assertSame('Acme GmbH', $guest->getCompany());
         static::assertSame(['DE123456789'], $guest->getVatIds());
-        static::assertSame('Erika', $guest->getFirstName());
+        static::assertSame('Erika Mustermann', $guest->getName());
     }
 
     private function login(): KernelBrowser

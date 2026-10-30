@@ -268,7 +268,7 @@ class SnippetFileCollectionTest extends TestCase
 
     public function testHasFileForPathTracksFilesAddedAfterFirstLookup(): void
     {
-        $firstFile = new MockSnippetFile('storefront.de', 'de-DE');
+        $firstFile = new MockSnippetFile('storefront.zh', 'zh-CN');
         $secondFile = new MockSnippetFile('storefront.en', 'en-GB');
         $collection = new SnippetFileCollection();
 
@@ -287,7 +287,7 @@ class SnippetFileCollectionTest extends TestCase
     {
         $firstFile = $this->createMock(AbstractSnippetFile::class);
         $firstFile->expects($this->once())->method('getPath')->willReturn(__FILE__);
-        $secondFile = new MockSnippetFile('storefront.de', 'de-DE');
+        $secondFile = new MockSnippetFile('storefront.zh', 'zh-CN');
         $collection = new SnippetFileCollection();
         $collection->add($firstFile);
 
@@ -300,7 +300,7 @@ class SnippetFileCollectionTest extends TestCase
 
     public function testHasFileForPathRebuildsAfterReplacementRemovalAndClear(): void
     {
-        $firstFile = new MockSnippetFile('storefront.de', 'de-DE');
+        $firstFile = new MockSnippetFile('storefront.zh', 'zh-CN');
         $secondFile = new MockSnippetFile('storefront.en', 'en-GB');
         $collection = new SnippetFileCollection();
         $collection->set('file', $firstFile);

@@ -38,14 +38,13 @@ class AddressTransformerTest extends TestCase
 
         static::assertNull($transformed['company']);
         static::assertNull($transformed['department']);
-        static::assertNull($transformed['salutationId']);
-        static::assertNull($transformed['title']);
+        static::assertNull($transformed['gender']);
         static::assertNull($transformed['zipcode']);
         static::assertNull($transformed['phoneNumber']);
         static::assertNull($transformed['additionalAddressLine1']);
         static::assertNull($transformed['additionalAddressLine2']);
         static::assertNull($transformed['countryStateId']);
-        static::assertSame('Max', $transformed['firstName']);
+        static::assertSame('Max Mustermann', $transformed['name']);
         static::assertSame('Musterstraße 1', $transformed['street']);
         static::assertArrayNotHasKey('customFields', $transformed);
     }
@@ -55,13 +54,14 @@ class AddressTransformerTest extends TestCase
         $address = $this->createAddress();
         $address->setCompany('Shopwell');
         $address->setDepartment('Development');
-        $address->setSalutationId(Uuid::randomHex());
-        $address->setTitle('Dr.');
+        $address->setGender('male');
         $address->setZipcode('48624');
         $address->setPhoneNumber('0123456789');
         $address->setAdditionalAddressLine1('Building 2');
         $address->setAdditionalAddressLine2('Floor 3');
         $address->setCountryStateId(Uuid::randomHex());
+        $address->setCountryCityId(Uuid::randomHex());
+        $address->setCountryDistrictId(Uuid::randomHex());
         $address->setCustomFields(['foo' => 'bar']);
 
         $transformed = AddressTransformer::transformForUpdate($address);
@@ -79,8 +79,7 @@ class AddressTransformerTest extends TestCase
     {
         $address = new CustomerAddressEntity();
         $address->setId(Uuid::randomHex());
-        $address->setFirstName('Max');
-        $address->setLastName('Mustermann');
+        $address->setName('Max Mustermann');
         $address->setStreet('Musterstraße 1');
         $address->setCity('Musterstadt');
         $address->setCountryId(Uuid::randomHex());
