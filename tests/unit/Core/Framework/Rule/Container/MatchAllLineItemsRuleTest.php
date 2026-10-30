@@ -15,10 +15,15 @@ use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Rule\Container\MatchAllLineItemsRule;
 use Shopwell\Core\Framework\Rule\Rule;
 use Shopwell\Core\Framework\Rule\RuleScope;
+use Shopwell\Core\Framework\Rule\SimpleRule;
+use Shopwell\Core\Framework\Rule\UnknownConditionRule;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+use Shopwell\Core\Test\Assert\Serialization;
 use Shopwell\Core\Test\Checkout\CartRuleFixture;
 use Shopwell\Core\Test\Stub\Rule\CountingTrueRule;
+use Shopwell\Core\Test\Stub\Rule\FalseRule;
+use Shopwell\Core\Test\Stub\Rule\TrueRule;
 use Symfony\Component\Validator\Constraints\Type;
 
 /**
@@ -28,6 +33,29 @@ use Symfony\Component\Validator\Constraints\Type;
 #[CoversClass(MatchAllLineItemsRule::class)]
 class MatchAllLineItemsRuleTest extends TestCase
 {
+    /**
+     * @param list<Rule> $remainingRules
+     */
+    #[DataProvider('missingConditionCases')]
+    public function testReplacesMissingConditionsAfterUnserialization(array $remainingRules, bool $expected): void
+    {
+        $original = new MatchAllLineItemsRule([new SimpleRule(), ...$remainingRules]);
+
+        // Replace the class name with an unavailable name of the same length to keep the serialized data valid.
+        $serialized = str_replace(SimpleRule::class, 'Shopwell\Core\Framework\Rule\AbsentRule', serialize($original));
+        $rule = Serialization::assertUnserializedInstanceOf(MatchAllLineItemsRule::class, $serialized);
+        static::assertInstanceOf(UnknownConditionRule::class, $rule->getRules()[0]);
+
+        static::assertSame($expected, $rule->match(new LineItemScope(new LineItem('product', LineItem::PRODUCT_LINE_ITEM_TYPE), static::createStub(SalesChannelContext::class))));
+    }
+
+    public static function missingConditionCases(): \Generator
+    {
+        yield 'only the missing condition remains' => [[], false];
+        yield 'remaining condition matches' => [[new TrueRule()], false];
+        yield 'remaining condition does not match' => [[new FalseRule()], false];
+    }
+
     public function testAndRuleNameIsStillTheSame(): void
     {
         static::assertSame('allLineItemsContainer', (new MatchAllLineItemsRule())->getName());

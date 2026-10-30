@@ -4,6 +4,9 @@ namespace Shopwell\Tests\Unit\Core\Framework\Webhook\Authorization\Policy;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Framework\Api\Acl\AclRoles;
+use Shopwell\Core\Framework\Api\Acl\ApiCaller;
+use Shopwell\Core\Framework\Api\Context\AdminApiSource;
 use Shopwell\Core\Framework\App\AppEntity;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Webhook\AclPrivilegeCollection;
@@ -20,12 +23,21 @@ use Shopwell\Core\Framework\Webhook\Webhook;
 #[CoversClass(PolicyRegistry::class)]
 class PolicyRegistryTest extends TestCase
 {
+    private Subscriber $subscriber;
+
+    protected function setUp(): void
+    {
+        $caller = ApiCaller::of(new AdminApiSource('user-id'));
+        static::assertNotNull($caller);
+        $this->subscriber = Subscriber::api($caller);
+    }
+
     public function testEventWithoutAPolicyIsPermitted(): void
     {
         $registry = new PolicyRegistry([new StubPolicy(['foo.event'], permits: false)]);
 
         static::assertTrue($registry->permitsDelivery(new StubHookable('bar.event'), $this->createWebhook()));
-        static::assertTrue($registry->permitsSubscription('bar.event', Subscriber::user()));
+        static::assertTrue($registry->permitsSubscription('bar.event', $this->subscriber));
     }
 
     public function testASinglePolicyCanVeto(): void
@@ -33,7 +45,7 @@ class PolicyRegistryTest extends TestCase
         $registry = new PolicyRegistry([new StubPolicy(['foo.event'], permits: false)]);
 
         static::assertFalse($registry->permitsDelivery(new StubHookable(), $this->createWebhook()));
-        static::assertFalse($registry->permitsSubscription('foo.event', Subscriber::user()));
+        static::assertFalse($registry->permitsSubscription('foo.event', $this->subscriber));
     }
 
     public function testEveryPolicyMustPermit(): void
@@ -44,7 +56,7 @@ class PolicyRegistryTest extends TestCase
         ]);
 
         static::assertFalse($registry->permitsDelivery(new StubHookable(), $this->createWebhook()));
-        static::assertFalse($registry->permitsSubscription('foo.event', Subscriber::user()));
+        static::assertFalse($registry->permitsSubscription('foo.event', $this->subscriber));
     }
 
     public function testAllPermittingMeansPermitted(): void
@@ -71,7 +83,7 @@ class PolicyRegistryTest extends TestCase
 
         $registry = new PolicyRegistry([$policy]);
         $registry->permitsDelivery(new StubHookable('bar.event'), $this->createWebhook());
-        $registry->permitsSubscription('bar.event', Subscriber::user());
+        $registry->permitsSubscription('bar.event', $this->subscriber);
 
         static::assertSame(0, $policy->permitCalls);
     }
@@ -90,7 +102,7 @@ class PolicyRegistryTest extends TestCase
             appActive: true,
             appVersion: null,
             appSecret: null,
-            appAclRoleId: null,
+            roles: new AclRoles(false, []),
         );
     }
 }

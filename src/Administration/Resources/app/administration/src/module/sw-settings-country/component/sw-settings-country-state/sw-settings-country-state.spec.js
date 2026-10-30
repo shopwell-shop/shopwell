@@ -1,7 +1,7 @@
 /**
  * @sw-package fundamentals@discovery
  */
-import { mount } from '@vue/test-utils';
+import { mount, flushPromises } from '@vue/test-utils';
 
 const COUNTRY_ID = 'e5f64789a1b2c3d4e5f64789a1b2c3d4';
 
@@ -229,19 +229,19 @@ describe('module/sw-settings-country/component/sw-settings-country-state', () =>
         });
 
         wrapper.vm.terms.state = '山';
-        await wrapper.vm.$nextTick();
+        await flushPromises();
 
         expect(wrapper.findAll('.sw-settings-country-state__item')).toHaveLength(1);
         expect(wrapper.find('.sw-settings-country-state__item-name').text()).toBe('山西省');
 
         wrapper.vm.terms.state = 'cn-13';
-        await wrapper.vm.$nextTick();
+        await flushPromises();
 
         expect(wrapper.findAll('.sw-settings-country-state__item')).toHaveLength(1);
         expect(wrapper.find('.sw-settings-country-state__item-name').text()).toBe('河北省');
 
         wrapper.vm.terms.state = 'missing';
-        await wrapper.vm.$nextTick();
+        await flushPromises();
 
         expect(wrapper.findAll('.sw-settings-country-state__item')).toHaveLength(0);
         expect(wrapper.find('.sw-settings-country-state__hint').exists()).toBeTruthy();
@@ -279,7 +279,7 @@ describe('module/sw-settings-country/component/sw-settings-country-state', () =>
         });
 
         await wrapper.find('.sw-settings-country-state__add-button').trigger('click');
-        await wrapper.vm.$nextTick();
+        await flushPromises();
 
         expect(wrapper.vm.currentRegion).not.toBeNull();
         expect(wrapper.vm.currentRegionLevel).toBe('state');
@@ -298,7 +298,7 @@ describe('module/sw-settings-country/component/sw-settings-country-state', () =>
         await wrapper.find('.sw-settings-country-state__item').trigger('click');
         await flushPromises();
         await wrapper.find('.sw-settings-country-state__item').trigger('click');
-        await wrapper.vm.$nextTick();
+        await flushPromises();
 
         expect(wrapper.vm.currentRegion.id).toBe(state.id);
         expect(wrapper.vm.currentRegionLevel).toBe('state');
@@ -310,7 +310,7 @@ describe('module/sw-settings-country/component/sw-settings-country-state', () =>
         const { wrapper } = await createWrapper({ states: [state] });
 
         await wrapper.find('.sw-settings-country-state__item').trigger('click');
-        await wrapper.vm.$nextTick();
+        await flushPromises();
 
         // Browsing the tree stays possible, editing does not.
         expect(wrapper.vm.currentRegion).toBeNull();

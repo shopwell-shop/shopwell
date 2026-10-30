@@ -11,6 +11,7 @@ use Shopwell\Core\Checkout\Cart\Event\CheckoutOrderPlacedCriteriaEvent;
 use Shopwell\Core\Checkout\Cart\Rule\AlwaysValidRule;
 use Shopwell\Core\Checkout\Cart\SalesChannel\CartService;
 use Shopwell\Core\Checkout\Customer\CustomerCollection;
+use Shopwell\Core\Checkout\Customer\CustomerEntity;
 use Shopwell\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionCollection;
 use Shopwell\Core\Content\Product\Aggregate\ProductVisibility\ProductVisibilityDefinition;
 use Shopwell\Core\Content\Product\ProductCollection;
@@ -502,6 +503,41 @@ class CartOrderRouteTest extends TestCase
 
         static::assertNotNull($response['orderCustomer']);
         static::assertSame($response['orderCustomer']['gender'], DictionaryEntryDefinition::NOT_SPECIFIED);
+    }
+
+    public function testBusinessCustomerNeedsVatIdWhenBillingCountryRequiresOne(): void
+    {
+        static::getContainer()->get('country.repository')->update([
+            ['id' => $this->validCountryId, 'vatIdRequired' => true],
+        ], Context::createDefaultContext());
+
+        $email = Uuid::randomHex() . '@example.com';
+        $customerId = $this->createCustomer('shopwell', $email);
+        $this->customerRepository->update([
+            ['id' => $customerId, 'accountType' => CustomerEntity::ACCOUNT_TYPE_BUSINESS, 'company' => 'Example Inc.'],
+        ], Context::createDefaultContext());
+
+        $this->login($email, 'shopwell');
+        $this->addProductToCart();
+
+        $this->browser->request('POST', '/store-api/checkout/order');
+
+        static::assertNotFalse($this->browser->getResponse()->getContent());
+        $response = \json_decode($this->browser->getResponse()->getContent(), true, 512, \JSON_THROW_ON_ERROR);
+
+        static::assertSame(CartException::CART_INVALID_CODE, $response['errors'][0]['code']);
+        static::assertStringContainsString('vat-id-missing', $response['errors'][0]['detail']);
+
+        $this->customerRepository->update([
+            ['id' => $customerId, 'vatIds' => ['DE123456789']],
+        ], Context::createDefaultContext());
+
+        $this->browser->request('POST', '/store-api/checkout/order');
+
+        static::assertNotFalse($this->browser->getResponse()->getContent());
+        $response = \json_decode($this->browser->getResponse()->getContent(), true, 512, \JSON_THROW_ON_ERROR);
+
+        static::assertSame('order', $response['apiAlias']);
     }
 
     public function testOrderLockedWhenAlreadyInProgress(): void

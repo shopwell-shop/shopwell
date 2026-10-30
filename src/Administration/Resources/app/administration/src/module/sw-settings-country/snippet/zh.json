@@ -43,6 +43,7 @@
       "helpTextCompanyTaxFree": "要免税处理 B2B 交易，相应客户账户必须拥有有效的增值税 ID。",
       "labelCheckVatIdFormat": "检查增值税 ID 格式",
       "helpTextCheckVatIdFormat": "检查欧盟增值税 ID 的格式。",
+      "helpTextCheckVatIdFormatNoPattern": "该国家没有已知的增值税 ID 格式，无法进行格式检查。",
       "labelForceStateInRegistration": "国家/地区为必填字段",
       "labelDisplayStateInRegistration": "显示省/地区",
       "placeholderName": "输入名称 ...",

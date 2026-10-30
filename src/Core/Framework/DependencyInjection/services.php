@@ -19,6 +19,7 @@ use Shopwell\Core\Framework\Adapter\Cache\RedisConnectionFactory;
 use Shopwell\Core\Framework\Adapter\Cache\ReverseProxy\ReverseProxyCache;
 use Shopwell\Core\Framework\Adapter\Cache\ReverseProxy\ReverseProxyServiceFactory;
 use Shopwell\Core\Framework\Adapter\Command\S3FilesystemVisibilityCommand;
+use Shopwell\Core\Framework\Adapter\Database\MySQLFactory;
 use Shopwell\Core\Framework\Adapter\Database\ReplicaConnectionResetter;
 use Shopwell\Core\Framework\Adapter\Kernel\EnvIntOrNullProcessor;
 use Shopwell\Core\Framework\Adapter\Kernel\HttpCacheKernel;
@@ -294,16 +295,21 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ])
         ->tag('shopwell.migration_source');
 
+    $services->set('doctrine.dbal.migration_connection', Connection::class)
+        ->public()
+        ->factory([MySQLFactory::class, 'createMigrationConnection'])
+        ->args([service(Connection::class)]);
+
     $services->set(MigrationRuntime::class)
         ->args([
-            service(Connection::class),
+            service('doctrine.dbal.migration_connection'),
             service('logger'),
         ]);
 
     $services->set(MigrationCollectionLoader::class)
         ->public()
         ->args([
-            service(Connection::class),
+            service('doctrine.dbal.migration_connection'),
             service(MigrationRuntime::class),
             service('logger'),
             tagged_iterator('shopwell.migration_source'),
@@ -311,7 +317,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(MigrationInfo::class)
         ->args([
-            service(Connection::class),
+            service('doctrine.dbal.migration_connection'),
         ]);
 
     $services->set(CreateMigrationCommand::class)

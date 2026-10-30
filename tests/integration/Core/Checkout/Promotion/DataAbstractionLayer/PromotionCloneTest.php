@@ -8,6 +8,7 @@ use Shopwell\Core\Checkout\Promotion\PromotionEntity;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\Feature;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Test\TestCaseBase\DatabaseTransactionBehaviour;
 use Shopwell\Core\Framework\Test\TestCaseBase\KernelTestBehaviour;
@@ -22,12 +23,11 @@ class PromotionCloneTest extends TestCase
     use DatabaseTransactionBehaviour;
     use KernelTestBehaviour;
 
-    public function testCloneResetsRedemptionCounters(): void
+    public function testCloneResetsOrderCount(): void
     {
         $context = Context::createDefaultContext();
         $sourceId = Uuid::randomHex();
         $cloneId = Uuid::randomHex();
-        $customerId = Uuid::randomHex();
 
         /** @var EntityRepository<PromotionCollection> $promotionRepository */
         $promotionRepository = static::getContainer()->get('promotion.repository');
@@ -35,7 +35,6 @@ class PromotionCloneTest extends TestCase
             'id' => $sourceId,
             'name' => 'Used promotion',
             'orderCount' => 3,
-            'ordersPerCustomerCount' => [$customerId => 2],
         ]], $context);
 
         $promotionRepository->clone($sourceId, $context, $cloneId);
@@ -43,6 +42,28 @@ class PromotionCloneTest extends TestCase
         $clone = $promotionRepository->search(new Criteria([$cloneId]), $context)->getEntities()->first();
         static::assertInstanceOf(PromotionEntity::class, $clone);
         static::assertSame(0, $clone->getOrderCount());
-        static::assertNull($clone->getOrdersPerCustomerCount());
+    }
+
+    public function testCloneResetsOrdersPerCustomerCount(): void
+    {
+        Feature::skipTestIfActive('PROMOTION_REDEMPTION_OPTIMIZATION', $this);
+
+        $context = Context::createDefaultContext();
+        $sourceId = Uuid::randomHex();
+        $cloneId = Uuid::randomHex();
+
+        /** @var EntityRepository<PromotionCollection> $promotionRepository */
+        $promotionRepository = static::getContainer()->get('promotion.repository');
+        $promotionRepository->create([[
+            'id' => $sourceId,
+            'name' => 'Used promotion',
+            'ordersPerCustomerCount' => [Uuid::randomHex() => 2],
+        ]], $context);
+
+        $promotionRepository->clone($sourceId, $context, $cloneId);
+
+        $clone = $promotionRepository->search(new Criteria([$cloneId]), $context)->getEntities()->first();
+        static::assertInstanceOf(PromotionEntity::class, $clone);
+        static::assertNull(Feature::silent('v6.8.0.0', static fn (): ?array => $clone->getOrdersPerCustomerCount()));
     }
 }

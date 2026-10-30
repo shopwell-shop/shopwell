@@ -25,11 +25,13 @@ use Shopwell\Core\Checkout\DocumentV2\Extension\DocumentRouteExtension;
 use Shopwell\Core\Checkout\DocumentV2\Renderer\DocumentRendererRegistry;
 use Shopwell\Core\Checkout\DocumentV2\SalesChannel\DocumentRoute;
 use Shopwell\Core\Checkout\DocumentV2\Service\DocumentFileResolver;
+use Shopwell\Core\Checkout\DocumentV2\Service\DocumentMediaGuard;
 use Shopwell\Core\Checkout\DocumentV2\Service\DocumentReader;
 use Shopwell\Core\Checkout\DocumentV2\Struct\RenderedDocument;
 use Shopwell\Core\Checkout\Order\Aggregate\OrderAddress\OrderAddressEntity;
 use Shopwell\Core\Checkout\Order\Aggregate\OrderCustomer\OrderCustomerEntity;
 use Shopwell\Core\Checkout\Order\OrderEntity;
+use Shopwell\Core\Content\Media\Aggregate\MediaFolder\MediaFolderCollection;
 use Shopwell\Core\Content\Media\MediaEntity;
 use Shopwell\Core\Content\Media\MediaService;
 use Shopwell\Core\Framework\Context;
@@ -1102,7 +1104,7 @@ class DocumentRouteTest extends TestCase
 
         $route = new DocumentRoute(
             static::createStub(DocumentGenerator::class),
-            new DocumentReader($documentRepository, $mediaService, new DocumentRendererRegistry([]), new DocumentFileResolver()),
+            new DocumentReader($documentRepository, $mediaService, new DocumentRendererRegistry([]), new DocumentFileResolver(), new DocumentMediaGuard(StaticEntityRepository::of(MediaFolderCollection::class, [[]]))),
             $documentRepository,
             static::createStub(RateLimiter::class),
             new GuestAuthenticator(),
@@ -1158,7 +1160,7 @@ class DocumentRouteTest extends TestCase
 
         $route = new DocumentRoute(
             static::createStub(DocumentGenerator::class),
-            new DocumentReader($documentRepository, $mediaService, new DocumentRendererRegistry([]), new DocumentFileResolver()),
+            new DocumentReader($documentRepository, $mediaService, new DocumentRendererRegistry([]), new DocumentFileResolver(), new DocumentMediaGuard(StaticEntityRepository::of(MediaFolderCollection::class, [[]]))),
             $documentRepository,
             static::createStub(RateLimiter::class),
             new GuestAuthenticator(),
@@ -1210,7 +1212,7 @@ class DocumentRouteTest extends TestCase
 
         $route = new DocumentRoute(
             static::createStub(DocumentGenerator::class),
-            new DocumentReader($documentRepository, static::createStub(MediaService::class), new DocumentRendererRegistry([]), new DocumentFileResolver()),
+            new DocumentReader($documentRepository, static::createStub(MediaService::class), new DocumentRendererRegistry([]), new DocumentFileResolver(), new DocumentMediaGuard(StaticEntityRepository::of(MediaFolderCollection::class, [[]]))),
             $documentRepository,
             static::createStub(RateLimiter::class),
             new GuestAuthenticator(),
@@ -1313,6 +1315,7 @@ class DocumentRouteTest extends TestCase
             static::createStub(MediaService::class),
             new DocumentRendererRegistry([]),
             new DocumentFileResolver(),
+            new DocumentMediaGuard(StaticEntityRepository::of(MediaFolderCollection::class, [[]])),
         );
     }
 }

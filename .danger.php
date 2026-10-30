@@ -17,6 +17,7 @@ use Shopwell\Core\DevOps\StaticAnalyze\Danger\Rules\MissingPullRequestDescriptio
 use Shopwell\Core\DevOps\StaticAnalyze\Danger\Rules\MissingReleaseInfo;
 use Shopwell\Core\DevOps\StaticAnalyze\Danger\Rules\MissingUnitTests;
 use Shopwell\Core\DevOps\StaticAnalyze\Danger\Rules\PhpstanBaselineGrowth;
+use Shopwell\Core\DevOps\StaticAnalyze\Danger\Rules\ProcessIsolationInTests;
 use Shopwell\Core\DevOps\StaticAnalyze\Danger\Rules\RedisGroupUsage;
 use Shopwell\Core\DevOps\StaticAnalyze\Danger\Rules\RemovedTwigBlocks;
 use Shopwell\Core\DevOps\StaticAnalyze\Danger\Rules\RouteSnapshotExtension;
@@ -47,6 +48,7 @@ return (new Config())
     ->useRule(new MissingPackageAttributeInTests())
     ->useRule(new RedisGroupUsage())
     ->useRule(new SingleCoversClassInTests())
+    ->useRule(new ProcessIsolationInTests())
     ->useRule(new SqlHeredocUsage())
     ->useRule(new RemovedTwigBlocks())
     ->useRule(new InvalidFileNameCharacters())

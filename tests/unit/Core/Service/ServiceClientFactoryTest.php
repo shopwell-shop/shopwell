@@ -8,6 +8,7 @@ use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Service\ServiceClientFactory;
 use Shopwell\Core\Service\ServiceRegistry\Client as ServiceRegistryClient;
 use Shopwell\Core\Service\ServiceRegistry\ServiceEntry;
+use Shopwell\Core\Service\ServiceRegistry\ServiceStatus;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 /**
@@ -33,7 +34,7 @@ class ServiceClientFactoryTest extends TestCase
         $serviceClientRegistry = static::createStub(ServiceRegistryClient::class);
 
         $clientFactory = new ServiceClientFactory($httpClient, $serviceClientRegistry, '6.6.0.0');
-        $client = $clientFactory->newFor(new ServiceEntry('MyCoolService', 'My Cool Service', 'https://mycoolservice.com', '/app-endpoint'));
+        $client = $clientFactory->newFor(new ServiceEntry('MyCoolService', 'My Cool Service', 'https://mycoolservice.com', '/app-endpoint', true, ServiceStatus::ACTIVE));
 
         static::assertSame($scopedClient, $client->client);
     }
@@ -54,7 +55,7 @@ class ServiceClientFactoryTest extends TestCase
         $serviceClientRegistry->expects($this->once())
             ->method('get')
             ->with('MyCoolService')
-            ->willReturn(new ServiceEntry('MyCoolService', 'My Cool Service', 'https://mycoolservice.com', '/app-endpoint'));
+            ->willReturn(new ServiceEntry('MyCoolService', 'My Cool Service', 'https://mycoolservice.com', '/app-endpoint', true, ServiceStatus::ACTIVE));
 
         $clientFactory = new ServiceClientFactory($httpClient, $serviceClientRegistry, '6.6.0.0');
         $client = $clientFactory->fromName('MyCoolService');

@@ -3,6 +3,7 @@
 namespace Shopwell\Core\Checkout\Cart\Tax;
 
 use Shopwell\Core\Checkout\Cart\Price\Struct\CartPrice;
+use Shopwell\Core\Checkout\Customer\CustomerEntity;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
 use Shopwell\Core\System\Country\CountryEntity;
@@ -24,13 +25,12 @@ class TaxDetector extends AbstractTaxDetector
     public function isNetDelivery(SalesChannelContext $context): bool
     {
         $shippingLocationCountry = $context->getShippingLocation()->getCountry();
-        $countryTaxFree = $shippingLocationCountry->getCustomerTax()->getEnabled();
 
-        if ($countryTaxFree) {
-            return true;
+        if ($context->getCustomer()?->getAccountType() === CustomerEntity::ACCOUNT_TYPE_BUSINESS) {
+            return $this->isCompanyTaxFree($context, $shippingLocationCountry);
         }
 
-        return $this->isCompanyTaxFree($context, $shippingLocationCountry);
+        return $shippingLocationCountry->getCustomerTax()->getEnabled();
     }
 
     public function getTaxState(SalesChannelContext $context): string

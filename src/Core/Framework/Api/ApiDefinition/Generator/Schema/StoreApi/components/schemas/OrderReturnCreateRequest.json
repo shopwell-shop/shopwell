@@ -1,0 +1,56 @@
+{
+    "openapi": "3.2.0",
+    "info": [],
+    "paths": [],
+    "components": {
+        "schemas": {
+            "OrderReturnCreateRequest": {
+                "description": "The body of a return request. Positions are named by the id of the order line item they belong to.",
+                "type": "object",
+                "properties": {
+                    "orderId": {
+                        "description": "The order the return belongs to.",
+                        "type": "string"
+                    },
+                    "type": {
+                        "description": "The kind of return, e.g. a return or a complaint.",
+                        "type": "string"
+                    },
+                    "positions": {
+                        "description": "The order line items to return, with the quantity to return.",
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "lineItemId": {
+                                    "type": "string"
+                                },
+                                "quantity": {
+                                    "type": "integer"
+                                }
+                            },
+                            "required": ["lineItemId", "quantity"]
+                        }
+                    },
+                    "reasonId": {
+                        "type": ["string", "null"]
+                    },
+                    "reasonText": {
+                        "type": ["string", "null"]
+                    },
+                    "customerNote": {
+                        "type": ["string", "null"]
+                    },
+                    "evidence": {
+                        "description": "Links or references that support the request.",
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "required": ["orderId", "type", "positions"]
+            }
+        }
+    }
+}

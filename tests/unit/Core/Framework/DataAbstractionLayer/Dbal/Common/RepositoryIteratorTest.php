@@ -8,6 +8,7 @@ use Shopwell\Core\Content\Product\ProductCollection;
 use Shopwell\Core\Content\Product\ProductDefinition;
 use Shopwell\Core\Content\Product\ProductEntity;
 use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\DataAbstractionLayerException;
 use Shopwell\Core\Framework\DataAbstractionLayer\Dbal\Common\RepositoryIterator;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
@@ -115,6 +116,34 @@ class RepositoryIteratorTest extends TestCase
 
         static::assertSame([$id], $iterator->fetchIds());
         static::assertSame(5, $criteria->getOffset());
+    }
+
+    public function testFetchIdsMovesTheAutoIncrementCursorPastTheLastId(): void
+    {
+        $criteria = (new Criteria())->setLimit(2);
+        $idA = Uuid::randomHex();
+        $idB = Uuid::randomHex();
+
+        $repository = StaticEntityRepository::of(ProductCollection::class, [[
+            $idA => ['primaryKey' => $idA, 'data' => ['autoIncrement' => 4]],
+            $idB => ['primaryKey' => $idB, 'data' => ['autoIncrement' => 7]],
+        ]], new ProductDefinition());
+
+        $iterator = new RepositoryIterator($repository, Context::createDefaultContext(), $criteria);
+
+        static::assertSame([$idA, $idB], $iterator->fetchIds());
+        static::assertEquals(new RangeFilter('autoIncrement', [RangeFilter::GT => 7]), $criteria->getFilters()['increment']);
+    }
+
+    public function testFetchIdsThrowsWhenTheAutoIncrementCursorIsMissing(): void
+    {
+        $repository = StaticEntityRepository::of(ProductCollection::class, [[Uuid::randomHex()]], new ProductDefinition());
+
+        $iterator = new RepositoryIterator($repository, Context::createDefaultContext(), (new Criteria())->setLimit(2));
+
+        $this->expectExceptionObject(DataAbstractionLayerException::repositoryIteratorMissingAutoIncrement());
+
+        $iterator->fetchIds();
     }
 
     private function product(int $autoIncrement): ProductEntity

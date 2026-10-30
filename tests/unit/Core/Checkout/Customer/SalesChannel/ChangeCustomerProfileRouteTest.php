@@ -9,6 +9,7 @@ use Shopwell\Core\Checkout\Customer\CustomerCollection;
 use Shopwell\Core\Checkout\Customer\CustomerEntity;
 use Shopwell\Core\Checkout\Customer\Extension\ChangeCustomerProfileRouteExtension;
 use Shopwell\Core\Checkout\Customer\SalesChannel\ChangeCustomerProfileRoute;
+use Shopwell\Core\Checkout\Customer\Validation\Constraint\CustomerVatIdentification;
 use Shopwell\Core\Checkout\Customer\Validation\CustomerValidationFactory;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
@@ -26,6 +27,8 @@ use Shopwell\Core\System\SalesChannel\SuccessResponse;
 use Shopwell\Core\Test\Generator;
 use Shopwell\Core\Test\TestDefaults;
 use Symfony\Component\EventDispatcher\EventDispatcher;
+use Symfony\Component\Validator\Constraint;
+use Symfony\Component\Validator\Constraints\NotBlank;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 /**
@@ -104,6 +107,60 @@ class ChangeCustomerProfileRouteTest extends TestCase
         $change->change($data, $salesChannelContext, $customer);
     }
 
+    public function testVatIdsAreValidatedAgainstTheActiveBillingCountry(): void
+    {
+        $defaultCountry = new CountryEntity();
+        $defaultCountry->setId(Uuid::randomHex());
+        $defaultCountry->setVatIdRequired(false);
+
+        $defaultBillingAddress = new CustomerAddressEntity();
+        $defaultBillingAddress->setCountryId($defaultCountry->getId());
+        $defaultBillingAddress->setCountry($defaultCountry);
+
+        $activeCountry = new CountryEntity();
+        $activeCountry->setId(Uuid::randomHex());
+        $activeCountry->setVatIdRequired(true);
+
+        $activeBillingAddress = new CustomerAddressEntity();
+        $activeBillingAddress->setCountryId($activeCountry->getId());
+        $activeBillingAddress->setCountry($activeCountry);
+
+        $customer = new CustomerEntity();
+        $customer->setId('customer1');
+        $customer->setDefaultBillingAddress($defaultBillingAddress);
+        $customer->setActiveBillingAddress($activeBillingAddress);
+
+        $validation = new DataValidationDefinition();
+        $validationFactory = static::createStub(CustomerValidationFactory::class);
+        $validationFactory
+            ->method('update')
+            ->willReturn($validation);
+
+        $change = new ChangeCustomerProfileRoute(
+            static::createStub(EntityRepository::class),
+            new EventDispatcher(),
+            static::createStub(DataValidator::class),
+            $validationFactory,
+            static::createStub(StoreApiCustomFieldMapper::class),
+            new ExtensionDispatcher(new EventDispatcher()),
+        );
+
+        $data = new RequestDataBag([
+            'accountType' => CustomerEntity::ACCOUNT_TYPE_BUSINESS,
+            'company' => 'Test Company',
+            'salutationId' => Uuid::randomHex(),
+        ]);
+
+        $change->change($data, static::createStub(SalesChannelContext::class), $customer);
+
+        $vatIdConstraints = $validation->getProperty('vatIds');
+
+        $vatIdentification = array_values(array_filter($vatIdConstraints, static fn (Constraint $constraint) => $constraint instanceof CustomerVatIdentification))[0] ?? null;
+        static::assertInstanceOf(CustomerVatIdentification::class, $vatIdentification);
+        static::assertSame($activeCountry->getId(), $vatIdentification->getCountryId());
+        static::assertContainsEquals(new NotBlank(), $vatIdConstraints);
+    }
+
     public function testCustomFieldsGetPassed(): void
     {
         $customFields = new RequestDataBag(['test1' => '1', 'test2' => '2']);
@@ -128,12 +185,56 @@ class ChangeCustomerProfileRouteTest extends TestCase
 
         $customer = new CustomerEntity();
         $customer->setId('customer1');
+        $customer->setAccountType(CustomerEntity::ACCOUNT_TYPE_PRIVATE);
         $data = new RequestDataBag([
             'customFields' => $customFields,
             'gender' => '1',
         ]);
 
         $change->change($data, static::createStub(SalesChannelContext::class), $customer);
+    }
+
+    public function testBusinessCustomerKeepsCompanyAndVatIdsWhenTheRequestOmitsThem(): void
+    {
+        [$written, $validation] = $this->changeProfile($this->createBusinessCustomer(), [
+            'name' => 'Jane Doe',
+        ]);
+
+        static::assertSame('Jane Doe', $written['name']);
+        static::assertArrayNotHasKey('accountType', $written);
+        static::assertArrayNotHasKey('company', $written);
+        static::assertArrayNotHasKey('vatIds', $written);
+        static::assertSame([], $validation->getProperty('company'));
+        static::assertSame([], $validation->getProperty('vatIds'));
+    }
+
+    public function testBusinessCustomerChangesCompanyAndVatIdsSentWithoutAccountType(): void
+    {
+        [$written, $validation] = $this->changeProfile($this->createBusinessCustomer(), [
+            'name' => 'Jane Doe',
+            'company' => 'New Company',
+            'vatIds' => ['DE987654321'],
+        ]);
+
+        static::assertArrayNotHasKey('accountType', $written);
+        static::assertSame('New Company', $written['company']);
+        static::assertSame(['DE987654321'], $written['vatIds']);
+        static::assertContainsEquals(new NotBlank(), $validation->getProperty('company'));
+        static::assertContainsEquals(new NotBlank(), $validation->getProperty('vatIds'));
+    }
+
+    public function testPrivateCustomerWithoutAccountTypeGetsNoCompany(): void
+    {
+        $customer = $this->createBusinessCustomer();
+        $customer->setAccountType(CustomerEntity::ACCOUNT_TYPE_PRIVATE);
+
+        [$written] = $this->changeProfile($customer, [
+            'name' => 'Jane Doe',
+            'company' => 'New Company',
+        ]);
+
+        static::assertSame('', $written['company']);
+        static::assertNull($written['vatIds']);
     }
 
     public function testAccountTypeGetPassed(): void
@@ -226,6 +327,7 @@ class ChangeCustomerProfileRouteTest extends TestCase
 
         $customer = new CustomerEntity();
         $customer->setId('customer1');
+        $customer->setAccountType(CustomerEntity::ACCOUNT_TYPE_PRIVATE);
 
         $data = new RequestDataBag([
             'gender' => '1',
@@ -253,6 +355,7 @@ class ChangeCustomerProfileRouteTest extends TestCase
 
         $customer = new CustomerEntity();
         $customer->setId('customer1');
+        $customer->setAccountType(CustomerEntity::ACCOUNT_TYPE_PRIVATE);
 
         $data = new RequestDataBag([
             'gender' => '1',
@@ -280,6 +383,7 @@ class ChangeCustomerProfileRouteTest extends TestCase
         $customer = new CustomerEntity();
         $customer->setId('customer1');
         $customer->setPhoneNumber('0123456789');
+        $customer->setAccountType(CustomerEntity::ACCOUNT_TYPE_PRIVATE);
 
         $data = new RequestDataBag([
             'gender' => '1',
@@ -328,5 +432,61 @@ class ChangeCustomerProfileRouteTest extends TestCase
             static::createStub(StoreApiCustomFieldMapper::class),
             new ExtensionDispatcher(new EventDispatcher()),
         );
+    }
+
+    /**
+     * @param array<string, mixed> $request
+     *
+     * @return array{0: array<string, mixed>, 1: DataValidationDefinition}
+     */
+    private function changeProfile(CustomerEntity $customer, array $request): array
+    {
+        $validation = new DataValidationDefinition();
+        $validationFactory = static::createStub(CustomerValidationFactory::class);
+        $validationFactory->method('update')->willReturn($validation);
+
+        $written = [];
+        $customerRepository = $this->createMock(EntityRepository::class);
+        $customerRepository
+            ->expects($this->once())
+            ->method('update')
+            ->with(static::callback(static function (array $data) use (&$written): bool {
+                $written = $data[0];
+
+                return true;
+            }));
+
+        $route = new ChangeCustomerProfileRoute(
+            $customerRepository,
+            new EventDispatcher(),
+            static::createStub(DataValidator::class),
+            $validationFactory,
+            static::createStub(StoreApiCustomFieldMapper::class),
+            new ExtensionDispatcher(new EventDispatcher()),
+        );
+
+        $route->change(new RequestDataBag([...$request]), static::createStub(SalesChannelContext::class), $customer);
+
+        return [$written, $validation];
+    }
+
+    private function createBusinessCustomer(): CustomerEntity
+    {
+        $country = new CountryEntity();
+        $country->setId(Uuid::randomHex());
+        $country->setVatIdRequired(true);
+
+        $billingAddress = new CustomerAddressEntity();
+        $billingAddress->setCountryId($country->getId());
+        $billingAddress->setCountry($country);
+
+        $customer = new CustomerEntity();
+        $customer->setId(Uuid::randomHex());
+        $customer->setAccountType(CustomerEntity::ACCOUNT_TYPE_BUSINESS);
+        $customer->setCompany('Example Inc.');
+        $customer->setVatIds(['DE123456789']);
+        $customer->setActiveBillingAddress($billingAddress);
+
+        return $customer;
     }
 }

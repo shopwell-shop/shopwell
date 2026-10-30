@@ -62,6 +62,9 @@ async function createWrapper(repositoryFactory = createMockRepositoryFactory()) 
                     mergeWithStoredFilters: jest.fn((storeKey, filters) => Promise.resolve(filters)),
                 },
                 feature: { isActive: jest.fn(() => true) },
+                dictionaryService: {
+                    getGenders: () => Promise.resolve([]),
+                },
             },
             mocks: {
                 $t: (key) => key,

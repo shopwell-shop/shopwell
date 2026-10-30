@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Shopwell\Core\Framework\DataAbstractionLayer\Cache;
 
+use Shopwell\Core\Checkout\Cart\Price\TaxRuleFingerprint;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Util\Hasher;
@@ -33,7 +34,7 @@ class EntityCacheKeyGenerator
     {
         $ruleIds = $context->getRuleIdsByAreas($areas);
 
-        return Hasher::hash([
+        $parts = [
             $context->getSalesChannelId(),
             $context->getDomainId(),
             $context->getLanguageIdChain(),
@@ -42,7 +43,14 @@ class EntityCacheKeyGenerator
             $context->getTaxState(),
             $context->getItemRounding(),
             $ruleIds,
-        ]);
+        ];
+
+        $taxRuleFingerprint = TaxRuleFingerprint::build($context);
+        if ($taxRuleFingerprint !== null) {
+            $parts[] = $taxRuleFingerprint;
+        }
+
+        return Hasher::hash($parts);
     }
 
     public function getCriteriaHash(Criteria $criteria): string

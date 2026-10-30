@@ -11,6 +11,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\EntityProtection\EntityProtecti
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\BoolField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\CustomFields;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\DateTimeField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\ApiAware;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\PrimaryKey;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\Required;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\RestrictDelete;
@@ -24,6 +25,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Field\PasswordField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\StringField;
 use Shopwell\Core\Framework\DataAbstractionLayer\FieldCollection;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Webhook\WebhookDefinition;
 use Shopwell\Core\System\Integration\Aggregate\IntegrationRole\IntegrationRoleDefinition;
 use Shopwell\Core\System\StateMachine\Aggregation\StateMachineHistory\StateMachineHistoryDefinition;
 
@@ -84,6 +86,8 @@ class IntegrationDefinition extends EntityDefinition
 
             (new OneToOneAssociationField('app', 'id', 'integration_id', AppDefinition::class, false))->addFlags(new RestrictDelete()),
             new OneToManyAssociationField('stateMachineHistoryEntries', StateMachineHistoryDefinition::class, 'integration_id', 'id'),
+            // an integration that still owns webhooks cannot be deleted, so its webhooks are not lost unnoticed
+            (new OneToManyAssociationField('webhooks', WebhookDefinition::class, 'owner_integration_id', 'id'))->removeFlag(ApiAware::class)->addFlags(new RestrictDelete()),
             new ManyToManyAssociationField('aclRoles', AclRoleDefinition::class, IntegrationRoleDefinition::class, 'integration_id', 'acl_role_id'),
         ]);
     }

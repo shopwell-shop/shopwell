@@ -9,6 +9,8 @@ export default {
             this.isLoading = true;
             Shopwell.Store.get('context').resetLanguageToDefault();
             this.customerGroup = this.customerGroupRepository.create();
+            this.customerGroup.displayGross = true;
+            this.customerGroup.priceBasis = 'gross';
             this.isLoading = false;
         },
 

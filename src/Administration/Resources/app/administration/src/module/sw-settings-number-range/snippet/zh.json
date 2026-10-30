@@ -47,7 +47,9 @@
       "placeholderSimpleModeImpossible": "高级模式已启用",
       "helpTextAdvancedField": "高级格式定义：<br/>{'{prefix}_{n}_{suffix}'}<br/><li>'n' 对应定义的起始编号</li><li>（'_' 为任意分隔符）</li><br/>使用 'date'（PHP 参数）：<br/><li>{'{date}'}：国际日期格式（YYYY-MM-DD）</li><li>{'{date_dmy}'}：自定义日期格式（DD-MM-YY）</li>",
       "errorPatternNeededMessage": "未定义格式。请至少指定一个起始值。",
-      "infoStartDecrementMessage": "仅当起始编号大于当前编号时，起始编号的修改才会生效。"
+      "infoStartDecrementMessage": "仅当起始编号大于当前编号时，起始编号的修改才会生效。",
+      "patternCollisionWarningTitle": "该格式已被其他编号范围使用",
+      "patternCollisionWarning": "格式 \"{pattern}\" 也被 \"{names}\" 用于同一单据类型。单据号在每个单据类型内必须唯一，因此两个编号范围最终可能生成相同的号码。请为每个编号范围设置独立的前缀或后缀。"
     }
   },
   "sw-privileges": {

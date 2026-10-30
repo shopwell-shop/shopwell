@@ -10,6 +10,7 @@ use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopwell\Core\Framework\Test\TestCaseBase\SalesChannelApiTestBehaviour;
+use Shopwell\Core\Framework\Util\Base64;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\System\Snippet\SnippetException;
 use Shopwell\Core\Test\Stub\Framework\IdsCollection;
@@ -121,6 +122,26 @@ class SnippetRouteTest extends TestCase
 
         static::assertSame($set['hash'], $setWithTrailingDot['hash']);
         static::assertSame($set['snippets'], $setWithTrailingDot['snippets']);
+    }
+
+    public function testPrefixesAreReadFromTheCompressedCriteria(): void
+    {
+        $this->createSnippet('myPrefix.inside.key', 'Inside');
+        $this->createSnippet('myPrefixOther.key', 'Outside');
+
+        $this->browser->request('GET', '/store-api/snippet?prefixes=myPrefix');
+        $expected = $this->getJsonResponse()['sets'][0];
+
+        $compressed = gzencode(json_encode(['prefixes' => 'myPrefix'], \JSON_THROW_ON_ERROR));
+        static::assertNotFalse($compressed, 'Gzip compressing failed');
+
+        $this->browser->request('GET', '/store-api/snippet', ['_criteria' => Base64::urlEncode($compressed)]);
+
+        $set = $this->getJsonResponse()['sets'][0];
+
+        static::assertSame('Inside', $set['snippets']['myPrefix.inside.key'] ?? null);
+        static::assertArrayNotHasKey('myPrefixOther.key', $set['snippets']);
+        static::assertSame($expected['snippets'], $set['snippets'], 'The compressed criteria is read like the query string');
     }
 
     public function testEtagRevalidationReturnsNotModified(): void

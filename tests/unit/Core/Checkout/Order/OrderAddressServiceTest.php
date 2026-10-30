@@ -120,7 +120,22 @@ class OrderAddressServiceTest extends TestCase
         $customerAddress->setCity('Musterstadt');
         $customerAddress->setCountryId(Uuid::randomHex());
 
-        $addressArray = array_filter($customerAddress->getVars());
+        $addressArray = [
+            'company' => null,
+            'department' => null,
+            'gender' => null,
+            'name' => 'Max Mustermann',
+            'street' => 'Musterstreet 1',
+            'zipcode' => null,
+            'city' => 'Musterstadt',
+            'phoneNumber' => null,
+            'additionalAddressLine1' => null,
+            'additionalAddressLine2' => null,
+            'countryId' => $customerAddress->getCountryId(),
+            'countryStateId' => null,
+            'countryCityId' => null,
+            'countryDistrictId' => null,
+        ];
         $customerAddress->setId(Uuid::randomHex());
 
         $mapping = [

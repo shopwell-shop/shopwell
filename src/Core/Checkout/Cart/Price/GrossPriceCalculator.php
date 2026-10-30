@@ -8,7 +8,9 @@ use Shopwell\Core\Checkout\Cart\Price\Struct\QuantityPriceDefinition;
 use Shopwell\Core\Checkout\Cart\Price\Struct\ReferencePrice;
 use Shopwell\Core\Checkout\Cart\Price\Struct\ReferencePriceDefinition;
 use Shopwell\Core\Checkout\Cart\Price\Struct\RegulationPrice;
+use Shopwell\Core\Checkout\Cart\Tax\Struct\TaxRuleCollection;
 use Shopwell\Core\Checkout\Cart\Tax\TaxCalculator;
+use Shopwell\Core\Checkout\Cart\Tax\TaxRuleShares;
 use Shopwell\Core\Framework\DataAbstractionLayer\Pricing\CashRoundingConfig;
 use Shopwell\Core\Framework\Log\Package;
 
@@ -64,10 +66,7 @@ class GrossPriceCalculator
             return $this->priceRounding->cashRound($definition->getPrice(), $config);
         }
 
-        $price = $this->taxCalculator->calculateGross(
-            $definition->getPrice(),
-            $definition->getTaxRules()
-        );
+        $price = $this->grossUp($definition->getPrice(), $definition->getTaxRules());
 
         return $this->priceRounding->cashRound($price, $config);
     }
@@ -80,10 +79,7 @@ class GrossPriceCalculator
         }
 
         if (!$definition->isCalculated()) {
-            $price = $this->taxCalculator->calculateGross(
-                $price,
-                $definition->getTaxRules()
-            );
+            $price = $this->grossUp($price, $definition->getTaxRules());
         }
 
         $listPrice = $this->priceRounding->cashRound($price, $config);
@@ -103,10 +99,7 @@ class GrossPriceCalculator
         }
 
         if (!$definition->isCalculated()) {
-            $price = $this->taxCalculator->calculateGross(
-                $price,
-                $definition->getTaxRules()
-            );
+            $price = $this->grossUp($price, $definition->getTaxRules());
         }
 
         $regulationPrice = $this->priceRounding->cashRound($price, $config);
@@ -116,6 +109,11 @@ class GrossPriceCalculator
         }
 
         return RegulationPrice::createFromUnitPrice($unitPrice, $regulationPrice);
+    }
+
+    private function grossUp(float $net, TaxRuleCollection $rules): float
+    {
+        return $this->taxCalculator->calculateGross($net, TaxRuleShares::ofNet($rules));
     }
 
     private function calculateReferencePrice(float $price, ?ReferencePriceDefinition $definition, CashRoundingConfig $config): ?ReferencePrice

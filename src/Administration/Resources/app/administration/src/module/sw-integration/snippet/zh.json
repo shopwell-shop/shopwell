@@ -21,7 +21,7 @@
     "mcp": {
       "cardTitle": "MCP 白名单",
       "modalTitle": "MCP 白名单",
-      "infoText": "选择此集成可以使用的 MCP 功能，未选中的都会被阻止。注意：工具还需要所分配角色中的相应实体权限。",
+      "infoText": "选择允许使用的 MCP 功能，未选中的都会被阻止。「全部」只会选中当前已有的功能；后续通过升级、插件或应用新增的功能需要单独选中。注意：工具还需要所分配角色中的相应实体权限。",
       "adminBanner": "此用户是管理员，无论下方选择如何，所有 MCP 功能均可访问。",
       "noSelectionBanner": "未选择任何功能，目前通过 MCP 无法访问任何内容。请选择所需的工具、资源和提示词。",
       "allCapabilitiesLabel": "全部功能",
@@ -29,7 +29,7 @@
       "toolsSection": "工具",
       "resourcesSection": "资源",
       "promptsSection": "提示词",
-      "toolsGuidance": "工具会执行操作并可能产生副作用（写入、删除）。请将访问限制在集成真正需要的范围内。",
+      "toolsGuidance": "工具会执行操作并可能产生副作用（写入、删除）。请只授予真正需要的那部分功能。",
       "resourcesGuidance": "资源提供只读的参考数据（实体列表、状态机、销售渠道）。请加以限制，避免不必要地暴露敏感业务数据。",
       "promptsGuidance": "提示词是决定 AI 上下文的系统指令。不需要的提示词会浪费上下文窗口，还可能让 AI 混乱。",
       "noCapabilitiesHeadline": "未找到功能",

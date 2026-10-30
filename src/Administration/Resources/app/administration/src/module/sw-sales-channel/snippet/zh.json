@@ -30,7 +30,7 @@
         "offline": "离线"
       },
       "productsLabel": "商品",
-      "productsCount": "商品 | 商品 | 商品"
+      "productsCount": "商品"
     },
     "modal": {
       "title": "新建销售渠道",
@@ -105,6 +105,7 @@
       "labelInputCurrency": "货币",
       "labelInputLanguage": "语言",
       "labelInputSnippet": "文本模块集",
+      "snippetSetGroupOther": "其他文本模块集",
       "labelIsExternalStorefront": "外部店铺前台",
       "helpTextIsExternalStorefront": "仅为指向外部店铺的域名生成 SEO URL。每种语言下，单个销售渠道只能设置一个外部店铺。",
       "buttonDeleteDomain": "删除域名",
@@ -154,6 +155,11 @@
         "titleEmptyState": "暂无商品",
         "titleEmptyStateTable": "未找到匹配的商品",
         "buttonAddProducts": "{productCount} 添加商品 | {productCount} 添加商品 | {productCount} 添加商品",
+                "messageProductsAssigned": "已将 {count} 个商品分配至销售渠道。",
+                "messageProductsAssignmentIncomplete": "目前已分配 {count} 个商品至销售渠道。再次添加相同的选择即可分配其余商品。",
+                "messageProductLimitExceeded": "一次最多可添加 {limit} 个商品。请缩小选择范围后重试。",
+                "messageProductStreamLimitExceeded": "一次最多可添加 {limit} 个动态商品分组。请缩小选择范围后重试。",
+                "messageCategoryLimitExceeded": "一次最多可添加 {limit} 个分类。请缩小选择范围后重试。",
         "columnProductName": "商品名称",
         "columnActive": "启用",
         "columnProductNumber": "商品编号",
@@ -410,6 +416,7 @@
       },
       "productAssignmentModal": {
         "title": "添加商品",
+        "buttonAddProducts": "最多添加 {productCount} 个商品 | 最多添加 {productCount} 个商品",
         "singleProducts": "选择商品",
         "singleProductsEmptyState": "未找到更多商品",
         "categories": {

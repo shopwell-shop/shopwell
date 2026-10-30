@@ -14,6 +14,7 @@ use Shopwell\Core\Content\Media\Upload\PresignedMediaUploadService;
 use Shopwell\Core\Framework\Adapter\Cache\CacheClearer;
 use Shopwell\Core\Framework\Adapter\Cache\CacheInvalidator;
 use Shopwell\Core\Framework\Api\Acl\AclCriteriaValidator;
+use Shopwell\Core\Framework\Api\Acl\AclVersionMergeValidator;
 use Shopwell\Core\Framework\Api\ApiDefinition\DefinitionService;
 use Shopwell\Core\Framework\Api\ApiDefinition\Generator\AllStoreApiSchemaMigrationScopeProvider;
 use Shopwell\Core\Framework\Api\ApiDefinition\Generator\BundleSchemaPathCollection;
@@ -52,6 +53,7 @@ use Shopwell\Core\Framework\Api\Cors\CorsHeaderProviderInterface;
 use Shopwell\Core\Framework\Api\EventListener\Authentication\ApiAuthenticationListener;
 use Shopwell\Core\Framework\Api\EventListener\Authentication\SalesChannelAuthenticationListener;
 use Shopwell\Core\Framework\Api\EventListener\Authentication\UserCredentialsChangedSubscriber;
+use Shopwell\Core\Framework\Api\EventListener\CompressedCriteriaRequestListener;
 use Shopwell\Core\Framework\Api\EventListener\CorsListener;
 use Shopwell\Core\Framework\Api\EventListener\ExpectationSubscriber;
 use Shopwell\Core\Framework\Api\EventListener\JsonRequestTransformerListener;
@@ -81,10 +83,13 @@ use Shopwell\Core\Framework\Api\Serializer\JsonApiDecoder;
 use Shopwell\Core\Framework\Api\Serializer\JsonApiEncoder;
 use Shopwell\Core\Framework\Api\Serializer\JsonEntityEncoder;
 use Shopwell\Core\Framework\Api\Sync\SyncService;
+use Shopwell\Core\Framework\App\ActiveAppsLoader;
 use Shopwell\Core\Framework\App\ShopId\ShopIdProvider;
+use Shopwell\Core\Framework\App\Url\AppUrlVerifier;
 use Shopwell\Core\Framework\DataAbstractionLayer\DefinitionInstanceRegistry;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityProtection\EntityProtectionValidator;
 use Shopwell\Core\Framework\DataAbstractionLayer\Indexing\EntityIndexerRegistry;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\CompressedCriteriaDecoder;
 use Shopwell\Core\Framework\Event\BusinessEventCollector;
 use Shopwell\Core\Framework\Feature\FeatureFlagRegistry;
 use Shopwell\Core\Framework\MessageQueue\Stats\StatsService;
@@ -103,7 +108,6 @@ use Shopwell\Core\Framework\Store\InAppPurchase;
 use Shopwell\Core\Framework\SystemCheck\SystemChecker;
 use Shopwell\Core\Framework\Validation\DataValidator;
 use Shopwell\Core\Framework\Validation\HappyPathValidator;
-use Shopwell\Core\Maintenance\System\Service\AppUrlVerifier;
 use Shopwell\Core\System\SalesChannel\Api\StructEncoder;
 use Shopwell\Core\System\SalesChannel\Entity\SalesChannelDefinitionInstanceRegistry;
 use Shopwell\Core\System\SystemConfig\SystemConfigService;
@@ -160,6 +164,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('api.request_criteria_builder'),
             service(EntityProtectionValidator::class),
             service(AclCriteriaValidator::class),
+            service(AclVersionMergeValidator::class),
         ])
         ->call('setContainer', [service('service_container')]);
 
@@ -326,6 +331,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('shopwell.increment.gateway.registry'),
             service(MigrationInfo::class),
             service(AppUrlVerifier::class),
+            service(ActiveAppsLoader::class),
             service(FlowActionCollector::class),
             service(SystemConfigService::class),
             service(ApiRouteInfoResolver::class),
@@ -441,6 +447,12 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ]);
 
     $services->set(JsonRequestTransformerListener::class)
+        ->tag('kernel.event_subscriber');
+
+    $services->set(CompressedCriteriaRequestListener::class)
+        ->args([
+            service(CompressedCriteriaDecoder::class),
+        ])
         ->tag('kernel.event_subscriber');
 
     $services->set(ExpectationSubscriber::class)

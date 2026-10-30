@@ -171,11 +171,9 @@ runs:
         working-directory: ${{ inputs.directory }}
 
     - name: Install Playwright Browsers
-      uses: shopwell-shop/github-actions/npm-ci-retry@51511121da3f6239e5df7cd307428aac88d728d1
+      uses: ./.github/actions/playwright-install
       with:
         working-directory: ${{ inputs.directory }}
-        # A stalled apt mirror hangs without failing, so the retry loop never fires; time each attempt out so it can retry (normal runtime is ~2 minutes).
-        command: timeout 10m bash -c 'sudo apt-get update --allow-releaseinfo-change && npx playwright install --with-deps chromium'
 
     - name: Run your tests
       shell: bash

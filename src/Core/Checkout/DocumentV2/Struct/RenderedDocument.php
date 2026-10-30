@@ -155,7 +155,7 @@ final class RenderedDocument extends Struct
     public function getApiAlias(): string
     {
         /** @deprecated tag:v6.9.0 - Remove the override, the API alias then follows the class name: `shopwell_core_checkout_document_v2_struct_rendered_document` */
-        if (!Feature::isActive('v6.9.0.0')) {
+        if (!Feature::has('v6.9.0.0') || !Feature::isActive('v6.9.0.0')) {
             return 'shopwell_core_checkout_document_renderer_rendered_document';
         }
 

@@ -8,6 +8,8 @@ use Shopwell\Core\Framework\App\AppException;
 use Shopwell\Core\Framework\App\Exception\ShopIdChangeSuggestedException;
 use Shopwell\Core\Framework\App\Lifecycle\AppManager;
 use Shopwell\Core\Framework\App\ShopId\ShopIdProvider;
+use Shopwell\Core\Framework\App\Url\AppUrlVerifier;
+use Shopwell\Core\Framework\App\Url\VerificationStatus;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
@@ -35,7 +37,8 @@ class MoveShopPermanentlyStrategy implements ShopIdChangeStrategy
         private readonly EntityRepository $appRepository,
         private readonly AppManager $appManager,
         private readonly ShopIdProvider $shopIdProvider,
-        private readonly LoggerInterface $logger
+        private readonly LoggerInterface $logger,
+        private readonly AppUrlVerifier $appUrlVerifier,
     ) {
     }
 
@@ -58,6 +61,14 @@ class MoveShopPermanentlyStrategy implements ShopIdChangeStrategy
             // no resolution needed
             return;
         } catch (ShopIdChangeSuggestedException $e) {
+            // Verify APP_URL before storing it with the shop ID. Once stored, the change counts as
+            // resolved, so a broken APP_URL would be accepted and every re-registration below would fail.
+            $state = $this->appUrlVerifier->forceVerify();
+
+            if (!$state->is(VerificationStatus::PASS)) {
+                throw AppException::appUrlFailedVerification($state);
+            }
+
             $this->shopIdProvider->regenerateAndSetShopId($e->shopId->id);
         }
 

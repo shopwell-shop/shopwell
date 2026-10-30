@@ -7,6 +7,7 @@ use Shopwell\Core\Checkout\Cart\CartException;
 use Shopwell\Core\Checkout\Customer\Exception\CustomerNotFoundByIdException;
 use Shopwell\Core\Checkout\Order\OrderException;
 use Shopwell\Core\Checkout\Payment\PaymentException;
+use Shopwell\Core\Framework\Api\Exception\MissingPrivilegeException;
 use Shopwell\Core\Framework\DataAbstractionLayer\Write\Validation\RestrictDeleteViolationException;
 use Shopwell\Core\Framework\Deprecation\BCChange\ReturnTypeNarrowing;
 use Shopwell\Core\Framework\Feature;
@@ -195,7 +196,7 @@ class SalesChannelException extends HttpException
     public static function invalidType(string $message): self
     {
         return new self(
-            Response::HTTP_INTERNAL_SERVER_ERROR,
+            Response::HTTP_BAD_REQUEST,
             self::INVALID_TYPE,
             $message
         );
@@ -371,6 +372,14 @@ class SalesChannelException extends HttpException
             'Could not find sales channel file "{{ fileFamily }}/{{ fileName }}".',
             ['fileFamily' => $fileFamily, 'fileName' => $fileName]
         );
+    }
+
+    /**
+     * @param list<string> $permissions
+     */
+    public static function missingPrivileges(array $permissions): ShopwellHttpException
+    {
+        return new MissingPrivilegeException($permissions);
     }
 
     public static function unexpectedCombinedPrimaryKey(string $entityName): self

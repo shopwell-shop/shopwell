@@ -9,6 +9,8 @@ import type CmsVisibility from '../../shared/CmsVisibility';
 export default Shopwell.Component.wrapComponentConfig({
     template,
 
+    emits: ['visibility-change'],
+
     props: {
         visibility: {
             type: Object as PropType<CmsVisibility>,

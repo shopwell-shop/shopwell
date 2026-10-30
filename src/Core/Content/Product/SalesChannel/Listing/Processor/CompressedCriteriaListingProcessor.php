@@ -8,12 +8,15 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\RequestCriteriaBuilder;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
+use Shopwell\Core\Framework\Routing\StoreApiRouteScope;
+use Shopwell\Core\PlatformRequest;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\Request;
 
 /**
  * This processor adds support of ProductListingCriteria fields passed in the compressed criteria payload.
  * It should run before any other filter/processor that relies on request parameters.
+ * Store API requests are not handled here, the CompressedCriteriaRequestListener already copied all fields of the payload.
  *
  * @internal
  */
@@ -40,6 +43,11 @@ class CompressedCriteriaListingProcessor extends AbstractListingProcessor
         }
 
         if (!$request->query->has('_criteria')) {
+            return;
+        }
+
+        // the listener copied the fields as query-string values, copying them again would overwrite them with their JSON types
+        if (\in_array(StoreApiRouteScope::ID, (array) $request->attributes->get(PlatformRequest::ATTRIBUTE_ROUTE_SCOPE, []), true)) {
             return;
         }
 

@@ -68,7 +68,7 @@ final class Money
         $exponent = self::exponent($currency);
         $amount = trim($amount);
 
-        if (preg_match('/^(?<sign>-?)(?<integer>\d+)(?:\.(?<fraction>\d*))?$/', $amount, $matches) !== 1) {
+        if (preg_match('/^(?<sign>-?)(?<integer>\d+)(?:\.(?<fraction>\d*))?\z/', $amount, $matches) !== 1) {
             throw PaymentException::invalidAmount(0);
         }
 

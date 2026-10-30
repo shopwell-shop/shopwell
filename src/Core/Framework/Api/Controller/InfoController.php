@@ -13,8 +13,10 @@ use Shopwell\Core\Framework\Api\ApiException;
 use Shopwell\Core\Framework\Api\Event\AdminInfoConfigEvent;
 use Shopwell\Core\Framework\Api\Route\ApiRouteInfoResolver;
 use Shopwell\Core\Framework\Api\Route\RouteInfo;
+use Shopwell\Core\Framework\App\ActiveAppsLoader;
 use Shopwell\Core\Framework\App\Exception\ShopIdChangeSuggestedException;
 use Shopwell\Core\Framework\App\ShopId\ShopIdProvider;
+use Shopwell\Core\Framework\App\Url\AppUrlVerifier;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\Event\BusinessEventCollector;
 use Shopwell\Core\Framework\Feature;
@@ -27,7 +29,6 @@ use Shopwell\Core\Framework\Routing\ApiRouteScope;
 use Shopwell\Core\Framework\Store\InAppPurchase;
 use Shopwell\Core\Kernel;
 use Shopwell\Core\Maintenance\Staging\Event\SetupStagingEvent;
-use Shopwell\Core\Maintenance\System\Service\AppUrlVerifier;
 use Shopwell\Core\PlatformRequest;
 use Shopwell\Core\System\SystemConfig\SystemConfigService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -52,6 +53,7 @@ class InfoController extends AbstractController
         private readonly IncrementGatewayRegistry $incrementGatewayRegistry,
         private readonly MigrationInfo $migrationInfo,
         private readonly AppUrlVerifier $appUrlVerifier,
+        private readonly ActiveAppsLoader $activeAppsLoader,
         private readonly FlowActionCollector $flowActionCollector,
         private readonly SystemConfigService $systemConfigService,
         private readonly ApiRouteInfoResolver $apiRouteInfoResolver,
@@ -196,6 +198,8 @@ class InfoController extends AbstractController
         // the allowed extensions (see MediaFileExtensionListProvider::normalizeExtensions()).
         $privateMimeTypesByExtension = $this->mediaFileExtensionListProvider->getMimeTypesByExtension(true, $context);
 
+        $appUrlReachable = $this->appUrlVerifier->verifyForAdministration();
+
         $config = [
             'version' => $this->getShopwellVersion(),
             'shopId' => $this->getShopId(),
@@ -207,8 +211,9 @@ class InfoController extends AbstractController
                 'enableUrlFeature' => $this->params->get('shopwell.media.enable_url_upload_feature'),
                 'presignedUploadSupported' => $this->presignedMediaUploadService !== null
                     && $this->presignedMediaUploadService->isAvailable(),
-                'appUrlReachable' => $this->appUrlVerifier->isAppUrlReachable($request),
-                'appsRequireAppUrl' => $this->appUrlVerifier->hasAppsThatNeedAppUrl(),
+                'appUrlReachable' => $appUrlReachable,
+                'appUrlStatusCode' => $appUrlReachable ? null : $this->appUrlVerifier->getCurrentState()?->statusCode,
+                'appsRequireAppUrl' => $this->activeAppsLoader->hasRegisteredApps(),
                 'firstMigrationDate' => $this->migrationInfo->getFirstMigrationDate(),
                 'private_allowed_extensions' => array_keys($privateMimeTypesByExtension),
                 'private_allowed_mime_types_by_extension' => $privateMimeTypesByExtension,

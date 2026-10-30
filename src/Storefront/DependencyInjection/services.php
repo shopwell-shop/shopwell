@@ -5,7 +5,9 @@ namespace Shopwell\Storefront\DependencyInjection;
 use Doctrine\DBAL\Connection;
 use Psr\Clock\ClockInterface;
 use Shopwell\Core\Checkout\Cart\CartCalculator;
+use Shopwell\Core\Checkout\Cart\CartFactory;
 use Shopwell\Core\Checkout\Cart\CartPersister;
+use Shopwell\Core\Checkout\Cart\CartRuleLoader;
 use Shopwell\Core\Checkout\Cart\Order\OrderRestorer;
 use Shopwell\Core\Checkout\Cart\SalesChannel\CartService;
 use Shopwell\Core\Checkout\Customer\SalesChannel\AccountNewsletterRecipientRoute;
@@ -118,6 +120,7 @@ use Shopwell\Storefront\Framework\Store\ThemeExtensionRemovalValidator;
 use Shopwell\Storefront\Framework\SystemCheck\ProductDetailReadinessCheck;
 use Shopwell\Storefront\Framework\SystemCheck\ProductListingReadinessCheck;
 use Shopwell\Storefront\Framework\SystemCheck\SalesChannelsReadinessCheck;
+use Shopwell\Storefront\Framework\SystemCheck\Util\SalesChannelDomainContextFactory;
 use Shopwell\Storefront\Framework\SystemCheck\Util\SalesChannelDomainProvider;
 use Shopwell\Storefront\Framework\SystemCheck\Util\SalesChannelDomainUtil;
 use Shopwell\Storefront\Framework\Twig\Components\TwigComponentRenderEventListener;
@@ -898,6 +901,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(KernelInterface::class),
             service('logger'),
             service(ClockInterface::class),
+            service('services_resetter'),
         ]);
 
     $services->set(SalesChannelsReadinessCheck::class)
@@ -910,8 +914,11 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(ProductDetailReadinessCheck::class)
         ->args([
             service(SalesChannelDomainUtil::class),
-            service(Connection::class),
             service(SalesChannelDomainProvider::class),
+            service('sales_channel.product.repository'),
+            service(SalesChannelDomainContextFactory::class),
+            service(ProductCloseoutFilterFactory::class),
+            service(SystemConfigService::class),
         ])
         ->tag('shopwell.system_check');
 
@@ -920,12 +927,21 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(SalesChannelDomainUtil::class),
             service(Connection::class),
             service(SalesChannelDomainProvider::class),
+            service('sales_channel.category.repository'),
+            service(SalesChannelDomainContextFactory::class),
         ])
         ->tag('shopwell.system_check');
 
     $services->set(SalesChannelDomainProvider::class)
         ->args([
             service(Connection::class),
+        ]);
+
+    $services->set(SalesChannelDomainContextFactory::class)
+        ->args([
+            service(SalesChannelContextFactory::class),
+            service(CartRuleLoader::class),
+            service(CartFactory::class),
         ]);
 
     $services->set(RobotsDirectiveParser::class)
