@@ -39,6 +39,8 @@ export default Shopwell.Component.wrapComponentConfig({
 
     inject: ['feature'],
 
+    emits: ['new-item-active'],
+
     props: {
         fullWidth: {
             type: Boolean,
