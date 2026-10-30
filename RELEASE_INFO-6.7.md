@@ -336,6 +336,11 @@ For the other changes, see "Administration build updated to Vite 8" in `UPGRADE-
 
 ## Storefront
 
+### CMS buy boxes select the configured variant
+
+Select-style variant configurators in CMS buy boxes now mark the assigned product's option as selected on landing pages and other CMS pages.
+Themes that override `buy_widget_configurator_select_option` can use `selected` to reflect the assigned product.
+
 ### CMS section background images use thumbnails
 
 A CMS section background image is now rendered as a responsive `<img class="cms-section-background">` element with the media thumbnails, like a CMS block background, instead of an inline `background-image` style on the `.cms-section` element.
@@ -344,6 +349,7 @@ Themes that style the section background through the removed inline style should
 The template variables `sectionBgImg` and `sectionBgImgMode` are deprecated and will be removed in 6.8.0.0, use `section.backgroundMedia` and `section.backgroundMediaMode` instead.
 The browser now picks the thumbnail that fits the viewport, so the thumbnail sizes configured for the media folder of the background image matter.
 Check that the folder provides a size large enough for full-width sections, otherwise the background looks pixelated.
+
 ### Storefront analytics send GA4 ecommerce events
 
 Storefront analytics now send ecommerce events in the format Google documents for GA4.
@@ -389,6 +395,14 @@ Omitting the argument still falls back to `this.activeFilterContainer` in 6.7, b
 ### Deprecation of unused custom `$offcanvas-zindex` SCSS variable
 
 The custom offcanvas z-index SCSS variable `$offcanvas-zindex` is not used anymore and is therefore deprecated. To override the offcanvas z-index or calculate your own z-index based on it, use the bootstrap variable `$zindex-offcanvas` instead. The deprecated `$offcanvas-zindex` SCSS variable and its respective `--offcanvas-zindex` CSS root variable now reflect the actual Bootstrap offcanvas z-index (`1045` instead of `1050`). Additionally, a new `--offcanvas-backdrop-zindex` CSS root variable has been added.
+
+### Storefront analytics report brand and category of products added from a product box
+
+With active analytics, adding a product from a product box now posts its brand and categories in the line item payload, like the buy widget does.
+Cart, checkout and purchase events report them as `item_brand` and `item_category`.
+
+The reorder of an order in the account now reports one `add_to_cart` with the products it added, priced with the current prices and the currency of the cart it returns.
+The reorder form posts only the order, so product number, quantity, brand and categories of the ordered products are rendered into the form as `[data-analytics-line-item]` elements while analytics is active.
 
 ### Theme compilation completion is notified once
 
