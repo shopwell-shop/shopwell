@@ -38,6 +38,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Field\StringField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\TimeZoneField;
 use Shopwell\Core\Framework\DataAbstractionLayer\FieldCollection;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Webhook\WebhookDefinition;
 use Shopwell\Core\System\Locale\LocaleDefinition;
 use Shopwell\Core\System\Organization\Aggregate\OrganizationUnit\OrganizationUnitDefinition;
 use Shopwell\Core\System\Position\PositionDefinition;
