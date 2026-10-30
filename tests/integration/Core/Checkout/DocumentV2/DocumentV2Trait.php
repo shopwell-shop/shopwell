@@ -3,9 +3,9 @@
 namespace Shopwell\Tests\Integration\Core\Checkout\DocumentV2;
 
 use Shopwell\Core\Checkout\Cart\Cart;
+use Shopwell\Core\Checkout\Cart\LineItemFactoryHandler\PromotionLineItemFactory;
 use Shopwell\Core\Checkout\Cart\SalesChannel\CartService;
 use Shopwell\Core\Checkout\Order\OrderCollection;
-use Shopwell\Core\Checkout\Promotion\Cart\PromotionItemBuilder;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
@@ -142,7 +142,7 @@ trait DocumentV2Trait
             static::getContainer(),
         );
 
-        $promoLineItem = (new PromotionItemBuilder())->buildPlaceholderItem($code);
+        $promoLineItem = (new PromotionLineItemFactory())->create(['referencedId' => $code], $this->salesChannelContext);
 
         return static::getContainer()
             ->get(CartService::class)

@@ -10,6 +10,7 @@ use Shopwell\Core\Checkout\Cart\CartException;
 use Shopwell\Core\Checkout\Cart\LineItem\CartDataCollection;
 use Shopwell\Core\Checkout\Cart\LineItem\LineItem;
 use Shopwell\Core\Checkout\Cart\LineItem\LineItemCollection;
+use Shopwell\Core\Checkout\Cart\LineItemFactoryHandler\PromotionLineItemFactory;
 use Shopwell\Core\Checkout\Cart\Order\IdStruct;
 use Shopwell\Core\Checkout\Cart\Order\OrderConverter;
 use Shopwell\Core\Checkout\CheckoutPermissions;
@@ -259,7 +260,7 @@ class PromotionCollector implements CartDataCollectorInterface
         $promotionLineItems = $original
             ->getLineItems()
             ->filterType(PromotionProcessor::LINE_ITEM_TYPE)
-            /** Filter out placeholder line.items. {@see PromotionItemBuilder::buildPlaceholderItem} */
+            /** Filter out placeholder line.items. {@see PromotionLineItemFactory::create} */
             ->filter(static fn (LineItem $item) => $item->getLabel() !== PromotionItemBuilder::PLACEHOLDER_PREFIX . ((string) $item->getReferencedId()));
 
         $discountLineItems = new LineItemCollection();
