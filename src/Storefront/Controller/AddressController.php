@@ -513,10 +513,8 @@ class AddressController extends StorefrontController
         $profile = new RequestDataBag([
             'accountType' => $accountType,
             'company' => $billingAddress->getCompany(),
-            'salutationId' => $billingAddress->getSalutationId(),
-            'title' => $billingAddress->getTitle(),
-            'firstName' => $billingAddress->getFirstName(),
-            'lastName' => $billingAddress->getLastName(),
+            'gender' => $billingAddress->getGender(),
+            'name' => $billingAddress->getName(),
         ]);
 
         if ($dataBag->has('vatIds')) {
