@@ -151,6 +151,8 @@ return [
         // Not released yet, so safe to be removed again
         preg_quote('REMOVED: Class Shopwell\Core\System\SystemConfig\Service\SystemConfigDefinitionService has been deleted', '/'),
         preg_quote('REMOVED: Class Shopwell\Core\Checkout\Document\Extension\DocumentRouteExtension has been deleted', '/'),
+        preg_quote('REMOVED: Method Shopwell\Core\Framework\DataAbstractionLayer\Write\Validation\WriteOutcome#rows() was removed', '/'),
+        preg_quote('REMOVED: Method Shopwell\Core\Framework\DataAbstractionLayer\Write\Validation\OutcomeRow#isInPayload() was removed', '/'),
 
         // The first and last name of customers, customer addresses, order customers, order
         // addresses, users and newsletter recipients are merged into a single `name` attribute.

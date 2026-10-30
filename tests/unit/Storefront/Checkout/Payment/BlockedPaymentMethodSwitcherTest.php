@@ -16,6 +16,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
 use Shopwell\Core\System\SalesChannel\SalesChannelEntity;
+use Shopwell\Core\Test\Annotation\DisabledFeatures;
 use Shopwell\Core\Test\Generator;
 use Shopwell\Core\Test\TestDefaults;
 use Shopwell\Storefront\Checkout\Cart\Error\PaymentMethodChangedError;
@@ -263,6 +264,61 @@ class BlockedPaymentMethodSwitcherTest extends TestCase
         );
 
         static::assertCount(0, $errorCollectionFiltered);
+    }
+
+    #[DisabledFeatures(['v6.8.0.0'])]
+    public function testSwitchBlockedOriginalToMethodWithSameName(): void
+    {
+        $this->paymentMethodCollection->remove('any-other-payment-method-id');
+        $this->paymentMethodCollection->remove('default-payment-method-id');
+        $this->paymentMethodCollection->add((new PaymentMethodEntity())->assign([
+            'id' => 'same-name-payment-method-id',
+            'name' => 'original-payment-method-name',
+            'translated' => ['name' => 'original-payment-method-name'],
+        ]));
+
+        $errorCollection = $this->getErrorCollection([
+            ['id' => 'original-payment-method-id', 'name' => 'original-payment-method-name'],
+        ]);
+        $newPaymentMethod = $this->switcher->switch($errorCollection, $this->salesChannelContext);
+
+        static::assertSame('same-name-payment-method-id', $newPaymentMethod->getId());
+
+        // Assert notices
+        $errorCollectionFiltered = $errorCollection->filter(
+            static fn ($error) => $error instanceof PaymentMethodChangedError
+        );
+        static::assertCount(1, $errorCollectionFiltered);
+        $error = $errorCollectionFiltered->first();
+        static::assertInstanceOf(PaymentMethodChangedError::class, $error);
+        static::assertSame([
+            'oldPaymentMethodId' => 'original-payment-method-id',
+            'oldPaymentMethodName' => 'original-payment-method-name',
+            'newPaymentMethodId' => 'same-name-payment-method-id',
+            'newPaymentMethodName' => 'original-payment-method-name',
+            'reason' => 'Payment method blocked',
+        ], $error->getParameters());
+    }
+
+    /**
+     * @deprecated tag:v6.8.0 - remove together with the name fallback, the blocked error always carries the id
+     */
+    #[DisabledFeatures(['v6.8.0.0'])]
+    public function testSwitchBlockedErrorWithoutIdBlocksByName(): void
+    {
+        $errorCollection = new ErrorCollection();
+        $errorCollection->add(new PaymentMethodBlockedError(
+            name: 'original-payment-method-name',
+            reason: 'Payment method blocked',
+        ));
+        $errorCollection->add(new PaymentMethodBlockedError(
+            name: 'default-payment-method-name',
+            reason: 'Payment method blocked',
+        ));
+
+        $newPaymentMethod = $this->switcher->switch($errorCollection, $this->salesChannelContext);
+
+        static::assertSame('any-other-payment-method-id', $newPaymentMethod->getId());
     }
 
     public function testOnlyAvailableFlagIsSet(): void
