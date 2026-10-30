@@ -201,7 +201,7 @@ async function createWrapper(
     );
 
     // wait until all loading promises are done
-    await wrapper.vm.$nextTick();
+    await flushPromises();
 
     return wrapper;
 }

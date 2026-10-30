@@ -115,7 +115,7 @@ describe('module/sw-customer/page/sw-customer-base-info', () => {
                 birthday: null,
             },
         });
-        await wrapper.vm.$nextTick();
+        await flushPromises();
 
         expect(wrapper.find('.sw-customer-base__label-birthday').text()).toBe('sw-customer.baseInfo.emptyTextBirthday');
     });
@@ -131,7 +131,7 @@ describe('module/sw-customer/page/sw-customer-base-info', () => {
                 lastLogin: null,
             },
         });
-        await wrapper.vm.$nextTick();
+        await flushPromises();
 
         expect(wrapper.find('.sw-customer-base__label-last-login').text()).toBe('sw-customer.baseInfo.emptyTextLogin');
     });
@@ -152,7 +152,7 @@ describe('module/sw-customer/page/sw-customer-base-info', () => {
             customerEditMode: true,
         });
 
-        await wrapper.vm.$nextTick();
+        await flushPromises();
 
         const leftColumn = wrapper.findAll('.sw-customer-base-info-columns')[0];
 
@@ -188,7 +188,7 @@ describe('module/sw-customer/page/sw-customer-base-info', () => {
             },
         });
 
-        await wrapper.vm.$nextTick();
+        await flushPromises();
 
         const leftColumn = wrapper.findAll('.sw-customer-base-info-columns')[0];
 
@@ -244,7 +244,7 @@ describe('module/sw-customer/page/sw-customer-base-info', () => {
             },
         });
 
-        await wrapper.vm.$nextTick();
+        await flushPromises();
 
         const leftColumn = wrapper.findAll('.sw-customer-base-info-columns')[0];
 
@@ -260,7 +260,7 @@ describe('module/sw-customer/page/sw-customer-base-info', () => {
             customerEditMode: true,
         });
 
-        await wrapper.vm.$nextTick();
+        await flushPromises();
 
         const leftColumn = wrapper.findAll('.sw-customer-base-info-columns')[0];
         // Affiliate code
