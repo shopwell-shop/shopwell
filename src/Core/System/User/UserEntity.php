@@ -67,6 +67,8 @@ class UserEntity extends Entity
 
     protected ?UserConfigCollection $configs = null;
 
+    protected ?WebhookCollection $webhooks = null;
+
     protected ?StateMachineHistoryCollection $stateMachineHistoryEntries = null;
 
     protected ?ImportExportLogCollection $importExportLogEntries = null;
@@ -458,5 +460,23 @@ class UserEntity extends Entity
     public function setPositionIds(?array $positionIds): void
     {
         $this->positionIds = $positionIds;
+    }
+
+    /**
+     * @internal
+     */
+    public function getWebhooks(): ?WebhookCollection
+    {
+        $this->checkIfPropertyAccessIsAllowed('webhooks');
+
+        return $this->webhooks;
+    }
+
+    /**
+     * @internal
+     */
+    public function setWebhooks(WebhookCollection $webhooks): void
+    {
+        $this->webhooks = $webhooks;
     }
 }

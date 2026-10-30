@@ -8,6 +8,7 @@ use Shopwell\Core\Defaults;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\DataAbstractionLayerException;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\DataAbstractionLayer\Write\Validation\RestrictDeleteViolationException;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Test\TestCaseBase\AdminFunctionalTestBehaviour;
 use Shopwell\Core\Framework\Test\TestCaseHelper\TestIntegration;
@@ -230,6 +231,28 @@ class WebhookApiTest extends TestCase
 
         static::assertStringContainsString(WebhookException::WEBHOOK_NOT_OWNED, (string) $this->getBrowser()->getResponse()->getContent());
         static::assertSame('https://owner.example', $this->loadWebhook($webhookId)->getUrl());
+    }
+
+    public function testAUserThatOwnsAWebhookCannotBeDeleted(): void
+    {
+        $connection = static::getContainer()->get(Connection::class);
+        $userId = TestUser::createNewTestUser($connection)->getUserId();
+        WebhookBuilder::ownedByUser($userId)->insert($connection);
+
+        $this->expectException(RestrictDeleteViolationException::class);
+
+        static::getContainer()->get('user.repository')->delete([['id' => $userId]], Context::createDefaultContext());
+    }
+
+    public function testAnIntegrationThatOwnsAWebhookCannotBeDeleted(): void
+    {
+        $connection = static::getContainer()->get(Connection::class);
+        $integrationId = TestIntegration::create($connection, [])->getId();
+        WebhookBuilder::ownedByIntegration($integrationId)->insert($connection);
+
+        $this->expectException(RestrictDeleteViolationException::class);
+
+        static::getContainer()->get('integration.repository')->delete([['id' => $integrationId]], Context::createDefaultContext());
     }
 
     public function testWebhookCannotBeUpdatedByAnIntegrationNamingItsOwner(): void
