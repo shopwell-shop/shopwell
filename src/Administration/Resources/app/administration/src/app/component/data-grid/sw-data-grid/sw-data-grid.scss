@@ -585,36 +585,3 @@
         box-shadow: inset 0 -1px 0 var(--color-border-secondary-default);
     }
 }
-
-/* --------------------------------------------------------------------------
- * Compact data density
- *
- * 40px rows and 12px side padding replace the 64px default, so a list shows
- * roughly 50% more records without shrinking the 13px cell type.
- * -------------------------------------------------------------------------- */
-
-/* stylelint-disable no-duplicate-selectors */
-.sw-data-grid .sw-data-grid__cell-content {
-    padding: var(--scale-size-10) var(--scale-size-12);
-}
-
-.sw-data-grid .sw-data-grid__cell--header .sw-data-grid__cell-content,
-.sw-data-grid .sw-data-grid__body .sw-data-grid__cell-content {
-    height: var(--scale-size-40);
-}
-
-.sw-data-grid .sw-data-grid__bulk {
-    height: var(--scale-size-40);
-    padding: var(--scale-size-10) var(--scale-size-12) var(--scale-size-10) 100px;
-}
-
-.sw-data-grid .sw-media-preview-v2,
-.sw-data-grid .sw-media-preview {
-    width: var(--scale-size-32);
-    height: var(--scale-size-32);
-}
-
-.sw-data-grid.is--compact .sw-data-grid__body .sw-data-grid__cell-content {
-    height: var(--scale-size-36);
-}
-/* stylelint-enable no-duplicate-selectors */
