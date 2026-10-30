@@ -4,25 +4,34 @@ namespace Shopwell\Core\System\StateMachine;
 
 use Doctrine\DBAL\Connection;
 use Shopwell\Core\Content\Flow\Dispatching\Action\SetOrderStateAction;
+use Shopwell\Core\Defaults;
+use Shopwell\Core\Framework\Adapter\Database\ReplicaConnection;
 use Shopwell\Core\Framework\Api\Context\AdminApiSource;
 use Shopwell\Core\Framework\Api\Context\AdminSalesChannelApiSource;
 use Shopwell\Core\Framework\Api\Context\ContextSource;
+use Shopwell\Core\Framework\Api\Sync\SyncOperation;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\DefinitionInstanceRegistry;
 use Shopwell\Core\Framework\DataAbstractionLayer\Doctrine\RetryableTransaction;
+use Shopwell\Core\Framework\DataAbstractionLayer\Doctrine\RetryableWriteTransaction;
 use Shopwell\Core\Framework\DataAbstractionLayer\Entity;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityCollection;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityWriteResult;
+use Shopwell\Core\Framework\DataAbstractionLayer\Event\EntityWrittenContainerEvent;
 use Shopwell\Core\Framework\DataAbstractionLayer\Exception\DefinitionNotFoundException;
 use Shopwell\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\StateMachineStateField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
+use Shopwell\Core\Framework\DataAbstractionLayer\Write\EntityWriterInterface;
+use Shopwell\Core\Framework\DataAbstractionLayer\Write\WriteContext;
 use Shopwell\Core\Framework\Feature;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\System\StateMachine\Aggregation\StateMachineHistory\StateMachineHistoryCollection;
+use Shopwell\Core\System\StateMachine\Aggregation\StateMachineHistory\StateMachineHistoryDefinition;
 use Shopwell\Core\System\StateMachine\Aggregation\StateMachineState\StateMachineStateCollection;
 use Shopwell\Core\System\StateMachine\Aggregation\StateMachineState\StateMachineStateEntity;
 use Shopwell\Core\System\StateMachine\Aggregation\StateMachineTransition\StateMachineTransitionEntity;
@@ -55,7 +64,8 @@ class StateMachineRegistry implements ResetInterface
         private readonly EventDispatcherInterface $eventDispatcher,
         private readonly DefinitionInstanceRegistry $definitionRegistry,
         private readonly StateMachineLocker $stateMachineLocker,
-        private readonly Connection $connection
+        private readonly Connection $connection,
+        private readonly EntityWriterInterface $entityWriter,
     ) {
     }
 
@@ -206,15 +216,16 @@ class StateMachineRegistry implements ResetInterface
 
         $data = [['id' => $transition->getEntityId(), $transition->getStateFieldName() => $toPlace->getId()]];
 
-        // Record the history entry and apply the new state atomically, so a failure of either write
-        // cannot leave the entity state and the state_machine_history out of sync. The history is written
-        // first on purpose: if it fails, the state update (and its entity-written events for indexers,
-        // cache invalidation and webhooks) is never performed. Nested DAL transactions are handled via
-        // DBAL savepoints.
-        RetryableTransaction::transactional($this->connection, function () use ($repository, $data, $stateMachineHistoryEntity, $context): void {
-            $this->stateMachineHistoryRepository->create([$stateMachineHistoryEntity], $context);
-            $repository->upsert($data, $context);
-        });
+        if ($context->getVersionId() === Defaults::LIVE_VERSION) {
+            $this->writeLiveTransition($transition, $stateMachineHistoryEntity, $data, $context);
+        } else {
+            // VersionManager records audit data for non-live writes. Keep the repository path so state
+            // transitions in a version continue to produce their version commit data atomically.
+            RetryableTransaction::transactional($this->connection, function () use ($repository, $data, $stateMachineHistoryEntity, $context): void {
+                $this->stateMachineHistoryRepository->create([$stateMachineHistoryEntity], $context);
+                $repository->upsert($data, $context);
+            });
+        }
 
         $stateMachineStateCollection = new StateMachineStateCollection();
 
@@ -228,6 +239,63 @@ class StateMachineRegistry implements ResetInterface
             $fromPlace,
             $toPlace,
         );
+    }
+
+    /**
+     * @param array<string, mixed> $stateMachineHistoryEntity
+     * @param list<array<string, mixed>> $data
+     */
+    private function writeLiveTransition(Transition $transition, array $stateMachineHistoryEntity, array $data, Context $context): void
+    {
+        ReplicaConnection::ensurePrimary();
+
+        $stateMachineHistoryEntity['id'] = Uuid::randomHex();
+
+        $operations = [
+            new SyncOperation(
+                'state-machine-history',
+                StateMachineHistoryDefinition::ENTITY_NAME,
+                SyncOperation::ACTION_UPSERT,
+                [$stateMachineHistoryEntity],
+            ),
+            new SyncOperation(
+                'state-machine-state',
+                $transition->getEntityName(),
+                SyncOperation::ACTION_UPSERT,
+                $data,
+            ),
+        ];
+
+        RetryableWriteTransaction::retryable($this->connection, function () use ($operations, $context): void {
+            // Each attempt pairs fresh pre-write work with its own success or error callbacks.
+            $result = $this->entityWriter->sync($operations, WriteContext::createFromContext($context));
+            RetryableWriteTransaction::preventRetries($this->connection);
+
+            $written = $result->getWritten();
+            $historyWritten = [];
+
+            if (isset($written[StateMachineHistoryDefinition::ENTITY_NAME])) {
+                $historyWritten[StateMachineHistoryDefinition::ENTITY_NAME] = $written[StateMachineHistoryDefinition::ENTITY_NAME];
+                unset($written[StateMachineHistoryDefinition::ENTITY_NAME]);
+            }
+
+            // Keep written-event failures atomic with the transition without replaying listener side effects.
+            $this->dispatchWrittenEvent($historyWritten, $context);
+            $this->dispatchWrittenEvent($written, $context);
+        });
+    }
+
+    /**
+     * @param array<string, list<EntityWriteResult>> $written
+     */
+    private function dispatchWrittenEvent(array $written, Context $context): void
+    {
+        if ($written === []) {
+            return;
+        }
+
+        $event = EntityWrittenContainerEvent::createWithWrittenEvents($written, $context, []);
+        $context->scope(Context::SYSTEM_SCOPE, fn () => $this->eventDispatcher->dispatch($event), [Context::SYSTEM_SCOPE_DAL_WRITE_EVENT]);
     }
 
     private function resolveOriginalSource(ContextSource $source): ContextSource
