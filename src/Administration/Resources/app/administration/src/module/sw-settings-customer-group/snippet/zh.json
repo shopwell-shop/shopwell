@@ -19,6 +19,7 @@
       "notificationErrorMessage": "保存客户组时出错。",
       "registrationFormTitle": "注册表单",
       "registrationForm": "自定义注册表单",
+      "fieldDisplayGrossValues": "含税 | 不含税",
       "taxDisplay": {
         "label": "税率显示",
         "grossLabel": "含税",
