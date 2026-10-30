@@ -166,9 +166,8 @@ use Shopwell\Core\Framework\Store\Services\AbstractStoreAppLifecycleService;
 use Shopwell\Core\Framework\Store\Services\ExtensionDownloader;
 use Shopwell\Core\Framework\Store\Services\StoreClient;
 use Shopwell\Core\Framework\Telemetry\Metrics\Meter;
-use Shopwell\Core\Framework\Webhook\Authorization\Policy\PolicyRegistry;
+use Shopwell\Core\Framework\Webhook\Authorization\Subscription\SubscriptionValidator;
 use Shopwell\Core\Framework\Webhook\BusinessEventEncoder;
-use Shopwell\Core\Framework\Webhook\Hookable\HookableEventCollector;
 use Shopwell\Core\Framework\Webhook\Validation\WebhookTargetValidator;
 use Shopwell\Core\Framework\Webhook\WebhookCacheClearer;
 use Shopwell\Core\System\CustomEntity\CustomEntityLifecycleService;
@@ -246,8 +245,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(HookableValidator::class)
         ->args([
-            service(HookableEventCollector::class),
-            service(PolicyRegistry::class),
+            service(SubscriptionValidator::class),
         ])
         ->tag('shopwell.app_manifest.validator');
 

@@ -1,0 +1,178 @@
+/**
+ * Shopwell Administration — compact workspace theme
+ *
+ * Back-office conventions used by Chinese admin UIs (Ant Design, Element Plus, RuoYi):
+ * a 13px data type, 32px controls, an 8px vertical rhythm, quiet borders and a
+ * single accent colour. The layer only tunes tokens and widgets of the Meteor
+ * component library, so extension components inherit the same density.
+ */
+
+// Light-theme only, so an explicit [data-theme="dark"] keeps its own palette.
+:root:not([data-theme="dark"]) {
+    // CJK-first font stack: Chinese labels no longer fall back to a latin-only face.
+    --font-family-body: -apple-system, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei",
+        "Helvetica Neue", arial, sans-serif;
+
+    // Slightly smaller type scale, closer to a dense data surface.
+    --font-size-xs: 0.8125rem;
+    --font-size-s: 0.9375rem;
+    --font-size-m: 1.0625rem;
+
+    // Neutral palette: #1f2329 / #646a73 text, #e5e6eb borders on a #f5f7fa canvas.
+    --color-text-primary-default: #1f2329;
+    --color-text-secondary-default: #646a73;
+    --color-text-tertiary-default: #8f959e;
+    --color-border-primary-default: #d0d3d9;
+    --color-border-secondary-default: #e5e6eb;
+    --color-elevation-surface-sunken: #f5f7fa;
+    --color-background-secondary-default: #f5f7fa;
+    --color-background-tertiary-default: #f2f3f5;
+    --color-background-brand-default: #e8f3ff;
+
+    // Element Plus-like radii: 4px controls, 6px cards.
+    --border-radius-card: 0.375rem;
+    --border-radius-button: 0.25rem;
+}
+
+body {
+    font-family: var(--font-family-body);
+}
+
+/* --------------------------------------------------------------------------
+ * Controls
+ * -------------------------------------------------------------------------- */
+
+.mt-button.mt-button--default {
+    min-height: var(--scale-size-32);
+    padding-inline: var(--scale-size-16);
+}
+
+.mt-button.mt-button--default.mt-button--square {
+    width: var(--scale-size-32);
+    height: var(--scale-size-32);
+}
+
+/* --------------------------------------------------------------------------
+ * Form fields — 32px controls, 16px row rhythm
+ * -------------------------------------------------------------------------- */
+
+.mt-field.mt-field {
+    margin-bottom: var(--scale-size-16);
+
+    .mt-block-field__block {
+        min-height: var(--scale-size-32);
+    }
+
+    input,
+    select,
+    textarea {
+        padding: var(--scale-size-8) var(--scale-size-12);
+        font-size: var(--font-size-xs);
+    }
+
+    .mt-field__label {
+        margin-bottom: var(--scale-size-6);
+        font-size: var(--font-size-xs);
+        line-height: var(--font-line-height-xs);
+    }
+
+    .mt-field__hint,
+    .mt-field__hint-right {
+        margin-top: var(--scale-size-2);
+        line-height: var(--font-line-height-2xs);
+    }
+
+    .mt-field__addition {
+        min-width: var(--scale-size-40);
+        padding: var(--scale-size-8) var(--scale-size-12);
+        font-size: var(--font-size-xs);
+    }
+
+    &.mt-field--small {
+        .mt-block-field__block {
+            min-height: var(--scale-size-28);
+        }
+
+        input,
+        select {
+            padding-block: var(--scale-size-4);
+        }
+    }
+}
+
+.mt-textarea {
+    margin-bottom: var(--scale-size-16);
+}
+
+.mt-password-field {
+    margin-bottom: var(--scale-size-16);
+}
+
+.mt-empty-state {
+    padding: var(--scale-size-32);
+}
+
+.mt-select.mt-select .mt-select__selection {
+    padding-inline: var(--scale-size-6);
+    font-size: var(--font-size-xs);
+    line-height: 1.5;
+}
+
+.mt-select.mt-select .mt-select__select-indicator-hitbox {
+    width: var(--scale-size-28);
+    height: var(--scale-size-28);
+}
+
+/* --------------------------------------------------------------------------
+ * Cards — 16px inner padding, 12px header
+ * -------------------------------------------------------------------------- */
+
+.mt-card.mt-card {
+    margin-bottom: var(--scale-size-16);
+    border-radius: var(--border-radius-card);
+
+    .mt-card__header {
+        padding: var(--scale-size-12) var(--scale-size-16);
+    }
+
+    .mt-card__toolbar {
+        padding: var(--scale-size-10) var(--scale-size-16) var(--scale-size-8);
+    }
+
+    .mt-card__content {
+        --mt-card-content-padding: var(--scale-size-16);
+    }
+
+    .mt-card__footer {
+        --mt-card-footer-padding: var(--scale-size-12) var(--scale-size-16);
+    }
+}
+
+/* --------------------------------------------------------------------------
+ * Tabs
+ * -------------------------------------------------------------------------- */
+
+.mt-tabs.mt-tabs {
+    .mt-tabs__item {
+        padding: var(--scale-size-8) var(--scale-size-12);
+        font-size: var(--font-size-xs);
+    }
+}
+
+/* --------------------------------------------------------------------------
+ * Meteor data table — 40px rows
+ * -------------------------------------------------------------------------- */
+
+.mt-data-table.mt-data-table {
+    --mt-data-table-header-size: var(--scale-size-40);
+
+    th,
+    td {
+        padding: var(--scale-size-8) var(--scale-size-12);
+        font-size: var(--font-size-xs);
+    }
+
+    th {
+        font-weight: var(--font-weight-medium);
+    }
+}

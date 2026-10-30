@@ -121,7 +121,7 @@ test.describe('Customer Registration Form', () => {
                 '@Storefront',
             ],
         },
-        async ({ ShopCustomer, StorefrontAccountLogin, StorefrontAccount, IdProvider }) => {
+        async ({ ShopCustomer, StorefrontAccountLogin, StorefrontAccount, IdProvider, TestDataService }) => {
             const locale = getLocale();
             const addressData = getAddressDataFromLocale(locale);
 
@@ -149,6 +149,8 @@ test.describe('Customer Registration Form', () => {
             await StorefrontAccountLogin.registerButton.click();
 
             await StorefrontAccountLogin.page.waitForURL('**/account', { waitUntil: 'commit' });
+            const registeredCustomer = await TestDataService.getCustomerByEmail(customer.email);
+            TestDataService.addCreatedRecord('customer', registeredCustomer.id);
 
             await ShopCustomer.expects(StorefrontAccount.page.getByText(customer.email, { exact: true })).toBeVisible();
         },
@@ -163,7 +165,7 @@ test.describe('Customer Registration Form', () => {
                 '@Storefront',
             ],
         },
-        async ({ ShopCustomer, StorefrontAccountLogin, IdProvider }) => {
+        async ({ ShopCustomer, StorefrontAccountLogin, IdProvider, TestDataService }) => {
             const locale = getLocale();
             const addressData = getAddressDataFromLocale(locale);
 
@@ -195,6 +197,8 @@ test.describe('Customer Registration Form', () => {
             await StorefrontAccountLogin.registerButton.click();
 
             await StorefrontAccountLogin.page.waitForURL('**/account', { waitUntil: 'commit' });
+            const registeredCustomer = await TestDataService.getCustomerByEmail(customer.email);
+            TestDataService.addCreatedRecord('customer', registeredCustomer.id);
 
             await ShopCustomer.expects(StorefrontAccountLogin.page.getByText(customer.email, { exact: true })).toBeVisible();
         },

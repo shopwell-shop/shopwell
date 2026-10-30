@@ -5,6 +5,7 @@ namespace Shopwell\Core\Framework\DependencyInjection;
 use Doctrine\DBAL\Connection;
 use Shopwell\Core\Framework\Api\Acl\AclAnnotationValidator;
 use Shopwell\Core\Framework\Api\Acl\AclCriteriaValidator;
+use Shopwell\Core\Framework\Api\Acl\AclRoleLoader;
 use Shopwell\Core\Framework\Api\Acl\AclWriteValidator;
 use Shopwell\Core\Framework\Api\Acl\Role\AclRoleDefinition;
 use Shopwell\Core\Framework\Api\Acl\Role\AclUserRoleDefinition;
@@ -36,6 +37,11 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(Connection::class),
         ])
         ->tag('kernel.event_subscriber');
+
+    $services->set(AclRoleLoader::class)
+        ->args([
+            service(Connection::class),
+        ]);
 
     $services->set(AclCriteriaValidator::class)
         ->public()
