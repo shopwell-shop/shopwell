@@ -21,9 +21,13 @@ use Shopwell\Core\Content\Media\MediaCollection;
 use Shopwell\Core\Content\Media\MediaDefinition;
 use Shopwell\Core\Content\Media\MediaEntity;
 use Shopwell\Core\Content\Media\Subscriber\MediaDeletionSubscriber;
+use Shopwell\Core\Content\Product\ProductCollection;
+use Shopwell\Core\Content\Test\Product\ProductBuilder;
 use Shopwell\Core\Defaults;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityWriteResult;
+use Shopwell\Core\Framework\DataAbstractionLayer\Event\EntityWrittenContainerEvent;
 use Shopwell\Core\Framework\DataAbstractionLayer\Event\EntityWrittenEvent;
 use Shopwell\Core\Framework\DataAbstractionLayer\Pricing\CashRoundingConfig;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
@@ -73,6 +77,23 @@ class MediaRepositoryTest extends TestCase
         $this->documentRepository = static::getContainer()->get('document.repository');
         $this->orderRepository = static::getContainer()->get('order.repository');
         $this->context = Context::createDefaultContext();
+    }
+
+    public function testDeletingAProductWithACoverReportsTheProductAsDeleted(): void
+    {
+        $ids = new IdsCollection();
+
+        /** @var EntityRepository<ProductCollection> $productRepository */
+        $productRepository = static::getContainer()->get('product.repository');
+        $productRepository->create([
+            (new ProductBuilder($ids, 'cover-product'))->price(100)->cover('cover-media')->build(),
+        ], $this->context);
+
+        $event = $productRepository->delete([['id' => $ids->get('cover-product')]], $this->context);
+
+        static::assertSame([$ids->get('cover-product')], $event->getDeletedPrimaryKeys('product'));
+        static::assertSame([], $this->getProductUpdates($event));
+        static::assertNull($productRepository->search(new Criteria([$ids->get('cover-product')]), $this->context)->getEntities()->first());
     }
 
     public function testPrivateMediaNotReadable(): void
@@ -777,6 +798,22 @@ class MediaRepositoryTest extends TestCase
         $media = $this->mediaRepository->search(new Criteria([$mediaId]), $this->context)->getEntities()->first();
         static::assertNotNull($media);
         static::assertSame(str_repeat('a', 255), $media->getAlt());
+    }
+
+    /**
+     * @return list<EntityWriteResult>
+     */
+    private function getProductUpdates(EntityWrittenContainerEvent $event): array
+    {
+        $productEvent = $event->getEventByEntityName('product');
+        if ($productEvent === null) {
+            return [];
+        }
+
+        return array_values(array_filter(
+            $productEvent->getWriteResults(),
+            static fn (EntityWriteResult $result): bool => $result->getOperation() !== EntityWriteResult::OPERATION_DELETE,
+        ));
     }
 
     /**
