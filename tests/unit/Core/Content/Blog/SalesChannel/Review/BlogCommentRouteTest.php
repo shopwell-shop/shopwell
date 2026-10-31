@@ -2,7 +2,6 @@
 
 namespace Shopwell\Tests\Unit\Core\Content\Blog\SalesChannel\Review;
 
-use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\MockObject\Stub;
@@ -60,7 +59,6 @@ class BlogCommentRouteTest extends TestCase
         $route->save($this->payload(), Generator::generateSalesChannelContext());
     }
 
-    #[AllowMockObjectsWithoutExpectations]
     public function testAnEntryAVisitorMayNotReadCannotBeCommentedOn(): void
     {
         /** @var EntityRepository<BlogCollection>&Stub $blogRepository */
@@ -83,7 +81,6 @@ class BlogCommentRouteTest extends TestCase
         $route->save($this->payload(), Generator::generateSalesChannelContext());
     }
 
-    #[AllowMockObjectsWithoutExpectations]
     public function testTheCreatedCommentIsHeldBackWhenTheShopModerates(): void
     {
         $salesChannelContext = Generator::generateSalesChannelContext();
@@ -164,7 +161,6 @@ class BlogCommentRouteTest extends TestCase
         static::assertSame($salesChannelContext->getSalesChannelId(), $created[0]['salesChannelId']);
     }
 
-    #[AllowMockObjectsWithoutExpectations]
     public function testAParentCommentIsStoredWithItsParent(): void
     {
         $salesChannelContext = Generator::generateSalesChannelContext();
@@ -263,7 +259,7 @@ class BlogCommentRouteTest extends TestCase
 
     private function validatorThatPasses(): DataValidator
     {
-        $validator = $this->createMock(DataValidator::class);
+        $validator = static::createStub(DataValidator::class);
         $validator->method('validate');
         $validator->method('getViolations')->willReturn(new ConstraintViolationList());
 
