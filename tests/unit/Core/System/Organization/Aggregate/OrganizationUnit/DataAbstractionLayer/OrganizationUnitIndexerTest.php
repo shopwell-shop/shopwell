@@ -2,7 +2,6 @@
 
 namespace Shopwell\Tests\Unit\Core\System\Organization\Aggregate\OrganizationUnit\DataAbstractionLayer;
 
-use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Context;
@@ -30,7 +29,6 @@ use Shopwell\Core\System\Organization\Aggregate\OrganizationUnit\OrganizationUni
  */
 #[Package('fundamentals@discovery')]
 #[CoversClass(OrganizationUnitIndexer::class)]
-#[AllowMockObjectsWithoutExpectations]
 class OrganizationUnitIndexerTest extends TestCase
 {
     public function testTheIndexerIsNamedAndOffersBothUpdaters(): void
@@ -181,10 +179,10 @@ class OrganizationUnitIndexerTest extends TestCase
         $repository->method('getDefinition')->willReturn(static::createStub(EntityDefinition::class));
 
         return new OrganizationUnitIndexer(
-            $iteratorFactory ?? $this->createMock(IteratorFactory::class),
+            $iteratorFactory ?? static::createStub(IteratorFactory::class),
             $repository,
-            $childCountUpdater ?? $this->createMock(ChildCountUpdater::class),
-            $treeUpdater ?? $this->createMock(TreeUpdater::class),
+            $childCountUpdater ?? static::createStub(ChildCountUpdater::class),
+            $treeUpdater ?? static::createStub(TreeUpdater::class),
         );
     }
 }

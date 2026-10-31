@@ -2,7 +2,6 @@
 
 namespace Shopwell\Tests\Unit\Storefront\Controller;
 
-use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Psr\Clock\ClockInterface;
@@ -75,7 +74,6 @@ class BlogControllerTest extends TestCase
         static::assertSame(['blog.comments.form.flood'], $session->getFlashBag()->get('danger'));
     }
 
-    #[AllowMockObjectsWithoutExpectations]
     public function testAnUnknownBlogIdFallsBackToTheListingInsteadOfRedirectingToIt(): void
     {
         $session = new Session(new MockArraySessionStorage());
@@ -169,7 +167,7 @@ class BlogControllerTest extends TestCase
         $settings->method('areCommentsEnabled')->willReturn(false);
 
         return new BlogCommentRoute(
-            $this->createMock(EntityRepository::class),
+            static::createStub(EntityRepository::class),
             $this->passingValidator(),
             new BlogCommentService(
                 static::createStub(EntityRepository::class),
