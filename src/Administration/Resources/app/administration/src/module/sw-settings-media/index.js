@@ -28,6 +28,18 @@ Module.register('sw-settings-media', {
         },
     },
 
+    navigation: [
+        {
+            id: 'sw-settings-media',
+            label: 'sw-settings-media.general.title',
+            parent: 'sw-settings',
+            path: 'sw.settings.media.index',
+            icon: 'regular-image',
+            position: 510,
+            privilege: 'system.system_config',
+        },
+    ],
+
     settingsItem: {
         group: 'content',
         to: 'sw.settings.media.index',

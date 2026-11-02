@@ -50,6 +50,7 @@ use Shopwell\Core\System\Payment\Webhook\PaymentWebhookSigner;
 use Shopwell\Core\System\StateMachine\Loader\InitialStateIdLoader;
 use Shopwell\Core\System\StateMachine\StateMachineRegistry;
 use Shopwell\Core\System\StateMachine\Transition;
+use Shopwell\Tests\Unit\Core\System\Payment\NumberRangeFixture;
 use Symfony\Component\Clock\MockClock;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
@@ -234,6 +235,7 @@ class PaymentOrderCloserTest extends TestCase
             $initialStateIdLoader,
             new PaymentOrderStateHandler($stateMachine),
             $clock,
+            NumberRangeFixture::generator('PG1001'),
         );
 
         $webhooks = new PaymentWebhookDispatcher(

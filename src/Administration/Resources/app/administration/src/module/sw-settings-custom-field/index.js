@@ -104,6 +104,18 @@ Module.register('sw-settings-custom-field', {
         },
     },
 
+    navigation: [
+        {
+            id: 'sw-settings-custom-field',
+            label: 'sw-settings-custom-field.general.mainMenuItemGeneral',
+            parent: 'sw-settings',
+            path: 'sw.settings.custom.field.index',
+            icon: 'regular-bars-square',
+            position: 500,
+            privilege: 'custom_field.viewer',
+        },
+    ],
+
     settingsItem: {
         group: 'content',
         to: 'sw.settings.custom.field.index',

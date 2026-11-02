@@ -56,6 +56,18 @@ Module.register('sw-settings-order-return', {
         },
     },
 
+    navigation: [
+        {
+            id: 'sw-settings-order-return',
+            label: 'sw-settings-order-return.general.mainMenuItemGeneral',
+            parent: 'sw-settings',
+            path: 'sw.settings.order.return.index',
+            icon: 'regular-undo',
+            position: 630,
+            privilege: 'order_return.viewer',
+        },
+    ],
+
     settingsItem: {
         // `commerce` and not `system`: the two screens change how the shop treats a customer, not how
         // the installation runs

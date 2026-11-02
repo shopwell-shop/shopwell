@@ -186,6 +186,18 @@ Module.register('sw-settings-sms', {
         },
     },
 
+    navigation: [
+        {
+            id: 'sw-settings-sms',
+            label: 'sw-settings-sms.general.mainMenuItemGeneral',
+            parent: 'sw-settings',
+            path: 'sw.settings.sms.gateway',
+            icon: 'regular-envelope',
+            position: 760,
+            privilege: 'sms_gateway.viewer',
+        },
+    ],
+
     settingsItem: {
         group: 'system',
         to: 'sw.settings.sms.gateway',

@@ -803,6 +803,7 @@ class PaymentTransferReconcilerTest extends TestCase
             $initialStateIdLoader,
             new MockClock(self::NOW),
             PaymentTransferRulesFixture::registry(),
+            \Shopwell\Tests\Unit\Core\System\Payment\NumberRangeFixture::generator('PT1001'),
         );
     }
 

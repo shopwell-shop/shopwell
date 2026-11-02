@@ -17,7 +17,7 @@ Extension/        Store API route extensions - kept next to the module like Orde
 SalesChannel/     `/loyalty`, `/loyalty/redeem` (request and response classes live beside the route)
 ScheduledTask/    daily point expiration
 Service/          account lifecycle, ledger, point rules, settings, tier resolution
-Subscriber/       account provisioning on customer write, order state -> award / redeem
+Subscriber/       account provisioning on customer write, order state -> award / redeem, wallet top-up -> bonus, closed return -> revoke
 ```
 
 `Extension/` stays where it is.
@@ -71,6 +71,33 @@ compare a total against a total, and the amount it expired was a guess.
   add up to their balance is logged and skipped, so one broken account does not keep the others' points alive.
 - A batch that is spent to zero keeps its row. "This customer once earned 500 points on that order" is
   history; history that disappears cannot be audited. Do not delete lots.
+
+## Two ways to earn, one rule each
+
+Points come from two facts that look alike and are not: an order was completed, and money was paid into
+the wallet. Each has its own rate and its own subscriber, and neither rate is derived from the other.
+
+- `OrderStateChangeLoyaltySubscriber` prices a **completed order** off `order.amountTotal`, which is the
+  total *after* the credits — a wallet payment, a points discount. What the balance paid for is not
+  counted again.
+- `WalletTopUpLoyaltySubscriber` prices a **credited top-up** off the amount that arrived, through
+  `core.loyalty.topUpPointsPerCurrencyUnit`. Zero — the default — pays nothing, and that is the honest
+  state: a shop that rewards buying rather than prepaying says so in the settings card, not in the code.
+- Because the order total excludes the wallet share, wallet money earns exactly once: at the top-up if
+  the rate is set, otherwise never. Do not "fix" the order rule to count `amountTotal` plus the wallet
+  share - that pays the same money twice.
+- The tier multiplier applies to both. It is the promise the tier makes about earning, and it has to
+  hold where the money comes in, or a member would be punished for prepaying.
+- **Tier points are only earned by orders.** Moving money into the shop is not buying, and a tier must
+  not be purchasable by topping up a wallet.
+- Both listeners reach the ledger the same way — `LoyaltyPointService::award()` with an idempotency key
+  built from the fact (`<orderId>-earned`, `<topUpId>-bonus`). Never book from a subscriber directly;
+  a webhook that arrives twice would otherwise pay twice.
+
+The wallet does not know this module exists. It announces `WalletTopUpCreditedEvent` and stops; the
+dependency points one way. A failure in the bonus is logged, not thrown: the money is already on the
+wallet, and the gateway would answer the retried notification with "already settled", losing the bonus
+for good instead of reporting it.
 
 ## A return undoes the points
 
@@ -184,6 +211,12 @@ of "level". Renaming it would only make the module harder to read for anyone who
 8. A new thing a return does to the points → a method on `LoyaltyReturnPoints`, wired either into the
    refund (if it settles value and must happen once per return) or into the closed-return subscriber
    (if it is a consequence of the goods coming back). Do not put money arithmetic into a subscriber.
+9. A new source of earning → a listener on the fact that earns, a rate of its own in `LoyaltySettings`
+   and its own field in `loyalty.xml`, and an idempotency key built from that fact. Do not reuse an
+   existing rate: two sources that share one number cannot be priced differently later, and the third
+   one will arrive.
+10. When a third earning source appears, the arithmetic of the two that exist (`amount × rate ×
+    multiplier`, floored) moves into one rule class. Two copies are a pattern; three are a bug.
 
 ## Gates
 

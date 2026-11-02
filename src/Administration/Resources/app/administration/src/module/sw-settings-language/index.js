@@ -52,6 +52,18 @@ Module.register('sw-settings-language', {
         },
     },
 
+    navigation: [
+        {
+            id: 'sw-settings-language',
+            label: 'sw-settings-language.general.mainMenuItemGeneral',
+            parent: 'sw-settings',
+            path: 'sw.settings.language.index',
+            icon: 'regular-flag',
+            position: 420,
+            privilege: 'language.viewer',
+        },
+    ],
+
     settingsItem: {
         group: 'localization',
         to: 'sw.settings.language.index',

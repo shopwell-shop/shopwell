@@ -64,7 +64,9 @@ class WalletTopUpLoyaltySubscriber implements EventSubscriberInterface
 
         $multiplier = $this->benefits->earnMultiplier($event->getCustomerId(), $context);
 
-        // the same arithmetic the completed order uses, so a member sees one earning rule and not two
+        // the same arithmetic the completed order uses, so a member sees one earning rule and not two.
+        // It stays in the currency's own unit instead of minor units because the tier multiplier is a
+        // float anyway - what has to be right is the floor, not the last bit of the multiplication
         $points = (int) floor($event->getAmount() * $perUnit * $multiplier);
 
         if ($points <= 0) {
@@ -83,6 +85,7 @@ class WalletTopUpLoyaltySubscriber implements EventSubscriberInterface
             $this->logger->error('Could not book the points of a wallet top-up.', [
                 'topUpId' => $event->getTopUpId(),
                 'customerId' => $event->getCustomerId(),
+                'currency' => $event->getCurrency(),
                 'points' => $points,
                 'exception' => $exception,
             ]);

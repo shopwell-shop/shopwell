@@ -367,6 +367,7 @@ class PaymentTransferControllerTest extends TestCase
             $this->initialStateIdLoader(),
             $clock,
             $providerRegistry,
+            \Shopwell\Tests\Unit\Core\System\Payment\NumberRangeFixture::generator('PT1001'),
         );
 
         $configResolver = new PaymentConfigResolver(
@@ -530,6 +531,7 @@ class PaymentTransferControllerTest extends TestCase
             $this->initialStateIdLoader(),
             $clock,
             $providerRegistry,
+            \Shopwell\Tests\Unit\Core\System\Payment\NumberRangeFixture::generator('PT1001'),
         );
 
         $appProviderRepository = static::createStub(EntityRepository::class);

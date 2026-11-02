@@ -2,7 +2,7 @@
   "sw-order": {
     "general": {
       "mainMenuItemGeneral": "Orders",
-      "mainMenuItemList": "Overview",
+      "mainMenuItemList": "Sales orders",
       "descriptionTextModule": "Manage received orders here.",
       "placeholderSearchBar": "Search all orders..."
     },

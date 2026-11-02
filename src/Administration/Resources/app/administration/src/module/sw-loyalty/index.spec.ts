@@ -40,12 +40,30 @@ describe('src/module/sw-loyalty/index', () => {
         expect(settingsItems.map((item) => item.id)).toEqual([
             'sw-settings-loyalty',
             'sw-settings-loyalty-plans',
-            'sw-settings-loyalty-orders',
         ]);
 
         settingsItems.forEach((item) => {
             expect(item.group).toBe('customer');
             expect(item.privilege).toBe('loyalty.viewer');
+        });
+    });
+
+    it('puts the membership orders next to the sales orders instead of into the settings', () => {
+        const module = Module.getModuleRegistry().get('sw-settings-loyalty');
+
+        const navigation = (module?.manifest.navigation ?? []) as Array<{
+            id: string;
+            path?: string;
+            parent?: string;
+            privilege?: string;
+        }>;
+
+        expect(navigation).toHaveLength(1);
+        expect(navigation[0]).toMatchObject({
+            id: 'sw-loyalty-orders',
+            path: 'sw.settings.loyalty.orders',
+            parent: 'sw-order',
+            privilege: 'loyalty.viewer',
         });
     });
 

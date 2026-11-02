@@ -71,7 +71,7 @@ class MembershipPurchaseRoute
             return $returnUrl;
         }
 
-        return $request->getSchemeAndHttpHost() . '/account/loyalty';
+        return $request->getSchemeAndHttpHost() . '/account/membership';
     }
 
     private function deviceOf(Request $request): ?string

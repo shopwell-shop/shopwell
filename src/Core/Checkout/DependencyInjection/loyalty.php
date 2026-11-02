@@ -36,7 +36,6 @@ use Shopwell\Core\Checkout\Loyalty\Subscriber\LoyaltyAccountProvisionSubscriber;
 use Shopwell\Core\Checkout\Loyalty\Subscriber\OrderReturnStateChangeLoyaltySubscriber;
 use Shopwell\Core\Checkout\Loyalty\Subscriber\OrderStateChangeLoyaltySubscriber;
 use Shopwell\Core\Checkout\Loyalty\Subscriber\WalletTopUpLoyaltySubscriber;
-use Shopwell\Core\Checkout\Membership\Service\MembershipOfferService;
 use Shopwell\Core\Checkout\Membership\Service\MembershipSubscriptionService;
 use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\System\SystemConfig\SystemConfigService;
@@ -204,8 +203,8 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(MembershipSubscriptionService::class),
         ]);
 
-    // the account page still renders points, tiers and the membership offer in one payload; the offer
-    // is read through its own model so the page does not grow a dependency on the membership tables
+    // the rewards page reads points, tiers and the redemption ladder from here; the membership offer it
+    // used to carry moved to MembershipRoute when the account page was split
     $services->set(LoyaltyRoute::class)
         ->public()
         ->args([
@@ -214,8 +213,6 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(LoyaltySettings::class),
             service(LoyaltyBenefitResolver::class),
             service(LoyaltyRedemptionCalculator::class),
-            service(MembershipOfferService::class),
-            service(ClockInterface::class),
             service(ExtensionDispatcher::class),
         ]);
 

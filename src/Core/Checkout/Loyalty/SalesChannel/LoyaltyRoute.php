@@ -2,7 +2,6 @@
 
 namespace Shopwell\Core\Checkout\Loyalty\SalesChannel;
 
-use Psr\Clock\ClockInterface;
 use Shopwell\Core\Checkout\Customer\CustomerEntity;
 use Shopwell\Core\Checkout\Loyalty\Entity\CustomerLoyalty\CustomerLoyaltyCollection;
 use Shopwell\Core\Checkout\Loyalty\Entity\CustomerLoyalty\CustomerLoyaltyEntity;
@@ -12,7 +11,6 @@ use Shopwell\Core\Checkout\Loyalty\Extension\LoyaltyRouteExtension;
 use Shopwell\Core\Checkout\Loyalty\Service\LoyaltyBenefitResolver;
 use Shopwell\Core\Checkout\Loyalty\Service\LoyaltyRedemptionCalculator;
 use Shopwell\Core\Checkout\Loyalty\Service\LoyaltySettings;
-use Shopwell\Core\Checkout\Membership\Service\MembershipOfferService;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
@@ -26,12 +24,17 @@ use Shopwell\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
 
+/**
+ * The rewards page: how many points a customer holds, what they are worth, and which tier they are in.
+ *
+ * Points are earned, a paid membership is bought - the offer side of the account lives on
+ * {@see \Shopwell\Core\Checkout\Membership\SalesChannel\MembershipRoute} since the two have their own
+ * page. What stays here is everything the customer reached without paying for it.
+ */
 #[Package('checkout')]
 #[Route(defaults: [PlatformRequest::ATTRIBUTE_ROUTE_SCOPE => [StoreApiRouteScope::ID]])]
 class LoyaltyRoute
 {
-    private const RECENT_ORDER_LIMIT = 5;
-
     /**
      * @internal
      *
@@ -44,8 +47,6 @@ class LoyaltyRoute
         private readonly LoyaltySettings $settings,
         private readonly LoyaltyBenefitResolver $benefits,
         private readonly LoyaltyRedemptionCalculator $redemption,
-        private readonly MembershipOfferService $membership,
-        private readonly ClockInterface $clock,
         private readonly ExtensionDispatcher $extensions,
     ) {
     }
@@ -68,25 +69,14 @@ class LoyaltyRoute
     private function _load(SalesChannelContext $context, CustomerEntity $customer): LoyaltyRouteResponse
     {
         $loyalty = $this->loadLoyalty($customer->getId(), $context);
-        $validUntil = $loyalty?->getMembershipValidUntil();
-
-        $offer = $this->membership->forCustomer(
-            $customer->getId(),
-            $context->getCurrency()->getId(),
-            $context->getCurrency()->getIsoCode(),
-            self::RECENT_ORDER_LIMIT,
-            $context->getContext()
-        );
 
         /** @var array<string, mixed> $data */
         $data = [
             'pointsBalance' => $loyalty?->getPointsBalance() ?? 0,
             'growthValue' => $loyalty?->getGrowthValue() ?? 0,
+            // the tier is a projection of what the customer earned and what a membership grants; both
+            // write it, and the page only reads it - the paid membership itself has its own route
             'membershipTierId' => $loyalty?->getMembershipTierId(),
-            'membershipValidUntil' => $validUntil?->format(\DATE_ATOM),
-            // a membership that was bought runs until its end, a tier that was only reached through the
-            // growth value has no end - the storefront shows the plans only in the second case as an upgrade
-            'membershipActive' => $validUntil !== null && $validUntil > $this->clock->now(),
             // the rate below the first step; the steps themselves are what the page has to show, so the
             // storefront never has to multiply the balance by one number and get a wrong amount
             'pointValueInCurrency' => $this->settings->pointValueInCurrency($context->getSalesChannelId()),
@@ -94,9 +84,6 @@ class LoyaltyRoute
             'minRedeemablePoints' => $this->settings->minRedeemablePoints($context->getSalesChannelId()),
             'maxRedeemablePercent' => $this->settings->maxRedeemablePercent($context->getSalesChannelId()),
             'tiers' => $this->loadTiers($context),
-            'plans' => $offer['plans'],
-            'membershipChannels' => $offer['channels'],
-            'membershipOrders' => $offer['orders'],
         ];
 
         return new LoyaltyRouteResponse(new ArrayStruct($data));

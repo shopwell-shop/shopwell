@@ -199,7 +199,8 @@ class PaymentTransferNotificationProcessorTest extends TestCase
             $cipher,
             static::createStub(InitialStateIdLoader::class),
             new MockClock(self::NOW),
-            PaymentTransferRulesFixture::registry()
+            PaymentTransferRulesFixture::registry(),
+            \Shopwell\Tests\Unit\Core\System\Payment\NumberRangeFixture::generator('PT1001')
         );
 
         $reconciler = new PaymentTransferReconciler(

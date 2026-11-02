@@ -17,6 +17,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\NumberRange\ValueGenerator\AbstractNumberRangeValueGenerator;
 use Shopwell\Core\System\Payment\Api\Struct\PaymentOrderRequest;
 use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppChannel\PaymentAppChannelEntity;
 use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppProvider\PaymentAppProviderEntity;
@@ -443,7 +444,7 @@ class PaymentOrderServiceTest extends TestCase
             ->with(static::callback(function (array $data): bool {
                 $row = $data[0];
 
-                static::assertStringStartsWith('PG20240101000000', $row['paymentNo']);
+                static::assertSame('PG1001', $row['paymentNo']);
                 static::assertSame('app-trade-1', $row['outTradeNo']);
                 static::assertSame('app-id', $row['paymentAppId']);
                 static::assertSame('alipay', $row['providerTechnicalName']);
@@ -635,8 +636,18 @@ class PaymentOrderServiceTest extends TestCase
             $configResolver ?? $this->inertConfigResolver(),
             $initialStateIdLoader ?? $this->initialStateIdLoader(),
             new PaymentOrderStateHandler($stateMachineRegistry ?? static::createStub(StateMachineRegistry::class)),
-            new MockClock(self::NOW)
+            new MockClock(self::NOW),
+            $this->numberRanges()
         );
+    }
+
+    private function numberRanges(): AbstractNumberRangeValueGenerator
+    {
+        $generator = static::createStub(AbstractNumberRangeValueGenerator::class);
+        // the number range answers the number, the service must not build one of its own
+        $generator->method('getValue')->willReturn('PG1001');
+
+        return $generator;
     }
 
     private function initialStateIdLoader(): InitialStateIdLoader

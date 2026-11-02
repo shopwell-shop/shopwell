@@ -10,6 +10,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\System\NumberRange\ValueGenerator\AbstractNumberRangeValueGenerator;
 use Shopwell\Core\System\Payment\Api\Struct\PaymentTransferRequest;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
 use Shopwell\Core\System\Payment\App\PaymentCredentialCipher;
@@ -73,6 +74,7 @@ final class PaymentTransferService
         private readonly InitialStateIdLoader $initialStateIdLoader,
         private readonly ClockInterface $clock,
         private readonly PaymentProviderRegistry $providers,
+        private readonly AbstractNumberRangeValueGenerator $numberRanges,
     ) {
     }
 
@@ -120,7 +122,7 @@ final class PaymentTransferService
         $row = [
             'id' => $id,
             'paymentAppId' => $app->id,
-            'transferNo' => $this->generateTransferNo($now),
+            'transferNo' => $this->numberRanges->getValue(PaymentTransferEntity::ENTITY_NAME, Context::createDefaultContext(), null),
             'outNo' => $request->outNo,
             'recipientId' => $recipient->id,
             'provider' => $request->provider,
@@ -492,11 +494,4 @@ final class PaymentTransferService
         return $reason === null ? null : mb_substr($reason, 0, self::FAILURE_REASON_LIMIT);
     }
 
-    /**
-     * 2 + 12 + 10 = 24 characters, well below the 64 the interfaces allow for a display number.
-     */
-    private function generateTransferNo(\DateTimeImmutable $now): string
-    {
-        return 'PT' . $now->format('ymdHis') . strtoupper(bin2hex(random_bytes(5)));
-    }
 }

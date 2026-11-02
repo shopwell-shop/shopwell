@@ -92,6 +92,7 @@ class PaymentOrderReconcilerTest extends TestCase
             $initialStateIdLoader,
             new PaymentOrderStateHandler(static::createStub(StateMachineRegistry::class)),
             $clock,
+            \Shopwell\Tests\Unit\Core\System\Payment\NumberRangeFixture::generator('PG1001'),
         );
 
         $webhooks = new PaymentWebhookDispatcher(

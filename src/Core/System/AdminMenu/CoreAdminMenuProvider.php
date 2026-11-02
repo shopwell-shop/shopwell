@@ -107,6 +107,16 @@ class CoreAdminMenuProvider implements AdminMenuDefinitionProviderInterface
                 parent: 'sw-order',
                 privilege: 'order.viewer',
             ),
+            // A paid membership is an order the customer placed, so its queue belongs in the order
+            // folder and not in the settings: an operator looking for "the subscription this customer
+            // paid for" starts at the orders, and the settings are where the plans are maintained.
+            new AdminMenuDefinitionStruct(
+                internalKey: 'sw-loyalty-orders',
+                title: 'sw-loyalty.order.general.mainMenuItemGeneral',
+                icon: 'regular-clipboard',
+                parent: 'sw-order',
+                privilege: 'loyalty.viewer',
+            ),
             new AdminMenuDefinitionStruct(
                 internalKey: 'sw-order-return',
                 type: AdminMenuItemDefinition::TYPE_FOLDER,

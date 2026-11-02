@@ -112,6 +112,7 @@ class ReconcileOpenPaymentTransfersTaskHandlerTest extends TestCase
             $initialStateIdLoader,
             new MockClock('2026-10-18T09:00:00+00:00'),
             PaymentTransferRulesFixture::registry(),
+            \Shopwell\Tests\Unit\Core\System\Payment\NumberRangeFixture::generator('PT1001'),
         );
 
         return new PaymentTransferReconciler(

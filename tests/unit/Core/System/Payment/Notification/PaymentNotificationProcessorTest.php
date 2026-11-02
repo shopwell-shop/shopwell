@@ -691,7 +691,8 @@ class PaymentNotificationProcessorTest extends TestCase
             $this->configResolver(static::createStub(GatewayInterface::class)),
             $this->initialStateIdLoader(),
             new PaymentOrderStateHandler($stateMachine ?? static::createStub(StateMachineRegistry::class)),
-            new MockClock(self::NOW)
+            new MockClock(self::NOW),
+            \Shopwell\Tests\Unit\Core\System\Payment\NumberRangeFixture::generator('PG1001')
         );
     }
 

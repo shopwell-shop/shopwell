@@ -191,7 +191,8 @@ class ReconcileOpenPaymentOrdersTaskHandlerTest extends TestCase
             $configResolver,
             $initialStateIdLoader,
             new PaymentOrderStateHandler(static::createStub(StateMachineRegistry::class)),
-            new MockClock('2024-01-01T00:00:00+00:00')
+            new MockClock('2024-01-01T00:00:00+00:00'),
+            \Shopwell\Tests\Unit\Core\System\Payment\NumberRangeFixture::generator('PG1001')
         );
 
         $webhookService = new PaymentWebhookDispatcher(

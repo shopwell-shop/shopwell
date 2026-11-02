@@ -414,7 +414,8 @@ class PaymentOrderQueryResultHandlerTest extends TestCase
             $this->configResolver(),
             $this->initialStateIdLoader(),
             new PaymentOrderStateHandler($stateMachine),
-            new MockClock(self::NOW)
+            new MockClock(self::NOW),
+            \Shopwell\Tests\Unit\Core\System\Payment\NumberRangeFixture::generator('PG1001')
         );
 
         $webhookService = new PaymentWebhookDispatcher(

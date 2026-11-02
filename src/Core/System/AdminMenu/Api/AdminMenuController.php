@@ -56,8 +56,10 @@ class AdminMenuController extends AbstractController
 
         $items = $this->menuItemRepository->search($criteria, $context)->getEntities();
 
+        // A list, not a map: the collection iterates with the row ids as keys, and a keyed
+        // array serializes to a JSON object the administration cannot read as a list.
         return new JsonResponse([
-            'items' => array_map(static fn ($item) => [
+            'items' => array_values(array_map(static fn ($item) => [
                 'id' => $item->getId(),
                 'parentId' => $item->getParentId(),
                 'afterMenuItemId' => $item->getAfterMenuItemId(),
@@ -75,7 +77,7 @@ class AdminMenuController extends AbstractController
                 'pluginId' => $item->getPluginId(),
                 'pluginName' => $item->getPlugin()?->getName(),
                 'roleIds' => $item->getRoles()?->getIds() ?? [],
-            ], [...$items]),
+            ], iterator_to_array($items, false))),
         ]);
     }
 
