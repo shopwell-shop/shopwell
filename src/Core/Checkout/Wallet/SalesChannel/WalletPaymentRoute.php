@@ -8,7 +8,7 @@ use Shopwell\Core\Checkout\Cart\SalesChannel\CartService;
 use Shopwell\Core\Checkout\Customer\CustomerEntity;
 use Shopwell\Core\Checkout\Wallet\Cart\WalletCartProcessor;
 use Shopwell\Core\Checkout\Wallet\Extension\WalletPaymentRouteExtension;
-use Shopwell\Core\Checkout\Wallet\Service\WalletService;
+use Shopwell\Core\Checkout\Wallet\Service\WalletAccountService;
 use Shopwell\Core\Checkout\Wallet\WalletException;
 use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Log\Package;
@@ -27,7 +27,7 @@ class WalletPaymentRoute
      * @internal
      */
     public function __construct(
-        private readonly WalletService $walletService,
+        private readonly WalletAccountService $wallets,
         private readonly CartService $cartService,
         private readonly CartLocker $cartLocker,
         private readonly ExtensionDispatcher $extensions,
@@ -75,7 +75,7 @@ class WalletPaymentRoute
         }
 
         $currencyId = $context->getCurrency()->getId();
-        $balance = $this->walletService->getBalance($customer->getId(), $currencyId, $context->getContext());
+        $balance = $this->wallets->balance($customer->getId(), $currencyId, $context->getContext());
 
         if ($amount > $balance) {
             throw WalletException::insufficientBalance($customer->getId(), $currencyId, $amount, $balance);

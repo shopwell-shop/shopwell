@@ -44,7 +44,10 @@ use Shopwell\Core\Checkout\Payment\SalesChannel\HandlePaymentMethodRoute;
 use Shopwell\Core\Checkout\Payment\SalesChannel\PaymentMethodRoute;
 use Shopwell\Core\Checkout\Payment\SalesChannel\SalesChannelPaymentMethodDefinition;
 use Shopwell\Core\Checkout\Payment\Storefront\PlatformPaymentApp;
+use Shopwell\Core\Checkout\Payment\Storefront\Settlement\PurchaseSettlement;
+use Shopwell\Core\Checkout\Payment\Storefront\StorefrontPaymentService;
 use Shopwell\Core\Framework\Adapter\Cache\CacheTagCollector;
+use Shopwell\Core\Framework\Adapter\Translation\Translator;
 use Shopwell\Core\Framework\DataAbstractionLayer\Dbal\Common\IteratorFactory;
 use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Rule\RuleIdMatcher;
@@ -54,9 +57,9 @@ use Shopwell\Core\System\Payment\Order\Event\PaymentOrderPaidEvent;
 use Shopwell\Core\System\Payment\Order\PaymentOrderCapture;
 use Shopwell\Core\System\Payment\Order\PaymentOrderReconciler;
 use Shopwell\Core\System\Payment\Order\PaymentOrderService;
-use Shopwell\Core\System\Payment\Order\Refund\PaymentRefundService;
+use Shopwell\Core\System\Payment\Order\PaymentRefundService;
 use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannelRegistry;
-use Shopwell\Core\System\Payment\Provider\PaymentProviderConfigService;
+use Shopwell\Core\System\Payment\Provider\Config\PaymentProviderConfigService;
 use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;
 use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextService;
 use Shopwell\Core\System\StateMachine\Loader\InitialStateIdLoader;
@@ -251,6 +254,24 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('payment_channel_config.repository'),
             service(PaymentChannelRegistry::class),
             service(PaymentProviderRegistry::class),
+        ]);
+
+    // the payments the shop collects for its own customers - a wallet top-up, a membership. They are
+    // payment orders like the one of an external app, only the app is the platform tenant the payment
+    // migration seeds; the gateway itself is only called, never reworked
+    $services->set(StorefrontPaymentService::class)
+        ->args([
+            service(PlatformPaymentApp::class),
+            service(PaymentOrderService::class),
+            service(PaymentOrderCapture::class),
+            service(Translator::class),
+        ]);
+
+    // what a paid payment order turns into, for every kind of purchase the shop sells itself
+    $services->set(PurchaseSettlement::class)
+        ->args([
+            service(Connection::class),
+            service(ClockInterface::class),
         ]);
 
     $services->set(OrderPaymentStarter::class)

@@ -19,7 +19,7 @@ use Shopwell\Core\System\Payment\App\PaymentAppEntity;
 use Shopwell\Core\System\Payment\PaymentException;
 use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannelRegistry;
 use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
-use Shopwell\Core\System\Payment\Provider\PaymentProviderConfigService;
+use Shopwell\Core\System\Payment\Provider\Config\PaymentProviderConfigService;
 
 /**
  * Writes the binding between a checkout payment method and the pair it collects through.

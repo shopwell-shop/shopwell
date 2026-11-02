@@ -12,6 +12,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
 use Shopwell\Core\Framework\Event\NestedEventCollection;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Payment\Api\Struct\PaymentTransferDraft;
 use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppChannel\PaymentAppChannelEntity;
 use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppProvider\PaymentAppProviderEntity;
 use Shopwell\Core\System\Payment\App\PaymentAppCollection;
@@ -25,7 +26,6 @@ use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
 use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
 use Shopwell\Core\System\Payment\Provider\PaymentProvider;
 use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;
-use Shopwell\Core\System\Payment\Transfer\Api\Struct\PaymentTransferDraft;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferBooking;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferCollection;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferEntity;
@@ -466,7 +466,17 @@ class PaymentTransferBookingTest extends TestCase
 
         $this->repository = new RecordingTransferRepository($existing, $booked);
 
-        $recipientService = new PaymentTransferRecipientService($recipientRepository, $cipher, $clock);
+        if ($providers === false) {
+            $registry = new PaymentProviderRegistry([]);
+        } else {
+            $registry = new PaymentProviderRegistry($providers === []
+                ? [$this->provider(self::PROVIDER, [self::CHANNEL => ['CNY']])]
+                : $providers);
+        }
+
+        // the services read the payout rules from the very same registry the booking resolves the
+        // interface with - two registries in one test would be two truths
+        $recipientService = new PaymentTransferRecipientService($recipientRepository, $cipher, $clock, $registry);
 
         $transferService = new PaymentTransferService(
             $this->repository,
@@ -476,15 +486,8 @@ class PaymentTransferBookingTest extends TestCase
             $cipher,
             $this->initialStateIdLoader(),
             $clock,
+            $registry,
         );
-
-        if ($providers === false) {
-            $registry = new PaymentProviderRegistry([]);
-        } else {
-            $registry = new PaymentProviderRegistry($providers === []
-                ? [$this->provider(self::PROVIDER, [self::CHANNEL => ['CNY']])]
-                : $providers);
-        }
 
         return new PaymentTransferBooking($appRepository, $registry, $recipientService, $transferService, $clock);
     }
@@ -582,6 +585,8 @@ class PaymentTransferBookingTest extends TestCase
             gatewayFactory: static::createStub(PaymentGatewayFactory::class),
             notificationExtractor: static::createStub(PaymentNotificationExtractorInterface::class),
             capabilities: $capabilities,
+            // the rules of the real declaration of this interface, never a matrix invented by the test
+            transferRules: PaymentTransferRulesFixture::rulesOf($name),
         );
     }
 

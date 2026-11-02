@@ -89,7 +89,6 @@ class Migration1792600000CreateLoyaltyAndWalletTables extends MigrationStep
                 `order_version_id` BINARY(16) NULL,
                 `sales_channel_id` BINARY(16) NULL,
                 `expires_at` DATETIME(3) NULL,
-                `expired_at` DATETIME(3) NULL,
                 `comment` VARCHAR(255) NULL,
                 `administrator_id` BINARY(16) NULL,
                 `created_at` DATETIME(3) NOT NULL,

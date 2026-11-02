@@ -4,7 +4,7 @@
 import { defineComponent } from 'vue';
 import template from './sw-finance-transfer-create-modal.html.twig';
 import './sw-finance-transfer-create-modal.scss';
-import { providerLabelKey, yuanToMinorUnits } from '../../service/payment-transfer.api.service';
+import { providerLabelKey, toMinorUnits } from '../../service/payment-transfer.api.service';
 import type { PaymentTransferPayload } from '../../service/payment-transfer.api.service';
 
 const { Mixin } = Shopwell;
@@ -98,8 +98,8 @@ type BankInfo = {
  * fields it insists on. The matrix is deliberately not re-implemented here - a second truth in the
  * browser would silently diverge from the one the server validates against.
  *
- * The one conversion the form owns is yuan to fen, and it is a string split (`yuanToMinorUnits`), never
- * a float multiplication.
+ * The one conversion the form owns is the typed amount to the smallest unit of the selected currency,
+ * and it is a string split (`toMinorUnits`), never a float multiplication.
  */
 // eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
 export default defineComponent({
@@ -259,11 +259,13 @@ export default defineComponent({
         },
 
         /**
-         * The amount the booking is sent with. `yuanToMinorUnits()` already refuses zero and the shape of
-         * a non amount, so this is the stored form of a payable input and nothing else.
+         * The amount the booking is sent with, converted with the exponent of the currency the operator
+         * picked - a payout in JPY has no minor unit, so a fixed "yuan times a hundred" would book a
+         * hundred times the amount. `toMinorUnits()` already refuses zero and the shape of a non
+         * amount, so this is the stored form of a payable input and nothing else.
          */
         amountInMinorUnits(): number | null {
-            return yuanToMinorUnits(this.amount);
+            return toMinorUnits(this.amount, this.currency);
         },
 
         isIdentityValueTooLong(): boolean {

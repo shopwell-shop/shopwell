@@ -23,6 +23,11 @@ use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
  * it - and overrides `api()` with a covariant return type, so it can call the methods of its concrete
  * api without a cast.
  *
+ * That injection is also why an action is **not** a stateless service: the api and the gateway are
+ * written onto it at execution time. The instance the container holds is therefore only a prototype,
+ * and {@see PaymentGatewayFactory::create()} gives every gateway its own clone - otherwise the api of
+ * one payment would leak into the next one that runs on the same action.
+ *
  * Every action also names the capability it implements. That is the single source of truth for what an
  * interface can do: the capability set of an interface is the union of the capabilities of its actions,
  * so a capability cannot be announced without the code that executes it.

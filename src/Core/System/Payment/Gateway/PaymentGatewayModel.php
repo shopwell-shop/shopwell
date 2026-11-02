@@ -4,8 +4,8 @@ namespace Shopwell\Core\System\Payment\Gateway;
 
 use Payum\Core\Model\ArrayObject;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Payment\Order\Aggregate\PaymentRefund\PaymentRefundEntity;
 use Shopwell\Core\System\Payment\Order\PaymentOrderEntity;
-use Shopwell\Core\System\Payment\Order\Refund\PaymentRefundEntity;
 use Shopwell\Core\System\Payment\PaymentException;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferEntity;
 

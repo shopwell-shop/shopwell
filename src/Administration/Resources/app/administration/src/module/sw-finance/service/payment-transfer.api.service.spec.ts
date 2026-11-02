@@ -5,8 +5,10 @@ import type { HttpClient } from 'src/core/factory/http-client.types';
 import type { LoginService } from 'src/core/service/login.service';
 import PaymentTransferApiService, {
     OUTCOME,
+    fromMinorUnits,
     minorUnitsToYuan,
     providerLabelKey,
+    toMinorUnits,
     yuanToMinorUnits,
 } from './payment-transfer.api.service';
 import type { PaymentTransferPayload } from './payment-transfer.api.service';
@@ -97,6 +99,44 @@ describe('module/sw-finance/service/payment-transfer.api.service - yuanToMinorUn
         expect(minorUnitsToYuan(1205)).toBe('12.05');
         expect(minorUnitsToYuan(100000)).toBe('1000.00');
         expect(minorUnitsToYuan(null)).toBe('');
+    });
+});
+
+describe('module/sw-finance/service/payment-transfer.api.service - toMinorUnits', () => {
+    /**
+     * The exponent belongs to the currency: a payout in JPY has no minor unit, so "yuan times a hundred"
+     * would book a payout a hundred times as large as the operator typed.
+     */
+    it.each([
+        ['12', 'JPY', 12],
+        ['1234', 'JPY', 1234],
+        ['7', 'KRW', 7],
+        ['12.05', 'CNY', 1205],
+        ['1.234', 'KWD', 1234],
+        ['1.2', 'KWD', 1200],
+    ])('should convert %p %p into %p minor units', (input, currency, expected) => {
+        expect(toMinorUnits(input, currency)).toBe(expected);
+    });
+
+    it.each([
+        ['12.05', 'JPY'],
+        ['12.0', 'JPY'],
+        ['1.2345', 'KWD'],
+        ['1.005', 'CNY'],
+    ])('should refuse %p for %p, whose exponent does not allow it', (input, currency) => {
+        expect(toMinorUnits(input, currency)).toBeNull();
+    });
+
+    it('should convert back with the exponent of the currency', () => {
+        expect(fromMinorUnits(1234, 'JPY')).toBe('1234');
+        expect(fromMinorUnits(1234, 'KWD')).toBe('1.234');
+        expect(fromMinorUnits(1205, 'CNY')).toBe('12.05');
+        expect(fromMinorUnits(null, 'JPY')).toBe('');
+    });
+
+    it('should stay the CNY conversion when no currency is given', () => {
+        expect(toMinorUnits('12.05')).toBe(1205);
+        expect(fromMinorUnits(1205)).toBe('12.05');
     });
 });
 

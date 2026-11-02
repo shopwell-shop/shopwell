@@ -35,6 +35,7 @@ use Shopwell\Core\System\StateMachine\Aggregation\StateMachineState\StateMachine
 use Shopwell\Core\System\StateMachine\Loader\InitialStateIdLoader;
 use Shopwell\Core\System\StateMachine\StateMachineRegistry;
 use Shopwell\Core\System\StateMachine\Transition;
+use Shopwell\Tests\Unit\Core\System\Payment\Provider\Fixtures\PlatformProviders;
 use Symfony\Component\Clock\MockClock;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -467,7 +468,7 @@ class PaymentCycleServiceTest extends TestCase
      */
     public function testMarkFailedEndsFinallyWhenTheRetryLadderIsExhausted(): void
     {
-        $cycle = $this->cycle(['attemptCount' => PaymentRetryPolicy::MAX_RETRIES]);
+        $cycle = $this->cycle(['attemptCount' => PlatformProviders::alipay()->getCycleRules()->maxRetries]);
         $subscription = $this->subscription();
 
         $cycleWritten = $this->failFinally($cycle, $subscription, 'ACQ.BUYER_BALANCE_NOT_ENOUGH');
@@ -933,6 +934,9 @@ class PaymentCycleServiceTest extends TestCase
             capabilities: $supportsMandate
                 ? [PaymentCapability::CAPTURE, PaymentCapability::MANDATE]
                 : [PaymentCapability::CAPTURE],
+            // the schedule reads the failure classification off the declaration, so the declaration of
+            // the fixture has to carry the rules the assertions below are written against
+            cycleRules: $supportsMandate ? PlatformProviders::alipay()->getCycleRules() : null,
         );
 
         return new PaymentProviderRegistry([$provider]);

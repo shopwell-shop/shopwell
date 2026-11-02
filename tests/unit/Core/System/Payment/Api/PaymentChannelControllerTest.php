@@ -8,7 +8,7 @@ use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Payment\Api\PaymentChannelController;
 use Shopwell\Core\System\Payment\App\PaymentAppAuthenticator;
 use Shopwell\Core\System\Payment\PaymentException;
-use Shopwell\Core\System\Payment\Provider\PaymentConfigResolver;
+use Shopwell\Core\System\Payment\Provider\Config\PaymentConfigResolver;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 

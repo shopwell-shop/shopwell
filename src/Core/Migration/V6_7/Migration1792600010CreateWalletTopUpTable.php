@@ -34,7 +34,6 @@ class Migration1792600010CreateWalletTopUpTable extends MigrationStep
                 `amount` DOUBLE NOT NULL DEFAULT 0,
                 `state` VARCHAR(32) NOT NULL,
                 `payment_no` VARCHAR(64) NULL,
-                `provider_technical_name` VARCHAR(64) NULL,
                 `channel_technical_name` VARCHAR(64) NULL,
                 `paid_at` DATETIME(3) NULL,
                 `credited_at` DATETIME(3) NULL,

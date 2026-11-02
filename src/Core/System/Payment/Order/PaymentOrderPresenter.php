@@ -7,8 +7,8 @@ use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\System\Payment\Gateway\PayResult;
-use Shopwell\Core\System\Payment\Order\Refund\PaymentRefundEntity;
+use Shopwell\Core\System\Payment\Gateway\Request\PayResult;
+use Shopwell\Core\System\Payment\Order\Aggregate\PaymentRefund\PaymentRefundEntity;
 use Shopwell\Core\System\StateMachine\Aggregation\StateMachineState\StateMachineStateCollection;
 use Shopwell\Core\System\StateMachine\Aggregation\StateMachineState\StateMachineStateEntity;
 

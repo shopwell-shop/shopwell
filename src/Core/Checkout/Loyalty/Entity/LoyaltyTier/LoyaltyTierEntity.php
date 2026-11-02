@@ -5,8 +5,10 @@ namespace Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyTier;
 use Shopwell\Core\Checkout\Customer\Aggregate\CustomerGroup\CustomerGroupEntity;
 use Shopwell\Core\Checkout\Loyalty\Entity\CustomerLoyalty\CustomerLoyaltyCollection;
 use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyTier\Aggregate\LoyaltyTierTranslation\LoyaltyTierTranslationCollection;
-use Shopwell\Core\Checkout\Loyalty\Entity\MembershipOrder\MembershipOrderCollection;
-use Shopwell\Core\Checkout\Loyalty\Entity\MembershipPlan\MembershipPlanCollection;
+use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyTierBenefit\LoyaltyTierBenefitCollection;
+use Shopwell\Core\Checkout\Membership\Entity\MembershipOrder\MembershipOrderCollection;
+use Shopwell\Core\Checkout\Membership\Entity\MembershipPlan\MembershipPlanCollection;
+use Shopwell\Core\Checkout\Membership\Entity\MembershipSubscription\MembershipSubscriptionCollection;
 use Shopwell\Core\Framework\DataAbstractionLayer\Entity;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityIdTrait;
 use Shopwell\Core\Framework\Log\Package;
@@ -48,6 +50,10 @@ class LoyaltyTierEntity extends Entity
     protected ?MembershipPlanCollection $membershipPlans = null;
 
     protected ?MembershipOrderCollection $membershipOrders = null;
+
+    protected ?MembershipSubscriptionCollection $membershipSubscriptions = null;
+
+    protected ?LoyaltyTierBenefitCollection $benefits = null;
 
     public function getTechnicalName(): string
     {
@@ -197,5 +203,25 @@ class LoyaltyTierEntity extends Entity
     public function setMembershipOrders(MembershipOrderCollection $membershipOrders): void
     {
         $this->membershipOrders = $membershipOrders;
+    }
+
+    public function getMembershipSubscriptions(): ?MembershipSubscriptionCollection
+    {
+        return $this->membershipSubscriptions;
+    }
+
+    public function setMembershipSubscriptions(MembershipSubscriptionCollection $membershipSubscriptions): void
+    {
+        $this->membershipSubscriptions = $membershipSubscriptions;
+    }
+
+    public function getBenefits(): ?LoyaltyTierBenefitCollection
+    {
+        return $this->benefits;
+    }
+
+    public function setBenefits(LoyaltyTierBenefitCollection $benefits): void
+    {
+        $this->benefits = $benefits;
     }
 }

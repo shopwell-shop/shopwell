@@ -280,6 +280,26 @@ describe('module/sw-finance/component/sw-finance-transfer-create-modal', () => {
         expect(wrapper.vm.isSaveDisabled).toBe(true);
     });
 
+    /**
+     * The exponent follows the selected currency, not the form: a channel that pays out in JPY has no
+     * minor unit, and a fixed multiplication by a hundred would book a payout a hundred times as large.
+     */
+    it('should convert the amount with the exponent of the selected currency', async () => {
+        const { wrapper } = await createWrapper();
+
+        wrapper.vm.currency = 'JPY';
+        wrapper.vm.amount = '1234';
+        await flushPromises();
+
+        expect(wrapper.vm.amountInMinorUnits).toBe(1234);
+
+        // a decimal point is not a typo to round away - the currency simply has no minor unit
+        wrapper.vm.amount = '12.05';
+        await flushPromises();
+
+        expect(wrapper.vm.amountInMinorUnits).toBeNull();
+    });
+
     it('should refuse an identity longer than the encrypted column', async () => {
         const { wrapper } = await createWrapper();
 

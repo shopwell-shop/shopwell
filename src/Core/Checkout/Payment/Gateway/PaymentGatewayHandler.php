@@ -21,10 +21,11 @@ use Shopwell\Core\Framework\Struct\Struct;
 use Shopwell\Core\System\Currency\CurrencyEntity;
 use Shopwell\Core\System\Payment\Api\Struct\PaymentRefundRequest;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
+use Shopwell\Core\System\Payment\Gateway\Request\Money;
 use Shopwell\Core\System\Payment\Order\PaymentOrderEntity;
 use Shopwell\Core\System\Payment\Order\PaymentOrderReconciler;
 use Shopwell\Core\System\Payment\Order\PaymentOrderService;
-use Shopwell\Core\System\Payment\Order\Refund\PaymentRefundService;
+use Shopwell\Core\System\Payment\Order\PaymentRefundService;
 use Shopwell\Core\System\Payment\PaymentException;
 use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannelRegistry;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -215,8 +216,12 @@ final class PaymentGatewayHandler extends AbstractPaymentHandler
         return $orderTransaction;
     }
 
+    /**
+     * The gateway counts in the smallest unit of the ISO currency, not in the decimals the shop rounds
+     * its prices with - the same conversion the capture uses, see {@see OrderPaymentStarter}.
+     */
     private function toSmallestUnit(float $totalPrice, CurrencyEntity $currency): int
     {
-        return (int) round($totalPrice * (10 ** $currency->getItemRounding()->getDecimals()));
+        return Money::fromFloat($totalPrice, $currency->getIsoCode());
     }
 }

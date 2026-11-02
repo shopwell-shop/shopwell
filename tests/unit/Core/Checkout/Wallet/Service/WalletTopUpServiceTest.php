@@ -2,15 +2,14 @@
 
 namespace Shopwell\Tests\Unit\Core\Checkout\Wallet\Service;
 
-use Doctrine\DBAL\Connection;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\MockObject\Stub;
 use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Checkout\Payment\Storefront\Settlement\PurchaseAttach;
 use Shopwell\Core\Checkout\Payment\Storefront\StorefrontPaymentService;
 use Shopwell\Core\Checkout\Wallet\Entity\CustomerWalletTopUp\CustomerWalletTopUpCollection;
 use Shopwell\Core\Checkout\Wallet\Entity\CustomerWalletTopUp\CustomerWalletTopUpEntity;
-use Shopwell\Core\Checkout\Wallet\Service\WalletService;
 use Shopwell\Core\Checkout\Wallet\Service\WalletSettings;
 use Shopwell\Core\Checkout\Wallet\Service\WalletTopUpService;
 use Shopwell\Core\Checkout\Wallet\WalletException;
@@ -18,11 +17,10 @@ use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Test\Stub\DataAbstractionLayer\StaticEntityRepository;
 use Shopwell\Core\Test\Stub\SystemConfigService\StaticSystemConfigService;
-use Symfony\Component\Clock\MockClock;
 
 /**
- * The top-up intent and its settlement are tested here, the money itself moves in
- * {@see \Shopwell\Tests\Unit\Core\Checkout\Wallet\Service\WalletServiceTest}.
+ * The top-up intent is tested here, the money itself moves on settlement - see
+ * {@see \Shopwell\Tests\Unit\Core\Checkout\Wallet\Purchase\WalletTopUpPurchaseTest}.
  *
  * @internal
  */
@@ -36,8 +34,6 @@ class WalletTopUpServiceTest extends TestCase
 
     private const CURRENCY_ID = 'c1b2c3d4e5f60718293a4b5c6d7e8f90';
 
-    private const NOW = '2026-06-01 12:00:00';
-
     /**
      * @var StaticEntityRepository<CustomerWalletTopUpCollection>
      */
@@ -45,11 +41,7 @@ class WalletTopUpServiceTest extends TestCase
 
     private StaticSystemConfigService $systemConfigService;
 
-    private WalletService $walletService;
-
     private StorefrontPaymentService&Stub $payments;
-
-    private Connection&Stub $connection;
 
     private WalletTopUpService $topUpService;
 
@@ -59,23 +51,10 @@ class WalletTopUpServiceTest extends TestCase
     {
         $this->topUpRepository = StaticEntityRepository::of(CustomerWalletTopUpCollection::class);
         $this->systemConfigService = new StaticSystemConfigService();
-        $this->walletService = static::createStub(WalletService::class);
         $this->payments = static::createStub(StorefrontPaymentService::class);
-        $this->connection = static::createStub(Connection::class);
         $this->context = Context::createDefaultContext();
 
-        $this->connection->method('transactional')->willReturnCallback(static fn (callable $callback) => $callback());
-
-        $clock = new MockClock(self::NOW);
-
-        $this->topUpService = new WalletTopUpService(
-            $this->topUpRepository,
-            $this->walletService,
-            $this->payments,
-            new WalletSettings($this->systemConfigService),
-            $this->connection,
-            $clock,
-        );
+        $this->topUpService = $this->service();
     }
 
     public function testOptionsReportLimitsPresetsAndPayableChannels(): void
@@ -89,7 +68,7 @@ class WalletTopUpServiceTest extends TestCase
             ->with('CNY', 'web')
             ->willReturn([['channel' => 'alipay_h5', 'label' => '支付宝', 'provider' => 'alipay', 'provider_label' => '支付宝', 'flow' => 'redirect']]);
 
-        $options = $this->service(payments: $payments)->options('CNY', 'web');
+        $options = $this->service($payments)->options('CNY', 'web');
 
         static::assertSame(10.0, $options['min']);
         static::assertSame(5000.0, $options['max']);
@@ -123,14 +102,14 @@ class WalletTopUpServiceTest extends TestCase
                 12800,
                 'CNY',
                 'Wallet top-up',
-                static::stringStartsWith(WalletTopUpService::ATTACH_PREFIX),
+                static::stringStartsWith('wallet_top_up:'),
                 'https://shop.test/account/wallet',
                 '10.0.0.1',
                 'web',
             )
             ->willReturn(['payment_no' => 'PAY-1', 'channel' => 'alipay_h5', 'params' => ['url' => 'https://pay.test']]);
 
-        $result = $this->service(payments: $payments)->create(
+        $result = $this->service($payments)->create(
             self::CUSTOMER_ID,
             self::CURRENCY_ID,
             'cny',
@@ -164,7 +143,7 @@ class WalletTopUpServiceTest extends TestCase
 
         $this->expectExceptionObject(WalletException::walletDisabled());
 
-        $this->service(payments: $payments)->create(
+        $this->service($payments)->create(
             self::CUSTOMER_ID,
             self::CURRENCY_ID,
             'CNY',
@@ -219,7 +198,7 @@ class WalletTopUpServiceTest extends TestCase
 
         $this->expectExceptionObject(WalletException::invalidAmount($amount));
 
-        $this->service(payments: $payments)->create(self::CUSTOMER_ID, self::CURRENCY_ID, 'CNY', $amount, 'alipay_h5', null, null, null, $this->context);
+        $this->service($payments)->create(self::CUSTOMER_ID, self::CURRENCY_ID, 'CNY', $amount, 'alipay_h5', null, null, null, $this->context);
     }
 
     public function testCreateRefusesAnAmountAboveTheConfiguredMaximum(): void
@@ -237,112 +216,30 @@ class WalletTopUpServiceTest extends TestCase
             $this->createTopUp(100.0, CustomerWalletTopUpEntity::STATE_OPEN),
         ]));
 
-        $recent = $this->topUpService->recent(self::CUSTOMER_ID, 5, $this->context);
+        $recent = $this->topUpService->recentTopUps(self::CUSTOMER_ID, 5, $this->context);
 
         static::assertCount(1, $recent);
-        static::assertSame(100.0, $recent[0]['amount']);
-        static::assertSame(CustomerWalletTopUpEntity::STATE_OPEN, $recent[0]['state']);
+        static::assertSame(100.0, $recent[0]->getAmount());
+        static::assertSame(CustomerWalletTopUpEntity::STATE_OPEN, $recent[0]->getState());
     }
 
-    public function testStatusThrowsForATopUpOfAnotherCustomer(): void
+    public function testFindThrowsForATopUpOfAnotherCustomer(): void
     {
         $this->topUpRepository->addSearch(new CustomerWalletTopUpCollection());
 
         $this->expectExceptionObject(WalletException::topUpNotFound(self::TOP_UP_ID));
 
-        $this->topUpService->status(self::TOP_UP_ID, self::CUSTOMER_ID, $this->context);
+        $this->topUpService->find(self::TOP_UP_ID, self::CUSTOMER_ID, $this->context);
     }
 
-    public function testSettleCreditsTheWalletOnce(): void
+    private function service(?StorefrontPaymentService $payments = null): WalletTopUpService
     {
-        $this->connection->method('fetchAssociative')->willReturn($this->topUpRow(128.0, CustomerWalletTopUpEntity::STATE_OPEN));
-
-        $walletService = $this->createMock(WalletService::class);
-        $walletService->expects($this->once())
-            ->method('creditPaidTopUp')
-            ->with(self::CUSTOMER_ID, self::CURRENCY_ID, 128.0, self::TOP_UP_ID, $this->context);
-
-        static::assertTrue($this->service(walletService: $walletService)->settle(self::TOP_UP_ID, 12800, 'PAY-1', $this->context));
-        static::assertSame(CustomerWalletTopUpEntity::STATE_CREDITED, $this->topUpRepository->updates[0][0]['state']);
-    }
-
-    public function testSettleDoesNothingForAnAlreadyCreditedTopUp(): void
-    {
-        $this->connection->method('fetchAssociative')->willReturn($this->topUpRow(128.0, CustomerWalletTopUpEntity::STATE_CREDITED));
-
-        $walletService = $this->createMock(WalletService::class);
-        $walletService->expects($this->never())->method('creditPaidTopUp');
-
-        static::assertFalse($this->service(walletService: $walletService)->settle(self::TOP_UP_ID, 12800, 'PAY-1', $this->context));
-        static::assertSame([], $this->topUpRepository->updates);
-    }
-
-    public function testSettleRefusesAnAmountTheCustomerDidNotAgreeTo(): void
-    {
-        $this->connection->method('fetchAssociative')->willReturn($this->topUpRow(128.0, CustomerWalletTopUpEntity::STATE_OPEN));
-
-        $walletService = $this->createMock(WalletService::class);
-        $walletService->expects($this->never())->method('creditPaidTopUp');
-
-        static::assertFalse($this->service(walletService: $walletService)->settle(self::TOP_UP_ID, 1, 'PAY-1', $this->context));
-        static::assertSame(CustomerWalletTopUpEntity::STATE_FAILED, $this->topUpRepository->updates[0][0]['state']);
-    }
-
-    public function testSettleIgnoresAnUnknownTopUp(): void
-    {
-        $this->connection->method('fetchAssociative')->willReturn(false);
-
-        static::assertFalse($this->topUpService->settle(self::TOP_UP_ID, 12800, 'PAY-1', $this->context));
-        static::assertSame([], $this->topUpRepository->updates);
-    }
-
-    /**
-     * A currency without a minor unit is charged in whole units - converting with a fixed factor of
-     * hundred would charge a hundredth of the intended amount.
-     */
-    public function testSettleUsesTheExponentOfTheCurrency(): void
-    {
-        $this->connection->method('fetchAssociative')->willReturn($this->topUpRow(128.0, CustomerWalletTopUpEntity::STATE_OPEN, 'JPY'));
-
-        $walletService = $this->createMock(WalletService::class);
-        $walletService->expects($this->once())
-            ->method('creditPaidTopUp')
-            ->with(self::CUSTOMER_ID, self::CURRENCY_ID, 128.0, self::TOP_UP_ID, $this->context);
-
-        static::assertTrue($this->service(walletService: $walletService)->settle(self::TOP_UP_ID, 128, 'PAY-1', $this->context));
-    }
-
-    /**
-     * The service under test with the doubles the scenario needs - the shared ones of setUp() only
-     * answer, they are no mocks.
-     */
-    private function service(
-        ?WalletService $walletService = null,
-        ?StorefrontPaymentService $payments = null,
-    ): WalletTopUpService {
         return new WalletTopUpService(
             $this->topUpRepository,
-            $walletService ?? $this->walletService,
             $payments ?? $this->payments,
             new WalletSettings($this->systemConfigService),
-            $this->connection,
-            new MockClock(self::NOW),
+            new PurchaseAttach('wallet_top_up:'),
         );
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function topUpRow(float $amount, string $state, string $currency = 'CNY'): array
-    {
-        return [
-            'id' => self::TOP_UP_ID,
-            'customer_id' => self::CUSTOMER_ID,
-            'currency_id' => self::CURRENCY_ID,
-            'currency' => $currency,
-            'amount' => $amount,
-            'state' => $state,
-        ];
     }
 
     private function createTopUp(float $amount, string $state): CustomerWalletTopUpEntity

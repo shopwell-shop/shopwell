@@ -7,9 +7,11 @@ use Shopwell\Core\Checkout\Customer\Aggregate\CustomerAddress\CustomerAddressEnt
 use Shopwell\Core\Checkout\Customer\Aggregate\CustomerGroup\CustomerGroupEntity;
 use Shopwell\Core\Checkout\Customer\Aggregate\CustomerRecovery\CustomerRecoveryEntity;
 use Shopwell\Core\Checkout\Customer\Aggregate\CustomerWishlist\CustomerWishlistCollection;
-use Shopwell\Core\Checkout\Loyalty\Entity\CustomerLoyalty\CustomerLoyaltyCollection;
+use Shopwell\Core\Checkout\Loyalty\Entity\CustomerLoyalty\CustomerLoyaltyEntity;
 use Shopwell\Core\Checkout\Loyalty\Entity\CustomerPointTransaction\CustomerPointTransactionCollection;
-use Shopwell\Core\Checkout\Loyalty\Entity\MembershipOrder\MembershipOrderCollection;
+use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyPointLot\LoyaltyPointLotCollection;
+use Shopwell\Core\Checkout\Membership\Entity\MembershipOrder\MembershipOrderCollection;
+use Shopwell\Core\Checkout\Membership\Entity\MembershipSubscription\MembershipSubscriptionCollection;
 use Shopwell\Core\Checkout\Order\Aggregate\OrderCustomer\OrderCustomerCollection;
 use Shopwell\Core\Checkout\OrderReturn\Entity\OrderReturnCollection;
 use Shopwell\Core\Checkout\Payment\PaymentMethodEntity;
@@ -162,11 +164,15 @@ class CustomerEntity extends Entity implements \Stringable
 
     protected ?ProductReviewCollection $productReviews = null;
 
-    protected ?CustomerLoyaltyCollection $customerLoyalties = null;
+    protected ?CustomerLoyaltyEntity $loyaltyAccount = null;
 
     protected ?CustomerPointTransactionCollection $customerPointTransactions = null;
 
     protected ?MembershipOrderCollection $membershipOrders = null;
+
+    protected ?MembershipSubscriptionCollection $membershipSubscriptions = null;
+
+    protected ?LoyaltyPointLotCollection $pointLots = null;
 
     protected ?CustomerWalletCollection $customerWallets = null;
 
@@ -856,14 +862,14 @@ class CustomerEntity extends Entity implements \Stringable
         $this->updatedBy = $updatedBy;
     }
 
-    public function getCustomerLoyalties(): ?CustomerLoyaltyCollection
+    public function getLoyaltyAccount(): ?CustomerLoyaltyEntity
     {
-        return $this->customerLoyalties;
+        return $this->loyaltyAccount;
     }
 
-    public function setCustomerLoyalties(CustomerLoyaltyCollection $customerLoyalties): void
+    public function setLoyaltyAccount(CustomerLoyaltyEntity $loyaltyAccount): void
     {
-        $this->customerLoyalties = $customerLoyalties;
+        $this->loyaltyAccount = $loyaltyAccount;
     }
 
     public function getCustomerPointTransactions(): ?CustomerPointTransactionCollection
@@ -884,6 +890,26 @@ class CustomerEntity extends Entity implements \Stringable
     public function setMembershipOrders(MembershipOrderCollection $membershipOrders): void
     {
         $this->membershipOrders = $membershipOrders;
+    }
+
+    public function getMembershipSubscriptions(): ?MembershipSubscriptionCollection
+    {
+        return $this->membershipSubscriptions;
+    }
+
+    public function setMembershipSubscriptions(MembershipSubscriptionCollection $membershipSubscriptions): void
+    {
+        $this->membershipSubscriptions = $membershipSubscriptions;
+    }
+
+    public function getPointLots(): ?LoyaltyPointLotCollection
+    {
+        return $this->pointLots;
+    }
+
+    public function setPointLots(LoyaltyPointLotCollection $pointLots): void
+    {
+        $this->pointLots = $pointLots;
     }
 
     public function getCustomerWallets(): ?CustomerWalletCollection

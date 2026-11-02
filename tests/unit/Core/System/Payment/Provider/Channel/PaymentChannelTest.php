@@ -9,7 +9,7 @@ use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Payment\PaymentException;
 use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
 use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
-use Shopwell\Core\System\Payment\Provider\PaymentConfigField;
+use Shopwell\Core\System\Payment\Provider\Config\PaymentConfigField;
 
 /**
  * @internal

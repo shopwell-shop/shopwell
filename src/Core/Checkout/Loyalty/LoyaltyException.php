@@ -13,10 +13,9 @@ class LoyaltyException extends HttpException
     final public const LOYALTY_INSUFFICIENT_POINTS_CODE = 'CHECKOUT__LOYALTY_INSUFFICIENT_POINTS';
     final public const LOYALTY_BELOW_MINIMUM_POINTS_CODE = 'CHECKOUT__LOYALTY_BELOW_MINIMUM_POINTS';
     final public const LOYALTY_EXCEEDS_MAX_REDEEMABLE_CODE = 'CHECKOUT__LOYALTY_EXCEEDS_MAX_REDEEMABLE';
-    final public const LOYALTY_PLAN_NOT_FOUND_CODE = 'CHECKOUT__LOYALTY_PLAN_NOT_FOUND';
-    final public const LOYALTY_PLAN_NOT_PURCHASABLE_CODE = 'CHECKOUT__LOYALTY_PLAN_NOT_PURCHASABLE';
     final public const LOYALTY_TIER_NOT_FOUND_CODE = 'CHECKOUT__LOYALTY_TIER_NOT_FOUND';
     final public const LOYALTY_INVALID_MEMBERSHIP_DURATION_CODE = 'CHECKOUT__LOYALTY_INVALID_MEMBERSHIP_DURATION';
+    final public const LOYALTY_LOT_BALANCE_MISMATCH_CODE = 'CHECKOUT__LOYALTY_LOT_BALANCE_MISMATCH';
 
     public static function invalidPoints(int $points): self
     {
@@ -58,26 +57,6 @@ class LoyaltyException extends HttpException
         );
     }
 
-    public static function planNotFound(string $planId): self
-    {
-        return new self(
-            Response::HTTP_NOT_FOUND,
-            self::LOYALTY_PLAN_NOT_FOUND_CODE,
-            'The membership plan "{{ planId }}" does not exist.',
-            ['planId' => $planId]
-        );
-    }
-
-    public static function planNotPurchasable(string $planId): self
-    {
-        return new self(
-            Response::HTTP_BAD_REQUEST,
-            self::LOYALTY_PLAN_NOT_PURCHASABLE_CODE,
-            'The membership plan "{{ planId }}" cannot be bought in this currency.',
-            ['planId' => $planId]
-        );
-    }
-
     public static function tierNotFound(string $tierId): self
     {
         return new self(
@@ -95,6 +74,21 @@ class LoyaltyException extends HttpException
             self::LOYALTY_INVALID_MEMBERSHIP_DURATION_CODE,
             'The membership duration "{{ durationDays }}" is invalid. A membership lasts at least one day.',
             ['durationDays' => $durationDays]
+        );
+    }
+
+    /**
+     * The batches of a customer and their balance have drifted apart. Every booking keeps them equal,
+     * so this is broken data - and booking on top of it would quietly move the difference onto the
+     * customer instead of failing where the cause is.
+     */
+    public static function lotBalanceMismatch(string $customerId, int $lotTotal, int $balance): self
+    {
+        return new self(
+            Response::HTTP_CONFLICT,
+            self::LOYALTY_LOT_BALANCE_MISMATCH_CODE,
+            'Customer "{{ customerId }}" has {{ balance }} points but their batches hold {{ lotTotal }}.',
+            ['customerId' => $customerId, 'balance' => $balance, 'lotTotal' => $lotTotal]
         );
     }
 }

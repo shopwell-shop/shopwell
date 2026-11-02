@@ -7,6 +7,7 @@ use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Payment\Api\Struct\PaymentTransferDraft;
 use Shopwell\Core\System\Payment\Api\Struct\PaymentTransferRequest;
 use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppChannel\PaymentAppChannelEntity;
 use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppProvider\PaymentAppProviderEntity;
@@ -17,7 +18,6 @@ use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
 use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
 use Shopwell\Core\System\Payment\Provider\PaymentProvider;
 use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;
-use Shopwell\Core\System\Payment\Transfer\Api\Struct\PaymentTransferDraft;
 
 /**
  * Books the intent to pay: the part of a payout that happens before any channel is involved.

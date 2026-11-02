@@ -17,10 +17,10 @@ use Shopwell\Core\System\Payment\App\PaymentAppCollection;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
 use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannelRegistry;
 use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
-use Shopwell\Core\System\Payment\Provider\PaymentChannelConfigCollection;
-use Shopwell\Core\System\Payment\Provider\PaymentChannelConfigEntity;
-use Shopwell\Core\System\Payment\Provider\PaymentProviderConfigCollection;
-use Shopwell\Core\System\Payment\Provider\PaymentProviderConfigEntity;
+use Shopwell\Core\System\Payment\Provider\Config\PaymentChannelConfigCollection;
+use Shopwell\Core\System\Payment\Provider\Config\PaymentChannelConfigEntity;
+use Shopwell\Core\System\Payment\Provider\Config\PaymentProviderConfigCollection;
+use Shopwell\Core\System\Payment\Provider\Config\PaymentProviderConfigEntity;
 
 /**
  * Keeps the payment methods out of the checkout that cannot collect a payment at all.

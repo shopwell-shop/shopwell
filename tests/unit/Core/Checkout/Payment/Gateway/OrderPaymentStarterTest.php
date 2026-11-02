@@ -19,7 +19,7 @@ use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Payment\Api\Struct\PayParams;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
-use Shopwell\Core\System\Payment\Gateway\PayResult;
+use Shopwell\Core\System\Payment\Gateway\Request\PayResult;
 use Shopwell\Core\System\Payment\Order\PaymentOrderCollection;
 use Shopwell\Core\System\Payment\Order\PaymentOrderEntity;
 use Shopwell\Core\System\Payment\PaymentException;
@@ -152,6 +152,44 @@ class OrderPaymentStarterTest extends TestCase
 
         static::assertSame($created, $started['order']);
         static::assertSame($payResult, $started['result']);
+    }
+
+    /**
+     * A shop that rounds its prices to whole yuan still pays in fen: the smallest unit is a property of
+     * the ISO currency, not of the item rounding the merchant configured. Converting by the item
+     * rounding would charge a hundredth of the price - 19.99 CNY has to be 1999, never 20.
+     */
+    public function testStartConvertsTheAmountByTheIsoCurrencyAndNotByTheItemRounding(): void
+    {
+        $created = PaymentGatewayFixture::paymentOrder();
+
+        $paymentOrderRepository = $this->createMock(EntityRepository::class);
+        $paymentOrderRepository->expects($this->exactly(3))
+            ->method('search')
+            ->willReturnCallback(static function (Criteria $criteria) use ($created): EntitySearchResult {
+                return $criteria->getIds() !== []
+                    ? PaymentGatewayFixture::searchResult([$created])
+                    : PaymentGatewayFixture::searchResult([]);
+            });
+        $paymentOrderRepository->expects($this->once())
+            ->method('create')
+            ->with(static::callback(static function (array $data): bool {
+                static::assertSame(1999, $data[0]['amount']);
+                static::assertSame('CNY', $data[0]['currency']);
+
+                return true;
+            }));
+
+        $transactionRepository = $this->createMock(EntityRepository::class);
+        $transactionRepository->expects($this->once())->method('create');
+        $transactionRepository->expects($this->once())->method('update');
+
+        // zero decimals of item rounding on purpose - the price is displayed and rounded to whole yuan
+        $order = $this->order();
+        $order->setCurrency(PaymentGatewayFixture::currency('CNY', 0));
+
+        PaymentGatewayFixture::starter($paymentOrderRepository, $transactionRepository, $this->gateway(new PayResult(new PayParams(PaymentFlow::REDIRECT))))
+            ->start($order, PaymentGatewayFixture::orderTransaction($order), PaymentGatewayFixture::channel(), $this->app(), 'https://shop.example.test/return');
     }
 
     public function testStartCapturesAgainWhenTheExistingOrderHasNoChannelAnswer(): void

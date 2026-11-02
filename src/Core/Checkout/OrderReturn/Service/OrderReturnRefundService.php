@@ -15,21 +15,26 @@ use Shopwell\Core\System\Payment\App\PaymentAppCollection;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
 use Shopwell\Core\System\Payment\Order\PaymentOrderEntity;
 use Shopwell\Core\System\Payment\Order\PaymentOrderService;
-use Shopwell\Core\System\Payment\Order\Refund\PaymentRefundService;
+use Shopwell\Core\System\Payment\Order\PaymentRefundService;
 
 /**
- * Pays a return out through the payment gateway.
+ * Pays a return out.
  *
  * The refund is not re-implemented here: the gateway already knows how to refund a payment order
  * idempotently, how much of it is still refundable and which interfaces can refund at all. This
- * service only answers the two questions the gateway can not - which payment belongs to the order of
- * the return and whose tenant collected it - and writes the resulting refund number back to the
- * return.
+ * service decides how the amount is composed - which part is given back by a
+ * {@see OrderReturnRefundSource} and which part the gateway pays - and writes the resulting refund
+ * number back to the return.
+ *
+ * The gateway only sees what it collected itself. An order that was paid partly with the wallet is
+ * therefore refunded in two steps: the wallet part first, the rest at the gateway. Asking the gateway
+ * for the full amount would make it refuse the payout, because a payment order can never refund more
+ * than it was paid.
  *
  * The refund number of the aftersale is used as the out refund number of the gateway. It is unique
  * per return and never changes, so a retried payout (a timeout of the channel, a clicked button
  * twice) can not refund the customer twice: the gateway answers the replay with the refund it already
- * has.
+ * has, and a refund source skips a reference it has already booked.
  *
  * @final
  */
@@ -41,6 +46,7 @@ class OrderReturnRefundService
      *
      * @param EntityRepository<PaymentAppCollection> $paymentAppRepository
      * @param EntityRepository<OrderReturnCollection> $orderReturnRepository
+     * @param iterable<OrderReturnRefundSource> $sources
      */
     public function __construct(
         private readonly EntityRepository $paymentAppRepository,
@@ -48,54 +54,138 @@ class OrderReturnRefundService
         private readonly PaymentOrderService $paymentOrderService,
         private readonly PaymentRefundService $paymentRefundService,
         private readonly OrderReturnStateHandler $stateHandler,
+        private readonly iterable $sources = [],
     ) {
     }
 
     /**
-     * Hands the amount of the return to the gateway and books the result on the return.
+     * Pays the amount of the return out and books the result on the return.
      *
      * A channel that answers asynchronously leaves the return in `refunding`; the subscriber on
      * `PaymentRefundFinishedEvent` closes it once the channel confirms. A channel that answers
-     * synchronously is closed right away.
+     * synchronously - and a return the sources paid completely, which never reaches the channel - is
+     * closed right away.
      *
-     * @throws OrderReturnException when there is no payment to refund or the gateway refuses
+     * @throws OrderReturnException when the return has nothing to pay out or the gateway refuses
      */
     public function refund(OrderReturnEntity $orderReturn, OrderEntity $order, Context $context): void
     {
-        if ($orderReturn->paymentRefundNo !== null) {
-            // the payout was already started for this return, the gateway answers a replay itself -
-            // calling it again here would only write the same number a second time
-            return;
-        }
-
         if ($orderReturn->refundAmount <= 0) {
             throw OrderReturnException::refundNotPossible($orderReturn->returnNumber, 'the return has no amount to refund.');
         }
 
-        $paymentOrder = $this->paymentOrder($order);
-
-        if ($paymentOrder === null) {
-            throw OrderReturnException::refundNotPossible(
-                $orderReturn->returnNumber,
-                'the order has no collected payment.'
-            );
+        if ($orderReturn->paymentRefundNo !== null) {
+            // the payout of this return has already run: the gateway has a refund under its number and
+            // the sources have booked against it. A second call must not compose the amount again -
+            // a source that answers "500 refundable" once more would pay the customer twice as soon as
+            // its own idempotency lapses. Money that is out wins over a state that a crash left behind.
+            return;
         }
 
-        $app = $this->paymentApp($paymentOrder);
+        [$remaining, $portions] = $this->split($orderReturn, $order, $context);
 
-        if ($app === null) {
+        // resolved before any money moves: a return that cannot be paid out completely has to fail while
+        // it is still untouched, not after a source has already credited the customer
+        $gateway = $remaining > 0 ? $this->gateway($orderReturn, $order) : null;
+
+        foreach ($portions as [$source, $amount]) {
+            $source->refund($orderReturn, $order, $amount, $context);
+        }
+
+        $synchronous = $gateway === null || $this->refundAtGateway($orderReturn, $gateway, $remaining, $context);
+
+        // the return moves to refunding only after the money was accepted, a refused payout leaves it
+        // where it was so a merchant can correct the amount or the channel and retry
+        $this->stateHandler->refund($orderReturn->id, $context);
+
+        if ($synchronous) {
+            $this->stateHandler->finish($orderReturn->id, $context);
+        }
+    }
+
+    /**
+     * Splits the amount of the return over the sources that collected part of the order.
+     *
+     * A source is asked for what it still holds, never for more, and never for more than the return is
+     * worth: the second return of the same order therefore only gets the part the first one left over.
+     *
+     * @return array{int, list<array{OrderReturnRefundSource, int}>} what is left for the gateway and the portions of the sources
+     */
+    private function split(OrderReturnEntity $orderReturn, OrderEntity $order, Context $context): array
+    {
+        $remaining = $orderReturn->refundAmount;
+        $portions = [];
+
+        foreach ($this->sources as $source) {
+            if ($remaining <= 0) {
+                break;
+            }
+
+            $amount = min($remaining, $source->refundableAmount($orderReturn, $order, $context));
+
+            if ($amount <= 0) {
+                continue;
+            }
+
+            $portions[] = [$source, $amount];
+            $remaining -= $amount;
+        }
+
+        return [$remaining, $portions];
+    }
+
+    /**
+     * The payment that collected the order of the return, and the channel it was collected with.
+     *
+     * Only a collected payment can be refunded, so the latest payment of the primary transaction is
+     * taken and checked for it. An order that was never paid (an invoice, a manual order) has none,
+     * and a merchant has to pay that one out by hand - which is the honest answer and not something a
+     * gateway call could invent.
+     *
+     * @throws OrderReturnException
+     *
+     * @return array{PaymentAppEntity, PaymentOrderEntity}
+     */
+    private function gateway(OrderReturnEntity $orderReturn, OrderEntity $order): array
+    {
+        $transactionId = $order->getPrimaryOrderTransactionId();
+
+        $paymentOrder = $transactionId === null
+            ? null
+            : $this->paymentOrderService->findLatestByOrderTransaction($transactionId);
+
+        if (!$paymentOrder instanceof PaymentOrderEntity || $paymentOrder->paidAt === null) {
+            throw OrderReturnException::refundNotPossible($orderReturn->returnNumber, 'the order has no collected payment.');
+        }
+
+        $criteria = new Criteria([$paymentOrder->paymentAppId]);
+        $app = $this->paymentAppRepository->search($criteria, Context::createDefaultContext())->getEntities()->first();
+
+        if (!$app instanceof PaymentAppEntity) {
             throw OrderReturnException::refundNotPossible(
                 $orderReturn->returnNumber,
                 'the payment app of the collected payment does not exist anymore.'
             );
         }
 
+        return [$app, $paymentOrder];
+    }
+
+    /**
+     * @param array{PaymentAppEntity, PaymentOrderEntity} $gateway
+     *
+     * @return bool whether the channel answered synchronously
+     */
+    private function refundAtGateway(OrderReturnEntity $orderReturn, array $gateway, int $amount, Context $context): bool
+    {
+        [$app, $paymentOrder] = $gateway;
+
         $refund = $this->paymentRefundService->refund(
             $app,
             $paymentOrder,
             new PaymentRefundRequest(
                 outRefundNo: $orderReturn->returnNumber,
-                amount: $orderReturn->refundAmount,
+                amount: $amount,
                 reason: 'Return ' . $orderReturn->returnNumber,
             )
         );
@@ -107,46 +197,6 @@ class OrderReturnRefundService
             'paymentRefundNo' => $refund->refundNo,
         ]], $context);
 
-        // the return moves to refunding only after the gateway accepted the request, a refused request
-        // leaves it where it was so a merchant can correct the amount or the channel and retry
-        $this->stateHandler->refund($orderReturn->id, $context);
-
-        if ($refund->refundedAt !== null) {
-            $this->stateHandler->finish($orderReturn->id, $context);
-        }
-    }
-
-    /**
-     * The payment that collected the order of the return.
-     *
-     * Only a collected payment can be refunded, so the latest payment of the primary transaction is
-     * taken and checked for it. An order that was never paid (an invoice, a manual order) has none,
-     * and a merchant has to pay that one out by hand - which is the honest answer and not something a
-     * gateway call could invent.
-     */
-    private function paymentOrder(OrderEntity $order): ?PaymentOrderEntity
-    {
-        $transactionId = $order->getPrimaryOrderTransactionId();
-
-        if ($transactionId === null) {
-            return null;
-        }
-
-        $paymentOrder = $this->paymentOrderService->findLatestByOrderTransaction($transactionId);
-
-        if (!$paymentOrder instanceof PaymentOrderEntity || $paymentOrder->paidAt === null) {
-            return null;
-        }
-
-        return $paymentOrder;
-    }
-
-    private function paymentApp(PaymentOrderEntity $paymentOrder): ?PaymentAppEntity
-    {
-        $criteria = new Criteria([$paymentOrder->paymentAppId]);
-
-        $app = $this->paymentAppRepository->search($criteria, Context::createDefaultContext())->getEntities()->first();
-
-        return $app instanceof PaymentAppEntity ? $app : null;
+        return $refund->refundedAt !== null;
     }
 }

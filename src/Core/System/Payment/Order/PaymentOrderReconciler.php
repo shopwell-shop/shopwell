@@ -13,12 +13,12 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\RangeFilter;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
-use Shopwell\Core\System\Payment\Gateway\PaymentQuery;
-use Shopwell\Core\System\Payment\Gateway\QueryResult;
+use Shopwell\Core\System\Payment\Gateway\Request\PaymentQuery;
+use Shopwell\Core\System\Payment\Gateway\Request\QueryResult;
 use Shopwell\Core\System\Payment\Order\Aggregate\PaymentTransaction\PaymentTransactionEntity;
 use Shopwell\Core\System\Payment\PaymentException;
 use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
-use Shopwell\Core\System\Payment\Provider\PaymentConfigResolver;
+use Shopwell\Core\System\Payment\Provider\Config\PaymentConfigResolver;
 use Shopwell\Core\System\StateMachine\Aggregation\StateMachineState\StateMachineStateCollection;
 use Shopwell\Core\System\StateMachine\Aggregation\StateMachineState\StateMachineStateEntity;
 

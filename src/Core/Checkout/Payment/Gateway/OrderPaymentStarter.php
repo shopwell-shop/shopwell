@@ -10,7 +10,8 @@ use Shopwell\Core\System\Currency\CurrencyEntity;
 use Shopwell\Core\System\Payment\Api\Struct\PaymentOrderRequest;
 use Shopwell\Core\System\Payment\Api\Struct\PayParams;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
-use Shopwell\Core\System\Payment\Gateway\PayResult;
+use Shopwell\Core\System\Payment\Gateway\Request\Money;
+use Shopwell\Core\System\Payment\Gateway\Request\PayResult;
 use Shopwell\Core\System\Payment\Order\Aggregate\PaymentTransaction\PaymentTransactionEntity;
 use Shopwell\Core\System\Payment\Order\PaymentOrderCapture;
 use Shopwell\Core\System\Payment\Order\PaymentOrderEntity;
@@ -171,9 +172,14 @@ final class OrderPaymentStarter
         );
     }
 
+    /**
+     * The gateway counts in the smallest unit of the ISO currency, which is not necessarily the number
+     * of decimals the shop rounds its prices with: a shop that displays and rounds to whole yuan still
+     * pays in fen, and a conversion by the item rounding would charge a hundredth of the price.
+     */
     private function toSmallestUnit(float $totalPrice, CurrencyEntity $currency): int
     {
-        return (int) round($totalPrice * (10 ** $currency->getItemRounding()->getDecimals()));
+        return Money::fromFloat($totalPrice, $currency->getIsoCode());
     }
 
     /**

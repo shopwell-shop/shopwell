@@ -6,17 +6,25 @@ use Doctrine\DBAL\Connection;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\MockObject\Stub;
 use PHPUnit\Framework\TestCase;
-use Psr\Clock\ClockInterface;
+use Shopwell\Core\Checkout\Ledger\RowLock;
 use Shopwell\Core\Checkout\Loyalty\Entity\CustomerLoyalty\CustomerLoyaltyCollection;
 use Shopwell\Core\Checkout\Loyalty\Entity\CustomerPointTransaction\CustomerPointTransactionCollection;
+use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyPointLot\LoyaltyPointLotCollection;
+use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyPointLotUse\LoyaltyPointLotUseCollection;
 use Shopwell\Core\Checkout\Loyalty\LoyaltyException;
 use Shopwell\Core\Checkout\Loyalty\Service\LoyaltyLedger;
+use Shopwell\Core\Checkout\Loyalty\Service\LoyaltyPointLots;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\Test\Stub\DataAbstractionLayer\StaticEntityRepository;
 use Symfony\Component\Clock\MockClock;
 
 /**
+ * The ledger writes three things for one booking: the booking, the balance and the batches. The tests
+ * pin down that all three move together and that the batches are spent oldest-expiry-first - the
+ * decision itself is covered by {@see LoyaltyPointLotsTest}.
+ *
  * @internal
  */
 #[Package('checkout')]
@@ -25,13 +33,13 @@ class LoyaltyLedgerTest extends TestCase
 {
     private const CUSTOMER_ID = 'a1b2c3d4e5f60718293a4b5c6d7e8f90';
 
+    private const NOW = '2026-11-02 12:00:00';
+
     private const ACCOUNT_ID = 'c1b2c3d4e5f60718293a4b5c6d7e8f90';
 
-    private const TIER_ID = 'e1b2c3d4e5f60718293a4b5c6d7e8f90';
+    private const FIRST_LOT_ID = '11b2c3d4e5f60718293a4b5c6d7e8f90';
 
-    private const NEW_TIER_ID = 'f1b2c3d4e5f60718293a4b5c6d7e8f90';
-
-    private const NOW = '2026-06-01 12:00:00';
+    private const SECOND_LOT_ID = '22b2c3d4e5f60718293a4b5c6d7e8f90';
 
     /**
      * @var StaticEntityRepository<CustomerLoyaltyCollection>
@@ -43,6 +51,16 @@ class LoyaltyLedgerTest extends TestCase
      */
     private StaticEntityRepository $pointTransactionRepository;
 
+    /**
+     * @var StaticEntityRepository<LoyaltyPointLotCollection>
+     */
+    private StaticEntityRepository $lotRepository;
+
+    /**
+     * @var StaticEntityRepository<LoyaltyPointLotUseCollection>
+     */
+    private StaticEntityRepository $useRepository;
+
     private Connection&Stub $connection;
 
     /**
@@ -53,7 +71,31 @@ class LoyaltyLedgerTest extends TestCase
      */
     private ?\Closure $rowResolver = null;
 
-    private ClockInterface $clock;
+    /**
+     * The batches the next `FOR UPDATE` on the lots answers, in the order the query would return them.
+     *
+     * @var list<array{id: string, remaining: int}>
+     */
+    private array $openLots = [];
+
+    /**
+     * The withdrawals the next `FOR UPDATE` on the uses answers, one row per batch the order took from.
+     *
+     * @var list<array{
+     *     useId: string,
+     *     lotId: string,
+     *     points: int,
+     *     returned: int,
+     *     remaining: int,
+     *     expiresAt: \DateTimeInterface|null,
+     *     expiredAt: \DateTimeInterface|null
+     * }>
+     */
+    private array $openUses = [];
+
+    private int $lotTotal = 0;
+
+    private bool $keyAlreadyBooked = false;
 
     private LoyaltyLedger $ledger;
 
@@ -63,6 +105,8 @@ class LoyaltyLedgerTest extends TestCase
     {
         $this->customerLoyaltyRepository = StaticEntityRepository::of(CustomerLoyaltyCollection::class);
         $this->pointTransactionRepository = StaticEntityRepository::of(CustomerPointTransactionCollection::class);
+        $this->lotRepository = StaticEntityRepository::of(LoyaltyPointLotCollection::class);
+        $this->useRepository = StaticEntityRepository::of(LoyaltyPointLotUseCollection::class);
         $this->connection = static::createStub(Connection::class);
         $this->context = Context::createDefaultContext();
 
@@ -75,22 +119,48 @@ class LoyaltyLedgerTest extends TestCase
                 return ($this->rowResolver)();
             }
 
-            return [
-                'id' => self::ACCOUNT_ID,
-                'points_balance' => 200,
-                'growth_value' => 500,
-                'membership_tier_id' => null,
-                'membership_valid_until' => null,
-            ];
+            return $this->row();
         });
 
-        $this->clock = new MockClock(self::NOW);
+        $this->connection->method('fetchOne')->willReturnCallback(function (string $sql): mixed {
+            if (str_contains($sql, 'SUM(`remaining_points`)')) {
+                return $this->lotTotal;
+            }
+
+            return $this->keyAlreadyBooked ? 1 : 0;
+        });
+
+        $this->connection->method('fetchAllAssociative')->willReturnCallback(function (string $sql): array {
+            if (str_contains($sql, 'loyalty_point_lot_use')) {
+                return array_map(
+                    fn (array $use): array => [
+                        'id' => Uuid::fromHexToBytes($use['useId']),
+                        'lot_id' => Uuid::fromHexToBytes($use['lotId']),
+                        'points' => $use['points'],
+                        'returned_points' => $use['returned'],
+                        'remaining_points' => $use['remaining'],
+                        'expires_at' => $use['expiresAt']?->format('Y-m-d H:i:s.v'),
+                        'expired_at' => $use['expiredAt']?->format('Y-m-d H:i:s.v'),
+                    ],
+                    $this->openUses
+                );
+            }
+
+            return array_map(
+                static fn (array $lot): array => [
+                    'id' => Uuid::fromHexToBytes($lot['id']),
+                    'remaining_points' => $lot['remaining'],
+                ],
+                $this->openLots
+            );
+        });
 
         $this->ledger = new LoyaltyLedger(
             $this->customerLoyaltyRepository,
             $this->pointTransactionRepository,
             $this->connection,
-            $this->clock,
+            new RowLock($this->connection),
+            new LoyaltyPointLots($this->connection, $this->lotRepository, $this->useRepository, new MockClock(self::NOW)),
         );
     }
 
@@ -118,9 +188,19 @@ class LoyaltyLedgerTest extends TestCase
         static::assertSame(300, $this->customerLoyaltyRepository->updates[0][0]['pointsBalance']);
     }
 
+    public function testABookingThatAddsPointsOpensABatch(): void
+    {
+        $this->ledger->bookPoints(self::CUSTOMER_ID, 'award', 100, $this->context, orderId: self::ACCOUNT_ID);
+
+        static::assertCount(1, $this->lotRepository->creates);
+        static::assertSame(100, $this->lotRepository->creates[0][0]['points']);
+        static::assertSame(100, $this->lotRepository->creates[0][0]['remainingPoints']);
+        static::assertSame(self::ACCOUNT_ID, $this->lotRepository->creates[0][0]['orderId']);
+    }
+
     public function testSkipsABookingWhoseKeyWasAlreadyBooked(): void
     {
-        $this->connection->method('fetchOne')->willReturn(1);
+        $this->keyAlreadyBooked = true;
 
         $balanceAfter = $this->ledger->bookPoints(
             self::CUSTOMER_ID,
@@ -133,6 +213,7 @@ class LoyaltyLedgerTest extends TestCase
         static::assertNull($balanceAfter);
         static::assertSame([], $this->pointTransactionRepository->creates);
         static::assertSame([], $this->customerLoyaltyRepository->updates);
+        static::assertSame([], $this->lotRepository->creates);
     }
 
     public function testRefusesToTakeTheBalanceBelowZero(): void
@@ -153,19 +234,113 @@ class LoyaltyLedgerTest extends TestCase
         }
     }
 
+    public function testASpentBookingTakesTheBatchThatExpiresFirst(): void
+    {
+        $this->lotTotal = 200;
+        $this->openLots = [
+            ['id' => self::FIRST_LOT_ID, 'remaining' => 100],
+            ['id' => self::SECOND_LOT_ID, 'remaining' => 100],
+        ];
+
+        $this->ledger->bookPoints(
+            self::CUSTOMER_ID,
+            'redeem',
+            -150,
+            $this->context,
+            rejectNegativeBalance: true
+        );
+
+        $transaction = $this->pointTransactionRepository->creates[0][0];
+        static::assertSame(-150, $transaction['points']);
+        static::assertSame(50, $transaction['balanceAfter']);
+
+        $uses = $this->useRepository->creates[0];
+        static::assertCount(2, $uses);
+        static::assertSame(self::FIRST_LOT_ID, $uses[0]['lotId']);
+        static::assertSame(100, $uses[0]['points']);
+        static::assertSame(self::SECOND_LOT_ID, $uses[1]['lotId']);
+        static::assertSame(50, $uses[1]['points']);
+
+        $updates = $this->lotRepository->updates[0];
+        static::assertSame(0, $updates[0]['remainingPoints']);
+        static::assertSame(50, $updates[1]['remainingPoints']);
+    }
+
+    public function testReportsABalanceThatTheBatchesCannotCover(): void
+    {
+        $this->lotTotal = 100;
+
+        $this->expectExceptionObject(LoyaltyException::lotBalanceMismatch(self::CUSTOMER_ID, 100, 200));
+
+        $this->ledger->bookPoints(
+            self::CUSTOMER_ID,
+            'redeem',
+            -150,
+            $this->context,
+            rejectNegativeBalance: true
+        );
+    }
+
+    public function testExpiringDrainsOnlyTheBatchesThatHaveRunOut(): void
+    {
+        $this->lotTotal = 200;
+        $this->openLots = [
+            ['id' => self::FIRST_LOT_ID, 'remaining' => 40],
+            ['id' => self::SECOND_LOT_ID, 'remaining' => 20],
+        ];
+
+        $now = new \DateTimeImmutable('2026-11-02 03:00:00');
+
+        static::assertSame(60, $this->ledger->expireLots(self::CUSTOMER_ID, 'expire', $now, $this->context));
+
+        $transaction = $this->pointTransactionRepository->creates[0][0];
+        static::assertSame('expire', $transaction['type']);
+        static::assertSame(-60, $transaction['points']);
+        static::assertSame(140, $transaction['balanceAfter']);
+
+        $updates = $this->lotRepository->updates[0];
+        static::assertSame(0, $updates[0]['remainingPoints']);
+        static::assertSame($now, $updates[0]['expiredAt']);
+        static::assertSame(0, $updates[1]['remainingPoints']);
+    }
+
+    public function testExpiringNothingWritesNoBooking(): void
+    {
+        $this->lotTotal = 200;
+        $this->openLots = [];
+
+        static::assertSame(0, $this->ledger->expireLots(
+            self::CUSTOMER_ID,
+            'expire',
+            new \DateTimeImmutable('2026-11-02 03:00:00'),
+            $this->context
+        ));
+
+        static::assertSame([], $this->pointTransactionRepository->creates);
+        static::assertSame([], $this->customerLoyaltyRepository->updates);
+    }
+
+    public function testRefusesToExpireWhenTheBatchesDoNotAddUpToTheBalance(): void
+    {
+        $this->lotTotal = 50;
+
+        $this->expectExceptionObject(LoyaltyException::lotBalanceMismatch(self::CUSTOMER_ID, 50, 200));
+
+        $this->ledger->expireLots(
+            self::CUSTOMER_ID,
+            'expire',
+            new \DateTimeImmutable('2026-11-02 03:00:00'),
+            $this->context
+        );
+    }
+
     public function testOpensTheAccountWhenTheCustomerHasNone(): void
     {
         $calls = 0;
         $this->rowResolver = function () use (&$calls): mixed {
             ++$calls;
 
-            return $calls === 1 ? false : [
-                'id' => self::ACCOUNT_ID,
-                'points_balance' => 0,
-                'growth_value' => 0,
-                'membership_tier_id' => null,
-                'membership_valid_until' => null,
-            ];
+            return $calls === 1 ? false : $this->row(pointsBalance: 0, growthValue: 0);
         };
 
         $this->ledger->bookPoints(self::CUSTOMER_ID, 'award', 10, $this->context);
@@ -184,61 +359,95 @@ class LoyaltyLedgerTest extends TestCase
         static::assertSame(750, $this->customerLoyaltyRepository->updates[0][0]['growthValue']);
     }
 
-    public function testActivatesAMembershipStartingNow(): void
+    /**
+     * A return gives back into the batch the points left, keeping its date: the withdrawal records
+     * what came back and the batch grows by exactly that.
+     */
+    public function testAGiveBackPutsThePointsBackIntoTheBatchTheyLeft(): void
     {
-        $period = $this->ledger->activateMembership(self::CUSTOMER_ID, self::TIER_ID, 30, $this->context);
+        $this->openUses = [[
+            'useId' => self::FIRST_LOT_ID,
+            'lotId' => self::SECOND_LOT_ID,
+            'points' => 100,
+            'returned' => 0,
+            'remaining' => 20,
+            'expiresAt' => new \DateTimeImmutable('2027-01-01 00:00:00'),
+            'expiredAt' => null,
+        ]];
 
-        $update = $this->customerLoyaltyRepository->updates[0][0];
-        static::assertSame(self::TIER_ID, $update['membershipTierId']);
-        static::assertEquals(new \DateTimeImmutable(self::NOW), $period['startsAt']);
-        static::assertEquals(new \DateTimeImmutable('2026-07-01 12:00:00'), $period['expiresAt']);
-        static::assertSame($period['expiresAt'], $update['membershipValidUntil']);
+        $given = $this->ledger->giveBackPoints(self::CUSTOMER_ID, 'return', self::ACCOUNT_ID, 200, $this->context, 'RT-1');
+
+        static::assertSame(100, $given);
+
+        $transaction = $this->pointTransactionRepository->creates[0][0];
+        static::assertSame('return', $transaction['type']);
+        static::assertSame(100, $transaction['points']);
+        static::assertSame(300, $transaction['balanceAfter']);
+        static::assertSame('RT-1', $transaction['comment']);
+
+        static::assertSame(100, $this->useRepository->updates[0][0]['returnedPoints']);
+        static::assertSame(120, $this->lotRepository->updates[0][0]['remainingPoints']);
+        static::assertSame(300, $this->customerLoyaltyRepository->updates[0][0]['pointsBalance']);
     }
 
-    public function testRenewingTheSameTierContinuesWhereItEnds(): void
+    public function testAGiveBackWithNothingOutWritesNoBooking(): void
     {
-        $this->rowResolver = static fn (): array => [
-            'id' => self::ACCOUNT_ID,
-            'points_balance' => 0,
-            'growth_value' => 0,
-            'membership_tier_id' => self::TIER_ID,
-            'membership_valid_until' => '2026-12-01 00:00:00',
-        ];
+        $this->openUses = [];
 
-        $period = $this->ledger->activateMembership(self::CUSTOMER_ID, self::TIER_ID, 30, $this->context);
-
-        static::assertEquals(new \DateTimeImmutable('2026-12-01 00:00:00'), $period['startsAt']);
-        static::assertEquals(new \DateTimeImmutable('2026-12-31 00:00:00'), $period['expiresAt']);
+        static::assertSame(0, $this->ledger->giveBackPoints(self::CUSTOMER_ID, 'return', self::ACCOUNT_ID, 100, $this->context));
+        static::assertSame([], $this->pointTransactionRepository->creates);
+        static::assertSame([], $this->customerLoyaltyRepository->updates);
+        static::assertSame([], $this->lotRepository->updates);
     }
 
-    public function testBuyingAnotherTierStartsNowInsteadOfStacking(): void
+    /**
+     * Taking back what an order earned walks the batches of that order - not the ones that expire
+     * next, which may belong to a different order entirely.
+     */
+    public function testRevokingTakesFromTheBatchesOfTheOrder(): void
     {
-        $this->rowResolver = static fn (): array => [
-            'id' => self::ACCOUNT_ID,
-            'points_balance' => 0,
-            'growth_value' => 0,
-            'membership_tier_id' => self::TIER_ID,
-            'membership_valid_until' => '2026-12-01 00:00:00',
+        $this->openLots = [
+            ['id' => self::FIRST_LOT_ID, 'remaining' => 100],
+            ['id' => self::SECOND_LOT_ID, 'remaining' => 100],
         ];
 
-        $period = $this->ledger->activateMembership(self::CUSTOMER_ID, self::NEW_TIER_ID, 30, $this->context);
+        static::assertSame(150, $this->ledger->revokeOrderPoints(self::CUSTOMER_ID, 'revoke', self::ACCOUNT_ID, 150, $this->context, 'RT-1'));
 
-        static::assertEquals(new \DateTimeImmutable(self::NOW), $period['startsAt']);
-        static::assertSame(self::NEW_TIER_ID, $this->customerLoyaltyRepository->updates[0][0]['membershipTierId']);
+        $transaction = $this->pointTransactionRepository->creates[0][0];
+        static::assertSame('revoke', $transaction['type']);
+        static::assertSame(-150, $transaction['points']);
+        static::assertSame(50, $transaction['balanceAfter']);
+
+        $uses = $this->useRepository->creates[0];
+        static::assertCount(2, $uses);
+        static::assertSame(0, $uses[0]['returnedPoints']);
+        static::assertSame(0, $this->lotRepository->updates[0][0]['remainingPoints']);
+        static::assertSame(50, $this->lotRepository->updates[0][1]['remainingPoints']);
     }
 
-    public function testAnEndedMembershipDoesNotContinue(): void
+    public function testRevokingWhatIsAlreadySpentWritesNoBooking(): void
     {
-        $this->rowResolver = static fn (): array => [
-            'id' => self::ACCOUNT_ID,
-            'points_balance' => 0,
-            'growth_value' => 0,
-            'membership_tier_id' => self::TIER_ID,
-            'membership_valid_until' => '2026-01-01 00:00:00',
+        $this->openLots = [];
+
+        static::assertSame(0, $this->ledger->revokeOrderPoints(self::CUSTOMER_ID, 'revoke', self::ACCOUNT_ID, 100, $this->context));
+        static::assertSame([], $this->pointTransactionRepository->creates);
+        static::assertSame([], $this->customerLoyaltyRepository->updates);
+    }
+
+    /**
+     * A locked row as the database answers it: uuid columns in bytes, everything else as stored.
+     *
+     * @return array<string, mixed>
+     */
+    private function row(
+        int $pointsBalance = 200,
+        int $growthValue = 500,
+        ?string $id = null,
+    ): array {
+        return [
+            'id' => Uuid::fromHexToBytes($id ?? self::ACCOUNT_ID),
+            'points_balance' => $pointsBalance,
+            'growth_value' => $growthValue,
         ];
-
-        $period = $this->ledger->activateMembership(self::CUSTOMER_ID, self::TIER_ID, 30, $this->context);
-
-        static::assertEquals(new \DateTimeImmutable(self::NOW), $period['startsAt']);
     }
 }

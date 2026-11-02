@@ -108,6 +108,7 @@ import type { CmsPageStore } from './module/sw-cms/store/cms-page.store';
 import type { TopBarButtonStore } from './app/store/topbar-button.store';
 import type { TeaserPopoverStore } from './app/store/teaser-popover.store';
 import type { AdminMenuStore } from './app/store/admin-menu.store';
+import type { AdminMenuConfigStore } from './app/store/admin-menu-config.store';
 import type { InAppPurchasesStore } from './app/store/in-app-purchase-checkout.store';
 import type { CmsService } from './module/sw-cms/service/cms.service';
 import type { ExtensionComponentSectionsStore } from './app/store/extension-component-sections.store';
@@ -240,6 +241,7 @@ declare global {
      */
     interface ServiceContainer extends SubContainer<'service'> {
         acl: AclService;
+        adminMenuApiService: $TSFixMe;
         appAclService: $TSFixMe;
         appCmsService: $TSFixMe;
         appModulesService: AppModulesService;
@@ -413,6 +415,7 @@ declare global {
         topBarButton: TopBarButtonStore;
         teaserPopover: TeaserPopoverStore;
         adminMenu: AdminMenuStore;
+        adminMenuConfig: AdminMenuConfigStore;
         inAppPurchaseCheckout: InAppPurchasesStore;
         extensionComponentSections: ExtensionComponentSectionsStore;
         blockOverride: BlockOverrideStore;

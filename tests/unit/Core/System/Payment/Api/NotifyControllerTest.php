@@ -13,9 +13,9 @@ use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterf
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationProcessor;
 use Shopwell\Core\System\Payment\Notification\Struct\PaymentNotificationAck;
 use Shopwell\Core\System\Payment\Notification\Struct\PaymentNotificationData;
+use Shopwell\Core\System\Payment\Order\Aggregate\PaymentRefund\PaymentRefundCollection;
 use Shopwell\Core\System\Payment\Order\PaymentOrderCollection;
-use Shopwell\Core\System\Payment\Order\Refund\PaymentRefundCollection;
-use Shopwell\Core\System\Payment\Provider\PaymentConfigResolver;
+use Shopwell\Core\System\Payment\Provider\Config\PaymentConfigResolver;
 use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;

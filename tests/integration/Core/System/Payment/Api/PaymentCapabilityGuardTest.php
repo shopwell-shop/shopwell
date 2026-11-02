@@ -14,10 +14,10 @@ use Shopwell\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppChannel\PaymentAppChannelCollection;
 use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppProvider\PaymentAppProviderCollection;
 use Shopwell\Core\System\Payment\App\PaymentCredentialCipher;
+use Shopwell\Core\System\Payment\Integration\Alipay\Api\AlipayApi;
 use Shopwell\Core\System\Payment\PaymentException;
-use Shopwell\Core\System\Payment\Provider\Alipay\AlipayApi;
-use Shopwell\Core\System\Payment\Provider\PaymentChannelConfigCollection;
-use Shopwell\Core\System\Payment\Provider\PaymentProviderConfigCollection;
+use Shopwell\Core\System\Payment\Provider\Config\PaymentChannelConfigCollection;
+use Shopwell\Core\System\Payment\Provider\Config\PaymentProviderConfigCollection;
 use Symfony\Component\HttpFoundation\Response;
 
 /**

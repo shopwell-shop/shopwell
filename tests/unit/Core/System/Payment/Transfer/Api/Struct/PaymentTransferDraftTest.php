@@ -6,7 +6,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\System\Payment\Transfer\Api\Struct\PaymentTransferDraft;
+use Shopwell\Core\System\Payment\Api\Struct\PaymentTransferDraft;
 use Symfony\Component\Validator\ConstraintViolationListInterface;
 use Symfony\Component\Validator\Validation;
 

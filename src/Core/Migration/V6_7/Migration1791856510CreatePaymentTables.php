@@ -13,12 +13,12 @@ use Shopwell\Core\Migration\Traits\StateMachineMigration;
 use Shopwell\Core\Migration\Traits\StateMachineMigrationTrait;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
 use Shopwell\Core\System\Payment\App\PaymentCredentialCipher;
+use Shopwell\Core\System\Payment\Integration\Alipay\Api\AlipayApi;
+use Shopwell\Core\System\Payment\Integration\Paypal\Api\PaypalApi;
+use Shopwell\Core\System\Payment\Integration\Stripe\Api\StripeApi;
+use Shopwell\Core\System\Payment\Integration\Wechat\Api\WechatApi;
 use Shopwell\Core\System\Payment\Order\PaymentOrderStates;
-use Shopwell\Core\System\Payment\Order\Refund\PaymentRefundStates;
-use Shopwell\Core\System\Payment\Provider\Alipay\AlipayApi;
-use Shopwell\Core\System\Payment\Provider\Paypal\PaypalApi;
-use Shopwell\Core\System\Payment\Provider\Stripe\StripeApi;
-use Shopwell\Core\System\Payment\Provider\Wechat\WechatApi;
+use Shopwell\Core\System\Payment\Order\PaymentRefundStates;
 use Shopwell\Core\System\Payment\Subscription\PaymentMandateStates;
 use Shopwell\Core\System\Payment\Subscription\PaymentSubscriptionCycleStates;
 use Shopwell\Core\System\Payment\Subscription\PaymentSubscriptionStates;
@@ -1223,7 +1223,7 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
     /**
      * Offers one channel to one app, or leaves the existing row exactly as it is.
      *
-     * The row is what {@see \Shopwell\Core\System\Payment\Provider\PaymentConfigResolver::resolve()}
+     * The row is what {@see \Shopwell\Core\System\Payment\Provider\Config\PaymentConfigResolver::resolve()}
      * requires before a payment can be opened at all, and what the administration shows as the switch
      * of the channel for that app - a merchant who switched it off has decided against that product
      * and keeps that decision.

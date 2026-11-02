@@ -4,6 +4,7 @@ namespace Shopwell\Core\Checkout\Order;
 
 use Shopwell\Core\Checkout\DocumentV2\DocumentDefinition;
 use Shopwell\Core\Checkout\Loyalty\Entity\CustomerPointTransaction\CustomerPointTransactionDefinition;
+use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyPointLot\LoyaltyPointLotDefinition;
 use Shopwell\Core\Checkout\Order\Aggregate\OrderAddress\OrderAddressDefinition;
 use Shopwell\Core\Checkout\Order\Aggregate\OrderCustomer\OrderCustomerDefinition;
 use Shopwell\Core\Checkout\Order\Aggregate\OrderDelivery\OrderDeliveryDefinition;
@@ -151,6 +152,7 @@ class OrderDefinition extends EntityDefinition
 
             // Reverse sides of the loyalty, wallet and payment domains
             new OneToManyAssociationField('customerPointTransactions', CustomerPointTransactionDefinition::class, 'order_id'),
+            new OneToManyAssociationField('pointLots', LoyaltyPointLotDefinition::class, 'order_id'),
             new OneToManyAssociationField('customerWalletTransactions', CustomerWalletTransactionDefinition::class, 'order_id'),
             (new OneToManyAssociationField('paymentOrders', 'payment_order', 'order_id'))->addFlags(new CascadeDelete()),
 

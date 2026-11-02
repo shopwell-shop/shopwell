@@ -1,0 +1,98 @@
+.sw-system-menu-tree {
+    padding: var(--scale-size-8) 0;
+
+    &__row {
+        display: flex;
+        gap: var(--scale-size-8);
+        align-items: center;
+        min-height: 36px;
+        padding: var(--scale-size-4) var(--scale-size-12);
+        padding-left: calc(var(--sw-system-menu-tree-depth) * var(--scale-size-16) + var(--scale-size-8));
+        color: var(--color-text-primary-default);
+        font-size: var(--font-size-s);
+        border-left: 2px solid transparent;
+        cursor: pointer;
+        user-select: none;
+
+        &:hover {
+            background-color: var(--color-elevation-surface-sunken);
+        }
+
+        &:focus-visible {
+            outline: 2px solid var(--color-interaction-primary-default);
+            outline-offset: -2px;
+        }
+
+        &.is--active {
+            background-color: var(--color-elevation-surface-raised);
+            border-left-color: var(--color-interaction-primary-default);
+            font-weight: var(--font-weight-semi-bold);
+        }
+
+        &.is--hidden {
+            color: var(--color-text-secondary-default);
+        }
+
+        &.is--dragged {
+            opacity: 0.5;
+        }
+
+        &.is--drop-before {
+            box-shadow: inset 0 2px 0 0 var(--color-interaction-primary-default);
+        }
+
+        &.is--drop-after {
+            box-shadow: inset 0 -2px 0 0 var(--color-interaction-primary-default);
+        }
+
+        &.is--drop-inside {
+            background-color: var(--color-elevation-surface-raised);
+            outline: 1px dashed var(--color-interaction-primary-default);
+            outline-offset: -2px;
+        }
+    }
+
+    &__toggle,
+    &__toggle-spacer {
+        display: flex;
+        flex: 0 0 var(--scale-size-16);
+        align-items: center;
+        justify-content: center;
+        width: var(--scale-size-16);
+        height: var(--scale-size-16);
+        padding: 0;
+        color: var(--color-text-secondary-default);
+        background: none;
+        border: 0;
+        cursor: pointer;
+    }
+
+    &__icon {
+        flex: 0 0 auto;
+        color: var(--color-icon-primary-default);
+    }
+
+    &__label {
+        flex: 1 1 auto;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
+
+    &__meta {
+        display: flex;
+        flex: 0 0 auto;
+        gap: var(--scale-size-6);
+        align-items: center;
+        color: var(--color-text-secondary-default);
+    }
+
+    &__badge {
+        padding: 0 var(--scale-size-6);
+        color: var(--color-text-secondary-default);
+        font-size: var(--font-size-2xs);
+        line-height: var(--scale-size-16);
+        background-color: var(--color-elevation-surface-sunken);
+        border-radius: var(--border-radius-s);
+    }
+}

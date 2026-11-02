@@ -22,7 +22,7 @@ use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
 use Shopwell\Core\System\Payment\App\PaymentCredentialCipher;
 use Shopwell\Core\System\Payment\PaymentException;
-use Shopwell\Core\System\Payment\Provider\PaymentProviderConfigService;
+use Shopwell\Core\System\Payment\Provider\Config\PaymentProviderConfigService;
 use Shopwell\Tests\Unit\Core\Checkout\Payment\Gateway\PaymentGatewayFixture;
 use Symfony\Component\HttpFoundation\JsonResponse;
 

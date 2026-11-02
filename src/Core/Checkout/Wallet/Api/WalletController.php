@@ -2,7 +2,7 @@
 
 namespace Shopwell\Core\Checkout\Wallet\Api;
 
-use Shopwell\Core\Checkout\Wallet\Service\WalletService;
+use Shopwell\Core\Checkout\Wallet\Service\WalletAdjustmentService;
 use Shopwell\Core\Framework\Api\Context\AdminApiSource;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\Log\Package;
@@ -20,7 +20,7 @@ class WalletController
     /**
      * @internal
      */
-    public function __construct(private readonly WalletService $walletService)
+    public function __construct(private readonly WalletAdjustmentService $adjustments)
     {
     }
 
@@ -36,7 +36,7 @@ class WalletController
         $amount = (float) $request->request->get('amount');
         $externalReference = $request->request->get('externalReference');
 
-        $this->walletService->topUp(
+        $this->adjustments->topUp(
             $customerId,
             $currencyId,
             $amount,
@@ -59,7 +59,7 @@ class WalletController
         $amount = (float) $request->request->get('amount');
         $comment = (string) $request->request->get('comment', '');
 
-        $this->walletService->adjust($customerId, $currencyId, $amount, $comment, $this->resolveAdministratorId($context), $context);
+        $this->adjustments->adjust($customerId, $currencyId, $amount, $comment, $this->resolveAdministratorId($context), $context);
 
         return new JsonResponse(null, Response::HTTP_NO_CONTENT);
     }

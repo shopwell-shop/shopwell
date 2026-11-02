@@ -210,7 +210,11 @@ final class PaymentCycleService
     public function markFailed(PaymentSubscriptionCycleEntity $cycle, ?string $failureCode): void
     {
         $subscription = $this->getSubscription($cycle->subscriptionId);
-        $failureClass = $this->retryPolicy->classify($subscription->provider, $failureCode);
+
+        // the rules of the interface that is charged decide how its own failure code reads - the
+        // policy holds no list of its own
+        $rules = $this->providerRegistry->get($subscription->provider)->cycleRules;
+        $failureClass = $this->retryPolicy->classify($rules, $failureCode);
 
         if ($failureClass === PaymentRetryPolicy::UNKNOWN) {
             // the channel did not say what happened. Neither answer is safe: `failed` would
@@ -231,7 +235,7 @@ final class PaymentCycleService
         $nextRetryAt = null;
         if ($failureClass === PaymentRetryPolicy::RETRYABLE) {
             $nextRetryAt = $this->retryPolicy->nextAttemptAt(
-                $subscription->provider,
+                $rules,
                 $failureCode,
                 $cycle->attemptCount,
                 $this->clock->now()

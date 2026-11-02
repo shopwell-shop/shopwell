@@ -17,6 +17,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Field\IdField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\IntField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\ManyToOneAssociationField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\OneToManyAssociationField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\OneToOneAssociationField;
 use Shopwell\Core\Framework\DataAbstractionLayer\FieldCollection;
 use Shopwell\Core\Framework\Log\Package;
 
@@ -58,7 +59,7 @@ class CustomerLoyaltyDefinition extends EntityDefinition
             (new FkField('membership_tier_id', 'membershipTierId', LoyaltyTierDefinition::class))->addFlags(new ApiAware(), new SetNullOnDelete()),
             (new DateTimeField('membership_valid_until', 'membershipValidUntil'))->addFlags(new ApiAware()),
             (new OneToManyAssociationField('transactions', CustomerPointTransactionDefinition::class, 'customer_id', 'id'))->addFlags(new CascadeDelete()),
-            new ManyToOneAssociationField('customer', 'customer_id', CustomerDefinition::class, 'id', false),
+            new OneToOneAssociationField('customer', 'customer_id', 'id', CustomerDefinition::class, false),
             new ManyToOneAssociationField('membershipTier', 'membership_tier_id', LoyaltyTierDefinition::class, 'id', false),
         ]);
     }

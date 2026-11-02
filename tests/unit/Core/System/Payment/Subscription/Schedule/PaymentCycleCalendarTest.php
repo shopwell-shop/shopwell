@@ -8,7 +8,9 @@ use PHPUnit\Framework\Attributes\RunInSeparateProcess;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Payment\PaymentException;
+use Shopwell\Core\System\Payment\Provider\Cycle\PaymentCycleRules;
 use Shopwell\Core\System\Payment\Subscription\Schedule\PaymentCycleCalendar;
+use Shopwell\Tests\Unit\Core\System\Payment\Provider\Fixtures\PlatformProviders;
 
 /**
  * @internal
@@ -21,9 +23,19 @@ class PaymentCycleCalendarTest extends TestCase
 
     private PaymentCycleCalendar $calendar;
 
+    /**
+     * The rules of the interfaces the platform ships, not a copy of them: a window that changed in
+     * the declaration has to change here too, or the test proves nothing.
+     */
+    private PaymentCycleRules $alipay;
+
+    private PaymentCycleRules $wechat;
+
     protected function setUp(): void
     {
         $this->calendar = new PaymentCycleCalendar();
+        $this->alipay = PlatformProviders::alipay()->getCycleRules();
+        $this->wechat = PlatformProviders::wechat()->getCycleRules();
     }
 
     #[DataProvider('periodEnds')]
@@ -72,7 +84,7 @@ class PaymentCycleCalendarTest extends TestCase
     #[DataProvider('clamps')]
     public function testClampIntoWindow(string $at, string $expected): void
     {
-        $result = $this->calendar->clampIntoWindow($this->shanghai($at));
+        $result = $this->calendar->clampIntoWindow($this->shanghai($at), $this->alipay);
 
         static::assertSame($expected, $result->setTimezone(new \DateTimeZone(self::SHANGHAI))->format('Y-m-d H:i:s'));
     }
@@ -80,12 +92,32 @@ class PaymentCycleCalendarTest extends TestCase
     #[DataProvider('windowMembership')]
     public function testIsWithinWindow(string $at, bool $expected): void
     {
-        static::assertSame($expected, $this->calendar->isWithinWindow($this->shanghai($at)));
+        static::assertSame($expected, $this->calendar->isWithinWindow($this->shanghai($at), $this->alipay));
+    }
+
+    /**
+     * The window is a property of the interface: an interface that accepts a different one is
+     * clamped against its own hours, not against alipay's.
+     */
+    public function testTheWindowOfTheInterfaceDecidesTheClamp(): void
+    {
+        $narrow = new PaymentCycleRules(windowStartHour: 9, windowEndHour: 17);
+
+        static::assertSame(
+            '2025-06-10 09:00:00',
+            $this->calendar->clampIntoWindow($this->shanghai('2025-06-10 07:30:00'), $narrow)->format('Y-m-d H:i:s')
+        );
+        static::assertSame(
+            '2025-06-11 09:00:00',
+            $this->calendar->clampIntoWindow($this->shanghai('2025-06-10 18:00:00'), $narrow)->format('Y-m-d H:i:s')
+        );
+        static::assertTrue($this->calendar->isWithinWindow($this->shanghai('2025-06-10 12:00:00'), $narrow));
+        static::assertFalse($this->calendar->isWithinWindow($this->shanghai('2025-06-10 08:30:00'), $narrow));
     }
 
     public function testDeductionWindowStartIsSevenLocal(): void
     {
-        $result = $this->calendar->deductionWindowStart($this->shanghai('2025-01-31 15:42:10'));
+        $result = $this->calendar->deductionWindowStart($this->shanghai('2025-01-31 15:42:10'), $this->alipay);
 
         static::assertSame('2025-01-31 07:00:00', $result->format('Y-m-d H:i:s'));
         static::assertSame(self::SHANGHAI, $result->getTimezone()->getName());
@@ -94,37 +126,45 @@ class PaymentCycleCalendarTest extends TestCase
     #[DataProvider('earliestExecutable')]
     public function testEarliestExecutableAt(string $now, string $expected): void
     {
-        $result = $this->calendar->earliestExecutableAt($this->shanghai($now));
+        $result = $this->calendar->earliestExecutableAt($this->shanghai($now), $this->alipay);
 
         static::assertSame($expected, $result->setTimezone(new \DateTimeZone(self::SHANGHAI))->format('Y-m-d H:i:s'));
+    }
+
+    public function testAnInterfaceWithoutLeadTimeIsExecutableAtOnce(): void
+    {
+        // wechat needs no lead time: only the window decides
+        $result = $this->calendar->earliestExecutableAt($this->shanghai('2025-06-01 10:00:00'), $this->wechat);
+
+        static::assertSame('2025-06-01 10:00:00', $result->format('Y-m-d H:i:s'));
     }
 
     public function testAlipayRejectsMonthlyAnchorAfterThe28th(): void
     {
         $this->expectException(PaymentException::class);
 
-        $this->calendar->assertExpressibleBy('alipay', PaymentCycleCalendar::UNIT_MONTH, 1, 29);
+        $this->calendar->assertExpressibleBy('alipay', $this->alipay, PaymentCycleCalendar::UNIT_MONTH, 1, 29);
     }
 
     public function testAlipayAcceptsMonthlyAnchorOnThe28th(): void
     {
-        $this->calendar->assertExpressibleBy('alipay', PaymentCycleCalendar::UNIT_MONTH, 1, 28);
-        $this->calendar->assertExpressibleBy('alipay', PaymentCycleCalendar::UNIT_MONTH, 3, 1);
+        $this->calendar->assertExpressibleBy('alipay', $this->alipay, PaymentCycleCalendar::UNIT_MONTH, 1, 28);
+        $this->calendar->assertExpressibleBy('alipay', $this->alipay, PaymentCycleCalendar::UNIT_MONTH, 3, 1);
 
         $this->addToAssertionCount(1);
     }
 
     public function testAlipayAcceptsNonMonthlyPeriodsWithAnyAnchorDay(): void
     {
-        $this->calendar->assertExpressibleBy('alipay', PaymentCycleCalendar::UNIT_WEEK, 1, 31);
-        $this->calendar->assertExpressibleBy('alipay', PaymentCycleCalendar::UNIT_YEAR, 1, 31);
+        $this->calendar->assertExpressibleBy('alipay', $this->alipay, PaymentCycleCalendar::UNIT_WEEK, 1, 31);
+        $this->calendar->assertExpressibleBy('alipay', $this->alipay, PaymentCycleCalendar::UNIT_YEAR, 1, 31);
 
         $this->addToAssertionCount(1);
     }
 
     public function testWechatAcceptsMonthlyAnchorsAlipayCannotExpress(): void
     {
-        $this->calendar->assertExpressibleBy('wechat', PaymentCycleCalendar::UNIT_MONTH, 1, 31);
+        $this->calendar->assertExpressibleBy('wechat', $this->wechat, PaymentCycleCalendar::UNIT_MONTH, 1, 31);
 
         $this->addToAssertionCount(1);
     }
@@ -148,10 +188,10 @@ class PaymentCycleCalendarTest extends TestCase
             // 23:30 UTC is 07:30 the next day in Beijing - inside the window, but the clamp must
             // still decide against Beijing time, not against the server clock. Within the window
             // the clamp returns the instant untouched.
-            static::assertTrue($this->calendar->isWithinWindow(new \DateTimeImmutable('2025-06-10 23:30:00')));
+            static::assertTrue($this->calendar->isWithinWindow(new \DateTimeImmutable('2025-06-10 23:30:00'), $this->alipay));
             static::assertSame(
                 '2025-06-11 07:30:00',
-                $this->calendar->clampIntoWindow(new \DateTimeImmutable('2025-06-10 23:30:00'))
+                $this->calendar->clampIntoWindow(new \DateTimeImmutable('2025-06-10 23:30:00'), $this->alipay)
                     ->setTimezone(new \DateTimeZone(self::SHANGHAI))->format('Y-m-d H:i:s')
             );
         } finally {

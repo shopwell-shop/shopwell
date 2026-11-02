@@ -45,7 +45,7 @@ final class PaymentAppProvisioner
 
     /**
      * How many hops an inheritance chain may have, see
-     * {@see \Shopwell\Core\System\Payment\Provider\PaymentConfigResolver}. The provisioner refuses a
+     * {@see \Shopwell\Core\System\Payment\Provider\Config\PaymentConfigResolver}. The provisioner refuses a
      * chain that is longer than the resolver is willing to walk, so a save can never write a row that
      * the payment would then be unable to resolve.
      */
@@ -358,7 +358,7 @@ final class PaymentAppProvisioner
      * instead of at the first payment, because this is the only moment the merchant can still act on
      * it.
      *
-     * The walk is the same one {@see \Shopwell\Core\System\Payment\Provider\PaymentConfigResolver}
+     * The walk is the same one {@see \Shopwell\Core\System\Payment\Provider\Config\PaymentConfigResolver}
      * does when it collects, so a chain that is accepted here is one the payment can resolve. The
      * tenant of the platform ends every chain, it never inherits itself.
      *

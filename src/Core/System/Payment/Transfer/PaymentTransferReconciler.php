@@ -15,12 +15,12 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
-use Shopwell\Core\System\Payment\Gateway\PaymentTransferQuery;
-use Shopwell\Core\System\Payment\Gateway\TransferQueryResult;
-use Shopwell\Core\System\Payment\Gateway\TransferResult;
+use Shopwell\Core\System\Payment\Gateway\Request\PaymentTransferQuery;
+use Shopwell\Core\System\Payment\Gateway\Request\TransferQueryResult;
+use Shopwell\Core\System\Payment\Gateway\Request\TransferResult;
 use Shopwell\Core\System\Payment\PaymentException;
 use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
-use Shopwell\Core\System\Payment\Provider\PaymentConfigResolver;
+use Shopwell\Core\System\Payment\Provider\Config\PaymentConfigResolver;
 use Shopwell\Core\System\StateMachine\Aggregation\StateMachineState\StateMachineStateCollection;
 use Shopwell\Core\System\StateMachine\Aggregation\StateMachineState\StateMachineStateEntity;
 

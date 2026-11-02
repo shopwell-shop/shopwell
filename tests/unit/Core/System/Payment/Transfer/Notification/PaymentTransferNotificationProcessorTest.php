@@ -18,14 +18,14 @@ use Shopwell\Core\System\Payment\App\PaymentAppCollection;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
 use Shopwell\Core\System\Payment\App\PaymentCredentialCipher;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayFactory;
-use Shopwell\Core\System\Payment\Gateway\TransferQueryResult;
-use Shopwell\Core\System\Payment\Gateway\TransferResult;
+use Shopwell\Core\System\Payment\Gateway\Request\TransferQueryResult;
+use Shopwell\Core\System\Payment\Gateway\Request\TransferResult;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationCollection;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationEntity;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
 use Shopwell\Core\System\Payment\PaymentException;
 use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannelRegistry;
-use Shopwell\Core\System\Payment\Provider\PaymentConfigResolver;
+use Shopwell\Core\System\Payment\Provider\Config\PaymentConfigResolver;
 use Shopwell\Core\System\Payment\Provider\PaymentProvider;
 use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;
 use Shopwell\Core\System\Payment\Transfer\Notification\PaymentTransferNotificationProcessor;
@@ -38,6 +38,7 @@ use Shopwell\Core\System\Payment\Transfer\PaymentTransferService;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferStateHandler;
 use Shopwell\Core\System\StateMachine\Loader\InitialStateIdLoader;
 use Shopwell\Core\System\StateMachine\StateMachineRegistry;
+use Shopwell\Tests\Unit\Core\System\Payment\Transfer\PaymentTransferRulesFixture;
 use Symfony\Component\Clock\MockClock;
 
 /**
@@ -194,10 +195,11 @@ class PaymentTransferNotificationProcessorTest extends TestCase
             $transferRepository,
             static::createStub(EntityRepository::class),
             new PaymentTransferStateHandler(static::createStub(StateMachineRegistry::class)),
-            new PaymentTransferRecipientService(static::createStub(EntityRepository::class), $cipher, new MockClock(self::NOW)),
+            new PaymentTransferRecipientService(static::createStub(EntityRepository::class), $cipher, new MockClock(self::NOW), PaymentTransferRulesFixture::registry()),
             $cipher,
             static::createStub(InitialStateIdLoader::class),
-            new MockClock(self::NOW)
+            new MockClock(self::NOW),
+            PaymentTransferRulesFixture::registry()
         );
 
         $reconciler = new PaymentTransferReconciler(

@@ -23,17 +23,17 @@ use Shopwell\Core\System\Payment\App\PaymentAppEntity;
 use Shopwell\Core\System\Payment\App\PaymentCredentialCipher;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayFactory;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
-use Shopwell\Core\System\Payment\Gateway\PaymentTransferQuery;
-use Shopwell\Core\System\Payment\Gateway\TransferQueryResult;
-use Shopwell\Core\System\Payment\Gateway\TransferResult;
+use Shopwell\Core\System\Payment\Gateway\Request\PaymentTransferQuery;
+use Shopwell\Core\System\Payment\Gateway\Request\TransferQueryResult;
+use Shopwell\Core\System\Payment\Gateway\Request\TransferResult;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
 use Shopwell\Core\System\Payment\PaymentException;
 use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
 use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
 use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannelRegistry;
 use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
-use Shopwell\Core\System\Payment\Provider\PaymentChannelConfigEntity;
-use Shopwell\Core\System\Payment\Provider\PaymentConfigResolver;
+use Shopwell\Core\System\Payment\Provider\Config\PaymentChannelConfigEntity;
+use Shopwell\Core\System\Payment\Provider\Config\PaymentConfigResolver;
 use Shopwell\Core\System\Payment\Provider\PaymentProvider;
 use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferCollection;
@@ -798,10 +798,11 @@ class PaymentTransferReconcilerTest extends TestCase
             $transfers,
             $recipients,
             new PaymentTransferStateHandler($registry),
-            new PaymentTransferRecipientService($recipients, $cipher, new MockClock(self::NOW)),
+            new PaymentTransferRecipientService($recipients, $cipher, new MockClock(self::NOW), PaymentTransferRulesFixture::registry()),
             $cipher,
             $initialStateIdLoader,
             new MockClock(self::NOW),
+            PaymentTransferRulesFixture::registry(),
         );
     }
 

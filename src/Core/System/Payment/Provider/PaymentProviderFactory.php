@@ -10,6 +10,8 @@ use Shopwell\Core\System\Payment\Gateway\PaymentGatewayFactory;
 use Shopwell\Core\System\Payment\PaymentException;
 use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
 use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
+use Shopwell\Core\System\Payment\Provider\Config\PaymentConfigField;
+use Shopwell\Core\System\Payment\Provider\Cycle\PaymentCycleRules;
 
 /**
  * Turns the declaration of an interface into the immutable snapshot the platform works with.
@@ -85,6 +87,11 @@ final class PaymentProviderFactory
         $actions = $this->actionsOf($declaration, $name);
         $capabilities = $this->capabilitiesOf($declaration, $actions, $name);
 
+        // the schedule that acts on `MANDATE` needs the cycle rules of the very interface; one half
+        // without the other is a declaration the platform cannot act on
+        $cycleRules = $declaration->getCycleRules();
+        $this->assertCycleRulesMatchDeclaration($capabilities, $cycleRules, $name);
+
         // the chain is walked once: it is where a decorator that renamed the interface is refused, and
         // the credential rule below is the second thing that needs the whole chain
         $declarations = $this->decorationChainOf($declaration, $name);
@@ -110,6 +117,11 @@ final class PaymentProviderFactory
             notificationExtractor: $declaration->getNotificationExtractor(),
             payParamsDecoder: $declaration->getPayParamsDecoder(),
             capabilities: $capabilities,
+            cycleRules: $cycleRules,
+            // the payout rules travel in the same snapshot as the cycle rules: the recipient service,
+            // the transfer service and the administration all read them from here, so the matrix of
+            // identities, required fields and currencies exists only in the declaration
+            transferRules: $declaration->getTransferRules(),
         );
     }
 
@@ -328,6 +340,38 @@ final class PaymentProviderFactory
         }
 
         return $capabilities;
+    }
+
+    /**
+     * `MANDATE` is the capability the subscription schedule acts on, and the cycle rules are what it
+     * needs to act at all - one half without the other is a declaration nothing can follow.
+     *
+     * Without the rules a plan would be accepted and then fail at the first deduction; without the
+     * capability the rules would describe a charge no code is allowed to send.
+     *
+     * @param list<PaymentCapability> $capabilities
+     *
+     * @throws PaymentException
+     */
+    private function assertCycleRulesMatchDeclaration(array $capabilities, ?PaymentCycleRules $cycleRules, string $name): void
+    {
+        $declaresMandate = \in_array(PaymentCapability::MANDATE, $capabilities, true);
+
+        if ($declaresMandate && $cycleRules === null) {
+            throw PaymentException::invalidProviderDeclaration(\sprintf(
+                'The payment interface "%s" declares the capability "%s" but no cycle rules, so a subscription it accepts would fail at the first deduction.',
+                $name,
+                PaymentCapability::MANDATE->value
+            ));
+        }
+
+        if (!$declaresMandate && $cycleRules !== null) {
+            throw PaymentException::invalidProviderDeclaration(\sprintf(
+                'The payment interface "%s" ships cycle rules but does not declare the capability "%s", so no schedule may ever charge with them.',
+                $name,
+                PaymentCapability::MANDATE->value
+            ));
+        }
     }
 
     /**

@@ -9,7 +9,7 @@ use Shopwell\Core\System\Payment\DependencyInjection\PaymentProviderCompilerPass
 use Shopwell\Core\System\Payment\PaymentException;
 use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
 use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannelRegistry;
-use Shopwell\Core\System\Payment\Provider\PaymentConfigField;
+use Shopwell\Core\System\Payment\Provider\Config\PaymentConfigField;
 use Shopwell\Core\System\Payment\Provider\PaymentProvider;
 use Shopwell\Core\System\Payment\Provider\PaymentProviderFactory;
 use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;

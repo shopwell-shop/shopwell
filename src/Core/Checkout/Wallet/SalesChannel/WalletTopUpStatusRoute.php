@@ -23,6 +23,7 @@ class WalletTopUpStatusRoute
      */
     public function __construct(
         private readonly WalletTopUpService $topUpService,
+        private readonly WalletPresenter $presenter,
         private readonly ExtensionDispatcher $extensions,
     ) {
     }
@@ -44,8 +45,8 @@ class WalletTopUpStatusRoute
 
     private function _load(string $topUpId, SalesChannelContext $context, CustomerEntity $customer): WalletTopUpRouteResponse
     {
-        return new WalletTopUpRouteResponse(new ArrayStruct(
-            $this->topUpService->status($topUpId, $customer->getId(), $context->getContext())
-        ));
+        $topUp = $this->topUpService->find($topUpId, $customer->getId(), $context->getContext());
+
+        return new WalletTopUpRouteResponse(new ArrayStruct($this->presenter->topUp($topUp)));
     }
 }

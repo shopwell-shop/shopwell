@@ -2041,6 +2041,11 @@
       "count": 1
     }
   },
+  "src/app/component/structure/sw-admin-menu/merge-navigation.helper.ts": {
+    "sw-deprecation-rules/private-feature-declarations": {
+      "count": 3
+    }
+  },
   "src/app/component/structure/sw-admin-menu/sw-admin-menu.spec.js": {
     "sw-test-rules/no-vm-access": {
       "count": 132
@@ -2049,6 +2054,11 @@
   "src/app/component/structure/sw-admin-menu/sw-admin-menu.spec/branch-expansion.spec.js": {
     "sw-test-rules/no-vm-access": {
       "count": 24
+    }
+  },
+  "src/app/component/structure/sw-admin-menu/sw-admin-menu.spec/database-navigation.spec.js": {
+    "sw-test-rules/no-vm-access": {
+      "count": 6
     }
   },
   "src/app/component/structure/sw-admin-menu/sw-admin-menu.spec/flyout-module-colors.spec.js": {
@@ -3551,6 +3561,14 @@
       "count": 1
     }
   },
+  "src/app/store/admin-menu-config.store.ts": {
+    "no-restricted-syntax": {
+      "count": 1
+    },
+    "sw-deprecation-rules/private-feature-declarations": {
+      "count": 5
+    }
+  },
   "src/app/store/admin-menu.store.spec.ts": {
     "@eslint-community/eslint-comments/require-description": {
       "count": 1
@@ -4131,6 +4149,14 @@
     }
   },
   "src/core/service/api/acl.api.service.js": {
+    "@eslint-community/eslint-comments/require-description": {
+      "count": 1
+    },
+    "filename-rules/not-match": {
+      "count": 1
+    }
+  },
+  "src/core/service/api/admin-menu.api.service.js": {
     "@eslint-community/eslint-comments/require-description": {
       "count": 1
     },
@@ -4820,7 +4846,7 @@
       "count": 4
     },
     "@typescript-eslint/no-restricted-types": {
-      "count": 40
+      "count": 43
     },
     "max-lines": {
       "count": 1
@@ -13015,6 +13041,27 @@
       "count": 1
     }
   },
+  "src/module/sw-settings-user-permission/index.js": {
+    "@eslint-community/eslint-comments/require-description": {
+      "count": 2
+    },
+    "filename-rules/not-match": {
+      "count": 1
+    }
+  },
+  "src/module/sw-settings-user-permission/page/sw-settings-user-permission/index.js": {
+    "@eslint-community/eslint-comments/require-description": {
+      "count": 1
+    },
+    "filename-rules/not-match": {
+      "count": 1
+    }
+  },
+  "src/module/sw-settings-user-permission/page/sw-settings-user-permission/sw-settings-user-permission.spec.js": {
+    "sw-test-rules/no-vm-access": {
+      "count": 3
+    }
+  },
   "src/module/sw-settings/acl/index.js": {
     "filename-rules/not-match": {
       "count": 1
@@ -13104,12 +13151,12 @@
       "count": 1
     }
   },
-  "src/module/sw-users-permissions/acl/index.js": {
+  "src/module/sw-system/acl/index.js": {
     "filename-rules/not-match": {
       "count": 1
     }
   },
-  "src/module/sw-users-permissions/component/sw-users-permissions-role-mcp-reference-modal/index.js": {
+  "src/module/sw-system/component/sw-system-menu-tree/index.js": {
     "@eslint-community/eslint-comments/require-description": {
       "count": 1
     },
@@ -13117,27 +13164,25 @@
       "count": 1
     }
   },
-  "src/module/sw-users-permissions/component/sw-users-permissions-role-mcp-reference-modal/sw-users-permissions-role-mcp-reference-modal.spec.js": {
+  "src/module/sw-system/component/sw-system-menu-tree/sw-system-menu-tree.spec.js": {
+    "sw-test-rules/no-vm-access": {
+      "count": 4
+    }
+  },
+  "src/module/sw-system/component/sw-system-role-mcp-reference-modal/index.js": {
+    "@eslint-community/eslint-comments/require-description": {
+      "count": 1
+    },
+    "filename-rules/not-match": {
+      "count": 1
+    }
+  },
+  "src/module/sw-system/component/sw-system-role-mcp-reference-modal/sw-system-role-mcp-reference-modal.spec.js": {
     "sw-test-rules/no-vm-access": {
       "count": 29
     }
   },
-  "src/module/sw-users-permissions/components/sw-user-sso-access-key-create-modal/index.js": {
-    "filename-rules/not-match": {
-      "count": 1
-    }
-  },
-  "src/module/sw-users-permissions/components/sw-user-sso-invitation-modal/index.js": {
-    "filename-rules/not-match": {
-      "count": 1
-    }
-  },
-  "src/module/sw-users-permissions/components/sw-user-sso-status-label/index.js": {
-    "filename-rules/not-match": {
-      "count": 1
-    }
-  },
-  "src/module/sw-users-permissions/components/sw-users-permissions-additional-permissions/index.js": {
+  "src/module/sw-system/components/sw-system-additional-permissions/index.js": {
     "@eslint-community/eslint-comments/require-description": {
       "count": 1
     },
@@ -13145,12 +13190,12 @@
       "count": 1
     }
   },
-  "src/module/sw-users-permissions/components/sw-users-permissions-additional-permissions/sw-users-permissions-additional-permissions.spec.js": {
+  "src/module/sw-system/components/sw-system-additional-permissions/sw-system-additional-permissions.spec.js": {
     "sw-test-rules/no-vm-access": {
-      "count": 9
+      "count": 14
     }
   },
-  "src/module/sw-users-permissions/components/sw-users-permissions-configuration/index.js": {
+  "src/module/sw-system/components/sw-system-detailed-additional-permissions/index.js": {
     "@eslint-community/eslint-comments/require-description": {
       "count": 1
     },
@@ -13158,12 +13203,7 @@
       "count": 1
     }
   },
-  "src/module/sw-users-permissions/components/sw-users-permissions-configuration/sw-users-permissions-configuration.spec.js": {
-    "sw-test-rules/no-vm-access": {
-      "count": 1
-    }
-  },
-  "src/module/sw-users-permissions/components/sw-users-permissions-detailed-additional-permissions/index.js": {
+  "src/module/sw-system/components/sw-system-detailed-permissions-grid/index.js": {
     "@eslint-community/eslint-comments/require-description": {
       "count": 1
     },
@@ -13171,7 +13211,7 @@
       "count": 1
     }
   },
-  "src/module/sw-users-permissions/components/sw-users-permissions-detailed-permissions-grid/index.js": {
+  "src/module/sw-system/components/sw-system-permissions-grid/index.js": {
     "@eslint-community/eslint-comments/require-description": {
       "count": 1
     },
@@ -13179,49 +13219,30 @@
       "count": 1
     }
   },
-  "src/module/sw-users-permissions/components/sw-users-permissions-permissions-grid/index.js": {
-    "@eslint-community/eslint-comments/require-description": {
-      "count": 1
-    },
-    "filename-rules/not-match": {
-      "count": 1
-    }
-  },
-  "src/module/sw-users-permissions/components/sw-users-permissions-permissions-grid/sw-users-permissions-permissions-grid.spec.js": {
+  "src/module/sw-system/components/sw-system-permissions-grid/sw-system-permissions-grid.spec.js": {
     "@eslint-community/eslint-comments/require-description": {
       "count": 1
     },
     "sw-test-rules/no-vm-access": {
-      "count": 37
+      "count": 50
     }
   },
-  "src/module/sw-users-permissions/components/sw-users-permissions-role-listing/index.js": {
-    "@eslint-community/eslint-comments/require-description": {
-      "count": 1
-    },
+  "src/module/sw-system/components/sw-system-user-sso-access-key-create-modal/index.js": {
     "filename-rules/not-match": {
       "count": 1
     }
   },
-  "src/module/sw-users-permissions/components/sw-users-permissions-role-listing/sw-users-permissions-role-listing.spec.js": {
-    "sw-test-rules/no-vm-access": {
-      "count": 1
-    }
-  },
-  "src/module/sw-users-permissions/components/sw-users-permissions-user-listing/index.js": {
-    "@eslint-community/eslint-comments/require-description": {
-      "count": 1
-    },
+  "src/module/sw-system/components/sw-system-user-sso-invitation-modal/index.js": {
     "filename-rules/not-match": {
       "count": 1
     }
   },
-  "src/module/sw-users-permissions/components/sw-users-permissions-user-listing/sw-users-permissions-user-listing.spec.js": {
-    "sw-test-rules/no-vm-access": {
-      "count": 12
+  "src/module/sw-system/components/sw-system-user-sso-status-label/index.js": {
+    "filename-rules/not-match": {
+      "count": 1
     }
   },
-  "src/module/sw-users-permissions/index.js": {
+  "src/module/sw-system/index.js": {
     "@eslint-community/eslint-comments/require-description": {
       "count": 2
     },
@@ -13229,17 +13250,62 @@
       "count": 1
     }
   },
-  "src/module/sw-users-permissions/page/sw-sso-users-permission-user-detail/index.js": {
+  "src/module/sw-system/page/sw-system-menu-list/index.js": {
+    "@eslint-community/eslint-comments/require-description": {
+      "count": 1
+    },
     "filename-rules/not-match": {
       "count": 1
     }
   },
-  "src/module/sw-users-permissions/page/sw-sso-users-permission-user-detail/sw-sso-users-permission-user-detail.spec.js": {
+  "src/module/sw-system/page/sw-system-menu-list/sw-system-menu-list.spec.js": {
+    "inclusive-language/use-inclusive-words": {
+      "count": 1
+    },
+    "sw-test-rules/no-vm-access": {
+      "count": 70
+    }
+  },
+  "src/module/sw-system/page/sw-system-role-detail/index.js": {
+    "@eslint-community/eslint-comments/require-description": {
+      "count": 1
+    },
+    "filename-rules/not-match": {
+      "count": 1
+    }
+  },
+  "src/module/sw-system/page/sw-system-role-detail/sw-system-role-detail.spec.js": {
+    "@eslint-community/eslint-comments/require-description": {
+      "count": 1
+    },
+    "sw-test-rules/no-vm-access": {
+      "count": 46
+    }
+  },
+  "src/module/sw-system/page/sw-system-role-list/index.js": {
+    "@eslint-community/eslint-comments/require-description": {
+      "count": 1
+    },
+    "filename-rules/not-match": {
+      "count": 1
+    }
+  },
+  "src/module/sw-system/page/sw-system-role-list/sw-system-role-list.spec.js": {
+    "sw-test-rules/no-vm-access": {
+      "count": 7
+    }
+  },
+  "src/module/sw-system/page/sw-system-sso-user-detail/index.js": {
+    "filename-rules/not-match": {
+      "count": 1
+    }
+  },
+  "src/module/sw-system/page/sw-system-sso-user-detail/sw-system-sso-user-detail.spec.js": {
     "sw-test-rules/no-vm-access": {
       "count": 22
     }
   },
-  "src/module/sw-users-permissions/page/sw-users-permissions-role-detail/index.js": {
+  "src/module/sw-system/page/sw-system-user-create/index.js": {
     "@eslint-community/eslint-comments/require-description": {
       "count": 1
     },
@@ -13247,15 +13313,31 @@
       "count": 1
     }
   },
-  "src/module/sw-users-permissions/page/sw-users-permissions-role-detail/sw-users-permissions-role-detail.spec.js": {
+  "src/module/sw-system/page/sw-system-user-create/sw-system-user-create.spec.js": {
+    "sw-test-rules/no-vm-access": {
+      "count": 6
+    }
+  },
+  "src/module/sw-system/page/sw-system-user-detail/index.js": {
+    "@eslint-community/eslint-comments/require-description": {
+      "count": 1
+    },
+    "filename-rules/not-match": {
+      "count": 1
+    },
+    "max-lines": {
+      "count": 1
+    }
+  },
+  "src/module/sw-system/page/sw-system-user-detail/sw-system-user-detail.spec.js": {
     "@eslint-community/eslint-comments/require-description": {
       "count": 1
     },
     "sw-test-rules/no-vm-access": {
-      "count": 38
+      "count": 42
     }
   },
-  "src/module/sw-users-permissions/page/sw-users-permissions-user-create/index.js": {
+  "src/module/sw-system/page/sw-system-user-list/index.js": {
     "@eslint-community/eslint-comments/require-description": {
       "count": 1
     },
@@ -13263,12 +13345,12 @@
       "count": 1
     }
   },
-  "src/module/sw-users-permissions/page/sw-users-permissions-user-create/sw-users-permissions-user-create.spec.js": {
+  "src/module/sw-system/page/sw-system-user-list/sw-system-user-list.spec.js": {
     "sw-test-rules/no-vm-access": {
-      "count": 5
+      "count": 11
     }
   },
-  "src/module/sw-users-permissions/page/sw-users-permissions-user-detail/index.js": {
+  "src/module/sw-system/view/sw-system-role-view-detailed/index.js": {
     "@eslint-community/eslint-comments/require-description": {
       "count": 1
     },
@@ -13276,15 +13358,7 @@
       "count": 1
     }
   },
-  "src/module/sw-users-permissions/page/sw-users-permissions-user-detail/sw-users-permissions-user-detail.spec.js": {
-    "@eslint-community/eslint-comments/require-description": {
-      "count": 1
-    },
-    "sw-test-rules/no-vm-access": {
-      "count": 41
-    }
-  },
-  "src/module/sw-users-permissions/page/sw-users-permissions/index.js": {
+  "src/module/sw-system/view/sw-system-role-view-general/index.js": {
     "@eslint-community/eslint-comments/require-description": {
       "count": 1
     },
@@ -13292,28 +13366,7 @@
       "count": 1
     }
   },
-  "src/module/sw-users-permissions/page/sw-users-permissions/sw-users-permissions.spec.js": {
-    "sw-test-rules/no-vm-access": {
-      "count": 5
-    }
-  },
-  "src/module/sw-users-permissions/view/sw-users-permissions-role-view-detailed/index.js": {
-    "@eslint-community/eslint-comments/require-description": {
-      "count": 1
-    },
-    "filename-rules/not-match": {
-      "count": 1
-    }
-  },
-  "src/module/sw-users-permissions/view/sw-users-permissions-role-view-general/index.js": {
-    "@eslint-community/eslint-comments/require-description": {
-      "count": 1
-    },
-    "filename-rules/not-match": {
-      "count": 1
-    }
-  },
-  "src/module/sw-users-permissions/view/sw-users-permissions-role-view-general/sw-users-permissions-role-view-general.spec.js": {
+  "src/module/sw-system/view/sw-system-role-view-general/sw-system-role-view-general.spec.js": {
     "sw-test-rules/no-vm-access": {
       "count": 4
     }

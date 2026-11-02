@@ -12,11 +12,11 @@ use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppChannel\PaymentAppChann
 use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppProvider\PaymentAppProviderCollection;
 use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppProvider\PaymentAppProviderEntity;
 use Shopwell\Core\System\Payment\PaymentException;
-use Shopwell\Core\System\Payment\Provider\PaymentChannelConfigCollection;
-use Shopwell\Core\System\Payment\Provider\PaymentChannelConfigEntity;
+use Shopwell\Core\System\Payment\Provider\Config\PaymentChannelConfigCollection;
+use Shopwell\Core\System\Payment\Provider\Config\PaymentChannelConfigEntity;
+use Shopwell\Core\System\Payment\Provider\Config\PaymentProviderConfigCollection;
+use Shopwell\Core\System\Payment\Provider\Config\PaymentProviderConfigEntity;
 use Shopwell\Core\System\Payment\Provider\PaymentProvider;
-use Shopwell\Core\System\Payment\Provider\PaymentProviderConfigCollection;
-use Shopwell\Core\System\Payment\Provider\PaymentProviderConfigEntity;
 use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;

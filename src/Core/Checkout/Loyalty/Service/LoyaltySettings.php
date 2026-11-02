@@ -22,6 +22,8 @@ class LoyaltySettings
 
     final public const CONFIG_KEY_POINTS_PER_CURRENCY_UNIT = 'core.loyalty.pointsPerCurrencyUnit';
 
+    final public const CONFIG_KEY_TOP_UP_POINTS_PER_CURRENCY_UNIT = 'core.loyalty.topUpPointsPerCurrencyUnit';
+
     final public const CONFIG_KEY_GROWTH_PER_CURRENCY_UNIT = 'core.loyalty.growthPerCurrencyUnit';
 
     final public const CONFIG_KEY_POINT_VALUE_IN_CURRENCY = 'core.loyalty.pointValueInCurrency';
@@ -37,6 +39,8 @@ class LoyaltySettings
     final public const DEFAULT_ENABLED = true;
 
     final public const DEFAULT_POINTS_PER_CURRENCY_UNIT = 1;
+
+    final public const DEFAULT_TOP_UP_POINTS_PER_CURRENCY_UNIT = 0;
 
     final public const DEFAULT_GROWTH_PER_CURRENCY_UNIT = 1;
 
@@ -72,6 +76,24 @@ class LoyaltySettings
     {
         return $this->int(self::CONFIG_KEY_POINTS_PER_CURRENCY_UNIT, $salesChannelId)
             ?? self::DEFAULT_POINTS_PER_CURRENCY_UNIT;
+    }
+
+    /**
+     * What topping up the wallet earns, per currency unit. Zero - the default - pays nothing.
+     *
+     * It is a rate of its own instead of reusing {@see pointsPerCurrencyUnit()} because paying money
+     * into the wallet is not buying something: the money earns here, and it cannot earn again when it
+     * is spent, since the order total a wallet payment is taken off is the one points are counted on.
+     * A shop that leaves this at zero therefore gives no points for wallet money at all - deliberately
+     * visible in the settings card rather than hidden in the code.
+     *
+     * The wallet belongs to the customer and not to a sales channel, so this is read without one: a
+     * channel scoped rate would not know which channel the money came in through.
+     */
+    public function topUpPointsPerCurrencyUnit(?string $salesChannelId = null): int
+    {
+        return $this->int(self::CONFIG_KEY_TOP_UP_POINTS_PER_CURRENCY_UNIT, $salesChannelId)
+            ?? self::DEFAULT_TOP_UP_POINTS_PER_CURRENCY_UNIT;
     }
 
     public function growthPerCurrencyUnit(?string $salesChannelId = null): int

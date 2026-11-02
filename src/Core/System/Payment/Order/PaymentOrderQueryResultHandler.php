@@ -5,7 +5,7 @@ namespace Shopwell\Core\System\Payment\Order;
 use Psr\Clock\ClockInterface;
 use Shopwell\Core\Defaults;
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\System\Payment\Gateway\QueryResult;
+use Shopwell\Core\System\Payment\Gateway\Request\QueryResult;
 use Shopwell\Core\System\Payment\PaymentException;
 use Shopwell\Core\System\Payment\Webhook\PaymentWebhookDispatcher;
 

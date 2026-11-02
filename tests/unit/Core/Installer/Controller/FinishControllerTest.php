@@ -11,6 +11,7 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Installer\Controller\FinishController;
+use Shopwell\Core\Installer\Finish\AdminMenuSeeder;
 use Shopwell\Core\Installer\Finish\SystemLocker;
 use Symfony\Component\Clock\NativeClock;
 use Symfony\Component\HttpFoundation\Request;
@@ -27,9 +28,12 @@ class FinishControllerTest extends TestCase
 {
     private SystemLocker&MockObject $systemLocker;
 
+    private AdminMenuSeeder&MockObject $adminMenuSeeder;
+
     protected function setUp(): void
     {
         $this->systemLocker = $this->createMock(SystemLocker::class);
+        $this->adminMenuSeeder = $this->createMock(AdminMenuSeeder::class);
     }
 
     public function testFinishWithCompletedParameterRendersTemplate(): void
@@ -38,12 +42,17 @@ class FinishControllerTest extends TestCase
             ->expects($this->never())
             ->method('lock');
 
+        $this->adminMenuSeeder
+            ->expects($this->never())
+            ->method('seed');
+
         $controller = $this->getMockBuilder(FinishController::class)
             ->setConstructorArgs([
                 $this->systemLocker,
                 new Client(),
                 'https://www.shopwell.cn',
                 new NativeClock(),
+                $this->adminMenuSeeder,
                 'admin',
             ])
             ->onlyMethods(['renderInstaller'])
@@ -132,6 +141,32 @@ class FinishControllerTest extends TestCase
         static::assertSame('/shop/custom-admin', $cookies[0]->getPath());
     }
 
+    public function testFinishWritesTheCoreNavigation(): void
+    {
+        $this->systemLocker
+            ->expects($this->once())
+            ->method('lock');
+
+        // the sidebar would fall back to its declarations and the menu page stay empty
+        // otherwise: a web installation never runs system:install
+        $this->adminMenuSeeder
+            ->expects($this->once())
+            ->method('seed');
+
+        $client = new Client(['handler' => new MockHandler([new TransferException()])]);
+
+        $session = new Session(new MockArraySessionStorage());
+        $session->set('ADMIN_USER', [
+            'username' => 'admin',
+            'password' => 'secret',
+        ]);
+
+        $request = new Request();
+        $request->setSession($session);
+
+        $this->createController($client)->finish($request);
+    }
+
     public function testFinishIgnoresTransferException(): void
     {
         $this->systemLocker
@@ -165,6 +200,7 @@ class FinishControllerTest extends TestCase
             $client,
             $appUrl,
             new NativeClock(),
+            $this->adminMenuSeeder,
             $adminPathName,
         );
     }

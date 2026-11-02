@@ -1,0 +1,94 @@
+.sw-system-menu-list {
+    // The navigation tree is a list of short labels, the default width of the side content
+    // would leave the form too little room on a 1280px screen.
+    .sw-page__content.has--side-content {
+        grid-template-columns: 320px 1fr;
+    }
+
+    &__sidebar {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        overflow-y: auto;
+        background-color: var(--color-elevation-surface-default);
+        border-right: 1px solid var(--color-border-secondary-default);
+    }
+
+    &__sidebar-header {
+        display: flex;
+        flex: 0 0 auto;
+        gap: var(--scale-size-8);
+        align-items: center;
+        justify-content: space-between;
+        padding: var(--scale-size-12) var(--scale-size-16);
+        border-bottom: 1px solid var(--color-border-secondary-default);
+    }
+
+    &__sidebar-title {
+        color: var(--color-text-primary-default);
+        font-weight: var(--font-weight-semi-bold);
+    }
+
+    &__sidebar-empty {
+        padding: var(--scale-size-16);
+        color: var(--color-text-secondary-default);
+        font-size: var(--font-size-s);
+    }
+
+    &__empty-state {
+        margin-top: var(--scale-size-48);
+    }
+
+    &__row {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: var(--scale-size-16);
+        margin-top: var(--scale-size-16);
+    }
+
+    &__icon-field {
+        display: flex;
+        gap: var(--scale-size-8);
+        align-items: flex-end;
+    }
+
+    &__field-icon {
+        flex: 1 1 auto;
+    }
+
+    &__icon-preview {
+        flex: 0 0 auto;
+        margin-bottom: var(--scale-size-12);
+        color: var(--color-icon-primary-default);
+    }
+
+    &__field-active {
+        margin-top: var(--scale-size-24);
+    }
+
+    &__roles-hint,
+    &__locked-hint {
+        margin-bottom: var(--scale-size-16);
+    }
+
+    &__meta {
+        display: grid;
+        grid-template-columns: max-content 1fr;
+        gap: var(--scale-size-8) var(--scale-size-24);
+        margin: 0;
+        font-size: var(--font-size-s);
+
+        dt {
+            color: var(--color-text-secondary-default);
+        }
+
+        dd {
+            margin: 0;
+            color: var(--color-text-primary-default);
+        }
+    }
+
+    &__delete-confirm {
+        margin: 0;
+    }
+}

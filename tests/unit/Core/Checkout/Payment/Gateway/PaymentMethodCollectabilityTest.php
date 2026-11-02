@@ -20,9 +20,9 @@ use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterf
 use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
 use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannelRegistry;
 use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
-use Shopwell\Core\System\Payment\Provider\PaymentChannelConfigEntity;
+use Shopwell\Core\System\Payment\Provider\Config\PaymentChannelConfigEntity;
+use Shopwell\Core\System\Payment\Provider\Config\PaymentProviderConfigEntity;
 use Shopwell\Core\System\Payment\Provider\PaymentProvider;
-use Shopwell\Core\System\Payment\Provider\PaymentProviderConfigEntity;
 use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;
 
 /**

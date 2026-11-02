@@ -12,7 +12,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Payment\App\PaymentCredentialCipher;
 use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannelRegistry;
-use Shopwell\Core\System\Payment\Provider\PaymentConfigResolver;
+use Shopwell\Core\System\Payment\Provider\Config\PaymentConfigResolver;
 use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;
 use Shopwell\Core\System\Payment\ScheduledTask\ReconcileOpenPaymentTransfersTaskHandler;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferCollection;
@@ -26,6 +26,7 @@ use Shopwell\Core\System\StateMachine\Aggregation\StateMachineState\StateMachine
 use Shopwell\Core\System\StateMachine\Aggregation\StateMachineState\StateMachineStateEntity;
 use Shopwell\Core\System\StateMachine\Loader\InitialStateIdLoader;
 use Shopwell\Core\System\StateMachine\StateMachineRegistry;
+use Shopwell\Tests\Unit\Core\System\Payment\Transfer\PaymentTransferRulesFixture;
 use Symfony\Component\Clock\MockClock;
 
 /**
@@ -106,10 +107,11 @@ class ReconcileOpenPaymentTransfersTaskHandlerTest extends TestCase
             $transferRepository,
             $recipients,
             new PaymentTransferStateHandler(static::createStub(StateMachineRegistry::class)),
-            new PaymentTransferRecipientService($recipients, new PaymentCredentialCipher(self::SECRET), new MockClock('2026-10-18T09:00:00+00:00')),
+            new PaymentTransferRecipientService($recipients, new PaymentCredentialCipher(self::SECRET), new MockClock('2026-10-18T09:00:00+00:00'), PaymentTransferRulesFixture::registry()),
             new PaymentCredentialCipher(self::SECRET),
             $initialStateIdLoader,
             new MockClock('2026-10-18T09:00:00+00:00'),
+            PaymentTransferRulesFixture::registry(),
         );
 
         return new PaymentTransferReconciler(

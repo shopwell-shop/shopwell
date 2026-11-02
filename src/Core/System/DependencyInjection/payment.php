@@ -22,11 +22,52 @@ use Shopwell\Core\System\Payment\App\PaymentCredentialCipher;
 use Shopwell\Core\System\Payment\App\PaymentSignatureService;
 use Shopwell\Core\System\Payment\Command\PaymentProvidersPruneCommand;
 use Shopwell\Core\System\Payment\Command\PaymentProvidersValidateCommand;
-use Shopwell\Core\System\Payment\Gateway\PaymentCloser;
+use Shopwell\Core\System\Payment\Gateway\PaymentChannelCloser;
 use Shopwell\Core\System\Payment\Install\PaymentMethodIconInstaller;
+use Shopwell\Core\System\Payment\Integration\Alipay\Action\AlipayCaptureAction;
+use Shopwell\Core\System\Payment\Integration\Alipay\Action\AlipayCloseAction;
+use Shopwell\Core\System\Payment\Integration\Alipay\Action\AlipayNotifyAction;
+use Shopwell\Core\System\Payment\Integration\Alipay\Action\AlipayQueryAction;
+use Shopwell\Core\System\Payment\Integration\Alipay\Action\AlipayRefundAction;
+use Shopwell\Core\System\Payment\Integration\Alipay\Action\AlipayTransferAction;
+use Shopwell\Core\System\Payment\Integration\Alipay\Action\AlipayTransferQueryAction;
+use Shopwell\Core\System\Payment\Integration\Alipay\AlipayProvider;
+use Shopwell\Core\System\Payment\Integration\Alipay\Notification\AlipayNotificationExtractor;
+use Shopwell\Core\System\Payment\Integration\Alipay\Notification\AlipayTransferNotificationVerifier;
+use Shopwell\Core\System\Payment\Integration\Alipay\Request\AlipayPayParamsDecoder;
+use Shopwell\Core\System\Payment\Integration\Paypal\Action\PaypalCaptureAction;
+use Shopwell\Core\System\Payment\Integration\Paypal\Action\PaypalNotifyAction;
+use Shopwell\Core\System\Payment\Integration\Paypal\Action\PaypalQueryAction;
+use Shopwell\Core\System\Payment\Integration\Paypal\Action\PaypalRefundAction;
+use Shopwell\Core\System\Payment\Integration\Paypal\Action\PaypalTransferAction;
+use Shopwell\Core\System\Payment\Integration\Paypal\Action\PaypalTransferQueryAction;
+use Shopwell\Core\System\Payment\Integration\Paypal\Notification\PaypalNotificationExtractor;
+use Shopwell\Core\System\Payment\Integration\Paypal\Notification\PaypalTransferNotificationVerifier;
+use Shopwell\Core\System\Payment\Integration\Paypal\PaypalProvider;
+use Shopwell\Core\System\Payment\Integration\Stripe\Action\StripeCaptureAction;
+use Shopwell\Core\System\Payment\Integration\Stripe\Action\StripeNotifyAction;
+use Shopwell\Core\System\Payment\Integration\Stripe\Action\StripeQueryAction;
+use Shopwell\Core\System\Payment\Integration\Stripe\Action\StripeRefundAction;
+use Shopwell\Core\System\Payment\Integration\Stripe\Action\StripeTransferAction;
+use Shopwell\Core\System\Payment\Integration\Stripe\Action\StripeTransferQueryAction;
+use Shopwell\Core\System\Payment\Integration\Stripe\Notification\StripeNotificationExtractor;
+use Shopwell\Core\System\Payment\Integration\Stripe\Notification\StripeTransferNotificationVerifier;
+use Shopwell\Core\System\Payment\Integration\Stripe\StripeProvider;
+use Shopwell\Core\System\Payment\Integration\Wechat\Action\WechatCaptureAction;
+use Shopwell\Core\System\Payment\Integration\Wechat\Action\WechatCloseAction;
+use Shopwell\Core\System\Payment\Integration\Wechat\Action\WechatNotifyAction;
+use Shopwell\Core\System\Payment\Integration\Wechat\Action\WechatQueryAction;
+use Shopwell\Core\System\Payment\Integration\Wechat\Action\WechatRefundAction;
+use Shopwell\Core\System\Payment\Integration\Wechat\Action\WechatTransferAction;
+use Shopwell\Core\System\Payment\Integration\Wechat\Action\WechatTransferQueryAction;
+use Shopwell\Core\System\Payment\Integration\Wechat\Notification\WechatNotificationExtractor;
+use Shopwell\Core\System\Payment\Integration\Wechat\Notification\WechatTransferNotificationVerifier;
+use Shopwell\Core\System\Payment\Integration\Wechat\Request\WechatPayParamsDecoder;
+use Shopwell\Core\System\Payment\Integration\Wechat\WechatProvider;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationEntity;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationProcessor;
 use Shopwell\Core\System\Payment\Notification\PaymentNotifyUrlBuilder;
+use Shopwell\Core\System\Payment\Order\Aggregate\PaymentRefund\PaymentRefundEntity;
 use Shopwell\Core\System\Payment\Order\Aggregate\PaymentTransaction\PaymentTransactionEntity;
 use Shopwell\Core\System\Payment\Order\PaymentOrderCapture;
 use Shopwell\Core\System\Payment\Order\PaymentOrderCloser;
@@ -37,57 +78,16 @@ use Shopwell\Core\System\Payment\Order\PaymentOrderQueryResultHandler;
 use Shopwell\Core\System\Payment\Order\PaymentOrderReconciler;
 use Shopwell\Core\System\Payment\Order\PaymentOrderService;
 use Shopwell\Core\System\Payment\Order\PaymentOrderStateHandler;
-use Shopwell\Core\System\Payment\Order\Refund\PaymentRefundEntity;
-use Shopwell\Core\System\Payment\Order\Refund\PaymentRefundService;
-use Shopwell\Core\System\Payment\Order\Refund\PaymentRefundStateHandler;
-use Shopwell\Core\System\Payment\Provider\Alipay\AlipayCaptureAction;
-use Shopwell\Core\System\Payment\Provider\Alipay\AlipayCloseAction;
-use Shopwell\Core\System\Payment\Provider\Alipay\AlipayNotificationExtractor;
-use Shopwell\Core\System\Payment\Provider\Alipay\AlipayNotifyAction;
-use Shopwell\Core\System\Payment\Provider\Alipay\AlipayPayParamsDecoder;
-use Shopwell\Core\System\Payment\Provider\Alipay\AlipayProvider;
-use Shopwell\Core\System\Payment\Provider\Alipay\AlipayQueryAction;
-use Shopwell\Core\System\Payment\Provider\Alipay\AlipayRefundAction;
-use Shopwell\Core\System\Payment\Provider\Alipay\AlipayTransferAction;
-use Shopwell\Core\System\Payment\Provider\Alipay\AlipayTransferNotificationVerifier;
-use Shopwell\Core\System\Payment\Provider\Alipay\AlipayTransferQueryAction;
-use Shopwell\Core\System\Payment\Provider\Api\PaymentProviderConfigController;
+use Shopwell\Core\System\Payment\Order\PaymentRefundService;
+use Shopwell\Core\System\Payment\Order\PaymentRefundStateHandler;
 use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannelRegistry;
-use Shopwell\Core\System\Payment\Provider\PaymentChannelConfigEntity;
-use Shopwell\Core\System\Payment\Provider\PaymentConfigResolver;
-use Shopwell\Core\System\Payment\Provider\PaymentProviderConfigEntity;
-use Shopwell\Core\System\Payment\Provider\PaymentProviderConfigService;
+use Shopwell\Core\System\Payment\Provider\Config\Api\PaymentProviderConfigController;
+use Shopwell\Core\System\Payment\Provider\Config\PaymentChannelConfigEntity;
+use Shopwell\Core\System\Payment\Provider\Config\PaymentConfigResolver;
+use Shopwell\Core\System\Payment\Provider\Config\PaymentProviderConfigEntity;
+use Shopwell\Core\System\Payment\Provider\Config\PaymentProviderConfigService;
 use Shopwell\Core\System\Payment\Provider\PaymentProviderFactory;
 use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;
-use Shopwell\Core\System\Payment\Provider\Paypal\PaypalCaptureAction;
-use Shopwell\Core\System\Payment\Provider\Paypal\PaypalNotificationExtractor;
-use Shopwell\Core\System\Payment\Provider\Paypal\PaypalNotifyAction;
-use Shopwell\Core\System\Payment\Provider\Paypal\PaypalProvider;
-use Shopwell\Core\System\Payment\Provider\Paypal\PaypalQueryAction;
-use Shopwell\Core\System\Payment\Provider\Paypal\PaypalRefundAction;
-use Shopwell\Core\System\Payment\Provider\Paypal\PaypalTransferAction;
-use Shopwell\Core\System\Payment\Provider\Paypal\PaypalTransferNotificationVerifier;
-use Shopwell\Core\System\Payment\Provider\Paypal\PaypalTransferQueryAction;
-use Shopwell\Core\System\Payment\Provider\Stripe\StripeCaptureAction;
-use Shopwell\Core\System\Payment\Provider\Stripe\StripeNotificationExtractor;
-use Shopwell\Core\System\Payment\Provider\Stripe\StripeNotifyAction;
-use Shopwell\Core\System\Payment\Provider\Stripe\StripeProvider;
-use Shopwell\Core\System\Payment\Provider\Stripe\StripeQueryAction;
-use Shopwell\Core\System\Payment\Provider\Stripe\StripeRefundAction;
-use Shopwell\Core\System\Payment\Provider\Stripe\StripeTransferAction;
-use Shopwell\Core\System\Payment\Provider\Stripe\StripeTransferNotificationVerifier;
-use Shopwell\Core\System\Payment\Provider\Stripe\StripeTransferQueryAction;
-use Shopwell\Core\System\Payment\Provider\Wechat\WechatCaptureAction;
-use Shopwell\Core\System\Payment\Provider\Wechat\WechatCloseAction;
-use Shopwell\Core\System\Payment\Provider\Wechat\WechatNotificationExtractor;
-use Shopwell\Core\System\Payment\Provider\Wechat\WechatNotifyAction;
-use Shopwell\Core\System\Payment\Provider\Wechat\WechatPayParamsDecoder;
-use Shopwell\Core\System\Payment\Provider\Wechat\WechatProvider;
-use Shopwell\Core\System\Payment\Provider\Wechat\WechatQueryAction;
-use Shopwell\Core\System\Payment\Provider\Wechat\WechatRefundAction;
-use Shopwell\Core\System\Payment\Provider\Wechat\WechatTransferAction;
-use Shopwell\Core\System\Payment\Provider\Wechat\WechatTransferNotificationVerifier;
-use Shopwell\Core\System\Payment\Provider\Wechat\WechatTransferQueryAction;
 use Shopwell\Core\System\Payment\ScheduledTask\ExpirePaymentOrdersTask;
 use Shopwell\Core\System\Payment\ScheduledTask\ExpirePaymentOrdersTaskHandler;
 use Shopwell\Core\System\Payment\ScheduledTask\ReconcileOpenPaymentOrdersTask;
@@ -468,7 +468,7 @@ return static function (ContainerConfigurator $container): void {
 
     // the gateway side of closing: it talks to the channel and keeps the attempt as a transaction,
     // but it never touches the order - the state machine stays with PaymentOrderService
-    $services->set(PaymentCloser::class)
+    $services->set(PaymentChannelCloser::class)
         ->args([
             service('payment_transaction.repository'),
             service(PaymentConfigResolver::class),
@@ -479,7 +479,7 @@ return static function (ContainerConfigurator $container): void {
     // services that must not know each other, because the reconciliation needs PaymentOrderService
     $services->set(PaymentOrderCloser::class)
         ->args([
-            service(PaymentCloser::class),
+            service(PaymentChannelCloser::class),
             service(PaymentOrderService::class),
             service(PaymentOrderReconciler::class),
         ]);
@@ -619,6 +619,7 @@ return static function (ContainerConfigurator $container): void {
             service('payment_transfer_recipient.repository'),
             service(PaymentCredentialCipher::class),
             service(ClockInterface::class),
+            service(PaymentProviderRegistry::class),
         ]);
 
     $services->set(PaymentTransferService::class)
@@ -630,6 +631,7 @@ return static function (ContainerConfigurator $container): void {
             service(PaymentCredentialCipher::class),
             service(InitialStateIdLoader::class),
             service(ClockInterface::class),
+            service(PaymentProviderRegistry::class),
         ]);
 
     // the two sides of a transfer that talk to the channel: submitting it, and asking what became of
@@ -663,12 +665,12 @@ return static function (ContainerConfigurator $container): void {
             service(ClockInterface::class),
         ]);
 
-    // the payout rules of the interfaces are read from their declarations - the matrix of identity
-    // types, required recipient fields and currencies must exist exactly once, next to the interface
+    // the payout rules of the interfaces are read from the snapshots in the registry - the matrix of
+    // identity types, required recipient fields and currencies must exist exactly once, next to the
+    // interface, and the administration must not interpret the raw declarations a second time
     $services->set(PaymentTransferPresenter::class)
         ->args([
             service(PaymentCredentialCipher::class),
-            tagged_iterator('shopwell.payment.provider'),
         ]);
 
     $services->set(PaymentTransferController::class)

@@ -16,10 +16,15 @@ use Shopwell\Core\Checkout\Cart\Price\Struct\CalculatedPrice;
 use Shopwell\Core\Checkout\Cart\Tax\Struct\CalculatedTaxCollection;
 use Shopwell\Core\Checkout\Cart\Tax\Struct\TaxRuleCollection;
 use Shopwell\Core\Checkout\Loyalty\Cart\LoyaltyPointCartProcessor;
-use Shopwell\Core\Checkout\Loyalty\Service\LoyaltyPointService;
+use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyRedemptionLevel\LoyaltyRedemptionLevelCollection;
+use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyRedemptionLevel\LoyaltyRedemptionLevelEntity;
+use Shopwell\Core\Checkout\Loyalty\Service\LoyaltyAccountService;
+use Shopwell\Core\Checkout\Loyalty\Service\LoyaltyRedemptionCalculator;
+use Shopwell\Core\Checkout\Loyalty\Service\LoyaltyRedemptionRates;
 use Shopwell\Core\Checkout\Loyalty\Service\LoyaltySettings;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Struct\ArrayStruct;
+use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
 use Shopwell\Core\Test\Generator;
 use Shopwell\Core\Test\Stub\SystemConfigService\StaticSystemConfigService;
@@ -31,7 +36,7 @@ use Shopwell\Core\Test\Stub\SystemConfigService\StaticSystemConfigService;
 #[CoversClass(LoyaltyPointCartProcessor::class)]
 class LoyaltyPointCartProcessorTest extends TestCase
 {
-    private LoyaltyPointService&Stub $loyaltyPointService;
+    private LoyaltyAccountService&Stub $accounts;
 
     private AbsolutePriceCalculator&Stub $calculator;
 
@@ -39,7 +44,7 @@ class LoyaltyPointCartProcessorTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->loyaltyPointService = static::createStub(LoyaltyPointService::class);
+        $this->accounts = static::createStub(LoyaltyAccountService::class);
         $this->calculator = static::createStub(AbsolutePriceCalculator::class);
         $this->calculatedPrice = new CalculatedPrice(-1.0, -1.0, new CalculatedTaxCollection(), new TaxRuleCollection());
         $this->calculator->method('calculate')->willReturn($this->calculatedPrice);
@@ -90,7 +95,7 @@ class LoyaltyPointCartProcessorTest extends TestCase
     {
         $cart = $this->createCart(50);
         $cart->setLineItems(new LineItemCollection([$this->createGoodsLineItem(1000.0)]));
-        $this->loyaltyPointService->method('getBalance')->willReturn(1000);
+        $this->accounts->method('balance')->willReturn(1000);
 
         $this->createProcessor([LoyaltySettings::CONFIG_KEY_MIN_REDEEMABLE_POINTS => 100])
             ->process(new CartDataCollection(), new Cart('original'), $cart, $this->createContext(), new CartBehavior());
@@ -102,7 +107,7 @@ class LoyaltyPointCartProcessorTest extends TestCase
     {
         $cart = $this->createCart(1000);
         $cart->setLineItems(new LineItemCollection([$this->createGoodsLineItem(500.0)]));
-        $this->loyaltyPointService->method('getBalance')->willReturn(100);
+        $this->accounts->method('balance')->willReturn(100);
 
         $this->createProcessor()->process(new CartDataCollection(), new Cart('original'), $cart, $this->createContext(), new CartBehavior());
 
@@ -119,7 +124,7 @@ class LoyaltyPointCartProcessorTest extends TestCase
     {
         $cart = $this->createCart(1000);
         $cart->setLineItems(new LineItemCollection([$this->createGoodsLineItem(500.0)]));
-        $this->loyaltyPointService->method('getBalance')->willReturn(1000);
+        $this->accounts->method('balance')->willReturn(1000);
 
         $this->createProcessor([LoyaltySettings::CONFIG_KEY_MAX_REDEEMABLE_PERCENT => 50.0])
             ->process(new CartDataCollection(), new Cart('original'), $cart, $this->createContext(), new CartBehavior());
@@ -136,7 +141,7 @@ class LoyaltyPointCartProcessorTest extends TestCase
             $this->createGoodsLineItem(500.0),
             $this->createCreditLineItem('voucher', 200.0),
         ]));
-        $this->loyaltyPointService->method('getBalance')->willReturn(1000);
+        $this->accounts->method('balance')->willReturn(1000);
 
         $this->createProcessor()->process(new CartDataCollection(), new Cart('original'), $cart, $this->createContext(), new CartBehavior());
 
@@ -149,7 +154,7 @@ class LoyaltyPointCartProcessorTest extends TestCase
     {
         $cart = $this->createCart(100);
         $cart->setLineItems(new LineItemCollection([$this->createGoodsLineItem(500.0)]));
-        $this->loyaltyPointService->method('getBalance')->willReturn(100);
+        $this->accounts->method('balance')->willReturn(100);
 
         $this->createProcessor()->process(new CartDataCollection(), new Cart('original'), $cart, $this->createContext(), new CartBehavior());
 
@@ -175,7 +180,7 @@ class LoyaltyPointCartProcessorTest extends TestCase
             $this->createGoodsLineItem(500.0),
             new LineItem(LoyaltyPointCartProcessor::LINE_ITEM_ID, LineItem::CREDIT_LINE_ITEM_TYPE),
         ]));
-        $this->loyaltyPointService->method('getBalance')->willReturn(100);
+        $this->accounts->method('balance')->willReturn(100);
 
         $this->createProcessor()->process(new CartDataCollection(), new Cart('original'), $cart, $this->createContext(), new CartBehavior());
 
@@ -183,6 +188,38 @@ class LoyaltyPointCartProcessorTest extends TestCase
         static::assertInstanceOf(LineItem::class, $lineItem);
         static::assertSame(1, $lineItem->getQuantity());
         static::assertSame(100, $lineItem->getPayloadValue('points'));
+    }
+
+    public function testUsesTheLadderForTheDiscountAmount(): void
+    {
+        $cart = $this->createCart(1500);
+        $cart->setLineItems(new LineItemCollection([$this->createGoodsLineItem(5000.0)]));
+        $this->accounts->method('balance')->willReturn(5000);
+
+        $this->createProcessor([], $this->rates([1000 => 2.0]))
+            ->process(new CartDataCollection(), new Cart('original'), $cart, $this->createContext(), new CartBehavior());
+
+        $lineItem = $cart->getLineItems()->get(LoyaltyPointCartProcessor::LINE_ITEM_ID);
+        static::assertInstanceOf(LineItem::class, $lineItem);
+
+        $priceDefinition = $lineItem->getPriceDefinition();
+        static::assertInstanceOf(AbsolutePriceDefinition::class, $priceDefinition);
+        // 1000 points at the configured rate, the 500 above the step at twice that
+        static::assertSame(-2000.0, $priceDefinition->getPrice());
+    }
+
+    public function testClampsToWhatTheOrderMayGiveAwayAtLadderRates(): void
+    {
+        $cart = $this->createCart(5000);
+        $cart->setLineItems(new LineItemCollection([$this->createGoodsLineItem(1000.0)]));
+        $this->accounts->method('balance')->willReturn(5000);
+
+        $this->createProcessor([], $this->rates([1000 => 2.0]))
+            ->process(new CartDataCollection(), new Cart('original'), $cart, $this->createContext(), new CartBehavior());
+
+        $lineItem = $cart->getLineItems()->get(LoyaltyPointCartProcessor::LINE_ITEM_ID);
+        static::assertInstanceOf(LineItem::class, $lineItem);
+        static::assertSame(1000, $lineItem->getPayloadValue('points'));
     }
 
     private function createContext(): SalesChannelContext
@@ -193,7 +230,7 @@ class LoyaltyPointCartProcessorTest extends TestCase
     /**
      * @param array<string, mixed> $config
      */
-    private function createProcessor(array $config = []): LoyaltyPointCartProcessor
+    private function createProcessor(array $config = [], ?LoyaltyRedemptionRates $rates = null): LoyaltyPointCartProcessor
     {
         $config = array_merge([
             LoyaltySettings::CONFIG_KEY_POINT_VALUE_IN_CURRENCY => 1.0,
@@ -201,11 +238,37 @@ class LoyaltyPointCartProcessorTest extends TestCase
             LoyaltySettings::CONFIG_KEY_MAX_REDEEMABLE_PERCENT => 100.0,
         ], $config);
 
+        $settings = new LoyaltySettings(new StaticSystemConfigService($config));
+
+        $redemption = static::createStub(LoyaltyRedemptionCalculator::class);
+        $redemption->method('rates')->willReturn(
+            $rates ?? LoyaltyRedemptionRates::fromLevels(new LoyaltyRedemptionLevelCollection(), $settings->pointValueInCurrency())
+        );
+
         return new LoyaltyPointCartProcessor(
             $this->calculator,
-            new LoyaltySettings(new StaticSystemConfigService($config)),
-            $this->loyaltyPointService
+            $redemption,
+            $settings,
+            $this->accounts
         );
+    }
+
+    /**
+     * @param array<int, float> $steps points => value of one point from there on
+     */
+    private function rates(array $steps): LoyaltyRedemptionRates
+    {
+        $levels = new LoyaltyRedemptionLevelCollection();
+
+        foreach ($steps as $points => $valuePerPoint) {
+            $level = new LoyaltyRedemptionLevelEntity();
+            $level->setId(Uuid::randomHex());
+            $level->setPoints($points);
+            $level->setValuePerPoint($valuePerPoint);
+            $levels->add($level);
+        }
+
+        return LoyaltyRedemptionRates::fromLevels($levels, 1.0);
     }
 
     private function createCart(int $requestedPoints = 0): Cart

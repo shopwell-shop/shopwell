@@ -3,6 +3,7 @@
 namespace Shopwell\Core\Checkout\Loyalty\Entity\CustomerPointTransaction;
 
 use Shopwell\Core\Checkout\Customer\CustomerEntity;
+use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyPointLotUse\LoyaltyPointLotUseCollection;
 use Shopwell\Core\Checkout\Order\OrderEntity;
 use Shopwell\Core\Framework\DataAbstractionLayer\Entity;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityIdTrait;
@@ -35,8 +36,6 @@ class CustomerPointTransactionEntity extends Entity
 
     protected ?\DateTimeInterface $expiresAt = null;
 
-    protected ?\DateTimeInterface $expiredAt = null;
-
     protected ?string $comment = null;
 
     protected ?string $administratorId = null;
@@ -46,6 +45,8 @@ class CustomerPointTransactionEntity extends Entity
     protected ?OrderEntity $order = null;
 
     protected ?SalesChannelEntity $salesChannel = null;
+
+    protected ?LoyaltyPointLotUseCollection $lotUses = null;
 
     public function getCustomerId(): string
     {
@@ -137,16 +138,6 @@ class CustomerPointTransactionEntity extends Entity
         $this->expiresAt = $expiresAt;
     }
 
-    public function getExpiredAt(): ?\DateTimeInterface
-    {
-        return $this->expiredAt;
-    }
-
-    public function setExpiredAt(?\DateTimeInterface $expiredAt): void
-    {
-        $this->expiredAt = $expiredAt;
-    }
-
     public function getComment(): ?string
     {
         return $this->comment;
@@ -195,5 +186,15 @@ class CustomerPointTransactionEntity extends Entity
     public function setSalesChannel(SalesChannelEntity $salesChannel): void
     {
         $this->salesChannel = $salesChannel;
+    }
+
+    public function getLotUses(): ?LoyaltyPointLotUseCollection
+    {
+        return $this->lotUses;
+    }
+
+    public function setLotUses(LoyaltyPointLotUseCollection $lotUses): void
+    {
+        $this->lotUses = $lotUses;
     }
 }

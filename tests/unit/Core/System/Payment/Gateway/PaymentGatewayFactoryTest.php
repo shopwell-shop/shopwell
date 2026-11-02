@@ -7,18 +7,19 @@ use Payum\Core\Request\Capture;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Payment\Gateway\AbstractPaymentAction;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayFactory;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
+use Shopwell\Core\System\Payment\Integration\Stripe\Action\StripeCaptureAction;
+use Shopwell\Core\System\Payment\Integration\Stripe\Api\StripeApi;
+use Shopwell\Core\System\Payment\Integration\Wechat\Action\WechatCaptureAction;
+use Shopwell\Core\System\Payment\Integration\Wechat\Api\WechatApi;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
 use Shopwell\Core\System\Payment\PaymentException;
 use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
 use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
 use Shopwell\Core\System\Payment\Provider\PaymentProvider;
 use Shopwell\Core\System\Payment\Provider\ResolvedPaymentConfig;
-use Shopwell\Core\System\Payment\Provider\Stripe\StripeApi;
-use Shopwell\Core\System\Payment\Provider\Stripe\StripeCaptureAction;
-use Shopwell\Core\System\Payment\Provider\Wechat\WechatApi;
-use Shopwell\Core\System\Payment\Provider\Wechat\WechatCaptureAction;
 
 /**
  * @internal
@@ -105,6 +106,68 @@ class PaymentGatewayFactoryTest extends TestCase
             // and it failed on the missing merchant credentials instead
             static::assertSame(WechatApi::MCH_ID, $exception->getParameters()['field'] ?? null);
         }
+    }
+
+    /**
+     * Payum writes the api and the gateway onto the action at execution time. Sharing one action
+     * between two gateways would therefore run the payment of one app with the credentials of the
+     * other - invisible in a sequential request, fatal in a long running worker. Every gateway has to
+     * be assembled with its own action.
+     */
+    public function testEveryGatewayIsAssembledWithItsOwnAction(): void
+    {
+        $prototype = new WechatCaptureAction();
+        $factory = new PaymentGatewayFactory('wechat', WechatApi::class, [$prototype]);
+
+        $first = $factory->createForPayment($this->resolved('wechat', 'wechat_h5'), '', '');
+        $second = $factory->createForPayment($this->resolved('wechat', 'wechat_h5'), '', '');
+
+        $firstAction = self::actionsOf($first)[0];
+        $secondAction = self::actionsOf($second)[0];
+
+        static::assertNotSame($prototype, $firstAction);
+        static::assertNotSame($firstAction, $secondAction);
+
+        $model = new PaymentGatewayModel([
+            PaymentGatewayModel::PAYMENT_NO => 'P-1',
+            PaymentGatewayModel::AMOUNT => 100,
+            PaymentGatewayModel::CURRENCY => 'CNY',
+            PaymentGatewayModel::SUBJECT => 'Order subject',
+        ]);
+
+        try {
+            $first->execute(new Capture($model));
+        } catch (\Throwable) {
+            // the credentials are missing on purpose - only the injection of the api matters here
+        }
+
+        static::assertNotNull(self::apiOf($firstAction));
+        static::assertNull(self::apiOf($secondAction), 'the second gateway must stay untouched');
+        static::assertNull(self::apiOf($prototype), 'the prototype in the container must never be executed on');
+    }
+
+    /**
+     * @return list<object>
+     */
+    private static function actionsOf(Gateway $gateway): array
+    {
+        $actions = new \ReflectionProperty(Gateway::class, 'actions');
+
+        /** @var list<object> $value */
+        $value = $actions->getValue($gateway);
+
+        return array_values($value);
+    }
+
+    private static function apiOf(object $action): ?object
+    {
+        // declared on the abstract action, so it is not found by reflecting the concrete class
+        $api = new \ReflectionProperty(AbstractPaymentAction::class, 'api');
+
+        /** @var object|null $value */
+        $value = $api->getValue($action);
+
+        return $value;
     }
 
     /**

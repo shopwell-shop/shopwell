@@ -1,0 +1,60 @@
+{% block sw_settings_user_permission %}
+<sw-page class="sw-settings-user-permission">
+
+    {% block sw_settings_user_permission_smart_bar_header %}
+    <template #smart-bar-header>
+        <h2>
+            {% block sw_settings_user_permission_smart_bar_header_title %}
+            <span>{{ $t('sw-settings.index.title') }}</span>
+
+            <mt-icon
+                name="regular-chevron-right-xs"
+                size="12px"
+            />
+
+            <span>{{ $t('sw-settings-user-permission.general.mainMenuItemGeneral') }}</span>
+            {% endblock %}
+        </h2>
+    </template>
+    {% endblock %}
+
+    {% block sw_settings_user_permission_smart_bar_actions %}
+    <template #smart-bar-actions>
+        <sw-button-process
+            class="sw-settings-user-permission__button-save"
+            variant="primary"
+            :is-loading="isLoading"
+            :process-success="isSaveSuccessful"
+            :disabled="!acl.can('users_and_permissions.editor') || undefined"
+            @click="onSave"
+            @update:process-success="onSaveFinish"
+        >
+            {{ $t('global.default.save') }}
+        </sw-button-process>
+    </template>
+    {% endblock %}
+
+    {% block sw_settings_user_permission_content %}
+    <template #content>
+        <sw-card-view>
+            {% block sw_settings_user_permission_content_card %}
+            <mt-card
+                class="sw-settings-user-permission__card"
+                position-identifier="sw-settings-user-permission"
+                :title="$t('sw-settings-user-permission.general.cardLabel')"
+            >
+                {% block sw_settings_user_permission_content_config %}
+                <sw-system-config
+                    ref="systemConfig"
+                    domain="core.userPermission"
+                    :class="{ 'is--disabled': !acl.can('users_and_permissions.editor') }"
+                    @loading-changed="onChangeLoading"
+                />
+                {% endblock %}
+            </mt-card>
+            {% endblock %}
+        </sw-card-view>
+    </template>
+    {% endblock %}
+</sw-page>
+{% endblock %}

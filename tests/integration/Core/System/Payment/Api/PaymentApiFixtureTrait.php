@@ -17,11 +17,11 @@ use Shopwell\Core\System\Payment\App\PaymentAppCollection;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
 use Shopwell\Core\System\Payment\App\PaymentCredentialCipher;
 use Shopwell\Core\System\Payment\App\PaymentSignatureService;
+use Shopwell\Core\System\Payment\Integration\Alipay\Api\AlipayApi;
 use Shopwell\Core\System\Payment\Order\PaymentOrderCollection;
 use Shopwell\Core\System\Payment\Order\PaymentOrderStates;
-use Shopwell\Core\System\Payment\Provider\Alipay\AlipayApi;
-use Shopwell\Core\System\Payment\Provider\PaymentChannelConfigCollection;
-use Shopwell\Core\System\Payment\Provider\PaymentProviderConfigCollection;
+use Shopwell\Core\System\Payment\Provider\Config\PaymentChannelConfigCollection;
+use Shopwell\Core\System\Payment\Provider\Config\PaymentProviderConfigCollection;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Component\HttpFoundation\Response;
 

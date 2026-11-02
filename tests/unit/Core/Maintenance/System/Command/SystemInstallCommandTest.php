@@ -459,6 +459,8 @@ class SystemInstallCommandTest extends TestCase
             'dal:refresh:index',
             'scheduled-task:register',
             'plugin:refresh',
+            // the navigation is written during the installation, not by the first request
+            'admin-menu:sync',
             'theme:refresh',
             'theme:compile',
             'cache:clear',
