@@ -33,7 +33,7 @@
   },
   "dependencies": {
     "@currents/playwright": "2.3.3",
-    "@shopwell-ag/acceptance-test-suite": "13.0.1",
+    "@shopwell-ag/acceptance-test-suite": "13.2.0",
     "@shopwell/api-client": "2.0.0",
     "lighthouse": "12.6.1",
     "playwright-lighthouse": "4.0.0"
