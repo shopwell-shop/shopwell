@@ -66,6 +66,7 @@ import type cmsBlockFavoritesService from './module/sw-cms/service/cms-block-fav
 import type CheckoutStoreService from './core/service/api/checkout-store.api.service';
 import type ExtensionHelperService from './app/service/extension-helper.service';
 import type PaymentTransferApiService from './module/sw-finance/service/payment-transfer.api.service';
+import type PaymentGatewayService from './module/sw-payment/service/payment-gateway.api.service';
 import type OrderReturnApiService from './module/sw-order-return/service/order-return.api.service';
 import type AsyncComponentFactory from './core/factory/async-component.factory';
 import type FilterFactory from './core/factory/filter.factory';
@@ -284,6 +285,7 @@ declare global {
         oauthAuthorizeApiService: OAuthAuthorizeApiService;
         orderStateMachineService: OrderStateMachineApiService;
         orderReturnApiService: OrderReturnApiService;
+        paymentGatewayService: PaymentGatewayService;
         paymentTransferApiService: PaymentTransferApiService;
         privileges: PrivilegesService;
         productStreamConditionService: $TSFixMe;
