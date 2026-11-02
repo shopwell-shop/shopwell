@@ -22,6 +22,7 @@ use Shopwell\Core\Installer\Controller\TranslationController;
 use Shopwell\Core\Installer\Database\BlueGreenDeploymentService;
 use Shopwell\Core\Installer\Database\DatabaseMigrator;
 use Shopwell\Core\Installer\Database\MigrationCollectionFactory;
+use Shopwell\Core\Installer\Finish\AdminMenuSeeder;
 use Shopwell\Core\Installer\Finish\SystemLocker;
 use Shopwell\Core\Installer\License\LicenseFetcher;
 use Shopwell\Core\Installer\Requirements\ConfigurationRequirementsValidator;
@@ -235,10 +236,16 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(Client::class),
             env('APP_URL')->string(),
             service(ClockInterface::class),
+            service(AdminMenuSeeder::class),
             env('SHOPWELL_ADMINISTRATION_PATH_NAME')->string(),
         ])
         ->call('setContainer', [
             service('service_container'),
+        ]);
+
+    $services->set(AdminMenuSeeder::class)
+        ->args([
+            param('kernel.project_dir'),
         ]);
 
     $services->set(BlueGreenDeploymentService::class);

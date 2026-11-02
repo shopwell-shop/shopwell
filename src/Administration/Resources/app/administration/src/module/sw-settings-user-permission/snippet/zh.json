@@ -1,0 +1,9 @@
+{
+    "sw-settings-user-permission": {
+        "general": {
+            "mainMenuItemGeneral": "用户与登录",
+            "description": "配置密码策略、登录与注册相关的店铺级规则",
+            "cardLabel": "用户与登录"
+        }
+    }
+}

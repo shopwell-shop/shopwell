@@ -43,6 +43,7 @@ class WalletRoute
         private readonly EntityRepository $walletRepository,
         private readonly EntityRepository $walletTransactionRepository,
         private readonly WalletTopUpService $topUpService,
+        private readonly WalletPresenter $presenter,
         private readonly ExtensionDispatcher $extensions,
     ) {
     }
@@ -68,22 +69,18 @@ class WalletRoute
 
         $wallets = $this->loadWallets($customer->getId(), $context);
 
-        $walletIds = array_map(static fn (array $wallet): string => (string) $wallet['id'], $wallets);
+        $walletIds = array_map(static fn (CustomerWalletEntity $wallet): string => $wallet->getId(), $wallets);
 
         /** @var array<string, mixed> $data */
         $data = [
-            'wallets' => array_map(
-                static fn (array $wallet): array => [
-                    'currencyId' => $wallet['currencyId'],
-                    'balance' => $wallet['balance'],
-                    'lockedBalance' => $wallet['lockedBalance'],
-                ],
-                $wallets
-            ),
+            'wallets' => array_map($this->presenter->wallet(...), $wallets),
             'transactions' => $this->loadTransactions($walletIds, $request, $context),
             // the account page needs the form and the ledger in one call, so a reloaded page shows
             // a payment that is still open without asking the gateway again
-            'topUps' => $this->topUpService->recent($customer->getId(), self::RECENT_TOP_UP_LIMIT, $context->getContext()),
+            'topUps' => array_map(
+                $this->presenter->topUp(...),
+                $this->topUpService->recentTopUps($customer->getId(), self::RECENT_TOP_UP_LIMIT, $context->getContext())
+            ),
             'topUpOptions' => $this->topUpService->options($currency, $this->deviceOf($request), $context->getSalesChannelId()),
         ];
 
@@ -91,7 +88,7 @@ class WalletRoute
     }
 
     /**
-     * @return list<array<string, mixed>>
+     * @return list<CustomerWalletEntity>
      */
     private function loadWallets(string $customerId, SalesChannelContext $context): array
     {
@@ -101,16 +98,9 @@ class WalletRoute
         $wallets = [];
 
         foreach ($this->walletRepository->search($criteria, $context->getContext())->getEntities() as $wallet) {
-            if (!$wallet instanceof CustomerWalletEntity) {
-                continue;
+            if ($wallet instanceof CustomerWalletEntity) {
+                $wallets[] = $wallet;
             }
-
-            $wallets[] = [
-                'id' => $wallet->getId(),
-                'currencyId' => $wallet->getCurrencyId(),
-                'balance' => $wallet->getBalance(),
-                'lockedBalance' => $wallet->getLockedBalance(),
-            ];
         }
 
         return $wallets;
@@ -139,21 +129,9 @@ class WalletRoute
         $transactions = [];
 
         foreach ($this->walletTransactionRepository->search($criteria, $context->getContext())->getEntities() as $transaction) {
-            if (!$transaction instanceof CustomerWalletTransactionEntity) {
-                continue;
+            if ($transaction instanceof CustomerWalletTransactionEntity) {
+                $transactions[] = $this->presenter->transaction($transaction);
             }
-
-            $transactions[] = [
-                'id' => $transaction->getId(),
-                'type' => $transaction->getType(),
-                'amount' => $transaction->getAmount(),
-                'balanceAfter' => $transaction->getBalanceAfter(),
-                'currencyId' => $transaction->getCurrencyId(),
-                'orderId' => $transaction->getOrderId(),
-                'externalReference' => $transaction->getExternalReference(),
-                'comment' => $transaction->getComment(),
-                'createdAt' => $transaction->getCreatedAt()?->format(\DATE_ATOM),
-            ];
         }
 
         return $transactions;

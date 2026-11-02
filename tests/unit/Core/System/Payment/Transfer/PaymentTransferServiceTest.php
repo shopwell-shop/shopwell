@@ -691,10 +691,11 @@ class PaymentTransferServiceTest extends TestCase
             $transfers ?? $this->transferRepository(),
             $recipients,
             new PaymentTransferStateHandler($registry),
-            new PaymentTransferRecipientService($recipients, $cipher, new MockClock(self::NOW)),
+            new PaymentTransferRecipientService($recipients, $cipher, new MockClock(self::NOW), PaymentTransferRulesFixture::registry()),
             $cipher,
             $this->initialStateIdLoader(),
             new MockClock(self::NOW),
+            PaymentTransferRulesFixture::registry(),
         );
     }
 

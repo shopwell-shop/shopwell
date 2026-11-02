@@ -9,7 +9,7 @@ use Shopwell\Core\Checkout\Cart\LineItem\CartDataCollection;
 use Shopwell\Core\Checkout\Cart\LineItem\LineItem;
 use Shopwell\Core\Checkout\Cart\Price\AbsolutePriceCalculator;
 use Shopwell\Core\Checkout\Cart\Price\Struct\AbsolutePriceDefinition;
-use Shopwell\Core\Checkout\Wallet\Service\WalletService;
+use Shopwell\Core\Checkout\Wallet\Service\WalletAccountService;
 use Shopwell\Core\Checkout\Wallet\Service\WalletSettings;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Struct\ArrayStruct;
@@ -35,7 +35,7 @@ class WalletCartProcessor implements CartProcessorInterface
     public function __construct(
         private readonly AbsolutePriceCalculator $calculator,
         private readonly WalletSettings $settings,
-        private readonly WalletService $walletService
+        private readonly WalletAccountService $wallets
     ) {
     }
 
@@ -57,7 +57,7 @@ class WalletCartProcessor implements CartProcessorInterface
         }
 
         $currencyId = $context->getCurrency()->getId();
-        $balance = $this->walletService->getBalance($customer->getId(), $currencyId, $context->getContext());
+        $balance = $this->wallets->balance($customer->getId(), $currencyId, $context->getContext());
         $maxPercent = $this->settings->maxPaymentPercent($context->getSalesChannelId());
 
         $available = $this->goodsTotal($toCalculate) - $this->otherCreditAmount($toCalculate);

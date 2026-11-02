@@ -213,7 +213,9 @@ class OrderReturnServiceTest extends TestCase
     public function testAWindowThatCountsFromTheOrderDateCanBeOver(): void
     {
         $order = $this->order([$this->productLineItem('line-item', 10.0)]);
-        $order->setOrderDate(new \DateTimeImmutable('-40 days'));
+        // counted from the frozen clock of service(), not from the wall clock - a relative date turns
+        // this test red the day the frozen date falls behind the window
+        $order->setOrderDate(new \DateTimeImmutable('2026-09-01 00:00:00'));
         $settings = $this->settings();
 
         $this->expectExceptionObject(OrderReturnException::windowExpired('SW-10001', 30));

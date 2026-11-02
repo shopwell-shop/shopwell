@@ -84,8 +84,8 @@
                         <mt-switch
                             v-model="currentIntegration.admin"
                             name="sw-field--currentIntegration-admin"
-                            class="sw-settings-user-detail__grid-is-admin"
-                            :label="$t('sw-users-permissions.users.user-detail.labelAdministrator')"
+                            class="sw-system-user-detail__grid-is-admin"
+                            :label="$t('sw-system.users.user-detail.labelAdministrator')"
                             :disabled="!acl.can('admin')"
                             bordered
                         />
@@ -98,12 +98,12 @@
                         v-model:entity-collection="currentIntegration.aclRoles"
                         v-tooltip="{
                             showDelay: 300,
-                            message: $t('sw-users-permissions.users.user-detail.disabledRoleSelectWarning'),
+                            message: $t('sw-system.users.user-detail.disabledRoleSelectWarning'),
                             disabled: !currentIntegration.admin || !acl.can('integration.editor')
                         }"
                         name="sw-field--currentIntegration-aclRoles"
-                        class="sw-settings-user-detail__grid-aclRoles"
-                        :label="$t('sw-users-permissions.users.user-detail.labelRoles')"
+                        class="sw-system-user-detail__grid-aclRoles"
+                        :label="$t('sw-system.users.user-detail.labelRoles')"
                         :disabled="currentIntegration.admin || !acl.can('integration.editor')"
                         label-property="name"
                     />
@@ -294,7 +294,7 @@
                             v-if="item.admin"
                             variant="attention"
                         >
-                            {{ $t('sw-users-permissions.users.user-detail.labelAdministrator') }}
+                            {{ $t('sw-system.users.user-detail.labelAdministrator') }}
                         </mt-badge>
 
                         <span v-if="!item.admin && item.aclRoles && item.aclRoles.length">

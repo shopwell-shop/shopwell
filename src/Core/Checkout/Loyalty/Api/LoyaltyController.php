@@ -7,8 +7,8 @@ use Shopwell\Core\Checkout\Loyalty\Entity\CustomerLoyalty\CustomerLoyaltyEntity;
 use Shopwell\Core\Checkout\Loyalty\Entity\CustomerPointTransaction\CustomerPointTransactionCollection;
 use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyTier\LoyaltyTierCollection;
 use Shopwell\Core\Checkout\Loyalty\LoyaltyException;
-use Shopwell\Core\Checkout\Loyalty\Service\LoyaltyLedger;
 use Shopwell\Core\Checkout\Loyalty\Service\LoyaltyPointService;
+use Shopwell\Core\Checkout\Membership\Service\MembershipSubscriptionService;
 use Shopwell\Core\Framework\Api\Context\AdminApiSource;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
@@ -43,7 +43,7 @@ class LoyaltyController
         private readonly EntityRepository $pointTransactionRepository,
         private readonly EntityRepository $loyaltyTierRepository,
         private readonly LoyaltyPointService $loyaltyPointService,
-        private readonly LoyaltyLedger $loyaltyLedger,
+        private readonly MembershipSubscriptionService $subscriptions,
     ) {
     }
 
@@ -117,8 +117,8 @@ class LoyaltyController
 
     /**
      * Grants a membership the operator decided on - a goodwill upgrade, a correction, or a membership
-     * that was paid outside of the shop. The period is written by the ledger, so an extension of the
-     * same tier continues where the running one ends instead of restarting today.
+     * that was paid outside of the shop. It goes through the membership itself, so granting the tier the
+     * customer already holds continues where the running membership ends instead of restarting today.
      */
     #[Route(
         path: '/api/_action/loyalty/customer/{customerId}/membership',
@@ -131,17 +131,13 @@ class LoyaltyController
         $tierId = (string) $request->request->get('tierId', '');
         $durationDays = $request->request->getInt('durationDays');
 
-        if ($durationDays < 1) {
-            throw LoyaltyException::invalidMembershipDuration($durationDays);
-        }
-
         $this->assertTierExists($tierId, $context);
 
-        $period = $this->loyaltyLedger->activateMembership($customerId, $tierId, $durationDays, $context);
+        $subscription = $this->subscriptions->grant($customerId, $tierId, $durationDays, $context);
 
         return new JsonResponse([
-            'startsAt' => $period['startsAt']->format(\DATE_ATOM),
-            'expiresAt' => $period['expiresAt']->format(\DATE_ATOM),
+            'startsAt' => $subscription->getStartsAt()->format(\DATE_ATOM),
+            'expiresAt' => $subscription->getEndsAt()->format(\DATE_ATOM),
         ]);
     }
 

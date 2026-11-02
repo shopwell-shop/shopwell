@@ -1,0 +1,88 @@
+{% block sw_system_menu_tree %}
+<div
+    class="sw-system-menu-tree"
+    role="tree"
+    :aria-label="$t('sw-system.menu.treeLabel')"
+>
+    {% block sw_system_menu_tree_rows %}
+    <div
+        v-for="row in rows"
+        :key="row.item.id"
+        class="sw-system-menu-tree__row"
+        :class="rowClasses(row.item)"
+        :style="{ '--sw-system-menu-tree-depth': row.depth }"
+        role="treeitem"
+        tabindex="0"
+        :aria-selected="isActive(row.item)"
+        :aria-level="row.depth + 1"
+        :aria-expanded="row.hasChildren ? String(!isCollapsed(row.item)) : undefined"
+        :draggable="isSortableItem(row.item)"
+        @click="select(row.item)"
+        @keydown="onKeydown($event, row.item)"
+        @dragstart="onDragStart($event, row.item)"
+        @dragover.prevent="onDragOver($event, row.item)"
+        @dragleave="onDragLeave(row.item)"
+        @drop.prevent="onDrop($event, row.item)"
+        @dragend="onDragEnd"
+    >
+        {% block sw_system_menu_tree_row_toggle %}
+        <button
+            v-if="row.hasChildren"
+            type="button"
+            class="sw-system-menu-tree__toggle"
+            :aria-label="isCollapsed(row.item) ? $t('sw-system.menu.expand') : $t('sw-system.menu.collapse')"
+            @click.stop="toggle(row.item)"
+        >
+            <mt-icon
+                :name="isCollapsed(row.item) ? 'regular-chevron-right-xs' : 'regular-chevron-down-xs'"
+                size="12px"
+            />
+        </button>
+        <span
+            v-else
+            class="sw-system-menu-tree__toggle-spacer"
+        ></span>
+        {% endblock %}
+
+        {% block sw_system_menu_tree_row_icon %}
+        <mt-icon
+            class="sw-system-menu-tree__icon"
+            :name="iconOf(row.item)"
+            size="16px"
+        />
+        {% endblock %}
+
+        {% block sw_system_menu_tree_row_label %}
+        <span class="sw-system-menu-tree__label">
+            {{ rowLabel(row.item) }}
+        </span>
+        {% endblock %}
+
+        {% block sw_system_menu_tree_row_meta %}
+        <span class="sw-system-menu-tree__meta">
+            <mt-icon
+                v-if="row.item.sysLocked"
+                v-tooltip="{ message: $t('sw-system.menu.tooltipLockedItem') }"
+                name="regular-lock"
+                size="12px"
+            />
+
+            <span
+                v-if="!row.item.active"
+                class="sw-system-menu-tree__badge"
+            >
+                {{ $t('sw-system.menu.labelInactive') }}
+            </span>
+
+            <span
+                v-if="row.item.pluginName"
+                class="sw-system-menu-tree__badge"
+            >
+                {{ row.item.pluginName }}
+            </span>
+        </span>
+        {% endblock %}
+    </div>
+    {% endblock %}
+</div>
+{% endblock %}

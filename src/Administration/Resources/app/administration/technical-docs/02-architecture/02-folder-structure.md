@@ -128,7 +128,7 @@ The `module/` directory contains business domain modules representing different 
 
 #### System & Configuration:
 - **`sw-settings*/`** - Various system settings modules
-- **`sw-users-permissions/`** - User and permission management
+- **`sw-system/`** - User and permission management
 - **`sw-integration/`** - Third-party integrations
 
 #### Utilities & Tools:

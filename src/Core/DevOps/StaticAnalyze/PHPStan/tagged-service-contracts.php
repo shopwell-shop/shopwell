@@ -58,6 +58,7 @@ use Shopwell\Core\Framework\Rule\Rule;
 use Shopwell\Core\Framework\SystemCheck\BaseCheck;
 use Shopwell\Core\Framework\Telemetry\Metrics\Metric\PeriodicMetricCollectorInterface;
 use Shopwell\Core\Framework\Telemetry\Metrics\MetricTransportInterface;
+use Shopwell\Core\System\AdminMenu\AdminMenuDefinitionProviderInterface;
 use Shopwell\Core\System\NumberRange\ValueGenerator\Pattern\AbstractValueGenerator;
 use Shopwell\Core\System\NumberRange\ValueGenerator\Pattern\IncrementStorage\AbstractIncrementStorage;
 use Shopwell\Core\System\Payment\Provider\AbstractPaymentProvider;
@@ -86,6 +87,7 @@ return [
             'messenger.receiver' => ReceiverInterface::class,
             'promotion.filter.picker' => FilterPickerInterface::class,
             'promotion.filter.sorter' => FilterSorterInterface::class,
+            'shopwell.admin_menu_definition_provider' => AdminMenuDefinitionProviderInterface::class,
             'shopwell.api.cors_header_provider' => CorsHeaderProviderInterface::class,
             'shopwell.api.enum_provider' => FieldEnumProviderInterface::class,
             'shopwell.app_script.twig.extension' => ExtensionInterface::class,

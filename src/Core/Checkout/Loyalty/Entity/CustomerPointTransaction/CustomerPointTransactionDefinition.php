@@ -3,6 +3,7 @@
 namespace Shopwell\Core\Checkout\Loyalty\Entity\CustomerPointTransaction;
 
 use Shopwell\Core\Checkout\Customer\CustomerDefinition;
+use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyPointLotUse\LoyaltyPointLotUseDefinition;
 use Shopwell\Core\Checkout\Order\OrderDefinition;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityDefinition;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\DateTimeField;
@@ -13,6 +14,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\Required;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\IdField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\IntField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\ManyToOneAssociationField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\OneToManyAssociationField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\ReferenceVersionField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\StringField;
 use Shopwell\Core\Framework\DataAbstractionLayer\FieldCollection;
@@ -61,12 +63,12 @@ class CustomerPointTransactionDefinition extends EntityDefinition
             (new ReferenceVersionField(OrderDefinition::class, 'order_version_id'))->addFlags(new ApiAware()),
             (new FkField('sales_channel_id', 'salesChannelId', SalesChannelDefinition::class))->addFlags(new ApiAware()),
             (new DateTimeField('expires_at', 'expiresAt'))->addFlags(new ApiAware()),
-            (new DateTimeField('expired_at', 'expiredAt'))->addFlags(new ApiAware()),
             (new StringField('comment', 'comment'))->addFlags(new ApiAware()),
             (new FkField('administrator_id', 'administratorId', UserDefinition::class))->addFlags(new ApiAware()),
             new ManyToOneAssociationField('customer', 'customer_id', CustomerDefinition::class, 'id', false),
             new ManyToOneAssociationField('order', 'order_id', OrderDefinition::class, 'id', false),
             new ManyToOneAssociationField('salesChannel', 'sales_channel_id', SalesChannelDefinition::class, 'id', false),
+            new OneToManyAssociationField('lotUses', LoyaltyPointLotUseDefinition::class, 'transaction_id'),
         ]);
     }
 }

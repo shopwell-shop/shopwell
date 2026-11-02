@@ -7,6 +7,7 @@ use Shopwell\Core\Checkout\Cart\Price\Struct\CartPrice;
 use Shopwell\Core\Checkout\DocumentV2\DocumentCollection;
 use Shopwell\Core\Checkout\DocumentV2\DocumentSourceEntity;
 use Shopwell\Core\Checkout\Loyalty\Entity\CustomerPointTransaction\CustomerPointTransactionCollection;
+use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyPointLot\LoyaltyPointLotCollection;
 use Shopwell\Core\Checkout\Order\Aggregate\OrderAddress\OrderAddressCollection;
 use Shopwell\Core\Checkout\Order\Aggregate\OrderAddress\OrderAddressEntity;
 use Shopwell\Core\Checkout\Order\Aggregate\OrderCustomer\OrderCustomerEntity;
@@ -109,6 +110,8 @@ class OrderEntity extends Entity implements DocumentSourceEntity
     protected ?DocumentCollection $documents = null;
 
     protected ?CustomerPointTransactionCollection $customerPointTransactions = null;
+
+    protected ?LoyaltyPointLotCollection $pointLots = null;
 
     protected ?CustomerWalletTransactionCollection $customerWalletTransactions = null;
 
@@ -465,6 +468,16 @@ class OrderEntity extends Entity implements DocumentSourceEntity
     public function setCustomerPointTransactions(CustomerPointTransactionCollection $customerPointTransactions): void
     {
         $this->customerPointTransactions = $customerPointTransactions;
+    }
+
+    public function getPointLots(): ?LoyaltyPointLotCollection
+    {
+        return $this->pointLots;
+    }
+
+    public function setPointLots(LoyaltyPointLotCollection $pointLots): void
+    {
+        $this->pointLots = $pointLots;
     }
 
     public function getCustomerWalletTransactions(): ?CustomerWalletTransactionCollection

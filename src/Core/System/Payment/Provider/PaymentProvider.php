@@ -8,6 +8,9 @@ use Shopwell\Core\System\Payment\Gateway\PaymentGatewayFactory;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
 use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
 use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
+use Shopwell\Core\System\Payment\Provider\Config\PaymentConfigField;
+use Shopwell\Core\System\Payment\Provider\Cycle\PaymentCycleRules;
+use Shopwell\Core\System\Payment\Provider\Transfer\PaymentTransferRules;
 
 /**
  * One payment interface the platform offers to the apps: alipay, wechat pay, paypal or stripe.
@@ -33,6 +36,8 @@ final readonly class PaymentProvider
      * @param array<string, PaymentChannel> $channels the offered channels, indexed by their technical name
      * @param PayParamsDecoderInterface|null $payParamsDecoder the interface knows the shape of its own answer; without a decoder a reopen captures again
      * @param list<PaymentCapability> $capabilities everything the interface can do: the union of what its actions declare and what it declares itself
+     * @param PaymentCycleRules|null $cycleRules what a merchant-initiated charge has to follow, null when the interface cannot be charged repeatedly
+     * @param PaymentTransferRules|null $transferRules what a payout has to follow, null when the interface cannot pay out at all
      */
     public function __construct(
         public string $technicalName,
@@ -43,6 +48,8 @@ final readonly class PaymentProvider
         public PaymentNotificationExtractorInterface $notificationExtractor,
         public ?PayParamsDecoderInterface $payParamsDecoder = null,
         public array $capabilities = [],
+        public ?PaymentCycleRules $cycleRules = null,
+        public ?PaymentTransferRules $transferRules = null,
     ) {
     }
 

@@ -1,0 +1,225 @@
+{% block sw_system_role_list %}
+<sw-page class="sw-system-role-list">
+
+    {% block sw_system_role_list_smart_bar_header %}
+    <template #smart-bar-header>
+        <h2>
+            {% block sw_system_role_list_smart_bar_header_title %}
+            <span>{{ $t('sw-system.general.mainMenuItemSystem') }}</span>
+
+            <mt-icon
+                name="regular-chevron-right-xs"
+                size="12px"
+            />
+
+            <span>{{ $t('sw-system.navigation.role') }}</span>
+
+            {% block sw_system_role_list_smart_bar_header_amount %}
+            <span
+                v-if="!isLoading"
+                class="sw-page__smart-bar-amount"
+            >
+                ({{ total }})
+            </span>
+            {% endblock %}
+            {% endblock %}
+        </h2>
+    </template>
+    {% endblock %}
+
+    {% block sw_system_role_list_smart_bar_actions %}
+    <template #smart-bar-actions>
+        <mt-button
+            class="sw-system-role-list__button-create"
+            :disabled="!acl.can('users_and_permissions.creator') || undefined"
+            variant="primary"
+            size="default"
+            @click="onCreateRole"
+        >
+            {{ $t('sw-system.roles.general.labelCreateNewRole') }}
+        </mt-button>
+    </template>
+    {% endblock %}
+
+    {% block sw_system_role_list_content %}
+    <template #content>
+        <sw-card-view>
+            {% block sw_system_role_list_content_card %}
+            <mt-card
+                class="sw-system-role-list__card"
+                position-identifier="sw-system-role-list"
+                :title="$t('sw-system.roles.general.cardLabel')"
+            >
+                {% block sw_system_role_list_toolbar %}
+                <div class="sw-system-role-list__toolbar">
+                    {% block sw_system_role_list_toolbar_search %}
+                    <sw-simple-search-field
+                        v-model:value="term"
+                        class="sw-system-role-list__search"
+                        size="small"
+                        variant="form"
+                        :placeholder="$t('sw-system.roles.general.placeholderSearchBar')"
+                        @search-term-change="onSearch"
+                    />
+                    {% endblock %}
+                </div>
+                {% endblock %}
+
+                {% block sw_system_role_list_grid %}
+                <sw-data-grid
+                    v-if="roles.length > 0 || isLoading"
+                    :data-source="roles"
+                    :columns="rolesColumns"
+                    identifier="sw-system-role-grid"
+                    :show-settings="true"
+                    :show-selection="false"
+                    :is-loading="isLoading"
+                    @column-sort="onSortColumn"
+                >
+                    {% block sw_system_role_list_grid_actions %}
+                    <template #actions="{ item }">
+                        {% block sw_system_role_list_grid_actions_edit %}
+                        <sw-context-menu-item
+                            class="sw-system-role-list__context-menu-edit"
+                            :router-link="{ name: 'sw.system.role.detail', params: { id: item.id } }"
+                            :disabled="!acl.can('users_and_permissions.editor') || undefined"
+                        >
+                            {{ $t('global.default.edit') }}
+                        </sw-context-menu-item>
+                        {% endblock %}
+
+                        {% block sw_system_role_list_grid_actions_duplicate %}
+                        <sw-context-menu-item
+                            class="sw-system-role-list__context-menu-duplicate"
+                            :disabled="!acl.can('users_and_permissions.creator') || undefined"
+                            @click="onDuplicateRole(item)"
+                        >
+                            {{ $t('sw-system.roles.role-grid.actionDuplicate') }}
+                        </sw-context-menu-item>
+                        {% endblock %}
+
+                        {% block sw_system_role_list_grid_actions_delete %}
+                        <sw-context-menu-item
+                            variant="danger"
+                            class="sw-system-role-list__context-menu-delete"
+                            :disabled="!acl.can('users_and_permissions.deleter') || undefined"
+                            @click="onDelete(item)"
+                        >
+                            {{ $t('global.default.delete') }}
+                        </sw-context-menu-item>
+                        {% endblock %}
+                    </template>
+                    {% endblock %}
+
+                    {% block sw_system_role_list_grid_column_name %}
+                    <template #column-name="{ item }">
+                        <mt-link :to="{ name: 'sw.system.role.detail', params: { id: item.id } }">
+                            {{ item.name }}
+                        </mt-link>
+                    </template>
+                    {% endblock %}
+
+                    {% block sw_system_role_list_grid_column_privileges %}
+                    <template #column-privileges="{ item }">
+                        <span class="sw-system-role-list__privilege-count">
+                            {{ (item.privileges || []).length }}
+                        </span>
+                    </template>
+                    {% endblock %}
+
+                    {% block sw_system_role_list_grid_pagination %}
+                    <template #pagination>
+                        <sw-pagination
+                            :page="page"
+                            :limit="limit"
+                            :total="total"
+                            :auto-hide="true"
+                            @page-change="onPageChange"
+                        />
+                    </template>
+                    {% endblock %}
+
+                    {% block sw_system_role_list_grid_action_modals %}
+                    <template #action-modals="{ item }">
+                        {% block sw_system_role_list_delete_modal %}
+                        <sw-modal
+                            v-if="isConfirmDeleteModalOpen && getItemToDelete(item)"
+                            :title="$t('sw-system.roles.role-grid.titleModalDelete')"
+                            variant="small"
+                            class="sw-system-role-list__delete-modal"
+                            @modal-close="onCloseDeleteModal"
+                        >
+                            <p class="sw-system-role-list__confirm-delete-text">
+                                {{ $t('sw-system.roles.role-grid.textModalDelete', { name: item.name }, 0) }}
+                            </p>
+
+                            <p
+                                v-if="affectedUserCount > 0"
+                                class="sw-system-role-list__affected-users"
+                            >
+                                {{ $t('sw-system.roles.role-grid.textModalDeleteAffectedUsers', { count: affectedUserCount }, 0) }}
+                            </p>
+
+                            <template #modal-footer>
+                                <mt-button
+                                    size="small"
+                                    variant="secondary"
+                                    @click="onCloseDeleteModal"
+                                >
+                                    {{ $t('global.default.cancel') }}
+                                </mt-button>
+
+                                <mt-button
+                                    class="sw-system-role-list__confirm-delete-button"
+                                    variant="critical"
+                                    size="small"
+                                    @click="onConfirmDelete(item)"
+                                >
+                                    {{ $t('global.default.delete') }}
+                                </mt-button>
+                            </template>
+                        </sw-modal>
+                        {% endblock %}
+                    </template>
+                    {% endblock %}
+                </sw-data-grid>
+                {% endblock %}
+
+                {% block sw_system_role_list_empty_state %}
+                <mt-empty-state
+                    v-else
+                    class="sw-system-role-list__empty-state"
+                    centered
+                    icon="regular-lock"
+                    :headline="emptyStateTitle"
+                    :description="$t('sw-system.roles.role-grid.messageEmptySubline')"
+                >
+                    <template
+                        v-if="!term && acl.can('users_and_permissions.creator')"
+                        #button
+                    >
+                        <mt-button
+                            variant="primary"
+                            size="default"
+                            @click="onCreateRole"
+                        >
+                            {{ $t('sw-system.roles.general.labelCreateNewRole') }}
+                        </mt-button>
+                    </template>
+                </mt-empty-state>
+                {% endblock %}
+            </mt-card>
+            {% endblock %}
+        </sw-card-view>
+    </template>
+    {% endblock %}
+
+    {% block sw_system_role_list_verify_user_modal %}
+    <sw-verify-user-modal
+        v-if="isConfirmingPasswordModalOpen"
+        @verified="deleteRole"
+        @close="onCloseConfirmPasswordModal"
+    />
+    {% endblock %}
+</sw-page>
+{% endblock %}

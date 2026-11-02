@@ -3,8 +3,8 @@
 namespace Shopwell\Core\System\Payment\Order;
 
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\System\Payment\Gateway\CloseResult;
-use Shopwell\Core\System\Payment\Gateway\PaymentCloser;
+use Shopwell\Core\System\Payment\Gateway\PaymentChannelCloser;
+use Shopwell\Core\System\Payment\Gateway\Request\CloseResult;
 use Shopwell\Core\System\Payment\PaymentException;
 
 /**
@@ -31,7 +31,7 @@ use Shopwell\Core\System\Payment\PaymentException;
 final class PaymentOrderCloser
 {
     public function __construct(
-        private readonly PaymentCloser $paymentCloser,
+        private readonly PaymentChannelCloser $paymentCloser,
         private readonly PaymentOrderService $orderService,
         private readonly PaymentOrderReconciler $reconciler,
     ) {

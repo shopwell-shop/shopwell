@@ -4,7 +4,7 @@ namespace Shopwell\Core\System\Payment\Provider\Channel;
 
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Payment\PaymentException;
-use Shopwell\Core\System\Payment\Provider\PaymentConfigField;
+use Shopwell\Core\System\Payment\Provider\Config\PaymentConfigField;
 
 /**
  * One way of paying a payment interface offers, e.g. the alipay h5 payment or the wechat native

@@ -2,8 +2,10 @@
 
 namespace Shopwell\Tests\Integration\Core\Checkout\Loyalty\Entity\CustomerLoyalty;
 
+use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Checkout\Loyalty\Entity\CustomerLoyalty\CustomerLoyaltyCollection;
+use Shopwell\Core\Checkout\Loyalty\Entity\CustomerLoyalty\CustomerLoyaltyEntity;
 use Shopwell\Core\Defaults;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
@@ -92,7 +94,48 @@ class CustomerLoyaltyRepositoryTest extends TestCase
     }
 
     /**
-     * A customer owns a membership from the moment it exists, so this test reads that membership
+     * The point account is one row per customer, and everything that opens an account relies on the
+     * database refusing a second one: `LoyaltyAccountService::open()` treats that rejection as "somebody
+     * else was faster" instead of booking into a duplicate. Without the unique key the protection is
+     * only a comment, so the constraint itself is pinned here.
+     */
+    public function testACustomerCannotOwnTwoPointAccounts(): void
+    {
+        $context = Context::createDefaultContext();
+        $customerId = $this->createCustomer();
+
+        $this->expectException(UniqueConstraintViolationException::class);
+
+        $this->repository->create([[
+            'id' => Uuid::randomHex(),
+            'customerId' => $customerId,
+        ]], $context);
+    }
+
+    /**
+     * The reverse side is to-one: a customer has one account, so reading it must not hand back a
+     * collection that the caller has to unwrap.
+     */
+    public function testTheCustomerCarriesItsPointAccountAsASingleToOne(): void
+    {
+        $context = Context::createDefaultContext();
+        $customerId = $this->createCustomer();
+
+        $criteria = new Criteria([$customerId]);
+        $criteria->addAssociation('loyaltyAccount');
+
+        $customer = static::getContainer()->get('customer.repository')
+            ->search($criteria, $context)
+            ->getEntities()
+            ->get($customerId);
+
+        static::assertNotNull($customer);
+        static::assertInstanceOf(CustomerLoyaltyEntity::class, $customer->getLoyaltyAccount());
+        static::assertSame($customerId, $customer->getLoyaltyAccount()->getCustomerId());
+    }
+
+    /**
+     * A customer owns a point account from the moment it exists, so this test reads that account
      * instead of opening a second one, which the unique key on the customer would reject.
      */
     private function membershipIdOf(string $customerId): string

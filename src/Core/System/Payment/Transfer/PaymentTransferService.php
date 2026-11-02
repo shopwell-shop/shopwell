@@ -14,6 +14,7 @@ use Shopwell\Core\System\Payment\Api\Struct\PaymentTransferRequest;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
 use Shopwell\Core\System\Payment\App\PaymentCredentialCipher;
 use Shopwell\Core\System\Payment\PaymentException;
+use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;
 use Shopwell\Core\System\StateMachine\Loader\InitialStateIdLoader;
 
 /**
@@ -37,16 +38,6 @@ use Shopwell\Core\System\StateMachine\Loader\InitialStateIdLoader;
 #[Package('framework')]
 final class PaymentTransferService
 {
-    private const PROVIDER_ALIPAY = 'alipay';
-    private const PROVIDER_WECHAT = 'wechat';
-
-    /**
-     * The interfaces whose payouts are settled in yuan only. Stripe and paypal are deliberately not
-     * on the list: what they can pay out is a property of the merchant account (stripe) or of the
-     * receiving account (paypal) and is validated by the channel adapter, not by the platform.
-     */
-    private const CNY_ONLY_PROVIDERS = [self::PROVIDER_ALIPAY, self::PROVIDER_WECHAT];
-
     /**
      * Wechat caps `out_bill_no` at 32 characters of `[0-9a-zA-Z]`, alipay caps `out_biz_no` at 64,
      * paypal caps the batch and item ids it derives from ours at 30. The strictest limit wins - a
@@ -70,12 +61,6 @@ final class PaymentTransferService
     private const FAILURE_REASON_LIMIT = 255;
 
     /**
-     * Wechat closes a transfer the shopper never confirmed after 24 hours and refunds it. The window
-     * may be exceeded slightly, so the moment is a hint for the query task, not a guarantee.
-     */
-    private const WECHAT_CONFIRM_WINDOW = '+24 hours';
-
-    /**
      * @param EntityRepository<PaymentTransferCollection> $transferRepository
      * @param EntityRepository<PaymentTransferRecipientCollection> $recipientRepository
      */
@@ -87,6 +72,7 @@ final class PaymentTransferService
         private readonly PaymentCredentialCipher $cipher,
         private readonly InitialStateIdLoader $initialStateIdLoader,
         private readonly ClockInterface $clock,
+        private readonly PaymentProviderRegistry $providers,
     ) {
     }
 
@@ -152,9 +138,7 @@ final class PaymentTransferService
             // so an insert that leaves the field out fails. Same story as paidAmount in
             // PaymentOrderService::create() and attemptCount in PaymentCycleService::scheduleCycle().
             'submitAttempts' => 0,
-            'expireAt' => $request->provider === self::PROVIDER_WECHAT
-                ? $now->modify(self::WECHAT_CONFIRM_WINDOW)
-                : null,
+            'expireAt' => $this->expireAtOf($request->provider, $now),
             'metadata' => $request->metadata,
         ];
 
@@ -450,9 +434,46 @@ final class PaymentTransferService
      */
     private function assertCurrencySupported(string $provider, string $currency): void
     {
-        if (\in_array($provider, self::CNY_ONLY_PROVIDERS, true) && $currency !== 'CNY') {
+        $rules = $this->providers->has($provider)
+            ? $this->providers->get($provider)->transferRules
+            : null;
+
+        // the rules of the interface decide: alipay and wechat settle in yuan, an interface whose
+        // rules name no currency leaves it to the merchant account - refusing a payout on a list of
+        // provider names here would be a second, diverging truth
+        if ($rules !== null && !$rules->supportsCurrency($currency)) {
             throw PaymentException::currencyNotSupported($provider, $currency);
         }
+    }
+
+    /**
+     * The moment an unconfirmed payout closes, from the confirm window of the interface (wechat
+     * refunds a transfer the shopper never confirmed after 24 hours). An interface without such a
+     * window keeps the payout open, and the moment is a hint for the query task, not a guarantee.
+     */
+    private function expireAtOf(string $provider, \DateTimeImmutable $now): ?\DateTimeImmutable
+    {
+        $window = $this->providers->has($provider)
+            ? $this->providers->get($provider)->transferRules?->confirmWindow
+            : null;
+
+        if ($window === null) {
+            return null;
+        }
+
+        $expireAt = $now->modify($window);
+
+        if ($expireAt === false) {
+            // a declaration whose window is no relative modifier is a broken declaration, not a payout
+            // without an expiry - silently dropping it would leave the transfer open forever
+            throw PaymentException::invalidProviderDeclaration(\sprintf(
+                'The confirm window "%s" of the payment interface "%s" is not a valid relative date modifier.',
+                $window,
+                $provider
+            ));
+        }
+
+        return $expireAt;
     }
 
     /**

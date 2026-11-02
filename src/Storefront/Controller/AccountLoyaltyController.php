@@ -5,7 +5,7 @@ namespace Shopwell\Storefront\Controller;
 use Shopwell\Core\Checkout\Cart\Cart;
 use Shopwell\Core\Checkout\Customer\CustomerEntity;
 use Shopwell\Core\Checkout\Loyalty\SalesChannel\LoyaltyRedeemRoute;
-use Shopwell\Core\Checkout\Loyalty\SalesChannel\MembershipPurchaseRoute;
+use Shopwell\Core\Checkout\Membership\SalesChannel\MembershipPurchaseRoute;
 use Shopwell\Core\Checkout\Loyalty\Service\LoyaltySettings;
 use Shopwell\Core\Framework\HttpException;
 use Shopwell\Core\Framework\Log\Package;

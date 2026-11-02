@@ -2,6 +2,7 @@ import { createFocusTrap } from 'focus-trap';
 import useModuleIconColors from 'src/app/composables/use-module-icon-colors';
 import template from './sw-admin-menu.html.twig';
 import { getActiveRouteNames, isEntryOnActiveRoute } from '../sw-admin-menu-item/menu-item-active.helper';
+import { mergeDatabaseNavigation } from './merge-navigation.helper';
 import './sw-admin-menu.scss';
 
 const { Mixin } = Shopwell;
@@ -30,7 +31,7 @@ export default {
         'systemConfigApiService',
     ],
 
-    mixins: [Mixin.getByName('notification')],
+    mixins: [Mixin.getByName('notification'), Mixin.getByName('translate-with-fallback')],
 
     shortcuts: {
         S: {
@@ -140,10 +141,23 @@ The admin menu only supports up to three levels of nesting.`,
             ];
         },
 
+        /**
+         * The stored navigation merged over the declarations. Reading the store here (and not in
+         * `created`) keeps the navigation reactive: the menu management page reloads the stored
+         * tree after every write, and the sidebar follows without a page reload.
+         */
+        databaseNavigation() {
+            const store = Shopwell.Store.get('adminMenuConfig');
+
+            return mergeDatabaseNavigation(this.navigationEntries, store?.visibleTree ?? [], (key) => {
+                return this.tWithFallback(key);
+            });
+        },
+
         mainMenuEntries() {
             const tree = new Shopwell.Helper.FlatTreeHelper((first, second) => first.position - second.position);
 
-            this.navigationEntries.forEach((module) => tree.add(module));
+            this.databaseNavigation.forEach((module) => tree.add(module));
 
             return tree.convertToTree();
         },
@@ -465,7 +479,22 @@ The admin menu only supports up to three levels of nesting.`,
         initNavigation() {
             this.adminMenuStore.adminModuleNavigation = this.menuService.getNavigationFromAdminModules();
 
+            this.loadDatabaseNavigation();
             this.refreshApps();
+        },
+
+        /**
+         * Fire-and-forget on purpose: the navigation renders from the declarations until the
+         * stored tree arrives, and keeps rendering from them when the request fails.
+         */
+        loadDatabaseNavigation() {
+            const store = Shopwell.Store.get('adminMenuConfig');
+
+            if (!store) {
+                return;
+            }
+
+            store.loadVisibleTree();
         },
 
         refreshApps() {

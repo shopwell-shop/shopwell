@@ -29,7 +29,7 @@ use Shopwell\Core\System\Payment\App\PaymentAppEntity;
  *
  * Inheritance is resolved along the chain, so an app may inherit from an app that inherits again; the
  * resolver refuses circles and stops at the tenant of the platform, see
- * {@see \Shopwell\Core\System\Payment\Provider\PaymentConfigResolver}.
+ * {@see \Shopwell\Core\System\Payment\Provider\Config\PaymentConfigResolver}.
  *
  * Which channels of that interface the app offers to its own users is a separate decision, see
  * {@see PaymentAppChannelEntity}.

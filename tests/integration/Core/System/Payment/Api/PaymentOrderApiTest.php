@@ -23,8 +23,8 @@ use Symfony\Component\HttpFoundation\Response;
  * The tests are about the HTTP contract, not about the calls to the interface: closing a payment is
  * the only call the platform initiates itself, and its success path is covered by
  * {@see \Shopwell\Tests\Unit\Core\System\Payment\Order\PaymentOrderCloserTest},
- * {@see \Shopwell\Tests\Unit\Core\System\Payment\Gateway\PaymentCloserTest} and
- * {@see \Shopwell\Tests\Unit\Core\System\Payment\Provider\Alipay\AlipayCloseActionTest}. The
+ * {@see \Shopwell\Tests\Unit\Core\System\Payment\Gateway\PaymentChannelCloserTest} and
+ * {@see \Shopwell\Tests\Unit\Core\System\Payment\Integration\Alipay\AlipayCloseActionTest}. The
  * integration layer therefore only exercises the paths that are decided before the interface is
  * called - the closed order is seeded directly in those states.
  *

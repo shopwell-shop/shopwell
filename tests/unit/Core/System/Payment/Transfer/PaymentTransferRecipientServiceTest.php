@@ -15,7 +15,12 @@ use Shopwell\Core\Framework\Event\NestedEventCollection;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
 use Shopwell\Core\System\Payment\App\PaymentCredentialCipher;
+use Shopwell\Core\System\Payment\Gateway\PaymentGatewayFactory;
+use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
 use Shopwell\Core\System\Payment\PaymentException;
+use Shopwell\Core\System\Payment\Provider\PaymentProvider;
+use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;
+use Shopwell\Core\System\Payment\Provider\Transfer\PaymentTransferRules;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferRecipientCollection;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferRecipientEntity;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferRecipientService;
@@ -408,6 +413,43 @@ class PaymentTransferRecipientServiceTest extends TestCase
         static::assertNull($written['verifiedAt']);
     }
 
+    /**
+     * The matrix is gone: a further interface is not added to this service, it declares its rules and
+     * the service enforces them - which is the whole point of reading the registry instead of a list
+     * of provider names.
+     */
+    public function testAFurtherInterfaceJoinsByDeclaringItsRules(): void
+    {
+        $registry = new PaymentProviderRegistry([
+            new PaymentProvider(
+                technicalName: 'acme',
+                label: 'acme',
+                credentials: [],
+                channels: [],
+                gatewayFactory: static::createStub(PaymentGatewayFactory::class),
+                notificationExtractor: static::createStub(PaymentNotificationExtractorInterface::class),
+                transferRules: new PaymentTransferRules(
+                    identityTypes: ['acme_handle'],
+                    requiredRecipientFields: ['acme_handle' => [PaymentTransferRules::FIELD_HOLDER_NAME]],
+                ),
+            ),
+        ]);
+
+        try {
+            $this->createCaptured('acme', 'acme_handle', 'handle-1', null, null, $registry);
+            static::fail('the declared holder name has to be required');
+        } catch (PaymentException $exception) {
+            static::assertSame(PaymentException::TRANSFER_RECIPIENT_INCOMPLETE, $exception->getErrorCode());
+        }
+
+        $row = $this->createCaptured('acme', 'acme_handle', 'handle-1', 'Acme Holder', null, $registry);
+
+        static::assertSame('acme', $row['provider']);
+        // no onboarding in the declaration, so the recipient is payable right away
+        static::assertTrue($row['payoutEnabled']);
+        static::assertSame(PaymentTransferStates::ONBOARDING_REGISTERED, $row['onboardingStatus']);
+    }
+
     public function testAnUnknownRecipientIsReported(): void
     {
         $repository = static::createStub(EntityRepository::class);
@@ -426,7 +468,7 @@ class PaymentTransferRecipientServiceTest extends TestCase
      *
      * @return array<string, mixed> the row the service handed to the repository
      */
-    private function createCaptured(string $provider, string $identityType, string $identityValue, ?string $holderName, ?array $bankInfo): array
+    private function createCaptured(string $provider, string $identityType, string $identityValue, ?string $holderName, ?array $bankInfo, ?PaymentProviderRegistry $providers = null): array
     {
         /** @var array<string, mixed> $written */
         $written = [];
@@ -443,7 +485,7 @@ class PaymentTransferRecipientServiceTest extends TestCase
             return $this->written();
         });
 
-        $this->service($repository)->createOrGet($this->app(), $provider, $identityType, $identityValue, $holderName, $bankInfo);
+        $this->service($repository, $providers)->createOrGet($this->app(), $provider, $identityType, $identityValue, $holderName, $bankInfo);
 
         return $written;
     }
@@ -456,9 +498,9 @@ class PaymentTransferRecipientServiceTest extends TestCase
     /**
      * @param EntityRepository<PaymentTransferRecipientCollection> $repository
      */
-    private function service(EntityRepository $repository): PaymentTransferRecipientService
+    private function service(EntityRepository $repository, ?PaymentProviderRegistry $providers = null): PaymentTransferRecipientService
     {
-        return new PaymentTransferRecipientService($repository, $this->cipher(), new MockClock(self::NOW));
+        return new PaymentTransferRecipientService($repository, $this->cipher(), new MockClock(self::NOW), $providers ?? PaymentTransferRulesFixture::registry());
     }
 
     private function cipher(): PaymentCredentialCipher

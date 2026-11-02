@@ -32,7 +32,7 @@ use Shopwell\Core\Checkout\Customer\SalesChannel\UpsertAddressRoute;
 use Shopwell\Core\Checkout\Customer\Service\SmsLoginService;
 use Shopwell\Core\Checkout\DocumentV2\SalesChannel\DocumentRoute;
 use Shopwell\Core\Checkout\Loyalty\SalesChannel\LoyaltyRedeemRoute;
-use Shopwell\Core\Checkout\Loyalty\SalesChannel\MembershipPurchaseRoute;
+use Shopwell\Core\Checkout\Membership\SalesChannel\MembershipPurchaseRoute;
 use Shopwell\Core\Checkout\Loyalty\Service\LoyaltySettings;
 use Shopwell\Core\Checkout\Order\SalesChannel\CancelOrderRoute;
 use Shopwell\Core\Checkout\Order\SalesChannel\OrderRoute;

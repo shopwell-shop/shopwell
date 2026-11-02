@@ -18,7 +18,7 @@ use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\System\Payment\Api\Struct\PaymentOrderRequest;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
 use Shopwell\Core\System\Payment\PaymentException;
-use Shopwell\Core\System\Payment\Provider\PaymentConfigResolver;
+use Shopwell\Core\System\Payment\Provider\Config\PaymentConfigResolver;
 use Shopwell\Core\System\StateMachine\Loader\InitialStateIdLoader;
 
 /**

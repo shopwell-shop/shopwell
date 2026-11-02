@@ -24,6 +24,15 @@
         </input-field>
 
         <input-field type="int">
+            <name>topUpPointsPerCurrencyUnit</name>
+            <defaultValue>0</defaultValue>
+            <label>Points earned per currency unit of a wallet top-up</label>
+            <label lang="zh-CN">钱包每充值 1 个货币单位获得的积分</label>
+            <helpText>Applied when a top-up is credited, with the membership tier multiplier on top. Leave at 0 to reward buying over prepaying: an order paid from the wallet balance earns points only on the part the balance does not cover.</helpText>
+            <helpText lang="zh-CN">充值到账时发放，会员等级的积分倍率会在此基础再叠加。填写 0 表示不奖励充值：用钱包余额支付的订单，只有余额未覆盖的部分才计入积分。</helpText>
+        </input-field>
+
+        <input-field type="int">
             <name>growthPerCurrencyUnit</name>
             <defaultValue>1</defaultValue>
             <label>Growth value earned per currency unit</label>

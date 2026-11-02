@@ -6,7 +6,7 @@ use Shopwell\Core\Checkout\Customer\Aggregate\CustomerGroupTranslation\CustomerG
 use Shopwell\Core\Checkout\Customer\CustomerDefinition;
 use Shopwell\Core\Checkout\Document\Aggregate\DocumentTypeTranslation\DocumentTypeTranslationDefinition;
 use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyTier\Aggregate\LoyaltyTierTranslation\LoyaltyTierTranslationDefinition;
-use Shopwell\Core\Checkout\Loyalty\Entity\MembershipPlan\Aggregate\MembershipPlanTranslation\MembershipPlanTranslationDefinition;
+use Shopwell\Core\Checkout\Membership\Entity\MembershipPlan\Aggregate\MembershipPlanTranslation\MembershipPlanTranslationDefinition;
 use Shopwell\Core\Checkout\Order\OrderDefinition;
 use Shopwell\Core\Checkout\Payment\Aggregate\PaymentMethodTranslation\PaymentMethodTranslationDefinition;
 use Shopwell\Core\Checkout\Promotion\Aggregate\PromotionTranslation\PromotionTranslationDefinition;

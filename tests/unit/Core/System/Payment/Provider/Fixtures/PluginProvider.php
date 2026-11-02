@@ -9,7 +9,7 @@ use Shopwell\Core\System\Payment\Provider\AbstractPaymentProvider;
 use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
 use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
 use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
-use Shopwell\Core\System\Payment\Provider\PaymentConfigField;
+use Shopwell\Core\System\Payment\Provider\Config\PaymentConfigField;
 
 /**
  * A payment interface of an extension, written the way an extension writes it.

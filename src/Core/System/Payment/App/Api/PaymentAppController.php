@@ -15,7 +15,7 @@ use Shopwell\Core\System\Payment\App\PaymentAppDto;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
 use Shopwell\Core\System\Payment\App\PaymentAppProvisioner;
 use Shopwell\Core\System\Payment\App\PaymentCredentialCipher;
-use Shopwell\Core\System\Payment\Provider\PaymentProviderConfigService;
+use Shopwell\Core\System\Payment\Provider\Config\PaymentProviderConfigService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;

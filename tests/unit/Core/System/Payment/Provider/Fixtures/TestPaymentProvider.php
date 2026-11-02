@@ -9,8 +9,8 @@ use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterf
 use Shopwell\Core\System\Payment\Provider\AbstractPaymentProvider;
 use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
 use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
+use Shopwell\Core\System\Payment\Provider\Config\PaymentConfigField;
 use Shopwell\Core\System\Payment\Provider\Cycle\PaymentCycleRules;
-use Shopwell\Core\System\Payment\Provider\PaymentConfigField;
 use Shopwell\Core\System\Payment\Provider\PayParamsDecoderInterface;
 use Shopwell\Core\System\Payment\Provider\Transfer\PaymentTransferRules;
 use Shopwell\Core\System\Payment\Transfer\Notification\PaymentTransferNotificationVerifierInterface;

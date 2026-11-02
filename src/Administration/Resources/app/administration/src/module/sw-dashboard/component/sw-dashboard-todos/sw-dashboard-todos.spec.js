@@ -11,9 +11,6 @@ function createRepositoryFactory(overrides = {}) {
         product_review: {
             search: jest.fn().mockResolvedValue({ total: 0 }),
         },
-        product_warehouse: {
-            search: jest.fn().mockResolvedValue({ total: 0 }),
-        },
         state_machine_state: {
             search: jest.fn().mockResolvedValue([]),
         },
@@ -124,19 +121,6 @@ describe('module/sw-dashboard/component/sw-dashboard-todos', () => {
         await flushPromises();
 
         expect(wrapper.vm.items.map((item) => item.key)).toEqual(['reviewsWaiting']);
-    });
-
-    it('counts the out of stock rows with inventory permission', async () => {
-        const factory = createRepositoryFactory({
-            product_warehouse: {
-                search: jest.fn().mockResolvedValue({ total: 5 }),
-            },
-        });
-
-        const wrapper = await createWrapper(['order.viewer', 'inventory.viewer'], factory);
-        await flushPromises();
-
-        expect(wrapper.vm.items.map((item) => item.key)).toEqual(['outOfStock']);
     });
 
     it('links the ship todo to the order list filtered by open deliveries', async () => {

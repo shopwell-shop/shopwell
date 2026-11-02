@@ -1,0 +1,118 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Checkout\Loyalty\Service;
+
+use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyTier\LoyaltyTierEntity;
+use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyTierBenefit\LoyaltyTierBenefitCollection;
+use Shopwell\Core\Checkout\Loyalty\LoyaltyBenefitTypes;
+use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
+use Shopwell\Core\Framework\Log\Package;
+
+/**
+ * Answers what a customer's tier grants.
+ *
+ * Callers ask this and never the tier table: the cart asks for a discount, the point booking asks for
+ * a multiplier, the account page asks for everything to print. Keeping the question here means the
+ * number of places that know how a benefit is stored stays one - which is what makes it possible to
+ * change the storage at all.
+ *
+ * It reads the tier through {@see TierResolver}, so a paid membership outranking the growth value is
+ * decided in one place and not repeated for every benefit.
+ *
+ * ## The three old columns
+ *
+ * `points_multiplier`, `discount_percent` and `free_shipping` are read as a fallback as long as they
+ * exist. The administration form still writes them and the storefront template still prints them; both
+ * move onto this table in the UI step, and on that day the fallback and the columns are deleted
+ * together. A row that exists always wins, so the fallback only fills gaps and never contradicts a
+ * configured benefit.
+ *
+ * @final
+ */
+#[Package('checkout')]
+class LoyaltyBenefitResolver
+{
+    /**
+     * @internal
+     *
+     * @param EntityRepository<LoyaltyTierBenefitCollection> $benefitRepository
+     */
+    public function __construct(
+        private readonly EntityRepository $benefitRepository,
+        private readonly TierResolver $tiers,
+    ) {
+    }
+
+    /**
+     * The benefits the customer holds right now - none when they reached no tier yet.
+     */
+    public function forCustomer(string $customerId, Context $context): LoyaltyTierBenefits
+    {
+        return $this->forTier($this->tiers->currentTier($customerId, $context), $context);
+    }
+
+    public function forTier(?LoyaltyTierEntity $tier, Context $context): LoyaltyTierBenefits
+    {
+        if ($tier === null) {
+            return LoyaltyTierBenefits::none();
+        }
+
+        // a caller that loaded the tier with its association pays one query for all benefits, one that
+        // did not gets them here - both end up with the same answer
+        $loaded = $tier->getBenefits();
+
+        return $this->withColumnFallback(
+            $tier,
+            $loaded === null ? $this->read($tier->getId(), $context) : LoyaltyTierBenefits::of($loaded)
+        );
+    }
+
+    /**
+     * The factor the customer's points are multiplied by. `1.0` means "no bonus", which is what a
+     * customer without a tier earns.
+     */
+    public function earnMultiplier(string $customerId, Context $context): float
+    {
+        return $this->forCustomer($customerId, $context)->earnMultiplier();
+    }
+
+    private function read(string $tierId, Context $context): LoyaltyTierBenefits
+    {
+        $criteria = new Criteria();
+        $criteria->addFilter(new EqualsFilter('loyaltyTierId', $tierId));
+        $criteria->addSorting(new FieldSorting('position', FieldSorting::ASCENDING));
+
+        $benefits = $this->benefitRepository->search($criteria, $context)->getEntities();
+
+        if (!$benefits instanceof LoyaltyTierBenefitCollection) {
+            return LoyaltyTierBenefits::none();
+        }
+
+        return LoyaltyTierBenefits::of($benefits);
+    }
+
+    private function withColumnFallback(LoyaltyTierEntity $tier, LoyaltyTierBenefits $benefits): LoyaltyTierBenefits
+    {
+        $multiplier = $tier->getPointsMultiplier();
+
+        if ($multiplier !== null && $multiplier !== 1.0) {
+            $benefits = $benefits->with(LoyaltyBenefitTypes::EARN_MULTIPLIER, $multiplier);
+        }
+
+        $discount = $tier->getDiscountPercent();
+
+        if ($discount !== null && $discount > 0.0) {
+            $benefits = $benefits->with(LoyaltyBenefitTypes::CART_DISCOUNT, $discount);
+        }
+
+        if ($tier->getFreeShipping() === true) {
+            $benefits = $benefits->with(LoyaltyBenefitTypes::FREE_SHIPPING, 1.0);
+        }
+
+        return $benefits;
+    }
+}

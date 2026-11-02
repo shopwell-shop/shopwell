@@ -82,19 +82,20 @@ class TierResolver
     }
 
     /**
-     * Returns the points multiplier of the tier the customer currently belongs to.
+     * The tier the customer belongs to right now, or null when they reached none yet.
+     *
+     * What that tier grants is {@see LoyaltyBenefitResolver}'s question. This class only answers which
+     * tier it is, so a benefit and its storage never have to be understood here.
      */
-    public function getPointsMultiplier(string $customerId, Context $context): float
+    public function currentTier(string $customerId, Context $context): ?LoyaltyTierEntity
     {
         $loyalty = $this->findLoyalty($customerId, $context);
 
         if ($loyalty === null) {
-            return 1.0;
+            return null;
         }
 
-        $tier = $this->resolveTier($loyalty, $loyalty->getGrowthValue(), $context);
-
-        return $tier?->getPointsMultiplier() ?? 1.0;
+        return $this->resolveTier($loyalty, $loyalty->getGrowthValue(), $context);
     }
 
     /**

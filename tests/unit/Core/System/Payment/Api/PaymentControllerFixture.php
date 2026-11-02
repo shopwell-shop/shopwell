@@ -26,14 +26,16 @@ use Shopwell\Core\System\Payment\App\PaymentAppCollection;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
 use Shopwell\Core\System\Payment\App\PaymentCredentialCipher;
 use Shopwell\Core\System\Payment\App\PaymentSignatureService;
-use Shopwell\Core\System\Payment\Gateway\CloseResult;
-use Shopwell\Core\System\Payment\Gateway\PaymentCloser;
+use Shopwell\Core\System\Payment\Gateway\PaymentChannelCloser;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayFactory;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
+use Shopwell\Core\System\Payment\Gateway\Request\CloseResult;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationCollection;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationProcessor;
 use Shopwell\Core\System\Payment\Notification\PaymentNotifyUrlBuilder;
+use Shopwell\Core\System\Payment\Order\Aggregate\PaymentRefund\PaymentRefundCollection;
+use Shopwell\Core\System\Payment\Order\Aggregate\PaymentRefund\PaymentRefundEntity;
 use Shopwell\Core\System\Payment\Order\Aggregate\PaymentTransaction\PaymentTransactionCollection;
 use Shopwell\Core\System\Payment\Order\PaymentOrderCapture;
 use Shopwell\Core\System\Payment\Order\PaymentOrderCloser;
@@ -45,20 +47,18 @@ use Shopwell\Core\System\Payment\Order\PaymentOrderQueryResultHandler;
 use Shopwell\Core\System\Payment\Order\PaymentOrderReconciler;
 use Shopwell\Core\System\Payment\Order\PaymentOrderService;
 use Shopwell\Core\System\Payment\Order\PaymentOrderStateHandler;
-use Shopwell\Core\System\Payment\Order\Refund\PaymentRefundCollection;
-use Shopwell\Core\System\Payment\Order\Refund\PaymentRefundEntity;
-use Shopwell\Core\System\Payment\Order\Refund\PaymentRefundService;
-use Shopwell\Core\System\Payment\Order\Refund\PaymentRefundStateHandler;
+use Shopwell\Core\System\Payment\Order\PaymentRefundService;
+use Shopwell\Core\System\Payment\Order\PaymentRefundStateHandler;
 use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
 use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
 use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannelRegistry;
 use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
-use Shopwell\Core\System\Payment\Provider\PaymentChannelConfigCollection;
-use Shopwell\Core\System\Payment\Provider\PaymentChannelConfigEntity;
-use Shopwell\Core\System\Payment\Provider\PaymentConfigResolver;
+use Shopwell\Core\System\Payment\Provider\Config\PaymentChannelConfigCollection;
+use Shopwell\Core\System\Payment\Provider\Config\PaymentChannelConfigEntity;
+use Shopwell\Core\System\Payment\Provider\Config\PaymentConfigResolver;
+use Shopwell\Core\System\Payment\Provider\Config\PaymentProviderConfigCollection;
+use Shopwell\Core\System\Payment\Provider\Config\PaymentProviderConfigEntity;
 use Shopwell\Core\System\Payment\Provider\PaymentProvider;
-use Shopwell\Core\System\Payment\Provider\PaymentProviderConfigCollection;
-use Shopwell\Core\System\Payment\Provider\PaymentProviderConfigEntity;
 use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;
 use Shopwell\Core\System\Payment\Webhook\PaymentWebhookDeliveryCollection;
 use Shopwell\Core\System\Payment\Webhook\PaymentWebhookDispatcher;
@@ -402,7 +402,7 @@ final class PaymentControllerFixture extends TestCase
         $paidHandler = new PaymentOrderPaidHandler($orderService, $webhooks, static::createStub(EventDispatcherInterface::class));
 
         return new PaymentOrderCloser(
-            new PaymentCloser($transactionRepository, $configResolver, self::clock()),
+            new PaymentChannelCloser($transactionRepository, $configResolver, self::clock()),
             $orderService,
             new PaymentOrderReconciler(
                 $paymentOrderRepository,

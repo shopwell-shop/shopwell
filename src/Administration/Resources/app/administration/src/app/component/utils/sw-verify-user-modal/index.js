@@ -50,7 +50,7 @@ export default {
                 .catch(() => {
                     this.createNotificationError({
                         message: this.$t(
-                            'sw-users-permissions.users.user-detail.passwordConfirmation.notificationPasswordErrorMessage',
+                            'sw-system.users.user-detail.passwordConfirmation.notificationPasswordErrorMessage',
                         ),
                     });
                 })

@@ -19,13 +19,13 @@ use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppProvider\PaymentAppProv
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
 use Shopwell\Core\System\Payment\App\PaymentCredentialCipher;
 use Shopwell\Core\System\Payment\App\PaymentSignatureService;
-use Shopwell\Core\System\Payment\Gateway\CloseResult;
-use Shopwell\Core\System\Payment\Gateway\PaymentClose;
-use Shopwell\Core\System\Payment\Gateway\PaymentCloser;
+use Shopwell\Core\System\Payment\Gateway\PaymentChannelCloser;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayFactory;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
-use Shopwell\Core\System\Payment\Gateway\PaymentQuery;
-use Shopwell\Core\System\Payment\Gateway\QueryResult;
+use Shopwell\Core\System\Payment\Gateway\Request\CloseResult;
+use Shopwell\Core\System\Payment\Gateway\Request\PaymentClose;
+use Shopwell\Core\System\Payment\Gateway\Request\PaymentQuery;
+use Shopwell\Core\System\Payment\Gateway\Request\QueryResult;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
 use Shopwell\Core\System\Payment\Order\PaymentOrderCloser;
 use Shopwell\Core\System\Payment\Order\PaymentOrderCollection;
@@ -41,8 +41,8 @@ use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
 use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
 use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannelRegistry;
 use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
-use Shopwell\Core\System\Payment\Provider\PaymentChannelConfigEntity;
-use Shopwell\Core\System\Payment\Provider\PaymentConfigResolver;
+use Shopwell\Core\System\Payment\Provider\Config\PaymentChannelConfigEntity;
+use Shopwell\Core\System\Payment\Provider\Config\PaymentConfigResolver;
 use Shopwell\Core\System\Payment\Provider\PaymentProvider;
 use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;
 use Shopwell\Core\System\Payment\Webhook\PaymentWebhookDispatcher;
@@ -248,7 +248,7 @@ class PaymentOrderCloserTest extends TestCase
         $paidHandler = new PaymentOrderPaidHandler($orderService, $webhooks, static::createStub(EventDispatcherInterface::class));
 
         return new PaymentOrderCloser(
-            new PaymentCloser(static::createStub(EntityRepository::class), $configResolver, $clock),
+            new PaymentChannelCloser(static::createStub(EntityRepository::class), $configResolver, $clock),
             $orderService,
             new PaymentOrderReconciler(
                 $orderRepository,

@@ -3,8 +3,8 @@
 namespace Shopwell\Core\Checkout\Wallet\Service;
 
 use Doctrine\DBAL\Connection;
-use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\DBAL\ParameterType;
+use Shopwell\Core\Checkout\Ledger\RowLock;
 use Shopwell\Core\Checkout\Wallet\Entity\CustomerWallet\CustomerWalletCollection;
 use Shopwell\Core\Checkout\Wallet\Entity\CustomerWalletTransaction\CustomerWalletTransactionCollection;
 use Shopwell\Core\Checkout\Wallet\Event\WalletBalanceChangedEvent;
@@ -21,8 +21,8 @@ use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
  * The balance on the wallet row is a projection of the ledger: every change is one entry, and the row
  * is only ever moved together with it. Both happen inside one transaction on a row that is locked for
  * the duration of it, so two bookings of the same wallet can neither read the same balance nor
- * overwrite each other - the read-modify-write that used to live in {@see WalletService} lost one of
- * two concurrent bookings and wrote a `balanceAfter` that never existed.
+ * overwrite each other - the read-modify-write that used to live in the wallet service lost one of two
+ * concurrent bookings and wrote a `balanceAfter` that never existed.
  *
  * Callers keep the business rules and pass them in: whether a booking may overdraw the wallet, which
  * reference it carries and what it is called. The ledger refuses an overdraft itself, because the
@@ -43,6 +43,7 @@ class WalletLedger
         private readonly EntityRepository $walletRepository,
         private readonly EntityRepository $walletTransactionRepository,
         private readonly Connection $connection,
+        private readonly RowLock $rows,
         private readonly EventDispatcherInterface $eventDispatcher,
     ) {
     }
@@ -55,6 +56,7 @@ class WalletLedger
      * nothing, the balance belongs to the entries.
      *
      * @param bool $rejectNegativeBalance whether the booking may take the wallet below zero
+     * @param bool $oncePerReference whether a booking with the same external reference and type may only happen once
      *
      * @throws WalletException when the booking would overdraw a wallet that must not be overdrawn
      */
@@ -70,6 +72,7 @@ class WalletLedger
         ?string $administratorId = null,
         bool $rejectNegativeBalance = false,
         bool $oncePerOrder = false,
+        bool $oncePerReference = false,
     ): float {
         $balanceAfter = $this->connection->transactional(function () use (
             $customerId,
@@ -82,13 +85,20 @@ class WalletLedger
             $comment,
             $administratorId,
             $rejectNegativeBalance,
-            $oncePerOrder
+            $oncePerOrder,
+            $oncePerReference
         ): float {
             $wallet = $this->lockWallet($customerId, $currencyId, $context);
 
             // an order may complete more than once - a retried state transition, a duplicate message -
             // and must only be debited once, which is decided under the very same lock
             if ($oncePerOrder && $orderId !== null && $this->hasEntryForOrder($wallet['id'], $orderId, $type)) {
+                return $wallet['balance'];
+            }
+
+            // an order can be returned in parts, so a refund is keyed on the return and not on the order:
+            // one booking per reference, and the second return of the same order is still paid out
+            if ($oncePerReference && $externalReference !== null && $this->hasEntryForReference($wallet['id'], $type, $externalReference)) {
                 return $wallet['balance'];
             }
 
@@ -145,58 +155,63 @@ class WalletLedger
         );
     }
 
+    private function hasEntryForReference(string $walletId, string $type, string $reference): bool
+    {
+        return (bool) $this->connection->fetchOne(
+            'SELECT 1 FROM `customer_wallet_transaction`
+             WHERE `customer_wallet_id` = :walletId AND `type` = :type AND `external_reference` = :reference
+             LIMIT 1',
+            [
+                'walletId' => Uuid::fromHexToBytes($walletId),
+                'type' => $type,
+                'reference' => $reference,
+            ],
+            [
+                'walletId' => ParameterType::BINARY,
+            ]
+        );
+    }
+
     /**
      * @return array{id: string, balance: float}
      */
     private function lockWallet(string $customerId, string $currencyId, Context $context): array
     {
-        $wallet = $this->selectForUpdate($customerId, $currencyId);
+        $wallet = $this->rows->lock('customer_wallet', [
+            'customer_id' => $customerId,
+            'currency_id' => $currencyId,
+        ]);
 
         if ($wallet !== null) {
-            return $wallet;
+            return $this->toAccount($wallet);
         }
 
         $id = Uuid::randomHex();
 
-        try {
-            $this->walletRepository->create([[
-                'id' => $id,
-                'customerId' => $customerId,
-                'currencyId' => $currencyId,
-                'balance' => 0.0,
-                'lockedBalance' => 0.0,
-            ]], $context);
-        } catch (UniqueConstraintViolationException) {
-            // a parallel booking opened the very same wallet first, its row is the one to book onto
-        }
+        $this->rows->createUnlessExists($this->walletRepository, [
+            'id' => $id,
+            'customerId' => $customerId,
+            'currencyId' => $currencyId,
+            'balance' => 0.0,
+            'lockedBalance' => 0.0,
+        ], $context);
 
         // the insert already holds the row, but reading it back keeps one code path for the balance
-        return $this->selectForUpdate($customerId, $currencyId) ?? ['id' => $id, 'balance' => 0.0];
+        $wallet = $this->rows->lock('customer_wallet', [
+            'customer_id' => $customerId,
+            'currency_id' => $currencyId,
+        ]) ?? ['id' => $id, 'balance' => 0.0];
+
+        return $this->toAccount($wallet);
     }
 
     /**
-     * @return array{id: string, balance: float}|null
+     * @param array<string, mixed> $wallet
+     *
+     * @return array{id: string, balance: float}
      */
-    private function selectForUpdate(string $customerId, string $currencyId): ?array
+    private function toAccount(array $wallet): array
     {
-        $row = $this->connection->fetchAssociative(
-            'SELECT LOWER(HEX(`id`)) AS `id`, `balance` FROM `customer_wallet`
-             WHERE `customer_id` = :customerId AND `currency_id` = :currencyId
-             FOR UPDATE',
-            [
-                'customerId' => Uuid::fromHexToBytes($customerId),
-                'currencyId' => Uuid::fromHexToBytes($currencyId),
-            ],
-            [
-                'customerId' => ParameterType::BINARY,
-                'currencyId' => ParameterType::BINARY,
-            ]
-        );
-
-        if (!\is_array($row)) {
-            return null;
-        }
-
-        return ['id' => (string) $row['id'], 'balance' => (float) $row['balance']];
+        return ['id' => (string) $wallet['id'], 'balance' => (float) $wallet['balance']];
     }
 }

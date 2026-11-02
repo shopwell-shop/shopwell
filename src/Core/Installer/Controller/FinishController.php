@@ -6,6 +6,7 @@ use GuzzleHttp\Client;
 use GuzzleHttp\Exception\TransferException;
 use Psr\Clock\ClockInterface;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Installer\Finish\AdminMenuSeeder;
 use Shopwell\Core\Installer\Finish\SystemLocker;
 use Symfony\Component\HttpFoundation\Cookie;
 use Symfony\Component\HttpFoundation\Request;
@@ -25,6 +26,7 @@ class FinishController extends InstallerController
         private readonly Client $client,
         private readonly string $appUrl,
         private readonly ClockInterface $clock,
+        private readonly AdminMenuSeeder $adminMenuSeeder,
         private readonly string $adminPathName = 'admin',
     ) {
     }
@@ -37,6 +39,11 @@ class FinishController extends InstallerController
         }
 
         $this->systemLocker->lock();
+
+        // The navigation is data the administration reads, and the installer never runs
+        // `system:install`: without this the sidebar would fall back to its declarations
+        // while the menu management page stays empty.
+        $this->adminMenuSeeder->seed();
 
         $session = $request->getSession();
         /** @var array<string, string> $adminInfo */

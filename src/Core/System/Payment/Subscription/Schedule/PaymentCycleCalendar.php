@@ -4,13 +4,16 @@ namespace Shopwell\Core\System\Payment\Subscription\Schedule;
 
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Payment\PaymentException;
+use Shopwell\Core\System\Payment\Provider\Cycle\PaymentCycleRules;
 
 /**
- * The deduction calendar for merchant-initiated subscriptions (alipay / wechat).
+ * The period arithmetic and the deduction window of merchant-initiated subscriptions.
  *
- * Every wall-clock calculation happens in Asia/Shanghai, no matter what timezone the server
- * happens to run in: both providers schedule their deduction windows against Beijing time and
- * the platform has to agree with them down to the minute.
+ * Nothing about a specific interface is written down here: the window, the lead time and the anchor
+ * day cap arrive as {@see PaymentCycleRules} from the interface that is being charged. A calendar
+ * that carried alipay's limits as constants would apply them to every interface added later - it
+ * happened to work for wechat because its limits are looser, and would have silently mis-scheduled
+ * the third one.
  *
  * Period arithmetic deliberately advances period by period instead of recomputing from the
  * original anchor. A plan signed on Jan 31st ends its first period on Feb 28th (or 29th) - and
@@ -29,21 +32,10 @@ final class PaymentCycleCalendar
     public const UNIT_YEAR = 'year';
 
     /**
-     * Alipay caps `period_rule_params.execute_time` at the 28th of the month, so a monthly plan
-     * anchored on the 29th, 30th or 31st simply cannot be expressed there. Refusing loudly beats
-     * silently clamping: the subscriber would be charged on a different day than they agreed to.
+     * The period boundary is a calendar fact of the platform, not a limit of an interface, so it is
+     * computed in the platform timezone even when the interface schedules in another one.
      */
-    public const ALIPAY_MAX_ANCHOR_DAY_OF_MONTH = 28;
-
-    public const WINDOW_START_HOUR = 7;
-    public const WINDOW_END_HOUR = 22;
-
-    /**
-     * Alipay's new charge flow must be initiated at least 48 hours before the deduction happens.
-     */
-    public const ALIPAY_LEAD_TIME_HOURS = 48;
-
-    private const TIMEZONE = 'Asia/Shanghai';
+    private const PERIOD_TIMEZONE = PaymentCycleRules::DEFAULT_TIMEZONE;
 
     public function nextPeriodEnd(\DateTimeImmutable $anchor, string $unit, int $count): \DateTimeImmutable
     {
@@ -51,7 +43,7 @@ final class PaymentCycleCalendar
             throw PaymentException::invalidPeriodCount($count);
         }
 
-        $cursor = $anchor->setTimezone(new \DateTimeZone(self::TIMEZONE))->setTime(0, 0);
+        $cursor = $anchor->setTimezone(new \DateTimeZone(self::PERIOD_TIMEZONE))->setTime(0, 0);
 
         return match ($unit) {
             self::UNIT_DAY => $cursor->modify(\sprintf('+%d days', $count)),
@@ -62,59 +54,59 @@ final class PaymentCycleCalendar
         };
     }
 
-    public function deductionWindowStart(\DateTimeImmutable $day): \DateTimeImmutable
+    public function deductionWindowStart(\DateTimeImmutable $day, PaymentCycleRules $rules): \DateTimeImmutable
     {
-        return $day->setTimezone(new \DateTimeZone(self::TIMEZONE))->setTime(self::WINDOW_START_HOUR, 0);
+        return $day->setTimezone(new \DateTimeZone($rules->timezone))->setTime($rules->windowStartHour, 0);
     }
 
     /**
      * The window is left-closed, right-open: 07:00:00 belongs to the day, 22:00:00 does not -
-     * that second is already past the boundary both providers enforce.
+     * that second is already past the boundary the interface enforces.
      */
-    public function clampIntoWindow(\DateTimeImmutable $at): \DateTimeImmutable
+    public function clampIntoWindow(\DateTimeImmutable $at, PaymentCycleRules $rules): \DateTimeImmutable
     {
-        $local = $at->setTimezone(new \DateTimeZone(self::TIMEZONE));
+        $local = $at->setTimezone(new \DateTimeZone($rules->timezone));
 
-        if ($this->isWithinWindow($local)) {
+        if ($this->isWithinWindow($local, $rules)) {
             return $at;
         }
 
-        if ($local->format('G') < self::WINDOW_START_HOUR) {
-            return $local->setTime(self::WINDOW_START_HOUR, 0);
+        if ((int) $local->format('G') < $rules->windowStartHour) {
+            return $local->setTime($rules->windowStartHour, 0);
         }
 
-        return $local->modify('+1 day')->setTime(self::WINDOW_START_HOUR, 0);
+        return $local->modify('+1 day')->setTime($rules->windowStartHour, 0);
     }
 
-    public function isWithinWindow(\DateTimeImmutable $at): bool
+    public function isWithinWindow(\DateTimeImmutable $at, PaymentCycleRules $rules): bool
     {
-        $local = $at->setTimezone(new \DateTimeZone(self::TIMEZONE));
-        $hour = (int) $local->format('G');
-
-        return $hour >= self::WINDOW_START_HOUR && $hour < self::WINDOW_END_HOUR;
+        return $rules->isWithinWindow((int) $at->setTimezone(new \DateTimeZone($rules->timezone))->format('G'));
     }
 
     /**
-     * The earliest moment a new-style alipay charge may be submitted for a deduction that should
-     * happen "now": 48 hours of lead time, then clamped into the deductible window.
+     * The earliest moment a new-style charge may be submitted for a deduction that should happen
+     * "now": the lead time of the interface, then clamped into its deductible window.
      */
-    public function earliestExecutableAt(\DateTimeImmutable $now): \DateTimeImmutable
+    public function earliestExecutableAt(\DateTimeImmutable $now, PaymentCycleRules $rules): \DateTimeImmutable
     {
         return $this->clampIntoWindow(
-            $now->setTimezone(new \DateTimeZone(self::TIMEZONE))
-                ->modify(\sprintf('+%d hours', self::ALIPAY_LEAD_TIME_HOURS))
+            $now->setTimezone(new \DateTimeZone($rules->timezone))
+                ->modify(\sprintf('+%d hours', $rules->leadTimeHours)),
+            $rules
         );
     }
 
-    public function assertExpressibleBy(string $provider, string $unit, int $count, int $anchorDayOfMonth): void
+    /**
+     * Refuses a monthly plan the interface cannot express, instead of clamping it: the subscriber
+     * would be charged on a day they never agreed to.
+     */
+    public function assertExpressibleBy(string $provider, PaymentCycleRules $rules, string $unit, int $count, int $anchorDayOfMonth): void
     {
-        if (\strtolower($provider) !== 'alipay') {
+        if (\strtolower($unit) !== self::UNIT_MONTH || $rules->supportsAnchorDayOfMonth($anchorDayOfMonth)) {
             return;
         }
 
-        if (\strtolower($unit) === self::UNIT_MONTH && $anchorDayOfMonth > self::ALIPAY_MAX_ANCHOR_DAY_OF_MONTH) {
-            throw PaymentException::paymentCycleNotExpressible($provider, $unit, $count, $anchorDayOfMonth);
-        }
+        throw PaymentException::paymentCycleNotExpressible($provider, $unit, $count, $anchorDayOfMonth);
     }
 
     /**

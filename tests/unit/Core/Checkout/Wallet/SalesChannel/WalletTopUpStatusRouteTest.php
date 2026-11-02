@@ -6,6 +6,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Checkout\Customer\CustomerEntity;
 use Shopwell\Core\Checkout\Wallet\Entity\CustomerWalletTopUp\CustomerWalletTopUpEntity;
+use Shopwell\Core\Checkout\Wallet\SalesChannel\WalletPresenter;
 use Shopwell\Core\Checkout\Wallet\SalesChannel\WalletTopUpStatusRoute;
 use Shopwell\Core\Checkout\Wallet\Service\WalletTopUpService;
 use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
@@ -28,22 +29,28 @@ class WalletTopUpStatusRouteTest extends TestCase
     {
         $context = Generator::generateSalesChannelContext();
 
+        $topUp = new CustomerWalletTopUpEntity();
+        $topUp->setId(self::TOP_UP_ID);
+        $topUp->setAmount(200.0);
+        $topUp->setCurrency('CNY');
+        $topUp->setState(CustomerWalletTopUpEntity::STATE_OPEN);
+
         $topUpService = $this->createMock(WalletTopUpService::class);
         $topUpService->expects($this->once())
-            ->method('status')
+            ->method('find')
             ->with(self::TOP_UP_ID, self::CUSTOMER_ID, $context->getContext())
-            ->willReturn([
-                'id' => self::TOP_UP_ID,
-                'amount' => 200.0,
-                'currency' => 'CNY',
-                'state' => CustomerWalletTopUpEntity::STATE_OPEN,
-            ]);
+            ->willReturn($topUp);
 
-        $route = new WalletTopUpStatusRoute($topUpService, new ExtensionDispatcher(new EventDispatcher()));
+        $route = new WalletTopUpStatusRoute(
+            $topUpService,
+            new WalletPresenter(),
+            new ExtensionDispatcher(new EventDispatcher())
+        );
 
         $response = $route->load(self::TOP_UP_ID, $context, $this->customer());
 
         static::assertSame(CustomerWalletTopUpEntity::STATE_OPEN, $response->getTopUp()->get('state'));
+        static::assertSame(200.0, $response->getTopUp()->get('amount'));
     }
 
     private function customer(): CustomerEntity

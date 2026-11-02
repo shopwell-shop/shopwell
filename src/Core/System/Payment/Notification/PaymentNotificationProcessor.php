@@ -9,16 +9,16 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
-use Shopwell\Core\System\Payment\Gateway\NotificationResult;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
+use Shopwell\Core\System\Payment\Gateway\Request\NotificationResult;
 use Shopwell\Core\System\Payment\Notification\Struct\PaymentNotificationData;
+use Shopwell\Core\System\Payment\Order\Aggregate\PaymentRefund\PaymentRefundEntity;
 use Shopwell\Core\System\Payment\Order\PaymentOrderEntity;
 use Shopwell\Core\System\Payment\Order\PaymentOrderPaidHandler;
 use Shopwell\Core\System\Payment\Order\PaymentOrderService;
-use Shopwell\Core\System\Payment\Order\Refund\PaymentRefundEntity;
-use Shopwell\Core\System\Payment\Order\Refund\PaymentRefundService;
+use Shopwell\Core\System\Payment\Order\PaymentRefundService;
 use Shopwell\Core\System\Payment\PaymentException;
-use Shopwell\Core\System\Payment\Provider\PaymentConfigResolver;
+use Shopwell\Core\System\Payment\Provider\Config\PaymentConfigResolver;
 use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;
 
 /**

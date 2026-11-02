@@ -147,27 +147,28 @@ class TierResolverTest extends TestCase
         static::assertSame('bronze', $this->customerLoyaltyRepository->updates[0][0]['membershipTierId']);
     }
 
-    public function testGetPointsMultiplierUsesTheRunningMembership(): void
+    public function testCurrentTierUsesTheRunningMembership(): void
     {
         $paidTier = $this->createTier('silver', 2, 1000);
-        $paidTier->setPointsMultiplier(1.5);
 
         $this->customerLoyaltyRepository->addSearch(new CustomerLoyaltyCollection([
             $this->createLoyalty('silver', $paidTier, '2026-12-01 00:00:00'),
         ]));
         $this->tierRepository->addSearch(new LoyaltyTierCollection([$paidTier]));
 
-        static::assertSame(1.5, $this->tierResolver->getPointsMultiplier(self::CUSTOMER_ID, $this->context));
+        static::assertSame($paidTier->getId(), $this->tierResolver->currentTier(self::CUSTOMER_ID, $this->context)?->getId());
     }
 
-    public function testGetPointsMultiplierFallsBackAfterTheMembershipEnded(): void
+    public function testCurrentTierFallsBackAfterTheMembershipEnded(): void
     {
+        $bronze = $this->createTier('bronze', 1, 0);
+
         $this->customerLoyaltyRepository->addSearch(new CustomerLoyaltyCollection([
             $this->createLoyalty('gold', $this->createTier('gold', 3, 5000), '2026-01-01 00:00:00'),
         ]));
-        $this->tierRepository->addSearch(new LoyaltyTierCollection([$this->createTier('bronze', 1, 0)]));
+        $this->tierRepository->addSearch(new LoyaltyTierCollection([$bronze]));
 
-        static::assertSame(1.0, $this->tierResolver->getPointsMultiplier(self::CUSTOMER_ID, $this->context));
+        static::assertSame($bronze->getId(), $this->tierResolver->currentTier(self::CUSTOMER_ID, $this->context)?->getId());
     }
 
     public function testResolveDoesNothingWhenTierIsUnchanged(): void
@@ -237,10 +238,9 @@ class TierResolverTest extends TestCase
         static::assertSame([], $this->customerRepository->updates);
     }
 
-    public function testGetPointsMultiplierReturnsTierMultiplier(): void
+    public function testCurrentTierFollowsTheGrowthValue(): void
     {
         $tier = $this->createTier('silver', 2, 1000);
-        $tier->setPointsMultiplier(2.0);
 
         $loyalty = $this->createLoyalty(null);
         $loyalty->setGrowthValue(1500);
@@ -248,22 +248,22 @@ class TierResolverTest extends TestCase
         $this->customerLoyaltyRepository->addSearch(new CustomerLoyaltyCollection([$loyalty]));
         $this->tierRepository->addSearch(new LoyaltyTierCollection([$tier]));
 
-        static::assertSame(2.0, $this->tierResolver->getPointsMultiplier(self::CUSTOMER_ID, $this->context));
+        static::assertSame($tier->getId(), $this->tierResolver->currentTier(self::CUSTOMER_ID, $this->context)?->getId());
     }
 
-    public function testGetPointsMultiplierDefaultsToOneWithoutLoyalty(): void
+    public function testCurrentTierIsNullWithoutLoyalty(): void
     {
         $this->customerLoyaltyRepository->addSearch(new CustomerLoyaltyCollection());
 
-        static::assertSame(1.0, $this->tierResolver->getPointsMultiplier(self::CUSTOMER_ID, $this->context));
+        static::assertNull($this->tierResolver->currentTier(self::CUSTOMER_ID, $this->context));
     }
 
-    public function testGetPointsMultiplierDefaultsToOneWithoutTier(): void
+    public function testCurrentTierIsNullWithoutTier(): void
     {
         $this->customerLoyaltyRepository->addSearch(new CustomerLoyaltyCollection([$this->createLoyalty(null)]));
         $this->tierRepository->addSearch(new LoyaltyTierCollection([$this->createTier('silver', 2, 1000)]));
 
-        static::assertSame(1.0, $this->tierResolver->getPointsMultiplier(self::CUSTOMER_ID, $this->context));
+        static::assertNull($this->tierResolver->currentTier(self::CUSTOMER_ID, $this->context));
     }
 
     /**

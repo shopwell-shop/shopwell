@@ -3,7 +3,7 @@
 namespace Shopwell\Core\Checkout\Wallet\Subscriber;
 
 use Shopwell\Core\Checkout\Customer\CustomerEvents;
-use Shopwell\Core\Checkout\Wallet\Service\WalletService;
+use Shopwell\Core\Checkout\Wallet\Service\WalletAccountService;
 use Shopwell\Core\Defaults;
 use Shopwell\Core\Framework\DataAbstractionLayer\Event\EntityWrittenEvent;
 use Shopwell\Core\Framework\Log\Package;
@@ -23,7 +23,7 @@ use Symfony\Component\EventDispatcher\EventSubscriberInterface;
  * first order.
  *
  * Writes outside the live version are ignored, like everywhere else in checkout, and
- * {@see WalletService::provisionAccount()} leaves an existing wallet untouched, so the subscriber
+ * {@see WalletAccountService::open()} leaves an existing wallet untouched, so the subscriber
  * is safe to run on every customer write.
  *
  * @internal
@@ -34,7 +34,7 @@ class WalletAccountProvisionSubscriber implements EventSubscriberInterface
     /**
      * @internal
      */
-    public function __construct(private readonly WalletService $walletService)
+    public function __construct(private readonly WalletAccountService $accounts)
     {
     }
 
@@ -58,7 +58,7 @@ class WalletAccountProvisionSubscriber implements EventSubscriberInterface
                 continue;
             }
 
-            $this->walletService->provisionAccount($customerId, $context);
+            $this->accounts->open($customerId, Defaults::CURRENCY, $context);
         }
     }
 }

@@ -23,16 +23,16 @@ use Shopwell\Core\System\Payment\App\PaymentAppEntity;
 use Shopwell\Core\System\Payment\App\PaymentCredentialCipher;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayFactory;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
-use Shopwell\Core\System\Payment\Gateway\PaymentTransferRequest;
-use Shopwell\Core\System\Payment\Gateway\TransferResult;
+use Shopwell\Core\System\Payment\Gateway\Request\PaymentTransferRequest;
+use Shopwell\Core\System\Payment\Gateway\Request\TransferResult;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
 use Shopwell\Core\System\Payment\PaymentException;
 use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
 use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
 use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannelRegistry;
 use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
-use Shopwell\Core\System\Payment\Provider\PaymentChannelConfigEntity;
-use Shopwell\Core\System\Payment\Provider\PaymentConfigResolver;
+use Shopwell\Core\System\Payment\Provider\Config\PaymentChannelConfigEntity;
+use Shopwell\Core\System\Payment\Provider\Config\PaymentConfigResolver;
 use Shopwell\Core\System\Payment\Provider\PaymentProvider;
 use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;
 use Shopwell\Core\System\Payment\Transfer\Api\PaymentTransferController;
@@ -357,7 +357,7 @@ class PaymentTransferControllerTest extends TestCase
 
         $stateMachineRegistry = static::createStub(StateMachineRegistry::class);
 
-        $recipientService = new PaymentTransferRecipientService($recipientRepository, $cipher, $clock);
+        $recipientService = new PaymentTransferRecipientService($recipientRepository, $cipher, $clock, $providerRegistry);
         $transferService = new PaymentTransferService(
             $transferRepository,
             $recipientRepository,
@@ -366,6 +366,7 @@ class PaymentTransferControllerTest extends TestCase
             $cipher,
             $this->initialStateIdLoader(),
             $clock,
+            $providerRegistry,
         );
 
         $configResolver = new PaymentConfigResolver(
@@ -390,7 +391,7 @@ class PaymentTransferControllerTest extends TestCase
             ),
             new PaymentTransferSubmitter($configResolver, $transferService),
             $transferService,
-            new PaymentTransferPresenter($cipher, []),
+            new PaymentTransferPresenter($cipher),
             $providerRegistry,
         );
     }
@@ -519,7 +520,7 @@ class PaymentTransferControllerTest extends TestCase
         $stateMachineRegistry = static::createStub(StateMachineRegistry::class);
         $stateMachineRegistry->method('transition')->willReturn(new StateMachineStateCollection());
 
-        $recipientService = new PaymentTransferRecipientService($recipientRepository, $cipher, $clock);
+        $recipientService = new PaymentTransferRecipientService($recipientRepository, $cipher, $clock, $providerRegistry);
         $transferService = new PaymentTransferService(
             $transferRepository,
             $recipientRepository,
@@ -528,6 +529,7 @@ class PaymentTransferControllerTest extends TestCase
             $cipher,
             $this->initialStateIdLoader(),
             $clock,
+            $providerRegistry,
         );
 
         $appProviderRepository = static::createStub(EntityRepository::class);
@@ -561,7 +563,7 @@ class PaymentTransferControllerTest extends TestCase
             ),
             new PaymentTransferSubmitter($configResolver, $transferService),
             $transferService,
-            new PaymentTransferPresenter($cipher, []),
+            new PaymentTransferPresenter($cipher),
             $providerRegistry,
         );
     }

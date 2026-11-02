@@ -23,7 +23,7 @@ use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterf
 use Shopwell\Core\System\Payment\Notification\Struct\PaymentNotificationAck;
 use Shopwell\Core\System\Payment\PaymentException;
 use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannelRegistry;
-use Shopwell\Core\System\Payment\Provider\PaymentConfigResolver;
+use Shopwell\Core\System\Payment\Provider\Config\PaymentConfigResolver;
 use Shopwell\Core\System\Payment\Provider\PaymentProvider;
 use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;
 use Shopwell\Core\System\Payment\Transfer\Notification\PaymentTransferNotificationProcessor;
@@ -36,6 +36,7 @@ use Shopwell\Core\System\Payment\Transfer\PaymentTransferService;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferStateHandler;
 use Shopwell\Core\System\StateMachine\Loader\InitialStateIdLoader;
 use Shopwell\Core\System\StateMachine\StateMachineRegistry;
+use Shopwell\Tests\Unit\Core\System\Payment\Transfer\PaymentTransferRulesFixture;
 use Symfony\Component\Clock\MockClock;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -181,10 +182,11 @@ class PaymentTransferNotifyControllerTest extends TestCase
             $transferRepository,
             static::createStub(EntityRepository::class),
             new PaymentTransferStateHandler(static::createStub(StateMachineRegistry::class)),
-            new PaymentTransferRecipientService(static::createStub(EntityRepository::class), $cipher, new MockClock(self::NOW)),
+            new PaymentTransferRecipientService(static::createStub(EntityRepository::class), $cipher, new MockClock(self::NOW), PaymentTransferRulesFixture::registry()),
             $cipher,
             static::createStub(InitialStateIdLoader::class),
-            new MockClock(self::NOW)
+            new MockClock(self::NOW),
+            PaymentTransferRulesFixture::registry()
         );
 
         $processor = new PaymentTransferNotificationProcessor(
