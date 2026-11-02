@@ -30,6 +30,12 @@ use Shopwell\Core\System\AdminMenu\CoreMenuRow;
  *   or moved, but never deleted - it is part of the product.
  * - A row whose declaration fields changed is refreshed, so a relabelled or re-iconed entry
  *   follows the release.
+ * - A row whose internal key no provider declares anymore is deleted. A core upgrade that
+ *   renames an entry must not leave its row behind as a ghost: the visible tree filters it,
+ *   but the management page would carry it as garbage forever. The declaration decides
+ *   whether a core row exists at all, so it also decides when it stops existing - this
+ *   includes a row the administrator once customized. Rows a plugin synced are the plugin
+ *   lifecycle's business and rows an administrator created (no internal key) are kept.
  * - A row an administrator customized is never touched. The declaration only decides whether
  *   the row exists at all.
  *
@@ -57,7 +63,7 @@ class CoreMenuSynchronizer
     }
 
     /**
-     * @return int the number of rows written, 0 when the table already matched the declarations
+     * @return int the number of rows written or removed, 0 when the table already matches the declarations
      */
     public function synchronize(): int
     {
@@ -73,6 +79,17 @@ class CoreMenuSynchronizer
 
         $context = $this->createContext();
         $stored = $this->storedItems($context);
+
+        $declaredKeys = [];
+        foreach ($declarations as $declaration) {
+            $declaredKeys[$declaration->internalKey] = true;
+        }
+
+        $removed = $this->removeUndeclaredRows($stored, $declaredKeys, $context);
+
+        foreach (array_keys($removed) as $internalKey) {
+            unset($stored[$internalKey]);
+        }
 
         // a customized row keeps the place it was given, but the entry that follows it still
         // has to be chained behind it - so it is passed in as an anchor instead of a row
@@ -115,7 +132,61 @@ class CoreMenuSynchronizer
 
         $this->synchronized = true;
 
-        return \count($writes);
+        return \count($writes) + \count($removed);
+    }
+
+    /**
+     * Deletes the rows a core upgrade left behind and re-anchors their children first.
+     *
+     * @param array<string, AdminMenuItemEntity> $stored indexed by internal key
+     * @param array<string, true> $declaredKeys
+     *
+     * @return array<string, string> internal key to id of the rows that were removed
+     */
+    private function removeUndeclaredRows(array $stored, array $declaredKeys, Context $context): array
+    {
+        $ghosts = [];
+
+        foreach ($stored as $internalKey => $item) {
+            // rows a plugin synced are removed by the plugin lifecycle, rows an administrator
+            // created carry no internal key and are never a core row
+            if ($item->getPluginId() !== null || $item->getInternalKey() === null) {
+                continue;
+            }
+
+            if (!isset($declaredKeys[$internalKey])) {
+                $ghosts[$internalKey] = $item->getId();
+            }
+        }
+
+        if ($ghosts === []) {
+            return [];
+        }
+
+        // deleting a parent cascades to its children, so a child that has to survive is
+        // moved to the top level first - the declared ones are re-placed by the pass below
+        $reanchored = [];
+
+        foreach ($stored as $item) {
+            if ($item->getParentId() !== null && isset($ghosts[$item->getParentId()])) {
+                $reanchored[] = [
+                    'id' => $item->getId(),
+                    'parentId' => null,
+                    'afterMenuItemId' => null,
+                ];
+            }
+        }
+
+        if ($reanchored !== []) {
+            $this->menuItemRepository->update($reanchored, $context);
+        }
+
+        $this->menuItemRepository->delete(
+            array_map(static fn (string $id): array => ['id' => $id], array_values($ghosts)),
+            $context
+        );
+
+        return $ghosts;
     }
 
     /**

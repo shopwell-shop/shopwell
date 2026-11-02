@@ -14,6 +14,7 @@ use Shopwell\Core\Checkout\Membership\Entity\MembershipSubscription\MembershipSu
 use Shopwell\Core\Checkout\Membership\Purchase\MembershipOrderPurchaseStore;
 use Shopwell\Core\Checkout\Membership\SalesChannel\MembershipPresenter;
 use Shopwell\Core\Checkout\Membership\SalesChannel\MembershipPurchaseRoute;
+use Shopwell\Core\Checkout\Membership\SalesChannel\MembershipRoute;
 use Shopwell\Core\Checkout\Membership\ScheduledTask\MembershipExpirationTask;
 use Shopwell\Core\Checkout\Membership\ScheduledTask\MembershipExpirationTaskHandler;
 use Shopwell\Core\Checkout\Membership\Service\MembershipOfferService;
@@ -103,6 +104,16 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->public()
         ->args([
             service(MembershipPurchaseService::class),
+            service(ExtensionDispatcher::class),
+        ]);
+
+    // the read side of the membership page; it owns the "what can be bought" payload on its own so the
+    // loyalty route does not have to know that memberships exist
+    $services->set(MembershipRoute::class)
+        ->public()
+        ->args([
+            service(MembershipOfferService::class),
+            service(MembershipSubscriptionService::class),
             service(ExtensionDispatcher::class),
         ]);
 

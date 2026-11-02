@@ -2,7 +2,9 @@
 
 namespace Shopwell\Tests\Unit\Core\System\Payment\Order\Refund;
 
+use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Payum\Core\GatewayInterface;
+use Shopwell\Core\System\NumberRange\ValueGenerator\AbstractNumberRangeValueGenerator;
 use Payum\Core\Request\Refund as RefundRequest;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
@@ -167,6 +169,48 @@ class PaymentRefundServiceTest extends TestCase
         $service = $this->refundService($refundRepository, $gateway);
 
         static::assertSame($existing, $service->refund($this->app(), $order, $this->refundRequest(1000)));
+    }
+
+    /**
+     * Two workers can pass the replay lookup at the same time. The unique key over (order, out refund
+     * number) is the second line of defence, and hitting it is not an error: the row the other worker
+     * booked is the answer, and the channel is never asked twice for the same refund.
+     */
+    public function testRefundRecoversTheRefundThatWasBookedBetweenLookupAndInsert(): void
+    {
+        $existing = $this->refundEntity();
+        $lookups = 0;
+
+        $refundRepository = static::createMock(EntityRepository::class);
+        $refundRepository->method('search')->willReturnCallback(
+            function (Criteria $criteria) use (&$lookups, $existing): EntitySearchResult {
+                if ($criteria->getIds() !== []) {
+                    return $this->refundResult();
+                }
+
+                // the replay lookup finds nothing, the lookup after the unique key conflict finds the row
+                ++$lookups;
+
+                return $lookups === 1 ? $this->refundResult() : $this->refundResult($existing);
+            }
+        );
+        $refundRepository->method('create')->willThrowException(static::createStub(UniqueConstraintViolationException::class));
+
+        $gateway = static::createMock(GatewayInterface::class);
+        $gateway->expects($this->never())->method('execute');
+
+        $service = $this->refundService($refundRepository, $gateway);
+
+        try {
+            $result = $service->refund($this->app(), $this->paidOrder(), $this->refundRequest(1000));
+            var_dump('returned', $result::class, $lookups);
+        } catch (\Throwable $exception) {
+            var_dump('threw', $exception::class, $lookups);
+
+            throw $exception;
+        }
+
+        static::assertSame($existing, $result);
     }
 
     public function testRefundSettlesSynchronouslyAndNotifiesTheApp(): void
@@ -618,8 +662,17 @@ class PaymentRefundServiceTest extends TestCase
             new PaymentRefundStateHandler($refundStateMachine ?? static::createStub(StateMachineRegistry::class)),
             $initialStateIdLoader,
             $eventDispatcher ?? static::createStub(EventDispatcherInterface::class),
-            new MockClock(self::NOW)
+            new MockClock(self::NOW),
+            $this->numberRanges()
         );
+    }
+
+    private function numberRanges(): AbstractNumberRangeValueGenerator
+    {
+        $generator = static::createStub(AbstractNumberRangeValueGenerator::class);
+        $generator->method('getValue')->willReturn('PR1001');
+
+        return $generator;
     }
 
     private function gateway(?string $status, ?string $outRefundId = null): GatewayInterface
@@ -733,7 +786,8 @@ class PaymentRefundServiceTest extends TestCase
             $this->configResolver($this->gateway(null)),
             $initialStateIdLoader,
             new PaymentOrderStateHandler($stateMachine ?? static::createStub(StateMachineRegistry::class)),
-            new MockClock(self::NOW)
+            new MockClock(self::NOW),
+            \Shopwell\Tests\Unit\Core\System\Payment\NumberRangeFixture::generator('PG1001')
         );
     }
 

@@ -2430,6 +2430,26 @@ class Migration1536233560BasicData extends MigrationStep
                 'nameZh' => '贷记单',
                 'nameEn' => 'Credit note',
             ],
+            // the numbers of the payment domain come from number ranges like every other business
+            // number of the platform - sequential and configurable, never date plus random suffix
+            'payment_order' => [
+                'id' => Uuid::randomHex(),
+                'global' => 0,
+                'nameZh' => '支付单',
+                'nameEn' => 'Payment order',
+            ],
+            'payment_refund' => [
+                'id' => Uuid::randomHex(),
+                'global' => 0,
+                'nameZh' => '退款单',
+                'nameEn' => 'Payment refund',
+            ],
+            'payment_transfer' => [
+                'id' => Uuid::randomHex(),
+                'global' => 0,
+                'nameZh' => '打款单',
+                'nameEn' => 'Payment transfer',
+            ],
         ];
 
         $definitionNumberRanges = [
@@ -2467,6 +2487,35 @@ class Migration1536233560BasicData extends MigrationStep
                 'global' => 1,
                 'typeId' => $definitionNumberRangeTypes['document_credit_note']['id'],
                 'pattern' => '{n}',
+                'start' => 1000,
+            ],
+            // prefix plus the increment of the range: short, alphanumeric and unique, which is what
+            // the channels demand of an out number - and what a support case reads back
+            'payment_order' => [
+                'id' => Uuid::randomHex(),
+                'name' => 'Payment orders',
+                'nameZh' => '支付单',
+                'global' => 1,
+                'typeId' => $definitionNumberRangeTypes['payment_order']['id'],
+                'pattern' => 'PG{n}',
+                'start' => 1000,
+            ],
+            'payment_refund' => [
+                'id' => Uuid::randomHex(),
+                'name' => 'Payment refunds',
+                'nameZh' => '退款单',
+                'global' => 1,
+                'typeId' => $definitionNumberRangeTypes['payment_refund']['id'],
+                'pattern' => 'PR{n}',
+                'start' => 1000,
+            ],
+            'payment_transfer' => [
+                'id' => Uuid::randomHex(),
+                'name' => 'Payment transfers',
+                'nameZh' => '打款单',
+                'global' => 1,
+                'typeId' => $definitionNumberRangeTypes['payment_transfer']['id'],
+                'pattern' => 'PT{n}',
                 'start' => 1000,
             ],
         ];

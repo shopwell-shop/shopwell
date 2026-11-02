@@ -368,6 +368,7 @@ final class PaymentControllerFixture extends TestCase
             static::createStub(InitialStateIdLoader::class),
             new PaymentOrderStateHandler(static::createStub(StateMachineRegistry::class)),
             self::clock(),
+            \Shopwell\Tests\Unit\Core\System\Payment\NumberRangeFixture::generator('PG1001'),
         );
     }
 

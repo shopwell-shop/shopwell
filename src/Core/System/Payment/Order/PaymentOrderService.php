@@ -15,6 +15,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\RangeFilter;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\System\NumberRange\ValueGenerator\AbstractNumberRangeValueGenerator;
 use Shopwell\Core\System\Payment\Api\Struct\PaymentOrderRequest;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
 use Shopwell\Core\System\Payment\PaymentException;
@@ -43,6 +44,7 @@ final class PaymentOrderService
         private readonly InitialStateIdLoader $initialStateIdLoader,
         private readonly PaymentOrderStateHandler $stateHandler,
         private readonly ClockInterface $clock,
+        private readonly AbstractNumberRangeValueGenerator $numberRanges,
     ) {
     }
 
@@ -82,7 +84,7 @@ final class PaymentOrderService
 
         $row = [
             'id' => $id,
-            'paymentNo' => $this->generatePaymentNo($now),
+            'paymentNo' => $this->numberRanges->getValue(PaymentOrderEntity::ENTITY_NAME, Context::createDefaultContext(), null),
             'outTradeNo' => $request->outTradeNo,
             'paymentAppId' => $app->id,
             'providerTechnicalName' => $resolved->provider->technicalName,
@@ -431,8 +433,4 @@ final class PaymentOrderService
         return $order instanceof PaymentOrderEntity ? $order : null;
     }
 
-    private function generatePaymentNo(\DateTimeImmutable $now): string
-    {
-        return 'PG' . $now->format('YmdHis') . strtoupper(bin2hex(random_bytes(4)));
-    }
 }

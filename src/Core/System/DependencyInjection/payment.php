@@ -5,6 +5,7 @@ namespace Shopwell\Core\System\DependencyInjection;
 use Psr\Clock\ClockInterface;
 use Shopwell\Core\Checkout\Payment\Aggregate\PaymentMethodGatewayChannel\PaymentMethodGatewayChannelEntity;
 use Shopwell\Core\Content\Media\MediaService;
+use Shopwell\Core\System\NumberRange\ValueGenerator\AbstractNumberRangeValueGenerator;
 use Shopwell\Core\System\Payment\Api\NotifyController;
 use Shopwell\Core\System\Payment\Api\PaymentApiRouteScope;
 use Shopwell\Core\System\Payment\Api\PaymentChannelController;
@@ -455,6 +456,7 @@ return static function (ContainerConfigurator $container): void {
             service(InitialStateIdLoader::class),
             service(PaymentOrderStateHandler::class),
             service(ClockInterface::class),
+            service(AbstractNumberRangeValueGenerator::class),
         ]);
 
     $services->set(PaymentOrderCapture::class)
@@ -517,6 +519,7 @@ return static function (ContainerConfigurator $container): void {
             service(InitialStateIdLoader::class),
             service('event_dispatcher'),
             service(ClockInterface::class),
+            service(AbstractNumberRangeValueGenerator::class),
         ]);
 
     $services->set(PaymentOrderPresenter::class)
@@ -632,6 +635,7 @@ return static function (ContainerConfigurator $container): void {
             service(InitialStateIdLoader::class),
             service(ClockInterface::class),
             service(PaymentProviderRegistry::class),
+            service(AbstractNumberRangeValueGenerator::class),
         ]);
 
     // the two sides of a transfer that talk to the channel: submitting it, and asking what became of

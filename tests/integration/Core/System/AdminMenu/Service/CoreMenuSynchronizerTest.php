@@ -199,6 +199,121 @@ class CoreMenuSynchronizerTest extends TestCase
         static::assertNull($this->coreItems()['sw-manufacturer']->getAfterMenuItemId());
     }
 
+    public function testDeletesARowTheCoreNoLongerDeclares(): void
+    {
+        $this->createSynchronizer()->synchronize();
+
+        // a release drops an entry entirely: the row must not survive as a ghost
+        $dropped = new class implements AdminMenuDefinitionProviderInterface {
+            public function getPluginTechnicalName(): ?string
+            {
+                return null;
+            }
+
+            public function getDefinitions(): array
+            {
+                return array_values(array_filter(
+                    (new CoreAdminMenuProvider())->getDefinitions(),
+                    static fn (AdminMenuDefinitionStruct $declaration): bool => $declaration->internalKey !== 'sw-media',
+                ));
+            }
+        };
+
+        $written = $this->createSynchronizer($dropped)->synchronize();
+
+        static::assertGreaterThan(0, $written);
+        static::assertSame(0, $this->countByInternalKey('sw-media'));
+
+        // a later release brings the entry back: the sync recreates it under its id
+        $this->createSynchronizer()->synchronize();
+
+        static::assertSame(1, $this->countByInternalKey('sw-media'));
+        static::assertSame(
+            $this->coreItems()['sw-content']->getId(),
+            $this->coreItems()['sw-media']->getParentId()
+        );
+    }
+
+    public function testDeletesACustomizedRowTheCoreNoLongerDeclares(): void
+    {
+        $this->createSynchronizer()->synchronize();
+
+        $review = $this->coreItems()['sw-review'];
+
+        $this->menuItemRepository->update([[
+            'id' => $review->getId(),
+            'title' => 'Bewertungen',
+            'configOverridden' => true,
+        ]], $this->context);
+
+        // the declaration decides whether a core row exists at all - a customization does
+        // not keep a dropped entry alive
+        $dropped = new class implements AdminMenuDefinitionProviderInterface {
+            public function getPluginTechnicalName(): ?string
+            {
+                return null;
+            }
+
+            public function getDefinitions(): array
+            {
+                return array_values(array_filter(
+                    (new CoreAdminMenuProvider())->getDefinitions(),
+                    static fn (AdminMenuDefinitionStruct $declaration): bool => $declaration->internalKey !== 'sw-review',
+                ));
+            }
+        };
+
+        $this->createSynchronizer($dropped)->synchronize();
+
+        static::assertSame(0, $this->countByInternalKey('sw-review'));
+    }
+
+    public function testReanchorsTheChildrenOfADeletedRowInsteadOfCascadingThemAway(): void
+    {
+        $this->createSynchronizer()->synchronize();
+
+        // an administrator-created entry under the catalogue: the catalogue is dropped in
+        // the next release, the custom entry must survive the ghost cleanup
+        $customChildId = Uuid::randomHex();
+        $catalogue = $this->coreItems()['sw-catalogue'];
+
+        $this->menuItemRepository->upsert([[
+            'id' => $customChildId,
+            'title' => 'My custom entry',
+            'type' => AdminMenuItemDefinition::TYPE_MENU,
+            'parent' => ['id' => $catalogue->getId()],
+            'active' => true,
+        ]], $this->context);
+
+        $dropped = new class implements AdminMenuDefinitionProviderInterface {
+            public function getPluginTechnicalName(): ?string
+            {
+                return null;
+            }
+
+            public function getDefinitions(): array
+            {
+                return array_values(array_filter(
+                    (new CoreAdminMenuProvider())->getDefinitions(),
+                    static fn (AdminMenuDefinitionStruct $declaration): bool => $declaration->internalKey !== 'sw-catalogue',
+                ));
+            }
+        };
+
+        $this->createSynchronizer($dropped)->synchronize();
+
+        static::assertSame(0, $this->countByInternalKey('sw-catalogue'));
+
+        $custom = $this->menuItemRepository->search(
+            (new Criteria())->addFilter(new EqualsFilter('id', $customChildId)),
+            $this->context
+        )->getEntities()->first();
+
+        static::assertNotNull($custom);
+        // the parent is gone: the entry floats to the top level instead of dying with it
+        static::assertNull($custom->getParentId());
+    }
+
     /**
      * @return list<AdminMenuDefinitionStruct>
      */

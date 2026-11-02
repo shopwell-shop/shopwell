@@ -98,11 +98,29 @@ Module.register('sw-settings-loyalty', {
             component: 'sw-loyalty-order-list',
             path: 'orders',
             meta: {
-                parentPath: 'sw.settings.index',
+                parentPath: 'sw.order.index',
                 privilege: 'loyalty.viewer',
             },
         },
     },
+
+    // the membership orders are orders, not settings: they sit next to the sales orders in the
+    // order folder, because that is where an operator looks for them when a customer asks about
+    // the subscription they paid for
+    navigation: [
+        {
+            // The runtime derives navigation ids from the module name - `settings-loyalty` becomes
+            // `sw-loyalty-` - so the id is written in that form already. The core declaration in
+            // `CoreAdminMenuProvider` has to name the same key, or the menu would render the entry
+            // twice: once from the database row and once from this declaration.
+            id: 'sw-loyalty-orders',
+            path: 'sw.settings.loyalty.orders',
+            label: 'sw-loyalty.order.general.mainMenuItemGeneral',
+            icon: 'regular-clipboard',
+            parent: 'sw-order',
+            privilege: 'loyalty.viewer',
+        },
+    ],
 
     settingsItem: [
         {
@@ -120,14 +138,6 @@ Module.register('sw-settings-loyalty', {
             icon: 'regular-shopping-bag',
             privilege: 'loyalty.viewer',
             label: 'sw-loyalty.plan.general.mainMenuItemGeneral',
-        },
-        {
-            id: 'sw-settings-loyalty-orders',
-            group: 'customer',
-            to: 'sw.settings.loyalty.orders',
-            icon: 'regular-clipboard',
-            privilege: 'loyalty.viewer',
-            label: 'sw-loyalty.order.general.mainMenuItemGeneral',
         },
     ],
 

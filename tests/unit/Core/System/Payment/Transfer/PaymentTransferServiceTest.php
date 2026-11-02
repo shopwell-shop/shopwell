@@ -84,7 +84,8 @@ class PaymentTransferServiceTest extends TestCase
         static::assertSame(0, $written['submitAttempts']);
         static::assertNull($written['expireAt']);
         static::assertSame(['source' => 'test'], $written['metadata']);
-        static::assertMatchesRegularExpression('/^PT\d{12}[0-9A-F]{10}$/', $written['transferNo']);
+        // the number comes from the number range of the platform, not from a date plus random suffix
+        static::assertSame('PT1001', $written['transferNo']);
         // nothing to keep when the channel needs no parameter of its own
         static::assertNull($written['channelParams']);
     }
@@ -696,6 +697,7 @@ class PaymentTransferServiceTest extends TestCase
             $this->initialStateIdLoader(),
             new MockClock(self::NOW),
             PaymentTransferRulesFixture::registry(),
+            \Shopwell\Tests\Unit\Core\System\Payment\NumberRangeFixture::generator('PT1001'),
         );
     }
 

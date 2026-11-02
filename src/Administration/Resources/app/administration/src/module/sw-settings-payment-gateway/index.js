@@ -48,6 +48,18 @@ Module.register('sw-settings-payment-gateway', {
         },
     },
 
+    navigation: [
+        {
+            id: 'sw-settings-payment-gateway',
+            label: 'sw-settings-payment-gateway.general.mainMenuItemGeneral',
+            parent: 'sw-settings',
+            path: 'sw.settings.payment.gateway.list',
+            icon: 'regular-plug',
+            position: 650,
+            privilege: 'payment_app.viewer',
+        },
+    ],
+
     settingsItem: {
         group: 'payment',
         to: 'sw.settings.payment.gateway.list',

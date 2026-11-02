@@ -81,7 +81,8 @@ use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextService;
 use Shopwell\Core\System\SalesChannel\SalesChannel\ContextSwitchRoute;
 use Shopwell\Core\System\SystemConfig\SystemConfigService;
 use Shopwell\Storefront\Checkout\Cart\SalesChannel\StorefrontCartFacade;
-use Shopwell\Storefront\Controller\AccountLoyaltyController;
+use Shopwell\Storefront\Controller\AccountMembershipController;
+use Shopwell\Storefront\Controller\AccountRewardsController;
 use Shopwell\Storefront\Controller\AccountOrderController;
 use Shopwell\Storefront\Controller\AccountOrderReturnController;
 use Shopwell\Storefront\Controller\AccountProfileController;
@@ -127,7 +128,8 @@ use Shopwell\Storefront\Framework\Routing\MaintenanceModeResolver;
 use Shopwell\Storefront\Framework\Twig\ErrorTemplateResolver;
 use Shopwell\Storefront\Page\Account\CustomerGroupRegistration\CustomerGroupRegistrationPageLoader;
 use Shopwell\Storefront\Page\Account\Login\AccountLoginPageLoader;
-use Shopwell\Storefront\Page\Account\Loyalty\AccountLoyaltyPageLoader;
+use Shopwell\Storefront\Page\Account\Membership\AccountMembershipPageLoader;
+use Shopwell\Storefront\Page\Account\Rewards\AccountRewardsPageLoader;
 use Shopwell\Storefront\Page\Account\Order\AccountEditOrderPageLoader;
 use Shopwell\Storefront\Page\Account\Order\AccountOrderDetailPageLoader;
 use Shopwell\Storefront\Page\Account\Order\AccountOrderPageLoader;
@@ -219,10 +221,17 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ])
         ->call('setContainer', [service('service_container')]);
 
-    $services->set(AccountLoyaltyController::class)
+    $services->set(AccountRewardsController::class)
         ->args([
-            service(AccountLoyaltyPageLoader::class),
+            service(AccountRewardsPageLoader::class),
             service(LoyaltyRedeemRoute::class),
+            service(LoyaltySettings::class),
+        ])
+        ->call('setContainer', [service('service_container')]);
+
+    $services->set(AccountMembershipController::class)
+        ->args([
+            service(AccountMembershipPageLoader::class),
             service(MembershipPurchaseRoute::class),
             service(LoyaltySettings::class),
         ])

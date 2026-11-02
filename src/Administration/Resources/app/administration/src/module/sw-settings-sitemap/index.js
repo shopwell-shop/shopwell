@@ -30,6 +30,18 @@ Module.register('sw-settings-sitemap', {
         },
     },
 
+    navigation: [
+        {
+            id: 'sw-settings-sitemap',
+            label: 'sw-settings-sitemap.general.mainMenuItemGeneral',
+            parent: 'sw-settings',
+            path: 'sw.settings.sitemap.index',
+            icon: 'regular-sitemap',
+            position: 540,
+            privilege: 'system.system_config',
+        },
+    ],
+
     settingsItem: {
         group: 'content',
         to: 'sw.settings.sitemap.index',

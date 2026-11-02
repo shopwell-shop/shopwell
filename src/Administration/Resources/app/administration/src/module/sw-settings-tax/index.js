@@ -102,6 +102,18 @@ Module.register('sw-settings-tax', {
         },
     },
 
+    navigation: [
+        {
+            id: 'sw-settings-tax',
+            label: 'sw-settings-tax.general.mainMenuItemGeneral',
+            parent: 'sw-settings',
+            path: 'sw.settings.tax.index',
+            icon: 'regular-chart-pie',
+            position: 440,
+            privilege: 'tax.viewer',
+        },
+    ],
+
     settingsItem: {
         group: 'localization',
         to: 'sw.settings.tax.index',

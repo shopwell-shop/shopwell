@@ -51,6 +51,18 @@ Module.register('sw-settings-dictionary', {
         },
     },
 
+    navigation: [
+        {
+            id: 'sw-settings-dictionary',
+            label: 'sw-settings-dictionary.general.mainMenuItemGeneral',
+            parent: 'sw-settings',
+            path: 'sw.settings.dictionary.index',
+            icon: 'regular-layer-group',
+            position: 120,
+            privilege: 'dictionary.viewer',
+        },
+    ],
+
     settingsItem: {
         group: 'general',
         to: 'sw.settings.dictionary.index',

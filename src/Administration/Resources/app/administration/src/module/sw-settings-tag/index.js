@@ -36,6 +36,18 @@ Module.register('sw-settings-tag', {
         },
     },
 
+    navigation: [
+        {
+            id: 'sw-settings-tag',
+            label: 'sw-settings-tag.general.mainMenuItemGeneral',
+            parent: 'sw-settings',
+            path: 'sw.settings.tag.index',
+            icon: 'regular-tag',
+            position: 550,
+            privilege: 'tag.viewer',
+        },
+    ],
+
     settingsItem: {
         group: 'content',
         to: 'sw.settings.tag.index',

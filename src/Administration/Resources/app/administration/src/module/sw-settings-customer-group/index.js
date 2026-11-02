@@ -63,6 +63,18 @@ Module.register('sw-settings-customer-group', {
         },
     },
 
+    navigation: [
+        {
+            id: 'sw-settings-customer-group',
+            label: 'sw-settings-customer-group.general.mainMenuItemGeneral',
+            parent: 'sw-settings',
+            path: 'sw.settings.customer.group.index',
+            icon: 'regular-users',
+            position: 200,
+            privilege: 'customer_groups.viewer',
+        },
+    ],
+
     settingsItem: {
         group: 'customer',
         to: 'sw.settings.customer.group.index',

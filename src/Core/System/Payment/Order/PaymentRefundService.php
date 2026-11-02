@@ -2,6 +2,7 @@
 
 namespace Shopwell\Core\System\Payment\Order;
 
+use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Payum\Core\Request\Refund as RefundRequest;
 use Psr\Clock\ClockInterface;
 use Shopwell\Core\Framework\Context;
@@ -10,6 +11,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\System\NumberRange\ValueGenerator\AbstractNumberRangeValueGenerator;
 use Shopwell\Core\System\Payment\Api\Struct\PaymentRefundRequest;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
@@ -52,6 +54,7 @@ final class PaymentRefundService
         private readonly InitialStateIdLoader $initialStateIdLoader,
         private readonly EventDispatcherInterface $eventDispatcher,
         private readonly ClockInterface $clock,
+        private readonly AbstractNumberRangeValueGenerator $numberRanges,
     ) {
     }
 
@@ -206,16 +209,29 @@ final class PaymentRefundService
     {
         $id = Uuid::randomHex();
 
-        $this->refundRepository->create([[
-            'id' => $id,
-            'refundNo' => 'PR' . $this->clock->now()->format('YmdHis') . strtoupper(bin2hex(random_bytes(3))),
-            'paymentOrderId' => $order->id,
-            'outRefundNo' => $request->outRefundNo,
-            'amount' => $request->amount,
-            'currency' => $order->currency,
-            'reason' => $request->reason,
-            'stateId' => $this->initialStateIdLoader->get(PaymentRefundStates::STATE_MACHINE),
-        ]], Context::createDefaultContext());
+        try {
+            $this->refundRepository->create([[
+                'id' => $id,
+                'refundNo' => $this->numberRanges->getValue(PaymentRefundEntity::ENTITY_NAME, Context::createDefaultContext(), null),
+                'paymentOrderId' => $order->id,
+                'outRefundNo' => $request->outRefundNo,
+                'amount' => $request->amount,
+                'currency' => $order->currency,
+                'reason' => $request->reason,
+                'stateId' => $this->initialStateIdLoader->get(PaymentRefundStates::STATE_MACHINE),
+            ]], Context::createDefaultContext());
+        } catch (UniqueConstraintViolationException $exception) {
+            // the unique key over (order, out refund number) was hit: two workers passed the replay
+            // lookup at the same time and the other one booked the refund first. That row is the
+            // answer, not an error - and the channel is never asked twice for the same refund
+            $race = $this->findByOutRefundNo($order->id, $request->outRefundNo);
+
+            if ($race instanceof PaymentRefundEntity) {
+                return $race;
+            }
+
+            throw $exception;
+        }
 
         return $this->getRefund($id);
     }

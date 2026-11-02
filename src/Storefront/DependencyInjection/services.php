@@ -19,6 +19,7 @@ use Shopwell\Core\Checkout\Customer\SalesChannel\LoadWishlistRoute;
 use Shopwell\Core\Checkout\Customer\Validation\AddressValidationFactory;
 use Shopwell\Core\Checkout\Gateway\SalesChannel\CheckoutGatewayRoute;
 use Shopwell\Core\Checkout\Loyalty\SalesChannel\LoyaltyRoute;
+use Shopwell\Core\Checkout\Membership\SalesChannel\MembershipRoute;
 use Shopwell\Core\Checkout\Order\SalesChannel\OrderRoute;
 use Shopwell\Core\Checkout\Order\SalesChannel\OrderService;
 use Shopwell\Core\Checkout\OrderReturn\SalesChannel\OrderReturnGuestRoute;
@@ -137,7 +138,8 @@ use Shopwell\Storefront\Framework\Twig\TwigDateRequestListener;
 use Shopwell\Storefront\Page\Account\CustomerGroupRegistration\CustomerGroupRegistrationPageLoader;
 use Shopwell\Storefront\Page\Account\Login\AccountLoginPageLoader;
 use Shopwell\Storefront\Page\Account\Login\OAuth2LoginPageSubscriber;
-use Shopwell\Storefront\Page\Account\Loyalty\AccountLoyaltyPageLoader;
+use Shopwell\Storefront\Page\Account\Membership\AccountMembershipPageLoader;
+use Shopwell\Storefront\Page\Account\Rewards\AccountRewardsPageLoader;
 use Shopwell\Storefront\Page\Account\Order\AccountEditOrderPageLoader;
 use Shopwell\Storefront\Page\Account\Order\AccountOrderDetailPageLoader;
 use Shopwell\Storefront\Page\Account\Order\AccountOrderPageLoader;
@@ -643,11 +645,19 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(Translator::class),
         ]);
 
-    $services->set(AccountLoyaltyPageLoader::class)
+    $services->set(AccountRewardsPageLoader::class)
         ->args([
             service(GenericPageLoader::class),
             service('event_dispatcher'),
             service(LoyaltyRoute::class),
+            service(Translator::class),
+        ]);
+
+    $services->set(AccountMembershipPageLoader::class)
+        ->args([
+            service(GenericPageLoader::class),
+            service('event_dispatcher'),
+            service(MembershipRoute::class),
             service(Translator::class),
         ]);
 

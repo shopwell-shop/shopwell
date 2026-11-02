@@ -27,6 +27,18 @@ Module.register('sw-settings-store', {
         },
     },
 
+    navigation: [
+        {
+            id: 'sw-settings-store',
+            label: 'sw-settings-store.general.mainMenuItemGeneral',
+            parent: 'sw-settings',
+            path: 'sw.settings.store.index',
+            icon: 'regular-laptop',
+            position: 770,
+            privilege: 'system.system_config',
+        },
+    ],
+
     settingsItem: {
         group: 'system',
         to: 'sw.settings.store.index',

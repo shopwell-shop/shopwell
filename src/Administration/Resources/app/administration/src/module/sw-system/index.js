@@ -152,7 +152,6 @@ Shopwell.Module.register('sw-system', {
             label: 'sw-system.general.mainMenuItemSystem',
             color: 'var(--sw-color-module-neutral-default)',
             icon: 'regular-user-shield',
-            path: 'sw.system.user',
             position: 95,
         },
         {

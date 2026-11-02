@@ -280,7 +280,8 @@ class PaymentOrderCaptureTest extends TestCase
             $this->configResolver($this->gateway()),
             $initialStateIdLoader,
             new PaymentOrderStateHandler($stateMachine ?? static::createStub(StateMachineRegistry::class)),
-            new MockClock(self::NOW)
+            new MockClock(self::NOW),
+            \Shopwell\Tests\Unit\Core\System\Payment\NumberRangeFixture::generator('PG1001')
         );
     }
 

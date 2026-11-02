@@ -214,6 +214,7 @@ class StorefrontPaymentServiceTest extends TestCase
             static::createStub(InitialStateIdLoader::class),
             new PaymentOrderStateHandler(static::createStub(StateMachineRegistry::class)),
             new MockClock('2026-06-01 12:00:00'),
+            \Shopwell\Tests\Unit\Core\System\Payment\NumberRangeFixture::generator('PG1001'),
         );
 
         return new StorefrontPaymentService(

@@ -56,6 +56,18 @@ Module.register('sw-settings-organization', {
         },
     },
 
+    navigation: [
+        {
+            id: 'sw-settings-organization',
+            label: 'sw-settings-organization.general.mainMenuItemGeneral',
+            parent: 'sw-settings',
+            path: 'sw.settings.organization.index',
+            icon: 'regular-officebuilding',
+            position: 160,
+            privilege: 'organization.viewer',
+        },
+    ],
+
     settingsItem: {
         group: 'general',
         to: 'sw.settings.organization.index',

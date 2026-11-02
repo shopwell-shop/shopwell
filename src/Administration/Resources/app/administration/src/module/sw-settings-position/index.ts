@@ -36,6 +36,18 @@ Module.register('sw-settings-position', {
         },
     },
 
+    navigation: [
+        {
+            id: 'sw-settings-position',
+            label: 'sw-settings-position.general.mainMenuItemGeneral',
+            parent: 'sw-settings',
+            path: 'sw.settings.position.index',
+            icon: 'regular-briefcase',
+            position: 170,
+            privilege: 'position.viewer',
+        },
+    ],
+
     settingsItem: {
         group: 'general',
         to: 'sw.settings.position.index',

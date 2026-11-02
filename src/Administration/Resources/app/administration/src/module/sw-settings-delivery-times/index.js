@@ -54,6 +54,18 @@ Module.register('sw-settings-delivery-time', {
         },
     },
 
+    navigation: [
+        {
+            id: 'sw-settings-delivery-times',
+            label: 'sw-settings-delivery-time.general.mainMenuItemGeneral',
+            parent: 'sw-settings',
+            path: 'sw.settings.delivery.time.index',
+            icon: 'regular-clock',
+            position: 600,
+            privilege: 'delivery_times.viewer',
+        },
+    ],
+
     settingsItem: {
         group: 'commerce',
         to: 'sw.settings.delivery.time.index',

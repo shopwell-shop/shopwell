@@ -67,6 +67,18 @@ Module.register('sw-settings-usage-data', {
         },
     },
 
+    navigation: [
+        {
+            id: 'sw-settings-usage-data',
+            label: 'sw-settings-usage-data.general.mainMenuItemGeneral',
+            parent: 'sw-settings',
+            path: 'sw.settings.usage.data.index',
+            icon: 'regular-shield',
+            position: 780,
+            privilege: 'system.system_config',
+        },
+    ],
+
     settingsItem: {
         group: 'system',
         to: 'sw.settings.usage.data.index',
