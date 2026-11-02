@@ -1,16 +1,122 @@
+/**
+ * A refund: the money that came back on the left, the numbers that identify it on the right.
+ */
 .sw-payment-refund-detail {
+    &__header {
+        display: flex;
+        gap: var(--scale-size-8);
+        align-items: center;
+    }
+
+    &__header-state {
+        flex: none;
+    }
+
     &__breadcrumb {
         font-weight: var(--font-weight-regular);
+    }
+
+    &__loading,
+    &__not-found {
+        padding: var(--scale-size-24);
     }
 
     &__loading-placeholder {
         min-height: var(--scale-size-160);
     }
 
+    &__layout {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        grid-template-columns: minmax(0, 8fr) minmax(300px, 4fr);
+        gap: var(--scale-size-24);
+        align-items: start;
+        padding: var(--scale-size-24);
+        overflow-y: auto;
+
+        @media screen and (max-width: 1100px) {
+            grid-template-columns: minmax(0, 1fr);
+        }
+    }
+
+    &__main {
+        display: flex;
+        flex-direction: column;
+        gap: var(--scale-size-16);
+        min-width: 0;
+    }
+
+    &__rail {
+        position: sticky;
+        top: 0;
+        display: flex;
+        flex-direction: column;
+        gap: var(--scale-size-16);
+        min-width: 0;
+    }
+
+    &__amount {
+        display: flex;
+        flex-direction: column;
+        gap: var(--scale-size-4);
+        padding-bottom: var(--scale-size-16);
+        margin-bottom: var(--scale-size-16);
+        border-bottom: 1px solid var(--color-border-secondary-default);
+    }
+
+    &__amount-label {
+        font-size: var(--font-size-xs);
+        color: var(--color-text-secondary-default);
+    }
+
+    &__amount-value {
+        font-size: var(--font-size-2xl);
+        font-weight: var(--font-weight-semibold);
+        line-height: var(--font-line-height-2xl);
+        color: var(--color-text-primary-default);
+    }
+
+    &__order-link {
+        font-family: ui-monospace, SFMono-Regular, menlo, monaco, consolas, monospace;
+        font-size: var(--font-size-xs);
+        color: var(--color-text-brand-default);
+        text-decoration: none;
+
+        &:hover,
+        &:focus-visible {
+            text-decoration: underline;
+        }
+    }
+
+    &__payload-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: var(--scale-size-16);
+
+        @media screen and (max-width: 960px) {
+            grid-template-columns: minmax(0, 1fr);
+        }
+    }
+
+    &__payload-block {
+        display: flex;
+        flex-direction: column;
+        gap: var(--scale-size-8);
+        min-width: 0;
+
+        h4 {
+            margin: 0;
+            font-size: var(--font-size-xs);
+            font-weight: var(--font-weight-semibold);
+            color: var(--color-text-secondary-default);
+        }
+    }
+
     &__payload {
-        max-height: 320px;
+        max-height: 420px;
         padding: var(--scale-size-16);
-        margin: 0 0 var(--scale-size-24);
+        margin: 0;
         overflow: auto;
         font-family: ui-monospace, SFMono-Regular, menlo, monaco, consolas, monospace;
         font-size: var(--font-size-xs);

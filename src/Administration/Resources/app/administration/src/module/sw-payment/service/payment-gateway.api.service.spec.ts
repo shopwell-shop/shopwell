@@ -1,6 +1,7 @@
 /**
  * @sw-package framework
  */
+import type { PaymentHttpClient } from './payment-gateway.api.service';
 import PaymentGatewayService, {
     PAYMENT_ORDER_STATE_MACHINE,
     PAYMENT_REFUND_STATE_MACHINE,
@@ -38,9 +39,9 @@ describe('module/sw-payment/service/payment-gateway.api.service', () => {
         it('should build a criteria that reads the states of one machine', () => {
             const criteria = createPaymentStateCriteria(PAYMENT_ORDER_STATE_MACHINE);
 
-            expect(criteria.filters).toHaveLength(1);
-            expect(criteria.filters[0].field).toBe('stateMachine.technicalName');
-            expect(criteria.filters[0].value).toBe(PAYMENT_ORDER_STATE_MACHINE);
+            expect(criteria.filters).toEqual([
+                { type: 'equals', field: 'stateMachine.technicalName', value: PAYMENT_ORDER_STATE_MACHINE },
+            ]);
             expect(criteria.sortings).toHaveLength(1);
             expect(criteria.sortings[0].field).toBe('technicalName');
             expect(criteria.sortings[0].order).toBe('ASC');
@@ -106,10 +107,13 @@ describe('module/sw-payment/service/payment-gateway.api.service', () => {
     });
 
     describe('http client', () => {
-        function createService(data = {}) {
+        function createService(data: unknown = {}) {
+            // the four verbs the service calls; the transport itself is replaced by recorders, which
+            // are not generic and are therefore handed over as the narrowed client type
             const httpClient = {
                 get: jest.fn(() => Promise.resolve({ data })),
                 post: jest.fn(() => Promise.resolve({ data })),
+                put: jest.fn(() => Promise.resolve({ data })),
                 delete: jest.fn(() => Promise.resolve({ data })),
             };
             const loginService = {
@@ -118,7 +122,7 @@ describe('module/sw-payment/service/payment-gateway.api.service', () => {
 
             return {
                 httpClient,
-                service: new PaymentGatewayService(httpClient, loginService),
+                service: new PaymentGatewayService(httpClient as unknown as PaymentHttpClient, loginService),
             };
         }
 

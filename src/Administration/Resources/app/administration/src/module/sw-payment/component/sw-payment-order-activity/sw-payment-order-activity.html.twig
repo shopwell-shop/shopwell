@@ -1,0 +1,95 @@
+{% block sw_payment_order_activity %}
+<div class="sw-payment-order-activity">
+    {% block sw_payment_order_activity_filters %}
+    <div class="sw-payment-order-activity__filters">
+        <button
+            v-for="filter in filters"
+            :key="filter.value"
+            class="sw-payment-order-activity__filter"
+            :class="{ 'is--active': activeKind === filter.value }"
+            type="button"
+            @click="onFilter(filter.value)"
+        >
+            {{ filter.label }}
+            <span class="sw-payment-order-activity__filter-count">{{ filter.count }}</span>
+        </button>
+    </div>
+    {% endblock %}
+
+    {% block sw_payment_order_activity_empty %}
+    <mt-empty-state
+        v-if="visibleActivities.length === 0"
+        centered
+        icon="regular-clock"
+        :headline="$t('sw-payment.order.activity.messageEmpty')"
+        :description="$t('sw-payment.order.activity.sublineEmpty')"
+    />
+    {% endblock %}
+
+    {% block sw_payment_order_activity_list %}
+    <ol
+        v-else
+        class="sw-payment-order-activity__list"
+    >
+        {% block sw_payment_order_activity_entry %}
+        <li
+            v-for="activity in visibleActivities"
+            :key="activity.id"
+            class="sw-payment-order-activity__entry"
+        >
+            {% block sw_payment_order_activity_entry_icon %}
+            <span
+                class="sw-payment-order-activity__icon"
+                :class="'is--' + activity.kind"
+            >
+                <mt-icon
+                    :name="kindIcon(activity.kind)"
+                    size="16px"
+                />
+            </span>
+            {% endblock %}
+
+            {% block sw_payment_order_activity_entry_body %}
+            <div class="sw-payment-order-activity__body">
+                <div class="sw-payment-order-activity__head">
+                    <span class="sw-payment-order-activity__title">{{ activity.title }}</span>
+
+                    {% block sw_payment_order_activity_entry_status %}
+                    <mt-badge :variant="activity.statusVariant">
+                        {{ activity.statusLabel }}
+                    </mt-badge>
+                    {% endblock %}
+                </div>
+
+                {% block sw_payment_order_activity_entry_detail %}
+                <p
+                    v-if="activity.detail"
+                    class="sw-payment-order-activity__detail"
+                >
+                    {{ activity.detail }}
+                </p>
+                {% endblock %}
+
+                {% block sw_payment_order_activity_entry_meta %}
+                <div class="sw-payment-order-activity__meta">
+                    <span>{{ activity.at }}</span>
+
+                    {% block sw_payment_order_activity_entry_link %}
+                    <router-link
+                        v-if="activity.link"
+                        class="sw-payment-order-activity__link"
+                        :to="activity.link"
+                    >
+                        {{ $t('sw-payment.order.activity.linkRecord') }}
+                    </router-link>
+                    {% endblock %}
+                </div>
+                {% endblock %}
+            </div>
+            {% endblock %}
+        </li>
+        {% endblock %}
+    </ol>
+    {% endblock %}
+</div>
+{% endblock %}

@@ -1,5 +1,11 @@
 /**
  * @sw-package framework
+ *
+ * The payment module: the payment orders the gateway books and the refunds it takes back.
+ *
+ * The pages are read-only. Money is moved by the apps that call the gateway, so the operator's work
+ * here is to answer "what happened to this payment" - which is why the detail pages are written as a
+ * story in time rather than as one tab per table.
  */
 import './acl';
 
@@ -7,15 +13,18 @@ import PaymentGatewayService from './service/payment-gateway.api.service';
 
 const { Module } = Shopwell;
 
-/* eslint-disable sw-deprecation-rules/private-feature-declarations */
+/* eslint-disable sw-deprecation-rules/private-feature-declarations -- the module entry point is where its own parts are registered */
 Shopwell.Component.register('sw-payment-config-field', () => import('./component/sw-payment-config-field'));
+Shopwell.Component.register('sw-payment-identifier', () => import('./component/sw-payment-identifier'));
+Shopwell.Component.register('sw-payment-order-summary', () => import('./component/sw-payment-order-summary'));
+Shopwell.Component.register('sw-payment-order-activity', () => import('./component/sw-payment-order-activity'));
 Shopwell.Component.register('sw-payment-order-list', () => import('./page/sw-payment-order-list'));
 Shopwell.Component.register('sw-payment-order-detail', () => import('./page/sw-payment-order-detail'));
 Shopwell.Component.register('sw-payment-refund-list', () => import('./page/sw-payment-refund-list'));
 Shopwell.Component.register('sw-payment-refund-detail', () => import('./page/sw-payment-refund-detail'));
 /* eslint-enable sw-deprecation-rules/private-feature-declarations */
 
-// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations -- registered here, read by the settings page
 Shopwell.Service().register('paymentGatewayService', () => {
     return new PaymentGatewayService(
         Shopwell.Application.getContainer('init').httpClient,
@@ -23,7 +32,7 @@ Shopwell.Service().register('paymentGatewayService', () => {
     );
 });
 
-// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations -- the module itself has no export to declare
 Module.register('sw-payment', {
     type: 'core',
     name: 'payment',
@@ -59,7 +68,7 @@ Module.register('sw-payment', {
                 },
             },
             props: {
-                default(route) {
+                default(route: { params: Record<string, string> }) {
                     return { paymentOrderId: route.params.id.toLowerCase() };
                 },
             },
@@ -87,7 +96,7 @@ Module.register('sw-payment', {
                 },
             },
             props: {
-                default(route) {
+                default(route: { params: Record<string, string> }) {
                     return { paymentRefundId: route.params.id.toLowerCase() };
                 },
             },
@@ -104,12 +113,14 @@ Module.register('sw-payment', {
             privilege: 'payment_order.viewer',
         },
         {
+            id: 'sw-payment-orders',
             path: 'sw.payment.index',
             label: 'sw-payment.general.mainMenuItemPaymentOrders',
             parent: 'sw-payment',
             privilege: 'payment_order.viewer',
         },
         {
+            id: 'sw-payment-refunds',
             path: 'sw.payment.refund',
             label: 'sw-payment.general.mainMenuItemRefunds',
             parent: 'sw-payment',

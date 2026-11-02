@@ -1,8 +1,26 @@
 /**
  * @sw-package framework
  */
+import { defineComponent } from 'vue';
+import type { PropType } from 'vue';
 import template from './sw-payment-config-field.html.twig';
 import './sw-payment-config-field.scss';
+
+/**
+ * One field of a payment interface or channel configuration, as the interface declares it.
+ *
+ * @private
+ */
+export interface PaymentConfigField {
+    name: string;
+    type: string;
+    label?: string | null;
+    helpText?: string | null;
+    default?: string | null;
+    required?: boolean;
+    secret?: boolean;
+    options?: Record<string, string>;
+}
 
 /**
  * Renders one input of a payment interface or channel configuration.
@@ -15,9 +33,10 @@ import './sw-payment-config-field.scss';
  * A field marked as secret is masked by the browser, but its value is handed over like every other one
  * and is therefore part of the form. Typing nothing keeps what is stored, which is the same rule the
  * server applies to every field of the interface.
+ *
+ * @private
  */
-// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
-export default {
+export default defineComponent({
     template,
 
     inheritAttrs: false,
@@ -30,7 +49,7 @@ export default {
         },
 
         field: {
-            type: Object,
+            type: Object as PropType<PaymentConfigField>,
             required: true,
         },
 
@@ -45,11 +64,11 @@ export default {
 
     computed: {
         currentValue: {
-            get() {
+            get(): string | number | boolean {
                 return this.modelValue ?? '';
             },
 
-            set(value) {
+            set(value: string | number | boolean): void {
                 this.$emit('update:modelValue', value);
             },
         },
@@ -59,21 +78,21 @@ export default {
          * booleans.
          */
         currentBoolean: {
-            get() {
+            get(): boolean {
                 return this.currentValue === '1' || this.currentValue === 'true' || this.currentValue === true;
             },
 
-            set(value) {
+            set(value: boolean): void {
                 this.currentValue = value ? '1' : '';
             },
         },
 
         currentNumber: {
-            get() {
+            get(): number | null {
                 return this.currentValue === '' || this.currentValue === null ? null : Number(this.currentValue);
             },
 
-            set(value) {
+            set(value: number | null | undefined): void {
                 this.currentValue = value === null || value === undefined ? '' : String(value);
             },
         },
@@ -81,16 +100,18 @@ export default {
         /**
          * An interface declares its own label, either a snippet key or a plain text.
          */
-        label() {
-            if (this.field.label) {
-                return this.$te(this.field.label) ? this.$t(this.field.label) : this.field.label;
+        label(): string {
+            const declared = this.field.label;
+
+            if (declared) {
+                return this.$te(declared) ? this.$t(declared) : declared;
             }
 
             return this.field.name;
         },
 
-        options() {
-            return Object.entries(this.field.options || {}).map(([value, label]) => {
+        options(): Array<{ value: string; label: string }> {
+            return Object.entries(this.field.options ?? {}).map(([value, label]) => {
                 return { value, label };
             });
         },
@@ -99,7 +120,7 @@ export default {
          * A field may declare a default in its schema which is applied server-side when the field
          * is left empty - showing it as a placeholder makes that visible.
          */
-        placeholder() {
+        placeholder(): string | undefined {
             return this.field.default ?? undefined;
         },
 
@@ -108,12 +129,14 @@ export default {
          * a secret field is part of the form, so "configured" would describe what the input already
          * shows.
          */
-        helpText() {
-            if (!this.field.helpText) {
+        helpText(): string | null {
+            const declared = this.field.helpText;
+
+            if (!declared) {
                 return null;
             }
 
-            return this.$te(this.field.helpText) ? this.$t(this.field.helpText) : this.field.helpText;
+            return this.$te(declared) ? this.$t(declared) : declared;
         },
     },
-};
+});

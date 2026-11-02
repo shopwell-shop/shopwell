@@ -1,0 +1,136 @@
+/**
+ * The timeline of a payment: a rail of icons, the entry beside it.
+ */
+.sw-payment-order-activity {
+    &__filters {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--scale-size-8);
+        padding-bottom: var(--scale-size-16);
+        border-bottom: 1px solid var(--color-border-secondary-default);
+    }
+
+    &__filter {
+        display: inline-flex;
+        gap: var(--scale-size-6);
+        align-items: center;
+        padding: var(--scale-size-4) var(--scale-size-12);
+        font-size: var(--font-size-xs);
+        color: var(--color-text-secondary-default);
+        cursor: pointer;
+        background: var(--color-elevation-surface-raised);
+        border: 1px solid var(--color-border-secondary-default);
+        border-radius: var(--border-radius-button);
+
+        &:hover,
+        &:focus-visible {
+            color: var(--color-text-primary-default);
+            background: var(--color-elevation-surface-hover);
+        }
+
+        &.is--active {
+            color: var(--color-text-primary-default);
+            background: var(--color-elevation-surface-selected);
+            border-color: var(--color-border-primary-default);
+        }
+    }
+
+    &__filter-count {
+        font-variant-numeric: tabular-nums;
+        color: var(--color-text-secondary-default);
+    }
+
+    &__list {
+        display: flex;
+        flex-direction: column;
+        padding: 0;
+        margin: 0;
+        list-style: none;
+    }
+
+    &__entry {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        gap: var(--scale-size-12);
+        padding: var(--scale-size-16) 0;
+
+        & + & {
+            border-top: 1px solid var(--color-border-secondary-default);
+        }
+    }
+
+    &__icon {
+        display: inline-flex;
+        flex: none;
+        align-items: center;
+        justify-content: center;
+        width: var(--scale-size-32);
+        height: var(--scale-size-32);
+        color: var(--color-text-secondary-default);
+        background: var(--color-elevation-surface-sunken);
+        border-radius: var(--border-radius-button);
+
+        &.is--transaction {
+            color: var(--color-icon-brand-default);
+        }
+
+        &.is--notification {
+            color: var(--color-icon-attention-default);
+        }
+
+        &.is--refund {
+            color: var(--color-icon-positive-default);
+        }
+    }
+
+    &__body {
+        display: flex;
+        flex-direction: column;
+        gap: var(--scale-size-4);
+        min-width: 0;
+    }
+
+    &__head {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--scale-size-8);
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    &__title {
+        overflow: hidden;
+        font-size: var(--font-size-s);
+        font-weight: var(--font-weight-medium);
+        line-height: var(--font-line-height-s);
+        color: var(--color-text-primary-default);
+        text-overflow: ellipsis;
+    }
+
+    &__detail {
+        margin: 0;
+        overflow-wrap: anywhere;
+        font-size: var(--font-size-xs);
+        line-height: var(--font-line-height-xs);
+        color: var(--color-text-secondary-default);
+    }
+
+    &__meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--scale-size-8);
+        align-items: center;
+        font-size: var(--font-size-2xs);
+        color: var(--color-text-secondary-default);
+    }
+
+    &__link {
+        color: var(--color-text-brand-default);
+        text-decoration: none;
+
+        &:hover,
+        &:focus-visible {
+            text-decoration: underline;
+        }
+    }
+}
