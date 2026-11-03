@@ -10,6 +10,7 @@ use Shopwell\Core\System\Currency\CurrencyEntity;
 use Shopwell\Core\System\Payment\Api\Struct\PaymentOrderRequest;
 use Shopwell\Core\System\Payment\Api\Struct\PayParams;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
+use Shopwell\Core\System\Payment\Exception\PaymentGatewayException;
 use Shopwell\Core\System\Payment\Gateway\Request\Money;
 use Shopwell\Core\System\Payment\Gateway\Request\PayResult;
 use Shopwell\Core\System\Payment\Order\Aggregate\PaymentTransaction\PaymentTransactionEntity;
@@ -83,7 +84,7 @@ final class OrderPaymentStarter
         if ($existing instanceof PaymentOrderEntity && $this->paymentOrderService->isPayable($existing)) {
             // the channel already answered for this payment: the payer only has to be handed over
             // again, the same way the app would do it with the parameters of the first capture
-            $params = $this->restorePayParams($existing, $channel);
+            $params = $this->restorePayParams($existing, $channel->providerTechnicalName);
 
             if ($params instanceof PayParams) {
                 return [
@@ -110,6 +111,22 @@ final class OrderPaymentStarter
     }
 
     /**
+     * The channel answer a storefront middle page renders again after a redirect.
+     *
+     * @throws PaymentException
+     */
+    public function payParams(PaymentOrderEntity $order): PayParams
+    {
+        $params = $this->restorePayParams($order, $order->providerTechnicalName);
+
+        if (!$params instanceof PayParams) {
+            throw PaymentGatewayException::gatewayResultMissing($order->channelTechnicalName);
+        }
+
+        return $params;
+    }
+
+    /**
      * The url the payer has to be sent to for the answer of the channel.
      *
      * @throws PaymentException
@@ -120,11 +137,11 @@ final class OrderPaymentStarter
 
         return match ($params->flow) {
             PaymentFlow::REDIRECT => $params->payUrl ?? $this->htmlFormUrl($order, $params),
-            PaymentFlow::QRCODE => $this->router->generate(self::ROUTE_QR_CODE, ['paymentNo' => $order->paymentNo]),
+            PaymentFlow::QRCODE => $this->router->generate(self::ROUTE_QR_CODE, ['orderId' => $order->id, 'paymentNo' => $order->paymentNo]),
             // a channel that is pulled up by an sdk cannot be opened from a browser; binding one to a
             // checkout payment method is a configuration error, not something the payer can fix
             /** @phpstan-ignore shopwell.domainException (The error belongs to the payment gateway the checkout wraps.) */
-            PaymentFlow::SDK => throw PaymentException::channelNotAvailableInStorefront($order->channelTechnicalName),
+            PaymentFlow::SDK => throw PaymentGatewayException::channelNotAvailableInStorefront($order->channelTechnicalName),
         };
     }
 
@@ -140,7 +157,7 @@ final class OrderPaymentStarter
         }
 
         // a self submitting form is rendered by the storefront, the checkout only names the page
-        return $this->router->generate(self::ROUTE_FORM, ['paymentNo' => $order->paymentNo]);
+        return $this->router->generate(self::ROUTE_FORM, ['orderId' => $order->id, 'paymentNo' => $order->paymentNo]);
     }
 
     /**
@@ -189,7 +206,7 @@ final class OrderPaymentStarter
      * asked from the interface the channel belongs to. Null means the interface cannot hand the payer
      * over again and the payment is captured anew.
      */
-    private function restorePayParams(PaymentOrderEntity $order, PaymentChannel $channel): ?PayParams
+    private function restorePayParams(PaymentOrderEntity $order, string $providerTechnicalName): ?PayParams
     {
         $response = $this->lastCaptureResponse($order);
 
@@ -198,7 +215,7 @@ final class OrderPaymentStarter
         }
 
         return $this->providers
-            ->get($channel->providerTechnicalName)
+            ->get($providerTechnicalName)
             ->payParamsFromResponse($response);
     }
 

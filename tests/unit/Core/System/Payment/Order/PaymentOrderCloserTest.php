@@ -2,6 +2,7 @@
 
 namespace Shopwell\Tests\Unit\Core\System\Payment\Order;
 
+use Doctrine\DBAL\Connection;
 use Payum\Core\GatewayInterface;
 use Payum\Core\Request\Generic;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -51,6 +52,7 @@ use Shopwell\Core\System\StateMachine\Loader\InitialStateIdLoader;
 use Shopwell\Core\System\StateMachine\StateMachineRegistry;
 use Shopwell\Core\System\StateMachine\Transition;
 use Shopwell\Tests\Unit\Core\System\Payment\NumberRangeFixture;
+use Shopwell\Tests\Unit\Core\System\Payment\Order\_fixtures\PaymentOrderRowLockStub;
 use Symfony\Component\Clock\MockClock;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
@@ -236,6 +238,7 @@ class PaymentOrderCloserTest extends TestCase
             new PaymentOrderStateHandler($stateMachine),
             $clock,
             NumberRangeFixture::generator('PG1001'),
+            new PaymentOrderRowLockStub(),
         );
 
         $webhooks = new PaymentWebhookDispatcher(
@@ -245,12 +248,13 @@ class PaymentOrderCloserTest extends TestCase
             static::createStub(HttpClientInterface::class),
             $clock,
             static::createStub(LoggerInterface::class),
+            static::createStub(Connection::class),
         );
 
         $paidHandler = new PaymentOrderPaidHandler($orderService, $webhooks, static::createStub(EventDispatcherInterface::class));
 
         return new PaymentOrderCloser(
-            new PaymentChannelCloser(static::createStub(EntityRepository::class), $configResolver, $clock),
+            new PaymentChannelCloser(static::createStub(EntityRepository::class), $configResolver, NumberRangeFixture::generator('PX1001')),
             $orderService,
             new PaymentOrderReconciler(
                 $orderRepository,

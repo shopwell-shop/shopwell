@@ -26,6 +26,14 @@ class QueryResultTest extends TestCase
         static::assertSame([], $result->raw);
     }
 
+    public function testAnAbsentAnswerKeepsTheChannelMessage(): void
+    {
+        $result = QueryResult::absent('unknown trade');
+
+        static::assertSame(QueryResult::STATUS_ABSENT, $result->status);
+        static::assertSame(['error' => 'unknown trade'], $result->raw);
+    }
+
     public function testKeepsEveryFieldOfTheAnswer(): void
     {
         $raw = ['trade_state' => 'SUCCESS', 'transaction_id' => 'transaction-1'];

@@ -2,9 +2,8 @@
 
 namespace Shopwell\Core\System\DependencyInjection;
 
+use Doctrine\DBAL\Connection;
 use Psr\Clock\ClockInterface;
-use Shopwell\Core\Checkout\Payment\Aggregate\PaymentMethodGatewayChannel\PaymentMethodGatewayChannelEntity;
-use Shopwell\Core\Content\Media\MediaService;
 use Shopwell\Core\System\NumberRange\ValueGenerator\AbstractNumberRangeValueGenerator;
 use Shopwell\Core\System\Payment\Api\NotifyController;
 use Shopwell\Core\System\Payment\Api\PaymentApiRouteScope;
@@ -24,7 +23,6 @@ use Shopwell\Core\System\Payment\App\PaymentSignatureService;
 use Shopwell\Core\System\Payment\Command\PaymentProvidersPruneCommand;
 use Shopwell\Core\System\Payment\Command\PaymentProvidersValidateCommand;
 use Shopwell\Core\System\Payment\Gateway\PaymentChannelCloser;
-use Shopwell\Core\System\Payment\Install\PaymentMethodIconInstaller;
 use Shopwell\Core\System\Payment\Integration\Alipay\Action\AlipayCaptureAction;
 use Shopwell\Core\System\Payment\Integration\Alipay\Action\AlipayCloseAction;
 use Shopwell\Core\System\Payment\Integration\Alipay\Action\AlipayNotifyAction;
@@ -77,6 +75,7 @@ use Shopwell\Core\System\Payment\Order\PaymentOrderPaidHandler;
 use Shopwell\Core\System\Payment\Order\PaymentOrderPresenter;
 use Shopwell\Core\System\Payment\Order\PaymentOrderQueryResultHandler;
 use Shopwell\Core\System\Payment\Order\PaymentOrderReconciler;
+use Shopwell\Core\System\Payment\Order\PaymentOrderRowLock;
 use Shopwell\Core\System\Payment\Order\PaymentOrderService;
 use Shopwell\Core\System\Payment\Order\PaymentOrderStateHandler;
 use Shopwell\Core\System\Payment\Order\PaymentRefundService;
@@ -84,6 +83,7 @@ use Shopwell\Core\System\Payment\Order\PaymentRefundStateHandler;
 use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannelRegistry;
 use Shopwell\Core\System\Payment\Provider\Config\Api\PaymentProviderConfigController;
 use Shopwell\Core\System\Payment\Provider\Config\PaymentChannelConfigEntity;
+use Shopwell\Core\System\Payment\Provider\Config\PaymentConfigReader;
 use Shopwell\Core\System\Payment\Provider\Config\PaymentConfigResolver;
 use Shopwell\Core\System\Payment\Provider\Config\PaymentProviderConfigEntity;
 use Shopwell\Core\System\Payment\Provider\Config\PaymentProviderConfigService;
@@ -95,8 +95,6 @@ use Shopwell\Core\System\Payment\ScheduledTask\ReconcileOpenPaymentOrdersTask;
 use Shopwell\Core\System\Payment\ScheduledTask\ReconcileOpenPaymentOrdersTaskHandler;
 use Shopwell\Core\System\Payment\ScheduledTask\ReconcileOpenPaymentTransfersTask;
 use Shopwell\Core\System\Payment\ScheduledTask\ReconcileOpenPaymentTransfersTaskHandler;
-use Shopwell\Core\System\Payment\Security\PaymentGatewayTokenEntity;
-use Shopwell\Core\System\Payment\Security\PaymentGatewayTokenStorage;
 use Shopwell\Core\System\Payment\Subscription\PaymentMandateEntity;
 use Shopwell\Core\System\Payment\Subscription\PaymentPlanEntity;
 use Shopwell\Core\System\Payment\Subscription\PaymentSubscriptionCycleEntity;
@@ -110,6 +108,7 @@ use Shopwell\Core\System\Payment\Transfer\PaymentTransferEntity;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferRecipientEntity;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferRecipientService;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferReconciler;
+use Shopwell\Core\System\Payment\Transfer\PaymentTransferResultBooker;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferService;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferStateHandler;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferSubmitter;
@@ -150,17 +149,6 @@ return static function (ContainerConfigurator $container): void {
     $container->parameters()->set('shopwell.payment.provider.decoration_chain', []);
 
     $services = $container->services();
-
-    // ---- Security: the payum tokens, kept in the database so every node resolves them ----
-    // `payment_token` belongs to the checkout (return url jwts, single use, cleaned up on expiry),
-    // so the tokens of the gateway get a table of their own
-    $services->set(PaymentGatewayTokenEntity::class)
-        ->tag('shopwell.entity');
-
-    $services->set(PaymentGatewayTokenStorage::class)
-        ->args([
-            service('payment_gateway_token.repository'),
-        ]);
 
     // ---- App: the apps that call the payment api, and their secrets ----
     $services->set(PaymentAppEntity::class)
@@ -205,10 +193,11 @@ return static function (ContainerConfigurator $container): void {
         ->args([
             service('payment_app.repository'),
             service(PaymentAppProvisioner::class),
-            // the answers of the controller carry the merchant account of an app and the parameters of
-            // its channels in plain text, so it has to unseal them itself
+            // non-secret merchant fields are read back; secret fields only report their configured state
             service(PaymentCredentialCipher::class),
             service(PaymentProviderConfigService::class),
+            service(PaymentProviderRegistry::class),
+            service(PaymentChannelRegistry::class),
         ])
         ->call('setContainer', [service('service_container')])
         ->tag('controller.service_arguments');
@@ -233,7 +222,10 @@ return static function (ContainerConfigurator $container): void {
     $services->set(AlipayPayParamsDecoder::class);
     $services->set(WechatPayParamsDecoder::class);
 
-    $services->set(PaymentProviderFactory::class);
+    $services->set(PaymentConfigReader::class);
+
+    $services->set(PaymentProviderFactory::class)
+        ->args([service(PaymentConfigReader::class)]);
 
     // The declarations are collected by `PaymentProviderCompilerPass`, which fills this argument with
     // one definition per technical name. An installation that ships no interface at all keeps the empty
@@ -283,20 +275,6 @@ return static function (ContainerConfigurator $container): void {
             service('payment_app_channel.repository'),
         ])
         ->tag('console.command');
-
-    // ---- the pictures of the methods the gateway seeds ----
-    // The icons are uploaded through the media service when the installation completes, not written
-    // to a path of our own: the service decides where a file ends up and files it in the folder of the
-    // payment methods, which is also where a picture a merchant uploads for a method of their own
-    // lands. A shop that installs gets the icons the same way a shop that uploads them does.
-    $services->set(PaymentMethodIconInstaller::class)
-        ->args([
-            service(MediaService::class),
-            service('payment_method.repository'),
-            service('media.repository'),
-            service('logger'),
-        ])
-        ->tag('kernel.event_listener');
 
     // ---- the resolution of one payment ----
     $services->set(PaymentConfigResolver::class)
@@ -449,6 +427,9 @@ return static function (ContainerConfigurator $container): void {
     $services->set(PaymentOrderStateHandler::class)
         ->args([service(StateMachineRegistry::class)]);
 
+    $services->set(PaymentOrderRowLock::class)
+        ->args([service(Connection::class)]);
+
     $services->set(PaymentOrderService::class)
         ->args([
             service('payment_order.repository'),
@@ -457,6 +438,7 @@ return static function (ContainerConfigurator $container): void {
             service(PaymentOrderStateHandler::class),
             service(ClockInterface::class),
             service(AbstractNumberRangeValueGenerator::class),
+            service(PaymentOrderRowLock::class),
         ]);
 
     $services->set(PaymentOrderCapture::class)
@@ -465,7 +447,7 @@ return static function (ContainerConfigurator $container): void {
             service(PaymentConfigResolver::class),
             service(PaymentOrderService::class),
             service(PaymentNotifyUrlBuilder::class),
-            service(ClockInterface::class),
+            service(AbstractNumberRangeValueGenerator::class),
         ]);
 
     // the gateway side of closing: it talks to the channel and keeps the attempt as a transaction,
@@ -474,7 +456,7 @@ return static function (ContainerConfigurator $container): void {
         ->args([
             service('payment_transaction.repository'),
             service(PaymentConfigResolver::class),
-            service(ClockInterface::class),
+            service(AbstractNumberRangeValueGenerator::class),
         ]);
 
     // the orchestration of a close: the channel first, the order afterwards. It sits between the two
@@ -520,6 +502,7 @@ return static function (ContainerConfigurator $container): void {
             service('event_dispatcher'),
             service(ClockInterface::class),
             service(AbstractNumberRangeValueGenerator::class),
+            service(PaymentOrderRowLock::class),
         ]);
 
     $services->set(PaymentOrderPresenter::class)
@@ -588,10 +571,6 @@ return static function (ContainerConfigurator $container): void {
     $services->set(PaymentWebhookDeliveryEntity::class)
         ->tag('shopwell.entity');
 
-    // ---- Checkout: the channel a payment method of the shop collects through ----
-    $services->set(PaymentMethodGatewayChannelEntity::class)
-        ->tag('shopwell.entity');
-
     // ---- Subscription: the plans, their instances, the signing agreements and their cycles ----
     $services->set(PaymentPlanEntity::class)
         ->tag('shopwell.entity');
@@ -641,10 +620,17 @@ return static function (ContainerConfigurator $container): void {
     // the two sides of a transfer that talk to the channel: submitting it, and asking what became of
     // it. They share the service as the only writer of the record and the resolver as the only way to
     // the credentials of the app
+    $services->set(PaymentTransferResultBooker::class)
+        ->args([
+            service(PaymentTransferService::class),
+            service(Connection::class),
+        ]);
+
     $services->set(PaymentTransferSubmitter::class)
         ->args([
             service(PaymentConfigResolver::class),
             service(PaymentTransferService::class),
+            service(PaymentTransferResultBooker::class),
         ]);
 
     $services->set(PaymentTransferReconciler::class)
@@ -760,6 +746,7 @@ return static function (ContainerConfigurator $container): void {
             service('http_client'),
             service(ClockInterface::class),
             service('logger'),
+            service(Connection::class),
         ]);
 
     $services->set(DeliverPaymentWebhookTask::class)

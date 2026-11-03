@@ -23,10 +23,13 @@ use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppChannel\PaymentAppChann
 use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppProvider\PaymentAppProviderEntity;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
 use Shopwell\Core\System\Payment\App\PaymentCredentialCipher;
+use Shopwell\Core\System\Payment\Exception\PaymentAppException;
+use Shopwell\Core\System\Payment\Exception\PaymentOrderException;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayFactory;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
 use Shopwell\Core\System\Payment\Order\PaymentOrderCollection;
 use Shopwell\Core\System\Payment\Order\PaymentOrderEntity;
+use Shopwell\Core\System\Payment\Order\PaymentOrderRowLock;
 use Shopwell\Core\System\Payment\Order\PaymentOrderService;
 use Shopwell\Core\System\Payment\Order\PaymentOrderStateHandler;
 use Shopwell\Core\System\Payment\Order\PaymentOrderStates;
@@ -98,7 +101,7 @@ class PaymentOrderServiceTest extends TestCase
     {
         $service = $this->service($this->orderRepository());
 
-        $this->expectExceptionObject(PaymentException::orderNotFound('missing-id'));
+        $this->expectExceptionObject(PaymentOrderException::orderNotFound('missing-id'));
 
         $service->getById('missing-id');
     }
@@ -127,7 +130,7 @@ class PaymentOrderServiceTest extends TestCase
     {
         $service = $this->service($this->orderRepository());
 
-        $this->expectExceptionObject(PaymentException::orderNotFound('PG0001'));
+        $this->expectExceptionObject(PaymentOrderException::orderNotFound('PG0001'));
 
         $service->getByPaymentNo('PG0001', $this->app('app-id'));
     }
@@ -137,7 +140,7 @@ class PaymentOrderServiceTest extends TestCase
         $order = $this->order();
         $service = $this->service($this->orderRepository([$order]));
 
-        $this->expectExceptionObject(PaymentException::foreignApp('other-app', 'PG0001'));
+        $this->expectExceptionObject(PaymentAppException::foreignApp('other-app', 'PG0001'));
 
         $service->getByPaymentNo('PG0001', $this->app('other-app-id', 'other-app'));
     }
@@ -169,7 +172,7 @@ class PaymentOrderServiceTest extends TestCase
     {
         $order = $this->order(['closedAt' => new \DateTimeImmutable(self::NOW)]);
 
-        $this->expectExceptionObject(PaymentException::orderAlreadyClosed('PG0001'));
+        $this->expectExceptionObject(PaymentOrderException::orderAlreadyClosed('PG0001'));
 
         $this->service($this->orderRepository())->close($order);
     }
@@ -182,7 +185,7 @@ class PaymentOrderServiceTest extends TestCase
     {
         $order = $this->order(['paidAt' => new \DateTimeImmutable(self::NOW)]);
 
-        $this->expectExceptionObject(PaymentException::orderAlreadyPaid('PG0001'));
+        $this->expectExceptionObject(PaymentOrderException::orderAlreadyPaid('PG0001'));
 
         $this->service($this->orderRepository())->close($order);
     }
@@ -191,7 +194,7 @@ class PaymentOrderServiceTest extends TestCase
     {
         $order = $this->order(['paidAt' => new \DateTimeImmutable(self::NOW)]);
 
-        $this->expectExceptionObject(PaymentException::orderAlreadyPaid('PG0001'));
+        $this->expectExceptionObject(PaymentOrderException::orderAlreadyPaid('PG0001'));
 
         $this->service($this->orderRepository())->expire($order);
     }
@@ -200,7 +203,7 @@ class PaymentOrderServiceTest extends TestCase
     {
         $order = $this->order(['closedAt' => new \DateTimeImmutable(self::NOW)]);
 
-        $this->expectExceptionObject(PaymentException::orderAlreadyClosed('PG0001'));
+        $this->expectExceptionObject(PaymentOrderException::orderAlreadyClosed('PG0001'));
 
         $this->service($this->orderRepository())->expire($order);
     }
@@ -304,6 +307,51 @@ class PaymentOrderServiceTest extends TestCase
         static::assertSame(1000, $result->refundedAmount);
     }
 
+    public function testApplyRefundUsesTheAmountsReadUnderTheOrderLock(): void
+    {
+        $refunded = $this->order(['refundedAmount' => 1000, 'paidAmount' => 1000, 'stateId' => 'state-refunded']);
+
+        $repository = static::createMock(EntityRepository::class);
+        $repository->expects($this->once())
+            ->method('update')
+            ->with(static::callback(function (array $data): bool {
+                static::assertSame(1000, $data[0]['refundedAmount']);
+
+                return true;
+            }));
+        $repository->method('search')->willReturn($this->searchResult([$refunded]));
+
+        $stateMachine = static::createMock(StateMachineRegistry::class);
+        $stateMachine->expects($this->once())
+            ->method('transition')
+            ->with(static::callback(static fn (Transition $t): bool => $t->getTransitionName() === PaymentOrderStates::ACTION_REFUND));
+
+        // The caller's entity still says zero. The database row already contains 600, and those
+        // locked amounts are the only safe base for this booking.
+        $order = $this->order(['paidAmount' => 1000, 'refundedAmount' => 0]);
+        $rowLock = $this->rowLock(['paidAmount' => 1000, 'refundedAmount' => 600]);
+
+        $result = $this->service($repository, null, null, $stateMachine, $rowLock)->applyRefund($order, 400);
+
+        static::assertSame($refunded, $result);
+    }
+
+    public function testApplyRefundRejectsAnOverRefundAgainstTheLockedAmounts(): void
+    {
+        $repository = static::createMock(EntityRepository::class);
+        $repository->expects($this->never())->method('update');
+
+        $stateMachine = static::createMock(StateMachineRegistry::class);
+        $stateMachine->expects($this->never())->method('transition');
+
+        $order = $this->order(['paidAmount' => 1000, 'refundedAmount' => 0]);
+        $rowLock = $this->rowLock(['paidAmount' => 1000, 'refundedAmount' => 600]);
+
+        $this->expectExceptionObject(PaymentOrderException::refundAmountExceedsOrder('PG0001', 401, 400));
+
+        $this->service($repository, null, null, $stateMachine, $rowLock)->applyRefund($order, 401);
+    }
+
     public function testExpireDueExpiresOnlyThePayableOrders(): void
     {
         $payable = $this->order();
@@ -350,7 +398,7 @@ class PaymentOrderServiceTest extends TestCase
         $stateMachine = static::createMock(StateMachineRegistry::class);
         $stateMachine->expects($this->never())->method('transition');
 
-        $this->expectExceptionObject(PaymentException::orderNotExpirable('PG0001'));
+        $this->expectExceptionObject(PaymentOrderException::orderNotExpirable('PG0001'));
 
         $this->service($repository, null, null, $stateMachine)->expire($order);
     }
@@ -629,7 +677,8 @@ class PaymentOrderServiceTest extends TestCase
         EntityRepository $repository,
         ?PaymentConfigResolver $configResolver = null,
         ?InitialStateIdLoader $initialStateIdLoader = null,
-        ?StateMachineRegistry $stateMachineRegistry = null
+        ?StateMachineRegistry $stateMachineRegistry = null,
+        ?PaymentOrderRowLock $rowLock = null
     ): PaymentOrderService {
         return new PaymentOrderService(
             $repository,
@@ -637,8 +686,23 @@ class PaymentOrderServiceTest extends TestCase
             $initialStateIdLoader ?? $this->initialStateIdLoader(),
             new PaymentOrderStateHandler($stateMachineRegistry ?? static::createStub(StateMachineRegistry::class)),
             new MockClock(self::NOW),
-            $this->numberRanges()
+            $this->numberRanges(),
+            $rowLock ?? $this->rowLock()
         );
+    }
+
+    /**
+     * @param array{paidAmount: int, refundedAmount: int} $amounts
+     */
+    private function rowLock(array $amounts = ['paidAmount' => 1000, 'refundedAmount' => 0]): PaymentOrderRowLock
+    {
+        $rowLock = static::createStub(PaymentOrderRowLock::class);
+        $rowLock->method('transaction')->willReturnCallback(static fn (\Closure $write): mixed => $write());
+        $rowLock->method('lockOrder')->willReturn($amounts);
+        $rowLock->method('lockRefund')->willReturn(false);
+        $rowLock->method('reservedRefundAmount')->willReturn(0);
+
+        return $rowLock;
     }
 
     private function numberRanges(): AbstractNumberRangeValueGenerator

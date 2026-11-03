@@ -42,6 +42,8 @@ use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;
 use Shopwell\Core\System\StateMachine\Loader\InitialStateIdLoader;
 use Shopwell\Core\System\StateMachine\StateMachineRegistry;
 use Shopwell\Core\System\StateMachine\Transition;
+use Shopwell\Tests\Unit\Core\System\Payment\NumberRangeFixture;
+use Shopwell\Tests\Unit\Core\System\Payment\Order\_fixtures\PaymentOrderRowLockStub;
 use Symfony\Component\Clock\MockClock;
 use Symfony\Component\HttpFoundation\RequestStack;
 
@@ -79,7 +81,7 @@ class PaymentOrderCaptureTest extends TestCase
                 static::assertSame(PaymentTransactionEntity::STATUS_PENDING, $data[0]['status']);
                 static::assertSame('alipay', $data[0]['providerTechnicalName']);
                 static::assertSame('alipay_h5', $data[0]['channelTechnicalName']);
-                static::assertStringStartsWith('PT20240101000000', $data[0]['transactionNo']);
+                static::assertSame('PX1001', $data[0]['transactionNo']);
 
                 return true;
             }));
@@ -159,7 +161,7 @@ class PaymentOrderCaptureTest extends TestCase
             $this->configResolver($gateway),
             $orderService ?? $this->orderService(),
             new PaymentNotifyUrlBuilder(static::createStub(RequestStack::class), 'https://base.example.test'),
-            new MockClock(self::NOW)
+            NumberRangeFixture::generator('PX1001')
         );
     }
 
@@ -281,7 +283,8 @@ class PaymentOrderCaptureTest extends TestCase
             $initialStateIdLoader,
             new PaymentOrderStateHandler($stateMachine ?? static::createStub(StateMachineRegistry::class)),
             new MockClock(self::NOW),
-            \Shopwell\Tests\Unit\Core\System\Payment\NumberRangeFixture::generator('PG1001')
+            NumberRangeFixture::generator('PG1001'),
+            new PaymentOrderRowLockStub()
         );
     }
 

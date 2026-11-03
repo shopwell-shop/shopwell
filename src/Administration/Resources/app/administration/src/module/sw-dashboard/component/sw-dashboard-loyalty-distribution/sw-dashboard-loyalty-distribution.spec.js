@@ -2,7 +2,7 @@ import { mount } from '@vue/test-utils';
 
 function createRepositoryFactory(overrides = {}) {
     const repositories = {
-        customer_loyalty: {
+        loyalty_account: {
             search: jest.fn().mockResolvedValue({ aggregations: {} }),
         },
         loyalty_tier: {
@@ -76,7 +76,7 @@ describe('module/sw-dashboard/component/sw-dashboard-loyalty-distribution', () =
 
     it('resolves the tier names of the buckets', async () => {
         const factory = createRepositoryFactory({
-            customer_loyalty: {
+            loyalty_account: {
                 search: jest.fn().mockResolvedValue({
                     aggregations: {
                         tierDistribution: {
@@ -111,7 +111,7 @@ describe('module/sw-dashboard/component/sw-dashboard-loyalty-distribution', () =
 
     it('falls back to the bucket key when the tier is gone', async () => {
         const factory = createRepositoryFactory({
-            customer_loyalty: {
+            loyalty_account: {
                 search: jest.fn().mockResolvedValue({
                     aggregations: {
                         tierDistribution: {

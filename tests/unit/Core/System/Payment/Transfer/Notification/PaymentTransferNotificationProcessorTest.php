@@ -38,6 +38,7 @@ use Shopwell\Core\System\Payment\Transfer\PaymentTransferService;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferStateHandler;
 use Shopwell\Core\System\StateMachine\Loader\InitialStateIdLoader;
 use Shopwell\Core\System\StateMachine\StateMachineRegistry;
+use Shopwell\Tests\Unit\Core\System\Payment\NumberRangeFixture;
 use Shopwell\Tests\Unit\Core\System\Payment\Transfer\PaymentTransferRulesFixture;
 use Symfony\Component\Clock\MockClock;
 
@@ -200,7 +201,7 @@ class PaymentTransferNotificationProcessorTest extends TestCase
             static::createStub(InitialStateIdLoader::class),
             new MockClock(self::NOW),
             PaymentTransferRulesFixture::registry(),
-            \Shopwell\Tests\Unit\Core\System\Payment\NumberRangeFixture::generator('PT1001')
+            NumberRangeFixture::generator('PT1001')
         );
 
         $reconciler = new PaymentTransferReconciler(

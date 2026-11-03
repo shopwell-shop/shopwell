@@ -546,7 +546,7 @@ class OrderSerializerTest extends TestCase
                 'primaryOrderDeliveryVersionId' => null,
                 'primaryOrderTransactionVersionId' => null,
                 // the reverse sides of the loyalty, wallet and payment domains
-                'customerPointTransactions' => null,
+                'loyaltyPointTransactions' => null,
                 'customerWalletTransactions' => null,
                 'paymentOrders' => null,
             ]

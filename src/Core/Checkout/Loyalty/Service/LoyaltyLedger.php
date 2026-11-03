@@ -4,8 +4,8 @@ namespace Shopwell\Core\Checkout\Loyalty\Service;
 
 use Doctrine\DBAL\Connection;
 use Shopwell\Core\Checkout\Ledger\RowLock;
-use Shopwell\Core\Checkout\Loyalty\Entity\CustomerLoyalty\CustomerLoyaltyCollection;
-use Shopwell\Core\Checkout\Loyalty\Entity\CustomerPointTransaction\CustomerPointTransactionCollection;
+use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyPointTransaction\LoyaltyPointTransactionCollection;
+use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyAccount\LoyaltyAccountCollection;
 use Shopwell\Core\Checkout\Loyalty\LoyaltyException;
 use Shopwell\Core\Checkout\Loyalty\LoyaltyPointTransactionTypes;
 use Shopwell\Core\Framework\Context;
@@ -14,7 +14,7 @@ use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Uuid\Uuid;
 
 /**
- * The only writer of the points and the growth value of a customer.
+ * The only writer of the points and the tier points of a customer.
  *
  * Three things describe the same points and are therefore written together: the booking (what
  * happened), the balance (the sum today) and the batches (which points those are). Spread over three
@@ -26,15 +26,20 @@ use Shopwell\Core\Framework\Uuid\Uuid;
  * because the use rows of an allocation point at the booking they belong to.
  *
  * The ledger stays free of business rules that belong to a caller: it does not decide how many points
- * an order earns, which tier a growth value unlocks, or how much of a return is paid out in points.
+ * an order earns, which tier tier points unlock, or how much of a return is paid out in points.
  * It refuses an overdraft, because only the balance it locked can be judged safely, and it keeps the
  * point booking idempotent by the key the caller brings.
  *
- * The paid membership is not its business either. `membership_tier_id` and `membership_valid_until`
- * are projections of a membership, and their one writer is
- * {@see \Shopwell\Core\Checkout\Membership\Service\MembershipSubscriptionService}.
+ * The paid membership is not its business either. `tier_id` and `membership_paid_until`
+ * are written by {@see \Shopwell\Core\Checkout\Membership\Service\MembershipSubscriptionService}
+ * while a membership runs, and `tier_id` is also what {@see TierResolver} keeps up to date
+ * with the tier the tier points reach - the column is the effective tier, the date is the paid
+ * period, and neither is a balance this class owns.
  *
- * @final
+ * @internal the write order and the row lock are the whole point of this class and cannot be varied
+ *           by a caller. Bookings go through {@see LoyaltyPointService}, which keeps the rules and
+ *           calls this; a booking kind that service cannot express is an extension point to be added
+ *           there, not a reason to call the ledger directly.
  */
 #[Package('checkout')]
 class LoyaltyLedger
@@ -42,11 +47,11 @@ class LoyaltyLedger
     /**
      * @internal
      *
-     * @param EntityRepository<CustomerLoyaltyCollection> $customerLoyaltyRepository
-     * @param EntityRepository<CustomerPointTransactionCollection> $pointTransactionRepository
+     * @param EntityRepository<LoyaltyAccountCollection> $loyaltyAccountRepository
+     * @param EntityRepository<LoyaltyPointTransactionCollection> $pointTransactionRepository
      */
     public function __construct(
-        private readonly EntityRepository $customerLoyaltyRepository,
+        private readonly EntityRepository $loyaltyAccountRepository,
         private readonly EntityRepository $pointTransactionRepository,
         private readonly Connection $connection,
         private readonly RowLock $rows,
@@ -284,22 +289,22 @@ class LoyaltyLedger
     }
 
     /**
-     * Adds the growth value an order earned and answers the new value. Growth is not part of the point
-     * ledger - it never gets spent - so it is only a counter, but it is counted under the same lock for
-     * the same reason.
+     * Adds the tier points an order earned and answers the new total. Tier points are not part of the
+     * point ledger - they are never spent - so they are only a counter, but they are counted under the
+     * same lock for the same reason.
      */
-    public function addGrowthValue(string $customerId, int $growth, Context $context): int
+    public function addTierPoints(string $customerId, int $earned, Context $context): int
     {
-        return $this->connection->transactional(function () use ($customerId, $growth, $context): int {
+        return $this->connection->transactional(function () use ($customerId, $earned, $context): int {
             $account = $this->lockAccount($customerId, $context);
-            $growthValue = $account['growthValue'] + $growth;
+            $tierPoints = $account['tierPoints'] + $earned;
 
-            $this->customerLoyaltyRepository->update([[
+            $this->loyaltyAccountRepository->update([[
                 'id' => $account['id'],
-                'growthValue' => $growthValue,
+                'tierPoints' => $tierPoints,
             ]], $context);
 
-            return $growthValue;
+            return $tierPoints;
         });
     }
 
@@ -310,7 +315,7 @@ class LoyaltyLedger
      * no order does not pretend to belong to one. The batches are not touched here: they are moved by
      * {@see LoyaltyPointLots} around this call, inside the same transaction.
      *
-     * @param array{id: string, pointsBalance: int, growthValue: int} $account
+     * @param array{id: string, pointsBalance: int, tierPoints: int} $account
      * @param array<string, mixed> $columns orderId, idempotencyKey, expiresAt, comment, administratorId
      */
     private function record(
@@ -331,18 +336,18 @@ class LoyaltyLedger
             'balanceAfter' => $balanceAfter,
         ] + $columns, static fn (mixed $value): bool => $value !== null)], $context);
 
-        $this->customerLoyaltyRepository->update([[
+        $this->loyaltyAccountRepository->update([[
             'id' => $account['id'],
             'pointsBalance' => $balanceAfter,
         ]], $context);
     }
 
     /**
-     * @return array{id: string, pointsBalance: int, growthValue: int}
+     * @return array{id: string, pointsBalance: int, tierPoints: int}
      */
     private function lockAccount(string $customerId, Context $context): array
     {
-        $account = $this->rows->lock('customer_loyalty', ['customer_id' => $customerId]);
+        $account = $this->rows->lock('loyalty_account', ['customer_id' => $customerId]);
 
         if ($account !== null) {
             return $this->toAccount($account);
@@ -350,17 +355,17 @@ class LoyaltyLedger
 
         $id = Uuid::randomHex();
 
-        $this->rows->createUnlessExists($this->customerLoyaltyRepository, [
+        $this->rows->createUnlessExists($this->loyaltyAccountRepository, [
             'id' => $id,
             'customerId' => $customerId,
             'pointsBalance' => 0,
-            'growthValue' => 0,
+            'tierPoints' => 0,
         ], $context);
 
-        $account = $this->rows->lock('customer_loyalty', ['customer_id' => $customerId]) ?? [
+        $account = $this->rows->lock('loyalty_account', ['customer_id' => $customerId]) ?? [
             'id' => $id,
             'points_balance' => 0,
-            'growth_value' => 0,
+            'tier_points' => 0,
         ];
 
         return $this->toAccount($account);
@@ -369,21 +374,21 @@ class LoyaltyLedger
     /**
      * @param array<string, mixed> $account
      *
-     * @return array{id: string, pointsBalance: int, growthValue: int}
+     * @return array{id: string, pointsBalance: int, tierPoints: int}
      */
     private function toAccount(array $account): array
     {
         return [
             'id' => (string) $account['id'],
             'pointsBalance' => (int) $account['points_balance'],
-            'growthValue' => (int) $account['growth_value'],
+            'tierPoints' => (int) $account['tier_points'],
         ];
     }
 
     private function hasPointTransaction(string $idempotencyKey): bool
     {
         return (bool) $this->connection->fetchOne(
-            'SELECT 1 FROM `customer_point_transaction` WHERE `idempotency_key` = :key LIMIT 1',
+            'SELECT 1 FROM `loyalty_point_transaction` WHERE `idempotency_key` = :key LIMIT 1',
             ['key' => $idempotencyKey]
         );
     }

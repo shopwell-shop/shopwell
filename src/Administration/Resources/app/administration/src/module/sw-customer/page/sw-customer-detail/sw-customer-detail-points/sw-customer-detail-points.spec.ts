@@ -17,9 +17,9 @@ type LoyaltyTierPayload = {
 
 type LoyaltySummary = {
     pointsBalance: number;
-    growthValue: number;
-    membershipTier: LoyaltyTierPayload | null;
-    membershipValidUntil: string | null;
+    tierPoints: number;
+    tier: LoyaltyTierPayload | null;
+    membershipPaidUntil: string | null;
 };
 
 type TransactionPage = { total: number; transactions: (typeof transactions)[number][] };
@@ -35,8 +35,8 @@ type PointsDetailVm = {
     page: number;
     typeFilter: string | null;
     nextTier: Tier | null;
-    growthProgress: number;
-    membershipTierLabel: string;
+    tierPointsProgress: number;
+    tierLabel: string;
     membershipIsRunning: boolean;
     allowAdjustPoints: boolean;
     showPointsModal: boolean;
@@ -54,15 +54,15 @@ type PointsDetailVm = {
 
 const loyaltySummary = {
     pointsBalance: 250,
-    growthValue: 1200,
-    membershipTier: {
+    tierPoints: 1200,
+    tier: {
         id: 'tier-1',
         technicalName: 'gold',
         name: 'Gold',
         level: 2,
         pointsMultiplier: 1.5,
     },
-    membershipValidUntil: '2099-12-31T23:59:59+00:00',
+    membershipPaidUntil: '2099-12-31T23:59:59+00:00',
 };
 
 const transactions = [
@@ -89,8 +89,8 @@ const transactions = [
 ];
 
 const tiers = [
-    { id: 'tier-1', name: 'Gold', level: 2, minGrowthValue: 1000 },
-    { id: 'tier-2', name: 'Platinum', level: 3, minGrowthValue: 2000 },
+    { id: 'tier-1', name: 'Gold', level: 2, minTierPoints: 1000 },
+    { id: 'tier-2', name: 'Platinum', level: 3, minTierPoints: 2000 },
 ];
 
 const membershipOrder = {
@@ -228,16 +228,16 @@ describe('src/module/sw-customer/page/sw-customer-detail/sw-customer-detail-poin
         const loyaltyApiService = createLoyaltyApiService();
         loyaltyApiService.getCustomerSummary.mockResolvedValue({
             pointsBalance: 0,
-            growthValue: 0,
-            membershipTier: null,
-            membershipValidUntil: null,
+            tierPoints: 0,
+            tier: null,
+            membershipPaidUntil: null,
         });
 
         const { wrapper } = await createWrapper([], loyaltyApiService);
 
-        expect(wrapper.vm.membershipTierLabel).toBe('sw-customer.detailPoints.noMembershipTier');
+        expect(wrapper.vm.tierLabel).toBe('sw-customer.detailPoints.noTier');
         expect(wrapper.vm.membershipIsRunning).toBe(false);
-        expect(wrapper.vm.growthProgress).toBe(0);
+        expect(wrapper.vm.tierPointsProgress).toBe(0);
     });
 
     it('should show how far the customer is on the way to the next tier', async () => {
@@ -245,14 +245,14 @@ describe('src/module/sw-customer/page/sw-customer-detail/sw-customer-detail-poin
 
         // 1200 of 1000..2000 -> 20 %
         expect(wrapper.vm.nextTier?.id).toBe('tier-2');
-        expect(wrapper.vm.growthProgress).toBe(20);
+        expect(wrapper.vm.tierPointsProgress).toBe(20);
     });
 
     it('should treat a membership without expiry as not running', async () => {
         const loyaltyApiService = createLoyaltyApiService();
         loyaltyApiService.getCustomerSummary.mockResolvedValue({
             ...loyaltySummary,
-            membershipValidUntil: null,
+            membershipPaidUntil: null,
         });
 
         const { wrapper } = await createWrapper([], loyaltyApiService);

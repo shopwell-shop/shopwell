@@ -34,7 +34,7 @@ use Shopwell\Core\System\Payment\Provider\Config\PaymentChannelConfigEntity;
 use Shopwell\Core\System\Payment\Provider\Config\PaymentConfigResolver;
 use Shopwell\Core\System\Payment\Provider\PaymentProvider;
 use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;
-use Symfony\Component\Clock\MockClock;
+use Shopwell\Tests\Unit\Core\System\Payment\NumberRangeFixture;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -44,8 +44,6 @@ use Symfony\Component\HttpFoundation\Response;
 #[CoversClass(PaymentChannelCloser::class)]
 class PaymentChannelCloserTest extends TestCase
 {
-    private const NOW = '2024-01-01T00:00:00+00:00';
-
     /**
      * What alipay declares: the close is one of its request capabilities.
      */
@@ -67,7 +65,7 @@ class PaymentChannelCloserTest extends TestCase
                 static::assertSame('alipay', $data[0]['providerTechnicalName']);
                 static::assertSame('alipay_h5', $data[0]['channelTechnicalName']);
                 static::assertSame('order-id', $data[0]['paymentOrderId']);
-                static::assertStringStartsWith('PT20240101000000', $data[0]['transactionNo']);
+                static::assertSame('PX1001', $data[0]['transactionNo']);
 
                 return true;
             }));
@@ -221,7 +219,7 @@ class PaymentChannelCloserTest extends TestCase
      */
     private function close(EntityRepository $transactions, GatewayInterface $gateway, array $capabilities = self::ALIPAY_CAPABILITIES): PaymentChannelCloser
     {
-        return new PaymentChannelCloser($transactions, $this->configResolver($gateway, $capabilities), new MockClock(self::NOW));
+        return new PaymentChannelCloser($transactions, $this->configResolver($gateway, $capabilities), NumberRangeFixture::generator('PX1001'));
     }
 
     /**

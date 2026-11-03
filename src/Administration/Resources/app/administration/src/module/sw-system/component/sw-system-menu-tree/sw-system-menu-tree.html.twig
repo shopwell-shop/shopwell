@@ -12,13 +12,9 @@
         :class="rowClasses(row.item)"
         :style="{ '--sw-system-menu-tree-depth': row.depth }"
         role="treeitem"
-        tabindex="0"
-        :aria-selected="isActive(row.item)"
         :aria-level="row.depth + 1"
-        :aria-expanded="row.hasChildren ? String(!isCollapsed(row.item)) : undefined"
+        :aria-expanded="row.hasChildren ? String(isExpanded(row.item)) : undefined"
         :draggable="isSortableItem(row.item)"
-        @click="select(row.item)"
-        @keydown="onKeydown($event, row.item)"
         @dragstart="onDragStart($event, row.item)"
         @dragover.prevent="onDragOver($event, row.item)"
         @dragleave="onDragLeave(row.item)"
@@ -30,11 +26,11 @@
             v-if="row.hasChildren"
             type="button"
             class="sw-system-menu-tree__toggle"
-            :aria-label="isCollapsed(row.item) ? $t('sw-system.menu.expand') : $t('sw-system.menu.collapse')"
+            :aria-label="isExpanded(row.item) ? $t('sw-system.menu.collapse') : $t('sw-system.menu.expand')"
             @click.stop="toggle(row.item)"
         >
             <mt-icon
-                :name="isCollapsed(row.item) ? 'regular-chevron-right-xs' : 'regular-chevron-down-xs'"
+                :name="isExpanded(row.item) ? 'regular-chevron-down-xs' : 'regular-chevron-right-xs'"
                 size="12px"
             />
         </button>
@@ -53,8 +49,21 @@
         {% endblock %}
 
         {% block sw_system_menu_tree_row_label %}
-        <span class="sw-system-menu-tree__label">
-            {{ rowLabel(row.item) }}
+        <button
+            type="button"
+            class="sw-system-menu-tree__label"
+            @click="toggle(row.item)"
+        >
+            {{ row.item.label }}
+        </button>
+        {% endblock %}
+
+        {% block sw_system_menu_tree_row_group %}
+        <span
+            v-if="row.item.groupLabel"
+            class="sw-system-menu-tree__badge sw-system-menu-tree__badge--group"
+        >
+            {{ row.item.groupLabel }}
         </span>
         {% endblock %}
 
@@ -80,6 +89,48 @@
             >
                 {{ row.item.pluginName }}
             </span>
+
+            <span class="sw-system-menu-tree__type">
+                {{ $t(typeLabel(row.item)) }}
+            </span>
+        </span>
+        {% endblock %}
+
+        {% block sw_system_menu_tree_row_actions %}
+        <span class="sw-system-menu-tree__actions">
+            {% block sw_system_menu_tree_row_actions_edit %}
+            <mt-button
+                v-if="editable"
+                class="sw-system-menu-tree__action"
+                size="x-small"
+                variant="secondary"
+                square
+                :title="$t('global.default.edit')"
+                @click="onEdit(row.item)"
+            >
+                <mt-icon
+                    name="regular-pen"
+                    size="14px"
+                />
+            </mt-button>
+            {% endblock %}
+
+            {% block sw_system_menu_tree_row_actions_delete %}
+            <mt-button
+                v-if="deletable && !row.item.sysLocked"
+                class="sw-system-menu-tree__action"
+                size="x-small"
+                variant="secondary"
+                square
+                :title="$t('global.default.delete')"
+                @click="onRemove(row.item)"
+            >
+                <mt-icon
+                    name="regular-trash"
+                    size="14px"
+                />
+            </mt-button>
+            {% endblock %}
         </span>
         {% endblock %}
     </div>

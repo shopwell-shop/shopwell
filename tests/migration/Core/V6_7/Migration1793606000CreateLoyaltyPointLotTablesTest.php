@@ -30,9 +30,9 @@ class Migration1793606000CreateLoyaltyPointLotTablesTest extends TestCase
 
     private const USE_TABLE = 'loyalty_point_lot_use';
 
-    private const TRANSACTION_TABLE = 'customer_point_transaction';
+    private const TRANSACTION_TABLE = 'loyalty_point_transaction';
 
-    private const ACCOUNT_TABLE = 'customer_loyalty';
+    private const ACCOUNT_TABLE = 'loyalty_account';
 
     private const PROBE = 'lot-probe';
 
@@ -279,7 +279,7 @@ class Migration1793606000CreateLoyaltyPointLotTablesTest extends TestCase
             'id' => Uuid::randomBytes(),
             'customer_id' => $customerId,
             'points_balance' => $balance,
-            'growth_value' => 0,
+            'tier_points' => 0,
             'created_at' => '2026-01-01 00:00:00.000',
         ]);
     }

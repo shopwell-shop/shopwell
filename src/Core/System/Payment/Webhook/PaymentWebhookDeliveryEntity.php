@@ -27,6 +27,7 @@ class PaymentWebhookDeliveryEntity extends EntityStruct
     use EntityCustomFieldsTrait;
 
     final public const STATUS_PENDING = 'pending';
+    final public const STATUS_PROCESSING = 'processing';
     final public const STATUS_SUCCESS = 'success';
     final public const STATUS_FAILED = 'failed';
     final public const STATUS_GIVING_UP = 'giving_up';
@@ -75,6 +76,12 @@ class PaymentWebhookDeliveryEntity extends EntityStruct
 
     #[Field(type: FieldType::INT, api: ['admin-api' => true, 'store-api' => false])]
     public int $attemptCount = 0;
+
+    #[Field(type: FieldType::STRING, api: ['admin-api' => true, 'store-api' => false], maxLength: 32)]
+    public ?string $claimToken = null;
+
+    #[Field(type: FieldType::DATETIME, api: ['admin-api' => true, 'store-api' => false])]
+    public ?\DateTimeInterface $claimExpiresAt = null;
 
     #[Field(type: FieldType::DATETIME, api: ['admin-api' => true, 'store-api' => false])]
     public ?\DateTimeInterface $nextRetryAt = null;

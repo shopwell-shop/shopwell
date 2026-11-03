@@ -7,6 +7,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Entity;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityIdTrait;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Plugin\PluginEntity;
+use Shopwell\Core\System\AdminMenu\Aggregate\AdminMenuItemTranslation\AdminMenuItemTranslationCollection;
 
 /**
  * @codeCoverageIgnore
@@ -21,6 +22,8 @@ class AdminMenuItemEntity extends Entity
     protected ?string $afterMenuItemId = null;
 
     protected ?string $internalKey = null;
+
+    protected ?string $groupName = null;
 
     protected ?string $title = null;
 
@@ -61,6 +64,8 @@ class AdminMenuItemEntity extends Entity
 
     protected ?AclRoleCollection $roles = null;
 
+    protected ?AdminMenuItemTranslationCollection $translations = null;
+
     public function getParentId(): ?string
     {
         return $this->parentId;
@@ -99,6 +104,16 @@ class AdminMenuItemEntity extends Entity
     public function setTitle(?string $title): void
     {
         $this->title = $title;
+    }
+
+    public function getGroupName(): ?string
+    {
+        return $this->groupName;
+    }
+
+    public function setGroupName(?string $groupName): void
+    {
+        $this->groupName = $groupName;
     }
 
     public function getIcon(): ?string
@@ -275,5 +290,15 @@ class AdminMenuItemEntity extends Entity
     public function setRoles(AclRoleCollection $roles): void
     {
         $this->roles = $roles;
+    }
+
+    public function getTranslations(): ?AdminMenuItemTranslationCollection
+    {
+        return $this->translations;
+    }
+
+    public function setTranslations(AdminMenuItemTranslationCollection $translations): void
+    {
+        $this->translations = $translations;
     }
 }

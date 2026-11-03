@@ -157,11 +157,12 @@ class LoyaltyPointService
     }
 
     /**
-     * Adds the growth value a completed order earned and answers the new value.
+     * Adds the tier points a completed order earned and answers the new total. This is how a customer
+     * climbs a tier; redeeming spends points and leaves tier points alone.
      */
-    public function addGrowthValue(string $customerId, int $growth, Context $context): int
+    public function addTierPoints(string $customerId, int $earned, Context $context): int
     {
-        return $this->ledger->addGrowthValue($customerId, $growth, $context);
+        return $this->ledger->addTierPoints($customerId, $earned, $context);
     }
 
     private function resolveExpiresAt(): ?\DateTimeInterface

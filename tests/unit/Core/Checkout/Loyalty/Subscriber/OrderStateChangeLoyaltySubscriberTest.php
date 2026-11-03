@@ -153,7 +153,7 @@ class OrderStateChangeLoyaltySubscriberTest extends TestCase
         $loyaltyPointService = static::createMock(LoyaltyPointService::class);
         $loyaltyPointService->expects($this->once())->method('award')
             ->with($customerId, 300, $orderId, $orderId . '-earned', static::anything());
-        $loyaltyPointService->expects($this->once())->method('addGrowthValue')
+        $loyaltyPointService->expects($this->once())->method('addTierPoints')
             ->with($customerId, 100, static::anything())
             ->willReturn(120);
 
@@ -172,7 +172,7 @@ class OrderStateChangeLoyaltySubscriberTest extends TestCase
             $benefits,
             new LoyaltySettings(new StaticSystemConfigService([
                 LoyaltySettings::CONFIG_KEY_POINTS_PER_CURRENCY_UNIT => 2,
-                LoyaltySettings::CONFIG_KEY_GROWTH_PER_CURRENCY_UNIT => 1,
+                LoyaltySettings::CONFIG_KEY_TIER_POINTS_PER_CURRENCY_UNIT => 1,
             ])),
         );
 
@@ -190,7 +190,7 @@ class OrderStateChangeLoyaltySubscriberTest extends TestCase
             [$this->createOrder(Uuid::randomHex(), 100.0, [])],
             [
                 LoyaltySettings::CONFIG_KEY_POINTS_PER_CURRENCY_UNIT => 0,
-                LoyaltySettings::CONFIG_KEY_GROWTH_PER_CURRENCY_UNIT => 0,
+                LoyaltySettings::CONFIG_KEY_TIER_POINTS_PER_CURRENCY_UNIT => 0,
             ],
         )->onOrderStateChange($this->createEvent('order', Uuid::randomHex(), OrderStates::STATE_COMPLETED));
     }
@@ -201,7 +201,7 @@ class OrderStateChangeLoyaltySubscriberTest extends TestCase
 
         $loyaltyPointService = static::createMock(LoyaltyPointService::class);
         $loyaltyPointService->expects($this->never())->method('award');
-        $loyaltyPointService->expects($this->never())->method('addGrowthValue');
+        $loyaltyPointService->expects($this->never())->method('addTierPoints');
 
         $this->createSubscriber(
             $loyaltyPointService,
@@ -210,12 +210,12 @@ class OrderStateChangeLoyaltySubscriberTest extends TestCase
         )->onOrderStateChange($this->createEvent('order', $customerId, OrderStates::STATE_COMPLETED));
     }
 
-    public function testResolvesTheTierWithTheGrowthValueTheLedgerAnswered(): void
+    public function testResolvesTheTierWithTheTierPointsTheLedgerAnswered(): void
     {
         $customerId = Uuid::randomHex();
 
         $loyaltyPointService = static::createStub(LoyaltyPointService::class);
-        $loyaltyPointService->method('addGrowthValue')->willReturn(40);
+        $loyaltyPointService->method('addTierPoints')->willReturn(40);
 
         $tierResolver = static::createMock(TierResolver::class);
         $tierResolver->expects($this->once())->method('resolve')
@@ -228,7 +228,7 @@ class OrderStateChangeLoyaltySubscriberTest extends TestCase
             $tierResolver,
             static::createStub(LoyaltyBenefitResolver::class),
             new LoyaltySettings(new StaticSystemConfigService([
-                LoyaltySettings::CONFIG_KEY_GROWTH_PER_CURRENCY_UNIT => 1,
+                LoyaltySettings::CONFIG_KEY_TIER_POINTS_PER_CURRENCY_UNIT => 1,
             ])),
         );
 

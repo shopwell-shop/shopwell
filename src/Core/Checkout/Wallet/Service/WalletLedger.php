@@ -28,7 +28,11 @@ use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
  * reference it carries and what it is called. The ledger refuses an overdraft itself, because the
  * balance it has to judge is the one it locked and not the one a caller read a moment earlier.
  *
- * @final
+ * @internal the write order and the row lock are the whole point of this class and cannot be varied
+ *           by a caller. Money moves through {@see WalletAdjustmentService} (top-up, manual
+ *           adjustment) and {@see WalletPaymentService} (order paid, order refunded); a movement
+ *           those cannot express is an extension point to be added there, not a reason to write the
+ *           balance from outside.
  */
 #[Package('checkout')]
 class WalletLedger

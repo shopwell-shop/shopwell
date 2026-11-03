@@ -4,8 +4,8 @@ namespace Shopwell\Core\Checkout\Loyalty\Service;
 
 use Shopwell\Core\Checkout\Cart\LineItem\LineItem;
 use Shopwell\Core\Checkout\Loyalty\Cart\LoyaltyPointCartProcessor;
-use Shopwell\Core\Checkout\Loyalty\Entity\CustomerPointTransaction\CustomerPointTransactionCollection;
-use Shopwell\Core\Checkout\Loyalty\Entity\CustomerPointTransaction\CustomerPointTransactionEntity;
+use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyPointTransaction\LoyaltyPointTransactionCollection;
+use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyPointTransaction\LoyaltyPointTransactionEntity;
 use Shopwell\Core\Checkout\Loyalty\LoyaltyPointTransactionTypes;
 use Shopwell\Core\Checkout\Order\OrderEntity;
 use Shopwell\Core\Checkout\OrderReturn\Entity\OrderReturnEntity;
@@ -46,7 +46,7 @@ class LoyaltyReturnPoints
     /**
      * @internal
      *
-     * @param EntityRepository<CustomerPointTransactionCollection> $pointTransactionRepository
+     * @param EntityRepository<LoyaltyPointTransactionCollection> $pointTransactionRepository
      */
     public function __construct(
         private readonly EntityRepository $pointTransactionRepository,
@@ -219,7 +219,7 @@ class LoyaltyReturnPoints
         $total = 0;
 
         foreach ($this->pointTransactionRepository->search($criteria, $context)->getEntities() as $transaction) {
-            if ($transaction instanceof CustomerPointTransactionEntity) {
+            if ($transaction instanceof LoyaltyPointTransactionEntity) {
                 $total += $transaction->getPoints();
             }
         }

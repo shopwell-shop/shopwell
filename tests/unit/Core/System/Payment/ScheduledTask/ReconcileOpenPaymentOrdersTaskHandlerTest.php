@@ -2,6 +2,7 @@
 
 namespace Shopwell\Tests\Unit\Core\System\Payment\ScheduledTask;
 
+use Doctrine\DBAL\Connection;
 use Payum\Core\GatewayInterface;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
@@ -40,6 +41,8 @@ use Shopwell\Core\System\StateMachine\Aggregation\StateMachineState\StateMachine
 use Shopwell\Core\System\StateMachine\Aggregation\StateMachineState\StateMachineStateEntity;
 use Shopwell\Core\System\StateMachine\Loader\InitialStateIdLoader;
 use Shopwell\Core\System\StateMachine\StateMachineRegistry;
+use Shopwell\Tests\Unit\Core\System\Payment\NumberRangeFixture;
+use Shopwell\Tests\Unit\Core\System\Payment\Order\_fixtures\PaymentOrderRowLockStub;
 use Symfony\Component\Clock\MockClock;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
@@ -192,7 +195,8 @@ class ReconcileOpenPaymentOrdersTaskHandlerTest extends TestCase
             $initialStateIdLoader,
             new PaymentOrderStateHandler(static::createStub(StateMachineRegistry::class)),
             new MockClock('2024-01-01T00:00:00+00:00'),
-            \Shopwell\Tests\Unit\Core\System\Payment\NumberRangeFixture::generator('PG1001')
+            NumberRangeFixture::generator('PG1001'),
+            new PaymentOrderRowLockStub()
         );
 
         $webhookService = new PaymentWebhookDispatcher(
@@ -201,7 +205,8 @@ class ReconcileOpenPaymentOrdersTaskHandlerTest extends TestCase
             new PaymentWebhookSigner(new PaymentSignatureService(), new PaymentCredentialCipher('test-secret'), new MockClock('2024-01-01T00:00:00+00:00')),
             static::createStub(HttpClientInterface::class),
             new MockClock('2024-01-01T00:00:00+00:00'),
-            static::createStub(LoggerInterface::class)
+            static::createStub(LoggerInterface::class),
+            static::createStub(Connection::class)
         );
 
         $clock = new MockClock('2024-01-01T00:00:00+00:00');

@@ -20,7 +20,7 @@ use Shopwell\Core\Framework\Log\Package;
  * number of places that know how a benefit is stored stays one - which is what makes it possible to
  * change the storage at all.
  *
- * It reads the tier through {@see TierResolver}, so a paid membership outranking the growth value is
+ * It reads the tier through {@see TierResolver}, so a paid membership outranking the tier points is
  * decided in one place and not repeated for every benefit.
  *
  * ## The three old columns

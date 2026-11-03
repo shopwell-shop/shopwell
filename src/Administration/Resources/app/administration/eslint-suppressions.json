@@ -3566,7 +3566,7 @@
       "count": 1
     },
     "sw-deprecation-rules/private-feature-declarations": {
-      "count": 5
+      "count": 6
     }
   },
   "src/app/store/admin-menu.store.spec.ts": {
@@ -13164,11 +13164,6 @@
       "count": 1
     }
   },
-  "src/module/sw-system/component/sw-system-menu-tree/sw-system-menu-tree.spec.js": {
-    "sw-test-rules/no-vm-access": {
-      "count": 4
-    }
-  },
   "src/module/sw-system/component/sw-system-role-mcp-reference-modal/index.js": {
     "@eslint-community/eslint-comments/require-description": {
       "count": 1
@@ -13259,11 +13254,8 @@
     }
   },
   "src/module/sw-system/page/sw-system-menu-list/sw-system-menu-list.spec.js": {
-    "inclusive-language/use-inclusive-words": {
-      "count": 1
-    },
     "sw-test-rules/no-vm-access": {
-      "count": 70
+      "count": 52
     }
   },
   "src/module/sw-system/page/sw-system-role-detail/index.js": {

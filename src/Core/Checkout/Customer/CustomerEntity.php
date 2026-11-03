@@ -7,8 +7,8 @@ use Shopwell\Core\Checkout\Customer\Aggregate\CustomerAddress\CustomerAddressEnt
 use Shopwell\Core\Checkout\Customer\Aggregate\CustomerGroup\CustomerGroupEntity;
 use Shopwell\Core\Checkout\Customer\Aggregate\CustomerRecovery\CustomerRecoveryEntity;
 use Shopwell\Core\Checkout\Customer\Aggregate\CustomerWishlist\CustomerWishlistCollection;
-use Shopwell\Core\Checkout\Loyalty\Entity\CustomerLoyalty\CustomerLoyaltyEntity;
-use Shopwell\Core\Checkout\Loyalty\Entity\CustomerPointTransaction\CustomerPointTransactionCollection;
+use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyPointTransaction\LoyaltyPointTransactionCollection;
+use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyAccount\LoyaltyAccountEntity;
 use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyPointLot\LoyaltyPointLotCollection;
 use Shopwell\Core\Checkout\Membership\Entity\MembershipOrder\MembershipOrderCollection;
 use Shopwell\Core\Checkout\Membership\Entity\MembershipSubscription\MembershipSubscriptionCollection;
@@ -164,9 +164,9 @@ class CustomerEntity extends Entity implements \Stringable
 
     protected ?ProductReviewCollection $productReviews = null;
 
-    protected ?CustomerLoyaltyEntity $loyaltyAccount = null;
+    protected ?LoyaltyAccountEntity $loyaltyAccount = null;
 
-    protected ?CustomerPointTransactionCollection $customerPointTransactions = null;
+    protected ?LoyaltyPointTransactionCollection $loyaltyPointTransactions = null;
 
     protected ?MembershipOrderCollection $membershipOrders = null;
 
@@ -862,24 +862,24 @@ class CustomerEntity extends Entity implements \Stringable
         $this->updatedBy = $updatedBy;
     }
 
-    public function getLoyaltyAccount(): ?CustomerLoyaltyEntity
+    public function getLoyaltyAccount(): ?LoyaltyAccountEntity
     {
         return $this->loyaltyAccount;
     }
 
-    public function setLoyaltyAccount(CustomerLoyaltyEntity $loyaltyAccount): void
+    public function setLoyaltyAccount(LoyaltyAccountEntity $loyaltyAccount): void
     {
         $this->loyaltyAccount = $loyaltyAccount;
     }
 
-    public function getCustomerPointTransactions(): ?CustomerPointTransactionCollection
+    public function getLoyaltyPointTransactions(): ?LoyaltyPointTransactionCollection
     {
-        return $this->customerPointTransactions;
+        return $this->loyaltyPointTransactions;
     }
 
-    public function setCustomerPointTransactions(CustomerPointTransactionCollection $customerPointTransactions): void
+    public function setLoyaltyPointTransactions(LoyaltyPointTransactionCollection $loyaltyPointTransactions): void
     {
-        $this->customerPointTransactions = $customerPointTransactions;
+        $this->loyaltyPointTransactions = $loyaltyPointTransactions;
     }
 
     public function getMembershipOrders(): ?MembershipOrderCollection

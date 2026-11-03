@@ -7,8 +7,8 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\MockObject\Stub;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Checkout\Ledger\RowLock;
-use Shopwell\Core\Checkout\Loyalty\Entity\CustomerLoyalty\CustomerLoyaltyCollection;
-use Shopwell\Core\Checkout\Loyalty\Entity\CustomerPointTransaction\CustomerPointTransactionCollection;
+use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyPointTransaction\LoyaltyPointTransactionCollection;
+use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyAccount\LoyaltyAccountCollection;
 use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyPointLot\LoyaltyPointLotCollection;
 use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyPointLotUse\LoyaltyPointLotUseCollection;
 use Shopwell\Core\Checkout\Loyalty\LoyaltyException;
@@ -42,12 +42,12 @@ class LoyaltyLedgerTest extends TestCase
     private const SECOND_LOT_ID = '22b2c3d4e5f60718293a4b5c6d7e8f90';
 
     /**
-     * @var StaticEntityRepository<CustomerLoyaltyCollection>
+     * @var StaticEntityRepository<LoyaltyAccountCollection>
      */
-    private StaticEntityRepository $customerLoyaltyRepository;
+    private StaticEntityRepository $loyaltyAccountRepository;
 
     /**
-     * @var StaticEntityRepository<CustomerPointTransactionCollection>
+     * @var StaticEntityRepository<LoyaltyPointTransactionCollection>
      */
     private StaticEntityRepository $pointTransactionRepository;
 
@@ -103,8 +103,8 @@ class LoyaltyLedgerTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->customerLoyaltyRepository = StaticEntityRepository::of(CustomerLoyaltyCollection::class);
-        $this->pointTransactionRepository = StaticEntityRepository::of(CustomerPointTransactionCollection::class);
+        $this->loyaltyAccountRepository = StaticEntityRepository::of(LoyaltyAccountCollection::class);
+        $this->pointTransactionRepository = StaticEntityRepository::of(LoyaltyPointTransactionCollection::class);
         $this->lotRepository = StaticEntityRepository::of(LoyaltyPointLotCollection::class);
         $this->useRepository = StaticEntityRepository::of(LoyaltyPointLotUseCollection::class);
         $this->connection = static::createStub(Connection::class);
@@ -156,7 +156,7 @@ class LoyaltyLedgerTest extends TestCase
         });
 
         $this->ledger = new LoyaltyLedger(
-            $this->customerLoyaltyRepository,
+            $this->loyaltyAccountRepository,
             $this->pointTransactionRepository,
             $this->connection,
             new RowLock($this->connection),
@@ -184,8 +184,8 @@ class LoyaltyLedgerTest extends TestCase
         static::assertSame(300, $transaction['balanceAfter']);
         static::assertSame('order-1-earned', $transaction['idempotencyKey']);
 
-        static::assertSame(self::ACCOUNT_ID, $this->customerLoyaltyRepository->updates[0][0]['id']);
-        static::assertSame(300, $this->customerLoyaltyRepository->updates[0][0]['pointsBalance']);
+        static::assertSame(self::ACCOUNT_ID, $this->loyaltyAccountRepository->updates[0][0]['id']);
+        static::assertSame(300, $this->loyaltyAccountRepository->updates[0][0]['pointsBalance']);
     }
 
     public function testABookingThatAddsPointsOpensABatch(): void
@@ -212,7 +212,7 @@ class LoyaltyLedgerTest extends TestCase
 
         static::assertNull($balanceAfter);
         static::assertSame([], $this->pointTransactionRepository->creates);
-        static::assertSame([], $this->customerLoyaltyRepository->updates);
+        static::assertSame([], $this->loyaltyAccountRepository->updates);
         static::assertSame([], $this->lotRepository->creates);
     }
 
@@ -230,7 +230,7 @@ class LoyaltyLedgerTest extends TestCase
             );
         } finally {
             static::assertSame([], $this->pointTransactionRepository->creates);
-            static::assertSame([], $this->customerLoyaltyRepository->updates);
+            static::assertSame([], $this->loyaltyAccountRepository->updates);
         }
     }
 
@@ -317,7 +317,7 @@ class LoyaltyLedgerTest extends TestCase
         ));
 
         static::assertSame([], $this->pointTransactionRepository->creates);
-        static::assertSame([], $this->customerLoyaltyRepository->updates);
+        static::assertSame([], $this->loyaltyAccountRepository->updates);
     }
 
     public function testRefusesToExpireWhenTheBatchesDoNotAddUpToTheBalance(): void
@@ -340,23 +340,23 @@ class LoyaltyLedgerTest extends TestCase
         $this->rowResolver = function () use (&$calls): mixed {
             ++$calls;
 
-            return $calls === 1 ? false : $this->row(pointsBalance: 0, growthValue: 0);
+            return $calls === 1 ? false : $this->row(pointsBalance: 0, tierPoints: 0);
         };
 
         $this->ledger->bookPoints(self::CUSTOMER_ID, 'award', 10, $this->context);
 
-        $account = $this->customerLoyaltyRepository->creates[0][0];
+        $account = $this->loyaltyAccountRepository->creates[0][0];
         static::assertSame(self::CUSTOMER_ID, $account['customerId']);
         static::assertSame(0, $account['pointsBalance']);
         static::assertSame(10, $this->pointTransactionRepository->creates[0][0]['balanceAfter']);
     }
 
-    public function testAddsGrowthValue(): void
+    public function testAddsTierPoints(): void
     {
-        $growthValue = $this->ledger->addGrowthValue(self::CUSTOMER_ID, 250, $this->context);
+        $tierPoints = $this->ledger->addTierPoints(self::CUSTOMER_ID, 250, $this->context);
 
-        static::assertSame(750, $growthValue);
-        static::assertSame(750, $this->customerLoyaltyRepository->updates[0][0]['growthValue']);
+        static::assertSame(750, $tierPoints);
+        static::assertSame(750, $this->loyaltyAccountRepository->updates[0][0]['tierPoints']);
     }
 
     /**
@@ -387,7 +387,7 @@ class LoyaltyLedgerTest extends TestCase
 
         static::assertSame(100, $this->useRepository->updates[0][0]['returnedPoints']);
         static::assertSame(120, $this->lotRepository->updates[0][0]['remainingPoints']);
-        static::assertSame(300, $this->customerLoyaltyRepository->updates[0][0]['pointsBalance']);
+        static::assertSame(300, $this->loyaltyAccountRepository->updates[0][0]['pointsBalance']);
     }
 
     public function testAGiveBackWithNothingOutWritesNoBooking(): void
@@ -396,7 +396,7 @@ class LoyaltyLedgerTest extends TestCase
 
         static::assertSame(0, $this->ledger->giveBackPoints(self::CUSTOMER_ID, 'return', self::ACCOUNT_ID, 100, $this->context));
         static::assertSame([], $this->pointTransactionRepository->creates);
-        static::assertSame([], $this->customerLoyaltyRepository->updates);
+        static::assertSame([], $this->loyaltyAccountRepository->updates);
         static::assertSame([], $this->lotRepository->updates);
     }
 
@@ -431,7 +431,7 @@ class LoyaltyLedgerTest extends TestCase
 
         static::assertSame(0, $this->ledger->revokeOrderPoints(self::CUSTOMER_ID, 'revoke', self::ACCOUNT_ID, 100, $this->context));
         static::assertSame([], $this->pointTransactionRepository->creates);
-        static::assertSame([], $this->customerLoyaltyRepository->updates);
+        static::assertSame([], $this->loyaltyAccountRepository->updates);
     }
 
     /**
@@ -441,13 +441,13 @@ class LoyaltyLedgerTest extends TestCase
      */
     private function row(
         int $pointsBalance = 200,
-        int $growthValue = 500,
+        int $tierPoints = 500,
         ?string $id = null,
     ): array {
         return [
             'id' => Uuid::fromHexToBytes($id ?? self::ACCOUNT_ID),
             'points_balance' => $pointsBalance,
-            'growth_value' => $growthValue,
+            'tier_points' => $tierPoints,
         ];
     }
 }

@@ -33,10 +33,10 @@
                     {{ $t('sw-customer.detailPoints.labelCurrentTier') }}
                 </p>
                 <p class="sw-customer-detail-points__item-value">
-                    {{ loyaltySummary ? membershipTierLabel : '-' }}
+                    {{ loyaltySummary ? tierLabel : '-' }}
                 </p>
                 <mt-badge
-                    v-if="loyaltySummary && loyaltySummary.membershipTier"
+                    v-if="loyaltySummary && loyaltySummary.tier"
                     class="sw-customer-detail-points__membership-state"
                     size="small"
                     :type="membershipIsRunning ? 'success' : 'warning'"
@@ -51,10 +51,10 @@
             {% block sw_customer_detail_points_membership_valid_until %}
             <div class="sw-customer-detail-points__item">
                 <p class="sw-customer-detail-points__item-label">
-                    {{ $t('sw-customer.detailPoints.labelMembershipValidUntil') }}
+                    {{ $t('sw-customer.detailPoints.labelMembershipPaidUntil') }}
                 </p>
                 <p class="sw-customer-detail-points__item-value">
-                    {{ loyaltySummary ? formatExpiry(membershipValidUntil) : '-' }}
+                    {{ loyaltySummary ? formatExpiry(membershipPaidUntil) : '-' }}
                 </p>
             </div>
             {% endblock %}
@@ -75,23 +75,23 @@
         {% block sw_customer_detail_points_growth %}
         <div
             v-if="nextTier"
-            class="sw-customer-detail-points__growth"
+            class="sw-customer-detail-points__tier-points"
         >
-            <div class="sw-customer-detail-points__growth-header">
+            <div class="sw-customer-detail-points__tier-points-header">
                 <span class="sw-customer-detail-points__item-label">
-                    {{ $t('sw-customer.detailPoints.labelGrowthValue') }}
+                    {{ $t('sw-customer.detailPoints.labelTierPoints') }}
                 </span>
-                <span class="sw-customer-detail-points__growth-values">
-                    {{ $t('sw-customer.detailPoints.growthProgress', {
-                    current: growthValue,
-                    required: nextTier.minGrowthValue,
+                <span class="sw-customer-detail-points__tier-points-values">
+                    {{ $t('sw-customer.detailPoints.tierPointsProgress', {
+                    current: tierPoints,
+                    required: nextTier.minTierPoints,
                     tier: nextTier.name
                     }, 0) }}
                 </span>
             </div>
             <mt-progress-bar
-                class="sw-customer-detail-points__growth-bar"
-                :model-value="growthProgress"
+                class="sw-customer-detail-points__tier-points-bar"
+                :model-value="tierPointsProgress"
                 :max-value="100"
             />
         </div>
@@ -324,7 +324,7 @@
             v-model="membershipForm.tierId"
             class="sw-customer-detail-points__membership-tier"
             :options="tierOptions"
-            :label="$t('sw-customer.detailPoints.labelMembershipTier')"
+            :label="$t('sw-customer.detailPoints.labelTier')"
             required
         />
 

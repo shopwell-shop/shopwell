@@ -1,55 +1,46 @@
 .sw-system-menu-list {
-    // The navigation tree is a list of short labels, the default width of the side content
-    // would leave the form too little room on a 1280px screen.
-    .sw-page__content.has--side-content {
-        grid-template-columns: 320px 1fr;
+    &__card {
+        // the tree is one list: a card with the default body padding would frame every level
+        // with the same inset the indentation already expresses
+        .mt-card__content {
+            padding: 0;
+        }
     }
 
-    &__sidebar {
+    &__toolbar {
         display: flex;
-        flex-direction: column;
-        height: 100%;
-        overflow-y: auto;
-        background-color: var(--color-elevation-surface-default);
-        border-right: 1px solid var(--color-border-secondary-default);
-    }
-
-    &__sidebar-header {
-        display: flex;
-        flex: 0 0 auto;
-        gap: var(--scale-size-8);
+        gap: var(--scale-size-16);
         align-items: center;
         justify-content: space-between;
         padding: var(--scale-size-12) var(--scale-size-16);
         border-bottom: 1px solid var(--color-border-secondary-default);
     }
 
-    &__sidebar-title {
-        color: var(--color-text-primary-default);
-        font-weight: var(--font-weight-semi-bold);
+    &__language {
+        flex: 0 0 280px;
     }
 
-    &__sidebar-empty {
-        padding: var(--scale-size-16);
+    &__count {
+        margin-left: auto;
         color: var(--color-text-secondary-default);
-        font-size: var(--font-size-s);
+        font-size: var(--font-size-xs);
+        white-space: nowrap;
     }
 
     &__empty-state {
-        margin-top: var(--scale-size-48);
+        margin: var(--scale-size-32) 0;
     }
 
-    &__row {
+    &__modal-grid {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: var(--scale-size-16);
-        margin-top: var(--scale-size-16);
     }
 
     &__icon-field {
         display: flex;
         gap: var(--scale-size-8);
-        align-items: flex-end;
+        align-items: flex-start;
     }
 
     &__field-icon {
@@ -57,8 +48,7 @@
     }
 
     &__icon-preview {
-        flex: 0 0 auto;
-        margin-bottom: var(--scale-size-12);
+        margin-top: var(--scale-size-24);
         color: var(--color-icon-primary-default);
     }
 
@@ -66,26 +56,12 @@
         margin-top: var(--scale-size-24);
     }
 
-    &__roles-hint,
-    &__locked-hint {
-        margin-bottom: var(--scale-size-16);
+    &__field-roles {
+        margin-top: var(--scale-size-16);
     }
 
-    &__meta {
-        display: grid;
-        grid-template-columns: max-content 1fr;
-        gap: var(--scale-size-8) var(--scale-size-24);
-        margin: 0;
-        font-size: var(--font-size-s);
-
-        dt {
-            color: var(--color-text-secondary-default);
-        }
-
-        dd {
-            margin: 0;
-            color: var(--color-text-primary-default);
-        }
+    &__locked-hint {
+        margin-bottom: var(--scale-size-16);
     }
 
     &__delete-confirm {

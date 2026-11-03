@@ -81,17 +81,6 @@ class TestPaymentProvider extends AbstractPaymentProvider
         return $this->actions;
     }
 
-    public function getCaptureAction(): AbstractPaymentAction
-    {
-        foreach ($this->actions as $action) {
-            if ($action->capability() === PaymentCapability::CAPTURE) {
-                return $action;
-            }
-        }
-
-        throw new \RuntimeException('The fixture declares no capture action.');
-    }
-
     public function getNotificationExtractor(): PaymentNotificationExtractorInterface
     {
         \assert($this->extractor instanceof PaymentNotificationExtractorInterface);

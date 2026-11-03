@@ -8,77 +8,27 @@
 
     {% block sw_system_menu_list_actions %}
     <template #smart-bar-actions>
-        {% block sw_system_menu_list_actions_delete %}
+        {% block sw_system_menu_list_actions_expand %}
         <mt-button
-            v-if="canDelete && draft && !isNew"
-            v-tooltip="{
-                message: $t('sw-system.menu.tooltipLockedItem'),
-                disabled: !isLocked,
-                showOnDisabledElements: true,
-            }"
-            class="sw-system-menu-list__button-delete"
-            variant="critical"
-            :disabled="isLocked || isSaving || undefined"
-            @click="onDelete"
+            class="sw-system-menu-list__button-expand"
+            variant="secondary"
+            :disabled="!hasTree || undefined"
+            @click="onToggleAll"
         >
-            {{ $t('global.default.delete') }}
+            {{ isAllExpanded ? $t('sw-system.menu.collapseAll') : $t('sw-system.menu.expandAll') }}
         </mt-button>
         {% endblock %}
 
-        {% block sw_system_menu_list_actions_save %}
+        {% block sw_system_menu_list_actions_create %}
         <mt-button
-            v-if="canEdit"
-            class="sw-system-menu-list__button-save"
+            v-if="canCreate"
+            class="sw-system-menu-list__button-create"
             variant="primary"
-            :is-loading="isSaving"
-            :disabled="!draft || !isDirty || undefined"
-            @click="onSave"
+            @click="onCreateNew"
         >
-            {{ $t('global.default.save') }}
+            {{ $t('sw-system.menu.createAction') }}
         </mt-button>
         {% endblock %}
-    </template>
-    {% endblock %}
-
-    {% block sw_system_menu_list_side_content %}
-    <template #side-content>
-        <div class="sw-system-menu-list__sidebar">
-            {% block sw_system_menu_list_sidebar_header %}
-            <header class="sw-system-menu-list__sidebar-header">
-                <span class="sw-system-menu-list__sidebar-title">
-                    {{ $t('sw-system.menu.sidebarTitle') }}
-                </span>
-
-                <mt-button
-                    v-if="canCreate"
-                    class="sw-system-menu-list__create-action"
-                    size="small"
-                    variant="secondary"
-                    @click="onCreateNew"
-                >
-                    {{ $t('sw-system.menu.createAction') }}
-                </mt-button>
-            </header>
-            {% endblock %}
-
-            {% block sw_system_menu_list_tree %}
-            <sw-system-menu-tree
-                v-if="tree.length > 0"
-                :items="tree"
-                :active-id="selectedId"
-                :sortable="canEdit"
-                @select="selectItem"
-                @move="onMove"
-            />
-
-            <p
-                v-else
-                class="sw-system-menu-list__sidebar-empty"
-            >
-                {{ $t('sw-system.menu.emptyTree') }}
-            </p>
-            {% endblock %}
-        </div>
     </template>
     {% endblock %}
 
@@ -92,310 +42,294 @@
             </template>
             {% endblock %}
 
-            {% block sw_system_menu_list_content_empty %}
-            <mt-empty-state
-                v-else-if="!draft"
-                class="sw-system-menu-list__empty-state"
-                centered
-                icon="regular-list"
-                :headline="$t('sw-system.menu.emptyStateHeadline')"
-                :description="$t('sw-system.menu.emptyStateDescription')"
+            {% block sw_system_menu_list_content_tree %}
+            <mt-card
+                v-else
+                class="sw-system-menu-list__card"
+                position-identifier="sw-system-menu-list-tree"
             >
-                <template
-                    v-if="canCreate"
-                    #button
-                >
-                    <mt-button
-                        variant="primary"
-                        size="default"
-                        @click="onCreateNew"
-                    >
-                        {{ $t('sw-system.menu.createAction') }}
-                    </mt-button>
-                </template>
-            </mt-empty-state>
-            {% endblock %}
-
-            {% block sw_system_menu_list_content_details %}
-            <template v-else>
-                {% block sw_system_menu_list_content_general %}
-                <mt-card
-                    class="sw-system-menu-list__card"
-                    position-identifier="sw-system-menu-list-general"
-                    :title="$t('sw-system.menu.cardGeneral')"
-                >
-                    {% block sw_system_menu_list_content_general_origin %}
-                    <mt-banner
-                        v-if="isLocked"
-                        class="sw-system-menu-list__locked-hint"
-                        variant="info"
-                    >
-                        {{ $t('sw-system.menu.hintLockedItem') }}
-                    </mt-banner>
-                    {% endblock %}
-
-                    {% block sw_system_menu_list_content_general_title %}
-                    <mt-text-field
-                        v-model="draft.title"
-                        class="sw-system-menu-list__field-title"
-                        name="sw-field--menu-item-title"
-                        :label="$t('sw-system.menu.labelTitle')"
-                        :placeholder="$t('sw-system.menu.placeholderTitle')"
-                        :disabled="!canEdit"
-                        required
-                    />
-
-                    <mt-text
-                        v-if="titleIsSnippetKey"
-                        size="xs"
-                        color="color-text-secondary-default"
-                    >
-                        {{ $t('sw-system.menu.hintTitleSnippet') }}
-                    </mt-text>
-                    {% endblock %}
-
-                    {% block sw_system_menu_list_content_general_row_type %}
-                    <div class="sw-system-menu-list__row">
-                        {% block sw_system_menu_list_content_general_type %}
-                        <mt-select
-                            class="sw-system-menu-list__field-type"
-                            :label="$t('sw-system.menu.labelType')"
-                            :model-value="draft.type"
-                            :options="typeOptions"
-                            :disabled="!canEdit"
-                            required
-                            @update:model-value="onTypeChange"
-                        />
-                        {% endblock %}
-
-                        {% block sw_system_menu_list_content_general_icon %}
-                        <div class="sw-system-menu-list__icon-field">
-                            <mt-text-field
-                                v-model="draft.icon"
-                                class="sw-system-menu-list__field-icon"
-                                name="sw-field--menu-item-icon"
-                                :label="$t('sw-system.menu.labelIcon')"
-                                :placeholder="$t('sw-system.menu.placeholderIcon')"
-                                :help-text="$t('sw-system.menu.helpIcon')"
-                                :disabled="!canEdit"
-                            />
-
-                            <mt-icon
-                                class="sw-system-menu-list__icon-preview"
-                                :name="draft.icon || 'regular-link'"
-                                size="20px"
-                            />
-                        </div>
-                        {% endblock %}
-                    </div>
-                    {% endblock %}
-
-                    {% block sw_system_menu_list_content_general_row_target %}
-                    <div class="sw-system-menu-list__row">
-                        {% block sw_system_menu_list_content_general_target %}
-                        <mt-select
-                            v-if="draft.type === 'menu' || draft.type === 'folder'"
-                            class="sw-system-menu-list__field-target"
-                            :label="$t('sw-system.menu.labelTarget')"
-                            :help-text="$t('sw-system.menu.helpTarget')"
-                            :model-value="draft.internalKey"
-                            :options="routeOptions"
-                            :disabled="!canEdit"
-                            required
-                            @update:model-value="draft.internalKey = $event"
-                        />
-
-                        <mt-text-field
-                            v-else-if="draft.type === 'link'"
-                            v-model="draft.linkTarget"
-                            class="sw-system-menu-list__field-target"
-                            name="sw-field--menu-item-link-target"
-                            :label="$t('sw-system.menu.labelLinkTarget')"
-                            :placeholder="$t('sw-system.menu.placeholderLinkTarget')"
-                            :disabled="!canEdit"
-                            required
-                        />
-
-                        <mt-text-field
-                            v-else
-                            v-model="draft.internalKey"
-                            class="sw-system-menu-list__field-target"
-                            name="sw-field--menu-item-internal-key"
-                            :label="$t('sw-system.menu.labelTarget')"
-                            :help-text="$t('sw-system.menu.helpHiddenTarget')"
-                            :disabled="!canEdit"
-                        />
-                        {% endblock %}
-
-                        {% block sw_system_menu_list_content_general_privilege %}
-                        <mt-select
-                            class="sw-system-menu-list__field-privilege"
-                            :label="$t('sw-system.menu.labelPrivilege')"
-                            :help-text="$t('sw-system.menu.helpPrivilege')"
-                            :model-value="privilegeValue"
-                            :options="privilegeOptions"
-                            :disabled="!canEdit"
-                            @update:model-value="draft.privilege = $event === '' ? null : $event"
-                        />
-                        {% endblock %}
-                    </div>
-                    {% endblock %}
-
-                    {% block sw_system_menu_list_content_general_row_position %}
-                    <div class="sw-system-menu-list__row">
-                        {% block sw_system_menu_list_content_general_parent %}
-                        <mt-select
-                            class="sw-system-menu-list__field-parent"
-                            :label="$t('sw-system.menu.labelParent')"
-                            :model-value="parentIdValue"
-                            :options="parentOptions"
-                            :disabled="!canEdit"
-                            @update:model-value="onParentChange"
-                        />
-                        {% endblock %}
-
-                        {% block sw_system_menu_list_content_general_position %}
-                        <mt-select
-                            class="sw-system-menu-list__field-position"
-                            :label="$t('sw-system.menu.labelPosition')"
-                            :help-text="$t('sw-system.menu.helpPosition')"
-                            :model-value="positionValue"
-                            :options="positionOptions"
-                            :disabled="!canEdit"
-                            @update:model-value="onPositionChange"
-                        />
-                        {% endblock %}
-                    </div>
-                    {% endblock %}
-
-                    {% block sw_system_menu_list_content_general_active %}
-                    <mt-switch
-                        v-model="draft.active"
-                        class="sw-system-menu-list__field-active"
-                        :label="$t('sw-system.menu.labelActive')"
-                        :help-text="$t('sw-system.menu.helpActive')"
-                        :bordered="true"
-                        :disabled="!canEdit"
+                {% block sw_system_menu_list_toolbar %}
+                <div class="sw-system-menu-list__toolbar">
+                    {% block sw_system_menu_list_toolbar_language %}
+                    <mt-select
+                        v-if="showLanguageSwitch"
+                        class="sw-system-menu-list__language"
+                        :label="$t('sw-system.menu.labelLanguage')"
+                        :model-value="languageId"
+                        :options="languageOptions"
+                        size="small"
+                        @update:model-value="onLanguageChange"
                     />
                     {% endblock %}
-                </mt-card>
+
+                    <span class="sw-system-menu-list__count">
+                        {{ $tc('sw-system.menu.entryCount', items.length, { count: items.length }) }}
+                    </span>
+                </div>
                 {% endblock %}
 
-                {% block sw_system_menu_list_content_roles %}
-                <mt-card
-                    class="sw-system-menu-list__card"
-                    position-identifier="sw-system-menu-list-roles"
-                    :title="$t('sw-system.menu.cardRoles')"
+                {% block sw_system_menu_list_tree %}
+                <sw-system-menu-tree
+                    v-if="hasTree"
+                    :items="tree"
+                    :expanded-ids="expandedIds"
+                    :sortable="canEdit"
+                    :editable="canEdit"
+                    :deletable="canDelete"
+                    @toggle="onToggle"
+                    @edit="onEdit"
+                    @remove="onDelete"
+                    @move="onMove"
+                />
+
+                <mt-empty-state
+                    v-else
+                    class="sw-system-menu-list__empty-state"
+                    centered
+                    icon="regular-list"
+                    :headline="$t('sw-system.menu.emptyStateHeadline')"
+                    :description="$t('sw-system.menu.emptyStateDescription')"
                 >
-                    <mt-banner
-                        class="sw-system-menu-list__roles-hint"
-                        variant="info"
+                    <template
+                        v-if="canCreate"
+                        #button
                     >
-                        {{ $t('sw-system.menu.hintRoles') }}
-                    </mt-banner>
-
-                    {% block sw_system_menu_list_content_roles_select %}
-                    <sw-entity-multi-id-select
-                        v-model:value="draft.roleIds"
-                        class="sw-system-menu-list__field-roles"
-                        name="sw-field--menu-item-roles"
-                        :label="$t('sw-system.menu.labelRoles')"
-                        :repository="aclRoleRepository"
-                        :criteria="roleCriteria"
-                        :disabled="!canEdit"
-                    />
-                    {% endblock %}
-                </mt-card>
+                        <mt-button
+                            variant="primary"
+                            size="default"
+                            @click="onCreateNew"
+                        >
+                            {{ $t('sw-system.menu.createAction') }}
+                        </mt-button>
+                    </template>
+                </mt-empty-state>
                 {% endblock %}
-
-                {% block sw_system_menu_list_content_meta %}
-                <mt-card
-                    v-if="!isNew"
-                    class="sw-system-menu-list__card"
-                    position-identifier="sw-system-menu-list-meta"
-                    :title="$t('sw-system.menu.cardMeta')"
-                >
-                    <dl class="sw-system-menu-list__meta">
-                        <dt>{{ $t('sw-system.menu.labelMetaIdentifier') }}</dt>
-                        <dd>{{ draft.internalKey || '–' }}</dd>
-
-                        <dt>{{ $t('sw-system.menu.labelMetaOwner') }}</dt>
-                        <dd>{{ selectedItem && selectedItem.pluginName ? selectedItem.pluginName : $t('sw-system.menu.ownerCore') }}</dd>
-
-                        <dt>{{ $t('sw-system.menu.labelMetaOverridden') }}</dt>
-                        <dd>{{ selectedItem && selectedItem.configOverridden ? $t('global.default.yes') : $t('global.default.no') }}</dd>
-                    </dl>
-                </mt-card>
-                {% endblock %}
-            </template>
+            </mt-card>
             {% endblock %}
         </sw-card-view>
+
+        {% block sw_system_menu_list_edit_modal %}
+        <sw-modal
+            v-if="showEditModal && draft"
+            class="sw-system-menu-list__edit-modal"
+            :title="editModalTitle"
+            @modal-close="onCloseEditModal"
+        >
+            {% block sw_system_menu_list_edit_modal_locked %}
+            <mt-banner
+                v-if="isLocked"
+                class="sw-system-menu-list__locked-hint"
+                variant="info"
+            >
+                {{ $t('sw-system.menu.hintLockedItem') }}
+            </mt-banner>
+            {% endblock %}
+
+            {% block sw_system_menu_list_edit_modal_general %}
+            <div class="sw-system-menu-list__modal-grid">
+                {% block sw_system_menu_list_edit_modal_title %}
+                <mt-text-field
+                    v-model="draft.title"
+                    class="sw-system-menu-list__field-title"
+                    name="sw-field--menu-item-title"
+                    :label="$t('sw-system.menu.labelTitle')"
+                    :placeholder="$t('sw-system.menu.placeholderTitle')"
+                    :help-text="$t('sw-system.menu.helpTitle', { language: languageLabel })"
+                    required
+                />
+                {% endblock %}
+
+                {% block sw_system_menu_list_edit_modal_group %}
+                <mt-text-field
+                    v-model="draft.groupName"
+                    class="sw-system-menu-list__field-group"
+                    name="sw-field--menu-item-group"
+                    :label="$t('sw-system.menu.labelGroup')"
+                    :placeholder="$t('sw-system.menu.placeholderGroup')"
+                    :help-text="$t('sw-system.menu.helpGroup')"
+                    :suggestions="groupOptions"
+                />
+                {% endblock %}
+
+                {% block sw_system_menu_list_edit_modal_group_title %}
+                <mt-text-field
+                    v-model="draft.groupTitle"
+                    class="sw-system-menu-list__field-group-title"
+                    name="sw-field--menu-item-group-title"
+                    :label="$t('sw-system.menu.labelGroupTitle')"
+                    :placeholder="$t('sw-system.menu.placeholderGroupTitle')"
+                    :help-text="$t('sw-system.menu.helpGroupTitle', { language: languageLabel })"
+                />
+                {% endblock %}
+
+                {% block sw_system_menu_list_edit_modal_type %}
+                <mt-select
+                    class="sw-system-menu-list__field-type"
+                    :label="$t('sw-system.menu.labelType')"
+                    :model-value="draft.type"
+                    :options="typeOptions"
+                    required
+                    @update:model-value="onTypeChange"
+                />
+                {% endblock %}
+
+                {% block sw_system_menu_list_edit_modal_icon %}
+                <div class="sw-system-menu-list__icon-field">
+                    <mt-text-field
+                        v-model="draft.icon"
+                        class="sw-system-menu-list__field-icon"
+                        name="sw-field--menu-item-icon"
+                        :label="$t('sw-system.menu.labelIcon')"
+                        :placeholder="$t('sw-system.menu.placeholderIcon')"
+                        :help-text="$t('sw-system.menu.helpIcon')"
+                    />
+
+                    <mt-icon
+                        class="sw-system-menu-list__icon-preview"
+                        :name="draft.icon || 'regular-link'"
+                        size="20px"
+                    />
+                </div>
+                {% endblock %}
+
+                {% block sw_system_menu_list_edit_modal_target %}
+                <mt-select
+                    v-if="draft.type === 'menu' || draft.type === 'folder'"
+                    class="sw-system-menu-list__field-target"
+                    :label="$t('sw-system.menu.labelTarget')"
+                    :help-text="$t('sw-system.menu.helpTarget')"
+                    :model-value="draft.internalKey"
+                    :options="routeOptions"
+                    required
+                    @update:model-value="draft.internalKey = $event"
+                />
+
+                <mt-text-field
+                    v-else-if="draft.type === 'link'"
+                    v-model="draft.linkTarget"
+                    class="sw-system-menu-list__field-target"
+                    name="sw-field--menu-item-link-target"
+                    :label="$t('sw-system.menu.labelLinkTarget')"
+                    :placeholder="$t('sw-system.menu.placeholderLinkTarget')"
+                    required
+                />
+
+                <mt-text-field
+                    v-else
+                    v-model="draft.internalKey"
+                    class="sw-system-menu-list__field-target"
+                    name="sw-field--menu-item-internal-key"
+                    :label="$t('sw-system.menu.labelTarget')"
+                    :help-text="$t('sw-system.menu.helpHiddenTarget')"
+                />
+                {% endblock %}
+
+                {% block sw_system_menu_list_edit_modal_privilege %}
+                <mt-select
+                    class="sw-system-menu-list__field-privilege"
+                    :label="$t('sw-system.menu.labelPrivilege')"
+                    :help-text="$t('sw-system.menu.helpPrivilege')"
+                    :model-value="privilegeValue"
+                    :options="privilegeOptions"
+                    @update:model-value="draft.privilege = $event === '' ? null : $event"
+                />
+                {% endblock %}
+
+                {% block sw_system_menu_list_edit_modal_parent %}
+                <mt-select
+                    class="sw-system-menu-list__field-parent"
+                    :label="$t('sw-system.menu.labelParent')"
+                    :model-value="parentIdValue"
+                    :options="parentOptions"
+                    @update:model-value="onParentChange"
+                />
+                {% endblock %}
+            </div>
+            {% endblock %}
+
+            {% block sw_system_menu_list_edit_modal_active %}
+            <mt-switch
+                v-model="draft.active"
+                class="sw-system-menu-list__field-active"
+                :label="$t('sw-system.menu.labelActive')"
+                :help-text="$t('sw-system.menu.helpActive')"
+                :bordered="true"
+            />
+            {% endblock %}
+
+            {% block sw_system_menu_list_edit_modal_roles %}
+            <sw-entity-multi-id-select
+                v-model:value="draft.roleIds"
+                class="sw-system-menu-list__field-roles"
+                name="sw-field--menu-item-roles"
+                :label="$t('sw-system.menu.labelRoles')"
+                :help-text="$t('sw-system.menu.hintRoles')"
+                :repository="aclRoleRepository"
+                :criteria="roleCriteria"
+            />
+            {% endblock %}
+
+            <template #modal-footer>
+                {% block sw_system_menu_list_edit_modal_cancel %}
+                <mt-button
+                    size="small"
+                    variant="secondary"
+                    @click="onCloseEditModal"
+                >
+                    {{ $t('global.default.cancel') }}
+                </mt-button>
+                {% endblock %}
+
+                {% block sw_system_menu_list_edit_modal_save %}
+                <mt-button
+                    class="sw-system-menu-list__button-save"
+                    variant="primary"
+                    size="small"
+                    :is-loading="isSaving"
+                    @click="onSave"
+                >
+                    {{ $t('global.default.save') }}
+                </mt-button>
+                {% endblock %}
+            </template>
+        </sw-modal>
+        {% endblock %}
+
+        {% block sw_system_menu_list_delete_modal %}
+        <sw-modal
+            v-if="showDeleteModal"
+            :title="$t('sw-system.menu.deleteModalTitle')"
+            variant="small"
+            class="sw-system-menu-list__delete-modal"
+            @modal-close="onCloseDeleteModal"
+        >
+            <p class="sw-system-menu-list__delete-confirm">
+                {{ deleteConfirmMessage }}
+            </p>
+
+            <template #modal-footer>
+                <mt-button
+                    size="small"
+                    variant="secondary"
+                    @click="onCloseDeleteModal"
+                >
+                    {{ $t('global.default.cancel') }}
+                </mt-button>
+
+                <mt-button
+                    class="sw-system-menu-list__confirm-delete-button"
+                    variant="critical"
+                    size="small"
+                    :is-loading="isDeleting"
+                    @click="onConfirmDelete"
+                >
+                    {{ $t('global.default.delete') }}
+                </mt-button>
+            </template>
+        </sw-modal>
+        {% endblock %}
     </template>
     {% endblock %}
 
-    {% block sw_system_menu_list_delete_modal %}
-    <sw-modal
-        v-if="showDeleteModal"
-        :title="$t('sw-system.menu.deleteModalTitle')"
-        variant="small"
-        class="sw-system-menu-list__delete-modal"
-        @modal-close="onCloseDeleteModal"
-    >
-        <p class="sw-system-menu-list__delete-confirm">
-            {{ deleteConfirmMessage }}
-        </p>
-
-        <template #modal-footer>
-            <mt-button
-                size="small"
-                variant="secondary"
-                @click="onCloseDeleteModal"
-            >
-                {{ $t('global.default.cancel') }}
-            </mt-button>
-
-            <mt-button
-                class="sw-system-menu-list__confirm-delete-button"
-                variant="critical"
-                size="small"
-                :is-loading="isDeleting"
-                @click="onConfirmDelete"
-            >
-                {{ $t('global.default.delete') }}
-            </mt-button>
-        </template>
-    </sw-modal>
-    {% endblock %}
-
-    {% block sw_system_menu_list_discard_modal %}
-    <sw-modal
-        v-if="showDiscardModal"
-        :title="$t('sw-system.menu.discardModalTitle')"
-        variant="small"
-        class="sw-system-menu-list__discard-modal"
-        @modal-close="onDiscardCancelled"
-    >
-        {{ $t('sw-system.menu.discardModalMessage') }}
-
-        <template #modal-footer>
-            <mt-button
-                size="small"
-                variant="secondary"
-                @click="onDiscardCancelled"
-            >
-                {{ $t('global.default.cancel') }}
-            </mt-button>
-
-            <mt-button
-                class="sw-system-menu-list__confirm-discard-button"
-                variant="critical"
-                size="small"
-                @click="onDiscardConfirmed"
-            >
-                {{ $t('global.default.discard') }}
-            </mt-button>
-        </template>
-    </sw-modal>
-    {% endblock %}
 </sw-page>
 {% endblock %}

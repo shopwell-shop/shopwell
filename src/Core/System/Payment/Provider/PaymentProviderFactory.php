@@ -11,6 +11,7 @@ use Shopwell\Core\System\Payment\PaymentException;
 use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
 use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
 use Shopwell\Core\System\Payment\Provider\Config\PaymentConfigField;
+use Shopwell\Core\System\Payment\Provider\Config\PaymentConfigReader;
 use Shopwell\Core\System\Payment\Provider\Cycle\PaymentCycleRules;
 
 /**
@@ -53,6 +54,10 @@ final class PaymentProviderFactory
      * A declaration that decorates itself would make the chain walk below endless.
      */
     private const MAX_DECORATION_DEPTH = 32;
+
+    public function __construct(private readonly PaymentConfigReader $configReader)
+    {
+    }
 
     /**
      * @param string|null $expectedName the technical name the service was tagged with, when the caller
@@ -132,13 +137,31 @@ final class PaymentProviderFactory
      */
     private function credentialFieldsOf(AbstractPaymentProvider $declaration, string $name): array
     {
+        return $this->validatedFields([
+            ...$this->configReader->fields($declaration->getConfigFile(), 'credentials'),
+            ...$declaration->getCredentials(),
+        ], $name);
+    }
+
+    /**
+     * XML is the base declaration and PHP fields are appended to it. The same validation applies to
+     * merchant fields and channel parameters: a duplicate name would silently overwrite a stored value.
+     *
+     * @param list<mixed> $declared
+     *
+     * @throws PaymentException
+     *
+     * @return list<PaymentConfigField>
+     */
+    private function validatedFields(array $declared, string $name): array
+    {
         $fields = [];
         $seen = [];
 
-        foreach ($declaration->getCredentials() as $field) {
+        foreach ($declared as $field) {
             if (!$field instanceof PaymentConfigField) {
                 throw PaymentException::invalidProviderDeclaration(\sprintf(
-                    'The payment interface "%s" declares a credential that is not a %s.',
+                    'The payment interface "%s" declares a configuration value that is not a %s.',
                     $name,
                     PaymentConfigField::class
                 ));
@@ -207,6 +230,25 @@ final class PaymentProviderFactory
                     $name
                 ));
             }
+
+            $params = $this->validatedFields([
+                ...$this->configReader->fields(
+                    $declaration->getConfigFile(),
+                    PaymentConfigReader::channelCard($channel->technicalName)
+                ),
+                ...$channel->params,
+            ], $name);
+
+            $channel = new PaymentChannel(
+                technicalName: $channel->technicalName,
+                providerTechnicalName: $channel->providerTechnicalName,
+                label: $channel->label,
+                flow: $channel->flow,
+                currencies: $channel->currencies,
+                devices: $channel->devices,
+                params: $params,
+                runtimeParams: $channel->runtimeParams,
+            );
 
             $channels[$channel->technicalName] = $channel;
         }
@@ -388,10 +430,10 @@ final class PaymentProviderFactory
     private function assertDecoratorsKeepTheCredentials(array $declarations, string $name): void
     {
         for ($i = 0, $count = \count($declarations); $i < $count - 1; ++$i) {
-            $inner = $declarations[$i + 1]->getCredentials();
+            $inner = $this->credentialFieldsOf($declarations[$i + 1], $name);
             $outerNames = array_map(
                 static fn (PaymentConfigField $field): string => $field->name,
-                $declarations[$i]->getCredentials()
+                $this->credentialFieldsOf($declarations[$i], $name)
             );
 
             foreach ($inner as $field) {

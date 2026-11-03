@@ -150,6 +150,11 @@ class WechatTransferQueryActionTest extends TestCase
         static::assertSame('WAIT_USER_CONFIRM', $result->providerStatus);
         static::assertSame('BILL-1', $result->providerRef);
         static::assertSame($package, $result->confirmPayload);
+
+        $model = $request->getModel();
+        static::assertInstanceOf(PaymentGatewayModel::class, $model);
+        static::assertSame('[hidden]', $model->response()['package_info']);
+        static::assertStringNotContainsString($package, (string) json_encode($model->response()));
     }
 
     /**

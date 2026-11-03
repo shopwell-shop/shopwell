@@ -12,6 +12,10 @@ use Shopwell\Core\Framework\Log\Package;
  * a value object (instead of a plain array) keeps the id derivation, the parent resolution
  * and the chain order in one place, so neither the installation nor the repair has to know
  * how an id is derived from an internal key.
+ *
+ * The label is not part of the row: the declaration carries a snippet key, the management
+ * page stores what a person writes into the translation table. A key written here would be a
+ * key the page shows and an overwrite waiting to happen on the next person who edits it.
  */
 #[Package('fundamentals@framework')]
 final class CoreMenuRow
@@ -23,7 +27,6 @@ final class CoreMenuRow
         public readonly string $id,
         public readonly string $internalKey,
         public readonly string $type,
-        public readonly ?string $title,
         public readonly ?string $icon,
         public readonly ?string $color,
         public readonly ?string $privilege,
@@ -31,6 +34,7 @@ final class CoreMenuRow
         public readonly ?string $parentId,
         public readonly ?string $afterMenuItemId,
         public readonly array $defaultMeta,
+        public readonly ?string $groupName = null,
     ) {
     }
 
@@ -46,11 +50,11 @@ final class CoreMenuRow
         return [
             'internalKey' => $this->internalKey,
             'type' => $this->type,
-            'title' => $this->title,
             'icon' => $this->icon,
             'color' => $this->color,
             'privilege' => $this->privilege,
             'linkTarget' => $this->linkTarget,
+            'groupName' => $this->groupName,
         ];
     }
 

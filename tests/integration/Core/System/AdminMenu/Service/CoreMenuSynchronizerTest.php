@@ -73,7 +73,10 @@ class CoreMenuSynchronizerTest extends TestCase
             // a core entry belongs to the product: customizable, but not deletable
             static::assertTrue($item->isSysLocked());
             static::assertNull($item->getPluginId());
-            static::assertSame($declaration->title, $item->getTitle());
+            // the label is not part of the row: the declaration carries a snippet key, and the
+            // navigation falls back to it until a person writes a label of their own
+            static::assertNull($item->getTitle());
+            static::assertSame($declaration->groupName, $item->getGroupName());
             static::assertNotNull($item->getDefaultMeta());
         }
     }
@@ -154,10 +157,21 @@ class CoreMenuSynchronizerTest extends TestCase
     {
         $this->createSynchronizer()->synchronize();
 
-        // the release renames an entry: the stored default no longer matches the declaration
+        // the release changes a field the row owns, so the row follows the declaration
+        $this->createSynchronizer($this->providerWith('sw-media', ['icon' => 'regular-image-plus']))->synchronize();
+
+        static::assertSame('regular-image-plus', $this->coreItems()['sw-media']->getIcon());
+    }
+
+    public function testDoesNotWriteARenamedLabelIntoTheTable(): void
+    {
+        $this->createSynchronizer()->synchronize();
+
+        // a renamed declaration is a label change in code - writing it into the table would put
+        // a snippet key there and show it to the next administrator who edits the entry
         $this->createSynchronizer($this->renamedProvider('sw-media', 'sw-media.general.mainMenuItemRenamed'))->synchronize();
 
-        static::assertSame('sw-media.general.mainMenuItemRenamed', $this->coreItems()['sw-media']->getTitle());
+        static::assertNull($this->coreItems()['sw-media']->getTitle());
     }
 
     public function testRecreatesARowThatWentMissing(): void
@@ -324,8 +338,8 @@ class CoreMenuSynchronizerTest extends TestCase
 
     /**
      * @param AdminMenuDefinitionProviderInterface|null $provider replaces the core provider,
-     *        so a case can declare the whole navigation with one entry changed instead of
-     *        adding a second declaration of the same entry
+     *                                                            so a case can declare the whole navigation with one entry changed instead of
+     *                                                            adding a second declaration of the same entry
      */
     private function createSynchronizer(?AdminMenuDefinitionProviderInterface $provider = null): CoreMenuSynchronizer
     {
@@ -342,10 +356,24 @@ class CoreMenuSynchronizerTest extends TestCase
      */
     private function renamedProvider(string $internalKey, string $title): AdminMenuDefinitionProviderInterface
     {
-        return new class($internalKey, $title) implements AdminMenuDefinitionProviderInterface {
+        return $this->providerWith($internalKey, ['title' => $title]);
+    }
+
+    /**
+     * Declares the given entry with the given fields replaced, the way a release changes one
+     * entry of the navigation.
+     *
+     * @param array<string, mixed> $overrides
+     */
+    private function providerWith(string $internalKey, array $overrides): AdminMenuDefinitionProviderInterface
+    {
+        return new class($internalKey, $overrides) implements AdminMenuDefinitionProviderInterface {
+            /**
+             * @param array<string, mixed> $overrides
+             */
             public function __construct(
                 private readonly string $internalKey,
-                private readonly string $title,
+                private readonly array $overrides,
             ) {
             }
 
@@ -367,14 +395,15 @@ class CoreMenuSynchronizerTest extends TestCase
 
                     $definitions[] = new AdminMenuDefinitionStruct(
                         internalKey: $declaration->internalKey,
-                        type: $declaration->type,
-                        title: $this->title,
-                        icon: $declaration->icon,
+                        type: $this->overrides['type'] ?? $declaration->type,
+                        title: $this->overrides['title'] ?? $declaration->title,
+                        icon: $this->overrides['icon'] ?? $declaration->icon,
                         color: $declaration->color,
                         parent: $declaration->parent,
                         position: $declaration->position,
                         privilege: $declaration->privilege,
                         linkTarget: $declaration->linkTarget,
+                        groupName: $declaration->groupName,
                     );
                 }
 

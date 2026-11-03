@@ -112,25 +112,25 @@ class OrderStateChangeLoyaltySubscriber implements EventSubscriberInterface
         $amountTotal = $order->getAmountTotal();
 
         $pointsPerUnit = $this->settings->pointsPerCurrencyUnit($salesChannelId);
-        $growthPerUnit = $this->settings->growthPerCurrencyUnit($salesChannelId);
+        $tierPointsPerUnit = $this->settings->tierPointsPerCurrencyUnit($salesChannelId);
         $multiplier = $this->benefits->earnMultiplier($customerId, $context);
 
         $points = (int) floor($amountTotal * $pointsPerUnit * $multiplier);
-        $growth = (int) floor($amountTotal * $growthPerUnit);
+        $earnedTierPoints = (int) floor($amountTotal * $tierPointsPerUnit);
 
         if ($points > 0) {
             $this->loyaltyPointService->award($customerId, $points, $order->getId(), $order->getId() . '-earned', $context);
         }
 
-        if ($growth <= 0) {
+        if ($earnedTierPoints <= 0) {
             return;
         }
 
-        // the growth value is written under the same lock as the points, so two completed orders at
-        // the same time cannot overwrite each other's growth
-        $growthValue = $this->loyaltyPointService->addGrowthValue($customerId, $growth, $context);
+        // tier points are written under the same lock as the points, so two completed orders at
+        // the same time cannot overwrite each other's tier points
+        $tierPoints = $this->loyaltyPointService->addTierPoints($customerId, $earnedTierPoints, $context);
 
-        $this->tierResolver->resolve($customerId, $growthValue, $context);
+        $this->tierResolver->resolve($customerId, $tierPoints, $context);
     }
 
     /**

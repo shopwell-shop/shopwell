@@ -53,7 +53,7 @@ class AccountRewardsPageLoader
         /** @var list<array<string, mixed>> $tiers */
         $tiers = $rewards->get('tiers') ?? [];
 
-        [$currentTier, $nextTier] = $this->resolveTiers($tiers, $rewards->get('membershipTierId'));
+        [$currentTier, $nextTier] = $this->resolveTiers($tiers, $rewards->get('tierId'));
         $page->setCurrentTier($currentTier);
         $page->setNextTier($nextTier);
 
@@ -82,19 +82,19 @@ class AccountRewardsPageLoader
     /**
      * The tier the customer is in and the one they are climbing towards.
      *
-     * The current tier is matched by id rather than by growth value: a membership can grant a tier the
-     * growth value alone would not reach, and the progress bar then has to start at that tier.
+     * The current tier is matched by id rather than by tier points: a membership can grant a tier the
+     * tier points alone would not reach, and the progress bar then has to start at that tier.
      *
      * @param list<array<string, mixed>> $tiers
      *
      * @return array{0: array<string, mixed>|null, 1: array<string, mixed>|null}
      */
-    private function resolveTiers(array $tiers, mixed $membershipTierId): array
+    private function resolveTiers(array $tiers, mixed $tierId): array
     {
         $currentTier = null;
 
         foreach ($tiers as $tier) {
-            if (($tier['id'] ?? null) === $membershipTierId) {
+            if (($tier['id'] ?? null) === $tierId) {
                 $currentTier = $tier;
                 break;
             }
@@ -107,7 +107,7 @@ class AccountRewardsPageLoader
         $nextTier = null;
 
         foreach ($tiers as $tier) {
-            if (($tier['minGrowthValue'] ?? 0) > ($currentTier['minGrowthValue'] ?? 0)) {
+            if (($tier['minTierPoints'] ?? 0) > ($currentTier['minTierPoints'] ?? 0)) {
                 $nextTier = $tier;
                 break;
             }

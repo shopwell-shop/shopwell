@@ -107,10 +107,10 @@ class PaymentProviderConfigServiceTest extends TestCase
         $this->service($repository)->resetProvider('alipay');
     }
 
-    public function testSavingAChannelSealsItsParams(): void
+    public function testSavingAChannelSealsItsParamsAndKeepsAnEmptySecret(): void
     {
         $repository = static::createMock(EntityRepository::class);
-        $repository->method('search')->willReturn($this->channelConfigResult());
+        $repository->method('search')->willReturn($this->channelConfigResult($this->storedChannelConfig()));
         $repository->expects($this->once())
             ->method('upsert')
             ->with(static::callback(function (array $data): bool {
@@ -119,7 +119,10 @@ class PaymentProviderConfigServiceTest extends TestCase
                 static::assertSame('alipay', $row['providerTechnicalName']);
                 static::assertSame('alipay_h5', $row['channelTechnicalName']);
                 static::assertTrue($row['enabled']);
-                static::assertSame(['appid' => 'wx-appid'], PaymentControllerFixture::cipher()->decrypt($row['params']));
+                static::assertSame(
+                    ['appid' => 'new-wx-appid', 'sign_key' => 'channel-secret'],
+                    PaymentControllerFixture::cipher()->decrypt($row['params']),
+                );
 
                 return true;
             }));
@@ -127,7 +130,7 @@ class PaymentProviderConfigServiceTest extends TestCase
         $channel = $this->provider()->channels['alipay_h5'];
 
         $this->service(PaymentControllerFixture::repository(PaymentProviderConfigCollection::class), $repository)
-            ->saveChannel($channel, true, ['appid' => 'wx-appid'], null);
+            ->saveChannel($channel, true, ['appid' => 'new-wx-appid', 'sign_key' => ''], null);
     }
 
     public function testEnablingAChannelWithoutItsParamsIsRejected(): void
@@ -185,7 +188,10 @@ class PaymentProviderConfigServiceTest extends TestCase
                     PaymentFlow::REDIRECT,
                     ['CNY'],
                     [PaymentChannel::DEVICE_WAP, PaymentChannel::DEVICE_WEB],
-                    [new PaymentConfigField('appid', 'appid', PaymentConfigField::TYPE_TEXT, true)],
+                    [
+                        new PaymentConfigField('appid', 'appid', PaymentConfigField::TYPE_TEXT, true),
+                        new PaymentConfigField('sign_key', 'sign_key', PaymentConfigField::TYPE_TEXT, true, true),
+                    ],
                     ['openid' => true],
                 ),
             ],
@@ -218,7 +224,7 @@ class PaymentProviderConfigServiceTest extends TestCase
         $config->providerTechnicalName = 'alipay';
         $config->channelTechnicalName = 'alipay_h5';
         $config->enabled = true;
-        $config->params = PaymentControllerFixture::cipher()->encrypt(['appid' => 'wx-appid']);
+        $config->params = PaymentControllerFixture::cipher()->encrypt(['appid' => 'wx-appid', 'sign_key' => 'channel-secret']);
 
         return $config;
     }

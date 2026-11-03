@@ -150,7 +150,7 @@ class Migration1793605100CreateLoyaltyTierBenefitTableTest extends TestCase
             'id' => $this->tierId,
             'technical_name' => self::PROBE,
             'level' => 99,
-            'min_growth_value' => 0,
+            'min_tier_points' => 0,
             'points_multiplier' => $multiplier,
             'discount_percent' => $discount,
             'free_shipping' => $freeShipping ? 1 : 0,

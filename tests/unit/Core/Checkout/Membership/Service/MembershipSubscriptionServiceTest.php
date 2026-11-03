@@ -7,7 +7,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\MockObject\Stub;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Checkout\Ledger\RowLock;
-use Shopwell\Core\Checkout\Loyalty\Entity\CustomerLoyalty\CustomerLoyaltyCollection;
+use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyAccount\LoyaltyAccountCollection;
 use Shopwell\Core\Checkout\Loyalty\Service\LoyaltyAccountService;
 use Shopwell\Core\Checkout\Loyalty\Service\TierResolver;
 use Shopwell\Core\Checkout\Membership\Entity\MembershipSubscription\MembershipSubscriptionCollection;
@@ -58,9 +58,9 @@ class MembershipSubscriptionServiceTest extends TestCase
     private StaticEntityRepository $subscriptionRepository;
 
     /**
-     * @var StaticEntityRepository<CustomerLoyaltyCollection>
+     * @var StaticEntityRepository<LoyaltyAccountCollection>
      */
-    private StaticEntityRepository $customerLoyaltyRepository;
+    private StaticEntityRepository $loyaltyAccountRepository;
 
     private Connection&Stub $connection;
 
@@ -84,7 +84,7 @@ class MembershipSubscriptionServiceTest extends TestCase
     protected function setUp(): void
     {
         $this->context = Context::createDefaultContext();
-        $this->customerLoyaltyRepository = StaticEntityRepository::of(CustomerLoyaltyCollection::class);
+        $this->loyaltyAccountRepository = StaticEntityRepository::of(LoyaltyAccountCollection::class);
         $this->connection = static::createStub(Connection::class);
 
         $this->connection->method('transactional')->willReturnCallback(
@@ -115,10 +115,10 @@ class MembershipSubscriptionServiceTest extends TestCase
         static::assertEquals(new \DateTimeImmutable('2026-07-01 12:00:00'), $created['endsAt']);
 
         // the loyalty account carries the membership, it does not own it
-        $projection = $this->customerLoyaltyRepository->updates[0][0];
+        $projection = $this->loyaltyAccountRepository->updates[0][0];
         static::assertSame(self::ACCOUNT_ID, $projection['id']);
-        static::assertSame(self::TIER_ID, $projection['membershipTierId']);
-        static::assertEquals(new \DateTimeImmutable('2026-07-01 12:00:00'), $projection['membershipValidUntil']);
+        static::assertSame(self::TIER_ID, $projection['tierId']);
+        static::assertEquals(new \DateTimeImmutable('2026-07-01 12:00:00'), $projection['membershipPaidUntil']);
 
         static::assertSame($created['id'], $subscription->getId());
     }
@@ -146,7 +146,7 @@ class MembershipSubscriptionServiceTest extends TestCase
 
         static::assertEquals(
             new \DateTimeImmutable('2026-12-31 00:00:00'),
-            $this->customerLoyaltyRepository->updates[0][0]['membershipValidUntil']
+            $this->loyaltyAccountRepository->updates[0][0]['membershipPaidUntil']
         );
     }
 
@@ -212,9 +212,9 @@ class MembershipSubscriptionServiceTest extends TestCase
 
     /**
      * Ending a membership is what takes the tier away: the projection is cleared and the tier of the
-     * growth value is resolved again, which is the path that dispatches the tier change.
+     * tier points are resolved again, which is the path that dispatches the tier change.
      */
-    public function testExpiringEndsWhatRanOutAndFallsBackToTheGrowthValue(): void
+    public function testExpiringEndsWhatRanOutAndFallsBackToTheTierPoints(): void
     {
         $this->dueIds = [Uuid::fromHexToBytes(self::SUBSCRIPTION_ID)];
         $this->lockedRow = $this->subscriptionRow(tierId: self::TIER_ID, endsAt: '2026-05-01 00:00:00', amount: 199.0);
@@ -230,9 +230,9 @@ class MembershipSubscriptionServiceTest extends TestCase
         static::assertSame(MembershipSubscriptionStates::STATE_ENDED, $update['state']);
         static::assertSame(MembershipSubscriptionStates::END_EXPIRED, $update['endReason']);
 
-        $projection = $this->customerLoyaltyRepository->updates[0][0];
-        static::assertNull($projection['membershipTierId']);
-        static::assertNull($projection['membershipValidUntil']);
+        $projection = $this->loyaltyAccountRepository->updates[0][0];
+        static::assertNull($projection['tierId']);
+        static::assertNull($projection['membershipPaidUntil']);
     }
 
     public function testAMembershipThatWasExtendedMeanwhileIsNotExpired(): void
@@ -259,7 +259,7 @@ class MembershipSubscriptionServiceTest extends TestCase
 
         $update = $this->subscriptionRepository->updates[0][0];
         static::assertSame(MembershipSubscriptionStates::END_REVOKED, $update['endReason']);
-        static::assertNull($this->customerLoyaltyRepository->updates[0][0]['membershipTierId']);
+        static::assertNull($this->loyaltyAccountRepository->updates[0][0]['tierId']);
     }
 
     public function testRevokingAMembershipThatAlreadyEndedChangesNothing(): void
@@ -296,7 +296,7 @@ class MembershipSubscriptionServiceTest extends TestCase
 
         return new MembershipSubscriptionService(
             $repository,
-            $this->customerLoyaltyRepository,
+            $this->loyaltyAccountRepository,
             $accounts,
             $tiers ?? static::createStub(TierResolver::class),
             new RowLock($this->connection),
@@ -406,7 +406,7 @@ class MembershipSubscriptionServiceTest extends TestCase
                 'id' => Uuid::fromHexToBytes(self::ACCOUNT_ID),
                 'customer_id' => Uuid::fromHexToBytes(self::CUSTOMER_ID),
                 'points_balance' => 0,
-                'growth_value' => 500,
+                'tier_points' => 500,
             ];
         }
 

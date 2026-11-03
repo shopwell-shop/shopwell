@@ -154,4 +154,29 @@ describe('src/app/component/structure/sw-admin-menu/merge-navigation.helper', ()
         expect(merged[0].id).toBe('sw-dashboard');
         expect(merged[0].path).toBe('sw.dashboard.index');
     });
+
+    it('opens the settings page instead of repeating its entries as a flyout', () => {
+        // The settings page lists its own sections. Its stored children stay managed, but a
+        // second navigation with the same list would be the flyout an operator just closed.
+        const declaredWithSettings: NavigationEntryLike[] = [
+            ...declared,
+            { id: 'sw-settings', label: 'sw-settings.general.mainMenuItemGeneral', path: 'sw.settings.index', position: 990 },
+            { id: 'sw-settings-tax', label: 'sw-settings-tax.general.mainMenuItemGeneral', path: 'sw.settings.tax.index', position: 100, parent: 'sw-settings' },
+        ];
+
+        const tree = [
+            node({
+                id: 's',
+                internalKey: 'sw-settings',
+                title: 'sw-settings.general.mainMenuItemGeneral',
+                children: [node({ id: 's1', internalKey: 'sw-settings-tax', title: 'sw-settings-tax.general.mainMenuItemGeneral' })],
+            }),
+        ];
+
+        const merged = mergeDatabaseNavigation(declaredWithSettings, tree);
+
+        expect(merged.filter((entry) => entry.id === 'sw-settings')).toHaveLength(1);
+        // not attached below the settings and not pushed to the top level either
+        expect(merged.some((entry) => entry.id === 'sw-settings-tax')).toBe(false);
+    });
 });

@@ -89,7 +89,7 @@
                 ],
                 "summary": "List the point transactions of a customer",
                 "description": "Answers one page of the point ledger of the given customer, newest first. The balance after each booking is part of the answer, so the administration can show the ledger without recalculating it.",
-                "operationId": "listCustomerPointTransactions",
+                "operationId": "listLoyaltyPointTransactions",
                 "parameters": [
                     {
                         "name": "customerId",

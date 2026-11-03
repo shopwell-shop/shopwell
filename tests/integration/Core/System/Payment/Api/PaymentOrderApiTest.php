@@ -97,7 +97,7 @@ class PaymentOrderApiTest extends TestCase
             static::assertArrayHasKey($key, $order, \sprintf('key "%s" is missing', $key));
         }
 
-        static::assertMatchesRegularExpression('/^PG\d{14}[0-9A-F]{8}$/', (string) $order['payment_no']);
+        static::assertMatchesRegularExpression('/^PG\d+$/', (string) $order['payment_no']);
         static::assertSame($payload['out_trade_no'], $order['out_trade_no']);
         static::assertSame('alipay', $order['provider']);
         static::assertSame('alipay_h5', $order['channel']);
@@ -146,7 +146,7 @@ class PaymentOrderApiTest extends TestCase
             ['orderId' => $orderRow['id']]
         );
         static::assertIsArray($transaction);
-        static::assertMatchesRegularExpression('/^PT\d{14}[0-9A-F]{6}$/', (string) $transaction['transaction_no']);
+        static::assertMatchesRegularExpression('/^PX\d+$/', (string) $transaction['transaction_no']);
         static::assertSame('capture', $transaction['type']);
         static::assertSame('success', $transaction['status']);
         static::assertSame('alipay', $transaction['provider_technical_name']);

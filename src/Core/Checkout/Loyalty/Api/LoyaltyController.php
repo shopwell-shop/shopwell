@@ -2,9 +2,9 @@
 
 namespace Shopwell\Core\Checkout\Loyalty\Api;
 
-use Shopwell\Core\Checkout\Loyalty\Entity\CustomerLoyalty\CustomerLoyaltyCollection;
-use Shopwell\Core\Checkout\Loyalty\Entity\CustomerLoyalty\CustomerLoyaltyEntity;
-use Shopwell\Core\Checkout\Loyalty\Entity\CustomerPointTransaction\CustomerPointTransactionCollection;
+use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyPointTransaction\LoyaltyPointTransactionCollection;
+use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyAccount\LoyaltyAccountCollection;
+use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyAccount\LoyaltyAccountEntity;
 use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyTier\LoyaltyTierCollection;
 use Shopwell\Core\Checkout\Loyalty\LoyaltyException;
 use Shopwell\Core\Checkout\Loyalty\Service\LoyaltyPointService;
@@ -34,12 +34,12 @@ class LoyaltyController
     /**
      * @internal
      *
-     * @param EntityRepository<CustomerLoyaltyCollection> $customerLoyaltyRepository
-     * @param EntityRepository<CustomerPointTransactionCollection> $pointTransactionRepository
+     * @param EntityRepository<LoyaltyAccountCollection> $loyaltyAccountRepository
+     * @param EntityRepository<LoyaltyPointTransactionCollection> $pointTransactionRepository
      * @param EntityRepository<LoyaltyTierCollection> $loyaltyTierRepository
      */
     public function __construct(
-        private readonly EntityRepository $customerLoyaltyRepository,
+        private readonly EntityRepository $loyaltyAccountRepository,
         private readonly EntityRepository $pointTransactionRepository,
         private readonly EntityRepository $loyaltyTierRepository,
         private readonly LoyaltyPointService $loyaltyPointService,
@@ -151,33 +151,33 @@ class LoyaltyController
     {
         $criteria = new Criteria();
         $criteria->addFilter(new EqualsFilter('customerId', $customerId));
-        $criteria->addAssociation('membershipTier');
+        $criteria->addAssociation('tier');
         $criteria->setLimit(1);
 
-        $loyalty = $this->customerLoyaltyRepository->search($criteria, $context)->getEntities()->first();
+        $loyalty = $this->loyaltyAccountRepository->search($criteria, $context)->getEntities()->first();
 
-        if (!$loyalty instanceof CustomerLoyaltyEntity) {
+        if (!$loyalty instanceof LoyaltyAccountEntity) {
             return new JsonResponse([
                 'pointsBalance' => 0,
-                'growthValue' => 0,
-                'membershipTier' => null,
-                'membershipValidUntil' => null,
+                'tierPoints' => 0,
+                'tier' => null,
+                'membershipPaidUntil' => null,
             ]);
         }
 
-        $tier = $loyalty->getMembershipTier();
+        $tier = $loyalty->getTier();
 
         return new JsonResponse([
             'pointsBalance' => $loyalty->getPointsBalance(),
-            'growthValue' => $loyalty->getGrowthValue(),
-            'membershipTier' => $tier === null ? null : [
+            'tierPoints' => $loyalty->getTierPoints(),
+            'tier' => $tier === null ? null : [
                 'id' => $tier->getId(),
                 'technicalName' => $tier->getTechnicalName(),
                 'name' => $tier->getName(),
                 'level' => $tier->getLevel(),
                 'pointsMultiplier' => $tier->getPointsMultiplier(),
             ],
-            'membershipValidUntil' => $loyalty->getMembershipValidUntil()?->format(\DATE_ATOM),
+            'membershipPaidUntil' => $loyalty->getMembershipPaidUntil()?->format(\DATE_ATOM),
         ]);
     }
 

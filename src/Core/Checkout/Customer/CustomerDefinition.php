@@ -7,8 +7,8 @@ use Shopwell\Core\Checkout\Customer\Aggregate\CustomerGroup\CustomerGroupDefinit
 use Shopwell\Core\Checkout\Customer\Aggregate\CustomerRecovery\CustomerRecoveryDefinition;
 use Shopwell\Core\Checkout\Customer\Aggregate\CustomerTag\CustomerTagDefinition;
 use Shopwell\Core\Checkout\Customer\Aggregate\CustomerWishlist\CustomerWishlistDefinition;
-use Shopwell\Core\Checkout\Loyalty\Entity\CustomerLoyalty\CustomerLoyaltyDefinition;
-use Shopwell\Core\Checkout\Loyalty\Entity\CustomerPointTransaction\CustomerPointTransactionDefinition;
+use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyPointTransaction\LoyaltyPointTransactionDefinition;
+use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyAccount\LoyaltyAccountDefinition;
 use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyPointLot\LoyaltyPointLotDefinition;
 use Shopwell\Core\Checkout\Membership\Entity\MembershipOrder\MembershipOrderDefinition;
 use Shopwell\Core\Checkout\Membership\Entity\MembershipSubscription\MembershipSubscriptionDefinition;
@@ -185,8 +185,8 @@ class CustomerDefinition extends EntityDefinition
             // never proposes to drop their foreign keys.
             // A customer owns exactly one point account - the table is unique on customer_id - so the
             // reverse side is to-one, not a collection that can never hold more than one entry.
-            new OneToOneAssociationField('loyaltyAccount', 'id', 'customer_id', CustomerLoyaltyDefinition::class, false),
-            new OneToManyAssociationField('customerPointTransactions', CustomerPointTransactionDefinition::class, 'customer_id'),
+            new OneToOneAssociationField('loyaltyAccount', 'id', 'customer_id', LoyaltyAccountDefinition::class, false),
+            new OneToManyAssociationField('loyaltyPointTransactions', LoyaltyPointTransactionDefinition::class, 'customer_id'),
             new OneToManyAssociationField('membershipOrders', MembershipOrderDefinition::class, 'customer_id'),
             new OneToManyAssociationField('membershipSubscriptions', MembershipSubscriptionDefinition::class, 'customer_id'),
             new OneToManyAssociationField('pointLots', LoyaltyPointLotDefinition::class, 'customer_id'),

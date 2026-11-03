@@ -7,7 +7,6 @@ use PaypalServerSdkLib\Environment;
 use PaypalServerSdkLib\Exceptions\ApiException;
 use PaypalServerSdkLib\Models\AmountWithBreakdown;
 use PaypalServerSdkLib\Models\CapturedPayment;
-use PaypalServerSdkLib\Models\CaptureStatus;
 use PaypalServerSdkLib\Models\CheckoutPaymentIntent;
 use PaypalServerSdkLib\Models\Money as PaypalMoney;
 use PaypalServerSdkLib\Models\Order;
@@ -23,6 +22,7 @@ use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Payment\Gateway\AbstractPaymentApi;
 use Shopwell\Core\System\Payment\Gateway\Request\Money;
 use Shopwell\Core\System\Payment\Gateway\Request\QueryResult;
+use Shopwell\Core\System\Payment\Integration\Paypal\Request\PaypalPaymentStatus;
 use Shopwell\Core\System\Payment\PaymentException;
 use Shopwell\Core\System\Payment\Provider\ResolvedPaymentConfig;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
@@ -93,18 +93,6 @@ final class PaypalApi extends AbstractPaymentApi
      * speak to it directly.
      */
     private const PAYOUTS_PATH = '/v1/payments/payouts';
-
-    /**
-     * The capture states of paypal mapped to what the platform does with the order. A (partially)
-     * refunded capture was paid before anything else.
-     */
-    private const QUERY_CAPTURE_STATES = [
-        CaptureStatus::COMPLETED => QueryResult::STATUS_PAID,
-        CaptureStatus::PARTIALLY_REFUNDED => QueryResult::STATUS_PAID,
-        CaptureStatus::REFUNDED => QueryResult::STATUS_PAID,
-        CaptureStatus::DECLINED => QueryResult::STATUS_FAILED,
-        CaptureStatus::FAILED => QueryResult::STATUS_FAILED,
-    ];
 
     private ?PaypalServerSdkClient $client = null;
 
@@ -422,7 +410,7 @@ final class PaypalApi extends AbstractPaymentApi
             $response = $this->client()->getPaymentsController()->getCapturedPayment(['captureId' => $captureId]);
         } catch (ApiException $exception) {
             if ($exception->getCode() === 404) {
-                return new QueryResult(QueryResult::STATUS_ABSENT, raw: ['error' => $exception->getMessage()]);
+                return QueryResult::absent($exception->getMessage());
             }
 
             throw $exception;
@@ -443,7 +431,7 @@ final class PaypalApi extends AbstractPaymentApi
             $response = $this->client()->getOrdersController()->getOrder(['id' => $orderId]);
         } catch (ApiException $exception) {
             if ($exception->getCode() === 404) {
-                return new QueryResult(QueryResult::STATUS_ABSENT, raw: ['error' => $exception->getMessage()]);
+                return QueryResult::absent($exception->getMessage());
             }
 
             throw $exception;
@@ -462,7 +450,7 @@ final class PaypalApi extends AbstractPaymentApi
         }
 
         return new QueryResult(
-            status: $status === OrderStatus::VOIDED ? QueryResult::STATUS_CLOSED : QueryResult::STATUS_PENDING,
+            status: PaypalPaymentStatus::order($status),
             outPaymentNo: $order->getId(),
             channelStatus: $status === '' ? null : $status,
             raw: [
@@ -514,7 +502,7 @@ final class PaypalApi extends AbstractPaymentApi
         $amount = $capture->getAmount();
 
         return new QueryResult(
-            status: self::QUERY_CAPTURE_STATES[$status] ?? QueryResult::STATUS_PENDING,
+            status: PaypalPaymentStatus::capture($status),
             outPaymentNo: $capture->getId(),
             amount: $this->amountOf($amount?->getValue(), $amount?->getCurrencyCode()),
             currency: $amount?->getCurrencyCode(),

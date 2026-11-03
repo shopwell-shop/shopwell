@@ -16,6 +16,7 @@ use Shopwell\Core\System\Payment\Integration\Wechat\Action\WechatCaptureAction;
 use Shopwell\Core\System\Payment\Integration\Wechat\Api\WechatApi;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
 use Shopwell\Core\System\Payment\PaymentException;
+use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
 use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
 use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
 use Shopwell\Core\System\Payment\Provider\PaymentProvider;
@@ -109,65 +110,54 @@ class PaymentGatewayFactoryTest extends TestCase
     }
 
     /**
-     * Payum writes the api and the gateway onto the action at execution time. Sharing one action
-     * between two gateways would therefore run the payment of one app with the credentials of the
-     * other - invisible in a sequential request, fatal in a long running worker. Every gateway has to
-     * be assembled with its own action.
+     * Payum writes the api onto an action at execution time. This test observes the real executions:
+     * every gateway must use a different clone and read its own merchant marker, without ever running
+     * the container prototype.
      */
     public function testEveryGatewayIsAssembledWithItsOwnAction(): void
     {
-        $prototype = new WechatCaptureAction();
+        $calls = new \ArrayObject();
+        $prototype = new class($calls) extends AbstractPaymentAction {
+            protected string $apiClass = WechatApi::class;
+
+            /**
+             * @param \ArrayObject<int, array{action: int, marker: mixed}> $calls
+             */
+            public function __construct(private readonly \ArrayObject $calls)
+            {
+            }
+
+            public function capability(): PaymentCapability
+            {
+                return PaymentCapability::CAPTURE;
+            }
+
+            public function supports($request): bool
+            {
+                return $this->isSupported($request, Capture::class);
+            }
+
+            public function execute($request): void
+            {
+                $this->modelOf($request);
+                $this->calls->append([
+                    'action' => spl_object_id($this),
+                    'marker' => $this->api()->credentials()['marker'] ?? null,
+                ]);
+            }
+        };
         $factory = new PaymentGatewayFactory('wechat', WechatApi::class, [$prototype]);
 
-        $first = $factory->createForPayment($this->resolved('wechat', 'wechat_h5'), '', '');
-        $second = $factory->createForPayment($this->resolved('wechat', 'wechat_h5'), '', '');
+        $first = $factory->createForPayment($this->resolved('wechat', 'wechat_h5', ['marker' => 'first']), '', '');
+        $second = $factory->createForPayment($this->resolved('wechat', 'wechat_h5', ['marker' => 'second']), '', '');
 
-        $firstAction = self::actionsOf($first)[0];
-        $secondAction = self::actionsOf($second)[0];
+        $first->execute(new Capture(new PaymentGatewayModel()));
+        $second->execute(new Capture(new PaymentGatewayModel()));
 
-        static::assertNotSame($prototype, $firstAction);
-        static::assertNotSame($firstAction, $secondAction);
-
-        $model = new PaymentGatewayModel([
-            PaymentGatewayModel::PAYMENT_NO => 'P-1',
-            PaymentGatewayModel::AMOUNT => 100,
-            PaymentGatewayModel::CURRENCY => 'CNY',
-            PaymentGatewayModel::SUBJECT => 'Order subject',
-        ]);
-
-        try {
-            $first->execute(new Capture($model));
-        } catch (\Throwable) {
-            // the credentials are missing on purpose - only the injection of the api matters here
-        }
-
-        static::assertNotNull(self::apiOf($firstAction));
-        static::assertNull(self::apiOf($secondAction), 'the second gateway must stay untouched');
-        static::assertNull(self::apiOf($prototype), 'the prototype in the container must never be executed on');
-    }
-
-    /**
-     * @return list<object>
-     */
-    private static function actionsOf(Gateway $gateway): array
-    {
-        $actions = new \ReflectionProperty(Gateway::class, 'actions');
-
-        /** @var list<object> $value */
-        $value = $actions->getValue($gateway);
-
-        return array_values($value);
-    }
-
-    private static function apiOf(object $action): ?object
-    {
-        // declared on the abstract action, so it is not found by reflecting the concrete class
-        $api = new \ReflectionProperty(AbstractPaymentAction::class, 'api');
-
-        /** @var object|null $value */
-        $value = $api->getValue($action);
-
-        return $value;
+        $executions = array_values($calls->getArrayCopy());
+        static::assertSame(['first', 'second'], array_column($executions, 'marker'));
+        static::assertNotSame($executions[0]['action'], $executions[1]['action']);
+        static::assertNotContains(spl_object_id($prototype), array_column($executions, 'action'));
     }
 
     /**

@@ -63,14 +63,14 @@ class TestPaymentDecorator extends AbstractPaymentProvider
         return [...$this->decorated->getActions(), ...$this->extraActions];
     }
 
-    public function getCaptureAction(): AbstractPaymentAction
-    {
-        return $this->decorated->getCaptureAction();
-    }
-
     public function getNotificationExtractor(): PaymentNotificationExtractorInterface
     {
         return $this->decorated->getNotificationExtractor();
+    }
+
+    public function getConfigFile(): ?string
+    {
+        return $this->decorated->getConfigFile();
     }
 
     public function getCredentials(): array

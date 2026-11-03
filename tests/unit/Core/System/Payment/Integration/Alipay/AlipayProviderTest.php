@@ -13,6 +13,7 @@ use Shopwell\Core\System\Payment\Integration\Alipay\Notification\AlipayTransferN
 use Shopwell\Core\System\Payment\Integration\Alipay\Request\AlipayPayParamsDecoder;
 use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
 use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
+use Shopwell\Core\System\Payment\Provider\Config\PaymentConfigReader;
 use Shopwell\Core\System\Payment\Provider\PaymentProviderFactory;
 use Shopwell\Tests\Unit\Core\System\Payment\Provider\Fixtures\PlatformProviders;
 
@@ -52,7 +53,7 @@ class AlipayProviderTest extends TestCase
             ['capture', 'refund', 'notification', 'query', 'close', 'transfer', 'transfer_query'],
             $capabilities
         );
-        static::assertInstanceOf(AlipayCaptureAction::class, $provider->getCaptureAction());
+        static::assertInstanceOf(AlipayCaptureAction::class, $provider->getActions()[0]);
         static::assertInstanceOf(AlipayNotificationExtractor::class, $provider->getNotificationExtractor());
         static::assertInstanceOf(AlipayPayParamsDecoder::class, $provider->getPayParamsDecoder());
         static::assertInstanceOf(AlipayTransferNotificationVerifier::class, $provider->getTransferNotificationVerifier());
@@ -72,7 +73,7 @@ class AlipayProviderTest extends TestCase
 
     public function testDeclaresTheCredentialsOfTheMerchantAccount(): void
     {
-        $fields = PlatformProviders::alipay()->getCredentials();
+        $fields = (new PaymentProviderFactory(new PaymentConfigReader()))->create(PlatformProviders::alipay())->credentials;
 
         static::assertSame(
             ['app_id', 'sandbox', 'private_key', 'alipay_public_key', 'sign_type', 'gateway_url'],
@@ -86,19 +87,21 @@ class AlipayProviderTest extends TestCase
         static::assertTrue($fields[2]->required);
         static::assertTrue($fields[2]->secret, 'The private key must never be echoed back.');
         static::assertSame('textarea', $fields[2]->type);
-        static::assertSame(['RSA2' => 'RSA2'], $fields[4]->options);
+        static::assertSame(['RSA2' => ['en-GB' => 'RSA2', 'zh-CN' => 'RSA2']], $fields[4]->options);
         static::assertSame('RSA2', $fields[4]->default);
         static::assertSame(AlipayProvider::DEFAULT_GATEWAY_URL, $fields[5]->default);
 
         // the page has to say which half of the pair is which: the app public key is uploaded to
         // alipay and never pasted into the shop, the private key is the one that signs
-        static::assertStringContainsString('应用公钥', (string) $fields[2]->helpText);
-        static::assertStringContainsString('不是你的应用公钥', (string) $fields[3]->helpText);
+        static::assertIsArray($fields[2]->helpText);
+        static::assertIsArray($fields[3]->helpText);
+        static::assertStringContainsString('应用公钥', (string) $fields[2]->helpText['zh-CN']);
+        static::assertStringContainsString('不是你的应用公钥', (string) $fields[3]->helpText['zh-CN']);
     }
 
     public function testDeclaresTheFiveChannelsOfTheInterface(): void
     {
-        $channels = PlatformProviders::alipay()->getChannels();
+        $channels = array_values((new PaymentProviderFactory(new PaymentConfigReader()))->create(PlatformProviders::alipay())->channels);
 
         static::assertSame(
             ['alipay_h5', 'alipay_web', 'alipay_qr', 'alipay_app', 'alipay_mini'],
@@ -152,7 +155,7 @@ class AlipayProviderTest extends TestCase
 
     public function testTheDeclarationIsCoherentEnoughToBuildTheSnapshot(): void
     {
-        $provider = (new PaymentProviderFactory())->create(PlatformProviders::alipay());
+        $provider = (new PaymentProviderFactory(new PaymentConfigReader()))->create(PlatformProviders::alipay());
 
         static::assertSame('alipay', $provider->technicalName);
         static::assertSame('sw-settings-payment-provider.provider.alipay', $provider->label);

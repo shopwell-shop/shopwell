@@ -31,6 +31,7 @@ use Shopwell\Core\System\Payment\Gateway\AbstractPaymentApi;
 use Shopwell\Core\System\Payment\Gateway\Request\CloseResult;
 use Shopwell\Core\System\Payment\Gateway\Request\Money;
 use Shopwell\Core\System\Payment\Gateway\Request\QueryResult;
+use Shopwell\Core\System\Payment\Integration\Alipay\Request\AlipayPaymentStatus;
 use Shopwell\Core\System\Payment\PaymentException;
 use Shopwell\Core\System\Payment\Provider\ResolvedPaymentConfig;
 
@@ -102,16 +103,6 @@ final class AlipayApi extends AbstractPaymentApi
      * money is the `status` next to it, `SUCCESS` is as little a terminal answer as `DEALING`.
      */
     final public const TRANSFER_CALL_OK = '10000';
-
-    /**
-     * The trade states of alipay mapped to what the platform does with the order. Everything alipay
-     * may still settle on its own is pending.
-     */
-    private const QUERY_STATES = [
-        'TRADE_SUCCESS' => QueryResult::STATUS_PAID,
-        'TRADE_FINISHED' => QueryResult::STATUS_PAID,
-        'TRADE_CLOSED' => QueryResult::STATUS_CLOSED,
-    ];
 
     private ?AlipayConfigUtil $configUtil = null;
 
@@ -441,7 +432,7 @@ final class AlipayApi extends AbstractPaymentApi
             $answer = $this->tradeApi()->query($query);
         } catch (ApiException $exception) {
             if ($this->isTradeUnknown($exception)) {
-                return new QueryResult(QueryResult::STATUS_ABSENT, raw: ['error' => $exception->getMessage()]);
+                return QueryResult::absent($exception->getMessage());
             }
 
             throw $exception;
@@ -455,9 +446,7 @@ final class AlipayApi extends AbstractPaymentApi
         $totalAmount = $answer->getTotalAmount();
 
         return new QueryResult(
-            status: $tradeStatus === null
-                ? QueryResult::STATUS_ABSENT
-                : (self::QUERY_STATES[$tradeStatus] ?? QueryResult::STATUS_PENDING),
+            status: AlipayPaymentStatus::query($tradeStatus),
             outPaymentNo: $answer->getTradeNo(),
             amount: $this->amountOf($totalAmount, $currency),
             currency: strtoupper($currency),

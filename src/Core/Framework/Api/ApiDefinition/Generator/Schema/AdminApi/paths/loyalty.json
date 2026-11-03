@@ -9,7 +9,7 @@
                 ],
                 "summary": "Adjust the loyalty points of a customer",
                 "description": "Books a manual point adjustment for the given customer. A positive number of points adds to the balance, a negative number deducts points. The resulting balance must not become negative.",
-                "operationId": "adjustCustomerLoyaltyPoints",
+                "operationId": "adjustLoyaltyAccountPoints",
                 "parameters": [
                     {
                         "name": "customerId",
@@ -67,8 +67,8 @@
                     "Loyalty"
                 ],
                 "summary": "Get the loyalty summary of a customer",
-                "description": "Returns the current points balance, growth value, membership tier and the most recent point transactions of the given customer.",
-                "operationId": "readCustomerLoyaltySummary",
+                "description": "Returns the current points balance, tier points, membership tier and the most recent point transactions of the given customer.",
+                "operationId": "readLoyaltyAccountSummary",
                 "parameters": [
                     {
                         "name": "customerId",
@@ -92,11 +92,11 @@
                                             "type": "integer",
                                             "description": "The currently available points balance."
                                         },
-                                        "growthValue": {
+                                        "tierPoints": {
                                             "type": "integer",
-                                            "description": "The accumulated growth value."
+                                            "description": "The accumulated tier points."
                                         },
-                                        "membershipTier": {
+                                        "tier": {
                                             "type": [
                                                 "object",
                                                 "null"
@@ -120,7 +120,7 @@
                                                 }
                                             }
                                         },
-                                        "membershipValidUntil": {
+                                        "membershipPaidUntil": {
                                             "type": [
                                                 "string",
                                                 "null"

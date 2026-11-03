@@ -36,7 +36,8 @@ use WeChatPay\Crypto\Rsa;
  *
  * The `package_info` is single use and can not be recovered from the interface: the platform stores it
  * in `confirm_payload`, and losing it means the transfer can only be canceled and sent again. The
- * action therefore passes it on untouched - it is never logged, cut or copied into another field.
+ * action therefore passes it on untouched in the result, while the persisted audit response only
+ * records that the interface issued one.
  *
  * The identity of the recipient is stored encrypted; the action decrypts it with the credential cipher
  * right before the request is built, so the plain text never lives longer than one call. Only an
@@ -111,6 +112,8 @@ final class WechatTransferAction extends AbstractPaymentAction
 
     private const URI_TRANSFER = 'v3/fund-app/mch-transfer/transfer-bills';
 
+    private const REDACTED = '[hidden]';
+
     protected string $apiClass = WechatApi::class;
 
     public function __construct(private readonly PaymentCredentialCipher $cipher)
@@ -142,9 +145,13 @@ final class WechatTransferAction extends AbstractPaymentAction
 
         $call = self::contentOf($request->transfer, $request->recipient, $request->channelParams, $this->cipher, $subject, $api);
 
+        // the wire call needs the openid, the persisted audit request must not contain it
+        $requestContent = $call['content'];
+        $requestContent['openid'] = self::REDACTED;
+
         $this->recordRequest($model, [
             'uri' => self::URI_TRANSFER,
-            'content' => $call['content'],
+            'content' => $requestContent,
             'headers' => $call['headers'],
         ]);
 
@@ -158,7 +165,8 @@ final class WechatTransferAction extends AbstractPaymentAction
             throw PaymentException::gatewayError($api->channel(), $exception->getMessage(), $exception);
         }
 
-        $this->recordResponse($model, $answer);
+        // package_info stays intact for the result, but is a bearer value and never enters the audit
+        $this->recordResponse($model, self::auditResponseOf($answer));
 
         $this->setResult($model, self::resultOf($answer));
     }
@@ -322,6 +330,23 @@ final class WechatTransferAction extends AbstractPaymentAction
     public static function confirmPayloadOf(array $answer): ?string
     {
         return self::stringOf($answer, 'package_info') ?: null;
+    }
+
+    /**
+     * A copy of the channel response that is safe to persist. The original answer is left untouched
+     * because resultOf() still needs the one time package_info.
+     *
+     * @param array<string, mixed> $answer
+     *
+     * @return array<string, mixed>
+     */
+    public static function auditResponseOf(array $answer): array
+    {
+        if (\array_key_exists('package_info', $answer)) {
+            $answer['package_info'] = self::REDACTED;
+        }
+
+        return $answer;
     }
 
     protected function api(): WechatApi

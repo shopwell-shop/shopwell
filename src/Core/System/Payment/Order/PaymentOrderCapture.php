@@ -3,11 +3,11 @@
 namespace Shopwell\Core\System\Payment\Order;
 
 use Payum\Core\Request\Capture;
-use Psr\Clock\ClockInterface;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\System\NumberRange\ValueGenerator\AbstractNumberRangeValueGenerator;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
 use Shopwell\Core\System\Payment\Gateway\Request\PayResult;
@@ -38,7 +38,7 @@ final class PaymentOrderCapture
         private readonly PaymentConfigResolver $configResolver,
         private readonly PaymentOrderService $orderService,
         private readonly PaymentNotifyUrlBuilder $notifyUrlBuilder,
-        private readonly ClockInterface $clock,
+        private readonly AbstractNumberRangeValueGenerator $numberRanges,
     ) {
     }
 
@@ -92,7 +92,7 @@ final class PaymentOrderCapture
         $this->transactionRepository->create([[
             'id' => $id,
             'paymentOrderId' => $order->id,
-            'transactionNo' => 'PT' . $this->clock->now()->format('YmdHis') . strtoupper(bin2hex(random_bytes(3))),
+            'transactionNo' => $this->numberRanges->getValue(PaymentTransactionEntity::ENTITY_NAME, Context::createDefaultContext(), null),
             'type' => PaymentTransactionEntity::TYPE_CAPTURE,
             'providerTechnicalName' => $providerTechnicalName,
             'channelTechnicalName' => $order->channelTechnicalName,

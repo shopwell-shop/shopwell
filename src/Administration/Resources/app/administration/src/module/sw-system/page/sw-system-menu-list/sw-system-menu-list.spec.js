@@ -3,13 +3,18 @@
  */
 import { mount } from '@vue/test-utils';
 
-const MENU_ITEMS = [
-    {
+const LANGUAGE_EN = 'language-en';
+const LANGUAGE_ZH = 'language-zh';
+
+function createItem(overrides = {}) {
+    return {
         id: 'catalog',
         parentId: null,
         afterMenuItemId: null,
         internalKey: 'sw-catalog',
-        title: 'Catalog',
+        title: null,
+        groupName: null,
+        translations: {},
         icon: 'regular-products',
         color: null,
         type: 'folder',
@@ -22,45 +27,41 @@ const MENU_ITEMS = [
         pluginId: null,
         pluginName: null,
         roleIds: [],
-    },
-    {
+        ...overrides,
+    };
+}
+
+const MENU_ITEMS = [
+    createItem(),
+    createItem({
         id: 'products',
         parentId: 'catalog',
-        afterMenuItemId: null,
         internalKey: 'sw.product.index',
-        title: 'Products',
-        icon: 'regular-products',
-        color: null,
         type: 'menu',
-        linkTarget: null,
-        privilege: 'product.viewer',
-        active: true,
         sysLocked: false,
-        archived: false,
-        configOverridden: false,
-        pluginId: null,
-        pluginName: null,
+        privilege: 'product.viewer',
         roleIds: ['role-a'],
-    },
-    {
+        groupName: 'general',
+        translations: {
+            [LANGUAGE_ZH]: { title: '产品目录', groupTitle: '常规' },
+        },
+    }),
+    createItem({
         id: 'categories',
         parentId: 'catalog',
         afterMenuItemId: 'products',
         internalKey: 'sw.category.index',
-        title: 'Categories',
-        icon: null,
-        color: null,
         type: 'menu',
-        linkTarget: null,
-        privilege: null,
+        icon: null,
         active: false,
         sysLocked: false,
-        archived: false,
         configOverridden: true,
-        pluginId: null,
-        pluginName: null,
-        roleIds: [],
-    },
+    }),
+];
+
+const ROUTE_ALLOWLIST = [
+    { internalKey: 'sw-catalog', title: 'sw-catalogue.general.mainMenuItemProducts', type: 'folder', parent: null, privilege: null },
+    { internalKey: 'sw.product.index', title: 'sw-product.general.mainMenuItemOverview', type: 'menu', parent: 'sw-catalog', privilege: 'product.viewer' },
 ];
 
 function menuStore() {
@@ -74,20 +75,15 @@ async function createWrapper({
         'admin_menu.creator',
         'admin_menu.deleter',
     ],
+    languages = [
+        { id: LANGUAGE_EN, name: 'English' },
+        { id: LANGUAGE_ZH, name: '中文' },
+    ],
 } = {}) {
     const store = menuStore();
 
-    store.items = MENU_ITEMS.map((item) => ({ ...item, roleIds: [...item.roleIds] }));
-    store.routeWhitelist = [
-        { internalKey: 'sw-catalog', title: 'Catalog', type: 'folder', parent: null, privilege: null },
-        {
-            internalKey: 'sw.product.index',
-            title: 'Products',
-            type: 'menu',
-            parent: 'sw-catalog',
-            privilege: 'product.viewer',
-        },
-    ];
+    store.items = MENU_ITEMS.map((item) => ({ ...item, translations: { ...item.translations }, roleIds: [...item.roleIds] }));
+    store.routeAllowlist = ROUTE_ALLOWLIST;
     store.isLoaded = true;
     store.isLoading = false;
 
@@ -117,7 +113,7 @@ async function createWrapper({
                     },
                 },
                 repositoryFactory: {
-                    create: () => ({ search: () => Promise.resolve([]) }),
+                    create: () => ({ search: () => Promise.resolve(languages) }),
                 },
                 privileges: {
                     getPrivilegesMappings: () => [
@@ -134,7 +130,6 @@ async function createWrapper({
                         <div>
                             <slot name="smart-bar-header"></slot>
                             <slot name="smart-bar-actions"></slot>
-                            <slot name="side-content"></slot>
                             <slot name="content"></slot>
                         </div>`,
                 },
@@ -149,6 +144,8 @@ async function createWrapper({
                         'variant',
                         'size',
                         'isLoading',
+                        'square',
+                        'title',
                     ],
                 },
                 'mt-text-field': {
@@ -162,6 +159,7 @@ async function createWrapper({
                         'helpText',
                         'placeholder',
                         'name',
+                        'suggestions',
                     ],
                 },
                 'mt-select': {
@@ -174,6 +172,7 @@ async function createWrapper({
                         'disabled',
                         'helpText',
                         'required',
+                        'size',
                     ],
                 },
                 'mt-switch': {
@@ -201,14 +200,21 @@ async function createWrapper({
                         'disabled',
                         'label',
                         'name',
+                        'helpText',
                     ],
                 },
                 'sw-system-menu-tree': {
                     template: '<div class="sw-system-menu-tree-stub"></div>',
-                    props: ['items', 'activeId', 'sortable'],
+                    props: [
+                        'items',
+                        'expandedIds',
+                        'sortable',
+                        'editable',
+                        'deletable',
+                    ],
                 },
                 'sw-modal': {
-                    template: '<div class="sw-modal-stub"><slot></slot><slot name="modal-footer"></slot></div>',
+                    template: '<div class="sw-modal-stub">{{ title }}<slot></slot><slot name="modal-footer"></slot></div>',
                     props: ['title', 'variant'],
                 },
                 'sw-skeleton': true,
@@ -224,6 +230,10 @@ async function createWrapper({
 describe('module/sw-system/page/sw-system-menu-list', () => {
     let wrapper;
 
+    beforeEach(() => {
+        Shopwell.Context.api.languageId = LANGUAGE_EN;
+    });
+
     afterEach(() => {
         if (wrapper) {
             wrapper.unmount();
@@ -233,232 +243,149 @@ describe('module/sw-system/page/sw-system-menu-list', () => {
         jest.restoreAllMocks();
     });
 
-    it('asks to pick an item when nothing is selected', async () => {
-        wrapper = await createWrapper();
-
-        expect(wrapper.find('.mt-empty-state-stub').exists()).toBe(true);
-        expect(wrapper.find('.sw-system-menu-tree-stub').exists()).toBe(true);
-    });
-
-    it('loads the stored navigation on creation', async () => {
+    it('loads the stored navigation and the languages it can be labelled in', async () => {
         wrapper = await createWrapper();
 
         expect(menuStore().load).toHaveBeenCalled();
+        expect(wrapper.vm.languages).toHaveLength(2);
+        expect(wrapper.vm.showLanguageSwitch).toBe(true);
     });
 
-    it('fills the form with the selected item', async () => {
+    it('renders the top level entries without expanding them', async () => {
         wrapper = await createWrapper();
 
-        wrapper.vm.selectItem('products');
+        expect(wrapper.vm.tree).toHaveLength(1);
+        expect(wrapper.vm.expandedIds).toEqual([]);
+        expect(wrapper.find('.sw-system-menu-tree-stub').exists()).toBe(true);
+    });
+
+    it('resolves the declared label of an entry that has no stored one', async () => {
+        wrapper = await createWrapper();
+
+        expect(wrapper.vm.tree[0].label).toBe('sw-catalogue.general.mainMenuItemProducts');
+    });
+
+    it('shows the stored label of the language the page displays', async () => {
+        wrapper = await createWrapper();
+
+        wrapper.vm.onLanguageChange(LANGUAGE_ZH);
         await flushPromises();
 
-        expect(wrapper.vm.draft.title).toBe('Products');
-        expect(wrapper.vm.draft.internalKey).toBe('sw.product.index');
-        expect(wrapper.find('.mt-text-field-stub').element.value).toBe('Products');
+        expect(wrapper.vm.tree[0].children[0].label).toBe('产品目录');
+        expect(wrapper.vm.tree[0].children[0].groupLabel).toBe('常规');
     });
 
-    it('creates a new item below the parent of the selected one', async () => {
+    it('expands and collapses an entry', async () => {
         wrapper = await createWrapper();
 
-        wrapper.vm.selectItem('products');
-        wrapper.vm.onCreateNew();
+        wrapper.vm.onToggle(wrapper.vm.tree[0]);
+        expect(wrapper.vm.expandedIds).toEqual(['catalog']);
 
-        expect(wrapper.vm.draft.id).toBeNull();
-        expect(wrapper.vm.draft.parentId).toBe('catalog');
-        expect(wrapper.vm.draft.afterMenuItemId).toBe('products');
+        wrapper.vm.onToggle(wrapper.vm.tree[0]);
+        expect(wrapper.vm.expandedIds).toEqual([]);
     });
 
-    it('saves a new item and places it afterwards', async () => {
+    it('expands every entry at once and collapses them again', async () => {
+        wrapper = await createWrapper();
+
+        wrapper.vm.onToggleAll();
+        expect(wrapper.vm.expandedIds).toEqual(['catalog']);
+
+        wrapper.vm.onToggleAll();
+        expect(wrapper.vm.expandedIds).toEqual([]);
+    });
+
+    it('prefills the dialog with the label and the group of the entry', async () => {
+        wrapper = await createWrapper();
+
+        wrapper.vm.onEdit(wrapper.vm.tree[0].children[0]);
+        await flushPromises();
+
+        expect(wrapper.vm.showEditModal).toBe(true);
+        expect(wrapper.vm.draft.title).toBe('sw-product.general.mainMenuItemOverview');
+        expect(wrapper.vm.draft.groupName).toBe('general');
+    });
+
+    it('saves the labels for the displayed language instead of the client language', async () => {
         wrapper = await createWrapper();
         wrapper.vm.createNotificationSuccess = jest.fn();
 
-        wrapper.vm.selectItem('products');
+        wrapper.vm.onLanguageChange(LANGUAGE_ZH);
+        wrapper.vm.onEdit(wrapper.vm.tree[0].children[0]);
+        wrapper.vm.draft.title = 'Produkte';
+        wrapper.vm.draft.groupTitle = 'Allgemein';
+
+        await wrapper.vm.onSave();
+
+        expect(menuStore().saveItem).toHaveBeenCalledWith(
+            expect.objectContaining({
+                groupName: 'general',
+                translations: [{ languageId: LANGUAGE_ZH, title: 'Produkte', groupTitle: 'Allgemein' }],
+            }),
+        );
+    });
+
+    it('places a renamed entry only when its level changed', async () => {
+        wrapper = await createWrapper();
+        wrapper.vm.createNotificationSuccess = jest.fn();
+
+        wrapper.vm.onEdit(wrapper.vm.tree[0].children[0]);
+        wrapper.vm.draft.title = 'Renamed';
+
+        await wrapper.vm.onSave();
+
+        expect(menuStore().moveItem).not.toHaveBeenCalled();
+    });
+
+    it('creates a new entry at the top level and places it', async () => {
+        wrapper = await createWrapper();
+        wrapper.vm.createNotificationSuccess = jest.fn();
+        menuStore().saveItem.mockResolvedValue('new-id');
+
         wrapper.vm.onCreateNew();
         wrapper.vm.draft.title = 'New entry';
         wrapper.vm.draft.internalKey = 'sw.product.index';
 
         await wrapper.vm.onSave();
 
-        expect(menuStore().saveItem).toHaveBeenCalledWith(
-            expect.objectContaining({
-                title: 'New entry',
-                type: 'menu',
-                internalKey: 'sw.product.index',
-                roles: [],
-            }),
-        );
+        expect(menuStore().saveItem).toHaveBeenCalledWith(expect.not.objectContaining({ id: expect.anything() }));
         expect(menuStore().moveItem).toHaveBeenCalledWith({
-            id: 'products',
-            parentId: 'catalog',
-            afterMenuItemId: 'products',
-        });
-    });
-
-    it('does not move an existing item that kept its position', async () => {
-        wrapper = await createWrapper();
-        wrapper.vm.createNotificationSuccess = jest.fn();
-
-        wrapper.vm.selectItem('products');
-        wrapper.vm.draft.title = 'Renamed';
-
-        await wrapper.vm.onSave();
-
-        expect(menuStore().saveItem).toHaveBeenCalledWith(expect.objectContaining({ id: 'products', title: 'Renamed' }));
-        expect(menuStore().moveItem).not.toHaveBeenCalled();
-    });
-
-    it('refuses to save without a title', async () => {
-        wrapper = await createWrapper();
-        wrapper.vm.createNotificationError = jest.fn();
-
-        wrapper.vm.selectItem('products');
-        wrapper.vm.draft.title = '   ';
-
-        await wrapper.vm.onSave();
-
-        expect(menuStore().saveItem).not.toHaveBeenCalled();
-        expect(wrapper.vm.createNotificationError).toHaveBeenCalledWith({
-            message: 'sw-system.menu.notification.titleRequired',
-        });
-    });
-
-    it('refuses to save a menu without a target', async () => {
-        wrapper = await createWrapper();
-        wrapper.vm.createNotificationError = jest.fn();
-
-        wrapper.vm.selectItem('products');
-        wrapper.vm.draft.internalKey = null;
-
-        await wrapper.vm.onSave();
-
-        expect(menuStore().saveItem).not.toHaveBeenCalled();
-        expect(wrapper.vm.createNotificationError).toHaveBeenCalledWith({
-            message: 'sw-system.menu.notification.targetRequired',
-        });
-    });
-
-    it('drops the route of an item when its type becomes a link', async () => {
-        wrapper = await createWrapper();
-
-        wrapper.vm.selectItem('products');
-        wrapper.vm.onTypeChange('link');
-
-        expect(wrapper.vm.draft.internalKey).toBeNull();
-        expect(wrapper.vm.draft.type).toBe('link');
-    });
-
-    it('resets the position when the parent changes', async () => {
-        wrapper = await createWrapper();
-
-        wrapper.vm.selectItem('categories');
-        wrapper.vm.onParentChange('');
-
-        expect(wrapper.vm.draft.parentId).toBeNull();
-        expect(wrapper.vm.draft.afterMenuItemId).toBeNull();
-    });
-
-    it('offers only folders below the top level as parents', async () => {
-        wrapper = await createWrapper();
-
-        wrapper.vm.selectItem('products');
-
-        expect(wrapper.vm.parentOptions).toEqual([
-            { value: '', label: 'sw-system.menu.parentRoot' },
-            { value: 'catalog', label: '— Catalog' },
-        ]);
-    });
-
-    it('does not offer the item itself as its own parent', async () => {
-        wrapper = await createWrapper();
-
-        wrapper.vm.selectItem('catalog');
-
-        expect(wrapper.vm.parentOptions.map((option) => option.value)).toEqual(['']);
-    });
-
-    it('moves an item when it is dropped in the tree', async () => {
-        wrapper = await createWrapper();
-
-        await wrapper.vm.onMove({ id: 'categories', parentId: null, afterMenuItemId: null });
-
-        expect(menuStore().moveItem).toHaveBeenCalledWith({
-            id: 'categories',
+            id: 'new-id',
             parentId: null,
             afterMenuItemId: null,
         });
     });
 
-    it('marks a core item as not deletable', async () => {
+    it('refuses to delete a locked entry', async () => {
         wrapper = await createWrapper();
 
-        wrapper.vm.selectItem('catalog');
-        await flushPromises();
-
-        expect(wrapper.vm.isLocked).toBe(true);
-        expect(wrapper.find('.sw-system-menu-list__button-delete').attributes('disabled')).toBeDefined();
-
-        wrapper.vm.onDelete();
+        wrapper.vm.onDelete(wrapper.vm.tree[0]);
 
         expect(wrapper.vm.showDeleteModal).toBe(false);
     });
 
-    it('counts the subtree a delete would remove', async () => {
-        wrapper = await createWrapper();
-
-        wrapper.vm.selectItem('catalog');
-
-        expect(wrapper.vm.descendantCount).toBe(2);
-        expect(wrapper.vm.deleteConfirmMessage).toBe('sw-system.menu.deleteConfirmMessageWithChildren');
-    });
-
-    it('deletes the selected item after the confirmation', async () => {
+    it('deletes an entry after the confirmation', async () => {
         wrapper = await createWrapper();
         wrapper.vm.createNotificationSuccess = jest.fn();
 
-        wrapper.vm.selectItem('products');
-        wrapper.vm.onDelete();
-
+        wrapper.vm.onDelete(wrapper.vm.tree[0].children[0]);
         expect(wrapper.vm.showDeleteModal).toBe(true);
 
         await wrapper.vm.onConfirmDelete();
 
         expect(menuStore().deleteItem).toHaveBeenCalledWith('products');
-        expect(wrapper.vm.draft).toBeNull();
-        expect(wrapper.vm.selectedId).toBeNull();
+        expect(wrapper.vm.showDeleteModal).toBe(false);
     });
 
-    it('asks before dropping unsaved changes', async () => {
+    it('names the subtree size in the delete confirmation', async () => {
         wrapper = await createWrapper();
 
-        wrapper.vm.selectItem('products');
-        wrapper.vm.draft.title = 'Changed';
-        wrapper.vm.selectItem('categories');
+        // a folder an administrator created himself: it may go, and its children go with it
+        menuStore().items[0].sysLocked = false;
+        await flushPromises();
 
-        expect(wrapper.vm.showDiscardModal).toBe(true);
-        expect(wrapper.vm.selectedId).toBe('products');
+        wrapper.vm.onDelete(wrapper.vm.tree[0]);
 
-        wrapper.vm.onDiscardConfirmed();
-
-        expect(wrapper.vm.showDiscardModal).toBe(false);
-        expect(wrapper.vm.selectedId).toBe('categories');
-        expect(wrapper.vm.draft.title).toBe('Categories');
-    });
-
-    it('keeps the draft when discarding is cancelled', async () => {
-        wrapper = await createWrapper();
-
-        wrapper.vm.selectItem('products');
-        wrapper.vm.draft.title = 'Changed';
-        wrapper.vm.selectItem('categories');
-        wrapper.vm.onDiscardCancelled();
-
-        expect(wrapper.vm.selectedId).toBe('products');
-        expect(wrapper.vm.draft.title).toBe('Changed');
-    });
-
-    it('hides the save action without the editor privilege', async () => {
-        wrapper = await createWrapper({ privileges: ['admin_menu.viewer'] });
-
-        expect(wrapper.find('.sw-system-menu-list__button-save').exists()).toBe(false);
+        expect(wrapper.vm.deleteConfirmMessage).toBe('sw-system.menu.deleteConfirmMessageWithChildren');
     });
 });

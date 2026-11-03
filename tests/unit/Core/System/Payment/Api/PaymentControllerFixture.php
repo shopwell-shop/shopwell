@@ -2,6 +2,7 @@
 
 namespace Shopwell\Tests\Unit\Core\System\Payment\Api;
 
+use Doctrine\DBAL\Connection;
 use Payum\Core\GatewayInterface;
 use Payum\Core\Request\Generic;
 use PHPUnit\Framework\Attributes\CoversNothing;
@@ -67,6 +68,8 @@ use Shopwell\Core\System\StateMachine\Aggregation\StateMachineState\StateMachine
 use Shopwell\Core\System\StateMachine\Aggregation\StateMachineState\StateMachineStateEntity;
 use Shopwell\Core\System\StateMachine\Loader\InitialStateIdLoader;
 use Shopwell\Core\System\StateMachine\StateMachineRegistry;
+use Shopwell\Tests\Unit\Core\System\Payment\NumberRangeFixture;
+use Shopwell\Tests\Unit\Core\System\Payment\Order\_fixtures\PaymentOrderRowLockStub;
 use Symfony\Component\Clock\MockClock;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
@@ -368,7 +371,8 @@ final class PaymentControllerFixture extends TestCase
             static::createStub(InitialStateIdLoader::class),
             new PaymentOrderStateHandler(static::createStub(StateMachineRegistry::class)),
             self::clock(),
-            \Shopwell\Tests\Unit\Core\System\Payment\NumberRangeFixture::generator('PG1001'),
+            NumberRangeFixture::generator('PG1001'),
+            new PaymentOrderRowLockStub(),
         );
     }
 
@@ -382,7 +386,7 @@ final class PaymentControllerFixture extends TestCase
             $configResolver,
             $orderService,
             new PaymentNotifyUrlBuilder(static::createStub(RequestStack::class)),
-            self::clock(),
+            NumberRangeFixture::generator('PX1001'),
         );
     }
 
@@ -403,7 +407,7 @@ final class PaymentControllerFixture extends TestCase
         $paidHandler = new PaymentOrderPaidHandler($orderService, $webhooks, static::createStub(EventDispatcherInterface::class));
 
         return new PaymentOrderCloser(
-            new PaymentChannelCloser($transactionRepository, $configResolver, self::clock()),
+            new PaymentChannelCloser($transactionRepository, $configResolver, NumberRangeFixture::generator('PX1001')),
             $orderService,
             new PaymentOrderReconciler(
                 $paymentOrderRepository,
@@ -433,6 +437,8 @@ final class PaymentControllerFixture extends TestCase
             static::createStub(InitialStateIdLoader::class),
             static::createStub(EventDispatcherInterface::class),
             self::clock(),
+            NumberRangeFixture::generator('PR1001'),
+            new PaymentOrderRowLockStub(),
         );
     }
 
@@ -445,6 +451,7 @@ final class PaymentControllerFixture extends TestCase
             static::createStub(HttpClientInterface::class),
             self::clock(),
             static::createStub(LoggerInterface::class),
+            static::createStub(Connection::class),
         );
     }
 

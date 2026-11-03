@@ -11,6 +11,7 @@ use Shopwell\Core\System\Payment\Gateway\Request\NotificationResult;
 use Shopwell\Core\System\Payment\Gateway\Request\Payload;
 use Shopwell\Core\System\Payment\Integration\Wechat\Api\WechatApi;
 use Shopwell\Core\System\Payment\Integration\Wechat\Notification\WechatNotificationCodec;
+use Shopwell\Core\System\Payment\Integration\Wechat\Request\WechatPaymentStatus;
 use Shopwell\Core\System\Payment\PaymentException;
 use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
 
@@ -77,7 +78,7 @@ final class WechatNotifyAction extends AbstractPaymentAction
         $this->setResult($model, new NotificationResult(
             signatureValid: $signatureValid,
             succeeded: $outRefundId === null
-                ? $tradeState === self::TRADE_SUCCESS
+                ? WechatPaymentStatus::isSuccessfulNotification((string) $tradeState)
                 : $refundStatus === self::REFUND_SUCCESS,
             outPaymentNo: Payload::string($resource, 'transaction_id'),
             outRefundId: $outRefundId,

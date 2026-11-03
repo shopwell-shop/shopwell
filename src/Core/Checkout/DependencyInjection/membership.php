@@ -77,7 +77,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(MembershipSubscriptionService::class)
         ->args([
             service('membership_subscription.repository'),
-            service('customer_loyalty.repository'),
+            service('loyalty_account.repository'),
             service(LoyaltyAccountService::class),
             service(TierResolver::class),
             service(RowLock::class),

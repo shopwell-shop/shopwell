@@ -108,17 +108,18 @@ class AdminMenuValidator implements EventSubscriberInterface
             return;
         }
 
-        $this->guardSysLockedItems($commands, $event);
-
         if ($event->getContext()->hasExtension(PluginMenuSynchronizer::CONTEXT_EXTENSION)) {
             // The declaration synchronization writes what a provider declares: internal keys
-            // the container may not know yet - a plugin installed in this very request - and
-            // ordering changes that are not an administrator decision. An entry whose
-            // declaration the registry misses stays hidden in {@link VisibleMenuTreeBuilder},
-            // which is the check that matters for rendering.
+            // the container may not know yet - a plugin installed in this very request -
+            // ordering changes that are not an administrator decision, and the deletion of
+            // rows a release no longer declares. The lock exists to stop a client from
+            // taking the navigation apart, not to stop the core from maintaining it.
+            // An entry whose declaration the registry misses stays hidden in
+            // {@link VisibleMenuTreeBuilder}, which is the check that matters for rendering.
             return;
         }
 
+        $this->guardSysLockedItems($commands, $event);
         $this->guardRouteWhitelist($commands, $event);
         $this->markOverriddenItems($commands);
     }

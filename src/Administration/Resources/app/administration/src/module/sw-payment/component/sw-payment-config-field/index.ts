@@ -7,6 +7,11 @@ import template from './sw-payment-config-field.html.twig';
 import './sw-payment-config-field.scss';
 
 /**
+ * @private
+ */
+export type LocalizedText = string | Record<string, string | null>;
+
+/**
  * One field of a payment interface or channel configuration, as the interface declares it.
  *
  * @private
@@ -14,12 +19,12 @@ import './sw-payment-config-field.scss';
 export interface PaymentConfigField {
     name: string;
     type: string;
-    label?: string | null;
-    helpText?: string | null;
+    label?: LocalizedText | null;
+    helpText?: LocalizedText | null;
     default?: string | null;
     required?: boolean;
     secret?: boolean;
-    options?: Record<string, string>;
+    options?: Record<string, LocalizedText>;
 }
 
 /**
@@ -62,6 +67,37 @@ export default defineComponent({
 
     emits: ['update:modelValue'],
 
+    methods: {
+        /**
+         * XML declarations carry every translation; PHP declarations may still use a snippet key.
+         */
+        localized(declared: LocalizedText | null | undefined): string | null {
+            if (!declared) {
+                return null;
+            }
+
+            let text: string;
+
+            if (typeof declared === 'string') {
+                text = declared;
+            } else {
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access -- vue-i18n exposes the active locale as a root ref in composition mode
+                const locale = this.$root.$i18n.locale.value as string;
+                text =
+                    declared[locale] ??
+                    declared['en-GB'] ??
+                    Object.values(declared).find((value): value is string => typeof value === 'string' && value !== '') ??
+                    '';
+            }
+
+            if (text === '') {
+                return null;
+            }
+
+            return this.$te(text) ? this.$t(text) : text;
+        },
+    },
+
     computed: {
         currentValue: {
             get(): string | number | boolean {
@@ -101,18 +137,12 @@ export default defineComponent({
          * An interface declares its own label, either a snippet key or a plain text.
          */
         label(): string {
-            const declared = this.field.label;
-
-            if (declared) {
-                return this.$te(declared) ? this.$t(declared) : declared;
-            }
-
-            return this.field.name;
+            return this.localized(this.field.label) ?? this.field.name;
         },
 
         options(): Array<{ value: string; label: string }> {
             return Object.entries(this.field.options ?? {}).map(([value, label]) => {
-                return { value, label };
+                return { value, label: this.localized(label) ?? value };
             });
         },
 
@@ -130,13 +160,7 @@ export default defineComponent({
          * shows.
          */
         helpText(): string | null {
-            const declared = this.field.helpText;
-
-            if (!declared) {
-                return null;
-            }
-
-            return this.$te(declared) ? this.$t(declared) : declared;
+            return this.localized(this.field.helpText);
         },
     },
 });

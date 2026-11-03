@@ -1,0 +1,25 @@
+{% sw_extends '@Storefront/storefront/base.html.twig' %}
+
+{% block base_content %}
+    <div class="container payment-gateway-qr">
+        <div class="row justify-content-center">
+            <div class="col-md-8 col-lg-6 text-center">
+                <h1 class="h3">{{ 'checkout.paymentGatewayQrTitle'|trans|sw_sanitize }}</h1>
+                <p class="text-body-secondary">{{ paymentOrder.subject|sw_sanitize }}</p>
+
+                {% set qrOptions = { content: qrContent, width: 280 } %}
+                <div class="d-inline-flex justify-content-center p-3 my-3 border rounded"
+                     data-page-qrcode-generator
+                     data-page-qrcode-generator-options="{{ qrOptions|json_encode|escape('html_attr') }}"></div>
+
+                <p>{{ 'checkout.paymentGatewayQrHint'|trans|sw_sanitize }}</p>
+
+                {% if paymentOrder.returnUrl %}
+                    <a class="btn btn-primary" href="{{ paymentOrder.returnUrl }}">
+                        {{ 'checkout.paymentGatewayReturn'|trans|sw_sanitize }}
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endblock %}

@@ -106,12 +106,13 @@ class PaymentTransferEntity extends EntityStruct
 
     /**
      * The `package_info` wechat hands out for the shopper to accept the transfer. It is a single use
-     * value and the only carrier of the confirmation flow - losing it means canceling and sending
-     * again.
+     * bearer value and the only carrier of the confirmation flow - losing it means canceling and
+     * sending again. It is never exposed through an entity api; the transfer presenter only exposes
+     * whether one exists.
      *
      * @var array<string, mixed>|null
      */
-    #[Field(type: FieldType::JSON, api: ['admin-api' => true, 'store-api' => false])]
+    #[Field(type: FieldType::JSON, api: false)]
     public ?array $confirmPayload = null;
 
     /**

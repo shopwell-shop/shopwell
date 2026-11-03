@@ -142,6 +142,11 @@ class WechatTransferActionTest extends TestCase
 
         // the platform stores fen and wechat reads fen: a division here would move a hundredth
         static::assertSame(123_456, $body['transfer_amount']);
+
+        $model = $request->getModel();
+        static::assertInstanceOf(PaymentGatewayModel::class, $model);
+        static::assertSame('[hidden]', $model->request()['content']['openid']);
+        static::assertStringNotContainsString('openid-of-the-shopper', (string) json_encode($model->request()));
     }
 
     /**
@@ -222,6 +227,11 @@ class WechatTransferActionTest extends TestCase
         static::assertSame(TransferResult::STATE_AWAITING_CONFIRM, $result->state);
         static::assertSame('BILL-1', $result->providerRef);
         static::assertSame($package, $result->confirmPayload);
+
+        $model = $request->getModel();
+        static::assertInstanceOf(PaymentGatewayModel::class, $model);
+        static::assertSame('[hidden]', $model->response()['package_info']);
+        static::assertStringNotContainsString($package, (string) json_encode($model->response()));
     }
 
     /**

@@ -119,7 +119,7 @@ export default Shopwell.Component.wrapComponentConfig({
         },
 
         pointTransactionRepository(): unknown {
-            return this.repositoryFactory.create('customer_point_transaction');
+            return this.repositoryFactory.create('loyalty_point_transaction');
         },
 
         currencyFilter(): (value: number, isoCode: string, decimals: number) => string {
@@ -196,7 +196,7 @@ export default Shopwell.Component.wrapComponentConfig({
                     value: this.currentMetrics.monthlyPoints.toLocaleString(),
                     unit: this.$t('sw-dashboard.metrics.pointsUnit'),
                     delta: null,
-                    link: { name: 'sw.settings.loyalty.orders', query: {} },
+                    link: { name: 'sw.settings.membership.orders', query: {} },
                     showComparison: false,
                 });
             }

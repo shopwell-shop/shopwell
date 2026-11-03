@@ -9,6 +9,7 @@ use Shopwell\Core\System\Payment\Integration\Stripe\Api\StripeApi;
 use Shopwell\Core\System\Payment\Integration\Stripe\StripeProvider;
 use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
 use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
+use Shopwell\Core\System\Payment\Provider\Config\PaymentConfigReader;
 use Shopwell\Core\System\Payment\Provider\PaymentProviderFactory;
 use Shopwell\Tests\Unit\Core\System\Payment\Provider\Fixtures\PlatformProviders;
 
@@ -60,7 +61,7 @@ class StripeProviderTest extends TestCase
 
     public function testDeclaresTheMerchantCredentials(): void
     {
-        $fields = PlatformProviders::stripe()->getCredentials();
+        $fields = (new PaymentProviderFactory(new PaymentConfigReader()))->create(PlatformProviders::stripe())->credentials;
 
         static::assertSame(
             ['secret_key', 'publishable_key', 'webhook_secret', 'api_version'],
@@ -100,7 +101,7 @@ class StripeProviderTest extends TestCase
 
     public function testTheDeclarationIsCoherentEnoughToBuildTheSnapshot(): void
     {
-        $provider = (new PaymentProviderFactory())->create(PlatformProviders::stripe());
+        $provider = (new PaymentProviderFactory(new PaymentConfigReader()))->create(PlatformProviders::stripe());
 
         static::assertSame('stripe', $provider->technicalName);
         static::assertCount(1, $provider->channels);

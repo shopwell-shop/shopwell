@@ -16,6 +16,8 @@ class AdminMenuItemTranslationEntity extends TranslationEntity
 
     protected ?string $title = null;
 
+    protected ?string $groupTitle = null;
+
     protected ?AdminMenuItemEntity $adminMenuItem = null;
 
     public function getAdminMenuItemId(): string
@@ -36,6 +38,16 @@ class AdminMenuItemTranslationEntity extends TranslationEntity
     public function setTitle(?string $title): void
     {
         $this->title = $title;
+    }
+
+    public function getGroupTitle(): ?string
+    {
+        return $this->groupTitle;
+    }
+
+    public function setGroupTitle(?string $groupTitle): void
+    {
+        $this->groupTitle = $groupTitle;
     }
 
     public function getAdminMenuItem(): ?AdminMenuItemEntity

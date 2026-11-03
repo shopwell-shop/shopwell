@@ -2450,6 +2450,18 @@ class Migration1536233560BasicData extends MigrationStep
                 'nameZh' => '打款单',
                 'nameEn' => 'Payment transfer',
             ],
+            'payment_transaction' => [
+                'id' => Uuid::randomHex(),
+                'global' => 0,
+                'nameZh' => '支付交易',
+                'nameEn' => 'Payment transaction',
+            ],
+            'payment_subscription_cycle' => [
+                'id' => Uuid::randomHex(),
+                'global' => 0,
+                'nameZh' => '订阅扣款期次',
+                'nameEn' => 'Payment subscription cycle',
+            ],
         ];
 
         $definitionNumberRanges = [
@@ -2516,6 +2528,24 @@ class Migration1536233560BasicData extends MigrationStep
                 'global' => 1,
                 'typeId' => $definitionNumberRangeTypes['payment_transfer']['id'],
                 'pattern' => 'PT{n}',
+                'start' => 1000,
+            ],
+            'payment_transaction' => [
+                'id' => Uuid::randomHex(),
+                'name' => 'Payment transactions',
+                'nameZh' => '支付交易',
+                'global' => 1,
+                'typeId' => $definitionNumberRangeTypes['payment_transaction']['id'],
+                'pattern' => 'PX{n}',
+                'start' => 1000,
+            ],
+            'payment_subscription_cycle' => [
+                'id' => Uuid::randomHex(),
+                'name' => 'Payment subscription cycles',
+                'nameZh' => '订阅扣款期次',
+                'global' => 1,
+                'typeId' => $definitionNumberRangeTypes['payment_subscription_cycle']['id'],
+                'pattern' => 'SC{n}',
                 'start' => 1000,
             ],
         ];

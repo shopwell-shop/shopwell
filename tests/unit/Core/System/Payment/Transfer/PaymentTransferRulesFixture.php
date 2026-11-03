@@ -7,15 +7,12 @@ use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Payment\Gateway\AbstractPaymentApi;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayFactory;
-use Shopwell\Core\System\Payment\Integration\Alipay\AlipayProvider;
-use Shopwell\Core\System\Payment\Integration\Paypal\PaypalProvider;
-use Shopwell\Core\System\Payment\Integration\Stripe\StripeProvider;
-use Shopwell\Core\System\Payment\Integration\Wechat\WechatProvider;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
 use Shopwell\Core\System\Payment\Provider\AbstractPaymentProvider;
 use Shopwell\Core\System\Payment\Provider\PaymentProvider;
 use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;
 use Shopwell\Core\System\Payment\Provider\Transfer\PaymentTransferRules;
+use Shopwell\Tests\Unit\Core\System\Payment\Provider\Fixtures\PlatformProviders;
 
 /**
  * The registry the payout services read their rules from, built from the real declarations.
@@ -84,19 +81,17 @@ final class PaymentTransferRulesFixture extends TestCase
     }
 
     /**
-     * The declarations of the built-in interfaces, read without their constructor: that constructor
-     * wants the ten actions of the interface, but the payout rules are a pure function of the class -
-     * they are what this fixture exists for, and building a whole gateway for them would be noise.
+     * The real declarations, assembled by the shared fixture with their real actions.
      *
      * @return list<AbstractPaymentProvider>
      */
     private static function declarations(): array
     {
-        return array_map(static function (string $class): AbstractPaymentProvider {
-            $declaration = (new \ReflectionClass($class))->newInstanceWithoutConstructor();
-            \assert($declaration instanceof AbstractPaymentProvider);
-
-            return $declaration;
-        }, [AlipayProvider::class, WechatProvider::class, StripeProvider::class, PaypalProvider::class]);
+        return [
+            PlatformProviders::alipay(),
+            PlatformProviders::wechat(),
+            PlatformProviders::stripe(),
+            PlatformProviders::paypal(),
+        ];
     }
 }

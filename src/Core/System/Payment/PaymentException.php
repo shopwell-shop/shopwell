@@ -4,6 +4,14 @@ namespace Shopwell\Core\System\Payment;
 
 use Shopwell\Core\Framework\HttpException;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Payment\Exception\PaymentAppException;
+use Shopwell\Core\System\Payment\Exception\PaymentCheckoutBindingException;
+use Shopwell\Core\System\Payment\Exception\PaymentGatewayException;
+use Shopwell\Core\System\Payment\Exception\PaymentNotificationException;
+use Shopwell\Core\System\Payment\Exception\PaymentOrderException;
+use Shopwell\Core\System\Payment\Exception\PaymentProviderException;
+use Shopwell\Core\System\Payment\Exception\PaymentSubscriptionException;
+use Shopwell\Core\System\Payment\Exception\PaymentTransferException;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -102,74 +110,60 @@ class PaymentException extends HttpException
     public const TRANSFER_NOTIFICATION_PROVIDER_UNKNOWN = 'PAYMENT__TRANSFER_NOTIFICATION_PROVIDER_UNKNOWN';
     public const TRANSFER_NOTIFICATION_TRANSFER_UNKNOWN = 'PAYMENT__TRANSFER_NOTIFICATION_TRANSFER_UNKNOWN';
 
+    /**
+     * @deprecated tag:v6.8.0 - Use PaymentProviderException::unknownProvider() instead
+     *
+     * @phpstan-ignore shopwell.deprecatedMethod (the forwarding facade must keep existing payment calls usable during the migration)
+     */
     public static function unknownProvider(string $technicalName): self
     {
-        return new self(
-            Response::HTTP_NOT_FOUND,
-            self::UNKNOWN_PROVIDER,
-            'The payment provider "{{ technicalName }}" is unknown.',
-            ['technicalName' => $technicalName]
-        );
-    }
-
-    public static function unknownChannel(string $technicalName): self
-    {
-        return new self(
-            Response::HTTP_NOT_FOUND,
-            self::UNKNOWN_CHANNEL,
-            'The payment channel "{{ technicalName }}" is unknown.',
-            ['technicalName' => $technicalName]
-        );
-    }
-
-    public static function duplicateChannel(string $channel, string $firstProvider, string $secondProvider): self
-    {
-        return new self(
-            Response::HTTP_INTERNAL_SERVER_ERROR,
-            self::DUPLICATE_CHANNEL,
-            'The payment channel "{{ channel }}" is declared by the providers "{{ firstProvider }}" and "{{ secondProvider }}".',
-            ['channel' => $channel, 'firstProvider' => $firstProvider, 'secondProvider' => $secondProvider]
-        );
-    }
-
-    public static function invalidProviderDeclaration(string $reason): self
-    {
-        return new self(
-            Response::HTTP_INTERNAL_SERVER_ERROR,
-            self::INVALID_PROVIDER_DECLARATION,
-            'A payment provider declaration is invalid: {{ reason }}',
-            ['reason' => $reason]
-        );
+        return PaymentProviderException::unknownProvider($technicalName);
     }
 
     /**
-     * Two implementations of the very same technical name, where the second one is not a decorator.
+     * @deprecated tag:v6.8.0 - Use PaymentProviderException::unknownChannel() instead
      *
-     * A technical name is a foreign key value - `payment_order.provider_technical_name`,
-     * `payment_provider_config.provider_technical_name`, `payment_app_provider.provider_technical_name` -
-     * so a second implementation that silently takes over would make every historic row
-     * uninterpretable. Extending an interface is done by decorating it, replacing it by giving the
-     * replacement a technical name of its own. The container refuses to compile, which is the only
-     * moment the conflict can still be answered with "fix the declaration".
+     * @phpstan-ignore shopwell.deprecatedMethod (the forwarding facade must keep existing payment calls usable during the migration)
+     */
+    public static function unknownChannel(string $technicalName): self
+    {
+        return PaymentProviderException::unknownChannel($technicalName);
+    }
+
+    /**
+     * @deprecated tag:v6.8.0 - Use PaymentProviderException::duplicateChannel() instead
+     *
+     * @phpstan-ignore shopwell.deprecatedMethod (the forwarding facade must keep existing payment calls usable during the migration)
+     */
+    public static function duplicateChannel(string $channel, string $firstProvider, string $secondProvider): self
+    {
+        return PaymentProviderException::duplicateChannel($channel, $firstProvider, $secondProvider);
+    }
+
+    /**
+     * @deprecated tag:v6.8.0 - Use PaymentProviderException::invalidProviderDeclaration() instead
+     *
+     * @phpstan-ignore shopwell.deprecatedMethod (the forwarding facade must keep existing payment calls usable during the migration)
+     */
+    public static function invalidProviderDeclaration(string $reason): self
+    {
+        return PaymentProviderException::invalidProviderDeclaration($reason);
+    }
+
+    /**
+     * @deprecated tag:v6.8.0 - Use PaymentProviderException::duplicateProvider() instead
+     *
+     * @phpstan-ignore shopwell.deprecatedMethod (the forwarding facade must keep existing payment calls usable during the migration)
      */
     public static function duplicateProvider(string $technicalName, string $firstDeclaration, string $secondDeclaration): self
     {
-        return new self(
-            Response::HTTP_INTERNAL_SERVER_ERROR,
-            self::DUPLICATE_PROVIDER,
-            'The payment provider "{{ technicalName }}" is declared by "{{ firstDeclaration }}" and by "{{ secondDeclaration }}", but the second one is not a decorator. Declare a technical name of its own or decorate the existing declaration through getDecorated().',
-            ['technicalName' => $technicalName, 'firstDeclaration' => $firstDeclaration, 'secondDeclaration' => $secondDeclaration]
-        );
+        return PaymentProviderException::duplicateProvider($technicalName, $firstDeclaration, $secondDeclaration);
     }
 
     /**
-     * Two declarations of one technical name that carry the very same priority.
+     * @deprecated tag:v6.8.0 - Use PaymentProviderException::ambiguousProviderPriority() instead
      *
-     * The priority is what orders the decoration chain, so one priority for two declarations means the
-     * order is decided by the container - by the order the services happen to be registered in. That
-     * order changes when an unrelated plugin installs itself, which would silently swap the outermost
-     * decorator, i.e. the instance that represents the interface. Since a chain only has one valid
-     * order, the ambiguity is refused at compile time instead of being resolved by chance.
+     * @phpstan-ignore shopwell.deprecatedMethod (the forwarding facade must keep existing payment calls usable during the migration)
      */
     public static function ambiguousProviderPriority(
         string $technicalName,
@@ -177,35 +171,17 @@ class PaymentException extends HttpException
         string $firstDeclaration,
         string $secondDeclaration,
     ): self {
-        return new self(
-            Response::HTTP_INTERNAL_SERVER_ERROR,
-            self::AMBIGUOUS_PROVIDER_PRIORITY,
-            'The payment provider "{{ technicalName }}" is declared by "{{ firstDeclaration }}" and by "{{ secondDeclaration }}", both with the priority {{ priority }}. The priority orders the decoration chain, so give them different priorities.',
-            [
-                'technicalName' => $technicalName,
-                'priority' => $priority,
-                'firstDeclaration' => $firstDeclaration,
-                'secondDeclaration' => $secondDeclaration,
-            ]
-        );
+        return PaymentProviderException::ambiguousProviderPriority($technicalName, $priority, $firstDeclaration, $secondDeclaration);
     }
 
     /**
-     * A technical name that the notify url could not carry.
+     * @deprecated tag:v6.8.0 - Use PaymentProviderException::invalidProviderName() instead
      *
-     * The route of the notify endpoint is `/payment-api/v1/notify/{provider}/{paymentNo}` with the
-     * requirement `[A-Za-z0-9_-]+` (`Api/NotifyController`), so a name outside of that character set
-     * would produce an interface whose callbacks can never arrive. It is refused at container compile
-     * time instead of at the first payment.
+     * @phpstan-ignore shopwell.deprecatedMethod (the forwarding facade must keep existing payment calls usable during the migration)
      */
     public static function invalidProviderName(string $technicalName): self
     {
-        return new self(
-            Response::HTTP_INTERNAL_SERVER_ERROR,
-            self::INVALID_PROVIDER_NAME,
-            'The payment provider technical name "{{ technicalName }}" is invalid, it must match [A-Za-z0-9_-]+ so that the notify url can carry it.',
-            ['technicalName' => $technicalName]
-        );
+        return PaymentProviderException::invalidProviderName($technicalName);
     }
 
     public static function stateMachineInvalid(string $stateMachine, string $reason): self
@@ -218,212 +194,188 @@ class PaymentException extends HttpException
         );
     }
 
+    /**
+     * @deprecated tag:v6.8.0 - Use PaymentProviderException::providerNotEnabled() instead
+     *
+     * @phpstan-ignore shopwell.deprecatedMethod (the forwarding facade must keep existing payment calls usable during the migration)
+     */
     public static function providerNotEnabled(string $technicalName, string $appId): self
     {
-        return new self(
-            Response::HTTP_FORBIDDEN,
-            self::PROVIDER_NOT_ENABLED,
-            'The payment provider "{{ technicalName }}" is not enabled for the app "{{ appId }}".',
-            ['technicalName' => $technicalName, 'appId' => $appId]
-        );
-    }
-
-    public static function providerNotConfigured(string $technicalName): self
-    {
-        return new self(
-            Response::HTTP_INTERNAL_SERVER_ERROR,
-            self::PROVIDER_NOT_CONFIGURED,
-            'The payment provider "{{ technicalName }}" is enabled but its credentials are not configured.',
-            ['technicalName' => $technicalName]
-        );
+        return PaymentProviderException::providerNotEnabled($technicalName, $appId);
     }
 
     /**
-     * The account sources of an interface run in a circle: app A inherits from app B, app B inherits
-     * from app A again. Neither of them owns an account, so the chain has no end and no credentials -
-     * it is a configuration mistake and is refused instead of being walked until a hop limit hits.
+     * @deprecated tag:v6.8.0 - Use PaymentProviderException::providerNotConfigured() instead
+     *
+     * @phpstan-ignore shopwell.deprecatedMethod (the forwarding facade must keep existing payment calls usable during the migration)
+     */
+    public static function providerNotConfigured(string $technicalName): self
+    {
+        return PaymentProviderException::providerNotConfigured($technicalName);
+    }
+
+    /**
+     * @deprecated tag:v6.8.0 - Use PaymentProviderException::providerInheritanceCycle() instead
+     *
+     * @phpstan-ignore shopwell.deprecatedMethod (the forwarding facade must keep existing payment calls usable during the migration)
      */
     public static function providerInheritanceCycle(string $technicalName, string $appTechnicalName): self
     {
-        return new self(
-            Response::HTTP_BAD_REQUEST,
-            self::PROVIDER_INHERITANCE_CYCLE,
-            'The account source of the payment provider "{{ technicalName }}" runs in a circle: the app "{{ appTechnicalName }}" inherits it from an app that inherits it from "{{ appTechnicalName }}" again. Exactly one app of the chain has to collect on an account of its own.',
-            ['technicalName' => $technicalName, 'appTechnicalName' => $appTechnicalName]
-        );
+        return PaymentProviderException::providerInheritanceCycle($technicalName, $appTechnicalName);
     }
 
     /**
-     * The account of an interface is inherited from an app that does not exist anymore. The column is
-     * a foreign key with `ON DELETE SET NULL`, so this only happens for a row that was written by
-     * hand or by an import - a clear answer beats walking into "no credentials" without saying why.
+     * @deprecated tag:v6.8.0 - Use PaymentProviderException::providerSourceAppMissing() instead
+     *
+     * @phpstan-ignore shopwell.deprecatedMethod (the forwarding facade must keep existing payment calls usable during the migration)
      */
     public static function providerSourceAppMissing(string $technicalName, string $appTechnicalName, string $sourceAppId): self
     {
-        return new self(
-            Response::HTTP_BAD_REQUEST,
-            self::PROVIDER_SOURCE_APP_MISSING,
-            'The app "{{ appTechnicalName }}" inherits the account of the payment provider "{{ technicalName }}" from the app "{{ sourceAppId }}", which does not exist.',
-            ['technicalName' => $technicalName, 'appTechnicalName' => $appTechnicalName, 'sourceAppId' => $sourceAppId]
-        );
-    }
-
-    public static function channelNotEnabled(string $technicalName, string $appId): self
-    {
-        return new self(
-            Response::HTTP_FORBIDDEN,
-            self::CHANNEL_NOT_ENABLED,
-            'The payment channel "{{ technicalName }}" is not enabled for the app "{{ appId }}".',
-            ['technicalName' => $technicalName, 'appId' => $appId]
-        );
-    }
-
-    public static function channelNotConfigured(string $technicalName, string $field): self
-    {
-        return new self(
-            Response::HTTP_INTERNAL_SERVER_ERROR,
-            self::CHANNEL_NOT_CONFIGURED,
-            'The payment channel "{{ technicalName }}" is missing the parameter "{{ field }}".',
-            ['technicalName' => $technicalName, 'field' => $field]
-        );
+        return PaymentProviderException::providerSourceAppMissing($technicalName, $appTechnicalName, $sourceAppId);
     }
 
     /**
-     * The platform does not offer this channel at all - no app can collect through it, whether it pays
-     * with the credentials of the platform or with its own ones.
+     * @deprecated tag:v6.8.0 - Use PaymentProviderException::channelNotEnabled() instead
+     *
+     * @phpstan-ignore shopwell.deprecatedMethod (the forwarding facade must keep existing payment calls usable during the migration)
+     */
+    public static function channelNotEnabled(string $technicalName, string $appId): self
+    {
+        return PaymentProviderException::channelNotEnabled($technicalName, $appId);
+    }
+
+    /**
+     * @deprecated tag:v6.8.0 - Use PaymentProviderException::channelNotConfigured() instead
+     *
+     * @phpstan-ignore shopwell.deprecatedMethod (the forwarding facade must keep existing payment calls usable during the migration)
+     */
+    public static function channelNotConfigured(string $technicalName, string $field): self
+    {
+        return PaymentProviderException::channelNotConfigured($technicalName, $field);
+    }
+
+    /**
+     * @deprecated tag:v6.8.0 - Use PaymentProviderException::channelDisabled() instead
+     *
+     * @phpstan-ignore shopwell.deprecatedMethod (the forwarding facade must keep existing payment calls usable during the migration)
      */
     public static function channelDisabled(string $technicalName): self
     {
-        return new self(
-            Response::HTTP_FORBIDDEN,
-            self::CHANNEL_DISABLED,
-            'The payment channel "{{ technicalName }}" is not offered by the platform.',
-            ['technicalName' => $technicalName]
-        );
+        return PaymentProviderException::channelDisabled($technicalName);
     }
 
     /**
-     * A channel of an interface that the adapter of that interface cannot open - the declaration and
-     * the adapter drifted apart, which is a programming error rather than a problem of the caller.
+     * @deprecated tag:v6.8.0 - Use PaymentProviderException::channelNotSupported() instead
+     *
+     * @phpstan-ignore shopwell.deprecatedMethod (the forwarding facade must keep existing payment calls usable during the migration)
      */
     public static function channelNotSupported(string $channel, string $provider): self
     {
-        return new self(
-            Response::HTTP_INTERNAL_SERVER_ERROR,
-            self::CHANNEL_NOT_SUPPORTED,
-            'The payment interface "{{ provider }}" cannot open a payment with the channel "{{ channel }}".',
-            ['channel' => $channel, 'provider' => $provider]
-        );
+        return PaymentProviderException::channelNotSupported($channel, $provider);
     }
 
+    /**
+     * @deprecated tag:v6.8.0 - Use PaymentProviderException::currencyNotSupported() instead
+     *
+     * @phpstan-ignore shopwell.deprecatedMethod (the forwarding facade must keep existing payment calls usable during the migration)
+     */
     public static function currencyNotSupported(string $technicalName, string $currency): self
     {
-        return new self(
-            Response::HTTP_BAD_REQUEST,
-            self::CURRENCY_NOT_SUPPORTED,
-            'The payment channel "{{ technicalName }}" does not support the currency "{{ currency }}".',
-            ['technicalName' => $technicalName, 'currency' => $currency]
-        );
+        return PaymentProviderException::currencyNotSupported($technicalName, $currency);
     }
 
+    /**
+     * @deprecated tag:v6.8.0 - Use PaymentProviderException::deviceNotSupported() instead
+     *
+     * @phpstan-ignore shopwell.deprecatedMethod (the forwarding facade must keep existing payment calls usable during the migration)
+     */
     public static function deviceNotSupported(string $technicalName, string $device): self
     {
-        return new self(
-            Response::HTTP_BAD_REQUEST,
-            self::DEVICE_NOT_SUPPORTED,
-            'The payment channel "{{ technicalName }}" cannot be used on the device "{{ device }}".',
-            ['technicalName' => $technicalName, 'device' => $device]
-        );
+        return PaymentProviderException::deviceNotSupported($technicalName, $device);
     }
 
     /**
      * @param list<string> $missing
+     *
+     * @deprecated tag:v6.8.0 - Use PaymentProviderException::missingRuntimeParams() instead
+     *
+     * @phpstan-ignore shopwell.deprecatedMethod (the forwarding facade must keep existing payment calls usable during the migration)
      */
     public static function missingRuntimeParams(string $technicalName, array $missing): self
     {
-        return new self(
-            Response::HTTP_BAD_REQUEST,
-            self::MISSING_RUNTIME_PARAMS,
-            'The payment channel "{{ technicalName }}" requires the parameter(s): {{ missing }}',
-            ['technicalName' => $technicalName, 'missing' => implode(', ', $missing)]
-        );
+        return PaymentProviderException::missingRuntimeParams($technicalName, $missing);
     }
 
     /**
      * @param list<string> $missing
+     *
+     * @deprecated tag:v6.8.0 - Use PaymentAppException::missingAuthParameters() instead
+     *
+     * @phpstan-ignore shopwell.deprecatedMethod (the forwarding facade must keep existing payment calls usable during the migration)
      */
     public static function missingAuthParameters(array $missing): self
     {
-        return new self(
-            Response::HTTP_UNAUTHORIZED,
-            self::MISSING_AUTH_PARAMETERS,
-            'Missing authentication parameter(s): {{ missing }}',
-            ['missing' => implode(', ', $missing)]
-        );
-    }
-
-    public static function invalidSignature(string $appId): self
-    {
-        return new self(
-            Response::HTTP_UNAUTHORIZED,
-            self::INVALID_SIGNATURE,
-            'The request signature of the app "{{ appId }}" is invalid.',
-            ['appId' => $appId]
-        );
-    }
-
-    public static function expiredTimestamp(int $timestamp, int $window): self
-    {
-        return new self(
-            Response::HTTP_UNAUTHORIZED,
-            self::EXPIRED_TIMESTAMP,
-            'The request timestamp "{{ timestamp }}" is outside of the allowed window of {{ window }} seconds.',
-            ['timestamp' => $timestamp, 'window' => $window]
-        );
-    }
-
-    public static function foreignApp(string $appId, string $paymentNo): self
-    {
-        return new self(
-            Response::HTTP_FORBIDDEN,
-            self::FOREIGN_APP,
-            'The payment order "{{ paymentNo }}" does not belong to the app "{{ appId }}".',
-            ['appId' => $appId, 'paymentNo' => $paymentNo]
-        );
-    }
-
-    public static function appNotFound(string $technicalName): self
-    {
-        return new self(
-            Response::HTTP_UNAUTHORIZED,
-            self::APP_NOT_FOUND,
-            'The payment app "{{ technicalName }}" is unknown.',
-            ['technicalName' => $technicalName]
-        );
-    }
-
-    public static function appDisabled(string $technicalName): self
-    {
-        return new self(
-            Response::HTTP_FORBIDDEN,
-            self::APP_DISABLED,
-            'The payment app "{{ technicalName }}" is disabled.',
-            ['technicalName' => $technicalName]
-        );
+        return PaymentAppException::missingAuthParameters($missing);
     }
 
     /**
-     * The tenant of the shop is seeded by the migration and cannot be created at runtime, so its
-     * absence means the installation or the upgrade is broken - not the request that hit it.
+     * @deprecated tag:v6.8.0 - Use PaymentAppException::invalidSignature() instead
+     *
+     * @phpstan-ignore shopwell.deprecatedMethod (the forwarding facade must keep existing payment calls usable during the migration)
+     */
+    public static function invalidSignature(string $appId): self
+    {
+        return PaymentAppException::invalidSignature($appId);
+    }
+
+    /**
+     * @deprecated tag:v6.8.0 - Use PaymentAppException::expiredTimestamp() instead
+     *
+     * @phpstan-ignore shopwell.deprecatedMethod (the forwarding facade must keep existing payment calls usable during the migration)
+     */
+    public static function expiredTimestamp(int $timestamp, int $window): self
+    {
+        return PaymentAppException::expiredTimestamp($timestamp, $window);
+    }
+
+    /**
+     * @deprecated tag:v6.8.0 - Use PaymentAppException::foreignApp() instead
+     *
+     * @phpstan-ignore shopwell.deprecatedMethod (the forwarding facade must keep existing payment calls usable during the migration)
+     */
+    public static function foreignApp(string $appId, string $paymentNo): self
+    {
+        return PaymentAppException::foreignApp($appId, $paymentNo);
+    }
+
+    /**
+     * @deprecated tag:v6.8.0 - Use PaymentAppException::appNotFound() instead
+     *
+     * @phpstan-ignore shopwell.deprecatedMethod (the forwarding facade must keep existing payment calls usable during the migration)
+     */
+    public static function appNotFound(string $technicalName): self
+    {
+        return PaymentAppException::appNotFound($technicalName);
+    }
+
+    /**
+     * @deprecated tag:v6.8.0 - Use PaymentAppException::appDisabled() instead
+     *
+     * @phpstan-ignore shopwell.deprecatedMethod (the forwarding facade must keep existing payment calls usable during the migration)
+     */
+    public static function appDisabled(string $technicalName): self
+    {
+        return PaymentAppException::appDisabled($technicalName);
+    }
+
+    /**
+     * @deprecated tag:v6.8.0 - Use PaymentAppException::platformTenantMissing() instead
+     *
+     * @phpstan-ignore shopwell.deprecatedMethod (the forwarding facade must keep existing payment calls usable during the migration)
      */
     public static function platformTenantMissing(string $technicalName): self
     {
-        return new self(
-            Response::HTTP_INTERNAL_SERVER_ERROR,
-            self::PLATFORM_TENANT_MISSING,
-            'The platform tenant "{{ technicalName }}" is missing. The payment migration has not seeded it.',
-            ['technicalName' => $technicalName]
-        );
+        return PaymentAppException::platformTenantMissing($technicalName);
     }
 
     public static function missingParameter(string $name): self
@@ -436,163 +388,154 @@ class PaymentException extends HttpException
         );
     }
 
+    /**
+     * @deprecated tag:v6.8.0 - Use PaymentOrderException::orderNotFound() instead
+     *
+     * @phpstan-ignore shopwell.deprecatedMethod (the forwarding facade must keep existing payment calls usable during the migration)
+     */
     public static function orderNotFound(string $paymentNo): self
     {
-        return new self(
-            Response::HTTP_NOT_FOUND,
-            self::ORDER_NOT_FOUND,
-            'The payment order "{{ paymentNo }}" does not exist.',
-            ['paymentNo' => $paymentNo]
-        );
+        return PaymentOrderException::orderNotFound($paymentNo);
     }
 
     /**
-     * The insert of a payment order hit a unique key, but neither the out trade number nor the
-     * idempotency key reads the conflicting order back - the order exists, it is just not visible
-     * to this request yet, so retrying is the right answer and "not found" would be a lie.
+     * @deprecated tag:v6.8.0 - Use PaymentOrderException::orderConflict() instead
+     *
+     * @phpstan-ignore shopwell.deprecatedMethod (the forwarding facade must keep existing payment calls usable during the migration)
      */
     public static function orderConflict(string $outTradeNo): self
     {
-        return new self(
-            Response::HTTP_CONFLICT,
-            self::ORDER_CONFLICT,
-            'The payment order for the out trade number "{{ outTradeNo }}" conflicts with an existing order that cannot be read back.',
-            ['outTradeNo' => $outTradeNo]
-        );
-    }
-
-    public static function orderNotPayable(string $paymentNo): self
-    {
-        return new self(
-            Response::HTTP_CONFLICT,
-            self::ORDER_NOT_PAYABLE,
-            'The payment order "{{ paymentNo }}" is not open for payment anymore.',
-            ['paymentNo' => $paymentNo]
-        );
-    }
-
-    public static function orderAlreadyClosed(string $paymentNo): self
-    {
-        return new self(
-            Response::HTTP_CONFLICT,
-            self::ORDER_ALREADY_CLOSED,
-            'The payment order "{{ paymentNo }}" is already closed.',
-            ['paymentNo' => $paymentNo]
-        );
+        return PaymentOrderException::orderConflict($outTradeNo);
     }
 
     /**
-     * The order cannot be closed because the payment already arrived: the close is refused instead of
-     * hiding a payment the platform has to book.
+     * @deprecated tag:v6.8.0 - Use PaymentOrderException::orderNotPayable() instead
+     *
+     * @phpstan-ignore shopwell.deprecatedMethod (the forwarding facade must keep existing payment calls usable during the migration)
+     */
+    public static function orderNotPayable(string $paymentNo): self
+    {
+        return PaymentOrderException::orderNotPayable($paymentNo);
+    }
+
+    /**
+     * @deprecated tag:v6.8.0 - Use PaymentOrderException::orderAlreadyClosed() instead
+     *
+     * @phpstan-ignore shopwell.deprecatedMethod (the forwarding facade must keep existing payment calls usable during the migration)
+     */
+    public static function orderAlreadyClosed(string $paymentNo): self
+    {
+        return PaymentOrderException::orderAlreadyClosed($paymentNo);
+    }
+
+    /**
+     * @deprecated tag:v6.8.0 - Use PaymentOrderException::orderAlreadyPaid() instead
+     *
+     * @phpstan-ignore shopwell.deprecatedMethod (the forwarding facade must keep existing payment calls usable during the migration)
      */
     public static function orderAlreadyPaid(string $paymentNo): self
     {
-        return new self(
-            Response::HTTP_CONFLICT,
-            self::ORDER_ALREADY_PAID,
-            'The payment order "{{ paymentNo }}" is already paid and cannot be closed.',
-            ['paymentNo' => $paymentNo]
-        );
+        return PaymentOrderException::orderAlreadyPaid($paymentNo);
     }
 
+    /**
+     * @deprecated tag:v6.8.0 - Use PaymentOrderException::orderNotExpirable() instead
+     *
+     * @phpstan-ignore shopwell.deprecatedMethod (the forwarding facade must keep existing payment calls usable during the migration)
+     */
     public static function orderNotExpirable(string $paymentNo): self
     {
-        return new self(
-            Response::HTTP_CONFLICT,
-            self::ORDER_NOT_EXPIRABLE,
-            'The payment order "{{ paymentNo }}" can no longer expire.',
-            ['paymentNo' => $paymentNo]
-        );
+        return PaymentOrderException::orderNotExpirable($paymentNo);
     }
 
+    /**
+     * @deprecated tag:v6.8.0 - Use PaymentOrderException::invalidAmount() instead
+     *
+     * @phpstan-ignore shopwell.deprecatedMethod (the forwarding facade must keep existing payment calls usable during the migration)
+     */
     public static function invalidAmount(int $amount): self
     {
-        return new self(
-            Response::HTTP_BAD_REQUEST,
-            self::INVALID_AMOUNT,
-            'The amount "{{ amount }}" must be a positive integer in the smallest currency unit.',
-            ['amount' => $amount]
-        );
+        return PaymentOrderException::invalidAmount($amount);
     }
 
+    /**
+     * @deprecated tag:v6.8.0 - Use PaymentOrderException::amountMismatch() instead
+     *
+     * @phpstan-ignore shopwell.deprecatedMethod (the forwarding facade must keep existing payment calls usable during the migration)
+     */
     public static function amountMismatch(string $paymentNo, int $expected, int $actual): self
     {
-        return new self(
-            Response::HTTP_CONFLICT,
-            self::AMOUNT_MISMATCH,
-            'The notified amount of "{{ paymentNo }}" is {{ actual }} but {{ expected }} was expected.',
-            ['paymentNo' => $paymentNo, 'expected' => $expected, 'actual' => $actual]
-        );
+        return PaymentOrderException::amountMismatch($paymentNo, $expected, $actual);
     }
 
+    /**
+     * @deprecated tag:v6.8.0 - Use PaymentOrderException::currencyMismatch() instead
+     *
+     * @phpstan-ignore shopwell.deprecatedMethod (the forwarding facade must keep existing payment calls usable during the migration)
+     */
     public static function currencyMismatch(string $paymentNo, string $expected, string $actual): self
     {
-        return new self(
-            Response::HTTP_CONFLICT,
-            self::CURRENCY_MISMATCH,
-            'The notified currency of "{{ paymentNo }}" is "{{ actual }}" but "{{ expected }}" was expected.',
-            ['paymentNo' => $paymentNo, 'expected' => $expected, 'actual' => $actual]
-        );
+        return PaymentOrderException::currencyMismatch($paymentNo, $expected, $actual);
     }
 
+    /**
+     * @deprecated tag:v6.8.0 - Use PaymentOrderException::refundNotAllowed() instead
+     *
+     * @phpstan-ignore shopwell.deprecatedMethod (the forwarding facade must keep existing payment calls usable during the migration)
+     */
     public static function refundNotAllowed(string $paymentNo): self
     {
-        return new self(
-            Response::HTTP_CONFLICT,
-            self::REFUND_NOT_ALLOWED,
-            'The payment order "{{ paymentNo }}" is not paid and therefore cannot be refunded.',
-            ['paymentNo' => $paymentNo]
-        );
+        return PaymentOrderException::refundNotAllowed($paymentNo);
     }
 
+    /**
+     * @deprecated tag:v6.8.0 - Use PaymentOrderException::refundAmountExceedsOrder() instead
+     *
+     * @phpstan-ignore shopwell.deprecatedMethod (the forwarding facade must keep existing payment calls usable during the migration)
+     */
     public static function refundAmountExceedsOrder(string $paymentNo, int $amount, int $available): self
     {
-        return new self(
-            Response::HTTP_CONFLICT,
-            self::REFUND_AMOUNT_EXCEEDS_ORDER,
-            'The refund amount {{ amount }} of "{{ paymentNo }}" exceeds the refundable amount {{ available }}.',
-            ['paymentNo' => $paymentNo, 'amount' => $amount, 'available' => $available]
-        );
+        return PaymentOrderException::refundAmountExceedsOrder($paymentNo, $amount, $available);
     }
 
+    /**
+     * @deprecated tag:v6.8.0 - Use PaymentNotificationException::notificationInvalid() instead
+     *
+     * @phpstan-ignore shopwell.deprecatedMethod (the forwarding facade must keep existing payment calls usable during the migration)
+     */
     public static function notificationInvalid(string $channel, string $reason): self
     {
-        return new self(
-            Response::HTTP_BAD_REQUEST,
-            self::NOTIFICATION_INVALID,
-            'The notification of channel "{{ channel }}" is invalid: {{ reason }}',
-            ['channel' => $channel, 'reason' => $reason]
-        );
+        return PaymentNotificationException::notificationInvalid($channel, $reason);
     }
 
+    /**
+     * @deprecated tag:v6.8.0 - Use PaymentNotificationException::notificationOrderUnknown() instead
+     *
+     * @phpstan-ignore shopwell.deprecatedMethod (the forwarding facade must keep existing payment calls usable during the migration)
+     */
     public static function notificationOrderUnknown(string $channel, string $reference): self
     {
-        return new self(
-            Response::HTTP_NOT_FOUND,
-            self::NOTIFICATION_ORDER_UNKNOWN,
-            'The notification of channel "{{ channel }}" references the unknown payment order "{{ reference }}".',
-            ['channel' => $channel, 'reference' => $reference]
-        );
+        return PaymentNotificationException::notificationOrderUnknown($channel, $reference);
     }
 
+    /**
+     * @deprecated tag:v6.8.0 - Use PaymentNotificationException::notificationNotFound() instead
+     *
+     * @phpstan-ignore shopwell.deprecatedMethod (the forwarding facade must keep existing payment calls usable during the migration)
+     */
     public static function notificationNotFound(string $id): self
     {
-        return new self(
-            Response::HTTP_NOT_FOUND,
-            self::NOTIFICATION_NOT_FOUND,
-            'The payment notification "{{ id }}" does not exist.',
-            ['id' => $id]
-        );
+        return PaymentNotificationException::notificationNotFound($id);
     }
 
+    /**
+     * @deprecated tag:v6.8.0 - Use PaymentNotificationException::webhookDeliveryNotFound() instead
+     *
+     * @phpstan-ignore shopwell.deprecatedMethod (the forwarding facade must keep existing payment calls usable during the migration)
+     */
     public static function webhookDeliveryNotFound(string $id): self
     {
-        return new self(
-            Response::HTTP_NOT_FOUND,
-            self::WEBHOOK_DELIVERY_NOT_FOUND,
-            'The payment webhook delivery "{{ id }}" does not exist.',
-            ['id' => $id]
-        );
+        return PaymentNotificationException::webhookDeliveryNotFound($id);
     }
 
     /**
@@ -620,51 +563,44 @@ class PaymentException extends HttpException
         );
     }
 
+    /**
+     * @deprecated tag:v6.8.0 - Use PaymentGatewayException::gatewayResultMissing() instead
+     *
+     * @phpstan-ignore shopwell.deprecatedMethod (the forwarding facade must keep existing payment calls usable during the migration)
+     */
     public static function gatewayResultMissing(string $channel): self
     {
-        return new self(
-            Response::HTTP_BAD_GATEWAY,
-            self::GATEWAY_RESULT_MISSING,
-            'The payment channel "{{ channel }}" did not return a result.',
-            ['channel' => $channel]
-        );
-    }
-
-    public static function refundNotFound(string $refundNo): self
-    {
-        return new self(
-            Response::HTTP_NOT_FOUND,
-            self::REFUND_NOT_FOUND,
-            'The refund "{{ refundNo }}" does not exist.',
-            ['refundNo' => $refundNo]
-        );
+        return PaymentGatewayException::gatewayResultMissing($channel);
     }
 
     /**
-     * Payum handed the action an api it does not work with - the gateway declaration and the action
-     * drifted apart, which is a programming error rather than a problem of the caller.
+     * @deprecated tag:v6.8.0 - Use PaymentOrderException::refundNotFound() instead
+     *
+     * @phpstan-ignore shopwell.deprecatedMethod (the forwarding facade must keep existing payment calls usable during the migration)
+     */
+    public static function refundNotFound(string $refundNo): self
+    {
+        return PaymentOrderException::refundNotFound($refundNo);
+    }
+
+    /**
+     * @deprecated tag:v6.8.0 - Use PaymentGatewayException::unsupportedApi() instead
+     *
+     * @phpstan-ignore shopwell.deprecatedMethod (the forwarding facade must keep existing payment calls usable during the migration)
      */
     public static function unsupportedApi(string $action, string $api): self
     {
-        return new self(
-            Response::HTTP_INTERNAL_SERVER_ERROR,
-            self::UNSUPPORTED_API,
-            'The action "{{ action }}" does not support the api "{{ api }}".',
-            ['action' => $action, 'api' => $api]
-        );
+        return PaymentGatewayException::unsupportedApi($action, $api);
     }
 
     /**
-     * The action was executed without an api, which payum always injects before - a wiring error.
+     * @deprecated tag:v6.8.0 - Use PaymentGatewayException::actionWithoutApi() instead
+     *
+     * @phpstan-ignore shopwell.deprecatedMethod (the forwarding facade must keep existing payment calls usable during the migration)
      */
     public static function actionWithoutApi(string $action): self
     {
-        return new self(
-            Response::HTTP_INTERNAL_SERVER_ERROR,
-            self::ACTION_WITHOUT_API,
-            'The action "{{ action }}" was executed without an api.',
-            ['action' => $action]
-        );
+        return PaymentGatewayException::actionWithoutApi($action);
     }
 
     /**
@@ -686,407 +622,282 @@ class PaymentException extends HttpException
     }
 
     /**
-     * A checkout payment method without a bound gateway channel cannot collect at all: the shopper
-     * picked a method the administration never told how to reach an interface.
+     * @deprecated tag:v6.8.0 - Use PaymentCheckoutBindingException::paymentMethodChannelMissing() instead
+     *
+     * @phpstan-ignore shopwell.deprecatedMethod (the forwarding facade must keep existing payment calls usable during the migration)
      */
     public static function paymentMethodChannelMissing(string $paymentMethodId): self
     {
-        return new self(
-            Response::HTTP_NOT_FOUND,
-            self::PAYMENT_METHOD_CHANNEL_MISSING,
-            'The payment method "{{ paymentMethodId }}" has no gateway channel bound to it.',
-            ['paymentMethodId' => $paymentMethodId]
-        );
+        return PaymentCheckoutBindingException::paymentMethodChannelMissing($paymentMethodId);
     }
 
     /**
-     * The app/channel pair that is already bound to another payment method cannot be bound a second
-     * time: the shopper's choice between the two methods would become meaningless and the money of one
-     * of them would land in the account of the other. The database enforces the same rule over
-     * (app, channel), this is the answer that names the method in the way of the one being configured.
+     * @deprecated tag:v6.8.0 - Use PaymentCheckoutBindingException::paymentMethodChannelTaken() instead
+     *
+     * @phpstan-ignore shopwell.deprecatedMethod (the forwarding facade must keep existing payment calls usable during the migration)
      */
     public static function paymentMethodChannelTaken(string $paymentAppName, string $channelTechnicalName, string $paymentMethodId, string $paymentMethodName): self
     {
-        return new self(
-            Response::HTTP_CONFLICT,
-            self::PAYMENT_METHOD_CHANNEL_TAKEN,
-            'The payment app "{{ paymentAppName }}" already collects the channel "{{ channelTechnicalName }}" for the payment method "{{ paymentMethodName }}" ({{ paymentMethodId }}).',
-            [
-                'paymentAppName' => $paymentAppName,
-                'channelTechnicalName' => $channelTechnicalName,
-                'paymentMethodId' => $paymentMethodId,
-                'paymentMethodName' => $paymentMethodName,
-            ]
-        );
+        return PaymentCheckoutBindingException::paymentMethodChannelTaken($paymentAppName, $channelTechnicalName, $paymentMethodId, $paymentMethodName);
     }
 
     /**
-     * The tenant the platform itself collects through is seeded, not onboarded, and it cannot be
-     * deleted: the shop would be left without a tenant to attribute platform payments to, and every
-     * platform payment would lose its bookkeeping. It stays editable, because the merchant configures
-     * the interfaces and channels of the shop on it.
+     * @deprecated tag:v6.8.0 - Use PaymentAppException::platformTenantNotDeletable() instead
+     *
+     * @phpstan-ignore shopwell.deprecatedMethod (the forwarding facade must keep existing payment calls usable during the migration)
      */
     public static function platformTenantNotDeletable(string $technicalName): self
     {
-        return new self(
-            Response::HTTP_BAD_REQUEST,
-            self::PLATFORM_TENANT_READ_ONLY,
-            'The payment app "{{ technicalName }}" is the tenant of the platform and cannot be deleted here.',
-            ['technicalName' => $technicalName]
-        );
+        return PaymentAppException::platformTenantNotDeletable($technicalName);
     }
 
     /**
-     * A channel that is opened by an sdk cannot be used by the storefront: it is pulled up by an app
-     * that renders the payment itself, a browser has no sdk to hand the parameters to.
+     * @deprecated tag:v6.8.0 - Use PaymentCheckoutBindingException::channelNotAvailableInStorefront() instead
+     *
+     * @phpstan-ignore shopwell.deprecatedMethod (the forwarding facade must keep existing payment calls usable during the migration)
      */
     public static function channelNotAvailableInStorefront(string $technicalName): self
     {
-        return new self(
-            Response::HTTP_BAD_REQUEST,
-            self::CHANNEL_NOT_AVAILABLE_IN_STOREFRONT,
-            'The payment channel "{{ technicalName }}" cannot be used in the storefront checkout.',
-            ['technicalName' => $technicalName]
-        );
+        return PaymentCheckoutBindingException::channelNotAvailableInStorefront($technicalName);
     }
 
     /**
-     * A subscription plan whose monthly deduction day falls after the 28th cannot be signed up at
-     * alipay at all: `period_rule_params.execute_time` is capped there by the provider. Refusing
-     * at plan level beats silently moving the deduction day - the subscriber would be charged on
-     * a day they never agreed to.
+     * @deprecated tag:v6.8.0 - Use PaymentSubscriptionException::paymentCycleNotExpressible() instead
+     *
+     * @phpstan-ignore shopwell.deprecatedMethod (the forwarding facade must keep existing payment calls usable during the migration)
      */
     public static function paymentCycleNotExpressible(string $provider, string $unit, int $count, int $anchorDayOfMonth): self
     {
-        return new self(
-            Response::HTTP_UNPROCESSABLE_ENTITY,
-            self::CYCLE_NOT_EXPRESSIBLE,
-            'A subscription charging every {{ count }} {{ unit }} on day {{ anchorDayOfMonth }} of the month cannot be expressed at the provider "{{ provider }}": monthly deduction days are limited to the 28th there.',
-            ['provider' => $provider, 'unit' => $unit, 'count' => $count, 'anchorDayOfMonth' => $anchorDayOfMonth]
-        );
-    }
-
-    public static function paymentCycleNotFound(string $id): self
-    {
-        return new self(
-            Response::HTTP_NOT_FOUND,
-            self::CYCLE_NOT_FOUND,
-            'The subscription cycle "{{ id }}" does not exist.',
-            ['id' => $id]
-        );
+        return PaymentSubscriptionException::paymentCycleNotExpressible($provider, $unit, $count, $anchorDayOfMonth);
     }
 
     /**
-     * The insert of a cycle hit the unique key over (subscription, cycle number), but the
-     * conflicting row cannot be read back in this request - the cycle exists, it is just not
-     * visible yet, so retrying is the right answer and "not found" would be a lie.
+     * @deprecated tag:v6.8.0 - Use PaymentSubscriptionException::paymentCycleNotFound() instead
+     *
+     * @phpstan-ignore shopwell.deprecatedMethod (the forwarding facade must keep existing payment calls usable during the migration)
+     */
+    public static function paymentCycleNotFound(string $id): self
+    {
+        return PaymentSubscriptionException::paymentCycleNotFound($id);
+    }
+
+    /**
+     * @deprecated tag:v6.8.0 - Use PaymentSubscriptionException::paymentCycleConflict() instead
+     *
+     * @phpstan-ignore shopwell.deprecatedMethod (the forwarding facade must keep existing payment calls usable during the migration)
      */
     public static function paymentCycleConflict(string $subscriptionId, int $cycleNo): self
     {
-        return new self(
-            Response::HTTP_CONFLICT,
-            self::CYCLE_CONFLICT,
-            'The cycle {{ cycleNo }} of the subscription "{{ subscriptionId }}" conflicts with an existing cycle that cannot be read back.',
-            ['subscriptionId' => $subscriptionId, 'cycleNo' => $cycleNo]
-        );
+        return PaymentSubscriptionException::paymentCycleConflict($subscriptionId, $cycleNo);
     }
 
     /**
-     * Only a cycle the channel answered definitively for may be re-armed: an in-flight trade has
-     * to stay `unknown` until a query resolves it, and a settled cycle has nothing to re-arm.
+     * @deprecated tag:v6.8.0 - Use PaymentSubscriptionException::paymentCycleNotRearmable() instead
+     *
+     * @phpstan-ignore shopwell.deprecatedMethod (the forwarding facade must keep existing payment calls usable during the migration)
      */
     public static function paymentCycleNotRearmable(string $id, string $state): self
     {
-        return new self(
-            Response::HTTP_CONFLICT,
-            self::CYCLE_NOT_REARMABLE,
-            'The subscription cycle "{{ id }}" is "{{ state }}" and cannot be re-armed for another charge attempt.',
-            ['id' => $id, 'state' => $state]
-        );
-    }
-
-    public static function subscriptionNotFound(string $id): self
-    {
-        return new self(
-            Response::HTTP_NOT_FOUND,
-            self::SUBSCRIPTION_NOT_FOUND,
-            'The payment subscription "{{ id }}" does not exist.',
-            ['id' => $id]
-        );
-    }
-
-    public static function invalidPeriodUnit(string $unit): self
-    {
-        return new self(
-            Response::HTTP_BAD_REQUEST,
-            self::INVALID_PERIOD_UNIT,
-            'The period unit "{{ unit }}" is not one of day, week, month or year.',
-            ['unit' => $unit]
-        );
-    }
-
-    public static function invalidPeriodCount(int $count): self
-    {
-        return new self(
-            Response::HTTP_BAD_REQUEST,
-            self::INVALID_PERIOD_COUNT,
-            'A period must advance by at least 1, got {{ count }}.',
-            ['count' => $count]
-        );
-    }
-
-    public static function transferNotFound(string $id): self
-    {
-        return new self(
-            Response::HTTP_NOT_FOUND,
-            self::TRANSFER_NOT_FOUND,
-            'The payment transfer "{{ id }}" does not exist.',
-            ['id' => $id]
-        );
+        return PaymentSubscriptionException::paymentCycleNotRearmable($id, $state);
     }
 
     /**
-     * The insert hit a unique key, but the conflicting row cannot be read back in this request - it
-     * exists, it is just not visible yet, so retrying is the right answer and "not found" would be a
-     * lie. Both unique keys of the domain report through this factory: the out number of a transfer
-     * and the identity hash of a recipient.
+     * @deprecated tag:v6.8.0 - Use PaymentSubscriptionException::subscriptionNotFound() instead
+     *
+     * @phpstan-ignore shopwell.deprecatedMethod (the forwarding facade must keep existing payment calls usable during the migration)
+     */
+    public static function subscriptionNotFound(string $id): self
+    {
+        return PaymentSubscriptionException::subscriptionNotFound($id);
+    }
+
+    /**
+     * @deprecated tag:v6.8.0 - Use PaymentSubscriptionException::invalidPeriodUnit() instead
+     *
+     * @phpstan-ignore shopwell.deprecatedMethod (the forwarding facade must keep existing payment calls usable during the migration)
+     */
+    public static function invalidPeriodUnit(string $unit): self
+    {
+        return PaymentSubscriptionException::invalidPeriodUnit($unit);
+    }
+
+    /**
+     * @deprecated tag:v6.8.0 - Use PaymentSubscriptionException::invalidPeriodCount() instead
+     *
+     * @phpstan-ignore shopwell.deprecatedMethod (the forwarding facade must keep existing payment calls usable during the migration)
+     */
+    public static function invalidPeriodCount(int $count): self
+    {
+        return PaymentSubscriptionException::invalidPeriodCount($count);
+    }
+
+    /**
+     * @deprecated tag:v6.8.0 - Use PaymentTransferException::transferNotFound() instead
+     *
+     * @phpstan-ignore shopwell.deprecatedMethod (the forwarding facade must keep existing payment calls usable during the migration)
+     */
+    public static function transferNotFound(string $id): self
+    {
+        return PaymentTransferException::transferNotFound($id);
+    }
+
+    /**
+     * @deprecated tag:v6.8.0 - Use PaymentTransferException::transferConflict() instead
+     *
+     * @phpstan-ignore shopwell.deprecatedMethod (the forwarding facade must keep existing payment calls usable during the migration)
      */
     public static function transferConflict(string $reference): self
     {
-        return new self(
-            Response::HTTP_CONFLICT,
-            self::TRANSFER_CONFLICT,
-            'The payment transfer "{{ reference }}" conflicts with an existing row that cannot be read back.',
-            ['reference' => $reference]
-        );
-    }
-
-    public static function transferRecipientNotFound(string $id): self
-    {
-        return new self(
-            Response::HTTP_NOT_FOUND,
-            self::TRANSFER_RECIPIENT_NOT_FOUND,
-            'The payment transfer recipient "{{ id }}" does not exist.',
-            ['id' => $id]
-        );
+        return PaymentTransferException::transferConflict($reference);
     }
 
     /**
-     * The interface cannot pay out to this kind of identity at all - wechat only knows an openid of
-     * the very app, stripe only a connected account, alipay no paypal email. Rejecting the pair at
-     * intake beats building a request the interface is guaranteed to refuse.
+     * @deprecated tag:v6.8.0 - Use PaymentTransferException::transferRecipientNotFound() instead
+     *
+     * @phpstan-ignore shopwell.deprecatedMethod (the forwarding facade must keep existing payment calls usable during the migration)
+     */
+    public static function transferRecipientNotFound(string $id): self
+    {
+        return PaymentTransferException::transferRecipientNotFound($id);
+    }
+
+    /**
+     * @deprecated tag:v6.8.0 - Use PaymentTransferException::transferIdentityNotSupported() instead
+     *
+     * @phpstan-ignore shopwell.deprecatedMethod (the forwarding facade must keep existing payment calls usable during the migration)
      */
     public static function transferIdentityNotSupported(string $provider, string $identityType): self
     {
-        return new self(
-            Response::HTTP_UNPROCESSABLE_ENTITY,
-            self::TRANSFER_IDENTITY_NOT_SUPPORTED,
-            'The payment interface "{{ provider }}" cannot pay out to the identity type "{{ identityType }}".',
-            ['provider' => $provider, 'identityType' => $identityType]
-        );
+        return PaymentTransferException::transferIdentityNotSupported($provider, $identityType);
     }
 
     /**
-     * A field the interface demands for this combination is missing - the name of the holder for an
-     * alipay logon id, the bank details for a card, the name of the holder from 2000 yuan on at wechat.
+     * @deprecated tag:v6.8.0 - Use PaymentTransferException::transferRecipientIncomplete() instead
+     *
+     * @phpstan-ignore shopwell.deprecatedMethod (the forwarding facade must keep existing payment calls usable during the migration)
      */
     public static function transferRecipientIncomplete(string $field): self
     {
-        return new self(
-            Response::HTTP_UNPROCESSABLE_ENTITY,
-            self::TRANSFER_RECIPIENT_INCOMPLETE,
-            'The transfer recipient is missing the field "{{ field }}" that the interface requires.',
-            ['field' => $field]
-        );
+        return PaymentTransferException::transferRecipientIncomplete($field);
     }
 
     /**
-     * The plain identity has to fit into the encrypted column, and the ciphertext is larger than the
-     * plain text: `PaymentCredentialCipher::encryptValue()` returns
-     * `base64_encode(nonce(24) + sodium secretbox(plain + 16))`, so a plain text of `n` bytes becomes
-     * `4 * ceil((n + 40) / 3)` characters. With `identity_value` being `VARCHAR(255)` the limit is
-     * therefore `4 * ceil((n + 40) / 3) <= 255`, i.e. `n <= 149`.
+     * @deprecated tag:v6.8.0 - Use PaymentTransferException::transferIdentityValueTooLong() instead
      *
-     * The limit is enforced before encrypting on purpose: the write would otherwise fail with MySQL
-     * error 1406 ("Data too long") and surface as a 500 instead of a readable 422. It is not a reason
-     * to widen the column - 149 bytes already cover every real identity (paypal's `receiver` tops out
-     * at 127 characters, and every identity type is ASCII), and a wider column only wastes storage on
-     * ciphertext.
+     * @phpstan-ignore shopwell.deprecatedMethod (the forwarding facade must keep existing payment calls usable during the migration)
      */
     public static function transferIdentityValueTooLong(int $length): self
     {
-        return new self(
-            Response::HTTP_UNPROCESSABLE_ENTITY,
-            self::TRANSFER_IDENTITY_VALUE_TOO_LONG,
-            'The transfer recipient identity is {{ length }} bytes long and must not exceed 149 bytes, so that its encrypted form fits into the 255 character column.',
-            ['length' => $length]
-        );
-    }
-
-    public static function transferAmountInvalid(): self
-    {
-        return new self(
-            Response::HTTP_UNPROCESSABLE_ENTITY,
-            self::TRANSFER_AMOUNT_INVALID,
-            'The transfer amount must be a positive integer in the smallest currency unit.',
-            []
-        );
+        return PaymentTransferException::transferIdentityValueTooLong($length);
     }
 
     /**
-     * The out number is the idempotency key of a payout and the interfaces cap it: wechat allows 32
-     * characters of `[0-9a-zA-Z]` on `out_bill_no`, alipay 64 on `out_biz_no`, and paypal 30 on the
-     * batch and item ids it derives from the number. The strictest limit wins, and a payout that
-     * cannot be sent under the number it was booked with must never be booked at all.
+     * @deprecated tag:v6.8.0 - Use PaymentTransferException::transferAmountInvalid() instead
+     *
+     * @phpstan-ignore shopwell.deprecatedMethod (the forwarding facade must keep existing payment calls usable during the migration)
+     */
+    public static function transferAmountInvalid(): self
+    {
+        return PaymentTransferException::transferAmountInvalid();
+    }
+
+    /**
+     * @deprecated tag:v6.8.0 - Use PaymentTransferException::transferOutNoInvalid() instead
+     *
+     * @phpstan-ignore shopwell.deprecatedMethod (the forwarding facade must keep existing payment calls usable during the migration)
      */
     public static function transferOutNoInvalid(string $outNo): self
     {
-        return new self(
-            Response::HTTP_UNPROCESSABLE_ENTITY,
-            self::TRANSFER_OUT_NO_INVALID,
-            'The out number "{{ outNo }}" must consist of 1 to 30 characters of [0-9a-zA-Z].',
-            ['outNo' => $outNo]
-        );
+        return PaymentTransferException::transferOutNoInvalid($outNo);
     }
 
     /**
-     * The out number already names a **different** payout of this app.
+     * @deprecated tag:v6.8.0 - Use PaymentTransferException::transferOutNoTaken() instead
      *
-     * The out number is the idempotency key, so a second booking under it is answered with the payout that
-     * exists - but only when it is the same payout. Reusing the number for another recipient, amount or
-     * currency would make the platform answer "already booked" with a payout the caller never meant, and the
-     * intended money would never move. The conflict is the only answer that lets the caller fix the number.
+     * @phpstan-ignore shopwell.deprecatedMethod (the forwarding facade must keep existing payment calls usable during the migration)
      */
     public static function transferOutNoTaken(string $outNo): self
     {
-        return new self(
-            Response::HTTP_CONFLICT,
-            self::TRANSFER_OUT_NO_TAKEN,
-            'The out number "{{ outNo }}" is already used by another payout of this app.',
-            ['outNo' => $outNo]
-        );
+        return PaymentTransferException::transferOutNoTaken($outNo);
     }
 
     /**
-     * The app a payout is booked for does not exist or is switched off.
+     * @deprecated tag:v6.8.0 - Use PaymentTransferException::transferAppNotAvailable() instead
      *
-     * It carries `PAYMENT__APP_NOT_FOUND` on purpose - the code an operator sees should stay the one the
-     * domain already uses for "this app cannot be worked with" - but answers 404 instead of the 401 of
-     * {@see self::appNotFound()}: that one is the answer of the app authentication of the payment api, and a
-     * 401 in the administration would read as "your session expired", which is not what happened.
+     * @phpstan-ignore shopwell.deprecatedMethod (the forwarding facade must keep existing payment calls usable during the migration)
      */
     public static function transferAppNotAvailable(string $appId): self
     {
-        return new self(
-            Response::HTTP_NOT_FOUND,
-            self::APP_NOT_FOUND,
-            'The payment app "{{ appId }}" does not exist or is not active.',
-            ['appId' => $appId]
-        );
+        return PaymentTransferException::transferAppNotAvailable($appId);
     }
 
     /**
-     * The transfer is already past the point of submission. Sending it again would not be a retry but
-     * a second payout - a retry always queries the channel first ("query before sending").
+     * @deprecated tag:v6.8.0 - Use PaymentTransferException::transferAlreadyFinalized() instead
+     *
+     * @phpstan-ignore shopwell.deprecatedMethod (the forwarding facade must keep existing payment calls usable during the migration)
      */
     public static function transferAlreadyFinalized(string $outNo, string $state): self
     {
-        return new self(
-            Response::HTTP_CONFLICT,
-            self::TRANSFER_ALREADY_FINALIZED,
-            'The payment transfer "{{ outNo }}" is "{{ state }}" and can not be submitted again.',
-            ['outNo' => $outNo, 'state' => $state]
-        );
+        return PaymentTransferException::transferAlreadyFinalized($outNo, $state);
     }
 
     /**
-     * The credentials of a payout are resolved from the app the caller acts for, so a transfer of
-     * another app would be paid out of that merchant account. The out number is the business case and
-     * is what the caller can act on - the transfer id is an internal detail.
+     * @deprecated tag:v6.8.0 - Use PaymentTransferException::transferForeignApp() instead
+     *
+     * @phpstan-ignore shopwell.deprecatedMethod (the forwarding facade must keep existing payment calls usable during the migration)
      */
     public static function transferForeignApp(string $appId, string $outNo): self
     {
-        return new self(
-            Response::HTTP_FORBIDDEN,
-            self::TRANSFER_FOREIGN_APP,
-            'The payment transfer "{{ outNo }}" does not belong to the app "{{ appId }}".',
-            ['appId' => $appId, 'outNo' => $outNo]
-        );
+        return PaymentTransferException::transferForeignApp($appId, $outNo);
     }
 
     /**
-     * A transfer that reached the interface has to name the object the interface created - every later
-     * query and every notification is matched by it. A row in an open state without one is a data
-     * defect of the submission, not a missing field of the recipient, and has to be reported as such:
-     * no query can be made and no answer can be booked.
+     * @deprecated tag:v6.8.0 - Use PaymentTransferException::transferProviderRefMissing() instead
+     *
+     * @phpstan-ignore shopwell.deprecatedMethod (the forwarding facade must keep existing payment calls usable during the migration)
      */
     public static function transferProviderRefMissing(string $outNo): self
     {
-        return new self(
-            Response::HTTP_INTERNAL_SERVER_ERROR,
-            self::TRANSFER_PROVIDER_REF_MISSING,
-            'The payment transfer "{{ outNo }}" carries no provider reference and can not be queried at the channel.',
-            ['outNo' => $outNo]
-        );
+        return PaymentTransferException::transferProviderRefMissing($outNo);
     }
 
     /**
-     * The interface does not pay out to a recipient that has not finished its onboarding: stripe
-     * refuses every payout of a connected account whose `payouts_enabled` is not true. Refusing the
-     * call locally - before a single request is built - beats using the error code of the interface
-     * as a validator, which would burn the idempotency key of the transfer on a guaranteed refusal.
+     * @deprecated tag:v6.8.0 - Use PaymentTransferException::transferRecipientNotReady() instead
+     *
+     * @phpstan-ignore shopwell.deprecatedMethod (the forwarding facade must keep existing payment calls usable during the migration)
      */
     public static function transferRecipientNotReady(string $recipientId): self
     {
-        return new self(
-            Response::HTTP_CONFLICT,
-            self::TRANSFER_RECIPIENT_NOT_READY,
-            'The transfer recipient "{{ recipientId }}" is not ready to be paid out on the side of the interface.',
-            ['recipientId' => $recipientId]
-        );
+        return PaymentTransferException::transferRecipientNotReady($recipientId);
     }
 
     /**
-     * A payout notification names an app in its url, and an app that does not exist has no merchant
-     * account whose signing key could verify the notification. The endpoint answers it the same way it
-     * answers an unknown interface: not found, without saying which of the two was wrong.
+     * @deprecated tag:v6.8.0 - Use PaymentTransferException::transferNotificationAppUnknown() instead
+     *
+     * @phpstan-ignore shopwell.deprecatedMethod (the forwarding facade must keep existing payment calls usable during the migration)
      */
     public static function transferNotificationAppUnknown(string $appId): self
     {
-        return new self(
-            Response::HTTP_NOT_FOUND,
-            self::TRANSFER_NOTIFICATION_APP_UNKNOWN,
-            'The app "{{ appId }}" of the payout notification does not exist.',
-            ['appId' => $appId]
-        );
+        return PaymentTransferException::transferNotificationAppUnknown($appId);
     }
 
     /**
-     * A payout notification can only be verified by the interface that sent it. An interface the
-     * platform does not ship has no verifier, and guessing one would mean trusting an unverified body.
+     * @deprecated tag:v6.8.0 - Use PaymentTransferException::transferNotificationProviderUnknown() instead
+     *
+     * @phpstan-ignore shopwell.deprecatedMethod (the forwarding facade must keep existing payment calls usable during the migration)
      */
     public static function transferNotificationProviderUnknown(string $provider): self
     {
-        return new self(
-            Response::HTTP_NOT_FOUND,
-            self::TRANSFER_NOTIFICATION_PROVIDER_UNKNOWN,
-            'The payment interface "{{ provider }}" can not verify a payout notification.',
-            ['provider' => $provider]
-        );
+        return PaymentTransferException::transferNotificationProviderUnknown($provider);
     }
 
     /**
-     * The signed body of a payout notification named a payout the app does not have. It is a defect of
-     * the caller or a payout of another merchant account, and neither becomes true by repeating the
-     * notification.
+     * @deprecated tag:v6.8.0 - Use PaymentTransferException::transferNotificationTransferUnknown() instead
+     *
+     * @phpstan-ignore shopwell.deprecatedMethod (the forwarding facade must keep existing payment calls usable during the migration)
      */
     public static function transferNotificationTransferUnknown(string $outNo): self
     {
-        return new self(
-            Response::HTTP_NOT_FOUND,
-            self::TRANSFER_NOTIFICATION_TRANSFER_UNKNOWN,
-            'The payout "{{ outNo }}" named by the notification does not exist for this app.',
-            ['outNo' => $outNo]
-        );
+        return PaymentTransferException::transferNotificationTransferUnknown($outNo);
     }
 }

@@ -56,18 +56,19 @@ final readonly class PaymentConfigField
 
     /**
      * @param string $name the key of the value inside the configuration payload
-     * @param string|null $label the snippet key of the label, the administration falls back to the name
-     * @param array<string, string> $options the selectable values of a select field, given as value => label
+     * @param string|array<string, string|null>|null $label a snippet key, plain text, or translations by locale
+     * @param array<string, string|array<string, string|null>> $options selectable values, with text or translations as labels
+     * @param string|array<string, string|null>|null $helpText a snippet key, plain text, or translations by locale
      */
     public function __construct(
         public string $name,
-        public ?string $label = null,
+        public string|array|null $label = null,
         public string $type = self::TYPE_TEXT,
         public bool $required = false,
         public bool $secret = false,
         public array $options = [],
         public ?string $default = null,
-        public ?string $helpText = null,
+        public string|array|null $helpText = null,
     ) {
     }
 

@@ -2,6 +2,7 @@
 
 namespace Shopwell\Tests\Unit\Core\System\Payment\Notification;
 
+use Doctrine\DBAL\Connection;
 use Payum\Core\GatewayInterface;
 use Payum\Core\Request\Notify;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -36,6 +37,7 @@ use Shopwell\Core\System\Payment\Order\Event\PaymentRefundFinishedEvent;
 use Shopwell\Core\System\Payment\Order\PaymentOrderCollection;
 use Shopwell\Core\System\Payment\Order\PaymentOrderEntity;
 use Shopwell\Core\System\Payment\Order\PaymentOrderPaidHandler;
+use Shopwell\Core\System\Payment\Order\PaymentOrderRowLock;
 use Shopwell\Core\System\Payment\Order\PaymentOrderService;
 use Shopwell\Core\System\Payment\Order\PaymentOrderStateHandler;
 use Shopwell\Core\System\Payment\Order\PaymentOrderStates;
@@ -57,6 +59,7 @@ use Shopwell\Core\System\Payment\Webhook\PaymentWebhookSigner;
 use Shopwell\Core\System\StateMachine\Loader\InitialStateIdLoader;
 use Shopwell\Core\System\StateMachine\StateMachineRegistry;
 use Shopwell\Core\System\StateMachine\Transition;
+use Shopwell\Tests\Unit\Core\System\Payment\NumberRangeFixture;
 use Symfony\Component\Clock\MockClock;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
@@ -533,7 +536,8 @@ class PaymentNotificationProcessorTest extends TestCase
             new PaymentWebhookSigner(new PaymentSignatureService(), $cipher, new MockClock(self::NOW)),
             static::createStub(HttpClientInterface::class),
             new MockClock(self::NOW),
-            static::createStub(LoggerInterface::class)
+            static::createStub(LoggerInterface::class),
+            static::createStub(Connection::class)
         );
 
         $orderService ??= $this->orderService($orderRepository ?? $this->orderRepository());
@@ -550,7 +554,9 @@ class PaymentNotificationProcessorTest extends TestCase
             new PaymentRefundStateHandler($refundStateMachine ?? static::createStub(StateMachineRegistry::class)),
             $this->initialStateIdLoader(),
             $eventDispatcher,
-            new MockClock(self::NOW)
+            new MockClock(self::NOW),
+            NumberRangeFixture::generator('PR1001'),
+            $this->rowLock()
         );
 
         return new PaymentNotificationProcessor(
@@ -692,8 +698,19 @@ class PaymentNotificationProcessorTest extends TestCase
             $this->initialStateIdLoader(),
             new PaymentOrderStateHandler($stateMachine ?? static::createStub(StateMachineRegistry::class)),
             new MockClock(self::NOW),
-            \Shopwell\Tests\Unit\Core\System\Payment\NumberRangeFixture::generator('PG1001')
+            NumberRangeFixture::generator('PG1001'),
+            $this->rowLock()
         );
+    }
+
+    private function rowLock(): PaymentOrderRowLock
+    {
+        $rowLock = static::createStub(PaymentOrderRowLock::class);
+        $rowLock->method('transaction')->willReturnCallback(static fn (\Closure $write) => $write());
+        $rowLock->method('lockOrder')->willReturn(['paidAmount' => 1000, 'refundedAmount' => 0]);
+        $rowLock->method('lockRefund')->willReturn(false);
+
+        return $rowLock;
     }
 
     private function initialStateIdLoader(): InitialStateIdLoader

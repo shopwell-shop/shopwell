@@ -74,7 +74,7 @@ class PaymentGatewayHandlerTest extends TestCase
 
         $response = $handler->pay($this->request(), $this->transaction(), Context::createDefaultContext(), null);
 
-        static::assertSame('/generated/frontend.payment.gateway.qr/PG-1', $response->getTargetUrl());
+        static::assertSame('/generated/frontend.payment.gateway.qr/payment-order-id/PG-1', $response->getTargetUrl());
     }
 
     public function testPayRefusesAnSdkChannel(): void

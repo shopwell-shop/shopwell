@@ -20,7 +20,6 @@ use Shopwell\Core\System\Payment\Provider\AbstractPaymentProvider;
 use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
 use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
 use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
-use Shopwell\Core\System\Payment\Provider\Config\PaymentConfigField;
 use Shopwell\Core\System\Payment\Provider\Cycle\PaymentCycleRules;
 use Shopwell\Core\System\Payment\Provider\PayParamsDecoderInterface;
 use Shopwell\Core\System\Payment\Provider\Transfer\PaymentTransferRules;
@@ -102,11 +101,6 @@ final class WechatProvider extends AbstractPaymentProvider
         ];
     }
 
-    public function getCaptureAction(): AbstractPaymentAction
-    {
-        return $this->captureAction;
-    }
-
     public function getNotificationExtractor(): PaymentNotificationExtractorInterface
     {
         return $this->notificationExtractor;
@@ -140,51 +134,11 @@ final class WechatProvider extends AbstractPaymentProvider
     }
 
     /**
-     * @return list<PaymentConfigField>
+     * The translated merchant and channel fields, read with the platform plugin-config reader.
      */
-    public function getCredentials(): array
+    public function getConfigFile(): string
     {
-        return [
-            new PaymentConfigField(
-                name: 'mch_id',
-                label: '商户号',
-                required: true,
-            ),
-            new PaymentConfigField(
-                name: 'mch_serial',
-                label: '商户证书序列号',
-                required: true,
-            ),
-            new PaymentConfigField(
-                name: 'mch_private_key',
-                label: '商户私钥',
-                type: PaymentConfigField::TYPE_TEXTAREA,
-                required: true,
-                secret: true,
-            ),
-            new PaymentConfigField(
-                name: 'apiv3_key',
-                label: 'APIv3 密钥',
-                type: PaymentConfigField::TYPE_PASSWORD,
-                required: true,
-                secret: true,
-            ),
-            new PaymentConfigField(
-                name: 'platform_serial',
-                label: '微信支付平台证书序列号',
-            ),
-            new PaymentConfigField(
-                name: 'platform_cert',
-                label: '微信支付平台证书',
-                type: PaymentConfigField::TYPE_TEXTAREA,
-            ),
-            new PaymentConfigField(
-                name: 'platform_certs',
-                label: '微信支付平台证书（轮换用）',
-                type: PaymentConfigField::TYPE_TEXTAREA,
-                helpText: 'JSON 对象，键为证书序列号、值为证书内容；平台证书轮换时可同时配置新旧两张，避免验签中断。',
-            ),
-        ];
+        return __DIR__ . '/Resources/config/payment-provider.xml';
     }
 
     /**
@@ -200,25 +154,6 @@ final class WechatProvider extends AbstractPaymentProvider
                 flow: PaymentFlow::REDIRECT,
                 currencies: ['CNY'],
                 devices: [PaymentChannel::DEVICE_WAP],
-                params: [
-                    new PaymentConfigField(
-                        name: 'appid',
-                        label: '公众号 / APP 的 appid',
-                        required: true,
-                    ),
-                    new PaymentConfigField(
-                        name: 'h5_type',
-                        label: 'H5 场景类型',
-                        type: PaymentConfigField::TYPE_SELECT,
-                        options: [
-                            'Wap' => 'Wap（手机浏览器）',
-                            'iOS' => 'iOS（iOS 应用内）',
-                            'Android' => 'Android（Android 应用内）',
-                        ],
-                        default: 'Wap',
-                        helpText: '微信按场景类型做风险控制，须与用户实际终端一致：手机浏览器选 Wap，内嵌在 iOS / Android 应用里则选 iOS / Android。',
-                    ),
-                ],
             ),
             new PaymentChannel(
                 technicalName: 'wechat_native',
@@ -227,13 +162,6 @@ final class WechatProvider extends AbstractPaymentProvider
                 flow: PaymentFlow::QRCODE,
                 currencies: ['CNY'],
                 devices: [PaymentChannel::DEVICE_WEB],
-                params: [
-                    new PaymentConfigField(
-                        name: 'appid',
-                        label: '公众号 / APP 的 appid',
-                        required: true,
-                    ),
-                ],
             ),
             new PaymentChannel(
                 technicalName: 'wechat_jsapi',
@@ -242,13 +170,6 @@ final class WechatProvider extends AbstractPaymentProvider
                 flow: PaymentFlow::SDK,
                 currencies: ['CNY'],
                 devices: [PaymentChannel::DEVICE_WAP],
-                params: [
-                    new PaymentConfigField(
-                        name: 'appid',
-                        label: '公众号的 appid',
-                        required: true,
-                    ),
-                ],
                 // the openid only exists inside the public account that issues it
                 runtimeParams: ['openid' => true],
             ),
@@ -259,13 +180,6 @@ final class WechatProvider extends AbstractPaymentProvider
                 flow: PaymentFlow::SDK,
                 currencies: ['CNY'],
                 devices: [PaymentChannel::DEVICE_MINI],
-                params: [
-                    new PaymentConfigField(
-                        name: 'appid',
-                        label: '小程序的 appid',
-                        required: true,
-                    ),
-                ],
                 runtimeParams: ['openid' => true],
             ),
             new PaymentChannel(
@@ -275,13 +189,6 @@ final class WechatProvider extends AbstractPaymentProvider
                 flow: PaymentFlow::SDK,
                 currencies: ['CNY'],
                 devices: [PaymentChannel::DEVICE_APP],
-                params: [
-                    new PaymentConfigField(
-                        name: 'appid',
-                        label: 'APP 的 appid',
-                        required: true,
-                    ),
-                ],
             ),
         ];
     }
@@ -328,13 +235,8 @@ final class WechatProvider extends AbstractPaymentProvider
                 'USER_ERROR',
             ],
             // PROCESSING forbids a second charge while the first is in flight, ORDERPAID is not a
-            // failure at all and ORDERCLOSED needs a fresh out trade number instead of a retry
-            unknownFailureCodes: [
-                'SYSTEMERROR',
-                'ORDER_ACCEPTED',
-                'ORDERPAID',
-                'ORDERCLOSED',
-            ],
+            // failure at all and ORDERCLOSED needs a fresh out trade number instead of a retry; they
+            // stay outside the two lists and therefore require a channel query before any retry
             maxRetries: 5,
         );
     }

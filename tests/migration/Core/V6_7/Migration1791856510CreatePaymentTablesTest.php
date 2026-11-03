@@ -34,8 +34,7 @@ class Migration1791856510CreatePaymentTablesTest extends TestCase
 {
     /**
      * The tables of the gateway in their final shape - the configuration matrix first, then the
-     * bookkeeping, then the payum tokens of the running checkouts and the binding of a checkout
-     * payment method to the channel it collects through.
+     * bookkeeping and the binding of a checkout payment method to the channel it collects through.
      */
     private const TABLES = [
         'payment_app',
@@ -44,7 +43,6 @@ class Migration1791856510CreatePaymentTablesTest extends TestCase
         'payment_app_provider',
         'payment_app_channel',
         'payment_order',
-        'payment_gateway_token',
         'payment_transaction',
         'payment_refund',
         'payment_notification',
@@ -156,32 +154,6 @@ class Migration1791856510CreatePaymentTablesTest extends TestCase
     }
 
     /**
-     * A token is the bearer credential an interface redirects the shopper back with: it is looked up by
-     * its hash on every node.
-     */
-    public function testPaymentGatewayTokenTable(): void
-    {
-        // the shape is asserted on the table this migration creates, not on one an earlier run left behind
-        $this->connection->executeStatement('DROP TABLE IF EXISTS `payment_gateway_token`');
-
-        (new Migration1791856510CreatePaymentTables())->update($this->connection);
-
-        $table = TableHelper::getTable($this->connection, 'payment_gateway_token');
-
-        static::assertSame(
-            ['id', 'hash', 'order_id', 'target_url', 'after_url', 'gateway_name', 'created_at', 'updated_at'],
-            array_column($table->columns, 'name')
-        );
-
-        static::assertTrue(TableHelper::indexSpansColumns($this->connection, 'payment_gateway_token', 'uniq.payment_gateway_token.hash', ['hash']));
-        static::assertTrue(TableHelper::indexExists($this->connection, 'payment_gateway_token', 'idx.payment_gateway_token.order_id'));
-
-        // a token grants access to one order and must not outlive it
-        static::assertTrue(TableHelper::foreignKeyExists($this->connection, 'payment_gateway_token', 'fk.payment_gateway_token.order_id'));
-        static::assertSame('CASCADE', $this->deleteRuleOf('payment_gateway_token', 'fk.payment_gateway_token.order_id'));
-    }
-
-    /**
      * An event is announced once per subject: `order` for an event that happens once per order, the
      * refund id for a refund event. The subject therefore belongs to the unique key - without it the
      * second refund of one order would collide with the event of the first one.
@@ -204,6 +176,35 @@ class Migration1791856510CreatePaymentTablesTest extends TestCase
             ['payment_order_id', 'event', 'subject']
         ));
         static::assertFalse(TableHelper::indexExists($this->connection, 'payment_webhook_delivery', 'uniq.payment_webhook_delivery.order_event'));
+    }
+
+    /**
+     * A worker leases a delivery before sending it. The token distinguishes the current worker from
+     * a late one, and the lease index makes abandoned processing rows discoverable again.
+     */
+    public function testPaymentWebhookDeliverySupportsLeasedClaims(): void
+    {
+        $this->connection->executeStatement('DROP TABLE IF EXISTS `payment_webhook_delivery`');
+
+        (new Migration1791856510CreatePaymentTables())->update($this->connection);
+
+        $claimToken = TableHelper::getColumnOfTable($this->connection, 'payment_webhook_delivery', 'claim_token');
+        static::assertFalse($claimToken->isNotNull);
+        static::assertSame(32, $claimToken->length);
+
+        static::assertFalse(TableHelper::getColumnOfTable($this->connection, 'payment_webhook_delivery', 'claim_expires_at')->isNotNull);
+        static::assertTrue(TableHelper::indexSpansColumns(
+            $this->connection,
+            'payment_webhook_delivery',
+            'idx.payment_webhook_delivery.claim',
+            ['status', 'claim_expires_at']
+        ));
+        static::assertTrue(TableHelper::indexSpansColumns(
+            $this->connection,
+            'payment_webhook_delivery',
+            'idx.payment_webhook_delivery.retry',
+            ['status', 'next_retry_at']
+        ));
     }
 
     /**

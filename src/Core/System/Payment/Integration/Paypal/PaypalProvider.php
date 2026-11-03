@@ -18,7 +18,6 @@ use Shopwell\Core\System\Payment\Provider\AbstractPaymentProvider;
 use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
 use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
 use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
-use Shopwell\Core\System\Payment\Provider\Config\PaymentConfigField;
 use Shopwell\Core\System\Payment\Provider\Transfer\PaymentTransferRules;
 use Shopwell\Core\System\Payment\Transfer\Notification\PaymentTransferNotificationVerifierInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
@@ -86,11 +85,6 @@ final class PaypalProvider extends AbstractPaymentProvider
         ];
     }
 
-    public function getCaptureAction(): AbstractPaymentAction
-    {
-        return $this->captureAction;
-    }
-
     public function getNotificationExtractor(): PaymentNotificationExtractorInterface
     {
         return $this->notificationExtractor;
@@ -125,40 +119,11 @@ final class PaypalProvider extends AbstractPaymentProvider
     }
 
     /**
-     * @return list<PaymentConfigField>
+     * The translated merchant and channel fields, read with the platform plugin-config reader.
      */
-    public function getCredentials(): array
+    public function getConfigFile(): string
     {
-        return [
-            new PaymentConfigField(
-                name: 'client_id',
-                label: 'Client ID',
-                required: true,
-            ),
-            new PaymentConfigField(
-                name: 'client_secret',
-                label: 'Client Secret',
-                type: PaymentConfigField::TYPE_PASSWORD,
-                required: true,
-                secret: true,
-            ),
-            new PaymentConfigField(
-                name: 'environment',
-                label: '运行环境',
-                type: PaymentConfigField::TYPE_SELECT,
-                options: ['sandbox' => 'sandbox', 'live' => 'live'],
-                default: 'sandbox',
-                helpText: '默认 sandbox，走 PayPal 的沙箱环境。上线前改成 live。',
-            ),
-            new PaymentConfigField(
-                name: 'webhook_id',
-                label: 'Webhook ID',
-            ),
-            new PaymentConfigField(
-                name: 'brand_name',
-                label: '收银台品牌名',
-            ),
-        ];
+        return __DIR__ . '/Resources/config/payment-provider.xml';
     }
 
     /**

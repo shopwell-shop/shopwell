@@ -56,8 +56,8 @@ class LoyaltyRouteTest extends TestCase
 
         static::assertSame(Response::HTTP_OK, $this->browser->getResponse()->getStatusCode());
         static::assertSame(0, $response['pointsBalance']);
-        static::assertSame(0, $response['growthValue']);
-        static::assertNull($response['membershipTierId']);
+        static::assertSame(0, $response['tierPoints']);
+        static::assertNull($response['tierId']);
         static::assertSame([], $response['tiers']);
     }
 
@@ -67,7 +67,7 @@ class LoyaltyRouteTest extends TestCase
 
         // the membership is opened with a zero balance when the customer is written, so the test
         // updates it instead of opening a second one that the unique key on the customer would reject
-        $loyaltyRepository = static::getContainer()->get('customer_loyalty.repository');
+        $loyaltyRepository = static::getContainer()->get('loyalty_account.repository');
         $context = Context::createDefaultContext();
 
         $criteria = new Criteria();
@@ -81,7 +81,7 @@ class LoyaltyRouteTest extends TestCase
             [
                 'id' => $loyaltyId,
                 'pointsBalance' => 250,
-                'growthValue' => 100,
+                'tierPoints' => 100,
             ],
         ], $context);
 
@@ -91,7 +91,7 @@ class LoyaltyRouteTest extends TestCase
                 'id' => $tierId,
                 'technicalName' => 'gold',
                 'level' => 2,
-                'minGrowthValue' => 50,
+                'minTierPoints' => 50,
                 'pointsMultiplier' => 1.5,
                 'active' => true,
                 'translations' => [
@@ -108,7 +108,7 @@ class LoyaltyRouteTest extends TestCase
 
         static::assertSame(Response::HTTP_OK, $this->browser->getResponse()->getStatusCode());
         static::assertSame(250, $response['pointsBalance']);
-        static::assertSame(100, $response['growthValue']);
+        static::assertSame(100, $response['tierPoints']);
         static::assertCount(1, $response['tiers']);
         static::assertSame($tierId, $response['tiers'][0]['id']);
         static::assertSame('gold', $response['tiers'][0]['technicalName']);

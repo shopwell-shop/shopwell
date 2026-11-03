@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopwell-shop/shopwell/trunk/src/Core/System/Payment/Provider/Schema/payment-provider.xsd">
+    <card>
+        <title>Stripe credentials</title><title lang="zh-CN">Stripe 凭据</title><name>credentials</name>
+        <input-field type="password"><name>secret_key</name><label>Secret Key</label><label lang="zh-CN">Secret Key</label><required>true</required><secret>true</secret></input-field>
+        <input-field><name>publishable_key</name><label>Publishable Key</label><label lang="zh-CN">Publishable Key</label></input-field>
+        <input-field type="password"><name>webhook_secret</name><label>Webhook signing secret</label><label lang="zh-CN">Webhook 签名密钥</label><secret>true</secret></input-field>
+        <input-field><name>api_version</name><label>API version</label><label lang="zh-CN">API 版本</label></input-field>
+    </card>
+</config>

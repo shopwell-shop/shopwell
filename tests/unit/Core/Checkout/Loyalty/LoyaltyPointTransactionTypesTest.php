@@ -8,7 +8,7 @@ use Shopwell\Core\Checkout\Loyalty\LoyaltyPointTransactionTypes;
 use Shopwell\Core\Framework\Log\Package;
 
 /**
- * The values end up in `customer_point_transaction.type` and are read back by the administration and
+ * The values end up in `loyalty_point_transaction.type` and are read back by the administration and
  * by support. They are data, so they are pinned here: renaming one silently turns every booking
  * already written into an unknown type.
  *

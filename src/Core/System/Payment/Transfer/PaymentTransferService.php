@@ -493,5 +493,4 @@ final class PaymentTransferService
     {
         return $reason === null ? null : mb_substr($reason, 0, self::FAILURE_REASON_LIMIT);
     }
-
 }

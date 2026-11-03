@@ -21,6 +21,8 @@ function createDraft(overrides = {}) {
     return {
         id: null,
         title: '',
+        groupName: '',
+        groupTitle: '',
         icon: '',
         type: TYPE_MENU,
         internalKey: null,
@@ -37,10 +39,13 @@ function createDraft(overrides = {}) {
 /**
  * The management page of the database driven navigation.
  *
- * The stored navigation is a tree; the form edits one item at a time. Both are always on
- * screen - the tree decides which item the form shows, and a drop in the tree is a move
- * request, not a local reorder: `AdminMenuConfigService::move()` repairs the ordering chain
- * of both affected levels, so a reorder must never be computed on the client as well.
+ * The stored navigation is a tree and the whole page is that tree: the entries are only
+ * labels plus a place, so a second pane that repeats them would cost the width the tree
+ * needs for the indentation. Editing happens in a dialog, one entry at a time.
+ *
+ * A drop in the tree is a move request, not a local reorder:
+ * `AdminMenuConfigService::move()` repairs the ordering chain of both affected levels, so a
+ * reorder must never be computed on the client as well.
  *
  * @sw-package fundamentals@framework
  */
@@ -58,14 +63,15 @@ export default {
 
     data() {
         return {
-            selectedId: null,
+            expandedIds: [],
+            languageId: Shopwell.Context.api.languageId,
+            languages: [],
+            showEditModal: false,
+            showDeleteModal: false,
             draft: null,
-            snapshot: null,
+            deleteTarget: null,
             isSaving: false,
             isDeleting: false,
-            showDeleteModal: false,
-            showDiscardModal: false,
-            pendingSelectionId: null,
         };
     },
 
@@ -84,8 +90,12 @@ export default {
             return this.store.items;
         },
 
+        /**
+         * The stored tree with the label of the selected language resolved - the tree
+         * component itself only knows rows, places and labels, never a store or a translation.
+         */
         tree() {
-            return this.store.tree;
+            return this.toRenderNodes(this.store.tree);
         },
 
         routeAllowlist() {
@@ -96,17 +106,22 @@ export default {
             return this.store.isLoading && !this.store.isLoaded;
         },
 
-        canEdit() {
-            return this.acl.can('admin_menu.editor');
+        hasTree() {
+            return this.tree.length > 0;
         },
 
         /**
-         * Core menu items store a snippet key instead of a literal title. The field has to show
-         * the stored value - editing anything else would write the translation back as the key -
-         * so the field explains itself instead of the stored key being "fixed" silently.
+         * The language the labels are shown and edited in - named in the field help, so an
+         * edit never lands in a language the operator did not mean.
          */
-        titleIsSnippetKey() {
-            return !!this.draft.title && this.$te(this.draft.title);
+        languageLabel() {
+            const language = this.languages.find((candidate) => candidate.id === this.languageId);
+
+            return language?.name ?? Shopwell.Store.get('session').currentLocale;
+        },
+
+        canEdit() {
+            return this.acl.can('admin_menu.editor');
         },
 
         canCreate() {
@@ -117,36 +132,47 @@ export default {
             return this.acl.can('admin_menu.deleter');
         },
 
+        /**
+         * The languages an item can be labelled in. A shop that runs a single language gets no
+         * switch - and no label for a decision that does not exist.
+         */
+        languageOptions() {
+            return this.languages.map((language) => {
+                return { value: language.id, label: language.name };
+            });
+        },
+
+        showLanguageSwitch() {
+            return this.languages.length > 1;
+        },
+
+        isAllExpanded() {
+            return this.expandableIds.length > 0 && this.expandableIds.every((id) => this.expandedIds.includes(id));
+        },
+
+        expandableIds() {
+            const collected = [];
+
+            const walk = (nodes) => {
+                nodes.forEach((node) => {
+                    if (node.children.length > 0) {
+                        collected.push(node.id);
+                        walk(node.children);
+                    }
+                });
+            };
+
+            walk(this.tree);
+
+            return collected;
+        },
+
         aclRoleRepository() {
             return this.repositoryFactory.create('acl_role');
         },
 
         roleCriteria() {
             return new Criteria(1, 500);
-        },
-
-        isDirty() {
-            if (this.draft === null) {
-                return false;
-            }
-
-            return JSON.stringify(this.draft) !== this.snapshot;
-        },
-
-        selectedItem() {
-            return this.selectedId ? this.store.itemById(this.selectedId) : null;
-        },
-
-        isNew() {
-            return this.draft !== null && this.draft.id === null;
-        },
-
-        /**
-         * A locked item is the declaration of a core module: it can be customized and
-         * hidden, but the navigation must not lose it.
-         */
-        isLocked() {
-            return this.draft !== null && this.draft.id !== null && this.selectedItem?.sysLocked === true;
         },
 
         typeOptions() {
@@ -173,7 +199,7 @@ export default {
                 .map((route) => {
                     return {
                         value: route.internalKey,
-                        label: `${route.title} (${route.internalKey})`,
+                        label: `${this.tWithFallback(route.title)} (${route.internalKey})`,
                     };
                 });
         },
@@ -194,7 +220,7 @@ export default {
                     if (node.type === TYPE_FOLDER && !blocked.includes(node.id)) {
                         options.push({
                             value: node.id,
-                            label: `${'— '.repeat(depth + 1)}${this.labelOf(node)}`,
+                            label: `${'— '.repeat(depth + 1)}${node.label}`,
                         });
                     }
 
@@ -215,31 +241,22 @@ export default {
             return this.parentIdValue === '' ? null : this.parentIdValue;
         },
 
-        positionOptions() {
-            const options = [{ value: '', label: this.$t('sw-system.menu.positionFirst') }];
+        groupOptions() {
+            // the groups a stored entry carries, so a rename of the free text field does not
+            // have to be retyped from memory
+            const known = new Set();
 
-            const siblings = this.store.siblingsOf(this.parentId) ?? [];
-
-            siblings.forEach((sibling) => {
-                if (sibling.id === this.draft?.id) {
-                    return;
+            this.items.forEach((item) => {
+                if (item.groupName) {
+                    known.add(item.groupName);
                 }
-
-                options.push({ value: sibling.id, label: this.labelOf(sibling) });
             });
 
-            return options;
+            return [...known].sort().map((group) => {
+                return { value: group, label: this.groupLabelOf(group) };
+            });
         },
 
-        positionValue() {
-            return this.draft?.afterMenuItemId ?? '';
-        },
-
-        /**
-         * Menu items carry a role key like `product.viewer`, the same identifier the
-         * navigation declarations use. The list comes from the privileges service, so a
-         * plugin's own privilege group is offered without registering it here.
-         */
         privilegeOptions() {
             const options = [{ value: '', label: this.$t('sw-system.menu.privilegeNone') }];
 
@@ -266,24 +283,38 @@ export default {
         },
 
         /**
+         * A locked item is the declaration of a core module: it can be customized and
+         * hidden, but the navigation must not lose it.
+         */
+        isLocked() {
+            if (!this.draft?.id) {
+                return false;
+            }
+
+            return this.store.itemById(this.draft.id)?.sysLocked === true;
+        },
+
+        isNew() {
+            return this.draft !== null && this.draft.id === null;
+        },
+
+        editModalTitle() {
+            return this.isNew ? this.$t('sw-system.menu.createModalTitle') : this.$t('sw-system.menu.editModalTitle');
+        },
+
+        /**
          * Deleting an item removes every row below it: `fk.admin_menu_item.parent_id` cascades.
          * The confirmation therefore names the subtree size instead of leaving the user to
          * discover it in the tree afterwards.
          */
-        descendantCount() {
-            if (!this.selectedId) {
-                return 0;
-            }
-
-            return this.descendantIds(this.selectedId).length;
-        },
-
         deleteConfirmMessage() {
-            if (this.descendantCount === 0) {
+            const count = this.deleteTarget ? this.descendantIds(this.deleteTarget.id).length : 0;
+
+            if (count === 0) {
                 return this.$t('sw-system.menu.deleteConfirmMessage');
             }
 
-            return this.$t('sw-system.menu.deleteConfirmMessageWithChildren', { count: this.descendantCount });
+            return this.$t('sw-system.menu.deleteConfirmMessageWithChildren', { count });
         },
     },
 
@@ -293,25 +324,88 @@ export default {
 
     methods: {
         createdComponent() {
+            this.loadLanguages();
+            this.loadTree();
+        },
+
+        loadTree() {
             this.store.load().catch(() => {
                 this.createNotificationError({ message: this.$t('sw-system.menu.notification.loadError') });
             });
         },
 
         /**
-         * Same rule as the tree row: a core item stores a snippet key, an item created in
-         * the administration stores plain text. Both have to read as a label here.
+         * The page labels entries in the language the operator picks, so it needs the language
+         * list itself - the administration wide language switch would reload the whole client
+         * for a label.
+         */
+        loadLanguages() {
+            const repository = this.repositoryFactory.create('language');
+
+            repository.search(new Criteria(1, 100), Shopwell.Context.api).then((languages) => {
+                this.languages = languages;
+
+                if (!this.languages.some((language) => language.id === this.languageId)) {
+                    this.languageId = Shopwell.Context.api.languageId;
+                }
+            });
+        },
+
+        toRenderNodes(nodes) {
+            return nodes.map((node) => {
+                return {
+                    ...node,
+                    label: this.labelOf(node),
+                    groupLabel: this.groupLabelOf(node.groupName, node),
+                    children: this.toRenderNodes(node.children),
+                };
+            });
+        },
+
+        /**
+         * A stored title wins, an entry an administrator did not rename keeps the label the
+         * module declares - the database only stores what a person wrote, everything else is
+         * still the code's.
          */
         labelOf(item) {
-            if (!item.title) {
-                return item.internalKey || this.$t('sw-system.menu.labelUntitled');
+            const stored = item.translations?.[this.languageId]?.title;
+
+            if (stored) {
+                return stored;
             }
 
-            return this.tWithFallback(item.title);
+            if (item.title) {
+                return this.tWithFallback(item.title);
+            }
+
+            const declared = this.routeAllowlist.find((route) => route.internalKey === item.internalKey);
+
+            if (declared?.title) {
+                return this.tWithFallback(declared.title);
+            }
+
+            return item.internalKey || this.$t('sw-system.menu.labelUntitled');
+        },
+
+        groupLabelOf(groupName, item = {}) {
+            if (!groupName) {
+                return null;
+            }
+
+            const stored = item.translations?.[this.languageId]?.groupTitle;
+
+            if (stored) {
+                return stored;
+            }
+
+            const key = `sw-system.menu.groups.${groupName}`;
+
+            return this.$te(key) ? this.$t(key) : groupName;
         },
 
         descendantIds(itemId) {
             const collected = [];
+            const flat = this.toRenderNodes(this.store.tree);
 
             const walk = (nodes) => {
                 nodes.forEach((node) => {
@@ -336,36 +430,46 @@ export default {
                 return null;
             };
 
-            const start = findNode(this.tree);
+            const start = findNode(flat);
             walk(start ? start.children : []);
 
             return collected;
         },
 
-        /**
-         * Selecting another item drops the current draft, so an unsaved change asks first.
-         */
-        selectItem(itemId) {
-            if (itemId === this.selectedId) {
-                return;
-            }
-
-            if (this.isDirty) {
-                this.pendingSelectionId = itemId;
-                this.showDiscardModal = true;
-
-                return;
-            }
-
-            this.applySelection(itemId);
+        onLanguageChange(languageId) {
+            this.languageId = languageId;
         },
 
-        applySelection(itemId) {
-            const item = this.store.itemById(itemId);
+        onToggle(item) {
+            this.expandedIds = this.expandedIds.includes(item.id)
+                ? this.expandedIds.filter((id) => id !== item.id)
+                : [...this.expandedIds, item.id];
+        },
 
-            this.selectedId = itemId;
-            this.draft = item ? createDraft({ ...item, roleIds: [...item.roleIds] }) : null;
-            this.snapshot = this.draft ? JSON.stringify(this.draft) : null;
+        onToggleAll() {
+            this.expandedIds = this.isAllExpanded ? [] : [...this.expandableIds];
+        },
+
+        /**
+         * The dialog edits the labels of the language the page shows - switching the language
+         * with an open dialog would silently rename the entry in another language.
+         */
+        onEdit(item) {
+            if (!this.canEdit) {
+                return;
+            }
+
+            const stored = item.translations?.[this.languageId] ?? {};
+
+            this.draft = createDraft({
+                ...item,
+                title: item.label,
+                groupName: item.groupName ?? '',
+                groupTitle: stored.groupTitle ?? '',
+                roleIds: [...item.roleIds],
+            });
+
+            this.showEditModal = true;
         },
 
         onCreateNew() {
@@ -373,12 +477,13 @@ export default {
                 return;
             }
 
-            const parentId = this.selectedItem ? this.selectedItem.parentId : null;
-            const afterMenuItemId = this.selectedItem ? this.selectedItem.id : null;
+            this.draft = createDraft();
+            this.showEditModal = true;
+        },
 
-            this.selectedId = null;
-            this.draft = createDraft({ parentId, afterMenuItemId });
-            this.snapshot = JSON.stringify(this.draft);
+        onCloseEditModal() {
+            this.showEditModal = false;
+            this.draft = null;
         },
 
         /**
@@ -392,14 +497,6 @@ export default {
 
             this.draft.parentId = value === '' ? null : value;
             this.draft.afterMenuItemId = null;
-        },
-
-        onPositionChange(value) {
-            if (!this.draft) {
-                return;
-            }
-
-            this.draft.afterMenuItemId = value === '' ? null : value;
         },
 
         /**
@@ -420,26 +517,6 @@ export default {
             if (value !== TYPE_LINK) {
                 this.draft.linkTarget = '';
             }
-        },
-
-        onDiscardConfirmed() {
-            this.showDiscardModal = false;
-
-            if (this.pendingSelectionId === null) {
-                this.draft = null;
-                this.snapshot = null;
-
-                return;
-            }
-
-            const itemId = this.pendingSelectionId;
-            this.pendingSelectionId = null;
-            this.applySelection(itemId);
-        },
-
-        onDiscardCancelled() {
-            this.showDiscardModal = false;
-            this.pendingSelectionId = null;
         },
 
         validate() {
@@ -464,10 +541,21 @@ export default {
             return true;
         },
 
+        /**
+         * The labels are translated fields, so they are written for the language the page shows
+         * instead of for the language the client happens to run in.
+         */
         buildPayload() {
+            const translation = {
+                languageId: this.languageId,
+                title: this.draft.title.trim(),
+                groupTitle: this.draft.groupTitle.trim() || null,
+            };
+
             return {
                 id: this.draft.id ?? undefined,
-                title: this.draft.title.trim(),
+                translations: [translation],
+                groupName: this.draft.groupName.trim() || null,
                 icon: this.draft.icon || null,
                 type: this.draft.type,
                 internalKey: this.draft.internalKey || null,
@@ -487,14 +575,13 @@ export default {
                 return true;
             }
 
-            return (
-                this.selectedItem?.parentId !== this.parentId ||
-                this.selectedItem?.afterMenuItemId !== this.draft.afterMenuItemId
-            );
+            const item = this.store.itemById(this.draft.id);
+
+            return item?.parentId !== this.parentId || item?.afterMenuItemId !== this.draft.afterMenuItemId;
         },
 
         async onSave() {
-            if (!this.draft || this.isSaving || !this.canEdit) {
+            if (!this.draft || this.isSaving || !this.canEdit && !this.canCreate) {
                 return;
             }
 
@@ -515,9 +602,16 @@ export default {
                         parentId: this.parentId,
                         afterMenuItemId: this.draft.afterMenuItemId,
                     });
+
+                    // the entry was placed somewhere the operator cannot see yet
+                    if (this.parentId && !this.expandedIds.includes(this.parentId)) {
+                        this.expandedIds = [...this.expandedIds, this.parentId];
+                    }
                 }
 
-                this.applySelection(id);
+                this.showEditModal = false;
+                this.draft = null;
+
                 this.createNotificationSuccess({ message: this.$t('sw-system.menu.notification.saveSuccess') });
             } catch (error) {
                 this.createNotificationError({
@@ -539,6 +633,10 @@ export default {
         async onMove(move) {
             try {
                 await this.store.moveItem(move);
+
+                if (move.parentId && !this.expandedIds.includes(move.parentId)) {
+                    this.expandedIds = [...this.expandedIds, move.parentId];
+                }
             } catch (error) {
                 this.createNotificationError({
                     message: this.errorMessage(error, 'sw-system.menu.notification.moveError'),
@@ -546,32 +644,33 @@ export default {
             }
         },
 
-        onDelete() {
-            if (!this.selectedId || !this.canDelete || this.isLocked) {
+        onDelete(item) {
+            if (!this.canDelete || item.sysLocked) {
                 return;
             }
 
+            this.deleteTarget = item;
             this.showDeleteModal = true;
         },
 
         onCloseDeleteModal() {
             this.showDeleteModal = false;
+            this.deleteTarget = null;
         },
 
         async onConfirmDelete() {
-            if (!this.selectedId) {
+            if (!this.deleteTarget) {
                 return;
             }
 
             this.isDeleting = true;
 
             try {
-                await this.store.deleteItem(this.selectedId);
+                await this.store.deleteItem(this.deleteTarget.id);
 
-                this.draft = null;
-                this.snapshot = null;
-                this.selectedId = null;
+                this.expandedIds = this.expandedIds.filter((id) => id !== this.deleteTarget.id);
                 this.showDeleteModal = false;
+                this.deleteTarget = null;
 
                 this.createNotificationSuccess({ message: this.$t('sw-system.menu.notification.deleteSuccess') });
             } catch (error) {

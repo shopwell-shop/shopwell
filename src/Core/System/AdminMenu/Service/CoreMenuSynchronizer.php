@@ -5,6 +5,7 @@ namespace Shopwell\Core\System\AdminMenu\Service;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsAnyFilter;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Struct\ArrayStruct;
@@ -85,9 +86,9 @@ class CoreMenuSynchronizer
             $declaredKeys[$declaration->internalKey] = true;
         }
 
-        $removed = $this->removeUndeclaredRows($stored, $declaredKeys, $context);
+        $ghosts = $this->undeclaredRows($stored, $declaredKeys);
 
-        foreach (array_keys($removed) as $internalKey) {
+        foreach (array_keys($ghosts) as $internalKey) {
             unset($stored[$internalKey]);
         }
 
@@ -130,20 +131,24 @@ class CoreMenuSynchronizer
             $this->menuItemRepository->update($placements, $context);
         }
 
+        // last, because the delete cascades: every row that has to survive has been moved
+        // and placed above already
+        $this->removeRows($ghosts, array_column($placements, 'id'), $context);
+
         $this->synchronized = true;
 
-        return \count($writes) + \count($removed);
+        return \count($writes) + \count($ghosts);
     }
 
     /**
-     * Deletes the rows a core upgrade left behind and re-anchors their children first.
+     * Collects the core rows whose internal key no declaration carries anymore.
      *
      * @param array<string, AdminMenuItemEntity> $stored indexed by internal key
      * @param array<string, true> $declaredKeys
      *
-     * @return array<string, string> internal key to id of the rows that were removed
+     * @return array<string, string> internal key to id
      */
-    private function removeUndeclaredRows(array $stored, array $declaredKeys, Context $context): array
+    private function undeclaredRows(array $stored, array $declaredKeys): array
     {
         $ghosts = [];
 
@@ -159,34 +164,55 @@ class CoreMenuSynchronizer
             }
         }
 
+        return $ghosts;
+    }
+
+    /**
+     * Deletes the rows a core upgrade left behind.
+     *
+     * A delete cascades to the children (`fk.admin_menu_item.parent_id`), so a child that has
+     * to survive is moved to the top level first: a row an administrator created has no
+     * declaration and no internal key, it lives only in the table and would silently go down
+     * with its parent. A declared child is not moved here - the placement pass above already
+     * re-parented it, which is why the ids it wrote are skipped.
+     *
+     * @param array<string, string> $ghosts internal key to id of the rows to delete
+     * @param list<string> $placed ids the placement pass wrote in this run
+     */
+    private function removeRows(array $ghosts, array $placed, Context $context): void
+    {
         if ($ghosts === []) {
-            return [];
+            return;
         }
 
-        // deleting a parent cascades to its children, so a child that has to survive is
-        // moved to the top level first - the declared ones are re-placed by the pass below
-        $reanchored = [];
+        $ghostIds = array_values($ghosts);
 
-        foreach ($stored as $item) {
-            if ($item->getParentId() !== null && isset($ghosts[$item->getParentId()])) {
-                $reanchored[] = [
-                    'id' => $item->getId(),
+        $children = $this->menuItemRepository
+            ->search(
+                (new Criteria())
+                    ->addFilter(new EqualsAnyFilter('parentId', $ghostIds))
+                    ->setLimit(null),
+                $context
+            )
+            ->getIds();
+
+        $survivors = array_values(array_diff($children, $placed));
+
+        if ($survivors !== []) {
+            $this->menuItemRepository->update(
+                array_map(static fn (string $id): array => [
+                    'id' => $id,
                     'parentId' => null,
                     'afterMenuItemId' => null,
-                ];
-            }
-        }
-
-        if ($reanchored !== []) {
-            $this->menuItemRepository->update($reanchored, $context);
+                ], $survivors),
+                $context
+            );
         }
 
         $this->menuItemRepository->delete(
-            array_map(static fn (string $id): array => ['id' => $id], array_values($ghosts)),
+            array_map(static fn (string $id): array => ['id' => $id], $ghostIds),
             $context
         );
-
-        return $ghosts;
     }
 
     /**
@@ -227,8 +253,10 @@ class CoreMenuSynchronizer
      */
     private function matchesDeclaration(AdminMenuItemEntity $item, CoreMenuRow $row): bool
     {
+        // the label is deliberately not compared: it belongs to the translation table and to
+        // whoever wrote it there, a declaration only supplies the key the page falls back to
         return $item->getType() === $row->type
-            && $item->getTitle() === $row->title
+            && $item->getGroupName() === $row->groupName
             && $item->getIcon() === $row->icon
             && $item->getColor() === $row->color
             && $item->getPrivilege() === $row->privilege

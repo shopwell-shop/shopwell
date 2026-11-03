@@ -2,6 +2,7 @@
 
 namespace Shopwell\Core\System\Payment\Webhook;
 
+use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Psr\Clock\ClockInterface;
 use Psr\Log\LoggerInterface;
@@ -9,15 +10,17 @@ use Shopwell\Core\Defaults;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\AndFilter;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsAnyFilter;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\OrFilter;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\RangeFilter;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\System\Payment\App\PaymentAppCollection;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
+use Shopwell\Core\System\Payment\Exception\PaymentNotificationException;
 use Shopwell\Core\System\Payment\Order\PaymentOrderEntity;
-use Shopwell\Core\System\Payment\PaymentException;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 /**
@@ -27,6 +30,10 @@ use Symfony\Contracts\HttpClient\HttpClientInterface;
  * channel: the delivery is queued as soon as the outcome is known and the queued deliveries are sent
  * by a scheduled task, which retries with a backoff. Each attempt is persisted, so a lost notification
  * is always visible and replayable.
+ *
+ * Delivery has at-least-once semantics: an expired lease may be claimed again after a worker died,
+ * including when the app received the request just before that worker died. The stable delivery id
+ * lets the app deduplicate that repeated request.
  *
  * The body is signed with the app secret, an app verifies it with the very same HMAC the api requests
  * are signed with, see {@see PaymentSignatureService::verifyPayload()}.
@@ -64,6 +71,11 @@ final class PaymentWebhookDispatcher
     private const TIMEOUT = 10;
 
     /**
+     * Longer than the HTTP timeout, so a healthy request cannot overlap with a recovered lease.
+     */
+    private const CLAIM_LEASE_SECONDS = 60;
+
+    /**
      * @param EntityRepository<PaymentWebhookDeliveryCollection> $deliveryRepository
      * @param EntityRepository<PaymentAppCollection> $paymentAppRepository
      */
@@ -74,6 +86,7 @@ final class PaymentWebhookDispatcher
         private readonly HttpClientInterface $client,
         private readonly ClockInterface $clock,
         private readonly LoggerInterface $logger,
+        private readonly Connection $connection,
     ) {
     }
 
@@ -153,21 +166,30 @@ final class PaymentWebhookDispatcher
     }
 
     /**
-     * Sends a queued delivery and persists the outcome of the attempt.
+     * Claims a queued delivery, sends it and persists the outcome of the attempt.
+     *
+     * @return bool whether this worker won the claim and made the attempt
      */
-    public function deliver(PaymentWebhookDeliveryEntity $delivery): void
+    public function deliver(PaymentWebhookDeliveryEntity $delivery): bool
     {
-        $app = $this->loadApp($delivery->paymentAppId);
+        $claimToken = Uuid::randomHex();
         $attempt = $delivery->attemptCount + 1;
 
-        if (!$app instanceof PaymentAppEntity) {
-            $this->finish($delivery, $attempt, null, 'The payment app does not exist anymore.', true);
+        if (!$this->claim($delivery, $claimToken)) {
+            return false;
+        }
 
-            return;
+        $app = $this->loadApp($delivery->paymentAppId);
+
+        if (!$app instanceof PaymentAppEntity) {
+            $this->finish($delivery, $claimToken, $attempt, null, 'The payment app does not exist anymore.', true);
+
+            return true;
         }
 
         $body = $this->signer->encode($delivery->payload ?? []);
 
+        // The claim is committed by its atomic update: no database transaction stays open during HTTP.
         try {
             $response = $this->client->request('POST', $delivery->url, [
                 'headers' => [
@@ -183,14 +205,16 @@ final class PaymentWebhookDispatcher
             $status = $response->getStatusCode();
             $content = mb_substr($response->getContent(false), 0, 2000);
         } catch (\Throwable $exception) {
-            $this->finish($delivery, $attempt, null, $exception->getMessage(), false);
+            $this->finish($delivery, $claimToken, $attempt, null, $exception->getMessage(), false);
 
-            return;
+            return true;
         }
 
         $succeeded = $status >= 200 && $status < 300;
 
-        $this->finish($delivery, $attempt, $status, $content, $succeeded);
+        $this->finish($delivery, $claimToken, $attempt, $status, $content, $succeeded);
+
+        return true;
     }
 
     /**
@@ -200,22 +224,34 @@ final class PaymentWebhookDispatcher
      */
     public function retryDue(int $limit = 50): int
     {
-        $criteria = new Criteria();
-        $criteria->addFilter(new EqualsAnyFilter('status', [
-            PaymentWebhookDeliveryEntity::STATUS_PENDING,
-            PaymentWebhookDeliveryEntity::STATUS_FAILED,
-        ]));
         // a date range filter compares strings, so the clock is formatted the way the storage does
-        $criteria->addFilter(new RangeFilter('nextRetryAt', [RangeFilter::LTE => $this->clock->now()->format(Defaults::STORAGE_DATE_TIME_FORMAT)]));
+        $now = $this->clock->now()->format(Defaults::STORAGE_DATE_TIME_FORMAT);
+        $criteria = new Criteria();
+        $criteria->addFilter(new OrFilter([
+            new AndFilter([
+                new EqualsAnyFilter('status', [
+                    PaymentWebhookDeliveryEntity::STATUS_PENDING,
+                    PaymentWebhookDeliveryEntity::STATUS_FAILED,
+                ]),
+                new RangeFilter('nextRetryAt', [RangeFilter::LTE => $now]),
+            ]),
+            new AndFilter([
+                new EqualsFilter('status', PaymentWebhookDeliveryEntity::STATUS_PROCESSING),
+                new RangeFilter('claimExpiresAt', [RangeFilter::LTE => $now]),
+            ]),
+        ]));
         $criteria->setLimit($limit);
 
         $deliveries = $this->deliveryRepository->search($criteria, Context::createDefaultContext())->getEntities();
+        $attempted = 0;
 
         foreach ($deliveries as $delivery) {
-            $this->deliver($delivery);
+            if ($this->deliver($delivery)) {
+                ++$attempted;
+            }
         }
 
-        return $deliveries->count();
+        return $attempted;
     }
 
     public function getDelivery(string $id): PaymentWebhookDeliveryEntity
@@ -223,7 +259,7 @@ final class PaymentWebhookDispatcher
         $delivery = $this->deliveryRepository->search(new Criteria([$id]), Context::createDefaultContext())->getEntities()->first();
 
         if (!$delivery instanceof PaymentWebhookDeliveryEntity) {
-            throw PaymentException::webhookDeliveryNotFound($id);
+            throw PaymentNotificationException::webhookDeliveryNotFound($id);
         }
 
         return $delivery;
@@ -247,24 +283,85 @@ final class PaymentWebhookDispatcher
         return $delivery instanceof PaymentWebhookDeliveryEntity ? $delivery : null;
     }
 
+    private function claim(PaymentWebhookDeliveryEntity $delivery, string $claimToken): bool
+    {
+        $now = $this->clock->now();
+        $storedNow = $now->format(Defaults::STORAGE_DATE_TIME_FORMAT);
+
+        // The status, due time and attempt predicate make this single update the lock: only one of
+        // several workers that selected the same row can change it and receive one affected row.
+        return $this->connection->executeStatement(
+            'UPDATE `payment_webhook_delivery`
+                SET `status` = :claimedStatus,
+                    `claim_token` = :claimToken,
+                    `claim_expires_at` = :claimExpiresAt,
+                    `attempt_count` = `attempt_count` + 1,
+                    `updated_at` = :updatedAt
+                WHERE `id` = :id
+                    AND `attempt_count` = :previousAttemptCount
+                    AND (
+                        (`status` IN (:pendingStatus, :failedStatus) AND `next_retry_at` <= :retryNow)
+                        OR (`status` = :processingStatus AND `claim_expires_at` <= :claimNow)
+                    )',
+            [
+                'claimedStatus' => PaymentWebhookDeliveryEntity::STATUS_PROCESSING,
+                'claimToken' => $claimToken,
+                'claimExpiresAt' => $now->modify(\sprintf('+%d seconds', self::CLAIM_LEASE_SECONDS))->format(Defaults::STORAGE_DATE_TIME_FORMAT),
+                'updatedAt' => $storedNow,
+                'id' => Uuid::fromHexToBytes($delivery->id),
+                'previousAttemptCount' => $delivery->attemptCount,
+                'pendingStatus' => PaymentWebhookDeliveryEntity::STATUS_PENDING,
+                'failedStatus' => PaymentWebhookDeliveryEntity::STATUS_FAILED,
+                'retryNow' => $storedNow,
+                'processingStatus' => PaymentWebhookDeliveryEntity::STATUS_PROCESSING,
+                'claimNow' => $storedNow,
+            ]
+        ) === 1;
+    }
+
     private function finish(
         PaymentWebhookDeliveryEntity $delivery,
+        string $claimToken,
         int $attempt,
         ?int $status,
         ?string $content,
         bool $succeeded
     ): void {
         $givingUp = !$succeeded && $attempt >= self::MAX_ATTEMPTS;
+        $now = $this->clock->now();
+        $nextRetryAt = $succeeded || $givingUp ? null : $now->modify(\sprintf('+%d seconds', self::RETRY_DELAYS[min($attempt - 1, \count(self::RETRY_DELAYS) - 1)]));
 
-        $this->deliveryRepository->update([[
-            'id' => $delivery->id,
-            'status' => $succeeded ? PaymentWebhookDeliveryEntity::STATUS_SUCCESS : ($givingUp ? PaymentWebhookDeliveryEntity::STATUS_GIVING_UP : PaymentWebhookDeliveryEntity::STATUS_FAILED),
-            'attemptCount' => $attempt,
-            'lastHttpStatus' => $status,
-            'lastResponse' => $content,
-            'succeededAt' => $succeeded ? $this->clock->now() : null,
-            'nextRetryAt' => $succeeded || $givingUp ? null : $this->clock->now()->modify(\sprintf('+%d seconds', self::RETRY_DELAYS[min($attempt - 1, \count(self::RETRY_DELAYS) - 1)])),
-        ]], Context::createDefaultContext());
+        // A recovered lease belongs to another worker now. Its token fails this predicate, so the
+        // late response of the old worker cannot overwrite the outcome of the newer attempt.
+        $finished = $this->connection->executeStatement(
+            'UPDATE `payment_webhook_delivery`
+                SET `status` = :status,
+                    `claim_token` = NULL,
+                    `claim_expires_at` = NULL,
+                    `last_http_status` = :lastHttpStatus,
+                    `last_response` = :lastResponse,
+                    `succeeded_at` = :succeededAt,
+                    `next_retry_at` = :nextRetryAt,
+                    `updated_at` = :updatedAt
+                WHERE `id` = :id
+                    AND `status` = :processingStatus
+                    AND `claim_token` = :claimToken',
+            [
+                'status' => $succeeded ? PaymentWebhookDeliveryEntity::STATUS_SUCCESS : ($givingUp ? PaymentWebhookDeliveryEntity::STATUS_GIVING_UP : PaymentWebhookDeliveryEntity::STATUS_FAILED),
+                'lastHttpStatus' => $status,
+                'lastResponse' => $content,
+                'succeededAt' => $succeeded ? $now->format(Defaults::STORAGE_DATE_TIME_FORMAT) : null,
+                'nextRetryAt' => $nextRetryAt?->format(Defaults::STORAGE_DATE_TIME_FORMAT),
+                'updatedAt' => $now->format(Defaults::STORAGE_DATE_TIME_FORMAT),
+                'id' => Uuid::fromHexToBytes($delivery->id),
+                'processingStatus' => PaymentWebhookDeliveryEntity::STATUS_PROCESSING,
+                'claimToken' => $claimToken,
+            ]
+        );
+
+        if ($finished === 0) {
+            return;
+        }
 
         if ($succeeded) {
             return;

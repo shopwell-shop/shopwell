@@ -6,6 +6,7 @@ use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Payment\Gateway\AbstractPaymentApi;
 use Shopwell\Core\System\Payment\Gateway\Request\QueryResult;
 use Shopwell\Core\System\Payment\Integration\Stripe\Notification\StripeWebhookVerifier;
+use Shopwell\Core\System\Payment\Integration\Stripe\Request\StripePaymentStatus;
 use Shopwell\Core\System\Payment\PaymentException;
 use Stripe\Exception\ApiErrorException;
 use Stripe\Exception\InvalidRequestException;
@@ -324,7 +325,7 @@ final class StripeApi extends AbstractPaymentApi
             $intent = $this->client()->paymentIntents->retrieve($paymentIntentId);
         } catch (InvalidRequestException $exception) {
             if ($exception->getHttpStatus() === 404) {
-                return new QueryResult(QueryResult::STATUS_ABSENT, raw: ['error' => $exception->getMessage()]);
+                return QueryResult::absent($exception->getMessage());
             }
 
             throw $exception;
@@ -334,15 +335,8 @@ final class StripeApi extends AbstractPaymentApi
         // created for, e.g. when the payer tipped a different total
         $received = $intent->amount_received;
 
-        $status = QueryResult::STATUS_PENDING;
-        if ($intent->status === 'succeeded') {
-            $status = QueryResult::STATUS_PAID;
-        } elseif ($intent->status === 'canceled') {
-            $status = QueryResult::STATUS_CLOSED;
-        }
-
         return new QueryResult(
-            status: $status,
+            status: StripePaymentStatus::intent((string) $intent->status),
             outPaymentNo: $intent->id,
             amount: \is_int($received) && $received > 0 ? $received : $intent->amount,
             currency: strtoupper((string) $intent->currency),
@@ -357,25 +351,16 @@ final class StripeApi extends AbstractPaymentApi
             $session = $this->client()->checkout->sessions->retrieve($sessionId);
         } catch (InvalidRequestException $exception) {
             if ($exception->getHttpStatus() === 404) {
-                return new QueryResult(QueryResult::STATUS_ABSENT, raw: ['error' => $exception->getMessage()]);
+                return QueryResult::absent($exception->getMessage());
             }
 
             throw $exception;
         }
 
-        // a session is completed as soon as the payer is done, the money may still be on its way for
-        // the payment methods stripe settles asynchronously
-        $status = QueryResult::STATUS_PENDING;
-        if ($session->status === 'complete' && $session->payment_status === 'paid') {
-            $status = QueryResult::STATUS_PAID;
-        } elseif ($session->status === 'expired') {
-            $status = QueryResult::STATUS_CLOSED;
-        }
-
         $answer = $session->toArray();
 
         return new QueryResult(
-            status: $status,
+            status: StripePaymentStatus::session((string) $session->status, (string) $session->payment_status),
             outPaymentNo: self::paymentIntentIdOf($answer),
             amount: $session->amount_total,
             currency: strtoupper((string) $session->currency),

@@ -3,8 +3,8 @@
 namespace Shopwell\Core\Checkout\Loyalty\SalesChannel;
 
 use Shopwell\Core\Checkout\Customer\CustomerEntity;
-use Shopwell\Core\Checkout\Loyalty\Entity\CustomerLoyalty\CustomerLoyaltyCollection;
-use Shopwell\Core\Checkout\Loyalty\Entity\CustomerLoyalty\CustomerLoyaltyEntity;
+use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyAccount\LoyaltyAccountCollection;
+use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyAccount\LoyaltyAccountEntity;
 use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyTier\LoyaltyTierCollection;
 use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyTier\LoyaltyTierEntity;
 use Shopwell\Core\Checkout\Loyalty\Extension\LoyaltyRouteExtension;
@@ -38,11 +38,11 @@ class LoyaltyRoute
     /**
      * @internal
      *
-     * @param EntityRepository<CustomerLoyaltyCollection> $customerLoyaltyRepository
+     * @param EntityRepository<LoyaltyAccountCollection> $loyaltyAccountRepository
      * @param EntityRepository<LoyaltyTierCollection> $tierRepository
      */
     public function __construct(
-        private readonly EntityRepository $customerLoyaltyRepository,
+        private readonly EntityRepository $loyaltyAccountRepository,
         private readonly EntityRepository $tierRepository,
         private readonly LoyaltySettings $settings,
         private readonly LoyaltyBenefitResolver $benefits,
@@ -73,13 +73,17 @@ class LoyaltyRoute
         /** @var array<string, mixed> $data */
         $data = [
             'pointsBalance' => $loyalty?->getPointsBalance() ?? 0,
-            'growthValue' => $loyalty?->getGrowthValue() ?? 0,
+            'tierPoints' => $loyalty?->getTierPoints() ?? 0,
             // the tier is a projection of what the customer earned and what a membership grants; both
             // write it, and the page only reads it - the paid membership itself has its own route
-            'membershipTierId' => $loyalty?->getMembershipTierId(),
+            'tierId' => $loyalty?->getTierId(),
             // the rate below the first step; the steps themselves are what the page has to show, so the
             // storefront never has to multiply the balance by one number and get a wrong amount
             'pointValueInCurrency' => $this->settings->pointValueInCurrency($context->getSalesChannelId()),
+            // what the page states as the earning rule; the numbers live in the settings, the page only
+            // repeats them, so a shop that changes its rate does not have to edit a template
+            'pointsPerCurrencyUnit' => $this->settings->pointsPerCurrencyUnit($context->getSalesChannelId()),
+            'tierPointsPerCurrencyUnit' => $this->settings->tierPointsPerCurrencyUnit($context->getSalesChannelId()),
             'redemptionLevels' => $this->redemption->rates($context->getSalesChannelId(), $context->getContext())->levels(),
             'minRedeemablePoints' => $this->settings->minRedeemablePoints($context->getSalesChannelId()),
             'maxRedeemablePercent' => $this->settings->maxRedeemablePercent($context->getSalesChannelId()),
@@ -110,7 +114,7 @@ class LoyaltyRoute
                 'technicalName' => $tier->getTechnicalName(),
                 'name' => $tier->getName(),
                 'level' => $tier->getLevel(),
-                'minGrowthValue' => $tier->getMinGrowthValue(),
+                'minTierPoints' => $tier->getMinTierPoints(),
                 // the three columns stay until the templates read `benefits`; a benefit row already wins
                 // over them here, so a shop that configured one sees it without changing the template
                 'pointsMultiplier' => $tier->getPointsMultiplier(),
@@ -123,14 +127,14 @@ class LoyaltyRoute
         return $tiers;
     }
 
-    private function loadLoyalty(string $customerId, SalesChannelContext $context): ?CustomerLoyaltyEntity
+    private function loadLoyalty(string $customerId, SalesChannelContext $context): ?LoyaltyAccountEntity
     {
         $criteria = new Criteria();
         $criteria->addFilter(new EqualsFilter('customerId', $customerId));
         $criteria->setLimit(1);
 
-        $loyalty = $this->customerLoyaltyRepository->search($criteria, $context->getContext())->getEntities()->first();
+        $loyalty = $this->loyaltyAccountRepository->search($criteria, $context->getContext())->getEntities()->first();
 
-        return $loyalty instanceof CustomerLoyaltyEntity ? $loyalty : null;
+        return $loyalty instanceof LoyaltyAccountEntity ? $loyalty : null;
     }
 }

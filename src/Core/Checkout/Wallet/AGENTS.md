@@ -87,6 +87,20 @@ Moving these columns to integer minor units is planned; until then, keep every n
 4. Currency handling: an unspecified currency means `Defaults::CURRENCY`; never assume the wallet is unique per
    customer — look it up by `(customerId, currencyId)`.
 
+## What is public API and what is not
+
+`WalletLedger` is `@internal`; `WalletAccountService`, `WalletAdjustmentService`, `WalletPaymentService`,
+`WalletTopUpService` and `WalletSettings` are public.
+
+The test is not "does it feel internal" but "does a third party have a different, legitimate thing to say here".
+Nobody has a legitimate opinion about the order of the entry and the balance or about the row lock, and a caller that
+varies either one breaks the projection without noticing. Everybody who wants to move money does have something to
+say, and the two services above are where that belongs — a movement they cannot express is an extension point to add
+there, not a reason to write the balance from outside.
+
+Two mechanics worth knowing: the marker is read from the **class** docblock only, so a `@internal` on `__construct`
+means "we build it", not "do not use it"; and `@internal` is not combined with `@final` — the stronger marker wins.
+
 ## Gates
 
 - `vendor/bin/phpunit --testsuite unit --filter "Checkout\\\\(Wallet|Ledger)"` and

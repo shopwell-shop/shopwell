@@ -122,6 +122,22 @@ describe('module/sw-payment/component/sw-payment-config-field', () => {
         expect(wrapper.find('input').attributes('data-label')).toBe('translated:some.snippet.key');
     });
 
+    it('should render the XML translation of the active administration locale', async () => {
+        const wrapper = await createWrapper(
+            {
+                label: { 'en-GB': 'Application ID', 'zh-CN': '应用 ID' },
+                helpText: { 'en-GB': 'From the open platform', 'zh-CN': '来自开放平台' },
+            },
+            {
+                $te: () => false,
+                $i18n: { locale: { value: 'zh-CN' } },
+            },
+        );
+
+        expect(wrapper.find('input').attributes('data-label')).toBe('应用 ID');
+        expect(wrapper.find('input').attributes('data-help')).toBe('来自开放平台');
+    });
+
     it('should fall back to the name of the field when it carries no label', async () => {
         const wrapper = await createWrapper({ name: 'mch_id', label: null });
 
@@ -147,6 +163,28 @@ describe('module/sw-payment/component/sw-payment-config-field', () => {
         expect(wrapper.findComponent({ name: 'MtSelect' }).props('options')).toEqual([
             { value: 'RSA2', label: 'RSA2' },
             { value: 'RSA', label: 'RSA' },
+        ]);
+    });
+
+    it('should localize XML option labels and fall back to English', async () => {
+        const wrapper = await createWrapper(
+            {
+                name: 'environment',
+                type: 'select',
+                options: {
+                    sandbox: { 'en-GB': 'Sandbox', 'zh-CN': '沙箱' },
+                    live: { 'en-GB': 'Live', 'zh-CN': '正式' },
+                },
+            },
+            {
+                $te: () => false,
+                $i18n: { locale: { value: 'de-DE' } },
+            },
+        );
+
+        expect(wrapper.findComponent({ name: 'MtSelect' }).props('options')).toEqual([
+            { value: 'sandbox', label: 'Sandbox' },
+            { value: 'live', label: 'Live' },
         ]);
     });
 

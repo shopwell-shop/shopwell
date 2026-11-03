@@ -3,8 +3,8 @@
 namespace Shopwell\Tests\Integration\Core\Checkout\Membership\Service;
 
 use PHPUnit\Framework\TestCase;
-use Shopwell\Core\Checkout\Loyalty\Entity\CustomerLoyalty\CustomerLoyaltyCollection;
-use Shopwell\Core\Checkout\Loyalty\Entity\CustomerLoyalty\CustomerLoyaltyEntity;
+use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyAccount\LoyaltyAccountCollection;
+use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyAccount\LoyaltyAccountEntity;
 use Shopwell\Core\Checkout\Membership\Entity\MembershipOrder\MembershipOrderEntity;
 use Shopwell\Core\Checkout\Membership\Entity\MembershipSubscription\MembershipSubscriptionCollection;
 use Shopwell\Core\Checkout\Membership\Entity\MembershipSubscription\MembershipSubscriptionEntity;
@@ -23,7 +23,7 @@ use Shopwell\Core\Test\TestDefaults;
 /**
  * The membership against the real database: a paid order has to end up as one row here and as a tier
  * on the loyalty account, a renewal has to keep it one row, and an expired membership has to give the
- * tier back to the growth value.
+ * tier back to the tier points.
  *
  * @internal
  */
@@ -40,7 +40,7 @@ class MembershipSubscriptionServiceTest extends TestCase
     private EntityRepository $subscriptions;
 
     /**
-     * @var EntityRepository<CustomerLoyaltyCollection>
+     * @var EntityRepository<LoyaltyAccountCollection>
      */
     private EntityRepository $loyalty;
 
@@ -48,7 +48,7 @@ class MembershipSubscriptionServiceTest extends TestCase
     {
         $this->context = Context::createDefaultContext();
         $this->subscriptions = static::getContainer()->get('membership_subscription.repository');
-        $this->loyalty = static::getContainer()->get('customer_loyalty.repository');
+        $this->loyalty = static::getContainer()->get('loyalty_account.repository');
     }
 
     public function testAPaidOrderBecomesAMembershipOnTheCustomer(): void
@@ -68,10 +68,10 @@ class MembershipSubscriptionServiceTest extends TestCase
 
         // the account carries the membership without owning it
         $account = $this->accountOf($customerId);
-        static::assertSame($tierId, $account->getMembershipTierId());
+        static::assertSame($tierId, $account->getTierId());
         static::assertSame(
             $subscription->getEndsAt()->format('Y-m-d H:i'),
-            $account->getMembershipValidUntil()?->format('Y-m-d H:i')
+            $account->getMembershipPaidUntil()?->format('Y-m-d H:i')
         );
     }
 
@@ -97,7 +97,7 @@ class MembershipSubscriptionServiceTest extends TestCase
 
     /**
      * The end of a membership is an act, not a date: the task ends it, and the tier falls back to what
-     * the growth value earns - here to no tier at all, because the customer has not earned one.
+     * the tier points earn - here to no tier at all, because the customer has not earned one.
      */
     public function testExpiringTakesTheTierAwayAgain(): void
     {
@@ -118,8 +118,8 @@ class MembershipSubscriptionServiceTest extends TestCase
 
         $this->loyalty->update([[
             'id' => $this->accountOf($customerId)->getId(),
-            'membershipTierId' => $tierId,
-            'membershipValidUntil' => new \DateTimeImmutable('-1 day'),
+            'tierId' => $tierId,
+            'membershipPaidUntil' => new \DateTimeImmutable('-1 day'),
         ]], $this->context);
 
         // the task sweeps the whole table, so what is asserted below is this membership, not the count
@@ -131,8 +131,8 @@ class MembershipSubscriptionServiceTest extends TestCase
         static::assertSame(MembershipSubscriptionStates::END_EXPIRED, $subscription->getEndReason());
 
         $account = $this->accountOf($customerId);
-        static::assertNull($account->getMembershipTierId());
-        static::assertNull($account->getMembershipValidUntil());
+        static::assertNull($account->getTierId());
+        static::assertNull($account->getMembershipPaidUntil());
 
         // a second run finds nothing left to do
         static::assertSame(0, $this->service()->expireDue($this->context));
@@ -177,14 +177,14 @@ class MembershipSubscriptionServiceTest extends TestCase
         ];
     }
 
-    private function accountOf(string $customerId): CustomerLoyaltyEntity
+    private function accountOf(string $customerId): LoyaltyAccountEntity
     {
         $criteria = new Criteria();
         $criteria->addFilter(new EqualsFilter('customerId', $customerId));
         $criteria->setLimit(1);
 
         $account = $this->loyalty->search($criteria, $this->context)->getEntities()->first();
-        static::assertInstanceOf(CustomerLoyaltyEntity::class, $account);
+        static::assertInstanceOf(LoyaltyAccountEntity::class, $account);
 
         return $account;
     }
@@ -237,7 +237,7 @@ class MembershipSubscriptionServiceTest extends TestCase
             'technicalName' => $technicalName . '-' . $tierId,
             'level' => $level,
             'active' => true,
-            'minGrowthValue' => 1000,
+            'minTierPoints' => 1000,
             'translations' => [
                 Defaults::LANGUAGE_SYSTEM => ['name' => ucfirst($technicalName)],
             ],
