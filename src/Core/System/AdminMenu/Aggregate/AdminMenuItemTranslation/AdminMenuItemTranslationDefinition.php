@@ -46,6 +46,7 @@ class AdminMenuItemTranslationDefinition extends EntityTranslationDefinition
     {
         return new FieldCollection([
             (new StringField('title', 'title'))->addFlags(new ApiAware())->setDescription('Translated label of the menu item shown in the administration navigation.'),
+            (new StringField('group_title', 'groupTitle'))->addFlags(new ApiAware())->setDescription('Translated label of the group this item is listed under.'),
         ]);
     }
 }

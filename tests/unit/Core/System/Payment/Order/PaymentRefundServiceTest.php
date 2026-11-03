@@ -2,9 +2,9 @@
 
 namespace Shopwell\Tests\Unit\Core\System\Payment\Order\Refund;
 
+use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Payum\Core\GatewayInterface;
-use Shopwell\Core\System\NumberRange\ValueGenerator\AbstractNumberRangeValueGenerator;
 use Payum\Core\Request\Refund as RefundRequest;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
@@ -16,6 +16,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\NumberRange\ValueGenerator\AbstractNumberRangeValueGenerator;
 use Shopwell\Core\System\Payment\Api\Struct\PaymentRefundRequest;
 use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppChannel\PaymentAppChannelEntity;
 use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppProvider\PaymentAppProviderEntity;
@@ -23,6 +24,7 @@ use Shopwell\Core\System\Payment\App\PaymentAppCollection;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
 use Shopwell\Core\System\Payment\App\PaymentCredentialCipher;
 use Shopwell\Core\System\Payment\App\PaymentSignatureService;
+use Shopwell\Core\System\Payment\Exception\PaymentOrderException;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayFactory;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
 use Shopwell\Core\System\Payment\Gateway\Request\NotificationResult;
@@ -34,6 +36,7 @@ use Shopwell\Core\System\Payment\Order\Aggregate\PaymentRefund\PaymentRefundEnti
 use Shopwell\Core\System\Payment\Order\Event\PaymentRefundFinishedEvent;
 use Shopwell\Core\System\Payment\Order\PaymentOrderCollection;
 use Shopwell\Core\System\Payment\Order\PaymentOrderEntity;
+use Shopwell\Core\System\Payment\Order\PaymentOrderRowLock;
 use Shopwell\Core\System\Payment\Order\PaymentOrderService;
 use Shopwell\Core\System\Payment\Order\PaymentOrderStateHandler;
 use Shopwell\Core\System\Payment\Order\PaymentOrderStates;
@@ -56,6 +59,7 @@ use Shopwell\Core\System\Payment\Webhook\PaymentWebhookSigner;
 use Shopwell\Core\System\StateMachine\Loader\InitialStateIdLoader;
 use Shopwell\Core\System\StateMachine\StateMachineRegistry;
 use Shopwell\Core\System\StateMachine\Transition;
+use Shopwell\Tests\Unit\Core\System\Payment\NumberRangeFixture;
 use Symfony\Component\Clock\MockClock;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\Response;
@@ -95,7 +99,7 @@ class PaymentRefundServiceTest extends TestCase
 
         $service = $this->refundService($refundRepository, $this->gateway(null));
 
-        $this->expectExceptionObject(PaymentException::refundNotAllowed('PG0001'));
+        $this->expectExceptionObject(PaymentOrderException::refundNotAllowed('PG0001'));
 
         $service->refund($this->app(), $this->order(), $this->refundRequest(1000));
     }
@@ -107,7 +111,7 @@ class PaymentRefundServiceTest extends TestCase
 
         $service = $this->refundService($refundRepository, $this->gateway(null));
 
-        $this->expectExceptionObject(PaymentException::invalidAmount(0));
+        $this->expectExceptionObject(PaymentOrderException::invalidAmount(0));
 
         $service->refund($this->app(), $this->paidOrder(), $this->refundRequest(0));
     }
@@ -121,9 +125,26 @@ class PaymentRefundServiceTest extends TestCase
 
         $service = $this->refundService($refundRepository, $this->gateway(null));
 
-        $this->expectExceptionObject(PaymentException::refundAmountExceedsOrder('PG0001', 1001, 1000));
+        $this->expectExceptionObject(PaymentOrderException::refundAmountExceedsOrder('PG0001', 1001, 1000));
 
         $service->refund($this->app(), $order, $this->refundRequest(1001));
+    }
+
+    public function testRefundCountsUnsettledRefundsAsReserved(): void
+    {
+        $refundRepository = static::createMock(EntityRepository::class);
+        $refundRepository->method('search')->willReturn($this->refundResult());
+        $refundRepository->expects($this->never())->method('create');
+
+        $gateway = static::createMock(GatewayInterface::class);
+        $gateway->expects($this->never())->method('execute');
+
+        $rowLock = $this->rowLock(reserved: 600);
+        $service = $this->refundService($refundRepository, $gateway, rowLock: $rowLock);
+
+        $this->expectExceptionObject(PaymentOrderException::refundAmountExceedsOrder('PG0001', 500, 400));
+
+        $service->refund($this->app(), $this->paidOrder(), $this->refundRequest(500));
     }
 
     public function testRefundReturnsTheExistingRefundForAKnownOutRefundNo(): void
@@ -188,29 +209,22 @@ class PaymentRefundServiceTest extends TestCase
                     return $this->refundResult();
                 }
 
-                // the replay lookup finds nothing, the lookup after the unique key conflict finds the row
+                // both replay lookups find nothing, the lookup after the unique key conflict finds the row
                 ++$lookups;
 
-                return $lookups === 1 ? $this->refundResult() : $this->refundResult($existing);
+                return $lookups < 3 ? $this->refundResult() : $this->refundResult($existing);
             }
         );
-        $refundRepository->method('create')->willThrowException(static::createStub(UniqueConstraintViolationException::class));
+        $refundRepository->expects($this->once())
+            ->method('create')
+            ->willThrowException(static::createStub(UniqueConstraintViolationException::class));
 
         $gateway = static::createMock(GatewayInterface::class);
         $gateway->expects($this->never())->method('execute');
 
         $service = $this->refundService($refundRepository, $gateway);
 
-        try {
-            $result = $service->refund($this->app(), $this->paidOrder(), $this->refundRequest(1000));
-            var_dump('returned', $result::class, $lookups);
-        } catch (\Throwable $exception) {
-            var_dump('threw', $exception::class, $lookups);
-
-            throw $exception;
-        }
-
-        static::assertSame($existing, $result);
+        static::assertSame($existing, $service->refund($this->app(), $this->paidOrder(), $this->refundRequest(1000)));
     }
 
     public function testRefundSettlesSynchronouslyAndNotifiesTheApp(): void
@@ -300,6 +314,53 @@ class PaymentRefundServiceTest extends TestCase
         );
 
         static::assertSame($refund, $service->refund($this->app(), $this->paidOrder(), $this->refundRequest(1000)));
+    }
+
+    public function testRefundSubmitsToTheChannelOutsideTheDatabaseTransaction(): void
+    {
+        $refund = $this->refundEntity();
+        $transactionState = new \ArrayObject(['active' => false]);
+
+        $rowLock = static::createStub(PaymentOrderRowLock::class);
+        $rowLock->method('transaction')->willReturnCallback(
+            static function (\Closure $write) use ($transactionState): mixed {
+                $transactionState->offsetSet('active', true);
+
+                try {
+                    return $write();
+                } finally {
+                    $transactionState->offsetSet('active', false);
+                }
+            }
+        );
+        $rowLock->method('lockOrder')->willReturn(['paidAmount' => 1000, 'refundedAmount' => 0]);
+        $rowLock->method('lockRefund')->willReturn(false);
+        $rowLock->method('reservedRefundAmount')->willReturn(0);
+
+        $gateway = static::createStub(GatewayInterface::class);
+        $gateway->method('execute')->willReturnCallback(
+            static function (object $request) use ($transactionState): void {
+                static::assertFalse($transactionState->offsetGet('active'));
+                static::assertInstanceOf(RefundRequest::class, $request);
+
+                $model = $request->getModel();
+                static::assertInstanceOf(PaymentGatewayModel::class, $model);
+                $model->offsetSet(PaymentGatewayModel::RESULT, new RefundResult(PaymentRefundStates::STATE_PROCESSING));
+            }
+        );
+
+        $refundRepository = static::createStub(EntityRepository::class);
+        $refundRepository->method('search')->willReturnCallback(
+            fn (Criteria $criteria): EntitySearchResult => $criteria->getIds() === []
+                ? $this->refundResult()
+                : $this->refundResult($refund)
+        );
+
+        $result = $this->refundService($refundRepository, $gateway, rowLock: $rowLock)
+            ->refund($this->app(), $this->paidOrder(), $this->refundRequest(1000));
+
+        static::assertSame($refund, $result);
+        static::assertFalse($transactionState->offsetGet('active'));
     }
 
     public function testRefundRecordsTheChannelFailureAndThrows(): void
@@ -430,7 +491,7 @@ class PaymentRefundServiceTest extends TestCase
      */
     public function testRefundingTheRemainderOfAnAlreadyRefundedOrderIsAFullRefund(): void
     {
-        $refund = $this->refundEntity();
+        $refund = $this->refundEntity(['amount' => 400]);
 
         $refundRepository = static::createMock(EntityRepository::class);
         $refundRepository->method('search')->willReturnCallback(
@@ -450,12 +511,14 @@ class PaymentRefundServiceTest extends TestCase
             'stateId' => 'state-partially-refunded',
         ]);
 
+        $rowLock = $this->rowLock(['paidAmount' => 1000, 'refundedAmount' => 600]);
         $service = $this->refundService(
             $refundRepository,
             $this->gateway(PaymentRefundStates::STATE_FINISHED, 'channel-refund-1'),
-            $this->orderService($this->orderRepository($order)),
+            $this->orderService($this->orderRepository($order), null, $rowLock),
             $refundStateMachine,
-            capabilities: self::FULL_REFUND_ONLY_CAPABILITIES
+            capabilities: self::FULL_REFUND_ONLY_CAPABILITIES,
+            rowLock: $rowLock
         );
 
         // 400 of the 400 that are left
@@ -485,21 +548,47 @@ class PaymentRefundServiceTest extends TestCase
         $refundRepository = static::createStub(EntityRepository::class);
         $refundRepository->method('search')->willReturn($this->refundResult());
 
-        $this->expectExceptionObject(PaymentException::refundNotFound('missing-id'));
+        $this->expectExceptionObject(PaymentOrderException::refundNotFound('missing-id'));
 
         $this->refundService($refundRepository, $this->gateway(null))->getRefund('missing-id');
     }
 
-    public function testApplyNotificationIsIdempotentOnceTheRefundWasSettled(): void
+    public function testApplyNotificationReplaysTheAnnouncementWithoutBookingASettledRefundAgain(): void
     {
         $refund = $this->refundEntity(['refundedAt' => new \DateTimeImmutable(self::NOW)]);
 
         $refundRepository = static::createMock(EntityRepository::class);
+        $refundRepository->method('search')->willReturn($this->refundResult($refund));
         $refundRepository->expects($this->never())->method('update');
-        $refundRepository->expects($this->never())->method('search');
 
-        $this->refundService($refundRepository, $this->gateway(null))
-            ->applyNotification($refund, $this->paidOrder(), new NotificationResult(true, true, amount: 1000, raw: ['status' => 'done']));
+        $orderRepository = static::createMock(EntityRepository::class);
+        $orderRepository->method('search')->willReturn(new EntitySearchResult(
+            PaymentOrderEntity::ENTITY_NAME,
+            1,
+            new PaymentOrderCollection([$this->paidOrder()]),
+            null,
+            new Criteria(),
+            Context::createDefaultContext()
+        ));
+        $orderRepository->expects($this->never())->method('update');
+
+        $refundStateMachine = static::createMock(StateMachineRegistry::class);
+        $refundStateMachine->expects($this->never())->method('transition');
+        $orderStateMachine = static::createMock(StateMachineRegistry::class);
+        $orderStateMachine->expects($this->never())->method('transition');
+
+        $eventDispatcher = static::createMock(EventDispatcherInterface::class);
+        $eventDispatcher->expects($this->once())->method('dispatch');
+
+        $rowLock = $this->rowLock(settled: true);
+        $this->refundService(
+            $refundRepository,
+            $this->gateway(null),
+            $this->orderService($orderRepository, $orderStateMachine, $rowLock),
+            $refundStateMachine,
+            $eventDispatcher,
+            rowLock: $rowLock
+        )->applyNotification($refund, $this->paidOrder(), new NotificationResult(true, true, amount: 1000, raw: ['status' => 'done']));
     }
 
     public function testApplyNotificationRecordsTheAnswerWithoutSettlingWhenTheChannelDidNotSucceed(): void
@@ -529,7 +618,7 @@ class PaymentRefundServiceTest extends TestCase
 
         $refundRepository = static::createMock(EntityRepository::class);
         $refundRepository->method('search')->willReturn($this->refundResult($refund));
-        $refundRepository->expects($this->exactly(2))->method('update');
+        $refundRepository->expects($this->once())->method('update');
 
         $refundStateMachine = static::createMock(StateMachineRegistry::class);
         $refundStateMachine->expects($this->once())
@@ -541,16 +630,51 @@ class PaymentRefundServiceTest extends TestCase
             ->method('transition')
             ->with(static::callback(static fn (Transition $t): bool => $t->getTransitionName() === PaymentOrderStates::ACTION_REFUND));
 
+        $transactionState = new \ArrayObject(['active' => false]);
         $eventDispatcher = static::createMock(EventDispatcherInterface::class);
-        $eventDispatcher->expects($this->once())->method('dispatch');
+        $eventDispatcher->expects($this->once())
+            ->method('dispatch')
+            ->willReturnCallback(static function (object $event) use ($transactionState): object {
+                static::assertFalse($transactionState->offsetGet('active'));
+                static::assertInstanceOf(PaymentRefundFinishedEvent::class, $event);
+
+                return $event;
+            });
+
+        $locks = new \ArrayObject();
+        $rowLock = static::createStub(PaymentOrderRowLock::class);
+        $rowLock->method('transaction')->willReturnCallback(
+            static function (\Closure $write) use ($transactionState): mixed {
+                $transactionState->offsetSet('active', true);
+
+                try {
+                    return $write();
+                } finally {
+                    $transactionState->offsetSet('active', false);
+                }
+            }
+        );
+        $rowLock->method('lockRefund')->willReturnCallback(static function () use ($locks): bool {
+            $locks->append('refund');
+
+            return false;
+        });
+        $rowLock->method('lockOrder')->willReturnCallback(static function () use ($locks): array {
+            $locks->append('order');
+
+            return ['paidAmount' => 1000, 'refundedAmount' => 0];
+        });
 
         $this->refundService(
             $refundRepository,
             $this->gateway(null),
-            $this->orderService($this->orderRepository($this->paidOrder()), $orderStateMachine),
+            $this->orderService($this->orderRepository($this->paidOrder()), $orderStateMachine, $rowLock),
             $refundStateMachine,
-            $eventDispatcher
+            $eventDispatcher,
+            rowLock: $rowLock
         )->applyNotification($refund, $this->paidOrder(), new NotificationResult(true, true, outRefundId: 'channel-refund-1', amount: 1000, raw: ['status' => 'done']));
+
+        static::assertSame(['refund', 'order'], $locks->getArrayCopy());
     }
 
     public function testApplyNotificationAnnouncesTheRefundWithItsOwnSubject(): void
@@ -561,7 +685,7 @@ class PaymentRefundServiceTest extends TestCase
 
         $refundRepository = static::createMock(EntityRepository::class);
         $refundRepository->method('search')->willReturn($this->refundResult($refund));
-        $refundRepository->expects($this->exactly(2))->method('update');
+        $refundRepository->expects($this->once())->method('update');
 
         $delivery = new PaymentWebhookDeliveryEntity();
         $delivery->setUniqueIdentifier('delivery-id');
@@ -613,8 +737,11 @@ class PaymentRefundServiceTest extends TestCase
         ?EventDispatcherInterface $eventDispatcher = null,
         ?EntityRepository $deliveryRepository = null,
         ?EntityRepository $appRepository = null,
+        ?PaymentOrderRowLock $rowLock = null,
         array $capabilities = self::REFUND_CAPABILITIES
     ): PaymentRefundService {
+        $rowLock ??= $this->rowLock();
+
         $initialStateIdLoader = static::createStub(InitialStateIdLoader::class);
         $initialStateIdLoader->method('get')->willReturn('state-open');
 
@@ -650,21 +777,40 @@ class PaymentRefundServiceTest extends TestCase
             new PaymentWebhookSigner(new PaymentSignatureService(), $cipher, new MockClock(self::NOW)),
             static::createStub(HttpClientInterface::class),
             new MockClock(self::NOW),
-            static::createStub(LoggerInterface::class)
+            static::createStub(LoggerInterface::class),
+            static::createStub(Connection::class)
         );
 
         return new PaymentRefundService(
             $refundRepository,
             $this->configResolver($gateway, $capabilities),
-            $orderService ?? $this->orderService($this->orderRepository($this->paidOrder())),
+            $orderService ?? $this->orderService($this->orderRepository($this->paidOrder()), null, $rowLock),
             $webhookService,
             new PaymentNotifyUrlBuilder(static::createStub(RequestStack::class), 'https://base.example.test'),
             new PaymentRefundStateHandler($refundStateMachine ?? static::createStub(StateMachineRegistry::class)),
             $initialStateIdLoader,
             $eventDispatcher ?? static::createStub(EventDispatcherInterface::class),
             new MockClock(self::NOW),
-            $this->numberRanges()
+            $this->numberRanges(),
+            $rowLock
         );
+    }
+
+    /**
+     * @param array{paidAmount: int, refundedAmount: int} $amounts
+     */
+    private function rowLock(
+        array $amounts = ['paidAmount' => 1000, 'refundedAmount' => 0],
+        int $reserved = 0,
+        bool $settled = false
+    ): PaymentOrderRowLock {
+        $rowLock = static::createStub(PaymentOrderRowLock::class);
+        $rowLock->method('transaction')->willReturnCallback(static fn (\Closure $write): mixed => $write());
+        $rowLock->method('lockOrder')->willReturn($amounts);
+        $rowLock->method('lockRefund')->willReturn($settled);
+        $rowLock->method('reservedRefundAmount')->willReturn($reserved);
+
+        return $rowLock;
     }
 
     private function numberRanges(): AbstractNumberRangeValueGenerator
@@ -776,8 +922,11 @@ class PaymentRefundServiceTest extends TestCase
     /**
      * @param EntityRepository<PaymentOrderCollection>|null $orderRepository
      */
-    private function orderService(?EntityRepository $orderRepository = null, ?StateMachineRegistry $stateMachine = null): PaymentOrderService
-    {
+    private function orderService(
+        ?EntityRepository $orderRepository = null,
+        ?StateMachineRegistry $stateMachine = null,
+        ?PaymentOrderRowLock $rowLock = null
+    ): PaymentOrderService {
         $initialStateIdLoader = static::createStub(InitialStateIdLoader::class);
         $initialStateIdLoader->method('get')->willReturn(self::CREATED_STATE);
 
@@ -787,7 +936,8 @@ class PaymentRefundServiceTest extends TestCase
             $initialStateIdLoader,
             new PaymentOrderStateHandler($stateMachine ?? static::createStub(StateMachineRegistry::class)),
             new MockClock(self::NOW),
-            \Shopwell\Tests\Unit\Core\System\Payment\NumberRangeFixture::generator('PG1001')
+            NumberRangeFixture::generator('PG1001'),
+            $rowLock ?? $this->rowLock()
         );
     }
 
@@ -858,6 +1008,10 @@ class PaymentRefundServiceTest extends TestCase
             $refundedAt = $overrides['refundedAt'];
             static::assertInstanceOf(\DateTimeInterface::class, $refundedAt);
             $refund->refundedAt = $refundedAt;
+        }
+
+        if (\array_key_exists('amount', $overrides)) {
+            $refund->amount = (int) $overrides['amount'];
         }
 
         return $refund;

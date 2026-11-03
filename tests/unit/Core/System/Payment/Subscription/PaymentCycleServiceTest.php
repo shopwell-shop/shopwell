@@ -12,6 +12,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Currency\CurrencyEntity;
+use Shopwell\Core\System\NumberRange\ValueGenerator\AbstractNumberRangeValueGenerator;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayFactory;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
 use Shopwell\Core\System\Payment\PaymentException;
@@ -20,6 +21,7 @@ use Shopwell\Core\System\Payment\Provider\PaymentProvider;
 use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;
 use Shopwell\Core\System\Payment\Subscription\PaymentCycleService;
 use Shopwell\Core\System\Payment\Subscription\PaymentCycleStateHandler;
+use Shopwell\Core\System\Payment\Subscription\PaymentCycleTransactionInterface;
 use Shopwell\Core\System\Payment\Subscription\PaymentPlanEntity;
 use Shopwell\Core\System\Payment\Subscription\PaymentSubscriptionCollection;
 use Shopwell\Core\System\Payment\Subscription\PaymentSubscriptionCycleCollection;
@@ -59,6 +61,8 @@ class PaymentCycleServiceTest extends TestCase
      * @var list<array{entityName: string, entityId: string, action: string}>
      */
     private array $transitions = [];
+
+    private PaymentCycleTransactionStub $transactions;
 
     #[DataProvider('periodAdvance')]
     public function testScheduleCycleAdvancesPeriodByPeriod(string $currentPeriodEnd, string $expectedPeriodEnd): void
@@ -182,9 +186,7 @@ class PaymentCycleServiceTest extends TestCase
         static::assertSame(self::SCHEDULED_STATE, $written['stateId']);
         // not nullable, no ddl default and the dal never writes the property initial value
         static::assertSame(0, $written['attemptCount']);
-        // SC + ymdHis + ten hex characters, well below the 32 the providers allow
-        static::assertMatchesRegularExpression('/^SC250131020000[0-9A-F]{10}$/', $written['outTradeNo']);
-        static::assertLessThanOrEqual(32, \strlen($written['outTradeNo']));
+        static::assertSame('SC1001', $written['outTradeNo']);
     }
 
     public function testScheduleCyclePrefersThePeriodEndOverTheTrialEnd(): void
@@ -295,6 +297,7 @@ class PaymentCycleServiceTest extends TestCase
     {
         $written = [];
         $repository = static::createMock(EntityRepository::class);
+        $repository->method('search')->willReturn($this->cycleSearchResult([$this->cycle()]));
         $repository->expects($this->once())
             ->method('update')
             ->with(static::callback(function (array $data) use (&$written): bool {
@@ -311,6 +314,7 @@ class PaymentCycleServiceTest extends TestCase
             [['entityName' => PaymentSubscriptionCycleEntity::ENTITY_NAME, 'entityId' => 'cycle-id', 'action' => PaymentSubscriptionCycleStates::ACTION_PROCESS]],
             $this->transitions
         );
+        static::assertSame([['cycleId' => 'cycle-id', 'withSubscription' => false]], $this->transactions->calls);
     }
 
     /**
@@ -320,6 +324,7 @@ class PaymentCycleServiceTest extends TestCase
     public function testMarkProcessingWithoutATransactionIdOnlyMovesTheState(): void
     {
         $repository = static::createMock(EntityRepository::class);
+        $repository->method('search')->willReturn($this->cycleSearchResult([$this->cycle()]));
         $repository->expects($this->never())->method('update');
 
         $this->service($repository)->markProcessing($this->cycle(), null);
@@ -340,6 +345,7 @@ class PaymentCycleServiceTest extends TestCase
 
         $cycleWritten = [];
         $cycleRepository = static::createMock(EntityRepository::class);
+        $cycleRepository->method('search')->willReturn($this->cycleSearchResult([$cycle]));
         $cycleRepository->expects($this->once())
             ->method('update')
             ->with(static::callback(function (array $data) use (&$cycleWritten): bool {
@@ -360,7 +366,7 @@ class PaymentCycleServiceTest extends TestCase
             }));
 
         $this->service($cycleRepository, $subscriptionRepository)->markSucceeded(
-            $cycle,
+            $this->cycle(),
             'channel-tx-1',
             $this->shanghai('2025-02-01 09:00:00')
         );
@@ -386,6 +392,7 @@ class PaymentCycleServiceTest extends TestCase
             [['entityName' => PaymentSubscriptionCycleEntity::ENTITY_NAME, 'entityId' => 'cycle-id', 'action' => PaymentSubscriptionCycleStates::ACTION_SUCCEED]],
             $this->transitions
         );
+        static::assertSame([['cycleId' => 'cycle-id', 'withSubscription' => true]], $this->transactions->calls);
     }
 
     /**
@@ -399,7 +406,10 @@ class PaymentCycleServiceTest extends TestCase
         $subscriptionRepository->method('search')->willReturn($this->subscriptionSearchResult($subscription));
         $subscriptionRepository->method('update');
 
-        $this->service(null, $subscriptionRepository)->markSucceeded(
+        $cycleRepository = static::createStub(EntityRepository::class);
+        $cycleRepository->method('search')->willReturn($this->cycleSearchResult([$this->cycle()]));
+
+        $this->service($cycleRepository, $subscriptionRepository)->markSucceeded(
             $this->cycle(),
             'channel-tx-1',
             $this->shanghai('2025-02-01 09:00:00')
@@ -422,6 +432,7 @@ class PaymentCycleServiceTest extends TestCase
 
         $written = [];
         $cycleRepository = static::createMock(EntityRepository::class);
+        $cycleRepository->method('search')->willReturn($this->cycleSearchResult([$cycle]));
         $cycleRepository->expects($this->once())
             ->method('update')
             ->with(static::callback(function (array $data) use (&$written): bool {
@@ -434,7 +445,10 @@ class PaymentCycleServiceTest extends TestCase
         $subscriptionRepository->method('search')->willReturn($this->subscriptionSearchResult($subscription));
         $subscriptionRepository->expects($this->never())->method('update');
 
-        $this->service($cycleRepository, $subscriptionRepository)->markFailed($cycle, 'ACQ.BUYER_BALANCE_NOT_ENOUGH');
+        $this->service($cycleRepository, $subscriptionRepository)->markFailed(
+            $this->cycle(['attemptCount' => 99]),
+            'ACQ.BUYER_BALANCE_NOT_ENOUGH'
+        );
 
         static::assertSame('cycle-id', $written['id']);
         static::assertSame('ACQ.BUYER_BALANCE_NOT_ENOUGH', $written['failureCode']);
@@ -450,6 +464,7 @@ class PaymentCycleServiceTest extends TestCase
             [['entityName' => PaymentSubscriptionCycleEntity::ENTITY_NAME, 'entityId' => 'cycle-id', 'action' => PaymentSubscriptionCycleStates::ACTION_FAIL_RETRYABLE]],
             $this->transitions
         );
+        static::assertSame([['cycleId' => 'cycle-id', 'withSubscription' => true]], $this->transactions->calls);
     }
 
     /**
@@ -511,6 +526,7 @@ class PaymentCycleServiceTest extends TestCase
         $subscription = $this->subscription(['failureCount' => 2]);
 
         $cycleRepository = static::createStub(EntityRepository::class);
+        $cycleRepository->method('search')->willReturn($this->cycleSearchResult([$this->cycle()]));
         $cycleRepository->method('update');
 
         $subscriptionWritten = [];
@@ -552,6 +568,7 @@ class PaymentCycleServiceTest extends TestCase
         ]);
 
         $cycleRepository = static::createStub(EntityRepository::class);
+        $cycleRepository->method('search')->willReturn($this->cycleSearchResult([$this->cycle()]));
         $cycleRepository->method('update');
 
         $subscriptionWritten = [];
@@ -583,6 +600,7 @@ class PaymentCycleServiceTest extends TestCase
     public function testMarkFailedKeepsAnUnknownAnswerInUnknown(?string $failureCode, ?string $expectedStoredCode): void
     {
         $cycleRepository = static::createMock(EntityRepository::class);
+        $cycleRepository->method('search')->willReturn($this->cycleSearchResult([$this->cycle()]));
         $cycleRepository->expects($this->once())
             ->method('update')
             ->with(static::callback(function (array $data) use ($expectedStoredCode): bool {
@@ -637,6 +655,7 @@ class PaymentCycleServiceTest extends TestCase
             [['entityName' => PaymentSubscriptionCycleEntity::ENTITY_NAME, 'entityId' => 'cycle-id', 'action' => PaymentSubscriptionCycleStates::ACTION_RESCHEDULE]],
             $this->transitions
         );
+        static::assertSame([['cycleId' => 'cycle-id', 'withSubscription' => false]], $this->transactions->calls);
     }
 
     /**
@@ -782,6 +801,7 @@ class PaymentCycleServiceTest extends TestCase
     ): array {
         $written = [];
         $cycleRepository = static::createMock(EntityRepository::class);
+        $cycleRepository->method('search')->willReturn($this->cycleSearchResult([$cycle]));
         $cycleRepository->expects($this->once())
             ->method('update')
             ->with(static::callback(function (array $data) use (&$written): bool {
@@ -815,7 +835,7 @@ class PaymentCycleServiceTest extends TestCase
                 return true;
             }));
 
-        $this->service($repository)->rearm($cycle, $tradeIsDead);
+        $this->service($repository)->rearm($this->cycle(), $tradeIsDead);
 
         return $written;
     }
@@ -904,9 +924,12 @@ class PaymentCycleServiceTest extends TestCase
             return new StateMachineStateCollection();
         });
 
+        $this->transactions = new PaymentCycleTransactionStub();
+
         return new PaymentCycleService(
             $cycleRepository ?? $this->cycleRepository(),
             $subscriptionRepository ?? $this->subscriptionRepository(),
+            $this->transactions,
             new PaymentCycleStateHandler($registry),
             new PaymentSubscriptionStateHandler($registry),
             new PaymentCycleCalendar(),
@@ -914,7 +937,22 @@ class PaymentCycleServiceTest extends TestCase
             $this->initialStateIdLoader(),
             $providerRegistry ?? $this->providerRegistry(),
             new MockClock(self::NOW),
+            $this->numberRanges(),
         );
+    }
+
+    private function numberRanges(): AbstractNumberRangeValueGenerator
+    {
+        $generator = static::createStub(AbstractNumberRangeValueGenerator::class);
+        $generator->method('getValue')->willReturnCallback(
+            static function (string $type): string {
+                static::assertSame(PaymentSubscriptionCycleEntity::ENTITY_NAME, $type);
+
+                return 'SC1001';
+            }
+        );
+
+        return $generator;
     }
 
     /**
@@ -1127,5 +1165,24 @@ class PaymentCycleServiceTest extends TestCase
     private function shanghai(string $dateTime): \DateTimeImmutable
     {
         return new \DateTimeImmutable($dateTime, new \DateTimeZone(self::SHANGHAI));
+    }
+}
+
+/**
+ * @internal
+ */
+#[Package('framework')]
+final class PaymentCycleTransactionStub implements PaymentCycleTransactionInterface
+{
+    /**
+     * @var list<array{cycleId: string, withSubscription: bool}>
+     */
+    public array $calls = [];
+
+    public function execute(string $cycleId, bool $withSubscription, \Closure $callback): mixed
+    {
+        $this->calls[] = ['cycleId' => $cycleId, 'withSubscription' => $withSubscription];
+
+        return $callback();
     }
 }

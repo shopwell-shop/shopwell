@@ -2,6 +2,7 @@
 
 namespace Shopwell\Tests\Unit\Core\System\Payment\Transfer\Api;
 
+use Doctrine\DBAL\Connection;
 use Payum\Core\GatewayInterface;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -43,6 +44,7 @@ use Shopwell\Core\System\Payment\Transfer\PaymentTransferEntity;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferRecipientCollection;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferRecipientEntity;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferRecipientService;
+use Shopwell\Core\System\Payment\Transfer\PaymentTransferResultBooker;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferService;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferStateHandler;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferStates;
@@ -51,6 +53,7 @@ use Shopwell\Core\System\StateMachine\Aggregation\StateMachineState\StateMachine
 use Shopwell\Core\System\StateMachine\Aggregation\StateMachineState\StateMachineStateEntity;
 use Shopwell\Core\System\StateMachine\Loader\InitialStateIdLoader;
 use Shopwell\Core\System\StateMachine\StateMachineRegistry;
+use Shopwell\Tests\Unit\Core\System\Payment\NumberRangeFixture;
 use Symfony\Component\Clock\MockClock;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -367,7 +370,7 @@ class PaymentTransferControllerTest extends TestCase
             $this->initialStateIdLoader(),
             $clock,
             $providerRegistry,
-            \Shopwell\Tests\Unit\Core\System\Payment\NumberRangeFixture::generator('PT1001'),
+            NumberRangeFixture::generator('PT1001'),
         );
 
         $configResolver = new PaymentConfigResolver(
@@ -390,7 +393,11 @@ class PaymentTransferControllerTest extends TestCase
                 $transferService,
                 $clock,
             ),
-            new PaymentTransferSubmitter($configResolver, $transferService),
+            new PaymentTransferSubmitter(
+                $configResolver,
+                $transferService,
+                $this->resultBooker($transferService),
+            ),
             $transferService,
             new PaymentTransferPresenter($cipher),
             $providerRegistry,
@@ -531,7 +538,7 @@ class PaymentTransferControllerTest extends TestCase
             $this->initialStateIdLoader(),
             $clock,
             $providerRegistry,
-            \Shopwell\Tests\Unit\Core\System\Payment\NumberRangeFixture::generator('PT1001'),
+            NumberRangeFixture::generator('PT1001'),
         );
 
         $appProviderRepository = static::createStub(EntityRepository::class);
@@ -563,11 +570,25 @@ class PaymentTransferControllerTest extends TestCase
                 $transferService,
                 $clock,
             ),
-            new PaymentTransferSubmitter($configResolver, $transferService),
+            new PaymentTransferSubmitter(
+                $configResolver,
+                $transferService,
+                $this->resultBooker($transferService),
+            ),
             $transferService,
             new PaymentTransferPresenter($cipher),
             $providerRegistry,
         );
+    }
+
+    private function resultBooker(PaymentTransferService $transferService): PaymentTransferResultBooker
+    {
+        $connection = static::createStub(Connection::class);
+        $connection->method('transactional')->willReturnCallback(
+            static fn (\Closure $closure): mixed => $closure($connection)
+        );
+
+        return new PaymentTransferResultBooker($transferService, $connection);
     }
 
     /**

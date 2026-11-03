@@ -7,7 +7,7 @@ use Shopwell\Core\Checkout\Customer\Aggregate\CustomerGroup\CustomerGroupEntity;
 use Shopwell\Core\Checkout\Customer\Aggregate\CustomerWishlist\CustomerWishlistCollection;
 use Shopwell\Core\Checkout\Customer\CustomerCollection;
 use Shopwell\Core\Checkout\DocumentV2\Aggregate\DocumentBaseConfig\DocumentBaseConfigDefinition;
-use Shopwell\Core\Checkout\Loyalty\Entity\CustomerPointTransaction\CustomerPointTransactionCollection;
+use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyPointTransaction\LoyaltyPointTransactionCollection;
 use Shopwell\Core\Checkout\Order\OrderCollection;
 use Shopwell\Core\Checkout\OrderReturn\Entity\OrderReturnCollection;
 use Shopwell\Core\Checkout\Payment\PaymentMethodCollection;
@@ -189,7 +189,7 @@ class SalesChannelEntity extends Entity
 
     protected ?ProductReviewCollection $productReviews = null;
 
-    protected ?CustomerPointTransactionCollection $customerPointTransactions = null;
+    protected ?LoyaltyPointTransactionCollection $loyaltyPointTransactions = null;
 
     protected ?PaymentPlanCollection $paymentPlans = null;
 
@@ -1059,14 +1059,14 @@ class SalesChannelEntity extends Entity
         $this->businessTimeZone = $businessTimeZone;
     }
 
-    public function getCustomerPointTransactions(): ?CustomerPointTransactionCollection
+    public function getLoyaltyPointTransactions(): ?LoyaltyPointTransactionCollection
     {
-        return $this->customerPointTransactions;
+        return $this->loyaltyPointTransactions;
     }
 
-    public function setCustomerPointTransactions(CustomerPointTransactionCollection $customerPointTransactions): void
+    public function setLoyaltyPointTransactions(LoyaltyPointTransactionCollection $loyaltyPointTransactions): void
     {
-        $this->customerPointTransactions = $customerPointTransactions;
+        $this->loyaltyPointTransactions = $loyaltyPointTransactions;
     }
 
     public function getPaymentPlans(): ?PaymentPlanCollection

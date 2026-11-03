@@ -276,14 +276,14 @@ class LoyaltyPointServiceTest extends TestCase
         static::assertSame(25, $this->service(null, $logger)->expireDue($this->context));
     }
 
-    public function testAddGrowthValueAnswersTheNewValue(): void
+    public function testAddTierPointsAnswersTheNewValue(): void
     {
         $this->ledger->expects($this->once())
-            ->method('addGrowthValue')
+            ->method('addTierPoints')
             ->with(self::CUSTOMER_ID, 25, $this->context)
             ->willReturn(125);
 
-        static::assertSame(125, $this->loyaltyPointService->addGrowthValue(self::CUSTOMER_ID, 25, $this->context));
+        static::assertSame(125, $this->loyaltyPointService->addTierPoints(self::CUSTOMER_ID, 25, $this->context));
     }
 
     /**

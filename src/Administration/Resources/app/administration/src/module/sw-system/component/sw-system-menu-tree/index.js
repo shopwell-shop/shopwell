@@ -11,10 +11,11 @@ const DROP_EDGE_RATIO = 0.25;
  * Renders the stored navigation as an indented list and turns drag gestures into move
  * intents.
  *
- * The tree keeps no ordering state of its own: it renders the levels it is given and
- * reports where an item was dropped. Rebuilding the sibling chain is the server's job -
- * `AdminMenuConfigService::move()` repairs both affected levels - so the tree only has to
- * translate "below this row" into a `parentId` and an `afterMenuItemId`.
+ * The tree keeps no state of its own: which entries are open is the caller's decision (the
+ * page starts with everything closed, because the navigation is long and its shape is what
+ * an operator comes for), the label is already resolved, and a drop is reported instead of
+ * applied - `AdminMenuConfigService::move()` repairs both affected levels, so the tree only
+ * has to translate "below this row" into a `parentId` and an `afterMenuItemId`.
  *
  * @sw-package fundamentals@framework
  */
@@ -22,9 +23,7 @@ const DROP_EDGE_RATIO = 0.25;
 export default {
     template,
 
-    mixins: [Shopwell.Mixin.getByName('translate-with-fallback')],
-
-    emits: ['select', 'move'],
+    emits: ['toggle', 'edit', 'remove', 'move'],
 
     props: {
         items: {
@@ -32,13 +31,25 @@ export default {
             required: true,
         },
 
-        activeId: {
-            type: String,
+        expandedIds: {
+            type: Array,
             required: false,
-            default: null,
+            default: () => [],
         },
 
         sortable: {
+            type: Boolean,
+            required: false,
+            default: false,
+        },
+
+        editable: {
+            type: Boolean,
+            required: false,
+            default: false,
+        },
+
+        deletable: {
             type: Boolean,
             required: false,
             default: false,
@@ -47,7 +58,6 @@ export default {
 
     data() {
         return {
-            collapsedIds: [],
             draggedId: null,
             dropTargetId: null,
             dropZone: null,
@@ -68,7 +78,7 @@ export default {
 
                     rows.push({ item: node, depth, hasChildren });
 
-                    if (hasChildren && !this.collapsedIds.includes(node.id)) {
+                    if (hasChildren && this.isExpanded(node)) {
                         walk(node.children, depth + 1);
                     }
                 });
@@ -100,12 +110,8 @@ export default {
     },
 
     methods: {
-        isActive(item) {
-            return item.id === this.activeId;
-        },
-
-        isCollapsed(item) {
-            return this.collapsedIds.includes(item.id);
+        isExpanded(item) {
+            return this.expandedIds.includes(item.id);
         },
 
         hasChildren(item) {
@@ -117,17 +123,15 @@ export default {
                 return;
             }
 
-            this.collapsedIds = this.isCollapsed(item)
-                ? this.collapsedIds.filter((id) => id !== item.id)
-                : [...this.collapsedIds, item.id];
+            this.$emit('toggle', item);
         },
 
-        expand(itemId) {
-            this.collapsedIds = this.collapsedIds.filter((id) => id !== itemId);
+        onEdit(item) {
+            this.$emit('edit', item);
         },
 
-        select(item) {
-            this.$emit('select', item.id);
+        onRemove(item) {
+            this.$emit('remove', item);
         },
 
         iconOf(item) {
@@ -140,19 +144,6 @@ export default {
 
         typeLabel(item) {
             return `sw-system.menu.types.${item.type}`;
-        },
-
-        /**
-         * Core rows store a snippet key as their title, entries created in the administration
-         * store plain text. Both have to render as readable text, so a key is resolved and
-         * anything unresolvable falls through unchanged.
-         */
-        rowLabel(item) {
-            if (!item.title) {
-                return item.internalKey || this.$t('sw-system.menu.labelUntitled');
-            }
-
-            return this.tWithFallback(item.title);
         },
 
         onDragStart(event, item) {
@@ -289,22 +280,12 @@ export default {
 
         rowClasses(item) {
             return {
-                'is--active': this.isActive(item),
                 'is--hidden': item.active === false,
                 'is--dragged': this.draggedId === item.id,
                 'is--drop-before': this.dropTargetId === item.id && this.dropZone === 'before',
                 'is--drop-after': this.dropTargetId === item.id && this.dropZone === 'after',
                 'is--drop-inside': this.dropTargetId === item.id && this.dropZone === 'inside',
             };
-        },
-
-        onKeydown(event, item) {
-            if (event.key !== 'Enter' && event.key !== ' ') {
-                return;
-            }
-
-            event.preventDefault();
-            this.select(item);
         },
     },
 };

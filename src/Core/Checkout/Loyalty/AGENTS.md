@@ -14,7 +14,7 @@ Cart/             turns a requested redemption into a credit line item on the ca
 Entity/           the account, its point transactions, the batches behind the balance, the tiers, their benefits and translations, the redemption ladder
 Event/            points awarded / redeemed, tier changed
 Extension/        Store API route extensions - kept next to the module like Order/, Payment/, Gateway/ do
-SalesChannel/     `/loyalty`, `/loyalty/redeem` (request and response classes live beside the route)
+SalesChannel/     `/loyalty` (the rewards page read), `/loyalty/redeem` (request and response classes live beside the route)
 ScheduledTask/    daily point expiration
 Service/          account lifecycle, ledger, point rules, settings, tier resolution
 Subscriber/       account provisioning on customer write, order state -> award / redeem, wallet top-up -> bonus, closed return -> revoke
@@ -24,23 +24,43 @@ Subscriber/       account provisioning on customer write, order state -> award /
 A `*RouteExtension` is not a route: it carries the request fields and the route registration of a
 `SalesChannel/` route, and every other checkout module keeps it at the module root.
 
+## `/loyalty` answers only what was earned
+
+The rewards page is one of two account pages. This route serves the half a customer **earned**: balance,
+what a point is worth, the ladder, the tier list. Everything a customer **buys** — plans, the running
+subscription, the membership orders — is served by `Membership\SalesChannel\MembershipRoute`, and the
+storefront renders it on `/account/membership`.
+
+The split is not cosmetic: a shop that sells no paid membership should not run a single membership query
+when a customer opens the rewards page. If you are about to add a field here, ask whether a customer who
+never paid for anything would still see it. If not, it belongs in the membership route.
+
+- The two routes are two payloads, not one payload cut in half. Do not "reuse" the offer by injecting
+  `MembershipOfferService` back into this class.
+- The route also states the **earning rules** (`pointsPerCurrencyUnit`, `tierPointsPerCurrencyUnit`,
+  `tiers[].pointsMultiplier`), because the page has to print them. A rate typed into a template becomes a
+  lie the day the shop changes it.
+- `tierId` is read here, and that is deliberate: it is the projection, i.e. "which tier applies
+  right now", whoever wrote it. The subscription period is **not** read from the projection — it has no
+  start, no plan name and no amount. See `Membership/AGENTS.md`.
+
 ## The balance is a projection
 
-`customer_loyalty.points_balance` is derived from `customer_point_transaction`.
+`loyalty_account.points_balance` is derived from `loyalty_point_transaction`.
 It is written **only** by `LoyaltyLedger::bookPoints()`, which locks the account row, writes the transaction and
 moves the balance in the same database transaction.
 Nothing else may update `pointsBalance` — not a subscriber, not a route, not an admin endpoint.
 
 - `LoyaltyLedger` — the write side: `bookPoints()`, `expireLots()`, `giveBackPoints()`, `revokeOrderPoints()`,
-  `addGrowthValue()`. It does **not** grant
-  memberships: `membership_tier_id` / `membership_valid_until` are a projection of `Checkout\Membership` and
+  `addTierPoints()`. It does **not** grant
+  memberships: `tier_id` / `membership_paid_until` are a projection of `Checkout\Membership` and
   only `MembershipSubscriptionService` writes them.
-  `addGrowthValue()` carries the name of the column it writes; the concept is *tier points* and the rename
+  `addTierPoints()` carries the name of the column it writes; the concept is *tier points* and the rename
   (`tierPoints`) is planned together with the column, not before it.
 - `LoyaltyAccountService` — the account lifecycle: `account()`, `balance()`, `open()`.
   `open()` is idempotent and relies on `UNIQUE(customer_id)`; it treats losing the creation race as success.
   Never `create()` an account anywhere else — the unique key would reject it and the caller would book into nothing.
-- `LoyaltyPointService` — the rules: `award()` / `redeem()` / `expireDue()` / `adjust()` / `addGrowthValue()`.
+- `LoyaltyPointService` — the rules: `award()` / `redeem()` / `expireDue()` / `adjust()` / `addTierPoints()`.
   It validates, delegates to the ledger, and dispatches an event only for a booking that really happened,
   so a redelivered webhook does not tell the shop twice that points were awarded.
 
@@ -181,22 +201,39 @@ One concept, one word — these three modules share the contract:
 
 | Concept | Word | Never |
 |---|---|---|
-| a customer's point account | loyalty account (`CustomerLoyalty`, `LoyaltyAccountService`) | membership, profile |
+| a customer's point account | loyalty account (`LoyaltyAccount`, `LoyaltyAccountService`, table `loyalty_account`) | membership, profile |
 | the level a customer reached | tier (`LoyaltyTier`, `TierResolver`) | level as a class name, rank, grade |
 | the integer sort position of a tier | level (`LoyaltyTierEntity::getLevel()`) | — |
-| the points that decide the tier | tier points (`growth_value` today) | growth, experience |
+| the points that decide the tier | tier points (`tier_points`, `min_tier_points` on the tier) | growth, experience |
+| the tier a customer is on right now | tier (`tier_id`) — bought or earned | membership tier, only the paid one is a membership |
+| the day a paid membership runs out | membership paid until (`membership_paid_until`) | valid until, the tier is not what expires |
 | points | points (`pointsBalance`, `bookPoints()`) | credit, score, coin |
 | a paid plan | plan (`MembershipPlan`) | package, product |
 
 `LoyaltyTier` is the name the industry uses (Salesforce `LoyaltyTier`, airline `tier points`), not a translation
 of "level". Renaming it would only make the module harder to read for anyone who knows a loyalty system.
 
+Three names still carry words that no longer match the columns, and that is deliberate:
+
+- twig blocks `sw_customer_detail_points_growth`, `sw_customer_detail_points_membership_valid_until` and
+  `sw_loyalty_tier_detail_content_card_min_growth_value` — a block name is where a theme or plugin hooks in.
+  Renaming one removes overrides that shops already wrote, and it removes them **silently**. Keep the block
+  name, name the variable inside it correctly.
+- ACL privileges `loyalty.viewer` / `creator` / `editor` / `deleter` — they are referenced by granted roles,
+  so a rename has to migrate permissions too. Nothing about the domain changes if the privilege keeps its word.
+- the `loyalty_tier` entity — it is the tier itself, not the account. `loyalty_tier` next to `loyalty_account`
+  reads unambiguously, and renaming it would churn every translation key and twig block on the tier pages.
+
+`loyalty_point_transaction` and `membership_order` still use the pre-rename words; that part of the rename
+is pending (see the architecture note, §20.7). Do not "fix" one of them in passing — both are table renames
+with index and foreign-key renames attached, and half of one is worse than none.
+
 ## Where a new rule goes
 
 1. A new way to earn or spend points → a method on `LoyaltyPointService` that calls `LoyaltyLedger`.
    Do not reach for the repository from a subscriber; the ledger is what keeps the balance consistent.
-2. A new field on the account → migration in `src/Core/Migration/V6_7/` **and** `CustomerLoyaltyDefinition`
-   **and** `CustomerLoyaltyEntity` **and** `LoyaltyLedger::toAccount()` when the ledger lock has to read it.
+2. A new field on the account → migration in `src/Core/Migration/V6_7/` **and** `LoyaltyAccountDefinition`
+   **and** `LoyaltyAccountEntity` **and** `LoyaltyLedger::toAccount()` when the ledger lock has to read it.
 3. A new tier property → `LoyaltyTierDefinition`; check `TierResolver` and the admin translation aggregate.
 4. A new benefit a tier can grant → a constant in `LoyaltyBenefitTypes`, an accessor on
    `LoyaltyTierBenefits`, and a document comment saying what its `value` means. No migration, no new
@@ -217,6 +254,27 @@ of "level". Renaming it would only make the module harder to read for anyone who
    one will arrive.
 10. When a third earning source appears, the arithmetic of the two that exist (`amount × rate ×
     multiplier`, floored) moves into one rule class. Two copies are a pattern; three are a bug.
+
+## What is public API and what is not
+
+Public: `LoyaltyPointService` (`award` / `redeem` / `adjust` / `addTierPoints`), `LoyaltySettings`,
+`LoyaltyAccountService`, `LoyaltyBenefitResolver`, `TierResolver`, `LoyaltyRedemptionCalculator` with
+`LoyaltyRedemptionRates`, `LoyaltyTierBenefits`, the entities and definitions, the store API routes with their
+`*RouteExtension`, and the events.
+
+`@internal`: `LoyaltyLedger` and `LoyaltyPointLots`.
+
+The test is not "does it feel internal" but "does a third party have a different, legitimate thing to say here".
+Nobody has a legitimate opinion about the order of the three writes, about the row lock, or about which batch pays —
+and the three are one mechanism: vary one and `sum(remaining_points) == points_balance` stops holding, quietly.
+Everybody who wants points to move *does* have something to say, and `LoyaltyPointService` is where that belongs.
+A booking kind that service cannot express is an extension point to add **there**; it is not a reason to call the
+ledger or insert batches directly.
+
+Two mechanics worth knowing: the marker is read from the **class** docblock only, so a `@internal` on `__construct`
+means "we build it", not "do not use it" (that is why almost every service here has one and still counts as public);
+and `@internal` is not combined with `@final` — the stronger marker wins. `InternalClassRule` enforces the parts that
+are mechanical (test classes, storefront controllers, subscribers, task handlers, migrations, message handlers).
 
 ## Gates
 

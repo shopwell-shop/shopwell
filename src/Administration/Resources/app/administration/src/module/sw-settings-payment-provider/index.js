@@ -58,7 +58,7 @@ Module.register('sw-settings-payment-provider', {
             parent: 'sw-settings',
             path: 'sw.settings.payment.provider.index',
             icon: 'regular-credit-card',
-            position: 660,
+            position: 810,
             privilege: 'payment_provider_config.viewer',
         },
     ],

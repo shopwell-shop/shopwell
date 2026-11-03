@@ -10,8 +10,8 @@ use Shopwell\Core\Checkout\Cart\SalesChannel\CartService;
 use Shopwell\Core\Checkout\Ledger\RowLock;
 use Shopwell\Core\Checkout\Loyalty\Api\LoyaltyController;
 use Shopwell\Core\Checkout\Loyalty\Cart\LoyaltyPointCartProcessor;
-use Shopwell\Core\Checkout\Loyalty\Entity\CustomerLoyalty\CustomerLoyaltyDefinition;
-use Shopwell\Core\Checkout\Loyalty\Entity\CustomerPointTransaction\CustomerPointTransactionDefinition;
+use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyPointTransaction\LoyaltyPointTransactionDefinition;
+use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyAccount\LoyaltyAccountDefinition;
 use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyPointLot\LoyaltyPointLotDefinition;
 use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyPointLotUse\LoyaltyPointLotUseDefinition;
 use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyRedemptionLevel\LoyaltyRedemptionLevelDefinition;
@@ -46,10 +46,10 @@ use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
 return static function (ContainerConfigurator $containerConfigurator): void {
     $services = $containerConfigurator->services();
 
-    $services->set(CustomerLoyaltyDefinition::class)
+    $services->set(LoyaltyAccountDefinition::class)
         ->tag('shopwell.entity.definition');
 
-    $services->set(CustomerPointTransactionDefinition::class)
+    $services->set(LoyaltyPointTransactionDefinition::class)
         ->tag('shopwell.entity.definition');
 
     $services->set(LoyaltyTierDefinition::class)
@@ -80,8 +80,8 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(LoyaltyLedger::class)
         ->args([
-            service('customer_loyalty.repository'),
-            service('customer_point_transaction.repository'),
+            service('loyalty_account.repository'),
+            service('loyalty_point_transaction.repository'),
             service(Connection::class),
             service(RowLock::class),
             service(LoyaltyPointLots::class),
@@ -94,7 +94,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(LoyaltyAccountService::class)
         ->args([
-            service('customer_loyalty.repository'),
+            service('loyalty_account.repository'),
             service(TierResolver::class),
             service(RowLock::class),
         ]);
@@ -118,7 +118,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     // what a return does to the points of an order: gives back what it spent, takes back what it earned
     $services->set(LoyaltyReturnPoints::class)
         ->args([
-            service('customer_point_transaction.repository'),
+            service('loyalty_point_transaction.repository'),
             service(LoyaltyPointLots::class),
             service(LoyaltyLedger::class),
         ]);
@@ -142,7 +142,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(TierResolver::class)
         ->args([
             service('loyalty_tier.repository'),
-            service('customer_loyalty.repository'),
+            service('loyalty_account.repository'),
             service('customer.repository'),
             service(LoyaltySettings::class),
             service('event_dispatcher'),
@@ -196,8 +196,8 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(LoyaltyController::class)
         ->public()
         ->args([
-            service('customer_loyalty.repository'),
-            service('customer_point_transaction.repository'),
+            service('loyalty_account.repository'),
+            service('loyalty_point_transaction.repository'),
             service('loyalty_tier.repository'),
             service(LoyaltyPointService::class),
             service(MembershipSubscriptionService::class),
@@ -208,7 +208,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(LoyaltyRoute::class)
         ->public()
         ->args([
-            service('customer_loyalty.repository'),
+            service('loyalty_account.repository'),
             service('loyalty_tier.repository'),
             service(LoyaltySettings::class),
             service(LoyaltyBenefitResolver::class),

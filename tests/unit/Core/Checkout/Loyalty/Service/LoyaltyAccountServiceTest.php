@@ -7,8 +7,8 @@ use PHPUnit\Framework\MockObject\Stub;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Checkout\Customer\CustomerCollection;
 use Shopwell\Core\Checkout\Ledger\RowLock;
-use Shopwell\Core\Checkout\Loyalty\Entity\CustomerLoyalty\CustomerLoyaltyCollection;
-use Shopwell\Core\Checkout\Loyalty\Entity\CustomerLoyalty\CustomerLoyaltyEntity;
+use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyAccount\LoyaltyAccountCollection;
+use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyAccount\LoyaltyAccountEntity;
 use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyTier\LoyaltyTierCollection;
 use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyTier\LoyaltyTierEntity;
 use Shopwell\Core\Checkout\Loyalty\Service\LoyaltyAccountService;
@@ -33,9 +33,9 @@ class LoyaltyAccountServiceTest extends TestCase
     private const NOW = '2025-01-01 00:00:00';
 
     /**
-     * @var StaticEntityRepository<CustomerLoyaltyCollection>
+     * @var StaticEntityRepository<LoyaltyAccountCollection>
      */
-    private StaticEntityRepository $customerLoyaltyRepository;
+    private StaticEntityRepository $loyaltyAccountRepository;
 
     /**
      * @var StaticEntityRepository<LoyaltyTierCollection>
@@ -55,7 +55,7 @@ class LoyaltyAccountServiceTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->customerLoyaltyRepository = StaticEntityRepository::of(CustomerLoyaltyCollection::class);
+        $this->loyaltyAccountRepository = StaticEntityRepository::of(LoyaltyAccountCollection::class);
         $this->tierRepository = StaticEntityRepository::of(LoyaltyTierCollection::class);
         $this->customerRepository = StaticEntityRepository::of(CustomerCollection::class);
         $this->rows = static::createStub(RowLock::class);
@@ -66,53 +66,53 @@ class LoyaltyAccountServiceTest extends TestCase
 
     public function testAnAccountOfACustomerIsAnswered(): void
     {
-        $account = new CustomerLoyaltyEntity();
+        $account = new LoyaltyAccountEntity();
         $account->setId('account-id');
         $account->setPointsBalance(250);
 
-        $this->customerLoyaltyRepository->addSearch(new CustomerLoyaltyCollection([$account]));
+        $this->loyaltyAccountRepository->addSearch(new LoyaltyAccountCollection([$account]));
 
         static::assertSame($account, $this->accounts->account(self::CUSTOMER_ID, $this->context));
     }
 
     public function testACustomerWithoutAnAccountAnswersNothing(): void
     {
-        $this->customerLoyaltyRepository->addSearch(new CustomerLoyaltyCollection());
+        $this->loyaltyAccountRepository->addSearch(new LoyaltyAccountCollection());
 
         static::assertNull($this->accounts->account(self::CUSTOMER_ID, $this->context));
     }
 
     public function testBalanceIsZeroWithoutAnAccount(): void
     {
-        $this->customerLoyaltyRepository->addSearch(new CustomerLoyaltyCollection());
+        $this->loyaltyAccountRepository->addSearch(new LoyaltyAccountCollection());
 
         static::assertSame(0, $this->accounts->balance(self::CUSTOMER_ID, $this->context));
     }
 
     public function testBalanceAnswersTheProjectedBalance(): void
     {
-        $account = new CustomerLoyaltyEntity();
+        $account = new LoyaltyAccountEntity();
         $account->setId('account-id');
         $account->setPointsBalance(250);
 
-        $this->customerLoyaltyRepository->addSearch(new CustomerLoyaltyCollection([$account]));
+        $this->loyaltyAccountRepository->addSearch(new LoyaltyAccountCollection([$account]));
 
         static::assertSame(250, $this->accounts->balance(self::CUSTOMER_ID, $this->context));
     }
 
     public function testOpenWritesAnAccountInTheTierThatZeroTierPointsUnlocks(): void
     {
-        $this->customerLoyaltyRepository->addSearch(new CustomerLoyaltyCollection());
+        $this->loyaltyAccountRepository->addSearch(new LoyaltyAccountCollection());
         $this->tierRepository->addSearch(new LoyaltyTierCollection([$this->createTier('bronze', 1, 0)]));
 
         $rows = $this->createMock(RowLock::class);
         $rows->expects($this->once())
             ->method('createUnlessExists')
             ->with(
-                $this->customerLoyaltyRepository,
+                $this->loyaltyAccountRepository,
                 static::callback(static fn (array $row): bool => $row['customerId'] === self::CUSTOMER_ID
                     && $row['pointsBalance'] === 0
-                    && $row['membershipTierId'] === 'bronze'),
+                    && $row['tierId'] === 'bronze'),
                 $this->context,
             );
 
@@ -125,10 +125,10 @@ class LoyaltyAccountServiceTest extends TestCase
      */
     public function testOpenLeavesAnExistingAccountUntouched(): void
     {
-        $account = new CustomerLoyaltyEntity();
+        $account = new LoyaltyAccountEntity();
         $account->setId('account-id');
 
-        $this->customerLoyaltyRepository->addSearch(new CustomerLoyaltyCollection([$account]));
+        $this->loyaltyAccountRepository->addSearch(new LoyaltyAccountCollection([$account]));
 
         $rows = $this->createMock(RowLock::class);
         $rows->expects($this->never())->method('createUnlessExists');
@@ -143,10 +143,10 @@ class LoyaltyAccountServiceTest extends TestCase
     private function service(?RowLock $rows = null): LoyaltyAccountService
     {
         return new LoyaltyAccountService(
-            $this->customerLoyaltyRepository,
+            $this->loyaltyAccountRepository,
             new TierResolver(
                 $this->tierRepository,
-                $this->customerLoyaltyRepository,
+                $this->loyaltyAccountRepository,
                 $this->customerRepository,
                 new LoyaltySettings(new StaticSystemConfigService()),
                 new EventDispatcher(),
@@ -156,13 +156,13 @@ class LoyaltyAccountServiceTest extends TestCase
         );
     }
 
-    private function createTier(string $technicalName, int $level, ?int $minGrowthValue): LoyaltyTierEntity
+    private function createTier(string $technicalName, int $level, ?int $minTierPoints): LoyaltyTierEntity
     {
         $tier = new LoyaltyTierEntity();
         $tier->setId($technicalName);
         $tier->setTechnicalName($technicalName);
         $tier->setLevel($level);
-        $tier->setMinGrowthValue($minGrowthValue);
+        $tier->setMinTierPoints($minTierPoints);
         $tier->setActive(true);
 
         return $tier;

@@ -20,7 +20,6 @@ use Shopwell\Core\System\Payment\Provider\AbstractPaymentProvider;
 use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
 use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
 use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
-use Shopwell\Core\System\Payment\Provider\Config\PaymentConfigField;
 use Shopwell\Core\System\Payment\Provider\Cycle\PaymentCycleRules;
 use Shopwell\Core\System\Payment\Provider\PayParamsDecoderInterface;
 use Shopwell\Core\System\Payment\Provider\Transfer\PaymentTransferRules;
@@ -104,11 +103,6 @@ final class AlipayProvider extends AbstractPaymentProvider
         ];
     }
 
-    public function getCaptureAction(): AbstractPaymentAction
-    {
-        return $this->captureAction;
-    }
-
     public function getNotificationExtractor(): PaymentNotificationExtractorInterface
     {
         return $this->notificationExtractor;
@@ -143,53 +137,11 @@ final class AlipayProvider extends AbstractPaymentProvider
     }
 
     /**
-     * @return list<PaymentConfigField>
+     * The translated merchant and channel fields, read with the platform plugin-config reader.
      */
-    public function getCredentials(): array
+    public function getConfigFile(): string
     {
-        return [
-            new PaymentConfigField(
-                name: 'app_id',
-                label: '支付宝应用 APPID',
-                required: true,
-            ),
-            new PaymentConfigField(
-                name: 'sandbox',
-                label: '沙箱模式',
-                type: PaymentConfigField::TYPE_BOOL,
-                default: '1',
-                helpText: '默认开启，走沙箱网关。上线前关闭并使用正式网关。',
-            ),
-            new PaymentConfigField(
-                name: 'private_key',
-                label: '应用私钥',
-                type: PaymentConfigField::TYPE_TEXTAREA,
-                required: true,
-                secret: true,
-                helpText: '签名用的那一半。在开放平台「开发设置 → 接口加签方式」里生成，与应用公钥成对；应用公钥只上传给支付宝，不要填在这里。',
-            ),
-            new PaymentConfigField(
-                name: 'alipay_public_key',
-                label: '支付宝公钥',
-                type: PaymentConfigField::TYPE_TEXTAREA,
-                required: true,
-                helpText: '验签用的那一半，是同一页面里「支付宝公钥」那一栏的值，不是你的应用公钥。',
-            ),
-            new PaymentConfigField(
-                name: 'sign_type',
-                label: '签名算法',
-                type: PaymentConfigField::TYPE_SELECT,
-                options: [self::SIGN_TYPE_RSA2 => self::SIGN_TYPE_RSA2],
-                default: self::SIGN_TYPE_RSA2,
-                helpText: '支付宝 SDK 目前只实现 RSA2（SHA256withRSA），因此这是唯一可选值。',
-            ),
-            new PaymentConfigField(
-                name: 'gateway_url',
-                label: '网关地址',
-                default: self::DEFAULT_GATEWAY_URL,
-                helpText: '留空使用默认网关；开启沙箱模式时自动使用沙箱网关。',
-            ),
-        ];
+        return __DIR__ . '/Resources/config/payment-provider.xml';
     }
 
     /**
@@ -205,7 +157,6 @@ final class AlipayProvider extends AbstractPaymentProvider
                 flow: PaymentFlow::REDIRECT,
                 currencies: ['CNY'],
                 devices: [PaymentChannel::DEVICE_WAP],
-                params: [$this->httpMethodField()],
             ),
             new PaymentChannel(
                 technicalName: 'alipay_web',
@@ -214,7 +165,6 @@ final class AlipayProvider extends AbstractPaymentProvider
                 flow: PaymentFlow::REDIRECT,
                 currencies: ['CNY'],
                 devices: [PaymentChannel::DEVICE_WEB],
-                params: [$this->httpMethodField()],
             ),
             new PaymentChannel(
                 technicalName: 'alipay_qr',
@@ -239,13 +189,6 @@ final class AlipayProvider extends AbstractPaymentProvider
                 flow: PaymentFlow::SDK,
                 currencies: ['CNY'],
                 devices: [PaymentChannel::DEVICE_MINI],
-                params: [
-                    new PaymentConfigField(
-                        name: 'op_app_id',
-                        label: '小程序 APPID',
-                        helpText: '拉起收银台的小程序 APPID，须在商家平台与 JSAPI 支付产品绑定；留空使用凭据中的应用 APPID。',
-                    ),
-                ],
                 // the mini program payment needs the buyer it is created for, an app has to hand it in
                 runtimeParams: ['buyer_id' => true],
             ),
@@ -304,30 +247,9 @@ final class AlipayProvider extends AbstractPaymentProvider
                 'ACQ.AGREEMENT_STATUS_NOT_NORMAL',
                 'ACQ.MERCHANT_AGREEMENT_INVALID',
             ],
-            // SYSTEM_ERROR may mean the charge went through, TRADE_HAS_SUCCESS is not a failure at all
-            unknownFailureCodes: [
-                'ACQ.SYSTEM_ERROR',
-                'ACQ.TRADE_HAS_SUCCESS',
-            ],
+            // SYSTEM_ERROR may mean the charge went through, TRADE_HAS_SUCCESS is not a failure at all;
+            // both stay outside the two lists and therefore require a channel query before any retry
             maxRetries: 5,
-        );
-    }
-
-    /**
-     * `GET` redirects the payer, `POST` answers a self submitting form for a url that grew too long.
-     */
-    private function httpMethodField(): PaymentConfigField
-    {
-        return new PaymentConfigField(
-            name: 'http_method',
-            label: '跳转方式',
-            type: PaymentConfigField::TYPE_SELECT,
-            options: [
-                'GET' => 'GET（直接跳转）',
-                'POST' => 'POST（自提交表单）',
-            ],
-            default: 'GET',
-            helpText: 'GET 直接把用户跳转到支付宝页面；POST 由平台返回自提交表单，参数过长时使用。',
         );
     }
 }

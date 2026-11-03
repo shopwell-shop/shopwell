@@ -10,8 +10,8 @@ use Shopwell\Core\Checkout\Cart\Price\Struct\CalculatedPrice;
 use Shopwell\Core\Checkout\Cart\Tax\Struct\CalculatedTaxCollection;
 use Shopwell\Core\Checkout\Cart\Tax\Struct\TaxRuleCollection;
 use Shopwell\Core\Checkout\Loyalty\Cart\LoyaltyPointCartProcessor;
-use Shopwell\Core\Checkout\Loyalty\Entity\CustomerPointTransaction\CustomerPointTransactionCollection;
-use Shopwell\Core\Checkout\Loyalty\Entity\CustomerPointTransaction\CustomerPointTransactionEntity;
+use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyPointTransaction\LoyaltyPointTransactionCollection;
+use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyPointTransaction\LoyaltyPointTransactionEntity;
 use Shopwell\Core\Checkout\Loyalty\Service\LoyaltyLedger;
 use Shopwell\Core\Checkout\Loyalty\Service\LoyaltyPointLots;
 use Shopwell\Core\Checkout\Loyalty\Service\LoyaltyReturnPoints;
@@ -180,12 +180,12 @@ class LoyaltyReturnPointsTest extends TestCase
     /**
      * @param list<array<string, mixed>> $rows
      *
-     * @return StaticEntityRepository<CustomerPointTransactionCollection>
+     * @return StaticEntityRepository<LoyaltyPointTransactionCollection>
      */
     private function repository(array $rows = []): StaticEntityRepository
     {
-        $search = static function (Criteria $criteria) use ($rows): CustomerPointTransactionCollection {
-            $collection = new CustomerPointTransactionCollection();
+        $search = static function (Criteria $criteria) use ($rows): LoyaltyPointTransactionCollection {
+            $collection = new LoyaltyPointTransactionCollection();
 
             foreach ($rows as $row) {
                 foreach ($criteria->getFilters() as $filter) {
@@ -194,7 +194,7 @@ class LoyaltyReturnPointsTest extends TestCase
                     }
                 }
 
-                $collection->add((new CustomerPointTransactionEntity())->assign($row));
+                $collection->add((new LoyaltyPointTransactionEntity())->assign($row));
             }
 
             return $collection;

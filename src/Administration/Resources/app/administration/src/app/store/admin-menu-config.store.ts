@@ -2,12 +2,23 @@
  * @sw-package fundamentals@framework
  */
 
+/**
+ * The labels of one language, as an administrator wrote them. A missing entry means the
+ * entry still carries the label its module declares.
+ */
+export type AdminMenuItemTranslation = {
+    title: string | null;
+    groupTitle: string | null;
+};
+
 export type AdminMenuItem = {
     id: string;
     parentId: string | null;
     afterMenuItemId: string | null;
     internalKey: string | null;
     title: string | null;
+    groupName: string | null;
+    translations: Record<string, AdminMenuItemTranslation>;
     icon: string | null;
     color: string | null;
     type: string;

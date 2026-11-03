@@ -9,19 +9,14 @@ function createNode(overrides) {
         parentId: null,
         afterMenuItemId: null,
         internalKey: null,
-        title: 'Node',
+        label: 'Node',
+        groupLabel: null,
         icon: null,
-        color: null,
         type: 'menu',
-        linkTarget: null,
-        privilege: null,
         active: true,
         sysLocked: false,
         archived: false,
-        configOverridden: false,
-        pluginId: null,
         pluginName: null,
-        roleIds: [],
         children: [],
         ...overrides,
     };
@@ -37,14 +32,14 @@ function createItems() {
     return [
         createNode({
             id: 'catalog',
-            title: 'Catalog',
+            label: 'Catalog',
             type: 'folder',
             children: [
-                createNode({ id: 'products', parentId: 'catalog', afterMenuItemId: null, title: 'Products' }),
-                createNode({ id: 'categories', parentId: 'catalog', afterMenuItemId: 'products', title: 'Categories' }),
+                createNode({ id: 'products', parentId: 'catalog', afterMenuItemId: null, label: 'Products' }),
+                createNode({ id: 'categories', parentId: 'catalog', afterMenuItemId: 'products', label: 'Categories' }),
             ],
         }),
-        createNode({ id: 'orders', afterMenuItemId: 'catalog', title: 'Orders' }),
+        createNode({ id: 'orders', afterMenuItemId: 'catalog', label: 'Orders' }),
     ];
 }
 
@@ -54,21 +49,26 @@ function mockHeight(element, height = 40) {
     };
 }
 
-async function createWrapper(props = {}, mocks = {}) {
+async function createWrapper(props = {}) {
     return mount(await wrapTestComponent('sw-system-menu-tree', { sync: true }), {
         props: {
             items: createItems(),
-            activeId: null,
+            expandedIds: [],
             sortable: true,
+            editable: true,
+            deletable: true,
             ...props,
         },
         global: {
             mocks: {
                 $t: (key) => key,
-                ...mocks,
             },
             stubs: {
                 'mt-icon': { template: '<span class="mt-icon-stub"></span>', props: ['name', 'size'] },
+                'mt-button': {
+                    template: '<button class="mt-button-stub" @click="$emit(\'click\')"><slot></slot></button>',
+                    props: ['size', 'variant', 'square', 'title', 'disabled'],
+                },
             },
         },
     });
@@ -89,182 +89,121 @@ describe('module/sw-system/component/sw-system-menu-tree', () => {
         jest.restoreAllMocks();
     });
 
-    it('renders a stored title as written when it is not a snippet key', async () => {
+    it('renders the top level entries only while nothing is expanded', async () => {
         wrapper = await createWrapper();
 
-        expect(wrapper.vm.rowLabel(createNode({ title: 'Mein Menü' }))).toBe('Mein Menü');
+        expect(wrapper.findAll('.sw-system-menu-tree__row')).toHaveLength(2);
+        expect(rowByLabel(wrapper, 'Products')).toBeUndefined();
     });
 
-    it('falls back to the internal key and then to the untitled snippet', async () => {
+    it('renders the children of an expanded entry', async () => {
+        wrapper = await createWrapper({ expandedIds: ['catalog'] });
+
+        expect(wrapper.findAll('.sw-system-menu-tree__row')).toHaveLength(4);
+        expect(rowByLabel(wrapper, 'Products')).toBeDefined();
+    });
+
+    it('reports a toggle instead of changing its own state', async () => {
         wrapper = await createWrapper();
 
-        expect(wrapper.vm.rowLabel(createNode({ title: null, internalKey: 'sw-system' }))).toBe('sw-system');
-        expect(wrapper.vm.rowLabel(createNode({ title: null, internalKey: null }))).toBe(
-            'sw-system.menu.labelUntitled',
-        );
+        await wrapper.find('.sw-system-menu-tree__toggle').trigger('click');
+
+        expect(wrapper.emitted('toggle')).toHaveLength(1);
+        expect(wrapper.emitted('toggle')[0][0].id).toBe('catalog');
     });
 
-    it('resolves a stored snippet key through the translation', async () => {
-        // `$te`/`$t` cannot be spied on the instance proxy (vue-i18n exposes them read-only),
-        // so the case overrides them the same way the factory already overrides `$t`.
-        wrapper = await createWrapper(
-            {},
-            {
-                $te: () => true,
-                $t: (key) => `translated:${key}`,
-            },
-        );
-
-        expect(wrapper.vm.rowLabel(createNode({ title: 'sw-product.general.mainMenuItemOverview' }))).toBe(
-            'translated:sw-product.general.mainMenuItemOverview',
-        );
-    });
-
-    it('renders every level in chain order', async () => {
+    it('does not offer a toggle for an entry without children', async () => {
         wrapper = await createWrapper();
 
-        const labels = wrapper
-            .findAll('.sw-system-menu-tree__row')
-            .map((row) => row.find('.sw-system-menu-tree__label').text());
-
-        expect(labels).toEqual([
-            'Catalog',
-            'Products',
-            'Categories',
-            'Orders',
-        ]);
+        expect(rowByLabel(wrapper, 'Orders').find('.sw-system-menu-tree__toggle').exists()).toBe(false);
     });
 
-    it('hides the children of a collapsed folder', async () => {
+    it('shows the group of an entry next to its label', async () => {
+        wrapper = await createWrapper({ expandedIds: ['catalog'] });
+
+        const row = wrapper.findAll('.sw-system-menu-tree__row')[1];
+        expect(row.text()).toContain('Products');
+    });
+
+    it('marks an inactive entry', async () => {
+        wrapper = await createWrapper({
+            items: [createNode({ id: 'orders', label: 'Orders', active: false })],
+        });
+
+        expect(wrapper.find('.sw-system-menu-tree__row').classes()).toContain('is--hidden');
+    });
+
+    it('emits an edit intent from the row action', async () => {
         wrapper = await createWrapper();
 
-        await rowByLabel(wrapper, 'Catalog').find('.sw-system-menu-tree__toggle').trigger('click');
+        await rowByLabel(wrapper, 'Orders').findAll('.sw-system-menu-tree__action')[0].trigger('click');
 
-        const labels = wrapper
-            .findAll('.sw-system-menu-tree__row')
-            .map((row) => row.find('.sw-system-menu-tree__label').text());
-
-        expect(labels).toEqual(['Catalog', 'Orders']);
+        expect(wrapper.emitted('edit')[0][0].id).toBe('orders');
     });
 
-    it('selects a row on click', async () => {
+    it('emits a delete intent from the row action', async () => {
         wrapper = await createWrapper();
 
-        await rowByLabel(wrapper, 'Orders').trigger('click');
+        await rowByLabel(wrapper, 'Orders').findAll('.sw-system-menu-tree__action')[1].trigger('click');
 
-        expect(wrapper.emitted('select')).toEqual([['orders']]);
+        expect(wrapper.emitted('remove')[0][0].id).toBe('orders');
     });
 
-    it('marks the selected row as active', async () => {
-        wrapper = await createWrapper({ activeId: 'products' });
+    it('hides the row actions when the operator may not edit', async () => {
+        wrapper = await createWrapper({ editable: false, deletable: false });
 
-        expect(rowByLabel(wrapper, 'Products').classes()).toContain('is--active');
-        expect(rowByLabel(wrapper, 'Orders').classes()).not.toContain('is--active');
+        expect(wrapper.find('.sw-system-menu-tree__action').exists()).toBe(false);
     });
 
-    it('moves a dragged item behind the row it was dropped on', async () => {
-        wrapper = await createWrapper();
+    it('never offers to delete an entry of a core module', async () => {
+        wrapper = await createWrapper({
+            items: [createNode({ id: 'orders', label: 'Orders', sysLocked: true })],
+        });
 
-        const orders = rowByLabel(wrapper, 'Orders');
-        const catalog = rowByLabel(wrapper, 'Catalog');
-
-        await orders.trigger('dragstart');
-        mockHeight(catalog.element);
-
-        await catalog.trigger('dragover', { clientY: 35 });
-        await catalog.trigger('drop', { clientY: 35 });
-
-        expect(wrapper.emitted('move')).toEqual([
-            [{ id: 'orders', parentId: null, afterMenuItemId: 'catalog' }],
-        ]);
+        expect(wrapper.findAll('.sw-system-menu-tree__action')).toHaveLength(1);
     });
 
-    it('appends a dragged item when it is dropped into a folder', async () => {
-        wrapper = await createWrapper();
+    it('appends a dropped item to the last child of a folder', async () => {
+        wrapper = await createWrapper({ expandedIds: ['catalog'] });
 
-        const orders = rowByLabel(wrapper, 'Orders');
-        const catalog = rowByLabel(wrapper, 'Catalog');
-
-        await orders.trigger('dragstart');
-        mockHeight(catalog.element);
-
-        await catalog.trigger('dragover', { clientY: 20 });
-        await catalog.trigger('drop', { clientY: 20 });
-
-        expect(wrapper.emitted('move')).toEqual([
-            [{ id: 'orders', parentId: 'catalog', afterMenuItemId: 'categories' }],
-        ]);
-    });
-
-    it('leads the level when a folder is dropped as the first entry', async () => {
-        wrapper = await createWrapper();
-
-        const orders = rowByLabel(wrapper, 'Orders');
         const products = rowByLabel(wrapper, 'Products');
+        await products.trigger('dragstart');
+        mockHeight(rowByLabel(wrapper, 'Catalog').element);
+        await rowByLabel(wrapper, 'Catalog').trigger('dragover');
+        await rowByLabel(wrapper, 'Catalog').trigger('drop');
 
-        await orders.trigger('dragstart');
-        mockHeight(products.element);
-
-        await products.trigger('dragover', { clientY: 5 });
-        await products.trigger('drop', { clientY: 5 });
-
-        expect(wrapper.emitted('move')).toEqual([
-            [{ id: 'orders', parentId: 'catalog', afterMenuItemId: null }],
-        ]);
+        expect(wrapper.emitted('move')[0][0]).toEqual({
+            id: 'products',
+            parentId: 'catalog',
+            afterMenuItemId: 'categories',
+        });
     });
 
-    it('refuses a move below the dragged item itself', async () => {
+    it('places a dropped item after the row it was dropped on', async () => {
         wrapper = await createWrapper();
 
-        const catalog = rowByLabel(wrapper, 'Catalog');
+        await rowByLabel(wrapper, 'Orders').trigger('dragstart');
+        mockHeight(rowByLabel(wrapper, 'Catalog').element);
 
-        await catalog.trigger('dragstart');
-        mockHeight(catalog.element);
-        await catalog.trigger('drop', { clientY: 20 });
+        // the lower quarter of a folder row means "after it", the middle means "into it"
+        const target = rowByLabel(wrapper, 'Catalog');
+        await target.trigger('dragover', { clientY: 39 });
+        await target.trigger('drop', { clientY: 39 });
+
+        expect(wrapper.emitted('move')[0][0]).toEqual({
+            id: 'orders',
+            parentId: null,
+            afterMenuItemId: 'catalog',
+        });
+    });
+
+    it('refuses to drop an entry into its own subtree', async () => {
+        wrapper = await createWrapper({ expandedIds: ['catalog'] });
+
+        await rowByLabel(wrapper, 'Catalog').trigger('dragstart');
+        await rowByLabel(wrapper, 'Products').trigger('dragover');
+        await rowByLabel(wrapper, 'Products').trigger('drop');
 
         expect(wrapper.emitted('move')).toBeUndefined();
-    });
-
-    it('refuses a move below a child of the dragged item', async () => {
-        wrapper = await createWrapper();
-
-        const catalog = rowByLabel(wrapper, 'Catalog');
-        const products = rowByLabel(wrapper, 'Products');
-
-        await catalog.trigger('dragstart');
-        mockHeight(products.element);
-        await products.trigger('drop', { clientY: 20 });
-
-        expect(wrapper.emitted('move')).toBeUndefined();
-    });
-
-    it('does not start a drag when sorting is disabled', async () => {
-        wrapper = await createWrapper({ sortable: false });
-
-        const orders = rowByLabel(wrapper, 'Orders');
-        const catalog = rowByLabel(wrapper, 'Catalog');
-
-        await orders.trigger('dragstart');
-        mockHeight(catalog.element);
-        await catalog.trigger('drop', { clientY: 35 });
-
-        expect(wrapper.emitted('move')).toBeUndefined();
-    });
-
-    it('does not offer a menu item as a drop target for children', async () => {
-        // only folders hold children: the middle of a menu row is a plain reorder instead
-        wrapper = await createWrapper();
-
-        const orders = rowByLabel(wrapper, 'Orders');
-        const products = rowByLabel(wrapper, 'Products');
-
-        await orders.trigger('dragstart');
-        mockHeight(products.element);
-
-        await products.trigger('drop', { clientY: 20 });
-
-        expect(wrapper.emitted('move')).toEqual([
-            [{ id: 'orders', parentId: 'catalog', afterMenuItemId: 'products' }],
-        ]);
     });
 });

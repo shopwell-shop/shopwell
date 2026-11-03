@@ -40,6 +40,10 @@ use Shopwell\Core\Framework\Uuid\Uuid;
  *
  * The invariant this class keeps is `sum(remaining_points) == points_balance` for every customer.
  * {@see remaining()} exists so a violation can be reported instead of silently drifted past.
+ *
+ * @internal the batches are a mechanism of {@see LoyaltyLedger}, not a booking API. Points are
+ *           awarded, spent and adjusted through {@see LoyaltyPointService}, which keeps the rules
+ *           and lets the ledger decide which batch pays.
  */
 #[Package('checkout')]
 class LoyaltyPointLots
@@ -210,7 +214,7 @@ class LoyaltyPointLots
             'SELECT COALESCE(SUM(uses.`points`), 0) AS `taken`,
                     COALESCE(SUM(uses.`points` - uses.`returned_points`), 0) AS `outstanding`
              FROM `loyalty_point_lot_use` uses
-             INNER JOIN `customer_point_transaction` booking ON booking.`id` = uses.`transaction_id`
+             INNER JOIN `loyalty_point_transaction` booking ON booking.`id` = uses.`transaction_id`
              WHERE booking.`order_id` = :orderId AND booking.`type` = :type',
             ['orderId' => Uuid::fromHexToBytes($orderId), 'type' => $type],
             ['orderId' => ParameterType::BINARY, 'type' => ParameterType::STRING]
@@ -244,7 +248,7 @@ class LoyaltyPointLots
             'SELECT uses.`id`, uses.`lot_id`, uses.`points`, uses.`returned_points`,
                     batch.`remaining_points`, batch.`expires_at`, batch.`expired_at`
              FROM `loyalty_point_lot_use` uses
-             INNER JOIN `customer_point_transaction` booking ON booking.`id` = uses.`transaction_id`
+             INNER JOIN `loyalty_point_transaction` booking ON booking.`id` = uses.`transaction_id`
              INNER JOIN `loyalty_point_lot` batch ON batch.`id` = uses.`lot_id`
              WHERE booking.`order_id` = :orderId AND booking.`type` = :type
                AND uses.`points` > uses.`returned_points`

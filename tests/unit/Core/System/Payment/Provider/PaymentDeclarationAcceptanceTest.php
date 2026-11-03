@@ -10,6 +10,7 @@ use Shopwell\Core\System\Payment\PaymentException;
 use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
 use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannelRegistry;
 use Shopwell\Core\System\Payment\Provider\Config\PaymentConfigField;
+use Shopwell\Core\System\Payment\Provider\Config\PaymentConfigReader;
 use Shopwell\Core\System\Payment\Provider\PaymentProvider;
 use Shopwell\Core\System\Payment\Provider\PaymentProviderFactory;
 use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;
@@ -242,7 +243,9 @@ class PaymentDeclarationAcceptanceTest extends TestCase
     private function container(): ContainerBuilder
     {
         $container = new ContainerBuilder();
-        $container->register(PaymentProviderFactory::class);
+        $container->register(PaymentConfigReader::class);
+        $container->register(PaymentProviderFactory::class)
+            ->setArguments([new Reference(PaymentConfigReader::class)]);
         $container->register(PaymentProviderRegistry::class)
             ->setArguments([[]])
             ->setPublic(true);

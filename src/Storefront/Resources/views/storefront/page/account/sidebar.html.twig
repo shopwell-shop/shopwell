@@ -64,14 +64,26 @@
                                 {% endif %}
                             {% endblock %}
 
-                            {% block page_account_sidebar_link_loyalty %}
+                            {% block page_account_sidebar_link_rewards %}
                                 {# an unset key means "not switched off", the same default the backend applies #}
                                 {% if config('core.loyalty.enabled') is not same as(false) %}
-                                    <a href="{{ path('frontend.account.loyalty.page') }}"
-                                       title="{{ 'account.loyaltyLink'|trans|striptags }}"
-                                       class="list-group-item list-group-item-action account-aside-item{% if activeRoute is same as('frontend.account.loyalty.page') %} is-active{% endif %}"
-                                       {% if activeRoute is same as('frontend.account.loyalty.page') %} aria-current="page"{% endif %}>
-                                        {{ 'account.loyaltyLink'|trans|sw_sanitize }}
+                                    <a href="{{ path('frontend.account.rewards.page') }}"
+                                       title="{{ 'account.rewardsLink'|trans|striptags }}"
+                                       class="list-group-item list-group-item-action account-aside-item{% if activeRoute is same as('frontend.account.rewards.page') %} is-active{% endif %}"
+                                       {% if activeRoute is same as('frontend.account.rewards.page') %} aria-current="page"{% endif %}>
+                                        {{ 'account.rewardsLink'|trans|sw_sanitize }}
+                                    </a>
+                                {% endif %}
+                            {% endblock %}
+
+                            {% block page_account_sidebar_link_membership %}
+                                {# the paid membership is part of the programme: the same switch hides both #}
+                                {% if config('core.loyalty.enabled') is not same as(false) %}
+                                    <a href="{{ path('frontend.account.membership.page') }}"
+                                       title="{{ 'account.membershipLink'|trans|striptags }}"
+                                       class="list-group-item list-group-item-action account-aside-item{% if activeRoute is same as('frontend.account.membership.page') %} is-active{% endif %}"
+                                       {% if activeRoute is same as('frontend.account.membership.page') %} aria-current="page"{% endif %}>
+                                        {{ 'account.membershipLink'|trans|sw_sanitize }}
                                     </a>
                                 {% endif %}
                             {% endblock %}

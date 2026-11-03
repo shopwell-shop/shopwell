@@ -10,6 +10,7 @@ use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\PlatformRequest;
 use Shopwell\Core\System\AdminMenu\AdminMenuException;
 use Shopwell\Core\System\AdminMenu\AdminMenuItemCollection;
+use Shopwell\Core\System\AdminMenu\AdminMenuItemEntity;
 use Shopwell\Core\System\AdminMenu\AdminMenuRouteRegistry;
 use Shopwell\Core\System\AdminMenu\Service\AdminMenuConfigService;
 use Shopwell\Core\System\AdminMenu\Service\VisibleMenuTreeBuilder;
@@ -52,19 +53,22 @@ class AdminMenuController extends AbstractController
     {
         $criteria = (new Criteria())
             ->addAssociation('roles')
-            ->addAssociation('plugin');
+            ->addAssociation('plugin')
+            ->addAssociation('translations');
 
         $items = $this->menuItemRepository->search($criteria, $context)->getEntities();
 
         // A list, not a map: the collection iterates with the row ids as keys, and a keyed
         // array serializes to a JSON object the administration cannot read as a list.
         return new JsonResponse([
-            'items' => array_values(array_map(static fn ($item) => [
+            'items' => array_values(array_map(static fn (AdminMenuItemEntity $item) => [
                 'id' => $item->getId(),
                 'parentId' => $item->getParentId(),
                 'afterMenuItemId' => $item->getAfterMenuItemId(),
                 'internalKey' => $item->getInternalKey(),
                 'title' => $item->getTitle(),
+                'groupName' => $item->getGroupName(),
+                'translations' => self::translationsOf($item),
                 'icon' => $item->getIcon(),
                 'color' => $item->getColor(),
                 'type' => $item->getType(),
@@ -162,6 +166,29 @@ class AdminMenuController extends AbstractController
         return new JsonResponse([
             'menu' => $this->treeBuilder->build($context),
         ]);
+    }
+
+    /**
+     * The labels of every installed language.
+     *
+     * The management page switches the language it shows without a request per language, and
+     * the sidebar already receives the label of the current one - a single map serves both
+     * without a second endpoint.
+     *
+     * @return array<string, array{title: ?string, groupTitle: ?string}>
+     */
+    private static function translationsOf(AdminMenuItemEntity $item): array
+    {
+        $translations = [];
+
+        foreach ($item->getTranslations() ?? [] as $translation) {
+            $translations[$translation->getLanguageId()] = [
+                'title' => $translation->getTitle(),
+                'groupTitle' => $translation->getGroupTitle(),
+            ];
+        }
+
+        return $translations;
     }
 
     private function requireUuid(mixed $value): string

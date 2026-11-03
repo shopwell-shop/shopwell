@@ -26,6 +26,7 @@ use Shopwell\Core\System\StateMachine\Aggregation\StateMachineState\StateMachine
 use Shopwell\Core\System\StateMachine\Aggregation\StateMachineState\StateMachineStateEntity;
 use Shopwell\Core\System\StateMachine\Loader\InitialStateIdLoader;
 use Shopwell\Core\System\StateMachine\StateMachineRegistry;
+use Shopwell\Tests\Unit\Core\System\Payment\NumberRangeFixture;
 use Shopwell\Tests\Unit\Core\System\Payment\Transfer\PaymentTransferRulesFixture;
 use Symfony\Component\Clock\MockClock;
 
@@ -112,7 +113,7 @@ class ReconcileOpenPaymentTransfersTaskHandlerTest extends TestCase
             $initialStateIdLoader,
             new MockClock('2026-10-18T09:00:00+00:00'),
             PaymentTransferRulesFixture::registry(),
-            \Shopwell\Tests\Unit\Core\System\Payment\NumberRangeFixture::generator('PT1001'),
+            NumberRangeFixture::generator('PT1001'),
         );
 
         return new PaymentTransferReconciler(

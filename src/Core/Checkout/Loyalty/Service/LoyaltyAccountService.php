@@ -3,8 +3,8 @@
 namespace Shopwell\Core\Checkout\Loyalty\Service;
 
 use Shopwell\Core\Checkout\Ledger\RowLock;
-use Shopwell\Core\Checkout\Loyalty\Entity\CustomerLoyalty\CustomerLoyaltyCollection;
-use Shopwell\Core\Checkout\Loyalty\Entity\CustomerLoyalty\CustomerLoyaltyEntity;
+use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyAccount\LoyaltyAccountCollection;
+use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyAccount\LoyaltyAccountEntity;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
@@ -27,24 +27,24 @@ class LoyaltyAccountService
     /**
      * @internal
      *
-     * @param EntityRepository<CustomerLoyaltyCollection> $customerLoyaltyRepository
+     * @param EntityRepository<LoyaltyAccountCollection> $loyaltyAccountRepository
      */
     public function __construct(
-        private readonly EntityRepository $customerLoyaltyRepository,
+        private readonly EntityRepository $loyaltyAccountRepository,
         private readonly TierResolver $tierResolver,
         private readonly RowLock $rows,
     ) {
     }
 
-    public function account(string $customerId, Context $context): ?CustomerLoyaltyEntity
+    public function account(string $customerId, Context $context): ?LoyaltyAccountEntity
     {
         $criteria = new Criteria();
         $criteria->addFilter(new EqualsFilter('customerId', $customerId));
         $criteria->setLimit(1);
 
-        $account = $this->customerLoyaltyRepository->search($criteria, $context)->getEntities()->first();
+        $account = $this->loyaltyAccountRepository->search($criteria, $context)->getEntities()->first();
 
-        return $account instanceof CustomerLoyaltyEntity ? $account : null;
+        return $account instanceof LoyaltyAccountEntity ? $account : null;
     }
 
     public function balance(string $customerId, Context $context): int
@@ -67,10 +67,10 @@ class LoyaltyAccountService
 
         // a booking of the same customer may open the very same account at the same time; losing that
         // race is not an error, the winner's row is the one the ledger books onto
-        $this->rows->createUnlessExists($this->customerLoyaltyRepository, [
+        $this->rows->createUnlessExists($this->loyaltyAccountRepository, [
             'customerId' => $customerId,
             'pointsBalance' => 0,
-            'membershipTierId' => $this->tierResolver->findTierIdForGrowthValue(0, $context),
+            'tierId' => $this->tierResolver->findTierIdForTierPoints(0, $context),
         ], $context);
     }
 }

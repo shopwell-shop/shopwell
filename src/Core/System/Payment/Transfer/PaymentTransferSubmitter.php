@@ -2,6 +2,7 @@
 
 namespace Shopwell\Core\System\Payment\Transfer;
 
+use Payum\Core\GatewayInterface;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
@@ -12,29 +13,27 @@ use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
 use Shopwell\Core\System\Payment\Provider\Config\PaymentConfigResolver;
 
 /**
- * Hands a payout over to its channel - the submitting counterpart of the capture of a payment order.
+ * Hands a payout over to its channel and coordinates auditing and booking the answer.
  *
- * The service behind it decides which state an answer means and keeps the bookkeeping; this class is
- * the side that talks to the interface: it resolves the credentials of the app, builds the gateway of
- * the channel, executes the payout and books the answer. A notification or a query answers what
- * happens afterwards - the submitter only knows what the channel said to the call itself.
- *
- * Every guard runs before the gateway is built: submitting is the one operation that moves money out.
+ * Guards, the channel call, the attempt audit and result booking are separate boundaries. In
+ * particular, the channel call always finishes before the result booker opens its write transaction.
  *
  * @internal
  */
 #[Package('framework')]
 final class PaymentTransferSubmitter
 {
-    final public const STEP_SUBMIT = 'submit';
-    final public const STEP_PROCESS = 'process';
-    final public const STEP_SUCCEED = 'succeed';
-    final public const STEP_AWAIT_CONFIRM = 'await_confirm';
-    final public const STEP_FAIL = 'fail';
+    // Compatibility for the reconciler and existing callers; submission steps belong to the result booker.
+    final public const STEP_SUBMIT = PaymentTransferResultBooker::STEP_SUBMIT;
+    final public const STEP_PROCESS = PaymentTransferResultBooker::STEP_PROCESS;
+    final public const STEP_SUCCEED = PaymentTransferResultBooker::STEP_SUCCEED;
+    final public const STEP_AWAIT_CONFIRM = PaymentTransferResultBooker::STEP_AWAIT_CONFIRM;
+    final public const STEP_FAIL = PaymentTransferResultBooker::STEP_FAIL;
 
     public function __construct(
         private readonly PaymentConfigResolver $configResolver,
         private readonly PaymentTransferService $transferService,
+        private readonly PaymentTransferResultBooker $resultBooker,
     ) {
     }
 
@@ -60,57 +59,13 @@ final class PaymentTransferSubmitter
      */
     public function submit(PaymentAppEntity $app, PaymentTransferEntity $transfer): TransferResult
     {
-        // the credentials are resolved from the app, so a transfer of another app would be paid out of
-        // this merchant account - the check is about money, not about form
-        if ($transfer->paymentAppId !== $app->id) {
-            throw PaymentException::transferForeignApp($app->id, $transfer->outNo);
-        }
-
-        $state = $transfer->statusMachineState?->getTechnicalName();
-
-        // submitting twice is not a retry but a second payout: a retry always queries the interface
-        // first. A transfer whose state was not read is refused as well - the caller has to load it
-        // with its state, and sending what can not be classified is the one thing that must not happen
-        if ($state !== PaymentTransferStates::STATE_CREATED) {
-            throw PaymentException::transferAlreadyFinalized($transfer->outNo, $state ?? 'unknown');
-        }
-
-        $recipient = $this->transferService->recipientOf($app, $transfer);
-
-        // a payout has no device, and null means "no restriction" - a channel that brings no device
-        // passes as well, so this is exactly the "no device" of a payout and not an omission
-        $resolved = $this->configResolver->resolve(
-            $app,
-            $transfer->channel,
-            $transfer->currency,
-            null,
-            $transfer->channelParams ?? []
-        );
-
-        $model = PaymentGatewayModel::forTransfer($transfer);
-
-        // An interface that never declared a payout cannot be asked to pay out. Without the guard
-        // payum fails inside the gateway with "no action supports this request", which the catch below
-        // can only report as a channel fault - and a 502 on money leaving the platform is the one
-        // answer that makes a caller retry a request that can never succeed. The guard sits before the
-        // attempt is recorded: nothing was attempted, so nothing may be written as an attempt.
-        if (!$resolved->provider->supports(PaymentCapability::TRANSFER)) {
-            throw PaymentException::providerLacksCapability($resolved->provider->technicalName, PaymentCapability::TRANSFER->value);
-        }
-
-        // no transfer action reads the notification or the return url - those two exist for the
-        // capture and the refund of a payment order only. They are passed empty on purpose: a payout
-        // has no payer to send anywhere, and wiring a real url here would be a callback nobody serves
-        $gateway = $resolved->provider->gatewayFactory->createForPayment($resolved, '', '');
+        $this->assertSubmittable($app, $transfer);
+        [$gateway, $model, $request] = $this->prepareChannel($app, $transfer);
 
         try {
-            $gateway->execute(new PaymentTransferRequest($model, $transfer, $recipient, $transfer->channelParams ?? []));
-            $result = $model->result(TransferResult::class, $transfer->channel);
+            $result = $this->callChannel($gateway, $model, $request, $transfer->channel);
         } catch (\Throwable $exception) {
-            // the money may have moved - never book a terminal state from a call that did not answer.
-            // This runs for every failure, including a configuration error that never left the
-            // platform: "someone tried and this is why it failed" is true either way, and the attempt
-            // counter carries no behaviour - it is an audit trail
+            // The money may have moved - never book a terminal state from a call that did not answer.
             $this->transferService->recordSubmitAttempt($transfer, $exception->getMessage());
 
             if ($exception instanceof PaymentException) {
@@ -121,13 +76,10 @@ final class PaymentTransferSubmitter
         }
 
         try {
-            $this->apply($model, $transfer, $result);
+            $this->resultBooker->apply($model, $transfer, $result);
         } catch (\Throwable $exception) {
-            // the channel answered, so the request demonstrably reached it - an answer that can not be
-            // booked (a channel naming no object, a state the machine refuses) is "the platform does not
-            // know", never "provably nothing happened". Recording the attempt is the evidence: it is the
-            // only thing the caller compares against, and without it the endpoint would classify this as
-            // a rejection and return a 502 for a payout that may already be on its way.
+            // The channel answered, so the request demonstrably reached it. An answer that cannot be
+            // booked is "the platform does not know", never "provably nothing happened".
             $this->recordUnbookedAnswer($transfer, $exception);
 
             if ($exception instanceof PaymentException) {
@@ -141,57 +93,94 @@ final class PaymentTransferSubmitter
     }
 
     /**
-     * The service calls the answer requires, in the order the state machine allows them.
-     *
-     * Pure on purpose: {@see PaymentTransferService} is final and can not be doubled, so the
-     * money-critical knowledge of what an answer means has to be assertable without a database and
-     * without a mock, and {@see apply()} only dispatches what this answers.
-     *
-     * A `succeeded` answer is booked through `process` because the machine has no
-     * `submitted -> succeeded` shortcut to rely on: `submit -> process -> succeed` is the money path,
-     * and each step is a real observation the call made.
-     *
-     * A `returned` answer at submission time is a `failed`, not a `mark_returned`: a transfer that
-     * never left `created` can not have arrived and come back, and a channel answering `RETURNED` on
-     * a fresh payout has simply not moved the money. `mark_returned` is reserved for the reconciler,
-     * which observes the transfer on its way first.
-     *
-     * A `failed` answer without an object reference is a refusal that never opened anything at the
-     * interface - there is nothing to submit, and `created -> failed` is the legal edge for it.
+     * Compatibility entry for existing callers; the mapping is owned by the result booker.
      *
      * @return list<string>
      */
     public static function stepNames(TransferResult $result): array
     {
-        $hasRef = $result->providerRef !== null && $result->providerRef !== '';
+        return PaymentTransferResultBooker::stepNames($result);
+    }
 
-        return match ($result->state) {
-            TransferResult::STATE_SUCCEEDED => [self::STEP_SUBMIT, self::STEP_PROCESS, self::STEP_SUCCEED],
-            TransferResult::STATE_AWAITING_CONFIRM => [self::STEP_SUBMIT, self::STEP_AWAIT_CONFIRM],
-            TransferResult::STATE_PROCESSING, TransferResult::STATE_ACCEPTED => [self::STEP_SUBMIT, self::STEP_PROCESS],
-            TransferResult::STATE_FAILED => $hasRef ? [self::STEP_SUBMIT, self::STEP_FAIL] : [self::STEP_FAIL],
-            TransferResult::STATE_RETURNED => [self::STEP_SUBMIT, self::STEP_PROCESS, self::STEP_FAIL],
-            TransferResult::STATE_UNKNOWN => $hasRef ? [self::STEP_SUBMIT] : [],
-            // an answer the platform does not know is treated like an answer it did not get: nothing
-            // is booked and the query of the channel decides
-            default => [],
-        };
+    /**
+     * Every guard that does not need the resolved provider runs before credentials or a gateway are
+     * touched: submitting is the one operation that moves money out.
+     *
+     * @throws PaymentException
+     */
+    private function assertSubmittable(PaymentAppEntity $app, PaymentTransferEntity $transfer): void
+    {
+        // Credentials are resolved from the app, so a transfer of another app would be paid out of
+        // this merchant account.
+        if ($transfer->paymentAppId !== $app->id) {
+            throw PaymentException::transferForeignApp($app->id, $transfer->outNo);
+        }
+
+        $state = $transfer->statusMachineState?->getTechnicalName();
+
+        // Submitting twice is a second payout, not a retry. An unread state fails closed as well.
+        if ($state !== PaymentTransferStates::STATE_CREATED) {
+            throw PaymentException::transferAlreadyFinalized($transfer->outNo, $state ?? 'unknown');
+        }
+    }
+
+    /**
+     * Resolves the channel and checks its payout capability before an attempt can be audited.
+     *
+     * @throws PaymentException
+     *
+     * @return array{GatewayInterface, PaymentGatewayModel, PaymentTransferRequest}
+     */
+    private function prepareChannel(PaymentAppEntity $app, PaymentTransferEntity $transfer): array
+    {
+        $recipient = $this->transferService->recipientOf($app, $transfer);
+
+        // A payout has no device, and null means "no restriction".
+        $resolved = $this->configResolver->resolve(
+            $app,
+            $transfer->channel,
+            $transfer->currency,
+            null,
+            $transfer->channelParams ?? []
+        );
+
+        $model = PaymentGatewayModel::forTransfer($transfer);
+
+        // This guard precedes both the gateway call and the attempt audit: nothing was attempted.
+        if (!$resolved->provider->supports(PaymentCapability::TRANSFER)) {
+            throw PaymentException::providerLacksCapability($resolved->provider->technicalName, PaymentCapability::TRANSFER->value);
+        }
+
+        // Notification and return URLs belong to capture and refund only; a payout has no payer.
+        $gateway = $resolved->provider->gatewayFactory->createForPayment($resolved, '', '');
+        $request = new PaymentTransferRequest($model, $transfer, $recipient, $transfer->channelParams ?? []);
+
+        return [$gateway, $model, $request];
+    }
+
+    /**
+     * Performs the external call. This is deliberately outside every database transaction.
+     */
+    private function callChannel(
+        GatewayInterface $gateway,
+        PaymentGatewayModel $model,
+        PaymentTransferRequest $request,
+        string $channel,
+    ): TransferResult {
+        $gateway->execute($request);
+
+        return $model->result(TransferResult::class, $channel);
     }
 
     /**
      * Records the attempt of an answer that arrived but could not be booked.
      *
      * The row is read again before it is written, and the write happens only while it is still
-     * `created`. `apply()` books multi step answers, so a step can have reached the row before a later
-     * one failed - `markSubmitted()` already counted that attempt, and counting it a second time from
-     * the stale value of this object would both double the audit trail and overwrite the freshly
-     * written counter with a number of its own. A row that is no longer `created` therefore needs no
-     * evidence: the caller sees the state move and never asks about the counter.
+     * `created`. A row that already moved has its attempt evidence from `markSubmitted()` and must not
+     * be counted a second time from the stale object of the caller.
      *
-     * The counter is the only durable proof that the platform tried, so a row that can not even be
-     * read back falls back to the value in memory: over counting can only turn a rejection into an
-     * unknown, never the other way round, and an unknown is the answer that stops a payout from being
-     * sent twice.
+     * If the row cannot be read back, the in-memory value is the safer fallback: over-counting can only
+     * turn a rejection into an unknown, never the other way round.
      */
     private function recordUnbookedAnswer(PaymentTransferEntity $transfer, \Throwable $exception): void
     {
@@ -210,100 +199,5 @@ final class PaymentTransferSubmitter
         }
 
         $this->transferService->recordSubmitAttempt($fresh, $reason);
-    }
-
-    /**
-     * @throws PaymentException
-     */
-    private function apply(PaymentGatewayModel $model, PaymentTransferEntity $transfer, TransferResult $result): void
-    {
-        $this->assertObjectReference($transfer, $result);
-
-        foreach (self::stepNames($result) as $step) {
-            switch ($step) {
-                case self::STEP_SUBMIT:
-                    $this->transferService->markSubmitted(
-                        $transfer,
-                        (string) $result->providerRef,
-                        $result->providerStageRef,
-                        $result->confirmPayload,
-                    );
-
-                    break;
-
-                case self::STEP_PROCESS:
-                    $this->transferService->markProcessing($transfer);
-
-                    break;
-
-                case self::STEP_SUCCEED:
-                    $this->transferService->markSucceeded($transfer);
-
-                    break;
-
-                case self::STEP_AWAIT_CONFIRM:
-                    $this->transferService->markAwaitingConfirm($transfer, $result->confirmPayload);
-
-                    break;
-
-                case self::STEP_FAIL:
-                    // the code of the interface is the evidence, and `returned` carries none - without
-                    // the fallback the row would say nothing at all. The reason is the raw answer: for
-                    // alipay the sub message, for stripe the failure message, and for the rest whatever
-                    // the channel chose to explain
-                    $this->transferService->markFailed(
-                        $transfer,
-                        $result->failureCode ?? $result->state,
-                        self::reasonOf($model),
-                    );
-
-                    break;
-            }
-        }
-    }
-
-    /**
-     * The answer of the channel as the row keeps it.
-     *
-     * The response is recorded by the action before it throws or returns, so this is the same evidence
-     * a support case is debugged with. `null` when the action answered nothing at all - an empty JSON
-     * object would claim an answer that does not exist.
-     */
-    private static function reasonOf(PaymentGatewayModel $model): ?string
-    {
-        $response = $model->response();
-
-        if ($response === []) {
-            return null;
-        }
-
-        // the wire content of a channel is not guaranteed to be valid utf-8, so a failing encode must
-        // not abort the booking - the failure is worth more without its reason than not at all
-        $reason = json_encode($response, \JSON_UNESCAPED_UNICODE | \JSON_UNESCAPED_SLASHES);
-
-        return $reason === false ? null : $reason;
-    }
-
-    /**
-     * A channel that answers success or processing without naming the object it created violates its
-     * contract, and booking it would produce a transfer nobody can ever query - the money would be
-     * untraceable. `failed` is exempt: a refusal that never opened an object has no reference.
-     *
-     * @throws PaymentException
-     */
-    private function assertObjectReference(PaymentTransferEntity $transfer, TransferResult $result): void
-    {
-        if ($result->state === TransferResult::STATE_UNKNOWN || $result->state === TransferResult::STATE_FAILED) {
-            return;
-        }
-
-        if ($result->providerRef !== null && $result->providerRef !== '') {
-            return;
-        }
-
-        throw PaymentException::gatewayError(
-            $transfer->channel,
-            \sprintf('the channel answered %s without an object reference', $result->state)
-        );
     }
 }

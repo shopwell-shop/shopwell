@@ -10,6 +10,7 @@ use Shopwell\Core\System\Payment\Gateway\AbstractPaymentApi;
 use Shopwell\Core\System\Payment\Gateway\Request\CloseResult;
 use Shopwell\Core\System\Payment\Gateway\Request\Payload;
 use Shopwell\Core\System\Payment\Gateway\Request\QueryResult;
+use Shopwell\Core\System\Payment\Integration\Wechat\Request\WechatPaymentStatus;
 use Shopwell\Core\System\Payment\PaymentException;
 use Shopwell\Core\System\Payment\Provider\ResolvedPaymentConfig;
 use WeChatPay\Builder;
@@ -114,17 +115,6 @@ final class WechatApi extends AbstractPaymentApi
      * last 30 days only.
      */
     private const URI_TRANSFER_QUERY = 'v3/fund-app/mch-transfer/transfer-bills/out-bill-no/%s';
-
-    /**
-     * The trade states of wechat mapped to what the platform does with the order. A refunded trade
-     * was paid before anything else, everything wechat may still settle on its own is pending.
-     */
-    private const QUERY_STATES = [
-        'SUCCESS' => QueryResult::STATUS_PAID,
-        'REFUND' => QueryResult::STATUS_PAID,
-        'CLOSED' => QueryResult::STATUS_CLOSED,
-        'PAYERROR' => QueryResult::STATUS_FAILED,
-    ];
 
     private ?BuilderChainable $builder = null;
 
@@ -270,7 +260,7 @@ final class WechatApi extends AbstractPaymentApi
             $response = $exception->getResponse();
 
             if ($response->getStatusCode() === 404) {
-                return new QueryResult(QueryResult::STATUS_ABSENT, raw: ['error' => $exception->getMessage()]);
+                return QueryResult::absent($exception->getMessage());
             }
 
             throw $exception;
@@ -280,7 +270,7 @@ final class WechatApi extends AbstractPaymentApi
         $amount = Payload::map($answer, 'amount');
 
         return new QueryResult(
-            status: self::QUERY_STATES[$state] ?? QueryResult::STATUS_PENDING,
+            status: WechatPaymentStatus::query($state),
             outPaymentNo: Payload::string($answer, 'transaction_id'),
             amount: Payload::int($amount, 'total'),
             currency: strtoupper(Payload::string($amount, 'currency', 'CNY') ?? 'CNY'),

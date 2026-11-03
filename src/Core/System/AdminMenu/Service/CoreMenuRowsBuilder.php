@@ -31,8 +31,8 @@ class CoreMenuRowsBuilder
     /**
      * @param list<AdminMenuDefinitionStruct> $declarations
      * @param array<string, string> $anchors internal key to id of rows the caller must not re-place
-     *        (a customized item keeps its position but still occupies the chain for the entry
-     *        that follows it)
+     *                                       (a customized item keeps its position but still occupies the chain for the entry
+     *                                       that follows it)
      *
      * @return list<CoreMenuRow> parents before their children, siblings in declared order
      */
@@ -142,7 +142,6 @@ class CoreMenuRowsBuilder
             id: $id,
             internalKey: $declaration->internalKey,
             type: $declaration->type,
-            title: $declaration->title,
             icon: $declaration->icon,
             color: $declaration->color,
             privilege: $declaration->privilege,
@@ -150,6 +149,7 @@ class CoreMenuRowsBuilder
             parentId: $parentKey === '' ? null : $ids[$parentKey],
             afterMenuItemId: $predecessor,
             defaultMeta: $declaration->jsonSerialize(),
+            groupName: $declaration->groupName,
         );
     }
 

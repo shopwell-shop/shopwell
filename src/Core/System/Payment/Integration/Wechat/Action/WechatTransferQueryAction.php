@@ -71,7 +71,8 @@ final class WechatTransferQueryAction extends AbstractPaymentAction
             throw PaymentException::gatewayError($api->channel(), $exception->getMessage(), $exception);
         }
 
-        $this->recordResponse($model, $answer);
+        // the result needs the original package_info, the persisted audit trail only its existence
+        $this->recordResponse($model, WechatTransferAction::auditResponseOf($answer));
 
         $this->setResult($model, self::resultOf($answer));
     }

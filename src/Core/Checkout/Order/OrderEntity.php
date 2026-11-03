@@ -6,7 +6,7 @@ use Shopwell\Core\Checkout\Cart\Price\Struct\CalculatedPrice;
 use Shopwell\Core\Checkout\Cart\Price\Struct\CartPrice;
 use Shopwell\Core\Checkout\DocumentV2\DocumentCollection;
 use Shopwell\Core\Checkout\DocumentV2\DocumentSourceEntity;
-use Shopwell\Core\Checkout\Loyalty\Entity\CustomerPointTransaction\CustomerPointTransactionCollection;
+use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyPointTransaction\LoyaltyPointTransactionCollection;
 use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyPointLot\LoyaltyPointLotCollection;
 use Shopwell\Core\Checkout\Order\Aggregate\OrderAddress\OrderAddressCollection;
 use Shopwell\Core\Checkout\Order\Aggregate\OrderAddress\OrderAddressEntity;
@@ -109,7 +109,7 @@ class OrderEntity extends Entity implements DocumentSourceEntity
 
     protected ?DocumentCollection $documents = null;
 
-    protected ?CustomerPointTransactionCollection $customerPointTransactions = null;
+    protected ?LoyaltyPointTransactionCollection $loyaltyPointTransactions = null;
 
     protected ?LoyaltyPointLotCollection $pointLots = null;
 
@@ -460,14 +460,14 @@ class OrderEntity extends Entity implements DocumentSourceEntity
         $this->documents = $documents;
     }
 
-    public function getCustomerPointTransactions(): ?CustomerPointTransactionCollection
+    public function getLoyaltyPointTransactions(): ?LoyaltyPointTransactionCollection
     {
-        return $this->customerPointTransactions;
+        return $this->loyaltyPointTransactions;
     }
 
-    public function setCustomerPointTransactions(CustomerPointTransactionCollection $customerPointTransactions): void
+    public function setLoyaltyPointTransactions(LoyaltyPointTransactionCollection $loyaltyPointTransactions): void
     {
-        $this->customerPointTransactions = $customerPointTransactions;
+        $this->loyaltyPointTransactions = $loyaltyPointTransactions;
     }
 
     public function getPointLots(): ?LoyaltyPointLotCollection

@@ -2,11 +2,11 @@
 
 namespace Shopwell\Core\System\Payment\Gateway;
 
-use Psr\Clock\ClockInterface;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\System\NumberRange\ValueGenerator\AbstractNumberRangeValueGenerator;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
 use Shopwell\Core\System\Payment\Gateway\Request\CloseResult;
 use Shopwell\Core\System\Payment\Gateway\Request\PaymentClose;
@@ -45,7 +45,7 @@ final class PaymentChannelCloser
     public function __construct(
         private readonly EntityRepository $transactionRepository,
         private readonly PaymentConfigResolver $configResolver,
-        private readonly ClockInterface $clock,
+        private readonly AbstractNumberRangeValueGenerator $numberRanges,
     ) {
     }
 
@@ -110,7 +110,7 @@ final class PaymentChannelCloser
         $this->transactionRepository->create([[
             'id' => $id,
             'paymentOrderId' => $order->id,
-            'transactionNo' => 'PT' . $this->clock->now()->format('YmdHis') . strtoupper(bin2hex(random_bytes(3))),
+            'transactionNo' => $this->numberRanges->getValue(PaymentTransactionEntity::ENTITY_NAME, Context::createDefaultContext(), null),
             'type' => self::TRANSACTION_TYPE_CLOSE,
             'providerTechnicalName' => $providerTechnicalName,
             'channelTechnicalName' => $order->channelTechnicalName,

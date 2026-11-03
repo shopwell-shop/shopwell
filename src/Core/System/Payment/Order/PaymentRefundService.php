@@ -14,6 +14,7 @@ use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\System\NumberRange\ValueGenerator\AbstractNumberRangeValueGenerator;
 use Shopwell\Core\System\Payment\Api\Struct\PaymentRefundRequest;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
+use Shopwell\Core\System\Payment\Exception\PaymentOrderException;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
 use Shopwell\Core\System\Payment\Gateway\Request\NotificationResult;
 use Shopwell\Core\System\Payment\Gateway\Request\RefundResult;
@@ -24,6 +25,8 @@ use Shopwell\Core\System\Payment\Order\Event\PaymentRefundFinishedEvent;
 use Shopwell\Core\System\Payment\PaymentException;
 use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
 use Shopwell\Core\System\Payment\Provider\Config\PaymentConfigResolver;
+use Shopwell\Core\System\Payment\Provider\PaymentProvider;
+use Shopwell\Core\System\Payment\Provider\ResolvedPaymentConfig;
 use Shopwell\Core\System\Payment\Webhook\PaymentWebhookDispatcher;
 use Shopwell\Core\System\StateMachine\Loader\InitialStateIdLoader;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
@@ -55,6 +58,7 @@ final class PaymentRefundService
         private readonly EventDispatcherInterface $eventDispatcher,
         private readonly ClockInterface $clock,
         private readonly AbstractNumberRangeValueGenerator $numberRanges,
+        private readonly PaymentOrderRowLock $rowLock,
     ) {
     }
 
@@ -71,18 +75,7 @@ final class PaymentRefundService
             return $existing;
         }
 
-        if ($order->paidAt === null) {
-            throw PaymentException::refundNotAllowed($order->paymentNo);
-        }
-
-        if ($request->amount <= 0) {
-            throw PaymentException::invalidAmount($request->amount);
-        }
-
-        $available = $order->paidAmount - $order->refundedAmount;
-        if ($request->amount > $available) {
-            throw PaymentException::refundAmountExceedsOrder($order->paymentNo, $request->amount, $available);
-        }
+        $this->guardRequest($order, $request);
 
         // a refund runs on the interface alone, but the channel of the order is what was opened - and
         // its runtime parameters are the ones the order was created with. The credentials are resolved
@@ -96,50 +89,49 @@ final class PaymentRefundService
             $order->channelParams ?? []
         );
 
-        // An interface that never declared a refund cannot give money back. Payum would answer the
-        // refund request with "no action supports this request" inside the gateway, which the catch
-        // below can only report as a channel fault (502) - while the declaration answered the very
-        // same question before a request was signed. The guard reads the resolved provider, so a
-        // plugin that adds a refund action makes refunding reachable for that interface.
-        $provider = $resolved->provider;
-
-        if (!$provider->supports(PaymentCapability::REFUND)) {
-            throw PaymentException::providerLacksCapability($provider->technicalName, PaymentCapability::REFUND->value);
-        }
-
-        // A full refund - the entire amount that is still refundable - is the plain refund action every
-        // interface that can refund at all can do, so `PARTIAL_REFUND` is deliberately not required for
-        // it: an interface that declares `refund` alone must still be able to hand the whole payment
-        // back, otherwise the only way out of a wrong payment would be closed to it. Only "less than
-        // what is left" is the distinct operation some interfaces refuse, and that one has to be
-        // declared. `available` is the remaining amount and not the order amount on purpose: a second
-        // refund of what is left is a full refund again, not a partial one.
-        if ($request->amount < $available && !$provider->supports(PaymentCapability::PARTIAL_REFUND)) {
-            throw PaymentException::providerLacksCapability($provider->technicalName, PaymentCapability::PARTIAL_REFUND->value);
-        }
-
-        $refund = $this->create($order, $request);
-
-        $model = PaymentGatewayModel::forRefund($order, $refund);
-        $gateway = $resolved->provider->gatewayFactory->createForPayment(
-            $resolved,
-            $this->notifyUrlBuilder->build($app, $resolved->provider->technicalName, $order->paymentNo),
-            (string) $order->returnUrl
-        );
+        $id = Uuid::randomHex();
+        $created = false;
 
         try {
-            $gateway->execute(new RefundRequest($model));
-            $result = $model->result(RefundResult::class, $order->channelTechnicalName);
-        } catch (\Throwable $exception) {
-            $this->recordResponse($refund, $model, $exception);
-            $this->stateHandler->fail($refund->id);
+            $refund = $this->rowLock->transaction(function () use (&$order, &$created, $id, $request, $resolved): PaymentRefundEntity {
+                if ($this->rowLock->lockOrder($order->id) === null) {
+                    throw PaymentOrderException::orderNotFound($order->id);
+                }
 
-            throw PaymentException::gatewayError($order->channelTechnicalName, $exception->getMessage(), $exception);
+                // The entity came from the caller before the lock. Re-read it and repeat the replay
+                // lookup now that concurrent refund creation on this order is serialized.
+                $order = $this->orderService->getById($order->id);
+                $existing = $this->findByOutRefundNo($order->id, $request->outRefundNo);
+                if ($existing instanceof PaymentRefundEntity) {
+                    return $existing;
+                }
+
+                $reserved = $this->rowLock->reservedRefundAmount($order->id);
+                $this->guard($order, $request, $resolved->provider, $reserved);
+
+                $refund = $this->create($id, $order, $request);
+                $created = true;
+
+                return $refund;
+            });
+        } catch (UniqueConstraintViolationException $exception) {
+            return $this->recoverCreateRace($order, $request, $exception);
         }
 
+        if (!$created) {
+            return $refund;
+        }
+
+        // The channel call is deliberately outside the creation transaction: no database row lock is
+        // held while a remote interface is slow or unreachable.
+        $model = $this->submit($app, $order, $refund, $resolved);
+        $result = $model->result(RefundResult::class, $order->channelTechnicalName);
+
         if ($result->status === PaymentRefundStates::STATE_PROCESSING) {
-            $this->recordResponse($refund, $model, null, $result->outRefundId);
-            $this->stateHandler->process($refund->id);
+            $this->rowLock->transaction(function () use ($refund, $model, $result): void {
+                $this->recordResponse($refund, $model, null, $result->outRefundId);
+                $this->stateHandler->process($refund->id);
+            });
 
             return $this->getRefund($refund->id);
         }
@@ -176,21 +168,23 @@ final class PaymentRefundService
         PaymentOrderEntity $order,
         NotificationResult $result
     ): void {
-        if ($refund->refundedAt !== null) {
-            return;
-        }
-
-        if ($result->raw !== []) {
-            $this->refundRepository->update([[
-                'id' => $refund->id,
-                'responsePayload' => $result->raw,
-            ]], Context::createDefaultContext());
-        }
-
         if (!$result->succeeded) {
+            if ($refund->refundedAt !== null) {
+                return;
+            }
+
+            if ($result->raw !== []) {
+                $this->refundRepository->update([[
+                    'id' => $refund->id,
+                    'responsePayload' => $result->raw,
+                ]], Context::createDefaultContext());
+            }
+
             return;
         }
 
+        // A successful replay still enters settle: its database booking is idempotent, and the
+        // post-commit announcement is allowed to repair an event or webhook lost by an earlier worker.
         $this->settle($refund, $order, null, $result->outRefundId, $result->raw);
     }
 
@@ -199,39 +193,113 @@ final class PaymentRefundService
         $refund = $this->refundRepository->search(new Criteria([$id]), Context::createDefaultContext())->getEntities()->first();
 
         if (!$refund instanceof PaymentRefundEntity) {
-            throw PaymentException::refundNotFound($id);
+            throw PaymentOrderException::refundNotFound($id);
         }
 
         return $refund;
     }
 
-    private function create(PaymentOrderEntity $order, PaymentRefundRequest $request): PaymentRefundEntity
+    private function guardRequest(PaymentOrderEntity $order, PaymentRefundRequest $request, int $reserved = 0): int
     {
-        $id = Uuid::randomHex();
+        if ($order->paidAt === null) {
+            throw PaymentOrderException::refundNotAllowed($order->paymentNo);
+        }
+
+        if ($request->amount <= 0) {
+            throw PaymentOrderException::invalidAmount($request->amount);
+        }
+
+        $available = $order->paidAmount - $order->refundedAmount - $reserved;
+        if ($request->amount > $available) {
+            throw PaymentOrderException::refundAmountExceedsOrder($order->paymentNo, $request->amount, $available);
+        }
+
+        return $available;
+    }
+
+    private function guard(
+        PaymentOrderEntity $order,
+        PaymentRefundRequest $request,
+        PaymentProvider $provider,
+        int $reserved
+    ): void {
+        $available = $this->guardRequest($order, $request, $reserved);
+
+        // An interface that never declared a refund cannot give money back. Payum would answer the
+        // refund request with "no action supports this request" inside the gateway, which the catch
+        // below can only report as a channel fault (502) - while the declaration answered the very
+        // same question before a request was signed. The guard reads the resolved provider, so a
+        // plugin that adds a refund action makes refunding reachable for that interface.
+        if (!$provider->supports(PaymentCapability::REFUND)) {
+            throw PaymentException::providerLacksCapability($provider->technicalName, PaymentCapability::REFUND->value);
+        }
+
+        // A full refund - the entire amount that is still refundable - is the plain refund action every
+        // interface that can refund at all can do, so `PARTIAL_REFUND` is deliberately not required for
+        // it: an interface that declares `refund` alone must still be able to hand the whole payment
+        // back, otherwise the only way out of a wrong payment would be closed to it. Only "less than
+        // what is left" is the distinct operation some interfaces refuse, and that one has to be
+        // declared. `available` is the remaining amount and not the order amount on purpose: a second
+        // refund of what is left is a full refund again, not a partial one.
+        if ($request->amount < $available && !$provider->supports(PaymentCapability::PARTIAL_REFUND)) {
+            throw PaymentException::providerLacksCapability($provider->technicalName, PaymentCapability::PARTIAL_REFUND->value);
+        }
+    }
+
+    private function submit(
+        PaymentAppEntity $app,
+        PaymentOrderEntity $order,
+        PaymentRefundEntity $refund,
+        ResolvedPaymentConfig $resolved
+    ): PaymentGatewayModel {
+        $model = PaymentGatewayModel::forRefund($order, $refund);
+        $gateway = $resolved->provider->gatewayFactory->createForPayment(
+            $resolved,
+            $this->notifyUrlBuilder->build($app, $resolved->provider->technicalName, $order->paymentNo),
+            (string) $order->returnUrl
+        );
 
         try {
-            $this->refundRepository->create([[
-                'id' => $id,
-                'refundNo' => $this->numberRanges->getValue(PaymentRefundEntity::ENTITY_NAME, Context::createDefaultContext(), null),
-                'paymentOrderId' => $order->id,
-                'outRefundNo' => $request->outRefundNo,
-                'amount' => $request->amount,
-                'currency' => $order->currency,
-                'reason' => $request->reason,
-                'stateId' => $this->initialStateIdLoader->get(PaymentRefundStates::STATE_MACHINE),
-            ]], Context::createDefaultContext());
-        } catch (UniqueConstraintViolationException $exception) {
-            // the unique key over (order, out refund number) was hit: two workers passed the replay
-            // lookup at the same time and the other one booked the refund first. That row is the
-            // answer, not an error - and the channel is never asked twice for the same refund
-            $race = $this->findByOutRefundNo($order->id, $request->outRefundNo);
+            $gateway->execute(new RefundRequest($model));
+        } catch (\Throwable $exception) {
+            $this->rowLock->transaction(function () use ($refund, $model, $exception): void {
+                $this->recordResponse($refund, $model, $exception);
+                $this->stateHandler->fail($refund->id);
+            });
 
-            if ($race instanceof PaymentRefundEntity) {
-                return $race;
-            }
-
-            throw $exception;
+            throw PaymentException::gatewayError($order->channelTechnicalName, $exception->getMessage(), $exception);
         }
+
+        return $model;
+    }
+
+    private function recoverCreateRace(
+        PaymentOrderEntity $order,
+        PaymentRefundRequest $request,
+        UniqueConstraintViolationException $exception
+    ): PaymentRefundEntity {
+        // The unique key over (order, out refund number) is the second line of defence. Its winner is
+        // the answer, and returning here means the channel is never asked twice for the same refund.
+        $existing = $this->findByOutRefundNo($order->id, $request->outRefundNo);
+        if ($existing instanceof PaymentRefundEntity) {
+            return $existing;
+        }
+
+        throw $exception;
+    }
+
+    private function create(string $id, PaymentOrderEntity $order, PaymentRefundRequest $request): PaymentRefundEntity
+    {
+        $this->refundRepository->create([[
+            'id' => $id,
+            'refundNo' => $this->numberRanges->getValue(PaymentRefundEntity::ENTITY_NAME, Context::createDefaultContext(), null),
+            'paymentOrderId' => $order->id,
+            'outRefundNo' => $request->outRefundNo,
+            'amount' => $request->amount,
+            'currency' => $order->currency,
+            'reason' => $request->reason,
+            'stateId' => $this->initialStateIdLoader->get(PaymentRefundStates::STATE_MACHINE),
+        ]], Context::createDefaultContext());
 
         return $this->getRefund($id);
     }
@@ -250,18 +318,45 @@ final class PaymentRefundService
         ?string $outRefundId,
         ?array $response = null
     ): PaymentRefundEntity {
-        $this->stateHandler->finish($refund->id);
+        $responsePayload = $response ?? ($model === null ? null : $model->response());
 
-        $this->refundRepository->update([[
-            'id' => $refund->id,
-            'outRefundId' => $outRefundId,
-            'refundedAt' => $this->clock->now(),
-            'responsePayload' => $response ?? ($model === null ? null : $model->response()),
-        ]], Context::createDefaultContext());
+        $refund = $this->rowLock->transaction(function () use ($refund, $order, $outRefundId, $responsePayload): PaymentRefundEntity {
+            // Settlement always takes the refund lock first. A second worker waits here and then sees
+            // the committed timestamp instead of adding the same amount to the order a second time.
+            $settled = $this->rowLock->lockRefund($refund->id);
+            if ($settled === null) {
+                throw PaymentOrderException::refundNotFound($refund->id);
+            }
 
-        $order = $this->orderService->applyRefund($order, $refund->amount);
-        $refund = $this->getRefund($refund->id);
+            $refund = $this->getRefund($refund->id);
+            if ($settled) {
+                // Keep the same lock order on a replay. No amount is written, but the fresh order is
+                // needed to repair the announcement with the committed refunded amount.
+                if ($this->rowLock->lockOrder($order->id) === null) {
+                    throw PaymentOrderException::orderNotFound($order->id);
+                }
 
+                return $refund;
+            }
+
+            // applyRefund takes the order lock and writes its state and amount in this same
+            // transaction. The refund state, timestamp and response join that atomic booking.
+            $this->orderService->applyRefund($order, $refund->amount);
+            $this->stateHandler->finish($refund->id);
+
+            $this->refundRepository->update([[
+                'id' => $refund->id,
+                'outRefundId' => $outRefundId,
+                'refundedAt' => $this->clock->now(),
+                'responsePayload' => $responsePayload,
+            ]], Context::createDefaultContext());
+
+            return $this->getRefund($refund->id);
+        });
+
+        // The transaction has committed here. Repeating a notification repeats these idempotent
+        // effects on purpose, so a worker that died between commit and announcement can be repaired.
+        $order = $this->orderService->getById($order->id);
         $this->eventDispatcher->dispatch(new PaymentRefundFinishedEvent($refund, $order, Context::createDefaultContext()));
 
         // a refund is announced per refund and not per order: an order can be refunded more than once

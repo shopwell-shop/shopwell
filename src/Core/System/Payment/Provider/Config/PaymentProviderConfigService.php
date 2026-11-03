@@ -17,10 +17,10 @@ use Shopwell\Core\System\Payment\Provider\PaymentProvider;
  * Stores the merchant configuration of the payment interfaces: the credentials of an interface and
  * the parameters of its channels.
  *
- * Everything stored here is sealed with the same cipher the gateway reads with, so the plain text only
- * lives in the answer of the endpoints that hand the configuration to the administration. The values
- * that are not sent stay untouched, which is what makes it possible to edit a single field of an
- * interface without retyping the rest.
+ * Everything stored here is sealed with the same cipher the gateway reads with. Plain text is accepted
+ * while saving, but secret values are never handed back to the administration. Values sent empty stay
+ * untouched, which makes it possible to edit a single field without retyping the rest - including a
+ * secret whose original value the form cannot read back.
  *
  * An interface or channel that is switched on has to be complete, otherwise the first payment of an
  * app would fail with a message only the log sees.

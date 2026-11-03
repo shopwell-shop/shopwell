@@ -36,6 +36,7 @@ use Shopwell\Core\System\Payment\Transfer\PaymentTransferService;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferStateHandler;
 use Shopwell\Core\System\StateMachine\Loader\InitialStateIdLoader;
 use Shopwell\Core\System\StateMachine\StateMachineRegistry;
+use Shopwell\Tests\Unit\Core\System\Payment\NumberRangeFixture;
 use Symfony\Component\Clock\MockClock;
 
 /**
@@ -487,7 +488,7 @@ class PaymentTransferBookingTest extends TestCase
             $this->initialStateIdLoader(),
             $clock,
             $registry,
-            \Shopwell\Tests\Unit\Core\System\Payment\NumberRangeFixture::generator('PT1001'),
+            NumberRangeFixture::generator('PT1001'),
         );
 
         return new PaymentTransferBooking($appRepository, $registry, $recipientService, $transferService, $clock);

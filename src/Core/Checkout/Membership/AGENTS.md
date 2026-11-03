@@ -10,24 +10,47 @@ It is the only module that sells something without a cart and without an order o
 Entity/           plans (with translations), the purchase row, the subscription a purchase produces
 Extension/        Store API route extension - kept at the module root, like Order/, Payment/, Gateway/
 Purchase/         how a paid membership row is handed to the shared settlement kernel
-SalesChannel/     `/membership/purchase` and the presenter for plan / order output
+SalesChannel/     `/membership` (read: plans, channels, orders, running subscription), `/membership/purchase`, the presenter
 ScheduledTask/    the daily task that ends memberships whose period ran out
 Service/          plan catalogue, purchase, offer summary, Subscription (open / current / expire / revoke)
 Subscriber/       payment confirmed -> settlement -> subscription
 ```
 
+## Two routes: one page reads, one page buys
+
+`MembershipRoute` (`store-api.membership`) is the read side of `/account/membership`; it is the counterpart
+of `Loyalty/SalesChannel/LoyaltyRoute`, and they are deliberately two payloads rather than one.
+
+- `plans` / `channels` / `orders` come from `MembershipOfferService::forCustomer()` — the offer is one call
+  and one presenter, not a query per section.
+- `subscription` comes from `MembershipSubscriptionService::current()` and is `null` when the customer holds
+  none. **Never** build that block out of `loyalty_account.tier_id / membership_paid_until`:
+  the projection exists so the rest of the platform can answer "which tier applies" without knowing that
+  memberships exist. It carries no start date, no plan name and no amount, and the page shows all three.
+- `planName` is copied from the subscription row, not joined from the plan. A plan renamed later must not
+  rewrite what the customer agreed to — the same reason `membership_order` copies the price.
+- The read route is what the page polls after a purchase (`/account/membership/json`); it does not get a
+  second endpoint for "the order I just opened".
+
+**A new `SalesChannel/*Route.php` is not registered by being annotated.** Every checkout module's route
+directories are imported one by one in `src/Core/Checkout/Resources/config/routes.php`. The membership
+directory was missing from that list from the beginning, so `/membership/purchase` existed as a service
+and never reached the router — invisible, because the storefront calls the route object, not HTTP. Adding
+this read route is what surfaced it. Prove a route with `bin/console debug:router | grep <route name>`,
+never with `lint:container`: the container is happy either way.
+
 ## Three rows with three different meanings
 
 ```
-membership_order  ──(one purchase, never changes)──▶  membership_subscription  ──(projection)──▶  customer_loyalty
-   what was bought                                    the membership itself              membershipTierId / ValidUntil
+membership_order  ──(one purchase, never changes)──▶  membership_subscription  ──(projection)──▶  loyalty_account
+   what was bought                                    the membership itself              tierId / ValidUntil
 ```
 
 - `membership_order` — what the customer bought: plan, tier, duration and price **copied at purchase time**.
   A later price change must not rewrite history, so the row never reads the plan again after creation.
 - `membership_subscription` — the membership that purchase bought. One row is one uninterrupted period:
   the same tier pushes `ends_at`, another tier ends it (`end_reason = superseded`) and starts a new one.
-- `customer_loyalty.membership_tier_id` / `membership_valid_until` — **a projection of the subscription, and
+- `loyalty_account.tier_id` / `membership_paid_until` — **a projection of the subscription, and
   `MembershipSubscriptionService` is its only writer.** The storefront, the administration and
   `TierResolver` read it without knowing that a membership exists; nothing else may write those two fields.
 - the gateway's payment order — how it is collected. Its id is the membership order's own id (the `attach`
@@ -64,7 +87,7 @@ period ends — but the end is also written down:
 
 - `MembershipSubscriptionService::expireDue()` — the daily `MembershipExpirationTask` ends what ran out
   (`state = ended`, `end_reason = expired`), clears the projection and lets `TierResolver::resolve()` fall the
-  customer back to the tier their growth value earns.
+  customer back to the tier their tier points earn.
 - `revoke()` — ends a membership ahead of its period (refund, goodwill decision). Same fallback.
 - Both are idempotent: a row that is already `ended` is left alone, so a re-run of the task is free.
 - `STATE_ACTIVE` / `STATE_ENDED` only. *Why* it ended is `end_reason` (`expired`, `superseded`, `revoked`), so
@@ -99,6 +122,8 @@ prefix for the same reason.
 
 - `vendor/bin/phpunit --testsuite unit --filter "Checkout\\\\Membership"` and `--testsuite integration --filter "Core\\\\Checkout\\\\Membership"`.
 - `bin/console dal:validate`, `bin/console lint:container` after touching `DependencyInjection/membership.php`.
+- `bin/console debug:router` after adding a route file, and after adding a route to an existing one. A missing
+  entry in `src/Core/Checkout/Resources/config/routes.php` produces no error anywhere else.
 - The settlement path is only proven end to end: a unit test of the subscriber does not prove the tier was activated.
 - A new row means the test database needs the migration: `bin/console -e test database:migrate --all`
   (with `DATABASE_URL` pointing at `<db>_test`, the bootstrapper does not re-run migrations on an existing DB).

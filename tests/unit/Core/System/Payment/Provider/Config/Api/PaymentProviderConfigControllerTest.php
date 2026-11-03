@@ -55,13 +55,12 @@ class PaymentProviderConfigControllerTest extends TestCase
         static::assertSame('platform-app', $provider['credentialFields'][0]['value']);
         static::assertTrue($provider['credentialFields'][0]['configured']);
 
-        // the private key is secret as well, but it is echoed back like every other field: the form is
-        // the only place an operator can read it, and a value they cannot look up is a value they can
-        // only replace blindly. What is stored stays sealed.
+        // a secret only reports that it is configured; leaving its input empty keeps the stored value
         static::assertSame('private_key', $provider['credentialFields'][1]['name']);
         static::assertTrue($provider['credentialFields'][1]['secret']);
-        static::assertSame('sk', $provider['credentialFields'][1]['value']);
+        static::assertNull($provider['credentialFields'][1]['value']);
         static::assertTrue($provider['credentialFields'][1]['configured']);
+        static::assertStringNotContainsString('sk', (string) json_encode($provider));
 
         static::assertCount(1, $provider['channels']);
         static::assertSame('alipay_h5', $provider['channels'][0]['channel']);
@@ -70,6 +69,8 @@ class PaymentProviderConfigControllerTest extends TestCase
         static::assertTrue($provider['channels'][0]['enabled']);
         static::assertTrue($provider['channels'][0]['configured']);
         static::assertSame('wx-appid', $provider['channels'][0]['paramFields'][0]['value']);
+        static::assertNull($provider['channels'][0]['paramFields'][1]['value']);
+        static::assertTrue($provider['channels'][0]['paramFields'][1]['configured']);
     }
 
     public function testAnUnconfiguredProviderIsPresentedAsNotConfigured(): void
@@ -232,6 +233,9 @@ class PaymentProviderConfigControllerTest extends TestCase
         static::assertSame('alipay_h5', $data['channel']['channel']);
         static::assertTrue($data['channel']['enabled']);
         static::assertTrue($data['channel']['configured']);
+        static::assertSame('wx-appid', $data['channel']['paramFields'][0]['value']);
+        static::assertNull($data['channel']['paramFields'][1]['value']);
+        static::assertTrue($data['channel']['paramFields'][1]['configured']);
     }
 
     public function testResettingAnUnknownChannelIsRejected(): void
@@ -295,7 +299,10 @@ class PaymentProviderConfigControllerTest extends TestCase
                     PaymentFlow::REDIRECT,
                     ['CNY'],
                     [PaymentChannel::DEVICE_WAP, PaymentChannel::DEVICE_WEB],
-                    [new PaymentConfigField('appid', 'appid', PaymentConfigField::TYPE_TEXT, true)],
+                    [
+                        new PaymentConfigField('appid', 'appid', PaymentConfigField::TYPE_TEXT, true),
+                        new PaymentConfigField('sign_key', 'sign_key', PaymentConfigField::TYPE_TEXT, true, true),
+                    ],
                     ['openid' => true],
                 ),
             ],
@@ -325,7 +332,7 @@ class PaymentProviderConfigControllerTest extends TestCase
         $config->providerTechnicalName = 'alipay';
         $config->channelTechnicalName = 'alipay_h5';
         $config->enabled = true;
-        $config->params = PaymentControllerFixture::cipher()->encrypt(['appid' => 'wx-appid']);
+        $config->params = PaymentControllerFixture::cipher()->encrypt(['appid' => 'wx-appid', 'sign_key' => 'channel-secret']);
 
         return $config;
     }

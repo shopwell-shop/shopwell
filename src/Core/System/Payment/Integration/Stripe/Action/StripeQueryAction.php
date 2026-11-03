@@ -2,74 +2,42 @@
 
 namespace Shopwell\Core\System\Payment\Integration\Stripe\Action;
 
-use Payum\Core\Exception\RequestNotSupportedException;
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\System\Payment\Gateway\AbstractPaymentAction;
+use Shopwell\Core\System\Payment\Gateway\AbstractPaymentQueryAction;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
 use Shopwell\Core\System\Payment\Gateway\Request\Payload;
-use Shopwell\Core\System\Payment\Gateway\Request\PaymentQuery;
 use Shopwell\Core\System\Payment\Gateway\Request\QueryResult;
 use Shopwell\Core\System\Payment\Integration\Stripe\Api\StripeApi;
-use Shopwell\Core\System\Payment\PaymentException;
-use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
 
 /**
  * Asks stripe what happened to a payment whose notification never arrived.
  *
- * Stripe is found again through the answer of its own capture, which is either a payment intent (the
- * sdk flow, an id that starts with `pi_`) or a hosted checkout session (the redirect flow, an id that
- * starts with `cs_`) - a session only gets its intent when the payer confirmed it, so both have to be
- * asked for. The answer says what the platform should do with the order, see {@see QueryResult}; a
- * resource stripe does not know answers `absent` instead of failing, which is what the expiry of the
- * order waits for.
- *
  * @internal
  */
 #[Package('framework')]
-final class StripeQueryAction extends AbstractPaymentAction
+final class StripeQueryAction extends AbstractPaymentQueryAction
 {
     protected string $apiClass = StripeApi::class;
 
-    public function capability(): PaymentCapability
+    protected function requestPayload(PaymentGatewayModel $model): array
     {
-        return PaymentCapability::QUERY;
-    }
-
-    public function execute($request): void
-    {
-        RequestNotSupportedException::assertSupports($this, $request);
-
-        $model = $this->modelOf($request);
-        $api = $this->api();
-
         $last = $this->lastChannelResponse($model);
         $id = Payload::string($last, 'id');
         $intent = Payload::string($last, 'payment_intent')
             ?? (str_starts_with((string) $id, 'pi_') ? $id : null);
-        // the intent wins whenever there is one, the session is the fallback of the redirect flow
-        $session = $intent === null ? $id : null;
 
-        $this->recordRequest($model, [
-            'session_id' => $session,
+        return [
+            // the intent wins whenever there is one, the session is the fallback of the redirect flow
+            'session_id' => $intent === null ? $id : null,
             'payment_intent_id' => $intent,
-        ]);
-
-        try {
-            $result = $api->query($session, $intent);
-        } catch (\Throwable $exception) {
-            $this->recordResponse($model, ['error' => $exception->getMessage()]);
-
-            throw PaymentException::gatewayError($api->channel(), $exception->getMessage());
-        }
-
-        $this->recordResponse($model, $result->raw);
-
-        $this->setResult($model, $result);
+        ];
     }
 
-    public function supports($request): bool
+    protected function query(PaymentGatewayModel $model): QueryResult
     {
-        return $this->isSupported($request, PaymentQuery::class);
+        $payload = $this->requestPayload($model);
+
+        return $this->api()->query($payload['session_id'], $payload['payment_intent_id']);
     }
 
     protected function api(): StripeApi
@@ -78,17 +46,5 @@ final class StripeQueryAction extends AbstractPaymentAction
         \assert($api instanceof StripeApi);
 
         return $api;
-    }
-
-    /**
-     * The answer of the last capture, which is where the session or the intent of stripe is found.
-     *
-     * @return array<string, mixed>
-     */
-    private function lastChannelResponse(PaymentGatewayModel $model): array
-    {
-        $last = $this->value($model, PaymentGatewayModel::LAST_CHANNEL_RESPONSE);
-
-        return \is_array($last) ? $last : [];
     }
 }

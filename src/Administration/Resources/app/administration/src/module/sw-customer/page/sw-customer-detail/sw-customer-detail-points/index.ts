@@ -7,7 +7,7 @@ import type CriteriaType from 'src/core/data/criteria.data';
 
 import template from './sw-customer-detail-points.html.twig';
 import './sw-customer-detail-points.scss';
-import type { LoyaltySummary, LoyaltySummaryTransaction } from '../../../../sw-loyalty/service/loyalty.api.service';
+import type { LoyaltySummary, LoyaltySummaryTransaction } from '../../../../sw-membership/service/loyalty.api.service';
 
 const { Mixin } = Shopwell;
 const { Criteria } = Shopwell.Data;
@@ -26,11 +26,11 @@ interface MembershipForm {
     durationDays: number;
 }
 
-interface MembershipTierOption {
+interface TierOption {
     id: string;
     name: string;
     level: number;
-    minGrowthValue: number;
+    minTierPoints: number;
 }
 
 interface MembershipOrder {
@@ -77,7 +77,7 @@ export default defineComponent({
             loyaltySummary: null as LoyaltySummary | null,
             transactions: [] as LoyaltySummaryTransaction[],
             orders: [] as MembershipOrder[],
-            tiers: [] as MembershipTierOption[],
+            tiers: [] as TierOption[],
             showPointsModal: false,
             showMembershipModal: false,
             pointsForm: { points: 0, comment: '' } as PointsForm,
@@ -116,13 +116,13 @@ export default defineComponent({
             return criteria;
         },
 
-        currentTier(): MembershipTierOption | null {
-            const tierId = this.loyaltySummary?.membershipTier?.id;
+        currentTier(): TierOption | null {
+            const tierId = this.loyaltySummary?.tier?.id;
 
             return this.tiers.find((tier) => tier.id === tierId) ?? null;
         },
 
-        nextTier(): MembershipTierOption | null {
+        nextTier(): TierOption | null {
             const current = this.currentTier;
 
             if (!current) {
@@ -132,53 +132,53 @@ export default defineComponent({
             return this.tiers.find((tier) => tier.level > current.level) ?? null;
         },
 
-        growthValue(): number {
-            return this.loyaltySummary?.growthValue ?? 0;
+        tierPoints(): number {
+            return this.loyaltySummary?.tierPoints ?? 0;
         },
 
         /**
          * How far the customer is on the way to the next tier, 0 when there is no next tier.
          */
-        growthProgress(): number {
+        tierPointsProgress(): number {
             const next = this.nextTier;
 
             if (!next) {
                 return 0;
             }
 
-            const from = this.currentTier?.minGrowthValue ?? 0;
-            const span = next.minGrowthValue - from;
+            const from = this.currentTier?.minTierPoints ?? 0;
+            const span = next.minTierPoints - from;
 
             if (span <= 0) {
                 return 100;
             }
 
-            const reached = Math.min(Math.max(this.growthValue - from, 0), span);
+            const reached = Math.min(Math.max(this.tierPoints - from, 0), span);
 
             return Math.round((reached / span) * 100);
         },
 
-        membershipValidUntil(): string | null {
-            return this.loyaltySummary?.membershipValidUntil ?? null;
+        membershipPaidUntil(): string | null {
+            return this.loyaltySummary?.membershipPaidUntil ?? null;
         },
 
         membershipIsRunning(): boolean {
-            if (!this.membershipValidUntil) {
+            if (!this.membershipPaidUntil) {
                 return false;
             }
 
-            return new Date(this.membershipValidUntil).getTime() > Date.now();
+            return new Date(this.membershipPaidUntil).getTime() > Date.now();
         },
 
-        membershipTierLabel(): string {
-            const tier = this.loyaltySummary?.membershipTier;
+        tierLabel(): string {
+            const tier = this.loyaltySummary?.tier;
 
             if (!tier) {
-                return this.$t('sw-customer.detailPoints.noMembershipTier');
+                return this.$t('sw-customer.detailPoints.noTier');
             }
 
             return this.$t(
-                'sw-customer.detailPoints.membershipTierValue',
+                'sw-customer.detailPoints.tierValue',
                 {
                     name: tier.name,
                     level: tier.level,
@@ -340,7 +340,7 @@ export default defineComponent({
 
         loadTiers(): Promise<void> {
             return this.loyaltyTierRepository.search(this.tierCriteria).then((tiers) => {
-                this.tiers = tiers as unknown as MembershipTierOption[];
+                this.tiers = tiers as unknown as TierOption[];
             });
         },
 

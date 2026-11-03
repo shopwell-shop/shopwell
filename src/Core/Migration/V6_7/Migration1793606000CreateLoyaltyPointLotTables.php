@@ -74,7 +74,7 @@ class Migration1793606000CreateLoyaltyPointLotTables extends MigrationStep
                 KEY `idx.loyalty_point_lot_use.lot_id` (`lot_id`),
                 KEY `idx.loyalty_point_lot_use.transaction_id` (`transaction_id`),
                 CONSTRAINT `fk.loyalty_point_lot_use.lot_id` FOREIGN KEY (`lot_id`) REFERENCES `loyalty_point_lot` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-                CONSTRAINT `fk.loyalty_point_lot_use.transaction_id` FOREIGN KEY (`transaction_id`) REFERENCES `customer_point_transaction` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+                CONSTRAINT `fk.loyalty_point_lot_use.transaction_id` FOREIGN KEY (`transaction_id`) REFERENCES `loyalty_point_transaction` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;'
         );
 
@@ -124,16 +124,16 @@ class Migration1793606000CreateLoyaltyPointLotTables extends MigrationStep
                         ORDER BY (booking.`expires_at` IS NULL), booking.`expires_at`, booking.`created_at`, booking.`id`
                         ROWS UNBOUNDED PRECEDING
                     ) AS `cumulative`
-                FROM `customer_point_transaction` booking
+                FROM `loyalty_point_transaction` booking
                 WHERE booking.`points` > 0 AND booking.`type` IN (\'award\', \'adjust\')
             ) earned
             INNER JOIN (
                 SELECT `customer_id`, SUM(`points`) AS `award_total`
-                FROM `customer_point_transaction`
+                FROM `loyalty_point_transaction`
                 WHERE `points` > 0 AND `type` IN (\'award\', \'adjust\')
                 GROUP BY `customer_id`
             ) totals ON totals.`customer_id` = earned.`customer_id`
-            LEFT JOIN `customer_loyalty` loyalty ON loyalty.`customer_id` = earned.`customer_id`
+            LEFT JOIN `loyalty_account` loyalty ON loyalty.`customer_id` = earned.`customer_id`
             WHERE GREATEST(0, LEAST(earned.`points`, earned.`cumulative` - COALESCE(totals.`award_total` - loyalty.`points_balance`, 0))) > 0;'
         );
     }

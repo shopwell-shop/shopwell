@@ -61,7 +61,7 @@ class VisibleMenuTreeBuilderTest extends TestCase
 
         static::assertCount(\count((new CoreAdminMenuProvider())->getDefinitions()), $flattened);
         static::assertArrayHasKey('sw-system', $flattened);
-        static::assertArrayHasKey('sw.system.menu', $flattened);
+        static::assertArrayHasKey('sw-system-menu', $flattened);
     }
 
     public function testRendersTheSeededNavigationInTheDeclaredOrder(): void
@@ -80,7 +80,7 @@ class VisibleMenuTreeBuilderTest extends TestCase
         // and the system menu carries the three sub menus of the redesign
         $system = $flattened['sw-system'];
         static::assertSame(
-            ['sw.system.user', 'sw.system.role', 'sw.system.menu'],
+            ['sw-system-user', 'sw-system-role', 'sw-system-menu'],
             array_map(static fn (array $node): ?string => $node['internalKey'], $system['children'])
         );
     }
@@ -101,7 +101,7 @@ class VisibleMenuTreeBuilderTest extends TestCase
 
         // a hidden parent and its children would be unreachable, so neither is rendered
         static::assertArrayNotHasKey('sw-system', $flattened);
-        static::assertArrayNotHasKey('sw.system.menu', $flattened);
+        static::assertArrayNotHasKey('sw-system-menu', $flattened);
     }
 
     private function createSynchronizer(): CoreMenuSynchronizer

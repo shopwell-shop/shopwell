@@ -65,12 +65,12 @@ class RowLockTest extends TestCase
         $connection = static::createStub(Connection::class);
         $connection->method('fetchAssociative')->willReturn([
             'id' => Uuid::fromHexToBytes(self::ACCOUNT_ID),
-            'membership_tier_id' => null,
+            'tier_id' => null,
         ]);
 
-        $row = (new RowLock($connection))->lock('customer_loyalty', ['customer_id' => self::CUSTOMER_ID]);
+        $row = (new RowLock($connection))->lock('loyalty_account', ['customer_id' => self::CUSTOMER_ID]);
 
-        static::assertNull($row['membership_tier_id'] ?? null);
+        static::assertNull($row['tier_id'] ?? null);
     }
 
     public function testCreateUnlessExistsToleratesAParallelTransactionThatWon(): void

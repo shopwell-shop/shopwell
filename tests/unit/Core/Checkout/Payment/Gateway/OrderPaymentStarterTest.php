@@ -44,12 +44,12 @@ class OrderPaymentStarterTest extends TestCase
 
         yield 'redirect to the self submitting form page' => [
             new PayParams(PaymentFlow::REDIRECT, httpMethod: 'POST', htmlForm: '<form></form>'),
-            '/generated/frontend.payment.gateway.form/PG-1',
+            '/generated/frontend.payment.gateway.form/payment-order-id/PG-1',
         ];
 
         yield 'qr code to the qr page' => [
             new PayParams(PaymentFlow::QRCODE, extra: ['qr_code' => 'https://qr.example.test']),
-            '/generated/frontend.payment.gateway.qr/PG-1',
+            '/generated/frontend.payment.gateway.qr/payment-order-id/PG-1',
         ];
     }
 

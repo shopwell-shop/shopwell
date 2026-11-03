@@ -21,6 +21,8 @@ use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;
 use Shopwell\Core\System\Payment\ScheduledTask\ExpirePaymentOrdersTaskHandler;
 use Shopwell\Core\System\StateMachine\Loader\InitialStateIdLoader;
 use Shopwell\Core\System\StateMachine\StateMachineRegistry;
+use Shopwell\Tests\Unit\Core\System\Payment\NumberRangeFixture;
+use Shopwell\Tests\Unit\Core\System\Payment\Order\_fixtures\PaymentOrderRowLockStub;
 use Symfony\Component\Clock\MockClock;
 
 /**
@@ -113,7 +115,8 @@ class ExpirePaymentOrdersTaskHandlerTest extends TestCase
             $initialStateIdLoader,
             new PaymentOrderStateHandler(static::createStub(StateMachineRegistry::class)),
             new MockClock('2024-01-01T00:00:00+00:00'),
-            \Shopwell\Tests\Unit\Core\System\Payment\NumberRangeFixture::generator('PG1001')
+            NumberRangeFixture::generator('PG1001'),
+            new PaymentOrderRowLockStub()
         );
     }
 }

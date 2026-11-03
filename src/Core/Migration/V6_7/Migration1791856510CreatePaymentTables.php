@@ -41,8 +41,7 @@ use Shopwell\Core\System\Payment\Subscription\PaymentSubscriptionStates;
  * keys. Adding a product therefore never duplicates a key.
  *
  * The rest of the tables is the bookkeeping: the payment orders, their attempts, the refunds, the
- * incoming notifications, the outgoing webhook deliveries and the payum tokens of the running
- * checkouts.
+ * incoming notifications and the outgoing webhook deliveries.
  *
  * There are two kinds of tenants: an external app creates its orders through the api and carries its
  * own out trade number, while the orders of the shop itself reference the checkout order and its
@@ -205,7 +204,6 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
         $this->createPaymentAppProviderTable($connection);
         $this->createPaymentAppChannelTable($connection);
         $this->createPaymentOrderTable($connection);
-        $this->createPaymentGatewayTokenTable($connection);
         $this->createPaymentTransactionTable($connection);
         $this->createPaymentRefundTable($connection);
         $this->createPaymentNotificationTable($connection);
@@ -692,34 +690,6 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
         );
     }
 
-    /**
-     * The payum tokens of the running checkouts. A token is the reference an interface redirects the
-     * shopper back to, so it has to be found by its hash on every node - hence the unique index.
-     *
-     * The token is a dependent row: it grants access to one order and must not survive it, so the
-     * reference is declared with a cascade delete - like the transactions and the notifications of an
-     * order, and unlike the app, which is the owner of the order.
-     */
-    private function createPaymentGatewayTokenTable(Connection $connection): void
-    {
-        $connection->executeStatement(
-            'CREATE TABLE IF NOT EXISTS `payment_gateway_token` (
-                `id` BINARY(16) NOT NULL,
-                `hash` VARCHAR(128) NOT NULL,
-                `order_id` BINARY(16) NULL,
-                `target_url` VARCHAR(2048) NULL,
-                `after_url` VARCHAR(2048) NULL,
-                `gateway_name` VARCHAR(64) NULL,
-                `created_at` DATETIME(3) NOT NULL,
-                `updated_at` DATETIME(3) NULL,
-                PRIMARY KEY (`id`),
-                UNIQUE KEY `uniq.payment_gateway_token.hash` (`hash`),
-                KEY `idx.payment_gateway_token.order_id` (`order_id`),
-                CONSTRAINT `fk.payment_gateway_token.order_id` FOREIGN KEY (`order_id`) REFERENCES `payment_order` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;'
-        );
-    }
-
     private function createPaymentTransactionTable(Connection $connection): void
     {
         $connection->executeStatement(
@@ -826,6 +796,8 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
                 `signature` VARCHAR(255) NULL,
                 `status` VARCHAR(32) NOT NULL,
                 `attempt_count` INT NOT NULL,
+                `claim_token` VARCHAR(32) NULL,
+                `claim_expires_at` DATETIME(3) NULL,
                 `next_retry_at` DATETIME(3) NULL,
                 `last_http_status` INT NULL,
                 `last_response` LONGTEXT NULL,
@@ -836,6 +808,7 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
                 PRIMARY KEY (`id`),
                 UNIQUE KEY `uniq.payment_webhook_delivery.subject` (`payment_order_id`, `event`, `subject`),
                 KEY `idx.payment_webhook_delivery.retry` (`status`, `next_retry_at`),
+                KEY `idx.payment_webhook_delivery.claim` (`status`, `claim_expires_at`),
                 KEY `idx.payment_webhook_delivery.payment_app_id` (`payment_app_id`),
                 CONSTRAINT `fk.payment_webhook_delivery.payment_order_id` FOREIGN KEY (`payment_order_id`) REFERENCES `payment_order` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
                 CONSTRAINT `fk.payment_webhook_delivery.payment_app_id` FOREIGN KEY (`payment_app_id`) REFERENCES `payment_app` (`id`) ON DELETE CASCADE ON UPDATE CASCADE

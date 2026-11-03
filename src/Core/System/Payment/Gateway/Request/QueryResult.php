@@ -50,4 +50,13 @@ final readonly class QueryResult
         public array $raw = [],
     ) {
     }
+
+    /**
+     * The channel explicitly answered that it does not know the payment. This is an answer, not an
+     * exception, and it is what allows an abandoned order to expire after reconciliation.
+     */
+    public static function absent(string $message): self
+    {
+        return new self(self::STATUS_ABSENT, raw: ['error' => $message]);
+    }
 }

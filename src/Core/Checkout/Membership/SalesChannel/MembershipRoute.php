@@ -25,7 +25,7 @@ use Symfony\Component\Routing\Attribute\Route;
  * the other page.
  *
  * What the page shows about the running membership comes from the subscription, not from the
- * `membership_tier_id` / `membership_valid_until` projection on the loyalty account: the projection sits
+ * `tier_id` / `membership_paid_until` projection on the loyalty account: the projection sits
  * there so the rest of the platform can read "which tier applies" without knowing that memberships
  * exist, and a projection is not a place to read the period from.
  */

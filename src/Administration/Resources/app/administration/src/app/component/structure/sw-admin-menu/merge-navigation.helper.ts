@@ -47,6 +47,16 @@ export type DatabaseMenuNode = {
 /** Keeps the gap between two siblings the declarations use as well (10, 20, 30, …) */
 const POSITION_STEP = 10;
 
+/**
+ * Entries whose page lists its own sections.
+ *
+ * The settings page renders every settings module inside itself, so the entries an
+ * administrator files below the settings entry are managed there - and the sidebar opens the
+ * page instead of a flyout with the same list a second time. The entries are not dropped:
+ * they stay in the management tree, they are only not rendered as a second navigation.
+ */
+const SELF_NAVIGATING_KEYS = new Set(['sw-settings']);
+
 function nodeKey(node: DatabaseMenuNode): string {
     return node.internalKey ?? node.id.replace(/^virtual:/, '');
 }
@@ -86,6 +96,13 @@ export function mergeDatabaseNavigation(
         }
     };
 
+    const collectKeys = (nodes: DatabaseMenuNode[]): void => {
+        nodes.forEach((node) => {
+            matched.add(nodeKey(node));
+            collectKeys(node.children ?? []);
+        });
+    };
+
     const renderLevel = (nodes: DatabaseMenuNode[], parentId: string | null): void => {
         nodes.forEach((node, index) => {
             const key = nodeKey(node);
@@ -115,6 +132,15 @@ export function mergeDatabaseNavigation(
             };
 
             merged.push(entry);
+
+            if (SELF_NAVIGATING_KEYS.has(key)) {
+                // marked as matched all the same: the fallback pass below would otherwise put
+                // every one of them back into the navigation as a level one entry
+                collectKeys(node.children ?? []);
+
+                return;
+            }
+
             renderLevel(node.children ?? [], entry.id ?? null);
         });
     };

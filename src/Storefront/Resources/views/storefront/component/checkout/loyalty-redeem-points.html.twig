@@ -4,8 +4,8 @@
             <div class="checkout-aside-action checkout-aside-loyalty"
                  data-loyalty-redeem-points="true"
                  data-loyalty-redeem-points-options="{{ {
-                     infoUrl: path('frontend.account.loyalty.json'),
-                     redeemUrl: path('frontend.account.loyalty.redeem')
+                     infoUrl: path('frontend.account.rewards.detail'),
+                     redeemUrl: path('frontend.account.rewards.redeem')
                  }|json_encode }}">
                 {% block component_checkout_loyalty_redeem_points_label %}
                     <label class="mb-1" for="loyaltyRedeemPointsInput">

@@ -34,6 +34,8 @@ use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;
 use Shopwell\Core\System\StateMachine\Loader\InitialStateIdLoader;
 use Shopwell\Core\System\StateMachine\StateMachineRegistry;
 use Shopwell\Core\Test\Stub\DataAbstractionLayer\StaticEntityRepository;
+use Shopwell\Tests\Unit\Core\System\Payment\NumberRangeFixture;
+use Shopwell\Tests\Unit\Core\System\Payment\Order\_fixtures\PaymentOrderRowLockStub;
 use Symfony\Component\Clock\MockClock;
 use Symfony\Component\HttpFoundation\RequestStack;
 
@@ -214,7 +216,8 @@ class StorefrontPaymentServiceTest extends TestCase
             static::createStub(InitialStateIdLoader::class),
             new PaymentOrderStateHandler(static::createStub(StateMachineRegistry::class)),
             new MockClock('2026-06-01 12:00:00'),
-            \Shopwell\Tests\Unit\Core\System\Payment\NumberRangeFixture::generator('PG1001'),
+            NumberRangeFixture::generator('PG1001'),
+            new PaymentOrderRowLockStub(),
         );
 
         return new StorefrontPaymentService(
@@ -233,7 +236,7 @@ class StorefrontPaymentServiceTest extends TestCase
                 $configResolver,
                 $orderService,
                 new PaymentNotifyUrlBuilder(new RequestStack()),
-                new MockClock('2026-06-01 12:00:00'),
+                NumberRangeFixture::generator('PX1001'),
             ),
             $translator ?? $this->translator([]),
         );

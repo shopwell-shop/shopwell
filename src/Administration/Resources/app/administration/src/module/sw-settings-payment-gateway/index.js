@@ -55,7 +55,7 @@ Module.register('sw-settings-payment-gateway', {
             parent: 'sw-settings',
             path: 'sw.settings.payment.gateway.list',
             icon: 'regular-plug',
-            position: 650,
+            position: 800,
             privilege: 'payment_app.viewer',
         },
     ],

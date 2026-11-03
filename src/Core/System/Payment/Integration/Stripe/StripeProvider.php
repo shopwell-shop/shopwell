@@ -18,7 +18,6 @@ use Shopwell\Core\System\Payment\Provider\AbstractPaymentProvider;
 use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
 use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
 use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
-use Shopwell\Core\System\Payment\Provider\Config\PaymentConfigField;
 use Shopwell\Core\System\Payment\Provider\Transfer\PaymentTransferRules;
 use Shopwell\Core\System\Payment\Transfer\Notification\PaymentTransferNotificationVerifierInterface;
 
@@ -86,11 +85,6 @@ final class StripeProvider extends AbstractPaymentProvider
         ];
     }
 
-    public function getCaptureAction(): AbstractPaymentAction
-    {
-        return $this->captureAction;
-    }
-
     public function getNotificationExtractor(): PaymentNotificationExtractorInterface
     {
         return $this->notificationExtractor;
@@ -116,33 +110,11 @@ final class StripeProvider extends AbstractPaymentProvider
     }
 
     /**
-     * @return list<PaymentConfigField>
+     * The translated merchant and channel fields, read with the platform plugin-config reader.
      */
-    public function getCredentials(): array
+    public function getConfigFile(): string
     {
-        return [
-            new PaymentConfigField(
-                name: 'secret_key',
-                label: 'Secret Key',
-                type: PaymentConfigField::TYPE_PASSWORD,
-                required: true,
-                secret: true,
-            ),
-            new PaymentConfigField(
-                name: 'publishable_key',
-                label: 'Publishable Key',
-            ),
-            new PaymentConfigField(
-                name: 'webhook_secret',
-                label: 'Webhook 签名密钥',
-                type: PaymentConfigField::TYPE_PASSWORD,
-                secret: true,
-            ),
-            new PaymentConfigField(
-                name: 'api_version',
-                label: 'API 版本',
-            ),
-        ];
+        return __DIR__ . '/Resources/config/payment-provider.xml';
     }
 
     /**

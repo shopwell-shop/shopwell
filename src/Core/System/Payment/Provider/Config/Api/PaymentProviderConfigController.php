@@ -28,10 +28,10 @@ use Symfony\Component\Routing\Attribute\Route;
  * `payment-provider.xml` of the interface, so an interface of an extension is configurable without
  * touching the administration at all.
  *
- * The stored values are echoed back, secret ones included, so an operator can read the merchant
- * account an interface runs on and correct a single field without retyping the rest. What is stored
- * stays sealed with the same cipher the gateway reads with: the plain text only exists in the answer
- * to this endpoint, never in the database. The sealing and the writing itself live in the
+ * Non-secret values are echoed back so an operator can read the merchant account an interface runs
+ * on and correct a single field without retyping the rest. A secret only reports whether it is
+ * configured; its original value is never returned. Everything stays sealed with the same cipher the
+ * gateway reads with. The sealing and the writing itself live in the
  * {@see PaymentProviderConfigService}, this controller only translates between the request and the
  * presentation.
  *
@@ -235,10 +235,8 @@ class PaymentProviderConfigController extends AbstractController
     /**
      * The fields of a configuration as the form renders them.
      *
-     * Every field carries its stored value, secret ones included: the form is a place to read and to
-     * correct, and a field that starts empty forces the operator to retype values they cannot look up
-     * anywhere. `configured` stays, so a field that has no value yet is still distinguishable from one
-     * whose value happens to be empty.
+     * A non-secret field carries its stored value. A secret only carries `configured`: the empty input
+     * means "keep the stored secret" when the form is saved, so no original value has to cross the api.
      *
      * @param list<PaymentConfigField> $fields
      * @param array<string, mixed> $values
@@ -254,7 +252,7 @@ class PaymentProviderConfigController extends AbstractController
             $hasValue = \is_scalar($stored) && (string) $stored !== '';
 
             $presented[] = $field->toArray() + [
-                'value' => $hasValue ? (string) $stored : null,
+                'value' => $hasValue && !$field->secret ? (string) $stored : null,
                 'configured' => $hasValue,
             ];
         }

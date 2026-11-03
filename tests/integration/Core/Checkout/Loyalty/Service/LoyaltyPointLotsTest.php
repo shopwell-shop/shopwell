@@ -3,10 +3,10 @@
 namespace Shopwell\Tests\Integration\Core\Checkout\Loyalty\Service;
 
 use PHPUnit\Framework\TestCase;
-use Shopwell\Core\Checkout\Loyalty\Entity\CustomerLoyalty\CustomerLoyaltyCollection;
-use Shopwell\Core\Checkout\Loyalty\Entity\CustomerLoyalty\CustomerLoyaltyEntity;
-use Shopwell\Core\Checkout\Loyalty\Entity\CustomerPointTransaction\CustomerPointTransactionCollection;
-use Shopwell\Core\Checkout\Loyalty\Entity\CustomerPointTransaction\CustomerPointTransactionEntity;
+use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyPointTransaction\LoyaltyPointTransactionCollection;
+use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyPointTransaction\LoyaltyPointTransactionEntity;
+use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyAccount\LoyaltyAccountCollection;
+use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyAccount\LoyaltyAccountEntity;
 use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyPointLot\LoyaltyPointLotCollection;
 use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyPointLot\LoyaltyPointLotEntity;
 use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyPointLotUse\LoyaltyPointLotUseCollection;
@@ -56,12 +56,12 @@ class LoyaltyPointLotsTest extends TestCase
     private EntityRepository $uses;
 
     /**
-     * @var EntityRepository<CustomerLoyaltyCollection>
+     * @var EntityRepository<LoyaltyAccountCollection>
      */
     private EntityRepository $accounts;
 
     /**
-     * @var EntityRepository<CustomerPointTransactionCollection>
+     * @var EntityRepository<LoyaltyPointTransactionCollection>
      */
     private EntityRepository $bookings;
 
@@ -70,8 +70,8 @@ class LoyaltyPointLotsTest extends TestCase
         $this->context = Context::createDefaultContext();
         $this->lots = static::getContainer()->get('loyalty_point_lot.repository');
         $this->uses = static::getContainer()->get('loyalty_point_lot_use.repository');
-        $this->accounts = static::getContainer()->get('customer_loyalty.repository');
-        $this->bookings = static::getContainer()->get('customer_point_transaction.repository');
+        $this->accounts = static::getContainer()->get('loyalty_account.repository');
+        $this->bookings = static::getContainer()->get('loyalty_point_transaction.repository');
     }
 
     public function testSpendingTakesTheBatchThatExpiresFirst(): void
@@ -372,20 +372,20 @@ class LoyaltyPointLotsTest extends TestCase
         return $uses;
     }
 
-    private function accountOf(string $customerId): CustomerLoyaltyEntity
+    private function accountOf(string $customerId): LoyaltyAccountEntity
     {
         $criteria = new Criteria();
         $criteria->addFilter(new EqualsFilter('customerId', $customerId));
         $criteria->setLimit(1);
 
         $account = $this->accounts->search($criteria, $this->context)->getEntities()->first();
-        static::assertInstanceOf(CustomerLoyaltyEntity::class, $account);
+        static::assertInstanceOf(LoyaltyAccountEntity::class, $account);
 
         return $account;
     }
 
     /**
-     * @return list<CustomerPointTransactionEntity>
+     * @return list<LoyaltyPointTransactionEntity>
      */
     private function bookingsOf(string $customerId): array
     {
@@ -395,11 +395,11 @@ class LoyaltyPointLotsTest extends TestCase
 
         return array_values(array_filter(
             $this->bookings->search($criteria, $this->context)->getEntities()->getElements(),
-            static fn ($booking): bool => $booking instanceof CustomerPointTransactionEntity
+            static fn ($booking): bool => $booking instanceof LoyaltyPointTransactionEntity
         ));
     }
 
-    private function expiryBookingOf(string $customerId): CustomerPointTransactionEntity
+    private function expiryBookingOf(string $customerId): LoyaltyPointTransactionEntity
     {
         $bookings = $this->expiryBookingsOf($customerId);
         static::assertCount(1, $bookings);
@@ -408,7 +408,7 @@ class LoyaltyPointLotsTest extends TestCase
     }
 
     /**
-     * @return list<CustomerPointTransactionEntity>
+     * @return list<LoyaltyPointTransactionEntity>
      */
     private function expiryBookingsOf(string $customerId): array
     {
@@ -420,7 +420,7 @@ class LoyaltyPointLotsTest extends TestCase
 
         return array_values(array_filter(
             $this->bookings->search($criteria, $this->context)->getEntities()->getElements(),
-            static fn ($booking): bool => $booking instanceof CustomerPointTransactionEntity
+            static fn ($booking): bool => $booking instanceof LoyaltyPointTransactionEntity
         ));
     }
 

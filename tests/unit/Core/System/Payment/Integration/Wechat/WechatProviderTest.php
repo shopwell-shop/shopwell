@@ -12,6 +12,7 @@ use Shopwell\Core\System\Payment\Integration\Wechat\Request\WechatPayParamsDecod
 use Shopwell\Core\System\Payment\Integration\Wechat\WechatProvider;
 use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
 use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
+use Shopwell\Core\System\Payment\Provider\Config\PaymentConfigReader;
 use Shopwell\Core\System\Payment\Provider\PaymentProviderFactory;
 use Shopwell\Tests\Unit\Core\System\Payment\Provider\Fixtures\PlatformProviders;
 
@@ -45,7 +46,7 @@ class WechatProviderTest extends TestCase
             ['capture', 'refund', 'notification', 'query', 'close', 'transfer', 'transfer_query'],
             array_map(static fn ($action): string => $action->capability()->value, $provider->getActions())
         );
-        static::assertInstanceOf(WechatCaptureAction::class, $provider->getCaptureAction());
+        static::assertInstanceOf(WechatCaptureAction::class, $provider->getActions()[0]);
         static::assertInstanceOf(WechatPayParamsDecoder::class, $provider->getPayParamsDecoder());
         static::assertInstanceOf(WechatTransferNotificationVerifier::class, $provider->getTransferNotificationVerifier());
     }
@@ -64,7 +65,7 @@ class WechatProviderTest extends TestCase
 
     public function testDeclaresTheMerchantCredentialsButNoAppid(): void
     {
-        $fields = PlatformProviders::wechat()->getCredentials();
+        $fields = (new PaymentProviderFactory(new PaymentConfigReader()))->create(PlatformProviders::wechat())->credentials;
 
         static::assertSame(
             ['mch_id', 'mch_serial', 'mch_private_key', 'apiv3_key', 'platform_serial', 'platform_cert', 'platform_certs'],
@@ -82,7 +83,7 @@ class WechatProviderTest extends TestCase
 
     public function testDeclaresTheFiveChannelsWithTheirAppid(): void
     {
-        $channels = PlatformProviders::wechat()->getChannels();
+        $channels = array_values((new PaymentProviderFactory(new PaymentConfigReader()))->create(PlatformProviders::wechat())->channels);
 
         static::assertSame(
             ['wechat_h5', 'wechat_native', 'wechat_jsapi', 'wechat_mini', 'wechat_app'],
@@ -131,7 +132,7 @@ class WechatProviderTest extends TestCase
 
     public function testTheDeclarationIsCoherentEnoughToBuildTheSnapshot(): void
     {
-        $provider = (new PaymentProviderFactory())->create(PlatformProviders::wechat());
+        $provider = (new PaymentProviderFactory(new PaymentConfigReader()))->create(PlatformProviders::wechat());
 
         static::assertSame('wechat', $provider->technicalName);
         static::assertCount(7, $provider->credentials);

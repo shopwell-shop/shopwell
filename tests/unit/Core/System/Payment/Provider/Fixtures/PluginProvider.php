@@ -54,11 +54,6 @@ final class PluginProvider extends AbstractPaymentProvider
         return [new TestPaymentAction(PaymentCapability::CAPTURE)];
     }
 
-    public function getCaptureAction(): AbstractPaymentAction
-    {
-        return $this->getActions()[0];
-    }
-
     public function getNotificationExtractor(): PaymentNotificationExtractorInterface
     {
         return new TestNotificationExtractor();

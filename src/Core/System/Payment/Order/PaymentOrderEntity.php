@@ -23,7 +23,6 @@ use Shopwell\Core\System\Payment\App\PaymentAppEntity;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationEntity;
 use Shopwell\Core\System\Payment\Order\Aggregate\PaymentRefund\PaymentRefundEntity;
 use Shopwell\Core\System\Payment\Order\Aggregate\PaymentTransaction\PaymentTransactionEntity;
-use Shopwell\Core\System\Payment\Security\PaymentGatewayTokenEntity;
 use Shopwell\Core\System\Payment\Webhook\PaymentWebhookDeliveryEntity;
 use Shopwell\Core\System\StateMachine\Aggregation\StateMachineState\StateMachineStateEntity;
 
@@ -216,15 +215,6 @@ class PaymentOrderEntity extends EntityStruct
 
     #[ManyToOne(entity: 'order_transaction', api: false)]
     public ?OrderTransactionEntity $orderTransaction = null;
-
-    /**
-     * The access tokens issued for this order. They are deleted together with the order, a credential
-     * that outlives what it grants access to is worse than no credential at all.
-     *
-     * @var array<string, PaymentGatewayTokenEntity>|null
-     */
-    #[OneToMany(entity: 'payment_gateway_token', ref: 'order_id', onDelete: OnDelete::CASCADE, api: false)]
-    public ?array $gatewayTokens = null;
 
     /**
      * The attempts to pay this order, they only exist together with the order.

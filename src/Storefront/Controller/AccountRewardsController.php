@@ -85,24 +85,10 @@ class AccountRewardsController extends StorefrontController
 
     /**
      * The current snapshot, for a page that updates itself after a redemption.
-     *
-     * `frontend.account.loyalty.json` is the same action: the cart's redemption form still points at the
-     * address the programme used to have, and it is the one caller that must keep working across the
-     * split. Remove the alias once that component generates the rewards route.
      */
     #[Route(
         path: '/account/rewards/detail',
         name: 'frontend.account.rewards.detail',
-        options: ['seo' => false],
-        defaults: [
-            PlatformRequest::ATTRIBUTE_LOGIN_REQUIRED => true,
-            'XmlHttpRequest' => true,
-        ],
-        methods: [Request::METHOD_GET]
-    )]
-    #[Route(
-        path: '/account/loyalty/json',
-        name: 'frontend.account.loyalty.json',
         options: ['seo' => false],
         defaults: [
             PlatformRequest::ATTRIBUTE_LOGIN_REQUIRED => true,
@@ -122,16 +108,6 @@ class AccountRewardsController extends StorefrontController
     #[Route(
         path: '/account/rewards/redeem-points',
         name: 'frontend.account.rewards.redeem',
-        options: ['seo' => false],
-        defaults: [
-            PlatformRequest::ATTRIBUTE_LOGIN_REQUIRED => true,
-            'XmlHttpRequest' => true,
-        ],
-        methods: [Request::METHOD_POST]
-    )]
-    #[Route(
-        path: '/account/loyalty/redeem-points',
-        name: 'frontend.account.loyalty.redeem',
         options: ['seo' => false],
         defaults: [
             PlatformRequest::ATTRIBUTE_LOGIN_REQUIRED => true,

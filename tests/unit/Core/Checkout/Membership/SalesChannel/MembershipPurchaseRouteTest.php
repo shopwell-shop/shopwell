@@ -41,7 +41,7 @@ class MembershipPurchaseRouteTest extends TestCase
                 'alipay_h5',
                 self::CURRENCY_ID,
                 'CNY',
-                'https://shop.test/account/loyalty',
+                'https://shop.test/account/membership',
                 '10.0.0.1',
                 'web',
                 $context->getContext(),
@@ -76,7 +76,7 @@ class MembershipPurchaseRouteTest extends TestCase
                 static::anything(),
                 static::anything(),
                 static::anything(),
-                'http://localhost/account/loyalty',
+                'http://localhost/account/membership',
                 static::anything(),
                 null,
                 static::anything(),
@@ -95,7 +95,7 @@ class MembershipPurchaseRouteTest extends TestCase
         return Request::create('/store-api/membership/purchase', Request::METHOD_POST, [
             'planId' => self::PLAN_ID,
             'channel' => 'alipay_h5',
-            'returnUrl' => 'https://shop.test/account/loyalty',
+            'returnUrl' => 'https://shop.test/account/membership',
             'device' => 'WEB',
         ], server: ['REMOTE_ADDR' => '10.0.0.1']);
     }

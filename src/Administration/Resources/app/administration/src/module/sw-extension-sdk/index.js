@@ -31,13 +31,7 @@ Shopwell.Module.register('sw-extension-sdk', {
         },
     },
 
-    navigation: [
-        {
-            id: 'sw-extension-sdk',
-            label: 'sw-extension-sdk.general.mainMenuItemGeneral',
-            icon: 'regular-view-grid',
-            color: 'var(--sw-color-module-neutral-default)',
-            position: 110,
-        },
-    ],
+    // No navigation on purpose. The route needs the id of an extension (`:id/:back?`) and is
+    // opened by the extension itself, so a main menu entry would offer a link that has nothing
+    // to open - and only a placeholder between the extensions and the settings.
 });

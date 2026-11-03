@@ -1,32 +1,24 @@
 .sw-system-menu-tree {
-    padding: var(--scale-size-8) 0;
+    padding: var(--scale-size-4) 0;
 
     &__row {
         display: flex;
         gap: var(--scale-size-8);
         align-items: center;
-        min-height: 36px;
-        padding: var(--scale-size-4) var(--scale-size-12);
-        padding-left: calc(var(--sw-system-menu-tree-depth) * var(--scale-size-16) + var(--scale-size-8));
+        min-height: 44px;
+        padding: var(--scale-size-4) var(--scale-size-16);
+        padding-left: calc(var(--sw-system-menu-tree-depth) * var(--scale-size-24) + var(--scale-size-12));
         color: var(--color-text-primary-default);
         font-size: var(--font-size-s);
-        border-left: 2px solid transparent;
-        cursor: pointer;
+        border-bottom: 1px solid var(--color-border-secondary-default);
         user-select: none;
+
+        &:last-child {
+            border-bottom: 0;
+        }
 
         &:hover {
             background-color: var(--color-elevation-surface-sunken);
-        }
-
-        &:focus-visible {
-            outline: 2px solid var(--color-interaction-primary-default);
-            outline-offset: -2px;
-        }
-
-        &.is--active {
-            background-color: var(--color-elevation-surface-raised);
-            border-left-color: var(--color-interaction-primary-default);
-            font-weight: var(--font-weight-semi-bold);
         }
 
         &.is--hidden {
@@ -74,9 +66,22 @@
 
     &__label {
         flex: 1 1 auto;
+        min-width: 0;
         overflow: hidden;
+        padding: 0;
+        color: inherit;
+        font: inherit;
+        text-align: left;
         white-space: nowrap;
         text-overflow: ellipsis;
+        background: none;
+        border: 0;
+        cursor: pointer;
+
+        &:focus-visible {
+            outline: 2px solid var(--color-interaction-primary-default);
+            outline-offset: 2px;
+        }
     }
 
     &__meta {
@@ -87,6 +92,13 @@
         color: var(--color-text-secondary-default);
     }
 
+    &__type {
+        min-width: 56px;
+        color: var(--color-text-secondary-default);
+        font-size: var(--font-size-2xs);
+        text-align: right;
+    }
+
     &__badge {
         padding: 0 var(--scale-size-6);
         color: var(--color-text-secondary-default);
@@ -94,5 +106,27 @@
         line-height: var(--scale-size-16);
         background-color: var(--color-elevation-surface-sunken);
         border-radius: var(--border-radius-s);
+
+        &--group {
+            color: var(--color-text-primary-default);
+            background-color: var(--color-elevation-surface-raised);
+            border: 1px solid var(--color-border-secondary-default);
+        }
+    }
+
+    &__actions {
+        display: flex;
+        flex: 0 0 auto;
+        gap: var(--scale-size-4);
+        align-items: center;
+
+        // the actions stay invisible until the row is hovered, so the labels keep the width
+        opacity: 0;
+        transition: opacity 0.15s ease;
+    }
+
+    &__row:hover &__actions,
+    &__row:focus-within &__actions {
+        opacity: 1;
     }
 }

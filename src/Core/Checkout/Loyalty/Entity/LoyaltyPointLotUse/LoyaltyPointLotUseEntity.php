@@ -2,7 +2,7 @@
 
 namespace Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyPointLotUse;
 
-use Shopwell\Core\Checkout\Loyalty\Entity\CustomerPointTransaction\CustomerPointTransactionEntity;
+use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyPointTransaction\LoyaltyPointTransactionEntity;
 use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyPointLot\LoyaltyPointLotEntity;
 use Shopwell\Core\Framework\DataAbstractionLayer\Entity;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityIdTrait;
@@ -26,7 +26,7 @@ class LoyaltyPointLotUseEntity extends Entity
 
     protected ?LoyaltyPointLotEntity $lot = null;
 
-    protected ?CustomerPointTransactionEntity $transaction = null;
+    protected ?LoyaltyPointTransactionEntity $transaction = null;
 
     public function getLotId(): string
     {
@@ -78,12 +78,12 @@ class LoyaltyPointLotUseEntity extends Entity
         $this->lot = $lot;
     }
 
-    public function getTransaction(): ?CustomerPointTransactionEntity
+    public function getTransaction(): ?LoyaltyPointTransactionEntity
     {
         return $this->transaction;
     }
 
-    public function setTransaction(CustomerPointTransactionEntity $transaction): void
+    public function setTransaction(LoyaltyPointTransactionEntity $transaction): void
     {
         $this->transaction = $transaction;
     }

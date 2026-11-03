@@ -9,6 +9,7 @@ use Shopwell\Core\System\Payment\Integration\Paypal\Api\PaypalApi;
 use Shopwell\Core\System\Payment\Integration\Paypal\PaypalProvider;
 use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
 use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
+use Shopwell\Core\System\Payment\Provider\Config\PaymentConfigReader;
 use Shopwell\Core\System\Payment\Provider\PaymentProviderFactory;
 use Shopwell\Tests\Unit\Core\System\Payment\Provider\Fixtures\PlatformProviders;
 
@@ -70,7 +71,7 @@ class PaypalProviderTest extends TestCase
 
     public function testDeclaresTheMerchantCredentials(): void
     {
-        $fields = PlatformProviders::paypal()->getCredentials();
+        $fields = (new PaymentProviderFactory(new PaymentConfigReader()))->create(PlatformProviders::paypal())->credentials;
 
         static::assertSame(
             ['client_id', 'client_secret', 'environment', 'webhook_id', 'brand_name'],
@@ -79,7 +80,10 @@ class PaypalProviderTest extends TestCase
         static::assertTrue($fields[0]->required);
         static::assertTrue($fields[1]->secret);
         static::assertTrue($fields[1]->required);
-        static::assertSame(['sandbox' => 'sandbox', 'live' => 'live'], $fields[2]->options);
+        static::assertSame([
+            'sandbox' => ['en-GB' => 'sandbox', 'zh-CN' => 'sandbox'],
+            'live' => ['en-GB' => 'live', 'zh-CN' => 'live'],
+        ], $fields[2]->options);
         static::assertSame('sandbox', $fields[2]->default);
     }
 
@@ -111,7 +115,7 @@ class PaypalProviderTest extends TestCase
 
     public function testTheDeclarationIsCoherentEnoughToBuildTheSnapshot(): void
     {
-        $provider = (new PaymentProviderFactory())->create(PlatformProviders::paypal());
+        $provider = (new PaymentProviderFactory(new PaymentConfigReader()))->create(PlatformProviders::paypal());
 
         static::assertSame('paypal', $provider->technicalName);
         static::assertCount(1, $provider->channels);

@@ -3,7 +3,7 @@
 namespace Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyTier;
 
 use Shopwell\Core\Checkout\Customer\Aggregate\CustomerGroup\CustomerGroupEntity;
-use Shopwell\Core\Checkout\Loyalty\Entity\CustomerLoyalty\CustomerLoyaltyCollection;
+use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyAccount\LoyaltyAccountCollection;
 use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyTier\Aggregate\LoyaltyTierTranslation\LoyaltyTierTranslationCollection;
 use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyTierBenefit\LoyaltyTierBenefitCollection;
 use Shopwell\Core\Checkout\Membership\Entity\MembershipOrder\MembershipOrderCollection;
@@ -25,7 +25,7 @@ class LoyaltyTierEntity extends Entity
 
     protected int $level;
 
-    protected ?int $minGrowthValue = null;
+    protected ?int $minTierPoints = null;
 
     protected ?float $pointsMultiplier = null;
 
@@ -43,7 +43,7 @@ class LoyaltyTierEntity extends Entity
 
     protected ?CustomerGroupEntity $customerGroup = null;
 
-    protected ?CustomerLoyaltyCollection $customers = null;
+    protected ?LoyaltyAccountCollection $customers = null;
 
     protected ?LoyaltyTierTranslationCollection $translations = null;
 
@@ -75,14 +75,14 @@ class LoyaltyTierEntity extends Entity
         $this->level = $level;
     }
 
-    public function getMinGrowthValue(): ?int
+    public function getMinTierPoints(): ?int
     {
-        return $this->minGrowthValue;
+        return $this->minTierPoints;
     }
 
-    public function setMinGrowthValue(?int $minGrowthValue): void
+    public function setMinTierPoints(?int $minTierPoints): void
     {
-        $this->minGrowthValue = $minGrowthValue;
+        $this->minTierPoints = $minTierPoints;
     }
 
     public function getPointsMultiplier(): ?float
@@ -165,12 +165,12 @@ class LoyaltyTierEntity extends Entity
         $this->customerGroup = $customerGroup;
     }
 
-    public function getCustomers(): ?CustomerLoyaltyCollection
+    public function getCustomers(): ?LoyaltyAccountCollection
     {
         return $this->customers;
     }
 
-    public function setCustomers(CustomerLoyaltyCollection $customers): void
+    public function setCustomers(LoyaltyAccountCollection $customers): void
     {
         $this->customers = $customers;
     }

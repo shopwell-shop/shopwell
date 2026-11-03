@@ -7,6 +7,7 @@ use Psr\Clock\ClockInterface;
 use Shopwell\Core\Checkout\Cart\Order\OrderConverter;
 use Shopwell\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
 use Shopwell\Core\Checkout\Order\Aggregate\OrderTransactionCaptureRefund\OrderTransactionCaptureRefundStateHandler;
+use Shopwell\Core\Checkout\Payment\Aggregate\PaymentMethodGatewayChannel\PaymentMethodGatewayChannelEntity;
 use Shopwell\Core\Checkout\Payment\Aggregate\PaymentMethodTranslation\PaymentMethodTranslationDefinition;
 use Shopwell\Core\Checkout\Payment\Api\PaymentMethodTechnicalNameFkResolver;
 use Shopwell\Core\Checkout\Payment\Cart\PaymentHandler\CashPayment;
@@ -38,6 +39,7 @@ use Shopwell\Core\Checkout\Payment\Gateway\PaymentGatewayHandler;
 use Shopwell\Core\Checkout\Payment\Gateway\PaymentMethodChannelBinder;
 use Shopwell\Core\Checkout\Payment\Gateway\PaymentMethodChannelResolver;
 use Shopwell\Core\Checkout\Payment\Gateway\PaymentMethodCollectability;
+use Shopwell\Core\Checkout\Payment\Install\PaymentMethodIconInstaller;
 use Shopwell\Core\Checkout\Payment\PaymentMethodDefinition;
 use Shopwell\Core\Checkout\Payment\PaymentProcessor;
 use Shopwell\Core\Checkout\Payment\SalesChannel\HandlePaymentMethodRoute;
@@ -46,6 +48,7 @@ use Shopwell\Core\Checkout\Payment\SalesChannel\SalesChannelPaymentMethodDefinit
 use Shopwell\Core\Checkout\Payment\Storefront\PlatformPaymentApp;
 use Shopwell\Core\Checkout\Payment\Storefront\Settlement\PurchaseSettlement;
 use Shopwell\Core\Checkout\Payment\Storefront\StorefrontPaymentService;
+use Shopwell\Core\Content\Media\MediaService;
 use Shopwell\Core\Framework\Adapter\Cache\CacheTagCollector;
 use Shopwell\Core\Framework\Adapter\Translation\Translator;
 use Shopwell\Core\Framework\DataAbstractionLayer\Dbal\Common\IteratorFactory;
@@ -201,8 +204,25 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ])
         ->tag('shopwell.payment.method');
 
-    // the binding table is the edge between a checkout payment method and a gateway channel; its
-    // entity is registered with the other payment tables in the system payment configuration
+    // ---- Checkout: the channel a payment method of the shop collects through ----
+    $services->set(PaymentMethodGatewayChannelEntity::class)
+        ->tag('shopwell.entity');
+
+    // ---- the pictures of the methods the gateway seeds ----
+    // The icons are uploaded through the media service when the installation completes, not written
+    // to a path of our own: the service decides where a file ends up and files it in the folder of the
+    // payment methods, which is also where a picture a merchant uploads for a method of their own
+    // lands. A shop that installs gets the icons the same way a shop that uploads them does.
+    $services->set(PaymentMethodIconInstaller::class)
+        ->args([
+            service(MediaService::class),
+            service('payment_method.repository'),
+            service('media.repository'),
+            service('logger'),
+        ])
+        ->tag('kernel.event_listener');
+
+    // the binding table is the edge between a checkout payment method and a gateway channel
     $services->set(PaymentMethodChannelResolver::class)
         ->args([
             service('payment_method_gateway_channel.repository'),

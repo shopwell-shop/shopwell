@@ -82,6 +82,7 @@ class AdminMenuItemDefinition extends EntityDefinition
             (new ParentFkField(self::class))->setDescription('Unique identity of the parent menu item. Top level items have no parent.'),
             (new FkField('after_menu_item_id', 'afterMenuItemId', self::class))->setDescription('Unique identity of the sibling this item is positioned after within the same parent.'),
             (new StringField('internal_key', 'internalKey'))->setDescription('Module navigation id or admin route name this item points to. Validated against the route whitelist for `menu` type items.'),
+            (new StringField('group_name', 'groupName'))->setDescription('Group the item is listed under (`general`, `customer`, …). Entries without a group are listed on their own.'),
             new TranslatedField('title'),
             (new StringField('icon', 'icon'))->setDescription('Meteor icon name shown next to the label.'),
             (new StringField('color', 'color'))->setDescription('Module theme color of the item.'),

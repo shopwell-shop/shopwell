@@ -93,13 +93,6 @@ abstract class AbstractPaymentProvider
     abstract public function getActions(): array;
 
     /**
-     * The action that opens a payment for a channel that has no more specific one.
-     *
-     * @see self::getChannelCaptureActions() for the per channel override
-     */
-    abstract public function getCaptureAction(): AbstractPaymentAction;
-
-    /**
      * The service that reads the references out of an incoming notification.
      *
      * It has to work without credentials: the platform needs to know which payment order a notification
@@ -116,10 +109,20 @@ abstract class AbstractPaymentProvider
     }
 
     /**
-     * The fields of the merchant account, in the order the administration renders them.
+     * The plugin-config compatible XML that declares the merchant and channel fields. Labels, help
+     * texts and option names use the existing `lang` translations of config.xsd. Null means the
+     * interface declares its fields in PHP only.
+     */
+    public function getConfigFile(): ?string
+    {
+        return null;
+    }
+
+    /**
+     * Additional fields of the merchant account, in the order the administration renders them.
      *
-     * Every channel of the interface is charged on this very account, which is why the credentials live
-     * here and not on the channel. A field marked secret is never echoed back to the administration.
+     * The XML returned by {@see self::getConfigFile()} is read first; this method is the code extension
+     * point for computed fields or for a decorator adding to an existing declaration.
      *
      * @return list<PaymentConfigField>
      */
@@ -146,7 +149,7 @@ abstract class AbstractPaymentProvider
      * The capture action of a single channel, for an interface whose channels open differently enough
      * that one action cannot serve them all.
      *
-     * A channel that is not named here falls back to {@see self::getCaptureAction()}.
+     * A channel that is not named here is served by the capture actions in {@see self::getActions()}.
      *
      * @return array<string, AbstractPaymentAction> channel technical name => action
      */

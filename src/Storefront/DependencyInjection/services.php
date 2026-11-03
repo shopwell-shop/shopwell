@@ -139,7 +139,6 @@ use Shopwell\Storefront\Page\Account\CustomerGroupRegistration\CustomerGroupRegi
 use Shopwell\Storefront\Page\Account\Login\AccountLoginPageLoader;
 use Shopwell\Storefront\Page\Account\Login\OAuth2LoginPageSubscriber;
 use Shopwell\Storefront\Page\Account\Membership\AccountMembershipPageLoader;
-use Shopwell\Storefront\Page\Account\Rewards\AccountRewardsPageLoader;
 use Shopwell\Storefront\Page\Account\Order\AccountEditOrderPageLoader;
 use Shopwell\Storefront\Page\Account\Order\AccountOrderDetailPageLoader;
 use Shopwell\Storefront\Page\Account\Order\AccountOrderPageLoader;
@@ -148,6 +147,7 @@ use Shopwell\Storefront\Page\Account\OrderReturn\GuestOrderReturnPageLoader;
 use Shopwell\Storefront\Page\Account\Overview\AccountOverviewPageLoader;
 use Shopwell\Storefront\Page\Account\Profile\AccountProfilePageLoader;
 use Shopwell\Storefront\Page\Account\RecoverPassword\AccountRecoverPasswordPageLoader;
+use Shopwell\Storefront\Page\Account\Rewards\AccountRewardsPageLoader;
 use Shopwell\Storefront\Page\Account\Wallet\AccountWalletPageLoader;
 use Shopwell\Storefront\Page\Address\Detail\AddressDetailPageLoader;
 use Shopwell\Storefront\Page\Address\Listing\AddressListingPageLoader;

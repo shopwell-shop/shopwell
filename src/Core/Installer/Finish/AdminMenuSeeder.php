@@ -65,7 +65,7 @@ class AdminMenuSeeder
      */
     private function reportFailure(string $reason): void
     {
-        error_log(sprintf(
+        error_log(\sprintf(
             'Could not write the core navigation rows (%s). Run "bin/console %s" once the installation is reachable.',
             trim($reason),
             self::COMMAND,

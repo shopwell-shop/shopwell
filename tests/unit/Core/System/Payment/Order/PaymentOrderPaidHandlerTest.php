@@ -2,6 +2,7 @@
 
 namespace Shopwell\Tests\Unit\Core\System\Payment\Order;
 
+use Doctrine\DBAL\Connection;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -35,6 +36,8 @@ use Shopwell\Core\System\Payment\Webhook\PaymentWebhookSigner;
 use Shopwell\Core\System\StateMachine\Loader\InitialStateIdLoader;
 use Shopwell\Core\System\StateMachine\StateMachineRegistry;
 use Shopwell\Core\System\StateMachine\Transition;
+use Shopwell\Tests\Unit\Core\System\Payment\NumberRangeFixture;
+use Shopwell\Tests\Unit\Core\System\Payment\Order\_fixtures\PaymentOrderRowLockStub;
 use Symfony\Component\Clock\MockClock;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
@@ -282,7 +285,8 @@ class PaymentOrderPaidHandlerTest extends TestCase
             $this->initialStateIdLoader(),
             new PaymentOrderStateHandler($stateMachine),
             new MockClock(self::NOW),
-            \Shopwell\Tests\Unit\Core\System\Payment\NumberRangeFixture::generator('PG1001')
+            NumberRangeFixture::generator('PG1001'),
+            new PaymentOrderRowLockStub()
         );
 
         $webhookService = new PaymentWebhookDispatcher(
@@ -291,7 +295,8 @@ class PaymentOrderPaidHandlerTest extends TestCase
             new PaymentWebhookSigner(new PaymentSignatureService(), $cipher, new MockClock(self::NOW)),
             static::createStub(HttpClientInterface::class),
             new MockClock(self::NOW),
-            static::createStub(LoggerInterface::class)
+            static::createStub(LoggerInterface::class),
+            static::createStub(Connection::class)
         );
 
         return new PaymentOrderPaidHandler(

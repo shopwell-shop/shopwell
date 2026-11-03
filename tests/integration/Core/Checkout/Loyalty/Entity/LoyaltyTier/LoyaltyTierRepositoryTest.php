@@ -39,7 +39,7 @@ class LoyaltyTierRepositoryTest extends TestCase
             'id' => $id,
             'technicalName' => 'gold',
             'level' => 3,
-            'minGrowthValue' => 5000,
+            'minTierPoints' => 5000,
             'pointsMultiplier' => 2.0,
             'discountPercent' => 5.0,
             'freeShipping' => true,
@@ -60,7 +60,7 @@ class LoyaltyTierRepositoryTest extends TestCase
         static::assertNotNull($tier);
         static::assertSame('gold', $tier->getTechnicalName());
         static::assertSame(3, $tier->getLevel());
-        static::assertSame(5000, $tier->getMinGrowthValue());
+        static::assertSame(5000, $tier->getMinTierPoints());
         static::assertSame(2.0, $tier->getPointsMultiplier());
         static::assertSame(5.0, $tier->getDiscountPercent());
         static::assertTrue($tier->getFreeShipping());

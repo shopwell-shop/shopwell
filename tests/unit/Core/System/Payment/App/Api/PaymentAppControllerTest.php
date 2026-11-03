@@ -21,13 +21,19 @@ use Shopwell\Core\System\Payment\App\PaymentAppDto;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
 use Shopwell\Core\System\Payment\App\PaymentAppProviderDto;
 use Shopwell\Core\System\Payment\App\PaymentAppProvisioner;
+use Shopwell\Core\System\Payment\Gateway\PaymentGatewayFactory;
+use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
 use Shopwell\Core\System\Payment\PaymentException;
+use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
 use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannelRegistry;
+use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
 use Shopwell\Core\System\Payment\Provider\Config\PaymentChannelConfigCollection;
 use Shopwell\Core\System\Payment\Provider\Config\PaymentChannelConfigEntity;
+use Shopwell\Core\System\Payment\Provider\Config\PaymentConfigField;
 use Shopwell\Core\System\Payment\Provider\Config\PaymentProviderConfigCollection;
 use Shopwell\Core\System\Payment\Provider\Config\PaymentProviderConfigEntity;
 use Shopwell\Core\System\Payment\Provider\Config\PaymentProviderConfigService;
+use Shopwell\Core\System\Payment\Provider\PaymentProvider;
 use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;
 use Shopwell\Tests\Unit\Core\System\Payment\Api\PaymentControllerFixture;
 use Symfony\Component\Clock\NativeClock;
@@ -74,35 +80,80 @@ class PaymentAppControllerTest extends TestCase
     }
 
     /**
-     * An app that collects on its own account is the ordinary case: the values it typed are stored
-     * sealed in its own authorization, and they are handed back in plain text so the page can render
-     * them and an operator can correct a single one of them.
+     * An app that collects on its own account gets its ordinary values back, while a secret only keeps
+     * its key and the configured state. The original secret never appears in the response.
      */
-    public function testAnAppThatCollectsOnItsOwnAccountEchoesItsOwnValues(): void
+    public function testAnAppThatCollectsOnItsOwnAccountHidesSecretsAndEchoesOrdinaryValues(): void
     {
         $app = PaymentControllerFixture::app('client-a', 'stored-secret');
         $app->providers = ['alipay' => PaymentControllerFixture::appProvider($app->id, true, null, ['app_id' => 'client-app', 'private_key' => 'sk'])];
 
         $channel = PaymentControllerFixture::appChannel($app->id);
-        $channel->params = PaymentControllerFixture::cipher()->encrypt(['appid' => 'wx-client']);
+        $channel->params = PaymentControllerFixture::cipher()->encrypt(['appid' => 'wx-client', 'sign_key' => 'channel-secret']);
         $app->channels = ['alipay_h5' => $channel];
 
         $controller = $this->controller(PaymentControllerFixture::repository(PaymentAppCollection::class, [$app]));
 
         $data = $this->decode($controller->list());
 
-        static::assertSame(['app_id' => 'client-app', 'private_key' => 'sk'], $data['apps'][0]['providers'][0]['credentials']);
+        static::assertSame(['app_id' => 'client-app', 'private_key' => null], $data['apps'][0]['providers'][0]['credentials']);
         static::assertTrue($data['apps'][0]['providers'][0]['hasCredentials']);
-        static::assertSame(['appid' => 'wx-client'], $data['apps'][0]['channels'][0]['params']);
+        static::assertSame(['appid' => 'wx-client', 'sign_key' => null], $data['apps'][0]['channels'][0]['params']);
         static::assertTrue($data['apps'][0]['channels'][0]['hasParams']);
+        static::assertStringNotContainsString('"private_key":"sk"', (string) json_encode($data));
+        static::assertStringNotContainsString('channel-secret', (string) json_encode($data));
+    }
+
+    public function testSavingAnEmptySecretKeepsItWithoutEchoingIt(): void
+    {
+        $existing = PaymentControllerFixture::app('client-a', 'stored-secret');
+        $current = PaymentControllerFixture::appProvider($existing->id, credentials: ['app_id' => 'old-app', 'private_key' => 'sk']);
+        $existing->providers = ['alipay' => $current];
+
+        $providerRepository = static::createMock(EntityRepository::class);
+        $providerRepository->method('search')->willReturn(new EntitySearchResult(
+            'payment_app_provider',
+            1,
+            new PaymentAppProviderCollection([$current]),
+            null,
+            new Criteria(),
+            Context::createDefaultContext(),
+        ));
+        $providerRepository->expects($this->once())
+            ->method('upsert')
+            ->with(static::callback(static function (array $data): bool {
+                static::assertSame(
+                    ['app_id' => 'new-app', 'private_key' => 'sk'],
+                    PaymentControllerFixture::cipher()->decrypt($data[0]['credentials']),
+                );
+
+                return true;
+            }));
+
+        $data = $this->decode($this->controller(
+            PaymentControllerFixture::repository(PaymentAppCollection::class, [$existing]),
+            $providerRepository,
+        )->save(new PaymentAppDto(
+            id: $existing->id,
+            technicalName: 'client-a',
+            providers: [new PaymentAppProviderDto(
+                providerTechnicalName: 'alipay',
+                credentials: ['app_id' => 'new-app', 'private_key' => ''],
+            )],
+        )));
+
+        // the repository double deliberately returns its original row after upsert; the write above
+        // proves the new ordinary value and the retained secret, the response proves the masking
+        static::assertSame(['app_id' => 'old-app', 'private_key' => null], $data['app']['providers'][0]['credentials']);
+        static::assertStringNotContainsString('"private_key":"sk"', (string) json_encode($data));
     }
 
     /**
      * The tenant of the platform has no account of its own: its row is seeded by the migration and
-     * everything the shop collects runs on the merchant configuration of the interface. Echoing its
-     * own empty row would present exactly the app an operator looks at first as unconfigured.
+     * everything the shop collects runs on the merchant configuration of the interface. Those values
+     * follow the same presentation rule, so this indirect path cannot disclose a secret either.
      */
-    public function testThePlatformTenantEchoesThePlatformLevelConfigurationAndIgnoresItsOwnRow(): void
+    public function testThePlatformTenantPresentsSanitizedPlatformConfigurationAndIgnoresItsOwnRow(): void
     {
         $platform = $this->platformTenant();
         $platform->providers = ['alipay' => PaymentControllerFixture::appProvider($platform->id)];
@@ -112,25 +163,29 @@ class PaymentAppControllerTest extends TestCase
         static::assertNull($platform->providers['alipay']->credentials);
         static::assertNull($platform->channels['alipay_h5']->params);
 
+        $providerConfig = PaymentControllerFixture::providerConfig();
+        $providerConfig->credentials = PaymentControllerFixture::cipher()->encrypt(['app_id' => 'platform-app', 'private_key' => 'platform-sk']);
         $channelConfig = PaymentControllerFixture::channelConfig();
-        $channelConfig->params = PaymentControllerFixture::cipher()->encrypt(['appid' => 'wx-platform']);
+        $channelConfig->params = PaymentControllerFixture::cipher()->encrypt(['appid' => 'wx-platform', 'sign_key' => 'platform-channel-secret']);
 
         $controller = $this->controller(
             PaymentControllerFixture::repository(PaymentAppCollection::class, [$platform]),
             null,
             null,
             null,
-            [PaymentControllerFixture::providerConfig()],
+            [$providerConfig],
             [$channelConfig],
         );
 
         $data = $this->decode($controller->list());
 
         static::assertSame(PaymentAppEntity::TYPE_PLATFORM, $data['apps'][0]['type']);
-        static::assertSame(['app_id' => 'platform-app'], $data['apps'][0]['providers'][0]['credentials']);
+        static::assertSame(['app_id' => 'platform-app', 'private_key' => null], $data['apps'][0]['providers'][0]['credentials']);
         static::assertTrue($data['apps'][0]['providers'][0]['hasCredentials']);
-        static::assertSame(['appid' => 'wx-platform'], $data['apps'][0]['channels'][0]['params']);
+        static::assertSame(['appid' => 'wx-platform', 'sign_key' => null], $data['apps'][0]['channels'][0]['params']);
         static::assertTrue($data['apps'][0]['channels'][0]['hasParams']);
+        static::assertStringNotContainsString('platform-sk', (string) json_encode($data));
+        static::assertStringNotContainsString('platform-channel-secret', (string) json_encode($data));
     }
 
     public function testTheListSkipsEntitiesThatAreNotApps(): void
@@ -376,7 +431,28 @@ class PaymentAppControllerTest extends TestCase
 
     private function registry(): PaymentProviderRegistry
     {
-        return PaymentControllerFixture::providerRegistry(PaymentControllerFixture::provider('alipay', [PaymentControllerFixture::channel('alipay_h5', 'alipay')]));
+        $channel = new PaymentChannel(
+            'alipay_h5',
+            'alipay',
+            'alipay_h5',
+            PaymentFlow::REDIRECT,
+            params: [
+                new PaymentConfigField('appid'),
+                new PaymentConfigField('sign_key', secret: true),
+            ],
+        );
+
+        return PaymentControllerFixture::providerRegistry(new PaymentProvider(
+            'alipay',
+            'alipay',
+            [
+                new PaymentConfigField('app_id'),
+                new PaymentConfigField('private_key', secret: true),
+            ],
+            ['alipay_h5' => $channel],
+            static::createStub(PaymentGatewayFactory::class),
+            static::createStub(PaymentNotificationExtractorInterface::class),
+        ));
     }
 
     /**
@@ -394,7 +470,8 @@ class PaymentAppControllerTest extends TestCase
         array $providerConfigs = [],
         array $channelConfigs = []
     ): PaymentAppController {
-        $registry = $providerRegistry ?? PaymentControllerFixture::providerRegistry();
+        $registry = $providerRegistry ?? $this->registry();
+        $channelRegistry = new PaymentChannelRegistry($registry);
 
         return new PaymentAppController(
             $appRepository,
@@ -404,7 +481,7 @@ class PaymentAppControllerTest extends TestCase
                 $appChannelRepository ?? PaymentControllerFixture::repository(PaymentAppChannelCollection::class),
                 PaymentControllerFixture::cipher(),
                 $registry,
-                new PaymentChannelRegistry($registry),
+                $channelRegistry,
                 new NativeClock(),
             ),
             PaymentControllerFixture::cipher(),
@@ -413,6 +490,8 @@ class PaymentAppControllerTest extends TestCase
                 PaymentControllerFixture::repository(PaymentChannelConfigCollection::class, $channelConfigs),
                 PaymentControllerFixture::cipher(),
             ),
+            $registry,
+            $channelRegistry,
         );
     }
 

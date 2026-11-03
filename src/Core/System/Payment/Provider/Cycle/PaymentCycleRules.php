@@ -17,9 +17,9 @@ use Shopwell\Core\Framework\Log\Package;
  *  - `leadTimeHours` - how long before the deduction a new-style charge has to be initiated.
  *  - `windowStartHour` / `windowEndHour` / `timezone` - the wall-clock window the interface accepts
  *    deduction calls in, left-closed and right-open.
- *  - `retryableFailureCodes` / `finalFailureCodes` / `unknownFailureCodes` - how the interface's own
- *    failure codes are read. A code that is on none of the lists is `unknown` on purpose: neither a
- *    retry nor declaring the mandate dead is safe without asking the interface.
+ *  - `retryableFailureCodes` / `finalFailureCodes` - how the interface's own failure codes are read.
+ *    A code that is on neither list is `unknown` on purpose: neither a retry nor declaring the mandate
+ *    dead is safe without asking the interface.
  *  - `maxRetries` - how often a cycle may be attempted again before it is given up.
  *  - `singleRetryFailureCodes` - the codes the interface documents as "retry once", where the second
  *    attempt is the last one no matter how many retries are left. A generic "the payment did not go
@@ -45,7 +45,6 @@ final readonly class PaymentCycleRules
      * @param int $windowEndHour the hour the deduction window closes, exclusive
      * @param list<string> $retryableFailureCodes the failure codes that mean "money problem, the mandate is fine"
      * @param list<string> $finalFailureCodes the failure codes that mean "the mandate is dead"
-     * @param list<string> $unknownFailureCodes the failure codes that mean "ask the interface what happened"
      * @param int $maxRetries how often one cycle may be charged again after a retryable failure
      * @param list<string> $singleRetryFailureCodes the retryable codes that may be retried exactly once
      * @param string $timezone the timezone the window is expressed in
@@ -57,7 +56,6 @@ final readonly class PaymentCycleRules
         public int $windowEndHour = 24,
         public array $retryableFailureCodes = [],
         public array $finalFailureCodes = [],
-        public array $unknownFailureCodes = [],
         public int $maxRetries = 0,
         public array $singleRetryFailureCodes = [],
         public string $timezone = self::DEFAULT_TIMEZONE,

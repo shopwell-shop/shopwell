@@ -2,6 +2,7 @@
 
 namespace Shopwell\Tests\Unit\Core\Checkout\Payment\Gateway;
 
+use Doctrine\DBAL\Connection;
 use Payum\Core\GatewayInterface;
 use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\TestCase;
@@ -57,6 +58,8 @@ use Shopwell\Core\System\Payment\Webhook\PaymentWebhookDispatcher;
 use Shopwell\Core\System\Payment\Webhook\PaymentWebhookSigner;
 use Shopwell\Core\System\StateMachine\Loader\InitialStateIdLoader;
 use Shopwell\Core\System\StateMachine\StateMachineRegistry;
+use Shopwell\Tests\Unit\Core\System\Payment\NumberRangeFixture;
+use Shopwell\Tests\Unit\Core\System\Payment\Order\_fixtures\PaymentOrderRowLockStub;
 use Symfony\Component\Clock\MockClock;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Routing\RouterInterface;
@@ -316,7 +319,8 @@ final class PaymentGatewayFixture extends TestCase
             $initialStateIdLoader,
             new PaymentOrderStateHandler(static::createStub(StateMachineRegistry::class)),
             self::clock(),
-            \Shopwell\Tests\Unit\Core\System\Payment\NumberRangeFixture::generator('PG1001'),
+            NumberRangeFixture::generator('PG1001'),
+            new PaymentOrderRowLockStub(),
         );
     }
 
@@ -333,7 +337,7 @@ final class PaymentGatewayFixture extends TestCase
             $configResolver,
             $orderService,
             new PaymentNotifyUrlBuilder(new RequestStack(), 'https://shop.example.test'),
-            self::clock(),
+            NumberRangeFixture::generator('PX1001'),
         );
     }
 
@@ -363,7 +367,7 @@ final class PaymentGatewayFixture extends TestCase
     {
         $router = static::createStub(RouterInterface::class);
         $router->method('generate')->willReturnCallback(
-            static fn (string $name, array $parameters = []): string => '/generated/' . $name . '/' . (string) ($parameters['paymentNo'] ?? '')
+            static fn (string $name, array $parameters = []): string => '/generated/' . $name . '/' . (string) ($parameters['orderId'] ?? '') . '/' . (string) ($parameters['paymentNo'] ?? '')
         );
 
         return $router;
@@ -405,6 +409,7 @@ final class PaymentGatewayFixture extends TestCase
             static::createStub(HttpClientInterface::class),
             self::clock(),
             static::createStub(LoggerInterface::class),
+            static::createStub(Connection::class),
         );
     }
 
@@ -428,6 +433,8 @@ final class PaymentGatewayFixture extends TestCase
             static::createStub(InitialStateIdLoader::class),
             static::createStub(EventDispatcherInterface::class),
             self::clock(),
+            NumberRangeFixture::generator('PR1001'),
+            new PaymentOrderRowLockStub(),
         );
     }
 

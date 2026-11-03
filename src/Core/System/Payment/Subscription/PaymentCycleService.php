@@ -11,6 +11,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\System\NumberRange\ValueGenerator\AbstractNumberRangeValueGenerator;
 use Shopwell\Core\System\Payment\PaymentException;
 use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
 use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;
@@ -41,6 +42,7 @@ final class PaymentCycleService
     public function __construct(
         private readonly EntityRepository $cycleRepository,
         private readonly EntityRepository $subscriptionRepository,
+        private readonly PaymentCycleTransactionInterface $transactions,
         private readonly PaymentCycleStateHandler $cycleStateHandler,
         private readonly PaymentSubscriptionStateHandler $subscriptionStateHandler,
         private readonly PaymentCycleCalendar $calendar,
@@ -48,6 +50,7 @@ final class PaymentCycleService
         private readonly InitialStateIdLoader $initialStateIdLoader,
         private readonly PaymentProviderRegistry $providerRegistry,
         private readonly ClockInterface $clock,
+        private readonly AbstractNumberRangeValueGenerator $numberRanges,
     ) {
     }
 
@@ -101,7 +104,11 @@ final class PaymentCycleService
             'amount' => $plan->amount,
             'currency' => $this->currencyOf($plan),
             'stateId' => $this->initialStateIdLoader->get(PaymentSubscriptionCycleStates::STATE_MACHINE),
-            'outTradeNo' => $this->generateOutTradeNo($now),
+            'outTradeNo' => $this->numberRanges->getValue(
+                PaymentSubscriptionCycleEntity::ENTITY_NAME,
+                Context::createDefaultContext(),
+                null
+            ),
             // the dal never writes the property initial value - it only consults
             // EntityDefinition::getDefaults(), and the column is not nullable without a ddl default,
             // so an insert that leaves the field out fails. Same story as paidAmount and
@@ -143,16 +150,19 @@ final class PaymentCycleService
      */
     public function markProcessing(PaymentSubscriptionCycleEntity $cycle, ?string $providerTransactionId): void
     {
-        $this->cycleStateHandler->process($cycle->id);
+        $this->transactions->execute($cycle->id, false, function () use ($cycle, $providerTransactionId): void {
+            $current = $this->getById($cycle->id);
+            $this->cycleStateHandler->process($current->id);
 
-        if ($providerTransactionId === null) {
-            return;
-        }
+            if ($providerTransactionId === null) {
+                return;
+            }
 
-        $this->cycleRepository->update([[
-            'id' => $cycle->id,
-            'providerTransactionId' => $providerTransactionId,
-        ]], Context::createDefaultContext());
+            $this->cycleRepository->update([[
+                'id' => $current->id,
+                'providerTransactionId' => $providerTransactionId,
+            ]], Context::createDefaultContext());
+        });
     }
 
     /**
@@ -164,34 +174,37 @@ final class PaymentCycleService
      */
     public function markSucceeded(PaymentSubscriptionCycleEntity $cycle, string $providerTransactionId, \DateTimeInterface $paidAt): void
     {
-        $this->cycleStateHandler->succeed($cycle->id);
+        $this->transactions->execute($cycle->id, true, function () use ($cycle, $providerTransactionId, $paidAt): void {
+            $current = $this->getById($cycle->id);
+            $subscription = $this->getSubscription($current->subscriptionId);
 
-        $this->cycleRepository->update([[
-            'id' => $cycle->id,
-            'providerTransactionId' => $providerTransactionId,
-            'paidAt' => $paidAt,
-            // a cycle that paid is done: a failure code or retry time left behind would make the
-            // reconcile task believe there is still something to resolve
-            'failureCode' => null,
-            'failureClass' => null,
-            'nextRetryAt' => null,
-        ]], Context::createDefaultContext());
+            $this->cycleStateHandler->succeed($current->id);
 
-        $subscription = $this->getSubscription($cycle->subscriptionId);
+            $this->cycleRepository->update([[
+                'id' => $current->id,
+                'providerTransactionId' => $providerTransactionId,
+                'paidAt' => $paidAt,
+                // a cycle that paid is done: a failure code or retry time left behind would make the
+                // reconcile task believe there is still something to resolve
+                'failureCode' => null,
+                'failureClass' => null,
+                'nextRetryAt' => null,
+            ]], Context::createDefaultContext());
 
-        $this->subscriptionRepository->update([[
-            'id' => $subscription->id,
-            'currentPeriodStart' => $cycle->periodStart,
-            'currentPeriodEnd' => $cycle->periodEnd,
-            'nextBillingAt' => $cycle->periodEnd,
-            'failureCount' => 0,
-            'lastFailureCode' => null,
-            'nextRetryAt' => null,
-        ]], Context::createDefaultContext());
+            $this->subscriptionRepository->update([[
+                'id' => $subscription->id,
+                'currentPeriodStart' => $current->periodStart,
+                'currentPeriodEnd' => $current->periodEnd,
+                'nextBillingAt' => $current->periodEnd,
+                'failureCount' => 0,
+                'lastFailureCode' => null,
+                'nextRetryAt' => null,
+            ]], Context::createDefaultContext());
 
-        if ($this->isPastDue($subscription)) {
-            $this->subscriptionStateHandler->activate($subscription->id);
-        }
+            if ($this->isPastDue($subscription)) {
+                $this->subscriptionStateHandler->activate($subscription->id);
+            }
+        });
     }
 
     /**
@@ -209,57 +222,60 @@ final class PaymentCycleService
      */
     public function markFailed(PaymentSubscriptionCycleEntity $cycle, ?string $failureCode): void
     {
-        $subscription = $this->getSubscription($cycle->subscriptionId);
+        $this->transactions->execute($cycle->id, true, function () use ($cycle, $failureCode): void {
+            $current = $this->getById($cycle->id);
+            $subscription = $this->getSubscription($current->subscriptionId);
 
-        // the rules of the interface that is charged decide how its own failure code reads - the
-        // policy holds no list of its own
-        $rules = $this->providerRegistry->get($subscription->provider)->cycleRules;
-        $failureClass = $this->retryPolicy->classify($rules, $failureCode);
+            // the rules of the interface that is charged decide how its own failure code reads - the
+            // policy holds no list of its own
+            $rules = $this->providerRegistry->get($subscription->provider)->cycleRules;
+            $failureClass = $this->retryPolicy->classify($rules, $failureCode);
 
-        if ($failureClass === PaymentRetryPolicy::UNKNOWN) {
-            // the channel did not say what happened. Neither answer is safe: `failed` would
-            // double charge, `succeeded` would ship without money - only a query may decide, so
-            // the cycle waits in `unknown` and its raw code is kept as evidence
-            $this->cycleStateHandler->markUnknown($cycle->id);
+            if ($failureClass === PaymentRetryPolicy::UNKNOWN) {
+                // the channel did not say what happened. Neither answer is safe: `failed` would
+                // double charge, `succeeded` would ship without money - only a query may decide, so
+                // the cycle waits in `unknown` and its raw code is kept as evidence
+                $this->cycleStateHandler->markUnknown($current->id);
+
+                $this->cycleRepository->update([[
+                    'id' => $current->id,
+                    'failureCode' => $failureCode,
+                    'failureClass' => PaymentSubscriptionCycleEntity::FAILURE_CLASS_UNKNOWN,
+                    'nextRetryAt' => null,
+                ]], Context::createDefaultContext());
+
+                return;
+            }
+
+            $nextRetryAt = null;
+            if ($failureClass === PaymentRetryPolicy::RETRYABLE) {
+                $nextRetryAt = $this->retryPolicy->nextAttemptAt(
+                    $rules,
+                    $failureCode,
+                    $current->attemptCount,
+                    $this->clock->now()
+                );
+            }
+
+            // a retryable failure without a next attempt means the ladder is exhausted - that is the
+            // final outcome of the cycle, not a retry that happens never
+            if ($nextRetryAt === null) {
+                $this->failCycleFinally($subscription, $current, $failureCode);
+
+                return;
+            }
+
+            $this->cycleStateHandler->failRetryable($current->id);
 
             $this->cycleRepository->update([[
-                'id' => $cycle->id,
+                'id' => $current->id,
                 'failureCode' => $failureCode,
-                'failureClass' => PaymentSubscriptionCycleEntity::FAILURE_CLASS_UNKNOWN,
-                'nextRetryAt' => null,
+                'failureClass' => PaymentSubscriptionCycleEntity::FAILURE_CLASS_RETRYABLE,
+                // the first failure consumes the first retry, so the count moves to 1 right here
+                'attemptCount' => $current->attemptCount + 1,
+                'nextRetryAt' => $nextRetryAt,
             ]], Context::createDefaultContext());
-
-            return;
-        }
-
-        $nextRetryAt = null;
-        if ($failureClass === PaymentRetryPolicy::RETRYABLE) {
-            $nextRetryAt = $this->retryPolicy->nextAttemptAt(
-                $rules,
-                $failureCode,
-                $cycle->attemptCount,
-                $this->clock->now()
-            );
-        }
-
-        // a retryable failure without a next attempt means the ladder is exhausted - that is the
-        // final outcome of the cycle, not a retry that happens never
-        if ($nextRetryAt === null) {
-            $this->failCycleFinally($subscription, $cycle, $failureCode);
-
-            return;
-        }
-
-        $this->cycleStateHandler->failRetryable($cycle->id);
-
-        $this->cycleRepository->update([[
-            'id' => $cycle->id,
-            'failureCode' => $failureCode,
-            'failureClass' => PaymentSubscriptionCycleEntity::FAILURE_CLASS_RETRYABLE,
-            // the first failure consumes the first retry, so the count moves to 1 right here
-            'attemptCount' => $cycle->attemptCount + 1,
-            'nextRetryAt' => $nextRetryAt,
-        ]], Context::createDefaultContext());
+        });
     }
 
     /**
@@ -280,22 +296,24 @@ final class PaymentCycleService
      */
     public function rearm(PaymentSubscriptionCycleEntity $cycle, bool $tradeIsDead = false): void
     {
-        // the state is read fresh: a cycle that moved on since the caller loaded it must not be
-        // re-armed on the strength of a stale copy
-        $current = $this->getById($cycle->id);
-        $state = $current->stateMachineState?->getTechnicalName();
+        $this->transactions->execute($cycle->id, false, function () use ($cycle, $tradeIsDead): void {
+            // a cycle that moved on since the caller loaded it must not be re-armed on the strength
+            // of a stale copy: this read happens only after the row lock has been acquired
+            $current = $this->getById($cycle->id);
+            $state = $current->stateMachineState?->getTechnicalName();
 
-        if ($state === PaymentSubscriptionCycleStates::STATE_UNKNOWN) {
-            // the channel's answer was inconclusive, but a dead trade is an answer: resolving it to
-            // `failed_retryable` is the first of the two transitions into the queue. The raw code
-            // and class of the inconclusive attempt stay untouched - they are what it really was.
-            $this->cycleStateHandler->failRetryable($cycle->id);
-        } elseif ($state !== PaymentSubscriptionCycleStates::STATE_FAILED_RETRYABLE) {
-            // an in-flight or already settled cycle has no queued attempt to go back to
-            throw PaymentException::paymentCycleNotRearmable($cycle->id, (string) $state);
-        }
+            if ($state === PaymentSubscriptionCycleStates::STATE_UNKNOWN) {
+                // the channel's answer was inconclusive, but a dead trade is an answer: resolving it to
+                // `failed_retryable` is the first of the two transitions into the queue. The raw code
+                // and class of the inconclusive attempt stay untouched - they are what it really was.
+                $this->cycleStateHandler->failRetryable($current->id);
+            } elseif ($state !== PaymentSubscriptionCycleStates::STATE_FAILED_RETRYABLE) {
+                // an in-flight or already settled cycle has no queued attempt to go back to
+                throw PaymentException::paymentCycleNotRearmable($current->id, (string) $state);
+            }
 
-        $this->reschedule($current, $tradeIsDead);
+            $this->reschedule($current, $tradeIsDead);
+        });
     }
 
     /**
@@ -457,15 +475,6 @@ final class PaymentCycleService
         }
 
         return $currency;
-    }
-
-    /**
-     * 2 + 12 + 10 = 24 characters, so even the `-r<n>` suffix of a rotated retry stays below the 32
-     * characters wechat allows (alipay allows 64; the strictest limit wins).
-     */
-    private function generateOutTradeNo(\DateTimeImmutable $now): string
-    {
-        return 'SC' . $now->format('ymdHis') . strtoupper(bin2hex(random_bytes(5)));
     }
 
     /**

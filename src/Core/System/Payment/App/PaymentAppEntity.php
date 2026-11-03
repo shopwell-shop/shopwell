@@ -2,7 +2,6 @@
 
 namespace Shopwell\Core\System\Payment\App;
 
-use Shopwell\Core\Checkout\Payment\Aggregate\PaymentMethodGatewayChannel\PaymentMethodGatewayChannelEntity;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\Entity;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\Field;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\FieldType;
@@ -182,7 +181,7 @@ class PaymentAppEntity extends EntityStruct
     /**
      * The gateway channels the app enabled for the payment methods of the shop.
      *
-     * @var array<string, PaymentMethodGatewayChannelEntity>|null
+     * @var array<string, EntityStruct>|null
      */
     #[OneToMany(entity: 'payment_method_gateway_channel', ref: 'payment_app_id', onDelete: OnDelete::CASCADE, api: ['admin-api' => true, 'store-api' => false])]
     public ?array $gatewayChannels = null;

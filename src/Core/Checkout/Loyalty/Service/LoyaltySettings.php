@@ -24,7 +24,7 @@ class LoyaltySettings
 
     final public const CONFIG_KEY_TOP_UP_POINTS_PER_CURRENCY_UNIT = 'core.loyalty.topUpPointsPerCurrencyUnit';
 
-    final public const CONFIG_KEY_GROWTH_PER_CURRENCY_UNIT = 'core.loyalty.growthPerCurrencyUnit';
+    final public const CONFIG_KEY_TIER_POINTS_PER_CURRENCY_UNIT = 'core.loyalty.tierPointsPerCurrencyUnit';
 
     final public const CONFIG_KEY_POINT_VALUE_IN_CURRENCY = 'core.loyalty.pointValueInCurrency';
 
@@ -42,7 +42,7 @@ class LoyaltySettings
 
     final public const DEFAULT_TOP_UP_POINTS_PER_CURRENCY_UNIT = 0;
 
-    final public const DEFAULT_GROWTH_PER_CURRENCY_UNIT = 1;
+    final public const DEFAULT_TIER_POINTS_PER_CURRENCY_UNIT = 1;
 
     final public const DEFAULT_POINT_VALUE_IN_CURRENCY = 0.01;
 
@@ -96,10 +96,14 @@ class LoyaltySettings
             ?? self::DEFAULT_TOP_UP_POINTS_PER_CURRENCY_UNIT;
     }
 
-    public function growthPerCurrencyUnit(?string $salesChannelId = null): int
+    /**
+     * Tier points an order earns per currency unit. They are the unit a tier is reached in, and
+     * they are never spent - redeeming takes points, not tier points.
+     */
+    public function tierPointsPerCurrencyUnit(?string $salesChannelId = null): int
     {
-        return $this->int(self::CONFIG_KEY_GROWTH_PER_CURRENCY_UNIT, $salesChannelId)
-            ?? self::DEFAULT_GROWTH_PER_CURRENCY_UNIT;
+        return $this->int(self::CONFIG_KEY_TIER_POINTS_PER_CURRENCY_UNIT, $salesChannelId)
+            ?? self::DEFAULT_TIER_POINTS_PER_CURRENCY_UNIT;
     }
 
     /**

@@ -2,7 +2,7 @@
 
 namespace Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyPointLotUse;
 
-use Shopwell\Core\Checkout\Loyalty\Entity\CustomerPointTransaction\CustomerPointTransactionDefinition;
+use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyPointTransaction\LoyaltyPointTransactionDefinition;
 use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyPointLot\LoyaltyPointLotDefinition;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityDefinition;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\FkField;
@@ -64,11 +64,11 @@ class LoyaltyPointLotUseDefinition extends EntityDefinition
         return new FieldCollection([
             (new IdField('id', 'id'))->addFlags(new ApiAware(), new PrimaryKey(), new Required()),
             (new FkField('lot_id', 'lotId', LoyaltyPointLotDefinition::class))->addFlags(new ApiAware(), new Required()),
-            (new FkField('transaction_id', 'transactionId', CustomerPointTransactionDefinition::class))->addFlags(new ApiAware(), new Required()),
+            (new FkField('transaction_id', 'transactionId', LoyaltyPointTransactionDefinition::class))->addFlags(new ApiAware(), new Required()),
             (new IntField('points', 'points'))->addFlags(new ApiAware(), new Required()),
             (new IntField('returned_points', 'returnedPoints'))->addFlags(new ApiAware(), new Required()),
             new ManyToOneAssociationField('lot', 'lot_id', LoyaltyPointLotDefinition::class, 'id', false),
-            new ManyToOneAssociationField('transaction', 'transaction_id', CustomerPointTransactionDefinition::class, 'id', false),
+            new ManyToOneAssociationField('transaction', 'transaction_id', LoyaltyPointTransactionDefinition::class, 'id', false),
         ]);
     }
 }

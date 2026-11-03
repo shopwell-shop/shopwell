@@ -10,6 +10,7 @@ use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
 use Shopwell\Core\System\Payment\Gateway\Request\Money;
 use Shopwell\Core\System\Payment\Gateway\Request\NotificationResult;
 use Shopwell\Core\System\Payment\Integration\Alipay\Api\AlipayApi;
+use Shopwell\Core\System\Payment\Integration\Alipay\Request\AlipayPaymentStatus;
 use Shopwell\Core\System\Payment\PaymentException;
 use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
 
@@ -25,11 +26,6 @@ use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
 #[Package('framework')]
 final class AlipayNotifyAction extends AbstractPaymentAction
 {
-    /**
-     * The trade states alipay reports for a paid trade.
-     */
-    final public const PAID_STATES = ['TRADE_SUCCESS', 'TRADE_FINISHED'];
-
     final public const DEFAULT_CURRENCY = 'CNY';
 
     protected string $apiClass = AlipayApi::class;
@@ -66,7 +62,7 @@ final class AlipayNotifyAction extends AbstractPaymentAction
             signatureValid: $signatureValid,
             // "the trade is paid" is only an answer when it comes from alipay - a forged body that
             // claims TRADE_SUCCESS is not a success, exactly like the stripe and paypal actions read it
-            succeeded: $signatureValid && \in_array($status, self::PAID_STATES, true),
+            succeeded: $signatureValid && AlipayPaymentStatus::isPaid($status),
             outPaymentNo: isset($parameters['trade_no']) ? (string) $parameters['trade_no'] : null,
             amount: $this->amountOf($parameters, $currency),
             currency: $currency,

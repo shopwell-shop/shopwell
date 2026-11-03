@@ -49,7 +49,6 @@ class PaymentCycleRulesTest extends TestCase
         $rules = new PaymentCycleRules(
             retryableFailureCodes: ['NOTENOUGH'],
             finalFailureCodes: ['CONTRACT_NOT_EXIST'],
-            unknownFailureCodes: ['ORDERPAID'],
         );
 
         static::assertSame('retryable', $rules->classifyFailureCode('NOTENOUGH'));

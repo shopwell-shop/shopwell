@@ -12,6 +12,7 @@ use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
 use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
 use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
 use Shopwell\Core\System\Payment\Provider\Config\PaymentConfigField;
+use Shopwell\Core\System\Payment\Provider\Config\PaymentConfigReader;
 use Shopwell\Core\System\Payment\Provider\PaymentProviderFactory;
 use Shopwell\Tests\Unit\Core\System\Payment\Provider\Fixtures\TestNotificationExtractor;
 use Shopwell\Tests\Unit\Core\System\Payment\Provider\Fixtures\TestPaymentAction;
@@ -40,7 +41,7 @@ class PaymentProviderFactoryTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->factory = new PaymentProviderFactory();
+        $this->factory = new PaymentProviderFactory(new PaymentConfigReader());
     }
 
     public function testBuildsTheSnapshotOutOfTheDeclaration(): void
@@ -73,6 +74,44 @@ class PaymentProviderFactoryTest extends TestCase
         static::assertSame('api_key', $provider->credentialField('api_key')?->name);
         static::assertNull($provider->credentialField('unknown'));
         static::assertSame(['api_key'], $provider->credentialNames());
+    }
+
+    public function testXmlDeclarationsCanBeExtendedInPhpWithoutReplacingThem(): void
+    {
+        $declaration = new class extends TestPaymentProvider {
+            public function __construct()
+            {
+                parent::__construct(
+                    actions: [new TestPaymentAction(PaymentCapability::CAPTURE)],
+                    credentials: [new PaymentConfigField(name: 'api_key')],
+                    channels: [new PaymentChannel(
+                        technicalName: 'one',
+                        providerTechnicalName: 'testpay',
+                        label: 'One',
+                        flow: PaymentFlow::REDIRECT,
+                        params: [new PaymentConfigField(name: 'code_param')],
+                    )],
+                );
+            }
+
+            public function getConfigFile(): string
+            {
+                return __DIR__ . '/Config/_fixtures/payment-provider.xml';
+            }
+
+            public function getCredentials(): array
+            {
+                return [...parent::getCredentials(), new PaymentConfigField(name: 'computed_field')];
+            }
+        };
+
+        $provider = $this->factory->create($declaration);
+
+        static::assertSame(
+            ['sandbox_mode', 'private_key', 'environment', 'api_key', 'computed_field'],
+            $provider->credentialNames()
+        );
+        static::assertSame(['shared_name', 'code_param'], array_column($provider->channels['one']->params, 'name'));
     }
 
     public function testTheCapabilitySetIsTheUnionOfTheActionsAndTheDeclaration(): void

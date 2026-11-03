@@ -79,17 +79,12 @@ final class PaymentNotificationProcessor
     ): PaymentNotificationEntity {
         $notificationId = $this->recordReceived($providerTechnicalName, $rawBody, $headers, $remoteIp);
 
-        $state = [
-            'result' => PaymentNotificationEntity::RESULT_ERROR,
-            'signatureValid' => false,
-            'orderId' => null,
-            'message' => null,
-        ];
+        $context = new PaymentNotificationProcessingContext($providerTechnicalName, $rawBody, $headers, $remoteIp, $paymentNoHint);
 
         try {
-            $this->handle($providerTechnicalName, $rawBody, $headers, $remoteIp, $paymentNoHint, $state);
+            $this->handle($context);
         } catch (\Throwable $exception) {
-            $state['message'] = $exception->getMessage();
+            $context->message = $exception->getMessage();
 
             if ($exception instanceof PaymentException) {
                 throw $exception;
@@ -97,93 +92,52 @@ final class PaymentNotificationProcessor
 
             throw PaymentException::gatewayError($providerTechnicalName, $exception->getMessage(), $exception);
         } finally {
-            $this->conclude($notificationId, $state);
+            $this->conclude($notificationId, $context);
         }
 
         return $this->getNotification($notificationId);
     }
 
     /**
-     * @param array{result: string, signatureValid: bool, orderId: string|null, message: string|null} $state
-     * @param array<string, string|list<string>> $headers
-     *
      * @throws PaymentException
      */
-    private function handle(
-        string $providerTechnicalName,
-        string $rawBody,
-        array $headers,
-        ?string $remoteIp,
-        ?string $paymentNoHint,
-        array &$state
-    ): void {
-        $provider = $this->providerRegistry->get($providerTechnicalName);
-        $data = $provider->notificationExtractor->extract($rawBody, $headers);
-
-        if ($paymentNoHint !== null && $paymentNoHint !== '') {
-            $data = new PaymentNotificationData($paymentNoHint, $data->outTradeNo, $data->outPaymentNo, $data->refundNo);
-        }
-
-        // the extracted references are not trusted yet, they only tell us which order the notification
-        // is about - which in turn tells us which credentials are needed to verify it
-        $refund = $data->refundNo === null ? null : $this->refundService->findByRefundNo($data->refundNo);
-
-        $order = $refund instanceof PaymentRefundEntity
-            ? $this->orderService->getById($refund->paymentOrderId)
-            : ($data->paymentNo === null ? null : $this->orderService->findByPaymentNo($data->paymentNo));
-
+    private function handle(PaymentNotificationProcessingContext $context): void
+    {
+        $data = $this->extractReferences($context);
+        ['order' => $order, 'refund' => $refund] = $this->resolveSubject($data);
         $app = $order?->paymentApp;
 
         if (!$order instanceof PaymentOrderEntity || !$app instanceof PaymentAppEntity) {
-            $state['result'] = PaymentNotificationEntity::RESULT_UNMATCHED;
+            $context->result = PaymentNotificationEntity::RESULT_UNMATCHED;
 
             throw PaymentException::notificationOrderUnknown(
-                $providerTechnicalName,
+                $context->providerTechnicalName,
                 $data->paymentNo ?? $data->refundNo ?? $data->outTradeNo ?? $data->outPaymentNo ?? ''
             );
         }
 
-        $state['orderId'] = $order->id;
-
-        $resolved = $this->configResolver->resolve(
-            $app,
-            $order->channelTechnicalName,
-            $order->currency,
-            $order->device,
-            $order->channelParams ?? []
-        );
-
-        $model = PaymentGatewayModel::forNotification($rawBody, $headers, $remoteIp);
-        $gateway = $resolved->provider->gatewayFactory->createForPayment($resolved, (string) $order->notifyUrl, (string) $order->returnUrl);
-
-        $gateway->execute(new Notify($model));
-        $result = $model->result(NotificationResult::class, $order->channelTechnicalName);
+        $context->orderId = $order->id;
+        $result = $this->verifyNotification($context, $order, $app);
 
         if (!$result->signatureValid) {
-            $state['result'] = PaymentNotificationEntity::RESULT_INVALID_SIGNATURE;
+            $context->result = PaymentNotificationEntity::RESULT_INVALID_SIGNATURE;
 
-            throw PaymentException::notificationInvalid($providerTechnicalName, 'the signature of the notification is invalid');
+            throw PaymentException::notificationInvalid($context->providerTechnicalName, 'the signature of the notification is invalid');
         }
 
-        $state['signatureValid'] = true;
-
+        $context->signatureValid = true;
         $expected = $refund instanceof PaymentRefundEntity ? $refund->amount : $order->amount;
 
-        if ($result->amount === null || $result->amount !== $expected) {
-            $state['result'] = PaymentNotificationEntity::RESULT_AMOUNT_MISMATCH;
+        if (!$this->amountMatches($expected, $result)) {
+            $context->result = PaymentNotificationEntity::RESULT_AMOUNT_MISMATCH;
 
             throw PaymentException::amountMismatch($order->paymentNo, $expected, $result->amount ?? 0);
         }
 
-        // the currency is judged as strictly as the amount: the same number in another currency is not
-        // the payment of this order. A currency the interface does not report cannot be disproved -
-        // rejecting it would leave a payment that really happened unpaid while the notification keeps
-        // retrying - so only a reported currency has to match, and it is compared case insensitively
-        // because `cny` and `CNY` are the same currency.
-        if ($result->currency !== null && strtoupper($result->currency) !== strtoupper($order->currency)) {
+        if ($result->currency !== null && !$this->currencyMatches($order->currency, $result->currency)) {
             // a result of its own: support filters this table by what went wrong, and a currency
             // mismatch reported as an amount mismatch would send them looking at the amount check
-            $state['result'] = PaymentNotificationEntity::RESULT_CURRENCY_MISMATCH;
+            $context->result = PaymentNotificationEntity::RESULT_CURRENCY_MISMATCH;
 
             throw PaymentException::currencyMismatch($order->paymentNo, $order->currency, $result->currency);
         }
@@ -193,23 +147,78 @@ final class PaymentNotificationProcessor
 
             // the notification is applied to the refund, so it is fully processed - whether the
             // refund is settled by it or stays processing is not an error of the notification
-            $state['result'] = PaymentNotificationEntity::RESULT_OK;
+            $context->result = PaymentNotificationEntity::RESULT_OK;
 
             return;
         }
 
-        $this->applyPayment($order, $result, $state);
+        $this->applyPayment($order, $result, $context);
+    }
+
+    private function extractReferences(PaymentNotificationProcessingContext $context): PaymentNotificationData
+    {
+        $provider = $this->providerRegistry->get($context->providerTechnicalName);
+        $data = $provider->notificationExtractor->extract($context->rawBody, $context->headers);
+
+        if ($context->paymentNoHint === null || $context->paymentNoHint === '') {
+            return $data;
+        }
+
+        return new PaymentNotificationData($context->paymentNoHint, $data->outTradeNo, $data->outPaymentNo, $data->refundNo);
     }
 
     /**
-     * @param array{result: string, signatureValid: bool, orderId: string|null, message: string|null} $state
+     * The extracted references are not trusted yet, they only tell us which order the notification
+     * is about - which in turn tells us which credentials are needed to verify it.
      *
+     * @return array{order: PaymentOrderEntity|null, refund: PaymentRefundEntity|null}
+     */
+    private function resolveSubject(PaymentNotificationData $data): array
+    {
+        $refund = $data->refundNo === null ? null : $this->refundService->findByRefundNo($data->refundNo);
+        $order = $refund instanceof PaymentRefundEntity
+            ? $this->orderService->getById($refund->paymentOrderId)
+            : ($data->paymentNo === null ? null : $this->orderService->findByPaymentNo($data->paymentNo));
+
+        return ['order' => $order, 'refund' => $refund];
+    }
+
+    private function verifyNotification(PaymentNotificationProcessingContext $context, PaymentOrderEntity $order, PaymentAppEntity $app): NotificationResult
+    {
+        $resolved = $this->configResolver->resolve(
+            $app,
+            $order->channelTechnicalName,
+            $order->currency,
+            $order->device,
+            $order->channelParams ?? []
+        );
+
+        $model = PaymentGatewayModel::forNotification($context->rawBody, $context->headers, $context->remoteIp);
+        $gateway = $resolved->provider->gatewayFactory->createForPayment($resolved, (string) $order->notifyUrl, (string) $order->returnUrl);
+
+        $gateway->execute(new Notify($model));
+
+        return $model->result(NotificationResult::class, $order->channelTechnicalName);
+    }
+
+    private function amountMatches(int $expected, NotificationResult $result): bool
+    {
+        return $result->amount !== null && $result->amount === $expected;
+    }
+
+    private function currencyMatches(string $expected, string $actual): bool
+    {
+        // `cny` and `CNY` are the same currency.
+        return strtoupper($actual) === strtoupper($expected);
+    }
+
+    /**
      * @throws PaymentException
      */
-    private function applyPayment(PaymentOrderEntity $order, NotificationResult $result, array &$state): void
+    private function applyPayment(PaymentOrderEntity $order, NotificationResult $result, PaymentNotificationProcessingContext $context): void
     {
         if ($order->paidAt !== null) {
-            $state['result'] = PaymentNotificationEntity::RESULT_DUPLICATE;
+            $context->result = PaymentNotificationEntity::RESULT_DUPLICATE;
 
             // the payment is written, but one of its consequences may have failed the first time - a
             // duplicate notification is the retry window for exactly that
@@ -221,7 +230,7 @@ final class PaymentNotificationProcessor
         // the interface reports a payment that is not settled yet, or one it gave up on. The order stays
         // payable and expires on its own, so nothing is written - the notification stays for support.
         if (!$result->succeeded) {
-            $state['result'] = PaymentNotificationEntity::RESULT_IGNORED;
+            $context->result = PaymentNotificationEntity::RESULT_IGNORED;
 
             return;
         }
@@ -231,7 +240,7 @@ final class PaymentNotificationProcessor
 
         // the payment is applied and the app is told about it, which is the only fully successful
         // outcome: every branch above either returns early or throws
-        $state['result'] = PaymentNotificationEntity::RESULT_OK;
+        $context->result = PaymentNotificationEntity::RESULT_OK;
     }
 
     /**
@@ -254,24 +263,21 @@ final class PaymentNotificationProcessor
         return $id;
     }
 
-    /**
-     * @param array{result: string, signatureValid: bool, orderId: string|null, message: string|null} $state
-     */
-    private function conclude(string $notificationId, array $state): void
+    private function conclude(string $notificationId, PaymentNotificationProcessingContext $context): void
     {
         $this->notificationRepository->update([[
             'id' => $notificationId,
-            'paymentOrderId' => $state['orderId'],
-            'signatureValid' => $state['signatureValid'],
-            'processed' => \in_array($state['result'], [
+            'paymentOrderId' => $context->orderId,
+            'signatureValid' => $context->signatureValid,
+            'processed' => \in_array($context->result, [
                 PaymentNotificationEntity::RESULT_OK,
                 PaymentNotificationEntity::RESULT_DUPLICATE,
                 PaymentNotificationEntity::RESULT_IGNORED,
             ], true),
             // 32 is the width of the column: every result constant is far shorter, and a shortened one
             // would read like a different outcome in exactly the table support diagnoses with
-            'processResult' => mb_substr($state['result'], 0, 32),
-            'errorMessage' => $state['message'] === null ? null : mb_substr($state['message'], 0, 512),
+            'processResult' => mb_substr($context->result, 0, 32),
+            'errorMessage' => $context->message === null ? null : mb_substr($context->message, 0, 512),
         ]], Context::createDefaultContext());
     }
 

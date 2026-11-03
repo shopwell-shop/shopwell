@@ -3,7 +3,7 @@
 namespace Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyTier;
 
 use Shopwell\Core\Checkout\Customer\Aggregate\CustomerGroup\CustomerGroupDefinition;
-use Shopwell\Core\Checkout\Loyalty\Entity\CustomerLoyalty\CustomerLoyaltyDefinition;
+use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyAccount\LoyaltyAccountDefinition;
 use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyTier\Aggregate\LoyaltyTierTranslation\LoyaltyTierTranslationDefinition;
 use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyTierBenefit\LoyaltyTierBenefitDefinition;
 use Shopwell\Core\Checkout\Membership\Entity\MembershipOrder\MembershipOrderDefinition;
@@ -62,7 +62,7 @@ class LoyaltyTierDefinition extends EntityDefinition
             (new IdField('id', 'id'))->addFlags(new ApiAware(), new PrimaryKey(), new Required()),
             (new StringField('technical_name', 'technicalName'))->addFlags(new ApiAware(), new Required()),
             (new IntField('level', 'level'))->addFlags(new ApiAware(), new Required()),
-            (new IntField('min_growth_value', 'minGrowthValue'))->addFlags(new ApiAware()),
+            (new IntField('min_tier_points', 'minTierPoints'))->addFlags(new ApiAware()),
             (new FloatField('points_multiplier', 'pointsMultiplier'))->addFlags(new ApiAware()),
             (new FloatField('discount_percent', 'discountPercent'))->addFlags(new ApiAware()),
             (new BoolField('free_shipping', 'freeShipping'))->addFlags(new ApiAware()),
@@ -71,7 +71,7 @@ class LoyaltyTierDefinition extends EntityDefinition
             (new TranslatedField('name'))->addFlags(new ApiAware(), new SearchRanking(SearchRanking::HIGH_SEARCH_RANKING)),
             (new TranslatedField('description'))->addFlags(new ApiAware()),
             new ManyToOneAssociationField('customerGroup', 'customer_group_id', CustomerGroupDefinition::class, 'id', false),
-            new OneToManyAssociationField('customers', CustomerLoyaltyDefinition::class, 'membership_tier_id', 'id'),
+            new OneToManyAssociationField('customers', LoyaltyAccountDefinition::class, 'tier_id', 'id'),
             new OneToManyAssociationField('membershipPlans', MembershipPlanDefinition::class, 'loyalty_tier_id'),
             new OneToManyAssociationField('membershipOrders', MembershipOrderDefinition::class, 'loyalty_tier_id'),
             new OneToManyAssociationField('membershipSubscriptions', MembershipSubscriptionDefinition::class, 'loyalty_tier_id'),

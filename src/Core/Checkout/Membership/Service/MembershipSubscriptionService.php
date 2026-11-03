@@ -6,7 +6,7 @@ use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\ParameterType;
 use Psr\Clock\ClockInterface;
 use Shopwell\Core\Checkout\Ledger\RowLock;
-use Shopwell\Core\Checkout\Loyalty\Entity\CustomerLoyalty\CustomerLoyaltyCollection;
+use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyAccount\LoyaltyAccountCollection;
 use Shopwell\Core\Checkout\Loyalty\Service\LoyaltyAccountService;
 use Shopwell\Core\Checkout\Loyalty\Service\TierResolver;
 use Shopwell\Core\Checkout\Membership\Entity\MembershipSubscription\MembershipSubscriptionCollection;
@@ -34,7 +34,7 @@ use Shopwell\Core\Framework\Uuid\Uuid;
  * paid for.
  *
  * The tier and the end of the membership are also written onto the loyalty account
- * (`membership_tier_id`, `membership_valid_until`). Those two columns are a projection of this table
+ * (`tier_id`, `membership_paid_until`). Those two columns are a projection of this table
  * and nothing else may write them: the storefront, the administration and the tier resolution all read
  * them without knowing that a membership exists, and a projection only stays correct when there is one
  * writer.
@@ -50,11 +50,11 @@ class MembershipSubscriptionService
      * @internal
      *
      * @param EntityRepository<MembershipSubscriptionCollection> $subscriptionRepository
-     * @param EntityRepository<CustomerLoyaltyCollection> $customerLoyaltyRepository
+     * @param EntityRepository<LoyaltyAccountCollection> $loyaltyAccountRepository
      */
     public function __construct(
         private readonly EntityRepository $subscriptionRepository,
-        private readonly EntityRepository $customerLoyaltyRepository,
+        private readonly EntityRepository $loyaltyAccountRepository,
         private readonly LoyaltyAccountService $accounts,
         private readonly TierResolver $tiers,
         private readonly RowLock $rows,
@@ -171,7 +171,7 @@ class MembershipSubscriptionService
 
     /**
      * Ends a membership ahead of its period - a refund, a goodwill decision, a purchase that has to be
-     * taken back. The tier falls back to what the growth value earns, the same way it does on expiry.
+     * taken back. The tier falls back to what the tier points earn, the same way it does on expiry.
      *
      * @throws MembershipException
      */
@@ -266,10 +266,10 @@ class MembershipSubscriptionService
                 ]], $context);
             }
 
-            $this->customerLoyaltyRepository->update([[
+            $this->loyaltyAccountRepository->update([[
                 'id' => $account['id'],
-                'membershipTierId' => $purchase['loyaltyTierId'],
-                'membershipValidUntil' => $endsAt,
+                'tierId' => $purchase['loyaltyTierId'],
+                'membershipPaidUntil' => $endsAt,
             ]], $context);
 
             return $id;
@@ -304,7 +304,7 @@ class MembershipSubscriptionService
      * Writes the end of a membership and takes the tier away from the loyalty account.
      *
      * The projection is cleared before the tier is resolved again: resolving reads the account, and it
-     * has to see that the paid tier is gone to fall back to what the growth value earns.
+     * has to see that the paid tier is gone to fall back to what the tier points earn.
      *
      * @param array<string, mixed> $subscription the locked row
      */
@@ -318,20 +318,20 @@ class MembershipSubscriptionService
         ]], $context);
 
         $customerId = (string) $subscription['customer_id'];
-        $account = $this->rows->lock('customer_loyalty', ['customer_id' => $customerId]);
+        $account = $this->rows->lock('loyalty_account', ['customer_id' => $customerId]);
 
         if ($account === null) {
             return;
         }
 
-        $this->customerLoyaltyRepository->update([[
+        $this->loyaltyAccountRepository->update([[
             'id' => $account['id'],
-            'membershipTierId' => null,
-            'membershipValidUntil' => null,
+            'tierId' => null,
+            'membershipPaidUntil' => null,
         ]], $context);
 
-        // the tier the growth value earns, dispatched as the change it is
-        $this->tiers->resolve($customerId, (int) $account['growth_value'], $context);
+        // the tier the tier points earn, dispatched as the change it is
+        $this->tiers->resolve($customerId, (int) $account['tier_points'], $context);
     }
 
     /**
@@ -339,7 +339,7 @@ class MembershipSubscriptionService
      */
     private function lockAccount(string $customerId, Context $context): array
     {
-        $account = $this->rows->lock('customer_loyalty', ['customer_id' => $customerId]);
+        $account = $this->rows->lock('loyalty_account', ['customer_id' => $customerId]);
 
         if ($account !== null) {
             return $account;
@@ -347,7 +347,7 @@ class MembershipSubscriptionService
 
         $this->accounts->open($customerId, $context);
 
-        return $this->rows->lock('customer_loyalty', ['customer_id' => $customerId])
+        return $this->rows->lock('loyalty_account', ['customer_id' => $customerId])
             ?? throw MembershipException::subscriptionWithoutAccount($customerId);
     }
 

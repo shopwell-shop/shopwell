@@ -15,7 +15,10 @@ use Shopwell\Core\System\Payment\App\PaymentAppDto;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
 use Shopwell\Core\System\Payment\App\PaymentAppProvisioner;
 use Shopwell\Core\System\Payment\App\PaymentCredentialCipher;
+use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannelRegistry;
+use Shopwell\Core\System\Payment\Provider\Config\PaymentConfigSanitizer;
 use Shopwell\Core\System\Payment\Provider\Config\PaymentProviderConfigService;
+use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -35,12 +38,12 @@ use Symfony\Component\Routing\Attribute\Route;
  * when it is created or rotated. Reading an app never returns it - the administration only learns
  * whether one is set.
  *
- * The credentials and the channel parameters of an app are different: they are echoed back in plain
- * text, so an operator can read through which merchant account an app collects and correct a single
- * value without retyping the rest. What is stored stays sealed with the
- * {@see PaymentCredentialCipher}. The tenant of the platform has no values of its own - it collects on
- * the merchant configuration of the interface, which lives in the `payment_provider_config` table, so
- * its rows are filled from there.
+ * Non-secret credentials and channel parameters are echoed back, so an operator can read through
+ * which merchant account an app collects and correct a single value without retyping the rest. Secret
+ * values only report that they are configured; their original values never leave the server. What is
+ * stored stays sealed with the {@see PaymentCredentialCipher}. The tenant of the platform has no values
+ * of its own - it collects on the merchant configuration of the interface, which lives in the
+ * `payment_provider_config` table, so its rows are filled from there and sanitized by the same rule.
  *
  * The controller only maps the request onto the {@see PaymentAppDto} and its answer back into the
  * response; the writing itself lives in the provisioner.
@@ -58,6 +61,8 @@ class PaymentAppController extends AbstractController
         private readonly PaymentAppProvisioner $provisioner,
         private readonly PaymentCredentialCipher $cipher,
         private readonly PaymentProviderConfigService $providerConfigService,
+        private readonly PaymentProviderRegistry $providerRegistry,
+        private readonly PaymentChannelRegistry $channelRegistry,
     ) {
     }
 
@@ -173,7 +178,14 @@ class PaymentAppController extends AbstractController
                 continue;
             }
 
-            $credentials = $this->credentialsOf($app, $provider);
+            $definition = $this->providerRegistry->has($provider->providerTechnicalName)
+                ? $this->providerRegistry->get($provider->providerTechnicalName)
+                : null;
+            // Without the declaration there is no safe way to tell secrets from ordinary values.
+            $credentials = $definition === null ? [] : PaymentConfigSanitizer::values(
+                $definition->credentials,
+                $this->credentialsOf($app, $provider),
+            );
 
             $providers[] = [
                 'providerTechnicalName' => $provider->providerTechnicalName,
@@ -184,7 +196,7 @@ class PaymentAppController extends AbstractController
                 // that is gone leaves the id behind until the next write, and an empty name then
                 'sourceAppId' => $provider->sourceAppId,
                 'sourceAppName' => $provider->sourceApp->name ?? '',
-                // the values are echoed back so the page can render them, what is stored stays sealed
+                // ordinary values render in the form; a secret is null and only its existence remains
                 'credentials' => $credentials,
                 'hasCredentials' => $credentials !== [],
                 'settings' => $provider->settings ?? [],
@@ -200,6 +212,10 @@ class PaymentAppController extends AbstractController
             $params = $app->type === PaymentAppEntity::TYPE_PLATFORM
                 ? ($platformParams[$channel->channelTechnicalName] ?? [])
                 : $this->cipher->decrypt($channel->params);
+            $definition = $this->channelRegistry->has($channel->channelTechnicalName)
+                ? $this->channelRegistry->get($channel->channelTechnicalName)
+                : null;
+            $params = $definition === null ? [] : PaymentConfigSanitizer::values($definition->params, $params);
 
             $channels[] = [
                 'channelTechnicalName' => $channel->channelTechnicalName,
