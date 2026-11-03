@@ -4,11 +4,11 @@ namespace Shopwell\Tests\Unit\Core\Checkout\Membership\Purchase;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
-use Shopwell\Core\Checkout\Membership\Entity\MembershipOrder\MembershipOrderCollection;
-use Shopwell\Core\Checkout\Membership\Entity\MembershipOrder\MembershipOrderEntity;
+use Shopwell\Core\Checkout\Membership\Entity\MembershipPurchase\MembershipPurchaseCollection;
+use Shopwell\Core\Checkout\Membership\Entity\MembershipPurchase\MembershipPurchaseEntity;
 use Shopwell\Core\Checkout\Membership\Entity\MembershipSubscription\MembershipSubscriptionEntity;
 use Shopwell\Core\Checkout\Membership\MembershipSubscriptionStates;
-use Shopwell\Core\Checkout\Membership\Purchase\MembershipOrderPurchase;
+use Shopwell\Core\Checkout\Membership\Purchase\MembershipPurchase;
 use Shopwell\Core\Checkout\Membership\Service\MembershipSubscriptionService;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\Log\Package;
@@ -21,8 +21,8 @@ use Shopwell\Core\Test\Stub\DataAbstractionLayer\StaticEntityRepository;
  * @internal
  */
 #[Package('checkout')]
-#[CoversClass(MembershipOrderPurchase::class)]
-class MembershipOrderPurchaseTest extends TestCase
+#[CoversClass(MembershipPurchase::class)]
+class MembershipPurchaseTest extends TestCase
 {
     private const ORDER_ID = 'c1b2c3d4e5f60718293a4b5c6d7e8f90';
 
@@ -31,7 +31,7 @@ class MembershipOrderPurchaseTest extends TestCase
     private const TIER_ID = 'd1b2c3d4e5f60718293a4b5c6d7e8f90';
 
     /**
-     * @var StaticEntityRepository<MembershipOrderCollection>
+     * @var StaticEntityRepository<MembershipPurchaseCollection>
      */
     private StaticEntityRepository $orderRepository;
 
@@ -39,7 +39,7 @@ class MembershipOrderPurchaseTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->orderRepository = StaticEntityRepository::of(MembershipOrderCollection::class);
+        $this->orderRepository = StaticEntityRepository::of(MembershipPurchaseCollection::class);
         $this->context = Context::createDefaultContext();
     }
 
@@ -55,7 +55,7 @@ class MembershipOrderPurchaseTest extends TestCase
 
     public function testAnActivatedOrderIsAlreadySettled(): void
     {
-        static::assertTrue($this->purchase(state: MembershipOrderEntity::STATE_ACTIVATED)->isSettled());
+        static::assertTrue($this->purchase(state: MembershipPurchaseEntity::STATE_ACTIVATED)->isSettled());
     }
 
     /**
@@ -85,7 +85,7 @@ class MembershipOrderPurchaseTest extends TestCase
 
         $update = $this->orderRepository->updates[0][0];
         static::assertSame(self::ORDER_ID, $update['id']);
-        static::assertSame(MembershipOrderEntity::STATE_ACTIVATED, $update['state']);
+        static::assertSame(MembershipPurchaseEntity::STATE_ACTIVATED, $update['state']);
         static::assertSame('PAY-1', $update['paymentNo']);
         static::assertSame($settledAt, $update['paidAt']);
         static::assertSame($settledAt, $update['activatedAt']);
@@ -106,7 +106,7 @@ class MembershipOrderPurchaseTest extends TestCase
         $this->purchase(subscriptions: $subscriptions)->fail('PAY-1', $failedAt, $this->context);
 
         $update = $this->orderRepository->updates[0][0];
-        static::assertSame(MembershipOrderEntity::STATE_FAILED, $update['state']);
+        static::assertSame(MembershipPurchaseEntity::STATE_FAILED, $update['state']);
         static::assertSame('PAY-1', $update['paymentNo']);
         static::assertSame($failedAt, $update['paidAt']);
     }
@@ -124,11 +124,11 @@ class MembershipOrderPurchaseTest extends TestCase
     }
 
     private function purchase(
-        string $state = MembershipOrderEntity::STATE_OPEN,
+        string $state = MembershipPurchaseEntity::STATE_OPEN,
         ?string $tierId = self::TIER_ID,
         ?MembershipSubscriptionService $subscriptions = null,
-    ): MembershipOrderPurchase {
-        return new MembershipOrderPurchase(
+    ): MembershipPurchase {
+        return new MembershipPurchase(
             [
                 'id' => self::ORDER_ID,
                 'customer_id' => self::CUSTOMER_ID,

@@ -7,11 +7,11 @@ use Psr\Clock\ClockInterface;
 use Shopwell\Core\Checkout\Ledger\RowLock;
 use Shopwell\Core\Checkout\Loyalty\Service\LoyaltyAccountService;
 use Shopwell\Core\Checkout\Loyalty\Service\TierResolver;
-use Shopwell\Core\Checkout\Membership\Entity\MembershipOrder\MembershipOrderDefinition;
 use Shopwell\Core\Checkout\Membership\Entity\MembershipPlan\Aggregate\MembershipPlanTranslation\MembershipPlanTranslationDefinition;
 use Shopwell\Core\Checkout\Membership\Entity\MembershipPlan\MembershipPlanDefinition;
+use Shopwell\Core\Checkout\Membership\Entity\MembershipPurchase\MembershipPurchaseDefinition;
 use Shopwell\Core\Checkout\Membership\Entity\MembershipSubscription\MembershipSubscriptionDefinition;
-use Shopwell\Core\Checkout\Membership\Purchase\MembershipOrderPurchaseStore;
+use Shopwell\Core\Checkout\Membership\Purchase\MembershipPurchaseStore;
 use Shopwell\Core\Checkout\Membership\SalesChannel\MembershipPresenter;
 use Shopwell\Core\Checkout\Membership\SalesChannel\MembershipPurchaseRoute;
 use Shopwell\Core\Checkout\Membership\SalesChannel\MembershipRoute;
@@ -39,7 +39,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(MembershipPlanTranslationDefinition::class)
         ->tag('shopwell.entity.definition');
 
-    $services->set(MembershipOrderDefinition::class)
+    $services->set(MembershipPurchaseDefinition::class)
         ->tag('shopwell.entity.definition');
 
     $services->set(MembershipSubscriptionDefinition::class)
@@ -48,7 +48,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     // the marker a membership order carries on its payment order, built and read through one object
     $services->set('shopwell.membership.purchase_attach', PurchaseAttach::class)
         ->args([
-            'membership_order:',
+            'membership_purchase:',
         ]);
 
     $services->set(MembershipPlanService::class)
@@ -60,7 +60,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(MembershipPurchaseService::class)
         ->args([
-            service('membership_order.repository'),
+            service('membership_purchase.repository'),
             service(MembershipPlanService::class),
             service(StorefrontPaymentService::class),
             service('shopwell.membership.purchase_attach'),
@@ -85,9 +85,9 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(ClockInterface::class),
         ]);
 
-    $services->set(MembershipOrderPurchaseStore::class)
+    $services->set(MembershipPurchaseStore::class)
         ->args([
-            service('membership_order.repository'),
+            service('membership_purchase.repository'),
             service(MembershipSubscriptionService::class),
             service(RowLock::class),
         ]);
@@ -95,7 +95,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(MembershipPurchaseSettlementSubscriber::class)
         ->args([
             service(PurchaseSettlement::class),
-            service(MembershipOrderPurchaseStore::class),
+            service(MembershipPurchaseStore::class),
             service('shopwell.membership.purchase_attach'),
         ])
         ->tag('kernel.event_subscriber');

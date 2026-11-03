@@ -7,6 +7,7 @@ use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyAccount\LoyaltyAccountCollectio
 use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyAccount\LoyaltyAccountEntity;
 use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyTier\LoyaltyTierCollection;
 use Shopwell\Core\Checkout\Loyalty\LoyaltyException;
+use Shopwell\Core\Checkout\Loyalty\Service\LoyaltyBenefitResolver;
 use Shopwell\Core\Checkout\Loyalty\Service\LoyaltyPointService;
 use Shopwell\Core\Checkout\Membership\Service\MembershipSubscriptionService;
 use Shopwell\Core\Framework\Api\Context\AdminApiSource;
@@ -44,6 +45,7 @@ class LoyaltyController
         private readonly EntityRepository $loyaltyTierRepository,
         private readonly LoyaltyPointService $loyaltyPointService,
         private readonly MembershipSubscriptionService $subscriptions,
+        private readonly LoyaltyBenefitResolver $benefits,
     ) {
     }
 
@@ -175,7 +177,9 @@ class LoyaltyController
                 'technicalName' => $tier->getTechnicalName(),
                 'name' => $tier->getName(),
                 'level' => $tier->getLevel(),
-                'pointsMultiplier' => $tier->getPointsMultiplier(),
+                // the tier's grants travel with the summary so the customer tab does not need a second
+                // request; the multiplier the tab prints is one entry of this map
+                'benefits' => $this->benefits->forTier($tier, $context)->all(),
             ],
             'membershipPaidUntil' => $loyalty->getMembershipPaidUntil()?->format(\DATE_ATOM),
         ]);

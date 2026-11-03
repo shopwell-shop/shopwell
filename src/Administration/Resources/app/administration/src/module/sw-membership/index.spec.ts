@@ -10,7 +10,7 @@ jest.mock('./service', () => ({}));
 const { Module, Component } = Shopwell;
 
 describe('src/module/sw-membership/index', () => {
-    it('registers the pages of the tiers, the plans and the orders', () => {
+    it('registers the pages of the tiers, the plans and the purchases', () => {
         const components = Component.getComponentRegistry();
 
         [
@@ -20,7 +20,7 @@ describe('src/module/sw-membership/index', () => {
             'sw-membership-plan-list',
             'sw-membership-plan-detail',
             'sw-membership-plan-create',
-            'sw-membership-order-list',
+            'sw-membership-purchase-list',
         ].forEach((component) => {
             expect(components.has(component)).toBe(true);
         });
@@ -48,7 +48,7 @@ describe('src/module/sw-membership/index', () => {
         });
     });
 
-    it('puts the membership orders next to the sales orders instead of into the settings', () => {
+    it('puts the membership purchases next to the sales orders instead of into the settings', () => {
         const module = Module.getModuleRegistry().get('sw-settings-membership');
 
         const navigation = (module?.manifest.navigation ?? []) as Array<{
@@ -60,14 +60,14 @@ describe('src/module/sw-membership/index', () => {
 
         expect(navigation).toHaveLength(1);
         expect(navigation[0]).toMatchObject({
-            id: 'sw-membership-orders',
-            path: 'sw.settings.membership.orders',
+            id: 'sw-membership-purchases',
+            path: 'sw.settings.membership.purchases',
             parent: 'sw-order',
             privilege: 'loyalty.viewer',
         });
     });
 
-    it('registers the tier, plan and order routes', () => {
+    it('registers the tier, plan and purchase routes', () => {
         const routes = Module.getModuleRegistry().get('sw-settings-membership')?.routes;
 
         [
@@ -77,7 +77,7 @@ describe('src/module/sw-membership/index', () => {
             'sw.settings.membership.plans',
             'sw.settings.membership.planDetail',
             'sw.settings.membership.planCreate',
-            'sw.settings.membership.orders',
+            'sw.settings.membership.purchases',
         ].forEach((route) => {
             expect(routes?.has(route)).toBe(true);
         });

@@ -4,7 +4,7 @@ namespace Shopwell\Tests\Unit\Core\Checkout\Membership\Subscriber;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
-use Shopwell\Core\Checkout\Membership\Purchase\MembershipOrderPurchaseStore;
+use Shopwell\Core\Checkout\Membership\Purchase\MembershipPurchaseStore;
 use Shopwell\Core\Checkout\Membership\Subscriber\MembershipPurchaseSettlementSubscriber;
 use Shopwell\Core\Checkout\Payment\Storefront\Settlement\PurchaseAttach;
 use Shopwell\Core\Checkout\Payment\Storefront\Settlement\PurchaseSettlement;
@@ -50,7 +50,7 @@ class MembershipPurchaseSettlementSubscriberTest extends TestCase
         $settlement->expects($this->once())
             ->method('settle')
             ->with(
-                static::isInstanceOf(MembershipOrderPurchaseStore::class),
+                static::isInstanceOf(MembershipPurchaseStore::class),
                 self::ORDER_ID,
                 19900,
                 'PAY-1',
@@ -89,7 +89,7 @@ class MembershipPurchaseSettlementSubscriberTest extends TestCase
         $dispatcher = new EventDispatcher();
         $dispatcher->addSubscriber(new MembershipPurchaseSettlementSubscriber(
             $settlement,
-            static::createStub(MembershipOrderPurchaseStore::class),
+            static::createStub(MembershipPurchaseStore::class),
             new PurchaseAttach(self::ATTACH_PREFIX),
         ));
 

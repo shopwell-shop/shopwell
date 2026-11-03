@@ -2,8 +2,8 @@
 
 namespace Shopwell\Core\Checkout\Membership\Service;
 
-use Shopwell\Core\Checkout\Membership\Entity\MembershipOrder\MembershipOrderCollection;
-use Shopwell\Core\Checkout\Membership\Entity\MembershipOrder\MembershipOrderEntity;
+use Shopwell\Core\Checkout\Membership\Entity\MembershipPurchase\MembershipPurchaseCollection;
+use Shopwell\Core\Checkout\Membership\Entity\MembershipPurchase\MembershipPurchaseEntity;
 use Shopwell\Core\Checkout\Membership\MembershipException;
 use Shopwell\Core\Checkout\Payment\Storefront\Settlement\PurchaseAttach;
 use Shopwell\Core\Checkout\Payment\Storefront\StorefrontPaymentService;
@@ -19,10 +19,10 @@ use Shopwell\Core\System\Payment\Gateway\Request\Money;
 /**
  * The memberships a customer buys.
  *
- * A purchase has two rows with different meanings: the order is what the customer bought - a tier, a
+ * A purchase has two rows with different meanings: the purchase is what the customer bought - a tier, a
  * duration and a price that were copied from the plan - and the payment order of the gateway is how it
- * is collected. The order is activated exactly once, keyed on its own row, see
- * {@see \Shopwell\Core\Checkout\Membership\Purchase\MembershipOrderPurchaseStore}.
+ * is collected. The purchase is activated exactly once, keyed on its own row, see
+ * {@see \Shopwell\Core\Checkout\Membership\Purchase\MembershipPurchaseStore}.
  *
  * @final
  */
@@ -32,10 +32,10 @@ class MembershipPurchaseService
     /**
      * @internal
      *
-     * @param EntityRepository<MembershipOrderCollection> $orderRepository
+     * @param EntityRepository<MembershipPurchaseCollection> $purchaseRepository
      */
     public function __construct(
-        private readonly EntityRepository $orderRepository,
+        private readonly EntityRepository $purchaseRepository,
         private readonly MembershipPlanService $plans,
         private readonly StorefrontPaymentService $payments,
         private readonly PurchaseAttach $attach,
@@ -43,7 +43,7 @@ class MembershipPurchaseService
     }
 
     /**
-     * Writes the order and opens the payment for it.
+     * Writes the purchase and opens the payment for it.
      *
      * @throws MembershipException
      *
@@ -66,7 +66,7 @@ class MembershipPurchaseService
         $amount = round($plan->getPrice(), Money::exponent($currency));
         $id = Uuid::randomHex();
 
-        $this->orderRepository->create([[
+        $this->purchaseRepository->create([[
             'id' => $id,
             'customerId' => $customerId,
             'membershipPlanId' => $plan->getId(),
@@ -76,7 +76,7 @@ class MembershipPurchaseService
             'currencyId' => $currencyId,
             'currency' => $currency,
             'durationDays' => $plan->getDurationDays(),
-            'state' => MembershipOrderEntity::STATE_OPEN,
+            'state' => MembershipPurchaseEntity::STATE_OPEN,
         ]], $context);
 
         try {
@@ -93,15 +93,15 @@ class MembershipPurchaseService
             );
         } catch (\Throwable $exception) {
             // the attempt stays visible instead of disappearing silently
-            $this->orderRepository->update([[
+            $this->purchaseRepository->update([[
                 'id' => $id,
-                'state' => MembershipOrderEntity::STATE_FAILED,
+                'state' => MembershipPurchaseEntity::STATE_FAILED,
             ]], $context);
 
             throw $exception;
         }
 
-        $this->orderRepository->update([[
+        $this->purchaseRepository->update([[
             'id' => $id,
             'paymentNo' => $payment['payment_no'],
             'channelTechnicalName' => $payment['channel'],
@@ -113,23 +113,23 @@ class MembershipPurchaseService
     /**
      * The last memberships a customer bought, newest first.
      *
-     * @return list<MembershipOrderEntity>
+     * @return list<MembershipPurchaseEntity>
      */
-    public function recentOrders(string $customerId, int $limit, Context $context): array
+    public function recentPurchases(string $customerId, int $limit, Context $context): array
     {
         $criteria = new Criteria();
         $criteria->addFilter(new EqualsFilter('customerId', $customerId));
         $criteria->addSorting(new FieldSorting('createdAt', FieldSorting::DESCENDING));
         $criteria->setLimit($limit);
 
-        $orders = [];
+        $purchases = [];
 
-        foreach ($this->orderRepository->search($criteria, $context)->getEntities() as $order) {
-            if ($order instanceof MembershipOrderEntity) {
-                $orders[] = $order;
+        foreach ($this->purchaseRepository->search($criteria, $context)->getEntities() as $purchase) {
+            if ($purchase instanceof MembershipPurchaseEntity) {
+                $purchases[] = $purchase;
             }
         }
 
-        return $orders;
+        return $purchases;
     }
 }

@@ -52,7 +52,7 @@ class Migration1793603497CreateMembershipSubscriptionTableTest extends TestCase
         static::assertSame(
             [
                 'id', 'customer_id', 'membership_plan_id', 'loyalty_tier_id', 'plan_name', 'amount', 'currency',
-                'state', 'starts_at', 'ends_at', 'ended_at', 'end_reason', 'last_order_id', 'created_at',
+                'state', 'starts_at', 'ends_at', 'ended_at', 'end_reason', 'last_purchase_id', 'created_at',
                 'updated_at',
             ],
             array_column(TableHelper::getTable($this->connection, self::TABLE)->columns, 'name')
@@ -80,7 +80,7 @@ class Migration1793603497CreateMembershipSubscriptionTableTest extends TestCase
     {
         $this->recreateTable();
 
-        foreach (['plan_name', 'currency', 'last_order_id', 'membership_plan_id', 'loyalty_tier_id'] as $column) {
+        foreach (['plan_name', 'currency', 'last_purchase_id', 'membership_plan_id', 'loyalty_tier_id'] as $column) {
             static::assertFalse(
                 TableHelper::getColumnOfTable($this->connection, self::TABLE, $column)->isNotNull,
                 $column . ' must stay nullable'
@@ -117,7 +117,7 @@ class Migration1793603497CreateMembershipSubscriptionTableTest extends TestCase
             ['fk.membership_subscription.customer_id', 'customer', 'CASCADE'],
             ['fk.membership_subscription.membership_plan_id', 'membership_plan', 'SET NULL'],
             ['fk.membership_subscription.loyalty_tier_id', 'loyalty_tier', 'SET NULL'],
-            ['fk.membership_subscription.last_order_id', 'membership_order', 'SET NULL'],
+            ['fk.membership_subscription.last_purchase_id', 'membership_purchase', 'SET NULL'],
         ];
 
         foreach ($references as [$foreignKey, $referencedTable, $deleteRule]) {

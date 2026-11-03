@@ -86,7 +86,7 @@
                                 :label="$t('sw-membership.detail.fieldNameLabel')"
                                 :error="loyaltyTierNameError"
                                 :placeholder="placeholder(loyaltyTier, 'name', $t('sw-membership.detail.placeholderName'))"
-                                :disabled="!acl.can('loyalty.editor') || undefined"
+                                :disabled="!allowSave || undefined"
                             />
                             {% endblock %}
 
@@ -100,7 +100,7 @@
                                 :label="$t('sw-membership.detail.fieldTechnicalNameLabel')"
                                 :error="loyaltyTierTechnicalNameError"
                                 :placeholder="$t('sw-membership.detail.placeholderTechnicalName')"
-                                :disabled="!acl.can('loyalty.editor') || undefined"
+                                :disabled="!allowSave || undefined"
                             />
                             {% endblock %}
 
@@ -114,7 +114,7 @@
                                 validation="required"
                                 :label="$t('sw-membership.detail.fieldLevelLabel')"
                                 :error="loyaltyTierLevelError"
-                                :disabled="!acl.can('loyalty.editor') || undefined"
+                                :disabled="!allowSave || undefined"
                             />
                             {% endblock %}
 
@@ -125,29 +125,7 @@
                                 class="sw-membership-tier-detail__min-tier-points"
                                 number-type="int"
                                 :label="$t('sw-membership.detail.fieldMinTierPointsLabel')"
-                                :disabled="!acl.can('loyalty.editor') || undefined"
-                            />
-                            {% endblock %}
-
-                            {% block sw_loyalty_tier_detail_content_card_points_multiplier %}
-                            <mt-number-field
-                                v-model="loyaltyTier.pointsMultiplier"
-                                name="sw-field--loyaltyTier-pointsMultiplier"
-                                class="sw-membership-tier-detail__points-multiplier"
-                                number-type="float"
-                                :label="$t('sw-membership.detail.fieldPointsMultiplierLabel')"
-                                :disabled="!acl.can('loyalty.editor') || undefined"
-                            />
-                            {% endblock %}
-
-                            {% block sw_loyalty_tier_detail_content_card_discount_percent %}
-                            <mt-number-field
-                                v-model="loyaltyTier.discountPercent"
-                                name="sw-field--loyaltyTier-discountPercent"
-                                class="sw-membership-tier-detail__discount-percent"
-                                number-type="float"
-                                :label="$t('sw-membership.detail.fieldDiscountPercentLabel')"
-                                :disabled="!acl.can('loyalty.editor') || undefined"
+                                :disabled="!allowSave || undefined"
                             />
                             {% endblock %}
 
@@ -159,17 +137,7 @@
                                 label-property="name"
                                 show-clearable-button
                                 :label="$t('sw-membership.detail.fieldCustomerGroupLabel')"
-                                :disabled="!acl.can('loyalty.editor') || undefined"
-                            />
-                            {% endblock %}
-
-                            {% block sw_loyalty_tier_detail_content_card_free_shipping %}
-                            <mt-switch
-                                v-model="loyaltyTier.freeShipping"
-                                name="sw-field--loyaltyTier-freeShipping"
-                                class="sw-membership-tier-detail__free-shipping"
-                                :label="$t('sw-membership.detail.fieldFreeShippingLabel')"
-                                :disabled="!acl.can('loyalty.editor') || undefined"
+                                :disabled="!allowSave || undefined"
                             />
                             {% endblock %}
 
@@ -179,7 +147,7 @@
                                 name="sw-field--loyaltyTier-active"
                                 class="sw-membership-tier-detail__active"
                                 :label="$t('sw-membership.detail.fieldActiveLabel')"
-                                :disabled="!acl.can('loyalty.editor') || undefined"
+                                :disabled="!allowSave || undefined"
                             />
                             {% endblock %}
                         </sw-container>
@@ -191,9 +159,85 @@
                             name="sw-field--loyaltyTier-description"
                             class="sw-membership-tier-detail__description"
                             :label="$t('sw-membership.detail.fieldDescriptionLabel')"
-                            :disabled="!acl.can('loyalty.editor') || undefined"
+                            :disabled="!allowSave || undefined"
                         />
                         {% endblock %}
+                    </template>
+                </mt-card>
+                {% endblock %}
+
+                {% block sw_loyalty_tier_detail_benefits_card %}
+                <mt-card
+                    :title="$t('sw-membership.detail.benefitsCardTitle')"
+                    :sub-title="$t('sw-membership.detail.benefitsCardHelpText')"
+                    position-identifier="sw-membership-tier-detail-benefits"
+                >
+                    <template v-if="!isLoading">
+                        <!-- eslint-disable sw-deprecation-rules/no-twigjs-blocks,vue/attributes-order -->
+                        <sw-container
+                            columns="repeat(2, minmax(250px, 1fr))"
+                            gap="0px 30px"
+                        >
+                            {% block sw_loyalty_tier_detail_benefits_card_earn_multiplier %}
+                            <mt-number-field
+                                v-model="benefits.earnMultiplier"
+                                name="sw-field--tier-benefit-earnMultiplier"
+                                class="sw-membership-tier-detail__earn-multiplier"
+                                number-type="float"
+                                :step="0.1"
+                                :label="$t('sw-membership.detail.fieldEarnMultiplierLabel')"
+                                :help-text="$t('sw-membership.detail.fieldEarnMultiplierHelpText')"
+                                :disabled="!allowSave || undefined"
+                            />
+                            {% endblock %}
+
+                            {% block sw_loyalty_tier_detail_benefits_card_cart_discount %}
+                            <mt-number-field
+                                v-model="benefits.cartDiscount"
+                                name="sw-field--tier-benefit-cartDiscount"
+                                class="sw-membership-tier-detail__cart-discount"
+                                number-type="float"
+                                :label="$t('sw-membership.detail.fieldCartDiscountLabel')"
+                                :help-text="$t('sw-membership.detail.fieldCartDiscountHelpText')"
+                                :disabled="!allowSave || undefined"
+                            />
+                            {% endblock %}
+
+                            {% block sw_loyalty_tier_detail_benefits_card_free_shipping %}
+                            <mt-switch
+                                v-model="benefits.grantsFreeShipping"
+                                name="sw-field--tier-benefit-freeShipping"
+                                class="sw-membership-tier-detail__free-shipping"
+                                :label="$t('sw-membership.detail.fieldFreeShippingLabel')"
+                                :disabled="!allowSave || undefined"
+                            />
+                            {% endblock %}
+
+                            {% block sw_loyalty_tier_detail_benefits_card_birthday_gift %}
+                            <mt-number-field
+                                v-model="benefits.birthdayGift"
+                                name="sw-field--tier-benefit-birthdayGift"
+                                class="sw-membership-tier-detail__birthday-gift"
+                                number-type="float"
+                                :label="$t('sw-membership.detail.fieldBirthdayGiftLabel')"
+                                :help-text="$t('sw-membership.detail.fieldBirthdayGiftHelpText')"
+                                :disabled="!allowSave || undefined"
+                            />
+                            {% endblock %}
+
+                            {% block sw_loyalty_tier_detail_benefits_card_points_expiry_days %}
+                            <mt-number-field
+                                v-model="benefits.pointsExpiryDays"
+                                name="sw-field--tier-benefit-pointsExpiryDays"
+                                class="sw-membership-tier-detail__points-expiry-days"
+                                number-type="int"
+                                :label="$t('sw-membership.detail.fieldPointsExpiryDaysLabel')"
+                                :help-text="$t('sw-membership.detail.fieldPointsExpiryDaysHelpText')"
+                                :disabled="!allowSave || undefined"
+                            />
+                            {% endblock %}
+                        </sw-container>
+                        <!-- eslint-enable sw-deprecation-rules/no-twigjs-blocks,vue/attributes-order -->
                     </template>
                 </mt-card>
                 {% endblock %}

@@ -78,28 +78,6 @@ final class LoyaltyTierBenefits
         return \array_key_exists($type, $this->values);
     }
 
-    /**
-     * The same benefits with one more grant, or unchanged when the type is already granted.
-     *
-     * A stored row always outranks a value that is only added afterwards, which is what makes this
-     * usable as a fallback: the caller adds what an older configuration said and must never overwrite
-     * what the newer one set.
-     */
-    public function with(string $type, float $value): self
-    {
-        if ($this->has($type)) {
-            return $this;
-        }
-
-        $values = $this->values;
-        $values[$type] = $value;
-
-        $order = $this->order;
-        $order[] = $type;
-
-        return new self($values, $order);
-    }
-
     public function value(string $type): ?float
     {
         return $this->values[$type] ?? null;

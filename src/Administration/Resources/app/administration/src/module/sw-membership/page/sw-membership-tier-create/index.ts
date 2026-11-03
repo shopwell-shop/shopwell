@@ -13,12 +13,15 @@ interface LoyaltyTierCreateContext {
     isSaveSuccessful: boolean;
     loyaltyTier: LoyaltyTier;
     loyaltyTierRepository: RepositoryType<'loyalty_tier'>;
+    persistLoyaltyTier: () => Promise<void>;
     $router: Router;
     $t: (key: string) => string;
     createNotificationError: (config: { message: string }) => void;
 }
 
-// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+// The page inherits the detail page and only decides how the first save of a tier ends: a create has
+// no id to stay on, so it navigates to the detail page it just produced.
+// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations -- a page of this module, registered in index.ts
 export default {
     methods: {
         createdComponent(this: LoyaltyTierCreateContext): void {
@@ -33,7 +36,9 @@ export default {
             this.isLoading = true;
 
             try {
-                await this.loyaltyTierRepository.save(this.loyaltyTier);
+                // the inherited save writes the tier and the benefits it grants, so a tier created with a
+                // multiplier does not lose it on the way to the detail page
+                await this.persistLoyaltyTier();
 
                 this.isSaveSuccessful = true;
 

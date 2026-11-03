@@ -156,7 +156,7 @@ describe('module/sw-dashboard/component/sw-dashboard-metrics', () => {
         const pointsCard = wrapper.vm.metricCards.find((card) => card.key === 'monthlyPoints');
         expect(pointsCard.value).toBe('4,200');
         expect(pointsCard.showComparison).toBe(false);
-        expect(pointsCard.link.name).toBe('sw.settings.membership.orders');
+        expect(pointsCard.link.name).toBe('sw.settings.membership.purchases');
         expect(wrapper.vm.currentMetrics.monthlyPoints).toBe(4200);
     });
 

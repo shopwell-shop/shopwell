@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace Shopwell\Core\Checkout\Membership\Entity\MembershipOrder;
+namespace Shopwell\Core\Checkout\Membership\Entity\MembershipPurchase;
 
 use Shopwell\Core\Checkout\Customer\CustomerDefinition;
 use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyTier\LoyaltyTierDefinition;
@@ -33,9 +33,9 @@ use Shopwell\Core\System\Currency\CurrencyDefinition;
  * @codeCoverageIgnore
  */
 #[Package('checkout')]
-class MembershipOrderDefinition extends EntityDefinition
+class MembershipPurchaseDefinition extends EntityDefinition
 {
-    final public const ENTITY_NAME = 'membership_order';
+    final public const ENTITY_NAME = 'membership_purchase';
 
     public function getEntityName(): string
     {
@@ -44,12 +44,12 @@ class MembershipOrderDefinition extends EntityDefinition
 
     public function getCollectionClass(): string
     {
-        return MembershipOrderCollection::class;
+        return MembershipPurchaseCollection::class;
     }
 
     public function getEntityClass(): string
     {
-        return MembershipOrderEntity::class;
+        return MembershipPurchaseEntity::class;
     }
 
     public function since(): ?string
@@ -87,7 +87,7 @@ class MembershipOrderDefinition extends EntityDefinition
             new ManyToOneAssociationField('loyaltyTier', 'loyalty_tier_id', LoyaltyTierDefinition::class, 'id', false),
 
             // the membership this order last pushed, if it is still the one on the customer
-            new OneToManyAssociationField('subscriptions', MembershipSubscriptionDefinition::class, 'last_order_id', 'id'),
+            new OneToManyAssociationField('subscriptions', MembershipSubscriptionDefinition::class, 'last_purchase_id', 'id'),
         ]);
     }
 }

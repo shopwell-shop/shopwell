@@ -5,10 +5,10 @@ namespace Shopwell\Tests\Unit\Core\Checkout\Membership\Service;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\MockObject\Stub;
 use PHPUnit\Framework\TestCase;
-use Shopwell\Core\Checkout\Membership\Entity\MembershipOrder\MembershipOrderCollection;
-use Shopwell\Core\Checkout\Membership\Entity\MembershipOrder\MembershipOrderEntity;
 use Shopwell\Core\Checkout\Membership\Entity\MembershipPlan\MembershipPlanCollection;
 use Shopwell\Core\Checkout\Membership\Entity\MembershipPlan\MembershipPlanEntity;
+use Shopwell\Core\Checkout\Membership\Entity\MembershipPurchase\MembershipPurchaseCollection;
+use Shopwell\Core\Checkout\Membership\Entity\MembershipPurchase\MembershipPurchaseEntity;
 use Shopwell\Core\Checkout\Membership\MembershipException;
 use Shopwell\Core\Checkout\Membership\Service\MembershipPlanService;
 use Shopwell\Core\Checkout\Membership\Service\MembershipPurchaseService;
@@ -20,7 +20,7 @@ use Shopwell\Core\Test\Stub\DataAbstractionLayer\StaticEntityRepository;
 
 /**
  * The purchase writes the order and hands it to the gateway; that a paid order becomes a membership is
- * tested in {@see \Shopwell\Tests\Unit\Core\Checkout\Membership\Purchase\MembershipOrderPurchaseTest}
+ * tested in {@see \Shopwell\Tests\Unit\Core\Checkout\Membership\Purchase\MembershipPurchaseTest}
  * and {@see \Shopwell\Tests\Unit\Core\Checkout\Payment\Storefront\Settlement\PurchaseSettlementTest}.
  *
  * @internal
@@ -47,7 +47,7 @@ class MembershipPurchaseServiceTest extends TestCase
     private StaticEntityRepository $planRepository;
 
     /**
-     * @var StaticEntityRepository<MembershipOrderCollection>
+     * @var StaticEntityRepository<MembershipPurchaseCollection>
      */
     private StaticEntityRepository $orderRepository;
 
@@ -58,7 +58,7 @@ class MembershipPurchaseServiceTest extends TestCase
     protected function setUp(): void
     {
         $this->planRepository = StaticEntityRepository::of(MembershipPlanCollection::class);
-        $this->orderRepository = StaticEntityRepository::of(MembershipOrderCollection::class);
+        $this->orderRepository = StaticEntityRepository::of(MembershipPurchaseCollection::class);
         $this->payments = static::createStub(StorefrontPaymentService::class);
         $this->context = Context::createDefaultContext();
     }
@@ -104,7 +104,7 @@ class MembershipPurchaseServiceTest extends TestCase
         static::assertSame(self::TIER_ID, $created['loyaltyTierId']);
         static::assertSame('年度金卡', $created['planName']);
         static::assertSame(365, $created['durationDays']);
-        static::assertSame(MembershipOrderEntity::STATE_OPEN, $created['state']);
+        static::assertSame(MembershipPurchaseEntity::STATE_OPEN, $created['state']);
 
         static::assertSame('PAY-1', $this->orderRepository->updates[0][0]['paymentNo']);
         static::assertSame('alipay_h5', $this->orderRepository->updates[0][0]['channelTechnicalName']);
@@ -176,18 +176,18 @@ class MembershipPurchaseServiceTest extends TestCase
             // expected
         }
 
-        static::assertSame(MembershipOrderEntity::STATE_FAILED, $this->orderRepository->updates[0][0]['state']);
+        static::assertSame(MembershipPurchaseEntity::STATE_FAILED, $this->orderRepository->updates[0][0]['state']);
     }
 
     public function testRecentOrdersAnswersTheOrdersOfTheCustomer(): void
     {
-        $order = new MembershipOrderEntity();
+        $order = new MembershipPurchaseEntity();
         $order->setId(self::ORDER_ID);
         $order->setPlanName('年度金卡');
 
-        $this->orderRepository->addSearch(new MembershipOrderCollection([$order]));
+        $this->orderRepository->addSearch(new MembershipPurchaseCollection([$order]));
 
-        $orders = $this->service()->recentOrders(self::CUSTOMER_ID, 5, $this->context);
+        $orders = $this->service()->recentPurchases(self::CUSTOMER_ID, 5, $this->context);
 
         static::assertCount(1, $orders);
         static::assertSame(self::ORDER_ID, $orders[0]->getId());
