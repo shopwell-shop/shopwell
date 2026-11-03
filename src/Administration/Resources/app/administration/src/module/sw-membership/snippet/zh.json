@@ -19,8 +19,6 @@
       "fieldTechnicalNameLabel": "技术名称",
       "fieldLevelLabel": "等级",
       "fieldMinTierPointsLabel": "最低成长值",
-      "fieldPointsMultiplierLabel": "积分倍率",
-      "fieldDiscountPercentLabel": "折扣（%）",
       "fieldFreeShippingLabel": "免运费",
       "fieldActiveLabel": "启用",
       "fieldCustomerGroupLabel": "客户组",
@@ -29,7 +27,17 @@
       "placeholderTechnicalName": "输入技术名称...",
       "placeholderNewLoyaltyTier": "新建会员等级",
       "notificationErrorMessage": "保存会员等级时出错。",
-      "messageSaveSuccess": "会员等级已保存。"
+      "messageSaveSuccess": "会员等级已保存。",
+      "benefitsCardTitle": "该等级提供什么",
+      "benefitsCardHelpText": "每项权益一行。留在中性值的字段表示不提供该项——等级上就不会有对应的权益记录。",
+      "fieldEarnMultiplierLabel": "积分倍率",
+      "fieldEarnMultiplierHelpText": "在基础费率之上每 1 个货币单位额外获得多少倍积分。填 1.5 表示多得一半；填 1 表示无加成。",
+      "fieldCartDiscountLabel": "购物车折扣（%）",
+      "fieldCartDiscountHelpText": "该等级会员在购物车总额上享有的折扣百分比。填 0 表示不折扣。",
+      "fieldBirthdayGiftLabel": "生日礼",
+      "fieldBirthdayGiftHelpText": "每年客户生日时赠送的金额，按店铺货币计。填 0 表示不赠送。",
+      "fieldPointsExpiryDaysLabel": "积分有效期（天）",
+      "fieldPointsExpiryDaysHelpText": "该等级获得的积分有效天数。留空表示沿用店铺全局设置。"
     },
     "plan": {
       "general": {
@@ -65,7 +73,7 @@
         "messageSaveSuccess": "会员套餐已保存。"
       }
     },
-    "order": {
+    "purchase": {
       "general": {
         "mainMenuItemGeneral": "会员订单"
       },
@@ -80,7 +88,8 @@
         "columnCreatedAt": "创建时间",
         "labelFilterState": "状态",
         "filterStateAll": "全部状态",
-        "emptyStateHeadline": "还没有会员订单"
+        "emptyStateHeadline": "还没有会员订单",
+        "emptyStateDescription": "客户发起支付后，套餐购买记录就会出现在这里。"
       },
       "state": {
         "open": "待支付",

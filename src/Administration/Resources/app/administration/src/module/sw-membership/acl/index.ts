@@ -14,7 +14,7 @@ Shopwell.Service('privileges').addPrivilegeMappingEntry({
                 'loyalty_account:read',
                 'loyalty_point_transaction:read',
                 'membership_plan:read',
-                'membership_order:read',
+                'membership_purchase:read',
                 'currency:read',
                 'loyalty.viewer',
             ],

@@ -8,17 +8,20 @@ import defaultSearchConfiguration from './default-search-configuration';
 
 const { Module } = Shopwell;
 
-/* eslint-disable sw-deprecation-rules/private-feature-declarations */
+// The pages are registered lazily and never exported: the module is the only entry point, so a
+// plugin must extend them through their twig blocks instead of importing them.
+/* eslint-disable sw-deprecation-rules/private-feature-declarations -- see the comment above */
 Shopwell.Component.register('sw-membership-tier-list', () => import('./page/sw-membership-tier-list'));
 Shopwell.Component.register('sw-membership-tier-detail', () => import('./page/sw-membership-tier-detail'));
 Shopwell.Component.extend('sw-membership-tier-create', 'sw-membership-tier-detail', () => import('./page/sw-membership-tier-create'));
 Shopwell.Component.register('sw-membership-plan-list', () => import('./page/sw-membership-plan-list'));
 Shopwell.Component.register('sw-membership-plan-detail', () => import('./page/sw-membership-plan-detail'));
 Shopwell.Component.extend('sw-membership-plan-create', 'sw-membership-plan-detail', () => import('./page/sw-membership-plan-create'));
-Shopwell.Component.register('sw-membership-order-list', () => import('./page/sw-membership-order-list'));
-/* eslint-enable sw-deprecation-rules/private-feature-declarations */
+Shopwell.Component.register('sw-membership-purchase-list', () => import('./page/sw-membership-purchase-list'));
+/* eslint-enable sw-deprecation-rules/private-feature-declarations -- see the comment above */
 
-// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+// A module is a registration, not an import: `manifest` is the public face of it.
+// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations -- see the comment above
 Module.register('sw-settings-membership', {
     type: 'core',
     name: 'settings-membership',
@@ -94,9 +97,9 @@ Module.register('sw-settings-membership', {
                 privilege: 'loyalty.creator',
             },
         },
-        orders: {
-            component: 'sw-membership-order-list',
-            path: 'orders',
+        purchases: {
+            component: 'sw-membership-purchase-list',
+            path: 'purchases',
             meta: {
                 parentPath: 'sw.order.index',
                 privilege: 'loyalty.viewer',
@@ -104,18 +107,18 @@ Module.register('sw-settings-membership', {
         },
     },
 
-    // the membership orders are orders, not settings: they sit next to the sales orders in the
-    // order folder, because that is where an operator looks for them when a customer asks about
-    // the subscription they paid for
+    // A membership purchase is an order the customer placed, so its queue sits next to the sales
+    // orders instead of in the settings: an operator looking for "the membership this customer paid
+    // for" starts at the orders, and the settings are where the plans are maintained.
     navigation: [
         {
             // The runtime derives navigation ids from the module name - `settings-membership` becomes
             // `sw-membership-` - so the id is written in that form already. The core declaration in
             // `CoreAdminMenuProvider` has to name the same key, or the menu would render the entry
             // twice: once from the database row and once from this declaration.
-            id: 'sw-membership-orders',
-            path: 'sw.settings.membership.orders',
-            label: 'sw-membership.order.general.mainMenuItemGeneral',
+            id: 'sw-membership-purchases',
+            path: 'sw.settings.membership.purchases',
+            label: 'sw-membership.purchase.general.mainMenuItemGeneral',
             icon: 'regular-clipboard',
             parent: 'sw-order',
             privilege: 'loyalty.viewer',

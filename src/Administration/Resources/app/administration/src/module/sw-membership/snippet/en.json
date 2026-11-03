@@ -19,8 +19,6 @@
       "fieldTechnicalNameLabel": "Technical name",
       "fieldLevelLabel": "Level",
       "fieldMinTierPointsLabel": "Min. tier points",
-      "fieldPointsMultiplierLabel": "Points multiplier",
-      "fieldDiscountPercentLabel": "Discount (%)",
       "fieldFreeShippingLabel": "Free shipping",
       "fieldActiveLabel": "Active",
       "fieldCustomerGroupLabel": "Customer group",
@@ -29,7 +27,17 @@
       "placeholderTechnicalName": "Enter a technical name...",
       "placeholderNewLoyaltyTier": "New loyalty tier",
       "notificationErrorMessage": "An error occurred while saving the loyalty tier.",
-      "messageSaveSuccess": "The loyalty tier has been saved."
+      "messageSaveSuccess": "The loyalty tier has been saved.",
+      "benefitsCardTitle": "What this tier grants",
+      "benefitsCardHelpText": "One entry per benefit. A field left at its neutral value grants nothing - the tier then has no such benefit at all.",
+      "fieldEarnMultiplierLabel": "Points multiplier",
+      "fieldEarnMultiplierHelpText": "How many points a currency unit earns on top of the base rate. 1.5 means half again as many; 1 grants no bonus.",
+      "fieldCartDiscountLabel": "Cart discount (%)",
+      "fieldCartDiscountHelpText": "Percentage taken off the cart total for members of this tier. 0 grants no discount.",
+      "fieldBirthdayGiftLabel": "Birthday gift",
+      "fieldBirthdayGiftHelpText": "Amount granted once a year on the customer birthday, in the shop currency. 0 grants no gift.",
+      "fieldPointsExpiryDaysLabel": "Points validity (days)",
+      "fieldPointsExpiryDaysHelpText": "How long the points this tier earns stay valid. Leave empty to use the shop wide setting."
     },
     "plan": {
       "general": {
@@ -65,7 +73,7 @@
         "messageSaveSuccess": "The membership plan has been saved."
       }
     },
-    "order": {
+    "purchase": {
       "general": {
         "mainMenuItemGeneral": "Membership orders"
       },
@@ -80,7 +88,8 @@
         "columnCreatedAt": "Created at",
         "labelFilterState": "State",
         "filterStateAll": "All states",
-        "emptyStateHeadline": "No membership orders yet"
+        "emptyStateHeadline": "No membership orders yet",
+        "emptyStateDescription": "Purchases of a plan appear here as soon as the customer starts the payment."
       },
       "state": {
         "open": "Awaiting payment",

@@ -115,11 +115,8 @@ class LoyaltyRoute
                 'name' => $tier->getName(),
                 'level' => $tier->getLevel(),
                 'minTierPoints' => $tier->getMinTierPoints(),
-                // the three columns stay until the templates read `benefits`; a benefit row already wins
-                // over them here, so a shop that configured one sees it without changing the template
-                'pointsMultiplier' => $tier->getPointsMultiplier(),
-                'discountPercent' => $tier->getDiscountPercent(),
-                'freeShipping' => $tier->getFreeShipping(),
+                // what the tier grants, keyed by benefit type - the template prints this map and never a
+                // column, because a benefit is a row and there is no column for it anymore
                 'benefits' => $this->benefits->forTier($tier, $context->getContext())->all(),
             ];
         }

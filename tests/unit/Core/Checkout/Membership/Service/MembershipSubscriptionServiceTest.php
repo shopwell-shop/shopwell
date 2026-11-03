@@ -110,7 +110,7 @@ class MembershipSubscriptionServiceTest extends TestCase
         static::assertSame(self::CUSTOMER_ID, $created['customerId']);
         static::assertSame(self::TIER_ID, $created['loyaltyTierId']);
         static::assertSame(MembershipSubscriptionStates::STATE_ACTIVE, $created['state']);
-        static::assertSame(self::ORDER_ID, $created['lastOrderId']);
+        static::assertSame(self::ORDER_ID, $created['lastPurchaseId']);
         static::assertEquals(new \DateTimeImmutable(self::NOW), $created['startsAt']);
         static::assertEquals(new \DateTimeImmutable('2026-07-01 12:00:00'), $created['endsAt']);
 
@@ -140,7 +140,7 @@ class MembershipSubscriptionServiceTest extends TestCase
         $update = $subscriptions->updates[0][0];
         static::assertSame(self::SUBSCRIPTION_ID, $update['id']);
         static::assertEquals(new \DateTimeImmutable('2026-12-31 00:00:00'), $update['endsAt']);
-        static::assertSame(self::ORDER_ID, $update['lastOrderId']);
+        static::assertSame(self::ORDER_ID, $update['lastPurchaseId']);
         // every purchase that extended this membership adds to what it cost
         static::assertEqualsWithDelta(348.0, (float) $update['amount'], 0.001);
 
@@ -386,7 +386,7 @@ class MembershipSubscriptionServiceTest extends TestCase
             'ends_at' => $endsAt,
             'ended_at' => null,
             'end_reason' => null,
-            'last_order_id' => null,
+            'last_purchase_id' => null,
         ];
     }
 

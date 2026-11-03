@@ -5,10 +5,10 @@ namespace Shopwell\Tests\Unit\Core\Checkout\Membership\Purchase;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Checkout\Ledger\RowLock;
-use Shopwell\Core\Checkout\Membership\Entity\MembershipOrder\MembershipOrderCollection;
-use Shopwell\Core\Checkout\Membership\Entity\MembershipOrder\MembershipOrderEntity;
-use Shopwell\Core\Checkout\Membership\Purchase\MembershipOrderPurchase;
-use Shopwell\Core\Checkout\Membership\Purchase\MembershipOrderPurchaseStore;
+use Shopwell\Core\Checkout\Membership\Entity\MembershipPurchase\MembershipPurchaseCollection;
+use Shopwell\Core\Checkout\Membership\Entity\MembershipPurchase\MembershipPurchaseEntity;
+use Shopwell\Core\Checkout\Membership\Purchase\MembershipPurchase;
+use Shopwell\Core\Checkout\Membership\Purchase\MembershipPurchaseStore;
 use Shopwell\Core\Checkout\Membership\Service\MembershipSubscriptionService;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Test\Stub\DataAbstractionLayer\StaticEntityRepository;
@@ -17,19 +17,19 @@ use Shopwell\Core\Test\Stub\DataAbstractionLayer\StaticEntityRepository;
  * @internal
  */
 #[Package('checkout')]
-#[CoversClass(MembershipOrderPurchaseStore::class)]
-class MembershipOrderPurchaseStoreTest extends TestCase
+#[CoversClass(MembershipPurchaseStore::class)]
+class MembershipPurchaseStoreTest extends TestCase
 {
     private const ORDER_ID = 'c1b2c3d4e5f60718293a4b5c6d7e8f90';
 
     /**
-     * @var StaticEntityRepository<MembershipOrderCollection>
+     * @var StaticEntityRepository<MembershipPurchaseCollection>
      */
     private StaticEntityRepository $orderRepository;
 
     protected function setUp(): void
     {
-        $this->orderRepository = StaticEntityRepository::of(MembershipOrderCollection::class);
+        $this->orderRepository = StaticEntityRepository::of(MembershipPurchaseCollection::class);
     }
 
     public function testItLocksTheOrderOfThePayment(): void
@@ -41,18 +41,18 @@ class MembershipOrderPurchaseStoreTest extends TestCase
             'duration_days' => 365,
             'amount' => 199.0,
             'currency' => 'CNY',
-            'state' => MembershipOrderEntity::STATE_OPEN,
+            'state' => MembershipPurchaseEntity::STATE_OPEN,
         ];
 
         $rows = $this->createMock(RowLock::class);
         $rows->expects($this->once())
             ->method('lock')
-            ->with('membership_order', ['id' => self::ORDER_ID])
+            ->with('membership_purchase', ['id' => self::ORDER_ID])
             ->willReturn($row);
 
         $purchase = $this->store($rows)->lockForSettlement(self::ORDER_ID);
 
-        static::assertInstanceOf(MembershipOrderPurchase::class, $purchase);
+        static::assertInstanceOf(MembershipPurchase::class, $purchase);
         static::assertSame(self::ORDER_ID, $purchase->purchaseId());
     }
 
@@ -64,9 +64,9 @@ class MembershipOrderPurchaseStoreTest extends TestCase
         static::assertNull($this->store($rows)->lockForSettlement(self::ORDER_ID));
     }
 
-    private function store(RowLock $rows): MembershipOrderPurchaseStore
+    private function store(RowLock $rows): MembershipPurchaseStore
     {
-        return new MembershipOrderPurchaseStore(
+        return new MembershipPurchaseStore(
             $this->orderRepository,
             static::createStub(MembershipSubscriptionService::class),
             $rows,

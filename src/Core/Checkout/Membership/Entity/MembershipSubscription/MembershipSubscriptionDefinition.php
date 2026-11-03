@@ -4,8 +4,8 @@ namespace Shopwell\Core\Checkout\Membership\Entity\MembershipSubscription;
 
 use Shopwell\Core\Checkout\Customer\CustomerDefinition;
 use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyTier\LoyaltyTierDefinition;
-use Shopwell\Core\Checkout\Membership\Entity\MembershipOrder\MembershipOrderDefinition;
 use Shopwell\Core\Checkout\Membership\Entity\MembershipPlan\MembershipPlanDefinition;
+use Shopwell\Core\Checkout\Membership\Entity\MembershipPurchase\MembershipPurchaseDefinition;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityDefinition;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\DateTimeField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\FkField;
@@ -78,12 +78,12 @@ class MembershipSubscriptionDefinition extends EntityDefinition
             (new DateTimeField('ended_at', 'endedAt'))->addFlags(new ApiAware()),
             (new StringField('end_reason', 'endReason', 32))->addFlags(new ApiAware()),
 
-            (new FkField('last_order_id', 'lastOrderId', MembershipOrderDefinition::class))->addFlags(new ApiAware(), new SetNullOnDelete()),
+            (new FkField('last_purchase_id', 'lastPurchaseId', MembershipPurchaseDefinition::class))->addFlags(new ApiAware(), new SetNullOnDelete()),
 
             new ManyToOneAssociationField('customer', 'customer_id', CustomerDefinition::class, 'id', false),
             new ManyToOneAssociationField('membershipPlan', 'membership_plan_id', MembershipPlanDefinition::class, 'id', false),
             new ManyToOneAssociationField('loyaltyTier', 'loyalty_tier_id', LoyaltyTierDefinition::class, 'id', false),
-            new ManyToOneAssociationField('lastOrder', 'last_order_id', MembershipOrderDefinition::class, 'id', false),
+            new ManyToOneAssociationField('lastPurchase', 'last_purchase_id', MembershipPurchaseDefinition::class, 'id', false),
         ]);
     }
 }

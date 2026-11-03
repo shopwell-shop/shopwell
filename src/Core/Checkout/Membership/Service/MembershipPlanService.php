@@ -44,7 +44,9 @@ class MembershipPlanService
             new EqualsFilter('active', true),
             new EqualsFilter('currencyId', $currencyId)
         );
-        $criteria->addAssociation('loyaltyTier');
+        // the tier and what it grants: the plan card prints the benefits, and loading them here keeps
+        // the presenter free of a second query per plan
+        $criteria->addAssociation('loyaltyTier.benefits');
         $criteria->addSorting(new FieldSorting('price', FieldSorting::ASCENDING));
 
         $plans = [];

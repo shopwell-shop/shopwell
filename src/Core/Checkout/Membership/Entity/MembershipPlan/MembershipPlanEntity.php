@@ -3,8 +3,8 @@
 namespace Shopwell\Core\Checkout\Membership\Entity\MembershipPlan;
 
 use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyTier\LoyaltyTierEntity;
-use Shopwell\Core\Checkout\Membership\Entity\MembershipOrder\MembershipOrderCollection;
 use Shopwell\Core\Checkout\Membership\Entity\MembershipPlan\Aggregate\MembershipPlanTranslation\MembershipPlanTranslationCollection;
+use Shopwell\Core\Checkout\Membership\Entity\MembershipPurchase\MembershipPurchaseCollection;
 use Shopwell\Core\Checkout\Membership\Entity\MembershipSubscription\MembershipSubscriptionCollection;
 use Shopwell\Core\Framework\DataAbstractionLayer\Entity;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityIdTrait;
@@ -39,7 +39,7 @@ class MembershipPlanEntity extends Entity
 
     protected ?string $description = null;
 
-    protected ?MembershipOrderCollection $orders = null;
+    protected ?MembershipPurchaseCollection $membershipPurchases = null;
 
     protected ?MembershipSubscriptionCollection $subscriptions = null;
 
@@ -145,14 +145,14 @@ class MembershipPlanEntity extends Entity
         $this->description = $description;
     }
 
-    public function getOrders(): ?MembershipOrderCollection
+    public function getMembershipPurchases(): ?MembershipPurchaseCollection
     {
-        return $this->orders;
+        return $this->membershipPurchases;
     }
 
-    public function setOrders(MembershipOrderCollection $orders): void
+    public function setMembershipPurchases(MembershipPurchaseCollection $membershipPurchases): void
     {
-        $this->orders = $orders;
+        $this->membershipPurchases = $membershipPurchases;
     }
 
     public function getSubscriptions(): ?MembershipSubscriptionCollection

@@ -5,10 +5,10 @@ namespace Shopwell\Tests\Unit\Core\Checkout\Membership\Service;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\MockObject\Stub;
 use PHPUnit\Framework\TestCase;
-use Shopwell\Core\Checkout\Membership\Entity\MembershipOrder\MembershipOrderCollection;
-use Shopwell\Core\Checkout\Membership\Entity\MembershipOrder\MembershipOrderEntity;
 use Shopwell\Core\Checkout\Membership\Entity\MembershipPlan\MembershipPlanCollection;
 use Shopwell\Core\Checkout\Membership\Entity\MembershipPlan\MembershipPlanEntity;
+use Shopwell\Core\Checkout\Membership\Entity\MembershipPurchase\MembershipPurchaseCollection;
+use Shopwell\Core\Checkout\Membership\Entity\MembershipPurchase\MembershipPurchaseEntity;
 use Shopwell\Core\Checkout\Membership\SalesChannel\MembershipPresenter;
 use Shopwell\Core\Checkout\Membership\Service\MembershipOfferService;
 use Shopwell\Core\Checkout\Membership\Service\MembershipPlanService;
@@ -40,7 +40,7 @@ class MembershipOfferServiceTest extends TestCase
     private StaticEntityRepository $planRepository;
 
     /**
-     * @var StaticEntityRepository<MembershipOrderCollection>
+     * @var StaticEntityRepository<MembershipPurchaseCollection>
      */
     private StaticEntityRepository $orderRepository;
 
@@ -53,7 +53,7 @@ class MembershipOfferServiceTest extends TestCase
     protected function setUp(): void
     {
         $this->planRepository = StaticEntityRepository::of(MembershipPlanCollection::class);
-        $this->orderRepository = StaticEntityRepository::of(MembershipOrderCollection::class);
+        $this->orderRepository = StaticEntityRepository::of(MembershipPurchaseCollection::class);
         $this->payments = static::createStub(StorefrontPaymentService::class);
         $this->context = Context::createDefaultContext();
 
@@ -80,16 +80,16 @@ class MembershipOfferServiceTest extends TestCase
         $plan->setCurrencyId(self::CURRENCY_ID);
         $plan->setActive(true);
 
-        $order = new MembershipOrderEntity();
+        $order = new MembershipPurchaseEntity();
         $order->setId(self::ORDER_ID);
         $order->setPlanName('年度金卡');
         $order->setAmount(199.0);
         $order->setCurrency('CNY');
         $order->setDurationDays(365);
-        $order->setState(MembershipOrderEntity::STATE_ACTIVATED);
+        $order->setState(MembershipPurchaseEntity::STATE_ACTIVATED);
 
         $this->planRepository->addSearch(new MembershipPlanCollection([$plan]));
-        $this->orderRepository->addSearch(new MembershipOrderCollection([$order]));
+        $this->orderRepository->addSearch(new MembershipPurchaseCollection([$order]));
 
         $offer = $this->offer->forCustomer(self::CUSTOMER_ID, self::CURRENCY_ID, 'CNY', 5, $this->context);
 
@@ -102,7 +102,7 @@ class MembershipOfferServiceTest extends TestCase
     public function testACustomerWithoutAPurchaseStillSeesTheOffer(): void
     {
         $this->planRepository->addSearch(new MembershipPlanCollection());
-        $this->orderRepository->addSearch(new MembershipOrderCollection());
+        $this->orderRepository->addSearch(new MembershipPurchaseCollection());
 
         $offer = $this->offer->forCustomer(self::CUSTOMER_ID, self::CURRENCY_ID, 'CNY', 5, $this->context);
 

@@ -1,25 +1,25 @@
 <?php declare(strict_types=1);
 
-namespace Shopwell\Core\Checkout\Membership\Entity\MembershipOrder;
+namespace Shopwell\Core\Checkout\Membership\Entity\MembershipPurchase;
 
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityCollection;
 use Shopwell\Core\Framework\Log\Package;
 
 /**
- * @extends EntityCollection<MembershipOrderEntity>
+ * @extends EntityCollection<MembershipPurchaseEntity>
  *
  * @codeCoverageIgnore
  */
 #[Package('checkout')]
-class MembershipOrderCollection extends EntityCollection
+class MembershipPurchaseCollection extends EntityCollection
 {
     public function getApiAlias(): string
     {
-        return 'membership_order_collection';
+        return 'membership_purchase_collection';
     }
 
     protected function getExpectedClass(): string
     {
-        return MembershipOrderEntity::class;
+        return MembershipPurchaseEntity::class;
     }
 }

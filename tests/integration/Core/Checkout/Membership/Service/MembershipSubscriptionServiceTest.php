@@ -5,7 +5,7 @@ namespace Shopwell\Tests\Integration\Core\Checkout\Membership\Service;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyAccount\LoyaltyAccountCollection;
 use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyAccount\LoyaltyAccountEntity;
-use Shopwell\Core\Checkout\Membership\Entity\MembershipOrder\MembershipOrderEntity;
+use Shopwell\Core\Checkout\Membership\Entity\MembershipPurchase\MembershipPurchaseEntity;
 use Shopwell\Core\Checkout\Membership\Entity\MembershipSubscription\MembershipSubscriptionCollection;
 use Shopwell\Core\Checkout\Membership\Entity\MembershipSubscription\MembershipSubscriptionEntity;
 use Shopwell\Core\Checkout\Membership\MembershipSubscriptionStates;
@@ -153,7 +153,7 @@ class MembershipSubscriptionServiceTest extends TestCase
     {
         $orderId = Uuid::randomHex();
 
-        static::getContainer()->get('membership_order.repository')->create([[
+        static::getContainer()->get('membership_purchase.repository')->create([[
             'id' => $orderId,
             'customerId' => $customerId,
             'loyaltyTierId' => $tierId,
@@ -162,7 +162,7 @@ class MembershipSubscriptionServiceTest extends TestCase
             'currencyId' => Defaults::CURRENCY,
             'currency' => 'CNY',
             'durationDays' => $durationDays,
-            'state' => MembershipOrderEntity::STATE_OPEN,
+            'state' => MembershipPurchaseEntity::STATE_OPEN,
         ]], $this->context);
 
         return [

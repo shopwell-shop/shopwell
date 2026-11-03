@@ -13,6 +13,12 @@ const { Criteria } = Shopwell.Data;
 
 type LoyaltyTier = EntitySchema.Entity<'loyalty_tier'>;
 
+/**
+ * The one benefit the list shows. The rest of the grants are a detail page question - a list that
+ * repeats all five of them says less than one number next to the tier name.
+ */
+const BENEFIT_EARN_MULTIPLIER = 'earn_multiplier';
+
 interface LoyaltyTierColumn {
     property: string;
     label: string;
@@ -77,6 +83,7 @@ export default defineComponent({
             const criteria = new Criteria(this.page, this.limit);
 
             criteria.setTerm(this.term ?? '');
+            criteria.addAssociation('benefits');
             criteria.addSorting(Criteria.sort(this.sortBy, this.sortDirection));
 
             return criteria;
@@ -135,9 +142,10 @@ export default defineComponent({
                     inlineEdit: 'number',
                 },
                 {
-                    property: 'pointsMultiplier',
+                    // what the tier grants lives in its own table, so the multiplier is printed from the
+                    // association instead of being inline editable - the detail page owns that form
+                    property: 'benefits',
                     label: 'sw-membership.list.columnPointsMultiplier',
-                    inlineEdit: 'number',
                 },
                 {
                     property: 'active',
@@ -145,6 +153,17 @@ export default defineComponent({
                     inlineEdit: 'boolean',
                 },
             ];
+        },
+
+        /**
+         * The multiplier the tier grants, `1` when it grants none - the same default the storefront
+         * applies, so the list never shows an empty cell where a customer earns the base rate.
+         */
+        earnMultiplier(loyaltyTier: LoyaltyTier): number {
+            const benefits = loyaltyTier.benefits?.getElements() ?? [];
+            const multiplier = benefits.find((benefit) => benefit.type === BENEFIT_EARN_MULTIPLIER);
+
+            return multiplier?.value ?? 1;
         },
 
         deleteLoyaltyTier(loyaltyTier: LoyaltyTier): void {

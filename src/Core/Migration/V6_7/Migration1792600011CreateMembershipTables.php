@@ -61,7 +61,7 @@ class Migration1792600011CreateMembershipTables extends MigrationStep
         );
 
         $connection->executeStatement(
-            'CREATE TABLE IF NOT EXISTS `membership_order` (
+            'CREATE TABLE IF NOT EXISTS `membership_purchase` (
                 `id` BINARY(16) NOT NULL,
                 `customer_id` BINARY(16) NOT NULL,
                 `membership_plan_id` BINARY(16) NULL,
@@ -81,16 +81,16 @@ class Migration1792600011CreateMembershipTables extends MigrationStep
                 `created_at` DATETIME(3) NOT NULL,
                 `updated_at` DATETIME(3) NULL,
                 PRIMARY KEY (`id`),
-                KEY `idx.membership_order.customer_id` (`customer_id`),
-                KEY `idx.membership_order.membership_plan_id` (`membership_plan_id`),
-                KEY `idx.membership_order.loyalty_tier_id` (`loyalty_tier_id`),
-                KEY `idx.membership_order.currency_id` (`currency_id`),
-                KEY `idx.membership_order.payment_no` (`payment_no`),
-                KEY `idx.membership_order.state` (`state`),
-                CONSTRAINT `fk.membership_order.customer_id` FOREIGN KEY (`customer_id`) REFERENCES `customer` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-                CONSTRAINT `fk.membership_order.membership_plan_id` FOREIGN KEY (`membership_plan_id`) REFERENCES `membership_plan` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
-                CONSTRAINT `fk.membership_order.loyalty_tier_id` FOREIGN KEY (`loyalty_tier_id`) REFERENCES `loyalty_tier` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
-                CONSTRAINT `fk.membership_order.currency_id` FOREIGN KEY (`currency_id`) REFERENCES `currency` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+                KEY `idx.membership_purchase.customer_id` (`customer_id`),
+                KEY `idx.membership_purchase.membership_plan_id` (`membership_plan_id`),
+                KEY `idx.membership_purchase.loyalty_tier_id` (`loyalty_tier_id`),
+                KEY `idx.membership_purchase.currency_id` (`currency_id`),
+                KEY `idx.membership_purchase.payment_no` (`payment_no`),
+                KEY `idx.membership_purchase.state` (`state`),
+                CONSTRAINT `fk.membership_purchase.customer_id` FOREIGN KEY (`customer_id`) REFERENCES `customer` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+                CONSTRAINT `fk.membership_purchase.membership_plan_id` FOREIGN KEY (`membership_plan_id`) REFERENCES `membership_plan` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
+                CONSTRAINT `fk.membership_purchase.loyalty_tier_id` FOREIGN KEY (`loyalty_tier_id`) REFERENCES `loyalty_tier` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
+                CONSTRAINT `fk.membership_purchase.currency_id` FOREIGN KEY (`currency_id`) REFERENCES `currency` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;'
         );
     }

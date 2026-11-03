@@ -42,8 +42,8 @@ class MembershipOfferService
             // bought on a desktop is often paid by scanning it with a phone
             'channels' => $this->payments->channels($currency, null),
             'orders' => array_map(
-                $this->presenter->order(...),
-                $this->purchases->recentOrders($customerId, $orderLimit, $context)
+                $this->presenter->purchase(...),
+                $this->purchases->recentPurchases($customerId, $orderLimit, $context)
             ),
         ];
     }

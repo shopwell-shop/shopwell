@@ -5,8 +5,10 @@ namespace Shopwell\Tests\Unit\Core\Checkout\Membership\SalesChannel;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyTier\LoyaltyTierEntity;
-use Shopwell\Core\Checkout\Membership\Entity\MembershipOrder\MembershipOrderEntity;
+use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyTierBenefit\LoyaltyTierBenefitCollection;
+use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyTierBenefit\LoyaltyTierBenefitEntity;
 use Shopwell\Core\Checkout\Membership\Entity\MembershipPlan\MembershipPlanEntity;
+use Shopwell\Core\Checkout\Membership\Entity\MembershipPurchase\MembershipPurchaseEntity;
 use Shopwell\Core\Checkout\Membership\SalesChannel\MembershipPresenter;
 use Shopwell\Core\Framework\Log\Package;
 
@@ -19,7 +21,7 @@ class MembershipPresenterTest extends TestCase
 {
     private const PLAN_ID = 'b1b2c3d4e5f60718293a4b5c6d7e8f90';
 
-    private const ORDER_ID = 'c1b2c3d4e5f60718293a4b5c6d7e8f90';
+    private const PURCHASE_ID = 'c1b2c3d4e5f60718293a4b5c6d7e8f90';
 
     private const TIER_ID = 'd1b2c3d4e5f60718293a4b5c6d7e8f90';
 
@@ -38,9 +40,7 @@ class MembershipPresenterTest extends TestCase
         $tier->setId(self::TIER_ID);
         $tier->setName('金卡');
         $tier->setLevel(3);
-        $tier->setPointsMultiplier(2.0);
-        $tier->setDiscountPercent(5.0);
-        $tier->setFreeShipping(true);
+        $tier->setBenefits($this->benefits());
 
         $plan = new MembershipPlanEntity();
         $plan->setId(self::PLAN_ID);
@@ -61,8 +61,14 @@ class MembershipPresenterTest extends TestCase
         static::assertSame(365, $presented['durationDays']);
         static::assertSame(self::CURRENCY_ID, $presented['currencyId']);
         static::assertSame(self::TIER_ID, $presented['tier']['id']);
-        static::assertSame(2.0, $presented['tier']['pointsMultiplier']);
-        static::assertTrue($presented['tier']['freeShipping']);
+        static::assertSame(
+            [
+                'earn_multiplier' => 2.0,
+                'cart_discount' => 5.0,
+                'free_shipping' => 1.0,
+            ],
+            $presented['tier']['benefits']
+        );
     }
 
     /**
@@ -82,22 +88,22 @@ class MembershipPresenterTest extends TestCase
         static::assertNull($this->presenter->plan($plan)['tier']);
     }
 
-    public function testOrderIsPresentedWithItsPeriod(): void
+    public function testPurchaseIsPresentedWithItsPeriod(): void
     {
-        $order = new MembershipOrderEntity();
-        $order->setId(self::ORDER_ID);
-        $order->setPlanName('年度金卡');
-        $order->setAmount(199.0);
-        $order->setCurrency('CNY');
-        $order->setDurationDays(365);
-        $order->setState(MembershipOrderEntity::STATE_ACTIVATED);
-        $order->setStartsAt(new \DateTimeImmutable('2026-06-01 12:00:00'));
-        $order->setExpiresAt(new \DateTimeImmutable('2027-06-01 12:00:00'));
+        $purchase = new MembershipPurchaseEntity();
+        $purchase->setId(self::PURCHASE_ID);
+        $purchase->setPlanName('年度金卡');
+        $purchase->setAmount(199.0);
+        $purchase->setCurrency('CNY');
+        $purchase->setDurationDays(365);
+        $purchase->setState(MembershipPurchaseEntity::STATE_ACTIVATED);
+        $purchase->setStartsAt(new \DateTimeImmutable('2026-06-01 12:00:00'));
+        $purchase->setExpiresAt(new \DateTimeImmutable('2027-06-01 12:00:00'));
 
-        $presented = $this->presenter->order($order);
+        $presented = $this->presenter->purchase($purchase);
 
-        static::assertSame(self::ORDER_ID, $presented['id']);
-        static::assertSame(MembershipOrderEntity::STATE_ACTIVATED, $presented['state']);
+        static::assertSame(self::PURCHASE_ID, $presented['id']);
+        static::assertSame(MembershipPurchaseEntity::STATE_ACTIVATED, $presented['state']);
         static::assertSame('2026-06-01T12:00:00+00:00', $presented['startsAt']);
         static::assertSame('2027-06-01T12:00:00+00:00', $presented['expiresAt']);
         static::assertNull($presented['createdAt']);

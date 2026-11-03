@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace Shopwell\Core\Checkout\Membership\Entity\MembershipOrder;
+namespace Shopwell\Core\Checkout\Membership\Entity\MembershipPurchase;
 
 use Shopwell\Core\Checkout\Customer\CustomerEntity;
 use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyTier\LoyaltyTierEntity;
@@ -14,7 +14,7 @@ use Shopwell\Core\Framework\Log\Package;
  * @codeCoverageIgnore
  */
 #[Package('checkout')]
-class MembershipOrderEntity extends Entity
+class MembershipPurchaseEntity extends Entity
 {
     use EntityIdTrait;
 

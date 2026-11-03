@@ -161,11 +161,11 @@
                                         '%points%': rewards.tierPointsPerCurrencyUnit
                                     })|sw_sanitize }}
                                 </li>
-                                {% if page.currentTier and page.currentTier.pointsMultiplier > 1 %}
+                                {% if page.currentTier and page.currentTier.benefits.earn_multiplier|default(1) > 1 %}
                                     <li>
                                         {{ 'account.rewardsEarnMultiplier'|trans({
                                             '%tier%': page.currentTier.name,
-                                            '%multiplier%': page.currentTier.pointsMultiplier
+                                            '%multiplier%': page.currentTier.benefits.earn_multiplier|default(1)
                                         })|sw_sanitize }}
                                     </li>
                                 {% endif %}
@@ -202,10 +202,10 @@
                                                     <tr class="{% if page.currentTier and tier.id is same as(page.currentTier.id) %}account-rewards-tier-current fw-bold{% endif %}">
                                                         <td>{{ tier.name }}</td>
                                                         <td>{{ tier.minTierPoints }}</td>
-                                                        <td>{{ tier.pointsMultiplier }}</td>
+                                                        <td>{{ tier.benefits.earn_multiplier|default(1) }}</td>
                                                         <td>
-                                                            {% if tier.discountPercent > 0 %}
-                                                                {{ tier.discountPercent }}%
+                                                            {% if tier.benefits.cart_discount|default(0) > 0 %}
+                                                                {{ tier.benefits.cart_discount }}%
                                                             {% else %}
                                                                 &ndash;
                                                             {% endif %}

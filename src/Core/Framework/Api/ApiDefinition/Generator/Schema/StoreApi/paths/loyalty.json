@@ -79,23 +79,12 @@
                                                             "null"
                                                         ]
                                                     },
-                                                    "pointsMultiplier": {
-                                                        "type": [
-                                                            "number",
-                                                            "null"
-                                                        ]
-                                                    },
-                                                    "discountPercent": {
-                                                        "type": [
-                                                            "number",
-                                                            "null"
-                                                        ]
-                                                    },
-                                                    "freeShipping": {
-                                                        "type": [
-                                                            "boolean",
-                                                            "null"
-                                                        ]
+                                                    "benefits": {
+                                                        "type": "object",
+                                                        "description": "What the tier grants, keyed by benefit type (earn_multiplier, cart_discount, free_shipping, birthday_gift, points_expiry_days). A type that is absent grants nothing.",
+                                                        "additionalProperties": {
+                                                            "type": "number"
+                                                        }
                                                     }
                                                 }
                                             }

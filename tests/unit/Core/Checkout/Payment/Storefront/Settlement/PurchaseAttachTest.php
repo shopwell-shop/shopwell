@@ -19,7 +19,7 @@ class PurchaseAttachTest extends TestCase
 
     public function testMarkerRoundTripsToThePurchaseItWasBuiltFor(): void
     {
-        $attach = new PurchaseAttach('membership_order:');
+        $attach = new PurchaseAttach('membership_purchase:');
 
         static::assertSame(
             self::PURCHASE_ID,
@@ -34,13 +34,13 @@ class PurchaseAttachTest extends TestCase
     {
         yield 'null' => ['attach' => null];
         yield 'other purchase' => ['attach' => 'wallet_top_up:' . self::PURCHASE_ID];
-        yield 'same prefix without an id' => ['attach' => 'membership_order:'];
+        yield 'same prefix without an id' => ['attach' => 'membership_purchase:'];
         yield 'unrelated value' => ['attach' => 'order-4711'];
     }
 
     #[DataProvider('foreignMarkers')]
     public function testPaymentOrdersOfOtherPurchasesAreNotClaimed(?string $attach): void
     {
-        static::assertNull((new PurchaseAttach('membership_order:'))->purchaseIdOf($attach));
+        static::assertNull((new PurchaseAttach('membership_purchase:'))->purchaseIdOf($attach));
     }
 }

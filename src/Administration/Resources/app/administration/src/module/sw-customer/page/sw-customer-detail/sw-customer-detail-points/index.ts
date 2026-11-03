@@ -33,7 +33,7 @@ interface TierOption {
     minTierPoints: number;
 }
 
-interface MembershipOrder {
+interface MembershipPurchase {
     id: string;
     planName: string;
     amount: number;
@@ -76,7 +76,7 @@ export default defineComponent({
             typeFilter: null as string | null,
             loyaltySummary: null as LoyaltySummary | null,
             transactions: [] as LoyaltySummaryTransaction[],
-            orders: [] as MembershipOrder[],
+            orders: [] as MembershipPurchase[],
             tiers: [] as TierOption[],
             showPointsModal: false,
             showMembershipModal: false,
@@ -94,8 +94,8 @@ export default defineComponent({
             return this.repositoryFactory.create('loyalty_tier');
         },
 
-        membershipOrderRepository() {
-            return this.repositoryFactory.create('membership_order');
+        membershipPurchaseRepository() {
+            return this.repositoryFactory.create('membership_purchase');
         },
 
         tierCriteria(): CriteriaType {
@@ -345,8 +345,8 @@ export default defineComponent({
         },
 
         loadOrders(): Promise<void> {
-            return this.membershipOrderRepository.search(this.orderCriteria).then((orders) => {
-                this.orders = orders as unknown as MembershipOrder[];
+            return this.membershipPurchaseRepository.search(this.orderCriteria).then((orders) => {
+                this.orders = orders as unknown as MembershipPurchase[];
             });
         },
 

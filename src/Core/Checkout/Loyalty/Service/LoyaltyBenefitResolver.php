@@ -4,7 +4,6 @@ namespace Shopwell\Core\Checkout\Loyalty\Service;
 
 use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyTier\LoyaltyTierEntity;
 use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyTierBenefit\LoyaltyTierBenefitCollection;
-use Shopwell\Core\Checkout\Loyalty\LoyaltyBenefitTypes;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
@@ -23,13 +22,9 @@ use Shopwell\Core\Framework\Log\Package;
  * It reads the tier through {@see TierResolver}, so a paid membership outranking the tier points is
  * decided in one place and not repeated for every benefit.
  *
- * ## The three old columns
- *
- * `points_multiplier`, `discount_percent` and `free_shipping` are read as a fallback as long as they
- * exist. The administration form still writes them and the storefront template still prints them; both
- * move onto this table in the UI step, and on that day the fallback and the columns are deleted
- * together. A row that exists always wins, so the fallback only fills gaps and never contradicts a
- * configured benefit.
+ * A benefit is a row of `loyalty_tier_benefit` and nothing else. The tier used to carry three fixed
+ * columns for the multiplier, the discount and free shipping; those are gone, and with them the
+ * fallback that read them when a row was missing. There is one storage, so there is one answer.
  *
  * @final
  */
@@ -65,10 +60,7 @@ class LoyaltyBenefitResolver
         // did not gets them here - both end up with the same answer
         $loaded = $tier->getBenefits();
 
-        return $this->withColumnFallback(
-            $tier,
-            $loaded === null ? $this->read($tier->getId(), $context) : LoyaltyTierBenefits::of($loaded)
-        );
+        return $loaded === null ? $this->read($tier->getId(), $context) : LoyaltyTierBenefits::of($loaded);
     }
 
     /**
@@ -93,26 +85,5 @@ class LoyaltyBenefitResolver
         }
 
         return LoyaltyTierBenefits::of($benefits);
-    }
-
-    private function withColumnFallback(LoyaltyTierEntity $tier, LoyaltyTierBenefits $benefits): LoyaltyTierBenefits
-    {
-        $multiplier = $tier->getPointsMultiplier();
-
-        if ($multiplier !== null && $multiplier !== 1.0) {
-            $benefits = $benefits->with(LoyaltyBenefitTypes::EARN_MULTIPLIER, $multiplier);
-        }
-
-        $discount = $tier->getDiscountPercent();
-
-        if ($discount !== null && $discount > 0.0) {
-            $benefits = $benefits->with(LoyaltyBenefitTypes::CART_DISCOUNT, $discount);
-        }
-
-        if ($tier->getFreeShipping() === true) {
-            $benefits = $benefits->with(LoyaltyBenefitTypes::FREE_SHIPPING, 1.0);
-        }
-
-        return $benefits;
     }
 }

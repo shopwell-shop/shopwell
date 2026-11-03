@@ -209,6 +209,7 @@ One concept, one word — these three modules share the contract:
 | the day a paid membership runs out | membership paid until (`membership_paid_until`) | valid until, the tier is not what expires |
 | points | points (`pointsBalance`, `bookPoints()`) | credit, score, coin |
 | a paid plan | plan (`MembershipPlan`) | package, product |
+| one line of the point ledger | point transaction (`loyalty_point_transaction`, `LoyaltyPointTransaction`) | customer point transaction, booking row |
 
 `LoyaltyTier` is the name the industry uses (Salesforce `LoyaltyTier`, airline `tier points`), not a translation
 of "level". Renaming it would only make the module harder to read for anyone who knows a loyalty system.
@@ -224,7 +225,7 @@ Three names still carry words that no longer match the columns, and that is deli
 - the `loyalty_tier` entity — it is the tier itself, not the account. `loyalty_tier` next to `loyalty_account`
   reads unambiguously, and renaming it would churn every translation key and twig block on the tier pages.
 
-`loyalty_point_transaction` and `membership_order` still use the pre-rename words; that part of the rename
+`loyalty_point_transaction` and `membership_purchase` still use the pre-rename words; that part of the rename
 is pending (see the architecture note, §20.7). Do not "fix" one of them in passing — both are table renames
 with index and foreign-key renames attached, and half of one is worse than none.
 

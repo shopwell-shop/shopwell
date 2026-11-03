@@ -201,6 +201,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('loyalty_tier.repository'),
             service(LoyaltyPointService::class),
             service(MembershipSubscriptionService::class),
+            service(LoyaltyBenefitResolver::class),
         ]);
 
     // the rewards page reads points, tiers and the redemption ladder from here; the membership offer it

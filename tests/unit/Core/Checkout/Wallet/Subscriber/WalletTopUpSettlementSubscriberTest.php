@@ -102,7 +102,7 @@ class WalletTopUpSettlementSubscriberTest extends TestCase
 
     public function testAPaymentOfAnotherIntentIsIgnored(): void
     {
-        $this->dispatch($this->unexpectedSettlement(), $this->unexpectedDispatcher(), 'membership_order:' . self::TOP_UP_ID, []);
+        $this->dispatch($this->unexpectedSettlement(), $this->unexpectedDispatcher(), 'membership_purchase:' . self::TOP_UP_ID, []);
     }
 
     public function testAMarkerWithoutAnIdIsIgnored(): void

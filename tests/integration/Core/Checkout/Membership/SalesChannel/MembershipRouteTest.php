@@ -98,7 +98,7 @@ class MembershipRouteTest extends TestCase
 
         static::assertArrayNotHasKey('plans', $response);
         static::assertArrayNotHasKey('membershipChannels', $response);
-        static::assertArrayNotHasKey('membershipOrders', $response);
+        static::assertArrayNotHasKey('membershipPurchases', $response);
         static::assertArrayHasKey('pointsBalance', $response);
     }
 

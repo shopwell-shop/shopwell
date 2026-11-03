@@ -43,7 +43,7 @@ class Migration1793603497CreateMembershipSubscriptionTable extends MigrationStep
                 `ends_at` DATETIME(3) NOT NULL,
                 `ended_at` DATETIME(3) NULL,
                 `end_reason` VARCHAR(32) NULL,
-                `last_order_id` BINARY(16) NULL,
+                `last_purchase_id` BINARY(16) NULL,
                 `created_at` DATETIME(3) NOT NULL,
                 `updated_at` DATETIME(3) NULL,
                 PRIMARY KEY (`id`),
@@ -52,11 +52,11 @@ class Migration1793603497CreateMembershipSubscriptionTable extends MigrationStep
                 KEY `idx.membership_subscription.ends_at` (`ends_at`),
                 KEY `idx.membership_subscription.loyalty_tier_id` (`loyalty_tier_id`),
                 KEY `idx.membership_subscription.membership_plan_id` (`membership_plan_id`),
-                KEY `idx.membership_subscription.last_order_id` (`last_order_id`),
+                KEY `idx.membership_subscription.last_purchase_id` (`last_purchase_id`),
                 CONSTRAINT `fk.membership_subscription.customer_id` FOREIGN KEY (`customer_id`) REFERENCES `customer` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
                 CONSTRAINT `fk.membership_subscription.membership_plan_id` FOREIGN KEY (`membership_plan_id`) REFERENCES `membership_plan` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
                 CONSTRAINT `fk.membership_subscription.loyalty_tier_id` FOREIGN KEY (`loyalty_tier_id`) REFERENCES `loyalty_tier` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
-                CONSTRAINT `fk.membership_subscription.last_order_id` FOREIGN KEY (`last_order_id`) REFERENCES `membership_order` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
+                CONSTRAINT `fk.membership_subscription.last_purchase_id` FOREIGN KEY (`last_purchase_id`) REFERENCES `membership_purchase` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;'
         );
     }

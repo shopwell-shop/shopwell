@@ -4,8 +4,8 @@ namespace Shopwell\Core\Checkout\Membership\Entity\MembershipSubscription;
 
 use Shopwell\Core\Checkout\Customer\CustomerEntity;
 use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyTier\LoyaltyTierEntity;
-use Shopwell\Core\Checkout\Membership\Entity\MembershipOrder\MembershipOrderEntity;
 use Shopwell\Core\Checkout\Membership\Entity\MembershipPlan\MembershipPlanEntity;
+use Shopwell\Core\Checkout\Membership\Entity\MembershipPurchase\MembershipPurchaseEntity;
 use Shopwell\Core\Checkout\Membership\MembershipSubscriptionStates;
 use Shopwell\Core\Framework\DataAbstractionLayer\Entity;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityIdTrait;
@@ -47,9 +47,9 @@ class MembershipSubscriptionEntity extends Entity
 
     protected ?string $endReason = null;
 
-    protected ?string $lastOrderId = null;
+    protected ?string $lastPurchaseId = null;
 
-    protected ?MembershipOrderEntity $lastOrder = null;
+    protected ?MembershipPurchaseEntity $lastPurchase = null;
 
     public function getCustomerId(): string
     {
@@ -191,24 +191,24 @@ class MembershipSubscriptionEntity extends Entity
         $this->endReason = $endReason;
     }
 
-    public function getLastOrderId(): ?string
+    public function getLastPurchaseId(): ?string
     {
-        return $this->lastOrderId;
+        return $this->lastPurchaseId;
     }
 
-    public function setLastOrderId(?string $lastOrderId): void
+    public function setLastPurchaseId(?string $lastPurchaseId): void
     {
-        $this->lastOrderId = $lastOrderId;
+        $this->lastPurchaseId = $lastPurchaseId;
     }
 
-    public function getLastOrder(): ?MembershipOrderEntity
+    public function getLastPurchase(): ?MembershipPurchaseEntity
     {
-        return $this->lastOrder;
+        return $this->lastPurchase;
     }
 
-    public function setLastOrder(MembershipOrderEntity $lastOrder): void
+    public function setLastPurchase(MembershipPurchaseEntity $lastPurchase): void
     {
-        $this->lastOrder = $lastOrder;
+        $this->lastPurchase = $lastPurchase;
     }
 
     /**

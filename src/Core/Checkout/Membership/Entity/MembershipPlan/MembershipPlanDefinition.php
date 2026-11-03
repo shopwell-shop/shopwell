@@ -3,8 +3,8 @@
 namespace Shopwell\Core\Checkout\Membership\Entity\MembershipPlan;
 
 use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyTier\LoyaltyTierDefinition;
-use Shopwell\Core\Checkout\Membership\Entity\MembershipOrder\MembershipOrderDefinition;
 use Shopwell\Core\Checkout\Membership\Entity\MembershipPlan\Aggregate\MembershipPlanTranslation\MembershipPlanTranslationDefinition;
+use Shopwell\Core\Checkout\Membership\Entity\MembershipPurchase\MembershipPurchaseDefinition;
 use Shopwell\Core\Checkout\Membership\Entity\MembershipSubscription\MembershipSubscriptionDefinition;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityDefinition;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\BoolField;
@@ -78,7 +78,7 @@ class MembershipPlanDefinition extends EntityDefinition
 
             new ManyToOneAssociationField('loyaltyTier', 'loyalty_tier_id', LoyaltyTierDefinition::class, 'id', false),
             new ManyToOneAssociationField('currency', 'currency_id', CurrencyDefinition::class, 'id', false),
-            new OneToManyAssociationField('orders', MembershipOrderDefinition::class, 'membership_plan_id', 'id'),
+            new OneToManyAssociationField('membershipPurchases', MembershipPurchaseDefinition::class, 'membership_plan_id', 'id'),
             new OneToManyAssociationField('subscriptions', MembershipSubscriptionDefinition::class, 'membership_plan_id', 'id'),
 
             (new TranslationsAssociationField(MembershipPlanTranslationDefinition::class, 'membership_plan_id'))->addFlags(new Required()),

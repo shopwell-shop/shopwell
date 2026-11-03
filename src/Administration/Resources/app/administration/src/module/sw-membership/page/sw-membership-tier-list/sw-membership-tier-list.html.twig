@@ -125,6 +125,12 @@
                             </mt-button>
                         </template>
 
+                        {% block sw_loyalty_tier_list_grid_column_benefits %}
+                        <template #column-benefits="{ item }">
+                            {{ earnMultiplier(item) }}
+                        </template>
+                        {% endblock %}
+
                         {% block sw_loyalty_tier_list_grid_column_active %}
                         <template #column-active="{ item }">
                             <mt-icon

@@ -6,8 +6,8 @@ use Shopwell\Core\Checkout\Customer\Aggregate\CustomerGroup\CustomerGroupEntity;
 use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyAccount\LoyaltyAccountCollection;
 use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyTier\Aggregate\LoyaltyTierTranslation\LoyaltyTierTranslationCollection;
 use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyTierBenefit\LoyaltyTierBenefitCollection;
-use Shopwell\Core\Checkout\Membership\Entity\MembershipOrder\MembershipOrderCollection;
 use Shopwell\Core\Checkout\Membership\Entity\MembershipPlan\MembershipPlanCollection;
+use Shopwell\Core\Checkout\Membership\Entity\MembershipPurchase\MembershipPurchaseCollection;
 use Shopwell\Core\Checkout\Membership\Entity\MembershipSubscription\MembershipSubscriptionCollection;
 use Shopwell\Core\Framework\DataAbstractionLayer\Entity;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityIdTrait;
@@ -27,12 +27,6 @@ class LoyaltyTierEntity extends Entity
 
     protected ?int $minTierPoints = null;
 
-    protected ?float $pointsMultiplier = null;
-
-    protected ?float $discountPercent = null;
-
-    protected ?bool $freeShipping = null;
-
     protected ?bool $active = null;
 
     protected ?string $customerGroupId = null;
@@ -49,7 +43,7 @@ class LoyaltyTierEntity extends Entity
 
     protected ?MembershipPlanCollection $membershipPlans = null;
 
-    protected ?MembershipOrderCollection $membershipOrders = null;
+    protected ?MembershipPurchaseCollection $membershipPurchases = null;
 
     protected ?MembershipSubscriptionCollection $membershipSubscriptions = null;
 
@@ -83,36 +77,6 @@ class LoyaltyTierEntity extends Entity
     public function setMinTierPoints(?int $minTierPoints): void
     {
         $this->minTierPoints = $minTierPoints;
-    }
-
-    public function getPointsMultiplier(): ?float
-    {
-        return $this->pointsMultiplier;
-    }
-
-    public function setPointsMultiplier(?float $pointsMultiplier): void
-    {
-        $this->pointsMultiplier = $pointsMultiplier;
-    }
-
-    public function getDiscountPercent(): ?float
-    {
-        return $this->discountPercent;
-    }
-
-    public function setDiscountPercent(?float $discountPercent): void
-    {
-        $this->discountPercent = $discountPercent;
-    }
-
-    public function getFreeShipping(): ?bool
-    {
-        return $this->freeShipping;
-    }
-
-    public function setFreeShipping(?bool $freeShipping): void
-    {
-        $this->freeShipping = $freeShipping;
     }
 
     public function getActive(): ?bool
@@ -195,14 +159,14 @@ class LoyaltyTierEntity extends Entity
         $this->membershipPlans = $membershipPlans;
     }
 
-    public function getMembershipOrders(): ?MembershipOrderCollection
+    public function getMembershipPurchases(): ?MembershipPurchaseCollection
     {
-        return $this->membershipOrders;
+        return $this->membershipPurchases;
     }
 
-    public function setMembershipOrders(MembershipOrderCollection $membershipOrders): void
+    public function setMembershipPurchases(MembershipPurchaseCollection $membershipPurchases): void
     {
-        $this->membershipOrders = $membershipOrders;
+        $this->membershipPurchases = $membershipPurchases;
     }
 
     public function getMembershipSubscriptions(): ?MembershipSubscriptionCollection

@@ -7,10 +7,10 @@ use Shopwell\Core\Checkout\Customer\Aggregate\CustomerAddress\CustomerAddressEnt
 use Shopwell\Core\Checkout\Customer\Aggregate\CustomerGroup\CustomerGroupEntity;
 use Shopwell\Core\Checkout\Customer\Aggregate\CustomerRecovery\CustomerRecoveryEntity;
 use Shopwell\Core\Checkout\Customer\Aggregate\CustomerWishlist\CustomerWishlistCollection;
-use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyPointTransaction\LoyaltyPointTransactionCollection;
 use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyAccount\LoyaltyAccountEntity;
 use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyPointLot\LoyaltyPointLotCollection;
-use Shopwell\Core\Checkout\Membership\Entity\MembershipOrder\MembershipOrderCollection;
+use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyPointTransaction\LoyaltyPointTransactionCollection;
+use Shopwell\Core\Checkout\Membership\Entity\MembershipPurchase\MembershipPurchaseCollection;
 use Shopwell\Core\Checkout\Membership\Entity\MembershipSubscription\MembershipSubscriptionCollection;
 use Shopwell\Core\Checkout\Order\Aggregate\OrderCustomer\OrderCustomerCollection;
 use Shopwell\Core\Checkout\OrderReturn\Entity\OrderReturnCollection;
@@ -168,7 +168,7 @@ class CustomerEntity extends Entity implements \Stringable
 
     protected ?LoyaltyPointTransactionCollection $loyaltyPointTransactions = null;
 
-    protected ?MembershipOrderCollection $membershipOrders = null;
+    protected ?MembershipPurchaseCollection $membershipPurchases = null;
 
     protected ?MembershipSubscriptionCollection $membershipSubscriptions = null;
 
@@ -882,14 +882,14 @@ class CustomerEntity extends Entity implements \Stringable
         $this->loyaltyPointTransactions = $loyaltyPointTransactions;
     }
 
-    public function getMembershipOrders(): ?MembershipOrderCollection
+    public function getMembershipPurchases(): ?MembershipPurchaseCollection
     {
-        return $this->membershipOrders;
+        return $this->membershipPurchases;
     }
 
-    public function setMembershipOrders(MembershipOrderCollection $membershipOrders): void
+    public function setMembershipPurchases(MembershipPurchaseCollection $membershipPurchases): void
     {
-        $this->membershipOrders = $membershipOrders;
+        $this->membershipPurchases = $membershipPurchases;
     }
 
     public function getMembershipSubscriptions(): ?MembershipSubscriptionCollection

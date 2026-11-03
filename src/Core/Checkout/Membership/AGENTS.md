@@ -10,7 +10,7 @@ It is the only module that sells something without a cart and without an order o
 Entity/           plans (with translations), the purchase row, the subscription a purchase produces
 Extension/        Store API route extension - kept at the module root, like Order/, Payment/, Gateway/
 Purchase/         how a paid membership row is handed to the shared settlement kernel
-SalesChannel/     `/membership` (read: plans, channels, orders, running subscription), `/membership/purchase`, the presenter
+SalesChannel/     `/membership` (read: plans, channels, past purchases, running subscription), `/membership/purchase`, the presenter
 ScheduledTask/    the daily task that ends memberships whose period ran out
 Service/          plan catalogue, purchase, offer summary, Subscription (open / current / expire / revoke)
 Subscriber/       payment confirmed -> settlement -> subscription
@@ -28,7 +28,7 @@ of `Loyalty/SalesChannel/LoyaltyRoute`, and they are deliberately two payloads r
   the projection exists so the rest of the platform can answer "which tier applies" without knowing that
   memberships exist. It carries no start date, no plan name and no amount, and the page shows all three.
 - `planName` is copied from the subscription row, not joined from the plan. A plan renamed later must not
-  rewrite what the customer agreed to — the same reason `membership_order` copies the price.
+  rewrite what the customer agreed to — the same reason `membership_purchase` copies the price.
 - The read route is what the page polls after a purchase (`/account/membership/json`); it does not get a
   second endpoint for "the order I just opened".
 
@@ -42,18 +42,18 @@ never with `lint:container`: the container is happy either way.
 ## Three rows with three different meanings
 
 ```
-membership_order  ──(one purchase, never changes)──▶  membership_subscription  ──(projection)──▶  loyalty_account
+membership_purchase  ──(one purchase, never changes)──▶  membership_subscription  ──(projection)──▶  loyalty_account
    what was bought                                    the membership itself              tierId / ValidUntil
 ```
 
-- `membership_order` — what the customer bought: plan, tier, duration and price **copied at purchase time**.
+- `membership_purchase` — what the customer bought: plan, tier, duration and price **copied at purchase time**.
   A later price change must not rewrite history, so the row never reads the plan again after creation.
 - `membership_subscription` — the membership that purchase bought. One row is one uninterrupted period:
   the same tier pushes `ends_at`, another tier ends it (`end_reason = superseded`) and starts a new one.
 - `loyalty_account.tier_id` / `membership_paid_until` — **a projection of the subscription, and
   `MembershipSubscriptionService` is its only writer.** The storefront, the administration and
   `TierResolver` read it without knowing that a membership exists; nothing else may write those two fields.
-- the gateway's payment order — how it is collected. Its id is the membership order's own id (the `attach`
+- the gateway's payment order — how it is collected. Its id is the membership purchase's own id (the `attach`
   marker points back at it), which is what makes settlement idempotent without a second key.
 
 `MembershipPurchaseService::purchase()` writes the row, opens the payment and stores the payment number.
@@ -65,8 +65,8 @@ money must stay visible.
 A paid membership is one implementation of
 `Shopwell\Core\Checkout\Payment\Storefront\Settlement\SettleablePurchase`:
 
-- `MembershipOrderPurchase::isSettleable()` — an order without a `loyalty_tier_id` cannot activate anything.
-- `MembershipOrderPurchase::settle()` — hands the locked order to `MembershipSubscriptionService::open()`,
+- `MembershipPurchase::isSettleable()` — a purchase without a `loyalty_tier_id` cannot activate anything.
+- `MembershipPurchase::settle()` — hands the locked purchase row to `MembershipSubscriptionService::open()`,
   stores the period that purchase bought on the row (`ends_at - duration_days`, because a renewal extends a
   membership that may have started long before) and marks it `activated`. **This module never writes the tier
   itself** — the validity math (same tier continues, another tier starts now, a ran-out membership does not
@@ -98,7 +98,7 @@ period ends — but the end is also written down:
 | Concept | Word | Never |
 |---|---|---|
 | what is sold | plan (`MembershipPlan`) | package, product, sku |
-| one purchase | membership order (`MembershipOrder`) | invoice |
+| one purchase | membership purchase (`MembershipPurchase`) | invoice, membership order |
 | the membership it produces | subscription (`MembershipSubscription`) | entitlement, license, membership row |
 | the tier it activates | tier (`loyaltyTierId`) | level, rank |
 | plans/channels/orders shown to a customer | offer (`MembershipOfferService::forCustomer()`) | catalogue, list |
@@ -107,6 +107,26 @@ Errors come from `MembershipException`; the plan codes keep their historical `CH
 values on purpose, because they are part of the Store API contract. The subscription codes follow the same
 prefix for the same reason.
 
+## `purchase` in the code, "order" on the screen
+
+The table is `membership_purchase` and its entity is `MembershipPurchase`, but the storefront and the
+administration still say "order" in the sentences (`account.membershipOrdersTitle`). That is
+deliberate, not a leftover:
+
+- the row is **not** an `order` in the DAL sense - there is a real `order` table right next to it, and
+  `membership_order` read as if the two were related. Inside the code, `purchase` is the only correct word.
+- to the customer, what they bought **is** an order. Snippet keys are also theme / plugin override points,
+  so renaming them silently drops the wording a shop already replaced.
+
+Rule of thumb: **rename the code, not the sentence.** If a snippet key says `order`, leave it - unless you
+are also prepared to migrate every theme.
+
+The page, its component and its menu key follow the code, not the sentence: `sw-membership-purchase-list`,
+route `sw.settings.membership.purchases`, navigation id and `CoreAdminMenuProvider` internal key
+`sw-membership-purchases`. The twig blocks of that page are still named `sw_loyalty_order_list*` - a block
+name is what a plugin extends, so it is not renamed along with the directory.
+
+
 ## Where a new capability goes
 
 1. A new plan attribute → migration + `MembershipPlanDefinition` + `MembershipPlanEntity` + `MembershipPresenter::plan()`.
@@ -114,7 +134,7 @@ prefix for the same reason.
    not the route: the route only resolves the customer and the currency.
 3. A new way to *get* a membership (gift, voucher, auto-renew) → a method on `MembershipSubscriptionService`
    that describes the purchase and calls the same `subscribe()`: what a membership is must not depend on how it
-   was paid for. Do not fold it into `MembershipOrderPurchase`.
+   was paid for. Do not fold it into `MembershipPurchase`.
 4. Store API output is built by `MembershipPresenter`. A route returns `['data' => ...]` and never assembles
    the payload itself.
 

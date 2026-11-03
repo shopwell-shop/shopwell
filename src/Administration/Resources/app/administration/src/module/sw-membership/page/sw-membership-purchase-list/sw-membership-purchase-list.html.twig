@@ -1,11 +1,11 @@
 {% block sw_loyalty_order_list %}
-<sw-page class="sw-membership-order-list">
+<sw-page class="sw-membership-purchase-list">
 
     {% block sw_loyalty_order_list_search_bar %}
     <template #search-bar>
         <sw-search-bar
             :initial-search="term"
-            :placeholder="$t('sw-membership.order.list.placeholderSearchBar')"
+            :placeholder="$t('sw-membership.purchase.list.placeholderSearchBar')"
             @search="onSearch"
         />
     </template>
@@ -14,12 +14,12 @@
     {% block sw_loyalty_order_list_smart_bar_header %}
     <template #smart-bar-header>
         <h2>
-            {{ $t('sw-settings.index.title') }}
+            {{ $t('sw-order.general.mainMenuItemGeneral') }}
             <mt-icon
                 name="regular-chevron-right-xs"
                 size="12px"
             />
-            {{ $t('sw-membership.order.general.mainMenuItemGeneral') }}
+            {{ $t('sw-membership.purchase.general.mainMenuItemGeneral') }}
 
             <span
                 v-if="!isLoading && total"
@@ -42,17 +42,17 @@
         <sw-card-view>
             {% block sw_loyalty_order_list_card %}
             <mt-card
-                position-identifier="sw-membership-order-list"
-                :title="$t('sw-membership.order.list.cardTitle')"
+                position-identifier="sw-membership-purchase-list"
+                :title="$t('sw-membership.purchase.list.cardTitle')"
                 :is-loading="isLoading"
             >
                 {% block sw_loyalty_order_list_filter %}
                 <template #headerRight>
                     <mt-select
                         v-model="stateFilter"
-                        class="sw-membership-order-list__state-filter"
+                        class="sw-membership-purchase-list__state-filter"
                         :options="stateFilterOptions"
-                        :label="$t('sw-membership.order.list.labelFilterState')"
+                        :label="$t('sw-membership.purchase.list.labelFilterState')"
                         size="small"
                         @update:model-value="onFilterChange"
                     />
@@ -61,9 +61,9 @@
 
                 {% block sw_loyalty_order_list_grid %}
                 <sw-data-grid
-                    v-if="orders.length > 0"
-                    class="sw-membership-order-list__grid"
-                    :data-source="orders"
+                    v-if="purchases && purchases.length > 0"
+                    class="sw-membership-purchase-list__grid"
+                    :data-source="purchases"
                     :columns="columns"
                     :show-selection="false"
                     :show-settings="false"
@@ -95,7 +95,7 @@
                     {% block sw_loyalty_order_list_grid_column_state %}
                     <template #column-state="{ item }">
                         <mt-badge
-                            class="sw-membership-order-list__state"
+                            class="sw-membership-purchase-list__state"
                             size="small"
                             :type="getStateVariant(item.state)"
                         >
@@ -122,7 +122,8 @@
                     v-else-if="!isLoading"
                     centered
                     icon="regular-shopping-bag"
-                    :headline="$t('sw-membership.order.list.emptyStateHeadline')"
+                    :headline="$t('sw-membership.purchase.list.emptyStateHeadline')"
+                    :description="$t('sw-membership.purchase.list.emptyStateDescription')"
                 />
                 {% endblock %}
                 {% endblock %}

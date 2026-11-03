@@ -115,8 +115,12 @@
                                                 "level": {
                                                     "type": "integer"
                                                 },
-                                                "pointsMultiplier": {
-                                                    "type": "number"
+                                                "benefits": {
+                                                    "type": "object",
+                                                    "description": "What the tier grants, keyed by benefit type. A type that is absent grants nothing.",
+                                                    "additionalProperties": {
+                                                        "type": "number"
+                                                    }
                                                 }
                                             }
                                         },

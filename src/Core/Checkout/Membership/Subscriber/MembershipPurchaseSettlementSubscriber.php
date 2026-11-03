@@ -2,7 +2,7 @@
 
 namespace Shopwell\Core\Checkout\Membership\Subscriber;
 
-use Shopwell\Core\Checkout\Membership\Purchase\MembershipOrderPurchaseStore;
+use Shopwell\Core\Checkout\Membership\Purchase\MembershipPurchaseStore;
 use Shopwell\Core\Checkout\Payment\Storefront\Settlement\PurchaseAttach;
 use Shopwell\Core\Checkout\Payment\Storefront\Settlement\PurchaseSettlement;
 use Shopwell\Core\Framework\Log\Package;
@@ -26,7 +26,7 @@ class MembershipPurchaseSettlementSubscriber implements EventSubscriberInterface
 {
     public function __construct(
         private readonly PurchaseSettlement $settlement,
-        private readonly MembershipOrderPurchaseStore $purchases,
+        private readonly MembershipPurchaseStore $purchases,
         private readonly PurchaseAttach $attach,
     ) {
     }
@@ -40,13 +40,13 @@ class MembershipPurchaseSettlementSubscriber implements EventSubscriberInterface
 
     public function onPaymentOrderPaid(PaymentOrderPaidEvent $event): void
     {
-        $order = $event->getPaymentOrder();
-        $orderId = $this->attach->purchaseIdOf($order->attach);
+        $payment = $event->getPaymentOrder();
+        $purchaseId = $this->attach->purchaseIdOf($payment->attach);
 
-        if ($orderId === null) {
+        if ($purchaseId === null) {
             return;
         }
 
-        $this->settlement->settle($this->purchases, $orderId, $order->paidAmount, $order->paymentNo, $event->getContext());
+        $this->settlement->settle($this->purchases, $purchaseId, $payment->paidAmount, $payment->paymentNo, $event->getContext());
     }
 }

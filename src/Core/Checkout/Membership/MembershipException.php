@@ -49,16 +49,16 @@ class MembershipException extends HttpException
     }
 
     /**
-     * An order whose tier was deleted before it was paid cannot become a membership: granting nothing
+     * A purchase whose tier was deleted before it was paid cannot become a membership: granting nothing
      * and taking the money anyway would be worse than failing the settlement.
      */
-    public static function subscriptionWithoutTier(string $orderId): self
+    public static function subscriptionWithoutTier(string $purchaseId): self
     {
         return new self(
             Response::HTTP_BAD_REQUEST,
             self::SUBSCRIPTION_WITHOUT_TIER_CODE,
-            'The membership order "{{ orderId }}" has no tier to grant.',
-            ['orderId' => $orderId]
+            'The membership purchase "{{ purchaseId }}" has no tier to grant.',
+            ['purchaseId' => $purchaseId]
         );
     }
 

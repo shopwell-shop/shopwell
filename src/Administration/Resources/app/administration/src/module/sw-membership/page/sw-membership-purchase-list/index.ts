@@ -3,34 +3,26 @@
  */
 import { defineComponent } from 'vue';
 import type CriteriaType from 'src/core/data/criteria.data';
+import type RepositoryType from 'src/core/data/repository.data';
 
-import template from './sw-membership-order-list.html.twig';
+import template from './sw-membership-purchase-list.html.twig';
 
 const { Criteria } = Shopwell.Data;
 
 const STATES = ['open', 'activated', 'failed'];
 
-interface MembershipOrder {
-    id: string;
-    customerId: string;
-    planName: string;
-    amount: number;
-    currency: string;
-    state: string;
-    durationDays: number;
-    paymentNo: string | null;
-    paidAt: string | null;
-    expiresAt: string | null;
-    createdAt: string | null;
-    customer: { id: string; firstName: string; lastName: string; customerNumber: string } | null;
-}
+type MembershipPurchase = EntitySchema.Entity<'membership_purchase'>;
 
 /**
- * Every membership that was bought - or attempted - in the shop. The list is read only on purpose:
- * a membership changes through the payment or through the customer detail page, never by editing the
- * order row itself.
+ * Every membership a customer bought in the shop, one row per purchase attempt. The list is read only
+ * on purpose: a membership changes through the payment or through the customer detail page, never by
+ * editing the purchase row itself. The membership that is in force afterwards is an account question
+ * and lives on the subscription page.
+ *
+ * The twig blocks are still named `sw_loyalty_order_list*`: a block name is what a plugin extends, so
+ * it is not renamed along with the directory.
  */
-// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations -- the module registers the page, a plugin must not import it
 export default defineComponent({
     template,
 
@@ -42,7 +34,7 @@ export default defineComponent({
         limit: number;
         total: number;
         term: string;
-        orders: MembershipOrder[];
+        purchases: EntityCollection<'membership_purchase'> | null;
         stateFilter: string | null;
     } {
         return {
@@ -51,7 +43,7 @@ export default defineComponent({
             limit: 25,
             total: 0,
             term: '',
-            orders: [],
+            purchases: null,
             stateFilter: null,
         };
     },
@@ -63,11 +55,11 @@ export default defineComponent({
     },
 
     computed: {
-        orderRepository() {
-            return this.repositoryFactory.create('membership_order');
+        purchaseRepository(): RepositoryType<'membership_purchase'> {
+            return this.repositoryFactory.create('membership_purchase');
         },
 
-        orderCriteria(): CriteriaType {
+        purchaseCriteria(): CriteriaType {
             const criteria = new Criteria(this.page, this.limit);
 
             criteria.addAssociation('customer');
@@ -88,34 +80,34 @@ export default defineComponent({
             return [
                 {
                     property: 'customer',
-                    label: 'sw-membership.order.list.columnCustomer',
+                    label: 'sw-membership.purchase.list.columnCustomer',
                 },
                 {
                     property: 'planName',
-                    label: 'sw-membership.order.list.columnPlan',
+                    label: 'sw-membership.purchase.list.columnPlan',
                 },
                 {
                     property: 'amount',
-                    label: 'sw-membership.order.list.columnAmount',
+                    label: 'sw-membership.purchase.list.columnAmount',
                 },
                 {
                     property: 'state',
-                    label: 'sw-membership.order.list.columnState',
+                    label: 'sw-membership.purchase.list.columnState',
                 },
                 {
                     property: 'paidAt',
-                    label: 'sw-membership.order.list.columnPaidAt',
+                    label: 'sw-membership.purchase.list.columnPaidAt',
                 },
                 {
                     property: 'createdAt',
-                    label: 'sw-membership.order.list.columnCreatedAt',
+                    label: 'sw-membership.purchase.list.columnCreatedAt',
                 },
             ];
         },
 
         stateFilterOptions() {
             return [
-                { value: null, label: this.$t('sw-membership.order.list.filterStateAll') },
+                { value: null, label: this.$t('sw-membership.purchase.list.filterStateAll') },
                 ...STATES.map((state) => {
                     return { value: state, label: this.getStateLabel(state) };
                 }),
@@ -140,17 +132,17 @@ export default defineComponent({
             this.isLoading = true;
 
             try {
-                const result = await this.orderRepository.search(this.orderCriteria);
+                const result = await this.purchaseRepository.search(this.purchaseCriteria);
 
-                this.orders = result as unknown as MembershipOrder[];
-                this.total = result.total ?? this.orders.length;
+                this.purchases = result;
+                this.total = result.total ?? result.length;
             } finally {
                 this.isLoading = false;
             }
         },
 
         getStateLabel(state: string): string {
-            return this.$t(`sw-membership.order.state.${state}`, {}, 0);
+            return this.$t(`sw-membership.purchase.state.${state}`, {}, 0);
         },
 
         getStateVariant(state: string): string {
@@ -161,16 +153,22 @@ export default defineComponent({
             return state === 'failed' ? 'error' : 'warning';
         },
 
-        formatAmount(order: MembershipOrder): string {
-            return this.currencyFilter(order.amount, order.currency) as string;
+        formatAmount(purchase: MembershipPurchase): string {
+            return this.currencyFilter(purchase.amount, purchase.currency) as string;
         },
 
-        formatCustomer(order: MembershipOrder): string {
-            if (!order.customer) {
-                return order.customerId;
+        /**
+         * Falls back to the id when the customer row was not loaded: the row still has to say whose
+         * purchase it was, and an empty cell would read like "nobody bought this".
+         */
+        formatCustomer(purchase: MembershipPurchase): string {
+            const customer = purchase.customer;
+
+            if (!customer) {
+                return purchase.customerId;
             }
 
-            return `${order.customer.firstName} ${order.customer.lastName} (${order.customer.customerNumber})`;
+            return `${customer.firstName} ${customer.lastName} (${customer.customerNumber ?? purchase.customerId})`;
         },
 
         formatDate(date: string | null): string {

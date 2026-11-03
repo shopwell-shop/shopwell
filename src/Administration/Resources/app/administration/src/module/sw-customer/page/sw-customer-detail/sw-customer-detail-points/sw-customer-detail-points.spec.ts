@@ -25,12 +25,12 @@ type LoyaltySummary = {
 type TransactionPage = { total: number; transactions: (typeof transactions)[number][] };
 type PointTransaction = (typeof transactions)[number];
 type Tier = (typeof tiers)[number];
-type MembershipOrder = typeof membershipOrder;
+type MembershipPurchase = typeof membershipPurchase;
 
 type PointsDetailVm = {
     loyaltySummary: LoyaltySummary | null;
     transactions: PointTransaction[];
-    orders: MembershipOrder[];
+    orders: MembershipPurchase[];
     total: number;
     page: number;
     typeFilter: string | null;
@@ -93,7 +93,7 @@ const tiers = [
     { id: 'tier-2', name: 'Platinum', level: 3, minTierPoints: 2000 },
 ];
 
-const membershipOrder = {
+const membershipPurchase = {
     id: 'membership-order-1',
     planName: 'Gold, one year',
     amount: 199,
@@ -110,7 +110,7 @@ const tierRepository = {
 };
 
 const orderRepository = {
-    search: jest.fn(() => Promise.resolve([membershipOrder])),
+    search: jest.fn(() => Promise.resolve([membershipPurchase])),
 };
 
 function createLoyaltyApiService() {
@@ -165,7 +165,7 @@ async function createWrapper(
                                 return tierRepository;
                             }
 
-                            if (name === 'membership_order') {
+                            if (name === 'membership_purchase') {
                                 return orderRepository;
                             }
 
@@ -197,7 +197,7 @@ describe('src/module/sw-customer/page/sw-customer-detail/sw-customer-detail-poin
         tierRepository.search.mockClear();
         orderRepository.search.mockClear();
         tierRepository.search.mockResolvedValue(tiers);
-        orderRepository.search.mockResolvedValue([membershipOrder]);
+        orderRepository.search.mockResolvedValue([membershipPurchase]);
     });
 
     it('should be a vue js component', async () => {

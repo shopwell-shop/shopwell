@@ -64,31 +64,31 @@ class MembershipSubscriptionService
     }
 
     /**
-     * Turns a paid membership order into a membership and answers the membership it belongs to.
+     * Turns a paid membership purchase into a membership and answers the membership it belongs to.
      *
-     * @param array<string, mixed> $order the locked `membership_order` row that was paid
+     * @param array<string, mixed> $purchase the locked `membership_purchase` row that was paid
      *
      * @throws MembershipException
      */
-    public function open(array $order, Context $context): MembershipSubscriptionEntity
+    public function open(array $purchase, Context $context): MembershipSubscriptionEntity
     {
-        $tierId = $order['loyalty_tier_id'] === null ? null : (string) $order['loyalty_tier_id'];
+        $tierId = $purchase['loyalty_tier_id'] === null ? null : (string) $purchase['loyalty_tier_id'];
 
         if ($tierId === null) {
             // the tier was deleted while the payment was open; granting nothing and taking the money
             // anyway would be worse than failing the settlement
-            throw MembershipException::subscriptionWithoutTier((string) $order['id']);
+            throw MembershipException::subscriptionWithoutTier((string) $purchase['id']);
         }
 
         return $this->subscribe([
-            'customerId' => (string) $order['customer_id'],
+            'customerId' => (string) $purchase['customer_id'],
             'loyaltyTierId' => $tierId,
-            'membershipPlanId' => $order['membership_plan_id'] === null ? null : (string) $order['membership_plan_id'],
-            'planName' => $order['plan_name'] === null ? null : (string) $order['plan_name'],
-            'amount' => (float) $order['amount'],
-            'currency' => $order['currency'] === null ? null : (string) $order['currency'],
-            'durationDays' => (int) $order['duration_days'],
-            'orderId' => (string) $order['id'],
+            'membershipPlanId' => $purchase['membership_plan_id'] === null ? null : (string) $purchase['membership_plan_id'],
+            'planName' => $purchase['plan_name'] === null ? null : (string) $purchase['plan_name'],
+            'amount' => (float) $purchase['amount'],
+            'currency' => $purchase['currency'] === null ? null : (string) $purchase['currency'],
+            'durationDays' => (int) $purchase['duration_days'],
+            'purchaseId' => (string) $purchase['id'],
         ], $context);
     }
 
@@ -113,7 +113,7 @@ class MembershipSubscriptionService
             'amount' => 0.0,
             'currency' => null,
             'durationDays' => $durationDays,
-            'orderId' => null,
+            'purchaseId' => null,
         ], $context);
     }
 
@@ -214,7 +214,7 @@ class MembershipSubscriptionService
      * The loyalty account and the running membership are locked for the whole decision, so two
      * settlements of the same customer cannot both extend the same period.
      *
-     * @param array{customerId: string, loyaltyTierId: string, membershipPlanId: ?string, planName: ?string, amount: float, currency: ?string, durationDays: int, orderId: ?string} $purchase
+     * @param array{customerId: string, loyaltyTierId: string, membershipPlanId: ?string, planName: ?string, amount: float, currency: ?string, durationDays: int, purchaseId: ?string} $purchase
      *
      * @throws MembershipException
      */
@@ -241,7 +241,7 @@ class MembershipSubscriptionService
                     // what this membership cost in total: every purchase that extended it adds up
                     'amount' => (float) $running['amount'] + $purchase['amount'],
                     'endsAt' => $endsAt,
-                    'lastOrderId' => $purchase['orderId'] ?? $running['last_order_id'],
+                    'lastPurchaseId' => $purchase['purchaseId'] ?? $running['last_purchase_id'],
                 ]], $context);
             } else {
                 if ($running !== null) {
@@ -262,7 +262,7 @@ class MembershipSubscriptionService
                     'state' => MembershipSubscriptionStates::STATE_ACTIVE,
                     'startsAt' => $now,
                     'endsAt' => $endsAt,
-                    'lastOrderId' => $purchase['orderId'],
+                    'lastPurchaseId' => $purchase['purchaseId'],
                 ]], $context);
             }
 
