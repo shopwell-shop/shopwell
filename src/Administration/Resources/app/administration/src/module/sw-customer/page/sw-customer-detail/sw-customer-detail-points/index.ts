@@ -50,7 +50,7 @@ interface MembershipPurchase {
  * led to it and the point ledger. A membership can also be granted here, for a goodwill upgrade or a
  * membership that was paid outside of the shop.
  */
-// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations -- the customer tab is reached through the customer detail page, which the membership module owns
 export default defineComponent({
     template,
 
@@ -340,13 +340,32 @@ export default defineComponent({
 
         loadTiers(): Promise<void> {
             return this.loyaltyTierRepository.search(this.tierCriteria).then((tiers) => {
-                this.tiers = tiers as unknown as TierOption[];
+                this.tiers = tiers.map((tier) => {
+                    return {
+                        id: tier.id,
+                        name: tier.name,
+                        level: tier.level,
+                        minTierPoints: tier.minTierPoints,
+                    };
+                });
             });
         },
 
         loadOrders(): Promise<void> {
             return this.membershipPurchaseRepository.search(this.orderCriteria).then((orders) => {
-                this.orders = orders as unknown as MembershipPurchase[];
+                this.orders = orders.map((order) => {
+                    return {
+                        id: order.id,
+                        planName: order.planName,
+                        amount: order.amount,
+                        currency: order.currency,
+                        state: order.state,
+                        durationDays: order.durationDays,
+                        paidAt: order.paidAt,
+                        expiresAt: order.expiresAt,
+                        createdAt: order.createdAt,
+                    };
+                });
             });
         },
 

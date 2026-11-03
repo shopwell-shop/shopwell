@@ -5,14 +5,6 @@
 import { mount } from '@vue/test-utils';
 import type { VueWrapper } from '@vue/test-utils';
 
-type TypedWrapper<T> = { vm: T } & VueWrapper;
-
-type PlanCreateVm = {
-    plan: { active: boolean; durationDays: number; isNew: () => boolean };
-    allowSave: boolean;
-    onSave: () => Promise<void>;
-};
-
 const membershipPlanRepository = {
     create: jest.fn(() => {
         return {
@@ -37,7 +29,7 @@ const membershipPlanRepository = {
 
 const routerPush = jest.fn();
 
-async function createWrapper(privileges: string[] = []): Promise<TypedWrapper<PlanCreateVm>> {
+async function createWrapper(privileges: string[] = []): Promise<VueWrapper> {
     const wrapper = mount(
         await wrapTestComponent('sw-membership-plan-create', {
             sync: true,
@@ -50,7 +42,7 @@ async function createWrapper(privileges: string[] = []): Promise<TypedWrapper<Pl
                 },
                 stubs: {
                     'sw-page': {
-                        template: '<div><slot name="content"></slot><slot></slot></div>',
+                        template: '<div><slot name="smart-bar-actions"></slot><slot name="content"></slot><slot></slot></div>',
                     },
                     'sw-card-view': {
                         template: '<div><slot></slot></div>',
@@ -63,11 +55,23 @@ async function createWrapper(privileges: string[] = []): Promise<TypedWrapper<Pl
                     },
                     'sw-language-info': true,
                     'sw-language-switch': true,
-                    'sw-button-process': true,
+                    'sw-button-process': {
+                        props: ['isLoading', 'disabled'],
+                        // `emits` keeps the parent listener from also running as a native click handler on
+                        // the button, which would call onSave twice
+                        emits: ['click'],
+                        template: '<button class="sw-membership-plan-detail__save" :disabled="disabled" @click="$emit(\'click\')" />',
+                    },
                     'sw-entity-single-select': true,
                     'mt-text-field': true,
-                    'mt-number-field': true,
-                    'mt-switch': true,
+                    'mt-number-field': {
+                        props: ['modelValue'],
+                        template: '<input class="mt-number-field" :value="modelValue" />',
+                    },
+                    'mt-switch': {
+                        props: ['modelValue'],
+                        template: '<input class="mt-switch" type="checkbox" :checked="modelValue" />',
+                    },
                     'mt-textarea': true,
                     'sw-skeleton': true,
                 },
@@ -95,7 +99,7 @@ async function createWrapper(privileges: string[] = []): Promise<TypedWrapper<Pl
         },
     );
 
-    return wrapper as unknown as TypedWrapper<PlanCreateVm>;
+    return wrapper;
 }
 
 describe('src/module/sw-membership/page/sw-membership-plan-create', () => {
@@ -108,38 +112,33 @@ describe('src/module/sw-membership/page/sw-membership-plan-create', () => {
     it('should be a vue js component', async () => {
         const wrapper = await createWrapper();
 
-        expect(wrapper.vm).toBeTruthy();
+        expect(wrapper.find('.sw-membership-plan-detail').exists()).toBe(true);
     });
 
     it('should create a new plan with sensible defaults', async () => {
         const wrapper = await createWrapper(['loyalty.creator']);
-        await wrapper.vm.$nextTick();
 
         expect(membershipPlanRepository.create).toHaveBeenCalledTimes(1);
-        expect(wrapper.vm.plan.isNew()).toBe(true);
-        expect(wrapper.vm.plan.active).toBe(true);
-        expect(wrapper.vm.plan.durationDays).toBe(365);
+        expect(wrapper.find('.sw-membership-plan-detail__duration').attributes('value')).toBe('365');
+        expect((wrapper.find('.sw-membership-plan-detail__active').element as HTMLInputElement).checked).toBe(true);
     });
 
     it('should allow save with creator permission', async () => {
         const wrapper = await createWrapper(['loyalty.creator']);
-        await wrapper.vm.$nextTick();
 
-        expect(wrapper.vm.allowSave).toBe(true);
+        expect(wrapper.find('.sw-membership-plan-detail__save').attributes('disabled')).toBeUndefined();
     });
 
     it('should not allow save without creator permission', async () => {
         const wrapper = await createWrapper();
-        await wrapper.vm.$nextTick();
 
-        expect(wrapper.vm.allowSave).toBe(false);
+        expect(wrapper.find('.sw-membership-plan-detail__save').attributes('disabled')).toBeDefined();
     });
 
     it('should persist the new plan and redirect to the detail page', async () => {
         const wrapper = await createWrapper(['loyalty.creator']);
-        await wrapper.vm.$nextTick();
 
-        await wrapper.vm.onSave();
+        await wrapper.find('.sw-membership-plan-detail__save').trigger('click');
         await flushPromises();
 
         expect(membershipPlanRepository.save).toHaveBeenCalledTimes(1);

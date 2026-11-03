@@ -29,7 +29,9 @@ const benefitRepository = {
     delete: jest.fn(() => Promise.resolve()),
 };
 
-let capturedBenefitCriteria: { filters: { field: string; value: unknown }[] } | null = null;
+type BenefitCriteria = { filters: { field: string; value: unknown }[] };
+
+let capturedBenefitCriteria: BenefitCriteria | null = null;
 
 function benefitRow(id: string, type: string, value: number): { id: string; type: string; value: number } {
     return { id, type, value };
@@ -126,7 +128,7 @@ describe('src/module/sw-membership/page/sw-membership-tier-detail', () => {
         benefitRepository.save.mockClear();
         benefitRepository.delete.mockClear();
         benefitRepository.search.mockReset();
-        benefitRepository.search.mockImplementation((criteria) => {
+        benefitRepository.search.mockImplementation((criteria: BenefitCriteria) => {
             capturedBenefitCriteria = criteria;
 
             return Promise.resolve([]);
@@ -162,7 +164,7 @@ describe('src/module/sw-membership/page/sw-membership-tier-detail', () => {
     });
 
     it('shows what the tier grants', async () => {
-        benefitRepository.search.mockImplementation((criteria) => {
+        benefitRepository.search.mockImplementation((criteria: BenefitCriteria) => {
             capturedBenefitCriteria = criteria;
 
             return Promise.resolve([

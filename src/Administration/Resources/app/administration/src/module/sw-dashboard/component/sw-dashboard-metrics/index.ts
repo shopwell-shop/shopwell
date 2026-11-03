@@ -291,7 +291,11 @@ export default Shopwell.Component.wrapComponentConfig({
             return httpClient
                 .get(url, { headers })
                 .then((response) => response.data.statistic)
-                .catch(() => [] as OrderAmountBucket[]);
+                .catch(() => {
+                    // the dashboard is a read-only overview: a failed request shows zero for that day
+                    // instead of blocking the other three cards behind an error state
+                    return [] as OrderAmountBucket[];
+                });
         },
 
         fetchNewCustomerCount(since: string, until?: string): Promise<number> {
@@ -306,7 +310,11 @@ export default Shopwell.Component.wrapComponentConfig({
             return (this.customerRepository as { search: (c: unknown) => Promise<{ total: number }> })
                 .search(criteria)
                 .then((result) => result.total)
-                .catch(() => 0);
+                .catch(() => {
+                    // without a count the card reads "0 new customers", which is also what an operator
+                    // without the customer privilege sees
+                    return 0;
+                });
         },
 
         /**
@@ -326,7 +334,11 @@ export default Shopwell.Component.wrapComponentConfig({
             })
                 .search(criteria)
                 .then((result) => result.aggregations?.walletBalance?.sum ?? 0)
-                .catch(() => 0);
+                .catch(() => {
+                    // the card is a headline figure; an unreachable aggregation must not take the whole
+                    // dashboard down with it
+                    return 0;
+                });
         },
 
         /**
@@ -347,7 +359,10 @@ export default Shopwell.Component.wrapComponentConfig({
             })
                 .search(criteria)
                 .then((result) => result.aggregations?.monthlyPoints?.sum ?? 0)
-                .catch(() => 0);
+                .catch(() => {
+                    // same as the wallet card: a failed sum reads as "0 points this month"
+                    return 0;
+                });
         },
 
         calculateAverageOrderValue(metrics: Metrics): number {
@@ -397,7 +412,11 @@ export default Shopwell.Component.wrapComponentConfig({
                         name: state.translated?.name ?? state.name,
                     };
                 })
-                .catch(() => null);
+                .catch(() => {
+                    // without a paid state the card falls back to all orders of the day, which is the
+                    // same view an operator without the payment privilege would get anyway
+                    return null;
+                });
         },
 
         buildDelta(current: number, previous: number): Delta | null {

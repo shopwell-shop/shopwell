@@ -6,6 +6,7 @@ use Shopwell\Core\Framework\App\AppEntity;
 use Shopwell\Core\Framework\DataAbstractionLayer\Entity;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityIdTrait;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\AdminMenu\AdminMenuItemCollection;
 use Shopwell\Core\System\Integration\IntegrationCollection;
 use Shopwell\Core\System\User\UserCollection;
 
@@ -31,6 +32,8 @@ class AclRoleEntity extends Entity
     protected ?AppEntity $app = null;
 
     protected ?IntegrationCollection $integrations = null;
+
+    protected ?AdminMenuItemCollection $adminMenuItems = null;
 
     protected ?\DateTimeInterface $deletedAt = null;
 
@@ -108,5 +111,19 @@ class AclRoleEntity extends Entity
     public function setDeletedAt(\DateTimeInterface $deletedAt): void
     {
         $this->deletedAt = $deletedAt;
+    }
+
+    /**
+     * The menu items this role is limited to. The relation is the write side of
+     * `AdminMenuItemDefinition::roles`, so an operator hides a menu item from a role there.
+     */
+    public function getAdminMenuItems(): ?AdminMenuItemCollection
+    {
+        return $this->adminMenuItems;
+    }
+
+    public function setAdminMenuItems(AdminMenuItemCollection $adminMenuItems): void
+    {
+        $this->adminMenuItems = $adminMenuItems;
     }
 }

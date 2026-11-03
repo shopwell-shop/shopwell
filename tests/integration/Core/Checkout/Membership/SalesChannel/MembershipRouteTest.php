@@ -125,7 +125,6 @@ class MembershipRouteTest extends TestCase
                 'technicalName' => 'gold',
                 'level' => 2,
                 'minTierPoints' => 50,
-                'pointsMultiplier' => 1.5,
                 'active' => true,
                 'translations' => [
                     Defaults::LANGUAGE_SYSTEM => [

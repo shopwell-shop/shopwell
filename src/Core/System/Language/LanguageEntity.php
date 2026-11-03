@@ -47,6 +47,7 @@ use Shopwell\Core\Framework\Feature;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Plugin\Aggregate\PluginTranslation\PluginTranslationCollection;
 use Shopwell\Core\Framework\Struct\Collection;
+use Shopwell\Core\System\AdminMenu\Aggregate\AdminMenuItemTranslation\AdminMenuItemTranslationCollection;
 use Shopwell\Core\System\Country\Aggregate\CountryCityTranslation\CountryCityTranslationCollection;
 use Shopwell\Core\System\Country\Aggregate\CountryDistrictTranslation\CountryDistrictTranslationCollection;
 use Shopwell\Core\System\Country\Aggregate\CountryStateTranslation\CountryStateTranslationCollection;
@@ -233,6 +234,8 @@ class LanguageEntity extends Entity
     protected ?LoyaltyTierTranslationCollection $loyaltyTierTranslations = null;
 
     protected ?MembershipPlanTranslationCollection $membershipPlanTranslations = null;
+
+    protected ?AdminMenuItemTranslationCollection $adminMenuItemTranslations = null;
 
     public function getMailHeaderFooterTranslations(): ?MailHeaderFooterCollection
     {
@@ -997,5 +1000,15 @@ class LanguageEntity extends Entity
     public function setMembershipPlanTranslations(MembershipPlanTranslationCollection $membershipPlanTranslations): void
     {
         $this->membershipPlanTranslations = $membershipPlanTranslations;
+    }
+
+    public function getAdminMenuItemTranslations(): ?AdminMenuItemTranslationCollection
+    {
+        return $this->adminMenuItemTranslations;
+    }
+
+    public function setAdminMenuItemTranslations(AdminMenuItemTranslationCollection $adminMenuItemTranslations): void
+    {
+        $this->adminMenuItemTranslations = $adminMenuItemTranslations;
     }
 }

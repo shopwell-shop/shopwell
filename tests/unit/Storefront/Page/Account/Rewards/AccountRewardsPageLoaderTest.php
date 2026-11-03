@@ -143,6 +143,9 @@ class AccountRewardsPageLoaderTest extends TestCase
     }
 
     /**
+     * The payload of a tier as the route sends it: what it grants is a keyed list of benefit rows, and
+     * a tier that grants nothing sends an empty list rather than three neutral numbers.
+     *
      * @return array<string, mixed>
      */
     private function tier(string $id, string $name, int $minTierPoints): array
@@ -151,8 +154,7 @@ class AccountRewardsPageLoaderTest extends TestCase
             'id' => $id,
             'name' => $name,
             'minTierPoints' => $minTierPoints,
-            'pointsMultiplier' => 1.0,
-            'discountPercent' => 0.0,
+            'benefits' => [],
         ];
     }
 }

@@ -4,6 +4,7 @@
 import { defineComponent } from 'vue';
 import type CriteriaType from 'src/core/data/criteria.data';
 import type RepositoryType from 'src/core/data/repository.data';
+import { systemKey } from '../../service/device.helper';
 
 import template from './sw-membership-plan-detail.html.twig';
 import './sw-membership-plan-detail.scss';
@@ -15,16 +16,12 @@ const { mapPropertyErrors } = Shopwell.Component.getComponentHelper();
 type MembershipPlan = EntitySchema.Entity<'membership_plan'>;
 type MembershipPlanEntity = MembershipPlan & { isNew: () => boolean };
 
-interface DeviceHelper {
-    getSystemKey: () => string;
-}
-
 /**
  * One purchasable membership: which tier it grants, for how long, in which currency and at which
  * price. The price is a plain amount in the currency of the plan, the storefront converts it for the
  * customer.
  */
-// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations -- a page of this module, registered in the module's index.ts
 export default defineComponent({
     template,
 
@@ -46,8 +43,10 @@ export default defineComponent({
 
     shortcuts: {
         'SYSTEMKEY+S': {
+            // the shortcut registry calls this without typing `this`, so the computed it reads is
+            // reached through an explicit shape instead of being inferred
             active(): boolean {
-                return (this as unknown as { allowSave: boolean }).allowSave;
+                return (this as { allowSave: boolean }).allowSave;
             },
             method: 'onSave',
         },
@@ -112,10 +111,8 @@ export default defineComponent({
                 };
             }
 
-            const device = this as unknown as { $device: DeviceHelper };
-
             return {
-                message: `${device.$device.getSystemKey()} + S`,
+                message: `${systemKey(this)} + S`,
                 appearance: 'light',
             };
         },

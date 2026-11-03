@@ -62,6 +62,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\FieldCollection;
 use Shopwell\Core\Framework\Feature;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Plugin\Aggregate\PluginTranslation\PluginTranslationDefinition;
+use Shopwell\Core\System\AdminMenu\Aggregate\AdminMenuItemTranslation\AdminMenuItemTranslationDefinition;
 use Shopwell\Core\System\Country\Aggregate\CountryCityTranslation\CountryCityTranslationDefinition;
 use Shopwell\Core\System\Country\Aggregate\CountryDistrictTranslation\CountryDistrictTranslationDefinition;
 use Shopwell\Core\System\Country\Aggregate\CountryStateTranslation\CountryStateTranslationDefinition;
@@ -204,6 +205,7 @@ class LanguageDefinition extends EntityDefinition
             // Reverse sides of the loyalty domain
             (new OneToManyAssociationField('loyaltyTierTranslations', LoyaltyTierTranslationDefinition::class, 'language_id'))->addFlags(new CascadeDelete()),
             (new OneToManyAssociationField('membershipPlanTranslations', MembershipPlanTranslationDefinition::class, 'language_id'))->addFlags(new CascadeDelete()),
+            (new OneToManyAssociationField('adminMenuItemTranslations', AdminMenuItemTranslationDefinition::class, 'language_id'))->addFlags(new CascadeDelete()),
         ]);
 
         if (!Feature::isActive('v6.8.0.0')) {

@@ -31,7 +31,7 @@ interface MembershipPlanListingRef {
  * The membership plans a customer can buy in the storefront. A plan is one price for one tier and one
  * duration - the tier itself is managed next door and stays untouched when a plan is retired.
  */
-// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations -- a page of this module, registered in the module's index.ts
 export default defineComponent({
     template,
 

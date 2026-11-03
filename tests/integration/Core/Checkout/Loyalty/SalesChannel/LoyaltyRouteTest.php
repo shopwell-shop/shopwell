@@ -92,13 +92,21 @@ class LoyaltyRouteTest extends TestCase
                 'technicalName' => 'gold',
                 'level' => 2,
                 'minTierPoints' => 50,
-                'pointsMultiplier' => 1.5,
                 'active' => true,
                 'translations' => [
                     Defaults::LANGUAGE_SYSTEM => [
                         'name' => 'Gold',
                     ],
                 ],
+            ],
+        ], $context);
+
+        static::getContainer()->get('loyalty_tier_benefit.repository')->create([
+            [
+                'loyaltyTierId' => $tierId,
+                'type' => 'earn_multiplier',
+                'value' => 1.5,
+                'position' => 10,
             ],
         ], $context);
 
@@ -113,5 +121,8 @@ class LoyaltyRouteTest extends TestCase
         static::assertSame($tierId, $response['tiers'][0]['id']);
         static::assertSame('gold', $response['tiers'][0]['technicalName']);
         static::assertSame(2, $response['tiers'][0]['level']);
+        // what a tier grants is a list of rows, so the storefront prints the rows instead of asking for
+        // three fixed numbers - the key names the rule, the value carries its parameter
+        static::assertSame(['earn_multiplier' => 1.5], $response['tiers'][0]['benefits']);
     }
 }

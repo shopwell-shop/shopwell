@@ -38,7 +38,7 @@ never paid for anything would still see it. If not, it belongs in the membership
 - The two routes are two payloads, not one payload cut in half. Do not "reuse" the offer by injecting
   `MembershipOfferService` back into this class.
 - The route also states the **earning rules** (`pointsPerCurrencyUnit`, `tierPointsPerCurrencyUnit`,
-  `tiers[].pointsMultiplier`), because the page has to print them. A rate typed into a template becomes a
+  `tiers[].benefits`), because the page has to print them. A rate typed into a template becomes a
   lie the day the shop changes it.
 - `tierId` is read here, and that is deliberate: it is the projection, i.e. "which tier applies
   right now", whoever wrote it. The subscription period is **not** read from the projection — it has no
@@ -185,11 +185,11 @@ The order subscriber asks it for a multiplier, the storefront route for everythi
 - An absent benefit is a **complete answer**, not a placeholder: no `earn_multiplier` row means the
   effective multiplier is `1.0`, no `cart_discount` row means `0.0`. Accessors answer the effective
   value so callers never null check. Do not "default" a missing row anywhere else.
-- Two writers would be a bug, but two *sources* are not: `points_multiplier`, `discount_percent` and
-  `free_shipping` are still read as a fallback while the administration form writes them. The
-  resolver merges row first, column as gap filler, and the fallback is deleted together with the
-  columns on the day the form and the storefront template read `benefits`. Do not add a fourth column
-  to that fallback — add a benefit type.
+- There is exactly one storage. The three fixed columns a tier used to carry (`points_multiplier`,
+  `discount_percent`, `free_shipping`) are gone from the create table statement, and the resolver's
+  column fallback went with them - it was a bridge while the administration form still wrote columns.
+  Do not reintroduce a second source "as a fallback": a config that reads two places shows the older
+  of the two whenever they disagree, and the disagreement is always somebody's bug.
 - A tier loaded with `benefits` association costs no extra query; a tier loaded without one gets its
   benefits from the repository. Both paths produce the same object, which is why the route can load
   all tiers at once.
