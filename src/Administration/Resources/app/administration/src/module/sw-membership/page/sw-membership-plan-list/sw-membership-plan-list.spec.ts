@@ -4,24 +4,12 @@
 
 import { mount } from '@vue/test-utils';
 import type { VueWrapper } from '@vue/test-utils';
+import { nextTick } from 'vue';
 import { searchRankingPoint } from 'src/app/service/search-ranking.service';
 import type Criteria from 'src/core/data/criteria.data';
 
 type SearchRankingPoint = {
     HIGH_SEARCH_RANKING: number;
-};
-
-type Plan = typeof plan;
-
-/**
- * `wrapTestComponent` is untyped, so the mounted instance is narrowed here instead of at every use.
- */
-type TypedWrapper<T> = { vm: T } & VueWrapper;
-
-type PlanListVm = {
-    plans: Plan[];
-    total: number;
-    formatPrice: (plan: Plan) => string;
 };
 
 const plan = {
@@ -41,7 +29,7 @@ const searchRankingServiceMock = {
     isValidTerm: jest.fn(),
 };
 
-async function createWrapper(privileges: string[] = [], plans: unknown[] = [plan]): Promise<TypedWrapper<PlanListVm>> {
+async function createWrapper(privileges: string[] = [], plans: unknown[] = [plan]): Promise<VueWrapper> {
     const wrapper = mount(
         await wrapTestComponent('sw-membership-plan-list', {
             sync: true,
@@ -60,6 +48,7 @@ async function createWrapper(privileges: string[] = [], plans: unknown[] = [plan
                     'sw-page': {
                         template: `
                     <div class="sw-page">
+                        <slot name="smart-bar-header"></slot>
                         <slot name="smart-bar-actions"></slot>
                         <slot name="content"></slot>
                         <slot></slot>
@@ -95,6 +84,10 @@ async function createWrapper(privileges: string[] = [], plans: unknown[] = [plan
 
                                 <slot name="delete-action" v-bind="{ item }"></slot>
                             </slot>
+
+                            <span class="sw-entity-listing__column-price">
+                                <slot name="column-price" v-bind="{ item }"></slot>
+                            </span>
                         </template>
                     </div>`,
                     },
@@ -128,7 +121,7 @@ async function createWrapper(privileges: string[] = [], plans: unknown[] = [plan
         },
     );
 
-    return wrapper as unknown as TypedWrapper<PlanListVm>;
+    return wrapper;
 }
 
 describe('src/module/sw-membership/page/sw-membership-plan-list', () => {
@@ -149,27 +142,27 @@ describe('src/module/sw-membership/page/sw-membership-plan-list', () => {
     it('should be a vue js component', async () => {
         const wrapper = await createWrapper();
 
-        expect(wrapper.vm).toBeTruthy();
+        expect(wrapper.find('.sw-membership-plan-list').exists()).toBe(true);
     });
 
     it('should load the plans with their tier and currency', async () => {
         const wrapper = await createWrapper();
         await flushPromises();
 
-        expect(wrapper.vm.plans).toHaveLength(1);
-        expect(wrapper.vm.total).toBe(1);
+        expect(wrapper.find('.sw-entity-listing__column-price').exists()).toBe(true);
+        expect(wrapper.find('.sw-page__smart-bar-amount').text()).toBe('(1)');
     });
 
     it('should not be able to create without creator permission', async () => {
         const wrapper = await createWrapper();
-        await wrapper.vm.$nextTick();
+        await nextTick();
 
         expect(wrapper.find('.sw-membership-plan-list__create').attributes('disabled')).toBeDefined();
     });
 
     it('should be able to create with creator permission', async () => {
         const wrapper = await createWrapper(['loyalty.creator']);
-        await wrapper.vm.$nextTick();
+        await nextTick();
 
         expect(wrapper.find('.sw-membership-plan-list__create').attributes('disabled')).toBeFalsy();
     });
@@ -206,6 +199,6 @@ describe('src/module/sw-membership/page/sw-membership-plan-list', () => {
         const wrapper = await createWrapper();
         await flushPromises();
 
-        expect(wrapper.vm.formatPrice(plan)).toContain('199');
+        expect(wrapper.find('.sw-entity-listing__column-price').text()).toContain('199');
     });
 });

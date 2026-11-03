@@ -13,11 +13,26 @@ const { Criteria } = Shopwell.Data;
 
 type LoyaltyTier = EntitySchema.Entity<'loyalty_tier'>;
 
+type GrantedBenefit = EntitySchema.Entity<'loyalty_tier_benefit'>;
+
 /**
  * The one benefit the list shows. The rest of the grants are a detail page question - a list that
  * repeats all five of them says less than one number next to the tier name.
  */
 const BENEFIT_EARN_MULTIPLIER = 'earn_multiplier';
+
+/**
+ * What the list reads out of the `benefits` association: a collection that hands out its rows. Naming
+ * the two members it needs keeps the read typed without reaching for the generated collection class,
+ * which resolves to a bare `Collection` for this entity.
+ */
+interface TierBenefitsCollection {
+    getElements: () => GrantedBenefit[];
+}
+
+interface TierGrants {
+    benefits?: TierBenefitsCollection | null;
+}
 
 interface LoyaltyTierColumn {
     property: string;
@@ -34,7 +49,7 @@ interface LoyaltyTierListingRef {
     doSearch: () => void;
 }
 
-// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations -- a page of this module, registered in the module's index.ts
 export default defineComponent({
     template,
 
@@ -159,7 +174,7 @@ export default defineComponent({
          * The multiplier the tier grants, `1` when it grants none - the same default the storefront
          * applies, so the list never shows an empty cell where a customer earns the base rate.
          */
-        earnMultiplier(loyaltyTier: LoyaltyTier): number {
+        earnMultiplier(loyaltyTier: TierGrants): number {
             const benefits = loyaltyTier.benefits?.getElements() ?? [];
             const multiplier = benefits.find((benefit) => benefit.type === BENEFIT_EARN_MULTIPLIER);
 

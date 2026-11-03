@@ -13,7 +13,13 @@ export interface LoyaltyTier {
     technicalName: string;
     name: string;
     level: number;
-    pointsMultiplier: number;
+
+    /**
+     * What the tier grants, keyed by benefit type (`earn_multiplier`, `cart_discount`, ...). A type that
+     * is absent grants nothing, so the caller reads `benefits.earn_multiplier ?? 1` and never has to tell
+     * "not configured" apart from "grants nothing".
+     */
+    benefits: Record<string, number>;
 }
 
 /**

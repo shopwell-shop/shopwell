@@ -108,4 +108,47 @@ class MembershipPresenterTest extends TestCase
         static::assertSame('2027-06-01T12:00:00+00:00', $presented['expiresAt']);
         static::assertNull($presented['createdAt']);
     }
+
+    /**
+     * A plan whose tier was loaded without its benefits is presented with an empty list: the page prints
+     * "this tier grants nothing", which is what a tier with no rows grants.
+     */
+    public function testATierWithoutLoadedBenefitsIsPresentedWithAnEmptyList(): void
+    {
+        $tier = new LoyaltyTierEntity();
+        $tier->setId(self::TIER_ID);
+        $tier->setLevel(3);
+
+        $plan = new MembershipPlanEntity();
+        $plan->setId(self::PLAN_ID);
+        $plan->setTechnicalName('gold-yearly');
+        $plan->setName('年度金卡');
+        $plan->setPrice(199.0);
+        $plan->setDurationDays(365);
+        $plan->setCurrencyId(self::CURRENCY_ID);
+        $plan->setLoyaltyTier($tier);
+
+        static::assertSame([], $this->presenter->plan($plan)['tier']['benefits']);
+    }
+
+    private function benefits(): LoyaltyTierBenefitCollection
+    {
+        return new LoyaltyTierBenefitCollection([
+            $this->benefit('earn_multiplier', 2.0, 10),
+            $this->benefit('cart_discount', 5.0, 20),
+            $this->benefit('free_shipping', 1.0, 30),
+        ]);
+    }
+
+    private function benefit(string $type, float $value, int $position): LoyaltyTierBenefitEntity
+    {
+        $benefit = new LoyaltyTierBenefitEntity();
+        $benefit->setId(\str_pad($type, 32, '0'));
+        $benefit->setLoyaltyTierId(self::TIER_ID);
+        $benefit->setType($type);
+        $benefit->setValue($value);
+        $benefit->setPosition($position);
+
+        return $benefit;
+    }
 }

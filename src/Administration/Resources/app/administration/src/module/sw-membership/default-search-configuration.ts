@@ -16,5 +16,5 @@ const defaultSearchConfiguration = {
     },
 };
 
-// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations -- the search configuration of the module, registered next to it
 export default defaultSearchConfiguration;

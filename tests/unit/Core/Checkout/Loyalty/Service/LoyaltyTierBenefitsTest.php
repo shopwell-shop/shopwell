@@ -86,22 +86,6 @@ class LoyaltyTierBenefitsTest extends TestCase
         static::assertCount(1, $benefits->all());
     }
 
-    public function testWithAddsAGrantThatWasNotThere(): void
-    {
-        $benefits = LoyaltyTierBenefits::none()->with(LoyaltyBenefitTypes::CART_DISCOUNT, 7.0);
-
-        static::assertSame(7.0, $benefits->cartDiscountPercent());
-        static::assertTrue($benefits->has(LoyaltyBenefitTypes::CART_DISCOUNT));
-        static::assertSame([LoyaltyBenefitTypes::CART_DISCOUNT => 7.0], $benefits->all());
-    }
-
-    public function testWithNeverOverwritesAStoredRow(): void
-    {
-        $stored = $this->benefits([[LoyaltyBenefitTypes::CART_DISCOUNT, 5.0, 10]]);
-
-        static::assertSame(5.0, $stored->with(LoyaltyBenefitTypes::CART_DISCOUNT, 9.0)->cartDiscountPercent());
-    }
-
     /**
      * @param list<array{0: string, 1: float, 2: int}> $rows type, value, position
      */

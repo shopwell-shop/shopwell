@@ -16,10 +16,10 @@ use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\Test\Stub\DataAbstractionLayer\StaticEntityRepository;
 
 /**
- * The resolver is the one place that knows how a benefit is stored, so the tests are about the two
- * answers it must never confuse: a stored row wins, and the three old columns only fill the gaps. A
- * row that exists next to a column with a different value is the case that decides whether a shop sees
- * what it configured or what it configured yesterday.
+ * The resolver is the one place that knows how a benefit is stored. A benefit is a row and nothing
+ * else, so what the tests pin down is the two ways to reach the rows: read them from the association
+ * the caller loaded, or ask the repository for the tier's rows. Both have to answer the same thing -
+ * and a tier without rows grants nothing rather than falling back to a column that no longer exists.
  *
  * @internal
  */
@@ -44,6 +44,15 @@ class LoyaltyBenefitResolverTest extends TestCase
         static::assertSame(1.0, $resolver->earnMultiplier(self::CUSTOMER_ID, $this->context));
     }
 
+    public function testATierWithoutRowsGrantsNothing(): void
+    {
+        $benefits = $this->resolver($this->tier(), [])->forCustomer(self::CUSTOMER_ID, $this->context);
+
+        static::assertTrue($benefits->isEmpty());
+        static::assertSame(1.0, $benefits->earnMultiplier());
+        static::assertFalse($benefits->grantsFreeShipping());
+    }
+
     public function testItReadsTheRowsOfTheTier(): void
     {
         $tier = $this->tier();
@@ -55,49 +64,6 @@ class LoyaltyBenefitResolverTest extends TestCase
 
         static::assertSame(2.0, $benefits->earnMultiplier());
         static::assertSame(15.0, $benefits->birthdayGiftAmount());
-    }
-
-    /**
-     * The columns still exist and the administration form still writes them, so a tier configured
-     * before this table existed must keep behaving the way it did.
-     */
-    public function testTheColumnsStillCountWhenNoRowExists(): void
-    {
-        $tier = $this->tier();
-        $tier->setPointsMultiplier(1.5);
-        $tier->setDiscountPercent(5.0);
-        $tier->setFreeShipping(true);
-
-        $benefits = $this->resolver($tier, [])->forCustomer(self::CUSTOMER_ID, $this->context);
-
-        static::assertSame(1.5, $benefits->earnMultiplier());
-        static::assertSame(5.0, $benefits->cartDiscountPercent());
-        static::assertTrue($benefits->grantsFreeShipping());
-    }
-
-    public function testARowOutranksTheColumn(): void
-    {
-        $tier = $this->tier();
-        $tier->setPointsMultiplier(1.5);
-
-        $benefits = $this->resolver($tier, [
-            [LoyaltyBenefitTypes::EARN_MULTIPLIER, 3.0, 10],
-        ])->forCustomer(self::CUSTOMER_ID, $this->context);
-
-        static::assertSame(3.0, $benefits->earnMultiplier());
-    }
-
-    public function testARowAndAColumnAreMergedIntoOneAnswer(): void
-    {
-        $tier = $this->tier();
-        $tier->setPointsMultiplier(1.5);
-
-        $benefits = $this->resolver($tier, [
-            [LoyaltyBenefitTypes::BIRTHDAY_GIFT, 15.0, 10],
-        ])->forCustomer(self::CUSTOMER_ID, $this->context);
-
-        static::assertSame(15.0, $benefits->birthdayGiftAmount());
-        static::assertSame(1.5, $benefits->earnMultiplier());
     }
 
     /**
@@ -144,7 +110,7 @@ class LoyaltyBenefitResolverTest extends TestCase
         }
 
         return new LoyaltyBenefitResolver(
-            StaticEntityRepository::of(LoyaltyTierBenefitCollection::class, [$collection, $collection]),
+            StaticEntityRepository::of(LoyaltyTierBenefitCollection::class, [$collection]),
             $this->tierResolver($tier),
         );
     }

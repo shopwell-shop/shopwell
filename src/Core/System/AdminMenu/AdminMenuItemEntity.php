@@ -27,6 +27,8 @@ class AdminMenuItemEntity extends Entity
 
     protected ?string $title = null;
 
+    protected ?string $groupTitle = null;
+
     protected ?string $icon = null;
 
     protected ?string $color = null;
@@ -114,6 +116,16 @@ class AdminMenuItemEntity extends Entity
     public function setGroupName(?string $groupName): void
     {
         $this->groupName = $groupName;
+    }
+
+    public function getGroupTitle(): ?string
+    {
+        return $this->groupTitle;
+    }
+
+    public function setGroupTitle(?string $groupTitle): void
+    {
+        $this->groupTitle = $groupTitle;
     }
 
     public function getIcon(): ?string

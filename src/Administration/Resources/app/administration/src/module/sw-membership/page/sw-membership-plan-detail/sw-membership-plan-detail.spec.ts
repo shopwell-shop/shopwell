@@ -5,17 +5,6 @@
 import { mount } from '@vue/test-utils';
 import type { VueWrapper } from '@vue/test-utils';
 
-type TypedWrapper<T> = { vm: T } & VueWrapper;
-
-type PlanDetailVm = {
-    plan: { technicalName: string } | null;
-    isLoading: boolean;
-    allowSave: boolean;
-    tooltipSave: Record<string, unknown>;
-    loadPlan: () => Promise<void>;
-    onCancel: () => void;
-};
-
 const membershipPlanRepository = {
     create: () => {
         return {
@@ -32,7 +21,7 @@ const membershipPlanRepository = {
         };
     },
 
-    get: () => {
+    get: jest.fn(() => {
         return Promise.resolve({
             id: '1',
             name: 'Gold, one year',
@@ -45,14 +34,20 @@ const membershipPlanRepository = {
             description: 'One year of Gold membership.',
             isNew: () => false,
         });
-    },
+    }),
 
     save: jest.fn(() => Promise.resolve({})),
 };
 
 const routerPushMock = jest.fn(() => Promise.resolve());
 
-async function createWrapper(privileges: string[] = [], planId: string | null = '1'): Promise<TypedWrapper<PlanDetailVm>> {
+// the tooltip of the save button follows the privilege of the operator, so the element is rewritten
+// on every update and not only on mount
+function writeTooltip(el: HTMLElement, binding: { value: unknown }): void {
+    el.setAttribute('data-tooltip', JSON.stringify(binding.value));
+}
+
+async function createWrapper(privileges: string[] = [], planId: string | null = '1'): Promise<VueWrapper> {
     const wrapper = mount(
         await wrapTestComponent('sw-membership-plan-detail', {
             sync: true,
@@ -65,6 +60,17 @@ async function createWrapper(privileges: string[] = [], planId: string | null = 
                 mocks: {
                     $route: { query: '' },
                     $router: { push: routerPushMock },
+                    // the platform of the machine that runs the test decides the real modifier, which
+                    // would make the expected tooltip depend on the developer's laptop
+                    $device: { getSystemKey: () => 'CTRL' },
+                },
+                directives: {
+                    // the real tooltip directive paints nothing the test could read, so the stub writes
+                    // the config it was given onto the element the operator hovers
+                    tooltip: {
+                        mounted: writeTooltip,
+                        updated: writeTooltip,
+                    },
                 },
                 stubs: {
                     'sw-page': {
@@ -86,11 +92,26 @@ async function createWrapper(privileges: string[] = [], planId: string | null = 
                     },
                     'sw-language-info': true,
                     'sw-language-switch': true,
-                    'sw-button-process': true,
+                    'sw-button-process': {
+                        props: ['isLoading', 'disabled'],
+                        // `emits` keeps the parent listener from also running as a native click handler on
+                        // the button, which would call onSave twice
+                        emits: ['click'],
+                        template: '<button class="sw-membership-plan-detail__save" :disabled="disabled" @click="$emit(\'click\')" />',
+                    },
                     'sw-entity-single-select': true,
-                    'mt-text-field': true,
-                    'mt-number-field': true,
-                    'mt-switch': true,
+                    'mt-text-field': {
+                        props: ['modelValue'],
+                        template: '<input class="mt-text-field" :value="modelValue" />',
+                    },
+                    'mt-number-field': {
+                        props: ['modelValue'],
+                        template: '<input class="mt-number-field" :value="modelValue" />',
+                    },
+                    'mt-switch': {
+                        props: ['modelValue'],
+                        template: '<input class="mt-switch" type="checkbox" :checked="modelValue" />',
+                    },
                     'mt-textarea': true,
                     'sw-skeleton': true,
                 },
@@ -118,27 +139,31 @@ async function createWrapper(privileges: string[] = [], planId: string | null = 
         },
     );
 
-    return wrapper as unknown as TypedWrapper<PlanDetailVm>;
+    return wrapper;
+}
+
+function tooltipOf(wrapper: VueWrapper, selector: string): unknown {
+    return JSON.parse(wrapper.find(selector).attributes('data-tooltip') ?? 'null');
 }
 
 describe('src/module/sw-membership/page/sw-membership-plan-detail', () => {
     beforeEach(() => {
         membershipPlanRepository.save.mockClear();
+        membershipPlanRepository.get.mockClear();
+        routerPushMock.mockClear();
     });
 
     it('should be a vue js component', async () => {
         const wrapper = await createWrapper();
 
-        expect(wrapper.vm).toBeTruthy();
+        expect(wrapper.find('.sw-membership-plan-detail').exists()).toBe(true);
     });
 
     it('should load the plan with its tier and currency on creation', async () => {
         const wrapper = await createWrapper();
         await flushPromises();
 
-        expect(wrapper.vm.plan).toBeTruthy();
-        expect(wrapper.vm.plan?.technicalName).toBe('gold_year');
-        expect(wrapper.vm.isLoading).toBe(false);
+        expect(wrapper.find('.sw-membership-plan-detail__technical-name').attributes('value')).toBe('gold_year');
     });
 
     it('should not be able to save without editor permission', async () => {
@@ -146,7 +171,6 @@ describe('src/module/sw-membership/page/sw-membership-plan-detail', () => {
         await flushPromises();
 
         expect(wrapper.find('.sw-membership-plan-detail__save').attributes()).toHaveProperty('disabled');
-        expect(wrapper.vm.allowSave).toBe(false);
     });
 
     it('should be able to save with editor permission', async () => {
@@ -154,14 +178,13 @@ describe('src/module/sw-membership/page/sw-membership-plan-detail', () => {
         await flushPromises();
 
         expect(wrapper.find('.sw-membership-plan-detail__save').attributes()).not.toHaveProperty('disabled');
-        expect(wrapper.vm.allowSave).toBe(true);
     });
 
     it('should show the save shortcut tooltip with editor permission', async () => {
         const wrapper = await createWrapper(['loyalty.editor']);
         await flushPromises();
 
-        expect(wrapper.vm.tooltipSave).toStrictEqual({
+        expect(tooltipOf(wrapper, '.sw-membership-plan-detail__save')).toStrictEqual({
             message: 'CTRL + S',
             appearance: 'light',
         });
@@ -171,7 +194,7 @@ describe('src/module/sw-membership/page/sw-membership-plan-detail', () => {
         const wrapper = await createWrapper();
         await flushPromises();
 
-        expect(wrapper.vm.tooltipSave).toStrictEqual({
+        expect(tooltipOf(wrapper, '.sw-membership-plan-detail__save')).toStrictEqual({
             message: 'sw-privileges.tooltip.warning',
             disabled: false,
             showOnDisabledElements: true,
@@ -182,27 +205,28 @@ describe('src/module/sw-membership/page/sw-membership-plan-detail', () => {
         const wrapper = await createWrapper(['loyalty.editor']);
         await flushPromises();
 
-        const loadPlanSpy = jest.spyOn(wrapper.vm, 'loadPlan');
         await wrapper.find('.sw-membership-plan-detail__save').trigger('click');
         await flushPromises();
 
         expect(membershipPlanRepository.save).toHaveBeenCalledTimes(1);
-        expect(loadPlanSpy).toHaveBeenCalled();
+        // the page reads the plan once when it opens and once after the save, so what the operator
+        // sees afterwards is what was stored and not what the form happened to hold
+        expect(membershipPlanRepository.get).toHaveBeenCalledTimes(2);
     });
 
-    it('should notify the user when no plan id was given', async () => {
+    it('should not request a plan when no plan id was given', async () => {
         const wrapper = await createWrapper([], null);
         await flushPromises();
 
-        expect(wrapper.vm.plan).toBeNull();
-        expect(wrapper.vm.isLoading).toBe(false);
+        expect(membershipPlanRepository.get).not.toHaveBeenCalled();
+        expect(wrapper.find('.sw-membership-plan-detail__technical-name').exists()).toBe(false);
     });
 
     it('should navigate back to the plan list on cancel', async () => {
         const wrapper = await createWrapper(['loyalty.editor']);
         await flushPromises();
 
-        wrapper.vm.onCancel();
+        await wrapper.find('.sw-membership-plan-detail__cancel').trigger('click');
 
         expect(routerPushMock).toHaveBeenCalledWith({ name: 'sw.settings.membership.plans' });
     });

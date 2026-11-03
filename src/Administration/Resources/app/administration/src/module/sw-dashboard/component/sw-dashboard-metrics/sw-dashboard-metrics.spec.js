@@ -3,6 +3,15 @@ import { mount } from '@vue/test-utils';
 const TODAY = '2026-06-15';
 const YESTERDAY = '2026-06-14';
 
+const LABEL = {
+    revenue: 'sw-dashboard.metrics.revenue',
+    orders: 'sw-dashboard.metrics.orders',
+    averageOrderValue: 'sw-dashboard.metrics.averageOrderValue',
+    newCustomers: 'sw-dashboard.metrics.newCustomers',
+    walletBalance: 'sw-dashboard.metrics.walletBalance',
+    monthlyPoints: 'sw-dashboard.metrics.monthlyPoints',
+};
+
 let statisticResponse = {
     paid: [],
     all: [],
@@ -43,8 +52,13 @@ async function createWrapper(privileges = ['order.viewer', 'customer.viewer'], f
                         'positionIdentifier',
                     ],
                 },
+                // the link target is what the operator gets on a click, so the stub writes it onto the
+                // anchor instead of dropping it
+                'router-link': {
+                    props: ['to'],
+                    template: '<a class="router-link" :data-to="JSON.stringify(to)"><slot /></a>',
+                },
                 'mt-icon': true,
-                'router-link': true,
                 'sw-extension-component-section': true,
             },
             mocks: {
@@ -64,6 +78,33 @@ async function createWrapper(privileges = ['order.viewer', 'customer.viewer'], f
             },
         },
     });
+}
+
+function cardLabels(wrapper) {
+    return wrapper.findAll('.sw-dashboard-metrics__label').map((label) => label.text());
+}
+
+function cardByLabel(wrapper, label) {
+    return wrapper.findAll('.sw-dashboard-metrics__card').find((card) => {
+        return card.find('.sw-dashboard-metrics__label').text() === label;
+    });
+}
+
+function valueOf(wrapper, label) {
+    return cardByLabel(wrapper, label).find('.sw-dashboard-metrics__value').text();
+}
+
+function deltaOf(wrapper, label) {
+    const delta = cardByLabel(wrapper, label).find('.sw-dashboard-metrics__delta');
+
+    return delta.exists() ? delta.text() : null;
+}
+
+function linkOf(wrapper, label) {
+    // a linked card *is* the anchor, so the target is on the card element itself
+    const to = cardByLabel(wrapper, label).attributes('data-to');
+
+    return to === undefined ? null : JSON.parse(to);
 }
 
 /**
@@ -108,11 +149,10 @@ describe('module/sw-dashboard/component/sw-dashboard-metrics', () => {
         const wrapper = await createWrapper(['order.viewer']);
         await flushPromises();
 
-        expect(wrapper.findAll('.sw-dashboard-metrics__card')).toHaveLength(3);
-        expect(wrapper.vm.metricCards.map((card) => card.key)).toEqual([
-            'revenue',
-            'orders',
-            'averageOrderValue',
+        expect(cardLabels(wrapper)).toEqual([
+            LABEL.revenue,
+            LABEL.orders,
+            LABEL.averageOrderValue,
         ]);
     });
 
@@ -120,8 +160,12 @@ describe('module/sw-dashboard/component/sw-dashboard-metrics', () => {
         const wrapper = await createWrapper();
         await flushPromises();
 
-        expect(wrapper.findAll('.sw-dashboard-metrics__card')).toHaveLength(4);
-        expect(wrapper.vm.metricCards.at(-1).key).toBe('newCustomers');
+        expect(cardLabels(wrapper)).toEqual([
+            LABEL.revenue,
+            LABEL.orders,
+            LABEL.averageOrderValue,
+            LABEL.newCustomers,
+        ]);
     });
 
     it('adds the wallet balance card with wallet permission', async () => {
@@ -135,10 +179,10 @@ describe('module/sw-dashboard/component/sw-dashboard-metrics', () => {
         const wrapper = await createWrapper(['order.viewer', 'wallet.viewer'], factory);
         await flushPromises();
 
-        const walletCard = wrapper.vm.metricCards.find((card) => card.key === 'walletBalance');
-        expect(walletCard.value).toContain('1,234.50');
-        expect(walletCard.showComparison).toBe(false);
-        expect(walletCard.link.name).toBe('sw.finance.walletTransactions');
+        expect(valueOf(wrapper, LABEL.walletBalance)).toContain('1,234.50');
+        // a balance has no "yesterday", so the card prints no comparison at all
+        expect(deltaOf(wrapper, LABEL.walletBalance)).toBeNull();
+        expect(linkOf(wrapper, LABEL.walletBalance).name).toBe('sw.finance.walletTransactions');
         expect(walletSearch).toHaveBeenCalledTimes(1);
     });
 
@@ -153,20 +197,17 @@ describe('module/sw-dashboard/component/sw-dashboard-metrics', () => {
         const wrapper = await createWrapper(['order.viewer', 'loyalty.viewer'], factory);
         await flushPromises();
 
-        const pointsCard = wrapper.vm.metricCards.find((card) => card.key === 'monthlyPoints');
-        expect(pointsCard.value).toBe('4,200');
-        expect(pointsCard.showComparison).toBe(false);
-        expect(pointsCard.link.name).toBe('sw.settings.membership.purchases');
-        expect(wrapper.vm.currentMetrics.monthlyPoints).toBe(4200);
+        expect(valueOf(wrapper, LABEL.monthlyPoints)).toBe('4,200 sw-dashboard.metrics.pointsUnit');
+        expect(deltaOf(wrapper, LABEL.monthlyPoints)).toBeNull();
+        expect(linkOf(wrapper, LABEL.monthlyPoints).name).toBe('sw.settings.membership.purchases');
     });
 
     it('hides the stock cards without their permissions', async () => {
         const wrapper = await createWrapper(['order.viewer', 'customer.viewer']);
         await flushPromises();
 
-        const keys = wrapper.vm.metricCards.map((card) => card.key);
-        expect(keys).not.toContain('walletBalance');
-        expect(keys).not.toContain('monthlyPoints');
+        expect(cardLabels(wrapper)).not.toContain(LABEL.walletBalance);
+        expect(cardLabels(wrapper)).not.toContain(LABEL.monthlyPoints);
     });
 
     it('uses paid orders for revenue and all orders for the order count', async () => {
@@ -178,14 +219,9 @@ describe('module/sw-dashboard/component/sw-dashboard-metrics', () => {
         const wrapper = await createWrapper();
         await flushPromises();
 
-        expect(wrapper.vm.currentMetrics).toEqual({
-            revenue: 100,
-            paidOrders: 2,
-            orders: 5,
-            newCustomers: 0,
-            walletBalance: 0,
-            monthlyPoints: 0,
-        });
+        expect(valueOf(wrapper, LABEL.revenue)).toContain('100');
+        expect(valueOf(wrapper, LABEL.orders)).toContain('5');
+        expect(valueOf(wrapper, LABEL.averageOrderValue)).toContain('50');
     });
 
     it('matches the bucket of the local calendar day', async () => {
@@ -205,9 +241,10 @@ describe('module/sw-dashboard/component/sw-dashboard-metrics', () => {
         const wrapper = await createWrapper();
         await flushPromises();
 
-        expect(wrapper.vm.currentMetrics.revenue).toBe(60);
-        expect(wrapper.vm.currentMetrics.orders).toBe(7);
-        expect(wrapper.vm.previousMetrics.revenue).toBe(900);
+        expect(valueOf(wrapper, LABEL.revenue)).toContain('60');
+        expect(valueOf(wrapper, LABEL.orders)).toContain('7');
+        // 900 on the day before is what the delta is measured against
+        expect(deltaOf(wrapper, LABEL.revenue)).toContain('93.3%');
     });
 
     it('calculates the average order value from paid orders only', async () => {
@@ -219,7 +256,8 @@ describe('module/sw-dashboard/component/sw-dashboard-metrics', () => {
         const wrapper = await createWrapper();
         await flushPromises();
 
-        expect(wrapper.vm.averageOrderValue).toBe(25);
+        // 100 paid over 4 paid orders, not over the 9 orders that exist
+        expect(valueOf(wrapper, LABEL.averageOrderValue)).toContain('25');
     });
 
     it('reports zero average order value when nothing was paid', async () => {
@@ -231,7 +269,7 @@ describe('module/sw-dashboard/component/sw-dashboard-metrics', () => {
         const wrapper = await createWrapper();
         await flushPromises();
 
-        expect(wrapper.vm.averageOrderValue).toBe(0);
+        expect(valueOf(wrapper, LABEL.averageOrderValue)).toContain('0');
     });
 
     it('compares the metrics with the previous day', async () => {
@@ -249,18 +287,7 @@ describe('module/sw-dashboard/component/sw-dashboard-metrics', () => {
         const wrapper = await createWrapper();
         await flushPromises();
 
-        expect(wrapper.vm.previousMetrics).toEqual({
-            revenue: 100,
-            paidOrders: 2,
-            orders: 2,
-            newCustomers: 0,
-        });
-
-        const ordersCard = wrapper.vm.metricCards.find((card) => card.key === 'orders');
-        expect(ordersCard.delta).toEqual({
-            direction: 'up',
-            text: '↑ 100.0% sw-dashboard.metrics.comparedToYesterday',
-        });
+        expect(deltaOf(wrapper, LABEL.orders)).toBe('↑ 100.0% sw-dashboard.metrics.comparedToYesterday');
     });
 
     it('counts the new customers of today and yesterday in separate ranges', async () => {
@@ -287,7 +314,9 @@ describe('module/sw-dashboard/component/sw-dashboard-metrics', () => {
         const wrapper = await createWrapper();
         await flushPromises();
 
-        expect(wrapper.vm.metricCards.every((card) => card.delta === null)).toBe(true);
+        expect(wrapper.findAll('.sw-dashboard-metrics__delta.is-up')).toHaveLength(0);
+        expect(wrapper.findAll('.sw-dashboard-metrics__delta.is-down')).toHaveLength(0);
+        expect(wrapper.findAll('.sw-dashboard-metrics__delta.is-none').length).toBeGreaterThan(0);
     });
 
     describe('deep links', () => {
@@ -301,10 +330,10 @@ describe('module/sw-dashboard/component/sw-dashboard-metrics', () => {
             const wrapper = await createWrapper(['order.viewer'], factory);
             await flushPromises();
 
-            const revenueCard = wrapper.vm.metricCards.find((card) => card.key === 'revenue');
-            const filters = JSON.parse(decodeURIComponent(revenueCard.link.query['grid.filter.order']));
+            const link = linkOf(wrapper, LABEL.revenue);
+            const filters = JSON.parse(decodeURIComponent(link.query['grid.filter.order']));
 
-            expect(revenueCard.link.name).toBe('sw.order.index');
+            expect(link.name).toBe('sw.order.index');
             expect(filters['order-date-filter'].criteria[0].field).toBe('orderDateTime');
             expect(filters['payment-status-filter'].criteria[0]).toEqual({
                 type: 'equalsAny',
@@ -317,8 +346,8 @@ describe('module/sw-dashboard/component/sw-dashboard-metrics', () => {
             const wrapper = await createWrapper();
             await flushPromises();
 
-            const ordersCard = wrapper.vm.metricCards.find((card) => card.key === 'orders');
-            const filters = JSON.parse(decodeURIComponent(ordersCard.link.query['grid.filter.order']));
+            const link = linkOf(wrapper, LABEL.orders);
+            const filters = JSON.parse(decodeURIComponent(link.query['grid.filter.order']));
 
             expect(Object.keys(filters)).toEqual(['order-date-filter']);
         });
@@ -330,8 +359,8 @@ describe('module/sw-dashboard/component/sw-dashboard-metrics', () => {
             const wrapper = await createWrapper();
             await flushPromises();
 
-            const ordersCard = wrapper.vm.metricCards.find((card) => card.key === 'orders');
-            const filters = JSON.parse(decodeURIComponent(ordersCard.link.query['grid.filter.order']));
+            const link = linkOf(wrapper, LABEL.orders);
+            const filters = JSON.parse(decodeURIComponent(link.query['grid.filter.order']));
 
             // 18:00 UTC is already the 16th of June in Shanghai
             expect(filters['order-date-filter'].criteria[0].parameters).toEqual({
@@ -344,8 +373,8 @@ describe('module/sw-dashboard/component/sw-dashboard-metrics', () => {
             const wrapper = await createWrapper();
             await flushPromises();
 
-            const customerCard = wrapper.vm.metricCards.find((card) => card.key === 'newCustomers');
-            expect(customerCard.link).toBeNull();
+            expect(linkOf(wrapper, LABEL.newCustomers)).toBeNull();
+            expect(cardByLabel(wrapper, LABEL.newCustomers).classes()).not.toContain('is-linked');
         });
     });
 });

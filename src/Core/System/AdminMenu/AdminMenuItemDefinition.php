@@ -84,6 +84,8 @@ class AdminMenuItemDefinition extends EntityDefinition
             (new StringField('internal_key', 'internalKey'))->setDescription('Module navigation id or admin route name this item points to. Validated against the route whitelist for `menu` type items.'),
             (new StringField('group_name', 'groupName'))->setDescription('Group the item is listed under (`general`, `customer`, …). Entries without a group are listed on their own.'),
             new TranslatedField('title'),
+            // the group *key* above is untranslated, the label a language shows for it is not
+            new TranslatedField('groupTitle'),
             (new StringField('icon', 'icon'))->setDescription('Meteor icon name shown next to the label.'),
             (new StringField('color', 'color'))->setDescription('Module theme color of the item.'),
             (new StringField('type', 'type'))->addFlags(new Required())->setDescription('Item type: `folder` groups children, `menu` links to an admin route, `link` opens an external URL, `hidden` is kept but not rendered.'),

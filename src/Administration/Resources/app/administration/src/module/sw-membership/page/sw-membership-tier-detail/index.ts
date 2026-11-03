@@ -4,6 +4,8 @@
 import { defineComponent } from 'vue';
 import type CriteriaType from 'src/core/data/criteria.data';
 import type RepositoryType from 'src/core/data/repository.data';
+import { systemKey } from '../../service/device.helper';
+import { shortcutAllowsSave } from '../../service/shortcut.helper';
 
 import template from './sw-membership-tier-detail.html.twig';
 import './sw-membership-tier-detail.scss';
@@ -118,8 +120,10 @@ export default defineComponent({
 
     shortcuts: {
         'SYSTEMKEY+S': {
-            active() {
-                return this.allowSave;
+            // the shortcut registry calls this without typing `this`, so the computed it reads is
+            // reached through the shared helper instead of an assertion in every page
+            active(): boolean {
+                return shortcutAllowsSave(this);
             },
             method: 'onSave',
         },
@@ -196,7 +200,7 @@ export default defineComponent({
             }
 
             return {
-                message: `${this.$device.getSystemKey()} + S`,
+                message: `${systemKey(this)} + S`,
                 appearance: 'light',
             };
         },
@@ -248,13 +252,15 @@ export default defineComponent({
             this.isLoading = true;
 
             try {
-                this.loyaltyTier = await this.loyaltyTierRepository.get(
+                const loyaltyTier = await this.loyaltyTierRepository.get(
                     this.loyaltyTierId as LoyaltyTier['id'],
                     Shopwell.Context.api,
                     this.loyaltyTierCriteria,
                 );
 
-                await this.loadBenefits(this.loyaltyTier.id);
+                this.loyaltyTier = loyaltyTier;
+
+                await this.loadBenefits(loyaltyTier.id);
             } finally {
                 this.isLoading = false;
             }
@@ -265,7 +271,7 @@ export default defineComponent({
          * form is saved through the tier entity, and an entity that carries a loaded collection writes it
          * back - which would turn "the operator removed this benefit" into "nothing happened".
          */
-        async loadBenefits(tierId: string): Promise<void> {
+        async loadBenefits(tierId: LoyaltyTier['id']): Promise<void> {
             const criteria = new Criteria(1, 50);
             criteria.addFilter(Criteria.equals('loyaltyTierId', tierId));
 
@@ -291,9 +297,9 @@ export default defineComponent({
          * removes the row. Types the shop does not know are never touched - a benefit an extension
          * invented stays stored even though this form cannot show it.
          */
-        async syncBenefits(tierId: string): Promise<void> {
+        async syncBenefits(tierId: LoyaltyTier['id']): Promise<void> {
             const saves: LoyaltyTierBenefit[] = [];
-            const deletions: string[] = [];
+            const deletions: LoyaltyTierBenefit['id'][] = [];
 
             BENEFIT_DESCRIPTORS.forEach((descriptor) => {
                 const value = descriptor.value(this.benefits);

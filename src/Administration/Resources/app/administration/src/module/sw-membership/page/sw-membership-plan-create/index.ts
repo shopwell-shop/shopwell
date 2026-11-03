@@ -18,7 +18,7 @@ interface MembershipPlanCreateContext {
     createNotificationError: (config: { message: string }) => void;
 }
 
-// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations -- a page of this module, registered in the module's index.ts
 export default {
     methods: {
         createdComponent(this: MembershipPlanCreateContext): void {
