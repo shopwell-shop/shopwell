@@ -32,6 +32,28 @@ class LoyaltySettingsTest extends TestCase
         static::assertFalse($settings->isEnabled());
     }
 
+    /**
+     * `system:config:set` without `--json` stores the raw argument, so the shop that switched the
+     * programme off through the CLI saves the *string* "false" - which must not read as enabled.
+     */
+    public function testAStringFalseFromTheCliTurnsTheMembershipOff(): void
+    {
+        $settings = new LoyaltySettings(new StaticSystemConfigService([
+            LoyaltySettings::CONFIG_KEY_ENABLED => 'false',
+        ]));
+
+        static::assertFalse($settings->isEnabled());
+    }
+
+    public function testAStringFalseFromTheCliLeavesTheGroupSyncOff(): void
+    {
+        $settings = new LoyaltySettings(new StaticSystemConfigService([
+            LoyaltySettings::CONFIG_KEY_TIER_AUTO_GROUP_SYNC => 'false',
+        ]));
+
+        static::assertFalse($settings->tierAutoGroupSync());
+    }
+
     public function testAnUnsavedShopEarnsAndRedeemsWithTheDefaultsTheSettingsCardShows(): void
     {
         $settings = new LoyaltySettings(new StaticSystemConfigService());
