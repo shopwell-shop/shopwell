@@ -7,7 +7,7 @@ import type CriteriaType from 'src/core/data/criteria.data';
 
 import template from './sw-customer-detail-points.html.twig';
 import './sw-customer-detail-points.scss';
-import type { LoyaltySummary, LoyaltySummaryTransaction } from '../../../../sw-membership/service/loyalty.api.service';
+import type { LoyaltySummary, LoyaltySummaryTransaction } from '../../../../sw-settings-membership/service/loyalty.api.service';
 
 const { Mixin } = Shopwell;
 const { Criteria } = Shopwell.Data;

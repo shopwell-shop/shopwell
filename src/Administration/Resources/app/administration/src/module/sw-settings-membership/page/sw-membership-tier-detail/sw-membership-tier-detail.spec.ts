@@ -116,7 +116,7 @@ async function createWrapper(privileges: string[] = ['loyalty.editor']): Promise
     return wrapper;
 }
 
-describe('src/module/sw-membership/page/sw-membership-tier-detail', () => {
+describe('src/module/sw-settings-membership/page/sw-membership-tier-detail', () => {
     beforeEach(() => {
         capturedBenefitCriteria = null;
 

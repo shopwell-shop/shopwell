@@ -4,10 +4,17 @@
 import { flushPromises } from '@vue/test-utils';
 import { associationNames, createWrapper, unmountActiveWrapper } from './sw-blog-detail.spec/create-wrapper';
 import { blog } from './sw-blog-detail.spec/fixtures';
+import { registerBlogType, resetBlogTypes } from '../../service/blog-type.registry';
 
 describe('src/module/sw-blog/page/sw-blog-detail', () => {
+    beforeEach(() => {
+        registerBlogType('post', () => Promise.resolve({ default: { name: 'post' } }));
+        registerBlogType('video', () => Promise.resolve({ default: { name: 'video' } }));
+    });
+
     afterEach(() => {
         unmountActiveWrapper();
+        resetBlogTypes();
         jest.clearAllMocks();
     });
 
@@ -35,6 +42,14 @@ describe('src/module/sw-blog/page/sw-blog-detail', () => {
         // nothing exists yet, so nothing is read
         expect(getBlog).not.toHaveBeenCalled();
         expect(wrapper.vm.isNew).toBe(true);
+    });
+
+    it('locks the type of a saved entry, because it owns the fields around it', async () => {
+        const { wrapper } = await createWrapper();
+        await flushPromises();
+
+        expect(wrapper.vm.isNew).toBe(false);
+        expect(wrapper.vm.blog).toEqual(expect.objectContaining({ type: 'post' }));
     });
 
     it('gives a new entry its url name from the title on the first save and fixes the address', async () => {
@@ -179,11 +194,13 @@ describe('src/module/sw-blog/page/sw-blog-detail', () => {
         expect(wrapper.vm.blog?.authorId).toBe('author-new');
     });
 
-    it('counts the comments that wait for approval', async () => {
+    it('leaves comment moderation to its own list page', async () => {
         const { wrapper } = await createWrapper();
         await flushPromises();
 
-        expect(wrapper.vm.pendingCommentCount).toBe(2);
+        // the entry page no longer carries a moderation queue door
+        expect((wrapper.vm as unknown as Record<string, unknown>).pendingCommentCount).toBeUndefined();
+        expect((wrapper.vm as unknown as Record<string, unknown>).onOpenCommentList).toBeUndefined();
     });
 
     it('refuses to save an entry without a title', async () => {

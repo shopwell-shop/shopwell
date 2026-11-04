@@ -265,12 +265,14 @@ describe('src/module/sw-blog/page/sw-blog-list', () => {
         expect(wrapper.vm.hasActiveSearchOrFilter).toBe(true);
     });
 
-    it('counts the comments that wait, for the door to the moderation queue', async () => {
+    it('keeps moderation out of the entry list', async () => {
         const { wrapper } = await createWrapper();
         await flushPromises();
 
-        expect(wrapper.vm.pendingCommentCount).toBe(3);
+        // the queue lives on its own page, like the customer group registration review
+        expect((wrapper.vm as unknown as Record<string, unknown>).pendingCommentCount).toBeUndefined();
     });
+
 
     it('hides creating and deleting from a role that may only read', async () => {
         const { wrapper } = await createWrapper((privilege) => privilege === 'blog.viewer');
@@ -280,7 +282,7 @@ describe('src/module/sw-blog/page/sw-blog-list', () => {
         expect(wrapper.vm.canEdit).toBe(false);
     });
 
-    it('opens the create page instead of asking for a title in a dialog', async () => {
+    it('opens the create page instead of asking for anything in a dialog', async () => {
         const { wrapper, push, save } = await createWrapper();
 
         wrapper.vm.onOpenCreateModal();
@@ -289,6 +291,15 @@ describe('src/module/sw-blog/page/sw-blog-list', () => {
         expect(push).toHaveBeenCalledWith({ name: 'sw.blog.create' });
         // nothing is written before the entry page is saved
         expect(save).not.toHaveBeenCalled();
+    });
+
+    it('labels the type column from the snippet and falls back to the raw value', async () => {
+        const { wrapper } = await createWrapper();
+        await flushPromises();
+
+        // $te answers false in the tests, so the raw value is the label
+        expect(wrapper.vm.typeLabel('video')).toBe('video');
+        expect(wrapper.vm.typeLabel(null)).toBe('');
     });
 
     it('deletes only after the confirmation of the modal', async () => {
@@ -321,13 +332,14 @@ describe('src/module/sw-blog/page/sw-blog-list', () => {
         expect(wrapper.vm.categoryNamesOf(blogs[1])).toEqual([]);
     });
 
-    it('opens the category list and the comment queue from the sidebar', async () => {
+    it('opens the category list from the sidebar and leaves moderation to its own page', async () => {
         const { wrapper, push } = await createWrapper();
 
         wrapper.vm.onOpenCategoryList();
-        wrapper.vm.onOpenCommentList();
 
         expect(push).toHaveBeenCalledWith({ name: 'sw.blog.category.list' });
-        expect(push).toHaveBeenCalledWith({ name: 'sw.blog.comment.list' });
+        // the comment queue is not reachable from the entry list anymore: it is its own page
+        expect(push).not.toHaveBeenCalledWith({ name: 'sw.blog.comment.list' });
+        expect((wrapper.vm as unknown as Record<string, unknown>).onOpenCommentList).toBeUndefined();
     });
 });

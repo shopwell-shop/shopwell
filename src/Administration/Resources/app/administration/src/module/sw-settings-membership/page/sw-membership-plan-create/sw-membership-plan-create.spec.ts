@@ -102,7 +102,7 @@ async function createWrapper(privileges: string[] = []): Promise<VueWrapper> {
     return wrapper;
 }
 
-describe('src/module/sw-membership/page/sw-membership-plan-create', () => {
+describe('src/module/sw-settings-membership/page/sw-membership-plan-create', () => {
     beforeEach(() => {
         membershipPlanRepository.create.mockClear();
         membershipPlanRepository.save.mockClear();

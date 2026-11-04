@@ -4,8 +4,8 @@
     {% block sw_loyalty_order_list_search_bar %}
     <template #search-bar>
         <sw-search-bar
+            initial-search-type="membership_purchase"
             :initial-search="term"
-            :placeholder="$t('sw-membership.purchase.list.placeholderSearchBar')"
             @search="onSearch"
         />
     </template>
@@ -13,133 +13,140 @@
 
     {% block sw_loyalty_order_list_smart_bar_header %}
     <template #smart-bar-header>
+        {% block sw_loyalty_order_list_smart_bar_header_title %}
         <h2>
-            {{ $t('sw-order.general.mainMenuItemGeneral') }}
-            <mt-icon
-                name="regular-chevron-right-xs"
-                size="12px"
-            />
+            {% block sw_loyalty_order_list_smart_bar_header_title_text %}
             {{ $t('sw-membership.purchase.general.mainMenuItemGeneral') }}
+            {% endblock %}
 
+            {% block sw_loyalty_order_list_smart_bar_header_amount %}
             <span
-                v-if="!isLoading && total"
+                v-if="!isLoading"
                 class="sw-page__smart-bar-amount"
             >
                 ({{ total }})
             </span>
+            {% endblock %}
         </h2>
-    </template>
-    {% endblock %}
-
-    {% block sw_loyalty_order_list_language_switch %}
-    <template #language-switch>
-        <sw-language-switch @on-change="onRefresh" />
+        {% endblock %}
     </template>
     {% endblock %}
 
     {% block sw_loyalty_order_list_content %}
     <template #content>
-        <sw-card-view>
-            {% block sw_loyalty_order_list_card %}
-            <mt-card
-                position-identifier="sw-membership-purchase-list"
-                :title="$t('sw-membership.purchase.list.cardTitle')"
+        {% block sw_loyalty_order_list_content %}
+        <div class="sw-membership-purchase-list__content">
+
+            {% block sw_loyalty_order_list_empty_state %}
+            <mt-empty-state
+                v-if="!isLoading && !total"
+                centered
+                :icon="$route.meta.$module.icon"
+                :headline="hasActiveSearchOrFilter ? $t('sw-empty-state.messageNoResultTitle') : $t('sw-membership.purchase.list.emptyStateHeadline')"
+                :description="hasActiveSearchOrFilter ? $t('sw-empty-state.messageNoResultSubline') : $t('sw-membership.purchase.list.emptyStateDescription')"
+            />
+            {% endblock %}
+
+            {% block sw_loyalty_order_list_grid %}
+            <sw-entity-listing
+                v-else-if="isLoading || purchases"
+                ref="listing"
+                class="sw-membership-purchase-list__grid"
+                identifier="sw-membership-purchase-list"
+                :data-source="purchases"
+                :columns="columns"
+                :repository="purchaseRepository"
+                :sort-by="sortBy"
+                :sort-direction="sortDirection"
                 :is-loading="isLoading"
+                :full-page="true"
+                :show-selection="false"
+                :show-settings="true"
+                :disable-data-fetching="true"
+                :allow-inline-edit="false"
+                :allow-column-edit="true"
+                :allow-edit="false"
+                :allow-delete="false"
+                :allow-view="false"
+                @page-change="onPageChange"
+                @column-sort="onSortColumn"
             >
-                {% block sw_loyalty_order_list_filter %}
-                <template #headerRight>
-                    <mt-select
-                        v-model="stateFilter"
-                        class="sw-membership-purchase-list__state-filter"
-                        :options="stateFilterOptions"
-                        :label="$t('sw-membership.purchase.list.labelFilterState')"
-                        size="small"
-                        @update:model-value="onFilterChange"
-                    />
+                {% block sw_loyalty_order_list_grid_column_customer %}
+                <template #column-customer="{ item }">
+                    <mt-link
+                        v-if="item.customer"
+                        :to="{ name: 'sw.customer.detail', params: { id: item.customerId } }"
+                    >
+                        {{ formatCustomer(item) }}
+                    </mt-link>
+                    <span v-else>{{ formatCustomer(item) }}</span>
                 </template>
                 {% endblock %}
 
-                {% block sw_loyalty_order_list_grid %}
-                <sw-data-grid
-                    v-if="purchases && purchases.length > 0"
-                    class="sw-membership-purchase-list__grid"
-                    :data-source="purchases"
-                    :columns="columns"
-                    :show-selection="false"
-                    :show-settings="false"
-                >
-                    {% block sw_loyalty_order_list_grid_column_customer %}
-                    <template #column-customer="{ item }">
-                        <mt-link
-                            v-if="item.customer"
-                            :to="{ name: 'sw.customer.detail', params: { id: item.customerId } }"
-                        >
-                            {{ formatCustomer(item) }}
-                        </mt-link>
-                        <span v-else>{{ formatCustomer(item) }}</span>
-                    </template>
-                    {% endblock %}
-
-                    {% block sw_loyalty_order_list_grid_column_plan %}
-                    <template #column-planName="{ item }">
-                        {{ item.planName || '-' }}
-                    </template>
-                    {% endblock %}
-
-                    {% block sw_loyalty_order_list_grid_column_amount %}
-                    <template #column-amount="{ item }">
-                        {{ formatAmount(item) }}
-                    </template>
-                    {% endblock %}
-
-                    {% block sw_loyalty_order_list_grid_column_state %}
-                    <template #column-state="{ item }">
-                        <mt-badge
-                            class="sw-membership-purchase-list__state"
-                            size="small"
-                            :type="getStateVariant(item.state)"
-                        >
-                            {{ getStateLabel(item.state) }}
-                        </mt-badge>
-                    </template>
-                    {% endblock %}
-
-                    {% block sw_loyalty_order_list_grid_column_paid_at %}
-                    <template #column-paidAt="{ item }">
-                        {{ formatDate(item.paidAt) }}
-                    </template>
-                    {% endblock %}
-
-                    {% block sw_loyalty_order_list_grid_column_created_at %}
-                    <template #column-createdAt="{ item }">
-                        {{ formatDate(item.createdAt) }}
-                    </template>
-                    {% endblock %}
-                </sw-data-grid>
-
-                {% block sw_loyalty_order_list_empty_state %}
-                <mt-empty-state
-                    v-else-if="!isLoading"
-                    centered
-                    icon="regular-shopping-bag"
-                    :headline="$t('sw-membership.purchase.list.emptyStateHeadline')"
-                    :description="$t('sw-membership.purchase.list.emptyStateDescription')"
-                />
-                {% endblock %}
+                {% block sw_loyalty_order_list_grid_column_plan %}
+                <template #column-planName="{ item }">
+                    {{ item.planName || '-' }}
+                </template>
                 {% endblock %}
 
-                {% block sw_loyalty_order_list_pagination %}
-                <sw-pagination
-                    v-if="total > 0"
-                    :page="page"
-                    :limit="limit"
-                    :total="total"
-                    @page-change="onPageChange"
-                />
+                {% block sw_loyalty_order_list_grid_column_amount %}
+                <template #column-amount="{ item }">
+                    {{ formatAmount(item) }}
+                </template>
                 {% endblock %}
-            </mt-card>
+
+                {% block sw_loyalty_order_list_grid_column_state %}
+                <template #column-state="{ item }">
+                    <mt-badge
+                        class="sw-membership-purchase-list__state"
+                        size="small"
+                        :variant="getStateVariant(item.state)"
+                    >
+                        {{ getStateLabel(item.state) }}
+                    </mt-badge>
+                </template>
+                {% endblock %}
+
+                {% block sw_loyalty_order_list_grid_column_paid_at %}
+                <template #column-paidAt="{ item }">
+                    {{ formatDate(item.paidAt) }}
+                </template>
+                {% endblock %}
+
+                {% block sw_loyalty_order_list_grid_column_created_at %}
+                <template #column-createdAt="{ item }">
+                    <sw-time-ago :date="item.createdAt" />
+                </template>
+                {% endblock %}
+            </sw-entity-listing>
             {% endblock %}
-        </sw-card-view>
+        </div>
+        {% endblock %}
+    </template>
+    {% endblock %}
+
+    {% block sw_loyalty_order_list_sidebar %}
+    <template #sidebar>
+        <sw-sidebar class="sw-membership-purchase-list__sidebar">
+            {% block sw_loyalty_order_list_sidebar_refresh %}
+            <sw-sidebar-item
+                icon="regular-undo"
+                :title="$t('sw-membership.purchase.list.titleSidebarItemRefresh')"
+                @click="onRefresh"
+            />
+            {% endblock %}
+
+            {% block sw_loyalty_order_list_sidebar_filter %}
+            <sw-sidebar-filter-panel
+                entity="membership_purchase"
+                :store-key="storeKey"
+                :filters="listFilters"
+                :defaults="defaultFilters"
+                :active-filter-number="activeFilterNumber"
+                @criteria-changed="updateCriteria"
+            />
+            {% endblock %}
+        </sw-sidebar>
     </template>
     {% endblock %}
 

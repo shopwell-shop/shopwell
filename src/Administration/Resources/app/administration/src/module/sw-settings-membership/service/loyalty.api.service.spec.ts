@@ -22,7 +22,7 @@ const createService = (httpClient: ReturnType<typeof createHttpClient>) => {
     return new LoyaltyApiService(httpClient as unknown as HttpClient, { getToken: () => TOKEN });
 };
 
-describe('src/module/sw-membership/service/loyalty.api.service', () => {
+describe('src/module/sw-settings-membership/service/loyalty.api.service', () => {
     it('asks the summary endpoint of a customer with the bearer token', async () => {
         const httpClient = createHttpClient();
         const summary = {

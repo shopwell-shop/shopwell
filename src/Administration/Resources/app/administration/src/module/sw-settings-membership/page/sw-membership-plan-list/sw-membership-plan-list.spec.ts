@@ -124,7 +124,7 @@ async function createWrapper(privileges: string[] = [], plans: unknown[] = [plan
     return wrapper;
 }
 
-describe('src/module/sw-membership/page/sw-membership-plan-list', () => {
+describe('src/module/sw-settings-membership/page/sw-membership-plan-list', () => {
     beforeEach(() => {
         searchRankingServiceMock.getSearchFieldsByEntity.mockResolvedValue({
             name: (searchRankingPoint as SearchRankingPoint).HIGH_SEARCH_RANKING,

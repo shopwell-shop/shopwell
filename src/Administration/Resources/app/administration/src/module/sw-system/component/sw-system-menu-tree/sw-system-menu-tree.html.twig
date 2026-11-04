@@ -12,9 +12,13 @@
         :class="rowClasses(row.item)"
         :style="{ '--sw-system-menu-tree-depth': row.depth }"
         role="treeitem"
+        tabindex="0"
         :aria-level="row.depth + 1"
+        :aria-selected="row.item.id === selectedId ? 'true' : undefined"
         :aria-expanded="row.hasChildren ? String(isExpanded(row.item)) : undefined"
         :draggable="isSortableItem(row.item)"
+        @keydown.enter.prevent="onSelect(row.item)"
+        @keydown.space.prevent="onSelect(row.item)"
         @dragstart="onDragStart($event, row.item)"
         @dragover.prevent="onDragOver($event, row.item)"
         @dragleave="onDragLeave(row.item)"
@@ -42,6 +46,7 @@
 
         {% block sw_system_menu_tree_row_icon %}
         <mt-icon
+            v-tooltip="rowTooltip(row.item)"
             class="sw-system-menu-tree__icon"
             :name="iconOf(row.item)"
             size="16px"
@@ -52,19 +57,10 @@
         <button
             type="button"
             class="sw-system-menu-tree__label"
-            @click="toggle(row.item)"
+            @click="onSelect(row.item)"
         >
             {{ row.item.label }}
         </button>
-        {% endblock %}
-
-        {% block sw_system_menu_tree_row_group %}
-        <span
-            v-if="row.item.groupLabel"
-            class="sw-system-menu-tree__badge sw-system-menu-tree__badge--group"
-        >
-            {{ row.item.groupLabel }}
-        </span>
         {% endblock %}
 
         {% block sw_system_menu_tree_row_meta %}
@@ -77,61 +73,67 @@
             />
 
             <span
-                v-if="!row.item.active"
-                class="sw-system-menu-tree__badge"
-            >
-                {{ $t('sw-system.menu.labelInactive') }}
-            </span>
-
-            <span
-                v-if="row.item.pluginName"
-                class="sw-system-menu-tree__badge"
-            >
-                {{ row.item.pluginName }}
-            </span>
-
-            <span class="sw-system-menu-tree__type">
-                {{ $t(typeLabel(row.item)) }}
-            </span>
+                class="sw-system-menu-tree__status"
+                :class="row.item.active ? 'is--active' : 'is--inactive'"
+                :aria-label="$t(row.item.active ? 'sw-system.menu.labelActive' : 'sw-system.menu.labelInactive')"
+            ></span>
         </span>
         {% endblock %}
 
         {% block sw_system_menu_tree_row_actions %}
-        <span class="sw-system-menu-tree__actions">
+        <sw-context-button
+            v-if="editable || deletable"
+            class="sw-system-menu-tree__context"
+        >
             {% block sw_system_menu_tree_row_actions_edit %}
-            <mt-button
+            <sw-context-menu-item
                 v-if="editable"
-                class="sw-system-menu-tree__action"
-                size="x-small"
-                variant="secondary"
-                square
-                :title="$t('global.default.edit')"
                 @click="onEdit(row.item)"
             >
-                <mt-icon
-                    name="regular-pen"
-                    size="14px"
-                />
-            </mt-button>
+                {{ $t('global.default.edit') }}
+            </sw-context-menu-item>
+            {% endblock %}
+
+            {% block sw_system_menu_tree_row_actions_create_above %}
+            <sw-context-menu-item
+                v-if="editable"
+                @click="onCreateAbove(row.item)"
+            >
+                {{ $t('sw-system.menu.createAbove') }}
+            </sw-context-menu-item>
+            {% endblock %}
+
+            {% block sw_system_menu_tree_row_actions_create_below %}
+            <sw-context-menu-item
+                v-if="editable"
+                @click="onCreateBelow(row.item)"
+            >
+                {{ $t('sw-system.menu.createBelow') }}
+            </sw-context-menu-item>
+            {% endblock %}
+
+            {% block sw_system_menu_tree_row_actions_add_child %}
+            <sw-context-menu-item
+                v-if="editable && row.item.type === 'folder'"
+                @click="onAddChild(row.item)"
+            >
+                {{ $t('sw-system.menu.addChild') }}
+            </sw-context-menu-item>
             {% endblock %}
 
             {% block sw_system_menu_tree_row_actions_delete %}
-            <mt-button
+            <sw-context-menu-divider
                 v-if="deletable && !row.item.sysLocked"
-                class="sw-system-menu-tree__action"
-                size="x-small"
-                variant="secondary"
-                square
-                :title="$t('global.default.delete')"
+            />
+            <sw-context-menu-item
+                v-if="deletable && !row.item.sysLocked"
+                variant="danger"
                 @click="onRemove(row.item)"
             >
-                <mt-icon
-                    name="regular-trash"
-                    size="14px"
-                />
-            </mt-button>
+                {{ $t('global.default.delete') }}
+            </sw-context-menu-item>
             {% endblock %}
-        </span>
+        </sw-context-button>
         {% endblock %}
     </div>
     {% endblock %}

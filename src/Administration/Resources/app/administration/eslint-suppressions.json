@@ -13253,11 +13253,6 @@
       "count": 1
     }
   },
-  "src/module/sw-system/page/sw-system-menu-list/sw-system-menu-list.spec.js": {
-    "sw-test-rules/no-vm-access": {
-      "count": 52
-    }
-  },
   "src/module/sw-system/page/sw-system-role-detail/index.js": {
     "@eslint-community/eslint-comments/require-description": {
       "count": 1
@@ -13327,19 +13322,6 @@
     },
     "sw-test-rules/no-vm-access": {
       "count": 42
-    }
-  },
-  "src/module/sw-system/page/sw-system-user-list/index.js": {
-    "@eslint-community/eslint-comments/require-description": {
-      "count": 1
-    },
-    "filename-rules/not-match": {
-      "count": 1
-    }
-  },
-  "src/module/sw-system/page/sw-system-user-list/sw-system-user-list.spec.js": {
-    "sw-test-rules/no-vm-access": {
-      "count": 11
     }
   },
   "src/module/sw-system/view/sw-system-role-view-detailed/index.js": {

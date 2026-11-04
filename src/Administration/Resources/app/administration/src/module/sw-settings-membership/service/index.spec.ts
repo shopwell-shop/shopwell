@@ -5,7 +5,7 @@
 import LoyaltyApiService from './loyalty.api.service';
 import './index';
 
-describe('src/module/sw-membership/service/index', () => {
+describe('src/module/sw-settings-membership/service/index', () => {
     it('registers the loyalty api service in the service container', () => {
         const container = Shopwell.Application.getContainer('service');
 

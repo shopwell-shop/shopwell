@@ -1,37 +1,85 @@
 /**
  * @sw-package fundamentals@framework
  */
+import { defineComponent } from 'vue';
+import type CriteriaType from 'src/core/data/criteria.data';
+import type RepositoryType from 'src/core/data/repository.data';
 import template from './sw-system-user-list.html.twig';
 import './sw-system-user-list.scss';
 
-const { Data, Mixin } = Shopwell;
-const { Criteria } = Data;
+const { Mixin } = Shopwell;
+const { Criteria } = Shopwell.Data;
 
-// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
-export default {
+type FilterDefinition = {
+    property: string;
+    label: string;
+    placeholder?: string;
+};
+
+type User = EntitySchema.Entity<'user'>;
+
+/**
+ * The filters the listing sends to the DAL, the type is not exported by the criteria module.
+ */
+type Filter = CriteriaType['filters'][number];
+
+type FilterFactory = {
+    create: (entityName: string, filters: Record<string, FilterDefinition>) => FilterDefinition[];
+};
+
+type FilterService = {
+    mergeWithStoredFilters: (storeKey: string, criteria: CriteriaType) => Promise<CriteriaType>;
+};
+
+/**
+ * The filter factory is injected but not part of the typed service container yet.
+ */
+function filterFactoryOf(vm: unknown): FilterFactory {
+    return (vm as { filterFactory?: FilterFactory }).filterFactory as FilterFactory;
+}
+
+type DeleteContext = Parameters<RepositoryType<'user'>['delete']>[1];
+
+/**
+ * The administration user list. The layout follows the shape of every other list of the
+ * administration: a search bar, a full page entity listing and a sidebar filter panel.
+ */
+// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations -- the page is extended by plugins through the component factory
+export default defineComponent({
     template,
 
-    inject: [
-        'userService',
-        'repositoryFactory',
-        'acl',
-        'ssoSettingsService',
-    ],
+    inject: ['repositoryFactory', 'acl', 'ssoSettingsService', 'filterFactory'],
 
     mixins: [Mixin.getByName('listing'), Mixin.getByName('notification')],
 
-    data() {
+    data(): {
+        users: EntityCollection<'user'> | null;
+        roles: EntityCollection<'acl_role'> | null;
+        isLoading: boolean;
+        isSso: boolean;
+        itemToDelete: User | null;
+        isConfirmDeleteModalOpen: boolean;
+        isConfirmingPasswordModalOpen: boolean;
+        showInvitationModal: boolean;
+        filterCriteria: Filter[];
+        defaultFilters: string[];
+        storeKey: string;
+        activeFilterNumber: number;
+        sortBy: string;
+    } {
         return {
-            users: [],
-            roles: [],
+            users: null,
+            roles: null,
             isLoading: false,
             isSso: false,
             itemToDelete: null,
             isConfirmDeleteModalOpen: false,
             isConfirmingPasswordModalOpen: false,
             showInvitationModal: false,
-            roleFilter: '',
-            statusFilter: '',
+            filterCriteria: [],
+            defaultFilters: ['role-filter', 'status-filter'],
+            storeKey: 'grid.filter.system-user',
+            activeFilterNumber: 0,
             sortBy: 'username',
         };
     },
@@ -43,39 +91,43 @@ export default {
     },
 
     computed: {
-        userRepository() {
+        userRepository(): RepositoryType<'user'> {
             return this.repositoryFactory.create('user');
         },
 
-        roleRepository() {
+        roleRepository(): RepositoryType<'acl_role'> {
             return this.repositoryFactory.create('acl_role');
         },
 
-        currentUser() {
-            return Shopwell.Store.get('session').currentUser;
+        currentUser(): User | null {
+            return Shopwell.Store.get('session').currentUser as User | null;
         },
 
-        userDetailRouterLink() {
+        userDetailRoute(): string {
             return this.isSso ? 'sw.system.user.sso.detail' : 'sw.system.user.detail';
         },
 
-        userCriteria() {
+        userDetailRouterLink(): string {
+            return this.userDetailRoute;
+        },
+
+        defaultCriteria(): CriteriaType {
             const criteria = new Criteria(this.page, this.limit);
 
-            if (this.term) {
-                criteria.setTerm(this.term);
+            const term = this.term ?? '';
+
+            if (this.isValidTerm(term)) {
+                criteria.setTerm(term);
             }
 
-            if (this.roleFilter) {
-                criteria.addFilter(Criteria.equals('aclRoles.id', this.roleFilter));
-            }
-
-            if (this.statusFilter !== '') {
-                criteria.addFilter(Criteria.equals('active', this.statusFilter === 'active'));
-            }
+            this.filterCriteria.forEach((filter) => {
+                criteria.addFilter(filter);
+            });
 
             if (this.sortBy) {
-                criteria.addSorting(Criteria.sort(this.sortBy, this.sortDirection || 'ASC'));
+                const sortDirection = this.sortDirection === 'DESC' ? 'DESC' : 'ASC';
+
+                criteria.addSorting(Criteria.sort(this.sortBy, sortDirection));
             }
 
             criteria.addAssociation('aclRoles');
@@ -84,61 +136,74 @@ export default {
             return criteria;
         },
 
-        roleFilterOptions() {
-            return [
-                { value: '', label: this.$t('sw-system.users.filter.allRoles') },
-                ...this.roles.map((role) => ({ value: role.id, label: role.name })),
-            ];
+        listFilterOptions(): Record<string, FilterDefinition> {
+            return {
+                'role-filter': {
+                    property: 'aclRoles',
+                    label: this.$t('sw-system.users.filter.labelRole'),
+                    placeholder: this.$t('sw-system.users.filter.labelRole'),
+                },
+                'status-filter': {
+                    property: 'active',
+                    label: this.$t('sw-system.users.filter.labelStatus'),
+                },
+            };
         },
 
-        statusFilterOptions() {
-            return [
-                { value: '', label: this.$t('sw-system.users.filter.allStatus') },
-                { value: 'active', label: this.$t('sw-system.users.filter.statusActive') },
-                { value: 'inactive', label: this.$t('sw-system.users.filter.statusInactive') },
-            ];
+        listFilters(): FilterDefinition[] {
+            const factory = filterFactoryOf(this);
+
+            return factory.create('user', this.listFilterOptions);
         },
 
-        userColumns() {
+        hasActiveSearchOrFilter(): boolean {
+            return this.activeFilterNumber > 0 || Boolean(this.isValidTerm(this.term ?? ''));
+        },
+
+        userColumns(): Array<Record<string, unknown>> {
             const columns = [
                 {
                     property: 'aclRoles',
                     sortable: false,
                     label: this.$t('sw-system.users.user-grid.labelRoles'),
+                    allowResize: true,
                 },
                 {
                     property: 'email',
                     label: this.$t('sw-system.users.user-grid.labelEmail'),
+                    allowResize: true,
                 },
                 {
                     property: 'active',
                     label: this.$t('sw-system.users.user-grid.status'),
+                    allowResize: true,
+                },
+                {
+                    property: 'createdAt',
+                    label: this.$t('sw-system.users.user-grid.labelCreatedAt'),
+                    allowResize: true,
                 },
             ];
 
             if (this.isSso) {
-                return columns;
+                return [
+                    {
+                        ...columns[0],
+                        primary: true,
+                    },
+                    ...columns.slice(1),
+                ];
             }
 
             return [
                 {
                     property: 'username',
                     label: this.$t('sw-system.users.user-grid.labelUser'),
+                    primary: true,
+                    allowResize: true,
                 },
                 ...columns,
             ];
-        },
-
-        hasUsers() {
-            return this.users.length > 0;
-        },
-
-        emptyStateTitle() {
-            if (this.term || this.roleFilter || this.statusFilter !== '') {
-                return this.$t('sw-system.users.emptyState.noResultTitle');
-            }
-
-            return this.$t('sw-system.users.emptyState.noUserTitle');
         },
     },
 
@@ -147,33 +212,37 @@ export default {
     },
 
     methods: {
-        createdComponent() {
-            this.ssoSettingsService.isSso().then((response) => {
+        createdComponent(): void {
+            void this.ssoSettingsService.isSso().then((response: { isSso: boolean }) => {
                 this.isSso = response.isSso;
             });
 
             this.loadRoles();
-            this.getList();
         },
 
-        loadRoles() {
+        loadRoles(): void {
             const criteria = new Criteria(1, 500);
             criteria.addFilter(Criteria.equals('app.id', null));
             criteria.addFilter(Criteria.equals('deletedAt', null));
             criteria.addSorting(Criteria.sort('name', 'ASC'));
 
-            this.roleRepository.search(criteria).then((roles) => {
+            void this.roleRepository.search(criteria).then((roles) => {
                 this.roles = roles;
             });
         },
 
-        getList() {
+        async getList(): Promise<void> {
             this.isLoading = true;
 
+            const filterService = Shopwell.Service('filterService') as FilterService;
+            const criteria = await filterService.mergeWithStoredFilters(this.storeKey, this.defaultCriteria);
+
+            this.activeFilterNumber = criteria.filters.length;
+
             return this.userRepository
-                .search(this.userCriteria)
+                .search(criteria)
                 .then((users) => {
-                    this.total = users.total;
+                    this.total = users.total ?? 0;
                     this.users = users;
                 })
                 .finally(() => {
@@ -181,54 +250,18 @@ export default {
                 });
         },
 
-        onSearch(value) {
-            this.term = value;
-            this.page = 1;
-
-            this.getList();
-        },
-
-        onFilterChange() {
-            this.page = 1;
-
-            this.getList();
-        },
-
-        onRoleFilterChange(value) {
-            this.roleFilter = value ?? '';
-            this.onFilterChange();
-        },
-
-        onStatusFilterChange(value) {
-            this.statusFilter = value ?? '';
-            this.onFilterChange();
-        },
-
-        onRefresh() {
-            this.loadRoles();
-            this.getList();
-        },
-
-        getItemToDelete(item) {
-            if (!this.itemToDelete) {
-                return false;
-            }
-
-            return this.itemToDelete.id === item.id;
-        },
-
-        onDelete(user) {
+        onDelete(user: User): void {
             this.itemToDelete = user;
             this.isConfirmDeleteModalOpen = true;
         },
 
-        onCloseDeleteModal() {
+        onCloseDeleteModal(): void {
             this.isConfirmDeleteModalOpen = false;
             this.itemToDelete = null;
         },
 
-        onConfirmDelete(user) {
-            if (user.id === this.currentUser.id) {
+        onConfirmDelete(user: User): void {
+            if (user.id === this.currentUser?.id) {
                 this.createNotificationError({
                     title: this.$t('global.default.error'),
                     message: this.$t('sw-system.users.user-grid.notification.deleteUserLoggedInError.message'),
@@ -250,8 +283,8 @@ export default {
             this.isConfirmingPasswordModalOpen = true;
         },
 
-        deleteUser(context) {
-            const user = this.itemToDelete;
+        deleteUser(context: DeleteContext): void {
+            const user = this.itemToDelete as User;
             const username = user.name;
 
             this.isConfirmingPasswordModalOpen = false;
@@ -275,8 +308,8 @@ export default {
             this.itemToDelete = null;
         },
 
-        onToggleActive(user) {
-            if (user.id === this.currentUser.id) {
+        onToggleActive(user: User): void {
+            if (user.id === this.currentUser?.id) {
                 this.createNotificationError({
                     title: this.$t('global.default.error'),
                     message: this.$t('sw-system.users.user-grid.notification.toggleActiveSelfError.message'),
@@ -308,28 +341,28 @@ export default {
                 });
         },
 
-        onUserInvited() {
+        onUserInvited(): void {
             this.getList();
             this.closeInvitationModal();
         },
 
-        openInvitationModal() {
+        openInvitationModal(): void {
             this.showInvitationModal = true;
         },
 
-        closeInvitationModal() {
+        closeInvitationModal(): void {
             this.showInvitationModal = false;
         },
 
-        invitationFailed() {
+        invitationFailed(): void {
             this.createNotificationError({
                 title: this.$t('global.default.error'),
                 message: this.$t('sw-system.sso.error.cannotInviteUser'),
             });
         },
 
-        onCloseConfirmPasswordModal() {
+        onCloseConfirmPasswordModal(): void {
             this.isConfirmingPasswordModalOpen = false;
         },
     },
-};
+});

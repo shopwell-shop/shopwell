@@ -15,36 +15,46 @@ that re-skins the storefront re-skins the blog with it.
 Listing
 --------------------------------------------------
 The layout only changes the grid; the card is the same component in all three.
+
+The cards keep the frame the product boxes use - border, radius, white surface - so the blog reads
+as part of the shop rather than as a foreign feed. The promoted first entry of the classic layout
+stays full width and carries the biggest image.
 */
 /* stylelint-disable selector-class-pattern --
  * The blog templates address their elements as plain BEM classes (`.blog-card__media`, ...), which
  * are restyled across modifier blocks and media queries where nesting with "&" is not possible. */
 .blog-index {
-    padding: 32px 0 48px;
+    padding: 40px 0 64px;
+
+    &__header {
+        text-align: center;
+        margin-bottom: 12px;
+    }
 
     &__title {
         font-size: clamp(1.75rem, 3.5vw, 2.25rem);
-        margin-bottom: 24px;
+        margin-bottom: 8px;
     }
 
     &__filter {
         display: flex;
+        justify-content: center;
+        flex-wrap: wrap;
         gap: 8px;
-        overflow-x: auto;
-        padding-bottom: 8px;
-        margin-bottom: 24px;
-        -webkit-overflow-scrolling: touch;
-        scrollbar-width: thin;
+        padding-bottom: 20px;
+        margin-bottom: 32px;
+        border-bottom: 1px solid $border-color;
     }
 
     &__chip {
-        flex: 0 0 auto;
-        padding: 6px 14px;
+        padding: 6px 16px;
         border-radius: 999px;
         border: 1px solid $border-color;
         font-size: 0.875rem;
         color: $body-color;
         white-space: nowrap;
+        text-decoration: none;
+        transition: all 0.15s ease;
 
         &--active,
         &:hover {
@@ -52,6 +62,10 @@ The layout only changes the grid; the card is the same component in all three.
             border-color: $primary;
             color: #fff;
         }
+    }
+
+    &__cms {
+        margin-top: 32px;
     }
 }
 
@@ -62,9 +76,11 @@ The layout only changes the grid; the card is the same component in all three.
 
     &__empty {
         grid-column: 1 / -1;
-        padding: 64px 0;
+        padding: 72px 24px;
         text-align: center;
         color: $secondary;
+        border: 1px dashed $border-color;
+        border-radius: $border-radius;
     }
 
     &--classic {
@@ -98,6 +114,7 @@ through a stretched link, so a card is one target and not four.
         position: relative;
         aspect-ratio: 16 / 9;
         background: rgba($primary, 0.08);
+        border-radius: 0;
         overflow: hidden;
     }
 
@@ -141,6 +158,7 @@ through a stretched link, so a card is one target and not four.
         background: rgba($primary, 0.1);
         color: $primary;
         font-size: 0.75rem;
+        text-decoration: none;
 
         &--more {
             background: transparent;
@@ -149,7 +167,7 @@ through a stretched link, so a card is one target and not four.
     }
 
     &__title {
-        font-size: 1.0625rem;
+        font-size: 1.125rem;
         line-height: 1.4;
         margin: 0;
         display: -webkit-box;
@@ -177,7 +195,7 @@ through a stretched link, so a card is one target and not four.
         line-height: 1.6;
         color: $secondary;
         display: -webkit-box;
-        -webkit-line-clamp: 3;
+        -webkit-line-clamp: 2;
         -webkit-box-orient: vertical;
         overflow: hidden;
     }
@@ -190,6 +208,33 @@ through a stretched link, so a card is one target and not four.
         gap: 10px;
         font-size: 0.8125rem;
         color: $secondary;
+
+        /* the middle dots of the byline: author · date · reading time */
+        > * + *::before {
+            content: '·';
+            margin-right: 10px;
+            color: $border-color;
+        }
+    }
+
+    &__author {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    &__avatar {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        background: rgba($primary, 0.12);
+        color: $primary;
+        font-size: 0.6875rem;
+        font-weight: 600;
+        line-height: 1;
     }
 
     &:hover &__image {
@@ -200,6 +245,10 @@ through a stretched link, so a card is one target and not four.
         text-decoration: underline;
     }
 
+    /*
+    The promoted entry: full width, a wider image and a bigger headline - the one card of the feed
+    that has to stand out before anything is read.
+    */
     &--featured {
         .blog-card__media {
             aspect-ratio: 21 / 9;
@@ -213,6 +262,10 @@ through a stretched link, so a card is one target and not four.
         .blog-card__content {
             padding: 24px;
         }
+
+        .blog-card__teaser {
+            -webkit-line-clamp: 3;
+        }
     }
 
     &--list {
@@ -222,6 +275,10 @@ through a stretched link, so a card is one target and not four.
             flex: 0 0 33%;
             max-width: 33%;
             aspect-ratio: 4 / 3;
+        }
+
+        .blog-card__content {
+            padding: 16px 20px;
         }
 
         .blog-card__teaser {
@@ -253,6 +310,7 @@ Detail
     &__breadcrumb {
         max-width: 720px;
         margin: 24px auto 0;
+        text-align: center;
         font-size: $font-size-sm;
         color: $headings-color;
 
@@ -296,10 +354,38 @@ Detail
     &__meta {
         display: flex;
         flex-wrap: wrap;
-        gap: 12px;
+        gap: 10px;
         justify-content: center;
+        align-items: center;
         font-size: 0.875rem;
         color: $secondary;
+
+        /* author · date · reading time, same byline rhythm as the cards */
+        > * + *::before {
+            content: '·';
+            color: $border-color;
+        }
+    }
+
+    &__author {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        color: $headings-color;
+    }
+
+    &__avatar {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background: rgba($primary, 0.12);
+        color: $primary;
+        font-size: 0.8125rem;
+        font-weight: 600;
+        line-height: 1;
     }
 
     &__categories {
@@ -316,10 +402,43 @@ Detail
         background: rgba($primary, 0.1);
         color: $primary;
         font-size: 0.8125rem;
+        text-decoration: none;
+    }
+
+    &__share {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+        margin-top: 20px;
+        padding-bottom: 24px;
+        border-bottom: 1px solid rgba($secondary, 0.15);
+    }
+
+    &__share-label {
+        font-size: 0.8125rem;
+        color: $secondary;
+    }
+
+    &__share-button {
+        padding: 4px 14px;
+        border: 1px solid $border-color;
+        border-radius: 999px;
+        background: transparent;
+        color: $body-color;
+        font-size: 0.8125rem;
+        cursor: pointer;
+        text-decoration: none;
+        transition: all 0.15s ease;
+
+        &:hover {
+            border-color: $primary;
+            color: $primary;
+        }
     }
 
     &__hero {
-        max-width: 960px;
+        max-width: 1040px;
         margin: 0 auto 32px;
         aspect-ratio: 16 / 9;
         overflow: hidden;
@@ -347,6 +466,50 @@ Detail
         max-width: 720px;
         margin: 0 auto;
         min-width: 0;
+    }
+
+    /*
+    The phone table of contents. It duplicates the rail's entries inside a disclosure widget, so it
+    costs one tap and no javascript. Above the wide breakpoint the rail takes over and this one is
+    removed from the layout entirely.
+    */
+    &__toc-mobile {
+        margin-bottom: 24px;
+        padding: 12px 16px;
+        border: 1px solid $border-color;
+        border-radius: $border-radius;
+
+        &-summary {
+            cursor: pointer;
+            font-size: 0.9375rem;
+            font-weight: 600;
+            color: $headings-color;
+        }
+
+        &-list {
+            list-style: none;
+            padding: 8px 0 0;
+            margin: 0;
+        }
+
+        &-item {
+            padding: 4px 0;
+
+            a {
+                font-size: 0.875rem;
+                color: $secondary;
+                text-decoration: none;
+
+                &:hover {
+                    color: $primary;
+                    text-decoration: underline;
+                }
+            }
+
+            &--h3 {
+                padding-left: 12px;
+            }
+        }
     }
 
     &__text {
@@ -391,6 +554,56 @@ Detail
         margin-bottom: 16px;
     }
 
+    /*
+    Previous and next. Two slots so the next link stays on the right even when there is no previous
+    entry to balance it.
+    */
+    &__prev-next {
+        max-width: 720px;
+        margin: 48px auto 0;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: 24px;
+        padding: 20px 0;
+        border-top: 1px solid rgba($secondary, 0.15);
+        border-bottom: 1px solid rgba($secondary, 0.15);
+
+        &-slot {
+            min-width: 0;
+
+            &--next {
+                text-align: right;
+            }
+        }
+
+        &-link {
+            display: block;
+            text-decoration: none;
+            color: inherit;
+            min-width: 0;
+
+            &:hover .blog-detail__prev-next-title {
+                text-decoration: underline;
+                color: $primary;
+            }
+        }
+
+        &-direction {
+            display: block;
+            font-size: 0.8125rem;
+            color: $secondary;
+            margin-bottom: 4px;
+        }
+
+        &-title {
+            display: block;
+            font-weight: 600;
+            font-size: 1rem;
+            line-height: 1.4;
+            color: $headings-color;
+        }
+    }
+
     &__back {
         max-width: 720px;
         margin: 32px auto 0;
@@ -429,6 +642,11 @@ Sidebar and author card
     &__link {
         font-size: 0.875rem;
         color: $secondary;
+        text-decoration: none;
+
+        &:hover {
+            color: $primary;
+        }
 
         &.is-active {
             color: $primary;
@@ -448,6 +666,23 @@ Sidebar and author card
     padding: 20px;
     border-radius: $border-radius;
     background: $gray-100;
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+
+    &__avatar {
+        flex: 0 0 auto;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        background: rgba($primary, 0.12);
+        color: $primary;
+        font-size: 1.125rem;
+        font-weight: 600;
+    }
 
     &__heading {
         font-size: 0.75rem;
@@ -485,6 +720,13 @@ column and the stacked list card need a decision.
         margin: 0;
     }
 
+    /*
+    The rail owns the table of contents on a wide screen; the phone copy would only repeat it.
+    */
+    .blog-detail__toc-mobile {
+        display: none;
+    }
+
     .blog-sidebar {
         position: sticky;
         top: 96px;
@@ -502,6 +744,14 @@ column and the stacked list card need a decision.
         font-size: 16px;
     }
 
+    .blog-detail__prev-next {
+        grid-template-columns: minmax(0, 1fr);
+
+        &-slot--next {
+            text-align: left;
+        }
+    }
+
     .blog-card--list {
         flex-direction: column;
 
@@ -509,6 +759,10 @@ column and the stacked list card need a decision.
             flex: 0 0 auto;
             max-width: 100%;
             aspect-ratio: 16 / 9;
+        }
+
+        .blog-card__content {
+            padding: 14px 16px 16px;
         }
     }
 }
@@ -753,6 +1007,11 @@ column three characters wide.
     reader who asked for less motion still wants to know how far into an article they are.
     */
     .blog-detail__progress {
+        transition: none;
+    }
+
+    .blog-index__chip,
+    .blog-detail__share-button {
         transition: none;
     }
 }

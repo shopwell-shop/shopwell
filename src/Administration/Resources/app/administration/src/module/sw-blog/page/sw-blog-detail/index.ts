@@ -67,7 +67,6 @@ export default defineComponent({
         assignments: BlogCategoryAssignment[];
         selectedCategoryIds: Array<EntitySchema.EntityKey<'blog_category'>>;
         categories: BlogCategory[];
-        pendingCommentCount: number;
         isLoading: boolean;
         isSaving: boolean;
         mediaUploadTag: string;
@@ -86,7 +85,6 @@ export default defineComponent({
             assignments: [],
             selectedCategoryIds: [],
             categories: [],
-            pendingCommentCount: 0,
             isLoading: false,
             isSaving: false,
             mediaUploadTag: 'sw-blog-detail-cover',
@@ -134,10 +132,6 @@ export default defineComponent({
 
         authorRepository(): RepositoryType<'blog_author'> {
             return this.repositoryFactory.create('blog_author');
-        },
-
-        commentRepository(): RepositoryType<'blog_comment'> {
-            return this.repositoryFactory.create('blog_comment');
         },
 
         canEdit(): boolean {
@@ -217,13 +211,13 @@ export default defineComponent({
     created() {
         void this.loadBlog();
         void this.loadCategories();
-        void this.loadPendingCommentCount();
     },
 
     methods: {
         /**
          * A new entry: nothing is written until the merchant saves, so an abandoned draft leaves no
-         * row behind. The type is preset because the editor of the body is chosen by it.
+         * row behind. The type is preset because the editor of the body is chosen by it, and the
+         * select locks as soon as the entry exists.
          */
         createBlog(): Blog {
             const blog = this.blogRepository.create();
@@ -294,25 +288,6 @@ export default defineComponent({
 
             await this.categoryRepository.search(criteria).then((result) => {
                 this.categories = [...result];
-            });
-        },
-
-        /**
-         * How many comments of this entry still wait, for the door to the queue.
-         */
-        async loadPendingCommentCount(): Promise<void> {
-            const id = this.effectiveId;
-
-            if (!id) {
-                this.pendingCommentCount = 0;
-
-                return;
-            }
-
-            const criteria = blogApi(this).pendingCommentsOfBlogCriteria(id);
-
-            await this.commentRepository.search(criteria).then((result) => {
-                this.pendingCommentCount = result.total ?? 0;
             });
         },
 
@@ -445,10 +420,6 @@ export default defineComponent({
             this.blog.publishedAt = null;
 
             void this.onSave();
-        },
-
-        onOpenCommentList(): void {
-            void this.$router.push({ name: 'sw.blog.comment.list' });
         },
 
         /**

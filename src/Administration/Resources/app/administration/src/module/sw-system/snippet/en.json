@@ -12,8 +12,12 @@
             "labelInactive": "hidden",
             "expand": "Expand",
             "collapse": "Collapse",
-            "emptyStateHeadline": "Select a menu item",
-            "emptyStateDescription": "Pick an entry on the left to edit it, or add a new one.",
+            "emptyStateHeadline": "No menu item selected",
+            "emptyStateDescription": "Select an entry on the left to edit it, or create a new one.",
+            "treeHeadline": "Navigation",
+            "treeEmpty": "There are no menu items yet.",
+            "createAbove": "Add above",
+            "createBelow": "Add below",
             "tooltipLockedItem": "This entry belongs to a core module. It can be customised, but not deleted.",
             "hintLockedItem": "This entry is declared by a core module. Changes are kept, a plugin update will not overwrite them.",
             "labelTitle": "Title",
@@ -57,19 +61,21 @@
                 "deleteSuccess": "The menu item has been deleted.",
                 "deleteError": "The menu item could not be deleted."
             },
-            "labelLanguage": "Language",
             "expandAll": "Expand all",
             "collapseAll": "Collapse all",
-            "entryCount": "{count} entry | {count} entries",
-            "createModalTitle": "Add menu item",
-            "editModalTitle": "Edit menu item",
+            "searchEmptyHeadline": "No matching menu items",
+            "addChild": "Add subitem",
+            "sectionBasics": "Basics",
+            "sectionTarget": "Target",
+            "sectionAccess": "Grouping & access",
             "helpTitle": "Label in {language}. Without a title the entry keeps the label of its module.",
             "labelGroup": "Group",
             "placeholderGroup": "general",
-            "helpGroup": "Optional. Entries of the same group are listed together.",
+            "helpGroup": "Top level entries only. Entries sharing the key are listed as one group in the navigation.",
             "labelGroupTitle": "Group name",
             "placeholderGroupTitle": "General",
             "helpGroupTitle": "Shown as the group heading in {language}.",
+            "placeholderSearchBar": "Search menu items...",
             "groups": {
                 "general": "General",
                 "customer": "Customers",
@@ -209,8 +215,10 @@
         "users": {
             "general": {
                 "placeholderSearchBar": "Find users…",
-                "labelCreateNewUser": "Create new user",
-                "cardLabel": "Users"
+                "labelCreateNewUser": "Create new user"
+            },
+            "list": {
+                "titleSidebarItemRefresh": "Refresh list"
             },
             "user-grid": {
                 "labelUsername": "User name",
@@ -218,6 +226,7 @@
                 "labelRoles": "Roles",
                 "labelEmail": "Email address",
                 "status": "Status",
+                "labelCreatedAt": "Created at",
                 "titleModalDelete": "Delete user",
                 "textModalDelete": "Do you really want to delete the user \"{name}\"?",
                 "notification": {
@@ -340,11 +349,7 @@
             },
             "filter": {
                 "labelRole": "Role",
-                "labelStatus": "Status",
-                "allRoles": "All roles",
-                "allStatus": "All statuses",
-                "statusActive": "Active",
-                "statusInactive": "Inactive"
+                "labelStatus": "Status"
             },
             "emptyState": {
                 "noUserTitle": "No users yet",

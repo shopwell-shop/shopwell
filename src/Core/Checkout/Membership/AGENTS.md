@@ -122,9 +122,12 @@ Rule of thumb: **rename the code, not the sentence.** If a snippet key says `ord
 are also prepared to migrate every theme.
 
 The page, its component and its menu key follow the code, not the sentence: `sw-membership-purchase-list`,
-route `sw.settings.membership.purchases`, navigation id and `CoreAdminMenuProvider` internal key
-`sw-membership-purchases`. The twig blocks of that page are still named `sw_loyalty_order_list*` - a block
-name is what a plugin extends, so it is not renamed along with the directory.
+route `sw.membership.purchases` in the dedicated module `sw-membership`, navigation id and
+`CoreAdminMenuProvider` internal key `sw-membership-purchases`. The orders queue is its own module on
+purpose: a route of the settings module with `parentPath: 'sw.order.index'` highlighted both entries of
+the orders menu at once, and the settings module only maintains tiers and plans. The twig blocks of that
+page are still named `sw_loyalty_order_list*` - a block name is what a plugin extends, so it is not
+renamed along with the directory.
 
 
 ## Where a new capability goes

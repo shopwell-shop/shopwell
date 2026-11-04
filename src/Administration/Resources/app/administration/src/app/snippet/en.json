@@ -1070,6 +1070,7 @@
       "customer": "Customer | Customers",
       "customer_address": "Address | Addresses",
       "customer_group": "Customer group | Customer groups",
+      "admin_menu_item": "Menu item | Menu items",
       "customer_wallet_transaction": "Wallet transaction | Wallet transactions",
       "extension": "Extension | Extensions",
       "integration": "Integration | Integrations",
