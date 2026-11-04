@@ -7,6 +7,7 @@ use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Checkout\Customer\CustomerEntity;
 use Shopwell\Core\Checkout\Loyalty\SalesChannel\LoyaltyRoute;
 use Shopwell\Core\Checkout\Loyalty\SalesChannel\LoyaltyRouteResponse;
+use Shopwell\Core\Checkout\Loyalty\Service\LoyaltyTierProgress;
 use Shopwell\Core\Framework\Adapter\Translation\AbstractTranslator;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Struct\ArrayStruct;
@@ -132,11 +133,14 @@ class AccountRewardsPageLoaderTest extends TestCase
         $translator = static::createStub(AbstractTranslator::class);
         $translator->method('trans')->willReturn($translated);
 
+        // the real projection, not a stub: what tier the page prints is exactly what this test is about,
+        // and the projection is pure - no repository, no context, nothing to isolate
         $loader = new AccountRewardsPageLoader(
             $genericLoader,
             $this->eventDispatcher,
             $loyaltyRoute,
-            $translator
+            $translator,
+            new LoyaltyTierProgress()
         );
 
         return $loader->load(new Request(), static::createStub(SalesChannelContext::class), new CustomerEntity());

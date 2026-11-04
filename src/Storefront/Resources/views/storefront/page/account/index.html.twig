@@ -3,6 +3,16 @@
 {% block page_account_main_content %}
     {% block page_account_overview %}
         <div class="account-overview">
+            {% block page_account_overview_welcome %}
+                <div class="account-welcome">
+                    <h1 class="account-welcome-title">{{ 'account.myAccount'|trans|sw_sanitize }}</h1>
+
+                    {% block page_account_overview_welcome_intro %}
+                        <p class="account-welcome-intro">{{ 'account.overviewInfo'|trans|sw_sanitize }}</p>
+                    {% endblock %}
+                </div>
+            {% endblock %}
+
             {% block page_account_overview_shipping_warning %}
                 {# A customer can register without an address and add it later during checkout. #}
                 {% set defaultShippingAddress = context.customer.defaultShippingAddress %}
@@ -29,58 +39,338 @@
                 {% endif %}
             {% endblock %}
 
-            {% block page_account_overview_welcome %}
-                <div class="account-welcome">
-                    <h1>{{ 'account.overviewTitle'|trans|sw_sanitize }}</h1>
+            {#
+                KPI row. Every number is loaded by `AccountOverviewPageLoader` through a store-api
+                route; the wallet and the points cards disappear completely when the shop switched
+                that feature off, so a disabled feature never shows up as a zero.
+            #}
+            {% block page_account_overview_kpi %}
+                <div class="account-kpi-row">
+                    {% block page_account_overview_kpi_pending_payment %}
+                        <div class="account-kpi">
+                            <span class="account-kpi-label">
+                                {% sw_icon 'clock' style { size: 'sm' } %}
+                                {{ 'account.overviewKpiPendingPayment'|trans|sw_sanitize }}
+                            </span>
+                            <span class="account-kpi-value">
+                                {{ page.pendingPaymentCount }}<small>{{ 'account.overviewKpiUnit'|trans|sw_sanitize }}</small>
+                            </span>
+                        </div>
+                    {% endblock %}
 
-                    {% block page_account_overview_welcome_intro %}
-                        <p>{{ 'account.overviewInfo'|trans|sw_sanitize }}</p>
+                    {% block page_account_overview_kpi_pending_delivery %}
+                        <div class="account-kpi">
+                            <span class="account-kpi-label">
+                                {% sw_icon 'truck' style { size: 'sm' } %}
+                                {{ 'account.overviewKpiPendingDelivery'|trans|sw_sanitize }}
+                            </span>
+                            <span class="account-kpi-value">
+                                {{ page.pendingDeliveryCount }}<small>{{ 'account.overviewKpiUnit'|trans|sw_sanitize }}</small>
+                            </span>
+                        </div>
+                    {% endblock %}
+
+                    {% block page_account_overview_kpi_wallet %}
+                        {% if page.walletBalance is not null %}
+                            <div class="account-kpi">
+                                <span class="account-kpi-label">
+                                    {% sw_icon 'money-wallet' style { size: 'sm' } %}
+                                    {{ 'account.overviewKpiWallet'|trans|sw_sanitize }}
+                                </span>
+                                <span class="account-kpi-value">
+                                    {{ page.walletBalance|currency(context.currency.isoCode) }}
+                                </span>
+                            </div>
+                        {% endif %}
+                    {% endblock %}
+
+                    {% block page_account_overview_kpi_points %}
+                        {% if page.rewards %}
+                            <div class="account-kpi">
+                                <span class="account-kpi-label">
+                                    {% sw_icon 'sparkles' style { size: 'sm' } %}
+                                    {{ 'account.rewardsPointsBalance'|trans|sw_sanitize }}
+                                </span>
+                                <span class="account-kpi-value">{{ page.rewards.pointsBalance }}</span>
+                            </div>
+                        {% endif %}
+                    {% endblock %}
+                </div>
+            {% endblock %}
+
+            {% block page_account_overview_newest_order %}
+                <div class="account-panel account-overview-newest-order">
+                    <div class="account-panel-head">
+                        {% block page_account_overview_newest_order_title %}
+                            <h2 class="account-panel-title">{{ 'account.overviewNewestOrderHeader'|trans|sw_sanitize }}</h2>
+                        {% endblock %}
+
+                        {% block page_account_overview_newest_order_all %}
+                            <a class="account-link-muted" href="{{ path('frontend.account.order.page') }}">
+                                {{ 'account.overviewAllOrders'|trans|sw_sanitize }}
+                            </a>
+                        {% endblock %}
+                    </div>
+
+                    {% block page_account_overview_newest_order_content %}
+                        {% block page_account_overview_newest_order_table %}
+                            {% set recentOrders = page.recentOrders %}
+
+                            {% if recentOrders is empty %}
+                                {% block page_account_overview_newest_order_empty %}
+                                    <div class="account-empty">
+                                        {% sw_icon 'bag' style { size: 'lg' } %}
+                                        <p class="account-empty-text">{{ 'account.overviewOrdersEmpty'|trans|sw_sanitize }}</p>
+                                        <a class="btn btn-primary btn-sm" href="{{ path('frontend.home.page') }}">
+                                            {{ 'checkout.continueShopping'|trans|sw_sanitize }}
+                                        </a>
+                                    </div>
+                                {% endblock %}
+                            {% else %}
+                                <div class="table-responsive account-order-table-wrapper">
+                                    <table class="table account-order-table">
+                                        <thead>
+                                            <tr>
+                                                <th scope="col">{{ 'account.orderReturnColumnOrder'|trans|sw_sanitize }}</th>
+                                                <th scope="col" class="account-order-date">{{ 'account.overviewOrderColumnDate'|trans|sw_sanitize }}</th>
+                                                <th scope="col">{{ 'account.overviewOrderColumnStatus'|trans|sw_sanitize }}</th>
+                                                <th scope="col" class="account-order-payment">{{ 'account.orderItemColumnPaymentMethod'|trans|sw_sanitize }}</th>
+                                                <th scope="col" class="text-end">{{ 'account.orderItemColumnTotal'|trans|sw_sanitize }}</th>
+                                                <th scope="col" class="text-end">{{ 'account.orderActions'|trans|sw_sanitize }}</th>
+                                            </tr>
+                                        </thead>
+
+                                        {% block page_account_overview_newest_order_table_body %}
+                                            <tbody>
+                                                {% for order in recentOrders %}
+                                                    {% set orderState = order.stateMachineState.technicalName %}
+                                                    {% set stateBadge = {
+                                                        'open': 'badge-warn',
+                                                        'in_progress': 'badge-info',
+                                                        'completed': 'badge-new',
+                                                        'cancelled': 'badge-neutral'
+                                                    } %}
+
+                                                    {# the same guarded read the order history uses:
+                                                       `primaryOrderTransaction` only exists from 6.8 on #}
+                                                    {% if feature('v6.8.0.0') %}
+                                                        {% set orderPaymentMethod = order.primaryOrderTransaction.paymentMethod %}
+                                                    {% else %}
+                                                        {% set orderPaymentMethod = order.transactions|last.paymentMethod %}
+                                                    {% endif %}
+
+                                                    {# a seeded order can live without a deep link code;
+                                                       the list page is the honest fallback then #}
+                                                    {% set orderHref = order.deepLinkCode
+                                                        ? path('frontend.account.order.single.page', { deepLinkCode: order.deepLinkCode })
+                                                        : path('frontend.account.order.page') %}
+
+                                                    <tr>
+                                                        <td>
+                                                            <a class="account-order-number" href="{{ orderHref }}">
+                                                                {{ order.orderNumber|sw_sanitize }}
+                                                            </a>
+                                                        </td>
+                                                        <td class="account-order-date">
+                                                            {{ order.orderDateTime|format_date('short', locale=app.request.locale) }}
+                                                        </td>
+                                                        <td>
+                                                            <span class="badge {{ stateBadge[orderState]|default('badge-neutral') }}">
+                                                                {{ order.stateMachineState.translated.name }}
+                                                            </span>
+                                                        </td>
+                                                        <td class="account-order-payment">
+                                                            {{ orderPaymentMethod.translated.name }}
+                                                        </td>
+                                                        <td class="text-end account-order-total">
+                                                            {{ order.amountTotal|currency(order.currency.isoCode) }}
+                                                        </td>
+                                                        <td class="text-end">
+                                                            <a class="btn btn-secondary btn-sm" href="{{ orderHref }}">
+                                                                {{ 'account.orderActionView'|trans|sw_sanitize }}
+                                                            </a>
+                                                        </td>
+                                                    </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        {% endblock %}
+                                    </table>
+                                </div>
+                            {% endif %}
+                        {% endblock %}
                     {% endblock %}
                 </div>
             {% endblock %}
 
             {% block page_account_overview_main %}
-                <div class="row">
-                    {% block page_account_overview_profile %}
-                        <div class="col-lg-6 card-col account-overview-card account-overview-profile">
-                            {% block page_account_overview_profile_card %}
-                                <div class="card">
-                                    <div class="card-body">
-                                        {% block page_account_overview_profile_title %}
-                                            <h2 class="card-title">
-                                                {{ 'account.overviewProfileHeader'|trans|sw_sanitize }}
-                                            </h2>
+                <div class="row g-4 account-overview-main">
+                    {% block page_account_overview_membership %}
+                        {% if page.rewards %}
+                            <div class="col-lg-7">
+                                <div class="account-panel account-panel-full">
+                                    <div class="account-panel-head">
+                                        {% block page_account_overview_membership_title %}
+                                            <h2 class="account-panel-title">{{ 'account.rewardsLink'|trans|sw_sanitize }}</h2>
                                         {% endblock %}
 
-                                        {% block page_account_overview_profile_content %}
-                                            <p>
-                                                {% if context.customer.gender and context.customer.gender != 'not_specified' %}
-                                                    {% for gender in page.genders %}
-                                                        {% if gender.technicalName == context.customer.gender %}
-                                                            {{ gender.translated.label }}
-                                                        {% endif %}
-                                                    {% endfor %}
+                                        {% block page_account_overview_membership_action %}
+                                            <a class="account-link-muted" href="{{ path('frontend.account.membership.page') }}">
+                                                {{ 'account.membershipLink'|trans|sw_sanitize }}
+                                            </a>
+                                        {% endblock %}
+                                    </div>
+
+                                    {% block page_account_overview_membership_tier %}
+                                        <div class="account-tier-line">
+                                            {% if page.currentTier %}
+                                                <span class="badge badge-info">{{ page.currentTier.name }}</span>
+                                            {% else %}
+                                                <span class="badge badge-neutral">{{ 'account.rewardsNoTier'|trans|sw_sanitize }}</span>
+                                            {% endif %}
+
+                                            {% if page.nextTier and page.tierPointsToNext is not null %}
+                                                <span class="account-tier-hint">
+                                                    {{ 'account.overviewTierToNext'|trans({
+                                                        '%tier%': page.nextTier.name,
+                                                        '%points%': page.tierPointsToNext
+                                                    })|sw_sanitize }}
+                                                </span>
+                                            {% endif %}
+                                        </div>
+                                    {% endblock %}
+
+                                    {% block page_account_overview_membership_progress %}
+                                        {% if page.nextTier %}
+                                            <div class="account-progress"
+                                                 role="progressbar"
+                                                 aria-valuenow="{{ page.tierProgress }}"
+                                                 aria-valuemin="0"
+                                                 aria-valuemax="100"
+                                                 aria-label="{{ 'account.overviewTierProgressAria'|trans({
+                                                     '%tier%': page.currentTier ? page.currentTier.name : '',
+                                                     '%next%': page.nextTier.name,
+                                                     '%points%': page.tierPointsToNext,
+                                                     '%percent%': page.tierProgress
+                                                 })|striptags }}">
+                                                <span class="account-progress-bar" style="width: {{ page.tierProgress }}%"></span>
+                                            </div>
+                                        {% endif %}
+                                    {% endblock %}
+
+                                    {% block page_account_overview_membership_benefits %}
+                                        {% set benefits = page.currentTier ? page.currentTier.benefits|default({}) : {} %}
+                                        {% set hasBenefit = benefits.free_shipping|default(0)
+                                            or benefits.cart_discount|default(0) > 0
+                                            or benefits.earn_multiplier|default(1) > 1
+                                            or benefits.birthday_gift|default(0) > 0
+                                            or benefits.points_expiry_days|default(0) > 0 %}
+
+                                        {% if hasBenefit %}
+                                            <ul class="account-benefits">
+                                                {% if benefits.free_shipping|default(0) %}
+                                                    <li>{% sw_icon 'checkmark' style { size: 'sm' } %}{{ 'account.benefitFreeShipping'|trans|sw_sanitize }}</li>
                                                 {% endif %}
-                                                {{ context.customer.name }}
-                                            </p>
+
+                                                {% if benefits.cart_discount|default(0) > 0 %}
+                                                    <li>{% sw_icon 'checkmark' style { size: 'sm' } %}{{ 'account.benefitCartDiscount'|trans({'%percent%': benefits.cart_discount})|sw_sanitize }}</li>
+                                                {% endif %}
+
+                                                {% if benefits.earn_multiplier|default(1) > 1 %}
+                                                    <li>{% sw_icon 'checkmark' style { size: 'sm' } %}{{ 'account.rewardsEarnMultiplier'|trans({'%tier%': page.currentTier.name, '%multiplier%': benefits.earn_multiplier})|sw_sanitize }}</li>
+                                                {% endif %}
+
+                                                {% if benefits.birthday_gift|default(0) > 0 %}
+                                                    <li>{% sw_icon 'checkmark' style { size: 'sm' } %}{{ 'account.benefitBirthdayGift'|trans({'%amount%': benefits.birthday_gift|currency(context.currency.isoCode)})|sw_sanitize }}</li>
+                                                {% endif %}
+
+                                                {% if benefits.points_expiry_days|default(0) > 0 %}
+                                                    <li>{% sw_icon 'checkmark' style { size: 'sm' } %}{{ 'account.benefitPointsExpiry'|trans({'%days%': benefits.points_expiry_days})|sw_sanitize }}</li>
+                                                {% endif %}
+                                            </ul>
+                                        {% endif %}
+                                    {% endblock %}
+
+                                    {% block page_account_overview_membership_links %}
+                                        <div class="account-panel-actions">
+                                            <a class="btn btn-primary btn-sm" href="{{ path('frontend.account.membership.page') }}">
+                                                {{ 'account.membershipLink'|trans|sw_sanitize }}
+                                            </a>
+                                            <a class="btn btn-secondary btn-sm" href="{{ path('frontend.account.rewards.page') }}">
+                                                {{ 'account.rewardsLink'|trans|sw_sanitize }}
+                                            </a>
+                                        </div>
+                                    {% endblock %}
+                                </div>
+                            </div>
+                        {% endif %}
+                    {% endblock %}
+
+                    {% block page_account_overview_profile %}
+                        <div class="{{ page.rewards ? 'col-lg-5' : 'col-lg-12' }}">
+                            {% block page_account_overview_profile_card %}
+                                <div class="account-panel account-panel-full">
+                                    <div class="account-panel-head">
+                                        {% block page_account_overview_profile_title %}
+                                            <h2 class="account-panel-title">{{ 'account.profileTitle'|trans|sw_sanitize }}</h2>
+                                        {% endblock %}
+
+                                        {% block page_account_overview_profile_actions %}
+                                            {% block page_account_overview_profile_actions_content %}
+                                                <a class="account-link-muted" href="{{ path('frontend.account.profile.page') }}">
+                                                    {{ 'account.overviewChangeProfile'|trans|sw_sanitize }}
+                                                </a>
+                                            {% endblock %}
+                                        {% endblock %}
+                                    </div>
+
+                                    <div class="account-detail-grid">
+                                        {% block page_account_overview_profile_content %}
+                                            <div class="account-detail-item">
+                                                <span class="account-detail-label">{{ 'account.overviewProfileName'|trans|sw_sanitize }}</span>
+                                                <span class="account-detail-value">
+                                                    {% if context.customer.gender and context.customer.gender != 'not_specified' %}
+                                                        {% for gender in page.genders %}
+                                                            {% if gender.technicalName == context.customer.gender %}
+                                                                {{ gender.translated.label }}
+                                                            {% endif %}
+                                                        {% endfor %}
+                                                    {% endif %}
+                                                    {{ context.customer.name }}
+                                                </span>
+                                            </div>
+                                        {% endblock %}
+
+                                        {% block page_account_overview_profile_customer_number %}
+                                            <div class="account-detail-item">
+                                                <span class="account-detail-label">{{ 'account.overviewProfileCustomerNumber'|trans|sw_sanitize }}</span>
+                                                <span class="account-detail-value account-detail-mono">{{ context.customer.customerNumber }}</span>
+                                            </div>
+                                        {% endblock %}
+
+                                        {% block page_account_overview_profile_email %}
+                                            <div class="account-detail-item">
+                                                <span class="account-detail-label">{{ 'account.profileMailTitle'|trans|sw_sanitize }}</span>
+                                                <span class="account-detail-value">{{ context.customer.email|decodeIdnEmail }}</span>
+                                            </div>
+                                        {% endblock %}
+
+                                        {% block page_account_overview_profile_phone %}
+                                            <div class="account-detail-item">
+                                                <span class="account-detail-label">{{ 'account.profilePhoneNumberLabel'|trans|sw_sanitize }}</span>
+                                                <span class="account-detail-value">
+                                                    {% if context.customer.phoneNumber %}
+                                                        {{ context.customer.phoneNumber }}
+                                                    {% else %}
+                                                        {{ 'account.orderTrackingNotAvailable'|trans|sw_sanitize }}
+                                                    {% endif %}
+                                                </span>
+                                            </div>
                                         {% endblock %}
 
                                         {% block page_account_overview_profile_company %}
                                             {% sw_include '@Storefront/storefront/component/account/customer-overview-personal-company.html.twig' with {
                                                 customer: context.customer,
                                             } %}
-                                        {% endblock %}
-
-                                        {% block page_account_overview_profile_email %}
-                                            <p>
-                                                {{ context.customer.email|decodeIdnEmail }}
-                                            </p>
-                                        {% endblock %}
-
-                                        {% block page_account_overview_profile_actions %}
-                                            <div class="card-actions">
-                                                {% block page_account_overview_profile_actions_content %}{% endblock %}
-                                            </div>
                                         {% endblock %}
                                     </div>
                                 </div>
@@ -90,59 +380,33 @@
                 </div>
             {% endblock %}
 
-            {% block page_account_overview_newsletter %}
-                <div class="account-overview-card account-overview-newsletter">
-                    <div class="card">
-                        <div class="card-body">
-                            {% block page_account_overview_newsletter_title %}
-                                <h2 class="card-title">
-                                    {{ 'account.newsletterTitle'|trans|sw_sanitize }}
-                                </h2>
-                            {% endblock %}
-
-                            {% block page_account_overview_newsletter_content %}
-                                <div class="js-newsletter-wrapper">
-                                    {% sw_include '@Storefront/storefront/page/account/newsletter.html.twig' with { newsletterAccountPagelet: page.getNewsletterAccountPagelet() } %}
-                                </div>
-                            {% endblock %}
-                        </div>
+            {% block page_account_overview_addresses_include %}
+                <div class="account-panel account-overview-addressbook">
+                    <div class="account-panel-head">
+                        <h2 class="account-panel-title">{{ 'account.overviewAddressPanelTitle'|trans|sw_sanitize }}</h2>
+                        <a class="account-link-muted" href="{{ path('frontend.account.address.page') }}">
+                            {{ 'account.addressCreateBtn'|trans|sw_sanitize }}
+                        </a>
                     </div>
+
+                    {% sw_include '@Storefront/storefront/page/account/address.html.twig' %}
                 </div>
             {% endblock %}
 
-            {% block page_account_overview_addresses_include %}
-                {% sw_include '@Storefront/storefront/page/account/address.html.twig' %}
-            {% endblock %}
-
-            {% block page_account_overview_newest_order %}
-                {% if page.newestOrder %}
-                    <div class="account-overview-card account-overview-newest-order">
-                        <div class="card">
-                            <div class="card-body">
-                                {% block page_account_overview_newest_order_title %}
-                                    <h2 class="card-title">
-                                        {{ 'account.overviewNewestOrderHeader'|trans|sw_sanitize }}
-                                    </h2>
-                                {% endblock %}
-
-                                {% block page_account_overview_newest_order_content %}
-                                    {% block page_account_overview_newest_order_table %}
-                                        <div class="order-table">
-                                            {% block page_account_overview_newest_order_table_body %}
-                                                <div class="order-table-body"
-                                                     data-order-detail-loader="true">
-                                                    {% sw_include '@Storefront/storefront/page/account/order-history/order-item.html.twig' with {
-                                                        order: page.newestOrder
-                                                    } %}
-                                                </div>
-                                            {% endblock %}
-                                        </div>
-                                    {% endblock %}
-                                {% endblock %}
-                            </div>
-                        </div>
+            {% block page_account_overview_newsletter %}
+                <div class="account-panel account-overview-newsletter">
+                    <div class="account-panel-head">
+                        {% block page_account_overview_newsletter_title %}
+                            <h2 class="account-panel-title">{{ 'account.newsletterTitle'|trans|sw_sanitize }}</h2>
+                        {% endblock %}
                     </div>
-                {% endif %}
+
+                    {% block page_account_overview_newsletter_content %}
+                        <div class="js-newsletter-wrapper">
+                            {% sw_include '@Storefront/storefront/page/account/newsletter.html.twig' with { newsletterAccountPagelet: page.getNewsletterAccountPagelet() } %}
+                        </div>
+                    {% endblock %}
+                </div>
             {% endblock %}
         </div>
     {% endblock %}

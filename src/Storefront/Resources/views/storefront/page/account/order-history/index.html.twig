@@ -6,23 +6,79 @@
             {% block page_account_orders_welcome %}
                 <div class="account-welcome">
                     {% block page_account_orders_welcome_headline %}
-                        <h1>{{ 'account.ordersTitle'|trans|sw_sanitize }}</h1>
+                        <h1 class="account-welcome-title">{{ 'account.ordersTitle'|trans|sw_sanitize }}</h1>
                     {% endblock %}
 
                     {% block page_account_orders_welcome_intro %}
-                        <p>{{ 'account.ordersWelcome'|trans|sw_sanitize }}</p>
+                        <p class="account-welcome-intro">{{ 'account.ordersIntro'|trans|sw_sanitize }}</p>
                     {% endblock %}
                 </div>
+            {% endblock %}
+
+            {#
+                Status tag row (原型 `.sw-tag` row).
+
+                The numbers are the ones the loader counted with the very filter the tag stands for
+                (`page.orderStateCounts`), so a tag can never promise a different count than the list it
+                opens. The row sits outside the empty-state branch on purpose: it is the only way back
+                out of an empty filter.
+            #}
+            {% block page_account_orders_state_filter %}
+                <nav class="account-orders-filters"
+                     aria-label="{{ 'account.orderFilterAriaLabel'|trans|sw_sanitize }}">
+                    {% block page_account_orders_state_filter_list %}
+                        {% set filterLabels = {
+                            'all': 'account.orderFilterAll',
+                            'pending_payment': 'account.orderFilterPendingPayment',
+                            'pending_shipment': 'account.orderFilterPendingShipment',
+                            'pending_delivery': 'account.orderFilterPendingDelivery',
+                            'completed': 'account.orderFilterCompleted',
+                            'cancelled': 'account.orderFilterCancelled'
+                        } %}
+
+                        {% for filter, label in filterLabels %}
+                            {% set isActive = page.orderStateFilter == filter %}
+
+                            {% if filter == 'all' %}
+                                {% set filterParams = {} %}
+                            {% else %}
+                                {% set filterParams = { orderState: filter } %}
+                            {% endif %}
+
+                            <a class="sw-tag{{ isActive ? ' sw-tag--active' : '' }}"
+                               href="{{ path('frontend.account.order.page', filterParams) }}"
+                               {% if isActive %}aria-current="page"{% endif %}>
+                                <span class="sw-tag-label">{{ label|trans|sw_sanitize }}</span>
+                                <span class="sw-tag-count">{{ page.getOrderStateCount(filter) }}</span>
+                            </a>
+                        {% endfor %}
+                    {% endblock %}
+                </nav>
             {% endblock %}
 
             {% block page_account_orders_main %}
                 <div class="account-orders-main">
                     {% if page.orders.total == 0 %}
                         {% block page_account_orders_info_empty %}
-                            {% sw_include '@Storefront/storefront/utilities/alert.html.twig' with {
-                                type: 'warning',
-                                content: 'account.ordersInfoEmpty'|trans|sw_sanitize
-                            } %}
+                            {% if page.orderStateFilter == 'all' %}
+                                {# no orders at all: the only useful next step is the catalogue #}
+                                <div class="account-empty">
+                                    {% sw_icon 'bag' style { size: 'lg' } %}
+                                    <p class="account-empty-text">{{ 'account.ordersInfoEmpty'|trans|sw_sanitize }}</p>
+                                    <a class="btn btn-primary btn-sm" href="{{ path('frontend.home.page') }}">
+                                        {{ 'checkout.continueShopping'|trans|sw_sanitize }}
+                                    </a>
+                                </div>
+                            {% else %}
+                                {# the shop has orders, this tag has none: lead back to the full list #}
+                                <div class="account-empty">
+                                    {% sw_icon 'bag' style { size: 'lg' } %}
+                                    <p class="account-empty-text">{{ 'account.ordersEmptyInFilter'|trans|sw_sanitize }}</p>
+                                    <a class="btn btn-secondary btn-sm" href="{{ path('frontend.account.order.page') }}">
+                                        {{ 'account.orderFilterReset'|trans|sw_sanitize }}
+                                    </a>
+                                </div>
+                            {% endif %}
                         {% endblock %}
                     {% else %}
                         {% block page_account_orders_overview %}
@@ -60,6 +116,11 @@
                                               data-form-ajax-pagination="true">
 
                                             <input type="hidden" name="p" value="1">
+
+                                            {# paging posts back, so the active tag has to travel with it #}
+                                            {% if page.orderStateFilter != 'all' %}
+                                                <input type="hidden" name="orderState" value="{{ page.orderStateFilter }}">
+                                            {% endif %}
 
                                             {% sw_include '@Storefront/storefront/component/pagination.html.twig' with {entities: page.orders}  %}
                                         </form>
