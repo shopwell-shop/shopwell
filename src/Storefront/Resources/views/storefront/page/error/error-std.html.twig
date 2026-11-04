@@ -1,1 +1,32 @@
 {% sw_extends '@Storefront/storefront/page/error/_page.html.twig' %}
+
+{% block base_content %}
+    <div class="content-main">
+        {% block std_error_content %}
+            <div class="container mt-5">
+                <div class="error-page">
+                    {% block std_error_code %}
+                        <p class="error-page__code" aria-hidden="true">500</p>
+                    {% endblock %}
+
+                    {% block std_error_header %}
+                        <h1 class="error-page__title">{{ 'general.errorPageHeader'|trans|sw_sanitize }}</h1>
+                    {% endblock %}
+
+                    {% block std_error_description %}
+                        <p class="error-page__text">{{ 'general.errorPageDescription'|trans|sw_sanitize }}</p>
+                    {% endblock %}
+
+                    {% block std_error_return %}
+                        <div class="error-page__actions">
+                            <a href="{{ path('frontend.home.page') }}"
+                               class="btn btn-primary justify-center">
+                                {{ 'general.404ErrorReturn'|trans|sw_sanitize }}
+                            </a>
+                        </div>
+                    {% endblock %}
+                </div>
+            </div>
+        {% endblock %}
+    </div>
+{% endblock %}

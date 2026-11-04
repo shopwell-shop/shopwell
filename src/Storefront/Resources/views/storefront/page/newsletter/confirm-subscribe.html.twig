@@ -1,8 +1,35 @@
 {% sw_extends '@Storefront/storefront/base.html.twig' %}
 
 {% block base_content %}
-    {% sw_include '@Storefront/storefront/utilities/alert.html.twig' with {
-        type: 'success',
-        content: 'newsletter.subscriptionCompleted'|trans|sw_sanitize
-    } %}
+    {% block page_newsletter_confirm %}
+        <div class="newsletter-confirm">
+            <div class="container">
+                {% block page_newsletter_confirm_card %}
+                    <div class="newsletter-confirm__card">
+                        {% block page_newsletter_confirm_icon %}
+                            <span class="newsletter-confirm__icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" focusable="false">
+                                    <path d="M4 12.5l5 5L20 6.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </span>
+                        {% endblock %}
+
+                        {% block page_newsletter_confirm_title %}
+                            <h1 class="newsletter-confirm__title">{{ 'newsletter.subscriptionCompleted'|trans|sw_sanitize }}</h1>
+                        {% endblock %}
+
+                        {% block page_newsletter_confirm_text %}
+                            <p class="newsletter-confirm__text">{{ 'newsletter.subscriptionConfirmationSuccess'|trans|sw_sanitize }}</p>
+                        {% endblock %}
+
+                        {% block page_newsletter_confirm_actions %}
+                            <a href="{{ path('frontend.home.page') }}" class="btn btn-primary">
+                                {{ 'general.homeLink'|trans|sw_sanitize }}
+                            </a>
+                        {% endblock %}
+                    </div>
+                {% endblock %}
+            </div>
+        </div>
+    {% endblock %}
 {% endblock %}
