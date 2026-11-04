@@ -1,0 +1,21 @@
+{
+    "sw-theme": {
+        "Storefront": {
+            "default": {
+                "footer": {
+                    "default": {
+                        "sw-footer-social-wechat": {
+                            "label": "微信公众号链接"
+                        },
+                        "sw-footer-social-phone": {
+                            "label": "客服电话链接"
+                        },
+                        "sw-footer-social-website": {
+                            "label": "官方网站链接"
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
