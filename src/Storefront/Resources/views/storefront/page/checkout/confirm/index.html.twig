@@ -29,6 +29,37 @@
             </span>
         {% endblock %}
 
+        {% block page_checkout_steps %}
+            <nav class="checkout-steps" aria-label="{{ 'checkout.stepsAriaLabel'|trans|striptags }}">
+                {% block page_checkout_steps_cart %}
+                    <span class="checkout-step is-done">
+                        <a class="checkout-step-link" href="{{ path('frontend.checkout.cart.page') }}">
+                            <span class="checkout-step-num" aria-hidden="true">1</span>
+                            {{ 'checkout.stepsCart'|trans|sw_sanitize }}
+                        </a>
+                    </span>
+                {% endblock %}
+
+                <span class="checkout-step-sep" aria-hidden="true">&rsaquo;</span>
+
+                {% block page_checkout_steps_confirm %}
+                    <span class="checkout-step is-active" aria-current="step">
+                        <span class="checkout-step-num" aria-hidden="true">2</span>
+                        {{ 'checkout.stepsConfirm'|trans|sw_sanitize }}
+                    </span>
+                {% endblock %}
+
+                <span class="checkout-step-sep" aria-hidden="true">&rsaquo;</span>
+
+                {% block page_checkout_steps_finish %}
+                    <span class="checkout-step">
+                        <span class="checkout-step-num" aria-hidden="true">3</span>
+                        {{ 'checkout.stepsFinish'|trans|sw_sanitize }}
+                    </span>
+                {% endblock %}
+            </nav>
+        {% endblock %}
+
         {% block page_checkout_confirm_alerts %}
             {% block page_checkout_confirm_violations %}
                 {% for violation in formViolations.getViolations() %}

@@ -1,8 +1,123 @@
-.checkout-aside-summary {
-    background-color: $light;
+/*
+ * Checkout — aside summary & actions (skin)
+ * ==============================================
+ * Visual source of truth: theme-prototype/cart.html / checkout.html `.sw-summary`
+ *
+ * The structural layer already makes `.checkout-aside-container` sticky on the
+ * cart page; the skin only retunes the offset (below the sticky navbar) and
+ * paints the panel. The confirm page gets the same sticky behaviour from
+ * page/checkout/_confirm.scss (skin) once the two-column grid is active.
+ */
+
+.checkout {
+    /*
+     * Summary panel (原型 .sw-summary)
+     * ---------------------- */
+    .checkout-aside-summary {
+        background: $sw-background-color;
+        border: 1px solid $sw-border-subtle;
+        box-shadow: $sw-shadow;
+        padding: $sw-space-6; // 24px, 原型 1.5rem
+    }
+
+    .checkout-aside-summary-header {
+        color: $sw-gray-1000;
+        font-size: $sw-font-size-md; // 16px, 原型 h2.h6
+        font-weight: 700;
+        margin-bottom: $sw-space-4;
+    }
+
+    // 原型 .sw-summary-row: 14px meta rows, tabular numbers
+    .checkout-aside-summary-label {
+        color: $sw-gray-800;
+        font-weight: 400;
+    }
+
+    .checkout-aside-summary-value {
+        color: $sw-gray-1000;
+        font-variant-numeric: tabular-nums;
+        font-weight: 600;
+    }
+
+    .checkout-aside-summary-list {
+        margin: 0;
+
+        > dt,
+        > dd {
+            font-size: $sw-font-size-sm;
+            padding-block: $sw-space-1;
+        }
+    }
+
+    // 原型 .sw-summary-total: divider row, headline price
+    .checkout-aside-summary-total {
+        border-top: 1px solid $sw-border-subtle;
+        color: $sw-gray-1000;
+        font-size: $sw-font-size-sm;
+        font-weight: 700;
+        margin-top: $sw-space-3;
+        padding-top: $sw-space-4;
+
+        &.checkout-aside-summary-value {
+            font-size: 1.5rem; // 24px, 原型 .sw-price in total
+            line-height: 1.2;
+        }
+    }
+
+    .checkout-aside-summary-total-rounded {
+        color: $sw-gray-1000;
+        font-size: $sw-font-size-sm;
+        font-weight: 700;
+    }
+
+    /*
+     * Aside actions: promotion code, wallet & loyalty deduction boxes
+     * ----------------------
+     * 原型 .sw-deduct: dashed border, canvas surface, dense labels. The
+     * components keep their DOM and `data-*` plugin hooks — paint only.
+     */
+    .checkout-aside-action {
+        margin-top: $sw-space-4;
+    }
+
+    .checkout-aside-add-code {
+        .form-control,
+        button {
+            height: $sw-control-h;
+        }
+    }
+
+    .checkout-aside-wallet,
+    .checkout-aside-loyalty {
+        background: $sw-gray-50;
+        border: 1px dashed $sw-border-strong;
+        padding: $sw-space-5; // 20px ≈ 原型 1.125rem
+
+        label {
+            color: $sw-gray-1000;
+            font-size: $sw-font-size-sm;
+            font-weight: 600;
+            margin-bottom: $sw-space-2;
+        }
+
+        .checkout-aside-wallet-balance,
+        .checkout-aside-loyalty-balance {
+            color: $sw-text-meta;
+            font-size: $sw-font-size-xs;
+        }
+
+        .form-control,
+        button {
+            height: $sw-control-h;
+        }
+    }
 }
 
-.checkout-aside-summary,
-.checkout-aside-products {
-    padding: $spacer;
+// Cart route: keep the aside under the sticky navbar instead of the viewport
+// edge (structural default is `top: 0`).
+.is-act-cartpage, // @deprecated tag:v6.8.0 - body class alias
+.is-active-route-frontend-checkout-cart-page {
+    .checkout .checkout-aside-container {
+        top: 96px;
+    }
 }

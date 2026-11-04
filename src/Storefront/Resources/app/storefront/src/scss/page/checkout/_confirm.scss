@@ -18,7 +18,6 @@
 
             @include media-breakpoint-up(lg) {
                 @include make-col(8);
-                @include make-col-offset(2);
             }
         }
 
@@ -48,6 +47,7 @@
 
             @include media-breakpoint-up(lg) {
                 @include make-col(4);
+                @include make-col-offset(0);
             }
         }
 
