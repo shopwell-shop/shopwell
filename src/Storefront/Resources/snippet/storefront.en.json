@@ -4,10 +4,12 @@
             "title": "Blog",
             "empty": "No entries yet.",
             "filterAll": "All",
-            "filterLabel": "Filter by category"
+            "filterLabel": "Filter by category",
+            "subtitle": "Buyer field notes, buying guides and industry observations, updated weekly."
         },
         "card": {
-            "readingTime": "%minutes% min read"
+            "readingTime": "%minutes% min read",
+            "readMore": "Read the full story"
         },
         "detail": {
             "toc": "Contents",
@@ -52,6 +54,12 @@
                 "error": "Your comment could not be submitted. Please check the fields and try again.",
                 "flood": "You just commented on this entry. Please wait a minute before writing the next one."
             }
+        },
+        "sidebar": {
+            "categoriesTitle": "Categories",
+            "latestTitle": "Latest entries",
+            "newsletterTitle": "Newsletter",
+            "newsletterText": "One email a week, only about things worth buying."
         }
     },
     "global": {
@@ -125,7 +133,9 @@
             "last": "Last page",
             "page": "Page",
             "title": "Pagination"
-        }
+        },
+        "errorPageHeader": "Something went wrong",
+        "errorPageDescription": "Sorry, an error occurred while processing this page. Please try again later or return to the shop."
     },
     "header": {
         "logoLink": "Go to homepage",
@@ -1060,7 +1070,9 @@
         "wishlistEmptyDescription": "Keep an eye on products you like by adding them to your wishlist.",
         "deliveryTimeRestock": "{1} Available in 1 day, delivery time %name%|[0,Inf[ Available in %restockTime% days, delivery time %name%",
         "deliveryShipping": "This product will be released on",
-        "remove": "Remove %product_name% from wishlist"
+        "remove": "Remove %product_name% from wishlist",
+        "subtitle": "%count% items in your wishlist",
+        "continueShopping": "Keep shopping"
     },
     "footer": {
         "serviceHotlineHeadline": "Service hotline",
@@ -1078,7 +1090,10 @@
         "includeVatTextPage": "All prices incl. VAT plus <a href=\"%url%\">shipping costs</a> and possible delivery charges, if not stated otherwise.",
         "excludeVatText": "%star%All prices excl. VAT plus <a data-ajax-modal=\"true\" href=\"%url%\" data-url=\"%url%\">shipping costs</a> and possible delivery charges, if not stated otherwise.",
         "excludeVatTextPage": "All prices excl. VAT plus <a href=\"%url%\">shipping costs</a> and possible delivery charges, if not stated otherwise.",
-        "copyrightInfo": "Built with Shopwell"
+        "copyrightInfo": "Built with Shopwell",
+        "socialWechat": "WeChat official account",
+        "socialPhone": "Customer service",
+        "socialWebsite": "Website"
     },
     "captcha": {
         "googleReCaptcha": {
