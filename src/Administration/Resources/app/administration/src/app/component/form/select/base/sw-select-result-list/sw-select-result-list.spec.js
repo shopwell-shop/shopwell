@@ -122,4 +122,27 @@ describe('components/sw-select-result-list', () => {
             warnSpy.mockRestore();
         },
     );
+
+    it('ignores keydown events which carry no key', async () => {
+        const addEventListenerSpy = jest.spyOn(document, 'addEventListener');
+
+        const wrapper = mount(await wrapTestComponent('sw-select-result-list', { sync: true }), {
+            global: {
+                stubs: {
+                    'sw-popover': await wrapTestComponent('sw-popover', { sync: true }),
+                    'sw-popover-deprecated': await wrapTestComponent('sw-popover-deprecated', { sync: true }),
+                },
+            },
+        });
+        await flushPromises();
+
+        const keyDownListener = addEventListenerSpy.mock.calls.find(([type]) => type === 'keydown')?.[1];
+        expect(keyDownListener).toBeDefined();
+
+        // Plain events dispatched under the `keydown` name have no `key` property at all
+        expect(() => keyDownListener(new Event('keydown'))).not.toThrow();
+
+        addEventListenerSpy.mockRestore();
+        wrapper.unmount();
+    });
 });

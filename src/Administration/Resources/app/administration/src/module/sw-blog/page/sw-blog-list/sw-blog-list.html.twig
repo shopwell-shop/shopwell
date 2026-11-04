@@ -37,25 +37,6 @@
 
     {% block sw_blog_list_smart_bar_actions %}
     <template #smart-bar-actions>
-        {% block sw_blog_list_smart_bar_actions_comments %}
-        <mt-button
-            class="sw-blog-list__button-comments"
-            variant="secondary"
-            size="default"
-            @click="onOpenCommentList"
-        >
-            {{ $t('sw-blog.list.textCommentPending') }}
-            <mt-badge
-                v-if="pendingCommentCount > 0"
-                class="sw-blog-list__comment-count"
-                variant="attention"
-                size="small"
-            >
-                {{ pendingCommentCount }}
-            </mt-badge>
-        </mt-button>
-        {% endblock %}
-
         {% block sw_blog_list_smart_bar_actions_add %}
         <mt-button
             class="sw-blog-list__button-create"
@@ -191,6 +172,18 @@
                             {{ item.publishedAt || $t('sw-blog.list.textUnscheduled') }}
                         </span>
                     </div>
+                </template>
+                {% endblock %}
+
+                {% block sw_blog_list_grid_column_type %}
+                <template #column-type="{ item }">
+                    <mt-badge
+                        v-if="item.type"
+                        variant="neutral"
+                        size="small"
+                    >
+                        {{ typeLabel(item.type) }}
+                    </mt-badge>
                 </template>
                 {% endblock %}
 

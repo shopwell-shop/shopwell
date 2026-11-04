@@ -196,7 +196,7 @@ export default Shopwell.Component.wrapComponentConfig({
                     value: this.currentMetrics.monthlyPoints.toLocaleString(),
                     unit: this.$t('sw-dashboard.metrics.pointsUnit'),
                     delta: null,
-                    link: { name: 'sw.settings.membership.purchases', query: {} },
+                    link: { name: 'sw.membership.purchases', query: {} },
                     showComparison: false,
                 });
             }

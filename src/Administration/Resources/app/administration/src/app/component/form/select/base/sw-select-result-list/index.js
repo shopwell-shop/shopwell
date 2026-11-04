@@ -156,6 +156,11 @@ export default {
         },
 
         navigate({ key }) {
+            // Plain events dispatched under the `keydown` name have no `key` at all
+            if (typeof key !== 'string') {
+                return;
+            }
+
             key = key.toUpperCase();
             if (key === 'ARROWDOWN') {
                 this.navigateNext();

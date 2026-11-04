@@ -103,7 +103,7 @@ async function createWrapper(privileges: string[] = []): Promise<VueWrapper> {
     return wrapper;
 }
 
-describe('src/module/sw-membership/page/sw-membership-tier-create', () => {
+describe('src/module/sw-settings-membership/page/sw-membership-tier-create', () => {
     beforeEach(() => {
         loyaltyTierRepository.create.mockClear();
         loyaltyTierRepository.save.mockClear();

@@ -150,7 +150,7 @@ async function createWrapper(
     return wrapper;
 }
 
-describe('src/module/sw-membership/page/sw-membership-tier-list', () => {
+describe('src/module/sw-settings-membership/page/sw-membership-tier-list', () => {
     beforeEach(() => {
         searchRankingServiceMock.getSearchFieldsByEntity.mockResolvedValue({
             name: (searchRankingPoint as SearchRankingPoint).HIGH_SEARCH_RANKING,

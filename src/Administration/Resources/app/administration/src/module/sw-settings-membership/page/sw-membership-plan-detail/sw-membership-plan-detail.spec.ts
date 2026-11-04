@@ -146,7 +146,7 @@ function tooltipOf(wrapper: VueWrapper, selector: string): unknown {
     return JSON.parse(wrapper.find(selector).attributes('data-tooltip') ?? 'null');
 }
 
-describe('src/module/sw-membership/page/sw-membership-plan-detail', () => {
+describe('src/module/sw-settings-membership/page/sw-membership-plan-detail', () => {
     beforeEach(() => {
         membershipPlanRepository.save.mockClear();
         membershipPlanRepository.get.mockClear();

@@ -199,7 +199,7 @@ describe('module/sw-dashboard/component/sw-dashboard-metrics', () => {
 
         expect(valueOf(wrapper, LABEL.monthlyPoints)).toBe('4,200 sw-dashboard.metrics.pointsUnit');
         expect(deltaOf(wrapper, LABEL.monthlyPoints)).toBeNull();
-        expect(linkOf(wrapper, LABEL.monthlyPoints).name).toBe('sw.settings.membership.purchases');
+        expect(linkOf(wrapper, LABEL.monthlyPoints).name).toBe('sw.membership.purchases');
     });
 
     it('hides the stock cards without their permissions', async () => {

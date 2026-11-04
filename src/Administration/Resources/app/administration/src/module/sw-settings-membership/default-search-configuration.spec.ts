@@ -9,7 +9,7 @@ type SearchRankingPoint = {
     HIGH_SEARCH_RANKING: number;
 };
 
-describe('src/module/sw-membership/default-search-configuration', () => {
+describe('src/module/sw-settings-membership/default-search-configuration', () => {
     it('is not searchable as a whole', () => {
         expect(defaultSearchConfiguration._searchable).toBe(false);
     });

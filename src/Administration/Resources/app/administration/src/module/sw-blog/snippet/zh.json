@@ -147,7 +147,8 @@
             "messageDeleteSuccess": "已删除",
             "messageLoadError": "加载失败，请稍后重试",
             "messageTitleRequired": "请填写标题",
-            "messageSlugRequired": "请填写 URL 名称"
+            "messageSlugRequired": "请填写 URL 名称",
+            "helpTextType": "类型决定这篇文章用哪个编辑器，首次保存后锁定。"
         },
         "category": {
             "cardEntries": "本分类的文章",

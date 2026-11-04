@@ -17,6 +17,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsAnyFilter;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\MultiFilter;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\NotFilter;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\RangeFilter;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Util\HtmlSanitizer;
@@ -105,6 +106,8 @@ class BlogDetailReader
         $struct->setShowAuthor($this->settings->showAuthor($salesChannelId));
         $struct->setShowReadingTime($this->settings->showReadingTime($salesChannelId));
         $struct->setRelatedBlogs($this->relatedBlogs($blog, $salesChannelId, $context));
+        $struct->setPreviousBlog($this->adjacentBlog($blog, true, $context));
+        $struct->setNextBlog($this->adjacentBlog($blog, false, $context));
 
         $commentsEnabled = $this->settings->areCommentsEnabled($salesChannelId);
         $commentsPerPage = $this->settings->getCommentsPerPage($salesChannelId);
@@ -215,6 +218,41 @@ class BlogDetailReader
         }
 
         return $related;
+    }
+
+    /**
+     * The neighbour of the current entry on the reading timeline: the previous one is the newest
+     * entry published before it, the next one the oldest published after it. One limit 1 query per
+     * side, guarded by the same visibility filter the listing uses, so a scheduled entry never
+     * shows up as a neighbour.
+     *
+     * Null on both sides is the normal case of a young blog, and an entry without `publishedAt`
+     * has no timeline to walk at all.
+     */
+    private function adjacentBlog(BlogEntity $blog, bool $previous, Context $context): ?BlogEntity
+    {
+        $publishedAt = $blog->publishedAt;
+
+        if ($publishedAt === null) {
+            return null;
+        }
+
+        $boundary = $previous
+            ? [RangeFilter::LT => $publishedAt->format('Y-m-d H:i:s.v')]
+            : [RangeFilter::GT => $publishedAt->format('Y-m-d H:i:s.v')];
+
+        $criteria = new Criteria();
+        $criteria->addFilter(
+            $this->visibilityGuard->getVisibilityFilter(),
+            new NotFilter(MultiFilter::CONNECTION_AND, [new EqualsFilter('id', $blog->id)]),
+            new RangeFilter('publishedAt', $boundary),
+        );
+        $criteria->addSorting(new FieldSorting('publishedAt', $previous ? FieldSorting::DESCENDING : FieldSorting::ASCENDING));
+        $criteria->setLimit(1);
+
+        $neighbour = $this->blogRepository->search($criteria, $context)->getEntities()->first();
+
+        return $neighbour instanceof BlogEntity ? $neighbour : null;
     }
 
     /**

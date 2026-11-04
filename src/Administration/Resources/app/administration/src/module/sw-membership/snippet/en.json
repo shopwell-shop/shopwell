@@ -1,93 +1,23 @@
 {
   "sw-membership": {
-    "general": {
-      "mainMenuItemGeneral": "Loyalty tiers",
-      "description": "Manage loyalty tiers that award points and grant benefits.",
-      "buttonCreate": "Add loyalty tier",
-      "placeholderSearchBar": "Search loyalty tiers..."
-    },
-    "list": {
-      "columnName": "Name",
-      "columnLevel": "Level",
-      "columnMinTierPoints": "Min. tier points",
-      "columnPointsMultiplier": "Points multiplier",
-      "columnActive": "Active"
-    },
-    "detail": {
-      "cardTitle": "Loyalty tier",
-      "fieldNameLabel": "Name",
-      "fieldTechnicalNameLabel": "Technical name",
-      "fieldLevelLabel": "Level",
-      "fieldMinTierPointsLabel": "Min. tier points",
-      "fieldFreeShippingLabel": "Free shipping",
-      "fieldActiveLabel": "Active",
-      "fieldCustomerGroupLabel": "Customer group",
-      "fieldDescriptionLabel": "Description",
-      "placeholderName": "Enter a name...",
-      "placeholderTechnicalName": "Enter a technical name...",
-      "placeholderNewLoyaltyTier": "New loyalty tier",
-      "notificationErrorMessage": "An error occurred while saving the loyalty tier.",
-      "messageSaveSuccess": "The loyalty tier has been saved.",
-      "benefitsCardTitle": "What this tier grants",
-      "benefitsCardHelpText": "One entry per benefit. A field left at its neutral value grants nothing - the tier then has no such benefit at all.",
-      "fieldEarnMultiplierLabel": "Points multiplier",
-      "fieldEarnMultiplierHelpText": "How many points a currency unit earns on top of the base rate. 1.5 means half again as many; 1 grants no bonus.",
-      "fieldCartDiscountLabel": "Cart discount (%)",
-      "fieldCartDiscountHelpText": "Percentage taken off the cart total for members of this tier. 0 grants no discount.",
-      "fieldBirthdayGiftLabel": "Birthday gift",
-      "fieldBirthdayGiftHelpText": "Amount granted once a year on the customer birthday, in the shop currency. 0 grants no gift.",
-      "fieldPointsExpiryDaysLabel": "Points validity (days)",
-      "fieldPointsExpiryDaysHelpText": "How long the points this tier earns stay valid. Leave empty to use the shop wide setting."
-    },
-    "plan": {
-      "general": {
-        "mainMenuItemGeneral": "Membership plans",
-        "buttonCreate": "Create plan",
-        "placeholderSearchBar": "Search plans..."
-      },
-      "list": {
-        "columnName": "Plan",
-        "columnTier": "Tier",
-        "columnPrice": "Price",
-        "columnDurationDays": "Duration",
-        "columnActive": "Active",
-        "durationDaysValue": "{days} days",
-        "emptyStateHeadline": "No membership plans yet",
-        "emptyStateDescription": "Create a plan so customers can buy a membership in the storefront."
-      },
-      "detail": {
-        "cardTitle": "Membership plan",
-        "fieldNameLabel": "Plan name",
-        "fieldTechnicalNameLabel": "Technical name",
-        "fieldTierLabel": "Membership tier",
-        "fieldTierHelpText": "The tier the customer holds after buying this plan.",
-        "fieldCurrencyLabel": "Currency",
-        "fieldPriceLabel": "Price",
-        "fieldDurationDaysLabel": "Duration (days)",
-        "fieldActiveLabel": "Active",
-        "fieldDescriptionLabel": "Description",
-        "placeholderName": "Enter a plan name...",
-        "placeholderTechnicalName": "Enter a technical name...",
-        "placeholderNewPlan": "New membership plan",
-        "notificationErrorMessage": "The membership plan could not be saved.",
-        "messageSaveSuccess": "The membership plan has been saved."
-      }
-    },
     "purchase": {
       "general": {
-        "mainMenuItemGeneral": "Membership orders"
+        "mainMenuItemGeneral": "Membership orders",
+        "description": "Every membership a customer bought, one row per purchase attempt."
       },
       "list": {
-        "cardTitle": "Membership orders",
         "placeholderSearchBar": "Search membership orders...",
+        "titleSidebarItemRefresh": "Refresh",
         "columnCustomer": "Customer",
         "columnPlan": "Plan",
         "columnAmount": "Amount",
         "columnState": "State",
         "columnPaidAt": "Paid at",
         "columnCreatedAt": "Created at",
-        "labelFilterState": "State",
-        "filterStateAll": "All states",
+        "filterStateLabel": "State",
+        "filterStatePlaceholder": "Select a state...",
+        "filterPlanLabel": "Plan",
+        "filterPlanPlaceholder": "Search by plan...",
         "emptyStateHeadline": "No membership orders yet",
         "emptyStateDescription": "Purchases of a plan appear here as soon as the customer starts the payment."
       },
@@ -95,13 +25,6 @@
         "open": "Awaiting payment",
         "activated": "Active",
         "failed": "Failed"
-      }
-    }
-  },
-  "sw-privileges": {
-    "permissions": {
-      "loyalty": {
-        "label": "Loyalty"
       }
     }
   }

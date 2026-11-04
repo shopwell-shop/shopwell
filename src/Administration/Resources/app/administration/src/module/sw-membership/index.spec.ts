@@ -4,52 +4,24 @@
 
 import './index';
 
-jest.mock('./acl', () => jest.fn());
-jest.mock('./service', () => ({}));
-
 const { Module, Component } = Shopwell;
 
 describe('src/module/sw-membership/index', () => {
-    it('registers the pages of the tiers, the plans and the purchases', () => {
+    it('registers the purchase list page', () => {
         const components = Component.getComponentRegistry();
 
-        [
-            'sw-membership-tier-list',
-            'sw-membership-tier-detail',
-            'sw-membership-tier-create',
-            'sw-membership-plan-list',
-            'sw-membership-plan-detail',
-            'sw-membership-plan-create',
-            'sw-membership-purchase-list',
-        ].forEach((component) => {
-            expect(components.has(component)).toBe(true);
-        });
+        expect(components.has('sw-membership-purchase-list')).toBe(true);
     });
 
-    it('registers the module under the customers group of the settings', () => {
-        const module = Module.getModuleRegistry().get('sw-settings-membership');
+    it('registers the module with the purchase as its entity', () => {
+        const module = Module.getModuleRegistry().get('sw-membership');
 
         expect(module).toBeTruthy();
-
-        const settingsItems = (module?.manifest.settingsItem ?? []) as Array<{
-            id: string;
-            group?: string;
-            privilege?: string;
-        }>;
-
-        expect(settingsItems.map((item) => item.id)).toEqual([
-            'sw-settings-membership',
-            'sw-settings-membership-plans',
-        ]);
-
-        settingsItems.forEach((item) => {
-            expect(item.group).toBe('customer');
-            expect(item.privilege).toBe('loyalty.viewer');
-        });
+        expect(module?.manifest.entity).toBe('membership_purchase');
     });
 
     it('puts the membership purchases next to the sales orders instead of into the settings', () => {
-        const module = Module.getModuleRegistry().get('sw-settings-membership');
+        const module = Module.getModuleRegistry().get('sw-membership');
 
         const navigation = (module?.manifest.navigation ?? []) as Array<{
             id: string;
@@ -61,25 +33,21 @@ describe('src/module/sw-membership/index', () => {
         expect(navigation).toHaveLength(1);
         expect(navigation[0]).toMatchObject({
             id: 'sw-membership-purchases',
-            path: 'sw.settings.membership.purchases',
+            path: 'sw.membership.purchases',
             parent: 'sw-order',
             privilege: 'loyalty.viewer',
         });
     });
 
-    it('registers the tier, plan and purchase routes', () => {
-        const routes = Module.getModuleRegistry().get('sw-settings-membership')?.routes;
+    it('registers the purchase route without a foreign parent path', () => {
+        const route = Module.getModuleRegistry().get('sw-membership')?.routes?.get('sw.membership.purchases');
 
-        [
-            'sw.settings.membership.index',
-            'sw.settings.membership.detail',
-            'sw.settings.membership.create',
-            'sw.settings.membership.plans',
-            'sw.settings.membership.planDetail',
-            'sw.settings.membership.planCreate',
-            'sw.settings.membership.purchases',
-        ].forEach((route) => {
-            expect(routes?.has(route)).toBe(true);
-        });
+        expect(route).toBeTruthy();
+
+        const meta = route?.meta as { parentPath?: string; privilege?: string };
+
+        // a parent path of the sales orders would highlight both entries of the orders menu at once
+        expect(meta.parentPath).toBeUndefined();
+        expect(meta.privilege).toBe('loyalty.viewer');
     });
 });

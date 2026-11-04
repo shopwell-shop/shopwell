@@ -60,4 +60,18 @@ describe('app/service/shortcut.service', () => {
 
         expect(addEventListenerSpy).toHaveBeenCalledWith('keyup', expect.any(Function));
     });
+
+    it('should ignore keyup events which carry no key', () => {
+        const addEventListenerSpy = jest.spyOn(document, 'addEventListener');
+        shortcutService = createShortcutService(shortcutFactory);
+
+        shortcutService.startEventListener();
+
+        const keyUpListener = addEventListenerSpy.mock.calls.find(([type]) => type === 'keyup')?.[1];
+        expect(keyUpListener).toBeDefined();
+
+        // Plain events dispatched under the `keyup` name have no `key` property at all
+        expect(() => keyUpListener(new Event('keyup'))).not.toThrow();
+        expect(shortcutFactory.getPathByCombination).not.toHaveBeenCalled();
+    });
 });

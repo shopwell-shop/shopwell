@@ -70,6 +70,11 @@ export default function createShortcutService(shortcutFactory, keystrokeDelay = 
     }
 
     function handleKeyUp(event) {
+        // Not every `keyup` carries a key, browsers and extensions dispatch plain events under that name.
+        if (typeof event.key !== 'string' || event.key === '') {
+            return false;
+        }
+
         if (shortcutsDisabled || isRestrictedSource(event)) {
             return false;
         }

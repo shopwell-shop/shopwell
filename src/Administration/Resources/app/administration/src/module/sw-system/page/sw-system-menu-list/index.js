@@ -3,6 +3,8 @@
  */
 import template from './sw-system-menu-list.html.twig';
 import './sw-system-menu-list.scss';
+import { buildPayload, createDraft, fingerprintDraft, needsMove } from './menu-draft';
+import { collectAncestorIds, collectBranchIds, collectDescendantIds, filterTreeByTerm, findNode } from './tree-filter';
 
 const { Data, Mixin } = Shopwell;
 const { Criteria } = Data;
@@ -13,35 +15,12 @@ const TYPE_LINK = 'link';
 const TYPE_HIDDEN = 'hidden';
 
 /**
- * Creates the draft of a menu item. The draft is the only editable state of the page: the
- * store is the source of truth for what is stored, the draft for what the form shows, and
- * the two only meet on save.
- */
-function createDraft(overrides = {}) {
-    return {
-        id: null,
-        title: '',
-        groupName: '',
-        groupTitle: '',
-        icon: '',
-        type: TYPE_MENU,
-        internalKey: null,
-        linkTarget: '',
-        privilege: null,
-        active: true,
-        parentId: null,
-        afterMenuItemId: null,
-        roleIds: [],
-        ...overrides,
-    };
-}
-
-/**
  * The management page of the database driven navigation.
  *
- * The stored navigation is a tree and the whole page is that tree: the entries are only
- * labels plus a place, so a second pane that repeats them would cost the width the tree
- * needs for the indentation. Editing happens in a dialog, one entry at a time.
+ * The page follows the navigation pattern of the category page: the stored navigation lives
+ * in the side content of the page, the content holds the form of the selected entry, and the
+ * smart bar carries the language and the save decision. The entries are only labels plus a
+ * place, so the form is one set of cards instead of a routed detail page.
  *
  * A drop in the tree is a move request, not a local reorder:
  * `AdminMenuConfigService::move()` repairs the ordering chain of both affected levels, so a
@@ -64,11 +43,13 @@ export default {
     data() {
         return {
             expandedIds: [],
+            searchTerm: '',
+            selectedId: null,
             languageId: Shopwell.Context.api.languageId,
             languages: [],
-            showEditModal: false,
             showDeleteModal: false,
             draft: null,
+            draftBaseline: null,
             deleteTarget: null,
             isSaving: false,
             isDeleting: false,
@@ -106,8 +87,47 @@ export default {
             return this.store.isLoading && !this.store.isLoaded;
         },
 
+        isSearching() {
+            return this.searchTerm.trim().length > 0;
+        },
+
+        /**
+         * The tree a search shows: while a term is entered, only the matching entries and
+         * their ancestors stay visible.
+         */
+        filteredTree() {
+            const term = this.searchTerm.trim();
+
+            if (!term) {
+                return this.tree;
+            }
+
+            return filterTreeByTerm(this.tree, term);
+        },
+
+        /**
+         * A search result is useless when its parents are closed, so while searching every
+         * branch of the filtered tree is open - the operator's own expansion wins again the
+         * moment the term is cleared.
+         */
+        effectiveExpandedIds() {
+            if (!this.isSearching) {
+                return this.expandedIds;
+            }
+
+            return collectBranchIds(this.filteredTree);
+        },
+
         hasTree() {
-            return this.tree.length > 0;
+            return this.filteredTree.length > 0;
+        },
+
+        /**
+         * The entry the detail pane shows. The search may hide it from the panel, but the
+         * selection itself survives so an edit never loses its subject.
+         */
+        selectedItem() {
+            return findNode(this.tree, this.selectedId);
         },
 
         /**
@@ -133,17 +153,12 @@ export default {
         },
 
         /**
-         * The languages an item can be labelled in. A shop that runs a single language gets no
-         * switch - and no label for a decision that does not exist.
+         * Editing an existing entry needs the editor privilege, creating one the creator
+         * privilege - the smart bar offers the same button for both, so it asks which one
+         * applies to the draft.
          */
-        languageOptions() {
-            return this.languages.map((language) => {
-                return { value: language.id, label: language.name };
-            });
-        },
-
-        showLanguageSwitch() {
-            return this.languages.length > 1;
+        canSaveDraft() {
+            return this.selectedItem ? this.canEdit : this.canCreate;
         },
 
         isAllExpanded() {
@@ -151,20 +166,7 @@ export default {
         },
 
         expandableIds() {
-            const collected = [];
-
-            const walk = (nodes) => {
-                nodes.forEach((node) => {
-                    if (node.children.length > 0) {
-                        collected.push(node.id);
-                        walk(node.children);
-                    }
-                });
-            };
-
-            walk(this.tree);
-
-            return collected;
+            return collectBranchIds(this.tree);
         },
 
         aclRoleRepository() {
@@ -211,7 +213,7 @@ export default {
         parentOptions() {
             // An item cannot become its own parent, and a folder cannot be moved below one of
             // its own children - both would detach the subtree from the navigation.
-            const blocked = this.draft?.id ? [this.draft.id, ...this.descendantIds(this.draft.id)] : [];
+            const blocked = this.draft?.id ? [this.draft.id, ...collectDescendantIds(this.tree, this.draft.id)] : [];
 
             const options = [{ value: '', label: this.$t('sw-system.menu.parentRoot') }];
 
@@ -237,8 +239,20 @@ export default {
             return this.draft?.parentId ?? '';
         },
 
+        /**
+         * `parentId` and `afterMenuItemId` are one decision: the predecessor is only valid
+         * within its own level, so changing the level drops it back to the head.
+         */
         parentId() {
             return this.parentIdValue === '' ? null : this.parentIdValue;
+        },
+
+        /**
+         * A group is a property of a top level entry: it decides which heading the entry is
+         * listed under, so the fields are only offered where the decision exists.
+         */
+        isTopLevel() {
+            return this.parentIdValue === '';
         },
 
         groupOptions() {
@@ -298,17 +312,13 @@ export default {
             return this.draft !== null && this.draft.id === null;
         },
 
-        editModalTitle() {
-            return this.isNew ? this.$t('sw-system.menu.createModalTitle') : this.$t('sw-system.menu.editModalTitle');
-        },
-
         /**
          * Deleting an item removes every row below it: `fk.admin_menu_item.parent_id` cascades.
          * The confirmation therefore names the subtree size instead of leaving the user to
          * discover it in the tree afterwards.
          */
         deleteConfirmMessage() {
-            const count = this.deleteTarget ? this.descendantIds(this.deleteTarget.id).length : 0;
+            const count = this.deleteTarget ? collectDescendantIds(this.tree, this.deleteTarget.id).length : 0;
 
             if (count === 0) {
                 return this.$t('sw-system.menu.deleteConfirmMessage');
@@ -336,8 +346,7 @@ export default {
 
         /**
          * The page labels entries in the language the operator picks, so it needs the language
-         * list itself - the administration wide language switch would reload the whole client
-         * for a label.
+         * list for the help texts - the switch itself loads the languages on its own.
          */
         loadLanguages() {
             const repository = this.repositoryFactory.create('language');
@@ -403,41 +412,29 @@ export default {
             return this.$te(key) ? this.$t(key) : groupName;
         },
 
-        descendantIds(itemId) {
-            const collected = [];
-            const flat = this.toRenderNodes(this.store.tree);
+        onSearch(value) {
+            this.searchTerm = value;
+        },
 
-            const walk = (nodes) => {
-                nodes.forEach((node) => {
-                    collected.push(node.id);
-                    walk(node.children);
-                });
-            };
+        /**
+         * The labels of the shown language are edited through the draft, so a language switch
+         * re-reads the stored translation instead of renaming the entry in the wrong language.
+         * Unsaved edits would be lost by that, so the switch asks first.
+         */
+        abortOnLanguageChange() {
+            return this.hasUnsavedChanges();
+        },
 
-            const findNode = (nodes) => {
-                for (const node of nodes) {
-                    if (node.id === itemId) {
-                        return node;
-                    }
-
-                    const found = findNode(node.children);
-
-                    if (found) {
-                        return found;
-                    }
-                }
-
-                return null;
-            };
-
-            const start = findNode(flat);
-            walk(start ? start.children : []);
-
-            return collected;
+        saveOnLanguageChange() {
+            return this.hasUnsavedChanges() ? this.onSave() : Promise.resolve();
         },
 
         onLanguageChange(languageId) {
             this.languageId = languageId;
+
+            if (this.selectedId) {
+                this.initDraft(findNode(this.tree, this.selectedId));
+            }
         },
 
         onToggle(item) {
@@ -451,11 +448,22 @@ export default {
         },
 
         /**
-         * The dialog edits the labels of the language the page shows - switching the language
-         * with an open dialog would silently rename the entry in another language.
+         * Selecting an entry means editing it: the detail pane is the form, filled from the
+         * stored state of the entry in the language the page shows. The parents are opened so
+         * a selection made from a search result is visible in the tree.
          */
-        onEdit(item) {
-            if (!this.canEdit) {
+        onItemSelect(item) {
+            this.selectedId = item.id;
+
+            const ancestors = collectAncestorIds(this.tree, item.id);
+
+            this.expandedIds = [...new Set([...this.expandedIds, ...ancestors])];
+
+            this.initDraft(findNode(this.tree, item.id));
+        },
+
+        initDraft(item) {
+            if (!item) {
                 return;
             }
 
@@ -468,8 +476,16 @@ export default {
                 groupTitle: stored.groupTitle ?? '',
                 roleIds: [...item.roleIds],
             });
+            this.draftBaseline = fingerprintDraft(this.draft);
+        },
 
-            this.showEditModal = true;
+        setDraft(draft) {
+            this.draft = draft;
+            this.draftBaseline = fingerprintDraft(draft);
+        },
+
+        hasUnsavedChanges() {
+            return this.draft !== null && fingerprintDraft(this.draft) !== this.draftBaseline;
         },
 
         onCreateNew() {
@@ -477,19 +493,70 @@ export default {
                 return;
             }
 
-            this.draft = createDraft();
-            this.showEditModal = true;
-        },
-
-        onCloseEditModal() {
-            this.showEditModal = false;
-            this.draft = null;
+            this.selectedId = null;
+            this.setDraft(createDraft());
         },
 
         /**
-         * `parentId` and `afterMenuItemId` are one decision: the predecessor is only valid
-         * within its own level, so changing the level drops it back to the head.
+         * Creating from a row of the tree means the place is already decided: the form opens
+         * with the level and the predecessor prefilled instead of asking the operator to
+         * reconstruct them from selects.
          */
+        onCreateAbove(item) {
+            if (!this.canCreate) {
+                return;
+            }
+
+            this.selectedId = null;
+            this.setDraft(
+                createDraft({
+                    parentId: item.parentId,
+                    afterMenuItemId: item.afterMenuItemId,
+                }),
+            );
+        },
+
+        onCreateBelow(item) {
+            if (!this.canCreate) {
+                return;
+            }
+
+            this.selectedId = null;
+            this.setDraft(
+                createDraft({
+                    parentId: item.parentId,
+                    afterMenuItemId: item.id,
+                }),
+            );
+        },
+
+        /**
+         * Only folders are offered the entry, so a child can never hang below a leaf.
+         */
+        onAddChild(item) {
+            if (!this.canCreate) {
+                return;
+            }
+
+            this.selectedId = null;
+            this.setDraft(createDraft({ parentId: item.id }));
+        },
+
+        /**
+         * Cancelling restores the stored state: a selected entry keeps its selection with the
+         * form showing what is stored, a new entry leaves the form entirely.
+         */
+        onCancelEdit() {
+            if (this.selectedId) {
+                this.initDraft(findNode(this.tree, this.selectedId));
+
+                return;
+            }
+
+            this.draft = null;
+            this.draftBaseline = null;
+        },
+
         onParentChange(value) {
             if (!this.draft) {
                 return;
@@ -541,47 +608,8 @@ export default {
             return true;
         },
 
-        /**
-         * The labels are translated fields, so they are written for the language the page shows
-         * instead of for the language the client happens to run in.
-         */
-        buildPayload() {
-            const translation = {
-                languageId: this.languageId,
-                title: this.draft.title.trim(),
-                groupTitle: this.draft.groupTitle.trim() || null,
-            };
-
-            return {
-                id: this.draft.id ?? undefined,
-                translations: [translation],
-                groupName: this.draft.groupName.trim() || null,
-                icon: this.draft.icon || null,
-                type: this.draft.type,
-                internalKey: this.draft.internalKey || null,
-                linkTarget: this.draft.type === TYPE_LINK ? this.draft.linkTarget.trim() : null,
-                privilege: this.draft.privilege || null,
-                active: this.draft.active,
-                roles: this.draft.roleIds.map((id) => ({ id })),
-            };
-        },
-
-        /**
-         * A new item is always placed explicitly, an existing one only when its level or its
-         * predecessor changed - a plain rename must not trigger a second write.
-         */
-        needsMove() {
-            if (this.isNew) {
-                return true;
-            }
-
-            const item = this.store.itemById(this.draft.id);
-
-            return item?.parentId !== this.parentId || item?.afterMenuItemId !== this.draft.afterMenuItemId;
-        },
-
         async onSave() {
-            if (!this.draft || this.isSaving || !this.canEdit && !this.canCreate) {
+            if (!this.draft || this.isSaving || (!this.canEdit && !this.canCreate)) {
                 return;
             }
 
@@ -589,14 +617,14 @@ export default {
                 return;
             }
 
-            const needsMove = this.needsMove();
+            const hasToMove = needsMove(this.draft, this.store.itemById(this.draft.id), this.parentId);
 
             this.isSaving = true;
 
             try {
-                const id = await this.store.saveItem(this.buildPayload());
+                const id = await this.store.saveItem(buildPayload(this.draft, this.languageId));
 
-                if (needsMove && id) {
+                if (hasToMove && id) {
                     await this.store.moveItem({
                         id,
                         parentId: this.parentId,
@@ -609,8 +637,10 @@ export default {
                     }
                 }
 
-                this.showEditModal = false;
-                this.draft = null;
+                if (id) {
+                    this.selectedId = id;
+                    this.initDraft(findNode(this.tree, id));
+                }
 
                 this.createNotificationSuccess({ message: this.$t('sw-system.menu.notification.saveSuccess') });
             } catch (error) {
@@ -636,6 +666,10 @@ export default {
 
                 if (move.parentId && !this.expandedIds.includes(move.parentId)) {
                     this.expandedIds = [...this.expandedIds, move.parentId];
+                }
+
+                if (move.id === this.selectedId) {
+                    this.initDraft(findNode(this.tree, this.selectedId));
                 }
             } catch (error) {
                 this.createNotificationError({
@@ -669,6 +703,13 @@ export default {
                 await this.store.deleteItem(this.deleteTarget.id);
 
                 this.expandedIds = this.expandedIds.filter((id) => id !== this.deleteTarget.id);
+
+                if (this.selectedId === this.deleteTarget.id) {
+                    this.selectedId = null;
+                    this.draft = null;
+                    this.draftBaseline = null;
+                }
+
                 this.showDeleteModal = false;
                 this.deleteTarget = null;
 

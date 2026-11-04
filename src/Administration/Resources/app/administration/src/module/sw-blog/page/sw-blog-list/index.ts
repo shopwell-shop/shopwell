@@ -68,7 +68,6 @@ export default defineComponent({
     template,
 
     inject: ['repositoryFactory', 'acl', 'blogApiService', 'filterFactory'],
-
     mixins: [Mixin.getByName('listing')],
 
     data(): {
@@ -81,7 +80,6 @@ export default defineComponent({
         storeKey: string;
         defaultFilters: string[];
         activeFilterNumber: number;
-        pendingCommentCount: number;
         presetAuthorId: string | null;
         presetCategoryId: string | null;
         deleteTarget: DeleteTarget | null;
@@ -96,7 +94,6 @@ export default defineComponent({
             storeKey: 'grid.filter.blog',
             defaultFilters: DEFAULT_FILTERS,
             activeFilterNumber: 0,
-            pendingCommentCount: 0,
             presetAuthorId: null,
             presetCategoryId: null,
             deleteTarget: null,
@@ -122,10 +119,6 @@ export default defineComponent({
             return this.repositoryFactory.create('blog_author');
         },
 
-        commentRepository(): RepositoryType<'blog_comment'> {
-            return this.repositoryFactory.create('blog_comment');
-        },
-
         /**
          * The columns in the order an editor reads them: what it looks like, what it is called, where
          * it is filed, whether it is live, and when it was touched last.
@@ -143,6 +136,12 @@ export default defineComponent({
                     primary: true,
                     inlineEdit: 'string',
                     allowResize: true,
+                },
+                {
+                    property: 'type',
+                    label: 'sw-blog.list.columnType',
+                    width: '110px',
+                    sortable: false,
                 },
                 {
                     property: 'categories',
@@ -283,7 +282,6 @@ export default defineComponent({
         void this.getList();
         void this.loadCategories();
         void this.loadAuthors();
-        void this.loadPendingCommentCount();
     },
 
     methods: {
@@ -394,30 +392,31 @@ export default defineComponent({
             });
         },
 
-        /**
-         * The number in the toolbar that leads to the moderation queue: how much is waiting right now,
-         * read with one count and not by loading the comments.
-         */
-        async loadPendingCommentCount(): Promise<void> {
-            const criteria = blogApi(this).pendingCommentsCriteria();
-
-            await this.commentRepository.search(criteria).then((result) => {
-                this.pendingCommentCount = result.total ?? 0;
-            });
-        },
-
         onRefresh(): void {
             void this.getList();
             void this.loadCategories();
             void this.loadAuthors();
-            void this.loadPendingCommentCount();
         },
 
         onOpenCreateModal(): void {
-            // creating does not ask for a title first: the entry page is where an entry is written,
-            // and a dialog that asks for the headline before the page that owns the headline is one
-            // step that teaches nothing
+            // creating does not ask for anything first: the entry page is where an entry is written,
+            // and the type is one select on that page, the way the product form does it
             void this.$router.push({ name: 'sw.blog.create' });
+        },
+
+        /**
+         * The label of one type, from the snippet when the type has one, otherwise the raw value -
+         * the same fallback the filter dropdown uses, so a plugin type never renders as an empty
+         * badge.
+         */
+        typeLabel(type: string | null | undefined): string {
+            if (typeof type !== 'string' || type === '') {
+                return '';
+            }
+
+            const key = blogApi(this).typeLabelKey(type);
+
+            return this.$te(key) ? this.$t(key) : type;
         },
 
         onInlineEditSave(blog: Blog): void {
@@ -475,10 +474,6 @@ export default defineComponent({
 
         onOpenCategoryList(): void {
             void this.$router.push({ name: 'sw.blog.category.list' });
-        },
-
-        onOpenCommentList(): void {
-            void this.$router.push({ name: 'sw.blog.comment.list' });
         },
     },
 });

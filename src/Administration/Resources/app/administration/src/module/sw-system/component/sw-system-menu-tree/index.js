@@ -23,7 +23,16 @@ const DROP_EDGE_RATIO = 0.25;
 export default {
     template,
 
-    emits: ['toggle', 'edit', 'remove', 'move'],
+    emits: [
+        'toggle',
+        'select',
+        'edit',
+        'create-above',
+        'create-below',
+        'add-child',
+        'remove',
+        'move',
+    ],
 
     props: {
         items: {
@@ -35,6 +44,12 @@ export default {
             type: Array,
             required: false,
             default: () => [],
+        },
+
+        selectedId: {
+            type: String,
+            required: false,
+            default: null,
         },
 
         sortable: {
@@ -128,6 +143,41 @@ export default {
 
         onEdit(item) {
             this.$emit('edit', item);
+        },
+
+        onSelect(item) {
+            this.$emit('select', item);
+        },
+
+        onCreateAbove(item) {
+            this.$emit('create-above', item);
+        },
+
+        onCreateBelow(item) {
+            this.$emit('create-below', item);
+        },
+
+        onAddChild(item) {
+            this.$emit('add-child', item);
+        },
+
+        /**
+         * The row itself only shows the type icon, the lock and the inactive state - the
+         * type wording, the source plugin and the group live in the tooltip instead of
+         * crowding every row.
+         */
+        rowTooltip(item) {
+            const parts = [this.$t(`sw-system.menu.types.${item.type}`)];
+
+            if (item.pluginName) {
+                parts.push(item.pluginName);
+            }
+
+            if (item.groupLabel) {
+                parts.push(item.groupLabel);
+            }
+
+            return parts.join(' · ');
         },
 
         onRemove(item) {
@@ -281,6 +331,7 @@ export default {
         rowClasses(item) {
             return {
                 'is--hidden': item.active === false,
+                'is--selected': item.id === this.selectedId,
                 'is--dragged': this.draggedId === item.id,
                 'is--drop-before': this.dropTargetId === item.id && this.dropZone === 'before',
                 'is--drop-after': this.dropTargetId === item.id && this.dropZone === 'after',

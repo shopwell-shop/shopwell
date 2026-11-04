@@ -122,14 +122,23 @@
                             :placeholder="$t('sw-blog.detail.placeholderTitle')"
                         />
 
+                        {% block sw_blog_detail_content_general_type %}
+                        {#
+                        The type works like the fields around it - a select in the form, no extra
+                        dialog - and is locked once the entry is saved: it decides which editor
+                        renders below, and switching it after content was written would silently
+                        drop the fields that type owned.
+                        #}
                         <mt-select
                             v-model:model-value="blog.type"
                             class="sw-blog-detail__type"
-                            :disabled="!canEdit"
+                            :disabled="!canEdit || !isNew"
                             :label="$t('sw-blog.detail.labelType')"
                             :options="typeOptions"
+                            :help-text="$t('sw-blog.detail.helpTextType')"
                             @update:model-value="ensureVideo"
                         />
+                        {% endblock %}
 
                         <mt-textarea
                             v-model="blog.teaser"
@@ -391,37 +400,6 @@
                         :placeholder="$t('sw-blog.detail.placeholderSlug')"
                         :help-text="$t('sw-blog.detail.helpTextSlug')"
                     />
-                </mt-card>
-                {% endblock %}
-
-                {% block sw_blog_detail_content_comments %}
-                <mt-card
-                    class="sw-blog-detail__comments-card"
-                    position-identifier="sw-blog-detail-comments"
-                    :title="$t('sw-blog.detail.cardComments')"
-                >
-                    <div class="sw-blog-detail__rail-content">
-                        <p class="sw-blog-detail__comment-hint">
-                            {{ $t('sw-blog.detail.textCommentPending') }}
-                        </p>
-
-                        <mt-button
-                            class="sw-blog-detail__open-comments"
-                            variant="secondary"
-                            size="small"
-                            @click="onOpenCommentList"
-                        >
-                            {{ $t('sw-blog.detail.buttonReviewComments') }}
-                            <mt-badge
-                                v-if="pendingCommentCount > 0"
-                                class="sw-blog-detail__comment-count"
-                                variant="attention"
-                                size="small"
-                            >
-                                {{ pendingCommentCount }}
-                            </mt-badge>
-                        </mt-button>
-                    </div>
                 </mt-card>
                 {% endblock %}
             </aside>

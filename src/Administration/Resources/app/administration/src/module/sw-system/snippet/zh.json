@@ -12,8 +12,12 @@
             "labelInactive": "已隐藏",
             "expand": "展开",
             "collapse": "折叠",
-            "emptyStateHeadline": "请选择一个菜单项",
+            "emptyStateHeadline": "未选择菜单项",
             "emptyStateDescription": "在左侧选择一个条目进行编辑，或新建一个。",
+            "treeHeadline": "导航",
+            "treeEmpty": "当前没有菜单项。",
+            "createAbove": "在上方新增",
+            "createBelow": "在下方新增",
             "tooltipLockedItem": "该条目由核心模块声明，可以自定义，但不能删除。",
             "hintLockedItem": "该条目由核心模块声明。你的修改会被保留，插件升级不会覆盖。",
             "labelTitle": "标题",
@@ -57,19 +61,21 @@
                 "deleteSuccess": "菜单项已删除。",
                 "deleteError": "菜单项删除失败。"
             },
-            "labelLanguage": "语言",
             "expandAll": "全部展开",
             "collapseAll": "全部折叠",
-            "entryCount": "{count} 个条目",
-            "createModalTitle": "新建菜单项",
-            "editModalTitle": "编辑菜单项",
+            "searchEmptyHeadline": "没有匹配的菜单项",
+            "addChild": "新建子项",
+            "sectionBasics": "通用",
+            "sectionTarget": "目标",
+            "sectionAccess": "归组与访问控制",
             "helpTitle": "在「{language}」下显示的名称。留空则沿用模块自带的文案。",
             "labelGroup": "分组",
             "placeholderGroup": "general",
-            "helpGroup": "可选。同一分组的条目会排在相邻位置。",
+            "helpGroup": "仅顶级条目有效。同一分组键的条目在导航中归为一组。",
             "labelGroupTitle": "分组名称",
             "placeholderGroupTitle": "常规",
             "helpGroupTitle": "在「{language}」下作为分组标题显示。",
+            "placeholderSearchBar": "搜索菜单项…",
             "groups": {
                 "general": "常规",
                 "customer": "客户",
@@ -209,8 +215,10 @@
         "users": {
             "general": {
                 "placeholderSearchBar": "搜索用户…",
-                "labelCreateNewUser": "创建用户",
-                "cardLabel": "用户"
+                "labelCreateNewUser": "创建用户"
+            },
+            "list": {
+                "titleSidebarItemRefresh": "刷新列表"
             },
             "user-grid": {
                 "labelUsername": "用户名",
@@ -218,6 +226,7 @@
                 "labelRoles": "角色",
                 "labelEmail": "邮箱地址",
                 "status": "状态",
+                "labelCreatedAt": "创建时间",
                 "titleModalDelete": "删除用户",
                 "textModalDelete": "确定要删除用户 \"{name}\" 吗？",
                 "notification": {
@@ -340,11 +349,7 @@
             },
             "filter": {
                 "labelRole": "角色",
-                "labelStatus": "状态",
-                "allRoles": "全部角色",
-                "allStatus": "全部状态",
-                "statusActive": "已激活",
-                "statusInactive": "已停用"
+                "labelStatus": "状态"
             },
             "emptyState": {
                 "noUserTitle": "还没有用户",

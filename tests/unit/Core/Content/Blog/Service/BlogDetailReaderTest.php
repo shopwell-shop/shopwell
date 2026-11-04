@@ -22,6 +22,8 @@ use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\RangeFilter;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Util\HtmlSanitizer;
 use Shopwell\Core\Test\Generator;
@@ -251,6 +253,120 @@ class BlogDetailReaderTest extends TestCase
         static::assertNotNull($relatedBlogs);
         static::assertCount(3, $relatedBlogs);
         static::assertSame(['related-id', 'top-up-1', 'top-up-2'], array_values($relatedBlogs->getIds()));
+    }
+
+    public function testTheNeighboursOnTheTimelineAreResolvedPerSide(): void
+    {
+        $blog = $this->blog('blog-id');
+        $blog->content = 'Body';
+        $blog->publishedAt = new \DateTimeImmutable('2026-06-01 10:00:00');
+
+        $previous = $this->blog('previous-id');
+        $next = $this->blog('next-id');
+
+        $calls = 0;
+        $boundaries = [];
+        $sortings = [];
+
+        $blogRepository = $this->createMock(EntityRepository::class);
+        $blogRepository->expects($this->exactly(3))
+            ->method('search')
+            ->willReturnCallback(function (Criteria $criteria, $context) use (&$calls, &$boundaries, &$sortings, $blog, $previous, $next): EntitySearchResult {
+                ++$calls;
+
+                if ($calls === 1) {
+                    return new EntitySearchResult(BlogEntity::ENTITY_NAME, 1, new BlogCollection([$blog]), null, $criteria, $context);
+                }
+
+                foreach ($criteria->getFilters() as $filter) {
+                    if ($filter instanceof RangeFilter) {
+                        $boundaries[$calls] = $filter->getParameters();
+                    }
+                }
+
+                $sortings[$calls] = $criteria->getSorting();
+
+                return match ($calls) {
+                    2 => new EntitySearchResult(BlogEntity::ENTITY_NAME, 1, new BlogCollection([$previous]), null, $criteria, $context),
+                    default => new EntitySearchResult(BlogEntity::ENTITY_NAME, 1, new BlogCollection([$next]), null, $criteria, $context),
+                };
+            });
+
+        $settings = static::createStub(BlogSettings::class);
+        $settings->method('areCommentsEnabled')->willReturn(false);
+        $settings->method('getRelatedPostsCount')->willReturn(0);
+
+        $reader = new BlogDetailReader(
+            $blogRepository,
+            static::createStub(EntityRepository::class),
+            static::createStub(EntityRepository::class),
+            $this->visibleGuard(),
+            $settings,
+            new BlogCommentTree(),
+            static::createStub(BlogReadingTimeEstimator::class),
+            $this->htmlSanitizer(),
+        );
+
+        $detail = $reader->read('blog-id', new Request(), Generator::generateSalesChannelContext());
+
+        static::assertSame($previous, $detail->getPreviousBlog());
+        static::assertSame($next, $detail->getNextBlog());
+
+        static::assertSame(
+            ['lt' => '2026-06-01 10:00:00.000'],
+            $boundaries[2],
+            'the previous neighbour is the newest entry published before the current one',
+        );
+        static::assertSame(
+            ['gt' => '2026-06-01 10:00:00.000'],
+            $boundaries[3],
+            'the next neighbour is the oldest entry published after the current one',
+        );
+
+        $previousSorting = $sortings[2][0];
+        static::assertInstanceOf(FieldSorting::class, $previousSorting);
+        static::assertSame(FieldSorting::DESCENDING, $previousSorting->getDirection());
+
+        $nextSorting = $sortings[3][0];
+        static::assertInstanceOf(FieldSorting::class, $nextSorting);
+        static::assertSame(FieldSorting::ASCENDING, $nextSorting->getDirection());
+    }
+
+    public function testAnEntryWithoutPublishedAtHasNoNeighboursAndCostsNoExtraQuery(): void
+    {
+        $blog = $this->blog('blog-id');
+
+        $settings = static::createStub(BlogSettings::class);
+        $settings->method('areCommentsEnabled')->willReturn(false);
+        $settings->method('getRelatedPostsCount')->willReturn(0);
+
+        $blogRepository = $this->createMock(EntityRepository::class);
+        $blogRepository->expects($this->once())
+            ->method('search')
+            ->willReturnCallback(static fn (Criteria $criteria, $context): EntitySearchResult => new EntitySearchResult(
+                BlogEntity::ENTITY_NAME,
+                1,
+                new BlogCollection([$blog]),
+                null,
+                $criteria,
+                $context,
+            ));
+
+        $reader = new BlogDetailReader(
+            $blogRepository,
+            static::createStub(EntityRepository::class),
+            static::createStub(EntityRepository::class),
+            $this->visibleGuard(),
+            $settings,
+            new BlogCommentTree(),
+            static::createStub(BlogReadingTimeEstimator::class),
+            $this->htmlSanitizer(),
+        );
+
+        $detail = $reader->read('blog-id', new Request(), Generator::generateSalesChannelContext());
+
+        static::assertNull($detail->getPreviousBlog());
+        static::assertNull($detail->getNextBlog());
     }
 
     /**

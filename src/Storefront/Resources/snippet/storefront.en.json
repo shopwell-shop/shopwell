@@ -15,7 +15,16 @@
             "authorHeading": "About the author",
             "readingTime": "%minutes% min read",
             "backToList": "All entries",
-            "breadcrumbLabel": "Breadcrumb"
+            "breadcrumbLabel": "Breadcrumb",
+            "previous": "Previous",
+            "next": "Next",
+            "prevNextLabel": "Entry navigation",
+            "share": {
+                "label": "Share",
+                "copyLink": "Copy link",
+                "copied": "Link copied",
+                "x": "Share on X"
+            }
         },
         "video": {
             "unsupported": "This video can not be played in your browser."

@@ -6,6 +6,10 @@ import EntityCollection from 'src/core/data/entity-collection.data';
 import Criteria from 'src/core/data/criteria.data';
 import 'src/app/mixin/translate-with-fallback.mixin';
 
+const STORE_KEY = 'grid.filter.system-user';
+
+const mergeWithStoredFilters = jest.fn((storeKey, criteria) => Promise.resolve(criteria));
+
 function createUserCollection(rows) {
     return new EntityCollection('user', 'user', Shopwell.Context.api, new Criteria(1), rows, rows.length);
 }
@@ -14,7 +18,26 @@ function createRoleCollection(rows) {
     return new EntityCollection('acl_role', 'acl_role', Shopwell.Context.api, new Criteria(1), rows, rows.length);
 }
 
-async function createWrapper({ rows = [], roles = [], privileges = [], isSso = false } = {}) {
+Shopwell.Service().register('filterService', () => {
+    return { mergeWithStoredFilters };
+});
+
+/**
+ * Logs a user in without breaking the other store lookups of the component.
+ */
+function loginAs(userId) {
+    const getStore = Shopwell.Store.get.bind(Shopwell.Store);
+
+    jest.spyOn(Shopwell.Store, 'get').mockImplementation((key) => {
+        if (key === 'session') {
+            return { currentUser: { id: userId } };
+        }
+
+        return getStore(key);
+    });
+}
+
+async function createWrapper({ rows = [], roles = [], privileges = [], isSso = false, term = '' } = {}) {
     const userRepository = {
         search: jest.fn(() => Promise.resolve(createUserCollection(rows))),
         save: jest.fn(() => Promise.resolve()),
@@ -25,6 +48,12 @@ async function createWrapper({ rows = [], roles = [], privileges = [], isSso = f
         search: jest.fn(() => Promise.resolve(createRoleCollection(roles))),
     };
 
+    const query = { page: 1, limit: 25 };
+
+    if (term) {
+        query.term = term;
+    }
+
     const wrapper = mount(
         await wrapTestComponent('sw-system-user-list', {
             sync: true,
@@ -34,7 +63,10 @@ async function createWrapper({ rows = [], roles = [], privileges = [], isSso = f
                 renderStubDefaultSlot: true,
                 mocks: {
                     $t: (key) => key,
-                    $route: { query: {}, meta: { $module: { icon: 'regular-user-shield' } } },
+                    $route: {
+                        query,
+                        meta: { $module: { icon: 'regular-user-shield' } },
+                    },
                     $router: { push: jest.fn(), replace: jest.fn() },
                 },
                 provide: {
@@ -47,6 +79,13 @@ async function createWrapper({ rows = [], roles = [], privileges = [], isSso = f
                             return privileges.includes(identifier);
                         },
                     },
+                    filterFactory: {
+                        create: (entityName, filters) => {
+                            return Object.entries(filters).map(([key, filter]) => {
+                                return { ...filter, name: key };
+                            });
+                        },
+                    },
                     userService: {},
                     repositoryFactory: {
                         create: (entity) => {
@@ -57,8 +96,8 @@ async function createWrapper({ rows = [], roles = [], privileges = [], isSso = f
                         isSso: () => Promise.resolve({ isSso }),
                     },
                     searchRankingService: {
-                        isValidTerm: (term) => {
-                            return term && term.trim().length >= 1;
+                        isValidTerm: (searchTerm) => {
+                            return searchTerm && searchTerm.trim().length >= 1;
                         },
                     },
                 },
@@ -66,29 +105,47 @@ async function createWrapper({ rows = [], roles = [], privileges = [], isSso = f
                     'sw-page': {
                         template: `
                             <div>
+                                <slot name="search-bar"></slot>
                                 <slot name="smart-bar-header"></slot>
                                 <slot name="smart-bar-actions"></slot>
                                 <slot name="content"></slot>
+                                <slot name="sidebar"></slot>
+                                <slot></slot>
                             </div>`,
                     },
-                    'sw-card-view': {
-                        template: '<div><slot></slot></div>',
+                    'sw-search-bar': true,
+                    'sw-entity-listing': {
+                        name: 'SwEntityListing',
+                        template: `
+                            <div>
+                                <template v-for="item in dataSource || []" :key="item.id">
+                                    <slot name="column-username" v-bind="{ item }"></slot>
+                                    <slot name="column-aclRoles" v-bind="{ item }"></slot>
+                                    <slot name="more-actions" v-bind="{ item }"></slot>
+                                    <slot name="delete-action" v-bind="{ item }"></slot>
+                                </template>
+                                <slot name="pagination"></slot>
+                            </div>`,
+                        props: ['dataSource', 'columns', 'repository', 'sortBy', 'isLoading'],
                     },
-                    'mt-card': {
-                        template: '<div><slot></slot></div>',
-                    },
-                    'sw-data-grid': {
-                        template: '<div><slot name="pagination"></slot><slot name="action-modals"></slot></div>',
-                        props: ['dataSource', 'columns', 'isLoading'],
+                    'sw-pagination': true,
+                    'sw-sidebar': true,
+                    'sw-sidebar-item': true,
+                    'sw-sidebar-filter-panel': {
+                        name: 'SwSidebarFilterPanel',
+                        template: `
+                            <div class="sw-sidebar-filter-panel-stub">
+                                <span
+                                    v-for="filter in filters"
+                                    :key="filter.name"
+                                    class="sw-sidebar-filter-panel-stub__filter"
+                                >{{ filter.name }}</span>
+                            </div>`,
+                        props: ['filters', 'storeKey', 'defaults', 'activeFilterNumber'],
                     },
                     'sw-context-menu-item': {
                         template: '<div class="sw-context-menu-item-stub" :data-disabled="disabled"><slot /></div>',
                         props: ['disabled', 'routerLink', 'variant'],
-                    },
-                    'sw-simple-search-field': {
-                        template: '<input class="search-field" />',
-                        inheritAttrs: false,
-                        props: ['value', 'placeholder'],
                     },
                     'mt-button': {
                         template: '<button class="mt-button-stub"><slot /></button>',
@@ -96,12 +153,16 @@ async function createWrapper({ rows = [], roles = [], privileges = [], isSso = f
                     'mt-link': {
                         template: '<a class="mt-link-stub"><slot /></a>',
                     },
+                    'mt-badge': {
+                        template: '<span class="mt-badge-stub"><slot /></span>',
+                    },
                     'mt-empty-state': {
+                        name: 'MtEmptyState',
                         template: '<div class="mt-empty-state-stub">{{ headline }}<slot name="button"></slot></div>',
                         props: ['headline', 'description', 'icon'],
                     },
                     'sw-avatar': true,
-                    'sw-pagination': true,
+                    'sw-time-ago': true,
                     'sw-system-user-sso-status-label': true,
                     'sw-system-user-sso-invitation-modal': true,
                     'sw-verify-user-modal': true,
@@ -118,9 +179,14 @@ async function createWrapper({ rows = [], roles = [], privileges = [], isSso = f
 describe('module/sw-system/page/sw-system-user-list', () => {
     let wrapper;
 
+    beforeEach(() => {
+        mergeWithStoredFilters.mockClear();
+    });
+
     afterEach(() => {
         if (wrapper) {
             wrapper.unmount();
+            wrapper = null;
         }
 
         jest.restoreAllMocks();
@@ -140,71 +206,124 @@ describe('module/sw-system/page/sw-system-user-list', () => {
         expect(criteria.sortings).toEqual([expect.objectContaining({ field: 'username', order: 'ASC' })]);
     });
 
-    it('should filter the users by the selected role', async () => {
-        const { wrapper: userList, userRepository } = await createWrapper({
-            roles: [{ id: 'role-1', name: 'Order management' }],
-        });
+    it('should merge the stored filters of the user list into the search criteria', async () => {
+        const { wrapper: userList } = await createWrapper();
         wrapper = userList;
 
-        userRepository.search.mockClear();
-        userList.vm.roleFilter = 'role-1';
-        userList.vm.onFilterChange();
+        expect(mergeWithStoredFilters).toHaveBeenCalledWith(STORE_KEY, expect.anything());
+    });
 
-        const criteria = userRepository.search.mock.calls[0][0];
+    it('should provide the role and status filters mapped to the entity fields', async () => {
+        const { wrapper: userList } = await createWrapper();
+        wrapper = userList;
 
-        expect(criteria.filters).toEqual(
-            expect.arrayContaining([
-                expect.objectContaining({ field: 'aclRoles.id', value: 'role-1' }),
-            ]),
+        const filterPanel = userList.findComponent({ name: 'SwSidebarFilterPanel' });
+
+        expect(filterPanel.props('storeKey')).toBe(STORE_KEY);
+        expect(filterPanel.props('defaults')).toEqual(['role-filter', 'status-filter']);
+        expect(filterPanel.props('activeFilterNumber')).toBe(0);
+        expect(filterPanel.props('filters')).toEqual([
+            {
+                name: 'role-filter',
+                property: 'aclRoles',
+                label: 'sw-system.users.filter.labelRole',
+                placeholder: 'sw-system.users.filter.labelRole',
+            },
+            {
+                name: 'status-filter',
+                property: 'active',
+                label: 'sw-system.users.filter.labelStatus',
+            },
+        ]);
+    });
+
+    it('should render the users columns with the created at column at the end', async () => {
+        const rows = [{ id: 'user-1', username: 'zhangsan', active: true }];
+        const { wrapper: userList } = await createWrapper({ rows });
+        wrapper = userList;
+
+        const columns = userList.findComponent({ name: 'SwEntityListing' }).props('columns');
+
+        expect(columns.map((column) => column.property)).toEqual(['username', 'aclRoles', 'email', 'active', 'createdAt']);
+        expect(columns.find((column) => column.property === 'createdAt').label).toBe(
+            'sw-system.users.user-grid.labelCreatedAt',
         );
     });
 
-    it('should translate the status filter into the active flag', async () => {
-        const { wrapper: userList, userRepository } = await createWrapper();
+    it('should show the empty state for an empty user list', async () => {
+        const { wrapper: userList } = await createWrapper();
         wrapper = userList;
 
-        userRepository.search.mockClear();
-        userList.vm.statusFilter = 'inactive';
-        userList.vm.onFilterChange();
+        expect(userList.findComponent({ name: 'MtEmptyState' }).props('headline')).toBe(
+            'sw-system.users.emptyState.noUserTitle',
+        );
+    });
 
-        const criteria = userRepository.search.mock.calls[0][0];
+    it('should show the no result empty state when a search term is active', async () => {
+        const { wrapper: userList } = await createWrapper({ term: 'lisi' });
+        wrapper = userList;
 
-        expect(criteria.filters).toEqual(
-            expect.arrayContaining([expect.objectContaining({ field: 'active', value: false })]),
+        expect(userList.findComponent({ name: 'MtEmptyState' }).props('headline')).toBe(
+            'sw-system.users.emptyState.noResultTitle',
         );
     });
 
     it('should deny disabling the currently logged in user', async () => {
-        jest.spyOn(Shopwell.Store, 'get').mockReturnValue({ currentUser: { id: 'current-user-id' } });
+        loginAs('current-user-id');
 
-        const { wrapper: userList, userRepository } = await createWrapper();
+        const createNotification = jest
+            .spyOn(Shopwell.Store.get('notification'), 'createNotification')
+            .mockImplementation(() => null);
+
+        const rows = [{ id: 'current-user-id', username: 'admin', active: true }];
+        const { wrapper: userList, userRepository } = await createWrapper({ rows });
         wrapper = userList;
 
-        const createNotificationError = jest.spyOn(userList.vm, 'createNotificationError').mockImplementation(() => {});
-        const self = { id: 'current-user-id', username: 'admin', active: true };
-
-        userList.vm.onToggleActive(self);
+        await userList.find('.sw-system-user-list__user-toggle-active-action').trigger('click');
+        await flushPromises();
 
         expect(userRepository.save).not.toHaveBeenCalled();
-        expect(createNotificationError).toHaveBeenCalled();
-        expect(self.active).toBe(true);
+        expect(createNotification).toHaveBeenCalledWith(
+            expect.objectContaining({
+                variant: 'error',
+                message: 'sw-system.users.user-grid.notification.toggleActiveSelfError.message',
+            }),
+        );
     });
 
     it('should persist the toggled active state', async () => {
-        jest.spyOn(Shopwell.Store, 'get').mockReturnValue({ currentUser: { id: 'current-user-id' } });
+        loginAs('current-user-id');
 
-        const { wrapper: userList, userRepository } = await createWrapper();
+        const rows = [{ id: 'other-user-id', username: 'lisi', active: true }];
+        const { wrapper: userList, userRepository } = await createWrapper({ rows });
         wrapper = userList;
 
-        jest.spyOn(userList.vm, 'createNotificationSuccess').mockImplementation(() => {});
-        jest.spyOn(userList.vm, 'getList').mockImplementation(() => {});
-
-        const user = { id: 'other-user-id', username: 'lisi', active: true };
-
-        userList.vm.onToggleActive(user);
+        await userList.find('.sw-system-user-list__user-toggle-active-action').trigger('click');
+        await flushPromises();
 
         expect(userRepository.save).toHaveBeenCalledWith(expect.objectContaining({ id: 'other-user-id', active: false }));
-        expect(user.active).toBe(false);
+    });
+
+    it('should ask for the password before deleting a user', async () => {
+        loginAs('current-user-id');
+
+        const rows = [{ id: 'other-user-id', username: 'lisi', active: true }];
+        const { wrapper: userList } = await createWrapper({ rows });
+        wrapper = userList;
+
+        await userList.find('.sw-system-user-list__user-delete-action').trigger('click');
+        await flushPromises();
+
+        const confirmModal = userList.find('.sw-system-user-list__delete-modal');
+
+        expect(confirmModal.exists()).toBe(true);
+
+        const deleteButton = confirmModal.findAll('button').at(1);
+
+        await deleteButton.trigger('click');
+        await flushPromises();
+
+        expect(userList.find('sw-verify-user-modal-stub').exists()).toBe(true);
     });
 
     it('should render the roles of a user as badges and collapse the rest', async () => {
@@ -227,7 +346,7 @@ describe('module/sw-system/page/sw-system-user-list', () => {
         const { wrapper: userList } = await createWrapper({ rows });
         wrapper = userList;
 
-        expect(userList.vm.userColumns.map((column) => column.property)).toEqual(['username', 'aclRoles', 'email', 'active']);
-        expect(userList.vm.hasUsers).toBe(true);
+        expect(userList.findAll('.mt-badge-stub')).toHaveLength(4);
+        expect(userList.find('.sw-system-user-list__role-badge-more').text()).toBe('+1');
     });
 });
