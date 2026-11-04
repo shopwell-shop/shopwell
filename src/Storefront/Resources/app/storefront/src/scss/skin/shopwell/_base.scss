@@ -111,3 +111,8 @@ https://sass-guidelin.es/#the-7-1-pattern
 @import 'page/account/wallet';
 @import 'page/account/rewards';
 @import 'page/account/membership';
+
+// S5 page slices — appended last so the skin outranks the structural defaults.
+@import 'page/blog/blog';
+@import 'page/wishlist/wishlist';
+@import 'page/error/error';

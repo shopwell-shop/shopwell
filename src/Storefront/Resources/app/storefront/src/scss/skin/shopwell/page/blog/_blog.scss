@@ -1,0 +1,263 @@
+/*
+ * Blog (skin)
+ * ==================================================
+ * Visual source of truth: theme-prototype/blog.html
+ *
+ * The structural component/_blog.scss already renders a working feed with the
+ * brand tokens (stage e470cc71d). What this skin layer adds on top is the
+ * prototype page composition: a left-aligned title row with the category
+ * chips on the right, the feed in an 8-column main area with a sticky side
+ * rail, and the promoted first entry as a horizontal split card instead of a
+ * stacked one.
+ *
+ * Deliberate deviations from the prototype:
+ *   - "热门标签" side card shows the blog categories: there is no tag
+ *     dimension on the blog entity, so the categories are the only real
+ *     filter surface.
+ *   - "本月最多阅读" became "最新文章": the entity has no view counter, a
+ *     most-read list would fabricate numbers.
+ *   - no "编辑推荐" badge on the featured card: the prototype badge is
+ *     editorial copy, the card only knows "first of the feed".
+ */
+
+/* stylelint-disable selector-class-pattern -- BEM classes of the blog templates, restyled across modifier blocks (same rule as the structural layer). */
+
+/*
+ * Title row: title block left, chips right, one bottom border (原型
+ * .d-flex.justify-content-between + .border-bottom).
+ */
+.blog-index__top {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: $sw-space-4;
+    padding-bottom: $sw-space-3;
+    margin-bottom: $sw-space-6;
+    border-bottom: 1px solid $sw-border-subtle;
+}
+
+.blog-index__header {
+    margin-bottom: 4px;
+    text-align: start;
+}
+
+.blog-index__title {
+    font-size: 1.75rem; // 原型 h1.h3
+    margin-bottom: 4px;
+}
+
+.blog-index__subtitle {
+    margin: 0;
+    color: $sw-gray-600;
+    font-size: $sw-font-size-sm;
+    line-height: 1.7;
+}
+
+.blog-index__filter {
+    justify-content: flex-start;
+    padding-bottom: 0;
+    margin-bottom: 0;
+    border-bottom: 0;
+}
+
+.blog-index__chip {
+    padding: 6px 14px;
+    font-size: $sw-font-size-sm;
+
+    &:hover {
+        text-decoration: none;
+    }
+}
+
+/*
+ * Feed composition: 8/12 main area + 4/12 side rail (原型 .col-lg-8 + .col-lg-4).
+ */
+.blog-index__layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 316px;
+    gap: $sw-space-6;
+    align-items: start;
+}
+
+.blog-index__aside {
+    display: flex;
+    flex-direction: column;
+    gap: $sw-space-6;
+
+    @include media-breakpoint-up(xl) {
+        position: sticky;
+        top: 96px;
+    }
+}
+
+.blog-index__cms {
+    margin-top: 0;
+}
+
+/*
+ * The promoted entry as a horizontal split card: media 7/12 left, content
+ * 5/12 right (原型 .sw-post-card > .row .col-lg-7 + .col-lg-5). Below lg it
+ * collapses back to the stacked card.
+ */
+.blog-card--featured {
+    display: grid;
+    grid-template-columns: 58% minmax(0, 1fr);
+
+    .blog-card__media {
+        aspect-ratio: auto;
+        height: 100%;
+        min-height: 260px;
+        border-right: 1px solid $sw-border-subtle;
+    }
+
+    .blog-card__content {
+        justify-content: center;
+        padding: $sw-space-6;
+    }
+
+    .blog-card__read-more {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        color: $sw-brand;
+        font-size: $sw-font-size-sm;
+        font-weight: 600;
+        position: relative;
+        z-index: 2;
+    }
+
+    .blog-card__read-more-arrow {
+        width: 16px;
+        height: 16px;
+    }
+}
+
+.blog-card__teaser {
+    color: $sw-gray-600;
+    line-height: 1.7;
+}
+
+/*
+ * Two columns inside the main area (原型 .row-cols-md-2). The structural
+ * auto-fill would already land on two columns at container width, but the
+ * explicit pair keeps the rhythm stable at every size in between.
+ */
+.blog-listing {
+    gap: $sw-space-6;
+}
+
+.blog-listing--classic,
+.blog-listing--grid {
+    @include media-breakpoint-up(md) {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+.blog-listing--classic .blog-card--featured {
+    grid-column: 1 / -1;
+}
+
+/*
+ * Side cards (原型 .sw-side-card / .sw-side-list)
+ */
+.blog-side-card {
+    padding: $sw-space-6;
+    background: $sw-background-color; // token-bridged card surface
+    border: 1px solid $sw-border-subtle;
+    box-shadow: $sw-shadow;
+}
+
+.blog-side-card__title {
+    margin: 0 0 $sw-space-4;
+    font-size: $sw-font-size-md;
+    font-weight: 700;
+    color: $sw-gray-1000;
+}
+
+.blog-side-card__text {
+    margin: 0 0 $sw-space-3;
+    color: $sw-gray-600;
+    font-size: $sw-font-size-sm;
+    line-height: 1.7;
+}
+
+.blog-side-card__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: $sw-space-2;
+}
+
+.blog-side-list {
+    display: flex;
+    flex-direction: column;
+
+    a {
+        padding: 10px 0;
+        color: $sw-gray-800;
+        font-size: $sw-font-size-sm;
+        font-weight: 600;
+        line-height: 1.5;
+        text-decoration: none;
+        border-top: 1px solid $sw-border-row;
+
+        &:first-child {
+            border-top: 0;
+        }
+
+        &:hover {
+            color: $sw-brand;
+            text-decoration: underline;
+        }
+
+        small {
+            display: block;
+            margin-top: 2px;
+            color: $sw-gray-600;
+            font-size: $sw-font-size-xs;
+            font-weight: 400;
+        }
+    }
+}
+
+.blog-newsletter-form {
+    display: flex;
+    flex-direction: column;
+    gap: $sw-space-2;
+
+    .btn {
+        width: 100%;
+    }
+}
+
+/*
+ * Responsive
+ */
+@include media-breakpoint-down(lg) {
+    .blog-index__layout {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .blog-index__aside {
+        margin-top: $sw-space-2;
+    }
+}
+
+@include media-breakpoint-down(md) {
+    .blog-card--featured {
+        grid-template-columns: minmax(0, 1fr);
+
+        .blog-card__media {
+            aspect-ratio: 16 / 9;
+            min-height: 0;
+            border-right: 0;
+            border-bottom: 1px solid $sw-border-subtle;
+        }
+
+        .blog-card__content {
+            padding: $sw-space-4;
+        }
+    }
+}
+
+/* stylelint-enable selector-class-pattern */

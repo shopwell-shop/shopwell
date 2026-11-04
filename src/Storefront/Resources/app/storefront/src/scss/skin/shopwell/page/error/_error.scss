@@ -1,0 +1,74 @@
+/*
+ * Error & maintenance pages (skin)
+ * ==================================================
+ * Branded centred card for 404 / 500 / maintenance (prototype content/404
+ * style: centred card, short copy, one primary action). The stock
+ * illustrations were replaced by a typographic error code — the upstream
+ * artwork does not exist in the Shopwell visual language.
+ *
+ * Shared by:
+ *   - page/error/error-404.html.twig  (.error-page__code "404")
+ *   - page/error/error-std.html.twig  (.error-page__code "500")
+ *   - page/error/error-maintenance.html.twig fallback (.error-page__icon)
+ */
+
+/* stylelint-disable selector-class-pattern --
+ * BEM element classes (`.error-page__title`, ...) are restyled across
+ * modifier blocks and breakpoints where "&" nesting is not possible. */
+
+.error-page {
+    max-width: 560px;
+    margin: 0 auto;
+    padding: $sw-space-8 $sw-space-6 $sw-space-7;
+    text-align: center;
+    background: $sw-background-color;
+    border: 1px solid $sw-border-subtle;
+    box-shadow: $sw-shadow;
+}
+
+.error-page__code {
+    margin: 0 0 $sw-space-4;
+    color: $sw-brand;
+    font-size: clamp(3.5rem, 8vw, 5rem);
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: 0.04em;
+}
+
+.error-page__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 64px;
+    height: 64px;
+    margin: 0 auto $sw-space-5;
+    border-radius: $sw-radius-round;
+    background: $sw-warning-soft;
+    color: $sw-warning-text;
+
+    svg {
+        width: 30px;
+        height: 30px;
+    }
+}
+
+.error-page__title {
+    margin-bottom: $sw-space-2;
+    font-size: 1.375rem;
+    font-weight: 700;
+    color: $sw-gray-1000;
+}
+
+.error-page__text {
+    margin: 0 auto $sw-space-6;
+    max-width: 400px;
+    color: $sw-gray-600;
+    font-size: $sw-font-size-sm;
+    line-height: 1.7;
+}
+
+.error-page__actions {
+    display: flex;
+    justify-content: center;
+    gap: $sw-space-3;
+}
