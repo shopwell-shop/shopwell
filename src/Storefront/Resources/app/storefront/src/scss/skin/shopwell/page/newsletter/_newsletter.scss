@@ -1,4 +1,57 @@
+/* stylelint-disable selector-class-pattern --
+ * BEM element classes (`.newsletter-confirm__card`, ...) are addressed across
+ * nested blocks where "&" nesting is not possible. */
+
 .newsletter-action {
     display: flex;
     justify-content: flex-end;
+}
+
+/*
+ * Double opt-in confirmation page
+ * ==================================================
+ * Branded centred success card (same treatment as the checkout finish page).
+ */
+.newsletter-confirm {
+    padding: $sw-space-8 0 $sw-space-7;
+}
+
+.newsletter-confirm__card {
+    max-width: 560px;
+    margin: 0 auto;
+    padding: $sw-space-8 $sw-space-6;
+    text-align: center;
+    background: $sw-background-color;
+    border: 1px solid $sw-border-subtle;
+    box-shadow: $sw-shadow;
+}
+
+.newsletter-confirm__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 64px;
+    height: 64px;
+    margin: 0 auto $sw-space-5;
+    border-radius: $sw-radius-round;
+    background: $sw-success-soft;
+    color: $sw-success-text;
+
+    svg {
+        width: 28px;
+        height: 28px;
+    }
+}
+
+.newsletter-confirm__title {
+    margin-bottom: $sw-space-2;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: $sw-gray-1000;
+}
+
+.newsletter-confirm__text {
+    margin-bottom: $sw-space-5;
+    color: $sw-gray-600;
+    font-size: $sw-font-size-sm;
 }
