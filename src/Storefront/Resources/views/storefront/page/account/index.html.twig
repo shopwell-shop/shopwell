@@ -5,11 +5,14 @@
         <div class="account-overview">
             {% block page_account_overview_welcome %}
                 <div class="account-welcome">
-                    <h1 class="account-welcome-title">{{ 'account.myAccount'|trans|sw_sanitize }}</h1>
+                    <h1 class="account-welcome-title">{{ 'account.overviewTitle'|trans|sw_sanitize }}</h1>
 
-                    {% block page_account_overview_welcome_intro %}
-                        <p class="account-welcome-intro">{{ 'account.overviewInfo'|trans|sw_sanitize }}</p>
-                    {% endblock %}
+                    {#
+                        The intro sentence is intentionally not rendered on the account overview.
+                        The block stays empty (instead of being removed) so themes and plugins
+                        overriding it keep working.
+                    #}
+                    {% block page_account_overview_welcome_intro %}{% endblock %}
                 </div>
             {% endblock %}
 
@@ -380,18 +383,12 @@
                 </div>
             {% endblock %}
 
-            {% block page_account_overview_addresses_include %}
-                <div class="account-panel account-overview-addressbook">
-                    <div class="account-panel-head">
-                        <h2 class="account-panel-title">{{ 'account.overviewAddressPanelTitle'|trans|sw_sanitize }}</h2>
-                        <a class="account-link-muted" href="{{ path('frontend.account.address.page') }}">
-                            {{ 'account.addressCreateBtn'|trans|sw_sanitize }}
-                        </a>
-                    </div>
-
-                    {% sw_include '@Storefront/storefront/page/account/address.html.twig' %}
-                </div>
-            {% endblock %}
+            {#
+                The address book lives on its own page (sidebar entry "地址"). It is not
+                duplicated on the overview any more; the block stays empty so overrides
+                keep working.
+            #}
+            {% block page_account_overview_addresses_include %}{% endblock %}
 
             {% block page_account_overview_newsletter %}
                 <div class="account-panel account-overview-newsletter">
