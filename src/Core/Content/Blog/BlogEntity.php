@@ -6,6 +6,7 @@ use Shopwell\Core\Content\Blog\Aggregate\BlogAuthor\BlogAuthorEntity;
 use Shopwell\Core\Content\Blog\Aggregate\BlogCategoryAssignment\BlogCategoryAssignmentEntity;
 use Shopwell\Core\Content\Blog\Aggregate\BlogComment\BlogCommentEntity;
 use Shopwell\Core\Content\Blog\Aggregate\BlogVideo\BlogVideoEntity;
+use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\AllowHtml;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\Entity;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\Field;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\FieldType;
@@ -124,8 +125,11 @@ class BlogEntity extends EntityStruct
 
     /**
      * The body of the entry as rendered by the editor. It may contain html, which is why it is a
-     * text column and not a string one.
+     * text column and not a string one. The {@see AllowHtml} flag mirrors that: without it the write
+     * pipeline strips every tag and an entry saved through the api would lose its structure on the
+     * way to the database. Sanitized, so the editor gets clean markup and not a raw passthrough.
      */
+    #[AllowHtml(sanitized: true)]
     #[Field(type: FieldType::TEXT, translated: true, api: ['admin-api' => true, 'store-api' => true])]
     public ?string $content = null;
 
