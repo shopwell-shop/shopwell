@@ -2,11 +2,29 @@
     <div class="col-12">
         {% if searchResult.total > 0 %}
             {% block block_wishlist_listing_header %}
-                <h1 class="wishlist-headline">
+                <div class="wishlist-header">
                     {% block block_wishlist_listing_header_text %}
-                        {{ 'wishlist.headline'|trans }}
+                        <div class="wishlist-header__text">
+                            <h1 class="wishlist-header__title">
+                                {% block block_wishlist_listing_header_title %}
+                                    {{ 'wishlist.headline'|trans }}
+                                {% endblock %}
+                            </h1>
+                            {% block block_wishlist_listing_header_count %}
+                                <p class="wishlist-header__subtitle">
+                                    {{ 'wishlist.subtitle'|trans({ '%count%': searchResult.total })|sw_sanitize }}
+                                </p>
+                            {% endblock %}
+                        </div>
                     {% endblock %}
-                </h1>
+
+                    {% block block_wishlist_listing_header_continue %}
+                        <a class="wishlist-header__continue"
+                           href="{{ seoUrl('frontend.navigation.page', { navigationId: context.salesChannel.navigationCategoryId }) }}">
+                            {{ 'wishlist.continueShopping'|trans|sw_sanitize }}
+                        </a>
+                    {% endblock %}
+                </div>
             {% endblock %}
         {% endif %}
 

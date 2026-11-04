@@ -4,10 +4,12 @@
             "title": "文章",
             "empty": "暂无文章。",
             "filterAll": "全部",
-            "filterLabel": "按分类筛选"
+            "filterLabel": "按分类筛选",
+            "subtitle": "买手的试用报告、选购指南与行业观察，每周更新。"
         },
         "card": {
-            "readingTime": "阅读约 %minutes% 分钟"
+            "readingTime": "阅读约 %minutes% 分钟",
+            "readMore": "阅读全文"
         },
         "detail": {
             "toc": "目录",
@@ -52,6 +54,12 @@
                 "error": "评论提交失败，请检查填写内容后重试。",
                 "flood": "你刚刚在这篇文章下评论过，请稍等一分钟再发下一条。"
             }
+        },
+        "sidebar": {
+            "categoriesTitle": "分类",
+            "latestTitle": "最新文章",
+            "newsletterTitle": "订阅资讯",
+            "newsletterText": "每周一封，只讲值得买的东西。"
         }
     },
     "global": {
@@ -125,7 +133,9 @@
             "last": "末页",
             "page": "页",
             "title": "分页"
-        }
+        },
+        "errorPageHeader": "出错了",
+        "errorPageDescription": "抱歉，页面处理时发生错误，请稍后重试或返回首页。"
     },
     "header": {
         "logoLink": "返回首页",
@@ -1060,7 +1070,9 @@
         "wishlistEmptyDescription": "把感兴趣的商品加入收藏，方便随时查看。",
         "deliveryTimeRestock": "{1}1 天后发货，%name% 送达 |[0,Inf[%restockTime% 天后发货，%name% 送达",
         "deliveryShipping": "该商品预计于",
-        "remove": "将 %product_name% 移出收藏"
+        "remove": "将 %product_name% 移出收藏",
+        "subtitle": "共 %count% 件商品",
+        "continueShopping": "继续逛逛"
     },
     "footer": {
         "serviceHotlineHeadline": "服务热线",
@@ -1078,7 +1090,10 @@
         "includeVatTextPage": "所有价格含税，另加<a href=\"%url%\">运费</a>及可能的货到付款手续费，另有说明除外。",
         "excludeVatText": "%star%所有价格不含税，另加<a data-ajax-modal=\"true\" href=\"%url%\" data-url=\"%url%\">运费</a>及可能的货到付款手续费，另有说明除外。",
         "excludeVatTextPage": "所有价格不含税，另加<a href=\"%url%\">运费</a>及可能的货到付款手续费，另有说明除外。",
-        "copyrightInfo": "由 Shopwell 提供技术支持"
+        "copyrightInfo": "由 Shopwell 提供技术支持",
+        "socialWechat": "微信公众号",
+        "socialPhone": "客服电话",
+        "socialWebsite": "官方网站"
     },
     "captcha": {
         "googleReCaptcha": {
