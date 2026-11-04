@@ -1,0 +1,200 @@
+/*
+ * Checkout — confirm page (skin)
+ * ==============================================
+ * Visual source of truth: theme-prototype/checkout.html
+ *
+ * Deliberate deviations from the prototype (team-approved):
+ *   - 3-step progress bar (购物车 / 确认订单 / 完成) — our flow has no separate
+ *     "地址与支付" page; a 4-step bar would render two steps on one page.
+ *   - minimal header/footer kept (Shopware checkout convention), the prototype
+ *     paints the full site chrome.
+ *
+ * The selection cards map the prototype `.sw-option` onto the stock radio
+ * groups (`.payment-method-radio` / `.shipping-method-radio`); the address and
+ * form panels reuse the shared card skin (component/_card.scss).
+ */
+
+/*
+ * Progress steps (原型 .sw-steps / .sw-step)
+ * ---------------------- */
+.checkout-steps {
+    align-items: center;
+    background: $sw-gray-50;
+    display: flex;
+    flex-wrap: wrap;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    gap: $sw-space-3;
+    margin-bottom: $sw-space-5;
+    padding: $sw-space-4 $sw-space-5;
+}
+
+.checkout-step {
+    align-items: center;
+    color: $sw-step-inactive-text;
+    display: inline-flex;
+    gap: $sw-space-2;
+}
+
+.checkout-step-sep {
+    color: $sw-text-muted;
+}
+
+.checkout-step-num {
+    align-items: center;
+    background: $sw-gray-200;
+    border-radius: $sw-radius-round;
+    color: $sw-gray-800;
+    display: inline-flex;
+    flex-shrink: 0;
+    font-size: $sw-font-size-xs;
+    font-weight: 700;
+    height: 22px;
+    justify-content: center;
+    width: 22px;
+}
+
+.checkout-step.is-active {
+    color: $sw-gray-1000;
+
+    .checkout-step-num {
+        background: $sw-brand;
+        color: #fff;
+    }
+}
+
+.checkout-step.is-done {
+    color: $sw-step-done-text;
+
+    .checkout-step-num {
+        background: $sw-success-soft;
+        color: $sw-step-done-text;
+    }
+}
+
+.checkout-step-link {
+    color: inherit;
+    display: inline-flex;
+    align-items: center;
+    gap: inherit;
+    text-decoration: none;
+
+    &:hover {
+        color: $sw-brand;
+    }
+}
+
+/*
+ * Page header
+ * ---------------------- */
+.confirm-main-header {
+    color: $sw-gray-1000;
+    font-size: 1.25rem; // 20px, 原型 h1.h3
+    font-weight: 700;
+    margin: 0 0 $sw-space-2;
+}
+
+.confirm-main-header-item-counter {
+    color: $sw-text-meta;
+    font-size: $sw-font-size-sm;
+    font-weight: 400;
+}
+
+.checkout {
+    /*
+     * Address / payment / shipping panels (原型 .sw-panel__head)
+     * ---------------------- */
+    .checkout-card > .card-body > .card-title,
+    .checkout-card .card-title {
+        align-items: center;
+        color: $sw-gray-1000;
+        display: flex;
+        flex-wrap: wrap;
+        font-size: $sw-font-size-md;
+        font-weight: 700;
+        justify-content: space-between;
+        margin-bottom: $sw-space-4;
+    }
+
+    /*
+     * Selection cards (原型 .sw-option)
+     * ----------------------
+     * The radio inputs keep their plugin hooks (`data-focus-id`, auto-submit
+     * form); the label is painted as the card surface.
+     */
+    .payment-method-radio,
+    .shipping-method-radio {
+        background: $sw-background-color;
+        border: 1px solid $sw-border-subtle;
+        cursor: pointer;
+        display: grid;
+        gap: $sw-space-3;
+        grid-template-columns: auto minmax(0, 1fr);
+        align-items: start;
+        margin-bottom: $sw-space-3;
+        padding: $sw-space-4 $sw-space-5;
+        transition:
+            border-color 0.15s ease,
+            background-color 0.15s ease,
+            box-shadow 0.15s ease;
+
+        &:hover {
+            border-color: $sw-brand;
+        }
+
+        &:has(input:checked) {
+            background: $sw-brand-soft; // 原型选中卡 #EAF3FF 底
+            border-color: $sw-brand;
+            box-shadow: 0 0 0 2px $sw-border-hover-ring;
+        }
+
+        .form-check-input {
+            margin-top: 3px;
+        }
+
+        .payment-method-label,
+        .shipping-method-label {
+            width: auto;
+        }
+
+        .payment-method-description,
+        .shipping-method-description {
+            width: auto;
+
+            strong {
+                color: $sw-gray-1000;
+                font-size: $sw-font-size-sm;
+                font-weight: 600;
+            }
+
+            p {
+                color: $sw-gray-600;
+                font-size: $sw-font-size-xs;
+                line-height: 1.6;
+            }
+        }
+
+        .payment-method-image,
+        .shipping-method-image {
+            max-height: 40px;
+            width: auto;
+        }
+    }
+
+    // 提交区（TOS / 钱包 / 积分 / 提交按钮）跟随摘要面板
+    .checkout-aside .checkout-aside-action .checkout-confirm-tos-information {
+        color: $sw-gray-800;
+        font-size: $sw-font-size-xs;
+    }
+}
+
+// Confirm route: aside summary becomes sticky next to the two-column grid.
+.is-act-confirmpage, // @deprecated tag:v6.8.0 - body class alias
+.is-active-route-frontend-checkout-confirm-page {
+    .checkout .checkout-aside-container {
+        @include media-breakpoint-up(lg) {
+            position: sticky;
+            top: 96px;
+        }
+    }
+}
