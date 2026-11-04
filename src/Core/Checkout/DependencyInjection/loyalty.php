@@ -10,10 +10,10 @@ use Shopwell\Core\Checkout\Cart\SalesChannel\CartService;
 use Shopwell\Core\Checkout\Ledger\RowLock;
 use Shopwell\Core\Checkout\Loyalty\Api\LoyaltyController;
 use Shopwell\Core\Checkout\Loyalty\Cart\LoyaltyPointCartProcessor;
-use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyPointTransaction\LoyaltyPointTransactionDefinition;
 use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyAccount\LoyaltyAccountDefinition;
 use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyPointLot\LoyaltyPointLotDefinition;
 use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyPointLotUse\LoyaltyPointLotUseDefinition;
+use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyPointTransaction\LoyaltyPointTransactionDefinition;
 use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyRedemptionLevel\LoyaltyRedemptionLevelDefinition;
 use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyTier\Aggregate\LoyaltyTierTranslation\LoyaltyTierTranslationDefinition;
 use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyTier\LoyaltyTierDefinition;
@@ -31,6 +31,7 @@ use Shopwell\Core\Checkout\Loyalty\Service\LoyaltyRedemptionCalculator;
 use Shopwell\Core\Checkout\Loyalty\Service\LoyaltyRefundSource;
 use Shopwell\Core\Checkout\Loyalty\Service\LoyaltyReturnPoints;
 use Shopwell\Core\Checkout\Loyalty\Service\LoyaltySettings;
+use Shopwell\Core\Checkout\Loyalty\Service\LoyaltyTierProgress;
 use Shopwell\Core\Checkout\Loyalty\Service\TierResolver;
 use Shopwell\Core\Checkout\Loyalty\Subscriber\LoyaltyAccountProvisionSubscriber;
 use Shopwell\Core\Checkout\Loyalty\Subscriber\OrderReturnStateChangeLoyaltySubscriber;
@@ -91,6 +92,10 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service(SystemConfigService::class),
         ]);
+
+    // pure projection over the loyalty payload - no dependencies, so both the rewards page and the
+    // account overview print the same tier ladder
+    $services->set(LoyaltyTierProgress::class);
 
     $services->set(LoyaltyAccountService::class)
         ->args([

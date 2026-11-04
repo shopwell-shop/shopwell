@@ -40,7 +40,8 @@ class AccountOrderPageLoader
         private readonly EventDispatcherInterface $eventDispatcher,
         private readonly AbstractOrderRoute $orderRoute,
         private readonly AbstractTranslator $translator,
-        private readonly OrderProductAvailabilityResolver $productAvailabilityResolver
+        private readonly OrderProductAvailabilityResolver $productAvailabilityResolver,
+        private readonly AccountOrderStateCounter $orderStateCounter
     ) {
     }
 
@@ -60,6 +61,10 @@ class AccountOrderPageLoader
         $page->setOrders($orders);
 
         $page->setDeepLinkCode($request->attributes->get('deepLinkCode'));
+
+        // the tag row shows the very numbers the filters produce, so both come from the same counter
+        $page->setOrderStateFilter($this->orderStateCounter->resolveFilter($this->requestedOrderState($request)));
+        $page->setOrderStateCounts($this->orderStateCounter->counts($request, $salesChannelContext));
 
         $this->eventDispatcher->dispatch(
             new AccountOrderPageLoadedEvent($page, $salesChannelContext, $request)
@@ -160,6 +165,24 @@ class AccountOrderPageLoader
             $criteria->addFilter(new EqualsFilter('deepLinkCode', $request->attributes->get('deepLinkCode')));
         }
 
+        $filter = $this->orderStateCounter->criteriaFilter(
+            $this->orderStateCounter->resolveFilter($this->requestedOrderState($request))
+        );
+
+        if ($filter !== null) {
+            $criteria->addFilter($filter);
+        }
+
         return $criteria;
+    }
+
+    /**
+     * The raw `orderState` query value; the counter decides whether it is a tag this shop knows.
+     */
+    private function requestedOrderState(Request $request): ?string
+    {
+        $value = RequestParamHelper::get($request, 'orderState');
+
+        return \is_string($value) ? $value : null;
     }
 }

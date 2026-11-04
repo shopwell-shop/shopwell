@@ -19,6 +19,8 @@ use Shopwell\Core\Checkout\Customer\SalesChannel\LoadWishlistRoute;
 use Shopwell\Core\Checkout\Customer\Validation\AddressValidationFactory;
 use Shopwell\Core\Checkout\Gateway\SalesChannel\CheckoutGatewayRoute;
 use Shopwell\Core\Checkout\Loyalty\SalesChannel\LoyaltyRoute;
+use Shopwell\Core\Checkout\Loyalty\Service\LoyaltySettings;
+use Shopwell\Core\Checkout\Loyalty\Service\LoyaltyTierProgress;
 use Shopwell\Core\Checkout\Membership\SalesChannel\MembershipRoute;
 use Shopwell\Core\Checkout\Order\SalesChannel\OrderRoute;
 use Shopwell\Core\Checkout\Order\SalesChannel\OrderService;
@@ -27,6 +29,7 @@ use Shopwell\Core\Checkout\OrderReturn\SalesChannel\OrderReturnRoute;
 use Shopwell\Core\Checkout\Payment\SalesChannel\PaymentMethodRoute;
 use Shopwell\Core\Checkout\Shipping\SalesChannel\ShippingMethodRoute;
 use Shopwell\Core\Checkout\Wallet\SalesChannel\WalletRoute;
+use Shopwell\Core\Checkout\Wallet\Service\WalletSettings;
 use Shopwell\Core\Content\Blog\Service\BlogDetailReader;
 use Shopwell\Core\Content\Blog\Service\BlogListingReader;
 use Shopwell\Core\Content\Blog\Service\BlogSettings;
@@ -142,6 +145,7 @@ use Shopwell\Storefront\Page\Account\Membership\AccountMembershipPageLoader;
 use Shopwell\Storefront\Page\Account\Order\AccountEditOrderPageLoader;
 use Shopwell\Storefront\Page\Account\Order\AccountOrderDetailPageLoader;
 use Shopwell\Storefront\Page\Account\Order\AccountOrderPageLoader;
+use Shopwell\Storefront\Page\Account\Order\AccountOrderStateCounter;
 use Shopwell\Storefront\Page\Account\OrderReturn\AccountOrderReturnPageLoader;
 use Shopwell\Storefront\Page\Account\OrderReturn\GuestOrderReturnPageLoader;
 use Shopwell\Storefront\Page\Account\Overview\AccountOverviewPageLoader;
@@ -651,6 +655,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('event_dispatcher'),
             service(LoyaltyRoute::class),
             service(Translator::class),
+            service(LoyaltyTierProgress::class),
         ]);
 
     $services->set(AccountMembershipPageLoader::class)
@@ -695,6 +700,12 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(NewsletterAccountPageletLoader::class),
             service(Translator::class),
             service(OrderProductAvailabilityResolver::class),
+            service(WalletRoute::class),
+            service(WalletSettings::class),
+            service(LoyaltyRoute::class),
+            service(LoyaltySettings::class),
+            service(LoyaltyTierProgress::class),
+            service(AccountOrderStateCounter::class),
         ]);
 
     $services->set(AccountOrderPageLoader::class)
@@ -704,6 +715,15 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(OrderRoute::class),
             service(Translator::class),
             service(OrderProductAvailabilityResolver::class),
+            service(AccountOrderStateCounter::class),
+        ]);
+
+    // pure route reader shared by the order list and the dashboard, so a badge and its tag
+    // can never disagree
+    $services->set(AccountOrderStateCounter::class)
+        ->args([
+            service(OrderRoute::class),
+            service('event_dispatcher'),
         ]);
 
     $services->set(OrderProductAvailabilityResolver::class)

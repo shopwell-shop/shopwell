@@ -5,6 +5,7 @@ namespace Shopwell\Storefront\Page\Account\Rewards;
 use Shopwell\Core\Checkout\Cart\Exception\CustomerNotLoggedInException;
 use Shopwell\Core\Checkout\Customer\CustomerEntity;
 use Shopwell\Core\Checkout\Loyalty\SalesChannel\LoyaltyRoute;
+use Shopwell\Core\Checkout\Loyalty\Service\LoyaltyTierProgress;
 use Shopwell\Core\Content\Category\Exception\CategoryNotFoundException;
 use Shopwell\Core\Framework\Adapter\Translation\AbstractTranslator;
 use Shopwell\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException;
@@ -29,7 +30,8 @@ class AccountRewardsPageLoader
         private readonly GenericPageLoaderInterface $genericLoader,
         private readonly EventDispatcherInterface $eventDispatcher,
         private readonly LoyaltyRoute $loyaltyRoute,
-        private readonly AbstractTranslator $translator
+        private readonly AbstractTranslator $translator,
+        private readonly LoyaltyTierProgress $tierProgress
     ) {
     }
 
@@ -53,7 +55,7 @@ class AccountRewardsPageLoader
         /** @var list<array<string, mixed>> $tiers */
         $tiers = $rewards->get('tiers') ?? [];
 
-        [$currentTier, $nextTier] = $this->resolveTiers($tiers, $rewards->get('tierId'));
+        [$currentTier, $nextTier] = $this->tierProgress->resolve($tiers, $rewards->get('tierId'));
         $page->setCurrentTier($currentTier);
         $page->setNextTier($nextTier);
 
@@ -77,42 +79,5 @@ class AccountRewardsPageLoader
         $page->getMetaInformation()?->setMetaTitle(
             $this->translator->trans('account.rewardsMetaTitle') . ' | ' . $page->getMetaInformation()->getMetaTitle()
         );
-    }
-
-    /**
-     * The tier the customer is in and the one they are climbing towards.
-     *
-     * The current tier is matched by id rather than by tier points: a membership can grant a tier the
-     * tier points alone would not reach, and the progress bar then has to start at that tier.
-     *
-     * @param list<array<string, mixed>> $tiers
-     *
-     * @return array{0: array<string, mixed>|null, 1: array<string, mixed>|null}
-     */
-    private function resolveTiers(array $tiers, mixed $tierId): array
-    {
-        $currentTier = null;
-
-        foreach ($tiers as $tier) {
-            if (($tier['id'] ?? null) === $tierId) {
-                $currentTier = $tier;
-                break;
-            }
-        }
-
-        if ($currentTier === null) {
-            return [null, $tiers[0] ?? null];
-        }
-
-        $nextTier = null;
-
-        foreach ($tiers as $tier) {
-            if (($tier['minTierPoints'] ?? 0) > ($currentTier['minTierPoints'] ?? 0)) {
-                $nextTier = $tier;
-                break;
-            }
-        }
-
-        return [$currentTier, $nextTier];
     }
 }

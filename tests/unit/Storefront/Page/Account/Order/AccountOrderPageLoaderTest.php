@@ -14,18 +14,22 @@ use Shopwell\Core\Framework\Adapter\Translation\AbstractTranslator;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\System\SalesChannel\SalesChannelContext;
 use Shopwell\Core\Test\Generator;
 use Shopwell\Core\Test\Stub\EventDispatcher\CollectingEventDispatcher;
 use Shopwell\Storefront\Checkout\Order\OrderProductAvailabilityResolver;
 use Shopwell\Storefront\Event\RouteRequest\OrderRouteRequestEvent;
 use Shopwell\Storefront\Page\Account\Order\AccountOrderPageLoadedEvent;
 use Shopwell\Storefront\Page\Account\Order\AccountOrderPageLoader;
+use Shopwell\Storefront\Page\Account\Order\AccountOrderStateCounter;
 use Shopwell\Storefront\Page\GenericPageLoader;
 use Shopwell\Storefront\Page\MetaInformation;
 use Shopwell\Storefront\Page\Page;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 /**
  * @internal
@@ -57,6 +61,11 @@ class AccountOrderPageLoaderTest extends TestCase
             $this->orderRoute,
             $this->translator,
             static::createStub(OrderProductAvailabilityResolver::class),
+            // The counts go through their own route stub so the order-list route stays a `once()` expectation.
+            // They also get their own dispatcher: the counter fires one `OrderRouteRequestEvent` per state
+            // bucket, which would otherwise drown the page-level event assertions below. That the counter
+            // dispatches its events is covered by AccountOrderStateCounterTest.
+            new AccountOrderStateCounter(static::createStub(OrderRoute::class), static::createStub(EventDispatcherInterface::class)),
         );
     }
 
@@ -113,9 +122,111 @@ class AccountOrderPageLoaderTest extends TestCase
         static::assertSame('noindex,follow', $metaInformation->getRobots());
 
         $events = $this->eventDispatcher->getEvents();
-        static::assertCount(2, $events);
 
-        static::assertInstanceOf(OrderRouteRequestEvent::class, $events[0]);
-        static::assertInstanceOf(AccountOrderPageLoadedEvent::class, $events[1]);
+        // one event for the order list, the tag counts run through the counter, the page event closes
+        $orderRouteEvents = array_values(array_filter(
+            $events,
+            static fn (object $event): bool => $event instanceof OrderRouteRequestEvent
+        ));
+        static::assertGreaterThan(0, \count($orderRouteEvents));
+        $lastEvent = $orderRouteEvents === [] ? null : $events[\count($events) - 1];
+        static::assertInstanceOf(AccountOrderPageLoadedEvent::class, $lastEvent);
+
+        // the tag row got a number for the unfiltered list and for every filter, from the counter
+        static::assertSame(
+            array_merge([AccountOrderStateCounter::FILTER_ALL], array_keys(AccountOrderStateCounter::FILTERS)),
+            array_keys($page->getOrderStateCounts())
+        );
+        static::assertSame(AccountOrderStateCounter::FILTER_ALL, $page->getOrderStateFilter());
+    }
+
+    public function testAKnownOrderStateBecomesAFilterOnTheOrderList(): void
+    {
+        $capturedCriteria = null;
+
+        $this->expectPageToLoad();
+
+        $this->orderRoute
+            ->expects($this->once())
+            ->method('load')
+            ->willReturnCallback(function (Request $request, SalesChannelContext $context, Criteria $criteria) use (&$capturedCriteria) {
+                $capturedCriteria = $criteria;
+
+                return $this->orderResponse();
+            });
+
+        $context = Generator::generateSalesChannelContext();
+        $page = $this->pageLoader->load(new Request(['orderState' => 'pending_payment']), $context);
+
+        static::assertSame('pending_payment', $page->getOrderStateFilter());
+        static::assertNotNull($capturedCriteria);
+
+        $filters = $capturedCriteria->getFilters();
+        static::assertCount(1, $filters);
+        static::assertInstanceOf(EqualsFilter::class, $filters[0]);
+        static::assertSame('stateMachineState.technicalName', $filters[0]->getField());
+        static::assertSame('open', $filters[0]->getValue());
+    }
+
+    public function testAnUnknownOrderStateFallsBackToTheUnfilteredList(): void
+    {
+        $capturedCriteria = null;
+
+        $this->expectPageToLoad();
+
+        $this->orderRoute
+            ->expects($this->once())
+            ->method('load')
+            ->willReturnCallback(function (Request $request, SalesChannelContext $context, Criteria $criteria) use (&$capturedCriteria) {
+                $capturedCriteria = $criteria;
+
+                return $this->orderResponse();
+            });
+
+        $context = Generator::generateSalesChannelContext();
+        $page = $this->pageLoader->load(new Request(['orderState' => 'something-made-up']), $context);
+
+        // a stale bookmark shows the orders instead of erroring
+        static::assertSame(AccountOrderStateCounter::FILTER_ALL, $page->getOrderStateFilter());
+        static::assertNotNull($capturedCriteria);
+        static::assertSame([], $capturedCriteria->getFilters());
+    }
+
+    /**
+     * Every test has to set an expectation on the shared page-loader double, otherwise PHPUnit reports
+     * the "no expectations" notice for a mock that other tests do use with expectations.
+     */
+    private function expectPageToLoad(): void
+    {
+        $page = new Page();
+        $page->setMetaInformation(new MetaInformation());
+        $page->getMetaInformation()?->setMetaTitle('testshop');
+
+        $this->genericPageLoader
+            ->expects($this->once())
+            ->method('load')
+            ->willReturn($page);
+
+        $this->translator
+            ->expects($this->once())
+            ->method('trans')
+            ->willReturn('translated');
+    }
+
+    private function orderResponse(): OrderRouteResponse
+    {
+        $order = new OrderEntity();
+        $order->setId(Uuid::randomHex());
+
+        return new OrderRouteResponse(
+            new EntitySearchResult(
+                OrderDefinition::ENTITY_NAME,
+                1,
+                new OrderCollection([$order]),
+                null,
+                new Criteria(),
+                Context::createDefaultContext()
+            )
+        );
     }
 }
