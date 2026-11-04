@@ -1,24 +1,96 @@
 /*
-Header
-==================================================
-Contains custom skin styles for the header at the top of the page.
-The header contains the shop logo, the search form and various actions like the offcanvas cart button.
-*/
+ * Header
+ * ==================================================
+ * Contains custom skin styles for the header at the top of the page.
+ * The header contains the shop logo, the main navigation, the search form
+ * and various actions like the offcanvas cart button.
+ *
+ * Visual source of truth: single-line header prototype
+ * (logo | main navigation | search | icon actions).
+ */
+
+/* Header surface: single white bar with a hairline divider. */
+.header-main {
+    background: $white;
+    border-bottom: 1px solid $sw-nav-border;
+}
+
+@include media-breakpoint-up(lg) {
+    .header-row {
+        min-height: 72px;
+        padding: 0.5rem 0;
+    }
+}
+
+/*
+ * Search: grey pill with an embedded accent button
+ * (replaces the attached input-group look).
+ */
+.header-search-form {
+    .input-group {
+        align-items: center;
+        background: $sw-nav-fill;
+        border: 1px solid $sw-nav-border;
+        border-radius: 0.5rem;
+        display: flex;
+        flex-wrap: nowrap;
+        gap: 0.5rem;
+        height: 42px;
+        padding: 0 0.375rem 0 0.875rem;
+        transition:
+            background-color 0.15s ease,
+            border-color 0.15s ease,
+            box-shadow 0.15s ease;
+
+        &:focus-within {
+            background: $white;
+            border-color: $sw-nav-accent;
+            box-shadow: 0 0 0 3px $sw-nav-accent-focus-ring;
+        }
+    }
+}
+
+.header-search-form .header-search-input {
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+    color: $sw-nav-link;
+    flex: 1 1 auto;
+    height: 100%;
+    min-width: 0;
+    order: 1;
+    padding: 0;
+
+    &::placeholder {
+        color: $sw-nav-muted;
+    }
+
+    &:focus {
+        border-color: transparent;
+        box-shadow: none;
+    }
+}
 
 .header-search-btn,
 .header-close-btn {
-    --#{$prefix}btn-focus-box-shadow: #{$input-btn-focus-box-shadow};
-    --#{$prefix}btn-border-color: #{$input-border-color};
-    --#{$prefix}btn-hover-color: #{$primary};
-    --#{$prefix}btn-hover-border-color: #{$input-border-color};
-    --#{$prefix}btn-active-border-color: #{$input-border-color};
-    --#{$prefix}btn-disabled-bg: #{$input-bg};
-    --#{$prefix}btn-disabled-border-color: #{$border-color};
-    border-left: 0 none;
+    --#{$prefix}btn-bg: #{$sw-nav-accent};
+    --#{$prefix}btn-border-color: #{$sw-nav-accent};
+    --#{$prefix}btn-color: #{$white};
+    --#{$prefix}btn-hover-bg: #{$sw-nav-accent-hover};
+    --#{$prefix}btn-hover-border-color: #{$sw-nav-accent-hover};
+    --#{$prefix}btn-hover-color: #{$white};
+    --#{$prefix}btn-active-bg: #{$sw-nav-accent};
+    --#{$prefix}btn-active-border-color: #{$sw-nav-accent};
+    --#{$prefix}btn-active-color: #{$white};
+    --#{$prefix}btn-focus-box-shadow: 0 0 0 3px #{$sw-nav-accent-focus-ring};
+    flex: 0 0 auto;
+    height: 32px;
+    order: 2;
+    padding: 0 1rem;
 
     &:hover {
         .icon {
-            color: $primary;
+            color: $white;
         }
     }
 
@@ -28,30 +100,40 @@ The header contains the shop logo, the search form and various actions like the 
     }
 }
 
-.header-search-input {
-    border-right: 0;
+/* The close button only appears while the suggest list is open (see base layer). */
+.header-close-btn {
+    --#{$prefix}btn-bg: transparent;
+    --#{$prefix}btn-border-color: transparent;
+    --#{$prefix}btn-color: #{$sw-nav-muted};
+    --#{$prefix}btn-hover-bg: #{$sw-nav-fill};
+    --#{$prefix}btn-hover-border-color: #{$sw-nav-fill};
+    --#{$prefix}btn-hover-color: #{$sw-nav-accent};
+    --#{$prefix}btn-active-bg: transparent;
+    --#{$prefix}btn-active-border-color: transparent;
+    --#{$prefix}btn-active-color: #{$sw-nav-accent};
+    --#{$prefix}btn-focus-box-shadow: 0 0 0 3px #{$sw-nav-accent-focus-ring};
 
-    &:focus {
-        &,
-        ~ .header-search-btn,
-        ~ .header-close-btn {
-            border-color: $primary;
-        }
+    &:hover .icon {
+        color: $sw-nav-accent;
     }
 }
 
+/* Icon actions: plain icon buttons, accent on hover. */
 .header-actions-btn {
-    --#{$prefix}btn-focus-box-shadow: #{$input-btn-focus-box-shadow};
+    --#{$prefix}btn-color: #{$sw-nav-link};
+    --#{$prefix}btn-border-color: transparent;
+    --#{$prefix}btn-focus-box-shadow: 0 0 0 3px #{$sw-nav-accent-focus-ring};
     --#{$prefix}btn-active-border-color: transparent;
     --#{$prefix}btn-active-bg: transparent;
-    --#{$prefix}btn-hover-color: transparent;
+    --#{$prefix}btn-active-color: #{$sw-nav-accent};
+    --#{$prefix}btn-hover-color: #{$sw-nav-accent};
     --#{$prefix}btn-hover-border-color: transparent;
     --#{$prefix}btn-hover-bg: transparent;
 
     &:hover {
         &,
         .icon {
-            color: $primary;
+            color: $sw-nav-accent;
         }
     }
 }

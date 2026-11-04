@@ -1,0 +1,57 @@
+/*
+Filter — rating select
+==============================================
+Radio rows with a star preview. Stars are styled by `component/_rating.scss`;
+this file only handles the row rhythm and the selected state.
+*/
+
+.filter-multi-select-rating {
+    .filter-rating-select-list-item {
+        align-items: center;
+        display: flex;
+        gap: $sw-space-2;
+        margin: 0;
+        min-height: 24px;
+    }
+
+    .filter-rating-select-item-label {
+        align-items: center;
+        color: $sw-gray-800;
+        cursor: pointer;
+        display: flex;
+        font-size: 0.875rem;
+        font-weight: 600;
+        gap: $sw-space-2;
+        margin: 0;
+    }
+
+    .filter-rating-select-radio {
+        border: 1px solid $sw-border-control;
+        flex: 0 0 auto;
+        height: 16px;
+        margin: 0;
+        width: 16px;
+
+        &:checked {
+            background-color: $sw-brand;
+            border-color: $sw-brand;
+        }
+
+        &:focus-visible {
+            outline: 2px solid $sw-brand;
+            outline-offset: 2px;
+            box-shadow: none;
+        }
+    }
+
+    .filter-rating-select-item-checkmark {
+        align-items: center;
+        color: $sw-brand;
+        display: none;
+    }
+
+    .filter-rating-select-list-item.is-selected .filter-rating-select-item-checkmark,
+    .filter-rating-select-list-item.selected .filter-rating-select-item-checkmark {
+        display: inline-flex;
+    }
+}

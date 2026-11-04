@@ -1,0 +1,188 @@
+/*
+ * Account centre — membership
+ * ==============================================
+ * Visual source of truth: theme-prototype/membership.html
+ *
+ * The plan cards are the prototype `.sw-plan`: white, squared, 28px padding,
+ * price as the headline. The card of the plan the customer is on is the
+ * "selected" card: brand-soft surface, brand border and a flag pinned to the
+ * top edge (原型 pins a flag too, the colour follows the theme spec).
+ */
+
+.account-membership {
+    padding-bottom: $sw-space-8;
+}
+
+.account-membership > .account-panel {
+    margin-bottom: $sw-space-6;
+}
+
+/*
+ * Current membership
+ * ---------------------- */
+.account-membership-current-state {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: $sw-space-2;
+    margin: 0;
+
+    .badge {
+        margin: 0;
+    }
+}
+
+.account-membership-current-plan {
+    color: $sw-gray-1000;
+    font-size: 0.8125rem;
+    font-weight: 600;
+}
+
+.account-membership-current-valid-until {
+    color: $sw-text-meta;
+    font-size: 0.8125rem; // 13px
+    margin: 0;
+}
+
+/*
+ * Plans
+ * ---------------------- */
+.account-membership-plans-channel {
+    align-items: center;
+    display: flex;
+    gap: $sw-space-2;
+
+    .form-label {
+        color: $sw-text-muted;
+        font-size: 0.75rem;
+        margin: 0;
+        white-space: nowrap;
+    }
+}
+
+.account-membership-plan-grid {
+    display: grid;
+    gap: $sw-space-4;
+    grid-template-columns: minmax(0, 1fr);
+
+    @include media-breakpoint-up(md) {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    @include media-breakpoint-up(xl) {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+.account-membership-plan {
+    background: $sw-background-color;
+    border: 1px solid $sw-border-subtle;
+    box-shadow: $sw-shadow;
+    display: flex;
+    flex-direction: column;
+    gap: $sw-space-3;
+    height: 100%;
+    padding: 1.75rem; // 原型 .sw-plan
+    position: relative;
+
+    // 原型 .sw-plan--current (assets/theme.css:3492): the green anchor, not the
+    // brand blue — "identical to the prototype" outranks the earlier spec.
+    &.is-current {
+        background: $sw-background-color;
+        border-color: $sw-color-success;
+        box-shadow:
+            0 0 0 2px rgba($sw-color-success, 0.14),
+            $sw-shadow;
+    }
+}
+
+.account-membership-plan-flag {
+    background: $sw-color-success;
+    color: #fff;
+    font-size: 0.6875rem; // 11px
+    font-weight: 700;
+    left: 1.75rem;
+    letter-spacing: 0.04em;
+    padding: 2px 10px;
+    position: absolute;
+    top: -11px;
+}
+
+.account-membership-plan-name {
+    color: $sw-gray-1000;
+    font-size: 1.0625rem; // 17px, 原型
+    font-weight: 700;
+    margin: 0;
+}
+
+.account-membership-plan-tier {
+    color: $sw-text-muted;
+    font-size: 0.75rem;
+    margin: 0;
+}
+
+.account-membership-plan-price {
+    color: $sw-gray-1000;
+    font-size: 2rem; // 原型 32px
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+    margin: 0;
+}
+
+.account-membership-plan-duration {
+    color: $sw-text-muted;
+    font-size: 0.8125rem;
+    margin: 0;
+}
+
+.account-membership-plan-description {
+    color: $sw-text-meta;
+    font-size: 0.8125rem; // 13px
+    line-height: 1.65;
+    margin: 0;
+}
+
+.account-membership-plan-buy {
+    margin-top: auto;
+
+    &:disabled {
+        pointer-events: none;
+    }
+}
+
+.account-membership-feedback {
+    margin-bottom: 0;
+}
+
+.account-membership-qrcode {
+    border: 1px dashed $sw-border-subtle;
+    padding: $sw-space-4;
+    text-align: center;
+}
+
+.account-membership-qrcode-title {
+    color: $sw-gray-1000;
+    font-size: $sw-font-size-sm;
+    font-weight: 700;
+    margin-bottom: $sw-space-3;
+}
+
+.account-membership-qrcode-target {
+    display: flex;
+    justify-content: center;
+    margin-bottom: $sw-space-3;
+
+    img,
+    canvas,
+    svg {
+        max-width: 200px;
+    }
+}
+
+.account-membership-qrcode-hint {
+    color: $sw-text-meta;
+    font-size: 0.8125rem;
+    margin-bottom: $sw-space-2;
+}

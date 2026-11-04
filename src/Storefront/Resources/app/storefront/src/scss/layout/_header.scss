@@ -85,3 +85,43 @@ The header contains the shop logo, the search form and various actions like the 
         }
     }
 }
+
+/*
+ * Single-line header (logo | main navigation | search | actions)
+ * ==================================================
+ * The main navigation is rendered inside the header row
+ * (block `layout_header_navbar`, col `.header-nav-col`).
+ * Below `lg` the navigation column is hidden and the offcanvas
+ * navigation takes over, so the legacy column stacking stays intact.
+ */
+@include media-breakpoint-up(lg) {
+    .header-row {
+        flex-wrap: nowrap;
+        align-items: center;
+    }
+
+    .header-nav-col {
+        flex: 1 1 0;
+        min-width: 0;
+    }
+
+    .header-search-col {
+        flex: 0 0 auto;
+        width: 400px;
+    }
+
+    .header-actions-col {
+        flex: 0 0 auto;
+    }
+
+    .header-search {
+        max-width: 100%;
+    }
+
+    /* Keep the whole single-line header (incl. top bar) visible while scrolling. */
+    .header-main {
+        position: sticky;
+        top: 0;
+        z-index: $zindex-sticky;
+    }
+}

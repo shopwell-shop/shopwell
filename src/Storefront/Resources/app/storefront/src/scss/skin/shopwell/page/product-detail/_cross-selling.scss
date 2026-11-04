@@ -31,3 +31,14 @@
         display: none;
     }
 }
+
+/*
+ * S3 — empty state
+ * ----------------------
+ * The core renders a cross-selling block even when no product matches the
+ * stream. An empty block would leave a title with nothing underneath, so the
+ * whole CMS block collapses when it contains no product card.
+ */
+.cms-block-cross-selling:not(:has(.product-box)) {
+    display: none;
+}

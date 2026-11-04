@@ -58,3 +58,14 @@
         }
     }
 }
+
+/*
+ * S3 — empty state
+ * ----------------------
+ * A product without reviews keeps the "write a review" entry point but must not
+ * render an empty list shell. The guard only hides the list container, never
+ * the form or the teaser CTA.
+ */
+.product-detail-review-list:not(:has(.product-detail-review-item)) {
+    display: none;
+}

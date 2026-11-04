@@ -1,46 +1,489 @@
-.account-aside-header {
-    background: none;
-    color: $headings-color;
-    font-weight: $font-weight-bold;
-    margin-bottom: $spacer;
-}
+/*
+Account centre shell + sidebar (aside)
+==============================================
+One grid for every account page: a 250px rail, then the content (prototype
+`.sw-account-layout`). Below `lg` the rail stops being a column and turns into a
+sticky chip bar that sits above the content (prototype does the same with
+`display: contents` + a horizontally scrolling list).
 
-.account-aside-item {
-    --#{$prefix}list-group-item-padding-x: 0;
-    --#{$prefix}list-group-action-active-color: #{$primary};
-    --#{$prefix}list-group-action-active-bg: #{$list-group-bg};
-    --#{$prefix}list-group-action-hover-color: #{$primary};
-    --#{$prefix}list-group-action-hover-bg: #{$list-group-bg};
-    --#{$prefix}list-group-border-width: 0;
+Identity card + grouped navigation. The header dropdown (`headerWidget`)
+renders the same items flat, so the card chrome here is scoped to
+`.account-aside` and never leaks into the popup.
 
-    &.is-active {
-        color: $primary;
-        font-weight: $font-weight-bold;
+Corner strategy: the sidebar card keeps the prototype's 12px radius and the
+items keep 6px — the deliberate round survivors of the otherwise square theme.
+*/
+
+.account.account-content {
+    align-items: start;
+    display: grid;
+    gap: $sw-space-7;
+    grid-template-columns: 250px minmax(0, 1fr);
+    padding-bottom: $sw-space-8;
+
+    // the bootstrap column classes on the two children would force a width
+    // inside a grid; the grid decides, so their flex sizing is reset
+    > * {
+        max-width: none;
+        width: auto;
     }
 }
 
-.account-aside-footer {
+.account-content-main {
+    min-width: 0;
+}
+
+.account-aside {
+    .account-menu-inner {
+        border: 1px solid $sw-border-subtle;
+        border-radius: $sw-radius-account-card;
+        background: $sw-background-color;
+        box-shadow: $sw-shadow;
+        overflow: hidden;
+    }
+}
+
+/*
+ * Identity card
+ * ---------------------- */
+.account-aside-header {
+    padding: $sw-space-4;
+    border-bottom: 1px solid $sw-border-row;
     background: none;
-    margin-top: 1px;
-    border-top: 1px solid $border-color;
+    color: $sw-gray-1000;
+    font-weight: 400;
+    margin-bottom: 0;
+}
+
+.account-aside-identity {
+    align-items: center;
+    display: flex;
+    gap: $sw-space-3;
+    min-width: 0;
+}
+
+.account-aside-avatar {
+    align-items: center;
+    background: $sw-brand-soft;
+    border-radius: $sw-radius-round;
+    box-shadow: 0 0 0 1px rgba($sw-brand, 0.18);
+    color: $sw-brand;
+    display: inline-flex;
+    flex: 0 0 auto;
+    font-size: $sw-font-size-md;
+    font-weight: 700;
+    height: 42px;
+    justify-content: center;
+    line-height: 1;
+    text-transform: uppercase;
+    width: 42px;
+}
+
+.account-aside-identity-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.account-aside-name {
+    color: $sw-gray-1000;
+    font-size: 0.9375rem; // 15px
+    font-weight: 700;
+    line-height: 1.3;
+    overflow: hidden;
+    overflow-wrap: anywhere;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+// A long e-mail must ellipsize instead of widening the sidebar.
+.account-aside-email {
+    color: $sw-gray-400; // #899FBD
+    display: block;
+    font-size: $sw-font-size-xs;
+    line-height: 1.4;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/*
+ * Tier rail (loyalty only)
+ * ----------------------
+ * Rendered only when the page loaded a tier, so the card never claims a level
+ * the customer does not hold.
+ */
+.account-aside-tier {
+    align-items: center;
+    display: flex;
+    gap: $sw-space-2;
+    justify-content: space-between;
+    margin-top: $sw-space-3;
+}
+
+.account-aside-tier-badge {
+    align-items: center;
+    background: $sw-brand-soft; // #EAF3FF
+    border-radius: $sw-radius-pill;
+    color: $sw-blue-700; // #0B539B
+    display: inline-flex;
+    flex: 0 0 auto;
+    font-size: 0.6875rem; // 11px
+    font-weight: 700;
+    gap: 3px;
+    letter-spacing: 0.02em;
+    line-height: 1.5;
+    padding: 2px 8px 2px 6px;
+    white-space: nowrap;
+
+    .icon {
+        color: $sw-brand;
+        height: 12px;
+        width: 12px;
+
+        > svg {
+            height: 12px;
+            top: 0;
+            width: 12px;
+        }
+    }
+}
+
+.account-aside-tier-hint {
+    color: $sw-gray-400;
+    font-size: 0.6875rem;
+    font-variant-numeric: tabular-nums;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.account-aside-progress {
+    background: $sw-gray-100; // #EEF2F7
+    border-radius: $sw-radius-pill;
+    height: 4px;
+    margin-top: $sw-space-2;
+    overflow: hidden;
+}
+
+.account-aside-progress-bar {
+    background: linear-gradient(90deg, $sw-brand, $sw-blue-400);
+    border-radius: inherit;
+    display: block;
+    height: 100%;
+}
+
+/*
+ * Navigation
+ * ---------------------- */
+.account-aside-list-group {
+    --#{$prefix}list-group-border-width: 0;
+
+    padding: $sw-space-2;
+}
+
+.account-aside-group + .account-aside-group {
+    margin-top: $sw-space-2;
+}
+
+.account-aside-group-title {
+    color: $sw-gray-400;
+    font-size: $sw-font-size-xs;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    margin: $sw-space-2 $sw-space-3 $sw-space-1;
+    text-transform: uppercase;
+}
+
+.account-aside-item {
+    align-items: center;
+    border: 0;
+    border-radius: $sw-radius-account-item; // 6px
+    color: $sw-gray-800; // #33445B
+    display: flex;
+    font-size: 0.875rem; // 14px
+    font-weight: 400;
+    gap: $sw-space-2;
+    padding: 8px 12px;
+    position: relative;
+    text-decoration: none;
+    transition:
+        background-color 0.15s ease,
+        color 0.15s ease;
+    --#{$prefix}list-group-item-padding-x: 12px;
+    --#{$prefix}list-group-item-padding-y: 8px;
+    --#{$prefix}list-group-border-width: 0;
+    --#{$prefix}list-group-action-active-color: #{$sw-brand};
+    --#{$prefix}list-group-action-active-bg: #{$sw-brand-soft};
+
+    .icon {
+        color: $sw-gray-400; // #899FBD
+        flex: 0 0 auto;
+        height: 16px;
+        transition: color 0.15s ease;
+        width: 16px;
+
+        > svg {
+            height: 16px;
+            top: 0;
+            width: 16px;
+        }
+    }
+
+    .account-aside-item-text {
+        flex: 1 1 auto;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    // live figure on the right (wallet balance / points) — only rendered when the
+    // page really loaded that number
+    .account-aside-item-badge {
+        background: $sw-brand-soft;
+        border-radius: $sw-radius-pill;
+        color: $sw-blue-700;
+        flex: 0 0 auto;
+        font-size: 0.6875rem;
+        font-variant-numeric: tabular-nums;
+        font-weight: 600;
+        line-height: 1.5;
+        margin-left: auto;
+        padding: 1px 6px;
+        white-space: nowrap;
+    }
+
+    &:hover,
+    &:focus-visible {
+        background: $sw-gray-50; // #F4F7FA
+        color: $sw-brand;
+        text-decoration: none;
+
+        .icon {
+            color: $sw-brand;
+        }
+    }
+
+    &:focus-visible {
+        outline: 2px solid $sw-brand;
+        outline-offset: -2px;
+    }
+
+    // active: tinted surface + brand text + 3px rounded bar on the leading edge
+    &.is-active {
+        background: $sw-brand-soft; // #EAF3FF
+        color: $sw-brand;
+        font-weight: 600;
+
+        .icon {
+            color: $sw-brand;
+        }
+
+        .account-aside-item-badge {
+            background: $sw-background-color;
+            color: $sw-brand;
+        }
+
+        &::before {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            width: 3px;
+            height: 18px;
+            border-radius: $sw-radius-pill;
+            background: $sw-brand;
+            content: '';
+            transform: translateY(-50%);
+        }
+    }
+}
+
+/*
+ * Footer (logout)
+ * ---------------------- */
+.account-aside-footer {
+    padding: $sw-space-2 $sw-space-3 $sw-space-3;
+    border-top: 1px solid $sw-border-row;
+    background: none;
 }
 
 .account-aside-btn {
-    line-height: normal;
-    width: 100%;
+    align-items: center;
+    border-radius: $sw-radius-account-item;
+    color: $sw-text-meta;
+    display: flex;
+    font-size: $sw-font-size-sm;
+    font-weight: 400;
+    gap: $sw-space-2;
+    height: 36px;
+    justify-content: flex-start;
+    padding: 0 $sw-space-3;
     text-align: left;
-    padding: 3px 0;
+    width: 100%;
+    --#{$prefix}btn-color: #{$sw-text-meta};
+    --#{$prefix}btn-hover-color: #{$sw-brand};
+    --#{$prefix}btn-padding-x: #{$sw-space-3};
+    --#{$prefix}btn-padding-y: 0;
+    --#{$prefix}btn-font-weight: 400;
 
     .icon {
-        vertical-align: middle;
-        margin-right: $spacer-xs;
+        color: inherit;
 
-        svg {
+        > svg {
             top: 0;
         }
+    }
+
+    &:hover {
+        background: $sw-gray-50;
+        color: $sw-brand;
+    }
+
+    &:focus-visible {
+        outline: 2px solid $sw-brand;
+        outline-offset: -2px;
     }
 }
 
 .account-guest-abort {
     border-top: 0;
+}
+
+/*
+ * Mobile: the vertical rail becomes a sticky, horizontally scrollable chip bar so
+ * the page content stays above the fold and the account navigation stays
+ * reachable (prototype does the same below 992px).
+ *
+ * `display: contents` on the rail is what lets the chip bar stick across the
+ * whole layout instead of inside its own 250px column.
+ * ---------------------- */
+@include media-breakpoint-down(lg) {
+    .account.account-content {
+        gap: $sw-space-6;
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .account-content-aside {
+        display: contents;
+    }
+
+    .account-aside .account-menu-inner {
+        border: 0;
+        box-shadow: none;
+        overflow: visible;
+    }
+
+    .account-aside-header {
+        border: 1px solid $sw-border-subtle;
+        border-radius: $sw-radius-account-card;
+        box-shadow: $sw-shadow;
+        margin-bottom: 0;
+        padding: 14px;
+    }
+
+    .account-aside-tier {
+        margin-top: $sw-space-2;
+    }
+
+    .account-aside-list-group {
+        background: $sw-background-color;
+        border: 1px solid $sw-border-subtle;
+        border-radius: 10px;
+        box-shadow: $sw-shadow;
+        display: flex;
+        flex-flow: row nowrap;
+        gap: 6px;
+        margin-top: $sw-space-3;
+        overflow-x: auto;
+        overscroll-behavior-x: contain;
+        padding: $sw-space-2;
+        position: sticky;
+        scrollbar-width: none;
+        top: 0;
+        z-index: 30;
+        -webkit-overflow-scrolling: touch;
+
+        &::-webkit-scrollbar {
+            display: none;
+        }
+    }
+
+    // the groups keep their markup, but as `display: contents` their chips become direct flex
+    // children of the strip: the strip's own `gap` and `flex: 0 0 auto` sizing apply per chip
+    // instead of per group. A group as a real box capped every chip at the group's width, which
+    // buried the entries behind the first two chips.
+    .account-aside-group,
+    .account-aside-group + .account-aside-group {
+        display: contents;
+    }
+
+    // group headings would break the single-row chip strip
+    .account-aside-group-title {
+        display: none;
+    }
+
+    .account-aside-item {
+        border: 1px solid $sw-border-subtle;
+        border-radius: $sw-radius-pill;
+        flex: 0 0 auto;
+        font-size: 0.8125rem;
+        font-weight: 400;
+        gap: 6px;
+        min-height: 34px;
+        padding: 6px 10px;
+        // bootstrap's `.list-group-item-action` sets `width: 100%`; a chip is as wide as its label
+        width: auto;
+        white-space: nowrap;
+
+        .icon {
+            height: 15px;
+            width: 15px;
+
+            > svg {
+                height: 15px;
+                width: 15px;
+            }
+        }
+
+        // prototype: the active chip inverts to a solid brand pill, the 3px bar
+        // would have nowhere to go in a 34px tall chip
+        &.is-active {
+            background: $sw-brand;
+            border-color: $sw-brand;
+            color: $sw-background-color;
+
+            .icon {
+                color: $sw-background-color;
+            }
+
+            .account-aside-item-badge {
+                background: rgba(#fff, 0.24);
+                color: $sw-background-color;
+            }
+
+            &::before {
+                content: none;
+                display: none;
+            }
+        }
+    }
+
+    .account-aside-item-badge {
+        margin-left: 0;
+    }
+
+    .account-aside-footer {
+        border-top: 0;
+        padding: $sw-space-2 0 0;
+    }
+
+    .account-aside-btn {
+        border: 1px solid $sw-border-subtle;
+        justify-content: center;
+        padding: 0 $sw-space-4;
+        width: auto;
+    }
 }

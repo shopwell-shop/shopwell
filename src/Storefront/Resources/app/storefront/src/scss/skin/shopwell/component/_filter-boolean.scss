@@ -1,0 +1,39 @@
+/*
+Filter — boolean (checkbox row)
+==============================================
+*/
+
+.filter-boolean {
+    .filter-boolean-label,
+    .form-check-label {
+        align-items: center;
+        color: $sw-gray-800;
+        cursor: pointer;
+        display: flex;
+        font-size: 0.875rem; // 14px
+        font-weight: 600;
+        gap: $sw-space-2;
+        margin: 0;
+        min-height: 24px;
+    }
+
+    .filter-boolean-input.form-check-input {
+        border: 1px solid $sw-border-control;
+        border-radius: $sw-radius;
+        flex: 0 0 auto;
+        height: 16px;
+        margin: 0;
+        width: 16px;
+
+        &:checked {
+            background-color: $sw-brand;
+            border-color: $sw-brand;
+        }
+
+        &:focus-visible {
+            outline: 2px solid $sw-brand;
+            outline-offset: 2px;
+            box-shadow: none;
+        }
+    }
+}

@@ -1,39 +1,74 @@
 /*
 Top bar
 ==================================================
-Contains skin styles for the top bar located at the top of the page.
-The top bar contains e.g. the language switcher, the currency switcher and the service menu.
+Thin dark strip above the header (language / currency / service menu). Same
+surface as the footer, so it reuses the `$sw-footer-*` dark tokens.
+
+The switchers are Bootstrap buttons and dropdowns; their colour wheels are
+re-pointed through `--bs-*` custom properties instead of overriding
+declarations, so hover/active states keep Bootstrap's behaviour.
 */
 
 .top-bar {
-    padding-top: 0.25rem;
+    min-height: 36px;
+    padding: 0;
+    background: $sw-footer-bg;
+    color: $sw-footer-color;
+    font-size: 0.8125rem; // 13px
+}
+
+.top-bar a {
+    color: $sw-footer-color;
+    text-decoration: none;
+
+    &:hover,
+    &:focus-visible {
+        color: $sw-footer-accent;
+        text-decoration: underline;
+        text-underline-offset: 3px;
+    }
 }
 
 .top-bar-nav-btn.btn {
-    --#{$prefix}btn-focus-box-shadow: #{$input-btn-focus-box-shadow};
-    --#{$prefix}btn-color: #{$body-color};
-    --#{$prefix}btn-font-weight: #{$font-weight-normal};
+    --#{$prefix}btn-color: #{$sw-footer-color};
+    --#{$prefix}btn-bg: transparent;
     --#{$prefix}btn-border-width: 0;
     --#{$prefix}btn-border-color: transparent;
+    --#{$prefix}btn-hover-color: #{$sw-footer-accent};
+    --#{$prefix}btn-hover-bg: transparent;
+    --#{$prefix}btn-hover-border-color: transparent;
+    --#{$prefix}btn-active-color: #{$sw-footer-accent};
+    --#{$prefix}btn-active-bg: transparent;
+    --#{$prefix}btn-active-border-color: transparent;
+    --#{$prefix}btn-font-size: 0.8125rem;
+    --#{$prefix}btn-font-weight: 400;
     --#{$prefix}btn-padding-x: 0;
     --#{$prefix}btn-padding-y: 0;
-    --#{$prefix}btn-hover-color: #{$primary};
-    --#{$prefix}btn-line-height: 2rem;
+    --#{$prefix}btn-line-height: 36px;
+    --#{$prefix}btn-focus-box-shadow: none;
+
+    height: 36px;
+
+    &:focus-visible {
+        outline: 2px solid $sw-footer-accent;
+        outline-offset: 2px;
+    }
 }
 
 .top-bar-list {
-    --#{$prefix}dropdown-link-hover-bg: transparent;
-    --#{$prefix}dropdown-link-hover-color: #{$primary};
-    --#{$prefix}dropdown-link-active-color: #{$primary};
-    --#{$prefix}dropdown-link-active-bg: transparent;
+    --#{$prefix}dropdown-link-hover-bg: #{$sw-gray-50};
+    --#{$prefix}dropdown-link-hover-color: #{$sw-brand};
+    --#{$prefix}dropdown-link-active-bg: #{$sw-brand-soft};
+    --#{$prefix}dropdown-link-active-color: #{$sw-brand};
+
+    border: 1px solid $sw-border-subtle;
+    border-radius: $sw-radius;
+    box-shadow: $sw-shadow-md;
+    padding: $sw-space-2;
+    font-size: 0.8125rem;
 }
 
 .top-bar-list-item-currency-symbol {
     min-width: 1.7rem;
-}
-
-// Prevent unintended button focus in Safari when clicking a button containg an icon.
-.top-bar-nav-text,
-.top-bar-list-icon {
-    pointer-events: none;
+    color: $sw-text-meta;
 }

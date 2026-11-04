@@ -88,6 +88,7 @@ https://sass-guidelin.es/#the-7-1-pattern
  * ----------------------- */
 @import 'layout/container';
 @import 'layout/header';
+@import 'layout/main-navigation';
 @import 'layout/header-minimal';
 @import 'layout/footer';
 @import 'layout/navigation-offcanvas';
@@ -129,3 +130,5 @@ https://sass-guidelin.es/#the-7-1-pattern
 @import 'page/search/search';
 
 @import 'page/wishlist/wishlist';
+
+@import 'component/table';

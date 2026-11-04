@@ -75,3 +75,37 @@ https://sass-guidelin.es/#the-7-1-pattern
 
 @import 'page/contact/contact';
 @import 'page/newsletter/newsletter';
+
+@import 'component/table';
+
+// S2 layout shell (appended at the end on purpose: the skin layer must win
+// over the structural defaults, and new files must be imported explicitly or
+// they are silently dropped from the bundle).
+@import 'layout/account-menu';
+@import 'layout/search-suggest';
+
+// S3 product & listing layer (appended at the end on purpose: skin must win).
+@import 'component/rating';
+@import 'component/product-feature';
+@import 'component/product-wishlist';
+@import 'component/gallery-slider';
+@import 'component/magnifier';
+@import 'component/zoom-modal';
+@import 'component/flags';
+@import 'component/delivery-status';
+@import 'component/notification-dot';
+@import 'component/filter-panel';
+@import 'component/filter-boolean';
+@import 'component/filter-multi-select';
+@import 'component/filter-property-select';
+@import 'component/filter-range';
+@import 'component/filter-rating-select';
+@import 'component/sorting';
+
+// Account centre (S5 slice) — appended last so the skin outranks the structural
+// account page defaults.
+@import 'page/account/auth';
+@import 'page/account/overview';
+@import 'page/account/wallet';
+@import 'page/account/rewards';
+@import 'page/account/membership';

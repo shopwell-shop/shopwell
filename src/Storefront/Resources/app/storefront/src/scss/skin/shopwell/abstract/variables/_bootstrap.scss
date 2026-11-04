@@ -26,10 +26,24 @@ $danger: $sw-color-danger !default;
 $light: $gray-100 !default;
 $dark: $gray-800 !default;
 
+// Contrast threshold for color-contrast() decisions.
+// #0870FF on white yields 4.40 — the Bootstrap default (4.5) would flip
+// primary buttons / badges to black text. White text on #0870FF is the
+// user-approved design baseline (AA short by 0.1), so lower the threshold
+// to keep white as the auto-selected contrast color.
+$min-contrast-ratio: 4 !default;
+
 $headings-color: $sw-headline-color !default;
 
 // Grid
 $grid-gutter-width: 40px !default;
+
+// Single content width across all breakpoints (prototype: 85.75rem).
+// ⚠️ No !default here on purpose — the structure layer already sets a
+// !default value in abstract/variables/_bootstrap.scss which must lose.
+$container-max-widths: (
+    xs: $sw-container-max,
+);
 
 // Body
 $body-bg: $sw-background-color !default;
@@ -37,7 +51,7 @@ $body-color: $sw-text-color !default;
 $body-secondary-color: $sw-text-color !default;
 
 // Components
-$border-color: $sw-border-color !default;
+$border-color: $sw-border-subtle !default;
 
 // Focus outlines
 $focus-ring-width: 0.25rem !default;
@@ -85,7 +99,9 @@ $link-hover-decoration: underline !default;
 $input-padding-y: 0.438rem !default;
 $input-padding-x: 0.5625rem !default;
 
-$input-placeholder-color: #666977 !default;
+$input-placeholder-color: $sw-text-placeholder-strong !default;
+
+$text-muted: $sw-text-muted-strong !default;
 
 $form-label-margin-bottom: 3px !default;
 
@@ -112,8 +128,9 @@ $btn-disabled-opacity: 1 !default;
 // Forms
 $enable-validation-icons: false !default;
 $input-color: $sw-text-color !default;
-$input-border-color: $sw-border-color !default;
-$form-check-input-border: 1px solid $sw-border-color !default;
+$input-border-color: $sw-border-control !default;
+$form-check-input-border: 1px solid $sw-border-check !default;
+$form-select-border-color: $sw-border-control !default;
 $form-check-input-width: 1rem !default;
 $form-check-padding-start: 1.5rem !default;
 $input-focus-border-color: $sw-color-brand-primary !default;
@@ -160,12 +177,13 @@ $breadcrumb-bg: transparent !default;
 $breadcrumb-border-radius: 0 !default;
 
 // Cards
-$card-border-color: transparent !default;
+$card-border-color: $sw-border-subtle !default;
 $card-bg: transparent !default;
 $card-spacer-y: 0 !default;
 $card-spacer-x: 0 !default;
 
 // Tables
+$table-border-color: $sw-border-subtle !default;
 $table-striped-bg: #f9f9f9 !default;
 $table-color: $sw-text-color !default;
 
@@ -185,7 +203,7 @@ $alert-padding-y: 0.5rem !default;
 $alert-border-width: 1px !default;
 
 // Badges
-$badge-border-radius: 50px !default;
+$badge-border-radius: 0 !default;
 $badge-padding-x: 5px !default;
 $badge-padding-y: 0 !default;
 

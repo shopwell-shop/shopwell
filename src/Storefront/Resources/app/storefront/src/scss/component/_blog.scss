@@ -46,9 +46,11 @@ stays full width and carries the biggest image.
         border-bottom: 1px solid $border-color;
     }
 
+    // Deliberate storefront-wide change: chips are square in the prototype
+    // (was a 999px pill before the restyle).
     &__chip {
         padding: 6px 16px;
-        border-radius: 999px;
+        border-radius: $sw-radius;
         border: 1px solid $border-color;
         font-size: 0.875rem;
         color: $body-color;
@@ -154,7 +156,7 @@ through a stretched link, so a card is one target and not four.
 
     &__chip {
         padding: 2px 10px;
-        border-radius: 999px;
+        border-radius: $sw-radius;
         background: rgba($primary, 0.1);
         color: $primary;
         font-size: 0.75rem;
@@ -398,7 +400,7 @@ Detail
 
     &__chip {
         padding: 2px 10px;
-        border-radius: 999px;
+        border-radius: $sw-radius;
         background: rgba($primary, 0.1);
         color: $primary;
         font-size: 0.8125rem;
@@ -423,7 +425,7 @@ Detail
     &__share-button {
         padding: 4px 14px;
         border: 1px solid $border-color;
-        border-radius: 999px;
+        border-radius: $sw-radius;
         background: transparent;
         color: $body-color;
         font-size: 0.8125rem;
@@ -866,7 +868,7 @@ column three characters wide.
 
     &__level {
         padding: 1px 8px;
-        border-radius: 999px;
+        border-radius: $sw-radius-pill;
         background: rgba($secondary, 0.12);
     }
 
@@ -916,7 +918,7 @@ column three characters wide.
         gap: 12px;
         margin-bottom: 12px;
         padding: 8px 12px;
-        border-radius: 4px;
+        border-radius: $sw-radius;
         background: rgba($primary, 0.08);
         font-size: 0.875rem;
     }
@@ -946,7 +948,7 @@ column three characters wide.
         width: 100%;
         padding: 10px 12px;
         border: 1px solid rgba($secondary, 0.3);
-        border-radius: 4px;
+        border-radius: $sw-radius;
         font: inherit;
     }
 
@@ -964,7 +966,7 @@ column three characters wide.
     &__flash {
         margin-bottom: 16px;
         padding: 10px 12px;
-        border-radius: 4px;
+        border-radius: $sw-radius;
         font-size: 0.875rem;
     }
 
@@ -979,7 +981,7 @@ column three characters wide.
     &__submit {
         padding: 10px 20px;
         border: 0;
-        border-radius: 4px;
+        border-radius: $sw-radius;
         background: $primary;
         color: #fff;
         font: inherit;

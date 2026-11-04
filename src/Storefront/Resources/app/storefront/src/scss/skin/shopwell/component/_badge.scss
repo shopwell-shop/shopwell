@@ -1,15 +1,19 @@
 /*
-Badge
-==============================================
-Custom skin styling for bootstrap badge component.
-
-https://getbootstrap.com/docs/5.2/components/badge/
-*/
+ * Badge
+ * ==============================================
+ * Custom skin styling for the bootstrap badge component plus the semantic
+ * badge variants used across the storefront.
+ * Visual source of truth: static prototype (square corners, 600 weight).
+ *
+ * https://getbootstrap.com/docs/5.2/components/badge/
+ */
 
 .badge {
-    border: 0;
+    border-radius: $sw-radius;
     box-sizing: content-box;
+    font-weight: $font-weight-semibold;
     height: auto;
+    letter-spacing: 0.02em;
     line-height: max(20px, 1.25em);
     margin: 0 5px;
     min-width: 10px;
@@ -19,4 +23,57 @@ https://getbootstrap.com/docs/5.2/components/badge/
     height: auto;
     line-height: max(28px, 1.25em);
     padding: 0 10px;
+}
+
+// Semantic badge palette (prototype: sale / warn / hot / new / info / neutral /
+// recommend / premium / sponsored).
+.badge-sale,
+.badge-warn {
+    background: $sw-warning-soft;
+    color: $sw-badge-sale-text;
+}
+
+.badge-hot {
+    background: $sw-gray-1000;
+    color: $white;
+}
+
+.badge-new {
+    background: $sw-success-soft;
+    color: $sw-success-text;
+}
+
+.badge-info,
+.badge-recommend {
+    background: $sw-blue-50;
+    color: $sw-blue-700;
+}
+
+// A failed or cancelled record needs the one semantic colour the prototype
+// palette did not have yet; derived from the danger anchor like every other
+// soft surface, so a merchant changing the anchor keeps it in sync.
+.badge-danger {
+    background: $sw-danger-soft;
+    color: $sw-danger-text;
+}
+
+.badge-neutral {
+    background: $sw-gray-100;
+    border: 1px solid $sw-border-subtle;
+    color: $sw-gray-600;
+}
+
+.badge-recommend {
+    border: 1px solid $sw-blue-100;
+}
+
+.badge-premium {
+    background: $sw-yellow-500;
+    color: $sw-badge-premium-text;
+}
+
+.badge-sponsored {
+    background: $sw-gray-50;
+    border: 1px dashed $sw-border-subtle;
+    color: $sw-gray-600;
 }

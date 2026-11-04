@@ -14,7 +14,9 @@
     {% endif %}
 
     {% block component_review_rating_output %}
-        <div class="product-review-rating">
+        {# `role="img"` + `aria-label` gives screen readers the score as a single
+           short label ("4.5/5"); the star icons themselves are aria-hidden. #}
+        <div class="product-review-rating" role="img" aria-label="{{ points|round(1) }}/5">
             {% if full > 0 %}
                 {% for star in range(1,full) %}
                     {% sw_include '@Storefront/storefront/component/review/point.html.twig' with {
@@ -36,6 +38,12 @@
                     } %}
                 {% endfor %}
             {% endif %}
+            {# Visible numeric score: #FAC30F on white is only 1.63:1, so the
+               number — not the colour — carries the information. #}
+            {% block component_review_rating_value %}
+                <span class="product-review-rating-value">{{ points|round(1) }}</span>
+            {% endblock %}
+
             <p class="product-review-rating-alt-text visually-hidden">
                 {{ altText }}
             </p>

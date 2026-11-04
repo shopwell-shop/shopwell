@@ -32,21 +32,21 @@
     "fields": {
       "sw-color-brand-primary": {
         "type": "color",
-        "value": "#0042a0",
+        "value": "#0870ff",
         "editable": true,
         "block": "themeColors",
         "order": 100
       },
       "sw-color-brand-secondary": {
         "type": "color",
-        "value": "#474a57",
+        "value": "#445a79",
         "editable": true,
         "block": "themeColors",
         "order": 200
       },
       "sw-border-color": {
         "type": "color",
-        "value": "#798490",
+        "value": "#d1dae5",
         "editable": true,
         "block": "themeColors",
         "order": 300
@@ -60,28 +60,28 @@
       },
       "sw-color-success": {
         "type": "color",
-        "value": "#007e4e",
+        "value": "#1fad5a",
         "editable": true,
         "block": "statusColors",
         "order": 100
       },
       "sw-color-info": {
         "type": "color",
-        "value": "#005b99",
+        "value": "#0b539b",
         "editable": true,
         "block": "statusColors",
         "order": 200
       },
       "sw-color-warning": {
         "type": "color",
-        "value": "#974200",
+        "value": "#ff8514",
         "editable": true,
         "block": "statusColors",
         "order": 300
       },
       "sw-color-danger": {
         "type": "color",
-        "value": "#c20017",
+        "value": "#e74040",
         "editable": true,
         "block": "statusColors",
         "order": 400
@@ -95,7 +95,7 @@
       },
       "sw-text-color": {
         "type": "color",
-        "value": "#2b3136",
+        "value": "#33445b",
         "editable": true,
         "block": "typography",
         "order": 200
@@ -109,21 +109,21 @@
       },
       "sw-headline-color": {
         "type": "color",
-        "value": "#2b3136",
+        "value": "#1c2431",
         "editable": true,
         "block": "typography",
         "order": 400
       },
       "sw-color-price": {
         "type": "color",
-        "value": "#2b3136",
+        "value": "#1c2431",
         "editable": true,
         "block": "eCommerce",
         "order": 100
       },
       "sw-color-buy-button": {
         "type": "color",
-        "value": "#0042a0",
+        "value": "#0870ff",
         "editable": true,
         "block": "eCommerce",
         "order": 200
