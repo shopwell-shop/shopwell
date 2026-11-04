@@ -1,0 +1,139 @@
+/*
+Account menu
+==================================================
+Popup that opens from the avatar in the header. On viewports ≥ sm it is a
+Bootstrap dropdown card; below sm the same markup is rendered inside an
+offcanvas, so every rule here has to work in both containers.
+
+Login/register forms and the item list come from `page/account/sidebar.html.twig`
+(`headerWidget: true`) — the items are only re-surfaced here, not redefined.
+*/
+
+.account-menu {
+    color: $sw-gray-800;
+    font-size: $sw-font-size-sm;
+}
+
+.account-menu-dropdown,
+.account-menu-inner {
+    border: 1px solid $sw-border-subtle;
+    border-radius: $sw-radius;
+    box-shadow: $sw-shadow-md;
+    background: $sw-background-color;
+}
+
+.account-menu-dropdown {
+    padding: $sw-space-2;
+}
+
+.account-menu-header {
+    padding: $sw-space-2 $sw-space-3 $sw-space-3;
+    border-bottom: 1px solid $sw-border-row;
+    color: $sw-text-meta;
+    font-size: $sw-font-size-xs;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.account-menu-login {
+    padding: $sw-space-4 $sw-space-3;
+    border-bottom: 1px solid $sw-border-row;
+}
+
+.account-menu-login-button {
+    width: 100%;
+}
+
+.account-menu-register {
+    margin-top: $sw-space-2;
+    color: $sw-text-meta;
+    font-size: $sw-font-size-xs;
+
+    a {
+        color: $sw-brand;
+        font-weight: 600;
+        text-decoration: none;
+
+        &:hover {
+            text-decoration: underline;
+            text-underline-offset: 2px;
+        }
+    }
+}
+
+/*
+ * Item list
+ * ---------------------- */
+.account-menu-links {
+    display: flex;
+    flex-direction: column;
+}
+
+.account-menu .account-aside-item {
+    display: block;
+    padding: $sw-space-2 $sw-space-3;
+    border-radius: $sw-radius;
+    color: $sw-gray-800;
+    font-size: $sw-font-size-sm;
+    text-decoration: none;
+    transition:
+        background-color 0.15s ease,
+        color 0.15s ease;
+
+    &:hover,
+    &:focus-visible {
+        background: $sw-gray-50;
+        color: $sw-brand;
+        text-decoration: none;
+    }
+
+    &:focus-visible {
+        outline: 2px solid $sw-brand;
+        outline-offset: -2px;
+    }
+
+    &.is-active,
+    &.active {
+        background: $sw-brand-soft;
+        color: $sw-brand;
+        font-weight: 600;
+    }
+}
+
+// The offcanvas variant is edge-to-edge, so the card border/shadow is dropped
+// and the item list gets the panel padding instead.
+.account-menu-offcanvas {
+    .account-menu-dropdown,
+    .account-menu-inner {
+        border: 0;
+        box-shadow: none;
+    }
+}
+
+@include media-breakpoint-down(sm) {
+    .account-menu-offcanvas {
+        .account-menu-header,
+        .account-menu-login {
+            padding-inline: $sw-space-6;
+        }
+
+        .account-menu-links {
+            padding: $sw-space-2 $sw-space-3;
+        }
+
+        .account-menu .account-aside-item {
+            padding: $sw-space-3;
+        }
+    }
+}
+
+/*
+ * Empty-state guard
+ * ----------------------
+ * Guests get the login/register block and no item list — without the guard the
+ * dropdown would keep an empty list container with its horizontal padding.
+ */
+.account-menu-links:not(:has(.account-aside-item)) {
+    display: none;
+}

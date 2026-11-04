@@ -1,0 +1,83 @@
+/*
+Filter — multi select
+==============================================
+Checkbox list used for manufacturer / category / property filters. The count is
+pushed to the row end and muted so the label stays the anchor.
+*/
+
+.filter-multi-select {
+    .filter-multi-select-list {
+        display: flex;
+        flex-direction: column;
+        gap: $sw-space-2;
+    }
+
+    .filter-multi-select-item,
+    .filter-multi-select-list-item {
+        align-items: center;
+        color: $sw-gray-800;
+        display: flex;
+        font-size: 0.875rem; // 14px
+        font-weight: 600;
+        gap: $sw-space-2;
+        margin: 0;
+        min-height: 24px;
+    }
+
+    .filter-multi-select-item-label,
+    .filter-multi-select-item .form-check-label {
+        color: inherit;
+        cursor: pointer;
+        flex: 1 1 auto;
+        font-size: inherit;
+        font-weight: inherit;
+        margin: 0;
+        overflow-wrap: anywhere;
+    }
+
+    .filter-multi-select-count {
+        color: $sw-gray-400; // #899FBD
+        flex: 0 0 auto;
+        font-size: $sw-font-size-xs;
+        font-weight: 400;
+        margin-left: auto;
+        text-align: right;
+        white-space: nowrap;
+    }
+
+    .filter-multi-select-item .form-check-input {
+        border: 1px solid $sw-border-control;
+        border-radius: $sw-radius;
+        flex: 0 0 auto;
+        height: 16px;
+        margin: 0;
+        width: 16px;
+
+        &:checked {
+            background-color: $sw-brand;
+            border-color: $sw-brand;
+        }
+
+        &:focus-visible {
+            outline: 2px solid $sw-brand;
+            outline-offset: 2px;
+            box-shadow: none;
+        }
+    }
+
+    // "clear" / "show more" links inside the group
+    .filter-multi-select-item-label:hover,
+    .filter-multi-select-item:hover .filter-multi-select-item-label {
+        color: $sw-brand;
+    }
+}
+
+// Dropdown variant (toolbar): the menu is a card, same as the search suggest.
+.filter-multi-select-dropdown.dropdown-menu,
+.filter-multi-select .dropdown-menu {
+    border: 1px solid $sw-border-subtle;
+    border-radius: $sw-radius;
+    box-shadow: $sw-shadow-md;
+    min-width: 240px;
+    padding: $sw-space-4;
+}

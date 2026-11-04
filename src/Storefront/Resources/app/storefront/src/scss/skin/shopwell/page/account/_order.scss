@@ -1,7 +1,455 @@
+/*
+ * Account centre — order history
+ * ==============================================
+ * Visual source of truth: theme-prototype/order.html
+ *
+ * Two things live here:
+ *
+ * 1. the status tag row at the top of the order list (原型 `.sw-tag`), which doubles as the
+ *    filter. The numbers inside the tags come from `AccountOrderStateCounter`, the same
+ *    counter that builds the filter the list itself uses, so the two can never disagree.
+ * 2. the order card (原型 `article.sw-order-card`), which replaces the old table row. The core
+ *    markup is untouched - the card is built by re-flowing the existing bootstrap grid into a
+ *    head / meta / foot stack, which is why this file overrides column widths instead of
+ *    introducing a new DOM.
+ *
+ * `.sw-tag` is deliberately generic (a pill + a count bubble): the account nav and the
+ * category filters can reuse it without a rename.
+ */
+
+/*
+ * Status tag row
+ * ---------------------- */
 .order-item-status-badge {
     margin: 10px 0;
 
     @include media-breakpoint-down(sm) {
         margin-top: 0;
+    }
+}
+
+/*
+ * Status tag row
+ * ----------------------
+ * Six tags never fit 390px, so the row scrolls sideways instead of wrapping: wrapping pushed the
+ * order list itself below the fold on a phone. `nowrap` + `overflow-x` keeps the list where the
+ * customer expects it, and the scrollbar is hidden so the row still reads as a row of pills.
+ */
+.account-orders-filters {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: $sw-space-2;
+    margin-bottom: $sw-space-5;
+    overflow-x: auto;
+    // room for the focus ring, which `overflow-x` would otherwise clip
+    padding: 2px;
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+        display: none;
+    }
+
+    .sw-tag {
+        flex: 0 0 auto;
+    }
+}
+
+.sw-tag {
+    align-items: center;
+    background: $sw-background-color;
+    border: 1px solid $sw-border-subtle;
+    border-radius: $sw-radius-pill;
+    color: $sw-gray-700;
+    display: inline-flex;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    gap: $sw-space-2;
+    line-height: 1;
+    padding: 8px 14px;
+    text-decoration: none;
+    transition:
+        background-color 0.15s ease,
+        border-color 0.15s ease,
+        color 0.15s ease;
+    white-space: nowrap;
+
+    &:hover,
+    &:focus-visible {
+        border-color: $sw-brand;
+        color: $sw-brand;
+        text-decoration: none;
+    }
+
+    &:focus-visible {
+        box-shadow: 0 0 0 3px $sw-brand-ring;
+        outline: 0;
+    }
+}
+
+.sw-tag--active {
+    background: $sw-brand;
+    border-color: $sw-brand;
+    color: $sw-background-color;
+
+    &:hover,
+    &:focus-visible {
+        background: $sw-brand-hover;
+        border-color: $sw-brand-hover;
+        color: $sw-background-color;
+    }
+
+    .sw-tag-count {
+        background: rgba(#fff, 0.24);
+        color: $sw-background-color;
+    }
+}
+
+.sw-tag-label {
+    // the tag is a control, not prose - it should not inherit paragraph line-height
+    display: inline-block;
+}
+
+.sw-tag-count {
+    background: $sw-gray-100;
+    border-radius: $sw-radius-pill;
+    color: $sw-gray-600;
+    font-size: 0.75rem;
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    min-width: 20px;
+    padding: 2px 7px;
+    text-align: center;
+}
+
+/*
+ * Order list
+ * ----------------------
+ * The list item carries the core table chrome (border, bottom margin, `position: relative`
+ * for the absolutely placed action menu); the card is the visual unit now, so the chrome
+ * moves onto the card and the item becomes a plain grid cell.
+ */
+.account-orders-overview {
+    display: grid;
+    gap: $sw-space-3;
+    margin: 0;
+
+    .order-table {
+        border: 0;
+        margin-bottom: 0;
+    }
+}
+
+/*
+ * Order card
+ * ---------------------- */
+.sw-order-card {
+    background: $sw-background-color;
+    border: 1px solid $sw-border-subtle;
+    border-radius: $sw-radius-account-card;
+    box-shadow: $sw-shadow-sm;
+    padding: $sw-space-5;
+    transition:
+        border-color 0.15s ease,
+        box-shadow 0.15s ease;
+
+    &:hover {
+        border-color: $sw-border-strong;
+        box-shadow: $sw-shadow-md;
+    }
+
+    // the core column-label row is kept for plugins; a card labels every value itself
+    .order-table-header-order-table-header {
+        display: none;
+    }
+
+    // the badge sits inside the card head now, not under a table header; the core paints the
+    // state with raw bootstrap colours, the rest of the account section speaks the semantic
+    // badge palette, so the card does too
+    .order-item-status-badge {
+        margin: 0;
+
+        /* stylelint-disable selector-class-pattern */
+        &.order-item-status-badge-open,
+        &.order-item-status-badge-in_progress {
+            background: $sw-blue-50;
+            color: $sw-blue-700;
+        }
+
+        &.order-item-status-badge-completed {
+            background: $sw-success-soft;
+            color: $sw-success-text;
+        }
+
+        &.order-item-status-badge-cancelled,
+        &.order-item-status-badge-failed {
+            background: $sw-gray-100;
+            border: 1px solid $sw-border-subtle;
+            color: $sw-gray-600;
+        }
+        /* stylelint-enable selector-class-pattern */
+
+        &.bg-danger {
+            background: $sw-danger-soft !important; // bootstrap paints this with !important
+            color: $sw-danger-text;
+        }
+    }
+}
+
+/*
+ * Card head — order number, date, state badge, action menu
+ * ----------------------
+ * Resets the core table placement: the core pins the action menu to the top-right corner of
+ * the row and pushes the number onto its own full-width line. In a card all four fields share
+ * one line.
+ */
+.sw-order-card .order-item-header {
+    padding: 0;
+}
+
+.sw-order-card-head {
+    align-items: center;
+    border-bottom: 1px solid $sw-border-row;
+    display: flex;
+    flex-wrap: wrap;
+    gap: $sw-space-2 $sw-space-4;
+    margin: 0 0 $sw-space-4;
+    padding-bottom: $sw-space-3;
+
+    // the head is a bootstrap row in the core markup; inside a card the fields share one line
+    > [class*='col-'] {
+        flex: 0 0 auto;
+        margin-top: 0;
+        max-width: none;
+        padding: 0;
+        width: auto;
+    }
+}
+
+.sw-order-card-number {
+    align-items: baseline;
+    display: flex;
+    gap: 6px;
+    margin-bottom: 0;
+    min-width: 0;
+    width: auto;
+
+    .order-table-header-label {
+        color: $sw-text-meta;
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
+
+    .order-table-body-value {
+        color: $sw-gray-1000;
+        font-size: 0.9375rem;
+        font-variant-numeric: tabular-nums;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        width: auto;
+    }
+}
+
+.sw-order-card-date {
+    color: $sw-text-meta;
+    font-size: 0.8125rem;
+    font-weight: 400;
+    line-height: 1.5;
+    margin: 0;
+    margin-top: 0;
+}
+
+.sw-order-card-status {
+    // wide screens: badge and menu group on the right, the identity block on the left
+    margin-left: auto;
+    margin-top: 0;
+
+    .order-table-header-order-status {
+        display: flex;
+        justify-content: flex-end;
+    }
+}
+
+.sw-order-card-menu {
+    // the core pins this wrapper to the corner of the row; inside the card it is a flex item
+    // that the payment indicator can hang off
+    margin-top: 0;
+    padding: 0;
+    position: relative;
+    right: auto;
+    top: auto;
+
+    .order-table-header-context-menu {
+        float: none;
+    }
+}
+
+/*
+ * Card meta — delivery and payment facts
+ * ----------------------
+ * The core hides the inline labels from `sm` up (the table header row named the columns); a
+ * card has no header row, so the labels come back.
+ */
+.sw-order-card .sw-order-card-body {
+    // the core hides these labels with bootstrap's `visually-hidden()` mixin, which sets every
+    // property with `!important` - so the reset has to speak `!important` as well
+    .order-table-header-label {
+        clip: auto !important;
+        clip-path: none;
+        color: $sw-gray-400;
+        display: block;
+        float: none;
+        font-size: 0.75rem;
+        font-weight: 500;
+        height: auto !important;
+        line-height: 1.4;
+        margin: 0 !important;
+        overflow: visible !important;
+        padding: 0 !important;
+        position: static !important;
+        white-space: normal !important;
+        width: auto !important;
+    }
+
+    .order-table-body-value {
+        color: $sw-gray-1000;
+        font-size: 0.875rem;
+        line-height: 1.5;
+        overflow-wrap: anywhere;
+        width: auto;
+    }
+}
+
+.sw-order-card-body {
+    border-top: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: $sw-space-4 $sw-space-6;
+    margin: 0;
+
+    > .order-table-header-order-table-body-cell {
+        display: flex;
+        flex: 1 1 140px;
+        flex-direction: column;
+        gap: 2px;
+        margin-top: 0;
+        max-width: none;
+        min-width: 0;
+        padding: 0;
+        width: auto;
+    }
+}
+
+/*
+ * Card foot — the action area
+ * ----------------------
+ * Only the expand toggle lives here. The amount moved up into the head, next to the state badge,
+ * so the two figures that matter read on one line instead of competing with the action.
+ */
+.sw-order-card-foot {
+    align-items: center;
+    border-top: 1px solid $sw-border-row;
+    display: flex;
+    justify-content: flex-end;
+    margin-top: $sw-space-1;
+    padding: $sw-space-4 0 0;
+}
+
+.sw-order-card-amount {
+    margin-top: 0;
+    padding: 0;
+}
+
+.sw-order-card-total {
+    align-items: baseline;
+    display: flex;
+    gap: $sw-space-2;
+    min-width: 0;
+}
+
+.sw-order-card-total-label {
+    color: $sw-text-meta;
+    font-size: 0.8125rem;
+}
+
+.sw-order-card-total-value {
+    color: $sw-gray-1000;
+    font-size: 1.125rem;
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+}
+
+.sw-order-card-toggle {
+    flex: 0 0 auto;
+    padding: 0;
+    text-align: right;
+}
+
+/*
+ * Small screens
+ * ----------------------
+ * A single-line head does not fit 390px, so the head becomes an explicit grid instead of relying
+ * on wrapping: number and menu on the first line, date below, badge last.
+ */
+@include media-breakpoint-down(sm) {
+    .sw-order-card {
+        padding: $sw-space-4;
+    }
+
+    .sw-order-card-head {
+        display: grid;
+        gap: $sw-space-2;
+        grid-template-areas:
+            'number menu'
+            'date   date'
+            'status amount';
+        grid-template-columns: minmax(0, 1fr) auto;
+    }
+
+    .sw-order-card-number {
+        grid-area: number;
+
+        // a hyphenated order number must not break mid-number, so the label moves above it
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 2px;
+
+        .order-table-body-value {
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+    }
+
+    .sw-order-card-date {
+        grid-area: date;
+    }
+
+    .sw-order-card-status {
+        grid-area: status;
+        margin-left: 0;
+
+        .order-table-header-order-status {
+            justify-content: flex-start;
+        }
+    }
+
+    .sw-order-card-menu {
+        grid-area: menu;
+    }
+
+    .sw-order-card-amount {
+        grid-area: amount;
+        justify-self: end;
+    }
+
+    .sw-order-card-body {
+        gap: $sw-space-3 $sw-space-4;
+
+        > .order-table-header-order-table-body-cell {
+            flex: 1 1 calc(50% - #{$sw-space-4});
+        }
     }
 }

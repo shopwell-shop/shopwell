@@ -1,8 +1,12 @@
 /*
-Navigation flyout
-==============================================
-Custom skin styling for navigation flyout which opens on hover over the main navigation.
-*/
+ * Navigation flyout
+ * ==============================================
+ * Custom skin styling for the navigation flyout which opens on hover
+ * over the main navigation inside the single-line header.
+ *
+ * Visual source of truth: single-line header prototype
+ * (accent hover, hairline column divider, muted small links).
+ */
 
 .navigation-flyout-categories {
     &:not(.is-level-0) {
@@ -15,7 +19,7 @@ Custom skin styling for navigation flyout which opens on hover over the main nav
             position: relative;
 
             &::before {
-                border-left: 1px solid $border-color;
+                border-left: 1px solid $sw-nav-divider;
                 content: '';
                 height: 100%;
                 left: 15px;
@@ -28,12 +32,13 @@ Custom skin styling for navigation flyout which opens on hover over the main nav
 
 .navigation-flyout-link {
     @include transition(padding 0.25s cubic-bezier(0, 0.77, 0.33, 1));
-    color: $body-color;
+    color: $sw-nav-link;
     font-size: $font-size-base;
     margin: 0 $spacer;
     padding: $spacer-xs 0;
 
     &.is-level-0 {
+        color: $sw-nav-ink;
         font-weight: $font-weight-bold;
     }
 
@@ -43,17 +48,22 @@ Custom skin styling for navigation flyout which opens on hover over the main nav
     }
 
     &.nav-link:hover {
-        color: $primary;
+        color: $sw-nav-accent;
         padding-left: 5px;
     }
 
     &.active {
-        color: $primary;
+        color: $sw-nav-accent;
         font-weight: $font-weight-bold;
     }
 }
 
 .navigation-flyout-category-link {
+    color: $sw-nav-ink;
     font-weight: $font-weight-bold;
     font-size: $font-size-base;
+
+    &:hover {
+        color: $sw-nav-accent;
+    }
 }

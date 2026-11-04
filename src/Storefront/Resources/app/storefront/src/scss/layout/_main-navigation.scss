@@ -1,0 +1,19 @@
+/*
+ * Main navigation (single-line header)
+ * ==================================================
+ * Structural styles for the main navigation which is rendered
+ * inside the header row (`.header-nav-col`).
+ *
+ * Visual styling lives in the skin layer, see
+ * `skin/shopwell/layout/_main-navigation.scss`.
+ */
+
+@include media-breakpoint-up(lg) {
+    .header-nav-col .main-navigation-menu {
+        width: 100%;
+    }
+
+    .header-nav-col .main-navigation-menu-list {
+        flex-wrap: nowrap;
+    }
+}

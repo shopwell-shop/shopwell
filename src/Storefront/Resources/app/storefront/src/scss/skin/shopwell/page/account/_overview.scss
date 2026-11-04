@@ -1,0 +1,415 @@
+/*
+Account overview (dashboard)
+==================================================
+KPI row, panels, tier ladder, benefits and the recent-orders table of the
+account start page.
+
+Visual source of truth: theme-prototype/account.html (`.sw-kpi`, `.sw-panel`,
+`.sw-progress`, `.sw-rules`, `.sw-detail-grid`). Measured values are copied as
+they are; the only deliberate differences are the two number sizes noted below.
+*/
+
+/*
+ * Page head
+ * ---------------------- */
+.account-welcome {
+    margin-bottom: $sw-space-6;
+}
+
+.account-welcome-title {
+    color: $sw-gray-1000;
+    font-size: 1.5rem; // 24px, prototype `h1.h3`
+    font-weight: 700;
+    line-height: 1.3;
+    margin: 0 0 $sw-space-1;
+}
+
+// Real copy, kept under the headline while the prototype has none: dropping the
+// line would drop the shop text that the block exists for.
+.account-welcome-intro {
+    color: $sw-text-meta;
+    font-size: 0.8125rem; // 13px
+    line-height: 1.6;
+    margin: 0;
+}
+
+/*
+ * KPI row
+ * ----------------------
+ * `col-6 col-lg-3` in the prototype — two cards per row on a phone, four next to
+ * each other from `lg`. A grid does the same without depending on the bootstrap
+ * column classes, and an absent card (feature switched off) only leaves a gap.
+ */
+.account-kpi-row {
+    display: grid;
+    gap: $sw-space-4;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-bottom: $sw-space-6;
+
+    @include media-breakpoint-up(lg) {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+}
+
+.account-kpi {
+    background: $sw-gray-50; // #F4F7FA, prototype canvas
+    border: 1px solid $sw-gray-100; // #EEF2F7
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    height: 100%;
+    padding: $sw-space-4 ($sw-space-4 + 2px); // 16px 18px
+}
+
+.account-kpi-label {
+    align-items: center;
+    color: $sw-gray-400; // #899FBD
+    display: inline-flex;
+    font-size: 0.75rem; // 12px
+    gap: 6px;
+    line-height: 1.4;
+
+    .icon {
+        color: $sw-brand;
+        flex: 0 0 auto;
+        height: 15px;
+        width: 15px;
+
+        > svg {
+            height: 15px;
+            top: 0;
+            width: 15px;
+        }
+    }
+}
+
+.account-kpi-value {
+    color: $sw-gray-1000;
+    font-size: 1.375rem; // 22px — prototype value, not the 32px from the spec
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+    line-height: 1.2;
+
+    small {
+        color: $sw-gray-400;
+        font-size: 0.75rem;
+        font-weight: 500;
+        margin-left: 2px;
+    }
+}
+
+/*
+ * Panel
+ * ---------------------- */
+.account-overview > .account-panel {
+    margin-bottom: $sw-space-6;
+}
+
+.account-panel {
+    background: $sw-background-color;
+    border: 1px solid $sw-border-subtle; // #D1DAE5
+    box-shadow: $sw-shadow;
+    padding: $sw-space-6;
+}
+
+// two panels side by side in a bootstrap row: same height, no extra gap
+.account-overview .account-panel-full {
+    height: 100%;
+    margin-bottom: 0;
+}
+
+.account-panel-head {
+    align-items: center;
+    border-bottom: 1px solid $sw-gray-100;
+    display: flex;
+    flex-wrap: wrap;
+    gap: $sw-space-3;
+    justify-content: space-between;
+    margin-bottom: 18px;
+    padding-bottom: 14px;
+}
+
+.account-panel-title {
+    color: $sw-gray-1000;
+    font-size: $sw-font-size-md; // 16px
+    font-weight: 700;
+    margin: 0;
+}
+
+.account-link-muted {
+    color: $sw-gray-400;
+    font-size: 0.75rem;
+    text-decoration: none;
+
+    &:hover,
+    &:focus-visible {
+        color: $sw-color-danger;
+        text-decoration: none;
+    }
+}
+
+.account-panel-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: $sw-space-2;
+}
+
+/*
+ * Tier ladder
+ * ---------------------- */
+.account-tier-line {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: $sw-space-2;
+    margin-bottom: $sw-space-2;
+
+    // the badge skin adds a horizontal margin for inline use; inside a flex row
+    // with a gap that margin doubles the space
+    .badge {
+        margin: 0;
+    }
+}
+
+.account-tier-hint {
+    color: $sw-text-meta;
+    font-size: 0.8125rem; // 13px
+    line-height: 1.6;
+}
+
+.account-progress {
+    background: $sw-gray-100; // #EEF2F7
+    border-radius: $sw-radius-pill;
+    height: 8px;
+    margin-bottom: $sw-space-4;
+    overflow: hidden;
+}
+
+.account-progress-bar {
+    background: linear-gradient(90deg, $sw-brand, $sw-blue-400);
+    border-radius: inherit;
+    display: block;
+    height: 100%;
+}
+
+/*
+ * Benefits (the ✓ list)
+ * ---------------------- */
+.account-benefits {
+    color: $sw-text-meta;
+    display: flex;
+    flex-direction: column;
+    font-size: 0.8125rem;
+    gap: 0.6rem;
+    list-style: none;
+    margin: 0 0 $sw-space-4;
+    padding: 0;
+
+    li {
+        align-items: flex-start;
+        display: flex;
+        gap: $sw-space-2;
+        line-height: 1.6;
+    }
+
+    .icon {
+        color: $sw-brand;
+        flex: 0 0 auto;
+        height: 15px;
+        margin-top: 3px;
+        width: 15px;
+
+        > svg {
+            height: 15px;
+            top: 0;
+            width: 15px;
+        }
+    }
+}
+
+/*
+ * Profile details (two columns, prototype `.sw-detail-grid`)
+ * ---------------------- */
+.account-detail-grid {
+    display: grid;
+    gap: $sw-space-4 $sw-space-6;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+
+    // a long e-mail in a 165px half column wraps letter by letter
+    @include media-breakpoint-down(sm) {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+.account-detail-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.account-detail-label {
+    color: $sw-gray-400;
+    font-size: 0.75rem;
+    line-height: 1.4;
+}
+
+.account-detail-value {
+    color: $sw-gray-1000;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+}
+
+.account-detail-mono {
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.02em;
+}
+
+/*
+ * Recent orders
+ * ---------------------- */
+.account-order-table {
+    margin-bottom: 0;
+
+    td {
+        vertical-align: middle;
+    }
+
+    thead th {
+        white-space: nowrap;
+    }
+}
+
+.account-order-number {
+    color: $sw-gray-1000;
+    font-size: 0.8125rem;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.02em;
+    text-decoration: none;
+
+    &:hover,
+    &:focus-visible {
+        color: $sw-brand;
+        text-decoration: none;
+    }
+}
+
+.account-order-date,
+.account-order-payment {
+    color: $sw-text-meta;
+    font-size: 0.8125rem;
+    white-space: nowrap;
+}
+
+.account-order-total {
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+/*
+ * Empty state (no orders yet)
+ * ---------------------- */
+.account-empty {
+    align-items: center;
+    color: $sw-gray-300;
+    display: flex;
+    flex-direction: column;
+    gap: $sw-space-3;
+    padding: $sw-space-7 $sw-space-4;
+    text-align: center;
+
+    .icon {
+        height: 40px;
+        width: 40px;
+
+        > svg {
+            height: 40px;
+            top: 0;
+            width: 40px;
+        }
+    }
+}
+
+.account-empty-text {
+    color: $sw-text-meta;
+    font-size: 0.875rem;
+    margin: 0;
+}
+
+/*
+ * Address book: the shipped address cards keep their own markup (two cards, one
+ * of them possibly the "same as billing" note). Inside the panel they lose the
+ * card chrome so they read as one section instead of a card in a card.
+ * ---------------------- */
+.account-overview-addressbook {
+    .account-overview-card {
+        margin-bottom: 0;
+    }
+
+    .card {
+        background: transparent;
+        border: 0;
+        box-shadow: none;
+        height: 100%;
+    }
+
+    .card-body {
+        padding: 0;
+    }
+
+    .card-title {
+        color: $sw-gray-400;
+        font-size: 0.75rem;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        margin-bottom: $sw-space-2;
+    }
+}
+
+/*
+ * Newsletter: the shipped form keeps its switches, the panel only supplies the
+ * frame around it.
+ * ---------------------- */
+.account-overview-newsletter {
+    .card {
+        background: transparent;
+        border: 0;
+        box-shadow: none;
+    }
+
+    .card-body {
+        padding: 0;
+    }
+}
+
+/*
+ * Recent-orders table on very narrow screens: the six columns squeeze the order
+ * number into a five-line wrap. Below the `sm` breakpoint the date and the
+ * payment method columns step aside — order number, status, total and the
+ * action button carry the decision-relevant information. The header cells carry
+ * the same classes as their body cells so one rule hides a whole column.
+ * ---------------------- */
+@media (max-width: 575.98px) {
+    .account-order-table .account-order-date,
+    .account-order-table .account-order-payment {
+        display: none;
+    }
+
+    // even four columns squeeze at 390px: the order number must not break mid-number and the
+    // action must not wrap into two lines. Tighter cell padding buys the rest of the room; the
+    // table sits in `.table-responsive`, so a row that still does not fit scrolls instead of
+    // crushing a column.
+    .account-order-table .account-order-number,
+    .account-order-table .account-order-total,
+    .account-order-table .btn {
+        white-space: nowrap;
+    }
+
+    .account-order-table th,
+    .account-order-table td {
+        padding-left: 6px;
+        padding-right: 6px;
+    }
+}

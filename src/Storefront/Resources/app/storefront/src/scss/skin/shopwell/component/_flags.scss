@@ -1,0 +1,23 @@
+/*
+Flags
+==============================================
+Country flag sprite used by the address forms and the language switcher. Only
+the box is normalised so flags never distort the text baseline.
+*/
+
+.flag {
+    border-radius: $sw-radius;
+    display: inline-block;
+    height: 12px;
+    overflow: hidden;
+    vertical-align: -1px;
+    width: 16px;
+}
+
+.flag-icon,
+.flag-image {
+    display: block;
+    height: 100%;
+    object-fit: cover;
+    width: 100%;
+}

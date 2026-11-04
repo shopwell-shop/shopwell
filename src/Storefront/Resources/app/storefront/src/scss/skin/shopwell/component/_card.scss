@@ -1,12 +1,36 @@
 /*
-Card
-==============================================
-Custom skin styling for bootstrap card component.
+ * Card
+ * ==============================================
+ * Custom skin styling for the bootstrap card component.
+ * Visual source of truth: static prototype — square corners, hairline border
+ * and a flat shadow (border and shadow coexist).
+ *
+ * Card border strategy (deliberate, S0 changed `$card-border-color` from
+ * `transparent` to `$sw-border-subtle` — a storefront-wide change):
+ *   - keep the 1px #D1DAE5 border for real card surfaces:
+ *     product boxes (`.product-box`), checkout/summary cards (`.checkout-card`,
+ *     `.checkout-product-table`), account panels (`account-*`), login/register
+ *     cards and CMS form cards — the prototype shows border + shadow together.
+ *   - pure content containers stay borderless: `.card-tabs` explicitly resets
+ *     `--bs-card-border-width: 0` in component/_tab-menu.scss.
+ *   - if a new container turns out to be borderless in the prototype, reset the
+ *     border in its own component file and note the reason there.
+ *
+ * https://getbootstrap.com/docs/5.2/components/card
+ */
 
-https://getbootstrap.com/docs/5.2/components/card
-*/
+.card {
+    --#{$prefix}card-border-radius: #{$sw-radius};
+    --#{$prefix}card-border-color: #{$sw-border-subtle};
+    border-radius: $sw-radius;
+    box-shadow: $sw-shadow;
+}
+
+.card-header {
+    border-radius: $sw-radius;
+}
 
 .card-title {
-    border-bottom: 1px solid $border-color;
+    border-bottom: 1px solid $sw-border-subtle;
     padding-bottom: 10px;
 }

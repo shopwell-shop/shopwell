@@ -14,7 +14,7 @@ This filter item should only be used inside a filter panel.
     width: 32px;
     height: 32px;
     display: inline-block;
-    border-radius: 4px;
+    border-radius: $sw-radius;
     border: 1px solid $border-color;
     background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 90 90'%3E%3Cpath fill='%23cdd5db' d='M0 0h30v30H0zM30 30h30v30H30zM60 0h30v30H60zM60 60h30v30H60zM0 60h30v30H0z'/%3E%3C/svg%3E");
     background-position: center center;
@@ -58,7 +58,7 @@ This filter item should only be used inside a filter panel.
     bottom: 0;
     width: 100%;
     height: 100%;
-    border-radius: 4px;
+    border-radius: $sw-radius;
     appearance: none;
     background-color: transparent;
     outline: none;

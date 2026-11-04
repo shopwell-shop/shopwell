@@ -41,4 +41,18 @@ Exposes custom SCSS variables of the Storefront as CSS custom properties.
     --price-color: #{$price-color};
 
     --font-weight-semibold: #{$font-weight-semibold};
+
+    // Design tokens (S0) — additive runtime access for components that
+    // cannot reach SCSS scope (e.g. inline CMS styles, plugins).
+    --sw-brand: #{$sw-brand};
+    --sw-brand-hover: #{$sw-brand-hover};
+    --sw-brand-active: #{$sw-brand-active};
+    --sw-brand-soft: #{$sw-brand-soft};
+    --sw-brand-ring: #{$sw-brand-ring};
+    --sw-border: #{$sw-border-subtle};
+    --sw-border-control: #{$sw-border-control};
+    --sw-border-row: #{$sw-border-row};
+    --sw-shadow: #{$sw-shadow};
+    --sw-shadow-md: #{$sw-shadow-md};
+    --sw-container-max: #{$sw-container-max};
 }

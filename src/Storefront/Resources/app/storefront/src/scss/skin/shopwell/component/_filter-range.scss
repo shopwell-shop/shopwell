@@ -1,0 +1,43 @@
+/*
+Filter — range (min / max price)
+==============================================
+*/
+
+.filter-range-container {
+    align-items: flex-end;
+    display: flex;
+    gap: $sw-space-2;
+}
+
+.filter-range-min,
+.filter-range-max {
+    flex: 1 1 0;
+    min-width: 0;
+}
+
+.filter-range-divider {
+    color: $sw-text-meta;
+    font-size: $sw-font-size-sm;
+    line-height: $sw-control-h;
+    padding-bottom: 1px;
+}
+
+.filter-range-unit {
+    color: $sw-text-meta;
+    font-size: $sw-font-size-xs;
+    margin-top: $sw-space-1;
+}
+
+.filter-range-error {
+    color: $sw-danger-text;
+    font-size: $sw-font-size-xs;
+    margin-top: $sw-space-1;
+}
+
+.filter-range-dropdown.dropdown-menu,
+.filter-range .dropdown-menu {
+    border: 1px solid $sw-border-subtle;
+    border-radius: $sw-radius;
+    box-shadow: $sw-shadow-md;
+    padding: $sw-space-4;
+}

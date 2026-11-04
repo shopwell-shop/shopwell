@@ -1,0 +1,23 @@
+/*
+ * Table
+ * ==============================================
+ * Structural styles for the bootstrap table component.
+ * Borders and zebra striping are intentionally dropped here — the storefront
+ * uses row separators only (visual styling lives in
+ * skin/shopwell/component/_table.scss).
+ *
+ * https://getbootstrap.com/docs/5.2/content/tables
+ */
+
+.table {
+    // No zebra striping, no outer frame.
+    --#{$prefix}table-striped-bg: transparent;
+    --#{$prefix}table-striped-color: inherit;
+    margin-bottom: 0;
+    vertical-align: middle;
+
+    > :not(caption) > * > * {
+        border-left-width: 0;
+        border-right-width: 0;
+    }
+}

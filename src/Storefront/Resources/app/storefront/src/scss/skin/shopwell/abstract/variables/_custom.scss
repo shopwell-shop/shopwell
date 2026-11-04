@@ -21,3 +21,22 @@ $price-color: $sw-color-price !default;
 $font-weight-semibold: 600 !default;
 
 $order-grid-gutter-width: 20px !default;
+
+/*
+ * Header navigation accent palette
+ * -------------------------------
+ * Local scope for the single-line header navigation only.
+ * These deliberately do NOT touch the global theme tokens
+ * ($sw-color-brand-primary & friends) — values are aliased from the
+ * design token layer (variables/_design-tokens.scss).
+ */
+$sw-nav-accent: $sw-brand !default;
+$sw-nav-accent-hover: $sw-brand-hover !default;
+$sw-nav-accent-soft: $sw-brand-soft !default;
+$sw-nav-ink: $sw-gray-1000 !default;
+$sw-nav-link: $sw-gray-800 !default;
+$sw-nav-muted: $sw-gray-400 !default;
+$sw-nav-border: $sw-border-subtle !default;
+$sw-nav-divider: $sw-gray-100 !default;
+$sw-nav-fill: $sw-gray-50 !default;
+$sw-nav-accent-focus-ring: $sw-brand-ring !default;

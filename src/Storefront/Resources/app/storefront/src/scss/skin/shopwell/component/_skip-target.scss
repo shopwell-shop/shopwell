@@ -1,3 +1,10 @@
+/*
+ * Skip target
+ * ==============================================
+ * Focus visibility for the skip-to-content target, aligned with the brand
+ * outline used by buttons, form controls and pagination.
+ */
+
 .skip-target {
     background-color: var(--#{$prefix}body-bg);
     z-index: 1;
@@ -5,4 +12,10 @@
     display: inline-block;
     top: 0;
     left: 0;
+
+    &:focus {
+        box-shadow: none;
+        outline: 2px solid $sw-brand;
+        outline-offset: 2px;
+    }
 }

@@ -1,0 +1,181 @@
+/*
+ * Account centre — rewards (points & tiers)
+ * ==============================================
+ * Visual source of truth: theme-prototype/rewards.html
+ *
+ * The hero is the prototype `.sw-tier-card`: a brand-tinted gradient panel that
+ * carries the tier badge, the points as the page headline, the way to the next
+ * tier and the two actions. Everything below is a plain `.account-panel`, and
+ * the tier table reuses the ledger cell helpers from the wallet partial.
+ */
+
+.account-rewards {
+    padding-bottom: $sw-space-8;
+}
+
+.account-rewards > .account-panel {
+    margin-bottom: $sw-space-6;
+}
+
+/*
+ * Tier hero
+ * ---------------------- */
+.account-tier-hero {
+    background: linear-gradient(135deg, $sw-blue-50 0%, #f4f9ff 60%, $sw-background-color 100%);
+    border-color: $sw-blue-100; // #BAE2FF, 原型 .sw-tier-card
+    display: flex;
+    flex-direction: column;
+    gap: $sw-space-4;
+}
+
+.account-tier-hero-head {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: $sw-space-2 $sw-space-3;
+    justify-content: space-between;
+
+    .badge {
+        margin: 0;
+    }
+}
+
+.account-tier-hero-badge {
+    align-items: center;
+    background: $sw-blue-25; // #EAF3FF
+    border-radius: $sw-radius-pill;
+    color: $sw-blue-700;
+    display: inline-flex;
+    font-size: 0.6875rem; // 11px
+    font-weight: 700;
+    gap: 0.35rem;
+    letter-spacing: 0.02em;
+    padding: 0.3rem 0.7rem;
+
+    .icon {
+        height: 12px;
+        width: 12px;
+
+        > svg {
+            height: 12px;
+            top: 0;
+            width: 12px;
+        }
+    }
+}
+
+.account-tier-hero-caption {
+    color: $sw-text-muted;
+    font-size: 0.75rem;
+}
+
+.account-tier-hero-value {
+    color: $sw-gray-1000;
+    font-size: 2rem; // 原型 32px
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+    line-height: 1.15;
+    margin: 0;
+
+    small {
+        color: $sw-text-meta;
+        font-size: 0.8125rem; // 13px
+        font-weight: 400;
+        margin-left: $sw-space-2;
+    }
+}
+
+.account-tier-hero-hint {
+    color: $sw-text-meta;
+    font-size: 0.8125rem; // 13px
+    line-height: 1.65;
+    margin: 0;
+}
+
+.account-tier-hero-progress {
+    display: flex;
+    flex-direction: column;
+    gap: $sw-space-2;
+}
+
+.account-tier-hero-progress-header {
+    align-items: center;
+    color: $sw-gray-600;
+    display: flex;
+    flex-wrap: wrap;
+    font-size: 0.8125rem;
+    gap: $sw-space-2;
+    justify-content: space-between;
+}
+
+.account-tier-hero-progress .account-progress {
+    margin-bottom: 0;
+}
+
+.account-tier-hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: $sw-space-2;
+    margin-top: $sw-space-1;
+}
+
+/*
+ * Redemption levels
+ * ---------------------- */
+.account-rewards-redeem-grid {
+    display: grid;
+    gap: $sw-space-3;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+}
+
+.account-rewards-redeem-level {
+    background: $sw-background-color;
+    border: 1px solid $sw-border-subtle;
+    display: flex;
+    flex-direction: column;
+    gap: $sw-space-1;
+    padding: $sw-space-4;
+
+    &.is-locked {
+        background: $sw-gray-50;
+        opacity: 0.65;
+    }
+}
+
+.account-rewards-redeem-points {
+    color: $sw-gray-1000;
+    font-size: 0.9375rem; // 15px
+    font-weight: 700;
+}
+
+.account-rewards-redeem-rate {
+    color: $sw-text-meta;
+    font-size: 0.8125rem;
+}
+
+.account-rewards-redeem-locked {
+    color: $sw-warning-text;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-top: $sw-space-1;
+}
+
+.account-rewards-redeem-hint {
+    color: $sw-text-muted;
+    font-size: 0.75rem;
+    margin: $sw-space-4 0 0;
+}
+
+/*
+ * Earn rules reuse `.account-rules` (wallet partial).
+ * The tier table reuses `.account-data-table`; only the current tier row is
+ * marked here.
+ * ---------------------- */
+.account-rewards-tier-current,
+tr.account-rewards-tier-current {
+    background: $sw-blue-25;
+
+    td {
+        color: $sw-blue-700;
+    }
+}

@@ -7,21 +7,23 @@ Contains all custom shopwell theme sw-variables.
 */
 
 // Color system
-$sw-color-brand-primary: #0042a0 !default;
-$sw-color-brand-secondary: #474a57 !default;
-$sw-color-price: #2b3136 !default;
+// Baselines synced with the prototype palette (anchor colors only —
+// derived ramps live in variables/_design-tokens.scss, never here).
+$sw-color-brand-primary: #0870ff !default;
+$sw-color-brand-secondary: #445a79 !default;
+$sw-color-price: #1c2431 !default;
 
-$sw-color-success: #007e4e !default;
-$sw-color-info: #005b99 !default;
-$sw-color-warning: #974200 !default;
-$sw-color-danger: #c20017 !default;
+$sw-color-success: #1fad5a !default;
+$sw-color-info: #0b539b !default;
+$sw-color-warning: #ff8514 !default;
+$sw-color-danger: #e74040 !default;
 
 $sw-background-color: #fff !default;
-$sw-text-color: #2b3136 !default;
-$sw-headline-color: #2b3136 !default;
-$sw-border-color: #798490 !default;
+$sw-text-color: #33445b !default;
+$sw-headline-color: #1c2431 !default;
+$sw-border-color: #d1dae5 !default;
 
-$sw-color-buy-button: #0042a0 !default;
+$sw-color-buy-button: #0870ff !default;
 $sw-color-buy-button-text: #fff !default;
 
 // Fonts

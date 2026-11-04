@@ -82,7 +82,7 @@ This file contains the generic styling for all filter items.
     display: inline-block;
     width: 16px;
     height: 16px;
-    border-radius: 4px;
+    border-radius: $sw-radius;
     border: 1px solid $border-color;
     margin-right: 0.25rem;
     background-position: center center;

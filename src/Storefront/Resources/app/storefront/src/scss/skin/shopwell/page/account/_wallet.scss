@@ -1,0 +1,326 @@
+/*
+ * Account centre — wallet
+ * ==============================================
+ * Visual source of truth: theme-prototype/wallet.html
+ *
+ * Layout: a dark balance card and the top-up form share one row (原型
+ * `.sw-wallet-grid`, 1.15fr / 0.85fr) and stack below `lg`. Everything under it
+ * is a plain `.account-panel`, so the ledger, the recent top-ups and the rules
+ * read as one column of sections rather than as cards inside a card.
+ *
+ * Tables deliberately reuse the S1 table skin (row separators, 12px header);
+ * this file only adds the cell helpers the ledger needs.
+ */
+
+.account-wallet {
+    padding-bottom: $sw-space-8;
+}
+
+.account-wallet > .account-panel {
+    margin-bottom: $sw-space-6;
+}
+
+/*
+ * Balance card + top-up
+ * ---------------------- */
+.account-wallet-top {
+    align-items: stretch;
+    display: grid;
+    gap: $sw-space-6;
+    grid-template-columns: minmax(0, 1fr);
+    margin-bottom: $sw-space-6;
+
+    @include media-breakpoint-up(lg) {
+        grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+    }
+}
+
+.account-wallet-balances {
+    display: grid;
+    gap: $sw-space-4;
+}
+
+// The one card on the account pages that is not white: the balance is the
+// headline of this page, so it gets the deep surface (原型 .sw-balance-card).
+// It stretches to the height of the form column, like the prototype's
+// `align-items: stretch` grid.
+.account-balance-card {
+    height: 100%;
+    background:
+        radial-gradient(420px 240px at 100% 0%, rgba($sw-brand, 0.55), transparent 62%),
+        linear-gradient(135deg, #001833 0%, $sw-gray-1000 55%, $sw-blue-700 130%);
+    border-radius: 16px; // 原型 .sw-balance-card: 1rem
+    box-shadow: $sw-shadow-md;
+    color: rgba(#fff, 0.72);
+    display: flex;
+    flex-direction: column;
+    gap: $sw-space-2;
+    overflow: hidden;
+    padding: $sw-space-7;
+    position: relative;
+
+    // decorative ring, bottom right — same as the prototype
+    &::after {
+        border: 1px solid rgba(#fff, 0.14);
+        border-radius: $sw-radius-round;
+        bottom: -80px;
+        content: '';
+        height: 220px;
+        pointer-events: none;
+        position: absolute;
+        right: -70px;
+        width: 220px;
+    }
+}
+
+.account-balance-label {
+    align-items: center;
+    color: rgba(#fff, 0.66);
+    display: flex;
+    font-size: 0.8125rem; // 13px
+    gap: 0.45rem;
+
+    .icon {
+        color: rgba(#fff, 0.8);
+        height: 15px;
+        width: 15px;
+
+        > svg {
+            height: 15px;
+            top: 0;
+            width: 15px;
+        }
+    }
+}
+
+.account-balance-currency {
+    border: 1px solid rgba(#fff, 0.22);
+    color: rgba(#fff, 0.72);
+    font-size: 0.6875rem; // 11px
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    padding: 0 0.35rem;
+}
+
+.account-balance-value {
+    color: #fff;
+    font-size: 2.5rem; // 原型 40px
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    margin-top: 0.35rem;
+    overflow-wrap: anywhere;
+}
+
+.account-balance-hint {
+    color: rgba(#fff, 0.6);
+    font-size: 0.8125rem; // 13px
+    line-height: 1.6;
+    margin: 0;
+    position: relative;
+    z-index: 1;
+}
+
+/*
+ * Top-up form
+ * ---------------------- */
+.account-wallet-top-up {
+    display: flex;
+    flex-direction: column;
+}
+
+.account-wallet-top-up-intro {
+    color: $sw-text-meta;
+    font-size: 0.8125rem; // 13px
+    line-height: 1.65;
+    margin-bottom: $sw-space-4;
+}
+
+.account-wallet-top-up-limits {
+    color: $sw-text-muted;
+    font-size: 0.75rem;
+    margin: 0;
+}
+
+.account-field {
+    margin-bottom: $sw-space-4;
+
+    > .form-label {
+        color: $sw-gray-1000;
+        font-size: 0.8125rem;
+        font-weight: 600;
+        margin-bottom: $sw-space-2;
+    }
+
+    &:last-of-type {
+        margin-bottom: $sw-space-2;
+    }
+}
+
+// Preset amounts: pill buttons that mirror the prototype `.sw-opt` chips.
+.account-wallet-top-up-presets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: $sw-space-2;
+    margin-bottom: $sw-space-4;
+}
+
+.account-wallet-top-up-preset {
+    background: $sw-background-color;
+    border: 1px solid $sw-border-subtle;
+    color: $sw-gray-800;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    min-height: $sw-btn-h-sm;
+    padding: 0.45rem 0.8rem;
+
+    &:hover,
+    &:focus-visible {
+        border-color: $sw-brand;
+        color: $sw-brand;
+    }
+
+    &.is-active,
+    &[aria-pressed='true'] {
+        background: $sw-blue-50;
+        border-color: $sw-brand;
+        color: $sw-blue-700;
+        font-weight: 600;
+    }
+}
+
+.account-wallet-top-up-actions {
+    margin-top: $sw-space-4;
+}
+
+.account-wallet-top-up-submit {
+    width: 100%;
+}
+
+.account-wallet-top-up-qrcode {
+    border: 1px dashed $sw-border-subtle;
+    padding: $sw-space-4;
+    text-align: center;
+}
+
+.account-wallet-top-up-qrcode-title {
+    color: $sw-gray-1000;
+    font-size: $sw-font-size-sm;
+    font-weight: 700;
+    margin-bottom: $sw-space-3;
+}
+
+.account-wallet-top-up-qrcode-target {
+    display: flex;
+    justify-content: center;
+    margin-bottom: $sw-space-3;
+
+    img,
+    canvas,
+    svg {
+        max-width: 200px;
+    }
+}
+
+.account-wallet-top-up-qrcode-hint,
+.account-wallet-top-up-qrcode-amount {
+    color: $sw-text-meta;
+    font-size: 0.8125rem;
+    margin-bottom: $sw-space-2;
+}
+
+.account-wallet-top-up-qrcode-amount strong {
+    color: $sw-gray-1000;
+    font-variant-numeric: tabular-nums;
+    margin-left: $sw-space-2;
+}
+
+.account-wallet-top-up-feedback {
+    margin-bottom: 0;
+}
+
+/*
+ * Ledger cells
+ * ---------------------- */
+.account-data-table {
+    margin-bottom: 0;
+
+    > :not(caption) > * > *:first-child {
+        padding-left: 0;
+    }
+
+    > :not(caption) > * > *:last-child {
+        padding-right: 0;
+    }
+}
+
+.account-data-date {
+    color: $sw-gray-600;
+    font-size: 0.8125rem;
+    white-space: nowrap;
+}
+
+.account-data-type {
+    color: $sw-gray-1000;
+    font-size: 0.8125rem;
+}
+
+.account-data-amount {
+    color: $sw-gray-1000;
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    white-space: nowrap;
+
+    &.is-in {
+        color: $sw-color-success;
+    }
+
+    &.is-out {
+        color: $sw-gray-1000;
+    }
+}
+
+.account-wallet-pagination {
+    margin-top: $sw-space-5;
+
+    .pagination {
+        justify-content: center;
+        margin-bottom: 0;
+    }
+}
+
+/*
+ * Rules list
+ * ---------------------- */
+.account-rules {
+    color: $sw-gray-600;
+    display: flex;
+    flex-direction: column;
+    font-size: 0.8125rem; // 13px
+    gap: 0.6rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+
+    li {
+        align-items: flex-start;
+        display: flex;
+        gap: 0.5rem;
+        line-height: 1.65;
+    }
+
+    .icon {
+        color: $sw-brand;
+        flex: 0 0 auto;
+        height: 15px;
+        margin-top: 3px;
+        width: 15px;
+
+        > svg {
+            height: 15px;
+            top: 0;
+            width: 15px;
+        }
+    }
+}

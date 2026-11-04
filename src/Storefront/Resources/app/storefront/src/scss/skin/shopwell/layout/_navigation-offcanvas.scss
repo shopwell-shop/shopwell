@@ -1,50 +1,136 @@
 /*
 Navigation offcanvas
 ==============================================
-Custom skin styling for navigation offcanvas which replaces main navigation on smaller screens.
-Based on custom offcanvas component.
+Visual layer for the mobile navigation drawer: white surface, hairline row
+dividers and a 14px link ramp that turns brand blue on hover.
+
+The AJAX drill-down is untouched — `.js-navigation-offcanvas-link`,
+`.js-navigation-offcanvas-loading-icon` and
+`.js-navigation-offcanvas-initial-content` keep their markup contract.
 */
 
+.navigation-offcanvas {
+    background: $sw-background-color;
+}
+
 .navigation-offcanvas-headline {
-    font-weight: $font-weight-bold;
-    color: $secondary;
+    color: $sw-gray-1000;
+    font-size: $sw-font-size-md;
+    font-weight: 600;
+    letter-spacing: -0.01em;
 
     &:focus-visible {
-        box-shadow: $focus-ring-box-shadow-inset;
+        outline: 2px solid $sw-brand;
+        outline-offset: 2px;
+        box-shadow: none;
     }
 }
 
+.navigation-offcanvas-list {
+    margin: 0;
+}
+
 .navigation-offcanvas-list-item {
-    background-color: $white;
-    border-top: 1px solid $gray-300;
+    background-color: $sw-background-color;
+    border-top: 1px solid $sw-border-row;
 
     &:last-child {
-        border-bottom: 1px solid $gray-300;
+        border-bottom: 1px solid $sw-border-row;
     }
 }
 
 .navigation-offcanvas-link {
-    color: $body-color;
+    align-items: center;
+    padding: $sw-space-3 $sw-space-6;
+    color: $sw-gray-800;
+    font-size: 0.875rem; // 14px
+    font-weight: 400;
+    line-height: 1.5;
+    text-decoration: none;
+    transition: color 0.15s ease;
+
+    &:hover,
+    &:focus-visible {
+        color: $sw-brand;
+        text-decoration: none;
+    }
 
     &:focus-visible {
-        box-shadow: $focus-ring-box-shadow-inset;
+        outline: 2px solid $sw-brand;
+        outline-offset: -2px;
+        box-shadow: none;
+    }
+
+    // chevron sits at the row end and inherits the hover colour
+    .navigation-offcanvas-link-icon {
+        display: inline-flex;
+        align-items: center;
+        color: $sw-gray-400;
+        transition:
+            color 0.15s ease,
+            transform 0.15s ease;
+
+        .icon {
+            color: inherit;
+        }
+    }
+
+    &:hover .navigation-offcanvas-link-icon {
+        color: $sw-brand;
+        transform: translateX(2px);
     }
 
     &.is-home-link {
         &,
         .icon {
-            color: $primary;
+            color: $sw-brand;
+            font-weight: 600;
         }
     }
 
     &.is-back-link {
-        border-top: 1px solid $gray-300;
-        font-weight: $font-weight-bold;
-        color: $secondary;
+        border-top: 1px solid $sw-border-row;
+        color: $sw-gray-1000;
+        font-weight: 600;
+
+        .navigation-offcanvas-link-icon {
+            color: currentcolor;
+            transform: none;
+        }
     }
 
-    &.is-current-category {
-        color: $primary;
-        font-weight: $font-weight-bold;
+    &.is-current-category,
+    &.active {
+        color: $sw-brand;
+        font-weight: 600;
     }
+}
+
+// Secondary level (drill-down pages) gets one indent step so the back link and
+// the child rows read as a nested list.
+.navigation-offcanvas-content:not(.navigation-offcanvas-root) {
+    .navigation-offcanvas-list-item > .navigation-offcanvas-link {
+        padding-left: $sw-space-7;
+    }
+
+    .navigation-offcanvas-list-item > .navigation-offcanvas-link.is-back-link {
+        padding-left: $sw-space-6;
+    }
+}
+
+.navigation-offcanvas-actions {
+    padding: $sw-space-3 $sw-space-6;
+    border-bottom: 1px solid $sw-border-row;
+    background: $sw-background-color;
+}
+
+/*
+ * Empty-state guard
+ * ----------------------
+ * A navigation pagelet without children must not paint empty divider rows.
+ * Long category names already wrap (`overflow-wrap: anywhere` in the
+ * structural layer) — this only removes the empty list shell.
+ */
+.navigation-offcanvas-list:not(:has(.navigation-offcanvas-list-item)) {
+    display: none;
 }
