@@ -4,6 +4,7 @@ namespace Shopwell\Core\Checkout\Loyalty\Service;
 
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\SystemConfig\SystemConfigService;
+use Shopwell\Core\System\SystemConfig\Util\ConfigBool;
 
 /**
  * The membership settings of the shop, read in one place.
@@ -69,7 +70,9 @@ class LoyaltySettings
     {
         $value = $this->systemConfigService->get(self::CONFIG_KEY_ENABLED, $salesChannelId);
 
-        return $value === null ? self::DEFAULT_ENABLED : (bool) $value;
+        // `system:config:set` writes the string "false" without `--json`, so the value is
+        // normalized instead of cast - a saved "false" must switch the programme off
+        return $value === null ? self::DEFAULT_ENABLED : ConfigBool::normalize($value);
     }
 
     public function pointsPerCurrencyUnit(?string $salesChannelId = null): int
@@ -146,7 +149,7 @@ class LoyaltySettings
     {
         $value = $this->systemConfigService->get(self::CONFIG_KEY_TIER_AUTO_GROUP_SYNC, $salesChannelId);
 
-        return $value === null ? self::DEFAULT_TIER_AUTO_GROUP_SYNC : (bool) $value;
+        return $value === null ? self::DEFAULT_TIER_AUTO_GROUP_SYNC : ConfigBool::normalize($value);
     }
 
     private function int(string $key, ?string $salesChannelId): ?int
