@@ -173,6 +173,27 @@
         "block": "media",
         "order": 500
       },
+      "sw-footer-social-wechat": {
+        "type": "url",
+        "value": "",
+        "editable": true,
+        "block": "footer",
+        "order": 100
+      },
+      "sw-footer-social-phone": {
+        "type": "url",
+        "value": "",
+        "editable": true,
+        "block": "footer",
+        "order": 200
+      },
+      "sw-footer-social-website": {
+        "type": "url",
+        "value": "",
+        "editable": true,
+        "block": "footer",
+        "order": 300
+      },
       "sw-breakpoint-xs": {
         "type": "number",
         "value": 0,

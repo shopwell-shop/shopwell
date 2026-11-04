@@ -1,0 +1,21 @@
+{
+    "sw-theme": {
+        "Storefront": {
+            "default": {
+                "footer": {
+                    "default": {
+                        "sw-footer-social-wechat": {
+                            "label": "WeChat official account URL"
+                        },
+                        "sw-footer-social-phone": {
+                            "label": "Service phone URL"
+                        },
+                        "sw-footer-social-website": {
+                            "label": "Website URL"
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
