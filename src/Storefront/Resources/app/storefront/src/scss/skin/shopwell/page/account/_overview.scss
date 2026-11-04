@@ -24,15 +24,6 @@ they are; the only deliberate differences are the two number sizes noted below.
     margin: 0 0 $sw-space-1;
 }
 
-// Real copy, kept under the headline while the prototype has none: dropping the
-// line would drop the shop text that the block exists for.
-.account-welcome-intro {
-    color: $sw-text-meta;
-    font-size: 0.8125rem; // 13px
-    line-height: 1.6;
-    margin: 0;
-}
-
 /*
  * KPI row
  * ----------------------
@@ -339,34 +330,9 @@ they are; the only deliberate differences are the two number sizes noted below.
 }
 
 /*
- * Address book: the shipped address cards keep their own markup (two cards, one
- * of them possibly the "same as billing" note). Inside the panel they lose the
- * card chrome so they read as one section instead of a card in a card.
+ * The address book moved to its own page; its former overview styles are gone
+ * with it.
  * ---------------------- */
-.account-overview-addressbook {
-    .account-overview-card {
-        margin-bottom: 0;
-    }
-
-    .card {
-        background: transparent;
-        border: 0;
-        box-shadow: none;
-        height: 100%;
-    }
-
-    .card-body {
-        padding: 0;
-    }
-
-    .card-title {
-        color: $sw-gray-400;
-        font-size: 0.75rem;
-        font-weight: 600;
-        letter-spacing: 0.02em;
-        margin-bottom: $sw-space-2;
-    }
-}
 
 /*
  * Newsletter: the shipped form keeps its switches, the panel only supplies the
