@@ -3,19 +3,35 @@
 {% block base_content %}
     <div class="container payment-gateway-qr">
         <div class="row justify-content-center">
-            <div class="col-md-8 col-lg-6 text-center">
+            {% set paymentStatusOptions = {
+                statusUrl: path('frontend.payment.gateway.status', {orderId: paymentOrder.id, paymentNo: paymentOrder.paymentNo}),
+                pendingMessage: 'checkout.paymentGatewayPending'|trans|striptags,
+                paidMessage: 'checkout.paymentGatewayPaid'|trans|striptags,
+                closedMessage: 'checkout.paymentGatewayClosed'|trans|striptags,
+                failedMessage: 'checkout.paymentGatewayFailed'|trans|striptags
+            } %}
+            <div class="col-md-8 col-lg-6 text-center"
+                 data-payment-status
+                 data-payment-status-options="{{ paymentStatusOptions|json_encode|escape('html_attr') }}">
                 <h1 class="h3">{{ 'checkout.paymentGatewayQrTitle'|trans|sw_sanitize }}</h1>
                 <p class="text-body-secondary">{{ paymentOrder.subject|sw_sanitize }}</p>
 
                 {% set qrOptions = { content: qrContent, width: 280 } %}
                 <div class="d-inline-flex justify-content-center p-3 my-3 border rounded"
+                     data-payment-status-qr
                      data-page-qrcode-generator
                      data-page-qrcode-generator-options="{{ qrOptions|json_encode|escape('html_attr') }}"></div>
 
                 <p>{{ 'checkout.paymentGatewayQrHint'|trans|sw_sanitize }}</p>
+                <p role="status" aria-live="polite" data-payment-status-message>
+                    {{ 'checkout.paymentGatewayPending'|trans|sw_sanitize }}
+                </p>
+                <button type="button" class="btn btn-outline-primary" data-payment-status-check>
+                    {{ 'checkout.paymentGatewayCheck'|trans|sw_sanitize }}
+                </button>
 
                 {% if paymentOrder.returnUrl %}
-                    <a class="btn btn-primary" href="{{ paymentOrder.returnUrl }}">
+                    <a class="btn btn-primary" href="{{ paymentOrder.returnUrl }}" data-payment-status-return>
                         {{ 'checkout.paymentGatewayReturn'|trans|sw_sanitize }}
                     </a>
                 {% endif %}

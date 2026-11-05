@@ -63,6 +63,7 @@ PluginManager.register('BlogComments', () => import('src/plugin/blog-comments/bl
 PluginManager.register('MembershipPurchase', () => import('src/plugin/membership/purchase.plugin'), '[data-membership-purchase]');
 PluginManager.register('WalletPayment', () => import('src/plugin/wallet/wallet-payment.plugin'), '[data-wallet-payment]');
 PluginManager.register('WalletTopUp', () => import('src/plugin/wallet/wallet-top-up.plugin'), '[data-wallet-top-up]');
+PluginManager.register('PaymentStatus', () => import('src/plugin/payment/payment-status.plugin'), '[data-payment-status]');
 PluginManager.register('OffCanvasCart', () => import('src/plugin/offcanvas-cart/offcanvas-cart.plugin'), '[data-off-canvas-cart]');
 PluginManager.register('AddToCart', () => import('src/plugin/add-to-cart/add-to-cart.plugin'), '[data-add-to-cart]');
 PluginManager.register('CollapseFooterColumns', () => import('src/plugin/collapse/collapse-footer-columns.plugin'), '[data-collapse-footer-columns]');

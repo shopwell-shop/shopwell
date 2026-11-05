@@ -1,3 +1,4 @@
+import PaymentPoller from 'src/plugin/payment/payment-handover';
 import {
     FLOW_QRCODE,
     FLOW_REDIRECT,
@@ -59,5 +60,33 @@ describe('payment-handover', () => {
 
         expect(canPayWithSdk({})).toBe(false);
         expect(canPayWithSdk({ paySign: 'abc' })).toBe(true);
+    });
+});
+
+
+describe('payment polling lifecycle', () => {
+    test('ignores an old response after a manual check restarts polling', async () => {
+        jest.useFakeTimers();
+        let completeOldRequest;
+        const probe = jest.fn()
+            .mockImplementationOnce(() => new Promise((resolve) => { completeOldRequest = resolve; }))
+            .mockResolvedValue({ state: 'pending' });
+        const onState = jest.fn().mockReturnValue(false);
+        const poller = new PaymentPoller({ probe, onState, interval: 100 });
+
+        try {
+            poller.start();
+            poller.start();
+            await Promise.resolve();
+            completeOldRequest({ state: 'paid' });
+            await Promise.resolve();
+            expect(onState).toHaveBeenCalledTimes(1);
+            expect(onState).toHaveBeenCalledWith({ state: 'pending' });
+            await jest.advanceTimersByTimeAsync(100);
+            expect(probe).toHaveBeenCalledTimes(3);
+        } finally {
+            poller.stop();
+            jest.useRealTimers();
+        }
     });
 });
