@@ -2,31 +2,15 @@
 Footer
 ==================================================
 Contains custom styles for the footer located at the bottom of the page.
-
-The mobile accordion is driven by `collapse-footer-columns.plugin.js`, which
-relies on this contract:
-    .js-footer-column > .js-footer-column-headline (+ .js-collapse-footer-column-trigger)
-                     ~ .js-footer-column-content
-Keep the classes and the DOM relationship intact when changing anything here.
 */
 
 .footer-column-content-inner {
     padding-bottom: $spacer;
-
-    > ul {
-        margin-bottom: 0;
-    }
-
-    > :last-child {
-        margin-bottom: 0;
-    }
 }
 
 .footer-column-headline {
     padding: $spacer-sm 0;
-    align-items: center;
     display: flex;
-    gap: $spacer-sm;
     justify-content: space-between;
 
     // control icon visibility via collapse show state
@@ -52,25 +36,7 @@ Keep the classes and the DOM relationship intact when changing anything here.
 
 .footer-column-toggle {
     padding: 0;
-    align-items: center;
-    display: inline-flex;
-    flex: 0 0 auto;
-    height: 24px;
-    justify-content: center;
-    margin-left: auto;
-    margin-right: -$spacer-xs;
-    width: 24px;
     --#{$prefix}btn-line-height: 1.375;
-
-    .icon {
-        transition: transform 0.2s ease;
-    }
-
-    // the plus icon is swapped for the minus icon on `aria-expanded="true"`,
-    // so the rotation is applied to the minus icon to keep the motion visible
-    &[aria-expanded='true'] .icon-footer-minus > svg {
-        transform: rotate(180deg);
-    }
 }
 
 .footer-link-item {
@@ -159,17 +125,5 @@ Keep the classes and the DOM relationship intact when changing anything here.
     // show collapse content on larger screens
     .footer-column-content.collapse {
         display: block;
-    }
-}
-
-// Mobile fold row: the divider, headline size and toggle hit area only need to
-// exist below md, where the columns are collapsed into accordions.
-@include media-breakpoint-down(md) {
-    .footer-column {
-        padding-right: 0;
-    }
-
-    .footer-column-headline {
-        padding: $spacer-md 0;
     }
 }

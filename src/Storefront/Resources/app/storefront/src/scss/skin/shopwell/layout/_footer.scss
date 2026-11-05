@@ -1,335 +1,62 @@
 /*
-Footer (dark shell)
+Footer
 ==================================================
-Visual layer for the footer. The prototype uses a dark slab (#1C2431) with
-white-alpha steps, so every colour here comes from the `$sw-footer-*` token
-group in `variables/_design-tokens.scss`.
-
-The mobile accordion is driven by `collapse-footer-columns.plugin.js`. The
-markup contract (`.js-footer-column`, `.js-collapse-footer-column-trigger`,
-`.js-footer-column-content`, `data-collapse-footer-columns`) is untouched —
-this file only colours the existing structure.
+Contains custom skin styles for the footer located at the bottom of the page.
 */
 
 .footer-main {
-    border-top: 0;
-    background: $sw-footer-bg;
-    color: $sw-footer-color;
-    font-size: $sw-font-size-sm;
+    border-top: 1px solid $border-color;
 }
 
-.footer-headline,
+.footer-column {
+    border-bottom: 1px solid $border-color;
+}
+
 .footer-column-headline {
-    margin-bottom: $sw-space-4;
-    color: $sw-footer-heading;
-    font-size: 0.8125rem; // 13px
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    line-height: 1.5;
-    text-transform: uppercase;
-
-    a {
-        color: inherit;
-        text-decoration: none;
-
-        &:hover {
-            color: $sw-footer-accent;
-            text-decoration: underline;
-        }
-    }
-}
-
-// Link column rhythm: the prototype uses a 9.6px row gap instead of padding.
-.footer-column-content-inner {
-    padding-bottom: $sw-space-4;
-
-    > ul {
-        display: flex;
-        flex-direction: column;
-        gap: 0.6rem;
-        margin: 0;
-    }
-}
-
-.footer-link-item {
-    padding: 0;
+    color: $primary;
+    font-size: $font-size-lg;
+    font-weight: $font-weight-bold;
 }
 
 .footer-link {
-    display: inline-block;
-    color: $sw-footer-color;
-    font-size: $sw-font-size-sm;
-    line-height: 1.5;
-    text-decoration: none;
-    transition: color 0.15s ease;
+    color: $body-color;
 
-    &:hover,
-    &:focus-visible {
-        color: $sw-footer-accent;
-        text-decoration: underline;
-    }
-
-    &:focus-visible {
-        outline: 2px solid $sw-footer-accent;
-        outline-offset: 2px;
+    &:hover {
+        color: $primary;
     }
 }
 
-// Contact column (hotline) — the phone number is the only strong text here.
-.footer-contact-hotline {
-    margin: 0 0 $sw-space-2;
-    color: $sw-footer-color;
-    font-size: $sw-font-size-sm;
-
-    a {
-        display: inline-block;
-        margin: $sw-space-2 0 $sw-space-3;
-        color: $sw-footer-heading;
-        font-size: 1rem;
-        font-weight: 600;
-    }
+.footer-contact-hotline a {
+    display: block;
+    margin: $spacer 0 $spacer-sm;
+    font-size: $font-size-lg;
+    font-weight: $font-weight-bold;
+    color: $primary;
 }
 
-.footer-contact-form {
-    font-size: $sw-font-size-sm;
-    line-height: 1.75;
-
-    a {
-        color: $sw-footer-strong;
-        text-decoration: underline;
-        text-underline-offset: 3px;
-
-        &:hover {
-            color: $sw-footer-accent;
-        }
-    }
-}
-
-.footer-revocation-button {
-    font-size: $sw-font-size-sm;
-
-    a {
-        color: $sw-footer-strong;
-        text-decoration: underline;
-        text-underline-offset: 3px;
-    }
-}
-
-/*
- * Social icons
- * ----------------------
- * 34x34 circles with an 18% white ring. The stock Storefront footer carries no
- * social markup (only the hotline + navigation columns), so these rules are a
- * hook: any theme/plugin extension that renders
- * `.footer-social-list > .footer-social-item > .footer-social-link` gets the
- * prototype look for free.
- */
-.footer-social-list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: $sw-space-2;
-    margin: $sw-space-4 0 0;
-    padding: 0;
-    list-style: none;
-}
-
-.footer-social-item {
-    display: inline-flex;
-}
-
-.footer-social-link {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 34px;
-    height: 34px;
-    border: 1px solid $sw-footer-social-border;
-    border-radius: $sw-radius-round;
-    color: $sw-footer-strong;
-    text-decoration: none;
-    transition:
-        background-color 0.15s ease,
-        border-color 0.15s ease,
-        color 0.15s ease;
-
-    .icon {
-        color: inherit;
-    }
-
-    .icon > svg {
-        top: 0;
-        width: 16px;
-        height: 16px;
-        fill: currentColor;
-    }
-
-    &:hover,
-    &:focus-visible {
-        background: $sw-brand;
-        border-color: $sw-brand;
-        color: $sw-footer-heading;
-        text-decoration: none;
-    }
-
-    &:focus-visible {
-        outline: 2px solid $sw-footer-accent;
-        outline-offset: 2px;
-    }
-}
-
-/*
- * Payment / shipping logos as pills
- * ----------------------
- * The prototype renders text pills ("微信支付" …); the Storefront renders
- * media logos from the payment method config. The pill shell (4px radius, 8%
- * white surface) is applied to the logo wrapper so both look the same.
- */
-.footer-logos {
-    justify-content: flex-start;
-    gap: $sw-space-2;
-    padding: $sw-space-5 0;
-    border-top: 1px solid $sw-footer-divider;
-}
-
-.footer-logo {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 24px;
-    margin: 0;
-    padding: 0.2rem 0.55rem;
-    border-radius: $sw-radius-pay;
-    background: $sw-footer-pill-bg;
-    color: $sw-footer-pill-color;
-    font-size: 0.6875rem; // 11px
-    font-weight: 600;
-}
-
-.footer-logo-image {
-    max-width: 64px;
-    max-height: 18px;
-}
-
-/*
- * Bottom bar
- * ---------------------- */
 .footer-bottom {
-    padding: $sw-space-5 0;
-    border-top: 1px solid $sw-footer-divider;
-    background: transparent;
-    color: $sw-footer-muted;
-    font-size: 0.8125rem; // 13px
-
-    a {
-        color: inherit;
-        text-decoration: none;
-
-        &:hover,
-        &:focus-visible {
-            color: $sw-footer-accent;
-            text-decoration: underline;
-        }
-    }
-}
-
-.footer-service-menu-list {
-    gap: $sw-space-6;
-    margin: 0 0 $sw-space-2;
-    padding: 0;
+    background: $gray-100;
 }
 
 .footer-service-menu-item {
-    padding-right: 0;
-}
+    padding-right: $spacer;
+    font-weight: $font-weight-bold;
 
-.footer-service-menu-link {
-    padding: 0;
-    font-weight: 400;
-}
-
-.footer-vat,
-.footer-copyright {
-    margin: 0;
-    text-align: center;
-    font-size: 0.8125rem;
-}
-
-.footer-copyright .icon {
-    color: $sw-footer-strong;
-}
-
-/*
- * Accordion trigger
- * ----------------------
- * S1 squares every `.btn` at 40px height; the fold trigger is an icon control,
- * so it is re-sized to 24px here and inherits the footer text colours.
- */
-.footer-column-toggle {
-    height: 24px;
-    padding: 0;
-    color: $sw-footer-strong;
-    transition: color 0.15s ease;
-    --#{$prefix}btn-color: #{$sw-footer-strong};
-    --#{$prefix}btn-hover-color: #{$sw-footer-accent};
-    --#{$prefix}btn-active-color: #{$sw-footer-accent};
-    --#{$prefix}btn-focus-box-shadow: none;
-
-    &:hover,
-    &[aria-expanded='true'] {
-        color: $sw-footer-accent;
+    &:last-child {
+        padding-right: 0;
     }
 }
 
-/*
- * Empty-state guards
- * ----------------------
- * A fresh install has no social links, and payment/shipping logo media is
- * optional. Without these guards the footer would show empty padded strips
- * with a stray divider. `:has()` is supported by every browser in our support
- * matrix; where it is not, the selector is dropped and the layout degrades to
- * the painted default, never to a broken one.
- */
-.footer-logos:not(:has(.footer-logo)),
-.footer-social-list:not(:has(.footer-social-item)) {
-    display: none;
-}
-
-// Long category / service names must wrap instead of pushing the column.
-.footer-link,
 .footer-service-menu-link {
-    overflow-wrap: anywhere;
+    color: inherit;
 }
 
-/*
- * Mobile accordion (white-on-dark variant of the fold row)
- * ----------------------
- * Default (light surfaces) the fold row uses $sw-border-row (#EAF0F5) with a
- * 15px/600 headline; inside the dark footer the divider becomes a 12% white
- * line and the headline stays white with an #8CCFFF hover/open state.
- */
-@include media-breakpoint-down(md) {
+@include media-breakpoint-up(md) {
     .footer-column {
-        border-bottom: 1px solid $sw-footer-divider-row;
+        border: 0;
     }
 
-    .footer-column-headline {
-        margin-bottom: 0;
-        color: $sw-footer-heading;
-        font-size: 0.9375rem; // 15px
-        font-weight: 600;
-        letter-spacing: 0;
-        text-transform: none;
-    }
-
-    .footer-column-content-inner {
-        padding-bottom: $sw-space-4;
-    }
-
-    .footer-logos {
-        padding: $sw-space-4 0;
-    }
-
-    .footer-service-menu-list {
-        gap: $sw-space-3;
+    .footer-link-item {
+        padding: 2px 0;
     }
 }

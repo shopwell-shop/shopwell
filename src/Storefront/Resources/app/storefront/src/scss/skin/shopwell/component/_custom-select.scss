@@ -1,20 +1,20 @@
 /*
- * Custom Select
- * ==============================================
- * Custom skin styling for bootstrap custom select menu.
- *
- * https://getbootstrap.com/docs/5.2/forms/select
- */
+Custom Select
+==============================================
+Custom skin styling for bootstrap custom select menu.
+
+https://getbootstrap.com/docs/5.2/forms/select
+*/
 
 .custom-select {
     cursor: pointer;
 
     &:invalid {
-        color: $sw-text-placeholder-strong;
+        color: $input-placeholder-color;
     }
 
     &:hover {
-        border-color: $sw-brand;
-        color: $sw-brand;
+        border-color: $primary;
+        color: $primary;
     }
 }

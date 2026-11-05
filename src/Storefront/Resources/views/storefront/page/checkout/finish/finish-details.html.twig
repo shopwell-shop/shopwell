@@ -3,12 +3,6 @@
         <div class="card checkout-card"
              data-checkout-customer-storage-reset="true">
             <div class="card-body">
-                {% block page_checkout_finish_success_icon %}
-                    <div class="finish-success-icon" aria-hidden="true">
-                        {% sw_icon 'checkmark' style { 'size': 'lg' } %}
-                    </div>
-                {% endblock %}
-
                 {% block page_checkout_finish_header %}
                     <h1 class="finish-header">
                         {% if page.changedPayment == true %}
@@ -82,50 +76,6 @@
                         {% endif %}
                         {% endblock %}
                     </div>
-                {% endblock %}
-
-                {% block page_checkout_finish_info_grid %}
-                    {% set finishPaymentName = feature('v6.8.0.0')
-                        ? page.order.primaryOrderTransaction.paymentMethod.translated.name
-                        : page.order.transactions.last.paymentMethod.translated.name %}
-
-                    <dl class="finish-detail-grid">
-                        {% block page_checkout_finish_info_grid_date %}
-                            <div class="finish-detail-item">
-                                <dt class="finish-detail-label">{{ 'checkout.finishInfoOrderDate'|trans|sw_sanitize }}</dt>
-                                <dd class="finish-detail-value">{{ page.order.orderDate|date('Y-m-d H:i') }}</dd>
-                            </div>
-                        {% endblock %}
-
-                        {% block page_checkout_finish_info_grid_payment %}
-                            <div class="finish-detail-item">
-                                <dt class="finish-detail-label">{{ 'checkout.finishInfoPaymentShort'|trans|sw_sanitize }}</dt>
-                                <dd class="finish-detail-value">{{ finishPaymentName }}</dd>
-                            </div>
-                        {% endblock %}
-
-                        {% block page_checkout_finish_info_grid_shipping %}
-                            {% if feature('v6.8.0.0') %}
-                                {% set finishShippingName = page.order.primaryOrderDelivery is defined ? page.order.primaryOrderDelivery.shippingMethod.translated.name : null %}
-                            {% else %}
-                                {% set finishShippingName = page.order.deliveries.first is not empty ? page.order.deliveries.first.shippingMethod.translated.name : null %}
-                            {% endif %}
-
-                            {% if finishShippingName %}
-                                <div class="finish-detail-item">
-                                    <dt class="finish-detail-label">{{ 'checkout.finishInfoShippingShort'|trans|sw_sanitize }}</dt>
-                                    <dd class="finish-detail-value">{{ finishShippingName }}</dd>
-                                </div>
-                            {% endif %}
-                        {% endblock %}
-
-                        {% block page_checkout_finish_info_grid_amount %}
-                            <div class="finish-detail-item">
-                                <dt class="finish-detail-label">{{ 'checkout.finishInfoAmount'|trans|sw_sanitize }}</dt>
-                                <dd class="finish-detail-value finish-detail-amount">{{ page.order.price.totalPrice|currency(context.currency.isoCode) }}</dd>
-                            </div>
-                        {% endblock %}
-                    </dl>
                 {% endblock %}
             </div>
         </div>

@@ -9,141 +9,55 @@
     {% block sw_blog_index %}
         <div class="blog-index">
             <div class="container">
-                {% block sw_blog_index_top %}
-                    {#
-                        Prototype blog.html: the title block and the category filter
-                        share one bottom-bordered row (title left, chips right).
-                    #}
-                    <div class="blog-index__top">
-                        {% block sw_blog_index_header %}
-                            <header class="blog-index__header">
-                                {% block sw_blog_index_header_title %}
-                                    <h1 class="blog-index__title">{{ 'blog.listing.title'|trans|sw_sanitize }}</h1>
-                                {% endblock %}
-                                {% block sw_blog_index_header_subtitle %}
-                                    <p class="blog-index__subtitle">{{ 'blog.listing.subtitle'|trans|sw_sanitize }}</p>
-                                {% endblock %}
-                            </header>
-                        {% endblock %}
-
-                        {% block sw_blog_index_filter %}
-                            {% if page.categories is not empty %}
-                                <nav class="blog-index__filter" aria-label="{{ 'blog.listing.filterLabel'|trans|striptags }}">
-                                    {% block sw_blog_index_filter_all %}
-                                        <a href="{{ seoUrl('frontend.blog.index') }}"
-                                           class="blog-index__chip{% if not page.activeCategoryId %} blog-index__chip--active{% endif %}">
-                                            {{ 'blog.listing.filterAll'|trans|sw_sanitize }}
-                                        </a>
-                                    {% endblock %}
-
-                                    {% block sw_blog_index_filter_categories %}
-                                        {% for category in page.categories %}
-                                            <a href="{{ seoUrl('frontend.blog.index', { category: category.id }) }}"
-                                               class="blog-index__chip{% if page.activeCategoryId == category.id %} blog-index__chip--active{% endif %}">
-                                                {{ category.name }}
-                                            </a>
-                                        {% endfor %}
-                                    {% endblock %}
-                                </nav>
-                            {% endif %}
-                        {% endblock %}
-                    </div>
+                {% block sw_blog_index_header %}
+                    <header class="blog-index__header">
+                        <h1 class="blog-index__title">{{ 'blog.listing.title'|trans|sw_sanitize }}</h1>
+                    </header>
                 {% endblock %}
 
-                {% block sw_blog_index_layout %}
-                    {# Prototype: feed in an 8-column main area plus a 4-column side rail. #}
-                    <div class="blog-index__layout">
-                        {% block sw_blog_index_main %}
-                            <div class="blog-index__main">
-                                {% block sw_blog_index_listing %}
-                                    {#
-                                        The layout of the category wins over the twig listing. The merchant built it in
-                                        the administration for exactly this page, so rendering the default next to it
-                                        would make the setting look broken.
-                                    #}
-                                    {% if page.cmsPage %}
-                                        {% block sw_blog_index_cms %}
-                                            <div class="cms-page blog-index__cms">
-                                                {% sw_include '@Storefront/storefront/page/content/detail.html.twig' with { cmsPage: page.cmsPage } only %}
-                                            </div>
-                                        {% endblock %}
-                                    {% else %}
-                                        {% sw_include '@Storefront/storefront/component/blog/blog-listing.html.twig' with { page: page } only %}
-                                    {% endif %}
-                                {% endblock %}
+                {% block sw_blog_index_filter %}
+                    {% if page.categories is not empty %}
+                        <nav class="blog-index__filter" aria-label="{{ 'blog.listing.filterLabel'|trans|striptags }}">
+                            {% block sw_blog_index_filter_all %}
+                                <a href="{{ seoUrl('frontend.blog.index') }}"
+                                   class="blog-index__chip{% if not page.activeCategoryId %} blog-index__chip--active{% endif %}">
+                                    {{ 'blog.listing.filterAll'|trans|sw_sanitize }}
+                                </a>
+                            {% endblock %}
 
-                                {% block sw_blog_index_pagination %}
-                                    {% if not page.cmsPage %}
-                                        {% sw_include '@Storefront/storefront/component/blog/blog-pagination.html.twig' with { page: page } only %}
-                                    {% endif %}
-                                {% endblock %}
+                            {% block sw_blog_index_filter_categories %}
+                                {% for category in page.categories %}
+                                    <a href="{{ seoUrl('frontend.blog.index', { category: category.id }) }}"
+                                       class="blog-index__chip{% if page.activeCategoryId == category.id %} blog-index__chip--active{% endif %}">
+                                        {{ category.name }}
+                                    </a>
+                                {% endfor %}
+                            {% endblock %}
+                        </nav>
+                    {% endif %}
+                {% endblock %}
+
+                {% block sw_blog_index_listing %}
+                    {#
+                        The layout of the category wins over the twig listing. The merchant built it in
+                        the administration for exactly this page, so rendering the default next to it
+                        would make the setting look broken.
+                    #}
+                    {% if page.cmsPage %}
+                        {% block sw_blog_index_cms %}
+                            <div class="cms-page blog-index__cms">
+                                {% sw_include '@Storefront/storefront/page/content/detail.html.twig' with { cmsPage: page.cmsPage } only %}
                             </div>
                         {% endblock %}
+                    {% else %}
+                        {% sw_include '@Storefront/storefront/component/blog/blog-listing.html.twig' with { page: page } only %}
+                    {% endif %}
+                {% endblock %}
 
-                        {% block sw_blog_index_aside %}
-                            <aside class="blog-index__aside">
-                                {% block sw_blog_index_aside_categories %}
-                                    {% if page.categories is not empty %}
-                                        <section class="blog-side-card">
-                                            <h2 class="blog-side-card__title">{{ 'blog.sidebar.categoriesTitle'|trans|sw_sanitize }}</h2>
-                                            <div class="blog-side-card__tags">
-                                                {% for category in page.categories %}
-                                                    <a href="{{ seoUrl('frontend.blog.index', { category: category.id }) }}"
-                                                       class="blog-index__chip{% if page.activeCategoryId == category.id %} blog-index__chip--active{% endif %}">
-                                                        {{ category.name }}
-                                                    </a>
-                                                {% endfor %}
-                                            </div>
-                                        </section>
-                                    {% endif %}
-                                {% endblock %}
-
-                                {% block sw_blog_index_aside_latest %}
-                                    {% if page.blogs is not empty %}
-                                        <section class="blog-side-card">
-                                            <h2 class="blog-side-card__title">{{ 'blog.sidebar.latestTitle'|trans|sw_sanitize }}</h2>
-                                            <div class="blog-side-list">
-                                                {% for blog in page.blogs|slice(0, 3) %}
-                                                    <a href="{{ seoUrl('frontend.blog.detail', { blogId: blog.id }) }}">
-                                                        {{ blog.title }}
-                                                        {% if blog.publishedAt %}
-                                                            <small>{{ blog.publishedAt|format_date('medium', locale=app.request.locale) }}</small>
-                                                        {% endif %}
-                                                    </a>
-                                                {% endfor %}
-                                            </div>
-                                        </section>
-                                    {% endif %}
-                                {% endblock %}
-
-                                {% block sw_blog_index_aside_newsletter %}
-                                    <section class="blog-side-card">
-                                        <h2 class="blog-side-card__title">{{ 'blog.sidebar.newsletterTitle'|trans|sw_sanitize }}</h2>
-                                        <p class="blog-side-card__text">{{ 'blog.sidebar.newsletterText'|trans|sw_sanitize }}</p>
-                                        <form action="{{ path('frontend.form.newsletter.register.handle') }}"
-                                              method="post"
-                                              class="blog-newsletter-form"
-                                              data-form-handler="true">
-                                            <input type="hidden" name="option" value="subscribe">
-                                            <label class="visually-hidden" for="blogNewsletterEmail">
-                                                {{ 'newsletter.labelMail'|trans|striptags }}
-                                            </label>
-                                            <input class="form-control"
-                                                   id="blogNewsletterEmail"
-                                                   type="email"
-                                                   name="email"
-                                                   placeholder="{{ 'newsletter.labelMail'|trans|striptags }}"
-                                                   autocomplete="email"
-                                                   required>
-                                            <button class="btn btn-primary" type="submit">
-                                                {{ 'newsletter.formSubmit'|trans|sw_sanitize }}
-                                            </button>
-                                        </form>
-                                    </section>
-                                {% endblock %}
-                            </aside>
-                        {% endblock %}
-                    </div>
+                {% block sw_blog_index_pagination %}
+                    {% if not page.cmsPage %}
+                        {% sw_include '@Storefront/storefront/component/blog/blog-pagination.html.twig' with { page: page } only %}
+                    {% endif %}
                 {% endblock %}
             </div>
         </div>

@@ -1,27 +1,8 @@
-{% set identityInitial = (context.customer.firstName ?: context.customer.name ?: context.customer.email)|slice(0, 1)|upper %}
-
-{#
-    Group visibility is decided once per group and used for the wrapper, the heading and the closing
-    tag alike. A heading that renders while its links are hidden is exactly the empty "我的售后"
-    section that appeared before: the wrapper and the title have to share one condition, not two
-    variations of the same one.
-#}
-{#
-    `system:config:set` writes the *string* "false" unless `--json` is passed, and the Twig
-    `config()` function hands that raw string through. The off-spellings below mirror
-    Shopwell\Core\System\SystemConfig\Util\ConfigBool so this template cannot disagree with the
-    PHP gate. They are spelled out with `same as` because Twig's `in` compares loosely and would
-    fold a boolean `true` into the string list. An unset key (`null`) is the default: on.
-    String values are lowered and trimmed first, so a CLI-written "False" or " false " behaves
-    exactly like "false"; booleans pass through untouched.
-#}
+{# Keep feature visibility consistent with the backend configuration normalization. #}
 {% set loyaltyRaw = config('core.loyalty.enabled') ?? true %}
 {% set walletRaw = config('core.wallet.enabled') ?? true %}
 {% set loyaltyEnabled = loyaltyRaw is string ? loyaltyRaw|lower|trim : loyaltyRaw %}
 {% set walletEnabled = walletRaw is string ? walletRaw|lower|trim : walletRaw %}
-
-{% set showAccountGroup = not headerWidget %}
-{% set showTransactionGroup = not headerWidget %}
 {% set showLoyaltyEntries = loyaltyEnabled
     and loyaltyEnabled is not same as('false')
     and loyaltyEnabled is not same as('0')
@@ -34,14 +15,6 @@
     and walletEnabled is not same as('')
     and walletEnabled is not same as('off')
     and walletEnabled is not same as('no') %}
-{% set showAssetGroup = not headerWidget and (showLoyaltyEntries or showWalletEntry) %}
-{% set showOrderReturnEntry = config('core.orderReturn.enabled') is not same as(false) %}
-
-{# Tier rail on the identity card: only where the page really loaded a tier (overview / rewards). #}
-{% set tier = not headerWidget and page is defined and page.currentTier is defined ? page.currentTier : null %}
-{% set nextTier = tier and page.nextTier is defined ? page.nextTier : null %}
-{% set tierProgress = tier and page.tierProgress is defined ? page.tierProgress : 0 %}
-{% set tierPointsToNext = tier and page.tierPointsToNext is defined ? page.tierPointsToNext : null %}
 
 {% block page_account_sidebar_inner %}
     <div class="{% if not headerWidget %}account-aside{% else %}header-account-menu{% endif %}">
@@ -49,59 +22,8 @@
             {% block page_account_sidebar_header %}
                 {% if not headerWidget %}
                     <div class="card-header account-aside-header">
-                        {#
-                            Identity card. Only real customer data is rendered: name and e-mail come
-                            from `context.customer`, the tier and the progress from the page itself.
-                            A loyalty level is never printed unless the loyalty route answered one.
-                        #}
-                        {% block page_account_sidebar_identity %}
-                            <div class="account-aside-identity">
-                                <span class="account-aside-avatar" aria-hidden="true">{{ identityInitial }}</span>
-                                <span class="account-aside-identity-text">
-                                    <span class="account-aside-name">{{ context.customer.name }}</span>
-                                    {% if context.customer.email %}
-                                        <span class="account-aside-email" title="{{ context.customer.email }}">
-                                            {{ context.customer.email }}
-                                        </span>
-                                    {% endif %}
-                                </span>
-                            </div>
-                        {% endblock %}
-
-                        {% block page_account_sidebar_tier %}
-                            {% if tier %}
-                                <div class="account-aside-tier">
-                                    <span class="account-aside-tier-badge">
-                                        {% sw_icon 'sparkles' style { size: 'sm' } %}
-                                        {{ tier.name }}
-                                    </span>
-                                    {% if nextTier and tierPointsToNext is not null %}
-                                        <span class="account-aside-tier-hint">
-                                            {{ 'account.overviewTierToNext'|trans({
-                                                '%tier%': nextTier.name,
-                                                '%points%': tierPointsToNext
-                                            })|sw_sanitize }}
-                                        </span>
-                                    {% endif %}
-                                </div>
-
-                                {% if nextTier %}
-                                    <div class="account-aside-progress"
-                                         role="progressbar"
-                                         aria-valuenow="{{ tierProgress }}"
-                                         aria-valuemin="0"
-                                         aria-valuemax="100"
-                                         aria-label="{{ 'account.overviewTierProgressAria'|trans({
-                                             '%tier%': tier.name,
-                                             '%next%': nextTier.name,
-                                             '%points%': tierPointsToNext,
-                                             '%percent%': tierProgress
-                                         })|striptags }}">
-                                        <span class="account-aside-progress-bar" style="width: {{ tierProgress }}%"></span>
-                                    </div>
-                                {% endif %}
-                            {% endif %}
-                        {% endblock %}
+                        {{ 'account.greetings'|trans|sw_sanitize }}
+                        {{ context.customer.name }}
                     </div>
                 {% endif %}
             {% endblock %}
@@ -110,24 +32,12 @@
                 {% if not context.customer.guest %}
                     <nav class="list-group list-group-flush account-aside-list-group"{% if headerWidget == null %} aria-label="{{ 'account.myAccount'|trans|striptags }}"{% endif %}>
                         {% block page_account_sidebar_menu_inner %}
-                            {#
-                                Three groups on the account page only. In the header dropdown
-                                (`headerWidget`) the same blocks render flat, so the popup keeps
-                                its compact list. No entry is added or removed by the grouping —
-                                the order stays the core order, the groups only add sections.
-                            #}
-                            {% if showAccountGroup %}
-                                <div class="account-aside-group">
-                                    <p class="account-aside-group-title">{{ 'account.asideGroupAccount'|trans|striptags }}</p>
-                            {% endif %}
-
                             {% block page_account_sidebar_link_home %}
                                 <a href="{{ path('frontend.account.home.page') }}"
                                    title="{{ 'account.overviewLink'|trans|striptags }}"
                                    class="list-group-item list-group-item-action account-aside-item{% if activeRoute is same as('frontend.account.home.page') %} is-active{% endif %}"
                                    {% if activeRoute is same as('frontend.account.home.page') %} aria-current="page"{% endif %}>
-                                    {% sw_icon 'layers' style { size: 'sm' } %}
-                                    <span class="account-aside-item-text">{{ 'account.overviewLink'|trans|sw_sanitize }}</span>
+                                    {{ 'account.overviewLink'|trans|sw_sanitize }}
                                 </a>
                             {% endblock %}
 
@@ -136,8 +46,7 @@
                                    title="{{ 'account.profileLink'|trans|striptags }}"
                                    class="list-group-item list-group-item-action account-aside-item{% if activeRoute is same as('frontend.account.profile.page') %} is-active{% endif %}"
                                    {% if activeRoute is same as('frontend.account.profile.page') %} aria-current="page"{% endif %}>
-                                    {% sw_icon 'avatar' style { size: 'sm' } %}
-                                    <span class="account-aside-item-text">{{ 'account.profileLink'|trans|sw_sanitize }}</span>
+                                    {{ 'account.profileLink'|trans|sw_sanitize }}
                                 </a>
                             {% endblock %}
 
@@ -148,68 +57,39 @@
                                    title="{{ 'account.addressLink'|trans|striptags }}"
                                    class="list-group-item list-group-item-action account-aside-item{% if activeRoute starts with('frontend.account.address') %} is-active{% endif %}"
                                    {% if activeRoute starts with('frontend.account.address.page') %} aria-current="page"{% endif %}>
-                                    {% sw_icon 'pushpin' style { size: 'sm' } %}
-                                    <span class="account-aside-item-text">{{ 'account.addressLink'|trans|sw_sanitize }}</span>
+                                    {{ 'account.addressLink'|trans|sw_sanitize }}
                                 </a>
                             {% endblock %}
-
-                            {% if showAccountGroup %}
-                                </div>
-                            {% endif %}
-
-                            {% if showTransactionGroup %}
-                                <div class="account-aside-group">
-                                    <p class="account-aside-group-title">{{ 'account.asideGroupTransactions'|trans|striptags }}</p>
-                            {% endif %}
 
                             {% block page_account_sidebar_link_orders %}
                                 <a href="{{ path('frontend.account.order.page') }}"
                                    title="{{ 'account.ordersLink'|trans|striptags }}"
                                    class="list-group-item list-group-item-action account-aside-item{% if activeRoute is same as('frontend.account.order.page') %} is-active{% endif %}"
                                    {% if activeRoute is same as('frontend.account.order.page') %} aria-current="page"{% endif %}>
-                                    {% sw_icon 'bag' style { size: 'sm' } %}
-                                    <span class="account-aside-item-text">{{ 'account.ordersLink'|trans|sw_sanitize }}</span>
+                                    {{ 'account.ordersLink'|trans|sw_sanitize }}
                                 </a>
                             {% endblock %}
 
                             {% block page_account_sidebar_link_order_return %}
-                                {% if showOrderReturnEntry %}
+                                {# an unset key means "not switched off", the same default the backend applies #}
+                                {% if config('core.orderReturn.enabled') is not same as(false) %}
                                     <a href="{{ path('frontend.account.order-return.page') }}"
                                        title="{{ 'account.orderReturnLink'|trans|striptags }}"
                                        class="list-group-item list-group-item-action account-aside-item{% if activeRoute starts with('frontend.account.order-return') %} is-active{% endif %}"
                                        {% if activeRoute is same as('frontend.account.order-return.page') %} aria-current="page"{% endif %}>
-                                        {% sw_icon 'arrow-turn-left' style { size: 'sm' } %}
-                                        <span class="account-aside-item-text">{{ 'account.orderReturnLink'|trans|sw_sanitize }}</span>
+                                        {{ 'account.orderReturnLink'|trans|sw_sanitize }}
                                     </a>
                                 {% endif %}
                             {% endblock %}
 
-                            {% if showTransactionGroup %}
-                                </div>
-                            {% endif %}
-
-                            {#
-                                The asset group only opens when at least one of its entries is
-                                enabled, otherwise it would render an empty section heading.
-                            #}
-                            {% if showAssetGroup %}
-                                <div class="account-aside-group">
-                                    <p class="account-aside-group-title">{{ 'account.asideGroupAssets'|trans|striptags }}</p>
-                            {% endif %}
-
                             {% block page_account_sidebar_link_rewards %}
+                                {# an unset key means "not switched off", the same default the backend applies #}
                                 {% if showLoyaltyEntries %}
                                     <a href="{{ path('frontend.account.rewards.page') }}"
                                        title="{{ 'account.rewardsLink'|trans|striptags }}"
                                        class="list-group-item list-group-item-action account-aside-item{% if activeRoute is same as('frontend.account.rewards.page') %} is-active{% endif %}"
                                        {% if activeRoute is same as('frontend.account.rewards.page') %} aria-current="page"{% endif %}>
-                                        {% sw_icon 'sparkles' style { size: 'sm' } %}
-                                        <span class="account-aside-item-text">{{ 'account.rewardsLink'|trans|sw_sanitize }}</span>
-                                        {% if page is defined and page.rewards is defined and page.rewards %}
-                                            <span class="account-aside-item-badge">
-                                                {{ page.rewards.pointsBalance }} {{ 'account.overviewPointsUnit'|trans|sw_sanitize }}
-                                            </span>
-                                        {% endif %}
+                                        {{ 'account.rewardsLink'|trans|sw_sanitize }}
                                     </a>
                                 {% endif %}
                             {% endblock %}
@@ -221,32 +101,22 @@
                                        title="{{ 'account.membershipLink'|trans|striptags }}"
                                        class="list-group-item list-group-item-action account-aside-item{% if activeRoute is same as('frontend.account.membership.page') %} is-active{% endif %}"
                                        {% if activeRoute is same as('frontend.account.membership.page') %} aria-current="page"{% endif %}>
-                                        {% sw_icon 'package-gift' style { size: 'sm' } %}
-                                        <span class="account-aside-item-text">{{ 'account.membershipLink'|trans|sw_sanitize }}</span>
+                                        {{ 'account.membershipLink'|trans|sw_sanitize }}
                                     </a>
                                 {% endif %}
                             {% endblock %}
 
                             {% block page_account_sidebar_link_wallet %}
+                                {# an unset key means "not switched off", the same default the backend applies #}
                                 {% if showWalletEntry %}
                                     <a href="{{ path('frontend.account.wallet.page') }}"
                                        title="{{ 'account.walletLink'|trans|striptags }}"
                                        class="list-group-item list-group-item-action account-aside-item{% if activeRoute is same as('frontend.account.wallet.page') %} is-active{% endif %}"
                                        {% if activeRoute is same as('frontend.account.wallet.page') %} aria-current="page"{% endif %}>
-                                        {% sw_icon 'money-wallet' style { size: 'sm' } %}
-                                        <span class="account-aside-item-text">{{ 'account.walletLink'|trans|sw_sanitize }}</span>
-                                        {% if page is defined and page.walletBalance is defined and page.walletBalance is not null %}
-                                            <span class="account-aside-item-badge">
-                                                {{ page.walletBalance|currency(context.currency.isoCode) }}
-                                            </span>
-                                        {% endif %}
+                                        {{ 'account.walletLink'|trans|sw_sanitize }}
                                     </a>
                                 {% endif %}
                             {% endblock %}
-
-                            {% if showAssetGroup %}
-                                </div>
-                            {% endif %}
                         {% endblock %}
                     </nav>
                 {% endif %}

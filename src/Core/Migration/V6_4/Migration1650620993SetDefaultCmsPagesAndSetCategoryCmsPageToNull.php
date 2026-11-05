@@ -60,28 +60,12 @@ class Migration1650620993SetDefaultCmsPagesAndSetCategoryCmsPageToNull extends M
 
     private function getDefaultCmsPageIdFromType(string $cmsPageType, Connection $connection): string
     {
-        // Prefer the sidebar listing layout, so a fresh installation ships with
-        // the filter sidebar instead of a full-width top filter bar.
         $cmsPageId = $connection->fetchOne('
-            SELECT cms_page.id
-            FROM cms_page
-            INNER JOIN cms_section ON cms_section.cms_page_id = cms_page.id
-            WHERE cms_page.type = :cmsPageType
-                AND cms_page.locked = 1
-                AND cms_section.type = :sidebarSectionType
-            LIMIT 1;
-        ', ['cmsPageType' => $cmsPageType, 'sidebarSectionType' => 'sidebar']);
-
-        // Fall back to the dominant locked layout of the given type, used by
-        // every page type that does not ship a sidebar variant.
-        if ($cmsPageId === false) {
-            $cmsPageId = $connection->fetchOne('
-                SELECT id
-                FROM  cms_page
-                WHERE type = :cmsPageType
-                ORDER BY locked DESC, created_at ASC;
-            ', ['cmsPageType' => $cmsPageType]);
-        }
+            SELECT id
+            FROM  cms_page
+            WHERE type = :cmsPageType
+            ORDER BY locked DESC, created_at ASC;
+       ', ['cmsPageType' => $cmsPageType]);
 
         return Uuid::fromBytesToHex($cmsPageId);
     }

@@ -33,14 +33,12 @@
 {% block page_checkout_main_content %}
     {% block page_checkout_cart %}
         {% block page_checkout_cart_header %}
-            <div class="cart-main-header-group pb-3 mb-4 border-bottom">
-                <h1 class="cart-main-header d-inline-block">
-                    {{ 'checkout.cartHeader'|trans|sw_sanitize }}
-                </h1>
-                <p class="cart-main-header-summary mb-0">
-                    {{ 'checkout.cartHeaderSummary'|trans({'%count%': page.cart.lineItems.filter(lineItem => lineItem.type == 'product')|length})|sw_sanitize }}
-                </p>
-            </div>
+            <h1 class="cart-main-header d-inline-block">
+                {{ 'checkout.cartHeader'|trans|sw_sanitize }}
+            </h1>
+            <span class="cart-main-header-item-counter d-inline-block mb-4 fw-bold fs-3 ms-1 text-dark-emphasis">
+                ({{- 'checkout.itemCounter'|trans({'%count%': page.cart.lineItems|length})|sw_sanitize -}})
+            </span>
         {% endblock %}
 
         {% block page_checkout_cart_product_table %}

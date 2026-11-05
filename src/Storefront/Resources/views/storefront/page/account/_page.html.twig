@@ -1,48 +1,10 @@
 {% sw_extends '@Storefront/storefront/base.html.twig' %}
 
-{#
-    The account pages carry their own breadcrumb: the core breadcrumb is built from the category
-    tree, and an account page has no category. Both entries are read from existing snippets
-    (`general.homeLink` and `account.myAccount`), so no shop text is duplicated here.
-#}
-{% block base_breadcrumb %}
-    {% block page_account_breadcrumb %}
-        {% if context.customer %}
-            <nav class="breadcrumb-nav" aria-label="breadcrumb">
-                {% block page_account_breadcrumb_list %}
-                    <ol class="breadcrumb">
-                        {% block page_account_breadcrumb_home %}
-                            <li class="breadcrumb-item">
-                                <a class="breadcrumb-link"
-                                   href="{{ path('frontend.home.page') }}"
-                                   title="{{ 'general.homeLink'|trans|striptags }}">
-                                    <span class="breadcrumb-title">{{ 'general.homeLink'|trans|sw_sanitize }}</span>
-                                </a>
-                            </li>
-                        {% endblock %}
-
-                        {% block page_account_breadcrumb_current %}
-                            <li class="breadcrumb-item active" aria-current="page">
-                                <span class="breadcrumb-title">{{ 'account.myAccount'|trans|sw_sanitize }}</span>
-                            </li>
-                        {% endblock %}
-                    </ol>
-                {% endblock %}
-            </nav>
-        {% endif %}
-    {% endblock %}
-{% endblock %}
-
 {% block base_content %}
     {% block page_account %}
-        {#
-            One grid for every account page: a fixed 250px rail and the content next to it on wide
-            screens, a single column below `lg`. The rail turns into a sticky chip bar on small
-            screens (`page/account/_aside.scss`), which is why it is no longer hidden there.
-        #}
-        <div class="account account-content">
+        <div class="account account-content row">
             {% block page_account_sidebar %}
-                <div class="account-content-aside">
+                <div class="account-content-aside col-lg-3 col-xl-2 d-none d-lg-block">
                     {% if context.customer and not context.customer.guest %}
                         {% sw_include '@Storefront/storefront/page/account/sidebar.html.twig' %}
                     {% endif %}
@@ -50,7 +12,7 @@
             {% endblock %}
 
             {% block page_account_main %}
-                <div class="account-content-main">
+                <div class="account-content-main col-lg-9 col-xl-10">
                     {% block page_account_main_content %}{% endblock %}
                 </div>
             {% endblock %}

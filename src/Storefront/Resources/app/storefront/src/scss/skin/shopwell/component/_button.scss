@@ -1,127 +1,13 @@
 /*
- * Button
- * ==============================================
- * Custom skin styling for the bootstrap button component.
- * Visual source of truth: static prototype (40px control height,
- * square corners, explicit brand interaction colors).
- *
- * https://getbootstrap.com/docs/5.2/components/buttons
- */
+Button
+==============================================
+Custom skin styling for bootstrap button component.
+
+https://getbootstrap.com/docs/5.2/components/buttons
+*/
 
 .btn {
-    --#{$prefix}btn-font-weight: 600;
-    --#{$prefix}btn-padding-y: 0;
-    --#{$prefix}btn-padding-x: 1.125rem;
-    --#{$prefix}btn-font-size: #{$sw-font-size-sm};
-    --#{$prefix}btn-line-height: #{$sw-btn-h};
-    --#{$prefix}btn-border-radius: #{$sw-radius};
-    --#{$prefix}btn-focus-box-shadow: none;
-    border-radius: $sw-radius;
-    height: $sw-btn-h;
-    transition:
-        background-color 0.15s ease,
-        border-color 0.15s ease,
-        color 0.15s ease;
-
-    // Brand outline instead of the bootstrap focus ring.
-    &:focus {
-        box-shadow: none;
-    }
-
-    &:focus-visible {
-        box-shadow: none;
-        outline: 2px solid $sw-brand;
-        outline-offset: 2px;
-    }
-}
-
-.btn-sm {
-    --#{$prefix}btn-padding-x: 0.75rem;
-    --#{$prefix}btn-font-size: #{$sw-font-size-xs};
-    --#{$prefix}btn-line-height: #{$sw-btn-h-sm};
-    height: $sw-btn-h-sm;
-}
-
-.btn-lg {
-    --#{$prefix}btn-padding-x: 1.75rem;
-    --#{$prefix}btn-font-size: #{$sw-font-size-md};
-    --#{$prefix}btn-line-height: 48px;
-    height: 48px;
-}
-
-/*
- * Brand variants.
- * The hover / active colors are pinned explicitly: Bootstrap derives them via
- * shade-color() / tint-color() ($btn-hover-bg-shade-amount = 15%), which turns
- * the hover state into a darker #075fd9 instead of the prototype's lighter
- * #2d85ff. $min-contrast-ratio only decides the contrast *text* color and is
- * intentionally left at 4 (see abstract/variables/_bootstrap.scss).
- */
-.btn-primary,
-.btn-buy {
-    --#{$prefix}btn-color: #{$white};
-    --#{$prefix}btn-bg: #{$sw-brand};
-    --#{$prefix}btn-border-color: #{$sw-brand};
-    --#{$prefix}btn-hover-color: #{$white};
-    --#{$prefix}btn-hover-bg: #{$sw-brand-hover};
-    --#{$prefix}btn-hover-border-color: #{$sw-brand-hover-border};
-    --#{$prefix}btn-active-color: #{$white};
-    --#{$prefix}btn-active-bg: #{$sw-brand-active};
-    --#{$prefix}btn-active-border-color: #{$sw-brand-active};
-    --#{$prefix}btn-disabled-color: #{$sw-disabled-text};
-    --#{$prefix}btn-disabled-bg: #{$sw-disabled-bg};
-    --#{$prefix}btn-disabled-border-color: #{$sw-disabled-bg};
-}
-
-.btn-outline-primary {
-    --#{$prefix}btn-color: #{$sw-brand};
-    --#{$prefix}btn-border-color: #{$sw-brand};
-    --#{$prefix}btn-hover-color: #{$white};
-    --#{$prefix}btn-hover-bg: #{$sw-brand};
-    --#{$prefix}btn-hover-border-color: #{$sw-brand};
-    --#{$prefix}btn-active-color: #{$white};
-    --#{$prefix}btn-active-bg: #{$sw-brand-active};
-    --#{$prefix}btn-active-border-color: #{$sw-brand-active};
-    --#{$prefix}btn-disabled-color: #{$sw-disabled-text};
-    --#{$prefix}btn-disabled-border-color: #{$sw-disabled-bg};
-}
-
-.btn-secondary {
-    --#{$prefix}btn-color: #{$sw-gray-800};
-    --#{$prefix}btn-bg: #{$sw-blue-50};
-    --#{$prefix}btn-border-color: #{$sw-blue-50};
-    --#{$prefix}btn-hover-color: #{$sw-blue-700};
-    --#{$prefix}btn-hover-bg: #{$sw-blue-100};
-    --#{$prefix}btn-hover-border-color: #{$sw-blue-100};
-    --#{$prefix}btn-active-color: #{$sw-blue-700};
-    --#{$prefix}btn-active-bg: #{$sw-blue-100};
-    --#{$prefix}btn-active-border-color: #{$sw-blue-100};
-}
-
-.btn-dark {
-    --#{$prefix}btn-color: #{$white};
-    --#{$prefix}btn-bg: #{$sw-gray-1000};
-    --#{$prefix}btn-border-color: #{$sw-gray-1000};
-    --#{$prefix}btn-hover-color: #{$white};
-    --#{$prefix}btn-hover-bg: #{$sw-gray-900};
-    --#{$prefix}btn-hover-border-color: #{$sw-gray-900};
-}
-
-.btn-outline-dark {
-    --#{$prefix}btn-color: #{$sw-gray-1000};
-    --#{$prefix}btn-border-color: #{$sw-border-subtle};
-    --#{$prefix}btn-hover-color: #{$sw-brand};
-    --#{$prefix}btn-hover-bg: #{$sw-blue-50};
-    --#{$prefix}btn-hover-border-color: #{$sw-brand};
-}
-
-.btn-link {
-    --#{$prefix}btn-color: #{$sw-text-link};
-    --#{$prefix}btn-hover-color: #{$sw-brand-active};
-    --#{$prefix}btn-font-weight: #{$font-weight-semibold};
-    --#{$prefix}btn-focus-box-shadow: none;
-    text-decoration: underline;
-    text-underline-offset: 3px;
+    --#{$prefix}btn-disabled-color: #{$btn-link-disabled-color};
 }
 
 // custom add to cart button, used e.g. in product-box and product detail buybox
@@ -132,18 +18,22 @@
         // stylelint-disable-next-line scss/at-extend-no-missing-placeholder
         @extend .btn-lg;
     }
+    @include button-variant($buy-btn-bg, $buy-btn-bg, $buy-btn-color);
 
-    // The deprecated btn-lg extension must not blow the buy button up to 48px:
-    // keep the regular 40px control height of the prototype.
-    --#{$prefix}btn-line-height: #{$sw-btn-h};
-    --#{$prefix}btn-padding-x: 1.125rem;
-    --#{$prefix}btn-font-size: #{$sw-font-size-sm};
-    height: $sw-btn-h;
+    --#{$prefix}btn-focus-box-shadow: #{$focus-ring-box-shadow};
 
     &.disabled,
     &:disabled {
         opacity: 1;
+        background: $disabled-btn-bg;
+        border-color: $disabled-btn-border-color;
+        color: $gray-300;
     }
+}
+
+.btn-link {
+    --#{$prefix}btn-font-weight: #{$font-weight-semibold};
+    --#{$prefix}btn-focus-box-shadow: #{$input-btn-focus-box-shadow};
 }
 
 // Button styling with the appearance of a regular text link
@@ -152,12 +42,11 @@
     --#{$prefix}btn-hover-color: #{$btn-link-hover-color};
     --#{$prefix}btn-font-weight: #{$font-weight-normal};
     --#{$prefix}btn-font-size: inherit;
-    --#{$prefix}btn-focus-box-shadow: none;
+    --#{$prefix}btn-focus-box-shadow: #{$input-btn-focus-box-shadow};
     --#{$prefix}btn-line-height: #{$line-height-base};
     --#{$prefix}btn-padding-y: 0;
     --#{$prefix}btn-padding-x: 0;
     --#{$prefix}btn-border-width: 0;
-    height: auto;
     text-decoration: $link-decoration;
     vertical-align: baseline;
     text-align: left;
@@ -165,5 +54,12 @@
 
     &:hover {
         text-decoration: $link-hover-decoration;
+    }
+}
+
+@each $variant, $value in $theme-colors {
+    .btn-#{$variant},
+    .btn-outline-#{$variant} {
+        --#{$prefix}btn-focus-box-shadow: #{$focus-ring-box-shadow};
     }
 }

@@ -63,14 +63,3 @@ The menu opens on smaller viewports inside an offcanvas and on larger viewports 
         }
     }
 }
-
-/*
- * S2 layout shell
- * ----------------------
- * List flow only — colours, borders and shadows live in
- * `skin/shopwell/layout/_account-menu.scss`.
- */
-.account-menu-links .account-aside-item {
-    display: block;
-    width: 100%;
-}

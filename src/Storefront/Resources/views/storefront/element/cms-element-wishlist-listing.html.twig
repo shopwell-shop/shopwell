@@ -1,6 +1,5 @@
 {% block element_wishlist_listing %}
-    {# 原型 wishlist.html: 2 per row on sm, 3 on xl (was col-xl-3 = 4). #}
-    {% set listingColumns = 'col-sm-6 col-lg-4 col-xl-4' %}
+    {% set listingColumns = 'col-sm-6 col-lg-4 col-xl-3' %}
 
     {% if section and section.type == 'sidebar' %}
         {% set listingColumns = 'col-sm-6 col-lg-6 col-xl-4' %}

@@ -1,18 +1,13 @@
 /*
- * Modal
- * ==============================================
- * Custom skin styling for the bootstrap modal component.
- * Visual source of truth: static prototype — white surface, hairline border,
- * square corners, elevated flat shadow.
- *
- * https://getbootstrap.com/docs/5.2/components/modal
- */
+Modal
+==============================================
+Custom skin styling for bootstrap modal component.
+
+https://getbootstrap.com/docs/5.2/components/modal
+*/
 
 .modal-content {
-    background: $white;
-    border: 1px solid $sw-border-subtle;
-    border-radius: $sw-radius;
-    box-shadow: $sw-shadow-md;
+    box-shadow: var(--#{$prefix}modal-box-shadow);
 
     .modal-title {
         margin: 0;
