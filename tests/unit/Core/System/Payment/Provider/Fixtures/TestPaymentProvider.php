@@ -6,9 +6,9 @@ use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Payment\Gateway\AbstractPaymentAction;
 use Shopwell\Core\System\Payment\Gateway\AbstractPaymentApi;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
+use Shopwell\Core\System\Payment\Product\PaymentProduct;
 use Shopwell\Core\System\Payment\Provider\AbstractPaymentProvider;
 use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
 use Shopwell\Core\System\Payment\Provider\Config\PaymentConfigField;
 use Shopwell\Core\System\Payment\Provider\Cycle\PaymentCycleRules;
 use Shopwell\Core\System\Payment\Provider\PayParamsDecoderInterface;
@@ -30,7 +30,7 @@ class TestPaymentProvider extends AbstractPaymentProvider
     /**
      * @param list<AbstractPaymentAction> $actions
      * @param list<PaymentConfigField> $credentials
-     * @param list<PaymentChannel> $channels
+     * @param list<PaymentProduct> $channels
      * @param list<PaymentCapability> $declaredCapabilities
      * @param array<string, AbstractPaymentAction> $channelCaptureActions
      * @param list<mixed> $apiArguments
@@ -93,7 +93,7 @@ class TestPaymentProvider extends AbstractPaymentProvider
         return $this->credentials;
     }
 
-    public function getChannels(): array
+    public function getProducts(): array
     {
         return $this->channels;
     }

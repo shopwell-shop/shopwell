@@ -11,15 +11,16 @@ use Payum\Core\Request\Refund;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Payment\Exception\PaymentGatewayException;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayFactory;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
-use Shopwell\Core\System\Payment\Gateway\Request\PayResult;
+use Shopwell\Core\System\Payment\Gateway\Struct\PaymentStartResult;
 use Shopwell\Core\System\Payment\Integration\Paypal\Action\PaypalCaptureAction;
 use Shopwell\Core\System\Payment\Integration\Paypal\Api\PaypalApi;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
 use Shopwell\Core\System\Payment\PaymentException;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
+use Shopwell\Core\System\Payment\Product\PaymentInteraction;
+use Shopwell\Core\System\Payment\Product\PaymentProduct;
 use Shopwell\Core\System\Payment\Provider\PaymentProvider;
 use Shopwell\Core\System\Payment\Provider\ResolvedPaymentConfig;
 
@@ -43,7 +44,7 @@ class PaypalCaptureActionTest extends TestCase
     {
         $action = new PaypalCaptureAction();
 
-        $this->expectExceptionObject(PaymentException::actionWithoutApi(PaypalCaptureAction::class));
+        $this->expectExceptionObject(PaymentGatewayException::actionWithoutApi(PaypalCaptureAction::class));
 
         $action->execute(new Capture(new PaymentGatewayModel()));
     }
@@ -115,9 +116,9 @@ class PaypalCaptureActionTest extends TestCase
         $model = $this->orderModel();
         $action->execute(new Capture($model));
 
-        $params = $model->result(PayResult::class, 'paypal_checkout')->params;
+        $params = $model->result(PaymentStartResult::class, 'paypal_checkout')->params;
 
-        static::assertSame(PaymentFlow::REDIRECT, $params->flow);
+        static::assertSame(PaymentInteraction::REDIRECT, $params->flow);
         static::assertSame('https://paypal.test/approve?token=ORDER-1', $params->payUrl);
         static::assertSame(['order_id' => 'ORDER-1'], $params->extra);
 
@@ -138,10 +139,10 @@ class PaypalCaptureActionTest extends TestCase
         $model = $this->orderModel();
         $action->execute(new Capture($model));
 
-        $params = $model->result(PayResult::class, 'paypal_checkout')->params;
+        $params = $model->result(PaymentStartResult::class, 'paypal_checkout')->params;
 
         // the app approves the very same order with the javascript sdk, so it needs the id only
-        static::assertSame(PaymentFlow::SDK, $params->flow);
+        static::assertSame(PaymentInteraction::SDK, $params->flow);
         static::assertNull($params->payUrl);
         static::assertSame(['order_id' => 'ORDER-1'], $params->extra);
     }
@@ -213,7 +214,7 @@ class PaypalCaptureActionTest extends TestCase
      */
     private function api(?PaypalServerSdkClient $client = null, array $settings = [PaypalCaptureAction::SETTING_FLOW => PaypalCaptureAction::FLOW_REDIRECT]): PaypalApi
     {
-        $channel = new PaymentChannel('paypal_checkout', 'paypal', 'paypal_checkout', PaymentFlow::REDIRECT);
+        $channel = new PaymentProduct('paypal_checkout', 'paypal', 'paypal_checkout', [PaymentInteraction::REDIRECT], 'paypal');
 
         return new PaypalApi(
             new ResolvedPaymentConfig(
@@ -225,11 +226,12 @@ class PaypalCaptureActionTest extends TestCase
                     new PaymentGatewayFactory('paypal', PaypalApi::class, []),
                     static::createStub(PaymentNotificationExtractorInterface::class),
                 ),
-                channel: $channel,
+                product: $channel,
                 credentials: [],
                 params: [],
                 runtimeParams: [],
                 settings: $settings,
+                accountId: 'test-account',
             ),
             'https://example.com/notify',
             'https://example.com/return',

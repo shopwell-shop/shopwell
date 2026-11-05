@@ -3,6 +3,7 @@
 namespace Shopwell\Core\System\Payment\Provider;
 
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Payment\Exception\PaymentProviderException;
 use Shopwell\Core\System\Payment\PaymentException;
 
 /**
@@ -55,6 +56,6 @@ final class PaymentProviderRegistry
      */
     public function get(string $technicalName): PaymentProvider
     {
-        return $this->providers[$technicalName] ?? throw PaymentException::unknownProvider($technicalName);
+        return $this->providers[$technicalName] ?? throw PaymentProviderException::unknownProvider($technicalName);
     }
 }

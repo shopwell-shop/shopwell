@@ -14,7 +14,8 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Uuid\Uuid;
-use Shopwell\Core\System\Payment\Gateway\Request\Money;
+use Shopwell\Core\System\Currency\CurrencyAmountConverter;
+use Shopwell\Core\System\Payment\Routing\PaymentContext;
 
 /**
  * The memberships a customer buys.
@@ -52,18 +53,19 @@ class MembershipPurchaseService
     public function purchase(
         string $customerId,
         string $planId,
-        string $channel,
+        string $method,
         string $currencyId,
-        string $currency,
+        PaymentContext $paymentContext,
         ?string $returnUrl,
         ?string $clientIp,
-        ?string $device,
         Context $context,
     ): array {
         $plan = $this->plans->findPurchasable($planId, $currencyId, $context);
 
-        $currency = strtoupper($currency);
-        $amount = round($plan->getPrice(), Money::exponent($currency));
+        $currency = strtoupper($paymentContext->currency);
+        $this->payments->resolveMethod($method, $paymentContext);
+        $minorAmount = CurrencyAmountConverter::fromFloat($plan->getPrice(), $currency);
+        $amount = CurrencyAmountConverter::toFloat($minorAmount, $currency);
         $id = Uuid::randomHex();
 
         $this->purchaseRepository->create([[
@@ -82,14 +84,13 @@ class MembershipPurchaseService
         try {
             $payment = $this->payments->open(
                 outTradeNo: $id,
-                channel: $channel,
-                amount: Money::fromFloat($amount, $currency),
-                currency: $currency,
+                method: $method,
+                amount: $minorAmount,
                 subject: $plan->getName() ?? 'Membership',
                 attach: $this->attach->forPurchase($id),
                 returnUrl: $returnUrl,
                 clientIp: $clientIp,
-                device: $device,
+                paymentContext: $paymentContext,
             );
         } catch (\Throwable $exception) {
             // the attempt stays visible instead of disappearing silently

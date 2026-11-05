@@ -5,7 +5,7 @@ namespace Shopwell\Tests\Unit\Core\System\Payment\Transfer\Notification;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\System\Payment\PaymentException;
+use Shopwell\Core\System\Payment\Exception\PaymentTransferException;
 use Shopwell\Core\System\Payment\Transfer\Notification\PaymentTransferNotificationVerifierInterface;
 use Shopwell\Core\System\Payment\Transfer\Notification\PaymentTransferNotificationVerifierRegistry;
 
@@ -49,7 +49,7 @@ class PaymentTransferNotificationVerifierRegistryTest extends TestCase
     {
         $registry = new PaymentTransferNotificationVerifierRegistry([$this->verifier('alipay')]);
 
-        $this->expectExceptionObject(PaymentException::transferNotificationProviderUnknown('paypal'));
+        $this->expectExceptionObject(PaymentTransferException::transferNotificationProviderUnknown('paypal'));
 
         $registry->get('paypal');
     }

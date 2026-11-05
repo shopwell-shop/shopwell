@@ -5,13 +5,13 @@ namespace Shopwell\Core\System\Payment\Integration\Alipay\Action;
 use Payum\Core\Exception\RequestNotSupportedException;
 use Payum\Core\Request\Notify;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Currency\CurrencyAmountConverter;
+use Shopwell\Core\System\Currency\CurrencyException;
 use Shopwell\Core\System\Payment\Gateway\AbstractPaymentAction;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
-use Shopwell\Core\System\Payment\Gateway\Request\Money;
 use Shopwell\Core\System\Payment\Gateway\Request\NotificationResult;
 use Shopwell\Core\System\Payment\Integration\Alipay\Api\AlipayApi;
 use Shopwell\Core\System\Payment\Integration\Alipay\Request\AlipayPaymentStatus;
-use Shopwell\Core\System\Payment\PaymentException;
 use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
 
 /**
@@ -68,6 +68,7 @@ final class AlipayNotifyAction extends AbstractPaymentAction
             currency: $currency,
             status: $status,
             raw: $parameters,
+            paymentNo: $parameters['out_trade_no'] ?? null,
         ));
     }
 
@@ -96,8 +97,8 @@ final class AlipayNotifyAction extends AbstractPaymentAction
         }
 
         try {
-            return Money::toMinor($amount, $currency);
-        } catch (PaymentException) {
+            return CurrencyAmountConverter::toMinor($amount, $currency);
+        } catch (CurrencyException) {
             return null;
         }
     }

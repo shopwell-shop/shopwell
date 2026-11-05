@@ -5,12 +5,13 @@ namespace Shopwell\Tests\Unit\Core\System\Payment\Integration\Stripe\Api;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Payment\Exception\PaymentGatewayException;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayFactory;
+use Shopwell\Core\System\Payment\Gateway\Request\QueryResult;
 use Shopwell\Core\System\Payment\Integration\Stripe\Api\StripeApi;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
-use Shopwell\Core\System\Payment\PaymentException;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
+use Shopwell\Core\System\Payment\Product\PaymentInteraction;
+use Shopwell\Core\System\Payment\Product\PaymentProduct;
 use Shopwell\Core\System\Payment\Provider\PaymentProvider;
 use Shopwell\Core\System\Payment\Provider\ResolvedPaymentConfig;
 
@@ -21,14 +22,21 @@ use Shopwell\Core\System\Payment\Provider\ResolvedPaymentConfig;
 #[CoversClass(StripeApi::class)]
 class StripeApiTest extends TestCase
 {
+    public function testMissingRemoteReferencesCannotProveThatThePaymentDoesNotExist(): void
+    {
+        $result = $this->api()->query(null, null);
+
+        static::assertSame(QueryResult::STATUS_PENDING, $result->status);
+    }
+
     public function testExposesTheConfigurationOfThePayment(): void
     {
         $api = $this->api(credentials: [StripeApi::SECRET_KEY => 'sk_test_123']);
 
         static::assertSame('stripe', $api->provider());
         static::assertSame('stripe_checkout', $api->channel());
-        static::assertNull($api->sourceAppId());
-        static::assertFalse($api->inherited());
+        static::assertSame('test-account', $api->accountId());
+
         static::assertSame([StripeApi::SECRET_KEY => 'sk_test_123'], $api->credentials());
         static::assertSame('https://example.com/notify', $api->notifyUrl());
         static::assertSame('https://example.com/return', $api->returnUrl());
@@ -45,7 +53,7 @@ class StripeApiTest extends TestCase
     {
         $api = $this->api();
 
-        $this->expectExceptionObject(PaymentException::missingCredentials('stripe', StripeApi::WEBHOOK_SECRET));
+        $this->expectExceptionObject(PaymentGatewayException::missingCredentials('stripe', StripeApi::WEBHOOK_SECRET));
 
         $api->webhookSecret();
     }
@@ -96,7 +104,7 @@ class StripeApiTest extends TestCase
     {
         $api = $this->api();
 
-        $this->expectExceptionObject(PaymentException::missingCredentials('stripe', StripeApi::SECRET_KEY));
+        $this->expectExceptionObject(PaymentGatewayException::missingCredentials('stripe', StripeApi::SECRET_KEY));
 
         $api->client();
     }
@@ -136,7 +144,7 @@ class StripeApiTest extends TestCase
      */
     private function api(array $credentials = []): StripeApi
     {
-        $channel = new PaymentChannel('stripe_checkout', 'stripe', 'stripe_checkout', PaymentFlow::REDIRECT);
+        $channel = new PaymentProduct('stripe_checkout', 'stripe', 'stripe_checkout', [PaymentInteraction::REDIRECT], 'stripe');
 
         return new StripeApi(
             new ResolvedPaymentConfig(
@@ -148,11 +156,12 @@ class StripeApiTest extends TestCase
                     new PaymentGatewayFactory('stripe', StripeApi::class, []),
                     static::createStub(PaymentNotificationExtractorInterface::class),
                 ),
-                channel: $channel,
+                product: $channel,
                 credentials: $credentials,
                 params: [],
                 runtimeParams: [],
                 settings: [],
+                accountId: 'test-account',
             ),
             'https://example.com/notify',
             'https://example.com/return',

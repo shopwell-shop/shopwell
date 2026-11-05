@@ -4,6 +4,8 @@ namespace Shopwell\Core\System\Payment\Integration\Alipay\Action;
 
 use Payum\Core\Exception\RequestNotSupportedException;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Payment\Exception\PaymentGatewayException;
+use Shopwell\Core\System\Payment\Exception\PaymentTransferException;
 use Shopwell\Core\System\Payment\Gateway\AbstractPaymentAction;
 use Shopwell\Core\System\Payment\Gateway\Request\PaymentTransferQuery;
 use Shopwell\Core\System\Payment\Gateway\Request\TransferQueryResult;
@@ -57,7 +59,7 @@ final class AlipayTransferQueryAction extends AbstractPaymentAction
         $model = $this->modelOf($request);
 
         $productCode = AlipayTransferAction::PRODUCT_CODES[$request->recipient->identityType]
-            ?? throw PaymentException::transferIdentityNotSupported($request->transfer->provider, $request->recipient->identityType);
+            ?? throw PaymentTransferException::transferIdentityNotSupported($request->transfer->provider, $request->recipient->identityType);
 
         $this->recordRequest($model, [
             'method' => AlipayApi::METHOD_COMMON_QUERY,
@@ -71,7 +73,7 @@ final class AlipayTransferQueryAction extends AbstractPaymentAction
         } catch (\Throwable $exception) {
             $this->recordResponse($model, ['error' => $exception->getMessage()]);
 
-            throw PaymentException::gatewayError($api->channel(), $exception->getMessage(), $exception);
+            throw PaymentGatewayException::gatewayError($api->channel(), $exception->getMessage(), $exception);
         }
 
         $this->recordResponse($model, $answer);

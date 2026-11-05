@@ -13,11 +13,13 @@ use Shopwell\Core\System\Payment\Integration\Stripe\Action\StripeTransferQueryAc
 use Shopwell\Core\System\Payment\Integration\Stripe\Api\StripeApi;
 use Shopwell\Core\System\Payment\Integration\Stripe\Notification\StripeNotificationExtractor;
 use Shopwell\Core\System\Payment\Integration\Stripe\Notification\StripeTransferNotificationVerifier;
+use Shopwell\Core\System\Payment\Integration\Stripe\Product\StripeProducts;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
+use Shopwell\Core\System\Payment\Product\PaymentInteraction;
+use Shopwell\Core\System\Payment\Product\PaymentProduct;
+use Shopwell\Core\System\Payment\Product\PaymentScene;
 use Shopwell\Core\System\Payment\Provider\AbstractPaymentProvider;
 use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
 use Shopwell\Core\System\Payment\Provider\Transfer\PaymentTransferRules;
 use Shopwell\Core\System\Payment\Transfer\Notification\PaymentTransferNotificationVerifierInterface;
 
@@ -121,16 +123,18 @@ final class StripeProvider extends AbstractPaymentProvider
      * Stripe declares no currencies and no devices: a payment intent is created in the currency the
      * caller asks for, and the checkout is a hosted page that works everywhere.
      *
-     * @return list<PaymentChannel>
+     * @return list<PaymentProduct>
      */
-    public function getChannels(): array
+    public function getProducts(): array
     {
         return [
-            new PaymentChannel(
-                technicalName: 'stripe_checkout',
+            new PaymentProduct(
+                technicalName: StripeProducts::CHECKOUT,
+                scenes: [new PaymentScene('browser', 'web'), new PaymentScene('browser', 'wap'), new PaymentScene('native_app', 'app')],
                 providerTechnicalName: 'stripe',
+                method: 'stripe',
                 label: 'sw-settings-payment-provider.channel.stripe_checkout',
-                flow: PaymentFlow::REDIRECT,
+                interactions: [PaymentInteraction::REDIRECT],
             ),
         ];
     }

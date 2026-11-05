@@ -4,12 +4,14 @@ namespace Shopwell\Core\System\Payment\Api;
 
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\PlatformRequest;
-use Shopwell\Core\System\Payment\Api\Struct\PaymentOrderRequest;
 use Shopwell\Core\System\Payment\App\PaymentAppAuthenticator;
-use Shopwell\Core\System\Payment\Order\PaymentOrderCapture;
 use Shopwell\Core\System\Payment\Order\PaymentOrderCloser;
 use Shopwell\Core\System\Payment\Order\PaymentOrderPresenter;
 use Shopwell\Core\System\Payment\Order\PaymentOrderService;
+use Shopwell\Core\System\Payment\Order\PaymentOrderStarter;
+use Shopwell\Core\System\Payment\Order\Struct\PaymentOrderRequest;
+use Shopwell\Core\System\Payment\PaymentException;
+use Shopwell\Core\System\Payment\Routing\PaymentRouteResolver;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
@@ -26,9 +28,11 @@ class PaymentOrderController extends AbstractPaymentApiController
     public function __construct(
         PaymentAppAuthenticator $authenticator,
         private readonly PaymentOrderService $orderService,
-        private readonly PaymentOrderCapture $captureService,
+        private readonly PaymentOrderStarter $starterService,
         private readonly PaymentOrderCloser $closer,
         private readonly PaymentOrderPresenter $presenter,
+        private readonly PaymentRouteResolver $routes,
+        private readonly PaymentContextParser $contexts,
     ) {
         parent::__construct($authenticator);
     }
@@ -56,7 +60,19 @@ class PaymentOrderController extends AbstractPaymentApiController
             return $this->json($this->presenter->order($order));
         }
 
-        $result = $this->captureService->capture($app, $order);
+        $result = $this->starterService->replay($order);
+        if ($result === null) {
+            $context = $this->contexts->parse($params);
+            $product = $params['product'] ?? null;
+            $method = $params['method'] ?? null;
+            if ((!\is_string($product) || $product === '') && (!\is_string($method) || $method === '')) {
+                throw PaymentException::missingParameter('method');
+            }
+            $route = \is_string($product) && $product !== ''
+                ? $this->routes->resolveProduct($app, $product, $context)
+                : $this->routes->resolveMethod($app, $method, $context);
+            $result = $this->starterService->start($app, $order, $route);
+        }
 
         return $this->json($this->presenter->order($this->orderService->getById($order->id), $result));
     }

@@ -8,17 +8,13 @@ use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\PlatformRequest;
+use Shopwell\Core\System\Payment\Account\PaymentAccountService;
+use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppAccount\PaymentAppAccountEntity;
 use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppChannel\PaymentAppChannelEntity;
-use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppProvider\PaymentAppProviderEntity;
 use Shopwell\Core\System\Payment\App\PaymentAppCollection;
 use Shopwell\Core\System\Payment\App\PaymentAppDto;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
 use Shopwell\Core\System\Payment\App\PaymentAppProvisioner;
-use Shopwell\Core\System\Payment\App\PaymentCredentialCipher;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannelRegistry;
-use Shopwell\Core\System\Payment\Provider\Config\PaymentConfigSanitizer;
-use Shopwell\Core\System\Payment\Provider\Config\PaymentProviderConfigService;
-use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -30,7 +26,7 @@ use Symfony\Component\Routing\Attribute\Route;
  *
  * The list is not limited to those apps: the tenant of the shop itself is part of it, because a
  * merchant has to see through which account the platform collects its own payments. That row is
- * read only - it is seeded by the migration, cannot be created here and is refused on every write.
+ * seeded by the migration and cannot be deleted or renamed.
  *
  * An app is an entity like any other, but its secret is not: storing it through the generic entity
  * endpoints would store it in plain text, so the secret is sealed by the {@see PaymentAppProvisioner}
@@ -38,12 +34,7 @@ use Symfony\Component\Routing\Attribute\Route;
  * when it is created or rotated. Reading an app never returns it - the administration only learns
  * whether one is set.
  *
- * Non-secret credentials and channel parameters are echoed back, so an operator can read through
- * which merchant account an app collects and correct a single value without retyping the rest. Secret
- * values only report that they are configured; their original values never leave the server. What is
- * stored stays sealed with the {@see PaymentCredentialCipher}. The tenant of the platform has no values
- * of its own - it collects on the merchant configuration of the interface, which lives in the
- * `payment_provider_config` table, so its rows are filled from there and sanitized by the same rule.
+ * App grants reference explicit accounts; selectable account metadata never includes merchant values.
  *
  * The controller only maps the request onto the {@see PaymentAppDto} and its answer back into the
  * response; the writing itself lives in the provisioner.
@@ -59,10 +50,7 @@ class PaymentAppController extends AbstractController
     public function __construct(
         private readonly EntityRepository $appRepository,
         private readonly PaymentAppProvisioner $provisioner,
-        private readonly PaymentCredentialCipher $cipher,
-        private readonly PaymentProviderConfigService $providerConfigService,
-        private readonly PaymentProviderRegistry $providerRegistry,
-        private readonly PaymentChannelRegistry $channelRegistry,
+        private readonly PaymentAccountService $accounts,
     ) {
     }
 
@@ -83,10 +71,8 @@ class PaymentAppController extends AbstractController
         // at all. It is read only, but that is not enforced here - the guard lives in the provisioner,
         // which is the only writer, so every write path is covered and not just this endpoint.
         $criteria = new Criteria();
-        $criteria->addAssociation('providers');
-        // the page names the app an interface inherits its account from, so the name has to be part
-        // of the answer instead of a second request per row
-        $criteria->addAssociation('providers.sourceApp');
+        $criteria->addAssociation('accounts');
+        $criteria->addAssociation('accounts.account');
         $criteria->addAssociation('channels');
 
         $entities = [];
@@ -115,7 +101,7 @@ class PaymentAppController extends AbstractController
             $apps[] = $this->present($app);
         }
 
-        return new JsonResponse(['apps' => $apps]);
+        return new JsonResponse(['apps' => $apps, 'accounts' => $this->accounts->list(Context::createDefaultContext(), false)]);
     }
 
     #[Route(
@@ -167,39 +153,16 @@ class PaymentAppController extends AbstractController
      */
     private function present(PaymentAppEntity $app): array
     {
-        // the tenant of the platform collects on the merchant configuration of the interface, its own
-        // authorizations carry no values at all - reading them would present an empty account for the
-        // one row an operator wants to see filled
-        $platformParams = $app->type === PaymentAppEntity::TYPE_PLATFORM ? $this->platformChannelParams($app) : [];
-
         $providers = [];
-        foreach ($app->providers ?? [] as $provider) {
-            if (!$provider instanceof PaymentAppProviderEntity) {
+        foreach ($app->accounts ?? [] as $provider) {
+            if (!$provider instanceof PaymentAppAccountEntity || $provider->account === null) {
                 continue;
             }
 
-            $definition = $this->providerRegistry->has($provider->providerTechnicalName)
-                ? $this->providerRegistry->get($provider->providerTechnicalName)
-                : null;
-            // Without the declaration there is no safe way to tell secrets from ordinary values.
-            $credentials = $definition === null ? [] : PaymentConfigSanitizer::values(
-                $definition->credentials,
-                $this->credentialsOf($app, $provider),
-            );
-
             $providers[] = [
-                'providerTechnicalName' => $provider->providerTechnicalName,
+                'accountId' => $provider->accountId,
                 'enabled' => $provider->enabled,
-                // the account source: null means the app collects on its own account, otherwise the
-                // payment runs on the account of the app named here. The name is part of the answer so
-                // the page can say "collects on the account of X" without a second request; a source app
-                // that is gone leaves the id behind until the next write, and an empty name then
-                'sourceAppId' => $provider->sourceAppId,
-                'sourceAppName' => $provider->sourceApp->name ?? '',
-                // ordinary values render in the form; a secret is null and only its existence remains
-                'credentials' => $credentials,
-                'hasCredentials' => $credentials !== [],
-                'settings' => $provider->settings ?? [],
+                'position' => $provider->position,
             ];
         }
 
@@ -209,19 +172,9 @@ class PaymentAppController extends AbstractController
                 continue;
             }
 
-            $params = $app->type === PaymentAppEntity::TYPE_PLATFORM
-                ? ($platformParams[$channel->channelTechnicalName] ?? [])
-                : $this->cipher->decrypt($channel->params);
-            $definition = $this->channelRegistry->has($channel->channelTechnicalName)
-                ? $this->channelRegistry->get($channel->channelTechnicalName)
-                : null;
-            $params = $definition === null ? [] : PaymentConfigSanitizer::values($definition->params, $params);
-
             $channels[] = [
                 'channelTechnicalName' => $channel->channelTechnicalName,
                 'enabled' => $channel->enabled,
-                'params' => $params,
-                'hasParams' => $params !== [],
                 'settings' => $channel->settings ?? [],
             ];
         }
@@ -242,54 +195,8 @@ class PaymentAppController extends AbstractController
             // the moment of the last rotation tells the administration until when the previous
             // secret still signs a request
             'secretRotatedAt' => $app->secretRotatedAt?->format(Defaults::STORAGE_DATE_TIME_FORMAT),
-            'providers' => $providers,
+            'accounts' => $providers,
             'channels' => $channels,
         ];
-    }
-
-    /**
-     * The merchant account one app collects one interface with.
-     *
-     * The tenant of the platform is the exception: its row is seeded by the migration and carries no
-     * credentials of its own, everything it collects runs on the merchant configuration of the
-     * interface. Presenting its own empty values would show an unconfigured account for the very row
-     * an operator looks at first, so the platform level configuration is read instead.
-     *
-     * @return array<string, mixed> the decrypted credentials, empty when none is stored
-     */
-    private function credentialsOf(PaymentAppEntity $app, PaymentAppProviderEntity $provider): array
-    {
-        if ($app->type !== PaymentAppEntity::TYPE_PLATFORM) {
-            return $this->cipher->decrypt($provider->credentials);
-        }
-
-        $config = $this->providerConfigService->findProviderConfig($provider->providerTechnicalName);
-
-        return $config === null ? [] : $this->cipher->decrypt($config->credentials);
-    }
-
-    /**
-     * The channel parameters of the platform level configuration, indexed by channel name.
-     *
-     * Only the app's own authorizations are read: the parameters of a channel of an interface the app
-     * is not authorized for are not part of its answer.
-     *
-     * @return array<string, array<string, mixed>>
-     */
-    private function platformChannelParams(PaymentAppEntity $app): array
-    {
-        $params = [];
-
-        foreach ($app->providers ?? [] as $provider) {
-            if (!$provider instanceof PaymentAppProviderEntity) {
-                continue;
-            }
-
-            foreach ($this->providerConfigService->findChannelConfigs($provider->providerTechnicalName) as $channelName => $config) {
-                $params[$channelName] = $this->cipher->decrypt($config->params);
-            }
-        }
-
-        return $params;
     }
 }

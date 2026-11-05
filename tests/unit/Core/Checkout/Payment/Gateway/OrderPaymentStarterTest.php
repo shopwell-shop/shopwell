@@ -2,28 +2,33 @@
 
 namespace Shopwell\Tests\Unit\Core\Checkout\Payment\Gateway;
 
-use Payum\Core\GatewayInterface;
-use Payum\Core\Request\Capture;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
-use Shopwell\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
-use Shopwell\Core\Checkout\Order\OrderEntity;
+use Shopwell\Core\Checkout\Cart\Price\Struct\CalculatedPrice;
+use Shopwell\Core\Checkout\Cart\Tax\Struct\CalculatedTaxCollection;
+use Shopwell\Core\Checkout\Cart\Tax\Struct\TaxRuleCollection;
 use Shopwell\Core\Checkout\Payment\Gateway\OrderPaymentStarter;
-use Shopwell\Core\Checkout\Payment\Storefront\PlatformPaymentApp;
-use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
-use Shopwell\Core\Framework\DataAbstractionLayer\Event\EntityWrittenContainerEvent;
-use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
-use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
+use Shopwell\Core\Checkout\Payment\PaymentException;
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\System\Payment\Api\Struct\PayParams;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
-use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
-use Shopwell\Core\System\Payment\Gateway\Request\PayResult;
-use Shopwell\Core\System\Payment\Order\PaymentOrderCollection;
+use Shopwell\Core\System\Payment\Gateway\PaymentGatewayFactory;
+use Shopwell\Core\System\Payment\Gateway\Struct\PaymentHandover;
+use Shopwell\Core\System\Payment\Gateway\Struct\PaymentStartResult;
+use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
+use Shopwell\Core\System\Payment\Order\Aggregate\PaymentAttempt\PaymentAttemptEntity;
 use Shopwell\Core\System\Payment\Order\PaymentOrderEntity;
-use Shopwell\Core\System\Payment\PaymentException;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
+use Shopwell\Core\System\Payment\Order\PaymentOrderService;
+use Shopwell\Core\System\Payment\Order\PaymentOrderStarter;
+use Shopwell\Core\System\Payment\Order\Struct\PaymentOrderRequest;
+use Shopwell\Core\System\Payment\Product\PaymentInteraction;
+use Shopwell\Core\System\Payment\Product\PaymentProduct;
+use Shopwell\Core\System\Payment\Product\PaymentScene;
+use Shopwell\Core\System\Payment\Provider\PaymentProvider;
+use Shopwell\Core\System\Payment\Provider\ResolvedPaymentConfig;
+use Shopwell\Core\System\Payment\Routing\PaymentContext;
+use Shopwell\Core\System\Payment\Routing\PaymentRoute;
+use Symfony\Component\Routing\RouterInterface;
 
 /**
  * @internal
@@ -32,371 +37,91 @@ use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
 #[CoversClass(OrderPaymentStarter::class)]
 class OrderPaymentStarterTest extends TestCase
 {
-    /**
-     * @return iterable<string, array{PayParams, string}>
-     */
-    public static function flowProvider(): iterable
+    #[DataProvider('currencies')]
+    public function testStartsTheResolvedRouteWithCurrencyExponentAndCheckoutReferences(string $currency, float $amount, int $expected): void
     {
-        yield 'redirect to the channel url' => [
-            new PayParams(PaymentFlow::REDIRECT, payUrl: 'https://pay.example.test', httpMethod: 'GET'),
-            'https://pay.example.test',
-        ];
+        $order = PaymentGatewayFixture::order();
+        $order->setCurrency(PaymentGatewayFixture::currency($currency, decimals: 0));
+        $transaction = PaymentGatewayFixture::orderTransaction($order);
+        $transaction->setAmount(new CalculatedPrice($amount, $amount, new CalculatedTaxCollection(), new TaxRuleCollection()));
+        $route = $this->route();
+        $paymentOrder = $this->paymentOrder();
+        $app = new PaymentAppEntity();
+        $orders = $this->createMock(PaymentOrderService::class);
+        $orders->expects($this->once())->method('create')->with($app, static::callback(static fn (PaymentOrderRequest $request): bool => $request->amount === $expected && $request->currency === $currency && $request->outTradeNo === $transaction->getId()), $order, $transaction)->willReturn($paymentOrder);
+        $starter = $this->createMock(PaymentOrderStarter::class);
+        $result = new PaymentStartResult(new PaymentHandover(PaymentInteraction::REDIRECT, 'https://pay.test'));
+        $starter->expects($this->once())->method('start')->with($app, $paymentOrder, $route)->willReturn($result);
+        $checkout = new OrderPaymentStarter($orders, $starter, static::createStub(RouterInterface::class));
 
-        yield 'redirect to the self submitting form page' => [
-            new PayParams(PaymentFlow::REDIRECT, httpMethod: 'POST', htmlForm: '<form></form>'),
-            '/generated/frontend.payment.gateway.form/payment-order-id/PG-1',
-        ];
-
-        yield 'qr code to the qr page' => [
-            new PayParams(PaymentFlow::QRCODE, extra: ['qr_code' => 'https://qr.example.test']),
-            '/generated/frontend.payment.gateway.qr/payment-order-id/PG-1',
-        ];
+        static::assertSame(['order' => $paymentOrder, 'result' => $result], $checkout->start($order, $transaction, $route, $app, 'https://shop.test/return', $route->context));
     }
 
-    #[DataProvider('flowProvider')]
-    public function testHandOverMapsTheFlowToAUrl(PayParams $params, string $expected): void
+    public static function currencies(): iterable
     {
-        $url = $this->starter()->handOver(PaymentGatewayFixture::paymentOrder(), new PayResult($params));
-
-        static::assertSame($expected, $url);
+        yield 'yuan in fen despite display precision zero' => ['CNY', 19.99, 1999];
+        yield 'yen has no minor exponent' => ['JPY', 1999.0, 1999];
+        yield 'dinar has three decimals' => ['BHD', 1.234, 1234];
     }
 
-    public function testHandOverRefusesAnSdkChannel(): void
+    public function testRedirectHandoverUsesProviderUrl(): void
     {
-        $this->expectExceptionObject(PaymentException::channelNotAvailableInStorefront(PaymentGatewayFixture::CHANNEL));
-
-        $this->starter()->handOver(
-            PaymentGatewayFixture::paymentOrder(),
-            new PayResult(new PayParams(PaymentFlow::SDK, extra: ['order_str' => 'signed']))
-        );
+        static::assertSame('https://pay.test', $this->checkout()->handOver($this->paymentOrder(), new PaymentStartResult(new PaymentHandover(PaymentInteraction::REDIRECT, 'https://pay.test'))));
     }
 
-    public function testHandOverThrowsWhenTheChannelGaveNeitherUrlNorForm(): void
+    public function testFormAndQrHandoverUseAuthenticatedMiddlePages(): void
     {
-        $this->expectExceptionObject(PaymentException::gatewayResultMissing(PaymentGatewayFixture::CHANNEL));
-
-        $this->starter()->handOver(
-            PaymentGatewayFixture::paymentOrder(),
-            new PayResult(new PayParams(PaymentFlow::REDIRECT))
-        );
+        $order = $this->paymentOrder();
+        $checkout = $this->checkout();
+        static::assertStringContainsString(OrderPaymentStarter::ROUTE_FORM, $checkout->handOver($order, new PaymentStartResult(new PaymentHandover(PaymentInteraction::REDIRECT, htmlForm: '<form></form>'))));
+        static::assertStringContainsString(OrderPaymentStarter::ROUTE_QR_CODE, $checkout->handOver($order, new PaymentStartResult(new PaymentHandover(PaymentInteraction::QRCODE))));
     }
 
-    public function testStartReusesTheOpenPaymentOrderWithoutCapturingAgain(): void
+    public function testBrowserRefusesUnsupportedInteraction(): void
     {
-        $paymentOrder = PaymentGatewayFixture::paymentOrder([
-            'transactions' => [PaymentGatewayFixture::captureTransaction([
-                'http_method' => 'GET',
-                'answer' => 'https://pay.example.test',
-            ])],
-        ]);
-
-        $paymentOrderRepository = $this->createMock(EntityRepository::class);
-        $paymentOrderRepository->expects($this->once())
-            ->method('search')
-            ->willReturn(PaymentGatewayFixture::searchResult([$paymentOrder]));
-        // the order is only reused: nothing is created at the platform and nothing at the channel
-        $paymentOrderRepository->expects($this->never())->method('create');
-
-        $transactionRepository = $this->createMock(EntityRepository::class);
-        $transactionRepository->expects($this->never())->method('create');
-        $transactionRepository->expects($this->never())->method('update');
-
-        $gateway = $this->createMock(GatewayInterface::class);
-        $gateway->expects($this->never())->method('execute');
-
-        $started = PaymentGatewayFixture::starter($paymentOrderRepository, $transactionRepository, $gateway)
-            ->start($this->order(), $this->orderTransaction(), PaymentGatewayFixture::channel(), $this->app(), 'https://shop.example.test/return');
-
-        static::assertSame($paymentOrder, $started['order']);
-        static::assertSame(PaymentFlow::REDIRECT, $started['result']->params->flow);
-        static::assertSame('https://pay.example.test', $started['result']->params->payUrl);
+        $this->expectExceptionObject(PaymentException::channelNotAvailableInStorefront('plugin_product'));
+        $this->checkout()->handOver($this->paymentOrder(), new PaymentStartResult(new PaymentHandover('plugin_sdk')));
     }
 
-    public function testStartCreatesThePaymentOrderForTheTransactionAndCapturesIt(): void
+    public function testMissingRedirectActionIsReported(): void
     {
-        $created = PaymentGatewayFixture::paymentOrder();
-
-        $paymentOrderRepository = $this->createMock(EntityRepository::class);
-        $paymentOrderRepository->expects($this->exactly(3))
-            ->method('search')
-            ->willReturnCallback(static function (Criteria $criteria) use ($created): EntitySearchResult {
-                // the lookup by id is the one that reads the order back after it was written
-                if ($criteria->getIds() !== []) {
-                    return PaymentGatewayFixture::searchResult([$created]);
-                }
-
-                return PaymentGatewayFixture::searchResult([]);
-            });
-        $paymentOrderRepository->expects($this->once())
-            ->method('create')
-            ->with(static::callback(static function (array $data): bool {
-                static::assertSame('order-transaction-id', $data[0]['outTradeNo']);
-                static::assertSame(1999, $data[0]['amount']);
-                static::assertSame('EUR', $data[0]['currency']);
-                static::assertSame('SW-1000', $data[0]['subject']);
-                static::assertSame('order-id', $data[0]['orderId']);
-                static::assertSame('order-transaction-id', $data[0]['orderTransactionId']);
-
-                return true;
-            }));
-
-        $transactionRepository = $this->createMock(EntityRepository::class);
-        $transactionRepository->expects($this->once())->method('create');
-        $transactionRepository->expects($this->once())->method('update');
-
-        $payResult = new PayResult(new PayParams(PaymentFlow::REDIRECT, payUrl: 'https://pay.example.test'));
-        $gateway = $this->gateway($payResult);
-
-        $started = PaymentGatewayFixture::starter($paymentOrderRepository, $transactionRepository, $gateway)
-            ->start($this->order(), $this->orderTransaction(), PaymentGatewayFixture::channel(), $this->app(), 'https://shop.example.test/return');
-
-        static::assertSame($created, $started['order']);
-        static::assertSame($payResult, $started['result']);
+        $this->expectExceptionObject(PaymentException::gatewayResultMissing('plugin_product'));
+        $this->checkout()->handOver($this->paymentOrder(), new PaymentStartResult(new PaymentHandover(PaymentInteraction::REDIRECT)));
     }
 
-    /**
-     * A shop that rounds its prices to whole yuan still pays in fen: the smallest unit is a property of
-     * the ISO currency, not of the item rounding the merchant configured. Converting by the item
-     * rounding would charge a hundredth of the price - 19.99 CNY has to be 1999, never 20.
-     */
-    public function testStartConvertsTheAmountByTheIsoCurrencyAndNotByTheItemRounding(): void
+    public function testPayParamsReplayTheDurableAttemptWithoutRecapturing(): void
     {
-        $created = PaymentGatewayFixture::paymentOrder();
+        $order = $this->paymentOrder();
+        $params = new PaymentHandover(PaymentInteraction::REDIRECT, 'https://pay.test');
+        $starter = $this->createMock(PaymentOrderStarter::class);
+        $starter->expects($this->once())->method('replay')->with($order)->willReturn(new PaymentStartResult($params));
+        $starter->expects($this->never())->method('start');
+        $checkout = new OrderPaymentStarter(static::createStub(PaymentOrderService::class), $starter, static::createStub(RouterInterface::class));
 
-        $paymentOrderRepository = $this->createMock(EntityRepository::class);
-        $paymentOrderRepository->expects($this->exactly(3))
-            ->method('search')
-            ->willReturnCallback(static function (Criteria $criteria) use ($created): EntitySearchResult {
-                return $criteria->getIds() !== []
-                    ? PaymentGatewayFixture::searchResult([$created])
-                    : PaymentGatewayFixture::searchResult([]);
-            });
-        $paymentOrderRepository->expects($this->once())
-            ->method('create')
-            ->with(static::callback(static function (array $data): bool {
-                static::assertSame(1999, $data[0]['amount']);
-                static::assertSame('CNY', $data[0]['currency']);
-
-                return true;
-            }));
-
-        $transactionRepository = $this->createMock(EntityRepository::class);
-        $transactionRepository->expects($this->once())->method('create');
-        $transactionRepository->expects($this->once())->method('update');
-
-        // zero decimals of item rounding on purpose - the price is displayed and rounded to whole yuan
-        $order = $this->order();
-        $order->setCurrency(PaymentGatewayFixture::currency('CNY', 0));
-
-        PaymentGatewayFixture::starter($paymentOrderRepository, $transactionRepository, $this->gateway(new PayResult(new PayParams(PaymentFlow::REDIRECT))))
-            ->start($order, PaymentGatewayFixture::orderTransaction($order), PaymentGatewayFixture::channel(), $this->app(), 'https://shop.example.test/return');
+        static::assertSame($params, $checkout->payParams($order));
     }
 
-    public function testStartCapturesAgainWhenTheExistingOrderHasNoChannelAnswer(): void
+    private function checkout(): OrderPaymentStarter
     {
-        $existing = PaymentGatewayFixture::paymentOrder(['transactions' => []]);
-
-        $paymentOrderRepository = $this->createMock(EntityRepository::class);
-        // the latest payment order and the idempotent lookup by out trade number: the create hands the
-        // existing order back, so it is not read again by id
-        $paymentOrderRepository->expects($this->exactly(2))
-            ->method('search')
-            ->willReturnCallback(static function (Criteria $criteria) use ($existing): EntitySearchResult {
-                return PaymentGatewayFixture::searchResult([$existing]);
-            });
-        // the create is idempotent and hands the existing order back, a second order is not written
-        $paymentOrderRepository->expects($this->never())->method('create');
-
-        $transactionRepository = $this->createMock(EntityRepository::class);
-        $transactionRepository->expects($this->once())->method('create');
-        $transactionRepository->expects($this->once())->method('update');
-
-        $payResult = new PayResult(new PayParams(PaymentFlow::REDIRECT, payUrl: 'https://pay.example.test'));
-
-        $started = PaymentGatewayFixture::starter(
-            $paymentOrderRepository,
-            $transactionRepository,
-            $this->gateway($payResult)
-        )->start($this->order(), $this->orderTransaction(), PaymentGatewayFixture::channel(), $this->app(), 'https://shop.example.test/return');
-
-        static::assertSame($existing, $started['order']);
-        static::assertSame($payResult, $started['result']);
+        return new OrderPaymentStarter(static::createStub(PaymentOrderService::class), static::createStub(PaymentOrderStarter::class), PaymentGatewayFixture::router());
     }
 
-    /**
-     * The tenant of the platform still authorizes itself on the first payment: the shop's own checkout
-     * needs no onboarding by hand, and the migration only seeds the channel it starts with.
-     */
-    public function testStartAuthorizesTheInterfaceAndTheChannelForThePlatformTenant(): void
+    private function paymentOrder(): PaymentOrderEntity
     {
-        $paymentOrder = PaymentGatewayFixture::paymentOrder();
-        $paymentOrderRepository = $this->paymentOrdersForCreate($paymentOrder);
+        $order = new PaymentOrderEntity();
+        $order->id = 'order';
+        $order->paymentNo = 'P1';
+        $order->activeAttempt = new PaymentAttemptEntity();
+        $order->activeAttempt->channelTechnicalName = 'plugin_product';
 
-        $transactionRepository = $this->createMock(EntityRepository::class);
-        $transactionRepository->expects($this->once())->method('create');
-        $transactionRepository->expects($this->once())->method('update');
-
-        $appProviderRepository = $this->createMock(EntityRepository::class);
-        $appProviderRepository->method('search')->willReturn(PaymentGatewayFixture::searchResult([]));
-        $appProviderRepository->expects($this->once())
-            ->method('upsert')
-            ->with(static::callback(static function (array $payload): bool {
-                static::assertSame(PaymentGatewayFixture::PLATFORM_APP_ID, $payload[0]['paymentAppId']);
-                static::assertSame(PaymentGatewayFixture::PROVIDER, $payload[0]['providerTechnicalName']);
-                // the tenant of the platform is the root of the chain: it inherits from nobody
-                static::assertNull($payload[0]['sourceAppId']);
-                static::assertTrue($payload[0]['enabled']);
-
-                return true;
-            }))
-            ->willReturn(static::createStub(EntityWrittenContainerEvent::class));
-
-        $appChannelRepository = $this->createMock(EntityRepository::class);
-        $appChannelRepository->method('search')->willReturn(PaymentGatewayFixture::searchResult([]));
-        $appChannelRepository->expects($this->once())
-            ->method('create')
-            ->with(static::callback(static function (array $payload): bool {
-                static::assertSame(PaymentGatewayFixture::PLATFORM_APP_ID, $payload[0]['paymentAppId']);
-                static::assertSame(PaymentGatewayFixture::CHANNEL, $payload[0]['channelTechnicalName']);
-                static::assertTrue($payload[0]['enabled']);
-
-                return true;
-            }))
-            ->willReturn(static::createStub(EntityWrittenContainerEvent::class));
-
-        $starter = new OrderPaymentStarter(
-            new PlatformPaymentApp(
-                PaymentGatewayFixture::repository([PaymentGatewayFixture::platformAppEntity()]),
-                $appProviderRepository,
-                $appChannelRepository,
-                PaymentGatewayFixture::repository([PaymentGatewayFixture::providerConfig()]),
-                PaymentGatewayFixture::repository([PaymentGatewayFixture::channelConfig()]),
-                PaymentGatewayFixture::channelRegistry(),
-                PaymentGatewayFixture::providerRegistry(),
-            ),
-            PaymentGatewayFixture::providerRegistry(),
-            PaymentGatewayFixture::paymentOrderService($paymentOrderRepository),
-            PaymentGatewayFixture::captureService(
-                $transactionRepository,
-                PaymentGatewayFixture::configResolver($this->gateway(
-                    new PayResult(new PayParams(PaymentFlow::REDIRECT, payUrl: 'https://pay.example.test'))
-                )),
-                PaymentGatewayFixture::paymentOrderService($paymentOrderRepository)
-            ),
-            PaymentGatewayFixture::router()
-        );
-
-        $started = $starter->start(
-            $this->order(),
-            $this->orderTransaction(),
-            PaymentGatewayFixture::channel(),
-            $this->app(),
-            'https://shop.example.test/return'
-        );
-
-        static::assertSame($paymentOrder, $started['order']);
+        return $order;
     }
 
-    /**
-     * Another app brings its own authorizations: writing them from the checkout would overrule the
-     * merchant's decision, so a channel the app does not offer is refused instead.
-     */
-    public function testStartRefusesAnAppThatDoesNotOfferTheChannel(): void
+    private function route(): PaymentRoute
     {
-        $app = PaymentGatewayFixture::externalApp();
+        $product = new PaymentProduct('plugin_product', 'plugin', 'Plugin', [PaymentInteraction::REDIRECT], 'card');
+        $provider = new PaymentProvider('plugin', 'Plugin', [], [$product->technicalName => $product], static::createStub(PaymentGatewayFactory::class), static::createStub(PaymentNotificationExtractorInterface::class));
 
-        $starter = new OrderPaymentStarter(
-            new PlatformPaymentApp(
-                PaymentGatewayFixture::repository([$app]),
-                PaymentGatewayFixture::repository(),
-                PaymentGatewayFixture::repository(),
-                PaymentGatewayFixture::repository(),
-                PaymentGatewayFixture::repository(),
-                PaymentGatewayFixture::channelRegistry(),
-                PaymentGatewayFixture::providerRegistry(),
-            ),
-            PaymentGatewayFixture::providerRegistry(),
-            PaymentGatewayFixture::paymentOrderService(PaymentGatewayFixture::repository()),
-            PaymentGatewayFixture::captureService(
-                PaymentGatewayFixture::repository(),
-                PaymentGatewayFixture::configResolver(),
-                PaymentGatewayFixture::paymentOrderService(PaymentGatewayFixture::repository())
-            ),
-            PaymentGatewayFixture::router()
-        );
-
-        $this->expectExceptionObject(PaymentException::channelNotEnabled(
-            PaymentGatewayFixture::CHANNEL,
-            $app->id
-        ));
-
-        $starter->start(
-            $this->order(),
-            $this->orderTransaction(),
-            PaymentGatewayFixture::channel(),
-            $app,
-            'https://shop.example.test/return'
-        );
-    }
-
-    private function starter(): OrderPaymentStarter
-    {
-        return PaymentGatewayFixture::starter(
-            PaymentGatewayFixture::repository(),
-            PaymentGatewayFixture::repository()
-        );
-    }
-
-    /**
-     * The account the shop's own checkout collects on.
-     */
-    private function app(): PaymentAppEntity
-    {
-        return PaymentGatewayFixture::platformAppEntity();
-    }
-
-    /**
-     * @return EntityRepository<PaymentOrderCollection>
-     */
-    private function paymentOrdersForCreate(PaymentOrderEntity $created): EntityRepository
-    {
-        $repository = static::createStub(EntityRepository::class);
-        $repository->method('search')->willReturnCallback(
-            static function (Criteria $criteria) use ($created): EntitySearchResult {
-                return $criteria->getIds() === []
-                    ? PaymentGatewayFixture::searchResult([])
-                    : PaymentGatewayFixture::searchResult([$created]);
-            }
-        );
-        $repository->method('create')->willReturn(static::createStub(EntityWrittenContainerEvent::class));
-        $repository->method('update')->willReturn(static::createStub(EntityWrittenContainerEvent::class));
-
-        return $repository;
-    }
-
-    private function gateway(PayResult $payResult): GatewayInterface
-    {
-        $gateway = static::createStub(GatewayInterface::class);
-        $gateway->method('execute')->willReturnCallback(static function (object $request) use ($payResult): void {
-            \assert($request instanceof Capture);
-            $model = $request->getModel();
-            \assert($model instanceof PaymentGatewayModel);
-
-            $model->offsetSet(PaymentGatewayModel::REQUEST, ['out_trade_no' => 'order-transaction-id']);
-            $model->offsetSet(PaymentGatewayModel::RESPONSE, ['answer' => 'https://pay.example.test']);
-            $model->offsetSet(PaymentGatewayModel::RESULT, $payResult);
-        });
-
-        return $gateway;
-    }
-
-    private function order(): OrderEntity
-    {
-        return PaymentGatewayFixture::order();
-    }
-
-    private function orderTransaction(): OrderTransactionEntity
-    {
-        return PaymentGatewayFixture::orderTransaction($this->order());
+        return new PaymentRoute(new ResolvedPaymentConfig($provider, $product, [], [], [], [], 'test-account'), new PaymentContext('CNY', new PaymentScene('browser', 'wap')), PaymentInteraction::REDIRECT);
     }
 }

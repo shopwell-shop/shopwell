@@ -3,6 +3,7 @@
 namespace Shopwell\Core\System\Payment\Order;
 
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Payment\Exception\PaymentOrderException;
 use Shopwell\Core\System\Payment\Gateway\PaymentChannelCloser;
 use Shopwell\Core\System\Payment\Gateway\Request\CloseResult;
 use Shopwell\Core\System\Payment\PaymentException;
@@ -45,15 +46,21 @@ final class PaymentOrderCloser
         // the payment is already there: closing would hide it, so the close is refused before the
         // channel is even asked
         if ($order->paidAt !== null) {
-            throw PaymentException::orderAlreadyPaid($order->paymentNo);
+            throw PaymentOrderException::orderAlreadyPaid($order->paymentNo);
         }
 
         if (!$this->orderService->isPayable($order)) {
             // only a closed order is left here: its published error code is kept, because an app may
             // branch on it
-            throw PaymentException::orderAlreadyClosed($order->paymentNo);
+            throw PaymentOrderException::orderAlreadyClosed($order->paymentNo);
         }
 
+        if ($order->activeAttemptId === null) {
+            if ($this->orderService->closeUnstarted($order)) {
+                return new CloseResult(CloseResult::STATUS_NOT_FOUND);
+            }
+            $order = $this->orderService->getById($order->id);
+        }
         $result = $this->paymentCloser->close($order);
 
         if ($result->status === CloseResult::STATUS_ALREADY_PAID) {
@@ -61,7 +68,7 @@ final class PaymentOrderCloser
             // exception only tells the caller that the order was not closed
             $this->reconciler->reconcile($order);
 
-            throw PaymentException::orderAlreadyPaid($order->paymentNo);
+            throw PaymentOrderException::orderAlreadyPaid($order->paymentNo);
         }
 
         // closed and not found are both closed for the platform: a trade the channel does not know

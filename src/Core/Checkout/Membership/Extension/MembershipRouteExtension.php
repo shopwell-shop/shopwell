@@ -7,6 +7,7 @@ use Shopwell\Core\Checkout\Membership\SalesChannel\MembershipRouteResponse;
 use Shopwell\Core\Framework\Extensions\Extension;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+use Symfony\Component\HttpFoundation\Request;
 
 /**
  * @public
@@ -24,6 +25,7 @@ final class MembershipRouteExtension extends Extension
      * @internal Shopwell owns the constructor; the properties are public API.
      */
     public function __construct(
+        public readonly Request $request,
         public readonly SalesChannelContext $context,
         public readonly CustomerEntity $customer,
     ) {

@@ -9,13 +9,15 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Payment\Api\Struct\PaymentTransferDraft;
 use Shopwell\Core\System\Payment\Api\Struct\PaymentTransferRequest;
+use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppAccount\PaymentAppAccountEntity;
 use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppChannel\PaymentAppChannelEntity;
-use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppProvider\PaymentAppProviderEntity;
 use Shopwell\Core\System\Payment\App\PaymentAppCollection;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
+use Shopwell\Core\System\Payment\Exception\PaymentProviderException;
+use Shopwell\Core\System\Payment\Exception\PaymentTransferException;
 use Shopwell\Core\System\Payment\PaymentException;
+use Shopwell\Core\System\Payment\Product\PaymentProduct;
 use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
 use Shopwell\Core\System\Payment\Provider\PaymentProvider;
 use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;
 
@@ -84,7 +86,7 @@ final class PaymentTransferBooking
         $amount = $draft->amount;
 
         if ($amount === null || $amount <= 0 || $amount > PaymentTransferDraft::MAX_AMOUNT) {
-            throw PaymentException::transferAmountInvalid();
+            throw PaymentTransferException::transferAmountInvalid();
         }
 
         $providerName = (string) $draft->provider;
@@ -99,7 +101,6 @@ final class PaymentTransferBooking
         $recipientId = $this->resolveRecipientId($app, $draft, $providerName, $amount);
 
         $outNo = $draft->outNo ?? $this->generateOutNo();
-        $this->assertOutNoIsFree($app, $outNo, $recipientId, $amount, $currency);
 
         return $this->transferService->create(
             $app,
@@ -111,6 +112,7 @@ final class PaymentTransferBooking
                 amount: $amount,
                 currency: $currency,
                 metadata: $draft->note === null ? null : ['note' => $draft->note],
+                accountId: $draft->accountId,
             )
         );
     }
@@ -132,7 +134,7 @@ final class PaymentTransferBooking
         }
 
         $criteria = new Criteria([$paymentAppId]);
-        $criteria->addAssociation('providers');
+        $criteria->addAssociation('accounts.account');
         $criteria->addAssociation('channels');
 
         $app = $this->appRepository->search($criteria, Context::createDefaultContext())->getEntities()->first();
@@ -140,7 +142,7 @@ final class PaymentTransferBooking
         // "does not exist" and "is switched off" are one answer for the caller: neither app can pay out,
         // and saying which of the two it is would describe rows of another tenant
         if (!$app instanceof PaymentAppEntity || !$app->active) {
-            throw PaymentException::transferAppNotAvailable($paymentAppId);
+            throw PaymentTransferException::transferAppNotAvailable($paymentAppId);
         }
 
         return $app;
@@ -153,12 +155,12 @@ final class PaymentTransferBooking
      */
     private function assertProviderAuthorized(PaymentAppEntity $app, string $providerName): PaymentProvider
     {
-        foreach ($app->providers ?? [] as $authorization) {
-            if (!$authorization instanceof PaymentAppProviderEntity) {
+        foreach ($app->accounts ?? [] as $authorization) {
+            if (!$authorization instanceof PaymentAppAccountEntity) {
                 continue;
             }
 
-            if ($authorization->providerTechnicalName !== $providerName || !$authorization->enabled) {
+            if ($authorization->account?->providerTechnicalName !== $providerName || !$authorization->account->active || !$authorization->enabled) {
                 continue;
             }
 
@@ -171,13 +173,13 @@ final class PaymentTransferBooking
             // announcing a payout and not executing it is the one mismatch the caller can not see: the
             // guard belongs here, before the intent is booked
             if (!$provider->supports(PaymentCapability::TRANSFER)) {
-                throw PaymentException::providerLacksCapability($providerName, PaymentCapability::TRANSFER->value);
+                throw PaymentProviderException::providerLacksCapability($providerName, PaymentCapability::TRANSFER->value);
             }
 
             return $provider;
         }
 
-        throw PaymentException::providerNotEnabled($providerName, $app->id);
+        throw PaymentProviderException::providerNotEnabled($providerName, $app->id);
     }
 
     /**
@@ -196,12 +198,12 @@ final class PaymentTransferBooking
                 continue;
             }
 
-            if ($provider->hasChannel($channelName)) {
+            if ($provider->hasProduct($channelName)) {
                 return;
             }
         }
 
-        throw PaymentException::channelNotEnabled($channelName, $app->id);
+        throw PaymentProviderException::channelNotEnabled($channelName, $app->id);
     }
 
     /**
@@ -216,13 +218,13 @@ final class PaymentTransferBooking
     private function assertCurrency(PaymentProvider $provider, string $channelName, string $currency): void
     {
         if (\preg_match('/^[A-Z]{3}\z/', $currency) !== 1) {
-            throw PaymentException::currencyNotSupported($channelName, $currency);
+            throw PaymentProviderException::currencyNotSupported($channelName, $currency);
         }
 
-        $channel = $provider->channels[$channelName] ?? null;
+        $channel = $provider->products[$channelName] ?? null;
 
-        if ($channel instanceof PaymentChannel && !$channel->supportsCurrency($currency)) {
-            throw PaymentException::currencyNotSupported($channelName, $currency);
+        if ($channel instanceof PaymentProduct && !$channel->supportsCurrency($currency)) {
+            throw PaymentProviderException::currencyNotSupported($channelName, $currency);
         }
     }
 
@@ -240,11 +242,11 @@ final class PaymentTransferBooking
         }
 
         if ($draft->identityType === null) {
-            throw PaymentException::transferRecipientIncomplete('identityType');
+            throw PaymentTransferException::transferRecipientIncomplete('identityType');
         }
 
         if ($draft->identityValue === null) {
-            throw PaymentException::transferRecipientIncomplete('identityValue');
+            throw PaymentTransferException::transferRecipientIncomplete('identityValue');
         }
     }
 
@@ -281,35 +283,6 @@ final class PaymentTransferBooking
         $this->recipientService->assertPayoutReady($recipient, $amount);
 
         return $recipient->id;
-    }
-
-    /**
-     * A hand filled out number that already names a **different** payout is refused: the platform would
-     * otherwise answer "already booked" with a payout the operator never meant, and the money of the
-     * intended one would never move.
-     *
-     * @throws PaymentException
-     */
-    private function assertOutNoIsFree(
-        PaymentAppEntity $app,
-        string $outNo,
-        string $recipientId,
-        int $amount,
-        string $currency,
-    ): void {
-        $existing = $this->transferService->getByOutNo($app, $outNo);
-
-        if ($existing === null) {
-            return;
-        }
-
-        $samePayout = $existing->recipientId === $recipientId
-            && $existing->amount === $amount
-            && $existing->currency === $currency;
-
-        if (!$samePayout) {
-            throw PaymentException::transferOutNoTaken($outNo);
-        }
     }
 
     /**

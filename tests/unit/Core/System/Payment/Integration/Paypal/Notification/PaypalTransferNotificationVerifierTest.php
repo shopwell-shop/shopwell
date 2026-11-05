@@ -5,9 +5,9 @@ namespace Shopwell\Tests\Unit\Core\System\Payment\Integration\Paypal\Notificatio
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Payment\Exception\PaymentGatewayException;
 use Shopwell\Core\System\Payment\Integration\Paypal\Api\PaypalApi;
 use Shopwell\Core\System\Payment\Integration\Paypal\Notification\PaypalTransferNotificationVerifier;
-use Shopwell\Core\System\Payment\PaymentException;
 use Symfony\Component\HttpClient\MockHttpClient;
 use Symfony\Component\HttpClient\Response\MockResponse;
 
@@ -55,7 +55,7 @@ class PaypalTransferNotificationVerifierTest extends TestCase
 
     public function testANotificationWithoutAWebhookIdThrows(): void
     {
-        $this->expectExceptionObject(PaymentException::missingCredentials(PaypalApi::PROVIDER, PaypalApi::WEBHOOK_ID));
+        $this->expectExceptionObject(PaymentGatewayException::missingCredentials(PaypalApi::PROVIDER, PaypalApi::WEBHOOK_ID));
 
         $this->verifier()->verify([], '{}', $this->headers());
     }

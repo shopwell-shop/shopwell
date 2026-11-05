@@ -16,12 +16,13 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\System\NumberRange\ValueGenerator\AbstractNumberRangeValueGenerator;
-use Shopwell\Core\System\Payment\Api\Struct\PaymentOrderRequest;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
 use Shopwell\Core\System\Payment\Exception\PaymentAppException;
 use Shopwell\Core\System\Payment\Exception\PaymentOrderException;
+use Shopwell\Core\System\Payment\Order\Aggregate\PaymentAttempt\PaymentAttemptCollection;
+use Shopwell\Core\System\Payment\Order\Aggregate\PaymentAttempt\PaymentAttemptEntity;
+use Shopwell\Core\System\Payment\Order\Struct\PaymentOrderRequest;
 use Shopwell\Core\System\Payment\PaymentException;
-use Shopwell\Core\System\Payment\Provider\Config\PaymentConfigResolver;
 use Shopwell\Core\System\StateMachine\Loader\InitialStateIdLoader;
 
 /**
@@ -33,21 +34,22 @@ use Shopwell\Core\System\StateMachine\Loader\InitialStateIdLoader;
  * @internal
  */
 #[Package('framework')]
-final class PaymentOrderService
+class PaymentOrderService
 {
     final public const DEFAULT_EXPIRE_MINUTES = 30;
 
     /**
      * @param EntityRepository<PaymentOrderCollection> $paymentOrderRepository
+     * @param EntityRepository<PaymentAttemptCollection> $attemptRepository
      */
     public function __construct(
         private readonly EntityRepository $paymentOrderRepository,
-        private readonly PaymentConfigResolver $configResolver,
         private readonly InitialStateIdLoader $initialStateIdLoader,
         private readonly PaymentOrderStateHandler $stateHandler,
         private readonly ClockInterface $clock,
         private readonly AbstractNumberRangeValueGenerator $numberRanges,
         private readonly PaymentOrderRowLock $rowLock,
+        private readonly EntityRepository $attemptRepository,
     ) {
     }
 
@@ -65,24 +67,17 @@ final class PaymentOrderService
         ?OrderEntity $order = null,
         ?OrderTransactionEntity $orderTransaction = null,
     ): PaymentOrderEntity {
-        // validates that the channel exists, is enabled for the app, that the app is authorized for its
-        // interface, that both support the currency and the device, and that the runtime parameters the
-        // channel demands are all there
-        $resolved = $this->configResolver->resolve(
-            $app,
-            $request->channel,
-            $request->currency,
-            $request->device,
-            $request->channelParams
-        );
-
         $existing = $this->findByOutTradeNo($app->id, $request->outTradeNo);
+        if ($existing === null && $request->idempotencyKey !== null) {
+            $existing = $this->findByIdempotencyKey($app->id, $request->idempotencyKey);
+        }
+
         if ($existing !== null) {
-            return $existing;
+            return $this->replay($existing, $request);
         }
 
         $id = Uuid::randomHex();
-        $row = $this->createRow($id, $app, $request, $resolved->provider->technicalName, $order, $orderTransaction);
+        $row = $this->createRow($id, $app, $request, $order, $orderTransaction);
 
         try {
             $this->paymentOrderRepository->create([$row], Context::createDefaultContext());
@@ -107,6 +102,9 @@ final class PaymentOrderService
         $criteria->addFilter(new EqualsFilter('orderTransactionId', $orderTransactionId));
         // the caller resolves the channel credentials of the payment, which needs the app
         $criteria->addAssociation('paymentApp');
+        $criteria->addAssociation('stateMachineState');
+        $criteria->addAssociation('activeAttempt');
+        $criteria->addAssociation('attempts');
         // a caller reopening the payment rebuilds the parameters of the hand over from the answer of
         // the last capture, which lives on the transactions - without them it would believe the
         // payment never reached the channel and open a second trade
@@ -147,6 +145,9 @@ final class PaymentOrderService
         $criteria = new Criteria();
         $criteria->addFilter(new EqualsFilter('paymentNo', $paymentNo));
         $criteria->addAssociation('paymentApp');
+        $criteria->addAssociation('stateMachineState');
+        $criteria->addAssociation('activeAttempt');
+        $criteria->addAssociation('attempts');
         $criteria->setLimit(1);
 
         $order = $this->paymentOrderRepository->search($criteria, Context::createDefaultContext())->getEntities()->first();
@@ -175,11 +176,31 @@ final class PaymentOrderService
 
         $this->rowLock->transaction(function () use ($order): void {
             $this->stateHandler->close($order->id);
+            $this->updateAttempt($order, PaymentAttemptEntity::STATUS_CLOSED);
 
             $this->paymentOrderRepository->update([[
                 'id' => $order->id,
                 'closedAt' => $this->clock->now(),
             ]], Context::createDefaultContext());
+        });
+    }
+
+    /**
+     * A local cancellation is safe only while no provider execution has been claimed.
+     */
+    public function closeUnstarted(PaymentOrderEntity $order): bool
+    {
+        return $this->rowLock->transaction(function () use ($order): bool {
+            if ($this->rowLock->lockOrder($order->id) === null) {
+                throw PaymentOrderException::orderNotFound($order->paymentNo);
+            }
+            $current = $this->getById($order->id);
+            if ($current->activeAttemptId !== null) {
+                return false;
+            }
+            $this->close($current);
+
+            return true;
         });
     }
 
@@ -251,10 +272,12 @@ final class PaymentOrderService
     {
         $this->rowLock->transaction(function () use ($order, $paidAmount, $outPaymentNo, $channelData): void {
             $this->stateHandler->pay($order->id);
+            $this->updateAttempt($order, PaymentAttemptEntity::STATUS_PAID, $outPaymentNo, $channelData);
 
             $this->paymentOrderRepository->update([[
                 'id' => $order->id,
                 'paidAmount' => $paidAmount,
+                'activeAttemptId' => $order->activeAttemptId,
                 'outPaymentNo' => $outPaymentNo,
                 'channelData' => $channelData,
                 'paidAt' => $this->clock->now(),
@@ -267,7 +290,11 @@ final class PaymentOrderService
      */
     public function markFailed(PaymentOrderEntity $order): void
     {
-        $this->stateHandler->fail($order->id);
+        $this->rowLock->transaction(function () use ($order): void {
+            // Failure belongs to this provider execution; the unpaid obligation remains opened
+            // so another explicit attempt can settle it and reconciliation can still find it.
+            $this->updateAttempt($order, PaymentAttemptEntity::STATUS_FAILED);
+        });
     }
 
     /**
@@ -315,12 +342,7 @@ final class PaymentOrderService
      */
     public function getById(string $id): PaymentOrderEntity
     {
-        $criteria = new Criteria([$id]);
-        $criteria->addAssociation('paymentApp');
-        // the storefront hand-over pages verify the customer on the order and restore the channel
-        // answer from its capture attempt; both associations are part of the order those callers need
-        $criteria->addAssociation('order.orderCustomer');
-        $criteria->addAssociation('transactions');
+        $criteria = $this->executionCriteria([$id]);
 
         $order = $this->paymentOrderRepository->search($criteria, Context::createDefaultContext())->getEntities()->first();
 
@@ -379,7 +401,6 @@ final class PaymentOrderService
         string $id,
         PaymentAppEntity $app,
         PaymentOrderRequest $request,
-        string $providerTechnicalName,
         ?OrderEntity $order,
         ?OrderTransactionEntity $orderTransaction
     ): array {
@@ -392,9 +413,6 @@ final class PaymentOrderService
             'paymentNo' => $this->numberRanges->getValue(PaymentOrderEntity::ENTITY_NAME, Context::createDefaultContext(), null),
             'outTradeNo' => $request->outTradeNo,
             'paymentAppId' => $app->id,
-            'providerTechnicalName' => $providerTechnicalName,
-            'channelTechnicalName' => $request->channel,
-            'channelParams' => $request->channelParams === [] ? null : $request->channelParams,
             'amount' => $request->amount,
             // a fresh order was neither paid nor refunded; the fields are not nullable, so the
             // dal write validation demands them
@@ -406,7 +424,6 @@ final class PaymentOrderService
             'attach' => $request->attach,
             'stateId' => $this->initialStateIdLoader->get(PaymentOrderStates::STATE_MACHINE),
             'clientIp' => $request->clientIp,
-            'device' => $request->device,
             'notifyUrl' => $request->notifyUrl ?? $app->notifyUrl,
             'returnUrl' => $request->returnUrl ?? $app->returnUrl,
             'idempotencyKey' => $request->idempotencyKey,
@@ -432,6 +449,25 @@ final class PaymentOrderService
         return $row;
     }
 
+    /**
+     * @param array<string, mixed>|null $channelData
+     */
+    private function updateAttempt(PaymentOrderEntity $order, string $status, ?string $outPaymentNo = null, ?array $channelData = null): void
+    {
+        if ($order->activeAttemptId === null) {
+            return;
+        }
+
+        $row = ['id' => $order->activeAttemptId, 'status' => $status];
+        if ($outPaymentNo !== null) {
+            $row['outPaymentNo'] = $outPaymentNo;
+        }
+        if ($channelData !== null) {
+            $row['channelData'] = $channelData;
+        }
+        $this->attemptRepository->update([$row], Context::createDefaultContext());
+    }
+
     private function recoverCreateRace(PaymentAppEntity $app, PaymentOrderRequest $request): PaymentOrderEntity
     {
         // two unique keys describe a create: the out trade number of the app and its idempotency
@@ -449,12 +485,42 @@ final class PaymentOrderService
             throw PaymentOrderException::orderConflict($request->outTradeNo);
         }
 
-        return $race;
+        return $this->replay($race, $request);
+    }
+
+    private function replay(PaymentOrderEntity $order, PaymentOrderRequest $request): PaymentOrderEntity
+    {
+        if ($order->amount !== $request->amount
+            || strtoupper($order->currency) !== strtoupper($request->currency)
+            || $order->attach !== $request->attach
+        ) {
+            throw PaymentOrderException::idempotencyMismatch($request->outTradeNo);
+        }
+
+        return $order;
+    }
+
+    /**
+     * @param list<string>|null $ids
+     */
+    private function executionCriteria(?array $ids = null): Criteria
+    {
+        $criteria = new Criteria($ids);
+        $criteria->addAssociation('paymentApp');
+        $criteria->addAssociation('stateMachineState');
+        $criteria->addAssociation('activeAttempt');
+        $criteria->addAssociation('attempts');
+        // the storefront hand-over pages verify the customer on the order and restore the channel
+        // answer from its capture attempt; both associations are part of the order those callers need
+        $criteria->addAssociation('order.orderCustomer');
+        $criteria->addAssociation('transactions');
+
+        return $criteria;
     }
 
     private function findByOutTradeNo(string $appId, string $outTradeNo): ?PaymentOrderEntity
     {
-        $criteria = new Criteria();
+        $criteria = $this->executionCriteria();
         $criteria->addFilter(
             new EqualsFilter('paymentAppId', $appId),
             new EqualsFilter('outTradeNo', $outTradeNo)
@@ -472,7 +538,7 @@ final class PaymentOrderService
      */
     private function findByIdempotencyKey(string $appId, string $idempotencyKey): ?PaymentOrderEntity
     {
-        $criteria = new Criteria();
+        $criteria = $this->executionCriteria();
         $criteria->addFilter(
             new EqualsFilter('paymentAppId', $appId),
             new EqualsFilter('idempotencyKey', $idempotencyKey)

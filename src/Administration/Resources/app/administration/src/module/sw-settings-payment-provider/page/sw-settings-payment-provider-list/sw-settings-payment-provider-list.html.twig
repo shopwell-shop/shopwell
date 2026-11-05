@@ -1,145 +1,160 @@
 {% block sw_settings_payment_provider_list %}
 <sw-page class="sw-settings-payment-provider-list">
-
-    {% block sw_settings_payment_provider_list_smart_bar_header %}
+    <template #search-bar>
+        <mt-search
+            v-model="term"
+            class="sw-payment-account-list__search"
+            :placeholder="$t('sw-settings-payment-provider.accounts.search')"
+        />
+    </template>
     <template #smart-bar-header>
-        {% block sw_settings_payment_provider_list_smart_bar_header_title %}
         <h2>
-            {% block sw_settings_payment_provider_list_smart_bar_header_title_text %}
-            {{ $t('sw-settings.index.title') }}
-            <mt-icon
-                name="regular-chevron-right-xs"
-                size="12px"
-            />
             {{ $t('sw-settings-payment-provider.general.mainMenuItemGeneral') }}
-            {% endblock %}
-
-            {% block sw_settings_payment_provider_list_smart_bar_header_amount %}
             <span
                 v-if="!isLoading"
                 class="sw-page__smart-bar-amount"
-            >
-                ({{ providers.length }})
-            </span>
-            {% endblock %}
+            >({{ filteredAccounts.length }})</span>
         </h2>
-        {% endblock %}
     </template>
-    {% endblock %}
-
-    {% block sw_settings_payment_provider_list_content %}
+    <template #smart-bar-actions>
+        <mt-button
+            class="sw-payment-account-list__create"
+            variant="primary"
+            :disabled="!acl.can('payment_account.creator') || undefined"
+            @click="$router.push({ name: 'sw.settings.payment.provider.create' })"
+        >
+            {{ $t('sw-settings-payment-provider.accounts.create') }}
+        </mt-button>
+    </template>
     <template #content>
-        <sw-card-view>
-
-            {% block sw_settings_payment_provider_list_loading %}
-            <template v-if="isLoading">
-                <mt-card>
-                    <sw-skeleton />
-                    <sw-skeleton />
-                </mt-card>
-            </template>
-            {% endblock %}
-
-            {% block sw_settings_payment_provider_list_empty_state %}
+        <div class="sw-settings-payment-provider-list__content">
+            <mt-banner
+                v-if="error"
+                class="sw-payment-account-list__error"
+                variant="critical"
+            >
+                {{ error }}
+            </mt-banner>
+            <sw-data-grid
+                v-if="isLoading || filteredAccounts.length"
+                class="sw-payment-account-list__grid"
+                identifier="sw-payment-account-list"
+                :data-source="visibleAccounts"
+                :columns="columns"
+                :is-loading="isLoading"
+                :full-page="true"
+                :show-selection="false"
+                :show-settings="true"
+                :allow-inline-edit="false"
+                :allow-column-edit="true"
+                :sort-by="sortBy"
+                :sort-direction="sortDirection"
+                @column-sort="onSort"
+            >
+                <template #column-name="{ item }">
+                    <router-link
+                        class="sw-payment-account-list__name"
+                        :to="{ name: 'sw.settings.payment.provider.detail', params: { id: item.id } }"
+                    >
+                        {{ accountLabel(item) }}
+                    </router-link>
+                </template>
+                <template #column-providerTechnicalName="{ item }">
+                    {{ providerLabel(item.providerTechnicalName) }}
+                </template>
+                <template #column-active="{ item }">
+                    <mt-badge
+                        class="sw-payment-account-list__status"
+                        size="small"
+                        :variant="item.active ? 'positive' : 'neutral'"
+                    >
+                        {{ item.active ? $t('sw-settings-payment-provider.accounts.enabled') : $t('sw-settings-payment-provider.accounts.disabled') }}
+                    </mt-badge>
+                </template>
+                <template #column-enabledProducts="{ item }">
+                    {{ item.enabledProducts.length }}
+                </template>
+                <template #actions="{ item }">
+                    <sw-context-menu-item
+                        class="sw-payment-account-list__edit"
+                        :router-link="{ name: 'sw.settings.payment.provider.detail', params: { id: item.id } }"
+                        :disabled="!acl.can('payment_account.editor') || undefined"
+                    >
+                        {{ $t('global.default.edit') }}
+                    </sw-context-menu-item>
+                    <sw-context-menu-item
+                        v-if="!item.isDefault"
+                        class="sw-payment-account-list__delete"
+                        variant="danger"
+                        :disabled="!acl.can('payment_account.deleter') || undefined"
+                        @click="openDelete(item)"
+                    >
+                        {{ $t('global.default.delete') }}
+                    </sw-context-menu-item>
+                </template>
+                <template #pagination>
+                    <sw-pagination
+                        :page="page"
+                        :limit="limit"
+                        :total="filteredAccounts.length"
+                        :total-visible="7"
+                        @page-change="onPageChange"
+                    />
+                </template>
+            </sw-data-grid>
             <mt-empty-state
-                v-else-if="providers.length === 0"
+                v-else
+                class="sw-payment-account-list__empty"
                 centered
                 icon="regular-credit-card"
-                :headline="$t('sw-settings-payment-provider.general.emptyStateTitle')"
-                :description="$t('sw-settings-payment-provider.general.emptyState')"
-            />
-            {% endblock %}
-
-            {% block sw_settings_payment_provider_list_cards %}
-            <template v-else>
-                {% block sw_settings_payment_provider_list_card %}
-                <mt-card
-                    v-for="provider in sortedProviders"
-                    :key="provider.technicalName"
-                    position-identifier="sw-settings-payment-provider-list-card"
-                    :title="displayLabel(provider)"
+                :headline="term ? $t('sw-empty-state.messageNoResultTitle') : $t('sw-settings-payment-provider.accounts.empty')"
+                :description="term ? '' : $t('sw-settings-payment-provider.accounts.description')"
+            >
+                <template
+                    v-if="!term && acl.can('payment_account.creator')"
+                    #button
                 >
-                    {% block sw_settings_payment_provider_list_card_technical_name %}
-                    <template #headerRight>
-                        <span class="sw-settings-payment-provider-list__technical-name">
-                            {{ provider.technicalName }}
-                        </span>
-                    </template>
-                    {% endblock %}
-
-                    {% block sw_settings_payment_provider_list_card_content %}
-                    {#
-                    The card carries no content of its own, so the actions of the card sit on the
-                    right - like on the card of a payment method, where the description pushes
-                    them there. The first column is the empty left half, `justify="end"` moves
-                    the link to the end of it, which puts the link and the switch side by side
-                    on the right of the card.
-                    #}
-                    <sw-container
-                        class="sw-settings-payment-provider-list__card-content"
-                        columns="1fr auto"
-                        gap="16px"
-                        justify="end"
+                    <mt-button
+                        variant="primary"
+                        @click="$router.push({ name: 'sw.settings.payment.provider.create' })"
                     >
-                        {% block sw_settings_payment_provider_list_card_link %}
-                        <sw-internal-link
-                            class="sw-settings-payment-provider-list__edit-link"
-                            :router-link="{ name: 'sw.settings.payment.provider.detail', params: { id: provider.technicalName } }"
-                            :disabled="!canView || undefined"
-                            hide-icon
-                        >
-                            {{ $t('global.default.configure') }}
-                        </sw-internal-link>
-                        {% endblock %}
-
-                        {% block sw_settings_payment_provider_list_card_toggle %}
-                        {#
-                        The key changes when the dialog closes, so the switch is rebuilt from the
-                        stored state - the native box was flipped by the browser and stays
-                        flipped otherwise, because the stored state did not change.
-                        #}
-                        <mt-switch
-                            :key="`${provider.technicalName}-${toggleRenderKey}`"
-                            v-tooltip="{
-                                message: $t('sw-settings-payment-provider.provider.enabledHelpText'),
-                                disabled: canEdit,
-                                showOnDisabledElements: true
-                            }"
-                            class="sw-settings-payment-provider-list__switch"
-                            :model-value="provider.enabled"
-                            :disabled="!canEdit || undefined"
-                            :label="$t('sw-settings-payment-provider.provider.enabled')"
-                            @update:model-value="onRequestToggleProvider(provider, $event)"
-                        />
-                        {% endblock %}
-                    </sw-container>
-                    {% endblock %}
-                </mt-card>
-                {% endblock %}
-            </template>
-            {% endblock %}
-
-            {% block sw_settings_payment_provider_list_toggle_confirm_modal %}
-            {#
-            Switching an interface off stops every app that collects through it, so the click of
-            the switch only opens this dialog and the state is written on confirmation. The switch
-            is bound one way, so it keeps the stored value while the dialog is open.
-            #}
-            <sw-confirm-modal
-                v-if="toggleTarget !== null"
-                :title="toggleModalTitle"
-                :text="toggleModalText"
-                @confirm="confirmToggle"
-                @cancel="cancelToggle"
-                @close="cancelToggle"
-            />
-            {% endblock %}
-
-            {% block sw_settings_payment_provider_list_extension %}
-            <sw-extension-component-section position-identifier="sw-settings-payment-provider-list__after-content" />
-            {% endblock %}
-        </sw-card-view>
+                        {{ $t('sw-settings-payment-provider.accounts.create') }}
+                    </mt-button>
+                </template>
+            </mt-empty-state>
+        </div>
+        <mt-modal-root
+            v-if="deleteTarget"
+            is-open
+            @change="onDeleteModalChange"
+        >
+            <mt-modal
+                width="s"
+                :title="$t('sw-settings-payment-provider.accounts.deleteTitle')"
+            >
+                <p>{{ $t('sw-settings-payment-provider.accounts.deleteMessage', { name: accountLabel(deleteTarget) }) }}</p>
+                <template #footer>
+                    <mt-modal-close
+                        as="mt-button"
+                        variant="secondary"
+                        size="small"
+                        @click="closeDelete"
+                    >
+                        {{ $t('global.default.cancel') }}
+                    </mt-modal-close>
+                    <mt-modal-action
+                        as="mt-button"
+                        class="sw-payment-account-list__confirm-delete"
+                        variant="critical"
+                        size="small"
+                        :is-loading="isDeleting"
+                        @click="confirmDelete"
+                    >
+                        {{ $t('global.default.delete') }}
+                    </mt-modal-action>
+                </template>
+            </mt-modal>
+        </mt-modal-root>
     </template>
-    {% endblock %}
 </sw-page>
 {% endblock %}

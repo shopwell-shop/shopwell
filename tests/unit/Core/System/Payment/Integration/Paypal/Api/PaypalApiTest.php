@@ -6,12 +6,13 @@ use PaypalServerSdkLib\Environment;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Payment\Exception\PaymentGatewayException;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayFactory;
+use Shopwell\Core\System\Payment\Gateway\Request\QueryResult;
 use Shopwell\Core\System\Payment\Integration\Paypal\Api\PaypalApi;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
-use Shopwell\Core\System\Payment\PaymentException;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
+use Shopwell\Core\System\Payment\Product\PaymentInteraction;
+use Shopwell\Core\System\Payment\Product\PaymentProduct;
 use Shopwell\Core\System\Payment\Provider\PaymentProvider;
 use Shopwell\Core\System\Payment\Provider\ResolvedPaymentConfig;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
@@ -24,14 +25,20 @@ use Symfony\Contracts\HttpClient\ResponseInterface;
 #[CoversClass(PaypalApi::class)]
 class PaypalApiTest extends TestCase
 {
+    public function testMissingRemoteReferencesCannotProveThatThePaymentDoesNotExist(): void
+    {
+        $result = $this->api()->query(null, null);
+
+        static::assertSame(QueryResult::STATUS_PENDING, $result->status);
+    }
+
     public function testExposesConfiguration(): void
     {
         $api = $this->api(['client_id' => 'client-id']);
 
         static::assertSame('paypal', $api->provider());
         static::assertSame('paypal_checkout', $api->channel());
-        static::assertNull($api->sourceAppId());
-        static::assertFalse($api->inherited());
+        static::assertSame('test-account', $api->accountId());
     }
 
     public function testEnvironmentDefaultsToSandbox(): void
@@ -59,7 +66,7 @@ class PaypalApiTest extends TestCase
     {
         $api = $this->api();
 
-        $this->expectExceptionObject(PaymentException::missingCredentials('paypal', PaypalApi::WEBHOOK_ID));
+        $this->expectExceptionObject(PaymentGatewayException::missingCredentials('paypal', PaypalApi::WEBHOOK_ID));
 
         $api->webhookId();
     }
@@ -185,7 +192,7 @@ class PaypalApiTest extends TestCase
     {
         $api = $this->api();
 
-        $this->expectExceptionObject(PaymentException::missingCredentials('paypal', PaypalApi::CLIENT_ID));
+        $this->expectExceptionObject(PaymentGatewayException::missingCredentials('paypal', PaypalApi::CLIENT_ID));
 
         $api->client();
     }
@@ -241,7 +248,7 @@ class PaypalApiTest extends TestCase
      */
     private function api(array $credentials = [], ?HttpClientInterface $httpClient = null): PaypalApi
     {
-        $channel = new PaymentChannel('paypal_checkout', 'paypal', 'paypal_checkout', PaymentFlow::REDIRECT);
+        $channel = new PaymentProduct('paypal_checkout', 'paypal', 'paypal_checkout', [PaymentInteraction::REDIRECT], 'paypal');
 
         return new PaypalApi(
             new ResolvedPaymentConfig(
@@ -253,11 +260,12 @@ class PaypalApiTest extends TestCase
                     new PaymentGatewayFactory('paypal', PaypalApi::class, []),
                     static::createStub(PaymentNotificationExtractorInterface::class),
                 ),
-                channel: $channel,
+                product: $channel,
                 credentials: $credentials,
                 params: [],
                 runtimeParams: [],
                 settings: [],
+                accountId: 'test-account',
             ),
             'https://example.com/notify',
             'https://example.com/return',

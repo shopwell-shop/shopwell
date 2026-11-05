@@ -4,15 +4,16 @@
     <card>
         <title>WeChat Pay credentials</title><title lang="zh-CN">微信支付凭据</title><name>credentials</name>
         <input-field><name>mch_id</name><label>Merchant number</label><label lang="zh-CN">商户号</label><required>true</required></input-field>
-        <input-field><name>mch_serial</name><label>Merchant certificate serial</label><label lang="zh-CN">商户证书序列号</label><required>true</required></input-field>
+        <input-field><name>mch_serial</name><label>Merchant certificate serial</label><label lang="zh-CN">商户证书序列号</label><required>true</required><secret>true</secret></input-field>
         <input-field type="textarea"><name>mch_private_key</name><label>Merchant private key</label><label lang="zh-CN">商户私钥</label><required>true</required><secret>true</secret></input-field>
         <input-field type="password"><name>apiv3_key</name><label>APIv3 key</label><label lang="zh-CN">APIv3 密钥</label><required>true</required><secret>true</secret></input-field>
-        <input-field><name>platform_serial</name><label>WeChat Pay platform certificate serial</label><label lang="zh-CN">微信支付平台证书序列号</label></input-field>
-        <input-field type="textarea"><name>platform_cert</name><label>WeChat Pay platform certificate</label><label lang="zh-CN">微信支付平台证书</label></input-field>
+        <input-field><name>platform_serial</name><label>WeChat Pay platform certificate serial</label><label lang="zh-CN">微信支付平台证书序列号</label><secret>true</secret></input-field>
+        <input-field type="textarea"><name>platform_cert</name><label>WeChat Pay platform certificate</label><label lang="zh-CN">微信支付平台证书</label><secret>true</secret></input-field>
         <input-field type="textarea">
             <name>platform_certs</name><label>Platform certificates for rotation</label><label lang="zh-CN">微信支付平台证书（轮换用）</label>
             <helpText>A JSON object keyed by certificate serial. Configure the old and new certificates together during rotation to avoid verification downtime.</helpText>
             <helpText lang="zh-CN">JSON 对象，键为证书序列号、值为证书内容；平台证书轮换时可同时配置新旧两张，避免验签中断。</helpText>
+            <secret>true</secret>
         </input-field>
     </card>
     <card>

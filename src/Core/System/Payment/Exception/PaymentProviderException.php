@@ -12,6 +12,36 @@ use Symfony\Component\HttpFoundation\Response;
 #[Package('framework')]
 class PaymentProviderException extends PaymentException
 {
+    public static function accountConfigurationChanged(string $accountId): self
+    {
+        return new self(
+            Response::HTTP_CONFLICT,
+            self::ACCOUNT_CONFIGURATION_CHANGED,
+            'Payment account "{{ accountId }}" changed during route selection. Select the route again.',
+            ['accountId' => $accountId]
+        );
+    }
+
+    public static function accountIdentityImmutable(string $accountId): self
+    {
+        return new self(
+            Response::HTTP_CONFLICT,
+            self::ACCOUNT_IDENTITY_IMMUTABLE,
+            'The merchant identity of payment account "{{ accountId }}" is already in use. Create another account for a different merchant or environment.',
+            ['accountId' => $accountId]
+        );
+    }
+
+    public static function unknownMethod(string $method): self
+    {
+        return new self(Response::HTTP_BAD_REQUEST, self::UNKNOWN_CHANNEL, 'The payment method "{{ method }}" is unavailable.', ['method' => $method]);
+    }
+
+    public static function unknownRoutingPolicy(string $policy): self
+    {
+        return new self(Response::HTTP_BAD_REQUEST, self::UNKNOWN_CHANNEL, 'The payment routing policy "{{ policy }}" is not registered.', ['policy' => $policy]);
+    }
+
     public static function unknownProvider(string $technicalName): self
     {
         return new self(
@@ -56,7 +86,7 @@ class PaymentProviderException extends PaymentException
      * Two implementations of the very same technical name, where the second one is not a decorator.
      *
      * A technical name is a foreign key value - `payment_order.provider_technical_name`,
-     * `payment_provider_config.provider_technical_name`, `payment_app_provider.provider_technical_name` -
+     * `payment_provider_config.provider_technical_name`, `payment_app_account.provider_technical_name` -
      * so a second implementation that silently takes over would make every historic row
      * uninterpretable. Extending an interface is done by decorating it, replacing it by giving the
      * replacement a technical name of its own. The container refuses to compile, which is the only
@@ -138,36 +168,6 @@ class PaymentProviderException extends PaymentException
         );
     }
 
-    /**
-     * The account sources of an interface run in a circle: app A inherits from app B, app B inherits
-     * from app A again. Neither of them owns an account, so the chain has no end and no credentials -
-     * it is a configuration mistake and is refused instead of being walked until a hop limit hits.
-     */
-    public static function providerInheritanceCycle(string $technicalName, string $appTechnicalName): self
-    {
-        return new self(
-            Response::HTTP_BAD_REQUEST,
-            self::PROVIDER_INHERITANCE_CYCLE,
-            'The account source of the payment provider "{{ technicalName }}" runs in a circle: the app "{{ appTechnicalName }}" inherits it from an app that inherits it from "{{ appTechnicalName }}" again. Exactly one app of the chain has to collect on an account of its own.',
-            ['technicalName' => $technicalName, 'appTechnicalName' => $appTechnicalName]
-        );
-    }
-
-    /**
-     * The account of an interface is inherited from an app that does not exist anymore. The column is
-     * a foreign key with `ON DELETE SET NULL`, so this only happens for a row that was written by
-     * hand or by an import - a clear answer beats walking into "no credentials" without saying why.
-     */
-    public static function providerSourceAppMissing(string $technicalName, string $appTechnicalName, string $sourceAppId): self
-    {
-        return new self(
-            Response::HTTP_BAD_REQUEST,
-            self::PROVIDER_SOURCE_APP_MISSING,
-            'The app "{{ appTechnicalName }}" inherits the account of the payment provider "{{ technicalName }}" from the app "{{ sourceAppId }}", which does not exist.',
-            ['technicalName' => $technicalName, 'appTechnicalName' => $appTechnicalName, 'sourceAppId' => $sourceAppId]
-        );
-    }
-
     public static function channelNotEnabled(string $technicalName, string $appId): self
     {
         return new self(
@@ -226,6 +226,16 @@ class PaymentProviderException extends PaymentException
         );
     }
 
+    public static function contextNotSupported(string $product, string $scene): self
+    {
+        return new self(
+            Response::HTTP_BAD_REQUEST,
+            self::CONTEXT_NOT_SUPPORTED,
+            'The payment product "{{ product }}" cannot be used in the scene "{{ scene }}" with the supplied handover capabilities.',
+            ['product' => $product, 'scene' => $scene]
+        );
+    }
+
     public static function deviceNotSupported(string $technicalName, string $device): self
     {
         return new self(
@@ -247,5 +257,48 @@ class PaymentProviderException extends PaymentException
             'The payment channel "{{ technicalName }}" requires the parameter(s): {{ missing }}',
             ['technicalName' => $technicalName, 'missing' => implode(', ', $missing)]
         );
+    }
+
+    /**
+     * The caller asked for an operation the interface never declared.
+     *
+     * Payum answers an unsupported request with an error inside the gateway, which the services
+     * around it can only report as a channel fault. That reads as "the interface is down" to whoever
+     * called, when the truth is "this interface cannot do that at all" - a fact the declaration knows
+     * before a single request is signed, and the one answer the caller can act on.
+     */
+    public static function providerLacksCapability(string $technicalName, string $capability): self
+    {
+        return new self(
+            Response::HTTP_BAD_REQUEST,
+            self::PROVIDER_LACKS_CAPABILITY,
+            'The payment provider "{{ technicalName }}" does not support "{{ capability }}".',
+            ['technicalName' => $technicalName, 'capability' => $capability]
+        );
+    }
+
+    public static function unknownConfigurationField(string $name, string $field): self
+    {
+        return new self(Response::HTTP_BAD_REQUEST, 'PAYMENT__UNKNOWN_CONFIGURATION_FIELD', 'Payment configuration "{{ name }}" does not declare field "{{ field }}".', ['name' => $name, 'field' => $field]);
+    }
+
+    public static function accountInUse(string $id): self
+    {
+        return new self(Response::HTTP_CONFLICT, 'PAYMENT__ACCOUNT_IN_USE', 'Payment account "{{ id }}" is referenced by configuration or payment history and cannot be deleted.', ['id' => $id]);
+    }
+
+    public static function accountNotFound(string $id): self
+    {
+        return new self(Response::HTTP_NOT_FOUND, 'PAYMENT__ACCOUNT_NOT_FOUND', 'Payment account "{{ id }}" does not exist.', ['id' => $id]);
+    }
+
+    public static function accountNotAuthorized(string $id, string $app): self
+    {
+        return new self(Response::HTTP_FORBIDDEN, 'PAYMENT__ACCOUNT_NOT_AUTHORIZED', 'App "{{ app }}" cannot use payment account "{{ id }}".', ['app' => $app, 'id' => $id]);
+    }
+
+    public static function accountSelectionRequired(string $product): self
+    {
+        return new self(Response::HTTP_BAD_REQUEST, 'PAYMENT__ACCOUNT_SELECTION_REQUIRED', 'Select an authorized payment account for "{{ product }}".', ['product' => $product]);
     }
 }

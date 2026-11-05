@@ -20,6 +20,8 @@ final class PaymentNotificationProcessingContext
 
     public ?string $orderId = null;
 
+    public ?string $attemptId = null;
+
     public ?string $message = null;
 
     /**

@@ -6,6 +6,7 @@ use Payum\Core\Request\Capture;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Payment\Exception\PaymentGatewayException;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayFactory;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
 use Shopwell\Core\System\Payment\Gateway\Request\PaymentQuery;
@@ -14,8 +15,8 @@ use Shopwell\Core\System\Payment\Integration\Stripe\Action\StripeQueryAction;
 use Shopwell\Core\System\Payment\Integration\Stripe\Api\StripeApi;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
 use Shopwell\Core\System\Payment\PaymentException;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
+use Shopwell\Core\System\Payment\Product\PaymentInteraction;
+use Shopwell\Core\System\Payment\Product\PaymentProduct;
 use Shopwell\Core\System\Payment\Provider\PaymentProvider;
 use Shopwell\Core\System\Payment\Provider\ResolvedPaymentConfig;
 
@@ -39,12 +40,12 @@ class StripeQueryActionTest extends TestCase
     {
         $action = new StripeQueryAction();
 
-        $this->expectExceptionObject(PaymentException::actionWithoutApi(StripeQueryAction::class));
+        $this->expectExceptionObject(PaymentGatewayException::actionWithoutApi(StripeQueryAction::class));
 
         $action->execute(new PaymentQuery(new PaymentGatewayModel()));
     }
 
-    public function testExecuteAnswersAbsentWhenTheCaptureDidNotHandOutAnId(): void
+    public function testALostCreateResponseKeepsThePaymentPendingWithoutARemoteId(): void
     {
         $model = new PaymentGatewayModel([
             PaymentGatewayModel::PAYMENT_NO => 'P-1',
@@ -61,7 +62,7 @@ class StripeQueryActionTest extends TestCase
         static::assertNull($request['session_id']);
 
         $result = $model->result(QueryResult::class, 'stripe_checkout');
-        static::assertSame(QueryResult::STATUS_ABSENT, $result->status);
+        static::assertSame(QueryResult::STATUS_PENDING, $result->status);
     }
 
     public function testExecuteAsksForTheIntentOfItsOwnIdAndWrapsAGatewayFailure(): void
@@ -137,7 +138,7 @@ class StripeQueryActionTest extends TestCase
 
     private function api(): StripeApi
     {
-        $channel = new PaymentChannel('stripe_checkout', 'stripe', 'Stripe Checkout', PaymentFlow::REDIRECT);
+        $channel = new PaymentProduct('stripe_checkout', 'stripe', 'Stripe Checkout', [PaymentInteraction::REDIRECT], 'stripe');
 
         return new StripeApi(
             new ResolvedPaymentConfig(
@@ -149,11 +150,12 @@ class StripeQueryActionTest extends TestCase
                     new PaymentGatewayFactory('stripe', StripeApi::class, []),
                     static::createStub(PaymentNotificationExtractorInterface::class),
                 ),
-                channel: $channel,
+                product: $channel,
                 credentials: [],
                 params: [],
                 runtimeParams: [],
                 settings: [],
+                accountId: 'test-account',
             ),
             'https://example.com/notify',
             '',

@@ -7,15 +7,17 @@ use Payum\Core\Request\Notify;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Payment\Exception\PaymentGatewayException;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayFactory;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
 use Shopwell\Core\System\Payment\Gateway\Request\NotificationResult;
 use Shopwell\Core\System\Payment\Integration\Wechat\Action\WechatNotifyAction;
 use Shopwell\Core\System\Payment\Integration\Wechat\Api\WechatApi;
+use Shopwell\Core\System\Payment\Integration\Wechat\Product\WechatProducts;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
 use Shopwell\Core\System\Payment\PaymentException;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
+use Shopwell\Core\System\Payment\Product\PaymentInteraction;
+use Shopwell\Core\System\Payment\Product\PaymentProduct;
 use Shopwell\Core\System\Payment\Provider\PaymentProvider;
 use Shopwell\Core\System\Payment\Provider\ResolvedPaymentConfig;
 use WeChatPay\Crypto\AesGcm;
@@ -48,7 +50,7 @@ class WechatNotifyActionTest extends TestCase
     {
         $action = new WechatNotifyAction();
 
-        $this->expectExceptionObject(PaymentException::actionWithoutApi(WechatNotifyAction::class));
+        $this->expectExceptionObject(PaymentGatewayException::actionWithoutApi(WechatNotifyAction::class));
 
         $action->execute(new Notify(new PaymentGatewayModel()));
     }
@@ -79,6 +81,7 @@ class WechatNotifyActionTest extends TestCase
     public function testExecuteReadsASuccessfulTradeNotification(): void
     {
         $resource = [
+            'out_trade_no' => 'PG-1',
             'trade_state' => WechatNotifyAction::TRADE_SUCCESS,
             'transaction_id' => '4200001234',
             'amount' => ['total' => 100, 'currency' => 'CNY'],
@@ -94,6 +97,8 @@ class WechatNotifyActionTest extends TestCase
         static::assertTrue($result->signatureValid);
         static::assertTrue($result->succeeded);
         static::assertSame('4200001234', $result->outPaymentNo);
+        static::assertSame('PG-1', $result->paymentNo);
+        static::assertFalse($result->isRefund);
         static::assertNull($result->outRefundId);
         static::assertSame(100, $result->amount);
         static::assertSame('CNY', $result->currency);
@@ -109,6 +114,7 @@ class WechatNotifyActionTest extends TestCase
     public function testAForgedNotificationIsNeitherDecryptedNorASuccess(): void
     {
         $model = $this->model($this->encryptedBody([
+            'out_trade_no' => 'PG-1',
             'trade_state' => WechatNotifyAction::TRADE_SUCCESS,
             'transaction_id' => '4200001234',
             'amount' => ['total' => 100, 'currency' => 'CNY'],
@@ -152,6 +158,8 @@ class WechatNotifyActionTest extends TestCase
     public function testExecuteReadsARefundNotification(): void
     {
         $resource = [
+            'out_trade_no' => 'PG-1',
+            'out_refund_no' => 'PR-1',
             'refund_status' => WechatNotifyAction::REFUND_SUCCESS,
             'refund_id' => '5000000123',
             'amount' => ['refund' => 25, 'total' => 100, 'currency' => 'CNY'],
@@ -166,6 +174,9 @@ class WechatNotifyActionTest extends TestCase
         $result = $model->result(NotificationResult::class, 'wechat_h5');
         static::assertTrue($result->succeeded);
         static::assertSame('5000000123', $result->outRefundId);
+        static::assertSame('PG-1', $result->paymentNo);
+        static::assertSame('PR-1', $result->refundNo);
+        static::assertTrue($result->isRefund);
         static::assertNull($result->outPaymentNo);
         static::assertSame(25, $result->amount);
         static::assertSame(WechatNotifyAction::REFUND_SUCCESS, $result->status);
@@ -297,7 +308,7 @@ class WechatNotifyActionTest extends TestCase
      */
     private function api(array $credentials = []): WechatApi
     {
-        $channel = new PaymentChannel(WechatApi::CHANNEL_H5, 'wechat', WechatApi::CHANNEL_H5, PaymentFlow::REDIRECT);
+        $channel = new PaymentProduct(WechatProducts::H5, 'wechat', WechatProducts::H5, [PaymentInteraction::REDIRECT], 'wechat');
 
         return new WechatApi(
             new ResolvedPaymentConfig(
@@ -305,15 +316,16 @@ class WechatNotifyActionTest extends TestCase
                     'wechat',
                     'wechat',
                     [],
-                    [WechatApi::CHANNEL_H5 => $channel],
+                    [WechatProducts::H5 => $channel],
                     new PaymentGatewayFactory('wechat', WechatApi::class, []),
                     static::createStub(PaymentNotificationExtractorInterface::class),
                 ),
-                channel: $channel,
+                product: $channel,
                 credentials: array_replace([WechatApi::API_V3_KEY => self::API_V3_KEY], $credentials),
                 params: [],
                 runtimeParams: [],
                 settings: [],
+                accountId: 'test-account',
             ),
             'https://example.com/notify',
             '',

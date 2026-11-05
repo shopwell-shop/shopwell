@@ -13,6 +13,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Currency\CurrencyEntity;
 use Shopwell\Core\System\NumberRange\ValueGenerator\AbstractNumberRangeValueGenerator;
+use Shopwell\Core\System\Payment\Exception\PaymentSubscriptionException;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayFactory;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
 use Shopwell\Core\System\Payment\PaymentException;
@@ -37,6 +38,7 @@ use Shopwell\Core\System\StateMachine\Aggregation\StateMachineState\StateMachine
 use Shopwell\Core\System\StateMachine\Loader\InitialStateIdLoader;
 use Shopwell\Core\System\StateMachine\StateMachineRegistry;
 use Shopwell\Core\System\StateMachine\Transition;
+use Shopwell\Core\Test\Stub\DataAbstractionLayer\StaticEntityRepository;
 use Shopwell\Tests\Unit\Core\System\Payment\Provider\Fixtures\PlatformProviders;
 use Symfony\Component\Clock\MockClock;
 use Symfony\Component\HttpFoundation\Response;
@@ -152,6 +154,26 @@ class PaymentCycleServiceTest extends TestCase
         static::assertSame($created, $result);
     }
 
+    public function testSchedulingTheSameUnpaidPeriodTwiceReturnsOneCycle(): void
+    {
+        $subscription = $this->subscription();
+        $periodStart = new \DateTimeImmutable(self::NOW);
+        $cycle = $this->cycle([
+            'periodStart' => $periodStart,
+            'periodEnd' => (new PaymentCycleCalendar())->nextPeriodEnd($periodStart, 'month', 1),
+        ]);
+        $repository = new StaticEntityRepository([
+            new PaymentSubscriptionCycleCollection(),
+            new PaymentSubscriptionCycleCollection([$cycle]),
+            new PaymentSubscriptionCycleCollection([$cycle]),
+        ]);
+        $service = $this->service($repository);
+
+        static::assertSame($cycle, $service->scheduleCycle($subscription, $this->plan()));
+        static::assertSame($cycle, $service->scheduleCycle($subscription, $this->plan()));
+        static::assertCount(1, $repository->creates);
+    }
+
     public function testScheduleCycleBooksTheFirstPeriodOfANewSubscription(): void
     {
         $subscription = $this->subscription(['currentPeriodEnd' => null, 'trialEnd' => null]);
@@ -217,7 +239,7 @@ class PaymentCycleServiceTest extends TestCase
     public function testScheduleCycleNumbersTheCycleAfterTheHighestOne(): void
     {
         $written = $this->scheduleCapture(
-            $this->subscription(),
+            $this->subscription(['currentPeriodEnd' => $this->shanghai('2025-02-01 00:00:00')]),
             [$this->cycle(['id' => 'cycle-old', 'cycleNo' => 7])]
         );
 
@@ -257,7 +279,7 @@ class PaymentCycleServiceTest extends TestCase
             ->method('create')
             ->willThrowException(static::createStub(UniqueConstraintViolationException::class));
 
-        $this->expectExceptionObject(PaymentException::paymentCycleConflict('subscription-id', 1));
+        $this->expectExceptionObject(PaymentSubscriptionException::paymentCycleConflict('subscription-id', 1));
 
         $this->service($repository)->scheduleCycle($this->subscription(), $this->plan());
     }
@@ -658,25 +680,14 @@ class PaymentCycleServiceTest extends TestCase
         static::assertSame([['cycleId' => 'cycle-id', 'withSubscription' => false]], $this->transactions->calls);
     }
 
-    /**
-     * The machine has no `unknown -> scheduled`: an inconclusive cycle the channel has since
-     * answered for resolves to `failed_retryable` first and only then returns to the queue.
-     */
-    public function testRearmResolvesAnUnknownCycleInTwoTransitions(): void
+    public function testRearmRefusesAnUnknownCycleEvenWhenTheCallerClaimsTheTradeIsDead(): void
     {
         $cycle = $this->cycle(['state' => PaymentSubscriptionCycleStates::STATE_UNKNOWN]);
+        $repository = new StaticEntityRepository([new PaymentSubscriptionCycleCollection([$cycle])]);
 
-        $written = $this->rearmCapture($cycle);
+        $this->expectExceptionObject(PaymentSubscriptionException::paymentCycleNotRearmable('cycle-id', PaymentSubscriptionCycleStates::STATE_UNKNOWN));
 
-        static::assertSame('cycle-id', $written['id']);
-        static::assertNull($written['nextRetryAt']);
-        static::assertSame(
-            [
-                ['entityName' => PaymentSubscriptionCycleEntity::ENTITY_NAME, 'entityId' => 'cycle-id', 'action' => PaymentSubscriptionCycleStates::ACTION_FAIL_RETRYABLE],
-                ['entityName' => PaymentSubscriptionCycleEntity::ENTITY_NAME, 'entityId' => 'cycle-id', 'action' => PaymentSubscriptionCycleStates::ACTION_RESCHEDULE],
-            ],
-            $this->transitions
-        );
+        $this->service($repository)->rearm($cycle, true);
     }
 
     public function testRearmRotatesTheTradeNumberOfADeadTrade(): void
@@ -745,7 +756,7 @@ class PaymentCycleServiceTest extends TestCase
         $repository->expects($this->never())->method('update');
 
         $this->expectExceptionObject(
-            PaymentException::paymentCycleNotRearmable('cycle-id', PaymentSubscriptionCycleStates::STATE_PROCESSING)
+            PaymentSubscriptionException::paymentCycleNotRearmable('cycle-id', PaymentSubscriptionCycleStates::STATE_PROCESSING)
         );
 
         $this->service($repository)->rearm($cycle, true);
@@ -760,7 +771,7 @@ class PaymentCycleServiceTest extends TestCase
         $repository->expects($this->never())->method('update');
 
         $this->expectExceptionObject(
-            PaymentException::paymentCycleNotRearmable('cycle-id', PaymentSubscriptionCycleStates::STATE_SUCCEEDED)
+            PaymentSubscriptionException::paymentCycleNotRearmable('cycle-id', PaymentSubscriptionCycleStates::STATE_SUCCEEDED)
         );
 
         $this->service($repository)->rearm($cycle);
@@ -966,7 +977,7 @@ class PaymentCycleServiceTest extends TestCase
             technicalName: 'alipay',
             label: 'Alipay',
             credentials: [],
-            channels: [],
+            products: [],
             gatewayFactory: static::createStub(PaymentGatewayFactory::class),
             notificationExtractor: static::createStub(PaymentNotificationExtractorInterface::class),
             capabilities: $supportsMandate
@@ -1183,6 +1194,11 @@ final class PaymentCycleTransactionStub implements PaymentCycleTransactionInterf
     {
         $this->calls[] = ['cycleId' => $cycleId, 'withSubscription' => $withSubscription];
 
+        return $callback();
+    }
+
+    public function executeForSubscription(string $subscriptionId, \Closure $callback): mixed
+    {
         return $callback();
     }
 }

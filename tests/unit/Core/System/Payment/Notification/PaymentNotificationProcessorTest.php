@@ -6,21 +6,20 @@ use Doctrine\DBAL\Connection;
 use Payum\Core\GatewayInterface;
 use Payum\Core\Request\Notify;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use Shopwell\Core\Framework\Context;
-use Shopwell\Core\Framework\DataAbstractionLayer\Entity;
-use Shopwell\Core\Framework\DataAbstractionLayer\EntityCollection;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppChannel\PaymentAppChannelEntity;
-use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppProvider\PaymentAppProviderEntity;
 use Shopwell\Core\System\Payment\App\PaymentAppCollection;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
 use Shopwell\Core\System\Payment\App\PaymentCredentialCipher;
 use Shopwell\Core\System\Payment\App\PaymentSignatureService;
+use Shopwell\Core\System\Payment\Exception\PaymentNotificationException;
+use Shopwell\Core\System\Payment\Exception\PaymentOrderException;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayFactory;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
 use Shopwell\Core\System\Payment\Gateway\Request\NotificationResult;
@@ -30,6 +29,8 @@ use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterf
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationProcessor;
 use Shopwell\Core\System\Payment\Notification\PaymentNotifyUrlBuilder;
 use Shopwell\Core\System\Payment\Notification\Struct\PaymentNotificationData;
+use Shopwell\Core\System\Payment\Order\Aggregate\PaymentAttempt\PaymentAttemptCollection;
+use Shopwell\Core\System\Payment\Order\Aggregate\PaymentAttempt\PaymentAttemptEntity;
 use Shopwell\Core\System\Payment\Order\Aggregate\PaymentRefund\PaymentRefundCollection;
 use Shopwell\Core\System\Payment\Order\Aggregate\PaymentRefund\PaymentRefundEntity;
 use Shopwell\Core\System\Payment\Order\Event\PaymentOrderPaidEvent;
@@ -45,13 +46,12 @@ use Shopwell\Core\System\Payment\Order\PaymentRefundService;
 use Shopwell\Core\System\Payment\Order\PaymentRefundStateHandler;
 use Shopwell\Core\System\Payment\Order\PaymentRefundStates;
 use Shopwell\Core\System\Payment\PaymentException;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannelRegistry;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
-use Shopwell\Core\System\Payment\Provider\Config\PaymentChannelConfigEntity;
+use Shopwell\Core\System\Payment\Product\PaymentInteraction;
+use Shopwell\Core\System\Payment\Product\PaymentProduct;
 use Shopwell\Core\System\Payment\Provider\Config\PaymentConfigResolver;
 use Shopwell\Core\System\Payment\Provider\PaymentProvider;
 use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;
+use Shopwell\Core\System\Payment\Provider\ResolvedPaymentConfig;
 use Shopwell\Core\System\Payment\Webhook\PaymentWebhookDeliveryCollection;
 use Shopwell\Core\System\Payment\Webhook\PaymentWebhookDeliveryEntity;
 use Shopwell\Core\System\Payment\Webhook\PaymentWebhookDispatcher;
@@ -59,7 +59,9 @@ use Shopwell\Core\System\Payment\Webhook\PaymentWebhookSigner;
 use Shopwell\Core\System\StateMachine\Loader\InitialStateIdLoader;
 use Shopwell\Core\System\StateMachine\StateMachineRegistry;
 use Shopwell\Core\System\StateMachine\Transition;
+use Shopwell\Core\Test\Stub\DataAbstractionLayer\StaticEntityRepository;
 use Shopwell\Tests\Unit\Core\System\Payment\NumberRangeFixture;
+use Shopwell\Tests\Unit\Core\System\Payment\PaymentEventDispatcherFixture;
 use Symfony\Component\Clock\MockClock;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
@@ -99,12 +101,138 @@ class PaymentNotificationProcessorTest extends TestCase
             $notificationRepository,
             static::createStub(GatewayInterface::class),
             $this->orderRepository(),
-            $this->extractor('PG0001')
+            $this->extractor('PG0001'),
+            knownAttempt: false,
         );
 
-        $this->expectExceptionObject(PaymentException::notificationOrderUnknown('alipay', 'PG0001'));
+        $this->expectExceptionObject(PaymentNotificationException::notificationOrderUnknown('alipay', 'PG0001'));
 
         $service->process('alipay', 'raw-body', ['Authorization' => 'Bearer secret', 'X-Custom' => 'value'], '1.2.3.4');
+    }
+
+    public function testTheUrlCannotReplaceTheSignedPaymentReference(): void
+    {
+        $orderRepository = new StaticEntityRepository([new PaymentOrderCollection([$this->order()])]);
+        $eventDispatcher = static::createMock(EventDispatcherInterface::class);
+        $eventDispatcher->expects($this->never())->method('dispatch');
+        $service = $this->service(
+            $this->notificationRepository(),
+            $this->gateway(new NotificationResult(signatureValid: true, succeeded: true, amount: 1000, currency: 'CNY', paymentNo: 'PG0002')),
+            $orderRepository,
+            $this->extractor('PG0002'),
+            eventDispatcher: $eventDispatcher,
+        );
+        $this->expectExceptionObject(PaymentNotificationException::notificationInvalid('alipay', 'the signed payment reference does not match the payment'));
+
+        try {
+            $service->process('alipay', 'signed-payment-two', [], null, 'PG0001');
+        } finally {
+            static::assertSame([], $orderRepository->updates);
+        }
+    }
+
+    public function testTheUrlIsNotProofOfAMissingSignedPaymentReference(): void
+    {
+        $orderRepository = new StaticEntityRepository([new PaymentOrderCollection([$this->order()])]);
+        $service = $this->service(
+            $this->notificationRepository(),
+            $this->gateway(new NotificationResult(signatureValid: true, succeeded: true, amount: 1000, currency: 'CNY')),
+            $orderRepository,
+            $this->extractor(null),
+        );
+        $this->expectExceptionObject(PaymentNotificationException::notificationInvalid('alipay', 'the signed payment reference does not match the payment'));
+
+        $service->process('alipay', 'signed-body-without-payment-reference', [], null, 'PG0001');
+    }
+
+    public function testARefundWithoutASignedRefundReferenceCannotSettleAPayment(): void
+    {
+        $orderRepository = new StaticEntityRepository([new PaymentOrderCollection([$this->order()])]);
+        $service = $this->service(
+            $this->notificationRepository(),
+            $this->gateway(new NotificationResult(signatureValid: true, succeeded: true, amount: 1000, currency: 'CNY', paymentNo: 'PG0001', isRefund: true)),
+            $orderRepository,
+            $this->extractor(null),
+        );
+        $this->expectExceptionObject(PaymentNotificationException::notificationInvalid('alipay', 'the signed refund does not belong to the payment'));
+
+        $service->process('alipay', 'signed-refund-without-refund-reference', [], null, 'PG0001');
+    }
+
+    public function testASignedRefundOfAnotherPaymentCannotBeBooked(): void
+    {
+        $refund = $this->refund();
+        $refund->paymentOrderId = 'another-order';
+        $orderRepository = new StaticEntityRepository([new PaymentOrderCollection([$this->order()])]);
+        $refundRepository = new StaticEntityRepository([new PaymentRefundCollection([$refund])]);
+        $eventDispatcher = static::createMock(EventDispatcherInterface::class);
+        $eventDispatcher->expects($this->never())->method('dispatch');
+        $service = $this->service(
+            $this->notificationRepository(),
+            $this->gateway(new NotificationResult(signatureValid: true, succeeded: true, amount: 400, currency: 'CNY', refundNo: 'PR0001', isRefund: true)),
+            $orderRepository,
+            $this->extractor(null),
+            eventDispatcher: $eventDispatcher,
+            refundRepository: $refundRepository,
+        );
+        $this->expectExceptionObject(PaymentNotificationException::notificationInvalid('alipay', 'the signed refund does not belong to the payment'));
+
+        try {
+            $service->process('alipay', 'signed-refund-of-another-payment', [], null, 'PG0001');
+        } finally {
+            static::assertSame([], $orderRepository->updates);
+            static::assertSame([], $refundRepository->updates);
+        }
+    }
+
+    public function testSignedExternalReferenceUsesTheOriginalAttemptAndMerchantAccount(): void
+    {
+        $order = $this->order();
+        $order->paymentNo = 'BUSINESS-OBLIGATION';
+        $attempt = $this->attempt();
+        $attempt->attemptNo = 'ORIGINAL-EXTERNAL-REQUEST';
+        $attempt->accountId = 'original-merchant-account';
+        $gateway = $this->gateway(new NotificationResult(paymentNo: $attempt->attemptNo, signatureValid: true, succeeded: false, amount: 1000));
+        $resolved = $this->configResolver($gateway)->resolveForAttempt($this->app(), $order, $attempt);
+        $resolver = static::createMock(PaymentConfigResolver::class);
+        $resolver->expects($this->once())->method('resolveForAttempt')->with(
+            static::isInstanceOf(PaymentAppEntity::class),
+            static::callback(static fn (PaymentOrderEntity $value): bool => $value->paymentNo === 'BUSINESS-OBLIGATION'),
+            static::callback(static fn (PaymentAttemptEntity $value): bool => $value->accountId === 'original-merchant-account'),
+        )->willReturn($resolved);
+        $resolver->expects($this->never())->method('resolveForOrder');
+        $notificationRepository = $this->notificationRepository(onUpdate: static function (array $row): void {
+            static::assertSame('attempt-id', $row['paymentAttemptId']);
+            static::assertSame(PaymentNotificationEntity::RESULT_IGNORED, $row['processResult']);
+        });
+        $service = $this->service(
+            $notificationRepository,
+            $gateway,
+            $this->orderRepository($order),
+            $this->extractor($attempt->attemptNo),
+            matchedAttempt: $attempt,
+            configResolver: $resolver,
+        );
+
+        $service->process('alipay', 'signed-original-attempt', [], null, $attempt->attemptNo);
+    }
+
+    public function testAttemptFromAnotherProviderCannotSelectTheVerificationAccount(): void
+    {
+        $attempt = $this->attempt();
+        $attempt->providerTechnicalName = 'wechat';
+        $gateway = static::createMock(GatewayInterface::class);
+        $gateway->expects($this->never())->method('execute');
+        $service = $this->service(
+            $this->notificationRepository(),
+            $gateway,
+            $this->orderRepository($this->order()),
+            $this->extractor('PG0001'),
+            matchedAttempt: $attempt,
+        );
+
+        $this->expectExceptionObject(PaymentNotificationException::notificationInvalid('alipay', 'the provider does not match the payment attempt'));
+        $service->process('alipay', 'wrong-provider', [], null, 'PG0001');
     }
 
     public function testProcessMarksTheNotificationInvalidWhenTheSignatureIsNotValid(): void
@@ -121,12 +249,12 @@ class PaymentNotificationProcessorTest extends TestCase
 
         $service = $this->service(
             $notificationRepository,
-            $this->gateway(new NotificationResult(signatureValid: false, succeeded: false)),
+            $this->gateway(new NotificationResult(paymentNo: 'PG0001', signatureValid: false, succeeded: false)),
             $this->orderRepository($order),
             $this->extractor('PG0001')
         );
 
-        $this->expectExceptionObject(PaymentException::notificationInvalid('alipay', 'the signature of the notification is invalid'));
+        $this->expectExceptionObject(PaymentNotificationException::notificationInvalid('alipay', 'the signature of the notification is invalid'));
 
         $service->process('alipay', 'raw-body', [], '1.2.3.4');
     }
@@ -144,12 +272,12 @@ class PaymentNotificationProcessorTest extends TestCase
 
         $service = $this->service(
             $notificationRepository,
-            $this->gateway(new NotificationResult(signatureValid: true, succeeded: true, amount: 999)),
+            $this->gateway(new NotificationResult(paymentNo: 'PG0001', signatureValid: true, succeeded: true, amount: 999)),
             $this->orderRepository($order),
             $this->extractor('PG0001')
         );
 
-        $this->expectExceptionObject(PaymentException::amountMismatch('PG0001', 1000, 999));
+        $this->expectExceptionObject(PaymentOrderException::amountMismatch('PG0001', 1000, 999));
 
         $service->process('alipay', 'raw-body', [], '1.2.3.4');
     }
@@ -172,7 +300,7 @@ class PaymentNotificationProcessorTest extends TestCase
 
         $service = $this->service(
             $notificationRepository,
-            $this->gateway(new NotificationResult(signatureValid: true, succeeded: true, amount: 1000, currency: 'JPY')),
+            $this->gateway(new NotificationResult(paymentNo: 'PG0001', signatureValid: true, succeeded: true, amount: 1000, currency: 'JPY')),
             $orderRepository,
             $this->extractor('PG0001'),
             orderService: $this->orderService($orderRepository, $orderStateMachine),
@@ -180,7 +308,7 @@ class PaymentNotificationProcessorTest extends TestCase
             deliveryRepository: $deliveryRepository
         );
 
-        $this->expectExceptionObject(PaymentException::currencyMismatch('PG0001', 'CNY', 'JPY'));
+        $this->expectExceptionObject(PaymentOrderException::currencyMismatch('PG0001', 'CNY', 'JPY'));
 
         $service->process('alipay', 'raw-body', [], '1.2.3.4');
     }
@@ -215,7 +343,7 @@ class PaymentNotificationProcessorTest extends TestCase
 
         $service = $this->service(
             $notificationRepository,
-            $this->gateway(new NotificationResult(signatureValid: true, succeeded: false, amount: 1000)),
+            $this->gateway(new NotificationResult(paymentNo: 'PG0001', signatureValid: true, succeeded: false, amount: 1000)),
             $orderRepository,
             $this->extractor('PG0001'),
             orderService: $this->orderService($orderRepository, $orderStateMachine),
@@ -261,7 +389,7 @@ class PaymentNotificationProcessorTest extends TestCase
 
         $service = $this->service(
             $notificationRepository,
-            $this->gateway(new NotificationResult(signatureValid: true, succeeded: true, amount: 1000)),
+            $this->gateway(new NotificationResult(paymentNo: 'PG0001', signatureValid: true, succeeded: true, amount: 1000)),
             $orderRepository,
             $this->extractor('PG0001'),
             orderService: $this->orderService($orderRepository, $orderStateMachine),
@@ -366,7 +494,7 @@ class PaymentNotificationProcessorTest extends TestCase
 
         $service = $this->service(
             $notificationRepository,
-            $this->gateway(new NotificationResult(signatureValid: true, succeeded: true, outPaymentNo: 'channel-trade-1', amount: 1000, raw: ['trade' => 'raw'])),
+            $this->gateway(new NotificationResult(paymentNo: 'PG0001', signatureValid: true, succeeded: true, outPaymentNo: 'channel-trade-1', amount: 1000, raw: ['trade' => 'raw'])),
             $orderRepository,
             $this->extractor('PG0001'),
             orderService: $this->orderService($orderRepository, $orderStateMachine),
@@ -381,10 +509,22 @@ class PaymentNotificationProcessorTest extends TestCase
         static::assertSame([PaymentOrderStates::ACTION_PROCESS, PaymentOrderStates::ACTION_PAY], $transitions);
     }
 
-    public function testProcessMarksASuccessfulRefundNotificationAsProcessed(): void
+    /**
+     * @return iterable<string, array{int, bool}>
+     */
+    public static function refundNotificationProvider(): iterable
+    {
+        yield 'plain refund' => [400, false];
+        yield 'encrypted partial refund' => [400, true];
+        yield 'encrypted full refund' => [1000, true];
+    }
+
+    #[DataProvider('refundNotificationProvider')]
+    public function testProcessMarksASuccessfulRefundNotificationAsProcessed(int $amount, bool $encrypted): void
     {
         $order = $this->order(['paidAt' => new \DateTimeImmutable(self::NOW), 'paidAmount' => 1000, 'stateId' => 'state-paid']);
         $refund = $this->refund();
+        $refund->amount = $amount;
 
         // the repository expectation doubles as the proof that conclude() ran: the outcome of the
         // processing is written exactly once, in the finally block of process()
@@ -425,8 +565,8 @@ class PaymentNotificationProcessorTest extends TestCase
         // and the settled amount is booked on the order
         $orderRepository->expects($this->once())
             ->method('update')
-            ->with(static::callback(static function (array $data): bool {
-                static::assertSame(400, $data[0]['refundedAmount']);
+            ->with(static::callback(static function (array $data) use ($amount): bool {
+                static::assertSame($amount, $data[0]['refundedAmount']);
 
                 return true;
             }));
@@ -443,15 +583,15 @@ class PaymentNotificationProcessorTest extends TestCase
 
         $service = $this->service(
             $notificationRepository,
-            $this->gateway(new NotificationResult(signatureValid: true, succeeded: true, outRefundId: 'channel-refund-1', amount: 400)),
+            $this->gateway(new NotificationResult(paymentNo: 'PG0001', signatureValid: true, succeeded: true, outRefundId: 'channel-refund-1', amount: $amount, refundNo: 'PR0001', isRefund: true)),
             $orderRepository,
-            $this->refundExtractor('PR0001'),
+            $encrypted ? $this->extractor(null) : $this->refundExtractor('PR0001'),
             eventDispatcher: $eventDispatcher,
             refundRepository: $refundRepository,
             refundStateMachine: $refundStateMachine
         );
 
-        static::assertSame('notification-id', $service->process('alipay', 'raw-body', [], '1.2.3.4')->id);
+        static::assertSame('notification-id', $service->process('alipay', 'raw-body', [], '1.2.3.4', $encrypted ? 'PG0001' : null)->id);
     }
 
     public function testProcessThrowsWhenTheStoredNotificationCannotBeReloaded(): void
@@ -472,7 +612,7 @@ class PaymentNotificationProcessorTest extends TestCase
 
         $service = $this->service(
             $notificationRepository,
-            $this->gateway(new NotificationResult(signatureValid: true, succeeded: true, amount: 1000)),
+            $this->gateway(new NotificationResult(paymentNo: 'PG0001', signatureValid: true, succeeded: true, amount: 1000)),
             $this->orderRepository($order),
             $this->extractor('PG0001')
         );
@@ -502,7 +642,10 @@ class PaymentNotificationProcessorTest extends TestCase
         ?EntityRepository $deliveryRepository = null,
         ?EntityRepository $appRepository = null,
         ?EntityRepository $refundRepository = null,
-        ?StateMachineRegistry $refundStateMachine = null
+        ?StateMachineRegistry $refundStateMachine = null,
+        bool $knownAttempt = true,
+        ?PaymentAttemptEntity $matchedAttempt = null,
+        ?PaymentConfigResolver $configResolver = null,
     ): PaymentNotificationProcessor {
         $cipher = new PaymentCredentialCipher('test-secret');
 
@@ -543,17 +686,16 @@ class PaymentNotificationProcessorTest extends TestCase
         $orderService ??= $this->orderService($orderRepository ?? $this->orderRepository());
         $eventDispatcher ??= static::createStub(EventDispatcherInterface::class);
 
-        $paidHandler = new PaymentOrderPaidHandler($orderService, $webhookService, $eventDispatcher);
+        $paidHandler = new PaymentOrderPaidHandler($orderService, PaymentEventDispatcherFixture::create($webhookService, $eventDispatcher));
 
         $refundService = new PaymentRefundService(
             $refundRepository ?? static::createStub(EntityRepository::class),
             $this->configResolver($gateway),
             $orderService,
-            $webhookService,
+            PaymentEventDispatcherFixture::create($webhookService, $eventDispatcher),
             new PaymentNotifyUrlBuilder(static::createStub(RequestStack::class), 'https://base.example.test'),
             new PaymentRefundStateHandler($refundStateMachine ?? static::createStub(StateMachineRegistry::class)),
             $this->initialStateIdLoader(),
-            $eventDispatcher,
             new MockClock(self::NOW),
             NumberRangeFixture::generator('PR1001'),
             $this->rowLock()
@@ -564,25 +706,27 @@ class PaymentNotificationProcessorTest extends TestCase
             $this->providerRegistry($extractor ?? $this->extractor(null)),
             $orderService,
             $refundService,
-            $this->configResolver($gateway),
-            $paidHandler
+            $configResolver ?? $this->configResolver($gateway),
+            $paidHandler,
+            new StaticEntityRepository([new PaymentAttemptCollection($knownAttempt ? [$matchedAttempt ?? $this->attempt()] : [])]),
         );
     }
 
     private function providerRegistry(PaymentNotificationExtractorInterface $extractor): PaymentProviderRegistry
     {
-        $channel = new PaymentChannel(
+        $channel = new PaymentProduct(
             technicalName: 'alipay_h5',
             providerTechnicalName: 'alipay',
+            method: 'alipay',
             label: 'Alipay H5',
-            flow: PaymentFlow::REDIRECT,
+            interactions: [PaymentInteraction::REDIRECT],
         );
 
         $provider = new PaymentProvider(
             technicalName: 'alipay',
             label: 'Alipay',
             credentials: [],
-            channels: ['alipay_h5' => $channel],
+            products: ['alipay_h5' => $channel],
             gatewayFactory: static::createStub(PaymentGatewayFactory::class),
             notificationExtractor: $extractor,
         );
@@ -623,13 +767,12 @@ class PaymentNotificationProcessorTest extends TestCase
 
     private function configResolver(GatewayInterface $gateway): PaymentConfigResolver
     {
-        $cipher = new PaymentCredentialCipher('test-secret');
-
-        $channel = new PaymentChannel(
+        $channel = new PaymentProduct(
             technicalName: 'alipay_h5',
             providerTechnicalName: 'alipay',
+            method: 'alipay',
             label: 'Alipay H5',
-            flow: PaymentFlow::REDIRECT,
+            interactions: [PaymentInteraction::REDIRECT],
         );
 
         $gatewayFactory = static::createStub(PaymentGatewayFactory::class);
@@ -639,52 +782,17 @@ class PaymentNotificationProcessorTest extends TestCase
             technicalName: 'alipay',
             label: 'Alipay',
             credentials: [],
-            channels: ['alipay_h5' => $channel],
+            products: ['alipay_h5' => $channel],
             gatewayFactory: $gatewayFactory,
             notificationExtractor: static::createStub(PaymentNotificationExtractorInterface::class),
         );
 
-        $providerRegistry = new PaymentProviderRegistry([$provider]);
+        $resolved = new ResolvedPaymentConfig($provider, $channel, ['app_id' => 'original-app'], ['appid' => 'original-appid'], [], [], 'account-id');
+        $resolver = static::createStub(PaymentConfigResolver::class);
+        $resolver->method('resolveForAttempt')->willReturn($resolved);
+        $resolver->method('resolveForOrder')->willReturn($resolved);
 
-        $appProvider = new PaymentAppProviderEntity();
-        $appProvider->setUniqueIdentifier('app-provider-id');
-        $appProvider->paymentAppId = 'app-id';
-        $appProvider->providerTechnicalName = 'alipay';
-        $appProvider->enabled = true;
-        $appProvider->credentials = $cipher->encrypt(['app_id' => 'own-app-id']);
-
-        $appChannel = new PaymentAppChannelEntity();
-        $appChannel->setUniqueIdentifier('app-channel-id');
-        $appChannel->paymentAppId = 'app-id';
-        $appChannel->channelTechnicalName = 'alipay_h5';
-        $appChannel->enabled = true;
-        $appChannel->params = $cipher->encrypt(['appid' => 'own-appid']);
-
-        $channelConfig = new PaymentChannelConfigEntity();
-        $channelConfig->setUniqueIdentifier('channel-config-id');
-        $channelConfig->providerTechnicalName = 'alipay';
-        $channelConfig->channelTechnicalName = 'alipay_h5';
-        $channelConfig->enabled = true;
-        $channelConfig->params = $cipher->encrypt(['appid' => 'platform-appid']);
-
-        $appProviderRepository = static::createStub(EntityRepository::class);
-        $appProviderRepository->method('search')->willReturn($this->entityResult('payment_app_provider', $appProvider));
-
-        $appChannelRepository = static::createStub(EntityRepository::class);
-        $appChannelRepository->method('search')->willReturn($this->entityResult('payment_app_channel', $appChannel));
-
-        $channelConfigRepository = static::createStub(EntityRepository::class);
-        $channelConfigRepository->method('search')->willReturn($this->entityResult('payment_channel_config', $channelConfig));
-
-        return new PaymentConfigResolver(
-            $providerRegistry,
-            new PaymentChannelRegistry($providerRegistry),
-            $appProviderRepository,
-            static::createStub(EntityRepository::class),
-            $appChannelRepository,
-            $channelConfigRepository,
-            $cipher
-        );
+        return $resolver;
     }
 
     /**
@@ -694,12 +802,12 @@ class PaymentNotificationProcessorTest extends TestCase
     {
         return new PaymentOrderService(
             $orderRepository ?? $this->orderRepository(),
-            $this->configResolver(static::createStub(GatewayInterface::class)),
             $this->initialStateIdLoader(),
             new PaymentOrderStateHandler($stateMachine ?? static::createStub(StateMachineRegistry::class)),
             new MockClock(self::NOW),
             NumberRangeFixture::generator('PG1001'),
-            $this->rowLock()
+            $this->rowLock(),
+            StaticEntityRepository::of(PaymentAttemptCollection::class),
         );
     }
 
@@ -792,7 +900,7 @@ class PaymentNotificationProcessorTest extends TestCase
 
         $service = $this->service(
             $notificationRepository,
-            $this->gateway(new NotificationResult(signatureValid: true, succeeded: true, outPaymentNo: 'channel-trade-1', amount: 1000, currency: $currency, raw: ['trade' => 'raw'])),
+            $this->gateway(new NotificationResult(paymentNo: 'PG0001', signatureValid: true, succeeded: true, outPaymentNo: 'channel-trade-1', amount: 1000, currency: $currency, raw: ['trade' => 'raw'])),
             $orderRepository,
             $this->extractor('PG0001'),
             orderService: $this->orderService($orderRepository, $orderStateMachine),
@@ -838,21 +946,6 @@ class PaymentNotificationProcessorTest extends TestCase
             PaymentOrderEntity::ENTITY_NAME,
             \count($orders),
             new PaymentOrderCollection($orders),
-            null,
-            new Criteria(),
-            Context::createDefaultContext()
-        );
-    }
-
-    /**
-     * @return EntitySearchResult<EntityCollection<Entity>>
-     */
-    private function entityResult(string $entityName, Entity $entity): EntitySearchResult
-    {
-        return new EntitySearchResult(
-            $entityName,
-            1,
-            new EntityCollection([$entity]),
             null,
             new Criteria(),
             Context::createDefaultContext()
@@ -983,8 +1076,8 @@ class PaymentNotificationProcessorTest extends TestCase
         $order->paymentNo = 'PG0001';
         $order->outTradeNo = 'app-trade-1';
         $order->paymentAppId = 'app-id';
-        $order->providerTechnicalName = 'alipay';
-        $order->channelTechnicalName = 'alipay_h5';
+        $order->activeAttemptId = 'attempt-id';
+        $order->activeAttempt = $this->attempt();
         $order->amount = 1000;
         $order->currency = 'CNY';
         $order->subject = 'An order';
@@ -1026,6 +1119,7 @@ class PaymentNotificationProcessorTest extends TestCase
         $refund->id = 'refund-id';
         $refund->refundNo = 'PR0001';
         $refund->paymentOrderId = 'order-id';
+        $refund->paymentAttemptId = 'attempt-id';
         $refund->outRefundNo = 'app-refund-1';
         $refund->amount = 400;
         $refund->currency = 'CNY';
@@ -1034,12 +1128,30 @@ class PaymentNotificationProcessorTest extends TestCase
         return $refund;
     }
 
+    private function attempt(): PaymentAttemptEntity
+    {
+        $attempt = new PaymentAttemptEntity();
+        $attempt->id = 'attempt-id';
+        $attempt->setUniqueIdentifier('attempt-id');
+        $attempt->paymentOrderId = 'order-id';
+        $attempt->attemptNo = 'PG0001';
+        $attempt->accountId = 'account-id';
+        $attempt->providerTechnicalName = 'alipay';
+        $attempt->channelTechnicalName = 'alipay_h5';
+        $attempt->method = 'alipay';
+        $attempt->interaction = PaymentInteraction::REDIRECT;
+        $attempt->status = PaymentAttemptEntity::STATUS_HANDOVER;
+
+        return $attempt;
+    }
+
     private function app(): PaymentAppEntity
     {
         $app = new PaymentAppEntity();
         $app->setUniqueIdentifier('app-id');
         $app->id = 'app-id';
         $app->technicalName = 'demo-app';
+        $app->type = PaymentAppEntity::TYPE_EXTERNAL;
         // the app secret is stored encrypted, the webhook signer decrypts it to sign the payload
         $app->appSecret = (new PaymentCredentialCipher('test-secret'))->encryptValue('secret');
         $app->active = true;

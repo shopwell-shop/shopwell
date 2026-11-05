@@ -12,10 +12,10 @@ use Shopwell\Core\Framework\Log\Package;
  * touching the administration at all. The fields are declared in
  * {@see AbstractPaymentProvider::getCredentials()} and in the `params` of a channel.
  *
- * A field marked as `secret` is echoed back like every other field, so an operator can read and correct
- * it; the value only exists in plain text in the answer to the administration, while what is stored is
- * sealed. The flag still tells the administration how to render the input, so a secret is masked on
- * screen instead of being shown to whoever looks at the page.
+ * A field marked as `secret` is stored encrypted and represented by a null value in administration
+ * responses. The configured flag reports whether a value exists, and an empty edit retains it.
+ * Secret credential fields can rotate after the account is used; nonsecret fields identify its merchant.
+ * Verification certificates use the secret flag too, so certificate rotation preserves historical access.
  *
  * @internal
  */
@@ -28,9 +28,8 @@ final readonly class PaymentConfigField
     final public const TYPE_TEXT = 'text';
 
     /**
-     * A single line input whose value is masked in the browser, e.g. an api key. The masking is a
-     * presentation detail only: the value itself is delivered to the administration like any other,
-     * so a field can be read and corrected.
+     * A single line input whose value is masked in the browser, e.g. an api key.
+     * Secret fields are never delivered to the administration.
      */
     final public const TYPE_PASSWORD = 'password';
 

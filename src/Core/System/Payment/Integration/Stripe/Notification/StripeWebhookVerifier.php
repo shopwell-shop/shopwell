@@ -3,6 +3,8 @@
 namespace Shopwell\Core\System\Payment\Integration\Stripe\Notification;
 
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Payment\Exception\PaymentGatewayException;
+use Shopwell\Core\System\Payment\Exception\PaymentNotificationException;
 use Shopwell\Core\System\Payment\Integration\Stripe\Api\StripeApi;
 use Shopwell\Core\System\Payment\PaymentException;
 use Stripe\Exception\SignatureVerificationException;
@@ -40,7 +42,7 @@ final class StripeWebhookVerifier
         $secret = $credentials[StripeApi::WEBHOOK_SECRET] ?? null;
 
         if (!\is_string($secret) || $secret === '') {
-            throw PaymentException::missingCredentials(StripeApi::PROVIDER, StripeApi::WEBHOOK_SECRET);
+            throw PaymentGatewayException::missingCredentials(StripeApi::PROVIDER, StripeApi::WEBHOOK_SECRET);
         }
 
         try {
@@ -50,7 +52,7 @@ final class StripeWebhookVerifier
         } catch (SignatureVerificationException) {
             return false;
         } catch (\Throwable $exception) {
-            throw PaymentException::notificationInvalid(StripeApi::PROVIDER, $exception->getMessage());
+            throw PaymentNotificationException::notificationInvalid(StripeApi::PROVIDER, $exception->getMessage());
         }
     }
 }

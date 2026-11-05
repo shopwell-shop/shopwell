@@ -12,6 +12,8 @@ use Shopwell\Core\PlatformRequest;
 use Shopwell\Core\System\Payment\Api\Struct\PaymentTransferDraft;
 use Shopwell\Core\System\Payment\App\PaymentAppCollection;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
+use Shopwell\Core\System\Payment\Exception\PaymentGatewayException;
+use Shopwell\Core\System\Payment\Exception\PaymentTransferException;
 use Shopwell\Core\System\Payment\Gateway\Request\TransferResult;
 use Shopwell\Core\System\Payment\PaymentException;
 use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;
@@ -19,6 +21,7 @@ use Shopwell\Core\System\Payment\Transfer\PaymentTransferBooking;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferEntity;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferRecipientCollection;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferRecipientEntity;
+use Shopwell\Core\System\Payment\Transfer\PaymentTransferResultBooker;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferService;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferStates;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferSubmitter;
@@ -98,6 +101,7 @@ class PaymentTransferController
         private readonly PaymentTransferService $transferService,
         private readonly PaymentTransferPresenter $presenter,
         private readonly PaymentProviderRegistry $providerRegistry,
+        private readonly PaymentTransferResultBooker $resultBooker,
     ) {
     }
 
@@ -123,7 +127,7 @@ class PaymentTransferController
     {
         $criteria = new Criteria();
         $criteria->addFilter(new EqualsFilter('active', true));
-        $criteria->addAssociation('providers');
+        $criteria->addAssociation('accounts.account');
         $criteria->addAssociation('channels');
 
         $apps = [];
@@ -333,10 +337,10 @@ class PaymentTransferController
         $state = $transfer->statusMachineState?->getTechnicalName();
 
         if ($state !== PaymentTransferStates::STATE_CREATED) {
-            throw PaymentException::transferAlreadyFinalized($transfer->outNo, $state ?? 'unknown');
+            throw PaymentTransferException::transferAlreadyFinalized($transfer->outNo, $state ?? 'unknown');
         }
 
-        $this->transferService->cancel($transfer, $reason);
+        $this->resultBooker->cancel($transfer, $reason);
 
         $after = $this->transferService->getById($id);
 
@@ -351,7 +355,7 @@ class PaymentTransferController
      *
      * Pure and static on purpose: the money critical knowledge has to be assertable without a database and
      * without a channel, and both `PaymentTransferService` and `PaymentTransferSubmitter` are final and can
-     * not be doubled. A status code is explicitly **not** the input: `PaymentException::gatewayError()` is a
+     * not be doubled. A status code is explicitly **not** the input: `PaymentGatewayException::gatewayError()` is a
      * 502 by which the money may have moved, while `transferAlreadyFinalized` is a 409 by which it certainly
      * did not - only the persisted attempt counter separates the two.
      *

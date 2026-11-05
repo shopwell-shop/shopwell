@@ -3,7 +3,7 @@
 namespace Shopwell\Core\System\Payment\App;
 
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\System\Payment\PaymentException;
+use Shopwell\Core\System\Payment\Exception\PaymentGatewayException;
 
 /**
  * Encrypts the secrets of the payment gateway at rest: the app secret and the channel credentials
@@ -38,7 +38,7 @@ final class PaymentCredentialCipher
         $decoded = base64_decode($payload, true);
 
         if ($decoded === false || \strlen($decoded) <= \SODIUM_CRYPTO_SECRETBOX_NONCEBYTES) {
-            throw PaymentException::missingCredentials('cipher', 'payload');
+            throw PaymentGatewayException::missingCredentials('cipher', 'payload');
         }
 
         $nonce = substr($decoded, 0, \SODIUM_CRYPTO_SECRETBOX_NONCEBYTES);
@@ -47,7 +47,7 @@ final class PaymentCredentialCipher
         $plain = sodium_crypto_secretbox_open($cipher, $nonce, $this->key());
 
         if ($plain === false) {
-            throw PaymentException::missingCredentials('cipher', 'payload');
+            throw PaymentGatewayException::missingCredentials('cipher', 'payload');
         }
 
         return $plain;
@@ -79,14 +79,14 @@ final class PaymentCredentialCipher
         }
 
         if (!isset($data[self::ENCRYPTED_KEY]) || !\is_string($data[self::ENCRYPTED_KEY])) {
-            throw PaymentException::missingCredentials('cipher', self::ENCRYPTED_KEY);
+            throw PaymentGatewayException::missingCredentials('cipher', self::ENCRYPTED_KEY);
         }
 
         $plain = $this->decryptValue($data[self::ENCRYPTED_KEY]);
         $decoded = json_decode($plain, true);
 
         if (!\is_array($decoded)) {
-            throw PaymentException::missingCredentials('cipher', 'payload');
+            throw PaymentGatewayException::missingCredentials('cipher', 'payload');
         }
 
         return $decoded;

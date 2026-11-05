@@ -5,6 +5,8 @@ namespace Shopwell\Core\System\Payment\Integration\Wechat\Action;
 use Payum\Core\Exception\RequestNotSupportedException;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Payment\App\PaymentCredentialCipher;
+use Shopwell\Core\System\Payment\Exception\PaymentGatewayException;
+use Shopwell\Core\System\Payment\Exception\PaymentTransferException;
 use Shopwell\Core\System\Payment\Gateway\AbstractPaymentAction;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
 use Shopwell\Core\System\Payment\Gateway\Request\PaymentTransferRequest;
@@ -14,7 +16,6 @@ use Shopwell\Core\System\Payment\PaymentException;
 use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferEntity;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferRecipientEntity;
-use WeChatPay\Crypto\Rsa;
 
 /**
  * Submits a merchant transfer to wechat, `POST /v3/fund-app/mch-transfer/transfer-bills`.
@@ -162,7 +163,7 @@ final class WechatTransferAction extends AbstractPaymentAction
         } catch (\Throwable $exception) {
             $this->recordResponse($model, ['error' => $exception->getMessage()]);
 
-            throw PaymentException::gatewayError($api->channel(), $exception->getMessage(), $exception);
+            throw PaymentGatewayException::gatewayError($api->channel(), $exception->getMessage(), $exception);
         }
 
         // package_info stays intact for the result, but is a bearer value and never enters the audit
@@ -207,7 +208,7 @@ final class WechatTransferAction extends AbstractPaymentAction
         WechatApi $api,
     ): array {
         if ($recipient->identityType !== self::IDENTITY_TYPE_OPEN_ID) {
-            throw PaymentException::transferIdentityNotSupported($transfer->provider, $recipient->identityType);
+            throw PaymentTransferException::transferIdentityNotSupported($transfer->provider, $recipient->identityType);
         }
 
         $sceneId = $channelParams[self::PARAM_TRANSFER_SCENE_ID] ?? null;
@@ -221,7 +222,7 @@ final class WechatTransferAction extends AbstractPaymentAction
         $openId = $cipher->decryptValue($recipient->identityValue);
 
         if (trim($openId) === '') {
-            throw PaymentException::transferRecipientIncomplete('identity_value');
+            throw PaymentTransferException::transferRecipientIncomplete('identity_value');
         }
 
         $content = [
@@ -376,14 +377,13 @@ final class WechatTransferAction extends AbstractPaymentAction
         if (trim($name) === '') {
             // from 2000 yuan on the interface refuses the call without the name, and a refusal burns
             // the out number
-            throw PaymentException::transferRecipientIncomplete('holder_name');
+            throw PaymentTransferException::transferRecipientIncomplete('holder_name');
         }
 
-        $certificate = $api->platformCertificate();
+        $encrypted = $api->encryptRecipientName($name);
+        $headers[self::HEADER_PLATFORM_SERIAL] = $encrypted['serial'];
 
-        $headers[self::HEADER_PLATFORM_SERIAL] = $certificate['serial'];
-
-        return Rsa::encrypt($name, $api->publicKeyOf($certificate['certificate']));
+        return $encrypted['value'];
     }
 
     /**

@@ -10,10 +10,8 @@ use Shopwell\Core\System\Payment\Integration\Wechat\Api\WechatApi;
 use Shopwell\Core\System\Payment\Integration\Wechat\Notification\WechatTransferNotificationVerifier;
 use Shopwell\Core\System\Payment\Integration\Wechat\Request\WechatPayParamsDecoder;
 use Shopwell\Core\System\Payment\Integration\Wechat\WechatProvider;
+use Shopwell\Core\System\Payment\Product\PaymentInteraction;
 use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
-use Shopwell\Core\System\Payment\Provider\Config\PaymentConfigReader;
-use Shopwell\Core\System\Payment\Provider\PaymentProviderFactory;
 use Shopwell\Tests\Unit\Core\System\Payment\Provider\Fixtures\PlatformProviders;
 
 /**
@@ -28,6 +26,16 @@ use Shopwell\Tests\Unit\Core\System\Payment\Provider\Fixtures\PlatformProviders;
 #[CoversClass(WechatProvider::class)]
 class WechatProviderTest extends TestCase
 {
+    public function testCertificateRotationKeepsTheMerchantNumberStable(): void
+    {
+        $fields = PlatformProviders::factory()->create(PlatformProviders::wechat())->credentials;
+        $byName = array_column($fields, null, 'name');
+        static::assertFalse($byName['mch_id']->secret);
+        foreach (['mch_serial', 'platform_serial', 'platform_cert', 'platform_certs'] as $name) {
+            static::assertTrue($byName[$name]->secret);
+        }
+    }
+
     public function testNamesItself(): void
     {
         $provider = PlatformProviders::wechat();
@@ -65,7 +73,7 @@ class WechatProviderTest extends TestCase
 
     public function testDeclaresTheMerchantCredentialsButNoAppid(): void
     {
-        $fields = (new PaymentProviderFactory(new PaymentConfigReader()))->create(PlatformProviders::wechat())->credentials;
+        $fields = PlatformProviders::factory()->create(PlatformProviders::wechat())->credentials;
 
         static::assertSame(
             ['mch_id', 'mch_serial', 'mch_private_key', 'apiv3_key', 'platform_serial', 'platform_cert', 'platform_certs'],
@@ -83,7 +91,7 @@ class WechatProviderTest extends TestCase
 
     public function testDeclaresTheFiveChannelsWithTheirAppid(): void
     {
-        $channels = array_values((new PaymentProviderFactory(new PaymentConfigReader()))->create(PlatformProviders::wechat())->channels);
+        $channels = array_values(PlatformProviders::factory()->create(PlatformProviders::wechat())->products);
 
         static::assertSame(
             ['wechat_h5', 'wechat_native', 'wechat_jsapi', 'wechat_mini', 'wechat_app'],
@@ -96,12 +104,12 @@ class WechatProviderTest extends TestCase
             static::assertContains('appid', array_map(static fn ($field): string => $field->name, $channel->params));
         }
 
-        static::assertSame(PaymentFlow::REDIRECT, $channels[0]->flow);
-        static::assertSame(['wap'], $channels[0]->devices);
-        static::assertSame(PaymentFlow::QRCODE, $channels[1]->flow);
+        static::assertSame([PaymentInteraction::REDIRECT], $channels[0]->interactions);
+        static::assertSame(['wap'], $channels[0]->devices());
+        static::assertSame([PaymentInteraction::QRCODE], $channels[1]->interactions);
         static::assertSame(['openid' => true], $channels[2]->runtimeParams);
         static::assertSame(['openid' => true], $channels[3]->runtimeParams);
-        static::assertSame(['app'], $channels[4]->devices);
+        static::assertSame(['app'], $channels[4]->devices());
         static::assertSame([], $channels[4]->runtimeParams, 'The app product brings its own identity.');
     }
 
@@ -132,11 +140,11 @@ class WechatProviderTest extends TestCase
 
     public function testTheDeclarationIsCoherentEnoughToBuildTheSnapshot(): void
     {
-        $provider = (new PaymentProviderFactory(new PaymentConfigReader()))->create(PlatformProviders::wechat());
+        $provider = PlatformProviders::factory()->create(PlatformProviders::wechat());
 
         static::assertSame('wechat', $provider->technicalName);
         static::assertCount(7, $provider->credentials);
-        static::assertCount(5, $provider->channels);
+        static::assertCount(5, $provider->products);
         static::assertTrue($provider->supports(PaymentCapability::MANDATE));
         static::assertTrue($provider->supports(PaymentCapability::TRANSFER_NOTIFICATION));
         static::assertTrue($provider->supports(PaymentCapability::CAPTURE));

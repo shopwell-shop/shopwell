@@ -21,4 +21,13 @@ interface PaymentCycleTransactionInterface
      * @return TReturn
      */
     public function execute(string $cycleId, bool $withSubscription, \Closure $callback): mixed;
+
+    /**
+     * @template TReturn
+     *
+     * @param \Closure(): TReturn $callback
+     *
+     * @return TReturn
+     */
+    public function executeForSubscription(string $subscriptionId, \Closure $callback): mixed;
 }

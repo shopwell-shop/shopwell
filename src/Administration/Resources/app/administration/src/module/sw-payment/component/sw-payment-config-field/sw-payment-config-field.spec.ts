@@ -217,7 +217,7 @@ describe('module/sw-payment/component/sw-payment-config-field', () => {
 
         await toggle.trigger('click');
 
-        expect(wrapper.emitted('update:modelValue')?.[0]).toEqual(['']);
+        expect(wrapper.emitted('update:modelValue')?.[0]).toEqual(['0']);
     });
 
     it('should speak numbers for a number field and store them as a string', async () => {

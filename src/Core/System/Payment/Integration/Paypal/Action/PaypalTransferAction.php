@@ -6,6 +6,7 @@ use Payum\Core\Exception\RequestNotSupportedException;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Util\Hasher;
 use Shopwell\Core\System\Payment\App\PaymentCredentialCipher;
+use Shopwell\Core\System\Payment\Exception\PaymentTransferException;
 use Shopwell\Core\System\Payment\Gateway\AbstractPaymentAction;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
 use Shopwell\Core\System\Payment\Gateway\Request\PaymentTransferRequest;
@@ -195,14 +196,14 @@ final class PaypalTransferAction extends AbstractPaymentAction
         $recipientType = self::IDENTITY_TYPES[$recipient->identityType] ?? null;
 
         if ($recipientType === null) {
-            throw PaymentException::transferIdentityNotSupported($transfer->provider, $recipient->identityType);
+            throw PaymentTransferException::transferIdentityNotSupported($transfer->provider, $recipient->identityType);
         }
 
         // the identity is a credential at rest and is decrypted for this call alone
         $receiver = $cipher->decryptValue($recipient->identityValue);
 
         if (trim($receiver) === '') {
-            throw PaymentException::transferRecipientIncomplete('identity_value');
+            throw PaymentTransferException::transferRecipientIncomplete('identity_value');
         }
 
         $subject = $subject !== '' ? $subject : PaymentGatewayModel::DEFAULT_SUBJECT;

@@ -10,18 +10,17 @@ use PHPUnit\Framework\TestCase;
 use Psr\Cache\CacheItemInterface;
 use Psr\Cache\CacheItemPoolInterface;
 use Psr\Log\LoggerInterface;
-use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\Entity;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityCollection;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
-use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
-use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\System\Payment\Account\PaymentAccountCollection;
+use Shopwell\Core\System\Payment\Account\PaymentAccountEntity;
+use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppAccount\PaymentAppAccountCollection;
+use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppAccount\PaymentAppAccountEntity;
 use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppChannel\PaymentAppChannelCollection;
 use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppChannel\PaymentAppChannelEntity;
-use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppProvider\PaymentAppProviderCollection;
-use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppProvider\PaymentAppProviderEntity;
 use Shopwell\Core\System\Payment\App\PaymentAppAuthenticator;
 use Shopwell\Core\System\Payment\App\PaymentAppCollection;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
@@ -35,10 +34,11 @@ use Shopwell\Core\System\Payment\Notification\PaymentNotificationCollection;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationProcessor;
 use Shopwell\Core\System\Payment\Notification\PaymentNotifyUrlBuilder;
+use Shopwell\Core\System\Payment\Order\Aggregate\PaymentAttempt\PaymentAttemptCollection;
+use Shopwell\Core\System\Payment\Order\Aggregate\PaymentAttempt\PaymentAttemptEntity;
 use Shopwell\Core\System\Payment\Order\Aggregate\PaymentRefund\PaymentRefundCollection;
 use Shopwell\Core\System\Payment\Order\Aggregate\PaymentRefund\PaymentRefundEntity;
 use Shopwell\Core\System\Payment\Order\Aggregate\PaymentTransaction\PaymentTransactionCollection;
-use Shopwell\Core\System\Payment\Order\PaymentOrderCapture;
 use Shopwell\Core\System\Payment\Order\PaymentOrderCloser;
 use Shopwell\Core\System\Payment\Order\PaymentOrderCollection;
 use Shopwell\Core\System\Payment\Order\PaymentOrderEntity;
@@ -47,17 +47,16 @@ use Shopwell\Core\System\Payment\Order\PaymentOrderPresenter;
 use Shopwell\Core\System\Payment\Order\PaymentOrderQueryResultHandler;
 use Shopwell\Core\System\Payment\Order\PaymentOrderReconciler;
 use Shopwell\Core\System\Payment\Order\PaymentOrderService;
+use Shopwell\Core\System\Payment\Order\PaymentOrderStarter;
 use Shopwell\Core\System\Payment\Order\PaymentOrderStateHandler;
 use Shopwell\Core\System\Payment\Order\PaymentRefundService;
 use Shopwell\Core\System\Payment\Order\PaymentRefundStateHandler;
+use Shopwell\Core\System\Payment\Product\PaymentInteraction;
+use Shopwell\Core\System\Payment\Product\PaymentProduct;
+use Shopwell\Core\System\Payment\Product\PaymentProductRegistry;
 use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannelRegistry;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
-use Shopwell\Core\System\Payment\Provider\Config\PaymentChannelConfigCollection;
 use Shopwell\Core\System\Payment\Provider\Config\PaymentChannelConfigEntity;
 use Shopwell\Core\System\Payment\Provider\Config\PaymentConfigResolver;
-use Shopwell\Core\System\Payment\Provider\Config\PaymentProviderConfigCollection;
 use Shopwell\Core\System\Payment\Provider\Config\PaymentProviderConfigEntity;
 use Shopwell\Core\System\Payment\Provider\PaymentProvider;
 use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;
@@ -68,12 +67,16 @@ use Shopwell\Core\System\StateMachine\Aggregation\StateMachineState\StateMachine
 use Shopwell\Core\System\StateMachine\Aggregation\StateMachineState\StateMachineStateEntity;
 use Shopwell\Core\System\StateMachine\Loader\InitialStateIdLoader;
 use Shopwell\Core\System\StateMachine\StateMachineRegistry;
+use Shopwell\Core\Test\Stub\DataAbstractionLayer\StaticEntityRepository;
+use Shopwell\Tests\Unit\Core\System\Payment\Account\_fixtures\PaymentAccountLockStub;
 use Shopwell\Tests\Unit\Core\System\Payment\NumberRangeFixture;
 use Shopwell\Tests\Unit\Core\System\Payment\Order\_fixtures\PaymentOrderRowLockStub;
+use Shopwell\Tests\Unit\Core\System\Payment\PaymentEventDispatcherFixture;
 use Symfony\Component\Clock\MockClock;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
-use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
+use Symfony\Component\Lock\LockFactory;
+use Symfony\Component\Lock\Store\InMemoryStore;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 /**
@@ -128,14 +131,11 @@ final class PaymentControllerFixture extends TestCase
      * @param class-string<TCollection> $collectionClass only used to bind the collection to the repository
      * @param list<Entity> $entities
      *
-     * @return EntityRepository<TCollection>
+     * @return StaticEntityRepository<TCollection>
      */
-    public static function repository(string $collectionClass, array $entities = []): EntityRepository
+    public static function repository(string $collectionClass, array $entities = []): StaticEntityRepository
     {
-        $repository = static::createStub(EntityRepository::class);
-        $repository->method('search')->willReturn(self::searchResult($entities));
-
-        return $repository;
+        return StaticEntityRepository::of($collectionClass, array_fill(0, 32, new $collectionClass($entities)));
     }
 
     public static function app(string $technicalName, string $secret, bool $active = true): PaymentAppEntity
@@ -163,8 +163,10 @@ final class PaymentControllerFixture extends TestCase
         $order->paymentNo = 'PG-1';
         $order->outTradeNo = 'T-1';
         $order->paymentAppId = $paymentAppId;
-        $order->providerTechnicalName = 'alipay';
-        $order->channelTechnicalName = 'alipay_h5';
+        $attempt = self::attempt($order->id, $paymentAppId);
+        $order->activeAttemptId = $attempt->id;
+        $order->activeAttempt = $attempt;
+        $order->attempts = [$attempt->id => $attempt];
         $order->amount = 1000;
         $order->currency = 'CNY';
         $order->subject = 'Order';
@@ -178,6 +180,23 @@ final class PaymentControllerFixture extends TestCase
         return $order;
     }
 
+    public static function attempt(string $orderId, string $appId, string $provider = 'alipay', string $product = 'alipay_h5'): PaymentAttemptEntity
+    {
+        $attempt = new PaymentAttemptEntity();
+        $attempt->id = md5('attempt-' . $orderId);
+        $attempt->setUniqueIdentifier($attempt->id);
+        $attempt->paymentOrderId = $orderId;
+        $attempt->accountId = md5('merchant-' . $appId);
+        $attempt->providerTechnicalName = $provider;
+        $attempt->channelTechnicalName = $product;
+        $attempt->attemptNo = 'PG-1';
+        $attempt->status = PaymentAttemptEntity::STATUS_HANDOVER;
+        $attempt->configuration = ['params' => [], 'runtimeParams' => [], 'settings' => []];
+        $attempt->context = [];
+
+        return $attempt;
+    }
+
     /**
      * @param array<string, mixed> $overrides
      */
@@ -188,6 +207,7 @@ final class PaymentControllerFixture extends TestCase
         $refund->setUniqueIdentifier($refund->id);
         $refund->refundNo = 'PR-1';
         $refund->paymentOrderId = $paymentOrderId;
+        $refund->paymentAttemptId = md5('attempt-' . $paymentOrderId);
         $refund->outRefundNo = 'R-1';
         $refund->amount = 500;
         $refund->currency = 'CNY';
@@ -202,30 +222,29 @@ final class PaymentControllerFixture extends TestCase
     }
 
     /**
-     * The authorization of an app for the `alipay` interface.
-     *
-     * `sourceAppId` names the app whose merchant account is charged, `null` means "an account of the
-     * app itself" - the credentials the app typed are then the ones of `credentials`.
-     *
-     * @param array<string, mixed>|null $credentials the merchant credentials of the app, sealed like
-     *                                               the provisioning stores them
+     * @param array<string, mixed> $credentials
      */
-    public static function appProvider(
-        string $appId,
-        bool $enabled = true,
-        ?string $sourceAppId = null,
-        ?array $credentials = null
-    ): PaymentAppProviderEntity {
-        $provider = new PaymentAppProviderEntity();
-        $provider->id = Uuid::randomHex();
-        $provider->setUniqueIdentifier($provider->id);
-        $provider->paymentAppId = $appId;
-        $provider->providerTechnicalName = 'alipay';
-        $provider->enabled = $enabled;
-        $provider->sourceAppId = $sourceAppId;
-        $provider->credentials = $credentials === null ? null : self::cipher()->encrypt($credentials);
+    public static function appAccount(string $appId, bool $enabled = true, array $credentials = ['app_id' => 'merchant-app']): PaymentAppAccountEntity
+    {
+        $account = new PaymentAccountEntity();
+        $account->id = md5('merchant-' . $appId);
+        $account->setUniqueIdentifier($account->id);
+        $account->providerTechnicalName = 'alipay';
+        $account->name = 'Merchant account';
+        $account->ownerAppId = $appId;
+        $account->active = true;
+        $account->enabledProducts = ['alipay_h5'];
+        $account->credentials = self::cipher()->encrypt($credentials);
+        $grant = new PaymentAppAccountEntity();
+        $grant->id = Uuid::randomHex();
+        $grant->setUniqueIdentifier($grant->id);
+        $grant->paymentAppId = $appId;
+        $grant->accountId = $account->id;
+        $grant->account = $account;
+        $grant->enabled = $enabled;
+        $grant->position = 0;
 
-        return $provider;
+        return $grant;
     }
 
     public static function appChannel(string $appId, bool $enabled = true): PaymentAppChannelEntity
@@ -259,18 +278,18 @@ final class PaymentControllerFixture extends TestCase
         $config->setUniqueIdentifier($config->id);
         $config->providerTechnicalName = 'alipay';
         $config->enabled = $enabled;
-        $config->credentials = self::cipher()->encrypt(['app_id' => 'platform-app']);
+        $config->accountId = md5('merchant-platform');
 
         return $config;
     }
 
-    public static function channel(string $technicalName, string $providerTechnicalName): PaymentChannel
+    public static function channel(string $technicalName, string $providerTechnicalName): PaymentProduct
     {
-        return new PaymentChannel($technicalName, $providerTechnicalName, $technicalName, PaymentFlow::REDIRECT);
+        return new PaymentProduct($technicalName, $providerTechnicalName, $technicalName, [PaymentInteraction::REDIRECT], $providerTechnicalName, capabilities: self::CAPABILITIES);
     }
 
     /**
-     * @param list<PaymentChannel> $channels
+     * @param list<PaymentProduct> $channels
      * @param list<PaymentCapability> $capabilities what the interface can do - the services in front of
      *                                              the gateway ask the declaration before they send a
      *                                              request, so a fixture has to declare what its tests
@@ -330,63 +349,71 @@ final class PaymentControllerFixture extends TestCase
         return new PaymentProviderRegistry($providers);
     }
 
-    public static function channelRegistry(PaymentProviderRegistry $providers): PaymentChannelRegistry
+    public static function channelRegistry(PaymentProviderRegistry $providers): PaymentProductRegistry
     {
-        return new PaymentChannelRegistry($providers);
+        return new PaymentProductRegistry($providers);
     }
 
     /**
-     * @param list<PaymentAppProviderEntity> $appProviders
+     * @param list<PaymentAppAccountEntity> $appAccounts
      * @param list<PaymentAppChannelEntity> $appChannels
      * @param list<PaymentChannelConfigEntity> $channelConfigs
-     * @param list<PaymentProviderConfigEntity> $providerConfigs
+     * @param list<PaymentAccountEntity> $accounts
      */
     public static function configResolver(
         PaymentProviderRegistry $providerRegistry,
-        PaymentChannelRegistry $channelRegistry,
-        array $appProviders = [],
+        PaymentProductRegistry $channelRegistry,
+        array $appAccounts = [],
         array $appChannels = [],
         array $channelConfigs = [],
-        array $providerConfigs = []
+        array $accounts = [],
     ): PaymentConfigResolver {
+        foreach ($appAccounts as $grant) {
+            if ($grant->account !== null) {
+                $accounts[] = $grant->account;
+            }
+        }
+
         return new PaymentConfigResolver(
             $providerRegistry,
             $channelRegistry,
-            self::repository(PaymentAppProviderCollection::class, $appProviders),
-            self::repository(PaymentProviderConfigCollection::class, $providerConfigs),
+            self::repository(PaymentAppAccountCollection::class, $appAccounts),
             self::repository(PaymentAppChannelCollection::class, $appChannels),
-            self::repository(PaymentChannelConfigCollection::class, $channelConfigs),
             self::cipher(),
+            self::repository(PaymentAccountCollection::class, $accounts),
         );
     }
 
     /**
      * @param EntityRepository<PaymentOrderCollection> $paymentOrderRepository
      */
-    public static function orderService(EntityRepository $paymentOrderRepository, PaymentConfigResolver $configResolver): PaymentOrderService
+    public static function orderService(EntityRepository $paymentOrderRepository): PaymentOrderService
     {
         return new PaymentOrderService(
             $paymentOrderRepository,
-            $configResolver,
             static::createStub(InitialStateIdLoader::class),
             new PaymentOrderStateHandler(static::createStub(StateMachineRegistry::class)),
             self::clock(),
             NumberRangeFixture::generator('PG1001'),
             new PaymentOrderRowLockStub(),
+            self::repository(PaymentAttemptCollection::class),
         );
     }
 
     /**
      * @param EntityRepository<PaymentTransactionCollection> $transactionRepository
      */
-    public static function captureService(EntityRepository $transactionRepository, PaymentConfigResolver $configResolver, PaymentOrderService $orderService): PaymentOrderCapture
+    public static function starterService(EntityRepository $transactionRepository, PaymentOrderService $orderService): PaymentOrderStarter
     {
-        return new PaymentOrderCapture(
+        return new PaymentOrderStarter(
             $transactionRepository,
-            $configResolver,
+            self::repository(PaymentAttemptCollection::class),
+            self::repository(PaymentOrderCollection::class),
             $orderService,
             new PaymentNotifyUrlBuilder(static::createStub(RequestStack::class)),
             NumberRangeFixture::generator('PX1001'),
+            new PaymentOrderRowLockStub(),
+            new PaymentAccountLockStub(),
         );
     }
 
@@ -404,7 +431,7 @@ final class PaymentControllerFixture extends TestCase
         PaymentOrderService $orderService
     ): PaymentOrderCloser {
         $webhooks = self::webhookService();
-        $paidHandler = new PaymentOrderPaidHandler($orderService, $webhooks, static::createStub(EventDispatcherInterface::class));
+        $paidHandler = new PaymentOrderPaidHandler($orderService, PaymentEventDispatcherFixture::create($webhooks));
 
         return new PaymentOrderCloser(
             new PaymentChannelCloser($transactionRepository, $configResolver, NumberRangeFixture::generator('PX1001')),
@@ -431,11 +458,10 @@ final class PaymentControllerFixture extends TestCase
             $refundRepository,
             $configResolver,
             $orderService,
-            self::webhookService(),
+            PaymentEventDispatcherFixture::create(self::webhookService()),
             new PaymentNotifyUrlBuilder(static::createStub(RequestStack::class)),
             new PaymentRefundStateHandler(static::createStub(StateMachineRegistry::class)),
             static::createStub(InitialStateIdLoader::class),
-            static::createStub(EventDispatcherInterface::class),
             self::clock(),
             NumberRangeFixture::generator('PR1001'),
             new PaymentOrderRowLockStub(),
@@ -471,7 +497,8 @@ final class PaymentControllerFixture extends TestCase
             $orderService,
             $refundService,
             $configResolver,
-            new PaymentOrderPaidHandler($orderService, self::webhookService(), static::createStub(EventDispatcherInterface::class)),
+            new PaymentOrderPaidHandler($orderService, PaymentEventDispatcherFixture::create(self::webhookService())),
+            self::repository(PaymentAttemptCollection::class),
         );
     }
 
@@ -503,6 +530,7 @@ final class PaymentControllerFixture extends TestCase
             new PaymentSignatureService(),
             self::cipher(),
             self::cache(),
+            new LockFactory(new InMemoryStore()),
             self::clock(),
         );
     }
@@ -548,23 +576,6 @@ final class PaymentControllerFixture extends TestCase
     }
 
     /**
-     * @param list<Entity> $entities
-     *
-     * @return EntitySearchResult<EntityCollection<Entity>>
-     */
-    private static function searchResult(array $entities): EntitySearchResult
-    {
-        return new EntitySearchResult(
-            $entities === [] ? '' : $entities[0]->getApiAlias(),
-            \count($entities),
-            new EntityCollection($entities),
-            null,
-            new Criteria(),
-            Context::createDefaultContext(),
-        );
-    }
-
-    /**
      * A cache that holds nothing, so a nonce is never seen as replayed.
      */
     private static function cache(): CacheItemPoolInterface
@@ -574,6 +585,7 @@ final class PaymentControllerFixture extends TestCase
 
         $cache = static::createStub(CacheItemPoolInterface::class);
         $cache->method('getItem')->willReturn($nonce);
+        $cache->method('save')->willReturn(true);
 
         return $cache;
     }

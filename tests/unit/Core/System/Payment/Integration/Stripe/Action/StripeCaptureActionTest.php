@@ -8,17 +8,18 @@ use Payum\Core\Request\Refund;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\System\Payment\Api\Struct\PayParams;
+use Shopwell\Core\System\Payment\Exception\PaymentGatewayException;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayFactory;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
-use Shopwell\Core\System\Payment\Gateway\Request\PayResult;
+use Shopwell\Core\System\Payment\Gateway\Struct\PaymentHandover;
+use Shopwell\Core\System\Payment\Gateway\Struct\PaymentStartResult;
 use Shopwell\Core\System\Payment\Integration\Stripe\Action\StripeCaptureAction;
 use Shopwell\Core\System\Payment\Integration\Stripe\Api\StripeApi;
 use Shopwell\Core\System\Payment\Integration\Stripe\Notification\StripeNotificationExtractor;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
 use Shopwell\Core\System\Payment\PaymentException;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
+use Shopwell\Core\System\Payment\Product\PaymentInteraction;
+use Shopwell\Core\System\Payment\Product\PaymentProduct;
 use Shopwell\Core\System\Payment\Provider\PaymentProvider;
 use Shopwell\Core\System\Payment\Provider\ResolvedPaymentConfig;
 use Shopwell\Tests\Unit\Core\System\Payment\Integration\Stripe\FakeStripeHttpClient;
@@ -68,7 +69,7 @@ class StripeCaptureActionTest extends TestCase
     {
         $action = new StripeCaptureAction();
 
-        $this->expectExceptionObject(PaymentException::actionWithoutApi(StripeCaptureAction::class));
+        $this->expectExceptionObject(PaymentGatewayException::actionWithoutApi(StripeCaptureAction::class));
 
         $action->execute(new Capture(new PaymentGatewayModel()));
     }
@@ -77,7 +78,7 @@ class StripeCaptureActionTest extends TestCase
     {
         $action = new StripeCaptureAction();
 
-        $this->expectExceptionObject(PaymentException::unsupportedApi(StripeCaptureAction::class, \stdClass::class));
+        $this->expectExceptionObject(PaymentGatewayException::unsupportedApi(StripeCaptureAction::class, \stdClass::class));
 
         $action->setApi(new \stdClass());
     }
@@ -189,10 +190,10 @@ class StripeCaptureActionTest extends TestCase
         $model = $this->orderModel();
         $action->execute(new Capture($model));
 
-        $result = $model->result(PayResult::class, 'stripe_checkout');
+        $result = $model->result(PaymentStartResult::class, 'stripe_checkout');
 
-        static::assertInstanceOf(PayParams::class, $result->params);
-        static::assertSame(PaymentFlow::REDIRECT, $result->params->flow);
+        static::assertInstanceOf(PaymentHandover::class, $result->params);
+        static::assertSame(PaymentInteraction::REDIRECT, $result->params->flow);
         static::assertSame('https://checkout.stripe.test/cs_1', $result->params->payUrl);
         static::assertSame('cs_1', $result->params->extra['session_id']);
         static::assertSame('pi_1', $result->params->extra['payment_intent_id']);
@@ -221,9 +222,9 @@ class StripeCaptureActionTest extends TestCase
         $model = $this->orderModel();
         $action->execute(new Capture($model));
 
-        $params = $model->result(PayResult::class, 'stripe_checkout')->params;
+        $params = $model->result(PaymentStartResult::class, 'stripe_checkout')->params;
 
-        static::assertSame(PaymentFlow::SDK, $params->flow);
+        static::assertSame(PaymentInteraction::SDK, $params->flow);
         static::assertSame('pi_1', $params->extra['payment_intent_id']);
         static::assertSame('pi_1_secret', $params->extra['client_secret']);
         static::assertSame('pk_test_123', $params->extra['publishable_key']);
@@ -315,7 +316,7 @@ class StripeCaptureActionTest extends TestCase
      */
     private function api(array $credentials = [], array $settings = []): StripeApi
     {
-        $channel = new PaymentChannel('stripe_checkout', 'stripe', 'stripe_checkout', PaymentFlow::REDIRECT);
+        $channel = new PaymentProduct('stripe_checkout', 'stripe', 'stripe_checkout', [PaymentInteraction::REDIRECT], 'stripe');
 
         return new StripeApi(
             new ResolvedPaymentConfig(
@@ -327,11 +328,12 @@ class StripeCaptureActionTest extends TestCase
                     new PaymentGatewayFactory('stripe', StripeApi::class, []),
                     static::createStub(PaymentNotificationExtractorInterface::class),
                 ),
-                channel: $channel,
+                product: $channel,
                 credentials: $credentials,
                 params: [],
                 runtimeParams: [],
                 settings: $settings,
+                accountId: 'test-account',
             ),
             'https://example.com/notify',
             'https://example.com/return',

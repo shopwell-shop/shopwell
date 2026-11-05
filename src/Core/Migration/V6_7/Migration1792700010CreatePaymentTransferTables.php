@@ -156,6 +156,7 @@ class Migration1792700010CreatePaymentTransferTables extends MigrationStep
             'CREATE TABLE IF NOT EXISTS `payment_transfer` (
                 `id` BINARY(16) NOT NULL,
                 `payment_app_id` BINARY(16) NOT NULL,
+                `account_id` BINARY(16) NOT NULL,
                 `transfer_no` VARCHAR(64) NOT NULL,
                 `out_no` VARCHAR(64) NOT NULL,
                 `recipient_id` BINARY(16) NOT NULL,
@@ -184,6 +185,7 @@ class Migration1792700010CreatePaymentTransferTables extends MigrationStep
                 UNIQUE KEY `uniq.payment_transfer.out_no` (`payment_app_id`, `out_no`),
                 KEY `idx.payment_transfer.status_id` (`status_id`),
                 KEY `idx.payment_transfer.recipient_id` (`recipient_id`),
+                CONSTRAINT `fk.payment_transfer.account_id` FOREIGN KEY (`account_id`) REFERENCES `payment_account` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
                 CONSTRAINT `fk.payment_transfer.payment_app_id` FOREIGN KEY (`payment_app_id`) REFERENCES `payment_app` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
                 CONSTRAINT `fk.payment_transfer.recipient_id` FOREIGN KEY (`recipient_id`) REFERENCES `payment_transfer_recipient` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
                 CONSTRAINT `fk.payment_transfer.status_id` FOREIGN KEY (`status_id`) REFERENCES `state_machine_state` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE

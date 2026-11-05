@@ -5,9 +5,9 @@ namespace Shopwell\Tests\Unit\Core\System\Payment\Integration\Stripe\Notificatio
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Payment\Exception\PaymentGatewayException;
 use Shopwell\Core\System\Payment\Integration\Stripe\Api\StripeApi;
 use Shopwell\Core\System\Payment\Integration\Stripe\Notification\StripeWebhookVerifier;
-use Shopwell\Core\System\Payment\PaymentException;
 
 /**
  * @internal
@@ -25,7 +25,7 @@ class StripeWebhookVerifierTest extends TestCase
 
     public function testAMissingSecretIsAConfigurationError(): void
     {
-        $this->expectExceptionObject(PaymentException::missingCredentials(StripeApi::PROVIDER, StripeApi::WEBHOOK_SECRET));
+        $this->expectExceptionObject(PaymentGatewayException::missingCredentials(StripeApi::PROVIDER, StripeApi::WEBHOOK_SECRET));
 
         StripeWebhookVerifier::verify([], '{}', $this->signature('{}'));
     }

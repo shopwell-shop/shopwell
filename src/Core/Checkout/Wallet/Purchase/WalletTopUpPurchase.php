@@ -10,7 +10,7 @@ use Shopwell\Core\Checkout\Wallet\WalletTransactionTypes;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\System\Payment\Gateway\Request\Money;
+use Shopwell\Core\System\Currency\CurrencyAmountConverter;
 
 /**
  * A paid top-up waiting to become money on the wallet.
@@ -44,7 +44,7 @@ class WalletTopUpPurchase implements SettleablePurchase
 
     public function amountMinor(): int
     {
-        return Money::fromFloat((float) $this->row['amount'], (string) $this->row['currency']);
+        return CurrencyAmountConverter::fromFloat((float) $this->row['amount'], (string) $this->row['currency']);
     }
 
     public function isSettled(): bool

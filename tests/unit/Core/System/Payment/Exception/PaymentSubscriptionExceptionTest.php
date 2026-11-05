@@ -6,7 +6,6 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Payment\Exception\PaymentSubscriptionException;
-use Shopwell\Core\System\Payment\PaymentException;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -16,7 +15,7 @@ use Symfony\Component\HttpFoundation\Response;
 #[CoversClass(PaymentSubscriptionException::class)]
 class PaymentSubscriptionExceptionTest extends TestCase
 {
-    public function testPaymentCycleNotExpressibleKeepsContractAndFacadeCompatibility(): void
+    public function testPaymentCycleNotExpressibleKeepsContract(): void
     {
         $exception = PaymentSubscriptionException::paymentCycleNotExpressible('alipay', 'month', 1, 29);
 
@@ -25,10 +24,5 @@ class PaymentSubscriptionExceptionTest extends TestCase
         static::assertSame('PAYMENT__CYCLE_NOT_EXPRESSIBLE', $exception->getErrorCode());
         static::assertSame('A subscription charging every 1 month on day 29 of the month cannot be expressed at the provider "alipay": monthly deduction days are limited to the 28th there.', $exception->getMessage());
         static::assertSame(['provider' => 'alipay', 'unit' => 'month', 'count' => 1, 'anchorDayOfMonth' => 29], $exception->getParameters());
-
-        $facade = PaymentException::paymentCycleNotExpressible('alipay', 'month', 1, 29);
-
-        static::assertSame(PaymentSubscriptionException::class, $facade::class);
-        static::assertEquals($exception, $facade);
     }
 }

@@ -6,6 +6,7 @@ use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\HandlerStack;
 use Psr\Http\Message\ResponseInterface;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Payment\Exception\PaymentProviderException;
 use Shopwell\Core\System\Payment\Gateway\AbstractPaymentApi;
 use Shopwell\Core\System\Payment\Gateway\Request\CloseResult;
 use Shopwell\Core\System\Payment\Gateway\Request\Payload;
@@ -16,6 +17,7 @@ use Shopwell\Core\System\Payment\Provider\ResolvedPaymentConfig;
 use WeChatPay\Builder;
 use WeChatPay\BuilderChainable;
 use WeChatPay\Crypto\Rsa;
+use WeChatPay\Formatter;
 
 /**
  * The wechat pay api of one payment, built on the api v3.
@@ -36,19 +38,9 @@ final class WechatApi extends AbstractPaymentApi
     final public const PROVIDER = 'wechat';
 
     /**
-     * The channels of wechat pay as they are declared in {@see WechatProvider::getChannels()}. They share
+     * The channels of wechat pay as they are declared in {@see WechatProvider::getProducts()}. They share
      * the merchant account and differ in the way the payer is handed over (and in their appid).
      */
-    final public const CHANNEL_H5 = 'wechat_h5';
-
-    final public const CHANNEL_NATIVE = 'wechat_native';
-
-    final public const CHANNEL_JSAPI = 'wechat_jsapi';
-
-    final public const CHANNEL_MINI = 'wechat_mini';
-
-    final public const CHANNEL_APP = 'wechat_app';
-
     /**
      * The name of the channel parameter that carries the appid of a channel. It belongs to the channel
      * and not to the merchant account, because the appid is bound to the merchant id and differs
@@ -191,6 +183,14 @@ final class WechatApi extends AbstractPaymentApi
         $response = $this->builder()->chain($uri)->post($options);
 
         return self::decode($response);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function queryRefund(string $refundNo): array
+    {
+        return self::decode($this->send('GET', 'v3/refund/domestic/refunds/' . rawurlencode($refundNo)));
     }
 
     /**
@@ -339,7 +339,7 @@ final class WechatApi extends AbstractPaymentApi
             return ['serial' => (string) array_key_first($certs), 'certificate' => (string) reset($certs)];
         }
 
-        throw PaymentException::invalidProviderDeclaration(\sprintf(
+        throw PaymentProviderException::invalidProviderDeclaration(\sprintf(
             'The wechat channel declares %d platform certificates but names no current one - set the credential "%s" to the serial whose certificate encrypts the user name.',
             \count($certs),
             self::PLATFORM_SERIAL,
@@ -351,7 +351,7 @@ final class WechatApi extends AbstractPaymentApi
         $key = Rsa::from($certificate, Rsa::KEY_TYPE_PUBLIC);
 
         if (!$key instanceof \OpenSSLAsymmetricKey) {
-            throw PaymentException::invalidProviderDeclaration('The wechat platform certificate does not contain a usable public key.');
+            throw PaymentProviderException::invalidProviderDeclaration('The wechat platform certificate does not contain a usable public key.');
         }
 
         return $key;
@@ -367,6 +367,66 @@ final class WechatApi extends AbstractPaymentApi
      * it hands the payment over to wechat: the jsapi and the app channel answer parameters the app
      * signs nothing about, they are signed here.
      */
+    /**
+     * The parameters `WeixinJSBridge` / `wx.chooseWXPay` of a page or mini program consume.
+     *
+     * @return array<string, string>
+     */
+    public function jsapiParameters(string $prepayId): array
+    {
+        $package = 'prepay_id=' . $prepayId;
+        $timestamp = (string) Formatter::timestamp();
+        $nonce = Formatter::nonce();
+
+        // wechat verifies exactly this message, every piece on its own line
+        $message = Formatter::joinedByLineFeed($this->appId(), $timestamp, $nonce, $package);
+
+        return [
+            'appId' => $this->appId(),
+            'timeStamp' => $timestamp,
+            'nonceStr' => $nonce,
+            'package' => $package,
+            'signType' => 'RSA',
+            'paySign' => $this->sign($message),
+        ];
+    }
+
+    /**
+     * The parameters the app sdk of wechat consumes.
+     *
+     * @return array<string, string>
+     */
+    public function appParameters(string $prepayId): array
+    {
+        $timestamp = (string) Formatter::timestamp();
+        $nonce = Formatter::nonce();
+
+        $message = Formatter::joinedByLineFeed($this->appId(), $timestamp, $nonce, $prepayId);
+
+        return [
+            'appid' => $this->appId(),
+            'partnerid' => $this->requireCredential(WechatApi::MCH_ID),
+            'prepayid' => $prepayId,
+            'package' => 'Sign=WXPay',
+            'noncestr' => $nonce,
+            'timestamp' => $timestamp,
+            'sign' => $this->sign($message),
+        ];
+    }
+
+    /**
+     * @return array{value: string, serial: string}
+     */
+    public function encryptRecipientName(string $name): array
+    {
+        $certificate = $this->platformCertificate();
+
+        return [
+            'value' => Rsa::encrypt($name, $this->publicKeyOf($certificate['certificate'])),
+            'serial' => $certificate['serial'],
+        ];
+    }
+
     public function sign(string $message): string
     {
         return Rsa::sign($message, $this->merchantPrivateKey());
@@ -377,7 +437,7 @@ final class WechatApi extends AbstractPaymentApi
         $key = Rsa::from($this->privateKey(), Rsa::KEY_TYPE_PRIVATE);
 
         if (!$key instanceof \OpenSSLAsymmetricKey) {
-            throw PaymentException::invalidProviderDeclaration('The wechat merchant private key does not contain a usable private key.');
+            throw PaymentProviderException::invalidProviderDeclaration('The wechat merchant private key does not contain a usable private key.');
         }
 
         return $key;

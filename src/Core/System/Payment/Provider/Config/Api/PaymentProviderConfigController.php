@@ -4,9 +4,11 @@ namespace Shopwell\Core\System\Payment\Provider\Config\Api;
 
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\PlatformRequest;
+use Shopwell\Core\System\Payment\Account\PaymentAccountEntity;
 use Shopwell\Core\System\Payment\App\PaymentCredentialCipher;
-use Shopwell\Core\System\Payment\PaymentException;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
+use Shopwell\Core\System\Payment\Exception\PaymentProviderException;
+use Shopwell\Core\System\Payment\Method\PaymentMethodRegistry;
+use Shopwell\Core\System\Payment\Product\PaymentProduct;
 use Shopwell\Core\System\Payment\Provider\Config\PaymentChannelConfigEntity;
 use Shopwell\Core\System\Payment\Provider\Config\PaymentConfigField;
 use Shopwell\Core\System\Payment\Provider\Config\PaymentProviderConfigEntity;
@@ -48,6 +50,7 @@ class PaymentProviderConfigController extends AbstractController
         private readonly PaymentProviderRegistry $providerRegistry,
         private readonly PaymentProviderConfigService $configService,
         private readonly PaymentCredentialCipher $cipher,
+        private readonly PaymentMethodRegistry $methods,
     ) {
     }
 
@@ -71,6 +74,36 @@ class PaymentProviderConfigController extends AbstractController
                 $this->configService->findProviderConfig($provider->technicalName),
                 $this->configService->findChannelConfigs($provider->technicalName)
             );
+        }
+
+        return new JsonResponse(['providers' => $providers]);
+    }
+
+    #[Route(
+        path: '/api/_action/payment/account-definitions',
+        name: 'api.action.payment.account.definitions',
+        defaults: [
+            'auth_required' => true,
+            PlatformRequest::ATTRIBUTE_ROUTE_SCOPE => ['administration'],
+            PlatformRequest::ATTRIBUTE_ACL => ['payment_account:read'],
+        ],
+        methods: [Request::METHOD_GET]
+    )]
+    #[Route(
+        path: '/api/_action/payment/definitions',
+        name: 'api.action.payment.definitions',
+        defaults: [
+            'auth_required' => true,
+            PlatformRequest::ATTRIBUTE_ROUTE_SCOPE => ['administration'],
+            PlatformRequest::ATTRIBUTE_ACL => ['payment_app:read'],
+        ],
+        methods: [Request::METHOD_GET]
+    )]
+    public function definitions(): JsonResponse
+    {
+        $providers = [];
+        foreach ($this->providerRegistry->all() as $provider) {
+            $providers[] = $this->presentProvider($provider, null, []);
         }
 
         return new JsonResponse(['providers' => $providers]);
@@ -123,7 +156,7 @@ class PaymentProviderConfigController extends AbstractController
         $this->configService->resetProvider($provider);
 
         return new JsonResponse([
-            'provider' => $this->presentProvider($definition, null, $this->configService->findChannelConfigs($provider)),
+            'provider' => $this->presentProvider($definition, $this->configService->findProviderConfig($provider), $this->configService->findChannelConfigs($provider)),
         ]);
     }
 
@@ -141,11 +174,11 @@ class PaymentProviderConfigController extends AbstractController
     {
         $definition = $this->providerRegistry->get($provider);
 
-        if (!$definition->hasChannel($channel)) {
-            throw PaymentException::unknownChannel($channel);
+        if (!$definition->hasProduct($channel)) {
+            throw PaymentProviderException::unknownChannel($channel);
         }
 
-        $channelDefinition = $definition->channels[$channel];
+        $channelDefinition = $definition->products[$channel];
 
         $payload = $this->payload($request);
 
@@ -157,7 +190,7 @@ class PaymentProviderConfigController extends AbstractController
         );
 
         return new JsonResponse([
-            'channel' => $this->presentChannel($channelDefinition, $this->configService->findChannelConfig($provider, $channel)),
+            'channel' => $this->presentChannel($channelDefinition, $this->configService->findChannelConfig($provider, $channel), $this->providerAccount($provider)),
         ]);
     }
 
@@ -175,14 +208,14 @@ class PaymentProviderConfigController extends AbstractController
     {
         $definition = $this->providerRegistry->get($provider);
 
-        if (!$definition->hasChannel($channel)) {
-            throw PaymentException::unknownChannel($channel);
+        if (!$definition->hasProduct($channel)) {
+            throw PaymentProviderException::unknownChannel($channel);
         }
 
         $this->configService->resetChannel($provider, $channel);
 
         return new JsonResponse([
-            'channel' => $this->presentChannel($definition->channels[$channel], null),
+            'channel' => $this->presentChannel($definition->products[$channel], null),
         ]);
     }
 
@@ -193,11 +226,12 @@ class PaymentProviderConfigController extends AbstractController
      */
     private function presentProvider(PaymentProvider $provider, ?PaymentProviderConfigEntity $config, array $channelConfigs): array
     {
-        $credentials = $config === null ? [] : $this->cipher->decrypt($config->credentials);
+        $account = $config === null ? null : $this->configService->findAccount($config->accountId);
+        $credentials = $this->cipher->decrypt($account?->credentials);
 
         $channels = [];
-        foreach ($provider->channels as $channel) {
-            $channels[] = $this->presentChannel($channel, $channelConfigs[$channel->technicalName] ?? null);
+        foreach ($provider->products as $channel) {
+            $channels[] = $this->presentChannel($channel, $channelConfigs[$channel->technicalName] ?? null, $account);
         }
 
         return [
@@ -205,31 +239,41 @@ class PaymentProviderConfigController extends AbstractController
             'label' => $provider->label,
             'enabled' => $config !== null && $config->enabled,
             'configured' => $credentials !== [],
+            'accountId' => $config?->accountId,
             'credentialFields' => $this->presentFields($provider->credentials, $credentials),
             'settings' => $config->settings ?? [],
-            'channels' => $channels,
+            'products' => $channels,
         ];
     }
 
     /**
      * @return array<string, mixed>
      */
-    private function presentChannel(PaymentChannel $channel, ?PaymentChannelConfigEntity $config): array
+    private function presentChannel(PaymentProduct $channel, ?PaymentChannelConfigEntity $config, ?PaymentAccountEntity $account = null): array
     {
-        $params = $config === null ? [] : $this->cipher->decrypt($config->params);
+        $params = $this->cipher->decrypt($account?->productParams[$channel->technicalName] ?? null);
 
         return [
-            'channel' => $channel->technicalName,
+            'product' => $channel->technicalName,
+            'method' => $channel->method,
+            'methodTranslationKey' => $this->methods->get($channel->method)->translationKey,
             'label' => $channel->label,
-            'flow' => $channel->flow->value,
+            'interactions' => $channel->interactions,
             'currencies' => $channel->currencies,
-            'devices' => $channel->devices,
+            'devices' => $channel->devices(),
             'runtimeParams' => $channel->runtimeParams,
             'paramFields' => $this->presentFields($channel->params, $params),
-            'enabled' => $config !== null && $config->enabled,
+            'enabled' => $account !== null && \in_array($channel->technicalName, $account->enabledProducts, true),
             'configured' => $params !== [],
             'settings' => $config->settings ?? [],
         ];
+    }
+
+    private function providerAccount(string $provider): ?PaymentAccountEntity
+    {
+        $config = $this->configService->findProviderConfig($provider);
+
+        return $config === null ? null : $this->configService->findAccount($config->accountId);
     }
 
     /**

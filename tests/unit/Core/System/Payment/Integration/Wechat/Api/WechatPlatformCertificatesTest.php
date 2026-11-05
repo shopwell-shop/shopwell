@@ -5,9 +5,9 @@ namespace Shopwell\Tests\Unit\Core\System\Payment\Integration\Wechat\Api;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Payment\Exception\PaymentGatewayException;
 use Shopwell\Core\System\Payment\Integration\Wechat\Api\WechatApi;
 use Shopwell\Core\System\Payment\Integration\Wechat\Api\WechatPlatformCertificates;
-use Shopwell\Core\System\Payment\PaymentException;
 
 /**
  * The platform rotates its certificates, so an installation may hold one certificate with its serial
@@ -63,7 +63,7 @@ class WechatPlatformCertificatesTest extends TestCase
      */
     public function testEmptyEntriesAreIgnored(): void
     {
-        $this->expectExceptionObject(PaymentException::missingCredentials(WechatApi::PROVIDER, WechatApi::PLATFORM_CERTS));
+        $this->expectExceptionObject(PaymentGatewayException::missingCredentials(WechatApi::PROVIDER, WechatApi::PLATFORM_CERTS));
 
         WechatPlatformCertificates::of([
             WechatApi::PLATFORM_CERTS => ['SERIAL-A' => '', 'SERIAL-B' => ['not' => 'scalar']],
@@ -73,7 +73,7 @@ class WechatPlatformCertificatesTest extends TestCase
 
     public function testWithoutAnyCertificateTheCredentialsAreIncomplete(): void
     {
-        $this->expectExceptionObject(PaymentException::missingCredentials(WechatApi::PROVIDER, WechatApi::PLATFORM_CERTS));
+        $this->expectExceptionObject(PaymentGatewayException::missingCredentials(WechatApi::PROVIDER, WechatApi::PLATFORM_CERTS));
 
         WechatPlatformCertificates::of([]);
     }

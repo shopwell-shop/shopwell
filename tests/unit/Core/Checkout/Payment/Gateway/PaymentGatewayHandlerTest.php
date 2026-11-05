@@ -17,21 +17,26 @@ use Shopwell\Core\Checkout\Payment\Cart\RefundPaymentTransactionStruct;
 use Shopwell\Core\Checkout\Payment\Gateway\OrderPaymentStarter;
 use Shopwell\Core\Checkout\Payment\Gateway\PaymentGatewayHandler;
 use Shopwell\Core\Checkout\Payment\Gateway\PaymentMethodChannelResolver;
+use Shopwell\Core\Checkout\Payment\Gateway\PaymentMethodCollectability;
+use Shopwell\Core\Checkout\Payment\PaymentException as CheckoutPaymentException;
+use Shopwell\Core\Checkout\Payment\Storefront\StorefrontPaymentContextResolver;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
-use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
-use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\System\Payment\Api\Struct\PayParams;
+use Shopwell\Core\System\Payment\Exception\PaymentOrderException;
+use Shopwell\Core\System\Payment\Exception\PaymentProviderException;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
-use Shopwell\Core\System\Payment\Gateway\Request\PayResult;
+use Shopwell\Core\System\Payment\Gateway\Struct\PaymentHandover;
+use Shopwell\Core\System\Payment\Gateway\Struct\PaymentStartResult;
 use Shopwell\Core\System\Payment\Order\Aggregate\PaymentTransaction\PaymentTransactionCollection;
 use Shopwell\Core\System\Payment\Order\PaymentOrderCollection;
 use Shopwell\Core\System\Payment\Order\PaymentOrderEntity;
-use Shopwell\Core\System\Payment\PaymentException;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannelRegistry;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
+use Shopwell\Core\System\Payment\Product\PaymentInteraction;
+use Shopwell\Core\System\Payment\Product\PaymentProductRegistry;
 use Shopwell\Core\System\Payment\Provider\Config\PaymentConfigResolver;
+use Shopwell\Core\System\Payment\Routing\DefaultPaymentRoutingPolicy;
+use Shopwell\Core\System\Payment\Routing\PaymentProductEligibility;
+use Shopwell\Core\System\Payment\Routing\PaymentRouteResolver;
 use Symfony\Component\HttpFoundation\Request;
 
 /**
@@ -66,10 +71,12 @@ class PaymentGatewayHandlerTest extends TestCase
             ])],
         ]);
 
+        static::assertNotNull($paymentOrder->activeAttempt);
+        $paymentOrder->activeAttempt->handover = (new PaymentHandover(PaymentInteraction::QRCODE, extra: ['qr_code' => 'https://qr.example.test']))->jsonSerialize();
         $handler = $this->handler(
             $this->orderTransactionRepository(),
             $this->paymentOrders([$paymentOrder]),
-            flow: PaymentFlow::QRCODE
+            flow: PaymentInteraction::QRCODE
         );
 
         $response = $handler->pay($this->request(), $this->transaction(), Context::createDefaultContext(), null);
@@ -79,24 +86,23 @@ class PaymentGatewayHandlerTest extends TestCase
 
     public function testPayRefusesAnSdkChannel(): void
     {
-        $created = PaymentGatewayFixture::paymentOrder();
-        $paymentOrderRepository = $this->paymentOrdersForCreate($created);
+        $paymentOrderRepository = PaymentGatewayFixture::repository();
 
         $transactionRepository = $this->createMock(EntityRepository::class);
-        $transactionRepository->expects($this->once())->method('create');
-        $transactionRepository->expects($this->once())->method('update');
+        $transactionRepository->expects($this->never())->method('create');
+        $transactionRepository->expects($this->never())->method('update');
 
-        $payResult = new PayResult(new PayParams(PaymentFlow::SDK, extra: ['order_str' => 'signed']));
+        $payResult = new PaymentStartResult(new PaymentHandover(PaymentInteraction::SDK, extra: ['order_str' => 'signed']));
 
         $handler = $this->handler(
             $this->orderTransactionRepository(),
             $paymentOrderRepository,
             transactionRepository: $transactionRepository,
             gateway: $this->gateway($payResult),
-            flow: PaymentFlow::SDK
+            flow: PaymentInteraction::SDK
         );
 
-        $this->expectExceptionObject(PaymentException::channelNotAvailableInStorefront(PaymentGatewayFixture::CHANNEL));
+        $this->expectExceptionObject(PaymentProviderException::unknownMethod(PaymentGatewayFixture::PROVIDER));
 
         $handler->pay($this->request(), $this->transaction(), Context::createDefaultContext(), null);
     }
@@ -109,7 +115,7 @@ class PaymentGatewayHandlerTest extends TestCase
     {
         $handler = $this->handler($this->orderTransactionRepository(), $this->paymentOrders([]), withApp: false);
 
-        $this->expectExceptionObject(PaymentException::paymentMethodChannelMissing('payment-method-id'));
+        $this->expectExceptionObject(CheckoutPaymentException::channelNotAvailableInStorefront(PaymentGatewayFixture::PROVIDER));
 
         $handler->pay($this->request(), $this->transaction(), Context::createDefaultContext(), null);
     }
@@ -161,7 +167,7 @@ class PaymentGatewayHandlerTest extends TestCase
     {
         $handler = $this->handler($this->orderTransactionRepository(), $this->paymentOrders([]));
 
-        $this->expectExceptionObject(PaymentException::orderNotFound('order-transaction-id'));
+        $this->expectExceptionObject(PaymentOrderException::orderNotFound('order-transaction-id'));
 
         $handler->refund($this->refundTransaction(), Context::createDefaultContext());
     }
@@ -178,54 +184,51 @@ class PaymentGatewayHandlerTest extends TestCase
         ?EntityRepository $transactionRepository = null,
         ?EntityRepository $refundRepository = null,
         ?GatewayInterface $gateway = null,
-        PaymentFlow $flow = PaymentFlow::REDIRECT,
+        string $flow = PaymentInteraction::REDIRECT,
         ?PaymentConfigResolver $configResolver = null,
         ?LoggerInterface $logger = null,
         bool $withApp = true,
     ): PaymentGatewayHandler {
         $configResolver ??= PaymentGatewayFixture::configResolver($gateway, $flow);
-        $orderService = PaymentGatewayFixture::paymentOrderService($paymentOrderRepository, $configResolver);
+        $orderService = PaymentGatewayFixture::paymentOrderService($paymentOrderRepository);
 
         $binding = new PaymentMethodGatewayChannelEntity();
         $binding->id = 'binding-id';
         $binding->setUniqueIdentifier($binding->id);
         $binding->paymentMethodId = 'payment-method-id';
         $binding->paymentAppId = PaymentGatewayFixture::PLATFORM_APP_ID;
-        $binding->channelTechnicalName = PaymentGatewayFixture::CHANNEL;
+        $binding->methodTechnicalName = PaymentGatewayFixture::PROVIDER;
+        $binding->routingPolicy = 'priority';
 
         if ($withApp) {
             $binding->paymentApp = PaymentGatewayFixture::platformAppEntity();
         }
 
-        $channelRegistry = new PaymentChannelRegistry(PaymentGatewayFixture::providerRegistry($flow));
+        $channelRegistry = new PaymentProductRegistry(PaymentGatewayFixture::providerRegistry($flow));
 
-        $starter = new OrderPaymentStarter(
-            PaymentGatewayFixture::platformApp(),
-            PaymentGatewayFixture::providerRegistry($flow),
-            $orderService,
-            PaymentGatewayFixture::captureService(
-                $transactionRepository ?? PaymentGatewayFixture::repository(),
-                $configResolver,
-                $orderService
-            ),
-            PaymentGatewayFixture::router()
-        );
+        $starter = new OrderPaymentStarter($orderService, PaymentGatewayFixture::starterService(
+            $transactionRepository ?? PaymentGatewayFixture::repository(),
+            $orderService
+        ), PaymentGatewayFixture::router());
 
         $refundRepository ??= PaymentGatewayFixture::repository();
 
         return new PaymentGatewayHandler(
             $orderTransactionRepository,
             new PaymentMethodChannelResolver(
-                PaymentGatewayFixture::repository([$binding]),
-                $channelRegistry
+                PaymentGatewayFixture::repository([$binding])
             ),
-            $channelRegistry,
             $starter,
             $orderService,
             PaymentGatewayFixture::reconciler($paymentOrderRepository, $orderService, $configResolver),
             PaymentGatewayFixture::refundService(PaymentGatewayFixture::repository(), $orderService, $configResolver),
             $refundRepository,
-            $logger ?? static::createStub(LoggerInterface::class)
+            $logger ?? static::createStub(LoggerInterface::class),
+            new PaymentMethodCollectability(
+                PaymentGatewayFixture::repository([$binding]),
+                new PaymentRouteResolver($channelRegistry, new PaymentProductEligibility(), $configResolver, [new DefaultPaymentRoutingPolicy()]),
+            ),
+            new StorefrontPaymentContextResolver(),
         );
     }
 
@@ -246,14 +249,11 @@ class PaymentGatewayHandlerTest extends TestCase
      */
     private function reusedPaymentOrders(): EntityRepository
     {
-        return $this->paymentOrders([
-            PaymentGatewayFixture::paymentOrder([
-                'transactions' => [PaymentGatewayFixture::captureTransaction([
-                    'http_method' => 'GET',
-                    'answer' => 'https://pay.example.test',
-                ])],
-            ]),
-        ]);
+        $order = PaymentGatewayFixture::paymentOrder();
+        static::assertNotNull($order->activeAttempt);
+        $order->activeAttempt->handover = (new PaymentHandover(PaymentInteraction::REDIRECT, 'https://pay.example.test'))->jsonSerialize();
+
+        return $this->paymentOrders([$order]);
     }
 
     /**
@@ -269,26 +269,7 @@ class PaymentGatewayHandlerTest extends TestCase
         return $repository;
     }
 
-    /**
-     * @return EntityRepository<PaymentOrderCollection>
-     */
-    private function paymentOrdersForCreate(PaymentOrderEntity $created): EntityRepository
-    {
-        $repository = $this->createMock(EntityRepository::class);
-        $repository->expects($this->exactly(3))
-            ->method('search')
-            ->willReturnCallback(static function (Criteria $criteria) use ($created): EntitySearchResult {
-                if ($criteria->getIds() !== []) {
-                    return PaymentGatewayFixture::searchResult([$created]);
-                }
-
-                return PaymentGatewayFixture::searchResult([]);
-            });
-
-        return $repository;
-    }
-
-    private function gateway(PayResult $payResult): GatewayInterface
+    private function gateway(PaymentStartResult $payResult): GatewayInterface
     {
         $gateway = static::createStub(GatewayInterface::class);
         $gateway->method('execute')->willReturnCallback(static function (object $request) use ($payResult): void {

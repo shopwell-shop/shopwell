@@ -7,32 +7,35 @@ use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Payum\Core\GatewayInterface;
 use Payum\Core\Request\Refund as RefundRequest;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use Shopwell\Core\Framework\Context;
-use Shopwell\Core\Framework\DataAbstractionLayer\Entity;
-use Shopwell\Core\Framework\DataAbstractionLayer\EntityCollection;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\NumberRange\ValueGenerator\AbstractNumberRangeValueGenerator;
-use Shopwell\Core\System\Payment\Api\Struct\PaymentRefundRequest;
-use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppChannel\PaymentAppChannelEntity;
-use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppProvider\PaymentAppProviderEntity;
 use Shopwell\Core\System\Payment\App\PaymentAppCollection;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
 use Shopwell\Core\System\Payment\App\PaymentCredentialCipher;
 use Shopwell\Core\System\Payment\App\PaymentSignatureService;
+use Shopwell\Core\System\Payment\Exception\PaymentGatewayException;
 use Shopwell\Core\System\Payment\Exception\PaymentOrderException;
+use Shopwell\Core\System\Payment\Exception\PaymentProviderException;
+use Shopwell\Core\System\Payment\Exception\PaymentRefundRejectedException;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayFactory;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
 use Shopwell\Core\System\Payment\Gateway\Request\NotificationResult;
+use Shopwell\Core\System\Payment\Gateway\Request\RefundQuery;
 use Shopwell\Core\System\Payment\Gateway\Request\RefundResult;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
 use Shopwell\Core\System\Payment\Notification\PaymentNotifyUrlBuilder;
+use Shopwell\Core\System\Payment\Order\Aggregate\PaymentAttempt\PaymentAttemptCollection;
+use Shopwell\Core\System\Payment\Order\Aggregate\PaymentAttempt\PaymentAttemptEntity;
 use Shopwell\Core\System\Payment\Order\Aggregate\PaymentRefund\PaymentRefundCollection;
 use Shopwell\Core\System\Payment\Order\Aggregate\PaymentRefund\PaymentRefundEntity;
+use Shopwell\Core\System\Payment\Order\Event\PaymentEventDispatcher;
 use Shopwell\Core\System\Payment\Order\Event\PaymentRefundFinishedEvent;
 use Shopwell\Core\System\Payment\Order\PaymentOrderCollection;
 use Shopwell\Core\System\Payment\Order\PaymentOrderEntity;
@@ -43,15 +46,14 @@ use Shopwell\Core\System\Payment\Order\PaymentOrderStates;
 use Shopwell\Core\System\Payment\Order\PaymentRefundService;
 use Shopwell\Core\System\Payment\Order\PaymentRefundStateHandler;
 use Shopwell\Core\System\Payment\Order\PaymentRefundStates;
+use Shopwell\Core\System\Payment\Order\Struct\PaymentRefundRequest;
 use Shopwell\Core\System\Payment\PaymentException;
+use Shopwell\Core\System\Payment\Product\PaymentInteraction;
+use Shopwell\Core\System\Payment\Product\PaymentProduct;
 use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannelRegistry;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
-use Shopwell\Core\System\Payment\Provider\Config\PaymentChannelConfigEntity;
 use Shopwell\Core\System\Payment\Provider\Config\PaymentConfigResolver;
 use Shopwell\Core\System\Payment\Provider\PaymentProvider;
-use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;
+use Shopwell\Core\System\Payment\Provider\ResolvedPaymentConfig;
 use Shopwell\Core\System\Payment\Webhook\PaymentWebhookDeliveryCollection;
 use Shopwell\Core\System\Payment\Webhook\PaymentWebhookDeliveryEntity;
 use Shopwell\Core\System\Payment\Webhook\PaymentWebhookDispatcher;
@@ -59,6 +61,7 @@ use Shopwell\Core\System\Payment\Webhook\PaymentWebhookSigner;
 use Shopwell\Core\System\StateMachine\Loader\InitialStateIdLoader;
 use Shopwell\Core\System\StateMachine\StateMachineRegistry;
 use Shopwell\Core\System\StateMachine\Transition;
+use Shopwell\Core\Test\Stub\DataAbstractionLayer\StaticEntityRepository;
 use Shopwell\Tests\Unit\Core\System\Payment\NumberRangeFixture;
 use Symfony\Component\Clock\MockClock;
 use Symfony\Component\HttpFoundation\RequestStack;
@@ -145,6 +148,32 @@ class PaymentRefundServiceTest extends TestCase
         $this->expectExceptionObject(PaymentOrderException::refundAmountExceedsOrder('PG0001', 500, 400));
 
         $service->refund($this->app(), $this->paidOrder(), $this->refundRequest(500));
+    }
+
+    #[DataProvider('mismatchedRefundReplays')]
+    public function testARefundNumberCannotBeReusedForDifferentBusinessParameters(int $amount, ?string $reason, bool $concurrentWinner): void
+    {
+        $existing = $this->refundEntity();
+        $searches = $concurrentWinner ? [new PaymentRefundCollection()] : [];
+        $searches[] = new PaymentRefundCollection([$existing]);
+        $repository = new StaticEntityRepository($searches);
+        $gateway = static::createMock(GatewayInterface::class);
+        $gateway->expects($this->never())->method('execute');
+        $service = $this->refundService($repository, $gateway);
+
+        $this->expectExceptionObject(PaymentOrderException::refundIdempotencyMismatch('app-refund-1'));
+
+        $service->refund($this->app(), $this->paidOrder(), new PaymentRefundRequest('app-refund-1', $amount, $reason));
+    }
+
+    /**
+     * @return \Generator<string, array{int, ?string, bool}>
+     */
+    public static function mismatchedRefundReplays(): \Generator
+    {
+        yield 'a changed amount conflicts with the initial replay' => [500, null, false];
+        yield 'a changed reason conflicts with the initial replay' => [1000, 'different reason', false];
+        yield 'a changed amount conflicts with the concurrent winner' => [500, null, true];
     }
 
     public function testRefundReturnsTheExistingRefundForAKnownOutRefundNo(): void
@@ -363,7 +392,7 @@ class PaymentRefundServiceTest extends TestCase
         static::assertFalse($transactionState->offsetGet('active'));
     }
 
-    public function testRefundRecordsTheChannelFailureAndThrows(): void
+    public function testRefundKeepsTheReservationWhenTheChannelOutcomeIsUnknown(): void
     {
         $refund = $this->refundEntity();
 
@@ -383,9 +412,7 @@ class PaymentRefundServiceTest extends TestCase
             }));
 
         $refundStateMachine = static::createMock(StateMachineRegistry::class);
-        $refundStateMachine->expects($this->once())
-            ->method('transition')
-            ->with(static::callback(static fn (Transition $t): bool => $t->getTransitionName() === PaymentRefundStates::ACTION_FAIL));
+        $refundStateMachine->expects($this->never())->method('transition');
 
         $service = $this->refundService(
             $refundRepository,
@@ -394,7 +421,7 @@ class PaymentRefundServiceTest extends TestCase
             $refundStateMachine
         );
 
-        $this->expectExceptionObject(PaymentException::gatewayError('alipay_h5', 'boom'));
+        $this->expectExceptionObject(PaymentGatewayException::gatewayError('alipay_h5', 'boom'));
 
         $service->refund($this->app(), $this->paidOrder(), $this->refundRequest(1000));
     }
@@ -404,6 +431,30 @@ class PaymentRefundServiceTest extends TestCase
      * before a request is signed, so the caller gets a 400 naming the capability instead of a 502 that
      * reads like a broken channel - and no refund row is written for a call that never happened.
      */
+    public function testProductWithoutRefundIsRefusedBeforeBookingOrCallingTheProvider(): void
+    {
+        $refunds = static::createMock(EntityRepository::class);
+        $refunds->method('search')->willReturn($this->refundResult());
+        $refunds->expects($this->never())->method('create');
+        $gateway = static::createMock(GatewayInterface::class);
+        $gateway->expects($this->never())->method('execute');
+        $this->expectExceptionObject(PaymentProviderException::providerLacksCapability('alipay', PaymentCapability::REFUND->value));
+
+        $this->refundService($refunds, $gateway, productCapabilities: [PaymentCapability::CAPTURE])->refund($this->app(), $this->paidOrder(), $this->refundRequest(1000));
+    }
+
+    public function testProductWithoutPartialRefundIsRefusedWhenTheProviderSupportsIt(): void
+    {
+        $refunds = static::createMock(EntityRepository::class);
+        $refunds->method('search')->willReturn($this->refundResult());
+        $refunds->expects($this->never())->method('create');
+        $gateway = static::createMock(GatewayInterface::class);
+        $gateway->expects($this->never())->method('execute');
+        $this->expectExceptionObject(PaymentProviderException::providerLacksCapability('alipay', PaymentCapability::PARTIAL_REFUND->value));
+
+        $this->refundService($refunds, $gateway, productCapabilities: self::FULL_REFUND_ONLY_CAPABILITIES)->refund($this->app(), $this->paidOrder(), $this->refundRequest(500));
+    }
+
     public function testAnInterfaceWithoutRefundIsRefusedBeforeTheAttemptIsBooked(): void
     {
         $refundRepository = static::createMock(EntityRepository::class);
@@ -444,7 +495,7 @@ class PaymentRefundServiceTest extends TestCase
 
         $service = $this->refundService($refundRepository, $gateway, capabilities: self::FULL_REFUND_ONLY_CAPABILITIES);
 
-        $this->expectExceptionObject(PaymentException::providerLacksCapability('alipay', PaymentCapability::PARTIAL_REFUND->value));
+        $this->expectExceptionObject(PaymentProviderException::providerLacksCapability('alipay', PaymentCapability::PARTIAL_REFUND->value));
 
         // 500 of 1000 still refundable is a partial refund
         $service->refund($this->app(), $this->paidOrder(), $this->refundRequest(500));
@@ -723,11 +774,132 @@ class PaymentRefundServiceTest extends TestCase
         )->applyNotification($refund, $order, new NotificationResult(true, true, outRefundId: 'channel-refund-1', amount: 1000, raw: ['status' => 'done']));
     }
 
+    public function testAConfirmedSubmissionRejectionFailsTheRefund(): void
+    {
+        $refund = $this->refundEntity();
+        $repository = new StaticEntityRepository([
+            new PaymentRefundCollection(),
+            new PaymentRefundCollection(),
+            new PaymentRefundCollection([$refund]),
+        ]);
+        $rejection = PaymentRefundRejectedException::rejected('alipay_h5', 'definitively rejected');
+        $gateway = static::createStub(GatewayInterface::class);
+        $gateway->method('execute')->willThrowException($rejection);
+        $states = static::createMock(StateMachineRegistry::class);
+        $states->expects($this->once())->method('transition')->with(static::callback(
+            static fn (Transition $transition): bool => $transition->getTransitionName() === PaymentRefundStates::ACTION_FAIL
+        ));
+        $service = $this->refundService($repository, $gateway, refundStateMachine: $states);
+
+        $this->expectExceptionObject(PaymentGatewayException::gatewayError('alipay_h5', $rejection->getMessage()));
+
+        $service->refund($this->app(), $this->paidOrder(), $this->refundRequest(1000));
+    }
+
+    public function testAnUnrecognizedRefundResultCannotBookAMovementOfMoney(): void
+    {
+        $refund = $this->refundEntity();
+        $repository = new StaticEntityRepository([
+            new PaymentRefundCollection(),
+            new PaymentRefundCollection(),
+            new PaymentRefundCollection([$refund]),
+        ]);
+        $states = static::createMock(StateMachineRegistry::class);
+        $states->expects($this->never())->method('transition');
+        $service = $this->refundService($repository, $this->gateway('unrecognized'), refundStateMachine: $states);
+
+        $this->expectExceptionObject(PaymentGatewayException::gatewayResultMissing('alipay_h5'));
+
+        $service->refund($this->app(), $this->paidOrder(), $this->refundRequest(1000));
+    }
+
+    public function testReconciliationKeepsAnUnknownRefundReservedWithoutSubmittingAgain(): void
+    {
+        $refund = $this->refundEntity();
+        $repository = new StaticEntityRepository([new PaymentRefundCollection([$refund])]);
+        $gateway = static::createMock(GatewayInterface::class);
+        $gateway->expects($this->once())->method('execute')->willReturnCallback(static function (object $request): void {
+            static::assertInstanceOf(RefundQuery::class, $request);
+            $model = $request->getModel();
+            static::assertInstanceOf(PaymentGatewayModel::class, $model);
+            $model->offsetSet(PaymentGatewayModel::RESULT, new RefundResult(PaymentRefundStates::STATE_PROCESSING));
+        });
+        $states = static::createMock(StateMachineRegistry::class);
+        $states->expects($this->never())->method('transition');
+
+        $result = $this->refundService($repository, $gateway, refundStateMachine: $states)
+            ->reconcile($this->app(), $this->paidOrder(), $refund);
+
+        static::assertNull($result->refundedAt);
+        static::assertCount(1, $repository->updates);
+        static::assertSame('refund-id', $repository->updates[0][0]['id']);
+    }
+
+    public function testReconciliationReleasesTheReservationOnlyForAConfirmedFailure(): void
+    {
+        $refund = $this->refundEntity();
+        $repository = new StaticEntityRepository([new PaymentRefundCollection([$refund])]);
+        $gateway = static::createStub(GatewayInterface::class);
+        $gateway->method('execute')->willThrowException(PaymentRefundRejectedException::rejected('alipay_h5', 'closed'));
+        $states = static::createMock(StateMachineRegistry::class);
+        $states->expects($this->once())->method('transition')->with(static::callback(
+            static fn (Transition $transition): bool => $transition->getTransitionName() === PaymentRefundStates::ACTION_FAIL
+        ));
+
+        $this->refundService($repository, $gateway, refundStateMachine: $states)
+            ->reconcile($this->app(), $this->paidOrder(), $refund);
+
+        static::assertCount(1, $repository->updates);
+        static::assertStringContainsString('closed', $repository->updates[0][0]['responsePayload']['exception']);
+    }
+
+    public function testReconciliationFailureCannotOverwriteAConcurrentSettlement(): void
+    {
+        $refund = $this->refundEntity();
+        $repository = new StaticEntityRepository([new PaymentRefundCollection([$refund])]);
+        $gateway = static::createStub(GatewayInterface::class);
+        $gateway->method('execute')->willThrowException(PaymentRefundRejectedException::rejected('alipay_h5', 'closed'));
+        $states = static::createMock(StateMachineRegistry::class);
+        $states->expects($this->never())->method('transition');
+
+        $this->refundService($repository, $gateway, refundStateMachine: $states, rowLock: $this->rowLock(settled: true))
+            ->reconcile($this->app(), $this->paidOrder(), $refund);
+
+        static::assertSame([], $repository->updates);
+    }
+
+    public function testReconciliationBooksAnAcceptedRefundAfterTheSubmissionResponseWasLost(): void
+    {
+        $refund = $this->refundEntity();
+        $repository = new StaticEntityRepository([
+            new PaymentRefundCollection([$refund]),
+            new PaymentRefundCollection([$refund]),
+        ]);
+        $gateway = static::createStub(GatewayInterface::class);
+        $gateway->method('execute')->willReturnCallback(static function (object $request): void {
+            static::assertInstanceOf(RefundQuery::class, $request);
+            $model = $request->getModel();
+            static::assertInstanceOf(PaymentGatewayModel::class, $model);
+            $model->offsetSet(PaymentGatewayModel::RESULT, new RefundResult(PaymentRefundStates::STATE_FINISHED, 'remote-refund'));
+        });
+        $states = static::createMock(StateMachineRegistry::class);
+        $states->expects($this->once())->method('transition')->with(static::callback(
+            static fn (Transition $transition): bool => $transition->getTransitionName() === PaymentRefundStates::ACTION_FINISH
+        ));
+
+        $this->refundService($repository, $gateway, refundStateMachine: $states)
+            ->reconcile($this->app(), $this->paidOrder(), $refund);
+
+        static::assertSame('remote-refund', $repository->updates[0][0]['outRefundId']);
+        static::assertInstanceOf(\DateTimeInterface::class, $repository->updates[0][0]['refundedAt']);
+    }
+
     /**
      * @param EntityRepository<PaymentRefundCollection> $refundRepository
      * @param EntityRepository<PaymentWebhookDeliveryCollection>|null $deliveryRepository
      * @param EntityRepository<PaymentAppCollection>|null $appRepository
      * @param list<PaymentCapability> $capabilities
+     * @param list<PaymentCapability>|null $productCapabilities
      */
     private function refundService(
         EntityRepository $refundRepository,
@@ -738,7 +910,8 @@ class PaymentRefundServiceTest extends TestCase
         ?EntityRepository $deliveryRepository = null,
         ?EntityRepository $appRepository = null,
         ?PaymentOrderRowLock $rowLock = null,
-        array $capabilities = self::REFUND_CAPABILITIES
+        array $capabilities = self::REFUND_CAPABILITIES,
+        ?array $productCapabilities = null
     ): PaymentRefundService {
         $rowLock ??= $this->rowLock();
 
@@ -783,13 +956,19 @@ class PaymentRefundServiceTest extends TestCase
 
         return new PaymentRefundService(
             $refundRepository,
-            $this->configResolver($gateway, $capabilities),
+            $this->configResolver($gateway, $capabilities, $productCapabilities),
             $orderService ?? $this->orderService($this->orderRepository($this->paidOrder()), null, $rowLock),
-            $webhookService,
+            new PaymentEventDispatcher(
+                StaticEntityRepository::of(PaymentOrderCollection::class),
+                StaticEntityRepository::of(PaymentRefundCollection::class),
+                $webhookService,
+                $eventDispatcher ?? static::createStub(EventDispatcherInterface::class),
+                new MockClock(self::NOW),
+                static::createStub(LoggerInterface::class),
+            ),
             new PaymentNotifyUrlBuilder(static::createStub(RequestStack::class), 'https://base.example.test'),
             new PaymentRefundStateHandler($refundStateMachine ?? static::createStub(StateMachineRegistry::class)),
             $initialStateIdLoader,
-            $eventDispatcher ?? static::createStub(EventDispatcherInterface::class),
             new MockClock(self::NOW),
             $this->numberRanges(),
             $rowLock
@@ -851,16 +1030,17 @@ class PaymentRefundServiceTest extends TestCase
 
     /**
      * @param list<PaymentCapability> $capabilities
+     * @param list<PaymentCapability>|null $productCapabilities
      */
-    private function configResolver(GatewayInterface $gateway, array $capabilities = self::REFUND_CAPABILITIES): PaymentConfigResolver
+    private function configResolver(GatewayInterface $gateway, array $capabilities = self::REFUND_CAPABILITIES, ?array $productCapabilities = null): PaymentConfigResolver
     {
-        $cipher = new PaymentCredentialCipher('test-secret');
-
-        $channel = new PaymentChannel(
+        $channel = new PaymentProduct(
             technicalName: 'alipay_h5',
             providerTechnicalName: 'alipay',
+            method: 'alipay',
             label: 'Alipay H5',
-            flow: PaymentFlow::REDIRECT,
+            interactions: [PaymentInteraction::REDIRECT],
+            capabilities: $productCapabilities ?? $capabilities,
         );
 
         $gatewayFactory = static::createStub(PaymentGatewayFactory::class);
@@ -870,53 +1050,18 @@ class PaymentRefundServiceTest extends TestCase
             technicalName: 'alipay',
             label: 'Alipay',
             credentials: [],
-            channels: ['alipay_h5' => $channel],
+            products: ['alipay_h5' => $channel],
             gatewayFactory: $gatewayFactory,
             notificationExtractor: static::createStub(PaymentNotificationExtractorInterface::class),
             capabilities: $capabilities,
         );
 
-        $providerRegistry = new PaymentProviderRegistry([$provider]);
+        $resolved = new ResolvedPaymentConfig($provider, $channel, [], [], [], [], 'account-id');
+        $resolver = static::createStub(PaymentConfigResolver::class);
+        $resolver->method('resolveForOrder')->willReturn($resolved);
+        $resolver->method('resolveForAttempt')->willReturn($resolved);
 
-        $appProvider = new PaymentAppProviderEntity();
-        $appProvider->setUniqueIdentifier('app-provider-id');
-        $appProvider->paymentAppId = 'app-id';
-        $appProvider->providerTechnicalName = 'alipay';
-        $appProvider->enabled = true;
-        $appProvider->credentials = $cipher->encrypt(['app_id' => 'own-app-id']);
-
-        $appChannel = new PaymentAppChannelEntity();
-        $appChannel->setUniqueIdentifier('app-channel-id');
-        $appChannel->paymentAppId = 'app-id';
-        $appChannel->channelTechnicalName = 'alipay_h5';
-        $appChannel->enabled = true;
-        $appChannel->params = $cipher->encrypt(['appid' => 'own-appid']);
-
-        $channelConfig = new PaymentChannelConfigEntity();
-        $channelConfig->setUniqueIdentifier('channel-config-id');
-        $channelConfig->providerTechnicalName = 'alipay';
-        $channelConfig->channelTechnicalName = 'alipay_h5';
-        $channelConfig->enabled = true;
-        $channelConfig->params = $cipher->encrypt(['appid' => 'platform-appid']);
-
-        $appProviderRepository = static::createStub(EntityRepository::class);
-        $appProviderRepository->method('search')->willReturn($this->entityResult('payment_app_provider', $appProvider));
-
-        $appChannelRepository = static::createStub(EntityRepository::class);
-        $appChannelRepository->method('search')->willReturn($this->entityResult('payment_app_channel', $appChannel));
-
-        $channelConfigRepository = static::createStub(EntityRepository::class);
-        $channelConfigRepository->method('search')->willReturn($this->entityResult('payment_channel_config', $channelConfig));
-
-        return new PaymentConfigResolver(
-            $providerRegistry,
-            new PaymentChannelRegistry($providerRegistry),
-            $appProviderRepository,
-            static::createStub(EntityRepository::class),
-            $appChannelRepository,
-            $channelConfigRepository,
-            $cipher
-        );
+        return $resolver;
     }
 
     /**
@@ -932,12 +1077,12 @@ class PaymentRefundServiceTest extends TestCase
 
         return new PaymentOrderService(
             $orderRepository ?? $this->orderRepository($this->paidOrder()),
-            $this->configResolver($this->gateway(null)),
             $initialStateIdLoader,
             new PaymentOrderStateHandler($stateMachine ?? static::createStub(StateMachineRegistry::class)),
             new MockClock(self::NOW),
             NumberRangeFixture::generator('PG1001'),
-            $rowLock ?? $this->rowLock()
+            $rowLock ?? $this->rowLock(),
+            StaticEntityRepository::of(PaymentAttemptCollection::class),
         );
     }
 
@@ -957,21 +1102,6 @@ class PaymentRefundServiceTest extends TestCase
         ));
 
         return $repository;
-    }
-
-    /**
-     * @return EntitySearchResult<EntityCollection<Entity>>
-     */
-    private function entityResult(string $entityName, Entity $entity): EntitySearchResult
-    {
-        return new EntitySearchResult(
-            $entityName,
-            1,
-            new EntityCollection([$entity]),
-            null,
-            new Criteria(),
-            Context::createDefaultContext()
-        );
     }
 
     /**
@@ -999,6 +1129,7 @@ class PaymentRefundServiceTest extends TestCase
         $refund->id = 'refund-id';
         $refund->refundNo = 'PR0001';
         $refund->paymentOrderId = 'order-id';
+        $refund->paymentAttemptId = 'attempt-id';
         $refund->outRefundNo = 'app-refund-1';
         $refund->amount = 1000;
         $refund->currency = 'CNY';
@@ -1028,8 +1159,16 @@ class PaymentRefundServiceTest extends TestCase
         $order->paymentNo = 'PG0001';
         $order->outTradeNo = 'app-trade-1';
         $order->paymentAppId = 'app-id';
-        $order->providerTechnicalName = 'alipay';
-        $order->channelTechnicalName = 'alipay_h5';
+        $attempt = new PaymentAttemptEntity();
+        $attempt->id = 'attempt-id';
+        $attempt->paymentOrderId = $order->id;
+        $attempt->attemptNo = 'PG0001';
+        $attempt->accountId = 'account-id';
+        $attempt->providerTechnicalName = 'alipay';
+        $attempt->channelTechnicalName = 'alipay_h5';
+        $attempt->status = PaymentAttemptEntity::STATUS_HANDOVER;
+        $order->activeAttempt = $attempt;
+        $order->activeAttemptId = $attempt->id;
         $order->amount = 1000;
         $order->currency = 'CNY';
         $order->subject = 'An order';

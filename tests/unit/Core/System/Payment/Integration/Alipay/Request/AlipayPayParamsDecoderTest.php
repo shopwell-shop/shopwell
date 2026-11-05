@@ -6,10 +6,10 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\System\Payment\Api\Struct\PayParams;
+use Shopwell\Core\System\Payment\Gateway\Struct\PaymentHandover;
 use Shopwell\Core\System\Payment\Integration\Alipay\Action\AlipayCaptureAction;
 use Shopwell\Core\System\Payment\Integration\Alipay\Request\AlipayPayParamsDecoder;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
+use Shopwell\Core\System\Payment\Product\PaymentInteraction;
 
 /**
  * The answers below are the ones {@see AlipayCaptureAction} records, so a change of the recorded shape
@@ -22,7 +22,7 @@ use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
 class AlipayPayParamsDecoderTest extends TestCase
 {
     /**
-     * @return iterable<string, array{array<string, mixed>, PayParams}>
+     * @return iterable<string, array{array<string, mixed>, PaymentHandover}>
      */
     public static function recordedAnswerProvider(): iterable
     {
@@ -31,7 +31,7 @@ class AlipayPayParamsDecoderTest extends TestCase
                 AlipayCaptureAction::RESPONSE_HTTP_METHOD => 'GET',
                 AlipayCaptureAction::RESPONSE_ANSWER => 'https://pay.example.test',
             ],
-            new PayParams(flow: PaymentFlow::REDIRECT, payUrl: 'https://pay.example.test', httpMethod: 'GET'),
+            new PaymentHandover(flow: PaymentInteraction::REDIRECT, payUrl: 'https://pay.example.test', httpMethod: 'GET'),
         ];
 
         yield 'self submitting form of a POST request' => [
@@ -39,12 +39,12 @@ class AlipayPayParamsDecoderTest extends TestCase
                 AlipayCaptureAction::RESPONSE_HTTP_METHOD => 'POST',
                 AlipayCaptureAction::RESPONSE_ANSWER => '<form action="https://pay.example.test"></form>',
             ],
-            new PayParams(flow: PaymentFlow::REDIRECT, httpMethod: 'POST', htmlForm: '<form action="https://pay.example.test"></form>'),
+            new PaymentHandover(flow: PaymentInteraction::REDIRECT, httpMethod: 'POST', htmlForm: '<form action="https://pay.example.test"></form>'),
         ];
 
         yield 'qr code of the precreate product' => [
             [AlipayCaptureAction::RESPONSE_QR_CODE => 'https://qr.alipay.com/abc'],
-            new PayParams(flow: PaymentFlow::QRCODE, extra: ['qr_code' => 'https://qr.alipay.com/abc']),
+            new PaymentHandover(flow: PaymentInteraction::QRCODE, extra: ['qr_code' => 'https://qr.alipay.com/abc']),
         ];
     }
 
@@ -52,7 +52,7 @@ class AlipayPayParamsDecoderTest extends TestCase
      * @param array<string, mixed> $response
      */
     #[DataProvider('recordedAnswerProvider')]
-    public function testDecodesTheRecordedAnswer(array $response, PayParams $expected): void
+    public function testDecodesTheRecordedAnswer(array $response, PaymentHandover $expected): void
     {
         static::assertEquals($expected, (new AlipayPayParamsDecoder())->payParamsFromResponse($response));
     }

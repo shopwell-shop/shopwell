@@ -599,8 +599,6 @@ class PaymentWebhookDispatcherTest extends TestCase
         $order->paymentNo = 'PG0001';
         $order->outTradeNo = 'app-trade-1';
         $order->paymentAppId = self::APP_ID;
-        $order->providerTechnicalName = 'alipay';
-        $order->channelTechnicalName = 'alipay_h5';
         $order->amount = 1000;
         $order->currency = 'CNY';
         $order->subject = 'An order';

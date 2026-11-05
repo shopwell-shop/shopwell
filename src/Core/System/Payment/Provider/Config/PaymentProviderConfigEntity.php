@@ -5,6 +5,7 @@ namespace Shopwell\Core\System\Payment\Provider\Config;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\Entity;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\Field;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\FieldType;
+use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\ForeignKey;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\PrimaryKey;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\Required;
 use Shopwell\Core\Framework\DataAbstractionLayer\Entity as EntityStruct;
@@ -12,12 +13,8 @@ use Shopwell\Core\Framework\DataAbstractionLayer\EntityCustomFieldsTrait;
 use Shopwell\Core\Framework\Log\Package;
 
 /**
- * The platform wide merchant credentials of a payment interface (alipay, wechat pay, …), used by the
- * apps whose account source is the tenant of the platform - the root of every inheritance chain.
- *
- * One row per payment interface and not per channel: an alipay application covers every product of
- * alipay, so the mobile web payment and the qr code payment share the very same keys. Adding a product
- * therefore never duplicates a key, and rotating a key is a single row.
+ * Platform provider admission and the explicit account used by provider configuration.
+ * Merchant identity and encrypted credentials live on the referenced payment account.
  *
  * @codeCoverageIgnore
  */
@@ -40,15 +37,9 @@ class PaymentProviderConfigEntity extends EntityStruct
     #[Field(type: FieldType::BOOL, api: ['admin-api' => true, 'store-api' => false])]
     public bool $enabled;
 
-    /**
-     * The merchant credentials of the interface, stored encrypted. They are only ever written through
-     * the provider admin controller - a write through the generic entity endpoint would store them in
-     * plain text.
-     *
-     * @var array<string, mixed>|null
-     */
-    #[Field(type: FieldType::JSON, api: false)]
-    public ?array $credentials = null;
+    #[Required]
+    #[ForeignKey(entity: 'payment_account', api: ['admin-api' => true, 'store-api' => false])]
+    public string $accountId;
 
     /**
      * @var array<string, mixed>|null

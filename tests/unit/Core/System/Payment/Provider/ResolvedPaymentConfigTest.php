@@ -5,11 +5,12 @@ namespace Shopwell\Tests\Unit\Core\System\Payment\Provider;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Payment\Exception\PaymentGatewayException;
+use Shopwell\Core\System\Payment\Exception\PaymentProviderException;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayFactory;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
-use Shopwell\Core\System\Payment\PaymentException;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
+use Shopwell\Core\System\Payment\Product\PaymentInteraction;
+use Shopwell\Core\System\Payment\Product\PaymentProduct;
 use Shopwell\Core\System\Payment\Provider\PaymentProvider;
 use Shopwell\Core\System\Payment\Provider\ResolvedPaymentConfig;
 
@@ -27,27 +28,21 @@ class ResolvedPaymentConfigTest extends TestCase
 
         $config = new ResolvedPaymentConfig(
             provider: $provider,
-            channel: $channel,
+            product: $channel,
             credentials: ['app_id' => 'platform-app', 'private_key' => 'secret'],
             params: ['appid' => 'wx-appid'],
             runtimeParams: ['openid' => 'o-1'],
             settings: ['sandbox' => '1'],
-            sourceAppId: 'a3f4c1d2e5b6a7c8d9e0f1a2b3c4d5e6',
-            usesPlatformAccount: true,
+            accountId: 'test-account',
         );
 
         static::assertSame($provider, $config->provider);
-        static::assertSame($channel, $config->channel);
+        static::assertSame($channel, $config->product);
         static::assertSame(['app_id' => 'platform-app', 'private_key' => 'secret'], $config->credentials);
         static::assertSame(['appid' => 'wx-appid'], $config->params);
         static::assertSame(['openid' => 'o-1'], $config->runtimeParams);
         static::assertSame(['sandbox' => '1'], $config->settings);
-        // whose account is charged and where the credentials came from are two different answers: an
-        // app that inherits from the tenant of the platform carries its id *and* is charged on the
-        // configuration of the platform level
-        static::assertSame('a3f4c1d2e5b6a7c8d9e0f1a2b3c4d5e6', $config->sourceAppId);
-        static::assertTrue($config->isInherited());
-        static::assertTrue($config->usesPlatformAccount);
+        static::assertSame('test-account', $config->accountId);
     }
 
     public function testGetReadsACredentialWithAFallback(): void
@@ -79,7 +74,7 @@ class ResolvedPaymentConfigTest extends TestCase
     {
         $config = $this->config([], []);
 
-        $this->expectExceptionObject(PaymentException::missingCredentials('alipay', 'app_id'));
+        $this->expectExceptionObject(PaymentGatewayException::missingCredentials('alipay', 'app_id'));
 
         $config->require('app_id');
     }
@@ -104,7 +99,7 @@ class ResolvedPaymentConfigTest extends TestCase
     {
         $config = $this->config([], []);
 
-        $this->expectExceptionObject(PaymentException::channelNotConfigured('alipay_h5', 'appid'));
+        $this->expectExceptionObject(PaymentProviderException::channelNotConfigured('alipay_h5', 'appid'));
 
         $config->requireParam('appid');
     }
@@ -116,11 +111,12 @@ class ResolvedPaymentConfigTest extends TestCase
 
         $config = new ResolvedPaymentConfig(
             provider: $provider,
-            channel: $channel,
+            product: $channel,
             credentials: ['app_id' => 'platform-app'],
             params: ['appid' => 'wx-appid'],
             runtimeParams: ['openid' => 'o-1'],
             settings: ['sandbox' => '1'],
+            accountId: 'test-account',
         );
 
         static::assertSame('o-1', $config->runtimeParam('openid'));
@@ -140,12 +136,12 @@ class ResolvedPaymentConfigTest extends TestCase
     {
         return new ResolvedPaymentConfig(
             provider: $this->provider('alipay'),
-            channel: $this->channel('alipay_h5', 'alipay'),
+            product: $this->channel('alipay_h5', 'alipay'),
             credentials: $credentials,
             params: $params,
             runtimeParams: [],
             settings: [],
-            usesPlatformAccount: true,
+            accountId: 'test-account',
         );
     }
 
@@ -161,8 +157,8 @@ class ResolvedPaymentConfigTest extends TestCase
         );
     }
 
-    private function channel(string $technicalName, string $providerTechnicalName): PaymentChannel
+    private function channel(string $technicalName, string $providerTechnicalName): PaymentProduct
     {
-        return new PaymentChannel($technicalName, $providerTechnicalName, $technicalName, PaymentFlow::REDIRECT);
+        return new PaymentProduct($technicalName, $providerTechnicalName, $technicalName, [PaymentInteraction::REDIRECT], $providerTechnicalName);
     }
 }

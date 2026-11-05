@@ -4,12 +4,12 @@ namespace Shopwell\Core\System\Payment\Integration\Wechat\Action;
 
 use Payum\Core\Exception\RequestNotSupportedException;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Payment\Exception\PaymentGatewayException;
 use Shopwell\Core\System\Payment\Gateway\AbstractPaymentAction;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
 use Shopwell\Core\System\Payment\Gateway\Request\CloseResult;
 use Shopwell\Core\System\Payment\Gateway\Request\PaymentClose;
 use Shopwell\Core\System\Payment\Integration\Wechat\Api\WechatApi;
-use Shopwell\Core\System\Payment\PaymentException;
 use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
 
 /**
@@ -47,7 +47,7 @@ final class WechatCloseAction extends AbstractPaymentAction
         } catch (\Throwable $exception) {
             $this->recordResponse($model, ['error' => $exception->getMessage()]);
 
-            throw PaymentException::gatewayError($api->channel(), $exception->getMessage(), $exception);
+            throw PaymentGatewayException::gatewayError($api->channel(), $exception->getMessage(), $exception);
         }
 
         $this->recordResponse($model, ['status' => $result->status, 'channel_status' => $result->channelStatus, 'raw' => $result->raw]);

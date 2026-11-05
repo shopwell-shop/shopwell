@@ -17,6 +17,8 @@ use Shopwell\Core\Checkout\Payment\Storefront\Settlement\PurchaseAttach;
 use Shopwell\Core\Checkout\Payment\Storefront\StorefrontPaymentService;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Payment\Product\PaymentScene;
+use Shopwell\Core\System\Payment\Routing\PaymentContext;
 use Shopwell\Core\Test\Stub\DataAbstractionLayer\StaticEntityRepository;
 
 /**
@@ -57,7 +59,7 @@ class MembershipOfferServiceTest extends TestCase
         $this->payments = static::createStub(StorefrontPaymentService::class);
         $this->context = Context::createDefaultContext();
 
-        $this->payments->method('channels')->willReturn([
+        $this->payments->method('options')->willReturn([
             ['channel' => 'alipay_h5', 'label' => '支付宝', 'provider' => 'alipay', 'provider_label' => '支付宝', 'flow' => 'redirect'],
         ]);
 
@@ -91,7 +93,7 @@ class MembershipOfferServiceTest extends TestCase
         $this->planRepository->addSearch(new MembershipPlanCollection([$plan]));
         $this->orderRepository->addSearch(new MembershipPurchaseCollection([$order]));
 
-        $offer = $this->offer->forCustomer(self::CUSTOMER_ID, self::CURRENCY_ID, 'CNY', 5, $this->context);
+        $offer = $this->offer->forCustomer(self::CUSTOMER_ID, self::CURRENCY_ID, new PaymentContext('CNY', new PaymentScene('browser', 'web', 'browser')), 5, $this->context);
 
         static::assertSame(['plans', 'channels', 'orders'], array_keys($offer));
         static::assertSame(self::PLAN_ID, $offer['plans'][0]['id']);
@@ -104,7 +106,7 @@ class MembershipOfferServiceTest extends TestCase
         $this->planRepository->addSearch(new MembershipPlanCollection());
         $this->orderRepository->addSearch(new MembershipPurchaseCollection());
 
-        $offer = $this->offer->forCustomer(self::CUSTOMER_ID, self::CURRENCY_ID, 'CNY', 5, $this->context);
+        $offer = $this->offer->forCustomer(self::CUSTOMER_ID, self::CURRENCY_ID, new PaymentContext('CNY', new PaymentScene('browser', 'web', 'browser')), 5, $this->context);
 
         static::assertSame([], $offer['plans']);
         static::assertSame([], $offer['orders']);

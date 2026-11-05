@@ -1200,6 +1200,12 @@
         }
     },
     "payment": {
+        "method": {
+            "alipay": "Alipay",
+            "wechat": "WeChat Pay",
+            "paypal": "PayPal",
+            "stripe": "Card payment"
+        },
         "channel": {
             "alipay_h5": "Alipay (mobile web)",
             "alipay_web": "Alipay (desktop web)",

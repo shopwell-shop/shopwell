@@ -6,9 +6,11 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Payment\DependencyInjection\PaymentProviderCompilerPass;
-use Shopwell\Core\System\Payment\PaymentException;
+use Shopwell\Core\System\Payment\Exception\PaymentProviderException;
+use Shopwell\Core\System\Payment\Method\PaymentMethod;
+use Shopwell\Core\System\Payment\Method\PaymentMethodRegistry;
+use Shopwell\Core\System\Payment\Product\PaymentProductRegistry;
 use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannelRegistry;
 use Shopwell\Core\System\Payment\Provider\Config\PaymentConfigField;
 use Shopwell\Core\System\Payment\Provider\Config\PaymentConfigReader;
 use Shopwell\Core\System\Payment\Provider\PaymentProvider;
@@ -23,6 +25,7 @@ use Shopwell\Tests\Unit\Core\System\Payment\Provider\Fixtures\TestSecondPaymentD
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Reference;
+use Symfony\Component\EventDispatcher\EventDispatcher;
 
 /**
  * The acceptance test of the extension contract: all three promises, proven on a real container.
@@ -77,7 +80,7 @@ class PaymentDeclarationAcceptanceTest extends TestCase
             array_map(static fn (PaymentConfigField $field): string => $field->name, $provider->credentials)
         );
 
-        $channel = $container->get(PaymentChannelRegistry::class)->get(PluginProvider::CHANNEL);
+        $channel = $container->get(PaymentProductRegistry::class)->get(PluginProvider::CHANNEL);
 
         static::assertSame(
             PluginProvider::TECHNICAL_NAME,
@@ -131,7 +134,7 @@ class PaymentDeclarationAcceptanceTest extends TestCase
      * The same technical name twice, and the second one is no decorator: the container does not compile.
      *
      * This is the case the technical name is protected against - it is a foreign key value in
-     * `payment_order`, `payment_provider_config` and `payment_app_provider`, so an interface that
+     * `payment_order`, `payment_provider_config` and `payment_app_account`, so an interface that
      * silently took the name over would reinterpret every stored row.
      */
     public function testASecondImplementationOfOneNameThatIsNoDecoratorFailsTheContainer(): void
@@ -142,7 +145,7 @@ class PaymentDeclarationAcceptanceTest extends TestCase
         $container->register(TestPaymentProviderDuplicate::class)
             ->addTag(PaymentProviderCompilerPass::PROVIDER_TAG, ['key' => PluginProvider::TECHNICAL_NAME, 'priority' => 0]);
 
-        $this->expectExceptionObject(PaymentException::duplicateProvider(
+        $this->expectExceptionObject(PaymentProviderException::duplicateProvider(
             PluginProvider::TECHNICAL_NAME,
             TestPaymentProvider::class,
             TestPaymentProviderDuplicate::class
@@ -224,7 +227,7 @@ class PaymentDeclarationAcceptanceTest extends TestCase
             'Both tags are collected, so the refusal has to come from the comparison of the key with the name.'
         );
 
-        $this->expectExceptionObject(PaymentException::invalidProviderDeclaration(\sprintf(
+        $this->expectExceptionObject(PaymentProviderException::invalidProviderDeclaration(\sprintf(
             'The declaration "%s" is tagged as the payment interface "%s" but names itself "%s". The tag key and the technical name have to be the same.',
             TestPaymentProvider::class,
             'aaa',
@@ -245,11 +248,18 @@ class PaymentDeclarationAcceptanceTest extends TestCase
         $container = new ContainerBuilder();
         $container->register(PaymentConfigReader::class);
         $container->register(PaymentProviderFactory::class)
-            ->setArguments([new Reference(PaymentConfigReader::class)]);
+            ->setArguments([
+                new Reference(PaymentConfigReader::class),
+                new Definition(PaymentMethodRegistry::class, [[
+                    new Definition(PaymentMethod::class, ['pluginpay', 'plugin.payment']),
+                    new Definition(PaymentMethod::class, ['testpay', 'test.payment']),
+                ]]),
+                new Definition(EventDispatcher::class),
+            ]);
         $container->register(PaymentProviderRegistry::class)
             ->setArguments([[]])
             ->setPublic(true);
-        $container->register(PaymentChannelRegistry::class)
+        $container->register(PaymentProductRegistry::class)
             ->setArguments([new Reference(PaymentProviderRegistry::class)])
             ->setPublic(true);
         $container->addCompilerPass(new PaymentProviderCompilerPass());

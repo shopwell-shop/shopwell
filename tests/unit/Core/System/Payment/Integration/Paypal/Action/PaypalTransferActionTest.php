@@ -12,6 +12,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Payment\App\PaymentCredentialCipher;
+use Shopwell\Core\System\Payment\Exception\PaymentGatewayException;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayFactory;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
 use Shopwell\Core\System\Payment\Gateway\Request\PaymentTransferRequest;
@@ -20,8 +21,8 @@ use Shopwell\Core\System\Payment\Integration\Paypal\Action\PaypalTransferAction;
 use Shopwell\Core\System\Payment\Integration\Paypal\Api\PaypalApi;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
 use Shopwell\Core\System\Payment\PaymentException;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
+use Shopwell\Core\System\Payment\Product\PaymentInteraction;
+use Shopwell\Core\System\Payment\Product\PaymentProduct;
 use Shopwell\Core\System\Payment\Provider\PaymentProvider;
 use Shopwell\Core\System\Payment\Provider\ResolvedPaymentConfig;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferEntity;
@@ -91,7 +92,7 @@ class PaypalTransferActionTest extends TestCase
     {
         $action = new PaypalTransferAction($this->cipher());
 
-        $this->expectExceptionObject(PaymentException::actionWithoutApi(PaypalTransferAction::class));
+        $this->expectExceptionObject(PaymentGatewayException::actionWithoutApi(PaypalTransferAction::class));
 
         $action->execute($this->request());
     }
@@ -100,7 +101,7 @@ class PaypalTransferActionTest extends TestCase
     {
         $action = new PaypalTransferAction($this->cipher());
 
-        $this->expectExceptionObject(PaymentException::unsupportedApi(PaypalTransferAction::class, \stdClass::class));
+        $this->expectExceptionObject(PaymentGatewayException::unsupportedApi(PaypalTransferAction::class, \stdClass::class));
 
         $action->setApi(new \stdClass());
     }
@@ -517,7 +518,7 @@ class PaypalTransferActionTest extends TestCase
 
     private function api(): PaypalApi
     {
-        $channel = new PaymentChannel('paypal_payout', 'paypal', 'paypal_payout', PaymentFlow::REDIRECT);
+        $channel = new PaymentProduct('paypal_payout', 'paypal', 'paypal_payout', [PaymentInteraction::REDIRECT], 'paypal');
 
         return new PaypalApi(
             new ResolvedPaymentConfig(
@@ -529,11 +530,12 @@ class PaypalTransferActionTest extends TestCase
                     new PaymentGatewayFactory('paypal', PaypalApi::class, []),
                     static::createStub(PaymentNotificationExtractorInterface::class),
                 ),
-                channel: $channel,
+                product: $channel,
                 credentials: [PaypalApi::CLIENT_ID => 'client-id', PaypalApi::CLIENT_SECRET => 'client-secret'],
                 params: [],
                 runtimeParams: [],
                 settings: [],
+                accountId: 'test-account',
             ),
             'https://example.com/notify',
             '',

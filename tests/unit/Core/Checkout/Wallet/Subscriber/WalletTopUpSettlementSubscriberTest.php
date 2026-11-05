@@ -169,8 +169,6 @@ class WalletTopUpSettlementSubscriberTest extends TestCase
         $order->paymentNo = 'PAY-1';
         $order->outTradeNo = self::TOP_UP_ID;
         $order->paymentAppId = 'a1b2c3d4e5f60718293a4b5c6d7e8f90';
-        $order->providerTechnicalName = 'alipay';
-        $order->channelTechnicalName = 'alipay_h5';
         $order->amount = 12800;
         $order->paidAmount = 12800;
         $order->currency = 'CNY';

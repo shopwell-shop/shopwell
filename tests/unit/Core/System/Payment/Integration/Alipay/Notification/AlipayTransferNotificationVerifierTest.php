@@ -6,9 +6,9 @@ use Alipay\OpenAPISDK\Util\AlipaySignature;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Payment\Exception\PaymentGatewayException;
 use Shopwell\Core\System\Payment\Integration\Alipay\Api\AlipayApi;
 use Shopwell\Core\System\Payment\Integration\Alipay\Notification\AlipayTransferNotificationVerifier;
-use Shopwell\Core\System\Payment\PaymentException;
 
 /**
  * @internal
@@ -78,7 +78,7 @@ class AlipayTransferNotificationVerifierTest extends TestCase
     {
         $body = $this->signedBody(['out_biz_no' => 'PO-1'], $this->privateKey);
 
-        $this->expectExceptionObject(PaymentException::missingCredentials(AlipayApi::PROVIDER, AlipayApi::PUBLIC_KEY));
+        $this->expectExceptionObject(PaymentGatewayException::missingCredentials(AlipayApi::PROVIDER, AlipayApi::PUBLIC_KEY));
 
         $this->verifier()->verify([], $body, []);
     }

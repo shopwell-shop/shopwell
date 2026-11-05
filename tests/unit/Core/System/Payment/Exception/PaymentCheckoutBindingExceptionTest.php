@@ -6,7 +6,6 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Payment\Exception\PaymentCheckoutBindingException;
-use Shopwell\Core\System\Payment\PaymentException;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -16,7 +15,7 @@ use Symfony\Component\HttpFoundation\Response;
 #[CoversClass(PaymentCheckoutBindingException::class)]
 class PaymentCheckoutBindingExceptionTest extends TestCase
 {
-    public function testPaymentMethodChannelTakenKeepsContractAndFacadeCompatibility(): void
+    public function testPaymentMethodChannelTakenKeepsContract(): void
     {
         $exception = PaymentCheckoutBindingException::paymentMethodChannelTaken('Payment App', 'alipay_page', 'method-id', 'Alipay');
 
@@ -30,10 +29,5 @@ class PaymentCheckoutBindingExceptionTest extends TestCase
             'paymentMethodId' => 'method-id',
             'paymentMethodName' => 'Alipay',
         ], $exception->getParameters());
-
-        $facade = PaymentException::paymentMethodChannelTaken('Payment App', 'alipay_page', 'method-id', 'Alipay');
-
-        static::assertSame(PaymentCheckoutBindingException::class, $facade::class);
-        static::assertEquals($exception, $facade);
     }
 }

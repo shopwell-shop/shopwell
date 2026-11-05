@@ -45,6 +45,11 @@ use Shopwell\Core\System\Payment\Integration\Wechat\Notification\WechatNotificat
 use Shopwell\Core\System\Payment\Integration\Wechat\Notification\WechatTransferNotificationVerifier;
 use Shopwell\Core\System\Payment\Integration\Wechat\Request\WechatPayParamsDecoder;
 use Shopwell\Core\System\Payment\Integration\Wechat\WechatProvider;
+use Shopwell\Core\System\Payment\Method\PaymentMethod;
+use Shopwell\Core\System\Payment\Method\PaymentMethodRegistry;
+use Shopwell\Core\System\Payment\Provider\Config\PaymentConfigReader;
+use Shopwell\Core\System\Payment\Provider\PaymentProviderFactory;
+use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\HttpClient\NativeHttpClient;
 
 /**
@@ -63,6 +68,16 @@ final class PlatformProviders
      * The secret the cipher is used with. The cipher is only constructed here, never asked to encrypt.
      */
     final public const CIPHER_SECRET = 'unit-test-secret';
+
+    public static function factory(): PaymentProviderFactory
+    {
+        $methods = new PaymentMethodRegistry(array_map(
+            static fn (string $name): PaymentMethod => new PaymentMethod($name, 'payment.method.' . $name),
+            ['alipay', 'wechat', 'paypal', 'stripe', 'testpay'],
+        ));
+
+        return new PaymentProviderFactory(new PaymentConfigReader(), $methods, new EventDispatcher());
+    }
 
     public static function alipay(): AlipayProvider
     {

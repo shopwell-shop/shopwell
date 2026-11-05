@@ -8,6 +8,8 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Payment\Exception\PaymentGatewayException;
+use Shopwell\Core\System\Payment\Exception\PaymentTransferException;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayFactory;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
 use Shopwell\Core\System\Payment\Gateway\Request\PaymentTransferRequest;
@@ -16,8 +18,8 @@ use Shopwell\Core\System\Payment\Integration\Stripe\Action\StripeTransferAction;
 use Shopwell\Core\System\Payment\Integration\Stripe\Api\StripeApi;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
 use Shopwell\Core\System\Payment\PaymentException;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
+use Shopwell\Core\System\Payment\Product\PaymentInteraction;
+use Shopwell\Core\System\Payment\Product\PaymentProduct;
 use Shopwell\Core\System\Payment\Provider\PaymentProvider;
 use Shopwell\Core\System\Payment\Provider\ResolvedPaymentConfig;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferEntity;
@@ -67,7 +69,7 @@ class StripeTransferActionTest extends TestCase
     {
         $action = new StripeTransferAction();
 
-        $this->expectExceptionObject(PaymentException::actionWithoutApi(StripeTransferAction::class));
+        $this->expectExceptionObject(PaymentGatewayException::actionWithoutApi(StripeTransferAction::class));
 
         $action->execute($this->request());
     }
@@ -76,7 +78,7 @@ class StripeTransferActionTest extends TestCase
     {
         $action = new StripeTransferAction();
 
-        $this->expectExceptionObject(PaymentException::unsupportedApi(StripeTransferAction::class, \stdClass::class));
+        $this->expectExceptionObject(PaymentGatewayException::unsupportedApi(StripeTransferAction::class, \stdClass::class));
 
         $action->setApi(new \stdClass());
     }
@@ -110,7 +112,7 @@ class StripeTransferActionTest extends TestCase
         $action = new StripeTransferAction();
         $action->setApi($this->api());
 
-        $this->expectExceptionObject(PaymentException::transferIdentityNotSupported('stripe', 'paypal_email'));
+        $this->expectExceptionObject(PaymentTransferException::transferIdentityNotSupported('stripe', 'paypal_email'));
 
         $action->execute($this->request(identityType: 'paypal_email'));
     }
@@ -120,7 +122,7 @@ class StripeTransferActionTest extends TestCase
         $action = new StripeTransferAction();
         $action->setApi($this->api());
 
-        $this->expectExceptionObject(PaymentException::transferRecipientIncomplete('provider_account_id'));
+        $this->expectExceptionObject(PaymentTransferException::transferRecipientIncomplete('provider_account_id'));
 
         $action->execute($this->request(accountId: 'user_1'));
     }
@@ -260,6 +262,40 @@ class StripeTransferActionTest extends TestCase
         static::assertSame('balance_insufficient', $result->failureCode);
         static::assertNull($result->providerStageRef);
         static::assertNull($result->providerRef);
+    }
+
+    /**
+     * @return iterable<string, array{int, bool}>
+     */
+    public static function uncertainResponseProvider(): iterable
+    {
+        yield 'transfer rate limited' => [429, false];
+        yield 'transfer server error' => [500, false];
+        yield 'payout rate limited after transfer' => [429, true];
+        yield 'payout server error after transfer' => [500, true];
+    }
+
+    #[DataProvider('uncertainResponseProvider')]
+    public function testAnUncertainResponseDoesNotDeclareTheTransferFailed(int $httpStatus, bool $payout): void
+    {
+        $path = $payout ? self::PAYOUT_PATH : self::TRANSFER_PATH;
+        $this->http->answers[$path] = [$httpStatus, self::json([
+            'error' => ['type' => 'api_error', 'code' => 'temporary_error', 'message' => 'Retry later.'],
+        ])];
+        $action = new StripeTransferAction();
+        $action->setApi($this->api());
+        $request = $this->request(stageRef: $payout ? 'tr_1' : null);
+
+        $action->execute($request);
+
+        $model = $request->getModel();
+        static::assertInstanceOf(PaymentGatewayModel::class, $model);
+        $result = $model->result(TransferResult::class, 'stripe');
+        static::assertSame(TransferResult::STATE_UNKNOWN, $result->state);
+        static::assertSame($payout ? 'tr_1' : null, $result->providerStageRef);
+        static::assertNull($result->failureCode);
+        static::assertSame($httpStatus, $model->response()[$payout ? 'payout' : 'transfer']['error']['status']);
+        static::assertSame($payout ? 1 : 0, $this->http->count(self::PAYOUT_PATH));
     }
 
     public function testTheRecordedRequestCarriesBothStagesAndTheAnswerCarriesTheRawBody(): void
@@ -404,7 +440,7 @@ class StripeTransferActionTest extends TestCase
 
     private function api(): StripeApi
     {
-        $channel = new PaymentChannel('stripe_transfer', 'stripe', 'stripe_transfer', PaymentFlow::REDIRECT);
+        $channel = new PaymentProduct('stripe_transfer', 'stripe', 'stripe_transfer', [PaymentInteraction::REDIRECT], 'stripe');
 
         return new StripeApi(
             new ResolvedPaymentConfig(
@@ -416,11 +452,12 @@ class StripeTransferActionTest extends TestCase
                     new PaymentGatewayFactory('stripe', StripeApi::class, []),
                     static::createStub(PaymentNotificationExtractorInterface::class),
                 ),
-                channel: $channel,
+                product: $channel,
                 credentials: [StripeApi::SECRET_KEY => 'sk_test_unit'],
                 params: [],
                 runtimeParams: [],
                 settings: [],
+                accountId: 'test-account',
             ),
             'https://example.com/notify',
             '',

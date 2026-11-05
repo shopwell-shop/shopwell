@@ -13,14 +13,14 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Payment\Exception\PaymentGatewayException;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayFactory;
 use Shopwell\Core\System\Payment\Gateway\Request\CloseResult;
 use Shopwell\Core\System\Payment\Gateway\Request\QueryResult;
 use Shopwell\Core\System\Payment\Integration\Alipay\Api\AlipayApi;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
-use Shopwell\Core\System\Payment\PaymentException;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
+use Shopwell\Core\System\Payment\Product\PaymentInteraction;
+use Shopwell\Core\System\Payment\Product\PaymentProduct;
 use Shopwell\Core\System\Payment\Provider\PaymentProvider;
 use Shopwell\Core\System\Payment\Provider\ResolvedPaymentConfig;
 
@@ -37,8 +37,8 @@ class AlipayApiTest extends TestCase
 
         static::assertSame('alipay', $api->provider());
         static::assertSame('alipay_h5', $api->channel());
-        static::assertNull($api->sourceAppId());
-        static::assertFalse($api->inherited());
+        static::assertSame('test-account', $api->accountId());
+
         static::assertSame([AlipayApi::APP_ID => '2021000000000000'], $api->credentials());
         static::assertSame('https://example.com/notify', $api->notifyUrl());
         static::assertSame('https://example.com/return', $api->returnUrl());
@@ -104,7 +104,7 @@ class AlipayApiTest extends TestCase
     {
         $api = $this->api();
 
-        $this->expectExceptionObject(PaymentException::missingCredentials('alipay', AlipayApi::PUBLIC_KEY));
+        $this->expectExceptionObject(PaymentGatewayException::missingCredentials('alipay', AlipayApi::PUBLIC_KEY));
 
         $api->publicKey();
     }
@@ -365,7 +365,7 @@ class AlipayApiTest extends TestCase
      */
     private function api(array $credentials = [], ?AlipayTradeApi $tradeApi = null): AlipayApi
     {
-        $channel = new PaymentChannel('alipay_h5', 'alipay', 'alipay_h5', PaymentFlow::REDIRECT);
+        $channel = new PaymentProduct('alipay_h5', 'alipay', 'alipay_h5', [PaymentInteraction::REDIRECT], 'alipay');
 
         return new AlipayApi(
             new ResolvedPaymentConfig(
@@ -377,11 +377,12 @@ class AlipayApiTest extends TestCase
                     new PaymentGatewayFactory('alipay', AlipayApi::class, []),
                     static::createStub(PaymentNotificationExtractorInterface::class),
                 ),
-                channel: $channel,
+                product: $channel,
                 credentials: $credentials,
                 params: [],
                 runtimeParams: [],
                 settings: [],
+                accountId: 'test-account',
             ),
             'https://example.com/notify',
             'https://example.com/return',

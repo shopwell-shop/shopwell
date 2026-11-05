@@ -4,11 +4,11 @@ namespace Shopwell\Core\System\Payment\Api;
 
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\PlatformRequest;
-use Shopwell\Core\System\Payment\Api\Struct\PaymentRefundRequest;
 use Shopwell\Core\System\Payment\App\PaymentAppAuthenticator;
 use Shopwell\Core\System\Payment\Order\PaymentOrderPresenter;
 use Shopwell\Core\System\Payment\Order\PaymentOrderService;
 use Shopwell\Core\System\Payment\Order\PaymentRefundService;
+use Shopwell\Core\System\Payment\Order\Struct\PaymentRefundRequest;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;

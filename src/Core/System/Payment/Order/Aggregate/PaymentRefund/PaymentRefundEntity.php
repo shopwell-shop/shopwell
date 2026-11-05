@@ -14,6 +14,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\State;
 use Shopwell\Core\Framework\DataAbstractionLayer\Entity as EntityStruct;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityCustomFieldsTrait;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Payment\Order\Aggregate\PaymentAttempt\PaymentAttemptEntity;
 use Shopwell\Core\System\Payment\Order\PaymentOrderEntity;
 use Shopwell\Core\System\Payment\Order\PaymentRefundStates;
 
@@ -38,6 +39,12 @@ class PaymentRefundEntity extends EntityStruct
     #[Field(type: FieldType::STRING, api: ['admin-api' => true, 'store-api' => false], maxLength: 64)]
     #[SearchRanking(SearchRanking::HIGH_SEARCH_RANKING)]
     public string $refundNo;
+
+    #[ManyToOne(entity: 'payment_attempt', api: false)]
+    public ?PaymentAttemptEntity $paymentAttempt = null;
+
+    #[ForeignKey(entity: 'payment_attempt', api: false)]
+    public ?string $paymentAttemptId = null;
 
     #[Required]
     #[ForeignKey(entity: 'payment_order', api: ['admin-api' => true, 'store-api' => false])]
@@ -71,6 +78,12 @@ class PaymentRefundEntity extends EntityStruct
 
     #[Field(type: FieldType::DATETIME, api: ['admin-api' => true, 'store-api' => false])]
     public ?\DateTimeInterface $refundedAt = null;
+
+    #[Field(type: FieldType::DATETIME, api: ['admin-api' => true, 'store-api' => false])]
+    public ?\DateTimeInterface $eventDispatchedAt = null;
+
+    #[Field(type: FieldType::DATETIME, api: ['admin-api' => true, 'store-api' => false])]
+    public ?\DateTimeInterface $eventDispatchAttemptedAt = null;
 
     /**
      * @var array<string, mixed>|null

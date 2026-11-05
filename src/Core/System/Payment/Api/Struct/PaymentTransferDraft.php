@@ -72,6 +72,7 @@ final readonly class PaymentTransferDraft
         public ?string $outNo = null,
         #[Assert\Length(max: 255)]
         public ?string $note = null,
+        public ?string $accountId = null,
     ) {
     }
 
@@ -94,13 +95,14 @@ final readonly class PaymentTransferDraft
             recipientId: self::string($payload, 'recipientId'),
             identityType: self::string($payload, 'identityType'),
             // the identity value is a credential - it is trimmed but never rewritten
-            identityValue: self::identityValue($payload),
+            identityValue: self::string($payload, 'identityValue'),
             holderName: self::string($payload, 'holderName'),
             bankInfo: self::bankInfo($payload),
             amount: self::amount($payload, 'amount'),
             currency: self::currency($payload),
             outNo: self::string($payload, 'outNo'),
             note: self::string($payload, 'note'),
+            accountId: self::string($payload, 'accountId'),
         );
     }
 
@@ -118,25 +120,6 @@ final readonly class PaymentTransferDraft
     private static function string(array $payload, string $key): ?string
     {
         $value = $payload[$key] ?? null;
-
-        if (!\is_scalar($value)) {
-            return null;
-        }
-
-        $value = trim((string) $value);
-
-        return $value === '' ? null : $value;
-    }
-
-    /**
-     * The identity is a credential: it is trimmed at its edges but nothing else is touched, because the
-     * hash and the ciphertext are derived from exactly this value.
-     *
-     * @param array<string, mixed> $payload
-     */
-    private static function identityValue(array $payload): ?string
-    {
-        $value = $payload['identityValue'] ?? null;
 
         if (!\is_scalar($value)) {
             return null;

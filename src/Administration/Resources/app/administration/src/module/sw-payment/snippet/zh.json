@@ -16,8 +16,8 @@
                 "columnPaymentNo": "支付单号",
                 "columnOutTradeNo": "商户订单号",
                 "columnPaymentApp": "所属应用",
-                "columnProvider": "支付接口",
-                "columnChannel": "支付渠道",
+                "columnProvider": "支付服务商",
+                "columnChannel": "支付产品",
                 "columnState": "状态",
                 "columnAmount": "金额",
                 "columnCurrency": "货币",
@@ -39,11 +39,11 @@
                     "placeholder": "全部应用..."
                 },
                 "channelFilter": {
-                    "label": "支付渠道",
+                    "label": "支付产品",
                     "placeholder": "多个渠道用逗号分隔..."
                 },
                 "providerFilter": {
-                    "label": "支付接口",
+                    "label": "支付服务商",
                     "placeholder": "多个接口用逗号分隔..."
                 },
                 "stateFilter": {
@@ -60,13 +60,13 @@
                 "cardIdentifiersTitle": "单号",
                 "cardRequestTitle": "下单请求",
                 "cardDatesTitle": "时间",
-                "cardChannelDataTitle": "渠道返回的原始报文",
+                "cardChannelDataTitle": "服务商响应",
                 "textRefundedOf": "已退 {refunded}",
                 "labelPaymentNo": "支付单号",
                 "labelOutTradeNo": "商户订单号",
                 "labelPaymentApp": "所属应用",
-                "labelProvider": "支付接口",
-                "labelChannel": "支付渠道",
+                "labelProvider": "支付服务商",
+                "labelChannel": "支付产品",
                 "labelAmount": "订单金额",
                 "labelPaidAmount": "已付金额",
                 "labelRefundedAmount": "已退金额",
@@ -135,7 +135,7 @@
                     "placeholder": "多个单号用逗号分隔..."
                 },
                 "channelFilter": {
-                    "label": "支付渠道",
+                    "label": "支付产品",
                     "placeholder": "多个渠道用逗号分隔..."
                 },
                 "stateFilter": {
@@ -154,11 +154,11 @@
                 "labelOutRefundNo": "商户退款号",
                 "labelPaymentOrder": "关联支付单",
                 "labelOutPaymentNo": "渠道交易号",
-                "labelChannel": "支付渠道",
+                "labelChannel": "支付产品",
                 "labelPaymentApp": "所属应用",
                 "labelAmount": "退款金额",
                 "labelReason": "退款原因",
-                "labelOutRefundId": "渠道退款号",
+                "labelOutRefundId": "服务商退款号",
                 "labelRefundedAt": "退款时间",
                 "labelCreatedAt": "创建时间",
                 "labelUpdatedAt": "更新时间",

@@ -9,7 +9,7 @@ use Shopwell\Core\Checkout\Payment\Storefront\Settlement\SettleablePurchase;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\System\Payment\Gateway\Request\Money;
+use Shopwell\Core\System\Currency\CurrencyAmountConverter;
 
 /**
  * A paid membership purchase waiting to become a membership on the customer.
@@ -46,7 +46,7 @@ class MembershipPurchase implements SettleablePurchase
 
     public function amountMinor(): int
     {
-        return Money::fromFloat((float) $this->row['amount'], (string) $this->row['currency']);
+        return CurrencyAmountConverter::fromFloat((float) $this->row['amount'], (string) $this->row['currency']);
     }
 
     public function isSettled(): bool

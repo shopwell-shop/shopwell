@@ -41,6 +41,18 @@ class PaypalNotificationExtractorTest extends TestCase
         static::assertNull($data->refundNo);
     }
 
+    public function testExtractLocatesAnApprovedOrderFromItsPurchaseUnit(): void
+    {
+        $body = json_encode([
+            'event_type' => 'CHECKOUT.ORDER.APPROVED',
+            'resource' => ['id' => 'ORDER-1', 'purchase_units' => [['custom_id' => 'PG-1']]],
+        ], \JSON_THROW_ON_ERROR);
+
+        $data = (new PaypalNotificationExtractor())->extract($body, []);
+
+        static::assertSame('PG-1', $data->paymentNo);
+    }
+
     public function testExtractReadsARefundNotification(): void
     {
         $body = json_encode([

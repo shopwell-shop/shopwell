@@ -4,20 +4,21 @@ namespace Shopwell\Tests\Unit\Core\System\Payment\App;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
-use Shopwell\Core\Framework\Context;
-use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
-use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
-use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
+use Psr\Cache\CacheItemPoolInterface;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Util\Hasher;
 use Shopwell\Core\System\Payment\App\PaymentAppAuthenticator;
 use Shopwell\Core\System\Payment\App\PaymentAppCollection;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
 use Shopwell\Core\System\Payment\App\PaymentCredentialCipher;
 use Shopwell\Core\System\Payment\App\PaymentSignatureService;
-use Shopwell\Core\System\Payment\PaymentException;
+use Shopwell\Core\System\Payment\Exception\PaymentAppException;
+use Shopwell\Core\Test\Stub\DataAbstractionLayer\StaticEntityRepository;
 use Symfony\Component\Cache\Adapter\ArrayAdapter;
 use Symfony\Component\Clock\MockClock;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Lock\LockFactory;
+use Symfony\Component\Lock\Store\InMemoryStore;
 
 /**
  * @internal
@@ -38,11 +39,14 @@ class PaymentAppAuthenticatorTest extends TestCase
 
     private PaymentCredentialCipher $cipher;
 
+    private LockFactory $lockFactory;
+
     protected function setUp(): void
     {
         $this->clock = new MockClock('2024-01-01T00:00:00+00:00');
         $this->signatureService = new PaymentSignatureService();
         $this->cipher = new PaymentCredentialCipher('application-secret');
+        $this->lockFactory = new LockFactory(new InMemoryStore());
     }
 
     public function testAuthenticateReturnsTheAppForAValidRequest(): void
@@ -55,11 +59,36 @@ class PaymentAppAuthenticatorTest extends TestCase
         static::assertSame($app, $authenticator->authenticate($this->request(), $params));
     }
 
+    public function testConfiguredAppRateLimitIsEnforcedAcrossSignedRequests(): void
+    {
+        $app = $this->app();
+        $app->rateLimit = 1;
+        $authenticator = $this->authenticator($app);
+        $authenticator->authenticate($this->request(), $this->signedParams());
+
+        $params = $this->signedParams();
+        $params[PaymentSignatureService::NONCE] = 'second-request';
+        $params[PaymentSignatureService::SIGN] = $this->signatureService->sign(self::SECRET, self::APP_ID, $this->clock->now()->getTimestamp(), 'second-request', self::METHOD, self::PATH, $params);
+
+        try {
+            $authenticator->authenticate($this->request(), $params);
+            static::fail('The second request must be rate limited.');
+        } catch (PaymentAppException $exception) {
+            static::assertSame(429, $exception->getStatusCode());
+            static::assertSame(PaymentAppException::APP_RATE_LIMIT_EXCEEDED, $exception->getErrorCode());
+            $seconds = $exception->getParameter('seconds');
+            static::assertIsInt($seconds);
+            static::assertGreaterThan(0, $seconds);
+            static::assertLessThanOrEqual(60, $seconds);
+            static::assertSame(['Retry-After' => (string) $seconds], $exception->getHeaders());
+        }
+    }
+
     public function testAuthenticateRejectsAMissingAuthParameter(): void
     {
         $authenticator = $this->authenticator($this->app());
 
-        $this->expectExceptionObject(PaymentException::missingAuthParameters([PaymentSignatureService::APP_ID]));
+        $this->expectExceptionObject(PaymentAppException::missingAuthParameters([PaymentSignatureService::APP_ID]));
 
         $authenticator->authenticate($this->request(), [PaymentSignatureService::TIMESTAMP => '1']);
     }
@@ -71,7 +100,7 @@ class PaymentAppAuthenticatorTest extends TestCase
         $params = $this->signedParams();
         $params[PaymentSignatureService::NONCE] = '   ';
 
-        $this->expectExceptionObject(PaymentException::missingAuthParameters([PaymentSignatureService::NONCE]));
+        $this->expectExceptionObject(PaymentAppException::missingAuthParameters([PaymentSignatureService::NONCE]));
 
         $authenticator->authenticate($this->request(), $params);
     }
@@ -83,7 +112,7 @@ class PaymentAppAuthenticatorTest extends TestCase
         $params = $this->signedParams();
         $params[PaymentSignatureService::TIMESTAMP] = 'not-a-number';
 
-        $this->expectExceptionObject(PaymentException::expiredTimestamp(0, PaymentAppAuthenticator::TIMESTAMP_WINDOW));
+        $this->expectExceptionObject(PaymentAppException::expiredTimestamp(0, PaymentAppAuthenticator::TIMESTAMP_WINDOW));
 
         $authenticator->authenticate($this->request(), $params);
     }
@@ -94,7 +123,7 @@ class PaymentAppAuthenticatorTest extends TestCase
 
         $timestamp = $this->clock->now()->getTimestamp() - 400;
 
-        $this->expectExceptionObject(PaymentException::expiredTimestamp($timestamp, PaymentAppAuthenticator::TIMESTAMP_WINDOW));
+        $this->expectExceptionObject(PaymentAppException::expiredTimestamp($timestamp, PaymentAppAuthenticator::TIMESTAMP_WINDOW));
 
         $authenticator->authenticate($this->request(), $this->signedParams($timestamp));
     }
@@ -113,7 +142,7 @@ class PaymentAppAuthenticatorTest extends TestCase
     {
         $authenticator = $this->authenticator(null);
 
-        $this->expectExceptionObject(PaymentException::appNotFound(self::APP_ID));
+        $this->expectExceptionObject(PaymentAppException::appNotFound(self::APP_ID));
 
         $authenticator->authenticate($this->request(), $this->signedParams());
     }
@@ -122,7 +151,7 @@ class PaymentAppAuthenticatorTest extends TestCase
     {
         $authenticator = $this->authenticator($this->app(active: false));
 
-        $this->expectExceptionObject(PaymentException::appDisabled(self::APP_ID));
+        $this->expectExceptionObject(PaymentAppException::appDisabled(self::APP_ID));
 
         $authenticator->authenticate($this->request(), $this->signedParams());
     }
@@ -135,7 +164,7 @@ class PaymentAppAuthenticatorTest extends TestCase
     {
         $authenticator = $this->authenticator($this->app(type: PaymentAppEntity::TYPE_PLATFORM));
 
-        $this->expectExceptionObject(PaymentException::appNotFound(self::APP_ID));
+        $this->expectExceptionObject(PaymentAppException::appNotFound(self::APP_ID));
 
         $authenticator->authenticate($this->request(), $this->signedParams());
     }
@@ -148,7 +177,7 @@ class PaymentAppAuthenticatorTest extends TestCase
     {
         $authenticator = $this->authenticator($this->app(active: false, type: PaymentAppEntity::TYPE_PLATFORM));
 
-        $this->expectExceptionObject(PaymentException::appNotFound(self::APP_ID));
+        $this->expectExceptionObject(PaymentAppException::appNotFound(self::APP_ID));
 
         $authenticator->authenticate($this->request(), $this->signedParams());
     }
@@ -160,7 +189,7 @@ class PaymentAppAuthenticatorTest extends TestCase
         $params = $this->signedParams();
         $params[PaymentSignatureService::SIGN] = 'the wrong signature';
 
-        $this->expectExceptionObject(PaymentException::invalidSignature(self::APP_ID));
+        $this->expectExceptionObject(PaymentAppException::invalidSignature(self::APP_ID));
 
         $authenticator->authenticate($this->request(), $params);
     }
@@ -172,16 +201,78 @@ class PaymentAppAuthenticatorTest extends TestCase
 
         $authenticator->authenticate($this->request(), $params);
 
-        $this->expectExceptionObject(PaymentException::invalidSignature(self::APP_ID));
+        $this->expectExceptionObject(PaymentAppException::invalidSignature(self::APP_ID));
 
         $authenticator->authenticate($this->request(), $params);
+    }
+
+    public function testFutureTimestampNonceRemainsClaimedAtTheLastAcceptedSecond(): void
+    {
+        $authenticator = $this->authenticator($this->app());
+        $params = $this->signedParams($this->clock->now()->getTimestamp() + PaymentAppAuthenticator::TIMESTAMP_WINDOW);
+
+        $authenticator->authenticate($this->request(), $params);
+        $this->clock->sleep(2 * PaymentAppAuthenticator::TIMESTAMP_WINDOW);
+
+        $this->expectExceptionObject(PaymentAppException::invalidSignature(self::APP_ID));
+        $authenticator->authenticate($this->request(), $params);
+    }
+
+    public function testContendedNonceClaimRejectsTheConcurrentRequest(): void
+    {
+        $authenticator = $this->authenticator($this->app());
+        $lock = $this->lockFactory->createLock('shopwell.payment.nonce.' . Hasher::hash(self::APP_ID . '|' . self::NONCE));
+        static::assertTrue($lock->acquire());
+
+        try {
+            $this->expectExceptionObject(PaymentAppException::invalidSignature(self::APP_ID));
+            $authenticator->authenticate($this->request(), $this->signedParams());
+        } finally {
+            $lock->release();
+        }
+    }
+
+    public function testFailedNoncePersistenceRejectsTheRequestAndReleasesTheLock(): void
+    {
+        $cache = $this->createMock(CacheItemPoolInterface::class);
+        $cache->method('getItem')->willReturn((new ArrayAdapter(clock: $this->clock))->getItem('nonce'));
+        $cache->expects($this->once())->method('save')->willReturn(false);
+        $authenticator = $this->authenticator($this->app(), $cache);
+
+        try {
+            $authenticator->authenticate($this->request(), $this->signedParams());
+            static::fail('A request without a persisted nonce must fail closed.');
+        } catch (PaymentAppException $exception) {
+            static::assertEquals(PaymentAppException::invalidSignature(self::APP_ID), $exception);
+        }
+
+        $lock = $this->lockFactory->createLock('shopwell.payment.nonce.' . Hasher::hash(self::APP_ID . '|' . self::NONCE));
+        static::assertTrue($lock->acquire());
+        $lock->release();
+    }
+
+    public function testDisallowedIpDoesNotConsumeTheNonce(): void
+    {
+        $app = $this->app(allowedIps: ['10.0.0.1']);
+        $authenticator = $this->authenticator($app);
+        $params = $this->signedParams();
+
+        try {
+            $authenticator->authenticate($this->request(), $params);
+            static::fail('The first IP must be refused.');
+        } catch (PaymentAppException $exception) {
+            static::assertEquals(PaymentAppException::invalidSignature(self::APP_ID), $exception);
+        }
+
+        $allowedRequest = Request::create(self::PATH, self::METHOD, server: ['REMOTE_ADDR' => '10.0.0.1']);
+        static::assertSame($app, $authenticator->authenticate($allowedRequest, $params));
     }
 
     public function testAuthenticateRejectsARequestFromADisallowedIp(): void
     {
         $authenticator = $this->authenticator($this->app(allowedIps: ['10.0.0.1']));
 
-        $this->expectExceptionObject(PaymentException::invalidSignature(self::APP_ID));
+        $this->expectExceptionObject(PaymentAppException::invalidSignature(self::APP_ID));
 
         $authenticator->authenticate($this->request(), $this->signedParams());
     }
@@ -270,43 +361,18 @@ class PaymentAppAuthenticatorTest extends TestCase
         return $app;
     }
 
-    private function authenticator(?PaymentAppEntity $app): PaymentAppAuthenticator
+    private function authenticator(?PaymentAppEntity $app, ?CacheItemPoolInterface $cache = null): PaymentAppAuthenticator
     {
+        $apps = new PaymentAppCollection($app === null ? [] : [$app]);
+
         return new PaymentAppAuthenticator(
-            $this->appRepository($app),
+            new StaticEntityRepository([$apps, $apps]),
             $this->signatureService,
             $this->cipher,
-            new ArrayAdapter(),
+            $cache ?? new ArrayAdapter(clock: $this->clock),
+            $this->lockFactory,
             $this->clock,
             PaymentAppAuthenticator::TIMESTAMP_WINDOW
-        );
-    }
-
-    /**
-     * @return EntityRepository<PaymentAppCollection>
-     */
-    private function appRepository(?PaymentAppEntity $app): EntityRepository
-    {
-        $repository = static::createStub(EntityRepository::class);
-        $repository->method('search')->willReturn($this->searchResult($app));
-
-        return $repository;
-    }
-
-    /**
-     * @return EntitySearchResult<PaymentAppCollection>
-     */
-    private function searchResult(?PaymentAppEntity $app): EntitySearchResult
-    {
-        $entities = $app instanceof PaymentAppEntity ? [$app] : [];
-
-        return new EntitySearchResult(
-            $app instanceof PaymentAppEntity ? $app->getApiAlias() : 'payment_app',
-            \count($entities),
-            new PaymentAppCollection($entities),
-            null,
-            new Criteria(),
-            Context::createDefaultContext()
         );
     }
 }

@@ -7,10 +7,8 @@ use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Payment\Integration\Paypal\Api\PaypalApi;
 use Shopwell\Core\System\Payment\Integration\Paypal\PaypalProvider;
+use Shopwell\Core\System\Payment\Product\PaymentInteraction;
 use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
-use Shopwell\Core\System\Payment\Provider\Config\PaymentConfigReader;
-use Shopwell\Core\System\Payment\Provider\PaymentProviderFactory;
 use Shopwell\Tests\Unit\Core\System\Payment\Provider\Fixtures\PlatformProviders;
 
 /**
@@ -71,7 +69,7 @@ class PaypalProviderTest extends TestCase
 
     public function testDeclaresTheMerchantCredentials(): void
     {
-        $fields = (new PaymentProviderFactory(new PaymentConfigReader()))->create(PlatformProviders::paypal())->credentials;
+        $fields = PlatformProviders::factory()->create(PlatformProviders::paypal())->credentials;
 
         static::assertSame(
             ['client_id', 'client_secret', 'environment', 'webhook_id', 'brand_name'],
@@ -89,14 +87,14 @@ class PaypalProviderTest extends TestCase
 
     public function testDeclaresTheSingleCheckoutChannel(): void
     {
-        $channels = PlatformProviders::paypal()->getChannels();
+        $channels = PlatformProviders::paypal()->getProducts();
 
         static::assertCount(1, $channels);
         static::assertSame('paypal_checkout', $channels[0]->technicalName);
         static::assertSame('paypal', $channels[0]->providerTechnicalName);
-        static::assertSame(PaymentFlow::REDIRECT, $channels[0]->flow);
+        static::assertSame([PaymentInteraction::REDIRECT], $channels[0]->interactions);
         static::assertSame([], $channels[0]->currencies, 'What the account can be paid in is a property of the account.');
-        static::assertSame([], $channels[0]->devices);
+        static::assertSame(['web', 'wap', 'app'], $channels[0]->devices());
     }
 
     public function testDeclaresWhatItPaysOutTo(): void
@@ -115,10 +113,10 @@ class PaypalProviderTest extends TestCase
 
     public function testTheDeclarationIsCoherentEnoughToBuildTheSnapshot(): void
     {
-        $provider = (new PaymentProviderFactory(new PaymentConfigReader()))->create(PlatformProviders::paypal());
+        $provider = PlatformProviders::factory()->create(PlatformProviders::paypal());
 
         static::assertSame('paypal', $provider->technicalName);
-        static::assertCount(1, $provider->channels);
+        static::assertCount(1, $provider->products);
         static::assertTrue($provider->supports(PaymentCapability::CAPTURE));
         static::assertFalse($provider->supports(PaymentCapability::CLOSE), 'Paypal has no close action.');
         static::assertFalse($provider->supports(PaymentCapability::MANDATE));

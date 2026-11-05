@@ -15,6 +15,8 @@ use Shopwell\Core\Checkout\Wallet\Service\WalletTopUpService;
 use Shopwell\Core\Checkout\Wallet\WalletException;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Payment\Product\PaymentScene;
+use Shopwell\Core\System\Payment\Routing\PaymentContext;
 use Shopwell\Core\Test\Stub\DataAbstractionLayer\StaticEntityRepository;
 use Shopwell\Core\Test\Stub\SystemConfigService\StaticSystemConfigService;
 
@@ -64,11 +66,11 @@ class WalletTopUpServiceTest extends TestCase
 
         $payments = $this->createMock(StorefrontPaymentService::class);
         $payments->expects($this->once())
-            ->method('channels')
-            ->with('CNY', 'web')
+            ->method('options')
+            ->with(new PaymentContext('CNY', new PaymentScene('browser', 'web', 'browser')))
             ->willReturn([['channel' => 'alipay_h5', 'label' => '支付宝', 'provider' => 'alipay', 'provider_label' => '支付宝', 'flow' => 'redirect']]);
 
-        $options = $this->service($payments)->options('CNY', 'web');
+        $options = $this->service($payments)->options(new PaymentContext('CNY', new PaymentScene('browser', 'web', 'browser')));
 
         static::assertSame(10.0, $options['min']);
         static::assertSame(5000.0, $options['max']);
@@ -78,16 +80,16 @@ class WalletTopUpServiceTest extends TestCase
 
     public function testPresetsFallBackToTheDefaultsAndDropGarbage(): void
     {
-        $this->payments->method('channels')->willReturn([]);
+        $this->payments->method('options')->willReturn([]);
 
         static::assertSame(
             [100.0, 200.0, 500.0, 1000.0, 2000.0],
-            $this->topUpService->options('CNY', null)['presets']
+            $this->topUpService->options(new PaymentContext('CNY', new PaymentScene('browser', 'web', 'browser')))['presets']
         );
 
         $this->systemConfigService->set(WalletSettings::CONFIG_KEY_TOP_UP_PRESETS, '300, 100 ,abc,, -5, 100');
 
-        static::assertSame([100.0, 300.0], $this->topUpService->options('CNY', null)['presets']);
+        static::assertSame([100.0, 300.0], $this->topUpService->options(new PaymentContext('CNY', new PaymentScene('browser', 'web', 'browser')))['presets']);
     }
 
     public function testCreateWritesTheIntentAndOpensThePayment(): void
@@ -95,31 +97,11 @@ class WalletTopUpServiceTest extends TestCase
         $payments = $this->createMock(StorefrontPaymentService::class);
         $payments->expects($this->once())
             ->method('open')
-            ->with(
-                static::isString(),
-                'alipay_h5',
-                // the amount is handed to the channel in the smallest unit of the currency
-                12800,
-                'CNY',
-                'Wallet top-up',
-                static::stringStartsWith('wallet_top_up:'),
-                'https://shop.test/account/wallet',
-                '10.0.0.1',
-                'web',
-            )
+            ->with(static::isString(), 'alipay_h5', // the amount is handed to the channel in the smallest unit of the currency
+                12800, 'Wallet top-up', static::stringStartsWith('wallet_top_up:'), new PaymentContext('CNY', new PaymentScene('browser', 'web', 'browser')), 'https://shop.test/account/wallet', '10.0.0.1')
             ->willReturn(['payment_no' => 'PAY-1', 'channel' => 'alipay_h5', 'params' => ['url' => 'https://pay.test']]);
 
-        $result = $this->service($payments)->create(
-            self::CUSTOMER_ID,
-            self::CURRENCY_ID,
-            'cny',
-            128.0,
-            'alipay_h5',
-            'https://shop.test/account/wallet',
-            '10.0.0.1',
-            'web',
-            $this->context,
-        );
+        $result = $this->service($payments)->create(self::CUSTOMER_ID, self::CURRENCY_ID, new PaymentContext('CNY', new PaymentScene('browser', 'web', 'browser')), 128.0, 'alipay_h5', 'https://shop.test/account/wallet', '10.0.0.1', $this->context);
 
         static::assertSame(128.0, $result['amount']);
         static::assertSame('CNY', $result['currency']);
@@ -129,9 +111,38 @@ class WalletTopUpServiceTest extends TestCase
         static::assertSame($result['id'], $created['id']);
         static::assertSame('CNY', $created['currency']);
         static::assertSame(CustomerWalletTopUpEntity::STATE_OPEN, $created['state']);
-        static::assertSame('alipay_h5', $created['channelTechnicalName']);
+        static::assertArrayNotHasKey('channelTechnicalName', $created);
 
         static::assertSame('PAY-1', $this->topUpRepository->updates[0][0]['paymentNo']);
+    }
+
+    public function testMethodSelectionStoresTheResolvedProduct(): void
+    {
+        $payments = static::createMock(StorefrontPaymentService::class);
+        $service = $this->service($payments, resolveExplicitChannel: false);
+        $payments->expects($this->once())->method('resolveMethod')->with('alipay', new PaymentContext('CNY', new PaymentScene('browser', 'web', 'browser')))->willReturn('alipay');
+        $payments->expects($this->once())->method('open')->with(static::anything(), 'alipay', static::anything(), static::anything(), static::anything(), static::isInstanceOf(PaymentContext::class), static::anything(), static::anything())->willReturn(['payment_no' => 'PAY-WEB', 'channel' => 'alipay_web', 'params' => []]);
+
+        $result = $service->create(self::CUSTOMER_ID, self::CURRENCY_ID, new PaymentContext('CNY', new PaymentScene('browser', 'web', 'browser')), 100.0, 'alipay', null, null, $this->context);
+
+        static::assertSame('alipay_web', $result['channel']);
+        static::assertSame('alipay_web', $this->topUpRepository->updates[0][0]['channelTechnicalName']);
+    }
+
+    public function testUnusableMethodIsRejectedBeforeCreatingAnIntent(): void
+    {
+        $payments = static::createMock(StorefrontPaymentService::class);
+        $service = $this->service($payments, resolveExplicitChannel: false);
+        $payments->expects($this->once())->method('resolveMethod')->willThrowException(new \RuntimeException('No usable product'));
+        $payments->expects($this->never())->method('open');
+
+        try {
+            $service->create(self::CUSTOMER_ID, self::CURRENCY_ID, new PaymentContext('CNY', new PaymentScene('browser', 'web', 'browser')), 100.0, 'wechat', null, null, $this->context);
+            static::fail('The selection must reject the method');
+        } catch (\RuntimeException $exception) {
+            static::assertSame('No usable product', $exception->getMessage());
+        }
+        static::assertSame([], $this->topUpRepository->creates);
     }
 
     public function testCreateIsRejectedWhenTheWalletIsDisabled(): void
@@ -143,17 +154,7 @@ class WalletTopUpServiceTest extends TestCase
 
         $this->expectExceptionObject(WalletException::walletDisabled());
 
-        $this->service($payments)->create(
-            self::CUSTOMER_ID,
-            self::CURRENCY_ID,
-            'CNY',
-            100.0,
-            'alipay_h5',
-            null,
-            null,
-            null,
-            $this->context,
-        );
+        $this->service($payments)->create(self::CUSTOMER_ID, self::CURRENCY_ID, new PaymentContext('CNY', new PaymentScene('browser', 'web', 'browser')), 100.0, 'alipay_h5', null, null, $this->context);
     }
 
     public function testCreateKeepsAFailedAttemptVisible(): void
@@ -161,17 +162,7 @@ class WalletTopUpServiceTest extends TestCase
         $this->payments->method('open')->willThrowException(new \RuntimeException('channel is down'));
 
         try {
-            $this->topUpService->create(
-                self::CUSTOMER_ID,
-                self::CURRENCY_ID,
-                'CNY',
-                100.0,
-                'alipay_h5',
-                null,
-                null,
-                null,
-                $this->context,
-            );
+            $this->topUpService->create(self::CUSTOMER_ID, self::CURRENCY_ID, new PaymentContext('CNY', new PaymentScene('browser', 'web', 'browser')), 100.0, 'alipay_h5', null, null, $this->context);
 
             static::fail('The exception of the channel has to reach the caller');
         } catch (\RuntimeException) {
@@ -198,7 +189,7 @@ class WalletTopUpServiceTest extends TestCase
 
         $this->expectExceptionObject(WalletException::invalidAmount($amount));
 
-        $this->service($payments)->create(self::CUSTOMER_ID, self::CURRENCY_ID, 'CNY', $amount, 'alipay_h5', null, null, null, $this->context);
+        $this->service($payments)->create(self::CUSTOMER_ID, self::CURRENCY_ID, new PaymentContext('CNY', new PaymentScene('browser', 'web', 'browser')), $amount, 'alipay_h5', null, null, $this->context);
     }
 
     public function testCreateRefusesAnAmountAboveTheConfiguredMaximum(): void
@@ -207,7 +198,7 @@ class WalletTopUpServiceTest extends TestCase
 
         $this->expectExceptionObject(WalletException::topUpAboveMaximum(600.0, 500.0));
 
-        $this->topUpService->create(self::CUSTOMER_ID, self::CURRENCY_ID, 'CNY', 600.0, 'alipay_h5', null, null, null, $this->context);
+        $this->topUpService->create(self::CUSTOMER_ID, self::CURRENCY_ID, new PaymentContext('CNY', new PaymentScene('browser', 'web', 'browser')), 600.0, 'alipay_h5', null, null, $this->context);
     }
 
     public function testRecentAnswersTheNewestTopUps(): void
@@ -232,8 +223,12 @@ class WalletTopUpServiceTest extends TestCase
         $this->topUpService->find(self::TOP_UP_ID, self::CUSTOMER_ID, $this->context);
     }
 
-    private function service(?StorefrontPaymentService $payments = null): WalletTopUpService
+    private function service((StorefrontPaymentService&Stub)|null $payments = null, bool $resolveExplicitChannel = true): WalletTopUpService
     {
+        if ($resolveExplicitChannel) {
+            ($payments ?? $this->payments)->method('resolveMethod')->willReturnArgument(0);
+        }
+
         return new WalletTopUpService(
             $this->topUpRepository,
             $payments ?? $this->payments,

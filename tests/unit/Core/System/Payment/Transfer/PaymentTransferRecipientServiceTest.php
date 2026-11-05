@@ -425,7 +425,7 @@ class PaymentTransferRecipientServiceTest extends TestCase
                 technicalName: 'acme',
                 label: 'acme',
                 credentials: [],
-                channels: [],
+                products: [],
                 gatewayFactory: static::createStub(PaymentGatewayFactory::class),
                 notificationExtractor: static::createStub(PaymentNotificationExtractorInterface::class),
                 transferRules: new PaymentTransferRules(

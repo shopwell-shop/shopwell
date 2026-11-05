@@ -1,126 +1,103 @@
+
 # `src/Core/System/Payment` — architecture guide
 
-This module is the platform's payment gateway for external systems: apps call `/payment-api/v1/*` to collect money,
-the platform talks to payment interfaces (Alipay, WeChat Pay, PayPal, Stripe) on their behalf, books what happened
-and reports it back through signed webhooks.
-It is **independent of the checkout** — `Checkout/Payment` is the shop's own cashier and must not be mixed with this module.
+Payment infrastructure for collecting money, refunds, payouts and recurring charges.
+`Checkout/Payment` adapts shop orders and storefront purchases to this module; the infrastructure never depends on checkout-specific purchase types.
 
-## Layers
+## Model
 
-```
-Api/              HTTP contract of the gateway: controllers, request/response structs, route scope
-App/              the apps that call us: authentication, provisioning, credential sealing
-Order/            collection domain: payment order aggregate, state, capture, close, reconcile, refunds
-Transfer/         payout domain (money leaving the platform)
-Subscription/     recurring domain (plans, mandates, cycles)
-Provider/         declaration contract: what an interface is and what it can do
-Integration/      protocol adapters: one package per interface, following the payum package layout
-Gateway/          payum orchestration: base action/api, gateway factory, request models
-Notification/     inbound: interface -> platform (verified, never a source of state)
-Webhook/          outbound: platform -> app (signed, retried)
-```
+- A **method** is what the payer recognizes, such as Alipay or WeChat Pay.
+  `Method/PaymentMethod` declares its open technical identifier, translation key and capabilities.
+- A **provider** implements a payment protocol and declares its products, credential schema and actions.
+  An official integration and an aggregator can offer the same logical method.
+- A **product** is an executable provider offering, such as mobile website payment or mini-program payment.
+  `Product/PaymentProduct` declares its method, supported scenes, interactions, currencies, runtime inputs and capabilities.
+- An **account** identifies a merchant with a provider and owns encrypted credentials, enabled products and product parameters.
+  `App/Aggregate/PaymentAppAccount` grants an application access to an explicit account and assigns routing priority.
+- A **cashier configuration** belongs to an application and defines an entry point's method allowlist, routing policy and presentation.
+  A cashier session freezes a business obligation, configuration and caller-supplied execution context before payment starts.
+- An **order** is the business obligation.
+  An **attempt** freezes the selected account, method, provider, product, interaction and provider request identity.
+  Transactions audit provider calls; they do not replace attempts.
 
-Dependency rule: `Api/` → domain (`Order/`, `Transfer/`, `Subscription/`) → channel (`Provider/`, `Integration/`, `Gateway/`).
-The channel layer never depends on the domain: an action reads the request and `PaymentGatewayModel`, nothing else.
-`Notification/` is the second inbound path into the domain (the first is `Api/`); both end in the same
-`PaymentOrderPaidHandler`, which is the only place a payment becomes paid.
+Identifiers for methods, providers, products, scenes and interactions are extensible strings.
+Core constants describe built-in integrations without closing the catalog to extensions.
+Scene descriptors contain data; ecosystem-specific scene declarations belong to integrations or entry-point adapters.
+Browser detection describes the current browser and proves neither native SDK support nor an account-scoped payer identity.
 
-Direction in one line: **Notification comes in, Webhook goes out.**
+## Responsibilities
 
-## Naming
-
-Names follow the conventions of the surrounding modules — look at `Checkout/Order`, `Checkout/Payment`,
-`Framework/App` and `System/StateMachine` before inventing a new one.
-
-- Directories and namespaces are the same path. A move is a rename; there is no intermediate state.
-- Class names keep their domain prefix (`PaymentOrderService`, not `OrderService`) — nested domains do not strip it.
-- Suffixes carry the role: `*Entity` / `*Collection` (data only, no behaviour), `*Service` (write side of an aggregate),
-  `*StateHandler` (the only place state machine actions are named), `*States` (state machine + action constants),
-  `*Registry` (read side, never writes), `*Factory` (builds a runtime object), `*Presenter` (domain → response shape),
-  `*Reconciler` (brings local state in line with the channel), `*Extractor` (reads references out of an inbound payload),
-  `*Verifier` (proves a notification is genuine).
-- An interface package has exactly one layout, copied from payum: `Action/`, `Api/`, `Request/`, `Notification/`,
-  and its `<Name>Provider.php` at the root. Do not add a sixth kind of file to that root.
-- A class that talks to a channel is `*Action`; a class that talks to the admin is a controller under `Api/`.
-
-## Adding a payment interface
-
-One class plus its actions, no core file and no migration:
-
-1. `Integration/<Name>/` with `Action/`, `Api/`, `Request/`, `Notification/`.
-2. `<Name>Provider extends AbstractPaymentProvider`: technical name, label snippet key, api class, actions,
-   notification extractor, credentials, channels, capabilities.
-3. Register the services in `src/Core/System/DependencyInjection/payment.php` and tag the declaration with
-   `shopwell.payment.provider` (`key` = technical name, `priority` = `-100` for core interfaces).
-4. `bin/console payment:providers:validate` must pass; it refuses incoherent declarations.
-
-Capabilities are a contract, not documentation: a request capability must have an action that declares it,
-a policy capability is declared explicitly, and the declaration and implementation are checked against each other.
-
-## Where the protocol lives
-
-`Api/` owns the wire: it builds the request objects of the vendor sdk, performs the call, and normalizes the
-answer into the array the action reads. An action composes the business content, decides what a rejection means,
-and maps the answer onto the domain result — it never reaches for the sdk itself.
-
-```php
-// Api: the only place the vendor sdk is touched
-public function createOrder(array $order): array   // $answer['error'] carries a rejection, never throws
-
-// Action: business content in, domain result out
-$answer = $api->createOrder([...]);
-if (isset($answer['error'])) {
-    throw PaymentException::gatewayError($api->channel(), PaypalApi::rejectionMessageOf($answer) ?? '...');
-}
+```text
+Api/              HTTP parsing, app authentication and response presentation
+App/              application lifecycle, signing, access limits and account grants
+Account/          merchant account lifecycle, credentials and identity protection
+Method/           payer-facing method definitions
+Product/          provider product declarations and scene contracts
+Routing/          eligibility, authorized candidates and routing policy
+Cashier/          cashier configurations, immutable sessions and payment initiation
+Order/            business obligations, execution attempts, refunds and reconciliation
+Transfer/         recipient onboarding and payouts
+Subscription/     plans, mandates, subscriptions and billing cycles
+Provider/         provider declarations, configuration and runtime gateway assembly
+Integration/      provider-specific protocol adapters
+Gateway/          Payum orchestration and normalized request/result contracts
+Notification/     authenticated provider callbacks entering the payment domain
+Webhook/          signed application notifications leaving the payment domain
 ```
 
-Rules that follow from it:
+HTTP controllers translate requests; they do not choose provider products or mutate financial state directly.
+Manage account configuration through `Account/PaymentAccountService`; applications grant existing accounts without writing merchant credentials.
+Routing intersects active accounts, account-enabled products and application product grants, then delegates candidate choice to a routing policy.
+Provider actions consume normalized gateway models and results.
+Vendor SDK calls, request models, cryptography and wire-response parsing belong in the integration's `Api/` package.
 
-- One `*Api` method per interface resource, all four interfaces spelling it the same way:
-  `createPayment` / `createTransfer` / `createOrder` / `createCheckoutSession` / `createPayout` for a creation,
-  `query` / `queryTransfer` for a read, `close` for a close, `refundPayment` / `refundCapture` / `createRefund` for a refund.
-  A verb that only one interface knows (`precreate`, `verifyWebhookSignature`) stays in that interface's api —
-  but a second interface using the same verb must not invent a different word for it.
-- Two kinds of answer, and which one a method returns is a decision, not a habit:
-  an answer that is the same fact for every interface (`query`, `close`) is narrowed to a `QueryResult` / `CloseResult`
-  on the spot; an answer only the caller can read is handed back as `array<string, mixed>` in the shape of the wire.
-- A rejection of the interface is an **answer**, not an exception: return it with `error.code` / `error.message`
-  and the original body under `raw`. Only a failure that produced no answer at all may throw. A capture that was
-  refused is an empty answer for the action to read (`$answer['qr_code'] ?? null`), because "refused" and "retry"
-  mean different things per channel and that is the action's call.
-- Reading a rejection is shared, not copied: `<Name>Api::rejectionCodeOf()` / `rejectionMessageOf()`.
-  Do not parse `$answer['error']` in an action — three copies of that parse is how the shapes drift apart.
-- Reading a wire field the domain needs (an intent id, an approve link, a signature) belongs to the api as well:
-  `StripeApi::paymentIntentIdOf()`, `PaypalApi::approveUrlOf()`, `AlipayApi::verifyNotificationSignature()`.
-- payum orchestration stays in `Gateway/`; the vendor sdk never appears in `Action/` — not even a request model.
-  A model the sdk wants is built in the `*Api` from the business content the action records, so the record and the
-  call cannot tell different stories.
+## Extension contracts
 
-## Style
+1. Register logical methods with `shopwell.payment.method_definition` and a translation key.
+2. Add a provider under `Integration/<Name>/`, extending `AbstractPaymentProvider`.
+   Keep protocol actions in `Action/`, SDK access in `Api/`, and notification verification in `Notification/`.
+3. Declare products through `getProducts()` with the offered logical method and actual supported capabilities.
+   A capture action must produce an interaction that its product declares.
+4. Use `Product/Event/PaymentProductsEvent` to contribute products or scene support when extending an existing declaration.
+5. Register custom routing policies with `shopwell.payment.routing_policy`.
+   Policies can choose only from the authorized candidates they receive.
+6. Run `bin/console payment:providers:validate` to validate the complete declaration graph.
 
-- Match the module you are in. If a pattern exists in `Checkout/Cart` or `System/StateMachine`, use it instead of a new one.
-- Validate at the boundary, not everywhere. A guard is justified when the value really can arrive in the wrong shape
-  from outside (HTTP payload, channel response, database row). Re-checking a value that the type system or the caller
-  already guarantees (`is_string($name) && $name !== ''` before passing a `string` into a place that needs a name)
-  hides the real invariant and reads as distrust of our own code. Look at how `Checkout/Order` handles its ids.
-- No defensive `??` chains that turn a programming error into a silent default. If a field is required, make it required.
-- Comments explain the business reason, not the syntax. The existing files are the reference.
-- Amounts are integers in the currency's smallest unit. Never format money inside the channel layer.
+A new provider, payment method or business scene must not require a new central conditional branch.
+Use events where timing fits; introduce a strategy or registry when the behavior itself varies.
+Labels are snippet keys or translated at presentation boundaries.
+Do not duplicate provider-specific identifiers in checkout or wallet code to select products.
 
-## Gates
+## Financial invariants
 
-- `vendor/bin/phpunit tests/unit/Core/System/Payment` and `tests/integration/Core/System/Payment` must stay green.
-- A class move is not verified by the module's own suite. Run the suites of the **consumers** as well —
-  `--testsuite migration`, `tests/unit/Core/Checkout/Payment`, `tests/unit/Core/Checkout/OrderReturn` —
-  because a suite the pipeline does not run keeps a dead import for as long as nothing executes that line.
-  `PaymentNamespaceAuditTest` reads the whole repository for that reason: every reference to a class of this module
-  must name a file that exists. It is the mechanical check; the suite matrix above is the behavioural one.
-- A module-scoped audit only sees its own namespace. `tests/unit/Core/DevOps/StaticAnalyze/StaleClassReferenceTest`
-  is the repository-wide counterpart — every class that `src` imports or names statically has to exist on disk.
-  Run it after any move, no matter which module moved: the references that break usually live in a definition
-  of another domain (`System/Currency`, `System/Language`, `Checkout/Customer`).
-- `vendor/bin/phpstan analyse` — clear the result cache first after moving files.
-- `vendor/bin/php-cs-fixer fix --config=.php-cs-fixer.dist.php <changed files>`.
-- `bin/console lint:container` after touching the DI file.
-- After moving a class: `composer dump-autoload`, then drop the test cache (`var/cache/test_*`), otherwise the
-  compiled container keeps loading the old class names.
+- Store payment amounts as integer minor units with their currency.
+  Convert external decimal or shop float amounts at the boundary through `System/Currency/CurrencyAmountConverter`.
+- Authorize every new route against the application's account grants and enabled products.
+  Required payer identities are scoped to the selected account; a common OpenID cannot authorize another merchant application's product.
+- Serialize merchant identity updates and first financial bindings through `Account/PaymentAccountLock`.
+  Revalidate the resolved account configuration inside the binding transaction with a current read.
+- Claim an attempt and persist its stable provider request identity before network I/O.
+  Keep network calls outside database row locks.
+- Replay a persisted handover.
+  An unanswered or unknown attempt must be reconciled before another provider trade can begin.
+- Bind refunds, queries and closes to their original attempt and account.
+  Account deactivation or changes to routing priority affect new payments, not historical recovery.
+- Treat provider callbacks as authenticated inputs to shared state handlers.
+  Preserve early settlement when the provider responds after its callback has already arrived.
+- Persist financial state and its event outbox atomically.
+  Dispatch external application notifications after commit, with idempotent delivery and retries.
+- Return a retryable server response when callback processing fails transiently.
+  Do not acknowledge an infrastructure failure as successfully processed.
+
+## Style and validation
+
+Follow the root `AGENTS.md`, PHP and Administration skills, and the established patterns in `Checkout/Cart` and `Checkout/DocumentV2`.
+Use domain-prefixed class names and role suffixes such as `Entity`, `Collection`, `Registry`, `Factory`, `Presenter`, `Reconciler` and `Verifier`.
+Keep entities focused on DAL data and put business transitions in their responsible service or state handler.
+Validate untrusted payloads at boundaries; avoid fallback chains that conceal broken internal contracts.
+This is a development baseline: edit original schema migrations and remove obsolete contracts without compatibility aliases or deprecated branches.
+
+Run payment unit and integration suites, consumer suites for the touched checkout, wallet, membership and storefront paths, and affected migration tests.
+After class moves, run `PaymentNamespaceAuditTest`, `StaleClassReferenceTest`, autoload generation and container lint.
+Lint every touched file and run PHPStan for changed PHP source and tests.
+Administration behavior changes require DOM-oriented Jest coverage; verify rendered layouts after rebuilding the Administration assets.

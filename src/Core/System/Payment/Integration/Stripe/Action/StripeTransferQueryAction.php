@@ -4,6 +4,8 @@ namespace Shopwell\Core\System\Payment\Integration\Stripe\Action;
 
 use Payum\Core\Exception\RequestNotSupportedException;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Payment\Exception\PaymentGatewayException;
+use Shopwell\Core\System\Payment\Exception\PaymentTransferException;
 use Shopwell\Core\System\Payment\Gateway\AbstractPaymentAction;
 use Shopwell\Core\System\Payment\Gateway\Request\PaymentTransferQuery;
 use Shopwell\Core\System\Payment\Gateway\Request\TransferQueryResult;
@@ -71,7 +73,7 @@ final class StripeTransferQueryAction extends AbstractPaymentAction
         } catch (\Throwable $exception) {
             $this->recordResponse($model, ['error' => $exception->getMessage()]);
 
-            throw PaymentException::gatewayError($api->channel(), $exception->getMessage(), $exception);
+            throw PaymentGatewayException::gatewayError($api->channel(), $exception->getMessage(), $exception);
         }
 
         $this->recordResponse($model, $answer);
@@ -132,7 +134,7 @@ final class StripeTransferQueryAction extends AbstractPaymentAction
         $accountId = $recipient->providerAccountId;
 
         if ($accountId === null || !str_starts_with($accountId, StripeTransferAction::ACCOUNT_ID_PREFIX)) {
-            throw PaymentException::transferRecipientIncomplete('provider_account_id');
+            throw PaymentTransferException::transferRecipientIncomplete('provider_account_id');
         }
     }
 

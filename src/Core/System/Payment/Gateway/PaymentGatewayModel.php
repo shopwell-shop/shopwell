@@ -4,9 +4,11 @@ namespace Shopwell\Core\System\Payment\Gateway;
 
 use Payum\Core\Model\ArrayObject;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Payment\Exception\PaymentGatewayException;
+use Shopwell\Core\System\Payment\Exception\PaymentOrderException;
+use Shopwell\Core\System\Payment\Order\Aggregate\PaymentAttempt\PaymentAttemptEntity;
 use Shopwell\Core\System\Payment\Order\Aggregate\PaymentRefund\PaymentRefundEntity;
 use Shopwell\Core\System\Payment\Order\PaymentOrderEntity;
-use Shopwell\Core\System\Payment\PaymentException;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferEntity;
 
 /**
@@ -19,7 +21,7 @@ use Shopwell\Core\System\Payment\Transfer\PaymentTransferEntity;
  * incoming answer are recorded on the model as well, and finally the action stores its typed result
  * in it:
  *
- *  - a Capture gets a {@see PayResult},
+ *  - a Capture gets a {@see PaymentStartResult},
  *  - a Refund gets a {@see RefundResult},
  *  - a Notify gets a {@see NotificationResult},
  *  - a Query gets a {@see QueryResult}.
@@ -88,10 +90,12 @@ final class PaymentGatewayModel extends ArrayObject
         $this->details = $values;
     }
 
-    public static function forOrder(PaymentOrderEntity $order): self
+    public static function forOrder(PaymentOrderEntity $order, ?PaymentAttemptEntity $attempt = null): self
     {
+        $attempt ??= $order->activeAttempt ?? throw PaymentOrderException::startPending($order->paymentNo);
+
         return new self([
-            self::PAYMENT_NO => $order->paymentNo,
+            self::PAYMENT_NO => $attempt->attemptNo,
             self::OUT_TRADE_NO => $order->outTradeNo,
             self::AMOUNT => $order->amount,
             self::CURRENCY => $order->currency,
@@ -99,17 +103,22 @@ final class PaymentGatewayModel extends ArrayObject
             self::BODY => $order->body,
             self::ATTACH => $order->attach,
             self::CLIENT_IP => $order->clientIp,
-            self::DEVICE => $order->device,
+            self::DEVICE => $attempt->context['device'] ?? null,
             self::EXPIRE_AT => $order->expireAt,
         ]);
     }
 
     public static function forRefund(PaymentOrderEntity $order, PaymentRefundEntity $refund): self
     {
+        $attempt = $refund->paymentAttempt ?? $order->activeAttempt;
+        if ($attempt === null || $refund->paymentAttemptId !== $attempt->id || $attempt->paymentOrderId !== $order->id) {
+            throw PaymentOrderException::refundNotAllowed($order->paymentNo);
+        }
+
         return new self([
-            self::PAYMENT_NO => $order->paymentNo,
+            self::PAYMENT_NO => $attempt->attemptNo,
             self::OUT_TRADE_NO => $order->outTradeNo,
-            self::OUT_PAYMENT_NO => $order->outPaymentNo,
+            self::OUT_PAYMENT_NO => $attempt->outPaymentNo,
             self::AMOUNT => $refund->amount,
             // some channels want the total of the trade next to the refunded amount
             self::ORDER_AMOUNT => $order->amount,
@@ -208,7 +217,7 @@ final class PaymentGatewayModel extends ArrayObject
     }
 
     /**
-     * The typed result the action stored, e.g. a {@see PayResult} after a capture - the three result
+     * The typed result the action stored, e.g. a {@see PaymentStartResult} after a capture - the three result
      * types share one read because they share one storage: whatever the action was, a result that is
      * missing or of the wrong kind means the action did not finish its work.
      *
@@ -223,7 +232,7 @@ final class PaymentGatewayModel extends ArrayObject
         $result = $this->offsetExists(self::RESULT) ? $this->offsetGet(self::RESULT) : null;
 
         if (!$result instanceof $resultClass) {
-            throw PaymentException::gatewayResultMissing($channel);
+            throw PaymentGatewayException::gatewayResultMissing($channel);
         }
 
         return $result;

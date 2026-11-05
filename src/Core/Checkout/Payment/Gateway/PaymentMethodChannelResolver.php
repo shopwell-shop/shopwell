@@ -9,9 +9,8 @@ use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Payment\Exception\PaymentCheckoutBindingException;
 use Shopwell\Core\System\Payment\PaymentException;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannelRegistry;
 
 /**
  * Resolves the gateway channel a checkout payment method collects through.
@@ -31,7 +30,6 @@ final class PaymentMethodChannelResolver
      */
     public function __construct(
         private readonly EntityRepository $bindingRepository,
-        private readonly PaymentChannelRegistry $channelRegistry,
     ) {
     }
 
@@ -51,17 +49,9 @@ final class PaymentMethodChannelResolver
 
         if (!$binding instanceof PaymentMethodGatewayChannelEntity) {
             /** @phpstan-ignore shopwell.domainException (The error belongs to the payment gateway the checkout wraps.) */
-            throw PaymentException::paymentMethodChannelMissing($paymentMethodId);
+            throw PaymentCheckoutBindingException::paymentMethodChannelMissing($paymentMethodId);
         }
 
         return $binding;
-    }
-
-    /**
-     * @throws PaymentException when the payment method is not bound or the bound channel is unknown
-     */
-    public function channelOf(string $paymentMethodId, Context $context): PaymentChannel
-    {
-        return $this->channelRegistry->get($this->resolve($paymentMethodId, $context)->channelTechnicalName);
     }
 }

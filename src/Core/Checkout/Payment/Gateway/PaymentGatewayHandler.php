@@ -13,21 +13,22 @@ use Shopwell\Core\Checkout\Payment\Cart\PaymentHandler\PaymentHandlerType;
 use Shopwell\Core\Checkout\Payment\Cart\PaymentTransactionStruct;
 use Shopwell\Core\Checkout\Payment\Cart\RefundPaymentTransactionStruct;
 use Shopwell\Core\Checkout\Payment\PaymentException as CheckoutPaymentException;
+use Shopwell\Core\Checkout\Payment\Storefront\StorefrontPaymentContextResolver;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Struct\Struct;
+use Shopwell\Core\System\Currency\CurrencyAmountConverter;
 use Shopwell\Core\System\Currency\CurrencyEntity;
-use Shopwell\Core\System\Payment\Api\Struct\PaymentRefundRequest;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
-use Shopwell\Core\System\Payment\Gateway\Request\Money;
+use Shopwell\Core\System\Payment\Exception\PaymentCheckoutBindingException;
+use Shopwell\Core\System\Payment\Exception\PaymentOrderException;
 use Shopwell\Core\System\Payment\Order\PaymentOrderEntity;
 use Shopwell\Core\System\Payment\Order\PaymentOrderReconciler;
 use Shopwell\Core\System\Payment\Order\PaymentOrderService;
 use Shopwell\Core\System\Payment\Order\PaymentRefundService;
-use Shopwell\Core\System\Payment\PaymentException;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannelRegistry;
+use Shopwell\Core\System\Payment\Order\Struct\PaymentRefundRequest;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 
@@ -58,13 +59,14 @@ final class PaymentGatewayHandler extends AbstractPaymentHandler
     public function __construct(
         private readonly EntityRepository $orderTransactionRepository,
         private readonly PaymentMethodChannelResolver $channelResolver,
-        private readonly PaymentChannelRegistry $channelRegistry,
         private readonly OrderPaymentStarter $starter,
         private readonly PaymentOrderService $paymentOrderService,
         private readonly PaymentOrderReconciler $reconciler,
         private readonly PaymentRefundService $refundService,
         private readonly EntityRepository $refundRepository,
         private readonly LoggerInterface $logger,
+        private readonly PaymentMethodCollectability $collectability,
+        private readonly StorefrontPaymentContextResolver $paymentContextResolver,
     ) {
     }
 
@@ -97,7 +99,12 @@ final class PaymentGatewayHandler extends AbstractPaymentHandler
         // the app whose merchant account is charged
         $binding = $this->channelResolver->resolve($orderTransaction->getPaymentMethodId(), $context);
 
-        $channel = $this->channelRegistry->get($binding->channelTechnicalName);
+        $currency = $order->getCurrency();
+        if (!$currency instanceof CurrencyEntity) {
+            throw CheckoutPaymentException::missingRequestParameter('currency');
+        }
+        $selection = $this->paymentContextResolver->resolve($request, $currency->getIsoCode());
+        $channel = $this->collectability->resolve($binding, $context, $selection);
         $app = $binding->paymentApp;
 
         if (!$app instanceof PaymentAppEntity) {
@@ -105,7 +112,7 @@ final class PaymentGatewayHandler extends AbstractPaymentHandler
             // row, so this is data that escaped the database, and without an account there is nothing
             // to collect on
             /** @phpstan-ignore shopwell.domainException (The error belongs to the payment gateway the checkout wraps.) */
-            throw PaymentException::paymentMethodChannelMissing($orderTransaction->getPaymentMethodId());
+            throw PaymentCheckoutBindingException::paymentMethodChannelMissing($orderTransaction->getPaymentMethodId());
         }
 
         $started = $this->starter->start(
@@ -113,7 +120,8 @@ final class PaymentGatewayHandler extends AbstractPaymentHandler
             $orderTransaction,
             $channel,
             $app,
-            (string) $transaction->getReturnUrl()
+            (string) $transaction->getReturnUrl(),
+            $selection
         );
 
         return new RedirectResponse($this->starter->handOver($started['order'], $started['result']));
@@ -159,7 +167,7 @@ final class PaymentGatewayHandler extends AbstractPaymentHandler
 
         if (!$paymentOrder instanceof PaymentOrderEntity) {
             /** @phpstan-ignore shopwell.domainException (The error belongs to the payment gateway the checkout wraps.) */
-            throw PaymentException::orderNotFound($transaction->getOrderTransactionId());
+            throw PaymentOrderException::orderNotFound($transaction->getOrderTransactionId());
         }
 
         // the service resolves the credentials of the channel through the app, and the lookup of the
@@ -168,7 +176,7 @@ final class PaymentGatewayHandler extends AbstractPaymentHandler
 
         if (!$app instanceof PaymentAppEntity) {
             /** @phpstan-ignore shopwell.domainException (The error belongs to the payment gateway the checkout wraps.) */
-            throw PaymentException::orderNotFound($paymentOrder->paymentNo);
+            throw PaymentOrderException::orderNotFound($paymentOrder->paymentNo);
         }
 
         $currency = $orderTransaction->getOrder()?->getCurrency();
@@ -176,8 +184,7 @@ final class PaymentGatewayHandler extends AbstractPaymentHandler
         if (!$currency instanceof CurrencyEntity) {
             // the refund amount of the checkout is a price in the currency of the order, the gateway
             // only accepts the smallest unit - without the currency it cannot be converted
-            /** @phpstan-ignore shopwell.domainException (The error belongs to the payment gateway the checkout wraps.) */
-            throw PaymentException::missingParameter('currency');
+            throw CheckoutPaymentException::missingRequestParameter('currency');
         }
 
         $refund = $this->refundRepository
@@ -222,6 +229,6 @@ final class PaymentGatewayHandler extends AbstractPaymentHandler
      */
     private function toSmallestUnit(float $totalPrice, CurrencyEntity $currency): int
     {
-        return Money::fromFloat($totalPrice, $currency->getIsoCode());
+        return CurrencyAmountConverter::fromFloat($totalPrice, $currency->getIsoCode());
     }
 }

@@ -3,6 +3,7 @@
 namespace Shopwell\Core\System\Payment\Integration\Paypal\Api;
 
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Payment\Exception\PaymentGatewayException;
 use Shopwell\Core\System\Payment\PaymentException;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
@@ -69,7 +70,7 @@ final class PaypalWebhookSignature
     public function verify(string $webhookId, string $rawBody, array $headers): bool
     {
         if ($webhookId === '') {
-            throw PaymentException::missingCredentials(PaypalApi::PROVIDER, PaypalApi::WEBHOOK_ID);
+            throw PaymentGatewayException::missingCredentials(PaypalApi::PROVIDER, PaypalApi::WEBHOOK_ID);
         }
 
         if (!self::hasSignatureHeaders($headers)) {

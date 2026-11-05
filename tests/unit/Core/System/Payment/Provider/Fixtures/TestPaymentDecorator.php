@@ -78,9 +78,9 @@ class TestPaymentDecorator extends AbstractPaymentProvider
         return $this->credentialsOverride ?? $this->decorated->getCredentials();
     }
 
-    public function getChannels(): array
+    public function getProducts(): array
     {
-        return $this->decorated->getChannels();
+        return $this->decorated->getProducts();
     }
 
     public function getChannelCaptureActions(): array

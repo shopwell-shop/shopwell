@@ -2,16 +2,17 @@
 
 namespace Shopwell\Core\System\Payment\Integration\Paypal\Action;
 
-use PaypalServerSdkLib\Models\RefundStatus;
 use Payum\Core\Exception\RequestNotSupportedException;
 use Payum\Core\Request\Refund;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Payment\Exception\PaymentGatewayException;
+use Shopwell\Core\System\Payment\Exception\PaymentRefundRejectedException;
 use Shopwell\Core\System\Payment\Gateway\AbstractPaymentAction;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
+use Shopwell\Core\System\Payment\Gateway\Request\RefundQuery;
 use Shopwell\Core\System\Payment\Gateway\Request\RefundResult;
 use Shopwell\Core\System\Payment\Integration\Paypal\Api\PaypalApi;
 use Shopwell\Core\System\Payment\Order\PaymentRefundStates;
-use Shopwell\Core\System\Payment\PaymentException;
 use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
 
 /**
@@ -30,7 +31,7 @@ final class PaypalRefundAction extends AbstractPaymentAction
     /**
      * The statuses paypal reports for a refund that will never happen.
      */
-    final public const FAILED_STATUSES = [RefundStatus::FAILED, RefundStatus::CANCELLED];
+    final public const FAILED_STATUSES = [PaypalApi::REFUND_FAILED, PaypalApi::REFUND_CANCELLED];
 
     protected string $apiClass = PaypalApi::class;
 
@@ -46,10 +47,16 @@ final class PaypalRefundAction extends AbstractPaymentAction
         $model = $this->modelOf($request);
         $api = $this->api();
 
+        if ($request instanceof RefundQuery) {
+            $this->query($request, $model, $api);
+
+            return;
+        }
+
         $captureId = $this->stringValue($model, PaymentGatewayModel::OUT_PAYMENT_NO);
 
         if ($captureId === '') {
-            throw PaymentException::gatewayError(
+            throw PaymentGatewayException::gatewayError(
                 $api->channel(),
                 'the payment has no capture at paypal yet and therefore cannot be refunded'
             );
@@ -78,13 +85,18 @@ final class PaypalRefundAction extends AbstractPaymentAction
         } catch (\Throwable $exception) {
             $this->recordResponse($model, ['error' => $exception->getMessage()]);
 
-            throw PaymentException::gatewayError($api->channel(), $exception->getMessage());
+            throw PaymentGatewayException::gatewayError($api->channel(), $exception->getMessage());
         }
 
         if (isset($answer['error'])) {
             $this->recordResponse($model, $answer);
 
-            throw PaymentException::gatewayError(
+            $code = PaypalApi::rejectionCodeOf($answer);
+            if (\in_array($code, ['REFUND_AMOUNT_EXCEEDED', 'CAPTURE_FULLY_REFUNDED', 'REFUND_NOT_ALLOWED'], true)) {
+                throw PaymentRefundRejectedException::rejected($api->channel(), PaypalApi::rejectionMessageOf($answer) ?? $code);
+            }
+
+            throw PaymentGatewayException::gatewayError(
                 $api->channel(),
                 PaypalApi::rejectionMessageOf($answer) ?? 'the channel rejected the refund'
             );
@@ -97,14 +109,14 @@ final class PaypalRefundAction extends AbstractPaymentAction
         $this->recordResponse($model, ['id' => $outRefundId, 'status' => $status]);
 
         if (\in_array($status, self::FAILED_STATUSES, true)) {
-            throw PaymentException::gatewayError(
+            throw PaymentRefundRejectedException::rejected(
                 $api->channel(),
                 \sprintf('the channel refused the refund with the status "%s"', $status)
             );
         }
 
         $this->setResult($model, new RefundResult(
-            status: $status === RefundStatus::COMPLETED
+            status: $status === PaypalApi::REFUND_COMPLETED
                 ? PaymentRefundStates::STATE_FINISHED
                 : PaymentRefundStates::STATE_PROCESSING,
             outRefundId: $outRefundId,
@@ -113,7 +125,7 @@ final class PaypalRefundAction extends AbstractPaymentAction
 
     public function supports($request): bool
     {
-        return $this->isSupported($request, Refund::class);
+        return $this->isSupported($request, Refund::class) || $this->isSupported($request, RefundQuery::class);
     }
 
     protected function api(): PaypalApi
@@ -122,5 +134,21 @@ final class PaypalRefundAction extends AbstractPaymentAction
         \assert($api instanceof PaypalApi);
 
         return $api;
+    }
+
+    private function query(RefundQuery $request, PaymentGatewayModel $model, PaypalApi $api): void
+    {
+        $answer = $api->queryRefund($this->stringValue($model, PaymentGatewayModel::OUT_PAYMENT_NO), $this->stringValue($model, PaymentGatewayModel::REFUND_NO), $request->outRefundId);
+        $this->recordResponse($model, $answer);
+        $status = (string) ($answer['status'] ?? '');
+        if (\in_array($status, self::FAILED_STATUSES, true)) {
+            throw PaymentRefundRejectedException::rejected($api->channel(), 'The channel confirmed a failed refund: ' . $status);
+        }
+
+        $id = $answer['id'] ?? $request->outRefundId;
+        $this->setResult($model, new RefundResult(
+            status: $status === PaypalApi::REFUND_COMPLETED ? PaymentRefundStates::STATE_FINISHED : PaymentRefundStates::STATE_PROCESSING,
+            outRefundId: \is_string($id) ? $id : null,
+        ));
     }
 }

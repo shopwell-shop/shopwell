@@ -7,16 +7,18 @@ use Payum\Core\Request\Capture;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Payment\Exception\PaymentGatewayException;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayFactory;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
 use Shopwell\Core\System\Payment\Gateway\Request\PaymentClose;
 use Shopwell\Core\System\Payment\Gateway\Request\PaymentQuery;
 use Shopwell\Core\System\Payment\Integration\Wechat\Action\WechatCloseAction;
 use Shopwell\Core\System\Payment\Integration\Wechat\Api\WechatApi;
+use Shopwell\Core\System\Payment\Integration\Wechat\Product\WechatProducts;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
 use Shopwell\Core\System\Payment\PaymentException;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
+use Shopwell\Core\System\Payment\Product\PaymentInteraction;
+use Shopwell\Core\System\Payment\Product\PaymentProduct;
 use Shopwell\Core\System\Payment\Provider\PaymentProvider;
 use Shopwell\Core\System\Payment\Provider\ResolvedPaymentConfig;
 
@@ -50,7 +52,7 @@ class WechatCloseActionTest extends TestCase
     {
         $action = new WechatCloseAction();
 
-        $this->expectExceptionObject(PaymentException::actionWithoutApi(WechatCloseAction::class));
+        $this->expectExceptionObject(PaymentGatewayException::actionWithoutApi(WechatCloseAction::class));
 
         $action->execute(new PaymentClose(new PaymentGatewayModel()));
     }
@@ -59,7 +61,7 @@ class WechatCloseActionTest extends TestCase
     {
         $action = new WechatCloseAction();
 
-        $this->expectExceptionObject(PaymentException::unsupportedApi(WechatCloseAction::class, \stdClass::class));
+        $this->expectExceptionObject(PaymentGatewayException::unsupportedApi(WechatCloseAction::class, \stdClass::class));
 
         $action->setApi(new \stdClass());
     }
@@ -88,7 +90,7 @@ class WechatCloseActionTest extends TestCase
 
     private function api(): WechatApi
     {
-        $channel = new PaymentChannel(WechatApi::CHANNEL_H5, 'wechat', WechatApi::CHANNEL_H5, PaymentFlow::REDIRECT);
+        $channel = new PaymentProduct(WechatProducts::H5, 'wechat', WechatProducts::H5, [PaymentInteraction::REDIRECT], 'wechat');
 
         return new WechatApi(
             new ResolvedPaymentConfig(
@@ -96,15 +98,16 @@ class WechatCloseActionTest extends TestCase
                     'wechat',
                     'wechat',
                     [],
-                    [WechatApi::CHANNEL_H5 => $channel],
+                    [WechatProducts::H5 => $channel],
                     new PaymentGatewayFactory('wechat', WechatApi::class, []),
                     static::createStub(PaymentNotificationExtractorInterface::class),
                 ),
-                channel: $channel,
+                product: $channel,
                 credentials: [WechatApi::MCH_ID => '1900000001'],
                 params: [],
                 runtimeParams: [],
                 settings: [],
+                accountId: 'test-account',
             ),
             'https://example.com/notify',
             '',

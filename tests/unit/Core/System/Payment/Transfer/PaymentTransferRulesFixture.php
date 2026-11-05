@@ -5,13 +5,20 @@ namespace Shopwell\Tests\Unit\Core\System\Payment\Transfer;
 use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Payment\Account\PaymentAccountCollection;
+use Shopwell\Core\System\Payment\Account\PaymentAccountEntity;
+use Shopwell\Core\System\Payment\App\PaymentCredentialCipher;
 use Shopwell\Core\System\Payment\Gateway\AbstractPaymentApi;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayFactory;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
+use Shopwell\Core\System\Payment\Product\PaymentProductRegistry;
 use Shopwell\Core\System\Payment\Provider\AbstractPaymentProvider;
+use Shopwell\Core\System\Payment\Provider\Config\PaymentConfigResolver;
 use Shopwell\Core\System\Payment\Provider\PaymentProvider;
 use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;
+use Shopwell\Core\System\Payment\Provider\ResolvedPaymentConfig;
 use Shopwell\Core\System\Payment\Provider\Transfer\PaymentTransferRules;
+use Shopwell\Core\Test\Stub\DataAbstractionLayer\StaticEntityRepository;
 use Shopwell\Tests\Unit\Core\System\Payment\Provider\Fixtures\PlatformProviders;
 
 /**
@@ -28,6 +35,51 @@ use Shopwell\Tests\Unit\Core\System\Payment\Provider\Fixtures\PlatformProviders;
 #[CoversNothing]
 final class PaymentTransferRulesFixture extends TestCase
 {
+    public static function resolvedConfig(?PaymentProviderRegistry $providers = null): PaymentConfigResolver
+    {
+        $resolver = static::createStub(PaymentConfigResolver::class);
+        $resolver->method('resolve')->willReturnCallback(static function ($app, string $productName, string $currency, $device = null, array $runtimeParams = [], ?string $accountId = null) use ($providers): ResolvedPaymentConfig {
+            foreach ($providers?->all() ?? [] as $provider) {
+                if (isset($provider->products[$productName])) {
+                    return new ResolvedPaymentConfig($provider, $provider->products[$productName], [], [], $runtimeParams, [], $accountId ?? 'account-id');
+                }
+            }
+            foreach (self::declarations() as $declaration) {
+                foreach ($declaration->getProducts() as $product) {
+                    if ($product->technicalName === $productName) {
+                        return new ResolvedPaymentConfig(self::provider($declaration), $product, [], [], $runtimeParams, [], $accountId ?? 'account-id');
+                    }
+                }
+            }
+            throw new \LogicException('Unknown payment product ' . $productName);
+        });
+
+        return $resolver;
+    }
+
+    public static function boundResolver(PaymentProvider $provider, PaymentCredentialCipher $cipher): PaymentConfigResolver
+    {
+        $account = new PaymentAccountEntity();
+        $account->id = 'account-id';
+        $account->setUniqueIdentifier($account->id);
+        $account->name = 'Original account';
+        $account->providerTechnicalName = $provider->technicalName;
+        $account->active = true;
+        $account->enabledProducts = array_keys($provider->products);
+        $account->credentials = $cipher->encrypt(['app_id' => 'own-app-id', 'alipay_public_key' => 'key']);
+        $account->productParams = ['alipay_h5' => $cipher->encrypt(['appid' => 'own-appid'])];
+        $providers = new PaymentProviderRegistry([$provider]);
+
+        return new PaymentConfigResolver(
+            $providers,
+            new PaymentProductRegistry($providers),
+            new StaticEntityRepository([]),
+            new StaticEntityRepository([]),
+            $cipher,
+            new StaticEntityRepository([new PaymentAccountCollection([$account])]),
+        );
+    }
+
     public static function registry(): PaymentProviderRegistry
     {
         return self::registryOf(self::declarations());
@@ -73,7 +125,7 @@ final class PaymentTransferRulesFixture extends TestCase
             technicalName: $name,
             label: $name,
             credentials: [],
-            channels: [],
+            products: [],
             gatewayFactory: new PaymentGatewayFactory($name, AbstractPaymentApi::class, []),
             notificationExtractor: static::createStub(PaymentNotificationExtractorInterface::class),
             transferRules: $declaration->getTransferRules(),

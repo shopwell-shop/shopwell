@@ -103,8 +103,6 @@ class MembershipPurchaseSettlementSubscriberTest extends TestCase
         $order->paymentNo = 'PAY-1';
         $order->outTradeNo = self::ORDER_ID;
         $order->paymentAppId = 'a1b2c3d4e5f60718293a4b5c6d7e8f90';
-        $order->providerTechnicalName = 'alipay';
-        $order->channelTechnicalName = 'alipay_h5';
         $order->amount = 19900;
         $order->paidAmount = 19900;
         $order->currency = 'CNY';

@@ -6,7 +6,6 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Payment\Exception\PaymentOrderException;
-use Shopwell\Core\System\Payment\PaymentException;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -16,7 +15,7 @@ use Symfony\Component\HttpFoundation\Response;
 #[CoversClass(PaymentOrderException::class)]
 class PaymentOrderExceptionTest extends TestCase
 {
-    public function testAmountMismatchKeepsContractAndFacadeCompatibility(): void
+    public function testAmountMismatchKeepsContract(): void
     {
         $exception = PaymentOrderException::amountMismatch('order-1', 100, 90);
 
@@ -25,10 +24,5 @@ class PaymentOrderExceptionTest extends TestCase
         static::assertSame('PAYMENT__AMOUNT_MISMATCH', $exception->getErrorCode());
         static::assertSame('The notified amount of "order-1" is 90 but 100 was expected.', $exception->getMessage());
         static::assertSame(['paymentNo' => 'order-1', 'expected' => 100, 'actual' => 90], $exception->getParameters());
-
-        $facade = PaymentException::amountMismatch('order-1', 100, 90);
-
-        static::assertSame(PaymentOrderException::class, $facade::class);
-        static::assertEquals($exception, $facade);
     }
 }

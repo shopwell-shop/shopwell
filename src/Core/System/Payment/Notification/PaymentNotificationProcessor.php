@@ -6,12 +6,18 @@ use Payum\Core\Request\Notify;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
+use Shopwell\Core\System\Payment\Exception\PaymentGatewayException;
+use Shopwell\Core\System\Payment\Exception\PaymentNotificationException;
+use Shopwell\Core\System\Payment\Exception\PaymentOrderException;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
 use Shopwell\Core\System\Payment\Gateway\Request\NotificationResult;
 use Shopwell\Core\System\Payment\Notification\Struct\PaymentNotificationData;
+use Shopwell\Core\System\Payment\Order\Aggregate\PaymentAttempt\PaymentAttemptCollection;
+use Shopwell\Core\System\Payment\Order\Aggregate\PaymentAttempt\PaymentAttemptEntity;
 use Shopwell\Core\System\Payment\Order\Aggregate\PaymentRefund\PaymentRefundEntity;
 use Shopwell\Core\System\Payment\Order\PaymentOrderEntity;
 use Shopwell\Core\System\Payment\Order\PaymentOrderPaidHandler;
@@ -51,6 +57,7 @@ final class PaymentNotificationProcessor
 
     /**
      * @param EntityRepository<PaymentNotificationCollection> $notificationRepository
+     * @param EntityRepository<PaymentAttemptCollection> $attemptRepository
      */
     public function __construct(
         private readonly EntityRepository $notificationRepository,
@@ -59,6 +66,7 @@ final class PaymentNotificationProcessor
         private readonly PaymentRefundService $refundService,
         private readonly PaymentConfigResolver $configResolver,
         private readonly PaymentOrderPaidHandler $paidHandler,
+        private readonly EntityRepository $attemptRepository,
     ) {
     }
 
@@ -90,7 +98,7 @@ final class PaymentNotificationProcessor
                 throw $exception;
             }
 
-            throw PaymentException::gatewayError($providerTechnicalName, $exception->getMessage(), $exception);
+            throw PaymentGatewayException::gatewayError($providerTechnicalName, $exception->getMessage(), $exception);
         } finally {
             $this->conclude($notificationId, $context);
         }
@@ -104,34 +112,57 @@ final class PaymentNotificationProcessor
     private function handle(PaymentNotificationProcessingContext $context): void
     {
         $data = $this->extractReferences($context);
-        ['order' => $order, 'refund' => $refund] = $this->resolveSubject($data);
+        $attempt = $this->resolveAttempt($data, $context->paymentNoHint);
+        $order = $attempt === null ? null : $this->orderService->getById($attempt->paymentOrderId);
         $app = $order?->paymentApp;
 
         if (!$order instanceof PaymentOrderEntity || !$app instanceof PaymentAppEntity) {
             $context->result = PaymentNotificationEntity::RESULT_UNMATCHED;
 
-            throw PaymentException::notificationOrderUnknown(
+            throw PaymentNotificationException::notificationOrderUnknown(
                 $context->providerTechnicalName,
                 $data->paymentNo ?? $data->refundNo ?? $data->outTradeNo ?? $data->outPaymentNo ?? ''
             );
         }
 
+        if ($attempt === null || $attempt->providerTechnicalName !== $context->providerTechnicalName) {
+            throw PaymentNotificationException::notificationInvalid($context->providerTechnicalName, 'the provider does not match the payment attempt');
+        }
+
         $context->orderId = $order->id;
+        $context->attemptId = $attempt->id;
+        // A delayed callback belongs to its original attempt, including its account and product.
+        $order->activeAttemptId = $attempt->id;
+        $order->activeAttempt = $attempt;
         $result = $this->verifyNotification($context, $order, $app);
 
         if (!$result->signatureValid) {
             $context->result = PaymentNotificationEntity::RESULT_INVALID_SIGNATURE;
 
-            throw PaymentException::notificationInvalid($context->providerTechnicalName, 'the signature of the notification is invalid');
+            throw PaymentNotificationException::notificationInvalid($context->providerTechnicalName, 'the signature of the notification is invalid');
         }
 
         $context->signatureValid = true;
+        $refund = null;
+        if ($result->isRefund) {
+            $refund = $result->refundNo === null ? null : $this->refundService->findByRefundNo($result->refundNo);
+            if (!$refund instanceof PaymentRefundEntity || $refund->paymentOrderId !== $order->id || $refund->paymentAttemptId !== $attempt->id) {
+                $context->result = PaymentNotificationEntity::RESULT_UNMATCHED;
+
+                throw PaymentNotificationException::notificationInvalid($context->providerTechnicalName, 'the signed refund does not belong to the payment');
+            }
+        } elseif ($result->paymentNo !== $attempt->attemptNo) {
+            $context->result = PaymentNotificationEntity::RESULT_UNMATCHED;
+
+            throw PaymentNotificationException::notificationInvalid($context->providerTechnicalName, 'the signed payment reference does not match the payment');
+        }
+
         $expected = $refund instanceof PaymentRefundEntity ? $refund->amount : $order->amount;
 
         if (!$this->amountMatches($expected, $result)) {
             $context->result = PaymentNotificationEntity::RESULT_AMOUNT_MISMATCH;
 
-            throw PaymentException::amountMismatch($order->paymentNo, $expected, $result->amount ?? 0);
+            throw PaymentOrderException::amountMismatch($order->paymentNo, $expected, $result->amount ?? 0);
         }
 
         if ($result->currency !== null && !$this->currencyMatches($order->currency, $result->currency)) {
@@ -139,7 +170,7 @@ final class PaymentNotificationProcessor
             // mismatch reported as an amount mismatch would send them looking at the amount check
             $context->result = PaymentNotificationEntity::RESULT_CURRENCY_MISMATCH;
 
-            throw PaymentException::currencyMismatch($order->paymentNo, $order->currency, $result->currency);
+            throw PaymentOrderException::currencyMismatch($order->paymentNo, $order->currency, $result->currency);
         }
 
         if ($refund instanceof PaymentRefundEntity) {
@@ -158,47 +189,48 @@ final class PaymentNotificationProcessor
     private function extractReferences(PaymentNotificationProcessingContext $context): PaymentNotificationData
     {
         $provider = $this->providerRegistry->get($context->providerTechnicalName);
-        $data = $provider->notificationExtractor->extract($context->rawBody, $context->headers);
 
-        if ($context->paymentNoHint === null || $context->paymentNoHint === '') {
-            return $data;
-        }
-
-        return new PaymentNotificationData($context->paymentNoHint, $data->outTradeNo, $data->outPaymentNo, $data->refundNo);
+        return $provider->notificationExtractor->extract($context->rawBody, $context->headers);
     }
 
     /**
      * The extracted references are not trusted yet, they only tell us which order the notification
      * is about - which in turn tells us which credentials are needed to verify it.
-     *
-     * @return array{order: PaymentOrderEntity|null, refund: PaymentRefundEntity|null}
      */
-    private function resolveSubject(PaymentNotificationData $data): array
+    private function resolveAttempt(PaymentNotificationData $data, ?string $paymentNoHint): ?PaymentAttemptEntity
     {
-        $refund = $data->refundNo === null ? null : $this->refundService->findByRefundNo($data->refundNo);
-        $order = $refund instanceof PaymentRefundEntity
-            ? $this->orderService->getById($refund->paymentOrderId)
-            : ($data->paymentNo === null ? null : $this->orderService->findByPaymentNo($data->paymentNo));
+        if ($paymentNoHint !== null && $paymentNoHint !== '') {
+            $criteria = new Criteria();
+            $criteria->addFilter(new EqualsFilter('attemptNo', $paymentNoHint));
+        } elseif ($data->refundNo !== null) {
+            $refund = $this->refundService->findByRefundNo($data->refundNo);
+            if ($refund?->paymentAttemptId === null) {
+                return null;
+            }
+            $criteria = new Criteria([$refund->paymentAttemptId]);
+        } elseif ($data->paymentNo !== null) {
+            $criteria = new Criteria();
+            $criteria->addFilter(new EqualsFilter('attemptNo', $data->paymentNo));
+        } else {
+            return null;
+        }
+        $criteria->setLimit(1);
+        $attempt = $this->attemptRepository->search($criteria, Context::createDefaultContext())->getEntities()->first();
 
-        return ['order' => $order, 'refund' => $refund];
+        return $attempt instanceof PaymentAttemptEntity ? $attempt : null;
     }
 
     private function verifyNotification(PaymentNotificationProcessingContext $context, PaymentOrderEntity $order, PaymentAppEntity $app): NotificationResult
     {
-        $resolved = $this->configResolver->resolve(
-            $app,
-            $order->channelTechnicalName,
-            $order->currency,
-            $order->device,
-            $order->channelParams ?? []
-        );
+        $resolved = $this->configResolver->resolveForAttempt($app, $order, $order->activeAttempt ?? throw PaymentOrderException::orderNotFound($order->paymentNo));
 
         $model = PaymentGatewayModel::forNotification($context->rawBody, $context->headers, $context->remoteIp);
+        $model->offsetSet(PaymentGatewayModel::PAYMENT_NO, $order->activeAttempt->attemptNo);
         $gateway = $resolved->provider->gatewayFactory->createForPayment($resolved, (string) $order->notifyUrl, (string) $order->returnUrl);
 
         $gateway->execute(new Notify($model));
 
-        return $model->result(NotificationResult::class, $order->channelTechnicalName);
+        return $model->result(NotificationResult::class, $resolved->product->technicalName);
     }
 
     private function amountMatches(int $expected, NotificationResult $result): bool
@@ -268,6 +300,7 @@ final class PaymentNotificationProcessor
         $this->notificationRepository->update([[
             'id' => $notificationId,
             'paymentOrderId' => $context->orderId,
+            'paymentAttemptId' => $context->attemptId,
             'signatureValid' => $context->signatureValid,
             'processed' => \in_array($context->result, [
                 PaymentNotificationEntity::RESULT_OK,
@@ -286,7 +319,7 @@ final class PaymentNotificationProcessor
         $notification = $this->notificationRepository->search(new Criteria([$id]), Context::createDefaultContext())->getEntities()->first();
 
         if (!$notification instanceof PaymentNotificationEntity) {
-            throw PaymentException::notificationNotFound($id);
+            throw PaymentNotificationException::notificationNotFound($id);
         }
 
         return $notification;

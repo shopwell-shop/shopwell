@@ -4,26 +4,26 @@ namespace Shopwell\Tests\Unit\Core\Checkout\Payment\Gateway\Api;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Checkout\Payment\Aggregate\PaymentMethodGatewayChannel\PaymentMethodGatewayChannelCollection;
 use Shopwell\Core\Checkout\Payment\Aggregate\PaymentMethodGatewayChannel\PaymentMethodGatewayChannelEntity;
 use Shopwell\Core\Checkout\Payment\Gateway\Api\PaymentMethodChannelController;
 use Shopwell\Core\Checkout\Payment\Gateway\Api\PaymentMethodChannelSaveDto;
 use Shopwell\Core\Checkout\Payment\Gateway\PaymentGatewayHandler;
 use Shopwell\Core\Checkout\Payment\Gateway\PaymentMethodChannelBinder;
-use Shopwell\Core\Checkout\Payment\PaymentException as CheckoutPaymentException;
+use Shopwell\Core\Checkout\Payment\PaymentException;
+use Shopwell\Core\Checkout\Payment\PaymentMethodCollection;
 use Shopwell\Core\Checkout\Payment\PaymentMethodEntity;
 use Shopwell\Core\Framework\Context;
-use Shopwell\Core\Framework\DataAbstractionLayer\Entity;
-use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
-use Shopwell\Core\Framework\DataAbstractionLayer\Event\EntityWrittenContainerEvent;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
-use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\NotEqualsFilter;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Payment\App\PaymentAppCollection;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
-use Shopwell\Core\System\Payment\App\PaymentCredentialCipher;
-use Shopwell\Core\System\Payment\PaymentException;
-use Shopwell\Core\System\Payment\Provider\Config\PaymentProviderConfigService;
+use Shopwell\Core\System\Payment\Method\PaymentMethod;
+use Shopwell\Core\System\Payment\Method\PaymentMethodRegistry;
+use Shopwell\Core\Test\Stub\DataAbstractionLayer\StaticEntityRepository;
 use Shopwell\Tests\Unit\Core\Checkout\Payment\Gateway\PaymentGatewayFixture;
+use Shopwell\Tests\Unit\Core\System\Payment\Api\PaymentControllerFixture;
 use Symfony\Component\HttpFoundation\JsonResponse;
 
 /**
@@ -33,328 +33,130 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 #[CoversClass(PaymentMethodChannelController::class)]
 class PaymentMethodChannelControllerTest extends TestCase
 {
-    private const PAYMENT_METHOD_ID = 'payment-method-id';
-
-    private const OTHER_PAYMENT_METHOD_ID = 'other-payment-method-id';
-
-    private const OTHER_APP_ID = 'other-app-id';
-
-    public function testReadPresentsTheBindingOfTheMethod(): void
+    public function testReadPresentsTheLogicalBindingAndAvailableApps(): void
     {
-        $controller = $this->controller(
-            [$this->binding(self::PAYMENT_METHOD_ID)],
-            [$this->paymentMethod('Alipay', PaymentGatewayHandler::class)]
-        );
+        $app = PaymentGatewayFixture::platformAppEntity();
+        $binding = $this->binding($app);
+        $data = $this->decode($this->controller($app, $binding)->read('checkout-method', Context::createDefaultContext()));
 
-        $data = $this->decode($controller->read(self::PAYMENT_METHOD_ID, Context::createDefaultContext()));
-
-        static::assertSame([
-            'paymentAppId' => PaymentGatewayFixture::PLATFORM_APP_ID,
-            'channelTechnicalName' => PaymentGatewayFixture::CHANNEL,
-        ], $data['binding']);
-        // the binding does not load the app, so the answer falls back to the account the shop collects on
-        static::assertSame([
-            'id' => PaymentGatewayFixture::PLATFORM_APP_ID,
-            'name' => 'Shopfront',
-            'technicalName' => PaymentAppEntity::PLATFORM_TECHNICAL_NAME,
-            'type' => PaymentAppEntity::TYPE_PLATFORM,
-        ], $data['paymentApp']);
+        static::assertSame(['paymentAppId' => $app->id, 'methodTechnicalName' => 'alipay', 'routingPolicy' => 'priority'], $data['binding']);
+        static::assertSame($app->id, $data['paymentApp']['id']);
         static::assertTrue($data['collectThroughGateway']);
-        // the method itself does not block its own channel
         static::assertSame([], $data['taken']);
+        static::assertSame($app->id, $data['apps'][0]['id']);
     }
 
-    /**
-     * An unbound method still answers with an account: the default is the tenant of the platform, which
-     * is what the operator sees as a filled row instead of a choice with exactly one answer.
-     */
-    public function testReadPresentsAnUnboundMethodWithoutABinding(): void
+    public function testUnboundMethodUsesThePlatformAppAsItsDefault(): void
     {
-        $controller = $this->controller([], [$this->paymentMethod('Invoice')]);
-
-        $data = $this->decode($controller->read(self::PAYMENT_METHOD_ID, Context::createDefaultContext()));
-
+        $app = PaymentGatewayFixture::platformAppEntity();
+        $data = $this->decode($this->controller($app)->read('checkout-method', Context::createDefaultContext()));
         static::assertNull($data['binding']);
-        static::assertSame(PaymentGatewayFixture::PLATFORM_APP_ID, $data['paymentApp']['id']);
-        // the administration tells the operator that saving is what makes the method collect at all
-        static::assertFalse($data['collectThroughGateway']);
-        static::assertSame([], $data['taken']);
+        static::assertSame($app->id, $data['paymentApp']['id']);
     }
 
-    public function testReadPresentsTheAppTheBindingCollectsOn(): void
+    public function testSelectableMetadataNeverExposesMerchantAccountsOrCredentials(): void
     {
-        $app = $this->externalApp();
-        $binding = $this->binding(self::PAYMENT_METHOD_ID, $app->id);
-        $binding->paymentApp = $app;
-
-        $controller = $this->controller([$binding], [$this->paymentMethod('Alipay', PaymentGatewayHandler::class)]);
-
-        $data = $this->decode($controller->read(self::PAYMENT_METHOD_ID, Context::createDefaultContext()));
-
-        static::assertSame($app->id, $data['binding']['paymentAppId']);
-        static::assertSame([
-            'id' => $app->id,
-            'name' => 'Other app',
-            'technicalName' => 'other-app',
-            'type' => PaymentAppEntity::TYPE_EXTERNAL,
-        ], $data['paymentApp']);
-    }
-
-    public function testReadListsThePairsOfTheOtherMethodsAsTaken(): void
-    {
-        $takenBinding = $this->binding(self::OTHER_PAYMENT_METHOD_ID);
-        $takenBinding->paymentMethod = $this->paymentMethod(
-            'Alipay of the other method',
-            PaymentGatewayHandler::class,
-            self::OTHER_PAYMENT_METHOD_ID
-        );
-        $takenBinding->paymentApp = PaymentGatewayFixture::platformAppEntity();
-
-        $controller = $this->controller([], [$this->paymentMethod('Invoice')], [$takenBinding]);
-
-        $data = $this->decode($controller->read(self::PAYMENT_METHOD_ID, Context::createDefaultContext()));
+        $app = PaymentControllerFixture::app('merchant-app', 'private-app-secret');
+        $grant = PaymentControllerFixture::appAccount($app->id, credentials: ['app_id' => 'private-merchant-id', 'private_key' => 'private-merchant-key']);
+        $app->accounts = [$grant->accountId => $grant];
+        $app->channels = ['alipay_h5' => PaymentControllerFixture::appChannel($app->id)];
+        $app->allowedIps = ['192.0.2.1'];
+        $app->settings = ['private-setting' => 'hidden'];
+        $data = $this->decode($this->controller($app, $this->binding($app))->read('checkout-method', Context::createDefaultContext()));
 
         static::assertSame([[
-            'paymentAppId' => PaymentGatewayFixture::PLATFORM_APP_ID,
-            'paymentAppName' => 'Shopfront',
-            'channelTechnicalName' => PaymentGatewayFixture::CHANNEL,
-            'paymentMethodId' => self::OTHER_PAYMENT_METHOD_ID,
-            'paymentMethodName' => 'Alipay of the other method',
+            'id' => $app->id,
+            'name' => $app->name,
+            'technicalName' => $app->technicalName,
+            'type' => $app->type,
+            'active' => true,
+            'methods' => [['technicalName' => 'alipay', 'translationKey' => 'payment.alipay']],
+        ]], $data['apps']);
+        $json = json_encode($data, \JSON_THROW_ON_ERROR);
+        foreach (['private-app-secret', 'private-merchant-id', 'private-merchant-key', 'private-setting', 'ownerAppId', 'accountId', 'credentials', 'allowedIps'] as $privateValue) {
+            static::assertStringNotContainsString($privateValue, $json);
+        }
+    }
+
+    public function testReadListsConflictingLogicalMethods(): void
+    {
+        $app = PaymentGatewayFixture::platformAppEntity();
+        $taken = $this->binding($app, 'other-checkout-method');
+        $otherMethod = new PaymentMethodEntity();
+        $otherMethod->setId('other-checkout-method');
+        $otherMethod->setName('Other checkout method');
+        $taken->paymentMethod = $otherMethod;
+        $data = $this->decode($this->controller($app, taken: [$taken])->read('checkout-method', Context::createDefaultContext()));
+        static::assertSame([[
+            'paymentAppId' => $app->id,
+            'paymentAppName' => $app->name,
+            'methodTechnicalName' => 'alipay',
+            'paymentMethodId' => 'other-checkout-method',
+            'paymentMethodName' => 'Other checkout method',
         ]], $data['taken']);
     }
 
-    /**
-     * Saving is what turns a plain payment method into one that collects through the gateway, so the
-     * answer has to describe the state after the write and not the one the request assumed.
-     */
-    public function testSaveBindsTheChannelAndAnswersTheStateAfterTheWrite(): void
+    public function testSaveReturnsTheStoredBindingAndSelectableMetadata(): void
     {
-        $paymentMethod = $this->paymentMethod('Invoice');
-
-        $controller = $this->controller(
-            [],
-            [$paymentMethod],
-            handlerIsWritten: static function () use ($paymentMethod): void {
-                $paymentMethod->setHandlerIdentifier(PaymentGatewayHandler::class);
-            }
-        );
-
-        $data = $this->decode($controller->save(
-            self::PAYMENT_METHOD_ID,
-            new PaymentMethodChannelSaveDto(PaymentGatewayFixture::CHANNEL),
-            Context::createDefaultContext()
-        ));
-
-        static::assertSame([
-            'paymentAppId' => PaymentGatewayFixture::PLATFORM_APP_ID,
-            'channelTechnicalName' => PaymentGatewayFixture::CHANNEL,
-        ], $data['binding']);
-        static::assertSame(PaymentGatewayFixture::PLATFORM_APP_ID, $data['paymentApp']['id']);
-        static::assertTrue($data['collectThroughGateway']);
+        $app = PaymentGatewayFixture::platformAppEntity();
+        $controller = $this->controller($app, $this->binding($app));
+        $data = $this->decode($controller->save('checkout-method', new PaymentMethodChannelSaveDto('alipay', $app->id), Context::createDefaultContext()));
+        static::assertSame(['paymentAppId' => $app->id, 'methodTechnicalName' => 'alipay', 'routingPolicy' => 'priority'], $data['binding']);
+        static::assertSame($app->id, $data['apps'][0]['id']);
     }
 
-    public function testSaveBindsTheAppTheOperatorChose(): void
+    public function testReadRejectsAnUnknownCheckoutMethod(): void
     {
-        $controller = $this->controller(
-            [],
-            [$this->paymentMethod('Invoice')],
-            apps: [$this->externalApp()]
-        );
-
-        $data = $this->decode($controller->save(
-            self::PAYMENT_METHOD_ID,
-            new PaymentMethodChannelSaveDto(PaymentGatewayFixture::CHANNEL, self::OTHER_APP_ID),
-            Context::createDefaultContext()
-        ));
-
-        static::assertSame(self::OTHER_APP_ID, $data['binding']['paymentAppId']);
-        static::assertSame('Other app', $data['paymentApp']['name']);
+        $this->expectExceptionObject(PaymentException::unknownPaymentMethodById('missing'));
+        $this->controller(PaymentGatewayFixture::platformAppEntity(), knownMethod: false)->read('missing', Context::createDefaultContext());
     }
 
-    public function testSaveRejectsAnUnknownPaymentMethod(): void
+    public function testSaveRejectsAnUnknownCheckoutMethod(): void
     {
-        $controller = $this->controller([], []);
-
-        $this->expectExceptionObject(CheckoutPaymentException::unknownPaymentMethodById(self::PAYMENT_METHOD_ID));
-
-        $controller->save(
-            self::PAYMENT_METHOD_ID,
-            new PaymentMethodChannelSaveDto(PaymentGatewayFixture::CHANNEL),
-            Context::createDefaultContext()
-        );
-    }
-
-    public function testSaveRejectsAChannelAnotherMethodAlreadyCollectsThrough(): void
-    {
-        $takenBinding = $this->binding(self::OTHER_PAYMENT_METHOD_ID);
-        $takenBinding->paymentMethod = $this->paymentMethod(
-            'Alipay',
-            PaymentGatewayHandler::class,
-            self::OTHER_PAYMENT_METHOD_ID
-        );
-
-        $controller = $this->controller(
-            [],
-            [
-                $this->paymentMethod('Invoice'),
-                $this->paymentMethod('Alipay', PaymentGatewayHandler::class, self::OTHER_PAYMENT_METHOD_ID),
-            ],
-            [$takenBinding]
-        );
-
-        $this->expectExceptionObject(PaymentException::paymentMethodChannelTaken(
-            'Shopfront',
-            PaymentGatewayFixture::CHANNEL,
-            self::OTHER_PAYMENT_METHOD_ID,
-            'Alipay'
-        ));
-
-        $controller->save(
-            self::PAYMENT_METHOD_ID,
-            new PaymentMethodChannelSaveDto(PaymentGatewayFixture::CHANNEL),
-            Context::createDefaultContext()
-        );
+        $this->expectExceptionObject(PaymentException::unknownPaymentMethodById('missing'));
+        $this->controller(PaymentGatewayFixture::platformAppEntity(), knownMethod: false)->save('missing', new PaymentMethodChannelSaveDto('alipay'), Context::createDefaultContext());
     }
 
     /**
-     * @param list<PaymentMethodGatewayChannelEntity> $ownBindings
-     * @param list<PaymentMethodEntity> $paymentMethods
-     * @param list<PaymentMethodGatewayChannelEntity> $takenBindings
-     * @param (\Closure(): void)|null $handlerIsWritten
-     * @param list<PaymentAppEntity> $apps
+     * @param list<PaymentMethodGatewayChannelEntity> $taken
      */
-    private function controller(
-        array $ownBindings,
-        array $paymentMethods,
-        array $takenBindings = [],
-        ?\Closure $handlerIsWritten = null,
-        array $apps = [],
-    ): PaymentMethodChannelController {
-        // the store is mutable so the answer of a save describes what the save wrote
-        $bindings = $ownBindings;
-        $appPool = array_merge([PaymentGatewayFixture::platformAppEntity()], $apps);
-
-        $bindingRepository = $this->repository(
-            static function (Criteria $criteria) use (&$bindings, $takenBindings): array {
-                return self::hasNotEqualsFilter($criteria) ? $takenBindings : $bindings;
-            },
-            null,
-            static function (array $payload) use (&$bindings, $appPool): void {
-                // the read after the write loads the app as an association, so the store does the same
-                $bindings = [self::bindingFromPayload($payload[0], $appPool)];
-            }
-        );
-
-        $paymentMethodRepository = $this->repository(
-            static fn (Criteria $criteria): array => $criteria->getIds() === []
-                ? $paymentMethods
-                : array_values(array_filter(
-                    $paymentMethods,
-                    static fn (Entity $entity): bool => \in_array($entity->getUniqueIdentifier(), $criteria->getIds(), true)
-                )),
-            $handlerIsWritten
-        );
-
-        $appRepository = $this->repository(
-            static function (Criteria $criteria) use ($apps): array {
-                $all = array_merge([PaymentGatewayFixture::platformAppEntity()], $apps);
-                $ids = $criteria->getIds();
-
-                if ($ids === []) {
-                    // the tenant of the platform is looked up by its technical name
-                    return $all;
+    private function controller(PaymentAppEntity $app, ?PaymentMethodGatewayChannelEntity $binding = null, array $taken = [], bool $knownMethod = true): PaymentMethodChannelController
+    {
+        $methods = [];
+        if ($knownMethod) {
+            $method = new PaymentMethodEntity();
+            $method->setId('checkout-method');
+            $method->setHandlerIdentifier(PaymentGatewayHandler::class);
+            $methods[] = $method;
+        }
+        $bindings = StaticEntityRepository::of(PaymentMethodGatewayChannelCollection::class, array_fill(0, 16, static function (Criteria $criteria) use ($binding, $taken): PaymentMethodGatewayChannelCollection {
+            foreach ($criteria->getFilters() as $filter) {
+                if ($filter instanceof NotEqualsFilter) {
+                    return new PaymentMethodGatewayChannelCollection($taken);
                 }
-
-                return array_values(array_filter(
-                    $all,
-                    static fn (Entity $entity): bool => \in_array($entity->getUniqueIdentifier(), $ids, true)
-                ));
             }
-        );
 
-        $binder = new PaymentMethodChannelBinder(
-            $bindingRepository,
-            $paymentMethodRepository,
-            $appRepository,
-            PaymentGatewayFixture::channelRegistry(),
-            new PaymentProviderConfigService(
-                $this->repository(static fn (Criteria $criteria): array => [PaymentGatewayFixture::providerConfig()]),
-                $this->repository(static fn (Criteria $criteria): array => [PaymentGatewayFixture::channelConfig()]),
-                new PaymentCredentialCipher('unit-test-cipher-secret'),
-            )
-        );
+            return new PaymentMethodGatewayChannelCollection($binding === null ? [] : [$binding]);
+        }));
+        $methodRepository = new StaticEntityRepository(array_fill(0, 16, new PaymentMethodCollection($methods)));
+        $apps = new StaticEntityRepository(array_fill(0, 16, new PaymentAppCollection([$app])));
+        $binder = new PaymentMethodChannelBinder($bindings, $methodRepository, $apps, new PaymentMethodRegistry([new PaymentMethod('alipay', 'payment.alipay')]), PaymentGatewayFixture::channelRegistry());
 
-        return new PaymentMethodChannelController($binder, $paymentMethodRepository);
+        return new PaymentMethodChannelController($binder, $methodRepository);
     }
 
-    /**
-     * @param \Closure(Criteria): list<Entity> $resolve
-     * @param (\Closure(): void)|null $onUpdate
-     * @param (\Closure(array<int, array<string, mixed>>): void)|null $onUpsert
-     *
-     * @phpstan-ignore missingType.generics (The stub serves every collection type the caller asserts.)
-     */
-    private function repository(\Closure $resolve, ?\Closure $onUpdate = null, ?\Closure $onUpsert = null): EntityRepository
-    {
-        $repository = static::createStub(EntityRepository::class);
-        $repository->method('search')->willReturnCallback(
-            static fn (Criteria $criteria): EntitySearchResult => PaymentGatewayFixture::searchResult($resolve($criteria))
-        );
-
-        if ($onUpdate instanceof \Closure) {
-            $written = static::createStub(EntityWrittenContainerEvent::class);
-            $repository->method('update')->willReturnCallback(static function () use ($onUpdate, $written): EntityWrittenContainerEvent {
-                $onUpdate();
-
-                return $written;
-            });
-        }
-
-        if ($onUpsert instanceof \Closure) {
-            $written = static::createStub(EntityWrittenContainerEvent::class);
-            $repository->method('upsert')->willReturnCallback(static function (array $payload) use ($onUpsert, $written): EntityWrittenContainerEvent {
-                $onUpsert($payload);
-
-                return $written;
-            });
-        }
-
-        return $repository;
-    }
-
-    /**
-     * @param array<string, mixed> $payload
-     * @param list<PaymentAppEntity> $appPool
-     */
-    private static function bindingFromPayload(array $payload, array $appPool = []): PaymentMethodGatewayChannelEntity
+    private function binding(PaymentAppEntity $app, string $methodId = 'checkout-method'): PaymentMethodGatewayChannelEntity
     {
         $binding = new PaymentMethodGatewayChannelEntity();
-        $binding->id = (string) $payload['id'];
+        $binding->id = 'binding-' . $methodId;
         $binding->setUniqueIdentifier($binding->id);
-        $binding->paymentMethodId = (string) $payload['paymentMethodId'];
-        $binding->paymentAppId = (string) $payload['paymentAppId'];
-        $binding->channelTechnicalName = (string) $payload['channelTechnicalName'];
-
-        foreach ($appPool as $app) {
-            if ($app->id === $binding->paymentAppId) {
-                $binding->paymentApp = $app;
-
-                break;
-            }
-        }
+        $binding->paymentMethodId = $methodId;
+        $binding->paymentAppId = $app->id;
+        $binding->paymentApp = $app;
+        $binding->methodTechnicalName = 'alipay';
+        $binding->routingPolicy = 'priority';
 
         return $binding;
-    }
-
-    private static function hasNotEqualsFilter(Criteria $criteria): bool
-    {
-        foreach ($criteria->getFilters() as $filter) {
-            if ($filter instanceof NotEqualsFilter) {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     /**
@@ -362,55 +164,6 @@ class PaymentMethodChannelControllerTest extends TestCase
      */
     private function decode(JsonResponse $response): array
     {
-        $content = $response->getContent();
-        static::assertIsString($content);
-
-        $decoded = json_decode($content, true);
-        static::assertIsArray($decoded);
-
-        return $decoded;
-    }
-
-    private function paymentMethod(
-        string $name,
-        string $handlerIdentifier = 'Shopwell\Core\Checkout\Payment\Cart\PaymentHandler\InvoicePayment',
-        string $id = self::PAYMENT_METHOD_ID,
-    ): PaymentMethodEntity {
-        $paymentMethod = new PaymentMethodEntity();
-        $paymentMethod->setId($id);
-        $paymentMethod->setUniqueIdentifier($id);
-        $paymentMethod->setHandlerIdentifier($handlerIdentifier);
-        $paymentMethod->setName($name);
-
-        return $paymentMethod;
-    }
-
-    private function binding(
-        string $paymentMethodId,
-        string $paymentAppId = PaymentGatewayFixture::PLATFORM_APP_ID,
-    ): PaymentMethodGatewayChannelEntity {
-        $binding = new PaymentMethodGatewayChannelEntity();
-        $binding->id = 'binding-of-' . $paymentMethodId;
-        $binding->setUniqueIdentifier($binding->id);
-        $binding->paymentMethodId = $paymentMethodId;
-        $binding->paymentAppId = $paymentAppId;
-        $binding->channelTechnicalName = PaymentGatewayFixture::CHANNEL;
-
-        return $binding;
-    }
-
-    private function externalApp(string $id = self::OTHER_APP_ID): PaymentAppEntity
-    {
-        $app = new PaymentAppEntity();
-        $app->id = $id;
-        $app->setUniqueIdentifier($id);
-        $app->technicalName = 'other-app';
-        $app->name = 'Other app';
-        $app->type = PaymentAppEntity::TYPE_EXTERNAL;
-        $app->active = true;
-        $app->appSecret = 'secret';
-        $app->settings = [];
-
-        return $app;
+        return json_decode((string) $response->getContent(), true, 512, \JSON_THROW_ON_ERROR);
     }
 }

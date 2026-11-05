@@ -5,14 +5,14 @@ namespace Shopwell\Core\System\Payment\Integration\Paypal\Action;
 use Payum\Core\Exception\RequestNotSupportedException;
 use Payum\Core\Request\Capture;
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\System\Payment\Api\Struct\PayParams;
+use Shopwell\Core\System\Payment\Exception\PaymentGatewayException;
 use Shopwell\Core\System\Payment\Gateway\AbstractPaymentAction;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
-use Shopwell\Core\System\Payment\Gateway\Request\PayResult;
+use Shopwell\Core\System\Payment\Gateway\Struct\PaymentHandover;
+use Shopwell\Core\System\Payment\Gateway\Struct\PaymentStartResult;
 use Shopwell\Core\System\Payment\Integration\Paypal\Api\PaypalApi;
-use Shopwell\Core\System\Payment\PaymentException;
+use Shopwell\Core\System\Payment\Product\PaymentInteraction;
 use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
 
 /**
  * Creates a paypal order and answers the app with what it needs to send the payer to paypal.
@@ -80,13 +80,13 @@ final class PaypalCaptureAction extends AbstractPaymentAction
         } catch (\Throwable $exception) {
             $this->recordResponse($model, ['error' => $exception->getMessage()]);
 
-            throw PaymentException::gatewayError($api->channel(), $exception->getMessage());
+            throw PaymentGatewayException::gatewayError($api->channel(), $exception->getMessage());
         }
 
         if (isset($answer['error'])) {
             $this->recordResponse($model, $answer);
 
-            throw PaymentException::gatewayError(
+            throw PaymentGatewayException::gatewayError(
                 $api->channel(),
                 PaypalApi::rejectionMessageOf($answer) ?? 'the channel rejected the order'
             );
@@ -97,7 +97,7 @@ final class PaypalCaptureAction extends AbstractPaymentAction
         if (!\is_string($orderId) || $orderId === '') {
             $this->recordResponse($model, $answer);
 
-            throw PaymentException::gatewayError($api->channel(), 'the channel did not answer an order');
+            throw PaymentGatewayException::gatewayError($api->channel(), 'the channel did not answer an order');
         }
 
         $this->recordResponse($model, [
@@ -106,7 +106,7 @@ final class PaypalCaptureAction extends AbstractPaymentAction
             'body' => $answer,
         ]);
 
-        $this->setResult($model, new PayResult($this->payParams($api->setting(self::SETTING_FLOW), $orderId, $answer)));
+        $this->setResult($model, new PaymentStartResult($this->payParams($api->setting(self::SETTING_FLOW), $orderId, $answer)));
     }
 
     public function supports($request): bool
@@ -125,11 +125,11 @@ final class PaypalCaptureAction extends AbstractPaymentAction
     /**
      * @param array<string, mixed> $answer the order of the interface
      */
-    private function payParams(?string $flow, string $orderId, array $answer): PayParams
+    private function payParams(?string $flow, string $orderId, array $answer): PaymentHandover
     {
         if (strtolower(trim((string) $flow)) === self::FLOW_SDK) {
-            return new PayParams(
-                flow: PaymentFlow::SDK,
+            return new PaymentHandover(
+                flow: PaymentInteraction::SDK,
                 extra: ['order_id' => $orderId]
             );
         }
@@ -137,11 +137,11 @@ final class PaypalCaptureAction extends AbstractPaymentAction
         $approveUrl = PaypalApi::approveUrlOf($answer);
 
         if ($approveUrl === null) {
-            throw PaymentException::gatewayError(PaypalApi::PROVIDER, 'the channel did not answer an approval url');
+            throw PaymentGatewayException::gatewayError(PaypalApi::PROVIDER, 'the channel did not answer an approval url');
         }
 
-        return new PayParams(
-            flow: PaymentFlow::REDIRECT,
+        return new PaymentHandover(
+            flow: PaymentInteraction::REDIRECT,
             payUrl: $approveUrl,
             httpMethod: 'GET',
             extra: ['order_id' => $orderId]

@@ -4,10 +4,12 @@ namespace Shopwell\Core\System\Payment\Integration\Alipay\Action;
 
 use Payum\Core\Exception\RequestNotSupportedException;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Currency\CurrencyAmountConverter;
 use Shopwell\Core\System\Payment\App\PaymentCredentialCipher;
+use Shopwell\Core\System\Payment\Exception\PaymentGatewayException;
+use Shopwell\Core\System\Payment\Exception\PaymentTransferException;
 use Shopwell\Core\System\Payment\Gateway\AbstractPaymentAction;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
-use Shopwell\Core\System\Payment\Gateway\Request\Money;
 use Shopwell\Core\System\Payment\Gateway\Request\PaymentTransferRequest;
 use Shopwell\Core\System\Payment\Gateway\Request\TransferResult;
 use Shopwell\Core\System\Payment\Integration\Alipay\Api\AlipayApi;
@@ -135,7 +137,7 @@ final class AlipayTransferAction extends AbstractPaymentAction
         } catch (\Throwable $exception) {
             $this->recordResponse($model, ['error' => $exception->getMessage()]);
 
-            throw PaymentException::gatewayError($api->channel(), $exception->getMessage(), $exception);
+            throw PaymentGatewayException::gatewayError($api->channel(), $exception->getMessage(), $exception);
         }
 
         $this->recordResponse($model, $answer);
@@ -175,7 +177,7 @@ final class AlipayTransferAction extends AbstractPaymentAction
         string $subject,
     ): array {
         if (!isset(self::IDENTITY_TYPES[$recipient->identityType])) {
-            throw PaymentException::transferIdentityNotSupported($transfer->provider, $recipient->identityType);
+            throw PaymentTransferException::transferIdentityNotSupported($transfer->provider, $recipient->identityType);
         }
 
         $sceneName = $channelParams['transfer_scene_name'] ?? null;
@@ -264,7 +266,7 @@ final class AlipayTransferAction extends AbstractPaymentAction
      */
     public static function amount(int $minor, string $currency): string
     {
-        return Money::toDecimal($minor, $currency);
+        return CurrencyAmountConverter::toDecimal($minor, $currency);
     }
 
     /**

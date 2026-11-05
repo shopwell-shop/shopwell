@@ -6,7 +6,7 @@ use Doctrine\DBAL\Connection;
 use Shopwell\Core\Framework\DataAbstractionLayer\Doctrine\RetryableWriteTransaction;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Uuid\Uuid;
-use Shopwell\Core\System\Payment\PaymentException;
+use Shopwell\Core\System\Payment\Exception\PaymentSubscriptionException;
 
 /**
  * The connection used for the row locks is also the transaction owner. The cycle and subscription
@@ -37,7 +37,7 @@ final class PaymentCycleTransaction implements PaymentCycleTransactionInterface
                 );
 
                 if ($cycle === false) {
-                    throw PaymentException::paymentCycleNotFound($cycleId);
+                    throw PaymentSubscriptionException::paymentCycleNotFound($cycleId);
                 }
 
                 if ($withSubscription) {
@@ -48,12 +48,28 @@ final class PaymentCycleTransaction implements PaymentCycleTransactionInterface
                     );
 
                     if ($locked === false) {
-                        throw PaymentException::subscriptionNotFound($subscriptionId);
+                        throw PaymentSubscriptionException::subscriptionNotFound($subscriptionId);
                     }
                 }
 
                 return $callback();
             }
         );
+    }
+
+    public function executeForSubscription(string $subscriptionId, \Closure $callback): mixed
+    {
+        return RetryableWriteTransaction::retryable($this->connection, function () use ($subscriptionId, $callback): mixed {
+            $locked = $this->connection->fetchOne(
+                'SELECT `id` FROM `payment_subscription` WHERE `id` = :id FOR UPDATE',
+                ['id' => Uuid::fromHexToBytes($subscriptionId)]
+            );
+
+            if ($locked === false) {
+                throw PaymentSubscriptionException::subscriptionNotFound($subscriptionId);
+            }
+
+            return $callback();
+        });
     }
 }

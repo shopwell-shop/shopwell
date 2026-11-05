@@ -6,7 +6,6 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Payment\Exception\PaymentTransferException;
-use Shopwell\Core\System\Payment\PaymentException;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -16,7 +15,7 @@ use Symfony\Component\HttpFoundation\Response;
 #[CoversClass(PaymentTransferException::class)]
 class PaymentTransferExceptionTest extends TestCase
 {
-    public function testTransferOutNoTakenKeepsContractAndFacadeCompatibility(): void
+    public function testTransferOutNoTakenKeepsContract(): void
     {
         $exception = PaymentTransferException::transferOutNoTaken('payout-1');
 
@@ -25,10 +24,5 @@ class PaymentTransferExceptionTest extends TestCase
         static::assertSame('PAYMENT__TRANSFER_OUT_NO_TAKEN', $exception->getErrorCode());
         static::assertSame('The out number "payout-1" is already used by another payout of this app.', $exception->getMessage());
         static::assertSame(['outNo' => 'payout-1'], $exception->getParameters());
-
-        $facade = PaymentException::transferOutNoTaken('payout-1');
-
-        static::assertSame(PaymentTransferException::class, $facade::class);
-        static::assertEquals($exception, $facade);
     }
 }

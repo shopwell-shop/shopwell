@@ -3,12 +3,12 @@
 namespace Shopwell\Core\System\Payment\Transfer\Api;
 
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppAccount\PaymentAppAccountEntity;
 use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppChannel\PaymentAppChannelEntity;
-use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppProvider\PaymentAppProviderEntity;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
 use Shopwell\Core\System\Payment\App\PaymentCredentialCipher;
+use Shopwell\Core\System\Payment\Product\PaymentProduct;
 use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
 use Shopwell\Core\System\Payment\Provider\PaymentProvider;
 use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;
 use Shopwell\Core\System\Payment\Provider\Transfer\PaymentTransferRules;
@@ -30,7 +30,7 @@ use Shopwell\Core\System\Payment\Transfer\PaymentTransferRecipientEntity;
  *  3. **`channelParams` is input, not administration data.** It is `api: false` on the entity, and this
  *     presenter keeps it out of the answer on purpose instead of relying on one flag.
  *
- * The transfer rules of the interfaces are read from the registry of the call: `payment_app_provider`
+ * The transfer rules of the interfaces are read from the registry of the call: `payment_app_account`
  * says which interface an app may use, and the snapshot the factory built for that interface says which
  * identities such a payout accepts, which fields it insists on and which currencies it settles in. Hard
  * coding that matrix in the admin - or reading the raw declarations a second time - would be a second,
@@ -161,7 +161,7 @@ final class PaymentTransferPresenter
                 'name' => $app->name,
                 'type' => $app->type,
                 'isPlatform' => $app->type === PaymentAppEntity::TYPE_PLATFORM,
-                'providers' => $this->providersOf($app, $registry),
+                'accounts' => $this->providersOf($app, $registry),
             ];
         }
 
@@ -223,12 +223,16 @@ final class PaymentTransferPresenter
     {
         $providers = [];
 
-        foreach ($app->providers ?? [] as $authorization) {
-            if (!$authorization instanceof PaymentAppProviderEntity || !$authorization->enabled) {
+        foreach ($app->accounts ?? [] as $authorization) {
+            if (!$authorization instanceof PaymentAppAccountEntity || !$authorization->enabled) {
                 continue;
             }
 
-            $name = $authorization->providerTechnicalName;
+            $name = $authorization->account?->providerTechnicalName;
+
+            if ($name === null || !$authorization->account->active) {
+                continue;
+            }
 
             if (!$registry->has($name)) {
                 continue;
@@ -251,6 +255,8 @@ final class PaymentTransferPresenter
 
             $providers[] = [
                 'technicalName' => $provider->technicalName,
+                'accountId' => $authorization->accountId,
+                'name' => $authorization->account->name,
                 // the label of a provider is a snippet key, the administration translates it
                 'label' => $provider->label,
                 'identityTypes' => $rules->identityTypes,
@@ -279,11 +285,11 @@ final class PaymentTransferPresenter
             }
 
             $name = $row->channelTechnicalName;
-            $channel = $provider->channels[$name] ?? null;
+            $channel = $provider->products[$name] ?? null;
 
             // the declaration is the authority on which interface a channel belongs to - a name prefix
             // would be a guess, and a channel the interface does not declare can never be opened
-            if (!$channel instanceof PaymentChannel || $channel->providerTechnicalName !== $provider->technicalName) {
+            if (!$channel instanceof PaymentProduct || $channel->providerTechnicalName !== $provider->technicalName) {
                 continue;
             }
 

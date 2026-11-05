@@ -3,6 +3,7 @@
 namespace Shopwell\Core\System\Payment\Integration\Wechat\Api;
 
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Payment\Exception\PaymentGatewayException;
 use Shopwell\Core\System\Payment\PaymentException;
 
 /**
@@ -53,7 +54,7 @@ final class WechatPlatformCertificates
         }
 
         if ($normalized === []) {
-            throw PaymentException::missingCredentials(WechatApi::PROVIDER, WechatApi::PLATFORM_CERTS);
+            throw PaymentGatewayException::missingCredentials(WechatApi::PROVIDER, WechatApi::PLATFORM_CERTS);
         }
 
         return $normalized;

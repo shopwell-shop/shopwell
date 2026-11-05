@@ -6,15 +6,16 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Payment\Account\PaymentAccountEntity;
+use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppAccount\PaymentAppAccountEntity;
 use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppChannel\PaymentAppChannelEntity;
-use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppProvider\PaymentAppProviderEntity;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
 use Shopwell\Core\System\Payment\App\PaymentCredentialCipher;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayFactory;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
+use Shopwell\Core\System\Payment\Product\PaymentInteraction;
+use Shopwell\Core\System\Payment\Product\PaymentProduct;
 use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
 use Shopwell\Core\System\Payment\Provider\PaymentProvider;
 use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;
 use Shopwell\Core\System\Payment\Provider\Transfer\PaymentTransferRules;
@@ -163,7 +164,7 @@ class PaymentTransferPresenterTest extends TestCase
 
         $app = $this->app('app-id', PaymentAppEntity::TYPE_PLATFORM);
         $app->assign([
-            'providers' => [
+            'accounts' => [
                 $this->authorization('alipay', true),
                 $this->authorization('paypal', true),
                 $this->authorization('stripe', false),
@@ -182,10 +183,11 @@ class PaymentTransferPresenterTest extends TestCase
         static::assertCount(1, $options['apps']);
         static::assertTrue($options['apps'][0]['isPlatform']);
 
-        static::assertCount(1, $options['apps'][0]['providers']);
-        $alipay = $options['apps'][0]['providers'][0];
+        static::assertCount(1, $options['apps'][0]['accounts']);
+        $alipay = $options['apps'][0]['accounts'][0];
 
         static::assertSame('alipay', $alipay['technicalName']);
+        static::assertSame('account-alipay', $alipay['accountId']);
         static::assertSame(['alipay_logon_id', 'bankcard'], $alipay['identityTypes']);
         static::assertSame(['CNY'], $alipay['currencies']);
         static::assertSame(['1', '2'], $alipay['bankAccountTypes']);
@@ -206,13 +208,13 @@ class PaymentTransferPresenterTest extends TestCase
 
         $app = $this->app('app-id', PaymentAppEntity::TYPE_EXTERNAL);
         $app->assign([
-            'providers' => [$this->authorization('alipay', true)],
+            'accounts' => [$this->authorization('alipay', true)],
             'channels' => [$this->appChannel('alipay_transfer', true)],
         ]);
 
         $options = $presenter->options([$app], $registry);
 
-        static::assertSame([], $options['apps'][0]['providers']);
+        static::assertSame([], $options['apps'][0]['accounts']);
         static::assertFalse($options['apps'][0]['isPlatform']);
     }
 
@@ -242,7 +244,7 @@ class PaymentTransferPresenterTest extends TestCase
     }
 
     /**
-     * @param array<string, PaymentChannel> $channels
+     * @param array<string, PaymentProduct> $channels
      */
     private function provider(string $name, array $channels, ?PaymentTransferRules $rules = null): PaymentProvider
     {
@@ -250,7 +252,7 @@ class PaymentTransferPresenterTest extends TestCase
             technicalName: $name,
             label: $name,
             credentials: [],
-            channels: $channels,
+            products: $channels,
             gatewayFactory: static::createStub(PaymentGatewayFactory::class),
             notificationExtractor: static::createStub(PaymentNotificationExtractorInterface::class),
             capabilities: [PaymentCapability::TRANSFER],
@@ -262,22 +264,29 @@ class PaymentTransferPresenterTest extends TestCase
     /**
      * @param list<string> $currencies
      */
-    private function channel(string $name, string $provider, array $currencies): PaymentChannel
+    private function channel(string $name, string $provider, array $currencies): PaymentProduct
     {
-        return new PaymentChannel(
+        return new PaymentProduct(
             technicalName: $name,
             providerTechnicalName: $provider,
+            method: $provider,
             label: $name,
-            flow: PaymentFlow::REDIRECT,
+            interactions: [PaymentInteraction::REDIRECT],
             currencies: $currencies,
         );
     }
 
-    private function authorization(string $provider, bool $enabled): PaymentAppProviderEntity
+    private function authorization(string $provider, bool $enabled): PaymentAppAccountEntity
     {
-        $authorization = new PaymentAppProviderEntity();
+        $authorization = new PaymentAppAccountEntity();
         $authorization->id = 'authorization-' . $provider;
-        $authorization->providerTechnicalName = $provider;
+        $authorization->accountId = 'account-' . $provider;
+        $account = new PaymentAccountEntity();
+        $account->id = $authorization->accountId;
+        $account->name = $provider;
+        $account->providerTechnicalName = $provider;
+        $account->active = true;
+        $authorization->account = $account;
         $authorization->enabled = $enabled;
 
         return $authorization;

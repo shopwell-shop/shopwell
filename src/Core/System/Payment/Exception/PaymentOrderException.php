@@ -37,6 +37,36 @@ class PaymentOrderException extends PaymentException
         );
     }
 
+    public static function idempotencyMismatch(string $outTradeNo): self
+    {
+        return new self(
+            Response::HTTP_CONFLICT,
+            self::ORDER_CONFLICT,
+            'The payment order for "{{ outTradeNo }}" was already created with different business parameters.',
+            ['outTradeNo' => $outTradeNo]
+        );
+    }
+
+    public static function refundIdempotencyMismatch(string $outRefundNo): self
+    {
+        return new self(
+            Response::HTTP_CONFLICT,
+            self::ORDER_CONFLICT,
+            'The refund for "{{ outRefundNo }}" was already created with different business parameters.',
+            ['outRefundNo' => $outRefundNo]
+        );
+    }
+
+    public static function startPending(string $paymentNo): self
+    {
+        return new self(
+            Response::HTTP_CONFLICT,
+            self::ORDER_NOT_PAYABLE,
+            'The payment "{{ paymentNo }}" has an unresolved channel attempt. Reconcile it before starting another trade.',
+            ['paymentNo' => $paymentNo]
+        );
+    }
+
     public static function orderNotPayable(string $paymentNo): self
     {
         return new self(

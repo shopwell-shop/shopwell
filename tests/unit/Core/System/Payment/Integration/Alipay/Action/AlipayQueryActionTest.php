@@ -7,15 +7,17 @@ use Payum\Core\Request\Capture;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Payment\Exception\PaymentGatewayException;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayFactory;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
 use Shopwell\Core\System\Payment\Gateway\Request\PaymentQuery;
 use Shopwell\Core\System\Payment\Integration\Alipay\Action\AlipayQueryAction;
 use Shopwell\Core\System\Payment\Integration\Alipay\Api\AlipayApi;
+use Shopwell\Core\System\Payment\Integration\Alipay\Product\AlipayProducts;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
 use Shopwell\Core\System\Payment\PaymentException;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
+use Shopwell\Core\System\Payment\Product\PaymentInteraction;
+use Shopwell\Core\System\Payment\Product\PaymentProduct;
 use Shopwell\Core\System\Payment\Provider\PaymentProvider;
 use Shopwell\Core\System\Payment\Provider\ResolvedPaymentConfig;
 
@@ -48,7 +50,7 @@ class AlipayQueryActionTest extends TestCase
     {
         $action = new AlipayQueryAction();
 
-        $this->expectExceptionObject(PaymentException::actionWithoutApi(AlipayQueryAction::class));
+        $this->expectExceptionObject(PaymentGatewayException::actionWithoutApi(AlipayQueryAction::class));
 
         $action->execute(new PaymentQuery(new PaymentGatewayModel()));
     }
@@ -57,7 +59,7 @@ class AlipayQueryActionTest extends TestCase
     {
         $action = new AlipayQueryAction();
 
-        $this->expectExceptionObject(PaymentException::unsupportedApi(AlipayQueryAction::class, \stdClass::class));
+        $this->expectExceptionObject(PaymentGatewayException::unsupportedApi(AlipayQueryAction::class, \stdClass::class));
 
         $action->setApi(new \stdClass());
     }
@@ -90,7 +92,7 @@ class AlipayQueryActionTest extends TestCase
 
     private function api(): AlipayApi
     {
-        $channel = new PaymentChannel(AlipayApi::CHANNEL_H5, 'alipay', AlipayApi::CHANNEL_H5, PaymentFlow::REDIRECT);
+        $channel = new PaymentProduct(AlipayProducts::H5, 'alipay', AlipayProducts::H5, [PaymentInteraction::REDIRECT], 'alipay');
 
         return new AlipayApi(
             new ResolvedPaymentConfig(
@@ -98,15 +100,16 @@ class AlipayQueryActionTest extends TestCase
                     'alipay',
                     'alipay',
                     [],
-                    [AlipayApi::CHANNEL_H5 => $channel],
+                    [AlipayProducts::H5 => $channel],
                     new PaymentGatewayFactory('alipay', AlipayApi::class, []),
                     static::createStub(PaymentNotificationExtractorInterface::class),
                 ),
-                channel: $channel,
+                product: $channel,
                 credentials: [],
                 params: [],
                 runtimeParams: [],
                 settings: [],
+                accountId: 'test-account',
             ),
             'https://example.com/notify',
             '',

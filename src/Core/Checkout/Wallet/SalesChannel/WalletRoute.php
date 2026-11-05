@@ -3,6 +3,7 @@
 namespace Shopwell\Core\Checkout\Wallet\SalesChannel;
 
 use Shopwell\Core\Checkout\Customer\CustomerEntity;
+use Shopwell\Core\Checkout\Payment\Storefront\StorefrontPaymentContextResolver;
 use Shopwell\Core\Checkout\Wallet\Entity\CustomerWallet\CustomerWalletCollection;
 use Shopwell\Core\Checkout\Wallet\Entity\CustomerWallet\CustomerWalletEntity;
 use Shopwell\Core\Checkout\Wallet\Entity\CustomerWalletTransaction\CustomerWalletTransactionCollection;
@@ -45,6 +46,7 @@ class WalletRoute
         private readonly WalletTopUpService $topUpService,
         private readonly WalletPresenter $presenter,
         private readonly ExtensionDispatcher $extensions,
+        private readonly StorefrontPaymentContextResolver $paymentContextResolver,
     ) {
     }
 
@@ -81,7 +83,7 @@ class WalletRoute
                 $this->presenter->topUp(...),
                 $this->topUpService->recentTopUps($customer->getId(), self::RECENT_TOP_UP_LIMIT, $context->getContext())
             ),
-            'topUpOptions' => $this->topUpService->options($currency, $this->deviceOf($request), $context->getSalesChannelId()),
+            'topUpOptions' => $this->topUpService->options($this->paymentContextResolver->resolve($request, $currency), $context->getSalesChannelId()),
         ];
 
         return new WalletRouteResponse(new ArrayStruct($data));
@@ -135,15 +137,5 @@ class WalletRoute
         }
 
         return $transactions;
-    }
-
-    /**
-     * The channels are filtered by device, so a phone is not offered a desktop only channel.
-     */
-    private function deviceOf(Request $request): ?string
-    {
-        $device = $request->query->get('device');
-
-        return \is_string($device) && $device !== '' ? strtolower($device) : null;
     }
 }

@@ -1,0 +1,86 @@
+{% block sw_payment_cashier_profiles %}
+<mt-card
+    position-identifier="sw-payment-cashier-profiles"
+    :title="$t('sw-settings-payment-gateway.cashier.title')"
+    :subtitle="$t('sw-settings-payment-gateway.cashier.description')"
+>
+    <template #headerRight>
+        <mt-button
+            class="sw-payment-cashier-profiles__add"
+            variant="secondary"
+            size="small"
+            :disabled="isLoading || !canEdit || undefined"
+            @click="addProfile"
+        >
+            {{ $t('sw-settings-payment-gateway.cashier.add') }}
+        </mt-button>
+    </template>
+    <sw-skeleton v-if="isLoading" />
+    <p
+        v-else-if="profiles.length === 0"
+        class="sw-settings-payment-gateway-detail__hint"
+    >
+        {{ $t('sw-settings-payment-gateway.cashier.empty') }}
+    </p>
+    <div
+        v-for="profile in profiles"
+        :key="profile.id"
+        class="sw-payment-cashier-profiles__profile sw-settings-payment-gateway-detail__provider"
+    >
+        <div class="sw-settings-payment-gateway-detail__grid">
+            <mt-text-field
+                v-model="profile.technicalName"
+                class="sw-payment-cashier-profiles__name"
+                :label="$t('sw-settings-payment-gateway.cashier.identifier')"
+                :help-text="$t('sw-settings-payment-gateway.cashier.identifierHelp')"
+                :disabled="!canEdit || busyIds.includes(profile.id) || undefined"
+                required
+            />
+            <mt-text-field
+                v-model="profile.routingPolicy"
+                class="sw-payment-cashier-profiles__policy"
+                :label="$t('sw-settings-payment-gateway.cashier.policy')"
+                :disabled="!canEdit || busyIds.includes(profile.id) || undefined"
+                required
+            />
+        </div>
+        <sw-multi-select
+            v-model="profile.allowedMethods"
+            class="sw-payment-cashier-profiles__methods"
+            :options="methodOptions"
+            :label="$t('sw-settings-payment-gateway.cashier.methods')"
+            :help-text="$t('sw-settings-payment-gateway.cashier.methodsHelp')"
+            :disabled="!canEdit || busyIds.includes(profile.id)"
+        />
+        <div class="sw-settings-payment-gateway-detail__account-head">
+            <mt-switch
+                v-model="profile.active"
+                :label="$t('sw-settings-payment-gateway.cashier.active')"
+                :disabled="!canEdit || busyIds.includes(profile.id) || undefined"
+            />
+            <div>
+                <mt-button
+                    class="sw-payment-cashier-profiles__delete"
+                    variant="critical"
+                    ghost
+                    size="small"
+                    :disabled="!canEdit || busyIds.includes(profile.id) || undefined"
+                    @click="deleteProfile(profile)"
+                >
+                    {{ $t('global.default.delete') }}
+                </mt-button>
+                <mt-button
+                    class="sw-payment-cashier-profiles__save"
+                    variant="primary"
+                    size="small"
+                    :is-loading="busyIds.includes(profile.id)"
+                    :disabled="!canEdit || !profile.technicalName.trim() || !profile.routingPolicy.trim() || busyIds.includes(profile.id) || undefined"
+                    @click="saveProfile(profile)"
+                >
+                    {{ $t('global.default.save') }}
+                </mt-button>
+            </div>
+        </div>
+    </div>
+</mt-card>
+{% endblock %}

@@ -70,7 +70,7 @@ export default class MembershipPurchasePlugin extends Plugin {
 
         const body = new FormData();
         body.append('planId', planId);
-        body.append('channel', this._channelSelect?.value ?? '');
+        body.append('method', this._channelSelect?.value ?? '');
         body.append('returnUrl', this.options.returnUrl || window.location.href);
 
         try {

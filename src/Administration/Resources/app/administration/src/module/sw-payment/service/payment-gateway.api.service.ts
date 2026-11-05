@@ -55,6 +55,29 @@ export interface PaymentState {
  */
 export type PaymentProviderView = Record<string, unknown>;
 
+/** @private */
+export type PaymentAppView = Record<string, unknown>;
+
+/** @private */
+export interface PaymentAccountView {
+    id: string;
+    name: string;
+    providerTechnicalName: string;
+    active: boolean;
+    ownerAppId: string | null;
+    isDefault: boolean;
+    enabledProducts: string[];
+    credentials: Record<string, string | number | boolean | null>;
+    productParams: Record<string, Record<string, string | number | boolean | null>>;
+    settings: Record<string, unknown>;
+}
+
+/** @private */
+export type PaymentAccountChoice = Pick<
+    PaymentAccountView,
+    'id' | 'name' | 'providerTechnicalName' | 'active' | 'ownerAppId' | 'isDefault'
+>;
+
 /**
  * The badge variants of `mt-badge`.
  */
@@ -269,13 +292,58 @@ export default class PaymentGatewayService {
     }
 
     /**
-     * The payment interfaces the shop can be configured with. An interface is code and lives in the
-     * server, the administration only renders it, so the list is asked for instead of being hard
-     * coded here.
-     *
-     * Every interface carries the declaration of its credentials and of its channels, which is what
-     * the settings page renders.
+     * Returns provider and product declarations without merchant configuration values.
      */
+    public listAccountDefinitions(): Promise<PaymentProviderView[]> {
+        return this.httpClient
+            .get<{
+                providers?: PaymentProviderView[];
+            }>('/_action/payment/account-definitions', { headers: this.getAuthHeaders() })
+            .then((response) => response.data.providers ?? []);
+    }
+
+    public listAccounts(): Promise<PaymentAccountView[]> {
+        return this.httpClient
+            .get<{ accounts: PaymentAccountView[] }>('/_action/payment/accounts', { headers: this.getAuthHeaders() })
+            .then((response) => response.data.accounts);
+    }
+
+    public getAccount(id: string): Promise<PaymentAccountView> {
+        return this.httpClient
+            .get<{ account: PaymentAccountView }>(`/_action/payment/accounts/${id}`, { headers: this.getAuthHeaders() })
+            .then((response) => response.data.account);
+    }
+
+    public saveAccount(id: string | null, payload: Record<string, unknown>): Promise<PaymentAccountView> {
+        const headers = this.getAuthHeaders();
+        const request =
+            id === null
+                ? this.httpClient.post<{ account: PaymentAccountView }>('/_action/payment/accounts', payload, { headers })
+                : this.httpClient.put<{ account: PaymentAccountView }>(`/_action/payment/accounts/${id}`, payload, {
+                      headers,
+                  });
+        return request.then((response) => response.data.account);
+    }
+
+    public deleteAccount(id: string): Promise<unknown> {
+        return this.httpClient.delete(`/_action/payment/accounts/${id}`, { headers: this.getAuthHeaders() });
+    }
+
+    public listAppConfiguration(): Promise<{ apps: PaymentAppView[]; accounts: PaymentAccountChoice[] }> {
+        return this.httpClient
+            .get<{
+                apps: PaymentAppView[];
+                accounts: PaymentAccountChoice[];
+            }>('/_action/payment/apps', { headers: this.getAuthHeaders() })
+            .then((response) => response.data);
+    }
+
+    public listProviderDefinitions(): Promise<PaymentProviderView[]> {
+        return this.httpClient
+            .get<{ providers?: PaymentProviderView[] }>('/_action/payment/definitions', { headers: this.getAuthHeaders() })
+            .then((response) => response.data.providers ?? []);
+    }
+
     public listProviders(): Promise<PaymentProviderView[]> {
         return this.httpClient
             .get<{ providers?: PaymentProviderView[] }>('/_action/payment/providers', { headers: this.getAuthHeaders() })
@@ -385,10 +453,14 @@ export default class PaymentGatewayService {
      */
     public savePaymentMethodChannel(
         paymentMethodId: string,
-        channelTechnicalName: string,
+        methodTechnicalName: string,
         paymentAppId: string | null = null,
+        routingPolicy: string = 'priority',
     ): Promise<Record<string, unknown>> {
-        const payload: { channelTechnicalName: string; paymentAppId?: string } = { channelTechnicalName };
+        const payload: { methodTechnicalName: string; routingPolicy: string; paymentAppId?: string } = {
+            methodTechnicalName,
+            routingPolicy,
+        };
 
         if (paymentAppId) {
             payload.paymentAppId = paymentAppId;

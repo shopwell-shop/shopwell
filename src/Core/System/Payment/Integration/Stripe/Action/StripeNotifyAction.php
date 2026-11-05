@@ -5,6 +5,7 @@ namespace Shopwell\Core\System\Payment\Integration\Stripe\Action;
 use Payum\Core\Exception\RequestNotSupportedException;
 use Payum\Core\Request\Notify;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Payment\Exception\PaymentNotificationException;
 use Shopwell\Core\System\Payment\Gateway\AbstractPaymentAction;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
 use Shopwell\Core\System\Payment\Gateway\Request\NotificationResult;
@@ -85,6 +86,9 @@ final class StripeNotifyAction extends AbstractPaymentAction
             currency: strtoupper($this->currencyOf($object)),
             status: $type,
             raw: $object,
+            paymentNo: $isRefund ? null : $this->paymentNoOf($object),
+            refundNo: $isRefund ? $this->stringOf(\is_array($object['metadata'] ?? null) ? $object['metadata'] : [], StripeNotificationExtractor::METADATA_REFUND_NO) : null,
+            isRefund: $isRefund,
         ));
     }
 
@@ -178,6 +182,17 @@ final class StripeNotifyAction extends AbstractPaymentAction
     /**
      * @param array<string, mixed> $object
      */
+    private function paymentNoOf(array $object): ?string
+    {
+        $metadata = \is_array($object['metadata'] ?? null) ? $object['metadata'] : [];
+
+        return $this->stringOf($metadata, StripeNotificationExtractor::METADATA_PAYMENT_NO)
+            ?? $this->stringOf($object, 'client_reference_id');
+    }
+
+    /**
+     * @param array<string, mixed> $object
+     */
     private function currencyOf(array $object): string
     {
         $currency = $object['currency'] ?? null;
@@ -230,7 +245,7 @@ final class StripeNotifyAction extends AbstractPaymentAction
             }
         }
 
-        throw PaymentException::notificationInvalid(
+        throw PaymentNotificationException::notificationInvalid(
             StripeApi::PROVIDER,
             'the notification carries no stripe signature'
         );

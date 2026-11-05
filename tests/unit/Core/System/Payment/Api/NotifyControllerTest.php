@@ -8,6 +8,7 @@ use Psr\Log\LoggerInterface;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Payment\Api\NotifyController;
+use Shopwell\Core\System\Payment\Exception\PaymentGatewayException;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationCollection;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationProcessor;
@@ -84,6 +85,21 @@ class NotifyControllerTest extends TestCase
         static::assertSame('', $response->getContent());
     }
 
+    public function testATemporaryGatewayFailureAsksTheChannelToRetry(): void
+    {
+        $repository = static::createStub(EntityRepository::class);
+        $repository->method('create')->willThrowException(PaymentGatewayException::gatewayError('paypal_checkout', 'capture timed out'));
+        $controller = $this->controller(
+            PaymentControllerFixture::providerRegistry(PaymentControllerFixture::provider('paypal', [], $this->extractor())),
+            $repository,
+        );
+
+        $response = $controller->notify($this->notification('{}'), 'paypal', 'PG-1');
+
+        static::assertSame(Response::HTTP_INTERNAL_SERVER_ERROR, $response->getStatusCode());
+        static::assertSame('', $response->getContent());
+    }
+
     private function extractor(): PaymentNotificationExtractorInterface
     {
         $extractor = static::createStub(PaymentNotificationExtractorInterface::class);
@@ -116,7 +132,7 @@ class NotifyControllerTest extends TestCase
     private function notificationServiceFor(PaymentProviderRegistry $providerRegistry, EntityRepository $notificationRepository): PaymentNotificationProcessor
     {
         $resolver = $this->resolver($providerRegistry);
-        $orderService = PaymentControllerFixture::orderService(PaymentControllerFixture::repository(PaymentOrderCollection::class), $resolver);
+        $orderService = PaymentControllerFixture::orderService(PaymentControllerFixture::repository(PaymentOrderCollection::class));
         $refundService = PaymentControllerFixture::refundService(PaymentControllerFixture::repository(PaymentRefundCollection::class), $resolver, $orderService);
 
         return PaymentControllerFixture::notificationService($providerRegistry, $notificationRepository, $orderService, $refundService, $resolver);

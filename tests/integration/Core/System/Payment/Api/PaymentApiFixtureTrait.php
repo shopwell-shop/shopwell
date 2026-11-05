@@ -7,21 +7,23 @@ use Doctrine\DBAL\Connection;
 use PHPUnit\Framework\Assert;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
-use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
-use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopwell\Core\Framework\Test\TestCaseBase\KernelLifecycleManager;
 use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppAccount\PaymentAppAccountCollection;
 use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppChannel\PaymentAppChannelCollection;
-use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppProvider\PaymentAppProviderCollection;
 use Shopwell\Core\System\Payment\App\PaymentAppCollection;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
 use Shopwell\Core\System\Payment\App\PaymentCredentialCipher;
 use Shopwell\Core\System\Payment\App\PaymentSignatureService;
 use Shopwell\Core\System\Payment\Integration\Alipay\Api\AlipayApi;
+use Shopwell\Core\System\Payment\Integration\Alipay\Product\AlipayProducts;
+use Shopwell\Core\System\Payment\Order\Aggregate\PaymentAttempt\PaymentAttemptCollection;
+use Shopwell\Core\System\Payment\Order\Aggregate\PaymentAttempt\PaymentAttemptEntity;
 use Shopwell\Core\System\Payment\Order\PaymentOrderCollection;
 use Shopwell\Core\System\Payment\Order\PaymentOrderStates;
-use Shopwell\Core\System\Payment\Provider\Config\PaymentChannelConfigCollection;
-use Shopwell\Core\System\Payment\Provider\Config\PaymentProviderConfigCollection;
+use Shopwell\Core\System\Payment\Product\PaymentProductRegistry;
+use Shopwell\Core\System\Payment\Provider\Config\PaymentProviderConfigService;
+use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -40,76 +42,34 @@ trait PaymentApiFixtureTrait
 
     private string $paymentAppSecret = '';
 
+    private string $paymentAccountId = '';
+
     private string $alipayPrivateKey = '';
 
     private string $alipayPublicKey = '';
 
     /**
-     * The platform side of alipay: a provider config with a fresh rsa key pair and the h5 channel
-     * switched on. Any seeded platform credentials are overwritten on purpose: the tests must sign
-     * and verify locally and never talk to a real gateway. The h5 capture only builds the redirect
-     * url, so no http call leaves the process.
+     * Uses locally generated signing keys; H5 capture builds a redirect without making an HTTP call.
      */
     private function setUpAlipayPlatform(): void
     {
         $this->generateAlipayKeyPair();
-
-        $cipher = static::getContainer()->get(PaymentCredentialCipher::class);
-        $context = Context::createDefaultContext();
-
-        /** @var EntityRepository<PaymentProviderConfigCollection> $providerRepository */
-        $providerRepository = static::getContainer()->get('payment_provider_config.repository');
-        $existingProvider = $providerRepository->searchIds(
-            (new Criteria())
-                ->addFilter(new EqualsFilter('providerTechnicalName', AlipayApi::PROVIDER))
-                ->setLimit(1),
-            $context
-        )->firstId();
-
-        $providerData = [
-            'providerTechnicalName' => AlipayApi::PROVIDER,
-            'enabled' => true,
-            'credentials' => $cipher->encrypt([
-                AlipayApi::APP_ID => '9021000149657375',
-                AlipayApi::PRIVATE_KEY => $this->alipayPrivateKey,
-                AlipayApi::PUBLIC_KEY => $this->alipayPublicKey,
-                AlipayApi::GATEWAY_URL => AlipayApi::SANDBOX_GATEWAY_URL,
-            ]),
-            'settings' => ['http_method' => 'GET'],
-        ];
-
-        if ($existingProvider !== null) {
-            $providerRepository->update([['id' => $existingProvider] + $providerData], $context);
-        } else {
-            $providerRepository->create([$providerData], $context);
-        }
-
-        /** @var EntityRepository<PaymentChannelConfigCollection> $channelRepository */
-        $channelRepository = static::getContainer()->get('payment_channel_config.repository');
-        $existingChannel = $channelRepository->searchIds(
-            (new Criteria())
-                ->addFilter(
-                    new EqualsFilter('providerTechnicalName', AlipayApi::PROVIDER),
-                    new EqualsFilter('channelTechnicalName', AlipayApi::CHANNEL_H5)
-                )
-                ->setLimit(1),
-            $context
-        )->firstId();
-
-        if ($existingChannel !== null) {
-            $channelRepository->update([['id' => $existingChannel, 'enabled' => true]], $context);
-        } else {
-            $channelRepository->create([[
-                'providerTechnicalName' => AlipayApi::PROVIDER,
-                'channelTechnicalName' => AlipayApi::CHANNEL_H5,
-                'enabled' => true,
-            ]], $context);
-        }
+        $container = static::getContainer();
+        $service = $container->get(PaymentProviderConfigService::class);
+        $service->saveProvider($container->get(PaymentProviderRegistry::class)->get(AlipayApi::PROVIDER), true, [
+            AlipayApi::APP_ID => '9021000149657375',
+            AlipayApi::PRIVATE_KEY => $this->alipayPrivateKey,
+            AlipayApi::PUBLIC_KEY => $this->alipayPublicKey,
+            AlipayApi::GATEWAY_URL => AlipayApi::SANDBOX_GATEWAY_URL,
+        ], []);
+        $service->saveChannel($container->get(PaymentProductRegistry::class)->get(AlipayProducts::H5), true, [], []);
+        $config = $service->findProviderConfig(AlipayApi::PROVIDER);
+        Assert::assertNotNull($config);
+        $this->paymentAccountId = $config->accountId;
     }
 
     /**
-     * Creates an app that is authorized for alipay with the platform credentials and has the h5
-     * channel enabled. Its technical name and plain secret become the signing defaults of
+     * Creates an app with an explicit Alipay account grant and the H5 product enabled. Its technical name and plain secret become the signing defaults of
      * {@see signedPayload()}.
      */
     private function createContractApp(
@@ -142,14 +102,12 @@ trait PaymentApiFixtureTrait
         $this->paymentAppId = $appId;
 
         if ($withProvider) {
-            /** @var EntityRepository<PaymentAppProviderCollection> $appProviderRepository */
-            $appProviderRepository = static::getContainer()->get('payment_app_provider.repository');
+            /** @var EntityRepository<PaymentAppAccountCollection> $appProviderRepository */
+            $appProviderRepository = static::getContainer()->get('payment_app_account.repository');
             $appProviderRepository->create([[
                 'paymentAppId' => $appId,
-                'providerTechnicalName' => AlipayApi::PROVIDER,
-                // the app collects on the merchant account of the platform tenant, which is what the
-                // retired `mode = 'platform'` used to say
-                'sourceAppId' => $this->platformTenantId($context),
+                'accountId' => $this->paymentAccountId,
+                'position' => 0,
                 'enabled' => true,
             ]], $context);
         }
@@ -159,34 +117,10 @@ trait PaymentApiFixtureTrait
             $appChannelRepository = static::getContainer()->get('payment_app_channel.repository');
             $appChannelRepository->create([[
                 'paymentAppId' => $appId,
-                'channelTechnicalName' => AlipayApi::CHANNEL_H5,
+                'channelTechnicalName' => AlipayProducts::H5,
                 'enabled' => true,
             ]], $context);
         }
-    }
-
-    /**
-     * The id of the tenant the platform itself collects through.
-     *
-     * An app that used to be declared with `mode = 'platform'` collects on the merchant account of
-     * that tenant, so the contract tests let their app inherit it instead of holding credentials of its
-     * own. The row is the one the installation writes, so it always exists.
-     */
-    private function platformTenantId(Context $context): string
-    {
-        /** @var EntityRepository<PaymentAppCollection> $appRepository */
-        $appRepository = static::getContainer()->get('payment_app.repository');
-
-        $id = $appRepository->searchIds(
-            (new Criteria())
-                ->addFilter(new EqualsFilter('technicalName', PaymentAppEntity::PLATFORM_TECHNICAL_NAME))
-                ->setLimit(1),
-            $context
-        )->firstId();
-
-        Assert::assertIsString($id, 'the tenant of the platform is seeded by the migration');
-
-        return $id;
     }
 
     /**
@@ -279,13 +213,17 @@ trait PaymentApiFixtureTrait
      *
      * @param array<string, mixed> $overrides dal payload of the order, valid defaults are merged in
      *
-     * @return array{id: string, paymentNo: string, outTradeNo: string}
+     * @return array{id: string, paymentNo: string, outTradeNo: string, attemptNo: string}
      */
     private function seedPaymentOrder(array $overrides = []): array
     {
         $id = Uuid::randomHex();
         $paymentNo = 'PG' . date('YmdHis') . strtoupper(bin2hex(random_bytes(4)));
         $outTradeNo = 'OT' . bin2hex(random_bytes(8));
+        $provider = (string) ($overrides['providerTechnicalName'] ?? AlipayApi::PROVIDER);
+        $product = (string) ($overrides['channelTechnicalName'] ?? AlipayProducts::H5);
+        $accountId = (string) ($overrides['accountId'] ?? $this->paymentAccountId);
+        unset($overrides['providerTechnicalName'], $overrides['channelTechnicalName'], $overrides['accountId']);
 
         /** @var EntityRepository<PaymentOrderCollection> $orderRepository */
         $orderRepository = static::getContainer()->get('payment_order.repository');
@@ -296,8 +234,6 @@ trait PaymentApiFixtureTrait
             'paymentNo' => $paymentNo,
             'outTradeNo' => $outTradeNo,
             'paymentAppId' => $this->paymentAppId,
-            'providerTechnicalName' => AlipayApi::PROVIDER,
-            'channelTechnicalName' => AlipayApi::CHANNEL_H5,
             'amount' => 100,
             'paidAmount' => 0,
             'refundedAmount' => 0,
@@ -307,7 +243,26 @@ trait PaymentApiFixtureTrait
             'expireAt' => new \DateTimeImmutable('+30 minutes'),
         ]], Context::createDefaultContext());
 
+        $attemptId = Uuid::randomHex();
+        /** @var EntityRepository<PaymentAttemptCollection> $attemptRepository */
+        $attemptRepository = static::getContainer()->get('payment_attempt.repository');
+        $attemptRepository->create([[
+            'id' => $attemptId,
+            'paymentOrderId' => (string) ($overrides['id'] ?? $id),
+            'attemptNo' => 'p' . $attemptId,
+            'accountId' => $accountId,
+            'method' => $provider,
+            'providerTechnicalName' => $provider,
+            'channelTechnicalName' => $product,
+            'interaction' => 'redirect',
+            'status' => PaymentAttemptEntity::STATUS_HANDOVER,
+            'context' => ['scene' => 'browser', 'device' => 'wap', 'environment' => 'browser', 'currency' => 'CNY'],
+            'configuration' => ['params' => [], 'settings' => ['flow' => 'redirect'], 'runtimeParams' => []],
+        ]], Context::createDefaultContext());
+        $orderRepository->update([['id' => (string) ($overrides['id'] ?? $id), 'activeAttemptId' => $attemptId]], Context::createDefaultContext());
+
         return [
+            'attemptNo' => 'p' . $attemptId,
             'id' => (string) ($overrides['id'] ?? $id),
             'paymentNo' => (string) ($overrides['paymentNo'] ?? $paymentNo),
             'outTradeNo' => (string) ($overrides['outTradeNo'] ?? $outTradeNo),

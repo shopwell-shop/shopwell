@@ -14,12 +14,14 @@ use Shopwell\Core\System\Payment\Integration\Wechat\Action\WechatTransferQueryAc
 use Shopwell\Core\System\Payment\Integration\Wechat\Api\WechatApi;
 use Shopwell\Core\System\Payment\Integration\Wechat\Notification\WechatNotificationExtractor;
 use Shopwell\Core\System\Payment\Integration\Wechat\Notification\WechatTransferNotificationVerifier;
+use Shopwell\Core\System\Payment\Integration\Wechat\Product\WechatProducts;
 use Shopwell\Core\System\Payment\Integration\Wechat\Request\WechatPayParamsDecoder;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
+use Shopwell\Core\System\Payment\Product\PaymentInteraction;
+use Shopwell\Core\System\Payment\Product\PaymentProduct;
+use Shopwell\Core\System\Payment\Product\PaymentScene;
 use Shopwell\Core\System\Payment\Provider\AbstractPaymentProvider;
 use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
 use Shopwell\Core\System\Payment\Provider\Cycle\PaymentCycleRules;
 use Shopwell\Core\System\Payment\Provider\PayParamsDecoderInterface;
 use Shopwell\Core\System\Payment\Provider\Transfer\PaymentTransferRules;
@@ -142,53 +144,59 @@ final class WechatProvider extends AbstractPaymentProvider
     }
 
     /**
-     * @return list<PaymentChannel>
+     * @return list<PaymentProduct>
      */
-    public function getChannels(): array
+    public function getProducts(): array
     {
         return [
-            new PaymentChannel(
-                technicalName: 'wechat_h5',
+            new PaymentProduct(
+                technicalName: WechatProducts::H5,
+                scenes: [new PaymentScene('browser', 'wap', 'browser')],
                 providerTechnicalName: 'wechat',
+                method: 'wechat',
                 label: 'sw-settings-payment-provider.channel.wechat_h5',
-                flow: PaymentFlow::REDIRECT,
+                interactions: [PaymentInteraction::REDIRECT],
                 currencies: ['CNY'],
-                devices: [PaymentChannel::DEVICE_WAP],
             ),
-            new PaymentChannel(
-                technicalName: 'wechat_native',
+            new PaymentProduct(
+                technicalName: WechatProducts::NATIVE,
+                scenes: [new PaymentScene('browser', 'web', 'browser')],
                 providerTechnicalName: 'wechat',
+                method: 'wechat',
                 label: 'sw-settings-payment-provider.channel.wechat_native',
-                flow: PaymentFlow::QRCODE,
+                interactions: [PaymentInteraction::QRCODE],
                 currencies: ['CNY'],
-                devices: [PaymentChannel::DEVICE_WEB],
             ),
-            new PaymentChannel(
-                technicalName: 'wechat_jsapi',
+            new PaymentProduct(
+                technicalName: WechatProducts::JSAPI,
+                scenes: [new PaymentScene('browser', 'wap', 'wechat')],
                 providerTechnicalName: 'wechat',
+                method: 'wechat',
                 label: 'sw-settings-payment-provider.channel.wechat_jsapi',
-                flow: PaymentFlow::SDK,
+                interactions: [PaymentInteraction::SDK],
                 currencies: ['CNY'],
-                devices: [PaymentChannel::DEVICE_WAP],
+
                 // the openid only exists inside the public account that issues it
                 runtimeParams: ['openid' => true],
             ),
-            new PaymentChannel(
-                technicalName: 'wechat_mini',
+            new PaymentProduct(
+                technicalName: WechatProducts::MINI,
+                scenes: [new PaymentScene('mini_program', 'mini', 'wechat')],
                 providerTechnicalName: 'wechat',
+                method: 'wechat',
                 label: 'sw-settings-payment-provider.channel.wechat_mini',
-                flow: PaymentFlow::SDK,
+                interactions: [PaymentInteraction::SDK],
                 currencies: ['CNY'],
-                devices: [PaymentChannel::DEVICE_MINI],
                 runtimeParams: ['openid' => true],
             ),
-            new PaymentChannel(
-                technicalName: 'wechat_app',
+            new PaymentProduct(
+                technicalName: WechatProducts::APP,
+                scenes: [new PaymentScene('native_app', 'app')],
                 providerTechnicalName: 'wechat',
+                method: 'wechat',
                 label: 'sw-settings-payment-provider.channel.wechat_app',
-                flow: PaymentFlow::SDK,
+                interactions: [PaymentInteraction::SDK],
                 currencies: ['CNY'],
-                devices: [PaymentChannel::DEVICE_APP],
             ),
         ];
     }
