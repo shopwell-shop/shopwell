@@ -41,6 +41,7 @@ use Shopwell\Core\Checkout\Order\SalesChannel\SetPaymentOrderRoute;
 use Shopwell\Core\Checkout\OrderReturn\SalesChannel\OrderReturnGuestRoute;
 use Shopwell\Core\Checkout\OrderReturn\SalesChannel\OrderReturnRoute;
 use Shopwell\Core\Checkout\OrderReturn\Service\OrderReturnSettings;
+use Shopwell\Core\Checkout\Payment\Gateway\OrderPaymentStarter;
 use Shopwell\Core\Checkout\Payment\PaymentProcessor;
 use Shopwell\Core\Checkout\Payment\SalesChannel\HandlePaymentMethodRoute;
 use Shopwell\Core\Checkout\Wallet\SalesChannel\WalletPaymentRoute;
@@ -77,6 +78,7 @@ use Shopwell\Core\Framework\RateLimiter\RateLimiter;
 use Shopwell\Core\Framework\Script\Api\ScriptResponseEncoder;
 use Shopwell\Core\Framework\Sso\Service\OAuth2LoginService;
 use Shopwell\Core\Framework\Util\HtmlSanitizer;
+use Shopwell\Core\System\Payment\Order\PaymentOrderService;
 use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextService;
 use Shopwell\Core\System\SalesChannel\SalesChannel\ContextSwitchRoute;
 use Shopwell\Core\System\SystemConfig\SystemConfigService;
@@ -111,6 +113,7 @@ use Shopwell\Storefront\Controller\NavigationController;
 use Shopwell\Storefront\Controller\NewsletterController;
 use Shopwell\Storefront\Controller\OAuth2LoginController;
 use Shopwell\Storefront\Controller\OrderReturnGuestController;
+use Shopwell\Storefront\Controller\PaymentGatewayController;
 use Shopwell\Storefront\Controller\ProductController;
 use Shopwell\Storefront\Controller\RegisterController;
 use Shopwell\Storefront\Controller\RobotsController;
@@ -187,6 +190,13 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->public()
         ->args([
             tagged_iterator('shopwell.storefront.captcha'),
+        ])
+        ->call('setContainer', [service('service_container')]);
+
+    $services->set(PaymentGatewayController::class)
+        ->args([
+            service(PaymentOrderService::class),
+            service(OrderPaymentStarter::class),
         ])
         ->call('setContainer', [service('service_container')]);
 
