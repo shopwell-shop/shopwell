@@ -1,71 +1,21 @@
-/*
- * Pagination
- * ==============================================
- * Custom skin styling for the bootstrap pagination component.
- * Visual source of truth: static prototype — 36x36 square items, filled
- * brand square for the current page.
- *
- * ⚠️ The storefront templates put `aria-current="page"` on the `<li>`
- * (`.page-item`), so the active state must be selected via
- * `.page-item.active .page-link` (an `aria-current` fallback is kept for
- * pages whose markup carries it on the link itself).
- */
-
 .pagination {
-    --#{$prefix}pagination-color: #{$sw-text-meta};
-    --#{$prefix}pagination-bg: transparent;
-    --#{$prefix}pagination-border-color: transparent;
-    --#{$prefix}pagination-border-radius: #{$sw-radius};
-    --#{$prefix}pagination-hover-color: #{$sw-brand};
-    --#{$prefix}pagination-hover-bg: #{$sw-gray-50};
-    --#{$prefix}pagination-hover-border-color: transparent;
-    --#{$prefix}pagination-focus-color: #{$sw-brand};
-    --#{$prefix}pagination-focus-bg: #{$sw-gray-50};
-    --#{$prefix}pagination-focus-box-shadow: none;
-    --#{$prefix}pagination-active-color: #{$white};
-    --#{$prefix}pagination-active-bg: #{$sw-brand};
-    --#{$prefix}pagination-active-border-color: #{$sw-brand};
-    --#{$prefix}pagination-disabled-color: #{$sw-gray-300};
-    --#{$prefix}pagination-disabled-bg: transparent;
-    --#{$prefix}pagination-disabled-border-color: transparent;
-    --#{$prefix}pagination-font-size: #{$sw-font-size-sm};
-    gap: 2px;
-    margin-top: 2.5rem;
+    --#{$prefix}pagination-padding-y: calc(#{$btn-padding-y} + 1px);
+    gap: 0.125rem;
 
     .page-link {
-        border-color: transparent;
-        font-weight: $font-weight-semibold;
+        line-height: $btn-line-height;
+        text-align: center;
+
+        @include media-breakpoint-up(sm) {
+            min-width: 40px;
+        }
 
         .icon {
             color: inherit;
         }
 
         &:focus {
-            box-shadow: none;
+            box-shadow: $focus-ring-box-shadow-inset;
         }
-
-        &:focus-visible {
-            box-shadow: none;
-            outline: 2px solid $sw-brand;
-            outline-offset: 1px;
-        }
-    }
-
-    .page-item.active .page-link,
-    .page-link[aria-current='page'] {
-        background: $sw-brand;
-        border-color: $sw-brand;
-        color: $white;
-
-        &:hover {
-            background: $sw-brand-hover;
-            border-color: $sw-brand-hover;
-            color: $white;
-            text-decoration: none;
-        }
-    }
-
-    .page-item.disabled .page-link {
-        color: $sw-gray-300;
     }
 }

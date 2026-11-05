@@ -1,25 +1,12 @@
 /*
- * Alert
- * ==============================================
- * Custom skin styling for the bootstrap alert component.
- * Visual source of truth: static prototype — flat soft surface, square
- * corners and a 3px semantic bar on the left edge.
- *
- * https://getbootstrap.com/docs/5.2/components/alerts
- */
+Alert
+==============================================
+Custom skin styling for bootstrap alert component.
+
+https://getbootstrap.com/docs/5.2/components/alerts
+*/
 
 .alert {
-    --#{$prefix}alert-border-radius: #{$sw-radius};
-    --#{$prefix}alert-bg: #{$sw-gray-50};
-    --#{$prefix}alert-color: #{$sw-gray-800};
-    --#{$prefix}alert-padding-x: 1rem;
-    --#{$prefix}alert-padding-y: 0.75rem;
-    border: 0;
-    border-left: 3px solid var(--#{$prefix}alert-border-color);
-    border-radius: $sw-radius;
-    color: var(--#{$prefix}alert-color);
-    font-size: $sw-font-size-sm;
-
     .icon {
         margin-right: $spacer-sm;
         flex-shrink: 0;
@@ -30,39 +17,10 @@
     }
 }
 
-// Semantic groups: bar color + soft surface + readable text.
-$sw-alert-variants: (
-    primary: (
-        $sw-brand,
-        $sw-brand-soft,
-        $sw-blue-700,
-    ),
-    info: (
-        $sw-blue-400,
-        $sw-blue-25,
-        $sw-blue-700,
-    ),
-    success: (
-        $sw-color-success,
-        $sw-success-soft,
-        $sw-success-text,
-    ),
-    warning: (
-        $sw-color-warning,
-        $sw-warning-soft,
-        $sw-warning-text,
-    ),
-    danger: (
-        $sw-color-danger,
-        $sw-danger-soft,
-        $sw-danger-text,
-    ),
-);
-
-@each $state, $values in $sw-alert-variants {
+@each $state, $value in $theme-colors {
     .alert-#{$state} {
-        --#{$prefix}alert-border-color: #{nth($values, 1)};
-        --#{$prefix}alert-bg: #{nth($values, 2)};
-        --#{$prefix}alert-color: #{nth($values, 3)};
+        --#{$prefix}alert-border-color: #{$value};
+        --#{$prefix}alert-bg: #{saturate(tint-color($value, 90%), 40%)};
+        --#{$prefix}alert-color: #{$body-color};
     }
 }

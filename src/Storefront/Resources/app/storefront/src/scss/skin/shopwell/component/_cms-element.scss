@@ -11,11 +11,3 @@ Skin styling for cms elements
         margin-bottom: $spacer-lg;
     }
 }
-
-// The structure layer gives the sidebar section row a 60px gutter, but this
-// skin keeps the boxed container padding at 20px per side. The negative row
-// margins would then stick out of the container and cause a horizontal
-// scrollbar, so the gutter is capped at 2 × container padding.
-.cms-section .cms-section-sidebar > .row {
-    --#{$prefix}gutter-x: #{$grid-gutter-width};
-}

@@ -35,15 +35,10 @@ class Migration1733136208AddH1ToCmsCategoryListing extends MigrationStep
 
     private function addH1ToDefaultListing(Connection $connection, string $cmsPageId): void
     {
-        // The sidebar listing layout has two sections, so the section has to be
-        // picked deterministically: the H1 belongs into the leading (default)
-        // section, above the category info block.
         $sectionData = $connection->fetchAssociative(
             'SELECT id, version_id
             FROM cms_section
-            WHERE cms_page_id = :cms_page_id
-            ORDER BY position ASC
-            LIMIT 1',
+            WHERE cms_page_id = :cms_page_id',
             ['cms_page_id' => $cmsPageId]
         );
 

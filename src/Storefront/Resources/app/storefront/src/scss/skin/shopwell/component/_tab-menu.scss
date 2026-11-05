@@ -1,51 +1,38 @@
 /*
- * Tab Menu
- * ==============================================
- * Custom skin styling for the bootstrap card with included tab navigation.
- * Visual source of truth: static prototype — 28px tab rhythm with a hairline
- * baseline, muted inactive labels and a brand underline for the active tab.
- *
- * https://getbootstrap.com/docs/5.2/components/card/#navigation
- */
+Tab Menu
+==============================================
+Custom skin styling for bootstrap card with included tab navigation.
+
+https://getbootstrap.com/docs/5.2/components/card/#navigation
+*/
 
 .card-tabs {
     --#{$prefix}card-border-width: 0;
 
     .card-header {
         --#{$prefix}card-cap-bg: none;
-        --#{$prefix}card-cap-padding-x: 0;
-        border-bottom: 1px solid $sw-border-subtle;
-    }
-
-    .nav {
-        gap: 1.75rem;
+        --#{$prefix}card-cap-padding-x: 10px;
     }
 
     .nav-item {
-        margin-right: 0;
+        margin-right: 10px;
     }
 
     .nav-link {
-        --#{$prefix}nav-link-padding-x: 2px;
-        --#{$prefix}nav-link-padding-y: 0.75rem;
-        --#{$prefix}nav-link-color: #{$sw-gray-600};
+        --#{$prefix}nav-link-padding-x: 0;
+        --#{$prefix}nav-link-padding-y: 5px;
+        --#{$prefix}nav-link-color: #{$body-color};
         --#{$prefix}nav-tabs-border-width: 0;
-        --#{$prefix}nav-tabs-border-radius: #{$sw-radius};
-        --#{$prefix}nav-tabs-link-hover-border-color: transparent;
-        --#{$prefix}nav-link-hover-color: #{$sw-gray-1000};
-        --#{$prefix}nav-tabs-link-active-color: #{$sw-brand};
-        --#{$prefix}nav-tabs-link-active-border-color: #{$sw-brand};
-        border-bottom: 2px solid transparent;
-        font-size: 0.9375rem;
-        font-weight: $font-weight-semibold;
+        --#{$prefix}nav-tabs-border-radius: 0;
+        --#{$prefix}nav-tabs-link-hover-border-color: #{$primary};
+        --#{$prefix}nav-link-hover-color: #{$primary};
+        --#{$prefix}nav-tabs-link-active-color: #{$primary};
+        --#{$prefix}nav-tabs-link-active-border-color: #{$primary};
+        border-bottom: 2px solid $border-color;
 
         &.active,
         &:hover {
             background-image: none;
-        }
-
-        &.active {
-            border-bottom-color: $sw-brand;
         }
 
         .product-cross-selling-tab-navigation {
@@ -53,14 +40,7 @@
         }
     }
 
-    .tab-pane {
-        color: $sw-gray-800;
-        font-size: 0.9375rem;
-        line-height: 1.75;
-        padding-top: 1.5rem;
-    }
-
     .card-body {
-        padding-top: 1.5rem;
+        padding-top: 30px;
     }
 }

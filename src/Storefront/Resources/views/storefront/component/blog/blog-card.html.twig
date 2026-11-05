@@ -65,19 +65,6 @@
                         {% endif %}
                     {% endblock %}
 
-                    {% block sw_blog_card_read_more %}
-                        {# Prototype: the promoted entry carries a "read the full story" affordance. #}
-                        {% if featured %}
-                            <span class="blog-card__read-more">
-                                {{ 'blog.card.readMore'|trans|sw_sanitize }}
-                                <svg class="blog-card__read-more-arrow" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                                    <path d="M4 12h15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                                    <path d="M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                </svg>
-                            </span>
-                        {% endif %}
-                    {% endblock %}
-
                     {% block sw_blog_card_meta %}
                         <div class="blog-card__meta">
                             {% if showAuthor and blog.author %}

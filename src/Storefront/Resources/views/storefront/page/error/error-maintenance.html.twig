@@ -62,25 +62,12 @@
                         {% else %}
                             {% block error_maintenance_main_fallback %}
                                 <div class="container mt-5">
-                                    <div class="error-page">
-                                        {% block error_maintenance_code %}
-                                            <span class="error-page__icon" aria-hidden="true">
-                                                <svg viewBox="0 0 24 24" focusable="false">
-                                                    <circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.8"/>
-                                                    <path d="M12 7.5v5.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-                                                    <circle cx="12" cy="16.4" r="1.1" fill="currentColor"/>
-                                                </svg>
-                                            </span>
-                                        {% endblock %}
+                                    <img src="{{ asset('assets/illustration/maintenance_mode.svg', 'theme') }}"
+                                         alt="{{ 'general.maintenanceModeHeader'|trans|striptags }}"
+                                         class="rounded mx-auto d-block w-75">
 
-                                        {% block error_maintenance_fallback_header %}
-                                            <h1 class="error-page__title">{{ 'general.maintenanceModeHeader'|trans|sw_sanitize }}</h1>
-                                        {% endblock %}
-
-                                        {% block error_maintenance_description %}
-                                            <p class="error-page__text">{{ 'general.maintenanceModeDescription'|trans|sw_sanitize }}</p>
-                                        {% endblock %}
-                                    </div>
+                                    <h1 class="mt-4 text-center">{{ 'general.maintenanceModeHeader'|trans }}</h1>
+                                    <p class="text-center">{{ 'general.maintenanceModeDescription'|trans }}</p>
                                 </div>
                             {% endblock %}
                         {% endif %}

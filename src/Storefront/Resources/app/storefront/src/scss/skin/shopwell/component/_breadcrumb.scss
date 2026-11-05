@@ -1,18 +1,12 @@
 /*
- * Breadcrumb
- * ==============================================
- * Custom skin styling for the bootstrap breadcrumb component.
- * Visual source of truth: static prototype — meta text, "›" divider.
- *
- * https://getbootstrap.com/docs/5.2/components/breadcrumb
- */
+Breadcrumb
+==============================================
+Custom skin styling for bootstrap breadcrumb component.
+
+https://getbootstrap.com/docs/5.2/components/breadcrumb
+*/
 
 .breadcrumb {
-    --#{$prefix}breadcrumb-divider: '›';
-    --#{$prefix}breadcrumb-item-padding-x: 0.5rem;
-    font-size: 0.8125rem;
-    padding-block: 1rem;
-
     @if not feature('v6.8.0.0') {
         .breadcrumb-placeholder {
             margin: 0 $spacer-sm;
@@ -31,30 +25,22 @@
     }
 
     .breadcrumb-item + .breadcrumb-item:before {
-        color: $sw-gray-300;
         line-height: 24px;
-        padding-top: 0;
+        padding-top: 3px;
     }
 
-    a,
-    .breadcrumb-link {
-        color: $sw-text-meta;
-        font-size: inherit;
-        text-decoration: none;
+    a {
+        color: $body-color;
+        font-size: $font-size-base;
 
         &:hover {
-            color: $sw-brand;
+            color: $sw-color-brand-primary;
             text-decoration: none;
         }
 
         &.is-active {
-            color: $sw-brand;
+            color: $sw-color-brand-primary;
             font-weight: $font-weight-bolder;
         }
-    }
-
-    .breadcrumb-item.active {
-        color: $sw-gray-1000;
-        font-weight: $font-weight-semibold;
     }
 }

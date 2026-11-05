@@ -1,11 +1,10 @@
 /*
- * Pagination
- * ==============================================
- * Custom styling for the bootstrap pagination component (structure only,
- * visual styling lives in skin/shopwell/component/_pagination.scss).
- *
- * https://getbootstrap.com/docs/5.2/components/pagination
- */
+Pagination
+==============================================
+Custom styling for bootstrap pagination component.
+
+https://getbootstrap.com/docs/5.2/components/pagination
+*/
 
 .pagination {
     margin-bottom: 0;
@@ -25,13 +24,7 @@
     }
 
     .page-link {
-        align-items: center;
-        display: inline-flex;
-        justify-content: center;
         cursor: pointer;
-        height: 36px;
         margin-bottom: 0;
-        min-width: 36px;
-        padding: 0 0.625rem;
     }
 }

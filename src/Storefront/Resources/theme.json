@@ -32,21 +32,21 @@
     "fields": {
       "sw-color-brand-primary": {
         "type": "color",
-        "value": "#0870ff",
+        "value": "#0042a0",
         "editable": true,
         "block": "themeColors",
         "order": 100
       },
       "sw-color-brand-secondary": {
         "type": "color",
-        "value": "#445a79",
+        "value": "#474a57",
         "editable": true,
         "block": "themeColors",
         "order": 200
       },
       "sw-border-color": {
         "type": "color",
-        "value": "#d1dae5",
+        "value": "#798490",
         "editable": true,
         "block": "themeColors",
         "order": 300
@@ -60,28 +60,28 @@
       },
       "sw-color-success": {
         "type": "color",
-        "value": "#1fad5a",
+        "value": "#007e4e",
         "editable": true,
         "block": "statusColors",
         "order": 100
       },
       "sw-color-info": {
         "type": "color",
-        "value": "#0b539b",
+        "value": "#005b99",
         "editable": true,
         "block": "statusColors",
         "order": 200
       },
       "sw-color-warning": {
         "type": "color",
-        "value": "#ff8514",
+        "value": "#974200",
         "editable": true,
         "block": "statusColors",
         "order": 300
       },
       "sw-color-danger": {
         "type": "color",
-        "value": "#e74040",
+        "value": "#c20017",
         "editable": true,
         "block": "statusColors",
         "order": 400
@@ -95,7 +95,7 @@
       },
       "sw-text-color": {
         "type": "color",
-        "value": "#33445b",
+        "value": "#2b3136",
         "editable": true,
         "block": "typography",
         "order": 200
@@ -109,21 +109,21 @@
       },
       "sw-headline-color": {
         "type": "color",
-        "value": "#1c2431",
+        "value": "#2b3136",
         "editable": true,
         "block": "typography",
         "order": 400
       },
       "sw-color-price": {
         "type": "color",
-        "value": "#1c2431",
+        "value": "#2b3136",
         "editable": true,
         "block": "eCommerce",
         "order": 100
       },
       "sw-color-buy-button": {
         "type": "color",
-        "value": "#0870ff",
+        "value": "#0042a0",
         "editable": true,
         "block": "eCommerce",
         "order": 200
@@ -172,27 +172,6 @@
         "editable": true,
         "block": "media",
         "order": 500
-      },
-      "sw-footer-social-wechat": {
-        "type": "url",
-        "value": "",
-        "editable": true,
-        "block": "footer",
-        "order": 100
-      },
-      "sw-footer-social-phone": {
-        "type": "url",
-        "value": "",
-        "editable": true,
-        "block": "footer",
-        "order": 200
-      },
-      "sw-footer-social-website": {
-        "type": "url",
-        "value": "",
-        "editable": true,
-        "block": "footer",
-        "order": 300
       },
       "sw-breakpoint-xs": {
         "type": "number",

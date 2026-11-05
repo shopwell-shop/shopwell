@@ -4,12 +4,10 @@
             "title": "文章",
             "empty": "暂无文章。",
             "filterAll": "全部",
-            "filterLabel": "按分类筛选",
-            "subtitle": "买手的试用报告、选购指南与行业观察，每周更新。"
+            "filterLabel": "按分类筛选"
         },
         "card": {
-            "readingTime": "阅读约 %minutes% 分钟",
-            "readMore": "阅读全文"
+            "readingTime": "阅读约 %minutes% 分钟"
         },
         "detail": {
             "toc": "目录",
@@ -54,12 +52,6 @@
                 "error": "评论提交失败，请检查填写内容后重试。",
                 "flood": "你刚刚在这篇文章下评论过，请稍等一分钟再发下一条。"
             }
-        },
-        "sidebar": {
-            "categoriesTitle": "分类",
-            "latestTitle": "最新文章",
-            "newsletterTitle": "订阅资讯",
-            "newsletterText": "每周一封，只讲值得买的东西。"
         }
     },
     "global": {
@@ -133,9 +125,7 @@
             "last": "末页",
             "page": "页",
             "title": "分页"
-        },
-        "errorPageHeader": "出错了",
-        "errorPageDescription": "抱歉，页面处理时发生错误，请稍后重试或返回首页。"
+        }
     },
     "header": {
         "logoLink": "返回首页",
@@ -276,7 +266,7 @@
         "registerDifferentShipping": "收货地址与账单地址不同",
         "registerSubmit": "注册",
         "greetings": "您好，",
-        "overviewLink": "账户概览",
+        "overviewLink": "概览",
         "profileLink": "个人资料",
         "addressLink": "地址",
         "paymentSuccess": "支付方式已更新",
@@ -295,9 +285,10 @@
         "logout": "退出登录",
         "guestAbort": "结束访客会话",
         "logoutSucceeded": "已退出登录。",
+        "overviewInfo": "在此查看个人信息、地址和默认支付方式。",
         "overviewProfileHeader": "个人信息",
-        "overviewTitle": "账户概览",
-        "overviewMetaTitle": "账户概览",
+        "overviewTitle": "概览",
+        "overviewMetaTitle": "概览",
         "overviewPaymentHeader": "默认支付方式",
         "overviewBillingHeader": "默认账单地址",
         "overviewShippingHeader": "默认收货地址",
@@ -384,17 +375,6 @@
         "optInSuccessAlert": "如该邮箱已注册，我们已发送确认邮件。",
         "ordersWelcome": "最近订单：",
         "ordersInfoEmpty": "您还没有订单。",
-        "ordersIntro": "查看您的历史订单、物流状态与售后进度。",
-        "ordersEmptyInFilter": "该状态下暂无订单。",
-        "orderCardTotal": "合计",
-        "orderFilterAriaLabel": "按订单状态筛选",
-        "orderFilterAll": "全部",
-        "orderFilterPendingPayment": "待付款",
-        "orderFilterPendingShipment": "待发货",
-        "orderFilterPendingDelivery": "待收货",
-        "orderFilterCompleted": "已完成",
-        "orderFilterCancelled": "已取消",
-        "orderFilterReset": "查看全部订单",
         "orderHeadline": "下单日期：",
         "orderStatus": "状态：",
         "orderStatusActionRequired": "待处理",
@@ -484,8 +464,6 @@
         "rewardsTitle": "积分与等级",
         "rewardsMetaTitle": "积分与等级",
         "rewardsWelcome": "查看你的积分、等级，以及积分能抵扣多少。",
-        "rewardsEarnCta": "去赚积分",
-        "rewardsBenefitsCta": "查看等级权益",
         "rewardsPointsBalance": "可用积分",
         "rewardsPointValue": "单积分价值",
         "rewardsTierPoints": "等级积分",
@@ -529,14 +507,6 @@
         "walletTitle": "我的钱包",
         "walletMetaTitle": "我的钱包",
         "walletWelcome": "查看各币种余额与最近交易记录。",
-        "walletAvailableLabel": "钱包可用余额",
-        "walletUsableHint": "结算时可直接抵扣，抵扣上限为订单应付金额。",
-        "walletEmptyCta": "去充值",
-        "walletRulesTitle": "钱包说明",
-        "walletRuleInstant": "充值金额实时到账，可用于全部自营商品结算，不可提现、不可转让。",
-        "walletRuleStackable": "钱包余额可与积分抵扣、优惠券叠加使用，抵扣上限为订单应付金额。",
-        "walletRuleRefund": "订单发生退款时，使用余额支付的部分原路退回钱包，1 个工作日内到账。",
-        "walletRuleNoCancel": "充值前请确认账号信息，充值成功后不支持撤销。",
         "walletBalanceInCurrency": "%currency% 余额",
         "walletTransactionsTitle": "交易记录",
         "walletTransactionsEmpty": "暂无交易记录。",
@@ -674,28 +644,7 @@
         "membershipLink": "会员套餐",
         "membershipTitle": "会员套餐",
         "membershipMetaTitle": "会员套餐",
-        "membershipWelcome": "购买会员套餐，或查看当前会员状态。",
-        "membershipPlanCurrent": "当前套餐",
-        "asideGroupAccount": "我的账户",
-        "asideGroupTransactions": "交易",
-        "asideGroupAssets": "资产与权益",
-        "overviewKpiPendingPayment": "待付款",
-        "overviewKpiPendingDelivery": "待收货",
-        "overviewKpiWallet": "钱包余额",
-        "overviewKpiUnit": "笔",
-        "overviewPointsUnit": "分",
-        "overviewAllOrders": "全部订单",
-        "overviewOrdersEmpty": "还没有订单，去看看有什么值得入手。",
-        "overviewOrderColumnDate": "下单日期",
-        "overviewOrderColumnStatus": "状态",
-        "overviewProfileName": "姓名",
-        "overviewProfileCustomerNumber": "会员编号",
-        "overviewTierToNext": "距%tier%还需 %points% 积分",
-        "overviewTierProgressAria": "会员等级进度：%tier%，距%next%还需 %points% 积分（约 %percent%）",
-        "benefitFreeShipping": "全场包邮，不限单笔金额",
-        "benefitCartDiscount": "会员价额外 %percent%% 折扣",
-        "benefitBirthdayGift": "生日礼金 %amount%",
-        "benefitPointsExpiry": "积分有效期 %days% 天"
+        "membershipWelcome": "购买会员套餐，或查看当前会员状态。"
     },
     "address": {
         "streetLabel": "详细地址",
@@ -734,7 +683,6 @@
         "cartTitle": "购物车",
         "cartMetaTitle": "购物车",
         "cartHeader": "购物车",
-        "cartHeaderSummary": "{1}购物车内有 1 款商品|[0,Inf[购物车内有 %count% 款商品",
         "cartUpdateSuccess": "购物车已更新。",
         "cartScreenReaderUpdate": "{1}购物车有 1 件商品，总额 %total%。|[0,Inf[购物车有 %count% 件商品，总额 %total%。",
         "continueShopping": "继续购物",
@@ -770,9 +718,9 @@
         "summaryTotalPrice": "总额",
         "summaryTotalPriceRounded": "总额（四舍五入）",
         "summaryNetPrice": "不含税总额",
-        "summaryTax": "含 %rate%% 税",
-        "summaryTaxLabeled": "含 %rate%% %label%",
-        "summaryTaxInclude": "含 %rate%% 税",
+        "summaryTax": "含 %rate% %% 税",
+        "summaryTaxLabeled": "含 %rate% %% %label%",
+        "summaryTaxInclude": "含 %rate% %% 税",
         "summaryOffCanvasLabel": "购物车摘要",
         "proceedLink": "去结算",
         "addressEqualText": "同收货地址",
@@ -810,14 +758,6 @@
         "confirmRevocationReminder": "您已声明放弃退换权。",
         "finishInfoPayment": "支付方式：",
         "finishInfoShipping": "配送方式：",
-        "finishInfoOrderDate": "下单日期",
-        "finishInfoPaymentShort": "支付方式",
-        "finishInfoShippingShort": "配送方式",
-        "finishInfoAmount": "实付金额",
-        "stepsAriaLabel": "结算进度",
-        "stepsCart": "购物车",
-        "stepsConfirm": "确认订单",
-        "stepsFinish": "完成",
         "finishHeader": "感谢您在 %shop% 下单！",
         "finishMetaTitle": "订单完成",
         "finishUpdateHeader": "感谢您更新订单！",
@@ -1070,9 +1010,7 @@
         "wishlistEmptyDescription": "把感兴趣的商品加入收藏，方便随时查看。",
         "deliveryTimeRestock": "{1}1 天后发货，%name% 送达 |[0,Inf[%restockTime% 天后发货，%name% 送达",
         "deliveryShipping": "该商品预计于",
-        "remove": "将 %product_name% 移出收藏",
-        "subtitle": "共 %count% 件商品",
-        "continueShopping": "继续逛逛"
+        "remove": "将 %product_name% 移出收藏"
     },
     "footer": {
         "serviceHotlineHeadline": "服务热线",
@@ -1090,10 +1028,7 @@
         "includeVatTextPage": "所有价格含税，另加<a href=\"%url%\">运费</a>及可能的货到付款手续费，另有说明除外。",
         "excludeVatText": "%star%所有价格不含税，另加<a data-ajax-modal=\"true\" href=\"%url%\" data-url=\"%url%\">运费</a>及可能的货到付款手续费，另有说明除外。",
         "excludeVatTextPage": "所有价格不含税，另加<a href=\"%url%\">运费</a>及可能的货到付款手续费，另有说明除外。",
-        "copyrightInfo": "由 Shopwell 提供技术支持",
-        "socialWechat": "微信公众号",
-        "socialPhone": "客服电话",
-        "socialWebsite": "官方网站"
+        "copyrightInfo": "由 Shopwell 提供技术支持"
     },
     "captcha": {
         "googleReCaptcha": {
