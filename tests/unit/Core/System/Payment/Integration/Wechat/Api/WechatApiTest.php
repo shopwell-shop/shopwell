@@ -6,13 +6,14 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Payment\Exception\PaymentGatewayException;
+use Shopwell\Core\System\Payment\Exception\PaymentProviderException;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayFactory;
 use Shopwell\Core\System\Payment\Gateway\Request\CloseResult;
 use Shopwell\Core\System\Payment\Integration\Wechat\Api\WechatApi;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
-use Shopwell\Core\System\Payment\PaymentException;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
+use Shopwell\Core\System\Payment\Product\PaymentInteraction;
+use Shopwell\Core\System\Payment\Product\PaymentProduct;
 use Shopwell\Core\System\Payment\Provider\PaymentProvider;
 use Shopwell\Core\System\Payment\Provider\ResolvedPaymentConfig;
 use WeChatPay\Crypto\Rsa;
@@ -33,8 +34,8 @@ class WechatApiTest extends TestCase
 
         static::assertSame('wechat', $api->provider());
         static::assertSame('wechat_h5', $api->channel());
-        static::assertNull($api->sourceAppId());
-        static::assertFalse($api->inherited());
+        static::assertSame('test-account', $api->accountId());
+
         static::assertSame('wx-app-id', $api->appId());
         static::assertSame('https://example.com/notify', $api->notifyUrl());
         static::assertSame('https://example.com/return', $api->returnUrl());
@@ -44,7 +45,7 @@ class WechatApiTest extends TestCase
     {
         $api = $this->api();
 
-        $this->expectExceptionObject(PaymentException::channelNotConfigured('wechat_h5', WechatApi::PARAM_APP_ID));
+        $this->expectExceptionObject(PaymentProviderException::channelNotConfigured('wechat_h5', WechatApi::PARAM_APP_ID));
 
         $api->appId();
     }
@@ -60,7 +61,7 @@ class WechatApiTest extends TestCase
     {
         $api = $this->api();
 
-        $this->expectExceptionObject(PaymentException::missingCredentials('wechat', WechatApi::API_V3_KEY));
+        $this->expectExceptionObject(PaymentGatewayException::missingCredentials('wechat', WechatApi::API_V3_KEY));
 
         $api->apiV3Key();
     }
@@ -117,7 +118,7 @@ class WechatApiTest extends TestCase
     {
         $api = $this->api();
 
-        $this->expectExceptionObject(PaymentException::missingCredentials('wechat', WechatApi::PLATFORM_CERTS));
+        $this->expectExceptionObject(PaymentGatewayException::missingCredentials('wechat', WechatApi::PLATFORM_CERTS));
 
         $api->platformCertOf(null);
     }
@@ -157,7 +158,7 @@ class WechatApiTest extends TestCase
             WechatApi::PLATFORM_CERTS => ['SERIAL-A' => 'CERT-A', 'SERIAL-B' => 'CERT-B'],
         ]);
 
-        $this->expectExceptionObject(PaymentException::invalidProviderDeclaration(
+        $this->expectExceptionObject(PaymentProviderException::invalidProviderDeclaration(
             'The wechat channel declares 2 platform certificates but names no current one - set the credential "platform_serial" to the serial whose certificate encrypts the user name.',
         ));
 
@@ -168,7 +169,7 @@ class WechatApiTest extends TestCase
     {
         $api = $this->api();
 
-        $this->expectExceptionObject(PaymentException::missingCredentials('wechat', WechatApi::PLATFORM_CERTS));
+        $this->expectExceptionObject(PaymentGatewayException::missingCredentials('wechat', WechatApi::PLATFORM_CERTS));
 
         $api->platformCertificate();
     }
@@ -280,7 +281,7 @@ class WechatApiTest extends TestCase
      */
     private function api(array $credentials = [], array $params = []): WechatApi
     {
-        $channel = new PaymentChannel('wechat_h5', 'wechat', 'wechat_h5', PaymentFlow::REDIRECT);
+        $channel = new PaymentProduct('wechat_h5', 'wechat', 'wechat_h5', [PaymentInteraction::REDIRECT], 'wechat');
 
         return new WechatApi(
             new ResolvedPaymentConfig(
@@ -292,11 +293,12 @@ class WechatApiTest extends TestCase
                     new PaymentGatewayFactory('wechat', WechatApi::class, []),
                     static::createStub(PaymentNotificationExtractorInterface::class),
                 ),
-                channel: $channel,
+                product: $channel,
                 credentials: $credentials,
                 params: $params,
                 runtimeParams: [],
                 settings: [],
+                accountId: 'test-account',
             ),
             'https://example.com/notify',
             'https://example.com/return',

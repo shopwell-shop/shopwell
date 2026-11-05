@@ -11,7 +11,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Payment\App\PaymentCredentialCipher;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannelRegistry;
+use Shopwell\Core\System\Payment\Product\PaymentProductRegistry;
 use Shopwell\Core\System\Payment\Provider\Config\PaymentConfigResolver;
 use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;
 use Shopwell\Core\System\Payment\ScheduledTask\ReconcileOpenPaymentTransfersTaskHandler;
@@ -26,6 +26,7 @@ use Shopwell\Core\System\StateMachine\Aggregation\StateMachineState\StateMachine
 use Shopwell\Core\System\StateMachine\Aggregation\StateMachineState\StateMachineStateEntity;
 use Shopwell\Core\System\StateMachine\Loader\InitialStateIdLoader;
 use Shopwell\Core\System\StateMachine\StateMachineRegistry;
+use Shopwell\Tests\Unit\Core\System\Payment\Account\_fixtures\PaymentAccountLockStub;
 use Shopwell\Tests\Unit\Core\System\Payment\NumberRangeFixture;
 use Shopwell\Tests\Unit\Core\System\Payment\Transfer\PaymentTransferRulesFixture;
 use Symfony\Component\Clock\MockClock;
@@ -92,12 +93,11 @@ class ReconcileOpenPaymentTransfersTaskHandlerTest extends TestCase
 
         $configResolver = new PaymentConfigResolver(
             $providers,
-            new PaymentChannelRegistry($providers),
-            static::createStub(EntityRepository::class),
-            static::createStub(EntityRepository::class),
+            new PaymentProductRegistry($providers),
             static::createStub(EntityRepository::class),
             static::createStub(EntityRepository::class),
             new PaymentCredentialCipher(self::SECRET),
+            static::createStub(EntityRepository::class),
         );
 
         $recipients = static::createStub(EntityRepository::class);
@@ -114,6 +114,8 @@ class ReconcileOpenPaymentTransfersTaskHandlerTest extends TestCase
             new MockClock('2026-10-18T09:00:00+00:00'),
             PaymentTransferRulesFixture::registry(),
             NumberRangeFixture::generator('PT1001'),
+            $configResolver,
+            new PaymentAccountLockStub(),
         );
 
         return new PaymentTransferReconciler(

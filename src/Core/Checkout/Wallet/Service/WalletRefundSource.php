@@ -13,7 +13,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\System\Payment\Gateway\Request\Money;
+use Shopwell\Core\System\Currency\CurrencyAmountConverter;
 
 /**
  * Gives back the part of an order the customer paid with the wallet.
@@ -52,7 +52,7 @@ class WalletRefundSource implements OrderReturnRefundSource
             return 0;
         }
 
-        return Money::fromFloat($remaining, $orderReturn->currency);
+        return CurrencyAmountConverter::fromFloat($remaining, $orderReturn->currency);
     }
 
     public function refund(OrderReturnEntity $orderReturn, OrderEntity $order, int $amount, Context $context): void
@@ -67,7 +67,7 @@ class WalletRefundSource implements OrderReturnRefundSource
             $order->getId(),
             $customerId,
             $order->getCurrencyId(),
-            Money::toFloat($amount, $orderReturn->currency),
+            CurrencyAmountConverter::toFloat($amount, $orderReturn->currency),
             $context,
             $orderReturn->returnNumber,
         );

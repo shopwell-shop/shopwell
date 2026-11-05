@@ -3,9 +3,9 @@
 namespace Shopwell\Core\System\Payment\Integration\Alipay\Notification;
 
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Payment\Exception\PaymentGatewayException;
 use Shopwell\Core\System\Payment\Integration\Alipay\Api\AlipayApi;
 use Shopwell\Core\System\Payment\Notification\Struct\PaymentNotificationAck;
-use Shopwell\Core\System\Payment\PaymentException;
 use Shopwell\Core\System\Payment\Transfer\Notification\PaymentTransferNotificationVerifierInterface;
 
 /**
@@ -47,7 +47,7 @@ final class AlipayTransferNotificationVerifier implements PaymentTransferNotific
         $publicKey = $credentials[AlipayApi::PUBLIC_KEY] ?? null;
 
         if (!\is_string($publicKey) || $publicKey === '') {
-            throw PaymentException::missingCredentials(AlipayApi::PROVIDER, AlipayApi::PUBLIC_KEY);
+            throw PaymentGatewayException::missingCredentials(AlipayApi::PROVIDER, AlipayApi::PUBLIC_KEY);
         }
 
         // the verifier holds the credential as it was configured, so it strips the pem envelope here

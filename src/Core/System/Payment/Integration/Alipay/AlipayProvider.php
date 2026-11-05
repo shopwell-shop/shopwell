@@ -14,26 +14,21 @@ use Shopwell\Core\System\Payment\Integration\Alipay\Action\AlipayTransferQueryAc
 use Shopwell\Core\System\Payment\Integration\Alipay\Api\AlipayApi;
 use Shopwell\Core\System\Payment\Integration\Alipay\Notification\AlipayNotificationExtractor;
 use Shopwell\Core\System\Payment\Integration\Alipay\Notification\AlipayTransferNotificationVerifier;
+use Shopwell\Core\System\Payment\Integration\Alipay\Product\AlipayProducts;
 use Shopwell\Core\System\Payment\Integration\Alipay\Request\AlipayPayParamsDecoder;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
+use Shopwell\Core\System\Payment\Product\PaymentInteraction;
+use Shopwell\Core\System\Payment\Product\PaymentProduct;
+use Shopwell\Core\System\Payment\Product\PaymentScene;
 use Shopwell\Core\System\Payment\Provider\AbstractPaymentProvider;
 use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
 use Shopwell\Core\System\Payment\Provider\Cycle\PaymentCycleRules;
 use Shopwell\Core\System\Payment\Provider\PayParamsDecoderInterface;
 use Shopwell\Core\System\Payment\Provider\Transfer\PaymentTransferRules;
 use Shopwell\Core\System\Payment\Transfer\Notification\PaymentTransferNotificationVerifierInterface;
 
 /**
- * The alipay interface of the platform.
- *
- * One open platform application is one set of credentials, and every channel below is charged on that
- * very account - which is why the credentials live here and the products do not duplicate a single key.
- *
- * The declaration used to be `Provider/Resources/config/alipay.xml`; it is code now, so the interface
- * and the actions it consists of are in one place and a plugin can decorate the one without rewriting
- * the other.
+ * Alipay protocol actions and executable products, sharing merchant account credentials.
  *
  * @internal
  */
@@ -44,13 +39,6 @@ final class AlipayProvider extends AbstractPaymentProvider
      * The snippet key of the name the administration shows.
      */
     final public const LABEL = 'sw-settings-payment-provider.provider.alipay';
-
-    /**
-     * The alipay SDK only implements RSA2 (SHA256withRSA), so the select has a single option - it is
-     * declared anyway, because the stored credential is read by the api and an installation that
-     * already carries a value must not lose it.
-     */
-    final public const SIGN_TYPE_RSA2 = 'RSA2';
 
     final public const DEFAULT_GATEWAY_URL = 'https://openapi.alipay.com';
 
@@ -145,52 +133,57 @@ final class AlipayProvider extends AbstractPaymentProvider
     }
 
     /**
-     * @return list<PaymentChannel>
+     * @return list<PaymentProduct>
      */
-    public function getChannels(): array
+    public function getProducts(): array
     {
         return [
-            new PaymentChannel(
-                technicalName: 'alipay_h5',
+            new PaymentProduct(
+                technicalName: AlipayProducts::H5,
+                scenes: [new PaymentScene('browser', 'wap', 'browser'), new PaymentScene('browser', 'wap', 'alipay')],
                 providerTechnicalName: 'alipay',
+                method: 'alipay',
                 label: 'sw-settings-payment-provider.channel.alipay_h5',
-                flow: PaymentFlow::REDIRECT,
+                interactions: [PaymentInteraction::REDIRECT],
                 currencies: ['CNY'],
-                devices: [PaymentChannel::DEVICE_WAP],
             ),
-            new PaymentChannel(
-                technicalName: 'alipay_web',
+            new PaymentProduct(
+                technicalName: AlipayProducts::WEB,
                 providerTechnicalName: 'alipay',
                 label: 'sw-settings-payment-provider.channel.alipay_web',
-                flow: PaymentFlow::REDIRECT,
+                interactions: [PaymentInteraction::REDIRECT],
+                method: 'alipay',
                 currencies: ['CNY'],
-                devices: [PaymentChannel::DEVICE_WEB],
+                scenes: [new PaymentScene('browser', 'web', 'browser')],
             ),
-            new PaymentChannel(
-                technicalName: 'alipay_qr',
+            new PaymentProduct(
+                technicalName: AlipayProducts::QR,
                 providerTechnicalName: 'alipay',
                 label: 'sw-settings-payment-provider.channel.alipay_qr',
-                flow: PaymentFlow::QRCODE,
+                interactions: [PaymentInteraction::QRCODE],
+                method: 'alipay',
                 currencies: ['CNY'],
-                devices: [PaymentChannel::DEVICE_WEB, PaymentChannel::DEVICE_WAP],
+                scenes: [new PaymentScene('browser', 'web', 'browser'), new PaymentScene('browser', 'wap', 'browser'), new PaymentScene('browser', 'wap', 'alipay')],
             ),
-            new PaymentChannel(
-                technicalName: 'alipay_app',
+            new PaymentProduct(
+                technicalName: AlipayProducts::APP,
                 providerTechnicalName: 'alipay',
                 label: 'sw-settings-payment-provider.channel.alipay_app',
-                flow: PaymentFlow::SDK,
+                interactions: [PaymentInteraction::SDK],
+                method: 'alipay',
                 currencies: ['CNY'],
-                devices: [PaymentChannel::DEVICE_APP],
+                scenes: [new PaymentScene('native_app', 'app')],
             ),
-            new PaymentChannel(
-                technicalName: 'alipay_mini',
+            new PaymentProduct(
+                technicalName: AlipayProducts::MINI,
                 providerTechnicalName: 'alipay',
                 label: 'sw-settings-payment-provider.channel.alipay_mini',
-                flow: PaymentFlow::SDK,
+                interactions: [PaymentInteraction::SDK],
+                method: 'alipay',
                 currencies: ['CNY'],
-                devices: [PaymentChannel::DEVICE_MINI],
-                // the mini program payment needs the buyer it is created for, an app has to hand it in
                 runtimeParams: ['buyer_id' => true],
+                // the mini program payment needs the buyer it is created for, an app has to hand it in
+                scenes: [new PaymentScene('mini_program', 'mini', 'alipay')],
             ),
         ];
     }

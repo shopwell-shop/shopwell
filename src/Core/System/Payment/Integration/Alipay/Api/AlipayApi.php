@@ -5,6 +5,7 @@ namespace Shopwell\Core\System\Payment\Integration\Alipay\Api;
 use Alipay\OpenAPISDK\Api\AlipayFundTransCommonApi;
 use Alipay\OpenAPISDK\Api\AlipayFundTransUniApi;
 use Alipay\OpenAPISDK\Api\AlipayTradeApi;
+use Alipay\OpenAPISDK\Api\AlipayTradeFastpayRefundApi;
 use Alipay\OpenAPISDK\ApiException;
 use Alipay\OpenAPISDK\Configuration;
 use Alipay\OpenAPISDK\Model\AlipayFundTransCommonQueryResponseModel;
@@ -14,6 +15,8 @@ use Alipay\OpenAPISDK\Model\AlipayTradeCloseModel;
 use Alipay\OpenAPISDK\Model\AlipayTradeCloseResponseModel;
 use Alipay\OpenAPISDK\Model\AlipayTradeCreateModel;
 use Alipay\OpenAPISDK\Model\AlipayTradeCreateResponseModel;
+use Alipay\OpenAPISDK\Model\AlipayTradeFastpayRefundQueryModel;
+use Alipay\OpenAPISDK\Model\AlipayTradeFastpayRefundQueryResponseModel;
 use Alipay\OpenAPISDK\Model\AlipayTradePrecreateModel;
 use Alipay\OpenAPISDK\Model\AlipayTradePrecreateResponseModel;
 use Alipay\OpenAPISDK\Model\AlipayTradeQueryModel;
@@ -27,9 +30,11 @@ use Alipay\OpenAPISDK\Util\AlipayConfigUtil;
 use Alipay\OpenAPISDK\Util\AlipaySignature;
 use Alipay\OpenAPISDK\Util\GenericExecuteApi;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Currency\CurrencyAmountConverter;
+use Shopwell\Core\System\Currency\CurrencyException;
+use Shopwell\Core\System\Payment\Exception\PaymentGatewayException;
 use Shopwell\Core\System\Payment\Gateway\AbstractPaymentApi;
 use Shopwell\Core\System\Payment\Gateway\Request\CloseResult;
-use Shopwell\Core\System\Payment\Gateway\Request\Money;
 use Shopwell\Core\System\Payment\Gateway\Request\QueryResult;
 use Shopwell\Core\System\Payment\Integration\Alipay\Request\AlipayPaymentStatus;
 use Shopwell\Core\System\Payment\PaymentException;
@@ -65,20 +70,10 @@ final class AlipayApi extends AbstractPaymentApi
     final public const PROVIDER = 'alipay';
 
     /**
-     * The channels of alipay as they are declared in {@see AlipayProvider::getChannels()}. The names are
+     * The channels of alipay as they are declared in {@see AlipayProvider::getProducts()}. The names are
      * the contract between the declaration and the capture action, which is the only place a channel
      * matters - adding a channel means declaring it there and teaching the action to open it.
      */
-    final public const CHANNEL_H5 = 'alipay_h5';
-
-    final public const CHANNEL_WEB = 'alipay_web';
-
-    final public const CHANNEL_QR = 'alipay_qr';
-
-    final public const CHANNEL_APP = 'alipay_app';
-
-    final public const CHANNEL_MINI = 'alipay_mini';
-
     final public const APP_ID = 'app_id';
     final public const PRIVATE_KEY = 'private_key';
     final public const PUBLIC_KEY = 'alipay_public_key';
@@ -128,6 +123,7 @@ final class AlipayApi extends AbstractPaymentApi
         string $notifyUrl,
         string $returnUrl,
         ?AlipayTradeApi $tradeApi = null,
+        private ?AlipayTradeFastpayRefundApi $refundQueryApi = null,
     ) {
         parent::__construct($config, $notifyUrl, $returnUrl);
 
@@ -198,7 +194,7 @@ final class AlipayApi extends AbstractPaymentApi
      */
     public function amount(int $minor, string $currency): string
     {
-        return Money::toDecimal($minor, $currency);
+        return CurrencyAmountConverter::toDecimal($minor, $currency);
     }
 
     /**
@@ -317,6 +313,22 @@ final class AlipayApi extends AbstractPaymentApi
     }
 
     /**
+     * @return array<string, mixed>
+     */
+    public function queryRefund(string $paymentNo, string $refundNo): array
+    {
+        $query = new AlipayTradeFastpayRefundQueryModel();
+        $query->setOutTradeNo($paymentNo);
+        $query->setOutRequestNo($refundNo);
+        $api = $this->refundQueryApi ??= new AlipayTradeFastpayRefundApi(null, $this->configuration(), null, 0, $this->configUtil());
+        $answer = $api->query($query);
+
+        return $answer instanceof AlipayTradeFastpayRefundQueryResponseModel
+            ? ['trade_no' => $answer->getTradeNo(), 'refund_status' => $answer->getRefundStatus()]
+            : [];
+    }
+
+    /**
      * Submits a payout, `alipay.fund.trans.uni.transfer` of the interface.
      *
      * The business content comes in the wire snake_case - the action builds it and records it, this
@@ -358,7 +370,7 @@ final class AlipayApi extends AbstractPaymentApi
 
         if (!$answer instanceof AlipayFundTransUniTransferResponseModel) {
             // alipay answers its default response when it rejects the call
-            throw PaymentException::gatewayError($this->channel(), 'the interface did not answer a transfer');
+            throw PaymentGatewayException::gatewayError($this->channel(), 'the interface did not answer a transfer');
         }
 
         return [
@@ -398,7 +410,7 @@ final class AlipayApi extends AbstractPaymentApi
         }
 
         if (!$answer instanceof AlipayFundTransCommonQueryResponseModel) {
-            throw PaymentException::gatewayError($this->channel(), 'the interface did not answer a transfer');
+            throw PaymentGatewayException::gatewayError($this->channel(), 'the interface did not answer a transfer');
         }
 
         return [
@@ -439,7 +451,7 @@ final class AlipayApi extends AbstractPaymentApi
         }
 
         if (!$answer instanceof AlipayTradeQueryResponseModel) {
-            throw PaymentException::gatewayError($this->channel(), 'the interface did not answer a trade');
+            throw PaymentGatewayException::gatewayError($this->channel(), 'the interface did not answer a trade');
         }
 
         $tradeStatus = $answer->getTradeStatus();
@@ -484,7 +496,7 @@ final class AlipayApi extends AbstractPaymentApi
         }
 
         if (!$answer instanceof AlipayTradeCloseResponseModel) {
-            throw PaymentException::gatewayError($this->channel(), 'the interface did not answer the close call');
+            throw PaymentGatewayException::gatewayError($this->channel(), 'the interface did not answer the close call');
         }
 
         return new CloseResult(CloseResult::STATUS_CLOSED, raw: ['out_trade_no' => $answer->getOutTradeNo()]);
@@ -859,8 +871,8 @@ final class AlipayApi extends AbstractPaymentApi
         }
 
         try {
-            return Money::toMinor($totalAmount, $currency);
-        } catch (PaymentException) {
+            return CurrencyAmountConverter::toMinor($totalAmount, $currency);
+        } catch (CurrencyException) {
             return null;
         }
     }

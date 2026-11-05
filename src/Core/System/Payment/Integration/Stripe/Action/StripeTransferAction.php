@@ -4,6 +4,8 @@ namespace Shopwell\Core\System\Payment\Integration\Stripe\Action;
 
 use Payum\Core\Exception\RequestNotSupportedException;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Payment\Exception\PaymentGatewayException;
+use Shopwell\Core\System\Payment\Exception\PaymentTransferException;
 use Shopwell\Core\System\Payment\Gateway\AbstractPaymentAction;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
 use Shopwell\Core\System\Payment\Gateway\Request\PaymentTransferRequest;
@@ -121,18 +123,19 @@ final class StripeTransferAction extends AbstractPaymentAction
                 $responses['error'] = $exception->getMessage();
                 $this->record($model, $requests, $responses);
 
-                throw PaymentException::gatewayError($api->channel(), $exception->getMessage(), $exception);
+                throw PaymentGatewayException::gatewayError($api->channel(), $exception->getMessage(), $exception);
             }
 
             $responses[self::STAGE_TRANSFER] = $answer;
 
             if (isset($answer['error'])) {
-                // the transfer never opened an object: no money has left the platform balance, so
-                // there is no stage reference to keep and the next attempt starts from scratch
+                // A rejected response may arrive after Stripe accepted the transfer. Only a definite
+                // rejection releases the booking; an uncertain answer keeps it reserved for recovery.
                 $this->record($model, $requests, $responses);
+                $rejected = StripeApi::isDefinitiveRejection($answer);
                 $this->setResult($model, new TransferResult(
-                    TransferResult::STATE_FAILED,
-                    failureCode: StripeApi::rejectionCodeOf($answer) ?? self::STAGE_TRANSFER,
+                    $rejected ? TransferResult::STATE_FAILED : TransferResult::STATE_UNKNOWN,
+                    failureCode: $rejected ? (StripeApi::rejectionCodeOf($answer) ?? self::STAGE_TRANSFER) : null,
                 ));
 
                 return;
@@ -143,7 +146,7 @@ final class StripeTransferAction extends AbstractPaymentAction
             if ($stageRef === null) {
                 $this->record($model, $requests, $responses);
 
-                throw PaymentException::gatewayError($api->channel(), 'the channel did not answer a transfer id');
+                throw PaymentGatewayException::gatewayError($api->channel(), 'the channel did not answer a transfer id');
             }
         }
 
@@ -160,7 +163,7 @@ final class StripeTransferAction extends AbstractPaymentAction
             $responses['error'] = $exception->getMessage();
             $this->record($model, $requests, $responses);
 
-            throw PaymentException::gatewayError($api->channel(), $exception->getMessage(), $exception);
+            throw PaymentGatewayException::gatewayError($api->channel(), $exception->getMessage(), $exception);
         }
 
         $responses[self::STAGE_PAYOUT] = $answer;
@@ -187,17 +190,17 @@ final class StripeTransferAction extends AbstractPaymentAction
         PaymentTransferRecipientEntity $recipient,
     ): void {
         if ($recipient->payoutEnabled !== true) {
-            throw PaymentException::transferRecipientNotReady($recipient->id);
+            throw PaymentTransferException::transferRecipientNotReady($recipient->id);
         }
 
         if ($recipient->identityType !== self::IDENTITY_TYPE) {
-            throw PaymentException::transferIdentityNotSupported($transfer->provider, $recipient->identityType);
+            throw PaymentTransferException::transferIdentityNotSupported($transfer->provider, $recipient->identityType);
         }
 
         $accountId = $recipient->providerAccountId;
 
         if ($accountId === null || !str_starts_with($accountId, self::ACCOUNT_ID_PREFIX)) {
-            throw PaymentException::transferRecipientIncomplete('provider_account_id');
+            throw PaymentTransferException::transferRecipientIncomplete('provider_account_id');
         }
     }
 
@@ -256,11 +259,14 @@ final class StripeTransferAction extends AbstractPaymentAction
     public static function resultOf(string $stageRef, array $answer): TransferResult
     {
         if (isset($answer['error'])) {
-            // the payout was rejected, the transfer stands: the money is on the connected account
+            $rejected = StripeApi::isDefinitiveRejection($answer);
+
+            // The transfer stands even when the payout answer is uncertain. Preserve its reference
+            // so recovery cannot move the same money to the connected account again.
             return new TransferResult(
-                TransferResult::STATE_FAILED,
+                $rejected ? TransferResult::STATE_FAILED : TransferResult::STATE_UNKNOWN,
                 providerStageRef: $stageRef,
-                failureCode: StripeApi::rejectionCodeOf($answer) ?? self::STAGE_PAYOUT,
+                failureCode: $rejected ? (StripeApi::rejectionCodeOf($answer) ?? self::STAGE_PAYOUT) : null,
             );
         }
 

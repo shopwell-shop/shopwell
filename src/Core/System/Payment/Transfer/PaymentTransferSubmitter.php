@@ -5,6 +5,9 @@ namespace Shopwell\Core\System\Payment\Transfer;
 use Payum\Core\GatewayInterface;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
+use Shopwell\Core\System\Payment\Exception\PaymentGatewayException;
+use Shopwell\Core\System\Payment\Exception\PaymentProviderException;
+use Shopwell\Core\System\Payment\Exception\PaymentTransferException;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
 use Shopwell\Core\System\Payment\Gateway\Request\PaymentTransferRequest;
 use Shopwell\Core\System\Payment\Gateway\Request\TransferResult;
@@ -23,13 +26,6 @@ use Shopwell\Core\System\Payment\Provider\Config\PaymentConfigResolver;
 #[Package('framework')]
 final class PaymentTransferSubmitter
 {
-    // Compatibility for the reconciler and existing callers; submission steps belong to the result booker.
-    final public const STEP_SUBMIT = PaymentTransferResultBooker::STEP_SUBMIT;
-    final public const STEP_PROCESS = PaymentTransferResultBooker::STEP_PROCESS;
-    final public const STEP_SUCCEED = PaymentTransferResultBooker::STEP_SUCCEED;
-    final public const STEP_AWAIT_CONFIRM = PaymentTransferResultBooker::STEP_AWAIT_CONFIRM;
-    final public const STEP_FAIL = PaymentTransferResultBooker::STEP_FAIL;
-
     public function __construct(
         private readonly PaymentConfigResolver $configResolver,
         private readonly PaymentTransferService $transferService,
@@ -42,13 +38,9 @@ final class PaymentTransferSubmitter
      *
      * A thrown exception is deliberately not a failure. It says the platform never learned the
      * outcome - the channel may have received and executed the request - so nothing terminal is
-     * booked; only the attempt is recorded and the transfer stays `created`. Booking `failed` there
-     * would invite a second payout, and leaving the transfer where it is lets the caller send it
-     * again, which is safe because all four interfaces are idempotent on our business number:
-     * alipay's documented recovery for `SYSTEM_ERROR` is re-sending the same `out_biz_no`, wechat
-     * demands "never change the number, retry with the original parameters", stripe honours
-     * `Idempotency-Key` for at least 24 hours, and paypal honours `PayPal-Request-Id` and
-     * `sender_batch_id` for 30 days.
+     * booked; only the attempt is recorded and the transfer stays `created`. A later submission
+     * refuses that unresolved attempt: provider idempotency keys expire, so reusing the business
+     * number alone cannot prove that sending again is safe.
      *
      * A domain error is not wrapped: it names its own cause and its own status, and wrapping it would
      * report a missing parameter as a gateway outage and turn a 4xx into a 5xx the caller believes it
@@ -61,6 +53,7 @@ final class PaymentTransferSubmitter
     {
         $this->assertSubmittable($app, $transfer);
         [$gateway, $model, $request] = $this->prepareChannel($app, $transfer);
+        $this->resultBooker->claim($transfer);
 
         try {
             $result = $this->callChannel($gateway, $model, $request, $transfer->channel);
@@ -72,7 +65,7 @@ final class PaymentTransferSubmitter
                 throw $exception;
             }
 
-            throw PaymentException::gatewayError($transfer->channel, $exception->getMessage(), $exception);
+            throw PaymentGatewayException::gatewayError($transfer->channel, $exception->getMessage(), $exception);
         }
 
         try {
@@ -86,20 +79,14 @@ final class PaymentTransferSubmitter
                 throw $exception;
             }
 
-            throw PaymentException::gatewayError($transfer->channel, $exception->getMessage(), $exception);
+            throw PaymentGatewayException::gatewayError($transfer->channel, $exception->getMessage(), $exception);
+        }
+
+        if ($result->state === TransferResult::STATE_UNKNOWN && ($result->providerRef === null || $result->providerRef === '')) {
+            $this->transferService->recordSubmitAttempt($transfer, 'The channel did not confirm whether the payout was accepted.');
         }
 
         return $result;
-    }
-
-    /**
-     * Compatibility entry for existing callers; the mapping is owned by the result booker.
-     *
-     * @return list<string>
-     */
-    public static function stepNames(TransferResult $result): array
-    {
-        return PaymentTransferResultBooker::stepNames($result);
     }
 
     /**
@@ -113,14 +100,18 @@ final class PaymentTransferSubmitter
         // Credentials are resolved from the app, so a transfer of another app would be paid out of
         // this merchant account.
         if ($transfer->paymentAppId !== $app->id) {
-            throw PaymentException::transferForeignApp($app->id, $transfer->outNo);
+            throw PaymentTransferException::transferForeignApp($app->id, $transfer->outNo);
+        }
+
+        if ($transfer->submitAttempts > 0) {
+            throw PaymentTransferException::transferAlreadyFinalized($transfer->outNo, 'unknown');
         }
 
         $state = $transfer->statusMachineState?->getTechnicalName();
 
         // Submitting twice is a second payout, not a retry. An unread state fails closed as well.
         if ($state !== PaymentTransferStates::STATE_CREATED) {
-            throw PaymentException::transferAlreadyFinalized($transfer->outNo, $state ?? 'unknown');
+            throw PaymentTransferException::transferAlreadyFinalized($transfer->outNo, $state ?? 'unknown');
         }
     }
 
@@ -136,19 +127,13 @@ final class PaymentTransferSubmitter
         $recipient = $this->transferService->recipientOf($app, $transfer);
 
         // A payout has no device, and null means "no restriction".
-        $resolved = $this->configResolver->resolve(
-            $app,
-            $transfer->channel,
-            $transfer->currency,
-            null,
-            $transfer->channelParams ?? []
-        );
+        $resolved = $this->configResolver->resolveForTransfer($app, $transfer);
 
         $model = PaymentGatewayModel::forTransfer($transfer);
 
         // This guard precedes both the gateway call and the attempt audit: nothing was attempted.
         if (!$resolved->provider->supports(PaymentCapability::TRANSFER)) {
-            throw PaymentException::providerLacksCapability($resolved->provider->technicalName, PaymentCapability::TRANSFER->value);
+            throw PaymentProviderException::providerLacksCapability($resolved->provider->technicalName, PaymentCapability::TRANSFER->value);
         }
 
         // Notification and return URLs belong to capture and refund only; a payout has no payer.

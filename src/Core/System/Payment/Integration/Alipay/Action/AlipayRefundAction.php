@@ -5,12 +5,13 @@ namespace Shopwell\Core\System\Payment\Integration\Alipay\Action;
 use Payum\Core\Exception\RequestNotSupportedException;
 use Payum\Core\Request\Refund;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Payment\Exception\PaymentGatewayException;
 use Shopwell\Core\System\Payment\Gateway\AbstractPaymentAction;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
+use Shopwell\Core\System\Payment\Gateway\Request\RefundQuery;
 use Shopwell\Core\System\Payment\Gateway\Request\RefundResult;
 use Shopwell\Core\System\Payment\Integration\Alipay\Api\AlipayApi;
 use Shopwell\Core\System\Payment\Order\PaymentRefundStates;
-use Shopwell\Core\System\Payment\PaymentException;
 use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
 
 /**
@@ -40,6 +41,12 @@ final class AlipayRefundAction extends AbstractPaymentAction
         $model = $this->modelOf($request);
         $api = $this->api();
 
+        if ($request instanceof RefundQuery) {
+            $this->query($request, $model, $api);
+
+            return;
+        }
+
         $currency = $this->stringValue($model, PaymentGatewayModel::CURRENCY, 'CNY');
         $amount = $api->amount($this->intValue($model, PaymentGatewayModel::AMOUNT), $currency);
         $refundNo = $this->stringValue($model, PaymentGatewayModel::REFUND_NO);
@@ -64,7 +71,7 @@ final class AlipayRefundAction extends AbstractPaymentAction
         } catch (\Throwable $exception) {
             $this->recordResponse($model, ['error' => $exception->getMessage()]);
 
-            throw PaymentException::gatewayError($api->channel(), $exception->getMessage());
+            throw PaymentGatewayException::gatewayError($api->channel(), $exception->getMessage());
         }
 
         $tradeNo = $answer['trade_no'] ?? null;
@@ -73,7 +80,7 @@ final class AlipayRefundAction extends AbstractPaymentAction
             // alipay answers its default response when it rejects the call
             $this->recordResponse($model, ['error' => 'the interface rejected the refund call']);
 
-            throw PaymentException::gatewayError($api->channel(), 'the interface did not answer a trade number');
+            throw PaymentGatewayException::gatewayError($api->channel(), 'the interface did not answer a trade number');
         }
 
         $this->recordResponse($model, $answer);
@@ -86,7 +93,7 @@ final class AlipayRefundAction extends AbstractPaymentAction
 
     public function supports($request): bool
     {
-        return $this->isSupported($request, Refund::class);
+        return $this->isSupported($request, Refund::class) || $this->isSupported($request, RefundQuery::class);
     }
 
     protected function api(): AlipayApi
@@ -95,5 +102,18 @@ final class AlipayRefundAction extends AbstractPaymentAction
         \assert($api instanceof AlipayApi);
 
         return $api;
+    }
+
+    private function query(RefundQuery $request, PaymentGatewayModel $model, AlipayApi $api): void
+    {
+        $answer = $api->queryRefund($this->stringValue($model, PaymentGatewayModel::PAYMENT_NO), $this->stringValue($model, PaymentGatewayModel::REFUND_NO));
+        $this->recordResponse($model, $answer);
+        $status = (string) ($answer['refund_status'] ?? '');
+
+        $id = $answer['trade_no'] ?? $request->outRefundId;
+        $this->setResult($model, new RefundResult(
+            status: $status === 'REFUND_SUCCESS' ? PaymentRefundStates::STATE_FINISHED : PaymentRefundStates::STATE_PROCESSING,
+            outRefundId: \is_string($id) ? $id : null,
+        ));
     }
 }

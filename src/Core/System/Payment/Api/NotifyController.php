@@ -66,8 +66,11 @@ class NotifyController
                 $paymentNo
             );
         } catch (PaymentException $exception) {
-            // the notification cannot be applied and will not become applicable by repeating it
             $this->log($provider, $exception->getMessage(), $exception);
+
+            if ($exception->getStatusCode() >= Response::HTTP_INTERNAL_SERVER_ERROR) {
+                return new Response('', Response::HTTP_INTERNAL_SERVER_ERROR);
+            }
 
             return $this->acknowledge($ack);
         } catch (\Throwable $exception) {

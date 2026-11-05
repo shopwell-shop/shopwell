@@ -46,6 +46,10 @@ class PaymentMandateEntity extends EntityStruct
      * The agreement number of the platform, the identifier the subscription domain works with.
      */
     #[Required]
+    #[ForeignKey(entity: 'payment_account', api: ['admin-api' => true, 'store-api' => false])]
+    public string $accountId;
+
+    #[Required]
     #[Field(type: FieldType::STRING, api: ['admin-api' => true, 'store-api' => false], maxLength: 64)]
     public string $agreementNo;
 

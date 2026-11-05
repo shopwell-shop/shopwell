@@ -5,12 +5,15 @@ import './acl';
 
 const { Module } = Shopwell;
 
-/* eslint-disable sw-deprecation-rules/private-feature-declarations */
+/** @private */
+Shopwell.Component.register('sw-payment-cashier-profiles', () => import('./component/sw-payment-cashier-profiles'));
+
+/* eslint-disable sw-deprecation-rules/private-feature-declarations -- Existing module registrations retain their extension names. */
 Shopwell.Component.register('sw-settings-payment-gateway-list', () => import('./page/sw-settings-payment-gateway-list'));
 Shopwell.Component.register('sw-settings-payment-gateway-detail', () => import('./page/sw-settings-payment-gateway-detail'));
 /* eslint-enable sw-deprecation-rules/private-feature-declarations */
 
-// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations -- Existing module registration remains compatible.
 Module.register('sw-settings-payment-gateway', {
     type: 'core',
     name: 'settings-payment-gateway',
@@ -35,14 +38,14 @@ Module.register('sw-settings-payment-gateway', {
 
         detail: {
             component: 'sw-settings-payment-gateway-detail',
-            path: 'detail/:id',
+            path: 'detail/:id/:section?',
             meta: {
                 parentPath: 'sw.settings.payment.gateway.list',
                 privilege: 'payment_app.viewer',
             },
             props: {
                 default(route) {
-                    return { appId: route.params.id };
+                    return { appId: route.params.id, section: route.params.section || 'collection' };
                 },
             },
         },

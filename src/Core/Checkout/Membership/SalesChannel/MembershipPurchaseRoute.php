@@ -5,6 +5,7 @@ namespace Shopwell\Core\Checkout\Membership\SalesChannel;
 use Shopwell\Core\Checkout\Customer\CustomerEntity;
 use Shopwell\Core\Checkout\Membership\Extension\MembershipPurchaseRouteExtension;
 use Shopwell\Core\Checkout\Membership\Service\MembershipPurchaseService;
+use Shopwell\Core\Checkout\Payment\Storefront\StorefrontPaymentContextResolver;
 use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Routing\StoreApiRouteScope;
@@ -24,6 +25,7 @@ class MembershipPurchaseRoute
     public function __construct(
         private readonly MembershipPurchaseService $purchases,
         private readonly ExtensionDispatcher $extensions,
+        private readonly StorefrontPaymentContextResolver $paymentContextResolver,
     ) {
     }
 
@@ -47,12 +49,11 @@ class MembershipPurchaseRoute
         $result = $this->purchases->purchase(
             customerId: $customer->getId(),
             planId: (string) $request->request->get('planId', ''),
-            channel: (string) $request->request->get('channel', ''),
+            method: (string) $request->request->get('method', ''),
             currencyId: $context->getCurrency()->getId(),
-            currency: $context->getCurrency()->getIsoCode(),
+            paymentContext: $this->paymentContextResolver->resolve($request, $context->getCurrency()->getIsoCode()),
             returnUrl: $this->returnUrlOf($request),
             clientIp: $request->getClientIp(),
-            device: $this->deviceOf($request),
             context: $context->getContext(),
         );
 
@@ -72,12 +73,5 @@ class MembershipPurchaseRoute
         }
 
         return $request->getSchemeAndHttpHost() . '/account/membership';
-    }
-
-    private function deviceOf(Request $request): ?string
-    {
-        $device = $request->request->get('device') ?? $request->query->get('device');
-
-        return \is_string($device) && $device !== '' ? strtolower($device) : null;
     }
 }

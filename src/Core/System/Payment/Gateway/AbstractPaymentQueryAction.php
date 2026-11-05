@@ -4,9 +4,9 @@ namespace Shopwell\Core\System\Payment\Gateway;
 
 use Payum\Core\Exception\RequestNotSupportedException;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Payment\Exception\PaymentGatewayException;
 use Shopwell\Core\System\Payment\Gateway\Request\PaymentQuery;
 use Shopwell\Core\System\Payment\Gateway\Request\QueryResult;
-use Shopwell\Core\System\Payment\PaymentException;
 use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
 
 /**
@@ -40,7 +40,7 @@ abstract class AbstractPaymentQueryAction extends AbstractPaymentAction
         } catch (\Throwable $exception) {
             $this->recordResponse($model, ['error' => $exception->getMessage()]);
 
-            throw PaymentException::gatewayError($this->api()->channel(), $exception->getMessage(), $exception);
+            throw PaymentGatewayException::gatewayError($this->api()->channel(), $exception->getMessage(), $exception);
         }
 
         $this->recordResponse($model, $result->raw);

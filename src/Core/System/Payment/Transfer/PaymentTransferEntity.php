@@ -44,6 +44,10 @@ class PaymentTransferEntity extends EntityStruct
     public string $id;
 
     #[Required]
+    #[ForeignKey(entity: 'payment_account', api: ['admin-api' => true, 'store-api' => false])]
+    public string $accountId;
+
+    #[Required]
     #[ForeignKey(entity: 'payment_app', api: ['admin-api' => true, 'store-api' => false])]
     public string $paymentAppId;
 

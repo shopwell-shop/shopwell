@@ -4,23 +4,21 @@ namespace Shopwell\Core\Checkout\Payment\Gateway;
 
 use Shopwell\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopwell\Core\Checkout\Order\OrderEntity;
-use Shopwell\Core\Checkout\Payment\Storefront\PlatformPaymentApp;
+use Shopwell\Core\Checkout\Payment\PaymentException as CheckoutPaymentException;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Currency\CurrencyAmountConverter;
 use Shopwell\Core\System\Currency\CurrencyEntity;
-use Shopwell\Core\System\Payment\Api\Struct\PaymentOrderRequest;
-use Shopwell\Core\System\Payment\Api\Struct\PayParams;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
-use Shopwell\Core\System\Payment\Exception\PaymentGatewayException;
-use Shopwell\Core\System\Payment\Gateway\Request\Money;
-use Shopwell\Core\System\Payment\Gateway\Request\PayResult;
-use Shopwell\Core\System\Payment\Order\Aggregate\PaymentTransaction\PaymentTransactionEntity;
-use Shopwell\Core\System\Payment\Order\PaymentOrderCapture;
+use Shopwell\Core\System\Payment\Gateway\Struct\PaymentHandover;
+use Shopwell\Core\System\Payment\Gateway\Struct\PaymentStartResult;
 use Shopwell\Core\System\Payment\Order\PaymentOrderEntity;
 use Shopwell\Core\System\Payment\Order\PaymentOrderService;
+use Shopwell\Core\System\Payment\Order\PaymentOrderStarter;
+use Shopwell\Core\System\Payment\Order\Struct\PaymentOrderRequest;
 use Shopwell\Core\System\Payment\PaymentException;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
-use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;
+use Shopwell\Core\System\Payment\Product\PaymentInteraction;
+use Shopwell\Core\System\Payment\Routing\PaymentContext;
+use Shopwell\Core\System\Payment\Routing\PaymentRoute;
 use Symfony\Component\Routing\RouterInterface;
 
 /**
@@ -54,10 +52,8 @@ final class OrderPaymentStarter
     final public const ROUTE_QR_CODE = 'frontend.payment.gateway.qr';
 
     public function __construct(
-        private readonly PlatformPaymentApp $platformApp,
-        private readonly PaymentProviderRegistry $providers,
         private readonly PaymentOrderService $paymentOrderService,
-        private readonly PaymentOrderCapture $paymentOrderCapture,
+        private readonly PaymentOrderStarter $paymentOrderStarter,
         private readonly RouterInterface $router,
     ) {
     }
@@ -65,48 +61,26 @@ final class OrderPaymentStarter
     /**
      * @throws PaymentException
      *
-     * @return array{order: PaymentOrderEntity, result: PayResult}
+     * @return array{order: PaymentOrderEntity, result: PaymentStartResult}
      */
     public function start(
         OrderEntity $order,
         OrderTransactionEntity $transaction,
-        PaymentChannel $channel,
+        PaymentRoute $route,
         PaymentAppEntity $app,
-        string $returnUrl
+        string $returnUrl,
+        PaymentContext $paymentContext,
     ): array {
-        // the app is the one the binding of the payment method names: the money is collected on its
-        // merchant account. For the tenant of the platform the first payment additionally authorizes
-        // the interface and offers the channel, so the shop's own payments need no onboarding by hand
-        $app = $this->platformApp->authorizeFor($app, $channel);
-
-        $existing = $this->paymentOrderService->findLatestByOrderTransaction($transaction->getId());
-
-        if ($existing instanceof PaymentOrderEntity && $this->paymentOrderService->isPayable($existing)) {
-            // the channel already answered for this payment: the payer only has to be handed over
-            // again, the same way the app would do it with the parameters of the first capture
-            $params = $this->restorePayParams($existing, $channel->providerTechnicalName);
-
-            if ($params instanceof PayParams) {
-                return [
-                    'order' => $existing,
-                    'result' => new PayResult($params, $existing->outPaymentNo),
-                ];
-            }
-        }
-
-        // the create is idempotent on (app, out trade number): when the order exists but the
-        // channel parameters could not be restored, the very same payment order is handed back and
-        // only the capture is repeated
         $paymentOrder = $this->paymentOrderService->create(
             $app,
-            $this->requestFor($order, $transaction, $channel, $returnUrl),
+            $this->requestFor($order, $transaction, $returnUrl),
             $order,
-            $transaction
+            $transaction,
         );
 
         return [
             'order' => $paymentOrder,
-            'result' => $this->paymentOrderCapture->capture($app, $paymentOrder),
+            'result' => $this->paymentOrderStarter->start($app, $paymentOrder, $route),
         ];
     }
 
@@ -115,12 +89,12 @@ final class OrderPaymentStarter
      *
      * @throws PaymentException
      */
-    public function payParams(PaymentOrderEntity $order): PayParams
+    public function payParams(PaymentOrderEntity $order): PaymentHandover
     {
-        $params = $this->restorePayParams($order, $order->providerTechnicalName);
+        $params = $this->paymentOrderStarter->replay($order)?->params;
 
-        if (!$params instanceof PayParams) {
-            throw PaymentGatewayException::gatewayResultMissing($order->channelTechnicalName);
+        if (!$params instanceof PaymentHandover) {
+            throw CheckoutPaymentException::gatewayResultMissing($order->activeAttempt->channelTechnicalName ?? '');
         }
 
         return $params;
@@ -129,31 +103,29 @@ final class OrderPaymentStarter
     /**
      * The url the payer has to be sent to for the answer of the channel.
      *
-     * @throws PaymentException
+     * @throws CheckoutPaymentException
      */
-    public function handOver(PaymentOrderEntity $order, PayResult $result): string
+    public function handOver(PaymentOrderEntity $order, PaymentStartResult $result): string
     {
         $params = $result->params;
 
         return match ($params->flow) {
-            PaymentFlow::REDIRECT => $params->payUrl ?? $this->htmlFormUrl($order, $params),
-            PaymentFlow::QRCODE => $this->router->generate(self::ROUTE_QR_CODE, ['orderId' => $order->id, 'paymentNo' => $order->paymentNo]),
+            PaymentInteraction::REDIRECT => $params->payUrl ?? $this->htmlFormUrl($order, $params),
+            PaymentInteraction::QRCODE => $this->router->generate(self::ROUTE_QR_CODE, ['orderId' => $order->id, 'paymentNo' => $order->paymentNo]),
             // a channel that is pulled up by an sdk cannot be opened from a browser; binding one to a
             // checkout payment method is a configuration error, not something the payer can fix
-            /** @phpstan-ignore shopwell.domainException (The error belongs to the payment gateway the checkout wraps.) */
-            PaymentFlow::SDK => throw PaymentGatewayException::channelNotAvailableInStorefront($order->channelTechnicalName),
+            default => throw CheckoutPaymentException::channelNotAvailableInStorefront($order->activeAttempt->channelTechnicalName ?? ''),
         };
     }
 
     /**
-     * @throws PaymentException
+     * @throws CheckoutPaymentException
      */
-    private function htmlFormUrl(PaymentOrderEntity $order, PayParams $params): string
+    private function htmlFormUrl(PaymentOrderEntity $order, PaymentHandover $params): string
     {
         if ($params->htmlForm === null) {
             // neither a url nor a form: the channel did not say how the payer gets to it
-            /** @phpstan-ignore shopwell.domainException (The error belongs to the payment gateway the checkout wraps.) */
-            throw PaymentException::gatewayResultMissing($order->channelTechnicalName);
+            throw CheckoutPaymentException::gatewayResultMissing($order->activeAttempt->channelTechnicalName ?? '');
         }
 
         // a self submitting form is rendered by the storefront, the checkout only names the page
@@ -166,22 +138,19 @@ final class OrderPaymentStarter
     private function requestFor(
         OrderEntity $order,
         OrderTransactionEntity $transaction,
-        PaymentChannel $channel,
-        string $returnUrl
+        string $returnUrl,
     ): PaymentOrderRequest {
         $currency = $order->getCurrency();
 
         if (!$currency instanceof CurrencyEntity) {
             // the amount is converted to the smallest unit of the currency, which cannot be guessed
-            /** @phpstan-ignore shopwell.domainException (The error belongs to the payment gateway the checkout wraps.) */
-            throw PaymentException::missingParameter('currency');
+            throw CheckoutPaymentException::missingRequestParameter('currency');
         }
 
         return new PaymentOrderRequest(
             // the transaction is the idempotency key: one order, one payment - a retry of the same
             // checkout must not open a second trade at the interface
             outTradeNo: $transaction->getId(),
-            channel: $channel->technicalName,
             amount: $this->toSmallestUnit($transaction->getAmount()->getTotalPrice(), $currency),
             currency: $currency->getIsoCode(),
             subject: $order->getOrderNumber() ?? $order->getId(),
@@ -196,50 +165,6 @@ final class OrderPaymentStarter
      */
     private function toSmallestUnit(float $totalPrice, CurrencyEntity $currency): int
     {
-        return Money::fromFloat($totalPrice, $currency->getIsoCode());
-    }
-
-    /**
-     * The parameters of the answer the channel already gave.
-     *
-     * The shape of that answer is knowledge of the interface, not of the checkout, so the decode is
-     * asked from the interface the channel belongs to. Null means the interface cannot hand the payer
-     * over again and the payment is captured anew.
-     */
-    private function restorePayParams(PaymentOrderEntity $order, string $providerTechnicalName): ?PayParams
-    {
-        $response = $this->lastCaptureResponse($order);
-
-        if ($response === []) {
-            return null;
-        }
-
-        return $this->providers
-            ->get($providerTechnicalName)
-            ->payParamsFromResponse($response);
-    }
-
-    /**
-     * The answer of the last capture that did not fail before the channel answered. It is where the
-     * parameters of the hand over are found again, because a payment order stores the order data but
-     * not how the channel answered it.
-     *
-     * @return array<string, mixed>
-     */
-    private function lastCaptureResponse(PaymentOrderEntity $order): array
-    {
-        foreach (array_reverse($order->transactions ?? []) as $transaction) {
-            if (!$transaction instanceof PaymentTransactionEntity || $transaction->type !== PaymentTransactionEntity::TYPE_CAPTURE) {
-                continue;
-            }
-
-            $response = $transaction->responsePayload;
-
-            if (\is_array($response) && $response !== []) {
-                return $response;
-            }
-        }
-
-        return [];
+        return CurrencyAmountConverter::fromFloat($totalPrice, $currency->getIsoCode());
     }
 }

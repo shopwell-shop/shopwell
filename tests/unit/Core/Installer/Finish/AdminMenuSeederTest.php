@@ -41,7 +41,7 @@ class AdminMenuSeederTest extends TestCase
 
     public function testRunsTheSynchronizationCommandOfTheInstalledProject(): void
     {
-        $this->writeConsole("<?php file_put_contents(__DIR__ . '/../ran', implode(' ', array_slice(\$argv, 1)));");
+        $this->writeConsole('<?php file_put_contents(__DIR__ . \'/../ran\', implode(\' \', array_slice($argv, 1)));');
 
         (new AdminMenuSeeder($this->projectDir))->seed();
 
@@ -62,6 +62,6 @@ class AdminMenuSeederTest extends TestCase
 
     private function writeConsole(string $code): void
     {
-        file_put_contents($this->projectDir . '/bin/console', $code . PHP_EOL);
+        file_put_contents($this->projectDir . '/bin/console', $code . \PHP_EOL);
     }
 }

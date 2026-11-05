@@ -8,14 +8,17 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Payment\Exception\PaymentGatewayException;
+use Shopwell\Core\System\Payment\Exception\PaymentProviderException;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayFactory;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
 use Shopwell\Core\System\Payment\Integration\Wechat\Action\WechatCaptureAction;
 use Shopwell\Core\System\Payment\Integration\Wechat\Api\WechatApi;
+use Shopwell\Core\System\Payment\Integration\Wechat\Product\WechatProducts;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
 use Shopwell\Core\System\Payment\PaymentException;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
+use Shopwell\Core\System\Payment\Product\PaymentInteraction;
+use Shopwell\Core\System\Payment\Product\PaymentProduct;
 use Shopwell\Core\System\Payment\Provider\PaymentProvider;
 use Shopwell\Core\System\Payment\Provider\ResolvedPaymentConfig;
 
@@ -39,7 +42,7 @@ class WechatCaptureActionTest extends TestCase
     {
         $action = new WechatCaptureAction();
 
-        $this->expectExceptionObject(PaymentException::actionWithoutApi(WechatCaptureAction::class));
+        $this->expectExceptionObject(PaymentGatewayException::actionWithoutApi(WechatCaptureAction::class));
 
         $action->execute(new Capture(new PaymentGatewayModel()));
     }
@@ -48,7 +51,7 @@ class WechatCaptureActionTest extends TestCase
     {
         $action = new WechatCaptureAction();
 
-        $this->expectExceptionObject(PaymentException::unsupportedApi(WechatCaptureAction::class, \stdClass::class));
+        $this->expectExceptionObject(PaymentGatewayException::unsupportedApi(WechatCaptureAction::class, \stdClass::class));
 
         $action->setApi(new \stdClass());
     }
@@ -56,9 +59,9 @@ class WechatCaptureActionTest extends TestCase
     public function testExecuteThrowsWhenTheAppIdOfTheChannelIsMissing(): void
     {
         $action = new WechatCaptureAction();
-        $action->setApi($this->api(WechatApi::CHANNEL_H5, params: [WechatApi::PARAM_APP_ID => '']));
+        $action->setApi($this->api(WechatProducts::H5, params: [WechatApi::PARAM_APP_ID => '']));
 
-        $this->expectExceptionObject(PaymentException::channelNotConfigured('wechat_h5', WechatApi::PARAM_APP_ID));
+        $this->expectExceptionObject(PaymentProviderException::channelNotConfigured('wechat_h5', WechatApi::PARAM_APP_ID));
 
         $action->execute(new Capture($this->orderModel()));
     }
@@ -68,7 +71,7 @@ class WechatCaptureActionTest extends TestCase
         $action = new WechatCaptureAction();
         $action->setApi($this->api('wechat_unknown'));
 
-        $this->expectExceptionObject(PaymentException::channelNotSupported('wechat_unknown', 'wechat'));
+        $this->expectExceptionObject(PaymentProviderException::channelNotSupported('wechat_unknown', 'wechat'));
 
         $action->execute(new Capture($this->orderModel()));
     }
@@ -102,11 +105,11 @@ class WechatCaptureActionTest extends TestCase
      */
     public static function channelProvider(): iterable
     {
-        yield 'h5' => [WechatApi::CHANNEL_H5];
-        yield 'native' => [WechatApi::CHANNEL_NATIVE];
-        yield 'jsapi' => [WechatApi::CHANNEL_JSAPI];
-        yield 'mini' => [WechatApi::CHANNEL_MINI];
-        yield 'app' => [WechatApi::CHANNEL_APP];
+        yield 'h5' => [WechatProducts::H5];
+        yield 'native' => [WechatProducts::NATIVE];
+        yield 'jsapi' => [WechatProducts::JSAPI];
+        yield 'mini' => [WechatProducts::MINI];
+        yield 'app' => [WechatProducts::APP];
     }
 
     public function testH5PayloadCarriesTheSceneInfoAttachAndExpiry(): void
@@ -117,7 +120,7 @@ class WechatCaptureActionTest extends TestCase
         $model->offsetSet(PaymentGatewayModel::EXPIRE_AT, new \DateTimeImmutable('2026-01-01T00:00:00+08:00'));
 
         $action = new WechatCaptureAction();
-        $action->setApi($this->api(WechatApi::CHANNEL_H5, settings: [WechatCaptureAction::SETTING_H5_TYPE => 'MWEB']));
+        $action->setApi($this->api(WechatProducts::H5, settings: [WechatCaptureAction::SETTING_H5_TYPE => 'MWEB']));
 
         $this->failExecution($action, $model);
 
@@ -139,7 +142,7 @@ class WechatCaptureActionTest extends TestCase
         $model->offsetUnset(PaymentGatewayModel::CLIENT_IP);
 
         $action = new WechatCaptureAction();
-        $action->setApi($this->api(WechatApi::CHANNEL_H5));
+        $action->setApi($this->api(WechatProducts::H5));
 
         $this->expectExceptionObject(PaymentException::missingParameter(PaymentGatewayModel::CLIENT_IP));
 
@@ -152,7 +155,7 @@ class WechatCaptureActionTest extends TestCase
         $model->offsetSet(PaymentGatewayModel::SUBJECT, str_repeat('a', 200));
 
         $action = new WechatCaptureAction();
-        $action->setApi($this->api(WechatApi::CHANNEL_H5));
+        $action->setApi($this->api(WechatProducts::H5));
 
         $this->failExecution($action, $model);
 
@@ -188,7 +191,7 @@ class WechatCaptureActionTest extends TestCase
      */
     private function api(string $channel, array $params = [], array $settings = []): WechatApi
     {
-        $channelOfPayment = new PaymentChannel($channel, 'wechat', $channel, PaymentFlow::REDIRECT);
+        $channelOfPayment = new PaymentProduct($channel, 'wechat', $channel, [PaymentInteraction::REDIRECT], 'wechat');
 
         return new WechatApi(
             new ResolvedPaymentConfig(
@@ -200,11 +203,12 @@ class WechatCaptureActionTest extends TestCase
                     new PaymentGatewayFactory('wechat', WechatApi::class, []),
                     static::createStub(PaymentNotificationExtractorInterface::class),
                 ),
-                channel: $channelOfPayment,
+                product: $channelOfPayment,
                 credentials: [WechatApi::MCH_ID => '1900000001'],
                 params: array_replace([WechatApi::PARAM_APP_ID => 'wx-app-id'], $params),
                 runtimeParams: [],
                 settings: $settings,
+                accountId: 'test-account',
             ),
             'https://example.com/notify',
             '',

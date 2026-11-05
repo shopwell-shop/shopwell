@@ -13,7 +13,7 @@ const { Mixin } = Shopwell;
  */
 const PLATFORM_TYPE = 'platform';
 
-// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+/** @private */
 export default {
     template,
 
@@ -137,7 +137,7 @@ export default {
          * are the interfaces the app can really collect through.
          */
         enabledProviderCount(app) {
-            return (app?.providers ?? []).filter((provider) => provider.enabled).length;
+            return (app?.accounts ?? []).filter((provider) => provider.enabled).length;
         },
 
         /**

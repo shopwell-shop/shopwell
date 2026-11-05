@@ -55,3 +55,18 @@ Shopwell.Service('privileges')
             },
         },
     });
+
+Shopwell.Service('privileges').addPrivilegeMappingEntry({
+    category: 'permissions',
+    parent: 'settings',
+    key: 'payment_account',
+    roles: {
+        viewer: { privileges: ['payment_account:read'], dependencies: [] },
+        editor: { privileges: ['payment_account:update'], dependencies: ['payment_account.viewer'] },
+        creator: {
+            privileges: ['payment_account:create'],
+            dependencies: ['payment_account.viewer', 'payment_account.editor'],
+        },
+        deleter: { privileges: ['payment_account:delete'], dependencies: ['payment_account.viewer'] },
+    },
+});

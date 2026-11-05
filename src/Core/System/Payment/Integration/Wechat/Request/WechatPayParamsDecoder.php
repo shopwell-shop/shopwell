@@ -3,9 +3,9 @@
 namespace Shopwell\Core\System\Payment\Integration\Wechat\Request;
 
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\System\Payment\Api\Struct\PayParams;
+use Shopwell\Core\System\Payment\Gateway\Struct\PaymentHandover;
 use Shopwell\Core\System\Payment\Integration\Wechat\Action\WechatCaptureAction;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
+use Shopwell\Core\System\Payment\Product\PaymentInteraction;
 use Shopwell\Core\System\Payment\Provider\PayParamsDecoderInterface;
 
 /**
@@ -21,13 +21,13 @@ use Shopwell\Core\System\Payment\Provider\PayParamsDecoderInterface;
 #[Package('framework')]
 final class WechatPayParamsDecoder implements PayParamsDecoderInterface
 {
-    public function payParamsFromResponse(array $response): ?PayParams
+    public function payParamsFromResponse(array $response): ?PaymentHandover
     {
         $codeUrl = $response[WechatCaptureAction::RESPONSE_CODE_URL] ?? null;
 
         if (\is_string($codeUrl) && $codeUrl !== '') {
-            return new PayParams(
-                flow: PaymentFlow::QRCODE,
+            return new PaymentHandover(
+                flow: PaymentInteraction::QRCODE,
                 extra: ['qr_code' => $codeUrl]
             );
         }
@@ -35,7 +35,7 @@ final class WechatPayParamsDecoder implements PayParamsDecoderInterface
         $payUrl = $response[WechatCaptureAction::RESPONSE_H5_URL] ?? null;
 
         if (\is_string($payUrl) && $payUrl !== '') {
-            return new PayParams(flow: PaymentFlow::REDIRECT, payUrl: $payUrl, httpMethod: 'GET');
+            return new PaymentHandover(flow: PaymentInteraction::REDIRECT, payUrl: $payUrl, httpMethod: 'GET');
         }
 
         return null;

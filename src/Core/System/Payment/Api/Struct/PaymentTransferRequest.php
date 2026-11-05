@@ -3,6 +3,7 @@
 namespace Shopwell\Core\System\Payment\Api\Struct;
 
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Payment\Exception\PaymentTransferException;
 use Shopwell\Core\System\Payment\PaymentException;
 
 /**
@@ -41,6 +42,7 @@ final readonly class PaymentTransferRequest
         public string $currency,
         public ?array $metadata = null,
         public array $channelParams = [],
+        public ?string $accountId = null,
     ) {
     }
 
@@ -53,7 +55,7 @@ final readonly class PaymentTransferRequest
     {
         $amount = $payload['amount'] ?? null;
         if (!\is_int($amount) && !(\is_string($amount) && ctype_digit($amount))) {
-            throw PaymentException::transferAmountInvalid();
+            throw PaymentTransferException::transferAmountInvalid();
         }
 
         $metadata = $payload['metadata'] ?? null;
@@ -67,6 +69,7 @@ final readonly class PaymentTransferRequest
             currency: strtoupper(self::string($payload, 'currency')),
             metadata: \is_array($metadata) ? $metadata : null,
             channelParams: self::channelParamsOf($payload),
+            accountId: isset($payload['account_id']) && \is_string($payload['account_id']) ? $payload['account_id'] : null,
         );
     }
 

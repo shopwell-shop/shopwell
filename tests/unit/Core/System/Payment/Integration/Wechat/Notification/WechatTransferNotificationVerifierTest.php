@@ -6,6 +6,8 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Payment\Exception\PaymentGatewayException;
+use Shopwell\Core\System\Payment\Exception\PaymentNotificationException;
 use Shopwell\Core\System\Payment\Integration\Wechat\Action\WechatNotifyAction;
 use Shopwell\Core\System\Payment\Integration\Wechat\Api\WechatApi;
 use Shopwell\Core\System\Payment\Integration\Wechat\Notification\WechatTransferNotificationVerifier;
@@ -137,7 +139,7 @@ class WechatTransferNotificationVerifierTest extends TestCase
 
     public function testANotificationWithoutAResourceIsInvalid(): void
     {
-        $this->expectExceptionObject(PaymentException::notificationInvalid(
+        $this->expectExceptionObject(PaymentNotificationException::notificationInvalid(
             WechatApi::PROVIDER,
             'the notification carries no encrypted resource'
         ));
@@ -149,7 +151,7 @@ class WechatTransferNotificationVerifierTest extends TestCase
     {
         $body = $this->encryptedBody(['out_bill_no' => 'PO-1']);
 
-        $this->expectExceptionObject(PaymentException::missingCredentials(WechatApi::PROVIDER, WechatApi::API_V3_KEY));
+        $this->expectExceptionObject(PaymentGatewayException::missingCredentials(WechatApi::PROVIDER, WechatApi::API_V3_KEY));
 
         $this->verifier()->outNoOf([WechatApi::PLATFORM_CERTS => json_encode([self::SERIAL => $this->publicKey], \JSON_THROW_ON_ERROR)], $body, []);
     }

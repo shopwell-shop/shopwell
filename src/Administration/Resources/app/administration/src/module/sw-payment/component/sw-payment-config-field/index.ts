@@ -2,7 +2,7 @@
  * @sw-package framework
  */
 import { defineComponent } from 'vue';
-import type { PropType } from 'vue';
+import type { ComponentPublicInstance, PropType } from 'vue';
 import template from './sw-payment-config-field.html.twig';
 import './sw-payment-config-field.scss';
 
@@ -81,8 +81,8 @@ export default defineComponent({
             if (typeof declared === 'string') {
                 text = declared;
             } else {
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access -- vue-i18n exposes the active locale as a root ref in composition mode
-                const locale = this.$root.$i18n.locale.value as string;
+                const root = this.$root as (ComponentPublicInstance & { $i18n: { locale: { value: string } } }) | null;
+                const locale = root?.$i18n.locale.value ?? 'en-GB';
                 text =
                     declared[locale] ??
                     declared['en-GB'] ??
@@ -119,7 +119,7 @@ export default defineComponent({
             },
 
             set(value: boolean): void {
-                this.currentValue = value ? '1' : '';
+                this.currentValue = value ? '1' : '0';
             },
         },
 

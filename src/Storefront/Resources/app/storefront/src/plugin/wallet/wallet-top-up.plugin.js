@@ -103,7 +103,7 @@ export default class WalletTopUpPlugin extends Plugin {
 
         const body = new FormData();
         body.append('amount', String(amount));
-        body.append('channel', this._channelSelect.value);
+        body.append('method', this._channelSelect.value);
         body.append('returnUrl', this.options.returnUrl || window.location.href);
 
         try {

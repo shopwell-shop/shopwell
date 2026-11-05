@@ -5,13 +5,15 @@ namespace Shopwell\Core\System\Payment\Integration\Stripe\Action;
 use Payum\Core\Exception\RequestNotSupportedException;
 use Payum\Core\Request\Refund;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Payment\Exception\PaymentGatewayException;
+use Shopwell\Core\System\Payment\Exception\PaymentRefundRejectedException;
 use Shopwell\Core\System\Payment\Gateway\AbstractPaymentAction;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
+use Shopwell\Core\System\Payment\Gateway\Request\RefundQuery;
 use Shopwell\Core\System\Payment\Gateway\Request\RefundResult;
 use Shopwell\Core\System\Payment\Integration\Stripe\Api\StripeApi;
 use Shopwell\Core\System\Payment\Integration\Stripe\Notification\StripeNotificationExtractor;
 use Shopwell\Core\System\Payment\Order\PaymentRefundStates;
-use Shopwell\Core\System\Payment\PaymentException;
 use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
 
 /**
@@ -52,10 +54,16 @@ final class StripeRefundAction extends AbstractPaymentAction
         $model = $this->modelOf($request);
         $api = $this->api();
 
+        if ($request instanceof RefundQuery) {
+            $this->query($request, $model, $api);
+
+            return;
+        }
+
         $paymentIntentId = $this->stringValue($model, PaymentGatewayModel::OUT_PAYMENT_NO);
 
         if ($paymentIntentId === '') {
-            throw PaymentException::gatewayError(
+            throw PaymentGatewayException::gatewayError(
                 $api->channel(),
                 'the payment has no payment intent at stripe yet and therefore cannot be refunded'
             );
@@ -88,13 +96,18 @@ final class StripeRefundAction extends AbstractPaymentAction
         } catch (\Throwable $exception) {
             $this->recordResponse($model, ['error' => $exception->getMessage()]);
 
-            throw PaymentException::gatewayError($api->channel(), $exception->getMessage());
+            throw PaymentGatewayException::gatewayError($api->channel(), $exception->getMessage());
         }
 
         if (isset($answer['error'])) {
             $this->recordResponse($model, $answer);
 
-            throw PaymentException::gatewayError(
+            $code = StripeApi::rejectionCodeOf($answer);
+            if (\in_array($code, ['amount_too_large', 'charge_already_refunded', 'charge_not_refundable', 'resource_missing'], true)) {
+                throw PaymentRefundRejectedException::rejected($api->channel(), StripeApi::rejectionMessageOf($answer) ?? $code);
+            }
+
+            throw PaymentGatewayException::gatewayError(
                 $api->channel(),
                 StripeApi::rejectionMessageOf($answer) ?? 'the channel rejected the refund'
             );
@@ -106,7 +119,7 @@ final class StripeRefundAction extends AbstractPaymentAction
         $this->recordResponse($model, ['id' => $outRefundId, 'status' => $status]);
 
         if (\in_array($status, self::FAILED_STATUSES, true)) {
-            throw PaymentException::gatewayError(
+            throw PaymentRefundRejectedException::rejected(
                 $api->channel(),
                 \sprintf('the channel refused the refund with the status "%s"', $status)
             );
@@ -122,7 +135,7 @@ final class StripeRefundAction extends AbstractPaymentAction
 
     public function supports($request): bool
     {
-        return $this->isSupported($request, Refund::class);
+        return $this->isSupported($request, Refund::class) || $this->isSupported($request, RefundQuery::class);
     }
 
     protected function api(): StripeApi
@@ -131,5 +144,21 @@ final class StripeRefundAction extends AbstractPaymentAction
         \assert($api instanceof StripeApi);
 
         return $api;
+    }
+
+    private function query(RefundQuery $request, PaymentGatewayModel $model, StripeApi $api): void
+    {
+        $answer = $api->queryRefund($this->stringValue($model, PaymentGatewayModel::OUT_PAYMENT_NO), $this->stringValue($model, PaymentGatewayModel::REFUND_NO), $request->outRefundId);
+        $this->recordResponse($model, $answer);
+        $status = (string) ($answer['status'] ?? '');
+        if (\in_array($status, self::FAILED_STATUSES, true)) {
+            throw PaymentRefundRejectedException::rejected($api->channel(), 'The channel confirmed a failed refund: ' . $status);
+        }
+
+        $id = $answer['id'] ?? $request->outRefundId;
+        $this->setResult($model, new RefundResult(
+            status: $status === self::STATUS_SUCCEEDED ? PaymentRefundStates::STATE_FINISHED : PaymentRefundStates::STATE_PROCESSING,
+            outRefundId: \is_string($id) ? $id : null,
+        ));
     }
 }

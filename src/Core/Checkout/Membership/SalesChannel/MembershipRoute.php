@@ -6,6 +6,7 @@ use Shopwell\Core\Checkout\Customer\CustomerEntity;
 use Shopwell\Core\Checkout\Membership\Extension\MembershipRouteExtension;
 use Shopwell\Core\Checkout\Membership\Service\MembershipOfferService;
 use Shopwell\Core\Checkout\Membership\Service\MembershipSubscriptionService;
+use Shopwell\Core\Checkout\Payment\Storefront\StorefrontPaymentContextResolver;
 use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Routing\StoreApiRouteScope;
@@ -42,6 +43,7 @@ class MembershipRoute
         private readonly MembershipOfferService $offer,
         private readonly MembershipSubscriptionService $subscriptions,
         private readonly ExtensionDispatcher $extensions,
+        private readonly StorefrontPaymentContextResolver $paymentContextResolver,
     ) {
     }
 
@@ -55,17 +57,17 @@ class MembershipRoute
     {
         return $this->extensions->publish(
             name: MembershipRouteExtension::NAME,
-            extension: new MembershipRouteExtension($context, $customer),
+            extension: new MembershipRouteExtension($request, $context, $customer),
             function: $this->_load(...),
         );
     }
 
-    private function _load(SalesChannelContext $context, CustomerEntity $customer): MembershipRouteResponse
+    private function _load(Request $request, SalesChannelContext $context, CustomerEntity $customer): MembershipRouteResponse
     {
         $offer = $this->offer->forCustomer(
             $customer->getId(),
             $context->getCurrency()->getId(),
-            $context->getCurrency()->getIsoCode(),
+            $this->paymentContextResolver->resolve($request, $context->getCurrency()->getIsoCode()),
             self::RECENT_ORDER_LIMIT,
             $context->getContext()
         );

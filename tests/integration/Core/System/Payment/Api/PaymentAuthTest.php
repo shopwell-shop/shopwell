@@ -37,7 +37,7 @@ class PaymentAuthTest extends TestCase
 
         $this->postJson($client, self::PATH_ORDERS, [
             'out_trade_no' => 'OT' . bin2hex(random_bytes(8)),
-            'channel' => 'alipay_h5',
+            'product' => 'alipay_h5',
             'amount' => 100,
             'currency' => 'CNY',
             'subject' => '测试商品',
@@ -52,7 +52,7 @@ class PaymentAuthTest extends TestCase
 
         $payload = $this->signedPayload('POST', self::PATH_ORDERS, [
             'out_trade_no' => 'OT' . bin2hex(random_bytes(8)),
-            'channel' => 'alipay_h5',
+            'product' => 'alipay_h5',
             'amount' => 100,
             'currency' => 'CNY',
             'subject' => '测试商品',
@@ -71,7 +71,7 @@ class PaymentAuthTest extends TestCase
 
         $payload = $this->signedPayload('POST', self::PATH_ORDERS, [
             'out_trade_no' => 'OT' . bin2hex(random_bytes(8)),
-            'channel' => 'alipay_h5',
+            'product' => 'alipay_h5',
             'amount' => 100,
             'currency' => 'CNY',
             'subject' => '测试商品',
@@ -88,7 +88,7 @@ class PaymentAuthTest extends TestCase
 
         $payload = $this->signedPayload('POST', self::PATH_ORDERS, [
             'out_trade_no' => 'OT' . bin2hex(random_bytes(8)),
-            'channel' => 'alipay_h5',
+            'product' => 'alipay_h5',
             'amount' => 100,
             'currency' => 'CNY',
             'subject' => '测试商品',
@@ -105,7 +105,7 @@ class PaymentAuthTest extends TestCase
 
         $payload = $this->signedPayload('POST', self::PATH_ORDERS, [
             'out_trade_no' => 'OT' . bin2hex(random_bytes(8)),
-            'channel' => 'alipay_h5',
+            'product' => 'alipay_h5',
             'amount' => 100,
             'currency' => 'CNY',
             'subject' => '测试商品',

@@ -3,7 +3,7 @@
 namespace Shopwell\Core\System\Payment\Subscription\Schedule;
 
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\System\Payment\PaymentException;
+use Shopwell\Core\System\Payment\Exception\PaymentSubscriptionException;
 use Shopwell\Core\System\Payment\Provider\Cycle\PaymentCycleRules;
 
 /**
@@ -40,7 +40,7 @@ final class PaymentCycleCalendar
     public function nextPeriodEnd(\DateTimeImmutable $anchor, string $unit, int $count): \DateTimeImmutable
     {
         if ($count < 1) {
-            throw PaymentException::invalidPeriodCount($count);
+            throw PaymentSubscriptionException::invalidPeriodCount($count);
         }
 
         $cursor = $anchor->setTimezone(new \DateTimeZone(self::PERIOD_TIMEZONE))->setTime(0, 0);
@@ -50,7 +50,7 @@ final class PaymentCycleCalendar
             self::UNIT_WEEK => $cursor->modify(\sprintf('+%d weeks', $count)),
             self::UNIT_MONTH => $this->addPeriods($cursor, $count, 1),
             self::UNIT_YEAR => $this->addPeriods($cursor, $count, 12),
-            default => throw PaymentException::invalidPeriodUnit($unit),
+            default => throw PaymentSubscriptionException::invalidPeriodUnit($unit),
         };
     }
 
@@ -106,7 +106,7 @@ final class PaymentCycleCalendar
             return;
         }
 
-        throw PaymentException::paymentCycleNotExpressible($provider, $unit, $count, $anchorDayOfMonth);
+        throw PaymentSubscriptionException::paymentCycleNotExpressible($provider, $unit, $count, $anchorDayOfMonth);
     }
 
     /**

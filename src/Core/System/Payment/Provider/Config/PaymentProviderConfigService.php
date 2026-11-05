@@ -2,15 +2,25 @@
 
 namespace Shopwell\Core\System\Payment\Provider\Config;
 
+use Doctrine\DBAL\Connection;
 use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\Doctrine\RetryableWriteTransaction;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Uuid\Uuid;
-use Shopwell\Core\System\Payment\App\PaymentCredentialCipher;
+use Shopwell\Core\System\Payment\Account\PaymentAccountCollection;
+use Shopwell\Core\System\Payment\Account\PaymentAccountDto;
+use Shopwell\Core\System\Payment\Account\PaymentAccountEntity;
+use Shopwell\Core\System\Payment\Account\PaymentAccountService;
+use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppAccount\PaymentAppAccountCollection;
+use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppChannel\PaymentAppChannelCollection;
+use Shopwell\Core\System\Payment\App\PaymentAppCollection;
+use Shopwell\Core\System\Payment\App\PaymentAppEntity;
+use Shopwell\Core\System\Payment\Exception\PaymentProviderException;
 use Shopwell\Core\System\Payment\PaymentException;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
+use Shopwell\Core\System\Payment\Product\PaymentProduct;
 use Shopwell\Core\System\Payment\Provider\PaymentProvider;
 
 /**
@@ -31,13 +41,22 @@ use Shopwell\Core\System\Payment\Provider\PaymentProvider;
 final class PaymentProviderConfigService
 {
     /**
+     * @param EntityRepository<PaymentAccountCollection> $accountRepository
+     * @param EntityRepository<PaymentAppCollection> $appRepository
+     * @param EntityRepository<PaymentAppAccountCollection> $appAccountRepository
+     * @param EntityRepository<PaymentAppChannelCollection> $appChannelRepository
      * @param EntityRepository<PaymentProviderConfigCollection> $providerConfigRepository
      * @param EntityRepository<PaymentChannelConfigCollection> $channelConfigRepository
      */
     public function __construct(
         private readonly EntityRepository $providerConfigRepository,
         private readonly EntityRepository $channelConfigRepository,
-        private readonly PaymentCredentialCipher $cipher,
+        private readonly EntityRepository $accountRepository,
+        private readonly EntityRepository $appRepository,
+        private readonly EntityRepository $appAccountRepository,
+        private readonly EntityRepository $appChannelRepository,
+        private readonly Connection $connection,
+        private readonly PaymentAccountService $accounts,
     ) {
     }
 
@@ -49,22 +68,9 @@ final class PaymentProviderConfigService
      */
     public function saveProvider(PaymentProvider $definition, bool $enabled, mixed $credentials, mixed $settings): void
     {
-        $config = $this->findProviderConfig($definition->technicalName);
-
-        $credentials = $this->mergeValues($config === null ? [] : $this->cipher->decrypt($config->credentials), $credentials);
-        $settings = array_merge($config->settings ?? [], $this->mapOf($settings));
-
-        if ($enabled) {
-            $this->assertComplete($definition->technicalName, $definition->credentials, $credentials);
-        }
-
-        $this->providerConfigRepository->upsert([[
-            'id' => $config->id ?? Uuid::randomHex(),
-            'providerTechnicalName' => $definition->technicalName,
-            'enabled' => $enabled,
-            'credentials' => $this->cipher->encrypt($credentials),
-            'settings' => $settings,
-        ]], Context::createDefaultContext());
+        RetryableWriteTransaction::retryable($this->connection, function () use ($definition, $enabled, $credentials, $settings): void {
+            $this->storeProvider($definition, $enabled, $credentials, $settings);
+        });
     }
 
     public function resetProvider(string $provider): void
@@ -72,7 +78,9 @@ final class PaymentProviderConfigService
         $config = $this->findProviderConfig($provider);
 
         if ($config !== null) {
-            $this->providerConfigRepository->delete([['id' => $config->id]], Context::createDefaultContext());
+            $account = $this->accounts->get($config->accountId, Context::createDefaultContext());
+            $this->accounts->save(new PaymentAccountDto($account->providerTechnicalName, $account->name, false, $account->enabledProducts, ownerAppId: $account->ownerAppId), Context::createDefaultContext(), $account->id);
+            $this->providerConfigRepository->update([['id' => $config->id, 'enabled' => false]], Context::createDefaultContext());
         }
     }
 
@@ -82,34 +90,30 @@ final class PaymentProviderConfigService
      *
      * @throws PaymentException
      */
-    public function saveChannel(PaymentChannel $definition, bool $enabled, mixed $params, mixed $settings): void
+    public function saveChannel(PaymentProduct $definition, bool $enabled, mixed $params, mixed $settings): void
     {
-        $config = $this->findChannelConfig($definition->providerTechnicalName, $definition->technicalName);
-
-        $params = $this->mergeValues($config === null ? [] : $this->cipher->decrypt($config->params), $params);
-        $settings = array_merge($config->settings ?? [], $this->mapOf($settings));
-
-        if ($enabled) {
-            $this->assertComplete($definition->technicalName, $definition->params, $params);
-        }
-
-        $this->channelConfigRepository->upsert([[
-            'id' => $config->id ?? Uuid::randomHex(),
-            'providerTechnicalName' => $definition->providerTechnicalName,
-            'channelTechnicalName' => $definition->technicalName,
-            'enabled' => $enabled,
-            'params' => $this->cipher->encrypt($params),
-            'settings' => $settings,
-        ]], Context::createDefaultContext());
+        RetryableWriteTransaction::retryable($this->connection, function () use ($definition, $enabled, $params, $settings): void {
+            $this->storeChannel($definition, $enabled, $params, $settings);
+        });
     }
 
     public function resetChannel(string $provider, string $channel): void
     {
         $config = $this->findChannelConfig($provider, $channel);
+        $providerConfig = $this->findProviderConfig($provider);
+        if ($providerConfig !== null) {
+            $account = $this->accounts->get($providerConfig->accountId, Context::createDefaultContext());
+            $this->accounts->save(new PaymentAccountDto($account->providerTechnicalName, $account->name, $account->active, array_values(array_diff($account->enabledProducts, [$channel])), ownerAppId: $account->ownerAppId), Context::createDefaultContext(), $account->id);
+        }
 
         if ($config !== null) {
             $this->channelConfigRepository->delete([['id' => $config->id]], Context::createDefaultContext());
         }
+    }
+
+    public function findAccount(string $id): ?PaymentAccountEntity
+    {
+        return $this->accountRepository->search(new Criteria([$id]), Context::createDefaultContext())->getEntities()->first();
     }
 
     public function findProviderConfig(string $provider): ?PaymentProviderConfigEntity
@@ -155,45 +159,95 @@ final class PaymentProviderConfigService
         return $config instanceof PaymentChannelConfigEntity ? $config : null;
     }
 
-    /**
-     * An interface or channel that is switched on has to be complete, otherwise the first payment of
-     * an app would fail with a message only the log sees.
-     *
-     * @param list<PaymentConfigField> $fields
-     * @param array<string, mixed> $values
-     */
-    private function assertComplete(string $technicalName, array $fields, array $values): void
+    private function storeProvider(PaymentProvider $definition, bool $enabled, mixed $credentials, mixed $settings): void
     {
-        foreach ($fields as $field) {
-            if (!$field->required) {
-                continue;
-            }
+        $config = $this->findProviderConfig($definition->technicalName);
 
-            if (!isset($values[$field->name]) || $values[$field->name] === '') {
-                throw PaymentException::missingCredentials($technicalName, $field->name);
-            }
+        $current = $config === null ? null : $this->findAccount($config->accountId);
+        $settings = array_merge($config->settings ?? [], $this->mapOf($settings));
+        $account = $this->accounts->save(new PaymentAccountDto(
+            providerTechnicalName: $definition->technicalName,
+            name: $current->name ?? $definition->technicalName,
+            active: $enabled,
+            enabledProducts: $current->enabledProducts ?? [],
+            credentials: $this->mapOf($credentials),
+            settings: $settings,
+            ownerAppId: $current->ownerAppId ?? null,
+        ), Context::createDefaultContext(), $config?->accountId);
+        $accountId = $account->id;
+
+        $this->providerConfigRepository->upsert([[
+            'id' => $config->id ?? Uuid::randomHex(),
+            'providerTechnicalName' => $definition->technicalName,
+            'enabled' => $enabled,
+            'accountId' => $accountId,
+            'settings' => $settings,
+        ]], Context::createDefaultContext());
+        $platform = $this->platformApp();
+        if ($platform !== null) {
+            $criteria = new Criteria();
+            $criteria->addFilter(new EqualsFilter('paymentAppId', $platform->id), new EqualsFilter('accountId', $accountId));
+            $grant = $this->appAccountRepository->search($criteria, Context::createDefaultContext())->getEntities()->first();
+            $this->appAccountRepository->upsert([[
+                'id' => $grant->id ?? Uuid::randomHex(),
+                'paymentAppId' => $platform->id,
+                'accountId' => $accountId,
+                'enabled' => $enabled,
+                'position' => $grant->position ?? 0,
+            ]], Context::createDefaultContext());
         }
     }
 
-    /**
-     * The values that are not sent stay untouched: an empty input means "keep what is stored", so a
-     * form that only changes one field does not have to submit the rest again.
-     *
-     * @param array<string, mixed> $current
-     *
-     * @return array<string, mixed>
-     */
-    private function mergeValues(array $current, mixed $incoming): array
+    private function storeChannel(PaymentProduct $definition, bool $enabled, mixed $params, mixed $settings): void
     {
-        foreach ($this->mapOf($incoming) as $name => $value) {
-            if ((string) $value === '') {
-                continue;
-            }
+        $config = $this->findChannelConfig($definition->providerTechnicalName, $definition->technicalName);
 
-            $current[$name] = $value;
+        $settings = array_merge($config->settings ?? [], $this->mapOf($settings));
+        $providerConfig = $this->findProviderConfig($definition->providerTechnicalName);
+        if ($providerConfig === null) {
+            throw PaymentProviderException::providerNotConfigured($definition->providerTechnicalName);
         }
+        $account = $this->accounts->get($providerConfig->accountId, Context::createDefaultContext());
+        $enabledProducts = array_values(array_diff($account->enabledProducts, [$definition->technicalName]));
+        if ($enabled) {
+            $enabledProducts[] = $definition->technicalName;
+        }
+        $this->accounts->save(new PaymentAccountDto(
+            providerTechnicalName: $account->providerTechnicalName,
+            name: $account->name,
+            active: $account->active,
+            enabledProducts: $enabledProducts,
+            productParams: [$definition->technicalName => $this->mapOf($params)],
+            ownerAppId: $account->ownerAppId,
+        ), Context::createDefaultContext(), $account->id);
 
-        return $current;
+        $this->channelConfigRepository->upsert([[
+            'id' => $config->id ?? Uuid::randomHex(),
+            'providerTechnicalName' => $definition->providerTechnicalName,
+            'channelTechnicalName' => $definition->technicalName,
+            'enabled' => $enabled,
+            'settings' => $settings,
+        ]], Context::createDefaultContext());
+        $platform = $this->platformApp();
+        if ($platform !== null) {
+            $criteria = new Criteria();
+            $criteria->addFilter(new EqualsFilter('paymentAppId', $platform->id), new EqualsFilter('channelTechnicalName', $definition->technicalName));
+            $grant = $this->appChannelRepository->search($criteria, Context::createDefaultContext())->getEntities()->first();
+            $this->appChannelRepository->upsert([[
+                'id' => $grant->id ?? Uuid::randomHex(),
+                'paymentAppId' => $platform->id,
+                'channelTechnicalName' => $definition->technicalName,
+                'enabled' => $enabled,
+            ]], Context::createDefaultContext());
+        }
+    }
+
+    private function platformApp(): ?PaymentAppEntity
+    {
+        $criteria = new Criteria();
+        $criteria->addFilter(new EqualsFilter('technicalName', PaymentAppEntity::PLATFORM_TECHNICAL_NAME));
+
+        return $this->appRepository->search($criteria, Context::createDefaultContext())->getEntities()->first();
     }
 
     /**

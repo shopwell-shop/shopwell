@@ -9,16 +9,19 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Payment\App\PaymentCredentialCipher;
+use Shopwell\Core\System\Payment\Exception\PaymentGatewayException;
+use Shopwell\Core\System\Payment\Exception\PaymentTransferException;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayFactory;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
 use Shopwell\Core\System\Payment\Gateway\Request\PaymentTransferRequest;
 use Shopwell\Core\System\Payment\Gateway\Request\TransferResult;
 use Shopwell\Core\System\Payment\Integration\Alipay\Action\AlipayTransferAction;
 use Shopwell\Core\System\Payment\Integration\Alipay\Api\AlipayApi;
+use Shopwell\Core\System\Payment\Integration\Alipay\Product\AlipayProducts;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
 use Shopwell\Core\System\Payment\PaymentException;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
+use Shopwell\Core\System\Payment\Product\PaymentInteraction;
+use Shopwell\Core\System\Payment\Product\PaymentProduct;
 use Shopwell\Core\System\Payment\Provider\PaymentProvider;
 use Shopwell\Core\System\Payment\Provider\ResolvedPaymentConfig;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferEntity;
@@ -72,7 +75,7 @@ class AlipayTransferActionTest extends TestCase
     {
         $action = new AlipayTransferAction($this->cipher);
 
-        $this->expectExceptionObject(PaymentException::actionWithoutApi(AlipayTransferAction::class));
+        $this->expectExceptionObject(PaymentGatewayException::actionWithoutApi(AlipayTransferAction::class));
 
         $action->execute($this->request());
     }
@@ -81,7 +84,7 @@ class AlipayTransferActionTest extends TestCase
     {
         $action = new AlipayTransferAction($this->cipher);
 
-        $this->expectExceptionObject(PaymentException::unsupportedApi(AlipayTransferAction::class, \stdClass::class));
+        $this->expectExceptionObject(PaymentGatewayException::unsupportedApi(AlipayTransferAction::class, \stdClass::class));
 
         $action->setApi(new \stdClass());
     }
@@ -240,7 +243,7 @@ class AlipayTransferActionTest extends TestCase
         $recipient = $this->recipient('wechat_open_id');
         $recipient->identityValue = $this->cipher->encryptValue('openid-1');
 
-        $this->expectExceptionObject(PaymentException::transferIdentityNotSupported('alipay', 'wechat_open_id'));
+        $this->expectExceptionObject(PaymentTransferException::transferIdentityNotSupported('alipay', 'wechat_open_id'));
 
         AlipayTransferAction::contentOf($this->transfer(), $recipient, $this->channelParams(), $this->cipher, '佣金结算');
     }
@@ -557,7 +560,7 @@ class AlipayTransferActionTest extends TestCase
      */
     private function api(array $credentials = []): AlipayApi
     {
-        $channel = new PaymentChannel(AlipayApi::CHANNEL_H5, 'alipay', AlipayApi::CHANNEL_H5, PaymentFlow::REDIRECT);
+        $channel = new PaymentProduct(AlipayProducts::H5, 'alipay', AlipayProducts::H5, [PaymentInteraction::REDIRECT], 'alipay');
 
         return new AlipayApi(
             new ResolvedPaymentConfig(
@@ -565,15 +568,16 @@ class AlipayTransferActionTest extends TestCase
                     'alipay',
                     'alipay',
                     [],
-                    [AlipayApi::CHANNEL_H5 => $channel],
+                    [AlipayProducts::H5 => $channel],
                     new PaymentGatewayFactory('alipay', AlipayApi::class, []),
                     static::createStub(PaymentNotificationExtractorInterface::class),
                 ),
-                channel: $channel,
+                product: $channel,
                 credentials: $credentials,
                 params: [],
                 runtimeParams: [],
                 settings: [],
+                accountId: 'test-account',
             ),
             'https://example.com/notify',
             '',

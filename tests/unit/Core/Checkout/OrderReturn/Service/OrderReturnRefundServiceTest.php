@@ -15,6 +15,7 @@ use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Payment\App\PaymentAppCollection;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
+use Shopwell\Core\System\Payment\Exception\PaymentOrderException;
 use Shopwell\Core\System\Payment\Order\Aggregate\PaymentRefund\PaymentRefundCollection;
 use Shopwell\Core\System\Payment\Order\Aggregate\PaymentRefund\PaymentRefundEntity;
 use Shopwell\Core\System\Payment\Order\PaymentOrderCollection;
@@ -143,7 +144,7 @@ class OrderReturnRefundServiceTest extends TestCase
             static::fail('the gateway has to refuse an amount it never collected');
         } catch (PaymentException $exception) {
             static::assertSame(
-                PaymentException::refundAmountExceedsOrder('PG-1', 1499, 1000)->getMessage(),
+                PaymentOrderException::refundAmountExceedsOrder('PG-1', 1499, 1000)->getMessage(),
                 $exception->getMessage()
             );
         }
@@ -305,6 +306,8 @@ class OrderReturnRefundServiceTest extends TestCase
             'id' => 'refund-id',
             'refundNo' => $refundNo,
             'outRefundNo' => 'RT-1',
+            'amount' => 1999,
+            'reason' => 'Return RT-1',
             'refundedAt' => $refundedAt,
         ]);
     }

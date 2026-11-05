@@ -10,9 +10,13 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Util\Hasher;
+use Shopwell\Core\System\Payment\Exception\PaymentAppException;
 use Shopwell\Core\System\Payment\PaymentException;
 use Symfony\Component\Clock\NativeClock;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Lock\LockFactory;
+use Symfony\Component\RateLimiter\RateLimiterFactory;
+use Symfony\Component\RateLimiter\Storage\CacheStorage;
 
 /**
  * Authenticates a caller of the payment api.
@@ -48,6 +52,7 @@ final class PaymentAppAuthenticator
         private readonly PaymentSignatureService $signatureService,
         private readonly PaymentCredentialCipher $cipher,
         private readonly CacheItemPoolInterface $cache,
+        private readonly LockFactory $lockFactory,
         private readonly ClockInterface $clock = new NativeClock(),
         private readonly int $timestampWindow = self::TIMESTAMP_WINDOW,
     ) {
@@ -66,12 +71,12 @@ final class PaymentAppAuthenticator
         $sign = $this->authValue($params, PaymentSignatureService::SIGN);
 
         if (!is_numeric($timestamp)) {
-            throw PaymentException::expiredTimestamp(0, $this->timestampWindow);
+            throw PaymentAppException::expiredTimestamp(0, $this->timestampWindow);
         }
 
         $timestamp = (int) $timestamp;
         if (abs($this->clock->now()->getTimestamp() - $timestamp) > $this->timestampWindow) {
-            throw PaymentException::expiredTimestamp($timestamp, $this->timestampWindow);
+            throw PaymentAppException::expiredTimestamp($timestamp, $this->timestampWindow);
         }
 
         $app = $this->loadApp($appId);
@@ -81,11 +86,12 @@ final class PaymentAppAuthenticator
             !$this->signatureService->verify($secret, $appId, $timestamp, $nonce, $request->getMethod(), $request->getPathInfo(), $params, $sign)
             && !$this->verifyWithPreviousSecret($app, $appId, $timestamp, $nonce, $request->getMethod(), $request->getPathInfo(), $params, $sign)
         ) {
-            throw PaymentException::invalidSignature($appId);
+            throw PaymentAppException::invalidSignature($appId);
         }
 
-        $this->assertNotReplayed($appId, $nonce);
         $this->assertIpAllowed($app, $request);
+        $this->assertRateLimit($app);
+        $this->assertNotReplayed($appId, $nonce, $timestamp);
 
         return $app;
     }
@@ -116,7 +122,7 @@ final class PaymentAppAuthenticator
         $value = $params[$key] ?? null;
 
         if (!\is_scalar($value) || trim((string) $value) === '') {
-            throw PaymentException::missingAuthParameters([$key]);
+            throw PaymentAppException::missingAuthParameters([$key]);
         }
 
         return trim((string) $value);
@@ -131,18 +137,18 @@ final class PaymentAppAuthenticator
         $app = $this->paymentAppRepository->search($criteria, Context::createDefaultContext())->getEntities()->first();
 
         if (!$app instanceof PaymentAppEntity) {
-            throw PaymentException::appNotFound($appId);
+            throw PaymentAppException::appNotFound($appId);
         }
 
         // the tenant of the shop is no caller: it is answered like an app that does not exist, so the
         // api does not tell anyone that this technical name is taken - the check has to come before
         // the one for `active`, otherwise a disabled platform tenant would still confirm its presence
         if ($app->type !== PaymentAppEntity::TYPE_EXTERNAL) {
-            throw PaymentException::appNotFound($appId);
+            throw PaymentAppException::appNotFound($appId);
         }
 
         if (!$app->active) {
-            throw PaymentException::appDisabled($appId);
+            throw PaymentAppException::appDisabled($appId);
         }
 
         return $app;
@@ -187,17 +193,46 @@ final class PaymentAppAuthenticator
         );
     }
 
-    private function assertNotReplayed(string $appId, string $nonce): void
+    private function assertRateLimit(PaymentAppEntity $app): void
     {
-        $item = $this->cache->getItem(self::NONCE_PREFIX . Hasher::hash($appId . '|' . $nonce));
+        if ($app->rateLimit === null) {
+            return;
+        }
+        $factory = new RateLimiterFactory([
+            'id' => 'shopwell.payment.app.' . $app->id,
+            'policy' => 'fixed_window',
+            'limit' => $app->rateLimit,
+            'interval' => '1 minute',
+        ], new CacheStorage($this->cache), $this->lockFactory);
+        $limit = $factory->create()->consume();
+        if (!$limit->isAccepted()) {
+            throw PaymentAppException::rateLimitExceeded(max(1, $limit->getRetryAfter()->getTimestamp() - (new NativeClock())->now()->getTimestamp()));
+        }
+    }
 
-        if ($item->isHit()) {
-            throw PaymentException::invalidSignature($appId);
+    private function assertNotReplayed(string $appId, string $nonce, int $timestamp): void
+    {
+        $key = self::NONCE_PREFIX . Hasher::hash($appId . '|' . $nonce);
+        $lock = $this->lockFactory->createLock($key);
+        if (!$lock->acquire()) {
+            throw PaymentAppException::invalidSignature($appId);
         }
 
-        $item->set(true);
-        $item->expiresAfter($this->timestampWindow);
-        $this->cache->save($item);
+        try {
+            $item = $this->cache->getItem($key);
+            if ($item->isHit()) {
+                throw PaymentAppException::invalidSignature($appId);
+            }
+
+            $item->set(true);
+            // Timestamp admission includes the endpoint second, including future-dated requests.
+            $item->expiresAt(new \DateTimeImmutable('@' . ($timestamp + $this->timestampWindow + 1)));
+            if (!$this->cache->save($item)) {
+                throw PaymentAppException::invalidSignature($appId);
+            }
+        } finally {
+            $lock->release();
+        }
     }
 
     private function assertIpAllowed(PaymentAppEntity $app, Request $request): void
@@ -209,7 +244,7 @@ final class PaymentAppAuthenticator
 
         $clientIp = $request->getClientIp();
         if ($clientIp === null || !\in_array($clientIp, $allowed, true)) {
-            throw PaymentException::invalidSignature($app->technicalName);
+            throw PaymentAppException::invalidSignature($app->technicalName);
         }
     }
 }

@@ -17,7 +17,7 @@
                 "columnOutTradeNo": "Merchant trade no.",
                 "columnPaymentApp": "App",
                 "columnProvider": "Provider",
-                "columnChannel": "Channel",
+                "columnChannel": "Payment product",
                 "columnState": "State",
                 "columnAmount": "Amount",
                 "columnCurrency": "Currency",
@@ -39,8 +39,8 @@
                     "placeholder": "All apps..."
                 },
                 "channelFilter": {
-                    "label": "Channel",
-                    "placeholder": "Separate multiple channels with a comma..."
+                    "label": "Payment product",
+                    "placeholder": "Separate multiple products with a comma..."
                 },
                 "providerFilter": {
                     "label": "Provider",
@@ -60,20 +60,20 @@
                 "cardIdentifiersTitle": "Identifiers",
                 "cardRequestTitle": "Request",
                 "cardDatesTitle": "Dates",
-                "cardChannelDataTitle": "Raw answer of the channel",
+                "cardChannelDataTitle": "Provider response",
                 "textRefundedOf": "{refunded} refunded",
                 "labelPaymentNo": "Payment no.",
                 "labelOutTradeNo": "Merchant trade no.",
                 "labelPaymentApp": "App",
                 "labelProvider": "Provider",
-                "labelChannel": "Channel",
+                "labelChannel": "Payment product",
                 "labelAmount": "Amount",
                 "labelPaidAmount": "Paid amount",
                 "labelRefundedAmount": "Refunded amount",
                 "labelSubject": "Subject",
                 "labelBody": "Body",
                 "labelAttach": "Attach",
-                "labelOutPaymentNo": "Channel trade no.",
+                "labelOutPaymentNo": "Provider transaction no.",
                 "labelClientIp": "Client ip",
                 "labelDevice": "Device",
                 "labelNotifyUrl": "Notify url",
@@ -135,8 +135,8 @@
                     "placeholder": "Separate multiple numbers with a comma..."
                 },
                 "channelFilter": {
-                    "label": "Channel",
-                    "placeholder": "Separate multiple channels with a comma..."
+                    "label": "Payment product",
+                    "placeholder": "Separate multiple products with a comma..."
                 },
                 "stateFilter": {
                     "label": "State",
@@ -153,12 +153,12 @@
                 "labelRefundNo": "Refund no.",
                 "labelOutRefundNo": "Merchant refund no.",
                 "labelPaymentOrder": "Payment order",
-                "labelOutPaymentNo": "Channel trade no.",
-                "labelChannel": "Channel",
+                "labelOutPaymentNo": "Provider transaction no.",
+                "labelChannel": "Payment product",
                 "labelPaymentApp": "App",
                 "labelAmount": "Amount",
                 "labelReason": "Reason",
-                "labelOutRefundId": "Channel refund no.",
+                "labelOutRefundId": "Provider refund no.",
                 "labelRefundedAt": "Refunded at",
                 "labelCreatedAt": "Created at",
                 "labelUpdatedAt": "Updated at",

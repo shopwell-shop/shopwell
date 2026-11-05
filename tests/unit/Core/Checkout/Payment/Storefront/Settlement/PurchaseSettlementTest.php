@@ -5,6 +5,7 @@ namespace Shopwell\Tests\Unit\Core\Checkout\Payment\Storefront\Settlement;
 use Doctrine\DBAL\Connection;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\MockObject\Stub;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Checkout\Payment\Storefront\Settlement\PurchaseSettlement;
 use Shopwell\Core\Checkout\Payment\Storefront\Settlement\PurchaseSettlementResult;
@@ -25,7 +26,7 @@ class PurchaseSettlementTest extends TestCase
 
     private const NOW = '2026-06-01 12:00:00';
 
-    private Connection&MockObject $connection;
+    private Connection&Stub $connection;
 
     private Context $context;
 
@@ -33,7 +34,7 @@ class PurchaseSettlementTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->connection = $this->createMock(Connection::class);
+        $this->connection = static::createStub(Connection::class);
         $this->connection->method('transactional')->willReturnCallback(static fn (callable $callback) => $callback());
         $this->context = Context::createDefaultContext();
         $this->settlement = new PurchaseSettlement($this->connection, new MockClock(self::NOW));
@@ -93,7 +94,7 @@ class PurchaseSettlementTest extends TestCase
 
     private function store(?SettleablePurchase $purchase): PurchaseStore
     {
-        $store = $this->createStub(PurchaseStore::class);
+        $store = static::createStub(PurchaseStore::class);
         $store->method('lockForSettlement')->willReturn($purchase);
 
         return $store;

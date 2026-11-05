@@ -26,9 +26,9 @@ use Shopwell\Core\System\Payment\Order\PaymentOrderQueryResultHandler;
 use Shopwell\Core\System\Payment\Order\PaymentOrderReconciler;
 use Shopwell\Core\System\Payment\Order\PaymentOrderService;
 use Shopwell\Core\System\Payment\Order\PaymentOrderStateHandler;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannelRegistry;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
+use Shopwell\Core\System\Payment\Product\PaymentInteraction;
+use Shopwell\Core\System\Payment\Product\PaymentProduct;
+use Shopwell\Core\System\Payment\Product\PaymentProductRegistry;
 use Shopwell\Core\System\Payment\Provider\Config\PaymentConfigResolver;
 use Shopwell\Core\System\Payment\Provider\PaymentProvider;
 use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;
@@ -43,6 +43,7 @@ use Shopwell\Core\System\StateMachine\Loader\InitialStateIdLoader;
 use Shopwell\Core\System\StateMachine\StateMachineRegistry;
 use Shopwell\Tests\Unit\Core\System\Payment\NumberRangeFixture;
 use Shopwell\Tests\Unit\Core\System\Payment\Order\_fixtures\PaymentOrderRowLockStub;
+use Shopwell\Tests\Unit\Core\System\Payment\PaymentEventDispatcherFixture;
 use Symfony\Component\Clock\MockClock;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
@@ -163,7 +164,7 @@ class ReconcileOpenPaymentOrdersTaskHandlerTest extends TestCase
         $gatewayFactory = static::createStub(PaymentGatewayFactory::class);
         $gatewayFactory->method('createForPayment')->willReturn(static::createStub(GatewayInterface::class));
 
-        $channel = new PaymentChannel('alipay_h5', 'alipay', 'Alipay H5', PaymentFlow::REDIRECT);
+        $channel = new PaymentProduct('alipay_h5', 'alipay', 'Alipay H5', [PaymentInteraction::REDIRECT], 'alipay');
 
         $provider = new PaymentProvider(
             'alipay',
@@ -178,12 +179,11 @@ class ReconcileOpenPaymentOrdersTaskHandlerTest extends TestCase
 
         $configResolver = new PaymentConfigResolver(
             $providerRegistry,
-            new PaymentChannelRegistry($providerRegistry),
+            new PaymentProductRegistry($providerRegistry),
             static::createStub(EntityRepository::class),
             static::createStub(EntityRepository::class),
-            static::createStub(EntityRepository::class),
-            static::createStub(EntityRepository::class),
-            new PaymentCredentialCipher('test-secret')
+            new PaymentCredentialCipher('test-secret'),
+            static::createStub(EntityRepository::class)
         );
 
         $initialStateIdLoader = static::createStub(InitialStateIdLoader::class);
@@ -191,12 +191,12 @@ class ReconcileOpenPaymentOrdersTaskHandlerTest extends TestCase
 
         $orderService = new PaymentOrderService(
             $orderRepository,
-            $configResolver,
             $initialStateIdLoader,
             new PaymentOrderStateHandler(static::createStub(StateMachineRegistry::class)),
             new MockClock('2024-01-01T00:00:00+00:00'),
             NumberRangeFixture::generator('PG1001'),
-            new PaymentOrderRowLockStub()
+            new PaymentOrderRowLockStub(),
+            static::createStub(EntityRepository::class)
         );
 
         $webhookService = new PaymentWebhookDispatcher(
@@ -210,7 +210,7 @@ class ReconcileOpenPaymentOrdersTaskHandlerTest extends TestCase
         );
 
         $clock = new MockClock('2024-01-01T00:00:00+00:00');
-        $paidHandler = new PaymentOrderPaidHandler($orderService, $webhookService, $eventDispatcher ?? static::createStub(EventDispatcherInterface::class));
+        $paidHandler = new PaymentOrderPaidHandler($orderService, PaymentEventDispatcherFixture::create($webhookService, $eventDispatcher));
 
         return new PaymentOrderReconciler(
             $orderRepository,
@@ -265,8 +265,7 @@ class ReconcileOpenPaymentOrdersTaskHandlerTest extends TestCase
         $order->paymentNo = 'PG0001';
         $order->outTradeNo = 'app-trade-1';
         $order->paymentAppId = 'app-id';
-        $order->providerTechnicalName = 'alipay';
-        $order->channelTechnicalName = 'alipay_h5';
+
         $order->amount = 1000;
         $order->paidAmount = 1000;
         $order->refundedAmount = 0;

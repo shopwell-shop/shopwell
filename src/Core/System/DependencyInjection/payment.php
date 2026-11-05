@@ -5,21 +5,32 @@ namespace Shopwell\Core\System\DependencyInjection;
 use Doctrine\DBAL\Connection;
 use Psr\Clock\ClockInterface;
 use Shopwell\Core\System\NumberRange\ValueGenerator\AbstractNumberRangeValueGenerator;
+use Shopwell\Core\System\Payment\Account\Api\PaymentAccountController;
+use Shopwell\Core\System\Payment\Account\PaymentAccountEntity;
+use Shopwell\Core\System\Payment\Account\PaymentAccountIdentitySubscriber;
+use Shopwell\Core\System\Payment\Account\PaymentAccountLock;
+use Shopwell\Core\System\Payment\Account\PaymentAccountService;
 use Shopwell\Core\System\Payment\Api\NotifyController;
 use Shopwell\Core\System\Payment\Api\PaymentApiRouteScope;
+use Shopwell\Core\System\Payment\Api\PaymentCashierController;
 use Shopwell\Core\System\Payment\Api\PaymentChannelController;
+use Shopwell\Core\System\Payment\Api\PaymentContextParser;
 use Shopwell\Core\System\Payment\Api\PaymentOrderController;
 use Shopwell\Core\System\Payment\Api\PaymentRefundController;
 use Shopwell\Core\System\Payment\Api\PaymentTransferNotifyController;
 use Shopwell\Core\System\Payment\Api\ReturnController;
+use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppAccount\PaymentAppAccountEntity;
 use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppChannel\PaymentAppChannelEntity;
-use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppProvider\PaymentAppProviderEntity;
 use Shopwell\Core\System\Payment\App\Api\PaymentAppController;
 use Shopwell\Core\System\Payment\App\PaymentAppAuthenticator;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
 use Shopwell\Core\System\Payment\App\PaymentAppProvisioner;
 use Shopwell\Core\System\Payment\App\PaymentCredentialCipher;
 use Shopwell\Core\System\Payment\App\PaymentSignatureService;
+use Shopwell\Core\System\Payment\Cashier\PaymentCashierConfigEntity;
+use Shopwell\Core\System\Payment\Cashier\PaymentCashierService;
+use Shopwell\Core\System\Payment\Cashier\PaymentCashierSessionEntity;
+use Shopwell\Core\System\Payment\Cashier\PaymentCashierSessionLock;
 use Shopwell\Core\System\Payment\Command\PaymentProvidersPruneCommand;
 use Shopwell\Core\System\Payment\Command\PaymentProvidersValidateCommand;
 use Shopwell\Core\System\Payment\Gateway\PaymentChannelCloser;
@@ -63,12 +74,15 @@ use Shopwell\Core\System\Payment\Integration\Wechat\Notification\WechatNotificat
 use Shopwell\Core\System\Payment\Integration\Wechat\Notification\WechatTransferNotificationVerifier;
 use Shopwell\Core\System\Payment\Integration\Wechat\Request\WechatPayParamsDecoder;
 use Shopwell\Core\System\Payment\Integration\Wechat\WechatProvider;
+use Shopwell\Core\System\Payment\Method\PaymentMethod;
+use Shopwell\Core\System\Payment\Method\PaymentMethodRegistry;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationEntity;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationProcessor;
 use Shopwell\Core\System\Payment\Notification\PaymentNotifyUrlBuilder;
+use Shopwell\Core\System\Payment\Order\Aggregate\PaymentAttempt\PaymentAttemptEntity;
 use Shopwell\Core\System\Payment\Order\Aggregate\PaymentRefund\PaymentRefundEntity;
 use Shopwell\Core\System\Payment\Order\Aggregate\PaymentTransaction\PaymentTransactionEntity;
-use Shopwell\Core\System\Payment\Order\PaymentOrderCapture;
+use Shopwell\Core\System\Payment\Order\Event\PaymentEventDispatcher;
 use Shopwell\Core\System\Payment\Order\PaymentOrderCloser;
 use Shopwell\Core\System\Payment\Order\PaymentOrderEntity;
 use Shopwell\Core\System\Payment\Order\PaymentOrderPaidHandler;
@@ -77,10 +91,12 @@ use Shopwell\Core\System\Payment\Order\PaymentOrderQueryResultHandler;
 use Shopwell\Core\System\Payment\Order\PaymentOrderReconciler;
 use Shopwell\Core\System\Payment\Order\PaymentOrderRowLock;
 use Shopwell\Core\System\Payment\Order\PaymentOrderService;
+use Shopwell\Core\System\Payment\Order\PaymentOrderStarter;
 use Shopwell\Core\System\Payment\Order\PaymentOrderStateHandler;
+use Shopwell\Core\System\Payment\Order\PaymentRefundReconciler;
 use Shopwell\Core\System\Payment\Order\PaymentRefundService;
 use Shopwell\Core\System\Payment\Order\PaymentRefundStateHandler;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannelRegistry;
+use Shopwell\Core\System\Payment\Product\PaymentProductRegistry;
 use Shopwell\Core\System\Payment\Provider\Config\Api\PaymentProviderConfigController;
 use Shopwell\Core\System\Payment\Provider\Config\PaymentChannelConfigEntity;
 use Shopwell\Core\System\Payment\Provider\Config\PaymentConfigReader;
@@ -89,10 +105,17 @@ use Shopwell\Core\System\Payment\Provider\Config\PaymentProviderConfigEntity;
 use Shopwell\Core\System\Payment\Provider\Config\PaymentProviderConfigService;
 use Shopwell\Core\System\Payment\Provider\PaymentProviderFactory;
 use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;
+use Shopwell\Core\System\Payment\Routing\DefaultPaymentRoutingPolicy;
+use Shopwell\Core\System\Payment\Routing\PaymentProductEligibility;
+use Shopwell\Core\System\Payment\Routing\PaymentRouteResolver;
+use Shopwell\Core\System\Payment\ScheduledTask\DispatchPaymentEventsTask;
+use Shopwell\Core\System\Payment\ScheduledTask\DispatchPaymentEventsTaskHandler;
 use Shopwell\Core\System\Payment\ScheduledTask\ExpirePaymentOrdersTask;
 use Shopwell\Core\System\Payment\ScheduledTask\ExpirePaymentOrdersTaskHandler;
 use Shopwell\Core\System\Payment\ScheduledTask\ReconcileOpenPaymentOrdersTask;
 use Shopwell\Core\System\Payment\ScheduledTask\ReconcileOpenPaymentOrdersTaskHandler;
+use Shopwell\Core\System\Payment\ScheduledTask\ReconcileOpenPaymentRefundsTask;
+use Shopwell\Core\System\Payment\ScheduledTask\ReconcileOpenPaymentRefundsTaskHandler;
 use Shopwell\Core\System\Payment\ScheduledTask\ReconcileOpenPaymentTransfersTask;
 use Shopwell\Core\System\Payment\ScheduledTask\ReconcileOpenPaymentTransfersTaskHandler;
 use Shopwell\Core\System\Payment\Subscription\PaymentMandateEntity;
@@ -150,11 +173,17 @@ return static function (ContainerConfigurator $container): void {
 
     $services = $container->services();
 
+    $services->set(PaymentCashierConfigEntity::class)->tag('shopwell.entity');
+    $services->set(PaymentCashierSessionEntity::class)->tag('shopwell.entity');
+
     // ---- App: the apps that call the payment api, and their secrets ----
+    $services->set(PaymentAccountEntity::class)
+        ->tag('shopwell.entity');
+
     $services->set(PaymentAppEntity::class)
         ->tag('shopwell.entity');
 
-    $services->set(PaymentAppProviderEntity::class)
+    $services->set(PaymentAppAccountEntity::class)
         ->tag('shopwell.entity');
 
     $services->set(PaymentAppChannelEntity::class)
@@ -172,6 +201,7 @@ return static function (ContainerConfigurator $container): void {
             service(PaymentSignatureService::class),
             service(PaymentCredentialCipher::class),
             service('cache.object'),
+            service('lock.factory'),
         ]);
 
     // onboards the apps that call the payment api and hands them their secret, so it is an admin
@@ -180,12 +210,14 @@ return static function (ContainerConfigurator $container): void {
     $services->set(PaymentAppProvisioner::class)
         ->args([
             service('payment_app.repository'),
-            service('payment_app_provider.repository'),
+            service('payment_app_account.repository'),
             service('payment_app_channel.repository'),
             service(PaymentCredentialCipher::class),
             service(PaymentProviderRegistry::class),
-            service(PaymentChannelRegistry::class),
+            service(PaymentProductRegistry::class),
             service(ClockInterface::class),
+            service(Connection::class),
+            service('payment_account.repository'),
         ]);
 
     $services->set(PaymentAppController::class)
@@ -194,10 +226,7 @@ return static function (ContainerConfigurator $container): void {
             service('payment_app.repository'),
             service(PaymentAppProvisioner::class),
             // non-secret merchant fields are read back; secret fields only report their configured state
-            service(PaymentCredentialCipher::class),
-            service(PaymentProviderConfigService::class),
-            service(PaymentProviderRegistry::class),
-            service(PaymentChannelRegistry::class),
+            service(PaymentAccountService::class),
         ])
         ->call('setContainer', [service('service_container')])
         ->tag('controller.service_arguments');
@@ -224,8 +253,15 @@ return static function (ContainerConfigurator $container): void {
 
     $services->set(PaymentConfigReader::class);
 
+    foreach (['alipay', 'wechat', 'paypal', 'stripe'] as $method) {
+        $services->set('shopwell.payment.method.' . $method, PaymentMethod::class)
+            ->args([$method, 'sw-settings-payment-provider.provider.' . $method])
+            ->tag('shopwell.payment.method_definition');
+    }
+    $services->set(PaymentMethodRegistry::class)
+        ->args([tagged_iterator('shopwell.payment.method_definition')]);
     $services->set(PaymentProviderFactory::class)
-        ->args([service(PaymentConfigReader::class)]);
+        ->args([service(PaymentConfigReader::class), service(PaymentMethodRegistry::class), service('event_dispatcher')]);
 
     // The declarations are collected by `PaymentProviderCompilerPass`, which fills this argument with
     // one definition per technical name. An installation that ships no interface at all keeps the empty
@@ -240,7 +276,7 @@ return static function (ContainerConfigurator $container): void {
 
     // the channels are indexed across the interfaces, and a name may only be used once - an app names
     // the way it wants to be paid and the platform derives the interface (and its credentials) from it
-    $services->set(PaymentChannelRegistry::class)
+    $services->set(PaymentProductRegistry::class)
         ->args([service(PaymentProviderRegistry::class)]);
 
     // the CI and the operator entry point: it prints every interface with its channels, its
@@ -271,21 +307,45 @@ return static function (ContainerConfigurator $container): void {
             ]),
             service('payment_provider_config.repository'),
             service('payment_channel_config.repository'),
-            service('payment_app_provider.repository'),
+            service('payment_app_account.repository'),
             service('payment_app_channel.repository'),
         ])
         ->tag('console.command');
+
+    $services->set(PaymentAccountService::class)
+        ->args([
+            service('payment_account.repository'),
+            service('payment_app.repository'),
+            service('payment_provider_config.repository'),
+            service(PaymentProviderRegistry::class),
+            service(PaymentCredentialCipher::class),
+            service(Connection::class),
+            service(PaymentAccountLock::class),
+        ]);
+    $services->set(PaymentAccountController::class)
+        ->public()
+        ->args([service(PaymentAccountService::class)])
+        ->call('setContainer', [service('service_container')])
+        ->tag('controller.service_arguments');
+
+    $services->set(PaymentAccountLock::class)->args([service(Connection::class)]);
+    $services->set(PaymentAccountIdentitySubscriber::class)
+        ->args([
+            service(PaymentAccountLock::class),
+            service(PaymentProviderRegistry::class),
+            service(PaymentCredentialCipher::class),
+        ])
+        ->tag('kernel.event_subscriber');
 
     // ---- the resolution of one payment ----
     $services->set(PaymentConfigResolver::class)
         ->args([
             service(PaymentProviderRegistry::class),
-            service(PaymentChannelRegistry::class),
-            service('payment_app_provider.repository'),
-            service('payment_provider_config.repository'),
+            service(PaymentProductRegistry::class),
+            service('payment_app_account.repository'),
             service('payment_app_channel.repository'),
-            service('payment_channel_config.repository'),
             service(PaymentCredentialCipher::class),
+            service('payment_account.repository'),
         ]);
 
     // the administration asks this one for the interfaces and their channels, so it sits behind the
@@ -295,7 +355,12 @@ return static function (ContainerConfigurator $container): void {
         ->args([
             service('payment_provider_config.repository'),
             service('payment_channel_config.repository'),
-            service(PaymentCredentialCipher::class),
+            service('payment_account.repository'),
+            service('payment_app.repository'),
+            service('payment_app_account.repository'),
+            service('payment_app_channel.repository'),
+            service(Connection::class),
+            service(PaymentAccountService::class),
         ]);
 
     $services->set(PaymentProviderConfigController::class)
@@ -304,6 +369,7 @@ return static function (ContainerConfigurator $container): void {
             service(PaymentProviderRegistry::class),
             service(PaymentProviderConfigService::class),
             service(PaymentCredentialCipher::class),
+            service(PaymentMethodRegistry::class),
         ])
         ->call('setContainer', [service('service_container')])
         ->tag('controller.service_arguments');
@@ -412,9 +478,22 @@ return static function (ContainerConfigurator $container): void {
         ])
         ->tag('shopwell.payment.provider', ['key' => 'stripe', 'priority' => -100]);
 
+    $services->set(PaymentProductEligibility::class);
+    $services->set(DefaultPaymentRoutingPolicy::class)
+        ->tag('shopwell.payment.routing_policy');
+    $services->set(PaymentRouteResolver::class)
+        ->args([
+            service(PaymentProductRegistry::class),
+            service(PaymentProductEligibility::class),
+            service(PaymentConfigResolver::class),
+            tagged_iterator('shopwell.payment.routing_policy'),
+        ]);
+
     // ---- Order: the payment order, its capture and its refunds ----
     $services->set(PaymentOrderEntity::class)
         ->tag('shopwell.entity');
+
+    $services->set(PaymentAttemptEntity::class)->tag('shopwell.entity');
 
     $services->set(PaymentTransactionEntity::class)
         ->tag('shopwell.entity');
@@ -433,21 +512,23 @@ return static function (ContainerConfigurator $container): void {
     $services->set(PaymentOrderService::class)
         ->args([
             service('payment_order.repository'),
-            service(PaymentConfigResolver::class),
             service(InitialStateIdLoader::class),
             service(PaymentOrderStateHandler::class),
             service(ClockInterface::class),
             service(AbstractNumberRangeValueGenerator::class),
             service(PaymentOrderRowLock::class),
+            service('payment_attempt.repository'),
         ]);
-
-    $services->set(PaymentOrderCapture::class)
+    $services->set(PaymentOrderStarter::class)
         ->args([
             service('payment_transaction.repository'),
-            service(PaymentConfigResolver::class),
+            service('payment_attempt.repository'),
+            service('payment_order.repository'),
             service(PaymentOrderService::class),
             service(PaymentNotifyUrlBuilder::class),
             service(AbstractNumberRangeValueGenerator::class),
+            service(PaymentOrderRowLock::class),
+            service(PaymentAccountLock::class),
         ]);
 
     // the gateway side of closing: it talks to the channel and keeps the attempt as a transaction,
@@ -470,11 +551,20 @@ return static function (ContainerConfigurator $container): void {
 
     // the one path a payment order becomes paid: a notification and the reconciliation both write
     // the payment through here, so the two cannot drift apart
+    $services->set(PaymentEventDispatcher::class)
+        ->args([
+            service('payment_order.repository'),
+            service('payment_refund.repository'),
+            service(PaymentWebhookDispatcher::class),
+            service('event_dispatcher'),
+            service(ClockInterface::class),
+            service('logger'),
+        ]);
+
     $services->set(PaymentOrderPaidHandler::class)
         ->args([
             service(PaymentOrderService::class),
-            service(PaymentWebhookDispatcher::class),
-            service('event_dispatcher'),
+            service(PaymentEventDispatcher::class),
         ]);
 
     // the write side of the reconciliation: the answer of a query becomes the same bookkeeping a
@@ -495,15 +585,43 @@ return static function (ContainerConfigurator $container): void {
             service('payment_refund.repository'),
             service(PaymentConfigResolver::class),
             service(PaymentOrderService::class),
-            service(PaymentWebhookDispatcher::class),
+            service(PaymentEventDispatcher::class),
             service(PaymentNotifyUrlBuilder::class),
             service(PaymentRefundStateHandler::class),
             service(InitialStateIdLoader::class),
-            service('event_dispatcher'),
             service(ClockInterface::class),
             service(AbstractNumberRangeValueGenerator::class),
             service(PaymentOrderRowLock::class),
         ]);
+
+    $services->set(PaymentRefundReconciler::class)
+        ->args([
+            service('payment_refund.repository'),
+            service('state_machine_state.repository'),
+            service(PaymentRefundService::class),
+            service(ClockInterface::class),
+            service('logger'),
+        ]);
+
+    $services->set(ReconcileOpenPaymentRefundsTask::class)
+        ->tag('shopwell.scheduled.task');
+    $services->set(ReconcileOpenPaymentRefundsTaskHandler::class)
+        ->args([
+            service('scheduled_task.repository'),
+            service('logger'),
+            service(PaymentRefundReconciler::class),
+        ])
+        ->tag('messenger.message_handler');
+
+    $services->set(DispatchPaymentEventsTask::class)
+        ->tag('shopwell.scheduled.task');
+    $services->set(DispatchPaymentEventsTaskHandler::class)
+        ->args([
+            service('scheduled_task.repository'),
+            service('logger'),
+            service(PaymentEventDispatcher::class),
+        ])
+        ->tag('messenger.message_handler');
 
     $services->set(PaymentOrderPresenter::class)
         ->args([
@@ -565,6 +683,7 @@ return static function (ContainerConfigurator $container): void {
             service(PaymentRefundService::class),
             service(PaymentConfigResolver::class),
             service(PaymentOrderPaidHandler::class),
+            service('payment_attempt.repository'),
         ]);
 
     // ---- Webhook: the signed deliveries of what happened to the apps ----
@@ -615,6 +734,8 @@ return static function (ContainerConfigurator $container): void {
             service(ClockInterface::class),
             service(PaymentProviderRegistry::class),
             service(AbstractNumberRangeValueGenerator::class),
+            service(PaymentConfigResolver::class),
+            service(PaymentAccountLock::class),
         ]);
 
     // the two sides of a transfer that talk to the channel: submitting it, and asking what became of
@@ -673,6 +794,7 @@ return static function (ContainerConfigurator $container): void {
             service(PaymentTransferService::class),
             service(PaymentTransferPresenter::class),
             service(PaymentProviderRegistry::class),
+            service(PaymentTransferResultBooker::class),
         ])
         ->tag('controller.service_arguments');
 
@@ -760,6 +882,33 @@ return static function (ContainerConfigurator $container): void {
         ])
         ->tag('messenger.message_handler');
 
+    $services->set(PaymentCashierSessionLock::class)
+        ->args([service(Connection::class)]);
+
+    $services->set(PaymentCashierService::class)
+        ->args([
+            service('payment_cashier_config.repository'),
+            service('payment_cashier_session.repository'),
+            service(PaymentRouteResolver::class),
+            service(PaymentMethodRegistry::class),
+            service(PaymentOrderService::class),
+            service(PaymentOrderStarter::class),
+            service(PaymentOrderPresenter::class),
+            service(ClockInterface::class),
+            service(PaymentCashierSessionLock::class),
+        ]);
+
+    $services->set(PaymentContextParser::class);
+
+    $services->set(PaymentCashierController::class)
+        ->public()
+        ->args([
+            service(PaymentAppAuthenticator::class),
+            service(PaymentCashierService::class),
+            service(PaymentContextParser::class),
+        ])
+        ->tag('controller.service_arguments');
+
     // ---- Api: the contract the apps call ----
     // the payment api is not the store api and not the admin api: an external app authenticates itself
     // with the credentials it sends as request parameters, so the scope has to be its own
@@ -771,9 +920,11 @@ return static function (ContainerConfigurator $container): void {
         ->args([
             service(PaymentAppAuthenticator::class),
             service(PaymentOrderService::class),
-            service(PaymentOrderCapture::class),
+            service(PaymentOrderStarter::class),
             service(PaymentOrderCloser::class),
             service(PaymentOrderPresenter::class),
+            service(PaymentRouteResolver::class),
+            service(PaymentContextParser::class),
         ])
         ->tag('controller.service_arguments');
 

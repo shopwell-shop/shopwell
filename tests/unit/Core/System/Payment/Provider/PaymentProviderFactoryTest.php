@@ -5,15 +5,17 @@ namespace Shopwell\Tests\Unit\Core\System\Payment\Provider;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Payment\Exception\PaymentProviderException;
 use Shopwell\Core\System\Payment\Gateway\AbstractPaymentAction;
 use Shopwell\Core\System\Payment\Gateway\AbstractPaymentApi;
 use Shopwell\Core\System\Payment\PaymentException;
+use Shopwell\Core\System\Payment\Product\PaymentInteraction;
+use Shopwell\Core\System\Payment\Product\PaymentProduct;
+use Shopwell\Core\System\Payment\Product\PaymentScene;
 use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
 use Shopwell\Core\System\Payment\Provider\Config\PaymentConfigField;
-use Shopwell\Core\System\Payment\Provider\Config\PaymentConfigReader;
 use Shopwell\Core\System\Payment\Provider\PaymentProviderFactory;
+use Shopwell\Tests\Unit\Core\System\Payment\Provider\Fixtures\PlatformProviders;
 use Shopwell\Tests\Unit\Core\System\Payment\Provider\Fixtures\TestNotificationExtractor;
 use Shopwell\Tests\Unit\Core\System\Payment\Provider\Fixtures\TestPaymentAction;
 use Shopwell\Tests\Unit\Core\System\Payment\Provider\Fixtures\TestPaymentApi;
@@ -41,7 +43,7 @@ class PaymentProviderFactoryTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->factory = new PaymentProviderFactory(new PaymentConfigReader());
+        $this->factory = PlatformProviders::factory();
     }
 
     public function testBuildsTheSnapshotOutOfTheDeclaration(): void
@@ -69,11 +71,29 @@ class PaymentProviderFactoryTest extends TestCase
         static::assertSame($decoder, $provider->payParamsDecoder);
         static::assertSame('testpay', $provider->gatewayFactory->provider());
         static::assertCount(1, $provider->credentials);
-        static::assertCount(1, $provider->channels);
-        static::assertTrue($provider->hasChannel('testpay_qr'));
+        static::assertCount(1, $provider->products);
+        static::assertTrue($provider->hasProduct('testpay_qr'));
         static::assertSame('api_key', $provider->credentialField('api_key')?->name);
         static::assertNull($provider->credentialField('unknown'));
         static::assertSame(['api_key'], $provider->credentialNames());
+    }
+
+    public function testSnapshotPreservesThePaymentMethodAndClientSceneOfAnAggregatorProduct(): void
+    {
+        $provider = $this->factory->create(new TestPaymentProvider(
+            actions: [new TestPaymentAction(PaymentCapability::CAPTURE)],
+            channels: [new PaymentProduct(
+                technicalName: 'aggregator_wechat',
+                providerTechnicalName: 'testpay',
+                label: 'WeChat',
+                interactions: [PaymentInteraction::QRCODE],
+                method: 'wechat',
+                scenes: [new PaymentScene('browser', 'web', 'browser')],
+            )],
+        ));
+
+        static::assertSame('wechat', $provider->products['aggregator_wechat']->method);
+        static::assertEquals([new PaymentScene('browser', 'web', 'browser')], $provider->products['aggregator_wechat']->scenes);
     }
 
     public function testXmlDeclarationsCanBeExtendedInPhpWithoutReplacingThem(): void
@@ -84,11 +104,12 @@ class PaymentProviderFactoryTest extends TestCase
                 parent::__construct(
                     actions: [new TestPaymentAction(PaymentCapability::CAPTURE)],
                     credentials: [new PaymentConfigField(name: 'api_key')],
-                    channels: [new PaymentChannel(
+                    channels: [new PaymentProduct(
                         technicalName: 'one',
                         providerTechnicalName: 'testpay',
+                        method: 'testpay',
                         label: 'One',
-                        flow: PaymentFlow::REDIRECT,
+                        interactions: [PaymentInteraction::REDIRECT],
                         params: [new PaymentConfigField(name: 'code_param')],
                     )],
                 );
@@ -111,7 +132,7 @@ class PaymentProviderFactoryTest extends TestCase
             ['sandbox_mode', 'private_key', 'environment', 'api_key', 'computed_field'],
             $provider->credentialNames()
         );
-        static::assertSame(['shared_name', 'code_param'], array_column($provider->channels['one']->params, 'name'));
+        static::assertSame(['shared_name', 'code_param'], array_column($provider->products['one']->params, 'name'));
     }
 
     public function testTheCapabilitySetIsTheUnionOfTheActionsAndTheDeclaration(): void
@@ -165,14 +186,14 @@ class PaymentProviderFactoryTest extends TestCase
 
     public function testRejectsATechnicalNameTheNotifyUrlCannotCarry(): void
     {
-        $this->expectExceptionObject(PaymentException::invalidProviderName('my pay'));
+        $this->expectExceptionObject(PaymentProviderException::invalidProviderName('my pay'));
 
         $this->factory->create($this->declaration([], name: 'my pay'));
     }
 
     public function testRejectsATechnicalNameWithAPathSeparator(): void
     {
-        $this->expectExceptionObject(PaymentException::invalidProviderName('test/pay'));
+        $this->expectExceptionObject(PaymentProviderException::invalidProviderName('test/pay'));
 
         $this->factory->create($this->declaration([], name: 'test/pay'));
     }
@@ -217,11 +238,12 @@ class PaymentProviderFactoryTest extends TestCase
         $this->expectException(PaymentException::class);
 
         $this->factory->create($this->declaration([], channels: [
-            new PaymentChannel(
+            new PaymentProduct(
                 technicalName: 'testpay_qr',
                 providerTechnicalName: 'somebody_else',
+                method: 'somebody_else',
                 label: 'test.channel.label',
-                flow: PaymentFlow::QRCODE,
+                interactions: [PaymentInteraction::QRCODE],
             ),
         ]));
     }
@@ -286,7 +308,7 @@ class PaymentProviderFactoryTest extends TestCase
 
     public function testRejectsAnApiThatIsNoPaymentApi(): void
     {
-        $this->expectExceptionObject(PaymentException::invalidProviderDeclaration(
+        $this->expectExceptionObject(PaymentProviderException::invalidProviderDeclaration(
             \sprintf(
                 'The payment interface "testpay" names the api "%s", which does not extend %s.',
                 \stdClass::class,
@@ -313,7 +335,7 @@ class PaymentProviderFactoryTest extends TestCase
         static::assertSame('testpay', $provider->technicalName);
         static::assertSame([PaymentCapability::CAPTURE, PaymentCapability::REFUND], $provider->capabilities);
         static::assertCount(1, $provider->credentials, 'The credentials of the decorated declaration survive.');
-        static::assertCount(1, $provider->channels);
+        static::assertCount(1, $provider->products);
     }
 
     /**
@@ -381,7 +403,7 @@ class PaymentProviderFactoryTest extends TestCase
     /**
      * @param list<AbstractPaymentAction> $actions
      * @param list<PaymentConfigField> $credentials
-     * @param list<PaymentChannel>|null $channels
+     * @param list<PaymentProduct>|null $channels
      * @param list<PaymentCapability> $declaredCapabilities
      */
     private function declaration(
@@ -402,13 +424,14 @@ class PaymentProviderFactoryTest extends TestCase
         );
     }
 
-    private function channel(string $technicalName, string $providerTechnicalName = 'testpay'): PaymentChannel
+    private function channel(string $technicalName, string $providerTechnicalName = 'testpay'): PaymentProduct
     {
-        return new PaymentChannel(
+        return new PaymentProduct(
             technicalName: $technicalName,
             providerTechnicalName: $providerTechnicalName,
+            method: $providerTechnicalName,
             label: 'test.channel.label',
-            flow: PaymentFlow::QRCODE,
+            interactions: [PaymentInteraction::QRCODE],
             currencies: ['EUR'],
         );
     }

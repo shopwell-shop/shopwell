@@ -7,8 +7,8 @@ use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
 use Shopwell\Core\System\Payment\Gateway\AbstractPaymentAction;
 use Shopwell\Core\System\Payment\Gateway\AbstractPaymentApi;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
+use Shopwell\Core\System\Payment\Product\PaymentProduct;
 use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
 use Shopwell\Core\System\Payment\Provider\Config\PaymentConfigField;
 use Shopwell\Core\System\Payment\Provider\Cycle\PaymentCycleRules;
 use Shopwell\Core\System\Payment\Provider\Transfer\PaymentTransferRules;
@@ -31,7 +31,7 @@ use Shopwell\Core\System\Payment\Transfer\Notification\PaymentTransferNotificati
  *
  * The `key` of the tag is the technical name the interface is addressed by: it appears in the notify
  * url (`/payment-api/v1/notify/mypay/…`), in `payment_order.provider_technical_name`, in
- * `payment_provider_config` and in `payment_app_provider`. It therefore has to match
+ * `payment_provider_config` and in `payment_app_account`. It therefore has to match
  * `[A-Za-z0-9_-]+` and it may never be reused for a different implementation - historic rows would
  * become uninterpretable. `priority` orders several implementations of the *same* key: the lowest
  * priority is the base implementation (the core interfaces use `-100`) and every other one has to be a
@@ -138,9 +138,9 @@ abstract class AbstractPaymentProvider
      * technical name is unique across **all** interfaces - two interfaces offering the same name would
      * leave the platform unable to tell which merchant account to charge.
      *
-     * @return list<PaymentChannel>
+     * @return list<PaymentProduct>
      */
-    public function getChannels(): array
+    public function getProducts(): array
     {
         return [];
     }

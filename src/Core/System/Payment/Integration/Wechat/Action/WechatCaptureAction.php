@@ -5,15 +5,17 @@ namespace Shopwell\Core\System\Payment\Integration\Wechat\Action;
 use Payum\Core\Exception\RequestNotSupportedException;
 use Payum\Core\Request\Capture;
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\System\Payment\Api\Struct\PayParams;
+use Shopwell\Core\System\Payment\Exception\PaymentGatewayException;
+use Shopwell\Core\System\Payment\Exception\PaymentProviderException;
 use Shopwell\Core\System\Payment\Gateway\AbstractPaymentAction;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
-use Shopwell\Core\System\Payment\Gateway\Request\PayResult;
+use Shopwell\Core\System\Payment\Gateway\Struct\PaymentHandover;
+use Shopwell\Core\System\Payment\Gateway\Struct\PaymentStartResult;
 use Shopwell\Core\System\Payment\Integration\Wechat\Api\WechatApi;
+use Shopwell\Core\System\Payment\Integration\Wechat\Product\WechatProducts;
 use Shopwell\Core\System\Payment\PaymentException;
+use Shopwell\Core\System\Payment\Product\PaymentInteraction;
 use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
-use WeChatPay\Formatter;
 
 /**
  * Opens a wechat pay trade (api v3).
@@ -64,7 +66,6 @@ final class WechatCaptureAction extends AbstractPaymentAction
     /**
      * The package the app sdk of wechat expects for an app trade.
      */
-    final public const APP_PACKAGE = 'Sign=WXPay';
 
     /**
      * Wechat cuts the description at 127 characters.
@@ -88,26 +89,26 @@ final class WechatCaptureAction extends AbstractPaymentAction
         $payload = $this->payload($model);
 
         switch ($api->channel()) {
-            case WechatApi::CHANNEL_H5:
+            case WechatProducts::H5:
                 $this->h5($model, $payload, self::URI_H5);
 
                 return;
-            case WechatApi::CHANNEL_NATIVE:
+            case WechatProducts::NATIVE:
                 $this->qrCode($model, $payload);
 
                 return;
-            case WechatApi::CHANNEL_JSAPI:
-            case WechatApi::CHANNEL_MINI:
+            case WechatProducts::JSAPI:
+            case WechatProducts::MINI:
                 $this->inApp($model, $payload, self::URI_JSAPI);
 
                 return;
-            case WechatApi::CHANNEL_APP:
+            case WechatProducts::APP:
                 $this->inApp($model, $payload, self::URI_APP);
 
                 return;
         }
 
-        throw PaymentException::channelNotSupported($api->channel(), $api->provider());
+        throw PaymentProviderException::channelNotSupported($api->channel(), $api->provider());
     }
 
     public function supports($request): bool
@@ -151,11 +152,11 @@ final class WechatCaptureAction extends AbstractPaymentAction
         $payUrl = $answer[self::RESPONSE_H5_URL] ?? null;
 
         if (!\is_string($payUrl) || $payUrl === '') {
-            throw PaymentException::gatewayError($api->channel(), 'the interface did not answer a payment url');
+            throw PaymentGatewayException::gatewayError($api->channel(), 'the interface did not answer a payment url');
         }
 
-        $this->setResult($model, new PayResult(new PayParams(
-            flow: PaymentFlow::REDIRECT,
+        $this->setResult($model, new PaymentStartResult(new PaymentHandover(
+            flow: PaymentInteraction::REDIRECT,
             payUrl: $payUrl,
             httpMethod: 'GET',
             extra: ['prepay_id' => $answer['prepay_id'] ?? null],
@@ -190,11 +191,11 @@ final class WechatCaptureAction extends AbstractPaymentAction
         $codeUrl = $answer[self::RESPONSE_CODE_URL] ?? null;
 
         if (!\is_string($codeUrl) || $codeUrl === '') {
-            throw PaymentException::gatewayError($api->channel(), 'the interface did not answer a code url');
+            throw PaymentGatewayException::gatewayError($api->channel(), 'the interface did not answer a code url');
         }
 
-        $this->setResult($model, new PayResult(new PayParams(
-            flow: PaymentFlow::QRCODE,
+        $this->setResult($model, new PaymentStartResult(new PaymentHandover(
+            flow: PaymentInteraction::QRCODE,
             extra: ['qr_code' => $codeUrl, 'prepay_id' => $answer['prepay_id'] ?? null],
         )));
     }
@@ -222,64 +223,17 @@ final class WechatCaptureAction extends AbstractPaymentAction
         $prepayId = $answer['prepay_id'] ?? null;
 
         if (!\is_string($prepayId) || $prepayId === '') {
-            throw PaymentException::gatewayError($api->channel(), 'the interface did not answer a prepay id');
+            throw PaymentGatewayException::gatewayError($api->channel(), 'the interface did not answer a prepay id');
         }
 
         $extra = $uri === self::URI_APP
-            ? $this->appParameters($api, $prepayId)
-            : $this->jsapiParameters($api, $prepayId);
+            ? $api->appParameters($prepayId)
+            : $api->jsapiParameters($prepayId);
 
-        $this->setResult($model, new PayResult(
-            new PayParams(flow: PaymentFlow::SDK, extra: $extra),
+        $this->setResult($model, new PaymentStartResult(
+            new PaymentHandover(flow: PaymentInteraction::SDK, extra: $extra),
             $prepayId
         ));
-    }
-
-    /**
-     * The parameters `WeixinJSBridge` / `wx.chooseWXPay` of a page or mini program consume.
-     *
-     * @return array<string, string>
-     */
-    private function jsapiParameters(WechatApi $api, string $prepayId): array
-    {
-        $package = 'prepay_id=' . $prepayId;
-        $timestamp = (string) Formatter::timestamp();
-        $nonce = Formatter::nonce();
-
-        // wechat verifies exactly this message, every piece on its own line
-        $message = Formatter::joinedByLineFeed($api->appId(), $timestamp, $nonce, $package);
-
-        return [
-            'appId' => $api->appId(),
-            'timeStamp' => $timestamp,
-            'nonceStr' => $nonce,
-            'package' => $package,
-            'signType' => 'RSA',
-            'paySign' => $api->sign($message),
-        ];
-    }
-
-    /**
-     * The parameters the app sdk of wechat consumes.
-     *
-     * @return array<string, string>
-     */
-    private function appParameters(WechatApi $api, string $prepayId): array
-    {
-        $timestamp = (string) Formatter::timestamp();
-        $nonce = Formatter::nonce();
-
-        $message = Formatter::joinedByLineFeed($api->appId(), $timestamp, $nonce, $prepayId);
-
-        return [
-            'appid' => $api->appId(),
-            'partnerid' => $api->requireCredential(WechatApi::MCH_ID),
-            'prepayid' => $prepayId,
-            'package' => self::APP_PACKAGE,
-            'noncestr' => $nonce,
-            'timestamp' => $timestamp,
-            'sign' => $api->sign($message),
-        ];
     }
 
     /**
@@ -336,7 +290,7 @@ final class WechatCaptureAction extends AbstractPaymentAction
         } catch (\Throwable $exception) {
             $this->recordResponse($model, ['error' => $exception->getMessage()]);
 
-            throw PaymentException::gatewayError($api->channel(), $exception->getMessage(), $exception);
+            throw PaymentGatewayException::gatewayError($api->channel(), $exception->getMessage(), $exception);
         }
 
         $this->recordResponse($model, $answer);

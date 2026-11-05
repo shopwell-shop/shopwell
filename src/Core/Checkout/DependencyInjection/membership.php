@@ -24,6 +24,7 @@ use Shopwell\Core\Checkout\Membership\Service\MembershipSubscriptionService;
 use Shopwell\Core\Checkout\Membership\Subscriber\MembershipPurchaseSettlementSubscriber;
 use Shopwell\Core\Checkout\Payment\Storefront\Settlement\PurchaseAttach;
 use Shopwell\Core\Checkout\Payment\Storefront\Settlement\PurchaseSettlement;
+use Shopwell\Core\Checkout\Payment\Storefront\StorefrontPaymentContextResolver;
 use Shopwell\Core\Checkout\Payment\Storefront\StorefrontPaymentService;
 use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
@@ -105,6 +106,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service(MembershipPurchaseService::class),
             service(ExtensionDispatcher::class),
+            service(StorefrontPaymentContextResolver::class),
         ]);
 
     // the read side of the membership page; it owns the "what can be bought" payload on its own so the
@@ -115,6 +117,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(MembershipOfferService::class),
             service(MembershipSubscriptionService::class),
             service(ExtensionDispatcher::class),
+            service(StorefrontPaymentContextResolver::class),
         ]);
 
     $services->set(MembershipExpirationTask::class)

@@ -8,6 +8,8 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Payment\Exception\PaymentGatewayException;
+use Shopwell\Core\System\Payment\Exception\PaymentTransferException;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayFactory;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
 use Shopwell\Core\System\Payment\Gateway\Request\PaymentTransferQuery;
@@ -16,9 +18,8 @@ use Shopwell\Core\System\Payment\Gateway\Request\TransferResult;
 use Shopwell\Core\System\Payment\Integration\Stripe\Action\StripeTransferQueryAction;
 use Shopwell\Core\System\Payment\Integration\Stripe\Api\StripeApi;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
-use Shopwell\Core\System\Payment\PaymentException;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
+use Shopwell\Core\System\Payment\Product\PaymentInteraction;
+use Shopwell\Core\System\Payment\Product\PaymentProduct;
 use Shopwell\Core\System\Payment\Provider\PaymentProvider;
 use Shopwell\Core\System\Payment\Provider\ResolvedPaymentConfig;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferEntity;
@@ -66,7 +67,7 @@ class StripeTransferQueryActionTest extends TestCase
     {
         $action = new StripeTransferQueryAction();
 
-        $this->expectExceptionObject(PaymentException::actionWithoutApi(StripeTransferQueryAction::class));
+        $this->expectExceptionObject(PaymentGatewayException::actionWithoutApi(StripeTransferQueryAction::class));
 
         $action->execute($this->request());
     }
@@ -75,7 +76,7 @@ class StripeTransferQueryActionTest extends TestCase
     {
         $action = new StripeTransferQueryAction();
 
-        $this->expectExceptionObject(PaymentException::unsupportedApi(StripeTransferQueryAction::class, \stdClass::class));
+        $this->expectExceptionObject(PaymentGatewayException::unsupportedApi(StripeTransferQueryAction::class, \stdClass::class));
 
         $action->setApi(new \stdClass());
     }
@@ -139,7 +140,7 @@ class StripeTransferQueryActionTest extends TestCase
         $action = new StripeTransferQueryAction();
         $action->setApi($this->api());
 
-        $this->expectExceptionObject(PaymentException::transferRecipientIncomplete('provider_account_id'));
+        $this->expectExceptionObject(PaymentTransferException::transferRecipientIncomplete('provider_account_id'));
 
         $action->execute($this->request(accountId: null));
     }
@@ -259,7 +260,7 @@ class StripeTransferQueryActionTest extends TestCase
 
     private function api(): StripeApi
     {
-        $channel = new PaymentChannel('stripe_transfer', 'stripe', 'stripe_transfer', PaymentFlow::REDIRECT);
+        $channel = new PaymentProduct('stripe_transfer', 'stripe', 'stripe_transfer', [PaymentInteraction::REDIRECT], 'stripe');
 
         return new StripeApi(
             new ResolvedPaymentConfig(
@@ -271,11 +272,12 @@ class StripeTransferQueryActionTest extends TestCase
                     new PaymentGatewayFactory('stripe', StripeApi::class, []),
                     static::createStub(PaymentNotificationExtractorInterface::class),
                 ),
-                channel: $channel,
+                product: $channel,
                 credentials: [StripeApi::SECRET_KEY => 'sk_test_unit'],
                 params: [],
                 runtimeParams: [],
                 settings: [],
+                accountId: 'test-account',
             ),
             'https://example.com/notify',
             '',

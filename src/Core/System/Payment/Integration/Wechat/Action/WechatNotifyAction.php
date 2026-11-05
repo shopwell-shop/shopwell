@@ -5,6 +5,7 @@ namespace Shopwell\Core\System\Payment\Integration\Wechat\Action;
 use Payum\Core\Exception\RequestNotSupportedException;
 use Payum\Core\Request\Notify;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Payment\Exception\PaymentNotificationException;
 use Shopwell\Core\System\Payment\Gateway\AbstractPaymentAction;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
 use Shopwell\Core\System\Payment\Gateway\Request\NotificationResult;
@@ -68,6 +69,8 @@ final class WechatNotifyAction extends AbstractPaymentAction
 
         $resource = WechatNotificationCodec::decryptResource($api->credentials(), $message);
         $outRefundId = Payload::string($resource, 'refund_id');
+        $refundNo = Payload::string($resource, 'out_refund_no');
+        $isRefund = $outRefundId !== null || $refundNo !== null || str_starts_with(Payload::string($message, 'event_type') ?? '', 'REFUND.');
 
         $this->recordResponse($model, $resource);
 
@@ -77,15 +80,18 @@ final class WechatNotifyAction extends AbstractPaymentAction
         // only reached with a valid signature, so a reported success is a success of the channel
         $this->setResult($model, new NotificationResult(
             signatureValid: $signatureValid,
-            succeeded: $outRefundId === null
+            succeeded: !$isRefund
                 ? WechatPaymentStatus::isSuccessfulNotification((string) $tradeState)
                 : $refundStatus === self::REFUND_SUCCESS,
             outPaymentNo: Payload::string($resource, 'transaction_id'),
             outRefundId: $outRefundId,
-            amount: $this->amountOf($resource, $outRefundId !== null),
+            amount: $this->amountOf($resource, $isRefund),
             currency: strtoupper($this->currencyOf($resource)),
             status: $tradeState ?? $refundStatus,
             raw: $resource,
+            paymentNo: Payload::string($resource, 'out_trade_no'),
+            refundNo: $refundNo,
+            isRefund: $isRefund,
         ));
     }
 
@@ -112,7 +118,7 @@ final class WechatNotifyAction extends AbstractPaymentAction
         $message = json_decode($rawBody, true);
 
         if (!\is_array($message)) {
-            throw PaymentException::notificationInvalid(WechatApi::PROVIDER, 'the notification is not a json object');
+            throw PaymentNotificationException::notificationInvalid(WechatApi::PROVIDER, 'the notification is not a json object');
         }
 
         return $message;

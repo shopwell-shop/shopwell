@@ -6,14 +6,16 @@ use Payum\Core\Exception\RequestNotSupportedException;
 use Payum\Core\Request\Capture;
 use Psr\Clock\ClockInterface;
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\System\Payment\Api\Struct\PayParams;
+use Shopwell\Core\System\Payment\Exception\PaymentGatewayException;
+use Shopwell\Core\System\Payment\Exception\PaymentProviderException;
 use Shopwell\Core\System\Payment\Gateway\AbstractPaymentAction;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
-use Shopwell\Core\System\Payment\Gateway\Request\PayResult;
+use Shopwell\Core\System\Payment\Gateway\Struct\PaymentHandover;
+use Shopwell\Core\System\Payment\Gateway\Struct\PaymentStartResult;
 use Shopwell\Core\System\Payment\Integration\Alipay\Api\AlipayApi;
-use Shopwell\Core\System\Payment\PaymentException;
+use Shopwell\Core\System\Payment\Integration\Alipay\Product\AlipayProducts;
+use Shopwell\Core\System\Payment\Product\PaymentInteraction;
 use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
 use Symfony\Component\Clock\NativeClock;
 
 /**
@@ -28,9 +30,6 @@ use Symfony\Component\Clock\NativeClock;
  *  - `alipay_qr`  `alipay.trade.precreate`, alipay answers a qr code the payer scans,
  *  - `alipay_app` `alipay.trade.app.pay`, alipay answers the order string the sdk of the app signs,
  *  - `alipay_mini` `alipay.trade.create`, the mini program then calls `my.tradePay` with the trade no.
- *
- * With the channel parameter `http_method=POST` the two gateway products answer with a self submitting
- * form instead of a url, which is what a desktop browser needs when the url would grow too long.
  *
  * What the action decides is the business content of a trade and what an answer means for the payer;
  * how a product is called at alipay is the part of {@see AlipayApi}.
@@ -72,12 +71,6 @@ final class AlipayCaptureAction extends AbstractPaymentAction
      */
     final public const PARAM_OP_APP_ID = 'op_app_id';
 
-    /**
-     * The key of the gateway http method: declared as a channel parameter and accepted as a free
-     * setting.
-     */
-    final public const SETTING_HTTP_METHOD = 'http_method';
-
     final public const DEFAULT_HTTP_METHOD = 'GET';
 
     /**
@@ -118,29 +111,29 @@ final class AlipayCaptureAction extends AbstractPaymentAction
         $api = $this->api();
 
         switch ($api->channel()) {
-            case AlipayApi::CHANNEL_H5:
+            case AlipayProducts::H5:
                 $this->redirectFlow($model, self::METHOD_WAP_PAY, self::PRODUCT_CODE_WAP);
 
                 return;
-            case AlipayApi::CHANNEL_WEB:
+            case AlipayProducts::WEB:
                 $this->redirectFlow($model, self::METHOD_PAGE_PAY, self::PRODUCT_CODE_PAGE);
 
                 return;
-            case AlipayApi::CHANNEL_QR:
+            case AlipayProducts::QR:
                 $this->qrFlow($model, self::PRODUCT_CODE_QR);
 
                 return;
-            case AlipayApi::CHANNEL_APP:
+            case AlipayProducts::APP:
                 $this->appFlow($model, self::PRODUCT_CODE_APP);
 
                 return;
-            case AlipayApi::CHANNEL_MINI:
+            case AlipayProducts::MINI:
                 $this->miniFlow($model);
 
                 return;
         }
 
-        throw PaymentException::channelNotSupported($api->channel(), $api->provider());
+        throw PaymentProviderException::channelNotSupported($api->channel(), $api->provider());
     }
 
     public function supports($request): bool
@@ -179,23 +172,21 @@ final class AlipayCaptureAction extends AbstractPaymentAction
 
         $this->recordRequest($model, ['method' => $method, 'content' => $content]);
 
-        $httpMethod = $this->httpMethod();
+        $httpMethod = self::DEFAULT_HTTP_METHOD;
 
         try {
             $answer = $api->paymentPage($method, $httpMethod, $parameters);
         } catch (\Throwable $exception) {
             $this->recordResponse($model, ['error' => $exception->getMessage()]);
 
-            throw PaymentException::gatewayError($api->channel(), $exception->getMessage(), $exception);
+            throw PaymentGatewayException::gatewayError($api->channel(), $exception->getMessage(), $exception);
         }
 
         $this->recordResponse($model, [self::RESPONSE_HTTP_METHOD => $httpMethod, self::RESPONSE_ANSWER => $answer]);
 
-        $params = $httpMethod === 'GET'
-            ? new PayParams(flow: PaymentFlow::REDIRECT, payUrl: $answer, httpMethod: 'GET', extra: ['method' => $method])
-            : new PayParams(flow: PaymentFlow::REDIRECT, httpMethod: 'POST', htmlForm: $answer, extra: ['method' => $method]);
+        $params = new PaymentHandover(flow: PaymentInteraction::REDIRECT, payUrl: $answer, httpMethod: $httpMethod, extra: ['method' => $method]);
 
-        $this->setResult($model, new PayResult($params));
+        $this->setResult($model, new PaymentStartResult($params));
     }
 
     /**
@@ -215,7 +206,7 @@ final class AlipayCaptureAction extends AbstractPaymentAction
         } catch (\Throwable $exception) {
             $this->recordResponse($model, ['error' => $exception->getMessage()]);
 
-            throw PaymentException::gatewayError($api->channel(), $exception->getMessage(), $exception);
+            throw PaymentGatewayException::gatewayError($api->channel(), $exception->getMessage(), $exception);
         }
 
         $qrCode = $answer[self::RESPONSE_QR_CODE] ?? null;
@@ -224,13 +215,13 @@ final class AlipayCaptureAction extends AbstractPaymentAction
             // alipay answers its default response when it rejects the call
             $this->recordResponse($model, ['error' => 'the interface rejected the precreate call']);
 
-            throw PaymentException::gatewayError($api->channel(), 'the interface did not answer a qr code');
+            throw PaymentGatewayException::gatewayError($api->channel(), 'the interface did not answer a qr code');
         }
 
         $this->recordResponse($model, [self::RESPONSE_QR_CODE => $qrCode]);
 
-        $this->setResult($model, new PayResult(new PayParams(
-            flow: PaymentFlow::QRCODE,
+        $this->setResult($model, new PaymentStartResult(new PaymentHandover(
+            flow: PaymentInteraction::QRCODE,
             extra: ['qr_code' => $qrCode, 'method' => self::METHOD_PRECREATE],
         )));
     }
@@ -255,19 +246,19 @@ final class AlipayCaptureAction extends AbstractPaymentAction
         } catch (\Throwable $exception) {
             $this->recordResponse($model, ['error' => $exception->getMessage()]);
 
-            throw PaymentException::gatewayError($api->channel(), $exception->getMessage(), $exception);
+            throw PaymentGatewayException::gatewayError($api->channel(), $exception->getMessage(), $exception);
         }
 
         if ($orderString === '') {
             $this->recordResponse($model, ['error' => 'the interface did not answer an order string']);
 
-            throw PaymentException::gatewayError($api->channel(), 'the interface did not answer an order string');
+            throw PaymentGatewayException::gatewayError($api->channel(), 'the interface did not answer an order string');
         }
 
         $this->recordResponse($model, ['order_str' => $orderString]);
 
-        $this->setResult($model, new PayResult(new PayParams(
-            flow: PaymentFlow::SDK,
+        $this->setResult($model, new PaymentStartResult(new PaymentHandover(
+            flow: PaymentInteraction::SDK,
             extra: ['order_str' => $orderString, 'method' => self::METHOD_APP_PAY],
         )));
     }
@@ -298,7 +289,7 @@ final class AlipayCaptureAction extends AbstractPaymentAction
         } catch (\Throwable $exception) {
             $this->recordResponse($model, ['error' => $exception->getMessage()]);
 
-            throw PaymentException::gatewayError($api->channel(), $exception->getMessage(), $exception);
+            throw PaymentGatewayException::gatewayError($api->channel(), $exception->getMessage(), $exception);
         }
 
         $tradeNo = $answer[self::RESPONSE_TRADE_NO] ?? null;
@@ -306,13 +297,13 @@ final class AlipayCaptureAction extends AbstractPaymentAction
         if (!\is_string($tradeNo) || $tradeNo === '') {
             $this->recordResponse($model, ['error' => 'the interface rejected the create call']);
 
-            throw PaymentException::gatewayError($api->channel(), 'the interface did not answer a trade number');
+            throw PaymentGatewayException::gatewayError($api->channel(), 'the interface did not answer a trade number');
         }
 
         $this->recordResponse($model, [self::RESPONSE_TRADE_NO => $tradeNo]);
 
-        $this->setResult($model, new PayResult(
-            new PayParams(flow: PaymentFlow::SDK, extra: ['trade_no' => $tradeNo, 'method' => self::METHOD_CREATE]),
+        $this->setResult($model, new PaymentStartResult(
+            new PaymentHandover(flow: PaymentInteraction::SDK, extra: ['trade_no' => $tradeNo, 'method' => self::METHOD_CREATE]),
             $tradeNo
         ));
     }
@@ -353,20 +344,6 @@ final class AlipayCaptureAction extends AbstractPaymentAction
         }
 
         return $content;
-    }
-
-    /**
-     * The declared channel parameter wins over the free settings, so the switch is reachable from the
-     * administration: the form it renders is built from the channel parameters, the settings are a
-     * free payload the api may send next to them.
-     */
-    private function httpMethod(): string
-    {
-        $api = $this->api();
-
-        $method = $api->param(self::SETTING_HTTP_METHOD) ?? $api->setting(self::SETTING_HTTP_METHOD, self::DEFAULT_HTTP_METHOD);
-
-        return strtoupper($method ?? self::DEFAULT_HTTP_METHOD);
     }
 
     /**

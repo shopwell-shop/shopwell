@@ -9,6 +9,8 @@ use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\System\Payment\App\PaymentAppCollection;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
+use Shopwell\Core\System\Payment\Exception\PaymentGatewayException;
+use Shopwell\Core\System\Payment\Exception\PaymentTransferException;
 use Shopwell\Core\System\Payment\Gateway\Request\TransferQueryResult;
 use Shopwell\Core\System\Payment\Gateway\Request\TransferResult;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationCollection;
@@ -91,7 +93,7 @@ final class PaymentTransferNotificationProcessor
                 throw $exception;
             }
 
-            throw PaymentException::gatewayError($provider, $exception->getMessage(), $exception);
+            throw PaymentGatewayException::gatewayError($provider, $exception->getMessage(), $exception);
         } finally {
             $this->conclude($notificationId, $state);
         }
@@ -118,29 +120,29 @@ final class PaymentTransferNotificationProcessor
     private function handle(PaymentAppEntity $app, string $provider, string $rawBody, array $headers, array &$state): void
     {
         $verifier = $this->verifierRegistry->get($provider);
-        $credentials = $this->configResolver->resolveProviderCredentials($app, $provider);
-
-        if (!$verifier->verify($credentials, $rawBody, $headers)) {
+        $transfer = null;
+        foreach ($this->transferService->accountIdsForProvider($app, $provider) as $accountId) {
+            $credentials = $this->configResolver->accountCredentials($accountId, $provider);
+            if (!$verifier->verify($credentials, $rawBody, $headers)) {
+                continue;
+            }
+            $state['signatureValid'] = true;
+            $outNo = $verifier->outNoOf($credentials, $rawBody, $headers);
+            if ($outNo === null) {
+                continue;
+            }
+            $candidate = $this->transferService->getByOutNo($app, $outNo);
+            if ($candidate !== null && $candidate->accountId === $accountId && $candidate->provider === $provider) {
+                $transfer = $candidate;
+                break;
+            }
+        }
+        if (!$state['signatureValid']) {
             $state['result'] = PaymentNotificationEntity::RESULT_INVALID_SIGNATURE;
 
             return;
         }
-
-        $state['signatureValid'] = true;
-
-        $outNo = $verifier->outNoOf($credentials, $rawBody, $headers);
-
-        if ($outNo === null) {
-            $state['result'] = PaymentNotificationEntity::RESULT_UNMATCHED;
-
-            return;
-        }
-
-        $transfer = $this->transferService->getByOutNo($app, $outNo);
-
         if (!$transfer instanceof PaymentTransferEntity) {
-            // a valid notification of a payout this app does not have: the business number is the
-            // caller's, so either it was deleted or it belongs to another merchant account
             $state['result'] = PaymentNotificationEntity::RESULT_UNMATCHED;
 
             return;
@@ -162,7 +164,7 @@ final class PaymentTransferNotificationProcessor
             ->first();
 
         if (!$app instanceof PaymentAppEntity) {
-            throw PaymentException::transferNotificationAppUnknown($appId);
+            throw PaymentTransferException::transferNotificationAppUnknown($appId);
         }
 
         return $app;

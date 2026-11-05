@@ -1,21 +1,20 @@
 .sw-settings-payment-provider-list {
-    .sw-settings-payment-provider-list__card-content {
-        align-items: center;
+    &__content {
+        width: 100%;
+        height: 100%;
+        position: absolute;
+        display: flex;
+        flex-direction: column;
     }
 
-    .sw-settings-payment-provider-list__technical-name {
-        color: var(--color-text-secondary-default);
-        font-size: var(--font-size-xs, 12px);
-        font-family: var(--font-family-monospace, monospace);
+    .sw-payment-account-list__grid {
+        position: relative;
+        min-height: 0;
+        flex: 1;
     }
 
-    // the link sits next to the switch, so it is underlined like the one of the payment method card
-    .sw-settings-payment-provider-list__edit-link {
+    .sw-payment-account-list__error {
+        margin: var(--scale-size-16) var(--scale-size-24);
         flex-shrink: 0;
-        text-decoration: underline;
-    }
-
-    .sw-settings-payment-provider-list__switch {
-        margin: 0;
     }
 }

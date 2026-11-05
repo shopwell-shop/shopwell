@@ -6,15 +6,15 @@ use Payum\Core\Exception\RequestNotSupportedException;
 use Payum\Core\Request\Capture;
 use Psr\Clock\ClockInterface;
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\System\Payment\Api\Struct\PayParams;
+use Shopwell\Core\System\Payment\Exception\PaymentGatewayException;
 use Shopwell\Core\System\Payment\Gateway\AbstractPaymentAction;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
-use Shopwell\Core\System\Payment\Gateway\Request\PayResult;
+use Shopwell\Core\System\Payment\Gateway\Struct\PaymentHandover;
+use Shopwell\Core\System\Payment\Gateway\Struct\PaymentStartResult;
 use Shopwell\Core\System\Payment\Integration\Stripe\Api\StripeApi;
 use Shopwell\Core\System\Payment\Integration\Stripe\Notification\StripeNotificationExtractor;
-use Shopwell\Core\System\Payment\PaymentException;
+use Shopwell\Core\System\Payment\Product\PaymentInteraction;
 use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
 use Symfony\Component\Clock\NativeClock;
 
 /**
@@ -88,7 +88,7 @@ final class StripeCaptureAction extends AbstractPaymentAction
             ? $this->captureWithPaymentIntent($api, $model, $amount, $currency, $metadata)
             : $this->captureWithCheckoutSession($api, $model, $amount, $currency, $metadata);
 
-        $this->setResult($model, new PayResult($params));
+        $this->setResult($model, new PaymentStartResult($params));
     }
 
     public function supports($request): bool
@@ -115,7 +115,7 @@ final class StripeCaptureAction extends AbstractPaymentAction
         int $amount,
         string $currency,
         array $metadata
-    ): PayParams {
+    ): PaymentHandover {
         /** @var array<string, mixed> $payload */
         $payload = [
             'amount' => $amount,
@@ -130,17 +130,17 @@ final class StripeCaptureAction extends AbstractPaymentAction
         }
 
         try {
-            $answer = $api->createPaymentIntent($payload);
+            $answer = $api->createPaymentIntent($payload, $this->stringValue($model, PaymentGatewayModel::PAYMENT_NO) . ':intent');
         } catch (\Throwable $exception) {
             $this->recordResponse($model, ['error' => $exception->getMessage()]);
 
-            throw PaymentException::gatewayError($api->channel(), $exception->getMessage());
+            throw PaymentGatewayException::gatewayError($api->channel(), $exception->getMessage());
         }
 
         if (isset($answer['error'])) {
             $this->recordResponse($model, $answer);
 
-            throw PaymentException::gatewayError(
+            throw PaymentGatewayException::gatewayError(
                 $api->channel(),
                 StripeApi::rejectionMessageOf($answer) ?? 'the channel rejected the payment'
             );
@@ -154,11 +154,11 @@ final class StripeCaptureAction extends AbstractPaymentAction
         $clientSecret = $answer['client_secret'] ?? null;
 
         if (!\is_string($clientSecret) || $clientSecret === '') {
-            throw PaymentException::gatewayError($api->channel(), 'the channel did not answer a client secret');
+            throw PaymentGatewayException::gatewayError($api->channel(), 'the channel did not answer a client secret');
         }
 
-        return new PayParams(
-            flow: PaymentFlow::SDK,
+        return new PaymentHandover(
+            flow: PaymentInteraction::SDK,
             extra: [
                 'payment_intent_id' => (string) ($answer['id'] ?? ''),
                 'client_secret' => $clientSecret,
@@ -178,7 +178,7 @@ final class StripeCaptureAction extends AbstractPaymentAction
         int $amount,
         string $currency,
         array $metadata
-    ): PayParams {
+    ): PaymentHandover {
         $returnUrl = $api->returnUrl();
         /** @var array<string, mixed> $payload */
         $payload = [
@@ -211,17 +211,17 @@ final class StripeCaptureAction extends AbstractPaymentAction
         }
 
         try {
-            $answer = $api->createCheckoutSession($payload);
+            $answer = $api->createCheckoutSession($payload, $this->stringValue($model, PaymentGatewayModel::PAYMENT_NO) . ':checkout');
         } catch (\Throwable $exception) {
             $this->recordResponse($model, ['error' => $exception->getMessage()]);
 
-            throw PaymentException::gatewayError($api->channel(), $exception->getMessage());
+            throw PaymentGatewayException::gatewayError($api->channel(), $exception->getMessage());
         }
 
         if (isset($answer['error'])) {
             $this->recordResponse($model, $answer);
 
-            throw PaymentException::gatewayError(
+            throw PaymentGatewayException::gatewayError(
                 $api->channel(),
                 StripeApi::rejectionMessageOf($answer) ?? 'the channel rejected the payment'
             );
@@ -238,11 +238,11 @@ final class StripeCaptureAction extends AbstractPaymentAction
         $payUrl = $answer['url'] ?? null;
 
         if (!\is_string($payUrl) || $payUrl === '') {
-            throw PaymentException::gatewayError($api->channel(), 'the channel did not answer a checkout url');
+            throw PaymentGatewayException::gatewayError($api->channel(), 'the channel did not answer a checkout url');
         }
 
-        return new PayParams(
-            flow: PaymentFlow::REDIRECT,
+        return new PaymentHandover(
+            flow: PaymentInteraction::REDIRECT,
             payUrl: $payUrl,
             httpMethod: 'GET',
             extra: [

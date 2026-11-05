@@ -11,33 +11,32 @@ use Shopwell\Core\Framework\DataAbstractionLayer\EntityCollection;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppProvider\PaymentAppProviderCollection;
-use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppProvider\PaymentAppProviderEntity;
 use Shopwell\Core\System\Payment\App\PaymentAppCollection;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
 use Shopwell\Core\System\Payment\App\PaymentCredentialCipher;
+use Shopwell\Core\System\Payment\Exception\PaymentTransferException;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayFactory;
 use Shopwell\Core\System\Payment\Gateway\Request\TransferQueryResult;
 use Shopwell\Core\System\Payment\Gateway\Request\TransferResult;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationCollection;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationEntity;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
-use Shopwell\Core\System\Payment\PaymentException;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannelRegistry;
-use Shopwell\Core\System\Payment\Provider\Config\PaymentConfigResolver;
 use Shopwell\Core\System\Payment\Provider\PaymentProvider;
-use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;
 use Shopwell\Core\System\Payment\Transfer\Notification\PaymentTransferNotificationProcessor;
 use Shopwell\Core\System\Payment\Transfer\Notification\PaymentTransferNotificationVerifierInterface;
 use Shopwell\Core\System\Payment\Transfer\Notification\PaymentTransferNotificationVerifierRegistry;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferCollection;
+use Shopwell\Core\System\Payment\Transfer\PaymentTransferEntity;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferRecipientService;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferReconciler;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferService;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferStateHandler;
 use Shopwell\Core\System\StateMachine\Loader\InitialStateIdLoader;
 use Shopwell\Core\System\StateMachine\StateMachineRegistry;
+use Shopwell\Core\Test\Stub\DataAbstractionLayer\StaticEntityRepository;
+use Shopwell\Tests\Unit\Core\System\Payment\Account\_fixtures\PaymentAccountLockStub;
 use Shopwell\Tests\Unit\Core\System\Payment\NumberRangeFixture;
 use Shopwell\Tests\Unit\Core\System\Payment\Transfer\PaymentTransferRulesFixture;
 use Symfony\Component\Clock\MockClock;
@@ -65,7 +64,7 @@ class PaymentTransferNotificationProcessorTest extends TestCase
 
         $processor = $this->processor($notificationRepository, $this->emptyAppRepository(), $this->verifier(true, 'PO-1'));
 
-        $this->expectExceptionObject(PaymentException::transferNotificationAppUnknown(self::APP_ID));
+        $this->expectExceptionObject(PaymentTransferException::transferNotificationAppUnknown(self::APP_ID));
 
         $processor->process('alipay', self::APP_ID, '{}', [], '1.2.3.4');
     }
@@ -164,31 +163,12 @@ class PaymentTransferNotificationProcessorTest extends TestCase
             technicalName: 'alipay',
             label: 'Alipay',
             credentials: [],
-            channels: [],
+            products: [],
             gatewayFactory: static::createStub(PaymentGatewayFactory::class),
             notificationExtractor: static::createStub(PaymentNotificationExtractorInterface::class),
         );
 
-        $appProvider = new PaymentAppProviderEntity();
-        $appProvider->setUniqueIdentifier('app-provider-id');
-        $appProvider->paymentAppId = self::APP_ID;
-        $appProvider->providerTechnicalName = 'alipay';
-        $appProvider->enabled = true;
-        $appProvider->credentials = $cipher->encrypt(['alipay_public_key' => 'key']);
-
-        $appProviderRepository = $this->appProviderRepository($appProvider);
-
-        $providerRegistry = new PaymentProviderRegistry([$provider]);
-
-        $configResolver = new PaymentConfigResolver(
-            $providerRegistry,
-            new PaymentChannelRegistry($providerRegistry),
-            $appProviderRepository,
-            static::createStub(EntityRepository::class),
-            static::createStub(EntityRepository::class),
-            static::createStub(EntityRepository::class),
-            $cipher
-        );
+        $configResolver = PaymentTransferRulesFixture::boundResolver($provider, $cipher);
 
         $transferRepository ??= $this->transferRepository();
 
@@ -201,7 +181,9 @@ class PaymentTransferNotificationProcessorTest extends TestCase
             static::createStub(InitialStateIdLoader::class),
             new MockClock(self::NOW),
             PaymentTransferRulesFixture::registry(),
-            NumberRangeFixture::generator('PT1001')
+            NumberRangeFixture::generator('PT1001'),
+            PaymentTransferRulesFixture::resolvedConfig(),
+            new PaymentAccountLockStub(),
         );
 
         $reconciler = new PaymentTransferReconciler(
@@ -234,24 +216,6 @@ class PaymentTransferNotificationProcessorTest extends TestCase
     }
 
     /**
-     * @return EntityRepository<PaymentAppProviderCollection>
-     */
-    private function appProviderRepository(PaymentAppProviderEntity $appProvider): EntityRepository
-    {
-        $repository = static::createStub(EntityRepository::class);
-        $repository->method('search')->willReturn(new EntitySearchResult(
-            'payment_app_provider',
-            1,
-            new PaymentAppProviderCollection([$appProvider]),
-            null,
-            new Criteria(),
-            Context::createDefaultContext()
-        ));
-
-        return $repository;
-    }
-
-    /**
      * @return EntityRepository<PaymentAppCollection>
      */
     private function appRepository(): EntityRepository
@@ -259,6 +223,7 @@ class PaymentTransferNotificationProcessorTest extends TestCase
         $app = new PaymentAppEntity();
         $app->setUniqueIdentifier(self::APP_ID);
         $app->id = self::APP_ID;
+        $app->type = PaymentAppEntity::TYPE_EXTERNAL;
         $app->technicalName = 'test-app';
 
         return $this->repositoryWith(new EntitySearchResult(
@@ -291,14 +256,23 @@ class PaymentTransferNotificationProcessorTest extends TestCase
      */
     private function transferRepository(): EntityRepository
     {
-        return $this->repositoryWith(new EntitySearchResult(
-            'payment_transfer',
-            0,
-            new PaymentTransferCollection([]),
-            null,
-            new Criteria(),
-            Context::createDefaultContext()
-        ));
+        $transfer = new PaymentTransferEntity();
+        $transfer->id = 'other-transfer';
+        $transfer->setUniqueIdentifier($transfer->id);
+        $transfer->paymentAppId = self::APP_ID;
+        $transfer->accountId = 'account-id';
+        $transfer->provider = 'alipay';
+        $select = static function (Criteria $criteria) use ($transfer): PaymentTransferCollection {
+            foreach ($criteria->getFilters() as $filter) {
+                if ($filter instanceof EqualsFilter && $filter->getField() === 'outNo') {
+                    return new PaymentTransferCollection();
+                }
+            }
+
+            return new PaymentTransferCollection([$transfer]);
+        };
+
+        return StaticEntityRepository::of(PaymentTransferCollection::class, [$select, $select]);
     }
 
     /**

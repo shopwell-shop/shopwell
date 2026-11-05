@@ -2,26 +2,29 @@
 
 namespace Shopwell\Tests\Unit\Core\System\Payment\App;
 
+use Doctrine\DBAL\Connection;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Context;
-use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
-use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
-use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Payment\Account\PaymentAccountCollection;
+use Shopwell\Core\System\Payment\Account\PaymentAccountEntity;
+use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppAccount\PaymentAppAccountCollection;
+use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppAccount\PaymentAppAccountEntity;
 use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppChannel\PaymentAppChannelCollection;
-use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppProvider\PaymentAppProviderCollection;
+use Shopwell\Core\System\Payment\App\PaymentAppAccountDto;
 use Shopwell\Core\System\Payment\App\PaymentAppChannelDto;
 use Shopwell\Core\System\Payment\App\PaymentAppCollection;
 use Shopwell\Core\System\Payment\App\PaymentAppDto;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
-use Shopwell\Core\System\Payment\App\PaymentAppProviderDto;
 use Shopwell\Core\System\Payment\App\PaymentAppProvisioner;
+use Shopwell\Core\System\Payment\Exception\PaymentAppException;
+use Shopwell\Core\System\Payment\Exception\PaymentProviderException;
 use Shopwell\Core\System\Payment\PaymentException;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannelRegistry;
-use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;
+use Shopwell\Core\System\Payment\Product\PaymentProductRegistry;
+use Shopwell\Core\Test\Stub\DataAbstractionLayer\StaticEntityRepository;
 use Shopwell\Tests\Unit\Core\System\Payment\Api\PaymentControllerFixture;
-use Symfony\Component\Clock\NativeClock;
+use Symfony\Component\Clock\MockClock;
 
 /**
  * @internal
@@ -30,512 +33,184 @@ use Symfony\Component\Clock\NativeClock;
 #[CoversClass(PaymentAppProvisioner::class)]
 class PaymentAppProvisionerTest extends TestCase
 {
-    public function testANewAppIsCreatedWithAGeneratedSecretThatIsHandedOutOnce(): void
+    private PaymentAppEntity $app;
+
+    private PaymentAccountEntity $account;
+
+    /**
+     * @var StaticEntityRepository<PaymentAppCollection>
+     */
+    private StaticEntityRepository $apps;
+
+    /**
+     * @var StaticEntityRepository<PaymentAppAccountCollection>
+     */
+    private StaticEntityRepository $grants;
+
+    /**
+     * @var StaticEntityRepository<PaymentAppChannelCollection>
+     */
+    private StaticEntityRepository $channels;
+
+    /**
+     * @var StaticEntityRepository<PaymentAccountCollection>
+     */
+    private StaticEntityRepository $accounts;
+
+    private PaymentAppProvisioner $provisioner;
+
+    protected function setUp(): void
     {
-        $stored = PaymentControllerFixture::app('client-a', 'stored-secret');
+        $this->app = PaymentControllerFixture::app('client', 'old-secret');
+        $this->account = new PaymentAccountEntity();
+        $this->account->id = 'merchant-account';
+        $this->account->setUniqueIdentifier($this->account->id);
+        $this->account->providerTechnicalName = 'alipay';
+        $this->account->name = 'Merchant';
+        $this->account->ownerAppId = $this->app->id;
+        $this->account->active = true;
+        $this->account->credentials = PaymentControllerFixture::cipher()->encrypt(['app_id' => 'merchant', 'private_key' => 'keep-key']);
+        $this->apps = new StaticEntityRepository(array_fill(0, 8, new PaymentAppCollection([$this->app])));
+        $this->grants = new StaticEntityRepository(array_fill(0, 8, new PaymentAppAccountCollection()));
+        $this->channels = new StaticEntityRepository(array_fill(0, 8, new PaymentAppChannelCollection()));
+        $this->accounts = new StaticEntityRepository(array_fill(0, 8, new PaymentAccountCollection([$this->account])));
+        $registry = PaymentControllerFixture::providerRegistry(PaymentControllerFixture::provider('alipay', [PaymentControllerFixture::channel('alipay_h5', 'alipay')]));
+        $connection = static::createStub(Connection::class);
+        $connection->method('transactional')->willReturnCallback(static fn (\Closure $write) => $write($connection));
+        $this->provisioner = new PaymentAppProvisioner($this->apps, $this->grants, $this->channels, PaymentControllerFixture::cipher(), $registry, new PaymentProductRegistry($registry), new MockClock('2026-11-05'), $connection, $this->accounts);
+    }
 
-        $appRepository = static::createMock(EntityRepository::class);
-        $appRepository->method('search')->willReturn($this->appResult($stored));
-        $appRepository->expects($this->once())
-            ->method('upsert')
-            ->with(static::callback(function (array $data): bool {
-                $row = $data[0];
-
-                static::assertSame('client-a', $row['technicalName']);
-                static::assertSame('Client A', $row['name']);
-                // an app onboarded here is always a caller of the api, never the tenant of the shop
-                static::assertSame(PaymentAppEntity::TYPE_EXTERNAL, $row['type']);
-                static::assertTrue($row['active']);
-                static::assertSame('https://app.example.com/notify', $row['notifyUrl']);
-                static::assertNull($row['returnUrl']);
-                static::assertSame(['10.0.0.1', '10.0.0.2'], $row['allowedIps']);
-                static::assertSame(60, $row['rateLimit']);
-                static::assertArrayHasKey('appSecret', $row);
-
-                return true;
-            }));
-
-        $result = $this->provisioner($appRepository)->save(new PaymentAppDto(
-            technicalName: '  client-a  ',
-            name: 'Client A',
-            active: true,
-            notifyUrl: 'https://app.example.com/notify',
-            returnUrl: '',
-            allowedIps: ['10.0.0.1', '', '10.0.0.2'],
-            rateLimit: 60,
-        ));
-
-        static::assertSame($stored, $result['app']);
+    public function testNewAppReceivesAGeneratedSealedSecret(): void
+    {
+        $result = $this->provisioner->save(new PaymentAppDto(technicalName: '  client  ', name: 'Client', active: true, allowedIps: ['10.0.0.1', '']));
+        $write = $this->apps->upserts[0][0];
+        static::assertSame('client', $write['technicalName']);
+        static::assertSame(PaymentAppEntity::TYPE_EXTERNAL, $write['type']);
+        static::assertSame(['10.0.0.1'], $write['allowedIps']);
         static::assertTrue($result['generated']);
-        static::assertMatchesRegularExpression('/^[0-9a-f]{64}$/', $result['secret']);
+        static::assertMatchesRegularExpression('/^[a-f0-9]{64}$/', $result['secret']);
+        static::assertSame($result['secret'], PaymentControllerFixture::cipher()->decryptValue($write['appSecret']));
     }
 
-    /**
-     * A missing technical name must not be written as an empty one: the app would then exist without
-     * a name anybody could address it by.
-     */
-    public function testAnAppWithoutATechnicalNameIsRejected(): void
+    public function testMissingTechnicalNameIsRejectedBeforeWriting(): void
     {
-        $appRepository = static::createMock(EntityRepository::class);
-        $appRepository->expects($this->never())->method('upsert');
-
-        $this->expectExceptionObject(PaymentException::missingParameter('technical_name'));
-
-        $this->provisioner($appRepository)->save(new PaymentAppDto(name: 'Client A'));
+        try {
+            $this->provisioner->save(new PaymentAppDto(name: 'Client'));
+            static::fail('A technical name is required.');
+        } catch (PaymentException $exception) {
+            static::assertEquals(PaymentException::missingParameter('technical_name'), $exception);
+            static::assertSame([], $this->apps->upserts);
+        }
     }
 
-    /**
-     * An authorization without an interface must not be looked up as the empty provider name either.
-     */
-    public function testAnAuthorizationWithoutAnInterfaceIsRejected(): void
+    public function testEditingWithoutSecretKeepsExistingAuthenticationKeys(): void
     {
-        $stored = PaymentControllerFixture::app('client-a', 'stored-secret');
-
-        $appRepository = static::createStub(EntityRepository::class);
-        $appRepository->method('search')->willReturn($this->appResult($stored));
-
-        $this->expectExceptionObject(PaymentException::missingParameter('provider_technical_name'));
-
-        $this->provisioner($appRepository)->save(new PaymentAppDto(
-            id: $stored->id,
-            technicalName: 'client-a',
-            providers: [new PaymentAppProviderDto()],
-        ));
-    }
-
-    public function testUpdatingAnAppWithoutATypedSecretKeepsTheStoredOne(): void
-    {
-        $existing = PaymentControllerFixture::app('client-a', 'stored-secret');
-
-        $appRepository = static::createMock(EntityRepository::class);
-        $appRepository->method('search')->willReturn($this->appResult($existing));
-        $appRepository->expects($this->once())
-            ->method('upsert')
-            ->with(static::callback(function (array $data) use ($existing): bool {
-                static::assertSame($existing->id, $data[0]['id']);
-                static::assertArrayNotHasKey('appSecret', $data[0]);
-                // the kind of an app never changes through this endpoint - a stored platform tenant
-                // must not become an external app by being saved again
-                static::assertArrayNotHasKey('type', $data[0]);
-
-                return true;
-            }));
-
-        $result = $this->provisioner($appRepository)->save(new PaymentAppDto(
-            id: $existing->id,
-            technicalName: 'client-a',
-        ));
-
+        $result = $this->provisioner->save(new PaymentAppDto(id: $this->app->id, technicalName: 'client'));
         static::assertSame('', $result['secret']);
         static::assertFalse($result['generated']);
+        static::assertArrayNotHasKey('appSecret', $this->apps->upserts[0][0]);
     }
 
-    public function testATypedSecretIsSealedAndHandedOutPlain(): void
+    public function testTypedSecretRotatesTheKeyAndPreservesGraceWindow(): void
     {
-        $existing = PaymentControllerFixture::app('client-a', 'stored-secret');
-
-        $appRepository = static::createMock(EntityRepository::class);
-        $appRepository->method('search')->willReturn($this->appResult($existing));
-        $appRepository->expects($this->once())
-            ->method('upsert')
-            ->with(static::callback(function (array $data): bool {
-                static::assertSame('my-own-secret', PaymentControllerFixture::cipher()->decryptValue($data[0]['appSecret']));
-
-                return true;
-            }));
-
-        $result = $this->provisioner($appRepository)->save(new PaymentAppDto(
-            id: $existing->id,
-            technicalName: 'client-a',
-            appSecret: '  my-own-secret  ',
-        ));
-
-        static::assertSame('my-own-secret', $result['secret']);
-        static::assertFalse($result['generated']);
+        $result = $this->provisioner->save(new PaymentAppDto(id: $this->app->id, technicalName: 'client', appSecret: ' new-secret '));
+        $write = $this->apps->upserts[0][0];
+        static::assertSame('new-secret', $result['secret']);
+        static::assertSame('new-secret', PaymentControllerFixture::cipher()->decryptValue($write['appSecret']));
+        static::assertSame($this->app->appSecret, $write['previousAppSecret']);
+        static::assertInstanceOf(\DateTimeImmutable::class, $write['secretRotatedAt']);
+        static::assertSame('2026-11-05', $write['secretRotatedAt']->format('Y-m-d'));
     }
 
-    public function testAnUnknownProviderIsRejected(): void
+    public function testNewAccountRequiresAKnownProvider(): void
     {
-        $stored = PaymentControllerFixture::app('client-a', 'stored-secret');
-
-        $this->expectExceptionObject(PaymentException::unknownProvider('stripe'));
-
-        $this->provisioner(PaymentControllerFixture::repository(PaymentAppCollection::class, [$stored]))
-            ->save(new PaymentAppDto(
-                technicalName: 'client-a',
-                providers: [new PaymentAppProviderDto(providerTechnicalName: 'stripe')],
-            ));
+        $this->account->providerTechnicalName = 'missing';
+        $this->expectExceptionObject(PaymentProviderException::unknownProvider('missing'));
+        $this->provisioner->save(new PaymentAppDto(technicalName: 'client', accounts: [new PaymentAppAccountDto(accountId: $this->account->id)]));
     }
 
-    public function testAChannelWhoseProviderIsNotAuthorizedIsRejected(): void
+    public function testNewAccountWithoutProviderIsRejected(): void
     {
-        $stored = PaymentControllerFixture::app('client-a', 'stored-secret');
-        $registry = PaymentControllerFixture::providerRegistry(PaymentControllerFixture::provider('alipay', [PaymentControllerFixture::channel('alipay_h5', 'alipay')]));
-
-        $this->expectExceptionObject(PaymentException::providerNotEnabled('alipay', $stored->id));
-
-        $this->provisioner(
-            PaymentControllerFixture::repository(PaymentAppCollection::class, [$stored]),
-            PaymentControllerFixture::repository(PaymentAppProviderCollection::class),
-            PaymentControllerFixture::repository(PaymentAppChannelCollection::class),
-            $registry
-        )->save(new PaymentAppDto(
-            id: $stored->id,
-            technicalName: 'client-a',
-            channels: [new PaymentAppChannelDto(channelTechnicalName: 'alipay_h5', enabled: true)],
-        ));
+        $this->expectExceptionObject(PaymentException::missingParameter('account_id'));
+        $this->provisioner->save(new PaymentAppDto(technicalName: 'client', accounts: [new PaymentAppAccountDto()]));
     }
 
-    public function testProvidersAreSyncedAndTheOnesMissingFromThePayloadAreRemoved(): void
+    public function testAnExplicitAccountGrantDoesNotDuplicateCredentials(): void
     {
-        $stored = PaymentControllerFixture::app('client-a', 'stored-secret');
-        $stale = PaymentControllerFixture::appProvider($stored->id);
-        $stale->providerTechnicalName = 'paypal';
-
-        $appProviderRepository = static::createMock(EntityRepository::class);
-        $appProviderRepository->method('search')->willReturn(new EntitySearchResult(
-            'payment_app_provider',
-            1,
-            new PaymentAppProviderCollection([$stale]),
-            null,
-            new Criteria(),
-            Context::createDefaultContext()
-        ));
-        $appProviderRepository->expects($this->once())
-            ->method('delete')
-            ->with(static::callback(static fn (array $data): bool => $data === [['id' => $stale->id]]));
-        $appProviderRepository->expects($this->once())
-            ->method('upsert')
-            ->with(static::callback(function (array $data) use ($stored): bool {
-                $row = $data[0];
-
-                static::assertSame($stored->id, $row['paymentAppId']);
-                static::assertSame('alipay', $row['providerTechnicalName']);
-                static::assertTrue($row['enabled']);
-                // no account source: the app collects on its own merchant account
-                static::assertNull($row['sourceAppId']);
-
-                return true;
-            }));
-
-        $registry = PaymentControllerFixture::providerRegistry(PaymentControllerFixture::provider('alipay', [PaymentControllerFixture::channel('alipay_h5', 'alipay')]));
-
-        $result = $this->provisioner(
-            PaymentControllerFixture::repository(PaymentAppCollection::class, [$stored]),
-            $appProviderRepository,
-            PaymentControllerFixture::repository(PaymentAppChannelCollection::class),
-            $registry
-        )->save(new PaymentAppDto(
-            id: $stored->id,
-            technicalName: 'client-a',
-            providers: [new PaymentAppProviderDto(providerTechnicalName: 'alipay', enabled: true)],
-        ));
-
-        static::assertSame($stored, $result['app']);
+        $this->provisioner->save(new PaymentAppDto(technicalName: 'client', accounts: [new PaymentAppAccountDto(accountId: $this->account->id, enabled: true, position: 7)]));
+        static::assertSame([], $this->accounts->upserts);
+        $grant = $this->grants->upserts[0][0];
+        static::assertSame($this->account->id, $grant['accountId']);
+        static::assertArrayNotHasKey('providerTechnicalName', $grant);
+        static::assertSame(7, $grant['position']);
+        static::assertArrayNotHasKey('credentials', $grant);
     }
 
-    /**
-     * The account source is an app: pointing at the tenant of the platform is what "the platform
-     * collects for me" means, and it stores the app id instead of a mode.
-     */
-    public function testAnAuthorizationMayInheritTheAccountOfAnotherApp(): void
+    public function testBorrowedAccountMayBeGrantedWithoutChangingItsKeys(): void
     {
-        $stored = PaymentControllerFixture::app('client-a', 'stored-secret');
-        $platform = $this->platformTenant();
-
-        $appRepository = static::createStub(EntityRepository::class);
-        $appRepository->method('search')->willReturnCallback(
-            static fn (Criteria $criteria): EntitySearchResult => $criteria->getIds() === [$platform->id]
-                ? new EntitySearchResult('payment_app', 1, new PaymentAppCollection([$platform]), null, new Criteria(), Context::createDefaultContext())
-                : new EntitySearchResult('payment_app', 1, new PaymentAppCollection([$stored]), null, new Criteria(), Context::createDefaultContext())
-        );
-
-        $appProviderRepository = static::createMock(EntityRepository::class);
-        $appProviderRepository->method('search')->willReturn(new EntitySearchResult(
-            'payment_app_provider',
-            0,
-            new PaymentAppProviderCollection([]),
-            null,
-            new Criteria(),
-            Context::createDefaultContext()
-        ));
-        $appProviderRepository->expects($this->once())
-            ->method('upsert')
-            ->with(static::callback(function (array $data) use ($platform): bool {
-                static::assertSame($platform->id, $data[0]['sourceAppId']);
-                // an inheriting authorization carries no credentials of its own
-                static::assertArrayNotHasKey('credentials', $data[0]);
-
-                return true;
-            }));
-
-        $this->provisioner($appRepository, $appProviderRepository, null, $this->alipayRegistry())->save(new PaymentAppDto(
-            id: $stored->id,
-            technicalName: 'client-a',
-            providers: [new PaymentAppProviderDto(
-                providerTechnicalName: 'alipay',
-                enabled: true,
-                sourceAppId: $platform->id,
-            )],
-        ));
+        $this->account->ownerAppId = null;
+        $this->provisioner->save(new PaymentAppDto(id: $this->app->id, technicalName: 'client', accounts: [new PaymentAppAccountDto(accountId: $this->account->id, enabled: true)]));
+        static::assertSame([], $this->accounts->upserts);
+        static::assertSame($this->account->id, $this->grants->upserts[0][0]['accountId']);
     }
 
-    /**
-     * An app that inherits from itself has no account at all - the shortest circle is refused where
-     * the merchant can still fix it.
-     */
-    public function testAnAuthorizationThatInheritsFromItselfIsRejected(): void
+    public function testMissingExplicitAccountFailsInsteadOfCreatingAnAlias(): void
     {
-        $stored = PaymentControllerFixture::app('client-a', 'stored-secret');
-
-        $this->expectExceptionObject(PaymentException::providerInheritanceCycle('alipay', 'client-a'));
-
-        $this->provisioner(
-            PaymentControllerFixture::repository(PaymentAppCollection::class, [$stored]),
-            null,
-            null,
-            $this->alipayRegistry()
-        )->save(new PaymentAppDto(
-            id: $stored->id,
-            technicalName: 'client-a',
-            providers: [new PaymentAppProviderDto(
-                providerTechnicalName: 'alipay',
-                enabled: true,
-                sourceAppId: $stored->id,
-            )],
-        ));
+        $this->accounts->searches = [new PaymentAccountCollection()];
+        $this->expectExceptionObject(PaymentProviderException::accountNotFound('missing'));
+        $this->provisioner->save(new PaymentAppDto(technicalName: 'client', accounts: [new PaymentAppAccountDto(accountId: 'missing')]));
     }
 
-    /**
-     * A source app that does not exist would be a chain without a merchant account, so the save is
-     * refused instead of storing an id nothing can resolve.
-     */
-    public function testAnAccountSourceThatDoesNotExistIsRejected(): void
+    public function testAProductRequiresAnEnabledProviderAccountGrant(): void
     {
-        $stored = PaymentControllerFixture::app('client-a', 'stored-secret');
-
-        $appRepository = static::createStub(EntityRepository::class);
-        $appRepository->method('search')->willReturnCallback(
-            static fn (Criteria $criteria): EntitySearchResult => $criteria->getIds() === [$stored->id]
-                ? new EntitySearchResult('payment_app', 1, new PaymentAppCollection([$stored]), null, new Criteria(), Context::createDefaultContext())
-                : new EntitySearchResult('payment_app', 0, new PaymentAppCollection([]), null, new Criteria(), Context::createDefaultContext())
-        );
-
-        $this->expectExceptionObject(PaymentException::providerSourceAppMissing('alipay', 'client-a', 'unknown-app'));
-
-        $this->provisioner($appRepository, null, null, $this->alipayRegistry())->save(new PaymentAppDto(
-            id: $stored->id,
-            technicalName: 'client-a',
-            providers: [new PaymentAppProviderDto(
-                providerTechnicalName: 'alipay',
-                enabled: true,
-                sourceAppId: 'unknown-app',
-            )],
-        ));
+        $this->expectExceptionObject(PaymentProviderException::providerNotEnabled('alipay', $this->app->id));
+        $this->provisioner->save(new PaymentAppDto(id: $this->app->id, technicalName: 'client', channels: [new PaymentAppChannelDto(channelTechnicalName: 'alipay_h5', enabled: true)]));
     }
 
-    /**
-     * The tenant of the platform is the account the shop itself collects through, so the merchant has
-     * to be able to configure it - the write is not refused. Its technical name is not part of that
-     * configuration: the migration and the seeded rows refer to the app by that name, so the stored
-     * one wins over whatever the payload calls it.
-     */
-    public function testSavingThePlatformTenantKeepsItsStoredTechnicalName(): void
+    public function testDisabledProductsCanBeSavedWithoutAccountGrants(): void
     {
-        $platform = $this->platformTenant();
-
-        $appRepository = static::createMock(EntityRepository::class);
-        $appRepository->method('search')->willReturn($this->appResult($platform));
-        $appRepository->expects($this->once())
-            ->method('upsert')
-            ->with(static::callback(
-                static fn (array $write): bool => ($write[0]['technicalName'] ?? null) === PaymentAppEntity::PLATFORM_TECHNICAL_NAME
-                    && ($write[0]['name'] ?? null) === 'Renamed'
-            ));
-
-        $this->provisioner($appRepository)->save(new PaymentAppDto(
-            id: $platform->id,
-            technicalName: 'renamed-platform',
-            name: 'Renamed',
-            active: true,
-        ));
+        $this->provisioner->save(new PaymentAppDto(id: $this->app->id, technicalName: 'client', accounts: [], channels: [new PaymentAppChannelDto(channelTechnicalName: 'alipay_h5', enabled: false)]));
+        static::assertFalse($this->channels->upserts[0][0]['enabled']);
+        static::assertSame([], $this->accounts->upserts);
     }
 
-    public function testDeletingThePlatformTenantIsRejected(): void
+    public function testOmittedAccountListPreservesGrants(): void
     {
-        $platform = $this->platformTenant();
-
-        $appRepository = static::createMock(EntityRepository::class);
-        $appRepository->method('search')->willReturn($this->appResult($platform));
-        $appRepository->expects($this->never())->method('delete');
-
-        $this->expectExceptionObject(PaymentException::platformTenantNotDeletable(PaymentAppEntity::PLATFORM_TECHNICAL_NAME));
-
-        $this->provisioner($appRepository)->delete($platform->id, Context::createDefaultContext());
+        $this->provisioner->save(new PaymentAppDto(id: $this->app->id, technicalName: 'client'));
+        static::assertSame([], $this->grants->upserts);
+        static::assertSame([], $this->grants->deletes);
     }
 
-    public function testDeletingAnExternalAppRemovesTheRow(): void
+    public function testRevokingGrantRetainsMerchantCredentials(): void
     {
-        $external = PaymentControllerFixture::app('client-a', 'stored-secret');
-
-        $appRepository = static::createMock(EntityRepository::class);
-        $appRepository->method('search')->willReturn($this->appResult($external));
-        $appRepository->expects($this->once())
-            ->method('delete')
-            ->with(
-                static::callback(static fn (array $data): bool => $data === [['id' => $external->id]]),
-                static::anything()
-            );
-
-        $this->provisioner($appRepository)->delete($external->id, Context::createDefaultContext());
+        $grant = new PaymentAppAccountEntity();
+        $grant->id = 'grant';
+        $grant->setUniqueIdentifier('grant');
+        $grant->accountId = $this->account->id;
+        $this->grants->searches = [new PaymentAppAccountCollection([$grant]), new PaymentAppAccountCollection()];
+        $this->provisioner->save(new PaymentAppDto(id: $this->app->id, technicalName: 'client', accounts: []));
+        static::assertSame([[['id' => 'grant']]], $this->grants->deletes);
+        static::assertSame([], $this->accounts->deletes);
     }
 
-    public function testSaveLeavesTheAuthorizationsUntouchedWhenNoProvidersAreGiven(): void
+    public function testPlatformTenantCannotBeRenamed(): void
     {
-        $stored = PaymentControllerFixture::app('client-a', 'stored-secret');
-        $provider = PaymentControllerFixture::appProvider($stored->id);
-        $channel = PaymentControllerFixture::appChannel($stored->id);
-
-        // revoking an authorization is a security relevant decision: a caller that does not send the
-        // field must not revoke anything
-        $appProviderRepository = static::createMock(EntityRepository::class);
-        $appProviderRepository->method('search')->willReturn(new EntitySearchResult(
-            'payment_app_provider',
-            1,
-            new PaymentAppProviderCollection([$provider]),
-            null,
-            new Criteria(),
-            Context::createDefaultContext()
-        ));
-        $appProviderRepository->expects($this->never())->method('delete');
-        $appProviderRepository->expects($this->never())->method('upsert');
-
-        $appChannelRepository = static::createMock(EntityRepository::class);
-        $appChannelRepository->method('search')->willReturn(new EntitySearchResult(
-            'payment_app_channel',
-            1,
-            new PaymentAppChannelCollection([$channel]),
-            null,
-            new Criteria(),
-            Context::createDefaultContext()
-        ));
-        $appChannelRepository->expects($this->never())->method('delete');
-        $appChannelRepository->expects($this->never())->method('upsert');
-
-        $result = $this->provisioner(
-            PaymentControllerFixture::repository(PaymentAppCollection::class, [$stored]),
-            $appProviderRepository,
-            $appChannelRepository
-        )->save(new PaymentAppDto(
-            id: $stored->id,
-            technicalName: 'client-a',
-        ));
-
-        static::assertSame($stored, $result['app']);
+        $this->app->type = PaymentAppEntity::TYPE_PLATFORM;
+        $this->app->technicalName = PaymentAppEntity::PLATFORM_TECHNICAL_NAME;
+        $this->provisioner->save(new PaymentAppDto(id: $this->app->id, technicalName: 'renamed'));
+        static::assertSame(PaymentAppEntity::PLATFORM_TECHNICAL_NAME, $this->apps->upserts[0][0]['technicalName']);
     }
 
-    public function testSaveRevokesEveryAuthorizationWhenAnEmptyListIsGiven(): void
+    public function testPlatformTenantCannotBeDeleted(): void
     {
-        $stored = PaymentControllerFixture::app('client-a', 'stored-secret');
-        $provider = PaymentControllerFixture::appProvider($stored->id);
-        $channel = PaymentControllerFixture::appChannel($stored->id);
-
-        // an explicitly sent empty list is the way to revoke everything, and it is the only one
-        $appProviderRepository = static::createMock(EntityRepository::class);
-        $appProviderRepository->method('search')->willReturn(new EntitySearchResult(
-            'payment_app_provider',
-            1,
-            new PaymentAppProviderCollection([$provider]),
-            null,
-            new Criteria(),
-            Context::createDefaultContext()
-        ));
-        $appProviderRepository->expects($this->once())
-            ->method('delete')
-            ->with(static::callback(static fn (array $data): bool => $data === [['id' => $provider->id]]));
-        $appProviderRepository->expects($this->never())->method('upsert');
-
-        $appChannelRepository = static::createMock(EntityRepository::class);
-        $appChannelRepository->method('search')->willReturn(new EntitySearchResult(
-            'payment_app_channel',
-            1,
-            new PaymentAppChannelCollection([$channel]),
-            null,
-            new Criteria(),
-            Context::createDefaultContext()
-        ));
-        $appChannelRepository->expects($this->once())
-            ->method('delete')
-            ->with(static::callback(static fn (array $data): bool => $data === [['id' => $channel->id]]));
-        $appChannelRepository->expects($this->never())->method('upsert');
-
-        $this->provisioner(
-            PaymentControllerFixture::repository(PaymentAppCollection::class, [$stored]),
-            $appProviderRepository,
-            $appChannelRepository
-        )->save(new PaymentAppDto(
-            id: $stored->id,
-            technicalName: 'client-a',
-            providers: [],
-            channels: [],
-        ));
+        $this->app->type = PaymentAppEntity::TYPE_PLATFORM;
+        $this->expectExceptionObject(PaymentAppException::platformTenantNotDeletable($this->app->technicalName));
+        $this->provisioner->delete($this->app->id, Context::createDefaultContext());
     }
 
-    /**
-     * @param EntityRepository<PaymentAppCollection> $appRepository
-     * @param EntityRepository<PaymentAppProviderCollection> $appProviderRepository
-     * @param EntityRepository<PaymentAppChannelCollection> $appChannelRepository
-     */
-    private function provisioner(
-        EntityRepository $appRepository,
-        ?EntityRepository $appProviderRepository = null,
-        ?EntityRepository $appChannelRepository = null,
-        ?PaymentProviderRegistry $providerRegistry = null
-    ): PaymentAppProvisioner {
-        $registry = $providerRegistry ?? PaymentControllerFixture::providerRegistry();
-
-        return new PaymentAppProvisioner(
-            $appRepository,
-            $appProviderRepository ?? PaymentControllerFixture::repository(PaymentAppProviderCollection::class),
-            $appChannelRepository ?? PaymentControllerFixture::repository(PaymentAppChannelCollection::class),
-            PaymentControllerFixture::cipher(),
-            $registry,
-            new PaymentChannelRegistry($registry),
-            new NativeClock(),
-        );
-    }
-
-    private function alipayRegistry(): PaymentProviderRegistry
+    public function testExternalTenantCanBeDeleted(): void
     {
-        return PaymentControllerFixture::providerRegistry(
-            PaymentControllerFixture::provider('alipay', [PaymentControllerFixture::channel('alipay_h5', 'alipay')])
-        );
-    }
-
-    /**
-     * The row the payment migration seeds: the tenant the platform itself collects through.
-     */
-    private function platformTenant(): PaymentAppEntity
-    {
-        $platform = PaymentControllerFixture::app(PaymentAppEntity::PLATFORM_TECHNICAL_NAME, 'platform-secret');
-        $platform->name = 'Platform Payment App';
-        $platform->type = PaymentAppEntity::TYPE_PLATFORM;
-
-        return $platform;
-    }
-
-    /**
-     * @return EntitySearchResult<PaymentAppCollection>
-     */
-    private function appResult(PaymentAppEntity $app): EntitySearchResult
-    {
-        return new EntitySearchResult(
-            'payment_app',
-            1,
-            new PaymentAppCollection([$app]),
-            null,
-            new Criteria(),
-            Context::createDefaultContext()
-        );
+        $this->provisioner->delete($this->app->id, Context::createDefaultContext());
+        static::assertSame([[['id' => $this->app->id]]], $this->apps->deletes);
     }
 }

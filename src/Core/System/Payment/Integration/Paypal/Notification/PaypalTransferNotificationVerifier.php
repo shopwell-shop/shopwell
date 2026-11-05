@@ -3,10 +3,10 @@
 namespace Shopwell\Core\System\Payment\Integration\Paypal\Notification;
 
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Payment\Exception\PaymentGatewayException;
 use Shopwell\Core\System\Payment\Integration\Paypal\Api\PaypalApi;
 use Shopwell\Core\System\Payment\Integration\Paypal\Api\PaypalWebhookSignature;
 use Shopwell\Core\System\Payment\Notification\Struct\PaymentNotificationAck;
-use Shopwell\Core\System\Payment\PaymentException;
 use Shopwell\Core\System\Payment\Transfer\Notification\PaymentTransferNotificationVerifierInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
@@ -43,7 +43,7 @@ final class PaypalTransferNotificationVerifier implements PaymentTransferNotific
         $webhookId = $credentials[PaypalApi::WEBHOOK_ID] ?? null;
 
         if (!\is_string($webhookId) || $webhookId === '') {
-            throw PaymentException::missingCredentials(PaypalApi::PROVIDER, PaypalApi::WEBHOOK_ID);
+            throw PaymentGatewayException::missingCredentials(PaypalApi::PROVIDER, PaypalApi::WEBHOOK_ID);
         }
 
         return (new PaypalWebhookSignature($this->httpClient))->verify($webhookId, $rawBody, $headers);

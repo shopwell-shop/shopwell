@@ -16,6 +16,8 @@ use Shopwell\Core\Checkout\Payment\Storefront\Settlement\PurchaseAttach;
 use Shopwell\Core\Checkout\Payment\Storefront\StorefrontPaymentService;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Payment\Product\PaymentScene;
+use Shopwell\Core\System\Payment\Routing\PaymentContext;
 use Shopwell\Core\Test\Stub\DataAbstractionLayer\StaticEntityRepository;
 
 /**
@@ -70,30 +72,10 @@ class MembershipPurchaseServiceTest extends TestCase
         $payments = $this->createMock(StorefrontPaymentService::class);
         $payments->expects($this->once())
             ->method('open')
-            ->with(
-                static::isString(),
-                'alipay_h5',
-                19900,
-                'CNY',
-                '年度金卡',
-                static::stringStartsWith(self::ATTACH_PREFIX),
-                'https://shop.test/account/loyalty',
-                '10.0.0.1',
-                'web',
-            )
+            ->with(static::isString(), 'alipay_h5', 19900, '年度金卡', static::stringStartsWith(self::ATTACH_PREFIX), new PaymentContext('CNY', new PaymentScene('browser', 'web', 'browser')), 'https://shop.test/account/loyalty', '10.0.0.1')
             ->willReturn(['payment_no' => 'PAY-1', 'channel' => 'alipay_h5', 'params' => ['url' => 'https://pay.test']]);
 
-        $result = $this->service($payments)->purchase(
-            self::CUSTOMER_ID,
-            self::PLAN_ID,
-            'alipay_h5',
-            self::CURRENCY_ID,
-            'cny',
-            'https://shop.test/account/loyalty',
-            '10.0.0.1',
-            'web',
-            $this->context,
-        );
+        $result = $this->service($payments)->purchase(self::CUSTOMER_ID, self::PLAN_ID, 'alipay_h5', self::CURRENCY_ID, new PaymentContext('CNY', new PaymentScene('browser', 'web', 'browser')), 'https://shop.test/account/loyalty', '10.0.0.1', $this->context);
 
         static::assertSame(199.0, $result['amount']);
         static::assertSame('CNY', $result['currency']);
@@ -122,14 +104,14 @@ class MembershipPurchaseServiceTest extends TestCase
 
         $payments = static::createStub(StorefrontPaymentService::class);
         $payments->method('open')->willReturnCallback(
-            static function (string $outTradeNo, string $channel, int $amount, string $currency, string $subject, string $attach) use (&$attachedTo): array {
+            static function (string $outTradeNo, string $channel, int $amount, string $subject, string $attach, PaymentContext $paymentContext) use (&$attachedTo): array {
                 $attachedTo = ['outTradeNo' => $outTradeNo, 'attach' => $attach];
 
                 return ['payment_no' => 'PAY-1', 'channel' => $channel, 'params' => []];
             }
         );
 
-        $result = $this->service($payments)->purchase(self::CUSTOMER_ID, self::PLAN_ID, 'alipay_h5', self::CURRENCY_ID, 'CNY', null, null, null, $this->context);
+        $result = $this->service($payments)->purchase(self::CUSTOMER_ID, self::PLAN_ID, 'alipay_h5', self::CURRENCY_ID, new PaymentContext('CNY', new PaymentScene('browser', 'web', 'browser')), null, null, $this->context);
 
         static::assertIsArray($attachedTo);
         static::assertSame($result['id'], $attachedTo['outTradeNo']);
@@ -143,7 +125,7 @@ class MembershipPurchaseServiceTest extends TestCase
 
         $this->expectExceptionObject(MembershipException::planNotFound(self::PLAN_ID));
 
-        $this->service()->purchase(self::CUSTOMER_ID, self::PLAN_ID, 'alipay_h5', self::CURRENCY_ID, 'CNY', null, null, null, $this->context);
+        $this->service()->purchase(self::CUSTOMER_ID, self::PLAN_ID, 'alipay_h5', self::CURRENCY_ID, new PaymentContext('CNY', new PaymentScene('browser', 'web', 'browser')), null, null, $this->context);
     }
 
     public function testAnInactivePlanIsRefused(): void
@@ -155,7 +137,7 @@ class MembershipPurchaseServiceTest extends TestCase
 
         $this->expectExceptionObject(MembershipException::planNotPurchasable(self::PLAN_ID));
 
-        $this->service()->purchase(self::CUSTOMER_ID, self::PLAN_ID, 'alipay_h5', self::CURRENCY_ID, 'CNY', null, null, null, $this->context);
+        $this->service()->purchase(self::CUSTOMER_ID, self::PLAN_ID, 'alipay_h5', self::CURRENCY_ID, new PaymentContext('CNY', new PaymentScene('browser', 'web', 'browser')), null, null, $this->context);
     }
 
     /**
@@ -169,7 +151,7 @@ class MembershipPurchaseServiceTest extends TestCase
         $this->payments->method('open')->willThrowException(new \RuntimeException('channel is down'));
 
         try {
-            $this->service()->purchase(self::CUSTOMER_ID, self::PLAN_ID, 'alipay_h5', self::CURRENCY_ID, 'CNY', null, null, null, $this->context);
+            $this->service()->purchase(self::CUSTOMER_ID, self::PLAN_ID, 'alipay_h5', self::CURRENCY_ID, new PaymentContext('CNY', new PaymentScene('browser', 'web', 'browser')), null, null, $this->context);
 
             static::fail('The exception of the channel has to reach the caller');
         } catch (\RuntimeException) {
@@ -193,8 +175,10 @@ class MembershipPurchaseServiceTest extends TestCase
         static::assertSame(self::ORDER_ID, $orders[0]->getId());
     }
 
-    private function service(?StorefrontPaymentService $payments = null): MembershipPurchaseService
+    private function service((StorefrontPaymentService&Stub)|null $payments = null): MembershipPurchaseService
     {
+        ($payments ?? $this->payments)->method('resolveMethod')->willReturn('alipay_h5');
+
         return new MembershipPurchaseService(
             $this->orderRepository,
             new MembershipPlanService($this->planRepository),

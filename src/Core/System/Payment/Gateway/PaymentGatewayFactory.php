@@ -34,7 +34,7 @@ class PaymentGatewayFactory implements GatewayFactoryInterface
     /**
      * @param class-string<AbstractPaymentApi> $apiClass the api of the interface, built per payment
      * @param list<ActionInterface> $actions the prototypes of the actions of the interface - every
-     *        gateway is assembled with its own copy of them, see {@see create()}
+     *                                       gateway is assembled with its own copy of them, see {@see create()}
      * @param list<mixed> $apiArguments the services the api needs besides the payment
      */
     public function __construct(

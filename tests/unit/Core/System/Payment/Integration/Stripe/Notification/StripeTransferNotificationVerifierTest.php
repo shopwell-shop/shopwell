@@ -5,10 +5,10 @@ namespace Shopwell\Tests\Unit\Core\System\Payment\Integration\Stripe\Notificatio
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Payment\Exception\PaymentGatewayException;
 use Shopwell\Core\System\Payment\Integration\Stripe\Api\StripeApi;
 use Shopwell\Core\System\Payment\Integration\Stripe\Notification\StripeNotificationExtractor;
 use Shopwell\Core\System\Payment\Integration\Stripe\Notification\StripeTransferNotificationVerifier;
-use Shopwell\Core\System\Payment\PaymentException;
 use Stripe\WebhookSignature;
 
 /**
@@ -57,7 +57,7 @@ class StripeTransferNotificationVerifierTest extends TestCase
     {
         $headers = [StripeNotificationExtractor::HEADER_SIGNATURE => WebhookSignature::generateSignatureHeader('{}', self::SECRET)];
 
-        $this->expectExceptionObject(PaymentException::missingCredentials(StripeApi::PROVIDER, StripeApi::WEBHOOK_SECRET));
+        $this->expectExceptionObject(PaymentGatewayException::missingCredentials(StripeApi::PROVIDER, StripeApi::WEBHOOK_SECRET));
 
         $this->verifier()->verify([], '{}', $headers);
     }

@@ -1,129 +1,30 @@
-.sw-settings-payment-provider-detail {
-    .sw-settings-payment-provider-detail__state {
-        margin-inline-end: var(--scale-size-8, 8px);
+.sw-payment-account-detail {
+    &__identity,
+    &__fields {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+        gap: var(--scale-size-16) var(--scale-size-24);
+        align-items: start;
     }
 
-    .sw-settings-payment-provider-detail__grid {
-        margin-top: var(--scale-size-16, 16px);
+    &__identity { align-items: center; }
+
+    &__products {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+        gap: var(--scale-size-16) var(--scale-size-24);
+        align-items: start;
     }
 
-    .sw-settings-payment-provider-detail__hint {
-        margin-top: var(--scale-size-16, 16px);
+    &__product .mt-switch { margin-block-start: 0; }
+
+    &__keys {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: var(--scale-size-24);
     }
 
-    .sw-settings-payment-provider-detail__channels-count {
-        margin-inline-end: var(--scale-size-8, 8px);
-    }
-
-    .sw-settings-payment-provider-detail__channels-empty {
-        padding: var(--scale-size-32, 32px) 0;
-    }
-
-    .sw-settings-payment-provider-detail__channel-table-wrapper {
-        overflow-x: auto;
-    }
-
-    .sw-settings-payment-provider-detail__channel-table {
-        width: 100%;
-        min-width: var(--scale-size-1024, 1024px);
-        border-collapse: collapse;
-    }
-
-    .sw-settings-payment-provider-detail__channel-head {
-        .sw-settings-payment-provider-detail__channel-cell {
-            color: var(--color-text-secondary-default);
-            font-size: var(--font-size-xs, 12px);
-            font-weight: var(--font-weight-semibold, 600);
-            text-align: left;
-            white-space: nowrap;
-        }
-    }
-
-    .sw-settings-payment-provider-detail__channel-cell {
-        border-bottom: 1px solid var(--color-border-secondary-default, rgba(0, 0, 0, 8%));
-        padding: var(--scale-size-12, 12px) var(--scale-size-8, 8px);
-        color: var(--color-text-primary-default);
-        vertical-align: middle;
-        white-space: nowrap;
-    }
-
-    .sw-settings-payment-provider-detail__channel-cell--channel {
-        cursor: pointer;
-        transition: background-color 0.15s ease;
-
-        &:hover {
-            background-color: var(--color-background-secondary-default, rgba(0, 0, 0, 2%));
-        }
-
-        &:focus-visible {
-            outline: 2px solid var(--color-border-brand-default, #0870ff);
-            outline-offset: -2px;
-        }
-    }
-
-    .sw-settings-payment-provider-detail__channel-select {
-        display: flex;
-        align-items: center;
-        gap: var(--scale-size-8, 8px);
-    }
-
-    .sw-settings-payment-provider-detail__channel-select-icon {
-        display: flex;
-        flex-shrink: 0;
-        align-items: center;
-        color: var(--color-text-secondary-default);
-    }
-
-    .sw-settings-payment-provider-detail__channel-info {
-        display: flex;
-        flex-direction: column;
-        min-width: 0;
-    }
-
-    .sw-settings-payment-provider-detail__channel-cell--params {
-        border-bottom: 1px solid var(--color-border-secondary-default, rgba(0, 0, 0, 8%));
-        background-color: var(--color-background-secondary-default, rgba(0, 0, 0, 2%));
-        padding: var(--scale-size-24, 24px) var(--scale-size-16, 16px);
-        white-space: normal;
-    }
-
-    .sw-settings-payment-provider-detail__channel-label {
-        display: block;
-        font-weight: var(--font-weight-semibold, 600);
-    }
-
-    .sw-settings-payment-provider-detail__channel-technical-name {
-        display: block;
-        color: var(--color-text-secondary-default);
-        font-family: var(--font-family-monospace, monospace);
-        font-size: var(--font-size-xs, 12px);
-    }
-
-    .sw-settings-payment-provider-detail__channel-params {
-        margin-bottom: var(--scale-size-8, 8px);
-    }
-
-    .sw-settings-payment-provider-detail__channel-params-actions {
-        display: flex;
-        justify-content: flex-end;
-        margin-top: var(--scale-size-8, 8px);
-    }
-
-    .sw-settings-payment-provider-detail__channel-params-empty {
-        margin: 0;
-        color: var(--color-text-secondary-default);
-    }
-
-    .sw-settings-payment-provider-detail__channel-enabled {
-        margin: 0;
-    }
-
-    .sw-settings-payment-provider-detail__danger-message {
-        margin: 0 0 var(--scale-size-16, 16px);
-        color: var(--color-text-secondary-default);
-    }
-
-    .sw-settings-payment-provider-detail__reset-modal-message {
-        margin: 0;
+    @media (max-width: 700px) {
+        &__keys { grid-template-columns: 1fr; }
     }
 }

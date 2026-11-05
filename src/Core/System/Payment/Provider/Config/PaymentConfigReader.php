@@ -3,6 +3,7 @@
 namespace Shopwell\Core\System\Payment\Provider\Config;
 
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Payment\Exception\PaymentProviderException;
 use Shopwell\Core\System\Payment\PaymentException;
 use Shopwell\Core\System\SystemConfig\Util\ConfigReader;
 
@@ -77,7 +78,7 @@ final class PaymentConfigReader extends ConfigReader
         $name = $element['name'] ?? null;
 
         if (!\is_string($name) || $name === '') {
-            throw PaymentException::invalidProviderDeclaration(\sprintf('The payment configuration "%s" contains a field without a name.', $file));
+            throw PaymentProviderException::invalidProviderDeclaration(\sprintf('The payment configuration "%s" contains a field without a name.', $file));
         }
 
         $type = match ($element['type'] ?? PaymentConfigField::TYPE_TEXT) {

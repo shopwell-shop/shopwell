@@ -12,9 +12,9 @@ use Shopwell\Core\Checkout\Payment\PaymentMethodCollection;
 use Shopwell\Core\Checkout\Payment\PaymentMethodEntity;
 use Shopwell\Core\Checkout\Payment\SalesChannel\PaymentMethodRoute;
 use Shopwell\Core\Checkout\Payment\SalesChannel\PaymentMethodRouteResponse;
+use Shopwell\Core\Checkout\Payment\Storefront\StorefrontPaymentContextResolver;
 use Shopwell\Core\Framework\Adapter\Cache\CacheTagCollector;
 use Shopwell\Core\Framework\Context;
-use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
 use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
@@ -22,9 +22,12 @@ use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Rule\RuleIdMatcher;
 use Shopwell\Core\Framework\Script\Execution\ScriptExecutor;
 use Shopwell\Core\System\Currency\CurrencyEntity;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannelRegistry;
+use Shopwell\Core\System\Payment\Product\PaymentProduct;
+use Shopwell\Core\System\Payment\Product\PaymentProductRegistry;
 use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;
+use Shopwell\Core\System\Payment\Routing\DefaultPaymentRoutingPolicy;
+use Shopwell\Core\System\Payment\Routing\PaymentProductEligibility;
+use Shopwell\Core\System\Payment\Routing\PaymentRouteResolver;
 use Shopwell\Core\System\SalesChannel\Entity\SalesChannelRepository;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
 use Shopwell\Core\Test\Generator;
@@ -76,8 +79,7 @@ class PaymentMethodRouteTest extends TestCase
     }
 
     /**
-     * The `device` the storefront asks for reaches the filter: a channel that is declared for `wap`
-     * only is not offered to a desktop request, while a request that names no device keeps it.
+     * The server derives the browser scene even if a request tries to override its device.
      */
     public function testTheDeviceOfTheRequestDecidesWhichChannelIsOffered(): void
     {
@@ -95,7 +97,7 @@ class PaymentMethodRouteTest extends TestCase
             $this->paymentMethods(),
             $this->wapOnlyCollectability()
         );
-        $response = $silent->load(new Request(), $this->context(), new Criteria());
+        $response = $silent->load(new Request(server: ['HTTP_USER_AGENT' => 'iPhone Mobile']), $this->context(), new Criteria());
 
         static::assertSame(['invoice-id', 'gateway-id'], array_values($response->getPaymentMethods()->getIds()));
     }
@@ -125,6 +127,7 @@ class PaymentMethodRouteTest extends TestCase
             static::createStub(RuleIdMatcher::class),
             $dispatcher,
             $collectability ?? $this->collectability(),
+            new StorefrontPaymentContextResolver(),
         );
     }
 
@@ -139,27 +142,31 @@ class PaymentMethodRouteTest extends TestCase
         $binding->setUniqueIdentifier($binding->id);
         $binding->paymentMethodId = 'gateway-id';
         $binding->paymentAppId = PaymentGatewayFixture::PLATFORM_APP_ID;
-        $binding->channelTechnicalName = PaymentGatewayFixture::CHANNEL;
+        $binding->methodTechnicalName = PaymentGatewayFixture::PROVIDER;
+        $binding->paymentApp = PaymentGatewayFixture::platformAppEntity();
+        $binding->routingPolicy = 'priority';
 
         return new PaymentMethodCollectability(
             PaymentGatewayFixture::repository([$binding]),
-            PaymentGatewayFixture::repository([PaymentGatewayFixture::channelConfig()]),
-            PaymentGatewayFixture::repository([PaymentGatewayFixture::providerConfig()]),
-            PaymentGatewayFixture::repository([PaymentGatewayFixture::platformAppEntity()]),
-            PaymentGatewayFixture::repository(),
-            PaymentGatewayFixture::channelRegistry(devices: [PaymentChannel::DEVICE_WAP]),
+            new PaymentRouteResolver(
+                PaymentGatewayFixture::channelRegistry(devices: [PaymentProduct::DEVICE_WAP]),
+                new PaymentProductEligibility(),
+                PaymentGatewayFixture::configResolver(),
+                [new DefaultPaymentRoutingPolicy()],
+            ),
         );
     }
 
     private function collectability(): PaymentMethodCollectability
     {
         return new PaymentMethodCollectability(
-            static::createStub(EntityRepository::class),
-            static::createStub(EntityRepository::class),
-            static::createStub(EntityRepository::class),
-            static::createStub(EntityRepository::class),
-            static::createStub(EntityRepository::class),
-            new PaymentChannelRegistry(new PaymentProviderRegistry([])),
+            PaymentGatewayFixture::repository(),
+            new PaymentRouteResolver(
+                new PaymentProductRegistry(new PaymentProviderRegistry([])),
+                new PaymentProductEligibility(),
+                PaymentGatewayFixture::configResolver(),
+                [new DefaultPaymentRoutingPolicy()],
+            ),
         );
     }
 

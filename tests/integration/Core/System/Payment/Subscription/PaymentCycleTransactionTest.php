@@ -42,6 +42,8 @@ class PaymentCycleTransactionTest extends TestCase
 
     private string $cycleId;
 
+    private string $accountId;
+
     protected function setUp(): void
     {
         $container = static::getContainer();
@@ -55,6 +57,14 @@ class PaymentCycleTransactionTest extends TestCase
         $this->planId = $ids->get('plan');
         $this->subscriptionId = $ids->get('subscription');
         $this->cycleId = $ids->get('cycle');
+        $this->accountId = $ids->get('account');
+        $container->get('payment_account.repository')->create([[
+            'id' => $this->accountId,
+            'providerTechnicalName' => 'alipay',
+            'name' => 'Cycle transaction account',
+            'enabledProducts' => ['alipay_h5'],
+            'active' => true,
+        ]], $this->context);
 
         $container->get('customer.repository')->create([
             (new CustomerBuilder($ids, 'customer'))->build(),
@@ -78,6 +88,7 @@ class PaymentCycleTransactionTest extends TestCase
         $container->get('payment_subscription.repository')->create([[
             'id' => $this->subscriptionId,
             'subscriptionNo' => $this->subscriptionId,
+            'accountId' => $this->accountId,
             'planId' => $this->planId,
             'customerId' => $this->customerId,
             'salesChannelId' => TestDefaults::SALES_CHANNEL,
@@ -107,6 +118,7 @@ class PaymentCycleTransactionTest extends TestCase
         static::assertSame(0, $this->connection->getTransactionNestingLevel());
         $this->connection->delete('payment_subscription_cycle', ['id' => Uuid::fromHexToBytes($this->cycleId)]);
         $this->connection->delete('payment_subscription', ['id' => Uuid::fromHexToBytes($this->subscriptionId)]);
+        $this->connection->delete('payment_account', ['id' => Uuid::fromHexToBytes($this->accountId)]);
         $this->connection->delete('payment_plan', ['id' => Uuid::fromHexToBytes($this->planId)]);
         $this->connection->delete('customer', ['id' => Uuid::fromHexToBytes($this->customerId)]);
         $this->connection->delete('customer_group', ['id' => Uuid::fromHexToBytes($this->customerGroupId)]);
@@ -171,6 +183,33 @@ class PaymentCycleTransactionTest extends TestCase
             });
         } finally {
             $this->connection->rollBack();
+        }
+
+        static::assertFalse($callbackRan);
+    }
+
+    public function testSchedulingLocksTheSubscriptionBeforeItsCallback(): void
+    {
+        $blocker = DriverManager::getConnection($this->connection->getParams());
+        $blocker->beginTransaction();
+        $blocker->fetchOne(
+            'SELECT `id` FROM `payment_subscription` WHERE `id` = :id FOR UPDATE',
+            ['id' => Uuid::fromHexToBytes($this->subscriptionId)]
+        );
+        $callbackRan = false;
+
+        try {
+            $this->expectContention(function (Connection $connection) use (&$callbackRan): void {
+                (new PaymentCycleTransaction($connection))->executeForSubscription(
+                    $this->subscriptionId,
+                    static function () use (&$callbackRan): void {
+                        $callbackRan = true;
+                    }
+                );
+            });
+        } finally {
+            $blocker->rollBack();
+            $blocker->close();
         }
 
         static::assertFalse($callbackRan);

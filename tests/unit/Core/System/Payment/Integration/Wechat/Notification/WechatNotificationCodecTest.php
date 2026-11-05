@@ -5,6 +5,8 @@ namespace Shopwell\Tests\Unit\Core\System\Payment\Integration\Wechat\Notificatio
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Payment\Exception\PaymentGatewayException;
+use Shopwell\Core\System\Payment\Exception\PaymentNotificationException;
 use Shopwell\Core\System\Payment\Integration\Wechat\Action\WechatNotifyAction;
 use Shopwell\Core\System\Payment\Integration\Wechat\Api\WechatApi;
 use Shopwell\Core\System\Payment\Integration\Wechat\Notification\WechatNotificationCodec;
@@ -49,7 +51,7 @@ class WechatNotificationCodecTest extends TestCase
 
     public function testAVerificationWithoutAnyCertificateCannotBeAnswered(): void
     {
-        $this->expectExceptionObject(PaymentException::missingCredentials(WechatApi::PROVIDER, WechatApi::PLATFORM_CERTS));
+        $this->expectExceptionObject(PaymentGatewayException::missingCredentials(WechatApi::PROVIDER, WechatApi::PLATFORM_CERTS));
 
         WechatNotificationCodec::verify([], '{}', $this->signedHeaders('{}'));
     }
@@ -68,14 +70,14 @@ class WechatNotificationCodecTest extends TestCase
 
     public function testAMessageWithoutAnEncryptedResourceIsRejected(): void
     {
-        $this->expectExceptionObject(PaymentException::notificationInvalid(WechatApi::PROVIDER, 'the notification carries no encrypted resource'));
+        $this->expectExceptionObject(PaymentNotificationException::notificationInvalid(WechatApi::PROVIDER, 'the notification carries no encrypted resource'));
 
         WechatNotificationCodec::decryptResource($this->credentials(), ['id' => 'evt-1']);
     }
 
     public function testADecryptionWithoutTheKeyIsAConfigurationError(): void
     {
-        $this->expectExceptionObject(PaymentException::missingCredentials(WechatApi::PROVIDER, WechatApi::API_V3_KEY));
+        $this->expectExceptionObject(PaymentGatewayException::missingCredentials(WechatApi::PROVIDER, WechatApi::API_V3_KEY));
 
         WechatNotificationCodec::decryptResource([], ['resource' => $this->encryptedResource(['a' => 1])]);
     }

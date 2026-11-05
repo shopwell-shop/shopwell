@@ -5,10 +5,11 @@ namespace Shopwell\Storefront\Controller;
 use Shopwell\Core\Checkout\Payment\Gateway\OrderPaymentStarter;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\PlatformRequest;
+use Shopwell\Core\System\Payment\Exception\PaymentOrderException;
 use Shopwell\Core\System\Payment\Order\PaymentOrderEntity;
 use Shopwell\Core\System\Payment\Order\PaymentOrderService;
 use Shopwell\Core\System\Payment\PaymentException;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
+use Shopwell\Core\System\Payment\Product\PaymentInteraction;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
 use Shopwell\Storefront\Framework\Routing\StorefrontRouteScope;
 use Symfony\Component\HttpFoundation\Response;
@@ -44,8 +45,8 @@ class PaymentGatewayController extends StorefrontController
         $order = $this->order($orderId, $paymentNo, $context);
         $params = $this->starter->payParams($order);
 
-        if ($params->flow !== PaymentFlow::REDIRECT || $params->htmlForm === null) {
-            throw PaymentException::orderNotFound($paymentNo);
+        if ($params->flow !== PaymentInteraction::REDIRECT || $params->htmlForm === null) {
+            throw PaymentOrderException::orderNotFound($paymentNo);
         }
 
         // the channel signed this exact document; escaping or rebuilding it would break the payment
@@ -67,8 +68,8 @@ class PaymentGatewayController extends StorefrontController
         $params = $this->starter->payParams($order);
         $qrContent = $params->extra['qr_code'] ?? null;
 
-        if ($params->flow !== PaymentFlow::QRCODE || !\is_string($qrContent) || $qrContent === '') {
-            throw PaymentException::orderNotFound($paymentNo);
+        if ($params->flow !== PaymentInteraction::QRCODE || !\is_string($qrContent) || $qrContent === '') {
+            throw PaymentOrderException::orderNotFound($paymentNo);
         }
 
         return $this->renderStorefront('@Storefront/storefront/page/payment/gateway/qr.html.twig', [
@@ -94,7 +95,7 @@ class PaymentGatewayController extends StorefrontController
             || $order->order?->getSalesChannelId() !== $context->getSalesChannelId()
             || $order->order->getOrderCustomer()?->getCustomerId() !== $customer->getId()
         ) {
-            throw PaymentException::orderNotFound($paymentNo);
+            throw PaymentOrderException::orderNotFound($paymentNo);
         }
 
         return $order;

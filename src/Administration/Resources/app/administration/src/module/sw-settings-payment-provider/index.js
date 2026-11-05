@@ -5,7 +5,7 @@ import './acl';
 
 const { Module } = Shopwell;
 
-/* eslint-disable sw-deprecation-rules/private-feature-declarations */
+/* eslint-disable sw-deprecation-rules/private-feature-declarations -- Existing module registrations retain their extension names. */
 Shopwell.Component.register('sw-settings-payment-provider-list', () => import('./page/sw-settings-payment-provider-list'));
 Shopwell.Component.register(
     'sw-settings-payment-provider-detail',
@@ -13,7 +13,7 @@ Shopwell.Component.register(
 );
 /* eslint-enable sw-deprecation-rules/private-feature-declarations */
 
-// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations -- Existing module registration remains compatible.
 Module.register('sw-settings-payment-provider', {
     type: 'core',
     name: 'settings-payment-provider',
@@ -24,7 +24,7 @@ Module.register('sw-settings-payment-provider', {
     color: 'var(--sw-color-module-cyan-default)',
     icon: 'regular-credit-card',
     favicon: 'icon-module-settings.svg',
-    entity: 'payment_provider_config',
+    entity: 'payment_account',
 
     routes: {
         index: {
@@ -32,8 +32,14 @@ Module.register('sw-settings-payment-provider', {
             path: 'index',
             meta: {
                 parentPath: 'sw.settings.index',
-                privilege: 'payment_provider_config.viewer',
+                privilege: 'payment_account.viewer',
             },
+        },
+
+        create: {
+            component: 'sw-settings-payment-provider-detail',
+            path: 'create',
+            meta: { parentPath: 'sw.settings.payment.provider.index', privilege: 'payment_account.creator' },
         },
 
         detail: {
@@ -41,11 +47,11 @@ Module.register('sw-settings-payment-provider', {
             path: 'detail/:id',
             meta: {
                 parentPath: 'sw.settings.payment.provider.index',
-                privilege: 'payment_provider_config.viewer',
+                privilege: 'payment_account.viewer',
             },
             props: {
                 default(route) {
-                    return { providerId: route.params.id };
+                    return { accountId: route.params.id };
                 },
             },
         },
@@ -59,7 +65,7 @@ Module.register('sw-settings-payment-provider', {
             path: 'sw.settings.payment.provider.index',
             icon: 'regular-credit-card',
             position: 810,
-            privilege: 'payment_provider_config.viewer',
+            privilege: 'payment_account.viewer',
         },
     ],
 
@@ -67,6 +73,6 @@ Module.register('sw-settings-payment-provider', {
         group: 'payment',
         to: 'sw.settings.payment.provider.index',
         icon: 'regular-credit-card',
-        privilege: 'payment_provider_config.viewer',
+        privilege: 'payment_account.viewer',
     },
 });

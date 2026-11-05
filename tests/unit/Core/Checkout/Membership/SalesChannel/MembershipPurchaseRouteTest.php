@@ -7,9 +7,12 @@ use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Checkout\Customer\CustomerEntity;
 use Shopwell\Core\Checkout\Membership\SalesChannel\MembershipPurchaseRoute;
 use Shopwell\Core\Checkout\Membership\Service\MembershipPurchaseService;
+use Shopwell\Core\Checkout\Payment\Storefront\StorefrontPaymentContextResolver;
 use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Currency\CurrencyEntity;
+use Shopwell\Core\System\Payment\Product\PaymentScene;
+use Shopwell\Core\System\Payment\Routing\PaymentContext;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
 use Shopwell\Core\Test\Generator;
 use Symfony\Component\EventDispatcher\EventDispatcher;
@@ -35,17 +38,7 @@ class MembershipPurchaseRouteTest extends TestCase
         $membershipService = $this->createMock(MembershipPurchaseService::class);
         $membershipService->expects($this->once())
             ->method('purchase')
-            ->with(
-                self::CUSTOMER_ID,
-                self::PLAN_ID,
-                'alipay_h5',
-                self::CURRENCY_ID,
-                'CNY',
-                'https://shop.test/account/membership',
-                '10.0.0.1',
-                'web',
-                $context->getContext(),
-            )
+            ->with(self::CUSTOMER_ID, self::PLAN_ID, 'alipay', self::CURRENCY_ID, new PaymentContext('CNY', new PaymentScene('browser', 'web', 'browser')), 'https://shop.test/account/membership', '10.0.0.1', $context->getContext())
             ->willReturn([
                 'id' => 'order-id',
                 'amount' => 199.0,
@@ -55,7 +48,7 @@ class MembershipPurchaseRouteTest extends TestCase
                 'params' => ['url' => 'https://pay.test'],
             ]);
 
-        $route = new MembershipPurchaseRoute($membershipService, new ExtensionDispatcher(new EventDispatcher()));
+        $route = new MembershipPurchaseRoute($membershipService, new ExtensionDispatcher(new EventDispatcher()), new StorefrontPaymentContextResolver());
 
         $response = $route->purchase($this->request(), $context, $this->customer());
 
@@ -70,22 +63,12 @@ class MembershipPurchaseRouteTest extends TestCase
         $membershipService = $this->createMock(MembershipPurchaseService::class);
         $membershipService->expects($this->once())
             ->method('purchase')
-            ->with(
-                static::anything(),
-                static::anything(),
-                static::anything(),
-                static::anything(),
-                static::anything(),
-                'http://localhost/account/membership',
-                static::anything(),
-                null,
-                static::anything(),
-            )
-            ->willReturn(['id' => 'order-id', 'amount' => 1.0, 'currency' => 'CNY', 'payment_no' => 'PAY-1', 'channel' => 'alipay_h5', 'params' => []]);
+            ->with(static::anything(), static::anything(), static::anything(), static::anything(), static::isInstanceOf(PaymentContext::class), 'http://localhost/account/membership', static::anything(), static::anything())
+            ->willReturn(['id' => 'order-id', 'amount' => 1.0, 'currency' => 'CNY', 'payment_no' => 'PAY-1', 'method' => 'alipay', 'params' => []]);
 
-        $route = new MembershipPurchaseRoute($membershipService, new ExtensionDispatcher(new EventDispatcher()));
+        $route = new MembershipPurchaseRoute($membershipService, new ExtensionDispatcher(new EventDispatcher()), new StorefrontPaymentContextResolver());
 
-        $request = Request::create('/store-api/membership/purchase', Request::METHOD_POST, ['planId' => self::PLAN_ID, 'channel' => 'alipay_h5']);
+        $request = Request::create('/store-api/membership/purchase', Request::METHOD_POST, ['planId' => self::PLAN_ID, 'method' => 'alipay']);
 
         $route->purchase($request, $context, $this->customer());
     }
@@ -94,7 +77,7 @@ class MembershipPurchaseRouteTest extends TestCase
     {
         return Request::create('/store-api/membership/purchase', Request::METHOD_POST, [
             'planId' => self::PLAN_ID,
-            'channel' => 'alipay_h5',
+            'method' => 'alipay',
             'returnUrl' => 'https://shop.test/account/membership',
             'device' => 'WEB',
         ], server: ['REMOTE_ADDR' => '10.0.0.1']);

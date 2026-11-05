@@ -35,17 +35,7 @@
             <required>true</required>
             <helpText>The Alipay public key from the same page, used to verify signatures; this is not the application public key.</helpText>
             <helpText lang="zh-CN">验签用的那一半，是同一页面里「支付宝公钥」那一栏的值，不是你的应用公钥。</helpText>
-        </input-field>
-        <input-field type="single-select">
-            <name>sign_type</name>
-            <label>Signature algorithm</label>
-            <label lang="zh-CN">签名算法</label>
-            <options>
-                <option><id>RSA2</id><name>RSA2</name><name lang="zh-CN">RSA2</name></option>
-            </options>
-            <defaultValue>RSA2</defaultValue>
-            <helpText>The Alipay integration currently implements RSA2 (SHA256withRSA) only.</helpText>
-            <helpText lang="zh-CN">支付宝 SDK 目前只实现 RSA2（SHA256withRSA），因此这是唯一可选值。</helpText>
+            <secret>true</secret>
         </input-field>
         <input-field>
             <name>gateway_url</name>
@@ -57,34 +47,6 @@
         </input-field>
     </card>
 
-    <card>
-        <title>Alipay H5</title><title lang="zh-CN">支付宝 H5</title><name>channelAlipayH5</name>
-        <input-field type="single-select">
-            <name>http_method</name>
-            <label>Hand-over method</label><label lang="zh-CN">跳转方式</label>
-            <options>
-                <option><id>GET</id><name>GET (direct redirect)</name><name lang="zh-CN">GET（直接跳转）</name></option>
-                <option><id>POST</id><name>POST (self-submitting form)</name><name lang="zh-CN">POST（自提交表单）</name></option>
-            </options>
-            <defaultValue>GET</defaultValue>
-            <helpText>GET redirects directly; POST returns a self-submitting form when the parameters grow too long.</helpText>
-            <helpText lang="zh-CN">GET 直接把用户跳转到支付宝页面；POST 由平台返回自提交表单，参数过长时使用。</helpText>
-        </input-field>
-    </card>
-    <card>
-        <title>Alipay Web</title><title lang="zh-CN">支付宝网页支付</title><name>channelAlipayWeb</name>
-        <input-field type="single-select">
-            <name>http_method</name>
-            <label>Hand-over method</label><label lang="zh-CN">跳转方式</label>
-            <options>
-                <option><id>GET</id><name>GET (direct redirect)</name><name lang="zh-CN">GET（直接跳转）</name></option>
-                <option><id>POST</id><name>POST (self-submitting form)</name><name lang="zh-CN">POST（自提交表单）</name></option>
-            </options>
-            <defaultValue>GET</defaultValue>
-            <helpText>GET redirects directly; POST returns a self-submitting form when the parameters grow too long.</helpText>
-            <helpText lang="zh-CN">GET 直接把用户跳转到支付宝页面；POST 由平台返回自提交表单，参数过长时使用。</helpText>
-        </input-field>
-    </card>
     <card>
         <title>Alipay Mini</title><title lang="zh-CN">支付宝小程序</title><name>channelAlipayMini</name>
         <input-field>

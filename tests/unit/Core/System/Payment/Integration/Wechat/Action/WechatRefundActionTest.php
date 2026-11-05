@@ -2,22 +2,30 @@
 
 namespace Shopwell\Tests\Unit\Core\System\Payment\Integration\Wechat\Action;
 
+use GuzzleHttp\HandlerStack;
 use Payum\Core\Request\Capture;
 use Payum\Core\Request\Refund;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Payment\Exception\PaymentGatewayException;
+use Shopwell\Core\System\Payment\Exception\PaymentRefundRejectedException;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayFactory;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
+use Shopwell\Core\System\Payment\Gateway\Request\RefundQuery;
+use Shopwell\Core\System\Payment\Gateway\Request\RefundResult;
 use Shopwell\Core\System\Payment\Integration\Wechat\Action\WechatRefundAction;
 use Shopwell\Core\System\Payment\Integration\Wechat\Api\WechatApi;
+use Shopwell\Core\System\Payment\Integration\Wechat\Product\WechatProducts;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
+use Shopwell\Core\System\Payment\Order\PaymentRefundStates;
 use Shopwell\Core\System\Payment\PaymentException;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
+use Shopwell\Core\System\Payment\Product\PaymentInteraction;
+use Shopwell\Core\System\Payment\Product\PaymentProduct;
 use Shopwell\Core\System\Payment\Provider\PaymentProvider;
 use Shopwell\Core\System\Payment\Provider\ResolvedPaymentConfig;
+use Shopwell\Tests\Unit\Core\System\Payment\Integration\Wechat\FakeWechatHandler;
 
 /**
  * @internal
@@ -26,6 +34,53 @@ use Shopwell\Core\System\Payment\Provider\ResolvedPaymentConfig;
 #[CoversClass(WechatRefundAction::class)]
 class WechatRefundActionTest extends TestCase
 {
+    public function testQueriesAnAcceptedRefundWithoutSubmittingAgain(): void
+    {
+        $action = $this->queryAction(['status' => 'SUCCESS', 'refund_id' => 'remote-refund']);
+        $model = new PaymentGatewayModel([
+            PaymentGatewayModel::PAYMENT_NO => 'ORDER-1',
+            PaymentGatewayModel::OUT_PAYMENT_NO => 'remote-payment',
+            PaymentGatewayModel::REFUND_NO => 'REFUND-1',
+        ]);
+
+        $action->execute(new RefundQuery($model, 'remote-refund'));
+
+        $result = $model->result(RefundResult::class, 'channel');
+        static::assertSame(PaymentRefundStates::STATE_FINISHED, $result->status);
+        static::assertSame('remote-refund', $result->outRefundId);
+    }
+
+    public function testAnUnrecognizedQueryAnswerKeepsTheRefundReserved(): void
+    {
+        $action = $this->queryAction([]);
+        $model = new PaymentGatewayModel();
+
+        $action->execute(new RefundQuery($model, 'remote-refund'));
+
+        $result = $model->result(RefundResult::class, 'channel');
+        static::assertSame(PaymentRefundStates::STATE_PROCESSING, $result->status);
+        static::assertSame('remote-refund', $result->outRefundId);
+    }
+
+    public function testAConfirmedFailedQueryReleasesTheReservation(): void
+    {
+        $action = $this->queryAction(['status' => 'CLOSED']);
+
+        $this->expectException(PaymentRefundRejectedException::class);
+
+        $action->execute(new RefundQuery(new PaymentGatewayModel(), 'remote-refund'));
+    }
+
+    public function testAnAbnormalRefundKeepsItsAmountReservedForMerchantHandling(): void
+    {
+        $action = $this->queryAction(['status' => 'ABNORMAL', 'refund_id' => 'remote-refund']);
+        $model = new PaymentGatewayModel();
+
+        $action->execute(new RefundQuery($model, 'remote-refund'));
+
+        static::assertSame(PaymentRefundStates::STATE_PROCESSING, $model->result(RefundResult::class, 'wechat')->status);
+    }
+
     public function testSupportsOnlyRefundRequestsWithAPaymentGatewayModel(): void
     {
         $action = new WechatRefundAction();
@@ -39,7 +94,7 @@ class WechatRefundActionTest extends TestCase
     {
         $action = new WechatRefundAction();
 
-        $this->expectExceptionObject(PaymentException::actionWithoutApi(WechatRefundAction::class));
+        $this->expectExceptionObject(PaymentGatewayException::actionWithoutApi(WechatRefundAction::class));
 
         $action->execute(new Refund(new PaymentGatewayModel()));
     }
@@ -113,9 +168,36 @@ class WechatRefundActionTest extends TestCase
         yield 'refund' => ['v3/refund/domestic/refunds', WechatRefundAction::URI_REFUND];
     }
 
-    private function api(): WechatApi
+    /**
+     * @param array<string, mixed> $answer
+     */
+    private function queryAction(array $answer): WechatRefundAction
     {
-        $channel = new PaymentChannel(WechatApi::CHANNEL_H5, 'wechat', WechatApi::CHANNEL_H5, PaymentFlow::REDIRECT);
+        $key = openssl_pkey_new(['private_key_bits' => 2048]);
+        static::assertNotFalse($key);
+        openssl_pkey_export($key, $privateKey);
+        $details = openssl_pkey_get_details($key);
+        static::assertIsArray($details);
+        $handler = new FakeWechatHandler($privateKey, 'PLATFORM-SERIAL');
+        $handler->answer(200, $answer);
+        $action = new WechatRefundAction();
+        $action->setApi($this->api($handler->stack(), [
+            WechatApi::MCH_ID => '1900000001',
+            WechatApi::MCH_SERIAL => 'MCH-SERIAL',
+            WechatApi::MCH_PRIVATE_KEY => $privateKey,
+            WechatApi::PLATFORM_CERT => $details['key'],
+            WechatApi::PLATFORM_SERIAL => 'PLATFORM-SERIAL',
+        ]));
+
+        return $action;
+    }
+
+    /**
+     * @param array<string, mixed> $credentials
+     */
+    private function api(?HandlerStack $handler = null, array $credentials = [WechatApi::MCH_ID => '1900000001']): WechatApi
+    {
+        $channel = new PaymentProduct(WechatProducts::H5, 'wechat', WechatProducts::H5, [PaymentInteraction::REDIRECT], 'wechat');
 
         return new WechatApi(
             new ResolvedPaymentConfig(
@@ -123,18 +205,20 @@ class WechatRefundActionTest extends TestCase
                     'wechat',
                     'wechat',
                     [],
-                    [WechatApi::CHANNEL_H5 => $channel],
+                    [WechatProducts::H5 => $channel],
                     new PaymentGatewayFactory('wechat', WechatApi::class, []),
                     static::createStub(PaymentNotificationExtractorInterface::class),
                 ),
-                channel: $channel,
-                credentials: [WechatApi::MCH_ID => '1900000001'],
+                product: $channel,
+                credentials: $credentials,
                 params: [],
                 runtimeParams: [],
                 settings: [],
+                accountId: 'test-account',
             ),
             'https://example.com/notify',
             '',
+            $handler,
         );
     }
 }

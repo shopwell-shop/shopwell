@@ -6,6 +6,7 @@ use Shopwell\Core\Checkout\Membership\SalesChannel\MembershipPresenter;
 use Shopwell\Core\Checkout\Payment\Storefront\StorefrontPaymentService;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Payment\Routing\PaymentContext;
 
 /**
  * What the account page shows about buying a membership: the plans, how they can be paid, and what the
@@ -34,13 +35,11 @@ class MembershipOfferService
     /**
      * @return array{plans: list<array<string, mixed>>, channels: list<array<string, string>>, orders: list<array<string, mixed>>}
      */
-    public function forCustomer(string $customerId, string $currencyId, string $currency, int $orderLimit, Context $context): array
+    public function forCustomer(string $customerId, string $currencyId, PaymentContext $paymentContext, int $orderLimit, Context $context): array
     {
         return [
             'plans' => array_map($this->presenter->plan(...), $this->plans->purchasable($currencyId, $context)),
-            // the account page is the same on every device, so no device is filtered out here: a plan
-            // bought on a desktop is often paid by scanning it with a phone
-            'channels' => $this->payments->channels($currency, null),
+            'channels' => $this->payments->options($paymentContext),
             'orders' => array_map(
                 $this->presenter->purchase(...),
                 $this->purchases->recentPurchases($customerId, $orderLimit, $context)

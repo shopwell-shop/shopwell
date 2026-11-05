@@ -16,11 +16,15 @@ use PaypalServerSdkLib\Models\OrderStatus;
 use PaypalServerSdkLib\Models\PurchaseUnit;
 use PaypalServerSdkLib\Models\PurchaseUnitRequest;
 use PaypalServerSdkLib\Models\RefundRequest;
+use PaypalServerSdkLib\Models\RefundStatus;
 use PaypalServerSdkLib\PaypalServerSdkClient;
 use PaypalServerSdkLib\PaypalServerSdkClientBuilder;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Currency\CurrencyAmountConverter;
+use Shopwell\Core\System\Currency\CurrencyException;
+use Shopwell\Core\System\Payment\Exception\PaymentGatewayException;
 use Shopwell\Core\System\Payment\Gateway\AbstractPaymentApi;
-use Shopwell\Core\System\Payment\Gateway\Request\Money;
+use Shopwell\Core\System\Payment\Gateway\Request\Payload;
 use Shopwell\Core\System\Payment\Gateway\Request\QueryResult;
 use Shopwell\Core\System\Payment\Integration\Paypal\Request\PaypalPaymentStatus;
 use Shopwell\Core\System\Payment\PaymentException;
@@ -43,6 +47,10 @@ use Symfony\Contracts\HttpClient\HttpClientInterface;
 #[Package('framework')]
 final class PaypalApi extends AbstractPaymentApi
 {
+    public const REFUND_COMPLETED = RefundStatus::COMPLETED;
+    public const REFUND_FAILED = RefundStatus::FAILED;
+    public const REFUND_CANCELLED = RefundStatus::CANCELLED;
+
     final public const PROVIDER = 'paypal';
 
     final public const CLIENT_ID = 'client_id';
@@ -163,7 +171,7 @@ final class PaypalApi extends AbstractPaymentApi
      */
     public function amount(int $minor, string $currency): string
     {
-        return Money::toDecimal($minor, $currency);
+        return CurrencyAmountConverter::toDecimal($minor, $currency);
     }
 
     /**
@@ -187,8 +195,9 @@ final class PaypalApi extends AbstractPaymentApi
             return $this->queryOrder($orderId);
         }
 
-        // without a capture id and without an order id there is nothing paypal could be asked about
-        return new QueryResult(QueryResult::STATUS_ABSENT);
+        // A create response can be lost after Paypal accepted the order. Missing references
+        // provide no evidence that it does not exist and must never close an in-flight trade.
+        return new QueryResult(QueryResult::STATUS_PENDING);
     }
 
     /**
@@ -264,6 +273,7 @@ final class PaypalApi extends AbstractPaymentApi
 
         try {
             $response = $this->client()->getOrdersController()->createOrder([
+                'paypalRequestId' => $order['payment_no'],
                 'body' => $orderRequest,
                 'prefer' => 'return=representation',
             ]);
@@ -274,6 +284,55 @@ final class PaypalApi extends AbstractPaymentApi
         }
 
         return self::decodedAnswer($response->getBody());
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function captureOrder(string $orderId, string $requestId): array
+    {
+        try {
+            $response = $this->client()->getOrdersController()->captureOrder([
+                'id' => $orderId,
+                'paypalRequestId' => $requestId,
+                'prefer' => 'return=representation',
+            ]);
+        } catch (ApiException $exception) {
+            return self::rejectedAnswerOf($exception);
+        }
+
+        return self::decodedAnswer($response->getBody());
+    }
+
+    /**
+     * @param array<string, mixed> $resource
+     */
+    public static function paymentNoOf(array $resource): ?string
+    {
+        $paymentNo = Payload::string($resource, 'custom_id');
+        if ($paymentNo !== null) {
+            return $paymentNo;
+        }
+
+        $units = $resource['purchase_units'] ?? [];
+        $unit = \is_array($units) && \is_array($units[0] ?? null) ? $units[0] : [];
+
+        return Payload::string($unit, 'custom_id');
+    }
+
+    /**
+     * @param array<string, mixed> $order
+     *
+     * @return array<string, mixed>|null
+     */
+    public static function capturedPaymentOf(array $order): ?array
+    {
+        $units = $order['purchase_units'] ?? [];
+        $unit = \is_array($units) && \is_array($units[0] ?? null) ? $units[0] : [];
+        $payments = Payload::map($unit, 'payments');
+        $captures = $payments['captures'] ?? [];
+
+        return \is_array($captures) && \is_array($captures[0] ?? null) ? $captures[0] : null;
     }
 
     /**
@@ -313,6 +372,40 @@ final class PaypalApi extends AbstractPaymentApi
         }
 
         return self::decodedAnswer($response->getBody());
+    }
+
+    /**
+     * Paypal's refund request key has a finite lifetime. Recovery therefore reads the original
+     * order's refund representations instead of repeating a potentially old POST.
+     *
+     * @return array<string, mixed>
+     */
+    public function queryRefund(string $captureId, string $refundNo, ?string $refundId): array
+    {
+        if ($refundId !== null) {
+            $response = $this->client()->getPaymentsController()->getRefund(['refundId' => $refundId]);
+
+            return self::decodedAnswer($response->getBody());
+        }
+
+        $capture = $this->client()->getPaymentsController()->getCapturedPayment(['captureId' => $captureId]);
+        $answer = self::decodedAnswer($capture->getBody());
+        $orderId = $answer['supplementary_data']['related_ids']['order_id'] ?? null;
+        if (!\is_string($orderId) || $orderId === '') {
+            return [];
+        }
+
+        $order = $this->client()->getOrdersController()->getOrder(['id' => $orderId]);
+        $answer = self::decodedAnswer($order->getBody());
+        foreach ($answer['purchase_units'] ?? [] as $unit) {
+            foreach ($unit['payments']['refunds'] ?? [] as $refund) {
+                if (($refund['custom_id'] ?? null) === $refundNo) {
+                    return $refund;
+                }
+            }
+        }
+
+        return [];
     }
 
     /**
@@ -419,7 +512,7 @@ final class PaypalApi extends AbstractPaymentApi
         $capture = $response->getResult();
 
         if (!$capture instanceof CapturedPayment) {
-            throw PaymentException::gatewayError($this->channel(), 'the interface did not answer a capture');
+            throw PaymentGatewayException::gatewayError($this->channel(), 'the interface did not answer a capture');
         }
 
         return $this->resultOfCapture($capture);
@@ -440,7 +533,7 @@ final class PaypalApi extends AbstractPaymentApi
         $order = $response->getResult();
 
         if (!$order instanceof Order) {
-            throw PaymentException::gatewayError($this->channel(), 'the interface did not answer an order');
+            throw PaymentGatewayException::gatewayError($this->channel(), 'the interface did not answer an order');
         }
 
         $status = $order->getStatus() ?? '';
@@ -493,7 +586,7 @@ final class PaypalApi extends AbstractPaymentApi
             );
         }
 
-        throw PaymentException::gatewayError($this->channel(), 'the interface answered an order without a purchase unit');
+        throw PaymentGatewayException::gatewayError($this->channel(), 'the interface answered an order without a purchase unit');
     }
 
     private function resultOfCapture(CapturedPayment $capture): QueryResult
@@ -523,8 +616,8 @@ final class PaypalApi extends AbstractPaymentApi
         }
 
         try {
-            return Money::toMinor($value, $currency);
-        } catch (PaymentException) {
+            return CurrencyAmountConverter::toMinor($value, $currency);
+        } catch (CurrencyException) {
             return null;
         }
     }

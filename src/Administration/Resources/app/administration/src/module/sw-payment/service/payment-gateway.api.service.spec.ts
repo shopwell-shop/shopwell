@@ -132,6 +132,50 @@ describe('module/sw-payment/service/payment-gateway.api.service', () => {
             'Content-Type': 'application/json',
         };
 
+        it('reads provider definitions without requesting platform merchant configuration', async () => {
+            const { service, httpClient } = createService({ providers: [{ technicalName: 'alipay', products: [] }] });
+            await expect(service.listProviderDefinitions()).resolves.toEqual([{ technicalName: 'alipay', products: [] }]);
+            expect(httpClient.get).toHaveBeenCalledWith('/_action/payment/definitions', { headers });
+            expect(httpClient.get).not.toHaveBeenCalledWith('/_action/payment/providers', expect.anything());
+        });
+
+        it('reads account definitions through the account-specific permission endpoint', async () => {
+            const { service, httpClient } = createService({ providers: [{ technicalName: 'alipay' }] });
+            await expect(service.listAccountDefinitions()).resolves.toEqual([{ technicalName: 'alipay' }]);
+            expect(httpClient.get).toHaveBeenCalledWith('/_action/payment/account-definitions', { headers });
+        });
+
+        it('lists central accounts and reads one account independently of app grants', async () => {
+            const list = createService({ accounts: [{ id: 'account-1' }] });
+            await expect(list.service.listAccounts()).resolves.toEqual([{ id: 'account-1' }]);
+            expect(list.httpClient.get).toHaveBeenCalledWith('/_action/payment/accounts', { headers });
+            const detail = createService({ account: { id: 'account-1' } });
+            await expect(detail.service.getAccount('account-1')).resolves.toEqual({ id: 'account-1' });
+            expect(detail.httpClient.get).toHaveBeenCalledWith('/_action/payment/accounts/account-1', { headers });
+        });
+
+        it('creates accounts with POST and updates existing accounts with PUT', async () => {
+            const { service, httpClient } = createService({ account: { id: 'account-1' } });
+            const payload = { name: 'Merchant', enabledProducts: ['alipay_h5'] };
+            await expect(service.saveAccount(null, payload)).resolves.toEqual({ id: 'account-1' });
+            expect(httpClient.post).toHaveBeenCalledWith('/_action/payment/accounts', payload, { headers });
+            await expect(service.saveAccount('account-1', payload)).resolves.toEqual({ id: 'account-1' });
+            expect(httpClient.put).toHaveBeenCalledWith('/_action/payment/accounts/account-1', payload, { headers });
+        });
+
+        it('deletes unused central accounts through the account endpoint', async () => {
+            const { service, httpClient } = createService(null);
+            await service.deleteAccount('account-1');
+            expect(httpClient.delete).toHaveBeenCalledWith('/_action/payment/accounts/account-1', { headers });
+        });
+
+        it('reads safe ungranted account choices together with apps', async () => {
+            const data = { apps: [{ id: 'app-1' }], accounts: [{ id: 'ungranted-account' }] };
+            const { service, httpClient } = createService(data);
+            await expect(service.listAppConfiguration()).resolves.toEqual(data);
+            expect(httpClient.get).toHaveBeenCalledWith('/_action/payment/apps', { headers });
+        });
+
         it('should read the payment interfaces the shop can be configured with', async () => {
             const { service, httpClient } = createService({ providers: [{ technicalName: 'alipay' }] });
 
@@ -202,6 +246,18 @@ describe('module/sw-payment/service/payment-gateway.api.service', () => {
                 appSecret: 'the-secret',
             });
             expect(httpClient.post).toHaveBeenCalledWith('/_action/payment/apps', { technicalName: 'demo' }, { headers });
+        });
+
+        it('should save a global method and named routing policy for the collecting app', async () => {
+            const { service, httpClient } = createService({ binding: { methodTechnicalName: 'plugin_method' } });
+
+            await service.savePaymentMethodChannel('checkout-method', 'plugin_method', 'app-1', 'merchant_priority');
+
+            expect(httpClient.put).toHaveBeenCalledWith(
+                '/_action/payment/methods/checkout-method/channel',
+                { methodTechnicalName: 'plugin_method', paymentAppId: 'app-1', routingPolicy: 'merchant_priority' },
+                { headers },
+            );
         });
 
         it('should delete an app', async () => {

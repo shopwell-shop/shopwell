@@ -8,320 +8,67 @@ use Shopwell\Core\Checkout\Payment\PaymentException;
 use Shopwell\Core\Checkout\Payment\Storefront\PlatformPaymentApp;
 use Shopwell\Core\Checkout\Payment\Storefront\StorefrontPaymentService;
 use Shopwell\Core\Framework\Adapter\Translation\AbstractTranslator;
-use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppChannel\PaymentAppChannelCollection;
-use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppProvider\PaymentAppProviderCollection;
-use Shopwell\Core\System\Payment\App\PaymentAppCollection;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
-use Shopwell\Core\System\Payment\App\PaymentCredentialCipher;
-use Shopwell\Core\System\Payment\Gateway\PaymentGatewayFactory;
-use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
-use Shopwell\Core\System\Payment\Notification\PaymentNotifyUrlBuilder;
-use Shopwell\Core\System\Payment\Order\PaymentOrderCapture;
-use Shopwell\Core\System\Payment\Order\PaymentOrderService;
-use Shopwell\Core\System\Payment\Order\PaymentOrderStateHandler;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannelRegistry;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
-use Shopwell\Core\System\Payment\Provider\Config\PaymentChannelConfigCollection;
-use Shopwell\Core\System\Payment\Provider\Config\PaymentChannelConfigEntity;
-use Shopwell\Core\System\Payment\Provider\Config\PaymentConfigResolver;
-use Shopwell\Core\System\Payment\Provider\Config\PaymentProviderConfigCollection;
-use Shopwell\Core\System\Payment\Provider\Config\PaymentProviderConfigEntity;
-use Shopwell\Core\System\Payment\Provider\PaymentProvider;
-use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;
-use Shopwell\Core\System\StateMachine\Loader\InitialStateIdLoader;
-use Shopwell\Core\System\StateMachine\StateMachineRegistry;
-use Shopwell\Core\Test\Stub\DataAbstractionLayer\StaticEntityRepository;
-use Shopwell\Tests\Unit\Core\System\Payment\NumberRangeFixture;
-use Shopwell\Tests\Unit\Core\System\Payment\Order\_fixtures\PaymentOrderRowLockStub;
-use Symfony\Component\Clock\MockClock;
-use Symfony\Component\HttpFoundation\RequestStack;
+use Shopwell\Core\System\Payment\Cashier\PaymentCashierService;
+use Shopwell\Core\System\Payment\Cashier\PaymentCashierSessionEntity;
+use Shopwell\Core\System\Payment\Gateway\Struct\PaymentHandover;
+use Shopwell\Core\System\Payment\Product\PaymentInteraction;
+use Shopwell\Core\System\Payment\Product\PaymentScene;
+use Shopwell\Core\System\Payment\Routing\PaymentContext;
 
 /**
- * The storefront only offers what the platform app can really collect through, and it opens the
- * payment through the app of the channel - never through an app it creates itself.
- *
  * @internal
  */
 #[Package('checkout')]
 #[CoversClass(StorefrontPaymentService::class)]
 class StorefrontPaymentServiceTest extends TestCase
 {
-    private const APP_ID = 'a1b2c3d4e5f60718293a4b5c6d7e8f90';
-
-    private PaymentChannelRegistry $channels;
-
-    private PaymentProviderRegistry $providers;
-
-    protected function setUp(): void
-    {
-        $this->providers = new PaymentProviderRegistry([
-            new PaymentProvider(
-                technicalName: 'alipay',
-                label: '支付宝',
-                credentials: [],
-                channels: [
-                    'alipay_h5' => new PaymentChannel(
-                        technicalName: 'alipay_h5',
-                        providerTechnicalName: 'alipay',
-                        label: '支付宝手机网站',
-                        flow: PaymentFlow::REDIRECT,
-                        currencies: ['CNY'],
-                        devices: [PaymentChannel::DEVICE_WAP, PaymentChannel::DEVICE_WEB],
-                    ),
-                    'alipay_global' => new PaymentChannel(
-                        technicalName: 'alipay_global',
-                        providerTechnicalName: 'alipay',
-                        label: '支付宝境外',
-                        flow: PaymentFlow::REDIRECT,
-                        currencies: ['USD'],
-                    ),
-                ],
-                gatewayFactory: static::createStub(PaymentGatewayFactory::class),
-                notificationExtractor: static::createStub(PaymentNotificationExtractorInterface::class),
-            ),
-        ]);
-        $this->channels = new PaymentChannelRegistry($this->providers);
-    }
-
-    public function testTheOfferedChannelsAreTheOnesThatCanReallyBeCollected(): void
-    {
-        $service = $this->service($this->appRepository([$this->platformApp()]));
-
-        $channels = $service->channels('CNY', PaymentChannel::DEVICE_WEB);
-
-        static::assertCount(1, $channels);
-        static::assertSame('alipay_h5', $channels[0]['channel']);
-        static::assertSame('支付宝', $channels[0]['provider_label']);
-        static::assertSame(PaymentFlow::REDIRECT->value, $channels[0]['flow']);
-    }
-
-    public function testAChannelIsNamedInTheLanguageOfTheStorefront(): void
-    {
-        $service = $this->service(
-            $this->appRepository([$this->platformApp()]),
-            translator: $this->translator(['payment.channel.alipay_h5' => '支付宝（手机网页）'])
-        );
-
-        $channels = $service->channels('CNY', PaymentChannel::DEVICE_WEB);
-
-        static::assertSame('支付宝（手机网页）', $channels[0]['label']);
-    }
-
-    /**
-     * A provider names its channels for the administration, where the label is a snippet key of that
-     * interface. A payer must never be shown that key.
-     */
-    public function testAChannelWithoutStorefrontSnippetIsNamedByItsTechnicalName(): void
-    {
-        $this->providers = new PaymentProviderRegistry([
-            new PaymentProvider(
-                technicalName: 'alipay',
-                label: '支付宝',
-                credentials: [],
-                channels: [
-                    'alipay_h5' => new PaymentChannel(
-                        technicalName: 'alipay_h5',
-                        providerTechnicalName: 'alipay',
-                        label: 'sw-settings-payment-provider.channel.alipay_h5',
-                        flow: PaymentFlow::REDIRECT,
-                    ),
-                ],
-                gatewayFactory: static::createStub(PaymentGatewayFactory::class),
-                notificationExtractor: static::createStub(PaymentNotificationExtractorInterface::class),
-            ),
-        ]);
-        $this->channels = new PaymentChannelRegistry($this->providers);
-
-        $channels = $this->service($this->appRepository([$this->platformApp()]))->channels('CNY', PaymentChannel::DEVICE_WEB);
-
-        static::assertSame('Alipay H5', $channels[0]['label']);
-    }
-
-    public function testAProviderThatDeclaredAReadableLabelKeepsIt(): void
-    {
-        $channels = $this->service($this->appRepository([$this->platformApp()]))->channels('CNY', PaymentChannel::DEVICE_WEB);
-
-        static::assertSame('支付宝手机网站', $channels[0]['label']);
-    }
-
-    public function testAChannelOfAnotherCurrencyIsNotOffered(): void
-    {
-        $channels = $this->service(
-            $this->appRepository([$this->platformApp()]),
-            $this->channelConfigs(['alipay_h5', 'alipay_global'])
-        )->channels('USD', PaymentChannel::DEVICE_WEB);
-
-        static::assertCount(1, $channels);
-        static::assertSame('alipay_global', $channels[0]['channel']);
-    }
-
-    public function testAnInterfaceWithoutCredentialsOffersNoChannel(): void
-    {
-        $channels = $this->service(
-            $this->appRepository([$this->platformApp()]),
-            providerConfigRepository: $this->providerConfigs(['alipay' => []])
-        )->channels('CNY', PaymentChannel::DEVICE_WEB);
-
-        static::assertSame([], $channels);
-    }
-
-    public function testOpeningAPaymentWithoutASeededTenantFails(): void
-    {
-        $service = $this->service($this->appRepository([]));
-
-        $this->expectExceptionObject(PaymentException::platformTenantMissing(PaymentAppEntity::PLATFORM_TECHNICAL_NAME));
-
-        $service->open('out-trade-no', 'alipay_h5', 100, 'CNY', 'Wallet top-up', 'wallet_top_up:1');
-    }
-
-    public function testOpeningAChannelThePlatformDidNotEnableFails(): void
-    {
-        $service = $this->service(
-            $this->appRepository([$this->platformApp()]),
-            $this->channelConfigs([])
-        );
-
-        $this->expectExceptionObject(PaymentException::channelDisabledByPlatform('alipay_h5'));
-
-        $service->open('out-trade-no', 'alipay_h5', 100, 'CNY', 'Wallet top-up', 'wallet_top_up:1');
-    }
-
-    /**
-     * @param StaticEntityRepository<PaymentAppCollection> $appRepository
-     * @param StaticEntityRepository<PaymentChannelConfigCollection>|null $channelConfigRepository
-     * @param StaticEntityRepository<PaymentProviderConfigCollection>|null $providerConfigRepository
-     */
-    private function service(
-        StaticEntityRepository $appRepository,
-        ?StaticEntityRepository $channelConfigRepository = null,
-        ?StaticEntityRepository $providerConfigRepository = null,
-        ?AbstractTranslator $translator = null,
-    ): StorefrontPaymentService {
-        $configResolver = new PaymentConfigResolver(
-            $this->providers,
-            $this->channels,
-            static::createStub(EntityRepository::class),
-            static::createStub(EntityRepository::class),
-            static::createStub(EntityRepository::class),
-            static::createStub(EntityRepository::class),
-            new PaymentCredentialCipher('test-secret'),
-        );
-
-        $orderService = new PaymentOrderService(
-            static::createStub(EntityRepository::class),
-            $configResolver,
-            static::createStub(InitialStateIdLoader::class),
-            new PaymentOrderStateHandler(static::createStub(StateMachineRegistry::class)),
-            new MockClock('2026-06-01 12:00:00'),
-            NumberRangeFixture::generator('PG1001'),
-            new PaymentOrderRowLockStub(),
-        );
-
-        return new StorefrontPaymentService(
-            new PlatformPaymentApp(
-                $appRepository,
-                StaticEntityRepository::of(PaymentAppProviderCollection::class, [new PaymentAppProviderCollection()]),
-                StaticEntityRepository::of(PaymentAppChannelCollection::class, [new PaymentAppChannelCollection()]),
-                $providerConfigRepository ?? $this->providerConfigs(['alipay' => ['app_id' => 'platform-app-id']]),
-                $channelConfigRepository ?? $this->channelConfigs(['alipay_h5']),
-                $this->channels,
-                $this->providers,
-            ),
-            $orderService,
-            new PaymentOrderCapture(
-                static::createStub(EntityRepository::class),
-                $configResolver,
-                $orderService,
-                new PaymentNotifyUrlBuilder(new RequestStack()),
-                NumberRangeFixture::generator('PX1001'),
-            ),
-            $translator ?? $this->translator([]),
-        );
-    }
-
-    /**
-     * A translator that knows the keys it is given and answers the key itself for every other one,
-     * the way the storefront catalogue does.
-     *
-     * @param array<string, string> $snippets
-     */
-    private function translator(array $snippets): AbstractTranslator
-    {
-        $translator = static::createStub(AbstractTranslator::class);
-        $translator->method('trans')->willReturnCallback(
-            static fn (string $id): string => $snippets[$id] ?? $id
-        );
-
-        return $translator;
-    }
-
-    /**
-     * @param list<PaymentAppEntity> $apps
-     *
-     * @return StaticEntityRepository<PaymentAppCollection>
-     */
-    private function appRepository(array $apps): StaticEntityRepository
-    {
-        return StaticEntityRepository::of(PaymentAppCollection::class, [new PaymentAppCollection($apps)]);
-    }
-
-    /**
-     * @param array<string, array<string, string>> $credentials
-     *
-     * @return StaticEntityRepository<PaymentProviderConfigCollection>
-     */
-    private function providerConfigs(array $credentials): StaticEntityRepository
-    {
-        $configs = [];
-
-        foreach ($credentials as $provider => $values) {
-            $config = new PaymentProviderConfigEntity();
-            $config->id = md5('provider-config-' . $provider);
-            $config->providerTechnicalName = $provider;
-            $config->enabled = true;
-            $config->credentials = $values;
-            $config->setUniqueIdentifier($config->id);
-
-            $configs[] = $config;
-        }
-
-        return StaticEntityRepository::of(PaymentProviderConfigCollection::class, [new PaymentProviderConfigCollection($configs)]);
-    }
-
-    /**
-     * @param list<string> $channels
-     *
-     * @return StaticEntityRepository<PaymentChannelConfigCollection>
-     */
-    private function channelConfigs(array $channels): StaticEntityRepository
-    {
-        $configs = [];
-
-        foreach ($channels as $channel) {
-            $config = new PaymentChannelConfigEntity();
-            $config->id = md5('channel-config-' . $channel);
-            $config->providerTechnicalName = 'alipay';
-            $config->channelTechnicalName = $channel;
-            $config->enabled = true;
-            $config->setUniqueIdentifier($config->id);
-
-            $configs[] = $config;
-        }
-
-        return StaticEntityRepository::of(PaymentChannelConfigCollection::class, [new PaymentChannelConfigCollection($configs)]);
-    }
-
-    private function platformApp(): PaymentAppEntity
+    public function testOptionsComeFromTheGenericCashierAndExposeOnlyMethods(): void
     {
         $app = new PaymentAppEntity();
-        $app->id = self::APP_ID;
-        $app->technicalName = PaymentAppEntity::PLATFORM_TECHNICAL_NAME;
-        $app->type = PaymentAppEntity::TYPE_PLATFORM;
-        $app->setUniqueIdentifier($app->id);
+        $platform = static::createStub(PlatformPaymentApp::class);
+        $platform->method('app')->willReturn($app);
+        $cashier = $this->createMock(PaymentCashierService::class);
+        $context = new PaymentContext('CNY', new PaymentScene('browser', 'wap', 'browser'));
+        $cashier->expects($this->once())->method('options')->with($app, 'h5', $context)->willReturn([['method' => 'plugin_method', 'translation_key' => 'payment.method.plugin', 'interaction' => 'redirect']]);
+        $translator = $this->createMock(AbstractTranslator::class);
+        $translator->expects($this->once())->method('trans')->with('payment.method.plugin')->willReturn('Plugin payment');
 
-        return $app;
+        $options = (new StorefrontPaymentService($platform, $cashier, $translator))->options($context);
+
+        static::assertSame([['method' => 'plugin_method', 'label' => 'Plugin payment', 'flow' => 'redirect']], $options);
+    }
+
+    public function testOpenPreservesPurchaseTermsAndPaysTheSelectedMethod(): void
+    {
+        $app = new PaymentAppEntity();
+        $platform = static::createStub(PlatformPaymentApp::class);
+        $platform->method('app')->willReturn($app);
+        $cashier = $this->createMock(PaymentCashierService::class);
+        $session = new PaymentCashierSessionEntity();
+        $session->id = 'session';
+        $context = new PaymentContext('JPY', new PaymentScene('browser', 'web', 'browser'));
+        $cashier->expects($this->once())->method('create')->with($app, 'h5', ['out_trade_no' => 'purchase', 'amount' => 123, 'subject' => 'Membership', 'attach' => 'purchase:1', 'return_url' => 'https://shop.test/return', 'client_ip' => '127.0.0.1'], $context)->willReturn($session);
+        $cashier->expects($this->once())->method('pay')->with($app, 'session', 'plugin_method')->willReturn(['payment_no' => 'P1', 'channel' => 'plugin_product', 'pay' => new PaymentHandover(PaymentInteraction::REDIRECT, 'https://pay.test')]);
+        $payments = new StorefrontPaymentService($platform, $cashier, static::createStub(AbstractTranslator::class));
+
+        $result = $payments->open('purchase', 'plugin_method', 123, 'Membership', 'purchase:1', $context, 'https://shop.test/return', '127.0.0.1');
+
+        static::assertSame('plugin_product', $result['channel']);
+        static::assertSame('https://pay.test', $result['params']['pay_url']);
+    }
+
+    public function testUnavailableMethodIsRejectedBeforeCreatingAPurchase(): void
+    {
+        $platform = static::createStub(PlatformPaymentApp::class);
+        $platform->method('app')->willReturn(new PaymentAppEntity());
+        $cashier = $this->createMock(PaymentCashierService::class);
+        $cashier->method('options')->willReturn([]);
+        $cashier->expects($this->never())->method('create');
+        $payments = new StorefrontPaymentService($platform, $cashier, static::createStub(AbstractTranslator::class));
+
+        $this->expectExceptionObject(PaymentException::channelNotAvailableInStorefront('unavailable'));
+        $payments->resolveMethod('unavailable', new PaymentContext('CNY', new PaymentScene('browser', 'wap', 'browser')));
     }
 }

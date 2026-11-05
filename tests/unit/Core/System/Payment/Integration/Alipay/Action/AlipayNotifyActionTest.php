@@ -8,15 +8,16 @@ use Payum\Core\Request\Notify;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Payment\Exception\PaymentGatewayException;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayFactory;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
 use Shopwell\Core\System\Payment\Gateway\Request\NotificationResult;
 use Shopwell\Core\System\Payment\Integration\Alipay\Action\AlipayNotifyAction;
 use Shopwell\Core\System\Payment\Integration\Alipay\Api\AlipayApi;
+use Shopwell\Core\System\Payment\Integration\Alipay\Product\AlipayProducts;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
-use Shopwell\Core\System\Payment\PaymentException;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
+use Shopwell\Core\System\Payment\Product\PaymentInteraction;
+use Shopwell\Core\System\Payment\Product\PaymentProduct;
 use Shopwell\Core\System\Payment\Provider\PaymentProvider;
 use Shopwell\Core\System\Payment\Provider\ResolvedPaymentConfig;
 
@@ -54,7 +55,7 @@ class AlipayNotifyActionTest extends TestCase
     {
         $action = new AlipayNotifyAction();
 
-        $this->expectExceptionObject(PaymentException::actionWithoutApi(AlipayNotifyAction::class));
+        $this->expectExceptionObject(PaymentGatewayException::actionWithoutApi(AlipayNotifyAction::class));
 
         $action->execute(new Notify(new PaymentGatewayModel()));
     }
@@ -63,7 +64,7 @@ class AlipayNotifyActionTest extends TestCase
     {
         $action = new AlipayNotifyAction();
 
-        $this->expectExceptionObject(PaymentException::unsupportedApi(AlipayNotifyAction::class, \stdClass::class));
+        $this->expectExceptionObject(PaymentGatewayException::unsupportedApi(AlipayNotifyAction::class, \stdClass::class));
 
         $action->setApi(new \stdClass());
     }
@@ -83,7 +84,7 @@ class AlipayNotifyActionTest extends TestCase
 
         $action->execute(new Notify($model));
 
-        $result = $model->result(NotificationResult::class, AlipayApi::CHANNEL_H5);
+        $result = $model->result(NotificationResult::class, AlipayProducts::H5);
 
         static::assertTrue($result->signatureValid);
         static::assertTrue($result->succeeded);
@@ -103,7 +104,7 @@ class AlipayNotifyActionTest extends TestCase
 
         $action->execute(new Notify($model));
 
-        $result = $model->result(NotificationResult::class, AlipayApi::CHANNEL_H5);
+        $result = $model->result(NotificationResult::class, AlipayProducts::H5);
 
         static::assertTrue($result->succeeded);
         static::assertSame('TRADE_FINISHED', $result->status);
@@ -122,7 +123,7 @@ class AlipayNotifyActionTest extends TestCase
 
         $action->execute(new Notify($model));
 
-        $result = $model->result(NotificationResult::class, AlipayApi::CHANNEL_H5);
+        $result = $model->result(NotificationResult::class, AlipayProducts::H5);
 
         static::assertFalse($result->signatureValid);
         static::assertFalse($result->succeeded);
@@ -137,7 +138,7 @@ class AlipayNotifyActionTest extends TestCase
 
         $action->execute(new Notify($model));
 
-        $result = $model->result(NotificationResult::class, AlipayApi::CHANNEL_H5);
+        $result = $model->result(NotificationResult::class, AlipayProducts::H5);
 
         static::assertFalse($result->succeeded);
         static::assertSame('WAIT_BUYER_PAY', $result->status);
@@ -152,7 +153,7 @@ class AlipayNotifyActionTest extends TestCase
 
         $action->execute(new Notify($model));
 
-        $result = $model->result(NotificationResult::class, AlipayApi::CHANNEL_H5);
+        $result = $model->result(NotificationResult::class, AlipayProducts::H5);
 
         static::assertSame('USD', $result->currency);
         static::assertSame(150, $result->amount);
@@ -167,7 +168,7 @@ class AlipayNotifyActionTest extends TestCase
 
         $action->execute(new Notify($model));
 
-        $result = $model->result(NotificationResult::class, AlipayApi::CHANNEL_H5);
+        $result = $model->result(NotificationResult::class, AlipayProducts::H5);
 
         static::assertSame(AlipayNotifyAction::DEFAULT_CURRENCY, $result->currency);
         static::assertSame(500, $result->amount);
@@ -182,7 +183,7 @@ class AlipayNotifyActionTest extends TestCase
 
         $action->execute(new Notify($model));
 
-        $result = $model->result(NotificationResult::class, AlipayApi::CHANNEL_H5);
+        $result = $model->result(NotificationResult::class, AlipayProducts::H5);
 
         static::assertNull($result->amount);
     }
@@ -196,7 +197,7 @@ class AlipayNotifyActionTest extends TestCase
 
         $action->execute(new Notify($model));
 
-        $result = $model->result(NotificationResult::class, AlipayApi::CHANNEL_H5);
+        $result = $model->result(NotificationResult::class, AlipayProducts::H5);
 
         static::assertNull($result->outPaymentNo);
         static::assertNull($result->amount);
@@ -211,7 +212,7 @@ class AlipayNotifyActionTest extends TestCase
 
         $action->execute(new Notify($model));
 
-        $result = $model->result(NotificationResult::class, AlipayApi::CHANNEL_H5);
+        $result = $model->result(NotificationResult::class, AlipayProducts::H5);
 
         static::assertFalse($result->signatureValid);
         static::assertFalse($result->succeeded);
@@ -294,7 +295,7 @@ class AlipayNotifyActionTest extends TestCase
      */
     private function api(array $credentials = []): AlipayApi
     {
-        $channel = new PaymentChannel(AlipayApi::CHANNEL_H5, 'alipay', AlipayApi::CHANNEL_H5, PaymentFlow::REDIRECT);
+        $channel = new PaymentProduct(AlipayProducts::H5, 'alipay', AlipayProducts::H5, [PaymentInteraction::REDIRECT], 'alipay');
 
         return new AlipayApi(
             new ResolvedPaymentConfig(
@@ -302,15 +303,16 @@ class AlipayNotifyActionTest extends TestCase
                     'alipay',
                     'alipay',
                     [],
-                    [AlipayApi::CHANNEL_H5 => $channel],
+                    [AlipayProducts::H5 => $channel],
                     new PaymentGatewayFactory('alipay', AlipayApi::class, []),
                     static::createStub(PaymentNotificationExtractorInterface::class),
                 ),
-                channel: $channel,
+                product: $channel,
                 credentials: $credentials,
                 params: [],
                 runtimeParams: [],
                 settings: [],
+                accountId: 'test-account',
             ),
             'https://example.com/notify',
             '',

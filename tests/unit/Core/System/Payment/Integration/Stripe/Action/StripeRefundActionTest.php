@@ -8,8 +8,11 @@ use Payum\Core\Request\Refund;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Payment\Exception\PaymentGatewayException;
+use Shopwell\Core\System\Payment\Exception\PaymentRefundRejectedException;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayFactory;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
+use Shopwell\Core\System\Payment\Gateway\Request\RefundQuery;
 use Shopwell\Core\System\Payment\Gateway\Request\RefundResult;
 use Shopwell\Core\System\Payment\Integration\Stripe\Action\StripeRefundAction;
 use Shopwell\Core\System\Payment\Integration\Stripe\Api\StripeApi;
@@ -17,8 +20,8 @@ use Shopwell\Core\System\Payment\Integration\Stripe\Notification\StripeNotificat
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
 use Shopwell\Core\System\Payment\Order\PaymentRefundStates;
 use Shopwell\Core\System\Payment\PaymentException;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
+use Shopwell\Core\System\Payment\Product\PaymentInteraction;
+use Shopwell\Core\System\Payment\Product\PaymentProduct;
 use Shopwell\Core\System\Payment\Provider\PaymentProvider;
 use Shopwell\Core\System\Payment\Provider\ResolvedPaymentConfig;
 use Shopwell\Tests\Unit\Core\System\Payment\Integration\Stripe\FakeStripeHttpClient;
@@ -43,6 +46,68 @@ class StripeRefundActionTest extends TestCase
         ApiRequestor::setHttpClient($this->http);
     }
 
+    public function testQueriesAnAcceptedRefundWithoutSubmittingAgain(): void
+    {
+        $action = $this->queryAction(['status' => 'succeeded', 'id' => 'remote-refund']);
+        $model = new PaymentGatewayModel([
+            PaymentGatewayModel::PAYMENT_NO => 'ORDER-1',
+            PaymentGatewayModel::OUT_PAYMENT_NO => 'remote-payment',
+            PaymentGatewayModel::REFUND_NO => 'REFUND-1',
+        ]);
+
+        $action->execute(new RefundQuery($model, 'remote-refund'));
+
+        $result = $model->result(RefundResult::class, 'channel');
+        static::assertSame(PaymentRefundStates::STATE_FINISHED, $result->status);
+        static::assertSame('remote-refund', $result->outRefundId);
+    }
+
+    public function testAnUnrecognizedQueryAnswerKeepsTheRefundReserved(): void
+    {
+        $action = $this->queryAction([]);
+        $model = new PaymentGatewayModel();
+
+        $action->execute(new RefundQuery($model, 'remote-refund'));
+
+        $result = $model->result(RefundResult::class, 'channel');
+        static::assertSame(PaymentRefundStates::STATE_PROCESSING, $result->status);
+        static::assertSame('remote-refund', $result->outRefundId);
+    }
+
+    public function testAConfirmedFailedQueryReleasesTheReservation(): void
+    {
+        $action = $this->queryAction(['status' => 'failed']);
+
+        $this->expectException(PaymentRefundRejectedException::class);
+
+        $action->execute(new RefundQuery(new PaymentGatewayModel(), 'remote-refund'));
+    }
+
+    public function testAnUnansweredSubmissionIsFoundByItsMerchantRefundNumber(): void
+    {
+        $this->http->answers['/v1/refunds'] = [200, json_encode([
+            'object' => 'list',
+            'url' => '/v1/refunds',
+            'has_more' => false,
+            'data' => [
+                ['id' => 'other-refund', 'object' => 'refund', 'status' => 'succeeded', 'metadata' => ['refund_no' => 'OTHER']],
+                ['id' => 'accepted-refund', 'object' => 'refund', 'status' => 'succeeded', 'metadata' => ['refund_no' => 'REFUND-1']],
+            ],
+        ], \JSON_THROW_ON_ERROR)];
+        $action = new StripeRefundAction();
+        $action->setApi($this->api([StripeApi::SECRET_KEY => 'sk_test_refund']));
+        $model = new PaymentGatewayModel([
+            PaymentGatewayModel::OUT_PAYMENT_NO => 'pi_original',
+            PaymentGatewayModel::REFUND_NO => 'REFUND-1',
+        ]);
+
+        $action->execute(new RefundQuery($model));
+
+        static::assertSame('accepted-refund', $model->result(RefundResult::class, 'stripe')->outRefundId);
+        static::assertSame('get', $this->http->requestOf('/v1/refunds')['method']);
+        static::assertSame('pi_original', $this->http->requestOf('/v1/refunds')['params']['payment_intent']);
+    }
+
     public function testSupportsOnlyRefundRequestsWithAPaymentGatewayModel(): void
     {
         $action = new StripeRefundAction();
@@ -65,7 +130,7 @@ class StripeRefundActionTest extends TestCase
     {
         $action = new StripeRefundAction();
 
-        $this->expectExceptionObject(PaymentException::actionWithoutApi(StripeRefundAction::class));
+        $this->expectExceptionObject(PaymentGatewayException::actionWithoutApi(StripeRefundAction::class));
 
         $action->execute(new Refund(new PaymentGatewayModel()));
     }
@@ -74,7 +139,7 @@ class StripeRefundActionTest extends TestCase
     {
         $action = new StripeRefundAction();
 
-        $this->expectExceptionObject(PaymentException::unsupportedApi(StripeRefundAction::class, \stdClass::class));
+        $this->expectExceptionObject(PaymentGatewayException::unsupportedApi(StripeRefundAction::class, \stdClass::class));
 
         $action->setApi(new \stdClass());
     }
@@ -306,11 +371,23 @@ class StripeRefundActionTest extends TestCase
     }
 
     /**
+     * @param array<string, mixed> $answer
+     */
+    private function queryAction(array $answer): StripeRefundAction
+    {
+        $this->http->answers['/v1/refunds/remote-refund'] = [200, json_encode($answer, \JSON_THROW_ON_ERROR)];
+        $action = new StripeRefundAction();
+        $action->setApi($this->api([StripeApi::SECRET_KEY => 'sk_test_refund']));
+
+        return $action;
+    }
+
+    /**
      * @param array<string, mixed> $credentials
      */
     private function api(array $credentials = []): StripeApi
     {
-        $channel = new PaymentChannel('stripe_checkout', 'stripe', 'stripe_checkout', PaymentFlow::REDIRECT);
+        $channel = new PaymentProduct('stripe_checkout', 'stripe', 'stripe_checkout', [PaymentInteraction::REDIRECT], 'stripe');
 
         return new StripeApi(
             new ResolvedPaymentConfig(
@@ -322,11 +399,12 @@ class StripeRefundActionTest extends TestCase
                     new PaymentGatewayFactory('stripe', StripeApi::class, []),
                     static::createStub(PaymentNotificationExtractorInterface::class),
                 ),
-                channel: $channel,
+                product: $channel,
                 credentials: $credentials,
                 params: [],
                 runtimeParams: [],
                 settings: [],
+                accountId: 'test-account',
             ),
             'https://example.com/notify',
             '',

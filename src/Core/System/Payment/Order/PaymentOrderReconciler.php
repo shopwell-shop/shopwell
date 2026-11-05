@@ -10,8 +10,11 @@ use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\RangeFilter;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
+use Shopwell\Core\System\Payment\Exception\PaymentOrderException;
+use Shopwell\Core\System\Payment\Exception\PaymentProviderException;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
 use Shopwell\Core\System\Payment\Gateway\Request\PaymentQuery;
 use Shopwell\Core\System\Payment\Gateway\Request\QueryResult;
@@ -91,6 +94,8 @@ final class PaymentOrderReconciler
         ]));
         $criteria->addAssociation('paymentApp');
         $criteria->addAssociation('transactions');
+        $criteria->addAssociation('activeAttempt');
+        $criteria->addSorting(new FieldSorting('updatedAt'), new FieldSorting('id'));
         $criteria->setLimit($limit);
 
         $orders = $this->paymentOrderRepository->search($criteria, Context::createDefaultContext())->getEntities();
@@ -102,14 +107,18 @@ final class PaymentOrderReconciler
             }
 
             try {
+                $this->paymentOrderRepository->update([[
+                    'id' => $order->id,
+                    'updatedAt' => $this->clock->now(),
+                ]], Context::createDefaultContext());
                 $this->reconcile($order);
             } catch (\Throwable $exception) {
                 // one order the interface cannot be asked about must not keep the others from being
                 // asked - the next run tries this one again
                 $this->logger->warning('Reconciling the payment order with the channel failed.', [
                     'paymentNo' => $order->paymentNo,
-                    'provider' => $order->providerTechnicalName,
-                    'channel' => $order->channelTechnicalName,
+                    'provider' => $order->activeAttempt === null ? 'unstarted' : $order->activeAttempt->providerTechnicalName,
+                    'channel' => $order->activeAttempt === null ? 'unstarted' : $order->activeAttempt->channelTechnicalName,
                     'error' => $exception->getMessage(),
                 ]);
 
@@ -140,19 +149,21 @@ final class PaymentOrderReconciler
             return;
         }
 
+        if ($order->activeAttemptId === null) {
+            if ($order->expireAt !== null && $order->expireAt <= $this->clock->now()) {
+                $this->orderService->expire($order);
+            }
+
+            return;
+        }
+
         $app = $order->paymentApp;
 
         if (!$app instanceof PaymentAppEntity) {
-            throw PaymentException::orderNotFound($order->paymentNo);
+            throw PaymentOrderException::orderNotFound($order->paymentNo);
         }
 
-        $resolved = $this->configResolver->resolve(
-            $app,
-            $order->channelTechnicalName,
-            $order->currency,
-            $order->device,
-            $order->channelParams ?? []
-        );
+        $resolved = $this->configResolver->resolveForOrder($app, $order);
 
         // An interface that never declared a query cannot be asked what became of a payment. Without
         // the guard payum throws "no action supports this request" inside the gateway, which reads as
@@ -160,15 +171,15 @@ final class PaymentOrderReconciler
         // distinction is the whole point of the declaration. It reads the resolved provider, i.e. the
         // end of the decoration chain, so a plugin that adds a query action to an interface makes the
         // reconciliation reachable for it.
-        if (!$resolved->provider->supports(PaymentCapability::QUERY)) {
-            throw PaymentException::providerLacksCapability($resolved->provider->technicalName, PaymentCapability::QUERY->value);
+        if (!$resolved->provider->supports(PaymentCapability::QUERY) || !$resolved->product->supports(PaymentCapability::QUERY)) {
+            throw PaymentProviderException::providerLacksCapability($resolved->provider->technicalName, PaymentCapability::QUERY->value);
         }
 
         $model = PaymentGatewayModel::forQuery($order, $this->lastChannelResponseOf($order));
         $gateway = $resolved->provider->gatewayFactory->createForPayment($resolved, (string) $order->notifyUrl, (string) $order->returnUrl);
 
         $gateway->execute(new PaymentQuery($model));
-        $result = $model->result(QueryResult::class, $order->channelTechnicalName);
+        $result = $model->result(QueryResult::class, $resolved->product->technicalName);
 
         $this->queryHandler->handle($order, $result);
     }
@@ -181,8 +192,16 @@ final class PaymentOrderReconciler
      */
     private function lastChannelResponseOf(PaymentOrderEntity $order): array
     {
+        if ($order->activeAttempt?->channelData !== null) {
+            return $order->activeAttempt->channelData;
+        }
+
         foreach (array_reverse($order->transactions ?? []) as $transaction) {
             if (!$transaction instanceof PaymentTransactionEntity || $transaction->type !== PaymentTransactionEntity::TYPE_CAPTURE) {
+                continue;
+            }
+
+            if ($order->activeAttemptId !== null && $transaction->paymentAttemptId !== $order->activeAttemptId) {
                 continue;
             }
 

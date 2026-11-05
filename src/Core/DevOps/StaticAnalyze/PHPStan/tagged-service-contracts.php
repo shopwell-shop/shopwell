@@ -62,6 +62,7 @@ use Shopwell\Core\System\AdminMenu\AdminMenuDefinitionProviderInterface;
 use Shopwell\Core\System\NumberRange\ValueGenerator\Pattern\AbstractValueGenerator;
 use Shopwell\Core\System\NumberRange\ValueGenerator\Pattern\IncrementStorage\AbstractIncrementStorage;
 use Shopwell\Core\System\Payment\Provider\AbstractPaymentProvider;
+use Shopwell\Core\System\Payment\Routing\PaymentRoutingPolicy;
 use Shopwell\Core\System\SalesChannel\Capability\AbstractSalesChannelTypeCapabilities;
 use Shopwell\Core\System\Sms\Gateway\SmsGatewayTransportFactoryInterface;
 use Shopwell\Core\System\Sms\Util\CountryDialCodeProviderInterface;
@@ -127,6 +128,7 @@ return [
             'shopwell.path.strategy' => AbstractMediaPathStrategy::class,
             'shopwell.payment.method' => AbstractPaymentHandler::class,
             'shopwell.payment.provider' => AbstractPaymentProvider::class,
+            'shopwell.payment.routing_policy' => PaymentRoutingPolicy::class,
             'shopwell.product.stock_filter' => AbstractStockUpdateFilter::class,
             'shopwell.product_export.provider' => AbstractAgenticCommerceProductExportProvider::class,
             'shopwell.product_export.validator' => ValidatorInterface::class,

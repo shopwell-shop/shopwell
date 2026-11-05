@@ -12,14 +12,15 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\Required;
 use Shopwell\Core\Framework\DataAbstractionLayer\Entity as EntityStruct;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityCustomFieldsTrait;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppAccount\PaymentAppAccountEntity;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
 
 /**
- * Which payment channels an app offers to its own users, and the channel parameters it uses.
+ * Which payment channels an app offers to its own users.
  *
  * A channel may only be enabled for an app whose payment interface the app is authorized for - the
  * interface carries the credentials and decides whose merchant account is charged, see
- * {@see PaymentAppProviderEntity}.
+ * {@see PaymentAppAccountEntity}.
  *
  * @codeCoverageIgnore
  */
@@ -45,14 +46,6 @@ class PaymentAppChannelEntity extends EntityStruct
 
     #[Field(type: FieldType::BOOL, api: ['admin-api' => true, 'store-api' => false])]
     public bool $enabled;
-
-    /**
-     * The app overrides of the channel parameters, e.g. its own wechat appid.
-     *
-     * @var array<string, mixed>|null
-     */
-    #[Field(type: FieldType::JSON, api: false)]
-    public ?array $params = null;
 
     /**
      * @var array<string, mixed>|null

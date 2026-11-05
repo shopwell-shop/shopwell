@@ -16,6 +16,23 @@ use Shopwell\Core\Framework\Log\Package;
 #[CoversClass(PaymentException::class)]
 class PaymentExceptionTest extends TestCase
 {
+    public function testUnavailablePaymentScene(): void
+    {
+        $exception = PaymentException::channelNotAvailableInStorefront('wechat_jsapi');
+        static::assertSame('CHECKOUT__PAYMENT_CHANNEL_UNAVAILABLE', $exception->getErrorCode());
+        static::assertSame(400, $exception->getStatusCode());
+        static::assertStringContainsString('wechat_jsapi', $exception->getMessage());
+    }
+
+    public function testMissingGatewayResult(): void
+    {
+        $exception = PaymentException::gatewayResultMissing('alipay_web');
+
+        static::assertSame('CHECKOUT__PAYMENT_GATEWAY_RESULT_MISSING', $exception->getErrorCode());
+        static::assertSame(502, $exception->getStatusCode());
+        static::assertStringContainsString('alipay_web', $exception->getMessage());
+    }
+
     public function testInvalidToken(): void
     {
         $exception = PaymentException::invalidToken('token');

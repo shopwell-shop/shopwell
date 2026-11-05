@@ -103,8 +103,9 @@ final class StripeApi extends AbstractPaymentApi
             return $this->querySession($sessionId);
         }
 
-        // without a session id and without an intent id there is nothing stripe could be asked about
-        return new QueryResult(QueryResult::STATUS_ABSENT);
+        // A create response can be lost after Stripe accepted the payment. Missing references
+        // provide no evidence that it does not exist and must never close an in-flight trade.
+        return new QueryResult(QueryResult::STATUS_PENDING);
     }
 
     /**
@@ -119,12 +120,12 @@ final class StripeApi extends AbstractPaymentApi
      * @return array<string, mixed> the answer of the interface; a rejected call is an answer as
      *                              well and carries `error.code` and `error.message`
      */
-    public function createPaymentIntent(array $payload): array
+    public function createPaymentIntent(array $payload, ?string $idempotencyKey = null): array
     {
         try {
             // the payload is built and validated by the action, the sdk shape is one more copy of it
             // @phpstan-ignore argument.type
-            $answer = $this->client()->paymentIntents->create($payload);
+            $answer = $this->client()->paymentIntents->create($payload, $idempotencyKey === null ? [] : ['idempotency_key' => $idempotencyKey]);
         } catch (ApiErrorException $exception) {
             return self::rejectedAnswerOf($exception);
         }
@@ -147,12 +148,12 @@ final class StripeApi extends AbstractPaymentApi
      * @return array<string, mixed> the answer of the interface; a rejected call is an answer as
      *                              well and carries `error.code` and `error.message`
      */
-    public function createCheckoutSession(array $payload): array
+    public function createCheckoutSession(array $payload, ?string $idempotencyKey = null): array
     {
         try {
             // the payload is built and validated by the action, the sdk shape is one more copy of it
             // @phpstan-ignore argument.type
-            $answer = $this->client()->checkout->sessions->create($payload);
+            $answer = $this->client()->checkout->sessions->create($payload, $idempotencyKey === null ? [] : ['idempotency_key' => $idempotencyKey]);
         } catch (ApiErrorException $exception) {
             return self::rejectedAnswerOf($exception);
         }
@@ -188,6 +189,29 @@ final class StripeApi extends AbstractPaymentApi
     }
 
     /**
+     * Metadata survives expiry of Stripe's idempotency key, so an unanswered call can be recovered
+     * without submitting another refund, however long the original worker was down.
+     *
+     * @return array<string, mixed>
+     */
+    public function queryRefund(string $paymentIntentId, string $refundNo, ?string $refundId): array
+    {
+        if ($refundId !== null) {
+            return $this->client()->refunds->retrieve($refundId)->toArray();
+        }
+
+        $refunds = $this->client()->refunds->all(['payment_intent' => $paymentIntentId, 'limit' => 100]);
+        foreach ($refunds->autoPagingIterator() as $refund) {
+            $answer = $refund->toArray();
+            if (($answer['metadata']['refund_no'] ?? null) === $refundNo) {
+                return $answer;
+            }
+        }
+
+        return [];
+    }
+
+    /**
      * Proves a notification was sent by stripe: the raw body is signed with the signing secret of the
      * webhook endpoint, so an unsigned body confirms nothing.
      *
@@ -219,6 +243,18 @@ final class StripeApi extends AbstractPaymentApi
     public static function rejectionCodeOf(array $answer): ?string
     {
         return self::rejectionFieldOf($answer, 'code');
+    }
+
+    /**
+     * @param array<string, mixed> $answer
+     */
+    public static function isDefinitiveRejection(array $answer): bool
+    {
+        $error = $answer['error'] ?? null;
+        $status = \is_array($error) ? ($error['status'] ?? null) : null;
+
+        return \is_int($status) && $status >= 400 && $status < 500
+            && !\in_array($status, [408, 409, 429], true);
     }
 
     /**
@@ -414,6 +450,7 @@ final class StripeApi extends AbstractPaymentApi
             'error' => [
                 'code' => \is_string($error['code'] ?? null) ? $error['code'] : null,
                 'message' => \is_string($error['message'] ?? null) ? $error['message'] : null,
+                'status' => $exception->getHttpStatus(),
             ],
             // the original body rides along - the evidence of a support case
             'raw' => $decoded,

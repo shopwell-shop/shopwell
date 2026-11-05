@@ -48,4 +48,29 @@ class PaymentGatewayException extends PaymentException
             ['action' => $action]
         );
     }
+
+    /**
+     * The interface failed. The original exception is kept as the previous one: the message alone
+     * loses the stack and the raw answer of the channel, which is what a failure is debugged with.
+     */
+    public static function gatewayError(string $channel, string $reason, ?\Throwable $previous = null): self
+    {
+        return new self(
+            Response::HTTP_BAD_GATEWAY,
+            self::GATEWAY_ERROR,
+            'The payment channel "{{ channel }}" returned an error: {{ reason }}',
+            ['channel' => $channel, 'reason' => $reason],
+            $previous
+        );
+    }
+
+    public static function missingCredentials(string $channel, string $field): self
+    {
+        return new self(
+            Response::HTTP_INTERNAL_SERVER_ERROR,
+            self::MISSING_CREDENTIALS,
+            'The payment channel "{{ channel }}" is missing the credential "{{ field }}".',
+            ['channel' => $channel, 'field' => $field]
+        );
+    }
 }

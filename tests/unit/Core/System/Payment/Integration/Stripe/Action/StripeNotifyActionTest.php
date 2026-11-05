@@ -8,6 +8,8 @@ use Payum\Core\Request\Notify;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Payment\Exception\PaymentGatewayException;
+use Shopwell\Core\System\Payment\Exception\PaymentNotificationException;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayFactory;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
 use Shopwell\Core\System\Payment\Gateway\Request\NotificationResult;
@@ -15,8 +17,8 @@ use Shopwell\Core\System\Payment\Integration\Stripe\Action\StripeNotifyAction;
 use Shopwell\Core\System\Payment\Integration\Stripe\Api\StripeApi;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
 use Shopwell\Core\System\Payment\PaymentException;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
+use Shopwell\Core\System\Payment\Product\PaymentInteraction;
+use Shopwell\Core\System\Payment\Product\PaymentProduct;
 use Shopwell\Core\System\Payment\Provider\PaymentProvider;
 use Shopwell\Core\System\Payment\Provider\ResolvedPaymentConfig;
 use Symfony\Component\Clock\NativeClock;
@@ -52,7 +54,7 @@ class StripeNotifyActionTest extends TestCase
     {
         $action = new StripeNotifyAction();
 
-        $this->expectExceptionObject(PaymentException::actionWithoutApi(StripeNotifyAction::class));
+        $this->expectExceptionObject(PaymentGatewayException::actionWithoutApi(StripeNotifyAction::class));
 
         $action->execute(new Notify(new PaymentGatewayModel()));
     }
@@ -61,7 +63,7 @@ class StripeNotifyActionTest extends TestCase
     {
         $action = new StripeNotifyAction();
 
-        $this->expectExceptionObject(PaymentException::unsupportedApi(StripeNotifyAction::class, \stdClass::class));
+        $this->expectExceptionObject(PaymentGatewayException::unsupportedApi(StripeNotifyAction::class, \stdClass::class));
 
         $action->setApi(new \stdClass());
     }
@@ -76,7 +78,7 @@ class StripeNotifyActionTest extends TestCase
             PaymentGatewayModel::HEADERS => [],
         ]);
 
-        $this->expectExceptionObject(PaymentException::notificationInvalid('stripe', 'the notification carries no stripe signature'));
+        $this->expectExceptionObject(PaymentNotificationException::notificationInvalid('stripe', 'the notification carries no stripe signature'));
 
         $action->execute(new Notify($model));
     }
@@ -424,7 +426,7 @@ class StripeNotifyActionTest extends TestCase
      */
     private function api(array $credentials = [StripeApi::WEBHOOK_SECRET => self::WEBHOOK_SECRET]): StripeApi
     {
-        $channel = new PaymentChannel('stripe_checkout', 'stripe', 'stripe_checkout', PaymentFlow::REDIRECT);
+        $channel = new PaymentProduct('stripe_checkout', 'stripe', 'stripe_checkout', [PaymentInteraction::REDIRECT], 'stripe');
 
         return new StripeApi(
             new ResolvedPaymentConfig(
@@ -436,11 +438,12 @@ class StripeNotifyActionTest extends TestCase
                     new PaymentGatewayFactory('stripe', StripeApi::class, []),
                     static::createStub(PaymentNotificationExtractorInterface::class),
                 ),
-                channel: $channel,
+                product: $channel,
                 credentials: $credentials,
                 params: [],
                 runtimeParams: [],
                 settings: [],
+                accountId: 'test-account',
             ),
             'https://example.com/notify',
             '',

@@ -7,10 +7,10 @@ use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Checkout\Customer\CustomerEntity;
 use Shopwell\Core\Checkout\Order\Aggregate\OrderCustomer\OrderCustomerEntity;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Payment\Exception\PaymentOrderException;
 use Shopwell\Core\System\Payment\Order\Aggregate\PaymentTransaction\PaymentTransactionCollection;
 use Shopwell\Core\System\Payment\Order\PaymentOrderCollection;
-use Shopwell\Core\System\Payment\PaymentException;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
+use Shopwell\Core\System\Payment\Product\PaymentInteraction;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
 use Shopwell\Core\Test\Generator;
 use Shopwell\Core\Test\Stub\DataAbstractionLayer\StaticEntityRepository;
@@ -29,7 +29,7 @@ class PaymentGatewayControllerTest extends TestCase
     {
         $controller = $this->controller(
             ['http_method' => 'POST', 'answer' => '<form id="alipay"></form>'],
-            PaymentFlow::REDIRECT
+            PaymentInteraction::REDIRECT
         );
 
         $response = $controller->form('payment-order-id', 'PG-1', $this->context());
@@ -40,7 +40,7 @@ class PaymentGatewayControllerTest extends TestCase
 
     public function testTheQrPageRendersThePersistedCodeWithoutCapturingAgain(): void
     {
-        $controller = $this->controller(['qr_code' => 'https://pay.example.test/qr'], PaymentFlow::QRCODE);
+        $controller = $this->controller(['qr_code' => 'https://pay.example.test/qr'], PaymentInteraction::QRCODE);
 
         $response = $controller->qr('payment-order-id', 'PG-1', $this->context());
 
@@ -51,9 +51,9 @@ class PaymentGatewayControllerTest extends TestCase
 
     public function testAnotherCustomerCannotOpenTheHandOver(): void
     {
-        $controller = $this->controller(['qr_code' => 'https://pay.example.test/qr'], PaymentFlow::QRCODE, 'another-customer');
+        $controller = $this->controller(['qr_code' => 'https://pay.example.test/qr'], PaymentInteraction::QRCODE, 'another-customer');
 
-        $this->expectExceptionObject(PaymentException::orderNotFound('PG-1'));
+        $this->expectExceptionObject(PaymentOrderException::orderNotFound('PG-1'));
 
         $controller->qr('payment-order-id', 'PG-1', $this->context());
     }
@@ -63,7 +63,7 @@ class PaymentGatewayControllerTest extends TestCase
      *
      * @return PaymentGatewayController&object{rendered: array<string, mixed>}
      */
-    private function controller(array $captureResponse, PaymentFlow $flow, string $orderCustomerId = 'customer-id'): PaymentGatewayController
+    private function controller(array $captureResponse, string $flow, string $orderCustomerId = 'customer-id'): PaymentGatewayController
     {
         $checkoutOrder = PaymentGatewayFixture::order();
         $checkoutOrder->assign([
@@ -75,9 +75,17 @@ class PaymentGatewayControllerTest extends TestCase
             'transactions' => [PaymentGatewayFixture::captureTransaction($captureResponse)],
         ]);
 
+        static::assertNotNull($paymentOrder->activeAttempt);
+        $paymentOrder->activeAttempt->handover = [
+            'flow' => $flow,
+            'http_method' => $captureResponse['http_method'] ?? 'GET',
+            'html_form' => $captureResponse['answer'] ?? null,
+            'extra' => $flow === PaymentInteraction::QRCODE ? $captureResponse : [],
+        ];
+
         $orders = new StaticEntityRepository([new PaymentOrderCollection([$paymentOrder])]);
         $transactions = StaticEntityRepository::of(PaymentTransactionCollection::class);
-        $orderService = PaymentGatewayFixture::paymentOrderService($orders, PaymentGatewayFixture::configResolver());
+        $orderService = PaymentGatewayFixture::paymentOrderService($orders);
         $starter = PaymentGatewayFixture::starter($orders, $transactions, flow: $flow);
 
         return new class($orderService, $starter) extends PaymentGatewayController {

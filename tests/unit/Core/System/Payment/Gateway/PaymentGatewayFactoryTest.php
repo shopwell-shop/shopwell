@@ -16,9 +16,9 @@ use Shopwell\Core\System\Payment\Integration\Wechat\Action\WechatCaptureAction;
 use Shopwell\Core\System\Payment\Integration\Wechat\Api\WechatApi;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
 use Shopwell\Core\System\Payment\PaymentException;
+use Shopwell\Core\System\Payment\Product\PaymentInteraction;
+use Shopwell\Core\System\Payment\Product\PaymentProduct;
 use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
 use Shopwell\Core\System\Payment\Provider\PaymentProvider;
 use Shopwell\Core\System\Payment\Provider\ResolvedPaymentConfig;
 
@@ -166,7 +166,7 @@ class PaymentGatewayFactoryTest extends TestCase
      */
     private function resolved(string $provider, string $channel, array $credentials = [], array $params = []): ResolvedPaymentConfig
     {
-        $channelOfPayment = new PaymentChannel($channel, $provider, $channel, PaymentFlow::REDIRECT);
+        $channelOfPayment = new PaymentProduct($channel, $provider, $channel, [PaymentInteraction::REDIRECT], $provider);
 
         return new ResolvedPaymentConfig(
             provider: new PaymentProvider(
@@ -177,12 +177,12 @@ class PaymentGatewayFactoryTest extends TestCase
                 static::createStub(PaymentGatewayFactory::class),
                 static::createStub(PaymentNotificationExtractorInterface::class),
             ),
-            channel: $channelOfPayment,
+            product: $channelOfPayment,
             credentials: $credentials,
             params: $params,
             runtimeParams: [],
             settings: [],
-            usesPlatformAccount: true,
+            accountId: 'test-account',
         );
     }
 }

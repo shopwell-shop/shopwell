@@ -72,6 +72,7 @@ class PaymentTransferEntityTest extends TestCase
         sort($required);
 
         static::assertSame([
+            'accountId',
             'amount',
             'channel',
             'createdAt',

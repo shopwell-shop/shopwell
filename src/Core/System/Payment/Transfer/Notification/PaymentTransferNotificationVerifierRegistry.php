@@ -3,6 +3,7 @@
 namespace Shopwell\Core\System\Payment\Transfer\Notification;
 
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Payment\Exception\PaymentTransferException;
 use Shopwell\Core\System\Payment\PaymentException;
 
 /**
@@ -43,6 +44,6 @@ final class PaymentTransferNotificationVerifierRegistry
      */
     public function get(string $provider): PaymentTransferNotificationVerifierInterface
     {
-        return $this->verifiers[$provider] ?? throw PaymentException::transferNotificationProviderUnknown($provider);
+        return $this->verifiers[$provider] ?? throw PaymentTransferException::transferNotificationProviderUnknown($provider);
     }
 }

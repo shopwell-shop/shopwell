@@ -9,7 +9,7 @@ use Payum\Core\GatewayAwareInterface;
 use Payum\Core\GatewayAwareTrait;
 use Payum\Core\Request\Generic;
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\System\Payment\PaymentException;
+use Shopwell\Core\System\Payment\Exception\PaymentGatewayException;
 use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
 
 /**
@@ -59,13 +59,13 @@ abstract class AbstractPaymentAction implements ActionInterface, ApiAwareInterfa
     public function setApi($api): void
     {
         if (!$api instanceof $this->apiClass) {
-            throw PaymentException::unsupportedApi(static::class, \is_object($api) ? $api::class : \gettype($api));
+            throw PaymentGatewayException::unsupportedApi(static::class, \is_object($api) ? $api::class : \gettype($api));
         }
 
         // a declaration may name a class the api does not extend, so the guarantee of the base class
         // is re-checked instead of assumed
         if (!$api instanceof AbstractPaymentApi) {
-            throw PaymentException::unsupportedApi(static::class, $api::class);
+            throw PaymentGatewayException::unsupportedApi(static::class, $api::class);
         }
 
         $this->api = $api;
@@ -74,7 +74,7 @@ abstract class AbstractPaymentAction implements ActionInterface, ApiAwareInterfa
     protected function api(): AbstractPaymentApi
     {
         if (!$this->api instanceof AbstractPaymentApi) {
-            throw PaymentException::actionWithoutApi(static::class);
+            throw PaymentGatewayException::actionWithoutApi(static::class);
         }
 
         return $this->api;

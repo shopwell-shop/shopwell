@@ -90,8 +90,6 @@ class PaymentOrderRowLockTest extends TestCase
             'paymentNo' => 'PG' . strtoupper(bin2hex(random_bytes(8))),
             'outTradeNo' => 'OT' . strtoupper(bin2hex(random_bytes(8))),
             'paymentAppId' => $appId,
-            'providerTechnicalName' => 'alipay',
-            'channelTechnicalName' => 'alipay_h5',
             'amount' => 1000,
             'paidAmount' => $paidAmount,
             'refundedAmount' => $refundedAmount,

@@ -6,7 +6,6 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Payment\Exception\PaymentGatewayException;
-use Shopwell\Core\System\Payment\PaymentException;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -16,7 +15,7 @@ use Symfony\Component\HttpFoundation\Response;
 #[CoversClass(PaymentGatewayException::class)]
 class PaymentGatewayExceptionTest extends TestCase
 {
-    public function testGatewayResultMissingKeepsContractAndFacadeCompatibility(): void
+    public function testGatewayResultMissingKeepsContract(): void
     {
         $exception = PaymentGatewayException::gatewayResultMissing('alipay');
 
@@ -25,10 +24,27 @@ class PaymentGatewayExceptionTest extends TestCase
         static::assertSame('PAYMENT__GATEWAY_RESULT_MISSING', $exception->getErrorCode());
         static::assertSame('The payment channel "alipay" did not return a result.', $exception->getMessage());
         static::assertSame(['channel' => 'alipay'], $exception->getParameters());
+    }
 
-        $facade = PaymentException::gatewayResultMissing('alipay');
+    public function testGatewayErrorKeepsThePreviousFailure(): void
+    {
+        $previous = new \RuntimeException('connection interrupted');
+        $exception = PaymentGatewayException::gatewayError('alipay', 'no response', $previous);
 
-        static::assertSame(PaymentGatewayException::class, $facade::class);
-        static::assertEquals($exception, $facade);
+        static::assertSame(PaymentGatewayException::class, $exception::class);
+        static::assertSame(Response::HTTP_BAD_GATEWAY, $exception->getStatusCode());
+        static::assertSame('PAYMENT__GATEWAY_ERROR', $exception->getErrorCode());
+        static::assertSame(['channel' => 'alipay', 'reason' => 'no response'], $exception->getParameters());
+        static::assertSame($previous, $exception->getPrevious());
+    }
+
+    public function testMissingCredentialsKeepsContract(): void
+    {
+        $exception = PaymentGatewayException::missingCredentials('alipay', 'app_id');
+
+        static::assertSame(PaymentGatewayException::class, $exception::class);
+        static::assertSame(Response::HTTP_INTERNAL_SERVER_ERROR, $exception->getStatusCode());
+        static::assertSame('PAYMENT__MISSING_CREDENTIALS', $exception->getErrorCode());
+        static::assertSame(['channel' => 'alipay', 'field' => 'app_id'], $exception->getParameters());
     }
 }

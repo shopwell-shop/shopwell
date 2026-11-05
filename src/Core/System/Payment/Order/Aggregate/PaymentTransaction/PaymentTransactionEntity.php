@@ -12,6 +12,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\Required;
 use Shopwell\Core\Framework\DataAbstractionLayer\Entity as EntityStruct;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityCustomFieldsTrait;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Payment\Order\Aggregate\PaymentAttempt\PaymentAttemptEntity;
 use Shopwell\Core\System\Payment\Order\PaymentOrderEntity;
 
 /**
@@ -34,9 +35,17 @@ class PaymentTransactionEntity extends EntityStruct
     final public const STATUS_SUCCESS = 'success';
     final public const STATUS_FAILED = 'failed';
 
+    final public const STATUS_UNKNOWN = 'unknown';
+
     #[PrimaryKey]
     #[Field(type: FieldType::UUID, api: ['admin-api' => true, 'store-api' => false])]
     public string $id;
+
+    #[ManyToOne(entity: 'payment_attempt', api: false)]
+    public ?PaymentAttemptEntity $paymentAttempt = null;
+
+    #[ForeignKey(entity: 'payment_attempt', api: false)]
+    public ?string $paymentAttemptId = null;
 
     #[Required]
     #[ForeignKey(entity: 'payment_order', api: ['admin-api' => true, 'store-api' => false])]

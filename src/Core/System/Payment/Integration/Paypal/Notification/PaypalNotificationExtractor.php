@@ -3,6 +3,7 @@
 namespace Shopwell\Core\System\Payment\Integration\Paypal\Notification;
 
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Payment\Integration\Paypal\Api\PaypalApi;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
 use Shopwell\Core\System\Payment\Notification\Struct\PaymentNotificationAck;
 use Shopwell\Core\System\Payment\Notification\Struct\PaymentNotificationData;
@@ -49,7 +50,7 @@ final class PaypalNotificationExtractor implements PaymentNotificationExtractorI
         }
 
         return new PaymentNotificationData(
-            paymentNo: self::stringOf($resource, 'custom_id'),
+            paymentNo: PaypalApi::paymentNoOf($resource),
             outTradeNo: self::stringOf($resource, 'invoice_id'),
             outPaymentNo: self::stringOf($resource, 'id'),
         );

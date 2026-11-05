@@ -6,7 +6,6 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Payment\Exception\PaymentNotificationException;
-use Shopwell\Core\System\Payment\PaymentException;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -16,7 +15,7 @@ use Symfony\Component\HttpFoundation\Response;
 #[CoversClass(PaymentNotificationException::class)]
 class PaymentNotificationExceptionTest extends TestCase
 {
-    public function testNotificationInvalidKeepsContractAndFacadeCompatibility(): void
+    public function testNotificationInvalidKeepsContract(): void
     {
         $exception = PaymentNotificationException::notificationInvalid('alipay', 'bad signature');
 
@@ -25,10 +24,5 @@ class PaymentNotificationExceptionTest extends TestCase
         static::assertSame('PAYMENT__NOTIFICATION_INVALID', $exception->getErrorCode());
         static::assertSame('The notification of channel "alipay" is invalid: bad signature', $exception->getMessage());
         static::assertSame(['channel' => 'alipay', 'reason' => 'bad signature'], $exception->getParameters());
-
-        $facade = PaymentException::notificationInvalid('alipay', 'bad signature');
-
-        static::assertSame(PaymentNotificationException::class, $facade::class);
-        static::assertEquals($exception, $facade);
     }
 }

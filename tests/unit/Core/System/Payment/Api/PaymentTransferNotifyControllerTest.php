@@ -12,30 +12,26 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Payment\Api\PaymentTransferNotifyController;
-use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppProvider\PaymentAppProviderCollection;
-use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppProvider\PaymentAppProviderEntity;
 use Shopwell\Core\System\Payment\App\PaymentAppCollection;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
 use Shopwell\Core\System\Payment\App\PaymentCredentialCipher;
-use Shopwell\Core\System\Payment\Gateway\PaymentGatewayFactory;
+use Shopwell\Core\System\Payment\Exception\PaymentGatewayException;
+use Shopwell\Core\System\Payment\Exception\PaymentNotificationException;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationCollection;
-use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
 use Shopwell\Core\System\Payment\Notification\Struct\PaymentNotificationAck;
-use Shopwell\Core\System\Payment\PaymentException;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannelRegistry;
 use Shopwell\Core\System\Payment\Provider\Config\PaymentConfigResolver;
-use Shopwell\Core\System\Payment\Provider\PaymentProvider;
-use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;
 use Shopwell\Core\System\Payment\Transfer\Notification\PaymentTransferNotificationProcessor;
 use Shopwell\Core\System\Payment\Transfer\Notification\PaymentTransferNotificationVerifierInterface;
 use Shopwell\Core\System\Payment\Transfer\Notification\PaymentTransferNotificationVerifierRegistry;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferCollection;
+use Shopwell\Core\System\Payment\Transfer\PaymentTransferEntity;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferRecipientService;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferReconciler;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferService;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferStateHandler;
 use Shopwell\Core\System\StateMachine\Loader\InitialStateIdLoader;
 use Shopwell\Core\System\StateMachine\StateMachineRegistry;
+use Shopwell\Tests\Unit\Core\System\Payment\Account\_fixtures\PaymentAccountLockStub;
 use Shopwell\Tests\Unit\Core\System\Payment\NumberRangeFixture;
 use Shopwell\Tests\Unit\Core\System\Payment\Transfer\PaymentTransferRulesFixture;
 use Symfony\Component\Clock\MockClock;
@@ -96,7 +92,7 @@ class PaymentTransferNotifyControllerTest extends TestCase
         $controller = $this->controller(
             $this->notificationRepository(),
             $this->appRepository(),
-            $this->verifier(throwOnVerify: PaymentException::notificationInvalid('alipay', 'broken'))
+            $this->verifier(throwOnVerify: PaymentNotificationException::notificationInvalid('alipay', 'broken'))
         );
 
         $response = $controller->notify($this->request(), 'alipay', self::APP_ID);
@@ -124,6 +120,19 @@ class PaymentTransferNotifyControllerTest extends TestCase
      * A broken installation is the only reason to ask for a retry, so a defect that is not the
      * interface's fault answers 5xx.
      */
+    public function testATransientPaymentFailureRequestsNotificationRetry(): void
+    {
+        $controller = $this->controller(
+            $this->notificationRepository(),
+            $this->appRepository(),
+            $this->verifier(throwOnVerify: PaymentGatewayException::gatewayError('alipay', 'upstream unavailable'))
+        );
+        $response = $controller->notify($this->request(), 'alipay', self::APP_ID);
+
+        static::assertSame(Response::HTTP_INTERNAL_SERVER_ERROR, $response->getStatusCode());
+        static::assertSame('', $response->getContent());
+    }
+
     public function testAnUnexpectedErrorIsAServerError(): void
     {
         $appRepository = $this->failingAppRepository(new \RuntimeException('database is gone'));
@@ -148,35 +157,8 @@ class PaymentTransferNotifyControllerTest extends TestCase
     ): PaymentTransferNotifyController {
         $cipher = new PaymentCredentialCipher('test-secret');
 
-        $provider = new PaymentProvider(
-            technicalName: 'alipay',
-            label: 'Alipay',
-            credentials: [],
-            channels: [],
-            gatewayFactory: static::createStub(PaymentGatewayFactory::class),
-            notificationExtractor: static::createStub(PaymentNotificationExtractorInterface::class),
-        );
-
-        $appProvider = new PaymentAppProviderEntity();
-        $appProvider->setUniqueIdentifier('app-provider-id');
-        $appProvider->paymentAppId = self::APP_ID;
-        $appProvider->providerTechnicalName = 'alipay';
-        $appProvider->enabled = true;
-        $appProvider->credentials = $cipher->encrypt(['alipay_public_key' => 'key']);
-
-        $appProviderRepository = $this->appProviderRepository($appProvider);
-
-        $providerRegistry = new PaymentProviderRegistry([$provider]);
-
-        $configResolver = new PaymentConfigResolver(
-            $providerRegistry,
-            new PaymentChannelRegistry($providerRegistry),
-            $appProviderRepository,
-            static::createStub(EntityRepository::class),
-            static::createStub(EntityRepository::class),
-            static::createStub(EntityRepository::class),
-            $cipher
-        );
+        $configResolver = static::createStub(PaymentConfigResolver::class);
+        $configResolver->method('accountCredentials')->willReturn(['alipay_public_key' => 'key']);
 
         $transferRepository = $this->transferRepository();
         $transferService = new PaymentTransferService(
@@ -188,7 +170,9 @@ class PaymentTransferNotifyControllerTest extends TestCase
             static::createStub(InitialStateIdLoader::class),
             new MockClock(self::NOW),
             PaymentTransferRulesFixture::registry(),
-            NumberRangeFixture::generator('PT1001')
+            NumberRangeFixture::generator('PT1001'),
+            $configResolver,
+            new PaymentAccountLockStub(),
         );
 
         $processor = new PaymentTransferNotificationProcessor(
@@ -251,24 +235,6 @@ class PaymentTransferNotifyControllerTest extends TestCase
     }
 
     /**
-     * @return EntityRepository<PaymentAppProviderCollection>
-     */
-    private function appProviderRepository(PaymentAppProviderEntity $appProvider): EntityRepository
-    {
-        $repository = static::createStub(EntityRepository::class);
-        $repository->method('search')->willReturn(new EntitySearchResult(
-            'payment_app_provider',
-            1,
-            new PaymentAppProviderCollection([$appProvider]),
-            null,
-            new Criteria(),
-            Context::createDefaultContext()
-        ));
-
-        return $repository;
-    }
-
-    /**
      * @return EntityRepository<PaymentAppCollection>
      */
     private function failingAppRepository(\Throwable $exception): EntityRepository
@@ -319,10 +285,15 @@ class PaymentTransferNotifyControllerTest extends TestCase
      */
     private function transferRepository(): EntityRepository
     {
+        $transfer = new PaymentTransferEntity();
+        $transfer->id = 'transfer-id';
+        $transfer->setUniqueIdentifier($transfer->id);
+        $transfer->accountId = 'account-id';
+
         return $this->repositoryWith(new EntitySearchResult(
             'payment_transfer',
-            0,
-            new PaymentTransferCollection([]),
+            1,
+            new PaymentTransferCollection([$transfer]),
             null,
             new Criteria(),
             Context::createDefaultContext()

@@ -6,6 +6,7 @@ use Payum\Core\Request\Capture;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Payment\Exception\PaymentGatewayException;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayFactory;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
 use Shopwell\Core\System\Payment\Gateway\Request\PaymentQuery;
@@ -14,8 +15,8 @@ use Shopwell\Core\System\Payment\Integration\Paypal\Action\PaypalQueryAction;
 use Shopwell\Core\System\Payment\Integration\Paypal\Api\PaypalApi;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
 use Shopwell\Core\System\Payment\PaymentException;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
+use Shopwell\Core\System\Payment\Product\PaymentInteraction;
+use Shopwell\Core\System\Payment\Product\PaymentProduct;
 use Shopwell\Core\System\Payment\Provider\PaymentProvider;
 use Shopwell\Core\System\Payment\Provider\ResolvedPaymentConfig;
 
@@ -39,7 +40,7 @@ class PaypalQueryActionTest extends TestCase
     {
         $action = new PaypalQueryAction();
 
-        $this->expectExceptionObject(PaymentException::actionWithoutApi(PaypalQueryAction::class));
+        $this->expectExceptionObject(PaymentGatewayException::actionWithoutApi(PaypalQueryAction::class));
 
         $action->execute(new PaymentQuery(new PaymentGatewayModel()));
     }
@@ -48,12 +49,12 @@ class PaypalQueryActionTest extends TestCase
     {
         $action = new PaypalQueryAction();
 
-        $this->expectExceptionObject(PaymentException::unsupportedApi(PaypalQueryAction::class, \stdClass::class));
+        $this->expectExceptionObject(PaymentGatewayException::unsupportedApi(PaypalQueryAction::class, \stdClass::class));
 
         $action->setApi(new \stdClass());
     }
 
-    public function testExecuteAnswersAbsentWhenTheCaptureDidNotHandOutAnOrderId(): void
+    public function testALostCreateResponseKeepsThePaymentPendingWithoutARemoteId(): void
     {
         $model = new PaymentGatewayModel([
             PaymentGatewayModel::PAYMENT_NO => 'P-1',
@@ -69,7 +70,7 @@ class PaypalQueryActionTest extends TestCase
         static::assertNull($request['order_id']);
 
         $result = $model->result(QueryResult::class, 'paypal_checkout');
-        static::assertSame(QueryResult::STATUS_ABSENT, $result->status);
+        static::assertSame(QueryResult::STATUS_PENDING, $result->status);
     }
 
     public function testExecuteAsksForTheOrderOfTheLastCaptureAndWrapsAGatewayFailure(): void
@@ -98,7 +99,7 @@ class PaypalQueryActionTest extends TestCase
 
     private function api(): PaypalApi
     {
-        $channel = new PaymentChannel('paypal_checkout', 'paypal', 'Paypal Checkout', PaymentFlow::REDIRECT);
+        $channel = new PaymentProduct('paypal_checkout', 'paypal', 'Paypal Checkout', [PaymentInteraction::REDIRECT], 'paypal');
 
         return new PaypalApi(
             new ResolvedPaymentConfig(
@@ -110,11 +111,12 @@ class PaypalQueryActionTest extends TestCase
                     new PaymentGatewayFactory('paypal', PaypalApi::class, []),
                     static::createStub(PaymentNotificationExtractorInterface::class),
                 ),
-                channel: $channel,
+                product: $channel,
                 credentials: [],
                 params: [],
                 runtimeParams: [],
                 settings: [],
+                accountId: 'test-account',
             ),
             'https://example.com/notify',
             '',

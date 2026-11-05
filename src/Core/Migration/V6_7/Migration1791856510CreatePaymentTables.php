@@ -14,9 +14,12 @@ use Shopwell\Core\Migration\Traits\StateMachineMigrationTrait;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
 use Shopwell\Core\System\Payment\App\PaymentCredentialCipher;
 use Shopwell\Core\System\Payment\Integration\Alipay\Api\AlipayApi;
+use Shopwell\Core\System\Payment\Integration\Alipay\Product\AlipayProducts;
 use Shopwell\Core\System\Payment\Integration\Paypal\Api\PaypalApi;
+use Shopwell\Core\System\Payment\Integration\Paypal\Product\PaypalProducts;
 use Shopwell\Core\System\Payment\Integration\Stripe\Api\StripeApi;
-use Shopwell\Core\System\Payment\Integration\Wechat\Api\WechatApi;
+use Shopwell\Core\System\Payment\Integration\Stripe\Product\StripeProducts;
+use Shopwell\Core\System\Payment\Integration\Wechat\Product\WechatProducts;
 use Shopwell\Core\System\Payment\Order\PaymentOrderStates;
 use Shopwell\Core\System\Payment\Order\PaymentRefundStates;
 use Shopwell\Core\System\Payment\Subscription\PaymentMandateStates;
@@ -26,15 +29,10 @@ use Shopwell\Core\System\Payment\Subscription\PaymentSubscriptionStates;
 /**
  * Creates the state machines and the tables of the generic payment gateway in their final shape.
  *
- * The configuration of the gateway is a 2x2 matrix, and the tables follow it exactly:
- *
- *  - `payment_provider_config` is the platform account of a payment interface (alipay, wechat pay, …),
- *  - `payment_app_provider` is the authorization of an app for a whole interface, and it names the
- *    account source - `NULL` for the credentials the app brings itself, the id of another app to
- *    inherit the account of that app, the tenant of the platform in particular,
- *  - `payment_channel_config` are the parameters of one channel of an interface (the appid of a wechat
- *    channel, for instance),
- *  - `payment_app_channel` is the switch of one channel for one app.
+ * `payment_account` stores merchant identity, encrypted credentials and per-product parameters.
+ * `payment_app_account` grants an app access to an explicit account.
+ * `payment_provider_config` points to the platform account for a provider.
+ * Product configuration and app product grants control admission to new payments.
  *
  * The credentials live on the interface and never on a single product of it: an alipay application
  * covers every product of alipay, so the mobile web payment and the qr code payment share the very same
@@ -79,7 +77,7 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
 
     final public const PROVIDER = AlipayApi::PROVIDER;
 
-    final public const CHANNEL = AlipayApi::CHANNEL_H5;
+    final public const CHANNEL = AlipayProducts::H5;
 
     /**
      * The technical name of the alipay payment method a fresh installation offers.
@@ -92,12 +90,10 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
     final public const PAYMENT_METHOD_WECHAT = 'wechat';
 
     /**
-     * The channel the alipay payment method collects through.
-     *
-     * It is the only non sdk channel of alipay that declares both `web` and `wap`, so the one method
-     * is collectable on a desktop browser and on a phone alike.
+     * The desktop product enabled alongside H5 for the seeded Alipay account.
+     * Checkout bindings select the logical method; routing chooses the product for each scene.
      */
-    final public const PAYMENT_METHOD_ALIPAY_CHANNEL = AlipayApi::CHANNEL_QR;
+    final public const PAYMENT_METHOD_ALIPAY_CHANNEL = AlipayProducts::WEB;
 
     /**
      * The channel the wechat pay payment method collects through.
@@ -105,7 +101,7 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
      * It is the only non sdk channel of wechat pay that declares `web`: `wechat_h5` is wap only and the
      * remaining three are opened by an sdk the storefront must not bind.
      */
-    final public const PAYMENT_METHOD_WECHAT_CHANNEL = WechatApi::CHANNEL_NATIVE;
+    final public const PAYMENT_METHOD_WECHAT_CHANNEL = WechatProducts::NATIVE;
 
     /**
      * The technical name of the paypal payment method a fresh installation offers.
@@ -121,12 +117,12 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
      * The channel of paypal the method collects through. Paypal declares a single product, and it is
      * the redirect checkout every browser can follow, so there is nothing to choose from.
      */
-    final public const PAYMENT_METHOD_PAYPAL_CHANNEL = 'paypal_checkout';
+    final public const PAYMENT_METHOD_PAYPAL_CHANNEL = PaypalProducts::CHECKOUT;
 
     /**
      * The channel of stripe the method collects through, the redirect checkout of the stripe account.
      */
-    final public const PAYMENT_METHOD_STRIPE_CHANNEL = 'stripe_checkout';
+    final public const PAYMENT_METHOD_STRIPE_CHANNEL = StripeProducts::CHECKOUT;
 
     /**
      * The positions the two seeded methods take in the payment selection, right after the four
@@ -199,11 +195,14 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
         $this->removeExpireTransitionOfOpenedOrders($connection);
 
         $this->createPaymentAppTable($connection);
+        $this->createPaymentAccountTable($connection);
         $this->createPaymentProviderConfigTable($connection);
         $this->createPaymentChannelConfigTable($connection);
-        $this->createPaymentAppProviderTable($connection);
+        $this->createPaymentAppAccountTable($connection);
         $this->createPaymentAppChannelTable($connection);
         $this->createPaymentOrderTable($connection);
+        $this->createCashierTables($connection);
+        $this->createPaymentAttemptTable($connection);
         $this->createPaymentTransactionTable($connection);
         $this->createPaymentRefundTable($connection);
         $this->createPaymentNotificationTable($connection);
@@ -223,6 +222,7 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
         $this->seedStripeProviderConfig($connection, $cipher, $now);
         $this->seedChannelConfig($connection, $now);
         $this->seedPlatformTenant($connection, $cipher, $now);
+        $this->seedCashierProfiles($connection, $now);
 
         // the methods the checkout offers right away - they collect on the tenant seeded above, so
         // they are written after it
@@ -231,6 +231,13 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
         // the seeded methods are visible to the checkout only after the index they are read through
         // was rebuilt - the seeding above writes every table that feeds it
         $this->registerIndexer($connection, 'payment_method.indexer');
+        $this->addAdditionalPrivileges($connection, [
+            'payment_app:read' => ['payment_cashier_config:read'],
+            'payment_app:update' => ['payment_cashier_config:create', 'payment_cashier_config:update', 'payment_cashier_config:delete'],
+            'payment_provider_config:read' => ['payment_account:read'],
+            'payment_provider_config:update' => ['payment_account:create', 'payment_account:update'],
+            'payment_provider_config:delete' => ['payment_account:delete'],
+        ]);
     }
 
     public function updateDestructive(Connection $connection): void
@@ -518,6 +525,28 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
      * The platform account of an interface. One row per interface and not per channel: rotating a key
      * is a single row, and no product of the interface can end up with a different key than its sibling.
      */
+    private function createPaymentAccountTable(Connection $connection): void
+    {
+        $connection->executeStatement(
+            'CREATE TABLE IF NOT EXISTS `payment_account` (
+                `id` BINARY(16) NOT NULL,
+                `provider_technical_name` VARCHAR(64) NOT NULL,
+                `name` VARCHAR(255) NOT NULL,
+                `owner_app_id` BINARY(16) NULL,
+                `active` TINYINT(1) NOT NULL DEFAULT 1,
+                `enabled_products` JSON NOT NULL,
+                `credentials` JSON NULL,
+                `product_params` JSON NULL,
+                `settings` JSON NULL,
+                `custom_fields` JSON NULL,
+                `created_at` DATETIME(3) NOT NULL,
+                `updated_at` DATETIME(3) NULL,
+                PRIMARY KEY (`id`),
+                CONSTRAINT `fk.payment_account.owner_app_id` FOREIGN KEY (`owner_app_id`) REFERENCES `payment_app` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;'
+        );
+    }
+
     private function createPaymentProviderConfigTable(Connection $connection): void
     {
         $connection->executeStatement(
@@ -525,13 +554,14 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
                 `id` BINARY(16) NOT NULL,
                 `provider_technical_name` VARCHAR(64) NOT NULL,
                 `enabled` TINYINT(1) NOT NULL DEFAULT 0,
-                `credentials` JSON NULL,
+                `account_id` BINARY(16) NOT NULL,
                 `settings` JSON NULL,
                 `custom_fields` JSON NULL,
                 `created_at` DATETIME(3) NOT NULL,
                 `updated_at` DATETIME(3) NULL,
                 PRIMARY KEY (`id`),
-                UNIQUE KEY `uniq.payment_provider_config.provider` (`provider_technical_name`)
+                UNIQUE KEY `uniq.payment_provider_config.provider` (`provider_technical_name`),
+                CONSTRAINT `fk.payment_provider_config.account_id` FOREIGN KEY (`account_id`) REFERENCES `payment_account` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;'
         );
     }
@@ -549,7 +579,6 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
                 `provider_technical_name` VARCHAR(64) NOT NULL,
                 `channel_technical_name` VARCHAR(64) NOT NULL,
                 `enabled` TINYINT(1) NOT NULL DEFAULT 0,
-                `params` JSON NULL,
                 `settings` JSON NULL,
                 `custom_fields` JSON NULL,
                 `created_at` DATETIME(3) NOT NULL,
@@ -561,37 +590,26 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
     }
 
     /**
-     * Which interface an app may collect through, and whose merchant account is charged.
-     *
-     * `source_app_id` names the app whose account is charged, `NULL` means the app brings its own one.
-     * Pointing it at the tenant of the platform is what "the platform collects for me" means.
-     *
-     * The foreign key is `ON DELETE SET NULL` on purpose: deleting the source app must not delete the
-     * authorization of the inheriting app, and it must not leave a dangling id either. The inheriting
-     * app falls back to "collects on its own account" instead, which has no credentials and is
-     * therefore refused at payment time - visibly, instead of silently collecting on an account that
-     * is not ours anymore.
+     * Grants an app access to an explicit account, which retains the merchant keys for historical trades.
      */
-    private function createPaymentAppProviderTable(Connection $connection): void
+    private function createPaymentAppAccountTable(Connection $connection): void
     {
         $connection->executeStatement(
-            'CREATE TABLE IF NOT EXISTS `payment_app_provider` (
+            'CREATE TABLE IF NOT EXISTS `payment_app_account` (
                 `id` BINARY(16) NOT NULL,
                 `payment_app_id` BINARY(16) NOT NULL,
-                `provider_technical_name` VARCHAR(64) NOT NULL,
-                `source_app_id` BINARY(16) NULL,
+                `account_id` BINARY(16) NOT NULL,
                 `enabled` TINYINT(1) NOT NULL DEFAULT 1,
-                `credentials` JSON NULL,
+                `position` INT NOT NULL DEFAULT 0,
                 `settings` JSON NULL,
                 `custom_fields` JSON NULL,
                 `created_at` DATETIME(3) NOT NULL,
                 `updated_at` DATETIME(3) NULL,
                 PRIMARY KEY (`id`),
-                UNIQUE KEY `uniq.payment_app_provider.app_provider` (`payment_app_id`, `provider_technical_name`),
-                KEY `idx.payment_app_provider.provider` (`provider_technical_name`),
-                KEY `idx.payment_app_provider.source_app` (`source_app_id`),
-                CONSTRAINT `fk.payment_app_provider.payment_app_id` FOREIGN KEY (`payment_app_id`) REFERENCES `payment_app` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-                CONSTRAINT `fk.payment_app_provider.source_app_id` FOREIGN KEY (`source_app_id`) REFERENCES `payment_app` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
+                UNIQUE KEY `uniq.payment_app_account.app_provider` (`payment_app_id`, `account_id`),
+                KEY `idx.payment_app_account.account` (`account_id`),
+                CONSTRAINT `fk.payment_app_account.payment_app_id` FOREIGN KEY (`payment_app_id`) REFERENCES `payment_app` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+                CONSTRAINT `fk.payment_app_account.account_id` FOREIGN KEY (`account_id`) REFERENCES `payment_account` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;'
         );
     }
@@ -608,7 +626,6 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
                 `payment_app_id` BINARY(16) NOT NULL,
                 `channel_technical_name` VARCHAR(64) NOT NULL,
                 `enabled` TINYINT(1) NOT NULL DEFAULT 1,
-                `params` JSON NULL,
                 `settings` JSON NULL,
                 `custom_fields` JSON NULL,
                 `created_at` DATETIME(3) NOT NULL,
@@ -647,9 +664,7 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
                 `order_version_id` BINARY(16) NULL,
                 `order_transaction_id` BINARY(16) NULL,
                 `order_transaction_version_id` BINARY(16) NULL,
-                `provider_technical_name` VARCHAR(64) NOT NULL,
-                `channel_technical_name` VARCHAR(64) NOT NULL,
-                `channel_params` JSON NULL,
+                `active_attempt_id` BINARY(16) NULL,
                 `amount` INT NOT NULL,
                 `paid_amount` INT NOT NULL,
                 `refunded_amount` INT NOT NULL,
@@ -661,12 +676,13 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
                 `out_payment_no` VARCHAR(128) NULL,
                 `channel_data` JSON NULL,
                 `client_ip` VARCHAR(45) NULL,
-                `device` VARCHAR(32) NULL,
                 `notify_url` VARCHAR(1024) NULL,
                 `return_url` VARCHAR(1024) NULL,
                 `idempotency_key` VARCHAR(128) NULL,
                 `expire_at` DATETIME(3) NULL,
                 `paid_at` DATETIME(3) NULL,
+                `event_dispatched_at` DATETIME(3) NULL,
+                `event_dispatch_attempted_at` DATETIME(3) NULL,
                 `closed_at` DATETIME(3) NULL,
                 `custom_fields` JSON NULL,
                 `created_at` DATETIME(3) NOT NULL,
@@ -675,10 +691,9 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
                 UNIQUE KEY `uniq.payment_order.payment_no` (`payment_no`),
                 UNIQUE KEY `uniq.payment_order.app_out_trade_no` (`payment_app_id`, `out_trade_no`),
                 UNIQUE KEY `uniq.payment_order.app_idempotency` (`payment_app_id`, `idempotency_key`),
-                KEY `idx.payment_order.provider` (`provider_technical_name`),
-                KEY `idx.payment_order.channel` (`channel_technical_name`),
                 KEY `idx.payment_order.state_id` (`state_id`),
                 KEY `idx.payment_order.paid_at` (`paid_at`),
+                KEY `idx.payment_order.event_delivery` (`event_dispatched_at`, `paid_at`),
                 KEY `idx.payment_order.expire_at` (`expire_at`),
                 KEY `idx.payment_order.order_id` (`order_id`, `order_version_id`),
                 KEY `idx.payment_order.order_transaction_id` (`order_transaction_id`, `order_transaction_version_id`),
@@ -690,11 +705,48 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
         );
     }
 
+    private function createPaymentAttemptTable(Connection $connection): void
+    {
+        $connection->executeStatement(
+            'CREATE TABLE IF NOT EXISTS `payment_attempt` (
+                `id` BINARY(16) NOT NULL,
+                `payment_order_id` BINARY(16) NOT NULL,
+                `attempt_no` VARCHAR(64) NOT NULL,
+                `account_id` BINARY(16) NOT NULL,
+                `method` VARCHAR(64) NOT NULL,
+                `provider_technical_name` VARCHAR(64) NOT NULL,
+                `channel_technical_name` VARCHAR(64) NOT NULL,
+                `interaction` VARCHAR(32) NOT NULL,
+                `status` VARCHAR(32) NOT NULL,
+                `context` JSON NOT NULL,
+                `configuration` JSON NOT NULL,
+                `handover` JSON NULL,
+                `out_payment_no` VARCHAR(128) NULL,
+                `channel_data` JSON NULL,
+                `created_at` DATETIME(3) NOT NULL,
+                `updated_at` DATETIME(3) NULL,
+                PRIMARY KEY (`id`),
+                UNIQUE KEY `uniq.payment_attempt.attempt_no` (`attempt_no`),
+                KEY `idx.payment_attempt.payment_order_id` (`payment_order_id`),
+                CONSTRAINT `fk.payment_attempt.payment_order_id` FOREIGN KEY (`payment_order_id`) REFERENCES `payment_order` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+                CONSTRAINT `fk.payment_attempt.account_id` FOREIGN KEY (`account_id`) REFERENCES `payment_account` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;'
+        );
+
+        if (!$connection->fetchOne('SELECT 1 FROM information_schema.TABLE_CONSTRAINTS WHERE CONSTRAINT_SCHEMA = DATABASE() AND TABLE_NAME = :table AND CONSTRAINT_NAME = :constraint', [
+            'table' => 'payment_order',
+            'constraint' => 'fk.payment_order.active_attempt_id',
+        ])) {
+            $connection->executeStatement('ALTER TABLE `payment_order` ADD CONSTRAINT `fk.payment_order.active_attempt_id` FOREIGN KEY (`active_attempt_id`) REFERENCES `payment_attempt` (`id`) ON DELETE SET NULL ON UPDATE CASCADE');
+        }
+    }
+
     private function createPaymentTransactionTable(Connection $connection): void
     {
         $connection->executeStatement(
             'CREATE TABLE IF NOT EXISTS `payment_transaction` (
                 `id` BINARY(16) NOT NULL,
+                `payment_attempt_id` BINARY(16) NULL,
                 `payment_order_id` BINARY(16) NOT NULL,
                 `transaction_no` VARCHAR(64) NOT NULL,
                 `type` VARCHAR(32) NOT NULL,
@@ -712,6 +764,7 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
                 PRIMARY KEY (`id`),
                 UNIQUE KEY `uniq.payment_transaction.transaction_no` (`transaction_no`),
                 KEY `idx.payment_transaction.payment_order_id` (`payment_order_id`),
+                CONSTRAINT `fk.payment_transaction.payment_attempt_id` FOREIGN KEY (`payment_attempt_id`) REFERENCES `payment_attempt` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
                 CONSTRAINT `fk.payment_transaction.payment_order_id` FOREIGN KEY (`payment_order_id`) REFERENCES `payment_order` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;'
         );
@@ -723,6 +776,7 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
             'CREATE TABLE IF NOT EXISTS `payment_refund` (
                 `id` BINARY(16) NOT NULL,
                 `refund_no` VARCHAR(64) NOT NULL,
+                `payment_attempt_id` BINARY(16) NULL,
                 `payment_order_id` BINARY(16) NOT NULL,
                 `out_refund_no` VARCHAR(128) NOT NULL,
                 `amount` INT NOT NULL,
@@ -731,6 +785,8 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
                 `state_id` BINARY(16) NOT NULL,
                 `out_refund_id` VARCHAR(128) NULL,
                 `refunded_at` DATETIME(3) NULL,
+                `event_dispatched_at` DATETIME(3) NULL,
+                `event_dispatch_attempted_at` DATETIME(3) NULL,
                 `request_payload` JSON NULL,
                 `response_payload` JSON NULL,
                 `custom_fields` JSON NULL,
@@ -740,6 +796,8 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
                 UNIQUE KEY `uniq.payment_refund.refund_no` (`refund_no`),
                 UNIQUE KEY `uniq.payment_refund.order_out_refund_no` (`payment_order_id`, `out_refund_no`),
                 KEY `idx.payment_refund.state_id` (`state_id`),
+                KEY `idx.payment_refund.event_delivery` (`event_dispatched_at`, `refunded_at`),
+                CONSTRAINT `fk.payment_refund.payment_attempt_id` FOREIGN KEY (`payment_attempt_id`) REFERENCES `payment_attempt` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
                 CONSTRAINT `fk.payment_refund.payment_order_id` FOREIGN KEY (`payment_order_id`) REFERENCES `payment_order` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
                 CONSTRAINT `fk.payment_refund.state_id` FOREIGN KEY (`state_id`) REFERENCES `state_machine_state` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;'
@@ -755,6 +813,7 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
         $connection->executeStatement(
             'CREATE TABLE IF NOT EXISTS `payment_notification` (
                 `id` BINARY(16) NOT NULL,
+                `payment_attempt_id` BINARY(16) NULL,
                 `payment_order_id` BINARY(16) NULL,
                 `provider_technical_name` VARCHAR(64) NOT NULL,
                 `raw_body` LONGTEXT NULL,
@@ -771,6 +830,7 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
                 KEY `idx.payment_notification.payment_order_id` (`payment_order_id`),
                 KEY `idx.payment_notification.provider` (`provider_technical_name`),
                 KEY `idx.payment_notification.processed` (`processed`),
+                CONSTRAINT `fk.payment_notification.payment_attempt_id` FOREIGN KEY (`payment_attempt_id`) REFERENCES `payment_attempt` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
                 CONSTRAINT `fk.payment_notification.payment_order_id` FOREIGN KEY (`payment_order_id`) REFERENCES `payment_order` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;'
         );
@@ -838,12 +898,13 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
                 `id` BINARY(16) NOT NULL,
                 `payment_method_id` BINARY(16) NOT NULL,
                 `payment_app_id` BINARY(16) NOT NULL,
-                `channel_technical_name` VARCHAR(64) NOT NULL,
+                `method_technical_name` VARCHAR(64) NOT NULL,
+                `routing_policy` VARCHAR(64) NOT NULL DEFAULT \'priority\',
                 `created_at` DATETIME(3) NOT NULL,
                 `updated_at` DATETIME(3) NULL,
                 PRIMARY KEY (`id`),
                 UNIQUE KEY `uniq.payment_method_gateway_channel.payment_method_id` (`payment_method_id`),
-                UNIQUE KEY `uniq.payment_method_gateway_channel.channel` (`payment_app_id`, `channel_technical_name`),
+                UNIQUE KEY `uniq.payment_method_gateway_channel.channel` (`payment_app_id`, `method_technical_name`),
                 CONSTRAINT `fk.payment_method_gateway_channel.payment_method_id` FOREIGN KEY (`payment_method_id`) REFERENCES `payment_method` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
                 CONSTRAINT `fk.payment_method_gateway_channel.payment_app_id` FOREIGN KEY (`payment_app_id`) REFERENCES `payment_app` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;'
@@ -895,6 +956,7 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
         $connection->executeStatement(
             'CREATE TABLE IF NOT EXISTS `payment_mandate` (
                 `id` BINARY(16) NOT NULL,
+                `account_id` BINARY(16) NOT NULL,
                 `agreement_no` VARCHAR(64) NOT NULL,
                 `out_agreement_no` VARCHAR(128) NULL,
                 `provider_agreement_no` VARCHAR(128) NULL,
@@ -918,6 +980,7 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
                 `created_at` DATETIME(3) NOT NULL,
                 `updated_at` DATETIME(3) NULL,
                 PRIMARY KEY (`id`),
+                CONSTRAINT `fk.payment_mandate.account_id` FOREIGN KEY (`account_id`) REFERENCES `payment_account` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
                 UNIQUE KEY `uniq.payment_mandate.agreement_no` (`agreement_no`),
                 UNIQUE KEY `uniq.payment_mandate.out_agreement_no` (`out_agreement_no`),
                 KEY `idx.payment_mandate.plan_id` (`plan_id`),
@@ -945,6 +1008,7 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
         $connection->executeStatement(
             'CREATE TABLE IF NOT EXISTS `payment_subscription` (
                 `id` BINARY(16) NOT NULL,
+                `account_id` BINARY(16) NOT NULL,
                 `subscription_no` VARCHAR(64) NOT NULL,
                 `plan_id` BINARY(16) NOT NULL,
                 `customer_id` BINARY(16) NOT NULL,
@@ -969,6 +1033,7 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
                 `created_at` DATETIME(3) NOT NULL,
                 `updated_at` DATETIME(3) NULL,
                 PRIMARY KEY (`id`),
+                CONSTRAINT `fk.payment_subscription.account_id` FOREIGN KEY (`account_id`) REFERENCES `payment_account` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
                 UNIQUE KEY `uniq.payment_subscription.subscription_no` (`subscription_no`),
                 UNIQUE KEY `uniq.payment_subscription.provider_subscription` (`provider`, `provider_subscription_id`),
                 KEY `idx.payment_subscription.status_next_billing` (`status_id`, `next_billing_at`),
@@ -1034,33 +1099,7 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
      */
     private function seedProviderConfig(Connection $connection, PaymentCredentialCipher $cipher, string $now): void
     {
-        $existing = $connection->fetchOne(
-            'SELECT `id` FROM `payment_provider_config` WHERE `provider_technical_name` = :provider',
-            ['provider' => self::PROVIDER]
-        );
-
-        $payload = (string) json_encode($cipher->encrypt($this->sandboxCredentials()), \JSON_THROW_ON_ERROR);
-        $settings = (string) json_encode(['http_method' => 'GET'], \JSON_THROW_ON_ERROR);
-
-        if (\is_string($existing) && $existing !== '') {
-            $connection->update('payment_provider_config', [
-                'enabled' => 1,
-                'credentials' => $payload,
-                'settings' => $settings,
-                'updated_at' => $now,
-            ], ['id' => $existing]);
-
-            return;
-        }
-
-        $connection->insert('payment_provider_config', [
-            'id' => Uuid::randomBytes(),
-            'provider_technical_name' => self::PROVIDER,
-            'enabled' => 1,
-            'credentials' => $payload,
-            'settings' => $settings,
-            'created_at' => $now,
-        ]);
+        $this->seedMerchantAccount($connection, self::PROVIDER, $cipher->encrypt($this->sandboxCredentials()), [], $now);
     }
 
     /**
@@ -1145,7 +1184,7 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
             $connection->insert('payment_app', [
                 'id' => $appId,
                 'technical_name' => PaymentAppEntity::PLATFORM_TECHNICAL_NAME,
-                'name' => 'Platform Payment App',
+                'name' => 'platform',
                 'type' => PaymentAppEntity::TYPE_PLATFORM,
                 'app_secret' => $cipher->encryptValue(bin2hex(random_bytes(32))),
                 'active' => 1,
@@ -1160,34 +1199,31 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
         }
 
         $this->offerChannel($connection, $appId, self::CHANNEL, $now);
+        $this->offerChannel($connection, $appId, self::PAYMENT_METHOD_ALIPAY_CHANNEL, $now);
         $this->offerChannel($connection, $appId, self::PAYMENT_METHOD_PAYPAL_CHANNEL, $now);
         $this->offerChannel($connection, $appId, self::PAYMENT_METHOD_STRIPE_CHANNEL, $now);
     }
 
     /**
-     * Authorizes one interface for the platform tenant: the tenant of the platform is the root of every
-     * inheritance chain, it collects on the merchant account that is configured on the platform level -
-     * `source_app_id` stays NULL, there is nobody to inherit from.
-     *
-     * An existing row is left exactly as it is - the merchant may have switched the interface off or
-     * pointed it at own credentials, and neither is undone here.
+     * Grants the platform tenant access to its explicitly configured merchant account.
+     * Existing grants retain their admission settings.
      */
     private function authorizePlatformProvider(Connection $connection, string $appId, string $providerTechnicalName, string $now): void
     {
+        $accountId = $connection->fetchOne('SELECT `account_id` FROM `payment_provider_config` WHERE `provider_technical_name` = :provider', ['provider' => $providerTechnicalName]);
         $existing = $connection->fetchOne(
-            'SELECT `id` FROM `payment_app_provider` WHERE `payment_app_id` = :app AND `provider_technical_name` = :provider',
-            ['app' => $appId, 'provider' => $providerTechnicalName]
+            'SELECT `id` FROM `payment_app_account` WHERE `payment_app_id` = :app AND `account_id` = :account',
+            ['app' => $appId, 'account' => $accountId]
         );
 
         if (\is_string($existing) && $existing !== '') {
             return;
         }
 
-        $connection->insert('payment_app_provider', [
+        $connection->insert('payment_app_account', [
             'id' => Uuid::randomBytes(),
             'payment_app_id' => $appId,
-            'provider_technical_name' => $providerTechnicalName,
-            'source_app_id' => null,
+            'account_id' => $accountId,
             'enabled' => 1,
             'created_at' => $now,
         ]);
@@ -1224,21 +1260,10 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
     /**
      * Seeds the four payment methods a fresh installation offers: alipay, wechat pay, paypal and stripe.
      *
-     * A payment method of the gateway is a binding and nothing else. It names the app whose merchant
-     * account is charged and one channel of that app - the interface is derived from the channel and
-     * the credentials from the app - so everything the method is worth is the row in
-     * `payment_method_gateway_channel`. Seeding a method therefore means seeding that binding, and the
-     * method itself on top of it.
-     *
-     * The channels are the ones that can be handed a shopper in a browser of either kind:
-     *
-     *  - `alipay_qr` is the only non sdk channel of alipay that declares both `web` and `wap`, so the
-     *    one method covers a desktop browser and a phone. Binding `alipay_h5` would have hidden it from
-     *    every desktop, binding `alipay_web` from every phone.
-     *  - `wechat_native` is the only non sdk channel of wechat pay that declares `web`. `wechat_h5` is
-     *    wap only and `wechat_jsapi`, `wechat_mini` and `wechat_app` are opened by an sdk, which the
-     *    checkout refuses to hand a payer over to.
-     *  - paypal and stripe declare a single product each, the redirect checkout every browser follows.
+     * A gateway method binds a logical method to the app whose account collects the payment.
+     * Routing chooses among the app's account-enabled products for the current browser scene.
+     * Alipay starts with desktop website payment and H5; QR payment remains available for opt-in.
+     * PayPal and Stripe each provide a browser redirect checkout product.
      *
      * They are not equally ready, and the difference is expressed in data instead of code:
      *
@@ -1278,7 +1303,6 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
             $connection,
             $platformAppId,
             self::PAYMENT_METHOD_ALIPAY,
-            self::PAYMENT_METHOD_ALIPAY_CHANNEL,
             self::PAYMENT_METHOD_ALIPAY_POSITION,
             ['zh' => '支付宝', 'en' => 'Alipay'],
             $now
@@ -1288,17 +1312,6 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
             return;
         }
 
-        // the seeded account of the interface is only collectable through a channel the platform
-        // offers, so the channel of the method is switched on together with the method.
-        //
-        // This has to be `alipay_qr` and cannot be left to the channel that {@see seedChannelConfig()}
-        // already switched on: that one is `alipay_h5`, which has no payment method bound to it, so a
-        // shopper could pick nothing through it. `alipay_qr` is the channel this method is bound to, and
-        // a bound channel that is not switched on is filtered out by the collectability check just like
-        // a channel that does not exist - the method would be listed but not collect a single payment.
-        $this->enableChannel($connection, self::PROVIDER, self::PAYMENT_METHOD_ALIPAY_CHANNEL, $now);
-        $this->offerChannel($connection, $platformAppId, self::PAYMENT_METHOD_ALIPAY_CHANNEL, $now);
-
         // wechat pay is deliberately left unconfigured: its method is bound, but neither the channel
         // nor the credentials exist, so the collectability filter keeps it out of the checkout until a
         // merchant fills in the merchant id and the certificate of this very shop
@@ -1306,7 +1319,6 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
             $connection,
             $platformAppId,
             self::PAYMENT_METHOD_WECHAT,
-            self::PAYMENT_METHOD_WECHAT_CHANNEL,
             self::PAYMENT_METHOD_WECHAT_POSITION,
             ['zh' => '微信支付', 'en' => 'WeChat Pay'],
             $now
@@ -1320,7 +1332,6 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
             $connection,
             $platformAppId,
             self::PAYMENT_METHOD_PAYPAL,
-            self::PAYMENT_METHOD_PAYPAL_CHANNEL,
             self::PAYMENT_METHOD_PAYPAL_POSITION,
             ['zh' => 'PayPal', 'en' => 'PayPal'],
             $now
@@ -1335,7 +1346,6 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
             $connection,
             $platformAppId,
             self::PAYMENT_METHOD_STRIPE,
-            self::PAYMENT_METHOD_STRIPE_CHANNEL,
             self::PAYMENT_METHOD_STRIPE_POSITION,
             ['zh' => 'Stripe', 'en' => 'Stripe'],
             $now
@@ -1366,7 +1376,6 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
         Connection $connection,
         string $platformAppId,
         string $technicalName,
-        string $channelTechnicalName,
         int $position,
         array $names,
         string $now
@@ -1407,8 +1416,8 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
             // the channel of an app is claimed by exactly one method, so a channel another method
             // already collects through is left to it instead of failing the unique key
             $claimed = $connection->fetchOne(
-                'SELECT `payment_method_id` FROM `payment_method_gateway_channel` WHERE `payment_app_id` = :app AND `channel_technical_name` = :channel',
-                ['app' => $platformAppId, 'channel' => $channelTechnicalName]
+                'SELECT `payment_method_id` FROM `payment_method_gateway_channel` WHERE `payment_app_id` = :app AND `method_technical_name` = :channel',
+                ['app' => $platformAppId, 'channel' => $technicalName]
             );
 
             if (\is_string($claimed) && $claimed !== '') {
@@ -1419,7 +1428,7 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
                 'id' => Uuid::randomBytes(),
                 'payment_method_id' => $methodId,
                 'payment_app_id' => $platformAppId,
-                'channel_technical_name' => $channelTechnicalName,
+                'method_technical_name' => $technicalName,
                 'created_at' => $now,
             ]);
         }
@@ -1553,23 +1562,7 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
      */
     private function seedPaypalProviderConfig(Connection $connection, PaymentCredentialCipher $cipher, string $now): void
     {
-        $existing = $connection->fetchOne(
-            'SELECT `id` FROM `payment_provider_config` WHERE `provider_technical_name` = :provider',
-            ['provider' => PaypalApi::PROVIDER]
-        );
-
-        if (\is_string($existing) && $existing !== '') {
-            return;
-        }
-
-        $connection->insert('payment_provider_config', [
-            'id' => Uuid::randomBytes(),
-            'provider_technical_name' => PaypalApi::PROVIDER,
-            'enabled' => 1,
-            'credentials' => (string) json_encode($cipher->encrypt($this->paypalSandboxCredentials()), \JSON_THROW_ON_ERROR),
-            'settings' => (string) json_encode([], \JSON_THROW_ON_ERROR),
-            'created_at' => $now,
-        ]);
+        $this->seedMerchantAccount($connection, PaypalApi::PROVIDER, $cipher->encrypt($this->paypalSandboxCredentials()), [], $now);
     }
 
     /**
@@ -1590,23 +1583,7 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
      */
     private function seedStripeProviderConfig(Connection $connection, PaymentCredentialCipher $cipher, string $now): void
     {
-        $existing = $connection->fetchOne(
-            'SELECT `id` FROM `payment_provider_config` WHERE `provider_technical_name` = :provider',
-            ['provider' => StripeApi::PROVIDER]
-        );
-
-        if (\is_string($existing) && $existing !== '') {
-            return;
-        }
-
-        $connection->insert('payment_provider_config', [
-            'id' => Uuid::randomBytes(),
-            'provider_technical_name' => StripeApi::PROVIDER,
-            'enabled' => 1,
-            'credentials' => (string) json_encode($cipher->encrypt($this->stripeTestCredentials()), \JSON_THROW_ON_ERROR),
-            'settings' => (string) json_encode([], \JSON_THROW_ON_ERROR),
-            'created_at' => $now,
-        ]);
+        $this->seedMerchantAccount($connection, StripeApi::PROVIDER, $cipher->encrypt($this->stripeTestCredentials()), [], $now);
     }
 
     /**
@@ -1620,6 +1597,42 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
         ];
     }
 
+    /**
+     * @param array<string, mixed> $credentials
+     * @param array<string, mixed> $settings
+     */
+    private function seedMerchantAccount(Connection $connection, string $provider, array $credentials, array $settings, string $now): void
+    {
+        if ($connection->fetchOne('SELECT `id` FROM `payment_provider_config` WHERE `provider_technical_name` = :provider', ['provider' => $provider]) !== false) {
+            return;
+        }
+        $accountId = Uuid::randomBytes();
+        $connection->insert('payment_account', [
+            'id' => $accountId,
+            'provider_technical_name' => $provider,
+            'name' => $provider,
+            'owner_app_id' => null,
+            'active' => 1,
+            'enabled_products' => json_encode(match ($provider) {
+                self::PROVIDER => [self::CHANNEL, self::PAYMENT_METHOD_ALIPAY_CHANNEL],
+                PaypalApi::PROVIDER => [self::PAYMENT_METHOD_PAYPAL_CHANNEL],
+                StripeApi::PROVIDER => [self::PAYMENT_METHOD_STRIPE_CHANNEL],
+                default => [],
+            }, \JSON_THROW_ON_ERROR),
+            'credentials' => json_encode($credentials, \JSON_THROW_ON_ERROR),
+            'settings' => json_encode($settings, \JSON_THROW_ON_ERROR),
+            'created_at' => $now,
+        ]);
+        $connection->insert('payment_provider_config', [
+            'id' => Uuid::randomBytes(),
+            'provider_technical_name' => $provider,
+            'account_id' => $accountId,
+            'enabled' => 1,
+            'settings' => json_encode($settings, \JSON_THROW_ON_ERROR),
+            'created_at' => $now,
+        ]);
+    }
+
     private function cipher(): PaymentCredentialCipher
     {
         $secret = $_SERVER['APP_SECRET'] ?? $_ENV['APP_SECRET'] ?? getenv('APP_SECRET');
@@ -1629,5 +1642,74 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
         }
 
         return new PaymentCredentialCipher($secret);
+    }
+
+    private function createCashierTables(Connection $connection): void
+    {
+        $connection->executeStatement(<<<SQL
+            CREATE TABLE IF NOT EXISTS `payment_cashier_config` (
+                `id` BINARY(16) NOT NULL,
+                `payment_app_id` BINARY(16) NOT NULL,
+                `technical_name` VARCHAR(64) NOT NULL,
+                `active` TINYINT(1) NOT NULL DEFAULT 1,
+                `allowed_methods` JSON DEFAULT NULL,
+                `routing_policy` VARCHAR(64) NOT NULL DEFAULT 'priority',
+                `presentation` JSON DEFAULT NULL,
+                `created_at` DATETIME(3) NOT NULL,
+                `updated_at` DATETIME(3) DEFAULT NULL,
+                PRIMARY KEY (`id`),
+                UNIQUE KEY `uniq.payment_cashier_config.app_name` (`payment_app_id`, `technical_name`),
+                CONSTRAINT `fk.payment_cashier_config.app` FOREIGN KEY (`payment_app_id`) REFERENCES `payment_app` (`id`) ON DELETE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+            SQL);
+
+        $connection->executeStatement(<<<SQL
+            CREATE TABLE IF NOT EXISTS `payment_cashier_session` (
+                `id` BINARY(16) NOT NULL,
+                `payment_app_id` BINARY(16) NOT NULL,
+                `cashier_config_id` BINARY(16) NOT NULL,
+                `out_trade_no` VARCHAR(128) NOT NULL,
+                `payload` JSON NOT NULL,
+                `payment_context` JSON NOT NULL,
+                `allowed_methods` JSON NOT NULL,
+                `routing_policy` VARCHAR(64) NOT NULL,
+                `presentation` JSON DEFAULT NULL,
+                `expire_at` DATETIME(3) NOT NULL,
+                `selected_method` VARCHAR(64) DEFAULT NULL,
+                `payment_order_id` BINARY(16) DEFAULT NULL,
+                `created_at` DATETIME(3) NOT NULL,
+                `updated_at` DATETIME(3) DEFAULT NULL,
+                PRIMARY KEY (`id`),
+                UNIQUE KEY `uniq.payment_cashier_session.app_trade` (`payment_app_id`, `out_trade_no`),
+                CONSTRAINT `fk.payment_cashier_session.app` FOREIGN KEY (`payment_app_id`) REFERENCES `payment_app` (`id`) ON DELETE RESTRICT,
+                CONSTRAINT `fk.payment_cashier_session.config` FOREIGN KEY (`cashier_config_id`) REFERENCES `payment_cashier_config` (`id`) ON DELETE RESTRICT,
+                CONSTRAINT `fk.payment_cashier_session.order` FOREIGN KEY (`payment_order_id`) REFERENCES `payment_order` (`id`) ON DELETE RESTRICT
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+            SQL);
+    }
+
+    private function seedCashierProfiles(Connection $connection, string $now): void
+    {
+        $appId = $connection->fetchOne('SELECT id FROM payment_app WHERE technical_name = :name', ['name' => PaymentAppEntity::PLATFORM_TECHNICAL_NAME]);
+        if (!\is_string($appId)) {
+            return;
+        }
+
+        foreach (['h5' => ['alipay', 'wechat', 'paypal', 'stripe'], 'wechat_mini' => ['wechat'], 'alipay_mini' => ['alipay']] as $name => $methods) {
+            $existing = $connection->fetchOne('SELECT id FROM payment_cashier_config WHERE payment_app_id = :app AND technical_name = :name', ['app' => $appId, 'name' => $name]);
+            if ($existing !== false) {
+                continue;
+            }
+            $connection->insert('payment_cashier_config', [
+                'id' => Uuid::randomBytes(),
+                'payment_app_id' => $appId,
+                'technical_name' => $name,
+                'active' => 1,
+                'allowed_methods' => json_encode($methods, \JSON_THROW_ON_ERROR),
+                'routing_policy' => 'priority',
+                'presentation' => '{}',
+                'created_at' => $now,
+            ]);
+        }
     }
 }

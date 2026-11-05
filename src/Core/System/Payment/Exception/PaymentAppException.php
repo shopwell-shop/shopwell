@@ -12,6 +12,19 @@ use Symfony\Component\HttpFoundation\Response;
 #[Package('framework')]
 class PaymentAppException extends PaymentException
 {
+    public static function rateLimitExceeded(int $seconds): self
+    {
+        $exception = new self(
+            Response::HTTP_TOO_MANY_REQUESTS,
+            self::APP_RATE_LIMIT_EXCEEDED,
+            'Too many payment requests, try again in {{ seconds }} seconds.',
+            ['seconds' => $seconds],
+        );
+        $exception->setHeaders(['Retry-After' => (string) $seconds]);
+
+        return $exception;
+    }
+
     /**
      * @param list<string> $missing
      */

@@ -14,7 +14,8 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Uuid\Uuid;
-use Shopwell\Core\System\Payment\Gateway\Request\Money;
+use Shopwell\Core\System\Currency\CurrencyAmountConverter;
+use Shopwell\Core\System\Payment\Routing\PaymentContext;
 
 /**
  * The top-ups a customer pays online.
@@ -51,13 +52,13 @@ class WalletTopUpService
      *
      * @return array{min: float, max: float, presets: list<float>, channels: list<array<string, string>>}
      */
-    public function options(string $currency, ?string $device, ?string $salesChannelId = null): array
+    public function options(PaymentContext $paymentContext, ?string $salesChannelId = null): array
     {
         return [
             'min' => $this->settings->minTopUpAmount($salesChannelId),
             'max' => $this->settings->maxTopUpAmount($salesChannelId),
             'presets' => $this->settings->topUpPresets($salesChannelId),
-            'channels' => $this->payments->channels($currency, $device),
+            'channels' => $this->payments->options($paymentContext),
         ];
     }
 
@@ -71,12 +72,11 @@ class WalletTopUpService
     public function create(
         string $customerId,
         string $currencyId,
-        string $currency,
+        PaymentContext $paymentContext,
         float $amount,
-        string $channel,
+        string $method,
         ?string $returnUrl,
         ?string $clientIp,
-        ?string $device,
         Context $context,
         ?string $salesChannelId = null,
     ): array {
@@ -84,10 +84,13 @@ class WalletTopUpService
             throw WalletException::walletDisabled();
         }
 
-        $currency = strtoupper($currency);
-        $amount = round($amount, Money::exponent($currency));
+        $currency = strtoupper($paymentContext->currency);
+        $minorAmount = CurrencyAmountConverter::fromFloat($amount, $currency);
+        $amount = CurrencyAmountConverter::toFloat($minorAmount, $currency);
 
         $this->assertAmount($amount, $salesChannelId);
+
+        $this->payments->resolveMethod($method, $paymentContext);
 
         $id = Uuid::randomHex();
 
@@ -98,20 +101,18 @@ class WalletTopUpService
             'currency' => $currency,
             'amount' => $amount,
             'state' => CustomerWalletTopUpEntity::STATE_OPEN,
-            'channelTechnicalName' => $channel,
         ]], $context);
 
         try {
             $payment = $this->payments->open(
                 outTradeNo: $id,
-                channel: $channel,
-                amount: Money::fromFloat($amount, $currency),
-                currency: $currency,
+                method: $method,
+                amount: $minorAmount,
                 subject: 'Wallet top-up',
                 attach: $this->attach->forPurchase($id),
                 returnUrl: $returnUrl,
                 clientIp: $clientIp,
-                device: $device,
+                paymentContext: $paymentContext,
             );
         } catch (\Throwable $exception) {
             // the attempt stays visible in the administration instead of disappearing silently
@@ -126,7 +127,7 @@ class WalletTopUpService
         $this->topUpRepository->update([[
             'id' => $id,
             'paymentNo' => $payment['payment_no'],
-            'channelTechnicalName' => $channel,
+            'channelTechnicalName' => $payment['channel'],
         ]], $context);
 
         return ['id' => $id, 'amount' => $amount, 'currency' => $currency] + $payment;

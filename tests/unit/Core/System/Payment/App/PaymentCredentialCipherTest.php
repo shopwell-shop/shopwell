@@ -6,7 +6,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Payment\App\PaymentCredentialCipher;
-use Shopwell\Core\System\Payment\PaymentException;
+use Shopwell\Core\System\Payment\Exception\PaymentGatewayException;
 
 /**
  * @internal
@@ -50,7 +50,7 @@ class PaymentCredentialCipherTest extends TestCase
     {
         $cipher = new PaymentCredentialCipher('application-secret');
 
-        $this->expectExceptionObject(PaymentException::missingCredentials('cipher', 'payload'));
+        $this->expectExceptionObject(PaymentGatewayException::missingCredentials('cipher', 'payload'));
 
         $cipher->decryptValue('!!! not base64 !!!');
     }
@@ -59,7 +59,7 @@ class PaymentCredentialCipherTest extends TestCase
     {
         $cipher = new PaymentCredentialCipher('application-secret');
 
-        $this->expectExceptionObject(PaymentException::missingCredentials('cipher', 'payload'));
+        $this->expectExceptionObject(PaymentGatewayException::missingCredentials('cipher', 'payload'));
 
         $cipher->decryptValue(base64_encode(random_bytes(10)));
     }
@@ -73,7 +73,7 @@ class PaymentCredentialCipherTest extends TestCase
 
         $payload[\strlen($payload) - 1] = $payload[\strlen($payload) - 1] === 'A' ? 'B' : 'A';
 
-        $this->expectExceptionObject(PaymentException::missingCredentials('cipher', 'payload'));
+        $this->expectExceptionObject(PaymentGatewayException::missingCredentials('cipher', 'payload'));
 
         $cipher->decryptValue(base64_encode($payload));
     }
@@ -82,7 +82,7 @@ class PaymentCredentialCipherTest extends TestCase
     {
         $encrypted = (new PaymentCredentialCipher('first-secret'))->encryptValue('the merchant secret');
 
-        $this->expectExceptionObject(PaymentException::missingCredentials('cipher', 'payload'));
+        $this->expectExceptionObject(PaymentGatewayException::missingCredentials('cipher', 'payload'));
 
         (new PaymentCredentialCipher('second-secret'))->decryptValue($encrypted);
     }
@@ -118,7 +118,7 @@ class PaymentCredentialCipherTest extends TestCase
     {
         $cipher = new PaymentCredentialCipher('application-secret');
 
-        $this->expectExceptionObject(PaymentException::missingCredentials('cipher', PaymentCredentialCipher::ENCRYPTED_KEY));
+        $this->expectExceptionObject(PaymentGatewayException::missingCredentials('cipher', PaymentCredentialCipher::ENCRYPTED_KEY));
 
         $cipher->decrypt(['secret_key' => 'plain']);
     }
@@ -127,7 +127,7 @@ class PaymentCredentialCipherTest extends TestCase
     {
         $cipher = new PaymentCredentialCipher('application-secret');
 
-        $this->expectExceptionObject(PaymentException::missingCredentials('cipher', PaymentCredentialCipher::ENCRYPTED_KEY));
+        $this->expectExceptionObject(PaymentGatewayException::missingCredentials('cipher', PaymentCredentialCipher::ENCRYPTED_KEY));
 
         $cipher->decrypt([PaymentCredentialCipher::ENCRYPTED_KEY => 42]);
     }
@@ -138,7 +138,7 @@ class PaymentCredentialCipherTest extends TestCase
 
         $payload = [PaymentCredentialCipher::ENCRYPTED_KEY => $cipher->encryptValue('"just a string"')];
 
-        $this->expectExceptionObject(PaymentException::missingCredentials('cipher', 'payload'));
+        $this->expectExceptionObject(PaymentGatewayException::missingCredentials('cipher', 'payload'));
 
         $cipher->decrypt($payload);
     }

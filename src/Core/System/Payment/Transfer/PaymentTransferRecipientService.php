@@ -13,6 +13,7 @@ use Shopwell\Core\Framework\Util\Hasher;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
 use Shopwell\Core\System\Payment\App\PaymentCredentialCipher;
+use Shopwell\Core\System\Payment\Exception\PaymentTransferException;
 use Shopwell\Core\System\Payment\PaymentException;
 use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;
 use Shopwell\Core\System\Payment\Provider\Transfer\PaymentTransferRules;
@@ -44,7 +45,7 @@ final class PaymentTransferRecipientService
      * which is `4 * ceil((n + 40) / 3)` characters, so the plain text may be at most 149 bytes. The
      * guard measures bytes, not characters - the cipher and the column both do. Checking it here
      * turns a "Data too long" 500 into a readable 422; see
-     * {@see PaymentException::transferIdentityValueTooLong()}.
+     * {@see PaymentTransferException::transferIdentityValueTooLong()}.
      */
     private const MAX_IDENTITY_LENGTH = 149;
 
@@ -122,7 +123,7 @@ final class PaymentTransferRecipientService
             $race = $this->findByHash($app->id, $provider, $identityType, $hash);
 
             if ($race === null) {
-                throw PaymentException::transferConflict($hash);
+                throw PaymentTransferException::transferConflict($hash);
             }
 
             return $race;
@@ -139,7 +140,7 @@ final class PaymentTransferRecipientService
         $recipient = $this->recipientRepository->search(new Criteria([$id]), Context::createDefaultContext())->getEntities()->first();
 
         if (!$recipient instanceof PaymentTransferRecipientEntity) {
-            throw PaymentException::transferRecipientNotFound($id);
+            throw PaymentTransferException::transferRecipientNotFound($id);
         }
 
         return $recipient;
@@ -189,7 +190,7 @@ final class PaymentTransferRecipientService
             : null;
 
         if ($rules !== null && $rules->requiresHolderNameFor($amount) && $recipient->holderName === null) {
-            throw PaymentException::transferRecipientIncomplete('holderName');
+            throw PaymentTransferException::transferRecipientIncomplete('holderName');
         }
     }
 
@@ -207,7 +208,7 @@ final class PaymentTransferRecipientService
             : null;
 
         if ($rules === null || !$rules->supportsIdentityType($identityType)) {
-            throw PaymentException::transferIdentityNotSupported($provider, $identityType);
+            throw PaymentTransferException::transferIdentityNotSupported($provider, $identityType);
         }
 
         return $rules;
@@ -229,7 +230,7 @@ final class PaymentTransferRecipientService
         ?array $bankInfo,
     ): void {
         if (trim($identityValue) === '') {
-            throw PaymentException::transferRecipientIncomplete('identityValue');
+            throw PaymentTransferException::transferRecipientIncomplete('identityValue');
         }
 
         // before the hash is computed and the plain text is encrypted: the ciphertext is what has to
@@ -238,16 +239,16 @@ final class PaymentTransferRecipientService
         // multibyte identity runs out of room long before it runs out of characters.
         $length = \strlen($identityValue);
         if ($length > self::MAX_IDENTITY_LENGTH) {
-            throw PaymentException::transferIdentityValueTooLong($length);
+            throw PaymentTransferException::transferIdentityValueTooLong($length);
         }
 
         foreach ($rules->requiredFieldsFor($identityType) as $field) {
             if ($field === PaymentTransferRules::FIELD_HOLDER_NAME && $holderName === null) {
-                throw PaymentException::transferRecipientIncomplete('holderName');
+                throw PaymentTransferException::transferRecipientIncomplete('holderName');
             }
 
             if ($field === PaymentTransferRules::FIELD_BANK_INFO && $bankInfo === null) {
-                throw PaymentException::transferRecipientIncomplete('bankInfo');
+                throw PaymentTransferException::transferRecipientIncomplete('bankInfo');
             }
         }
 
@@ -258,7 +259,7 @@ final class PaymentTransferRecipientService
         $accountType = $bankInfo['account_type'] ?? null;
 
         if (!\is_scalar($accountType) || !$rules->supportsBankAccountType((string) $accountType)) {
-            throw PaymentException::transferRecipientIncomplete('bankInfo.account_type');
+            throw PaymentTransferException::transferRecipientIncomplete('bankInfo.account_type');
         }
     }
 

@@ -76,7 +76,7 @@ describe('MembershipPurchasePlugin', () => {
         expect(url).toBe(options.purchaseUrl);
         expect(request.method).toBe('POST');
         expect(request.body.get('planId')).toBe('plan-1');
-        expect(request.body.get('channel')).toBe('wechat_qr');
+        expect(request.body.get('method')).toBe('wechat');
         expect(request.body.get('returnUrl')).toBe(options.returnUrl);
     });
 

@@ -5,6 +5,7 @@ namespace Shopwell\Core\System\Payment\Order;
 use Psr\Clock\ClockInterface;
 use Shopwell\Core\Defaults;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Payment\Exception\PaymentOrderException;
 use Shopwell\Core\System\Payment\Gateway\Request\QueryResult;
 use Shopwell\Core\System\Payment\PaymentException;
 use Shopwell\Core\System\Payment\Webhook\PaymentWebhookDispatcher;
@@ -52,7 +53,6 @@ final class PaymentOrderQueryResultHandler
                 return;
             case QueryResult::STATUS_FAILED:
                 $this->orderService->markFailed($order);
-                $this->announceClosed($order, 'failed', PaymentOrderStates::STATE_FAILED);
 
                 return;
             case QueryResult::STATUS_ABSENT:
@@ -109,7 +109,7 @@ final class PaymentOrderQueryResultHandler
         $expected = $order->amount;
 
         if ($result->amount === null || $result->amount !== $expected) {
-            throw PaymentException::amountMismatch($order->paymentNo, $expected, $result->amount ?? 0);
+            throw PaymentOrderException::amountMismatch($order->paymentNo, $expected, $result->amount ?? 0);
         }
 
         // the same number in another currency is not the payment of this order, so the currency is
@@ -118,7 +118,7 @@ final class PaymentOrderQueryResultHandler
         // happened unbooked forever, so only a reported currency has to match. The case is ignored
         // because `cny` and `CNY` are the same currency.
         if ($result->currency !== null && strtoupper($result->currency) !== strtoupper($order->currency)) {
-            throw PaymentException::currencyMismatch($order->paymentNo, $order->currency, $result->currency);
+            throw PaymentOrderException::currencyMismatch($order->paymentNo, $order->currency, $result->currency);
         }
 
         $this->paidHandler->handle($order, $result->amount, $result->outPaymentNo, $result->raw);

@@ -3,8 +3,12 @@
 namespace Shopwell\Core\System\Payment\Transfer;
 
 use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\ParameterType;
 use Shopwell\Core\Framework\DataAbstractionLayer\Doctrine\RetryableWriteTransaction;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\System\Payment\Exception\PaymentGatewayException;
+use Shopwell\Core\System\Payment\Exception\PaymentTransferException;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
 use Shopwell\Core\System\Payment\Gateway\Request\TransferResult;
 use Shopwell\Core\System\Payment\PaymentException;
@@ -30,6 +34,49 @@ final class PaymentTransferResultBooker
         private readonly PaymentTransferService $transferService,
         private readonly Connection $connection,
     ) {
+    }
+
+    /**
+     * Claims the first attempt before external I/O. A stale caller or a crashed worker cannot send
+     * again: the single conditional write is committed before the remote request starts.
+     */
+    public function claim(PaymentTransferEntity $transfer): void
+    {
+        $claimed = $this->connection->executeStatement(
+            'UPDATE payment_transfer SET submit_attempts = 1, updated_at = UTC_TIMESTAMP(3)
+             WHERE id = :id AND status_id = :statusId AND submit_attempts = 0',
+            ['id' => Uuid::fromHexToBytes($transfer->id), 'statusId' => Uuid::fromHexToBytes($transfer->statusId)],
+            ['id' => ParameterType::BINARY, 'statusId' => ParameterType::BINARY]
+        );
+
+        if ($claimed !== 1) {
+            throw PaymentTransferException::transferAlreadyFinalized($transfer->outNo, 'unknown');
+        }
+    }
+
+    /**
+     * A local cancellation and the first remote attempt compete for the same row. The lock lasts
+     * only through the state write, so a stale unclaimed entity cannot cancel a payout in flight.
+     */
+    public function cancel(PaymentTransferEntity $transfer, ?string $reason = null): void
+    {
+        RetryableWriteTransaction::retryable($this->connection, function () use ($transfer, $reason): void {
+            $row = $this->connection->fetchAssociative(
+                'SELECT submit_attempts, status_id FROM payment_transfer WHERE id = :id FOR UPDATE',
+                ['id' => Uuid::fromHexToBytes($transfer->id)],
+                ['id' => ParameterType::BINARY]
+            );
+
+            if ($row === false) {
+                throw PaymentTransferException::transferNotFound($transfer->id);
+            }
+
+            if ((int) $row['submit_attempts'] !== 0 || Uuid::fromBytesToHex((string) $row['status_id']) !== $transfer->statusId) {
+                throw PaymentTransferException::transferAlreadyFinalized($transfer->outNo, 'unknown');
+            }
+
+            $this->transferService->cancel($transfer, $reason);
+        });
     }
 
     /**
@@ -155,7 +202,7 @@ final class PaymentTransferResultBooker
             return;
         }
 
-        throw PaymentException::gatewayError(
+        throw PaymentGatewayException::gatewayError(
             $transfer->channel,
             \sprintf('the channel answered %s without an object reference', $result->state)
         );

@@ -9,6 +9,7 @@ use Shopwell\Core\Checkout\Cart\SalesChannel\CartService;
 use Shopwell\Core\Checkout\Ledger\RowLock;
 use Shopwell\Core\Checkout\Payment\Storefront\Settlement\PurchaseAttach;
 use Shopwell\Core\Checkout\Payment\Storefront\Settlement\PurchaseSettlement;
+use Shopwell\Core\Checkout\Payment\Storefront\StorefrontPaymentContextResolver;
 use Shopwell\Core\Checkout\Payment\Storefront\StorefrontPaymentService;
 use Shopwell\Core\Checkout\Wallet\Api\WalletController;
 use Shopwell\Core\Checkout\Wallet\Cart\WalletCartProcessor;
@@ -159,6 +160,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(WalletTopUpService::class),
             service(WalletPresenter::class),
             service(ExtensionDispatcher::class),
+            service(StorefrontPaymentContextResolver::class),
         ]);
 
     $services->set(WalletTopUpCreateRoute::class)
@@ -166,6 +168,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service(WalletTopUpService::class),
             service(ExtensionDispatcher::class),
+            service(StorefrontPaymentContextResolver::class),
         ]);
 
     $services->set(WalletTopUpStatusRoute::class)

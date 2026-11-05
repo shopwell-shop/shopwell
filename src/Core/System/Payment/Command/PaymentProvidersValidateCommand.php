@@ -5,8 +5,8 @@ namespace Shopwell\Core\System\Payment\Command;
 use Psr\Container\ContainerInterface;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Payment\PaymentException;
+use Shopwell\Core\System\Payment\Product\PaymentProductRegistry;
 use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannelRegistry;
 use Shopwell\Core\System\Payment\Provider\PaymentProvider;
 use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -16,25 +16,14 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
 /**
- * Answers "what does this installation actually offer, and who covers what" for CI and for an
- * operator.
- *
- * Every check the declaration mechanism performs is a check on something a developer can get wrong -
- * a capability announced without an action, a payout notification declared without a verifier, a
- * channel declared by two interfaces, a technical name the notify url cannot carry. The container
- * compile catches the second of those, the first resolution of the registry catches the rest, and this
- * command turns both into a build step: it fails, so the failure happens before the plugin is installed
- * instead of at the first payment of a shopper.
- *
- * It also prints the decoration chain of every interface, which is the only place an operator can see
- * that a plugin replaced or extended a single step of the core implementation.
+ * Validates installed provider declarations before they can accept payments.
  *
  * @internal
  */
 #[Package('framework')]
 #[AsCommand(
     name: 'payment:providers:validate',
-    description: 'Validates the payment interfaces this installation declares: capabilities, channels and decoration chains.',
+    description: 'Validates installed payment providers: capabilities, products and decoration chains.',
 )]
 class PaymentProvidersValidateCommand extends Command
 {
@@ -63,7 +52,7 @@ class PaymentProvidersValidateCommand extends Command
             $providers = $registry->all();
             // The channel index is built here for the same reason: it refuses to be built when two
             // interfaces claim the same channel name.
-            $channels = (new PaymentChannelRegistry($registry))->all();
+            $products = (new PaymentProductRegistry($registry))->all();
         } catch (PaymentException $exception) {
             $io->error($exception->getMessage());
 
@@ -71,7 +60,7 @@ class PaymentProvidersValidateCommand extends Command
         }
 
         if ($providers === []) {
-            $io->warning('This installation declares no payment interface at all.');
+            $io->warning('This installation declares no payment provider.');
 
             return Command::SUCCESS;
         }
@@ -81,17 +70,17 @@ class PaymentProvidersValidateCommand extends Command
         foreach ($providers as $technicalName => $provider) {
             $rows[] = [
                 $technicalName,
-                (string) \count($provider->channels),
+                (string) \count($provider->products),
                 $this->capabilitiesOf($provider->capabilities),
                 $this->chainOf($technicalName),
             ];
         }
 
-        $io->table(['interface', 'channels', 'capabilities', 'decorated by'], $rows);
+        $io->table(['provider', 'products', 'capabilities', 'decorated by'], $rows);
         $io->writeln(\sprintf(
-            '%d interface(s), %d channel(s).',
+            '%d provider(s), %d product(s).',
             \count($providers),
-            \count($channels)
+            \count($products)
         ));
 
         $problems = $this->problemsOf($providers);
@@ -102,7 +91,7 @@ class PaymentProvidersValidateCommand extends Command
             return Command::FAILURE;
         }
 
-        $io->success('Every declared payment interface is coherent.');
+        $io->success('Every declared payment provider is coherent.');
 
         return Command::SUCCESS;
     }
@@ -152,16 +141,16 @@ class PaymentProvidersValidateCommand extends Command
         $problems = [];
 
         foreach ($providers as $technicalName => $provider) {
-            if ($provider->channels === []) {
+            if ($provider->products === []) {
                 $problems[] = \sprintf(
-                    'The payment interface "%s" declares no payment channel, so no app can collect through it.',
+                    'The payment provider "%s" declares no payment product, so no app can collect through it.',
                     $technicalName
                 );
             }
 
             if ($provider->credentials === []) {
                 $problems[] = \sprintf(
-                    'The payment interface "%s" declares no credential field, which no merchant account can be configured with.',
+                    'The payment provider "%s" declares no credential field, which no merchant account can be configured with.',
                     $technicalName
                 );
             }

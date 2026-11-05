@@ -7,11 +7,16 @@ Shopwell.Service('privileges').addPrivilegeMappingEntry({
     key: 'payment_app',
     roles: {
         viewer: {
-            privileges: ['payment_app:read'],
+            privileges: ['payment_app:read', 'payment_cashier_config:read'],
             dependencies: [],
         },
         editor: {
-            privileges: ['payment_app:update'],
+            privileges: [
+                'payment_app:update',
+                'payment_cashier_config:create',
+                'payment_cashier_config:update',
+                'payment_cashier_config:delete',
+            ],
             dependencies: ['payment_app.viewer'],
         },
         creator: {

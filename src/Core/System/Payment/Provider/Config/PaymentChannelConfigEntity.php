@@ -46,15 +46,6 @@ class PaymentChannelConfigEntity extends EntityStruct
     public bool $enabled;
 
     /**
-     * The parameters of the channel, declared by its `params` in the `payment-provider.xml`. They are
-     * not secret by nature but may be, so they run through the same cipher as the credentials.
-     *
-     * @var array<string, mixed>|null
-     */
-    #[Field(type: FieldType::JSON, api: false)]
-    public ?array $params = null;
-
-    /**
      * @var array<string, mixed>|null
      */
     #[Field(type: FieldType::JSON, api: ['admin-api' => true, 'store-api' => false])]

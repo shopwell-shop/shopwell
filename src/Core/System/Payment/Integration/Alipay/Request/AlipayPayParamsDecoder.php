@@ -3,9 +3,9 @@
 namespace Shopwell\Core\System\Payment\Integration\Alipay\Request;
 
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\System\Payment\Api\Struct\PayParams;
+use Shopwell\Core\System\Payment\Gateway\Struct\PaymentHandover;
 use Shopwell\Core\System\Payment\Integration\Alipay\Action\AlipayCaptureAction;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
+use Shopwell\Core\System\Payment\Product\PaymentInteraction;
 use Shopwell\Core\System\Payment\Provider\PayParamsDecoderInterface;
 
 /**
@@ -22,13 +22,13 @@ use Shopwell\Core\System\Payment\Provider\PayParamsDecoderInterface;
 #[Package('framework')]
 final class AlipayPayParamsDecoder implements PayParamsDecoderInterface
 {
-    public function payParamsFromResponse(array $response): ?PayParams
+    public function payParamsFromResponse(array $response): ?PaymentHandover
     {
         $qrCode = $response[AlipayCaptureAction::RESPONSE_QR_CODE] ?? null;
 
         if (\is_string($qrCode) && $qrCode !== '') {
-            return new PayParams(
-                flow: PaymentFlow::QRCODE,
+            return new PaymentHandover(
+                flow: PaymentInteraction::QRCODE,
                 extra: [AlipayCaptureAction::RESPONSE_QR_CODE => $qrCode]
             );
         }
@@ -44,9 +44,9 @@ final class AlipayPayParamsDecoder implements PayParamsDecoderInterface
         if ($httpMethod === 'POST') {
             // alipay hands a self submitting form when the url would grow too long, the storefront
             // renders it on a middle page instead of redirecting to a url
-            return new PayParams(flow: PaymentFlow::REDIRECT, httpMethod: 'POST', htmlForm: $answer);
+            return new PaymentHandover(flow: PaymentInteraction::REDIRECT, httpMethod: 'POST', htmlForm: $answer);
         }
 
-        return new PayParams(flow: PaymentFlow::REDIRECT, payUrl: $answer, httpMethod: 'GET');
+        return new PaymentHandover(flow: PaymentInteraction::REDIRECT, payUrl: $answer, httpMethod: 'GET');
     }
 }

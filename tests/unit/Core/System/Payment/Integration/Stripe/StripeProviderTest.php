@@ -7,10 +7,8 @@ use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Payment\Integration\Stripe\Api\StripeApi;
 use Shopwell\Core\System\Payment\Integration\Stripe\StripeProvider;
+use Shopwell\Core\System\Payment\Product\PaymentInteraction;
 use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
-use Shopwell\Core\System\Payment\Provider\Config\PaymentConfigReader;
-use Shopwell\Core\System\Payment\Provider\PaymentProviderFactory;
 use Shopwell\Tests\Unit\Core\System\Payment\Provider\Fixtures\PlatformProviders;
 
 /**
@@ -61,7 +59,7 @@ class StripeProviderTest extends TestCase
 
     public function testDeclaresTheMerchantCredentials(): void
     {
-        $fields = (new PaymentProviderFactory(new PaymentConfigReader()))->create(PlatformProviders::stripe())->credentials;
+        $fields = PlatformProviders::factory()->create(PlatformProviders::stripe())->credentials;
 
         static::assertSame(
             ['secret_key', 'publishable_key', 'webhook_secret', 'api_version'],
@@ -75,14 +73,14 @@ class StripeProviderTest extends TestCase
 
     public function testDeclaresTheSingleCheckoutChannel(): void
     {
-        $channels = PlatformProviders::stripe()->getChannels();
+        $channels = PlatformProviders::stripe()->getProducts();
 
         static::assertCount(1, $channels);
         static::assertSame('stripe_checkout', $channels[0]->technicalName);
         static::assertSame('stripe', $channels[0]->providerTechnicalName);
-        static::assertSame(PaymentFlow::REDIRECT, $channels[0]->flow);
+        static::assertSame([PaymentInteraction::REDIRECT], $channels[0]->interactions);
         static::assertSame([], $channels[0]->currencies);
-        static::assertSame([], $channels[0]->devices);
+        static::assertSame(['web', 'wap', 'app'], $channels[0]->devices());
     }
 
     public function testDeclaresTheConnectedAccountAsItsPayoutIdentity(): void
@@ -101,10 +99,10 @@ class StripeProviderTest extends TestCase
 
     public function testTheDeclarationIsCoherentEnoughToBuildTheSnapshot(): void
     {
-        $provider = (new PaymentProviderFactory(new PaymentConfigReader()))->create(PlatformProviders::stripe());
+        $provider = PlatformProviders::factory()->create(PlatformProviders::stripe());
 
         static::assertSame('stripe', $provider->technicalName);
-        static::assertCount(1, $provider->channels);
+        static::assertCount(1, $provider->products);
         static::assertTrue($provider->supports(PaymentCapability::CAPTURE));
         static::assertFalse($provider->supports(PaymentCapability::CLOSE));
         static::assertFalse($provider->supports(PaymentCapability::MANDATE));

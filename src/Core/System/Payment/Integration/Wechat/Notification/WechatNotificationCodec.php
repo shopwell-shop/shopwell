@@ -3,6 +3,8 @@
 namespace Shopwell\Core\System\Payment\Integration\Wechat\Notification;
 
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Payment\Exception\PaymentGatewayException;
+use Shopwell\Core\System\Payment\Exception\PaymentNotificationException;
 use Shopwell\Core\System\Payment\Integration\Wechat\Action\WechatNotifyAction;
 use Shopwell\Core\System\Payment\Integration\Wechat\Api\WechatApi;
 use Shopwell\Core\System\Payment\Integration\Wechat\Api\WechatPlatformCertificates;
@@ -84,13 +86,13 @@ final class WechatNotificationCodec
         $resource = $message['resource'] ?? null;
 
         if (!\is_array($resource) || !\is_string($resource['ciphertext'] ?? null)) {
-            throw PaymentException::notificationInvalid(WechatApi::PROVIDER, 'the notification carries no encrypted resource');
+            throw PaymentNotificationException::notificationInvalid(WechatApi::PROVIDER, 'the notification carries no encrypted resource');
         }
 
         $apiV3Key = $credentials[WechatApi::API_V3_KEY] ?? null;
 
         if (!\is_string($apiV3Key) || $apiV3Key === '') {
-            throw PaymentException::missingCredentials(WechatApi::PROVIDER, WechatApi::API_V3_KEY);
+            throw PaymentGatewayException::missingCredentials(WechatApi::PROVIDER, WechatApi::API_V3_KEY);
         }
 
         try {
@@ -101,13 +103,13 @@ final class WechatNotificationCodec
                 \is_string($resource['associated_data'] ?? null) ? $resource['associated_data'] : ''
             );
         } catch (\Throwable $exception) {
-            throw PaymentException::notificationInvalid(WechatApi::PROVIDER, $exception->getMessage());
+            throw PaymentNotificationException::notificationInvalid(WechatApi::PROVIDER, $exception->getMessage());
         }
 
         $decoded = json_decode($plain, true);
 
         if (!\is_array($decoded)) {
-            throw PaymentException::notificationInvalid(WechatApi::PROVIDER, 'the decrypted resource is not a json object');
+            throw PaymentNotificationException::notificationInvalid(WechatApi::PROVIDER, 'the decrypted resource is not a json object');
         }
 
         return $decoded;

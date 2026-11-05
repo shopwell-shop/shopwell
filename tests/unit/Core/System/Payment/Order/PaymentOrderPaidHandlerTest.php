@@ -15,8 +15,9 @@ use Shopwell\Core\System\Payment\App\PaymentAppCollection;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
 use Shopwell\Core\System\Payment\App\PaymentCredentialCipher;
 use Shopwell\Core\System\Payment\App\PaymentSignatureService;
-use Shopwell\Core\System\Payment\Gateway\PaymentGatewayFactory;
-use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
+use Shopwell\Core\System\Payment\Exception\PaymentOrderException;
+use Shopwell\Core\System\Payment\Order\Aggregate\PaymentAttempt\PaymentAttemptCollection;
+use Shopwell\Core\System\Payment\Order\Aggregate\PaymentAttempt\PaymentAttemptEntity;
 use Shopwell\Core\System\Payment\Order\Event\PaymentOrderPaidEvent;
 use Shopwell\Core\System\Payment\Order\PaymentOrderCollection;
 use Shopwell\Core\System\Payment\Order\PaymentOrderEntity;
@@ -24,11 +25,6 @@ use Shopwell\Core\System\Payment\Order\PaymentOrderPaidHandler;
 use Shopwell\Core\System\Payment\Order\PaymentOrderService;
 use Shopwell\Core\System\Payment\Order\PaymentOrderStateHandler;
 use Shopwell\Core\System\Payment\Order\PaymentOrderStates;
-use Shopwell\Core\System\Payment\PaymentException;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannelRegistry;
-use Shopwell\Core\System\Payment\Provider\Config\PaymentConfigResolver;
-use Shopwell\Core\System\Payment\Provider\PaymentProvider;
-use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;
 use Shopwell\Core\System\Payment\Webhook\PaymentWebhookDeliveryCollection;
 use Shopwell\Core\System\Payment\Webhook\PaymentWebhookDeliveryEntity;
 use Shopwell\Core\System\Payment\Webhook\PaymentWebhookDispatcher;
@@ -36,8 +32,10 @@ use Shopwell\Core\System\Payment\Webhook\PaymentWebhookSigner;
 use Shopwell\Core\System\StateMachine\Loader\InitialStateIdLoader;
 use Shopwell\Core\System\StateMachine\StateMachineRegistry;
 use Shopwell\Core\System\StateMachine\Transition;
+use Shopwell\Core\Test\Stub\DataAbstractionLayer\StaticEntityRepository;
 use Shopwell\Tests\Unit\Core\System\Payment\NumberRangeFixture;
 use Shopwell\Tests\Unit\Core\System\Payment\Order\_fixtures\PaymentOrderRowLockStub;
+use Shopwell\Tests\Unit\Core\System\Payment\PaymentEventDispatcherFixture;
 use Symfony\Component\Clock\MockClock;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
@@ -164,7 +162,7 @@ class PaymentOrderPaidHandlerTest extends TestCase
         // markPaid() propagates what the storage reports, e.g. the order was paid by another thread
         $orderRepository->expects($this->once())
             ->method('update')
-            ->willThrowException(PaymentException::orderNotFound('order-id'));
+            ->willThrowException(PaymentOrderException::orderNotFound('order-id'));
 
         $eventDispatcher = static::createMock(EventDispatcherInterface::class);
         $eventDispatcher->expects($this->never())->method('dispatch');
@@ -174,7 +172,7 @@ class PaymentOrderPaidHandlerTest extends TestCase
 
         $handler = $this->handler($orderRepository, static::createStub(StateMachineRegistry::class), $deliveryRepository, $eventDispatcher);
 
-        $this->expectExceptionObject(PaymentException::orderNotFound('order-id'));
+        $this->expectExceptionObject(PaymentOrderException::orderNotFound('order-id'));
 
         $handler->handle($order, 1000, 'channel-trade-1', ['trade' => 'raw']);
     }
@@ -281,12 +279,12 @@ class PaymentOrderPaidHandlerTest extends TestCase
 
         $orderService = new PaymentOrderService(
             $orderRepository,
-            $this->configResolver(),
             $this->initialStateIdLoader(),
             new PaymentOrderStateHandler($stateMachine),
             new MockClock(self::NOW),
             NumberRangeFixture::generator('PG1001'),
-            new PaymentOrderRowLockStub()
+            new PaymentOrderRowLockStub(),
+            StaticEntityRepository::of(PaymentAttemptCollection::class),
         );
 
         $webhookService = new PaymentWebhookDispatcher(
@@ -301,32 +299,7 @@ class PaymentOrderPaidHandlerTest extends TestCase
 
         return new PaymentOrderPaidHandler(
             $orderService,
-            $webhookService,
-            $eventDispatcher ?? static::createStub(EventDispatcherInterface::class)
-        );
-    }
-
-    private function configResolver(): PaymentConfigResolver
-    {
-        $provider = new PaymentProvider(
-            technicalName: 'alipay',
-            label: 'Alipay',
-            credentials: [],
-            channels: [],
-            gatewayFactory: static::createStub(PaymentGatewayFactory::class),
-            notificationExtractor: static::createStub(PaymentNotificationExtractorInterface::class),
-        );
-
-        $providerRegistry = new PaymentProviderRegistry([$provider]);
-
-        return new PaymentConfigResolver(
-            $providerRegistry,
-            new PaymentChannelRegistry($providerRegistry),
-            static::createStub(EntityRepository::class),
-            static::createStub(EntityRepository::class),
-            static::createStub(EntityRepository::class),
-            static::createStub(EntityRepository::class),
-            new PaymentCredentialCipher('test-secret')
+            PaymentEventDispatcherFixture::create($webhookService, $eventDispatcher)
         );
     }
 
@@ -420,8 +393,16 @@ class PaymentOrderPaidHandlerTest extends TestCase
         $order->paymentNo = 'PG0001';
         $order->outTradeNo = 'app-trade-1';
         $order->paymentAppId = 'app-id';
-        $order->providerTechnicalName = 'alipay';
-        $order->channelTechnicalName = 'alipay_h5';
+        $attempt = new PaymentAttemptEntity();
+        $attempt->id = 'attempt-id';
+        $attempt->paymentOrderId = $order->id;
+        $attempt->attemptNo = 'PG0001';
+        $attempt->accountId = 'account-id';
+        $attempt->providerTechnicalName = 'alipay';
+        $attempt->channelTechnicalName = 'alipay_h5';
+        $attempt->status = PaymentAttemptEntity::STATUS_HANDOVER;
+        $order->activeAttempt = $attempt;
+        $order->activeAttemptId = $attempt->id;
         $order->amount = 1000;
         $order->paidAmount = 0;
         $order->refundedAmount = 0;

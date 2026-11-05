@@ -5,9 +5,12 @@ namespace Shopwell\Core\System\Payment\Integration\Paypal\Action;
 use Payum\Core\Exception\RequestNotSupportedException;
 use Payum\Core\Request\Notify;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Currency\CurrencyAmountConverter;
+use Shopwell\Core\System\Currency\CurrencyException;
+use Shopwell\Core\System\Payment\Exception\PaymentGatewayException;
+use Shopwell\Core\System\Payment\Exception\PaymentNotificationException;
 use Shopwell\Core\System\Payment\Gateway\AbstractPaymentAction;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
-use Shopwell\Core\System\Payment\Gateway\Request\Money;
 use Shopwell\Core\System\Payment\Gateway\Request\NotificationResult;
 use Shopwell\Core\System\Payment\Gateway\Request\Payload;
 use Shopwell\Core\System\Payment\Integration\Paypal\Api\PaypalApi;
@@ -64,6 +67,12 @@ final class PaypalNotifyAction extends AbstractPaymentAction
 
         $this->recordResponse($model, $event);
 
+        if ($signatureValid && ($event['event_type'] ?? null) === 'CHECKOUT.ORDER.APPROVED') {
+            $this->captureApprovedOrder($model, $event);
+
+            return;
+        }
+
         $this->setResult($model, self::resultOf($event, $signatureValid));
     }
 
@@ -90,6 +99,9 @@ final class PaypalNotifyAction extends AbstractPaymentAction
             currency: strtoupper(self::currencyOf($resource)),
             status: $eventType,
             raw: $resource,
+            paymentNo: $refund ? null : Payload::string($resource, 'custom_id'),
+            refundNo: $refund ? Payload::string($resource, 'custom_id') : null,
+            isRefund: $refund,
         );
     }
 
@@ -107,6 +119,40 @@ final class PaypalNotifyAction extends AbstractPaymentAction
     }
 
     /**
+     * @param array<string, mixed> $event
+     */
+    private function captureApprovedOrder(PaymentGatewayModel $model, array $event): void
+    {
+        $resource = Payload::map($event, 'resource');
+        $paymentNo = PaypalApi::paymentNoOf($resource);
+        $expected = $this->stringValue($model, PaymentGatewayModel::PAYMENT_NO);
+        $orderId = Payload::string($resource, 'id');
+        if ($paymentNo === null || $paymentNo !== $expected || $orderId === null) {
+            throw PaymentNotificationException::notificationInvalid(PaypalApi::PROVIDER, 'the signed approval does not match the payment');
+        }
+
+        $requestId = $paymentNo . ':capture';
+        $this->recordRequest($model, ['order_id' => $orderId, 'request_id' => $requestId]);
+        $answer = $this->api()->captureOrder($orderId, $requestId);
+        $this->recordResponse($model, $answer);
+        if (isset($answer['error'])) {
+            throw PaymentGatewayException::gatewayError($this->api()->channel(), PaypalApi::rejectionMessageOf($answer) ?? 'the channel rejected the capture');
+        }
+
+        $capture = PaypalApi::capturedPaymentOf($answer);
+        if ($capture === null) {
+            throw PaymentGatewayException::gatewayError($this->api()->channel(), 'the channel did not answer a capture');
+        }
+
+        $capture['custom_id'] = $paymentNo;
+        $status = Payload::string($capture, 'status') ?? '';
+        $this->setResult($model, self::resultOf([
+            'event_type' => 'PAYMENT.CAPTURE.' . $status,
+            'resource' => $capture,
+        ], true));
+    }
+
+    /**
      * @throws PaymentException
      *
      * @return array<string, mixed>
@@ -116,7 +162,7 @@ final class PaypalNotifyAction extends AbstractPaymentAction
         $decoded = json_decode($rawBody, true);
 
         if (!\is_array($decoded)) {
-            throw PaymentException::notificationInvalid(PaypalApi::PROVIDER, 'the notification is not a json object');
+            throw PaymentNotificationException::notificationInvalid(PaypalApi::PROVIDER, 'the notification is not a json object');
         }
 
         return $decoded;
@@ -146,8 +192,8 @@ final class PaypalNotifyAction extends AbstractPaymentAction
         }
 
         try {
-            return Money::toMinor($value, strtoupper(self::currencyOf($resource)));
-        } catch (PaymentException) {
+            return CurrencyAmountConverter::toMinor($value, strtoupper(self::currencyOf($resource)));
+        } catch (CurrencyException) {
             return null;
         }
     }

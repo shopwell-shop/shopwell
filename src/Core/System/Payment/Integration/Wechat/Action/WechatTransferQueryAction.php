@@ -4,6 +4,7 @@ namespace Shopwell\Core\System\Payment\Integration\Wechat\Action;
 
 use Payum\Core\Exception\RequestNotSupportedException;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Payment\Exception\PaymentGatewayException;
 use Shopwell\Core\System\Payment\Gateway\AbstractPaymentAction;
 use Shopwell\Core\System\Payment\Gateway\Request\PaymentTransferQuery;
 use Shopwell\Core\System\Payment\Gateway\Request\TransferQueryResult;
@@ -68,7 +69,7 @@ final class WechatTransferQueryAction extends AbstractPaymentAction
         } catch (\Throwable $exception) {
             $this->recordResponse($model, ['error' => $exception->getMessage()]);
 
-            throw PaymentException::gatewayError($api->channel(), $exception->getMessage(), $exception);
+            throw PaymentGatewayException::gatewayError($api->channel(), $exception->getMessage(), $exception);
         }
 
         // the result needs the original package_info, the persisted audit trail only its existence

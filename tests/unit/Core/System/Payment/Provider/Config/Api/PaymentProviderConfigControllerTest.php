@@ -2,16 +2,28 @@
 
 namespace Shopwell\Tests\Unit\Core\System\Payment\Provider\Config\Api;
 
+use Doctrine\DBAL\Connection;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\System\Payment\Account\PaymentAccountCollection;
+use Shopwell\Core\System\Payment\Account\PaymentAccountEntity;
+use Shopwell\Core\System\Payment\Account\PaymentAccountLock;
+use Shopwell\Core\System\Payment\Account\PaymentAccountService;
+use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppAccount\PaymentAppAccountCollection;
+use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppChannel\PaymentAppChannelCollection;
+use Shopwell\Core\System\Payment\App\PaymentAppCollection;
+use Shopwell\Core\System\Payment\Exception\PaymentGatewayException;
+use Shopwell\Core\System\Payment\Exception\PaymentProviderException;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayFactory;
+use Shopwell\Core\System\Payment\Method\PaymentMethod;
+use Shopwell\Core\System\Payment\Method\PaymentMethodRegistry;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
-use Shopwell\Core\System\Payment\PaymentException;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
+use Shopwell\Core\System\Payment\Product\PaymentInteraction;
+use Shopwell\Core\System\Payment\Product\PaymentProduct;
+use Shopwell\Core\System\Payment\Product\PaymentScene;
 use Shopwell\Core\System\Payment\Provider\Config\Api\PaymentProviderConfigController;
 use Shopwell\Core\System\Payment\Provider\Config\PaymentChannelConfigCollection;
 use Shopwell\Core\System\Payment\Provider\Config\PaymentChannelConfigEntity;
@@ -21,6 +33,7 @@ use Shopwell\Core\System\Payment\Provider\Config\PaymentProviderConfigEntity;
 use Shopwell\Core\System\Payment\Provider\Config\PaymentProviderConfigService;
 use Shopwell\Core\System\Payment\Provider\PaymentProvider;
 use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;
+use Shopwell\Core\Test\Stub\DataAbstractionLayer\StaticEntityRepository;
 use Shopwell\Tests\Unit\Core\System\Payment\Api\PaymentControllerFixture;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -62,15 +75,34 @@ class PaymentProviderConfigControllerTest extends TestCase
         static::assertTrue($provider['credentialFields'][1]['configured']);
         static::assertStringNotContainsString('sk', (string) json_encode($provider));
 
-        static::assertCount(1, $provider['channels']);
-        static::assertSame('alipay_h5', $provider['channels'][0]['channel']);
-        static::assertSame('redirect', $provider['channels'][0]['flow']);
-        static::assertSame(['CNY'], $provider['channels'][0]['currencies']);
-        static::assertTrue($provider['channels'][0]['enabled']);
-        static::assertTrue($provider['channels'][0]['configured']);
-        static::assertSame('wx-appid', $provider['channels'][0]['paramFields'][0]['value']);
-        static::assertNull($provider['channels'][0]['paramFields'][1]['value']);
-        static::assertTrue($provider['channels'][0]['paramFields'][1]['configured']);
+        static::assertCount(1, $provider['products']);
+        static::assertSame('alipay_h5', $provider['products'][0]['product']);
+        static::assertSame(['redirect'], $provider['products'][0]['interactions']);
+        static::assertSame(['CNY'], $provider['products'][0]['currencies']);
+        static::assertTrue($provider['products'][0]['enabled']);
+        static::assertTrue($provider['products'][0]['configured']);
+        static::assertSame('wx-appid', $provider['products'][0]['paramFields'][0]['value']);
+        static::assertNull($provider['products'][0]['paramFields'][1]['value']);
+        static::assertTrue($provider['products'][0]['paramFields'][1]['configured']);
+    }
+
+    public function testDefinitionsExposeSchemasWithoutReadingMerchantConfiguration(): void
+    {
+        $providers = static::createMock(EntityRepository::class);
+        $providers->expects($this->never())->method('search');
+        $products = static::createMock(EntityRepository::class);
+        $products->expects($this->never())->method('search');
+        $controller = $this->controller($providers, $products, PaymentControllerFixture::providerRegistry($this->provider()));
+
+        $data = $this->decode($controller->definitions());
+
+        static::assertSame('alipay', $data['providers'][0]['technicalName']);
+        static::assertSame('alipay_h5', $data['providers'][0]['products'][0]['product']);
+        static::assertSame('alipay', $data['providers'][0]['products'][0]['method']);
+        static::assertNull($data['providers'][0]['accountId']);
+        static::assertNull($data['providers'][0]['credentialFields'][0]['value']);
+        static::assertNull($data['providers'][0]['products'][0]['paramFields'][0]['value']);
+        static::assertFalse($data['providers'][0]['credentialFields'][0]['configured']);
     }
 
     public function testAnUnconfiguredProviderIsPresentedAsNotConfigured(): void
@@ -88,15 +120,15 @@ class PaymentProviderConfigControllerTest extends TestCase
         static::assertFalse($provider['configured']);
         static::assertNull($provider['credentialFields'][0]['value']);
         static::assertFalse($provider['credentialFields'][0]['configured']);
-        static::assertFalse($provider['channels'][0]['enabled']);
-        static::assertFalse($provider['channels'][0]['configured']);
+        static::assertFalse($provider['products'][0]['enabled']);
+        static::assertFalse($provider['products'][0]['configured']);
     }
 
     public function testSavingAnUnknownProviderIsRejected(): void
     {
         $controller = $this->controller(PaymentControllerFixture::repository(PaymentProviderConfigCollection::class), PaymentControllerFixture::repository(PaymentChannelConfigCollection::class), PaymentControllerFixture::providerRegistry());
 
-        $this->expectExceptionObject(PaymentException::unknownProvider('stripe'));
+        $this->expectExceptionObject(PaymentProviderException::unknownProvider('stripe'));
 
         $controller->save('stripe', $this->payload(['enabled' => true]));
     }
@@ -105,7 +137,7 @@ class PaymentProviderConfigControllerTest extends TestCase
     {
         $controller = $this->controller(PaymentControllerFixture::repository(PaymentProviderConfigCollection::class), PaymentControllerFixture::repository(PaymentChannelConfigCollection::class));
 
-        $this->expectExceptionObject(PaymentException::missingCredentials('alipay', 'app_id'));
+        $this->expectExceptionObject(PaymentGatewayException::missingCredentials('alipay', 'app_id'));
 
         $controller->save('alipay', $this->payload([
             'enabled' => true,
@@ -150,23 +182,25 @@ class PaymentProviderConfigControllerTest extends TestCase
     {
         $controller = $this->controller(PaymentControllerFixture::repository(PaymentProviderConfigCollection::class), PaymentControllerFixture::repository(PaymentChannelConfigCollection::class), PaymentControllerFixture::providerRegistry());
 
-        $this->expectExceptionObject(PaymentException::unknownProvider('stripe'));
+        $this->expectExceptionObject(PaymentProviderException::unknownProvider('stripe'));
 
         $controller->reset('stripe');
     }
 
-    public function testResettingAConfiguredProviderDeletesIt(): void
+    public function testResettingAConfiguredProviderDisablesAdmissionAndRetainsConfiguredKeys(): void
     {
-        $controller = $this->controller(
-            PaymentControllerFixture::repository(PaymentProviderConfigCollection::class, [$this->storedProviderConfig()]),
-            PaymentControllerFixture::repository(PaymentChannelConfigCollection::class),
-        );
+        $configured = $this->storedProviderConfig();
+        $disabled = clone $configured;
+        $disabled->enabled = false;
+        $repository = StaticEntityRepository::of(PaymentProviderConfigCollection::class, []);
+        $repository->searches = [new PaymentProviderConfigCollection([$configured]), new PaymentProviderConfigCollection([$disabled])];
+        $controller = $this->controller($repository, PaymentControllerFixture::repository(PaymentChannelConfigCollection::class));
 
         $data = $this->decode($controller->reset('alipay'));
 
         static::assertSame('alipay', $data['provider']['technicalName']);
         static::assertFalse($data['provider']['enabled']);
-        static::assertFalse($data['provider']['configured']);
+        static::assertTrue($data['provider']['configured']);
     }
 
     public function testResettingAnUnconfiguredProviderIsHarmless(): void
@@ -185,7 +219,7 @@ class PaymentProviderConfigControllerTest extends TestCase
     {
         $controller = $this->controller(PaymentControllerFixture::repository(PaymentProviderConfigCollection::class), PaymentControllerFixture::repository(PaymentChannelConfigCollection::class), PaymentControllerFixture::providerRegistry());
 
-        $this->expectExceptionObject(PaymentException::unknownProvider('stripe'));
+        $this->expectExceptionObject(PaymentProviderException::unknownProvider('stripe'));
 
         $controller->saveChannel('stripe', 'alipay_h5', $this->payload([]));
     }
@@ -198,12 +232,12 @@ class PaymentProviderConfigControllerTest extends TestCase
             PaymentControllerFixture::providerRegistry($this->provider())
         );
 
-        $this->expectExceptionObject(PaymentException::unknownChannel('alipay_wap'));
+        $this->expectExceptionObject(PaymentProviderException::unknownChannel('alipay_wap'));
 
         $controller->saveChannel('alipay', 'alipay_wap', $this->payload([]));
     }
 
-    public function testEnablingAChannelWithoutItsParamsIsRejected(): void
+    public function testEnablingAChannelWithoutAConfiguredProviderIsRejected(): void
     {
         $controller = $this->controller(
             PaymentControllerFixture::repository(PaymentProviderConfigCollection::class),
@@ -211,7 +245,7 @@ class PaymentProviderConfigControllerTest extends TestCase
             PaymentControllerFixture::providerRegistry($this->provider())
         );
 
-        $this->expectExceptionObject(PaymentException::missingCredentials('alipay_h5', 'appid'));
+        $this->expectExceptionObject(PaymentProviderException::providerNotConfigured('alipay'));
 
         $controller->saveChannel('alipay', 'alipay_h5', $this->payload(['enabled' => true]));
     }
@@ -219,7 +253,7 @@ class PaymentProviderConfigControllerTest extends TestCase
     public function testSavingAChannelStoresItsParams(): void
     {
         $controller = $this->controller(
-            PaymentControllerFixture::repository(PaymentProviderConfigCollection::class),
+            PaymentControllerFixture::repository(PaymentProviderConfigCollection::class, [$this->storedProviderConfig()]),
             PaymentControllerFixture::repository(PaymentChannelConfigCollection::class, [$this->storedChannelConfig()]),
             PaymentControllerFixture::providerRegistry($this->provider())
         );
@@ -230,7 +264,7 @@ class PaymentProviderConfigControllerTest extends TestCase
             'settings' => ['theme' => 'blue'],
         ])));
 
-        static::assertSame('alipay_h5', $data['channel']['channel']);
+        static::assertSame('alipay_h5', $data['channel']['product']);
         static::assertTrue($data['channel']['enabled']);
         static::assertTrue($data['channel']['configured']);
         static::assertSame('wx-appid', $data['channel']['paramFields'][0]['value']);
@@ -246,7 +280,7 @@ class PaymentProviderConfigControllerTest extends TestCase
             PaymentControllerFixture::providerRegistry($this->provider())
         );
 
-        $this->expectExceptionObject(PaymentException::unknownChannel('alipay_wap'));
+        $this->expectExceptionObject(PaymentProviderException::unknownChannel('alipay_wap'));
 
         $controller->resetChannel('alipay', 'alipay_wap');
     }
@@ -254,14 +288,14 @@ class PaymentProviderConfigControllerTest extends TestCase
     public function testResettingAChannelClearsItsConfiguration(): void
     {
         $controller = $this->controller(
-            PaymentControllerFixture::repository(PaymentProviderConfigCollection::class),
+            PaymentControllerFixture::repository(PaymentProviderConfigCollection::class, [$this->storedProviderConfig()]),
             PaymentControllerFixture::repository(PaymentChannelConfigCollection::class, [$this->storedChannelConfig()]),
             PaymentControllerFixture::providerRegistry($this->provider())
         );
 
         $data = $this->decode($controller->resetChannel('alipay', 'alipay_h5'));
 
-        static::assertSame('alipay_h5', $data['channel']['channel']);
+        static::assertSame('alipay_h5', $data['channel']['product']);
         static::assertFalse($data['channel']['enabled']);
         static::assertFalse($data['channel']['configured']);
     }
@@ -275,10 +309,39 @@ class PaymentProviderConfigControllerTest extends TestCase
         EntityRepository $channelConfigRepository,
         ?PaymentProviderRegistry $providerRegistry = null
     ): PaymentProviderConfigController {
+        $connection = static::createStub(Connection::class);
+        $connection->method('transactional')->willReturnCallback(static fn (\Closure $write) => $write($connection));
+        $account = new PaymentAccountEntity();
+        $account->id = 'abcdef1234567890abcdef1234567890';
+        $account->setUniqueIdentifier($account->id);
+        $account->providerTechnicalName = 'alipay';
+        $account->name = 'Merchant';
+        $account->active = true;
+        $account->enabledProducts = ['alipay_h5'];
+        $account->productParams = ['alipay_h5' => PaymentControllerFixture::cipher()->encrypt(['appid' => 'wx-appid', 'sign_key' => 'channel-secret'])];
+        $account->credentials = PaymentControllerFixture::cipher()->encrypt(['app_id' => 'platform-app', 'private_key' => 'sk']);
+
+        $registry = $providerRegistry ?? PaymentControllerFixture::providerRegistry($this->provider());
+        $accounts = PaymentControllerFixture::repository(PaymentAccountCollection::class, [$account]);
+        $apps = PaymentControllerFixture::repository(PaymentAppCollection::class);
+
+        $lock = static::createStub(PaymentAccountLock::class);
+        $lock->method('lock')->willReturn($account);
+
         return new PaymentProviderConfigController(
             $providerRegistry ?? PaymentControllerFixture::providerRegistry($this->provider()),
-            new PaymentProviderConfigService($providerConfigRepository, $channelConfigRepository, PaymentControllerFixture::cipher()),
+            new PaymentProviderConfigService(
+                $providerConfigRepository,
+                $channelConfigRepository,
+                $accounts,
+                $apps,
+                PaymentControllerFixture::repository(PaymentAppAccountCollection::class),
+                PaymentControllerFixture::repository(PaymentAppChannelCollection::class),
+                $connection,
+                new PaymentAccountService($accounts, $apps, $providerConfigRepository, $registry, PaymentControllerFixture::cipher(), $connection, $lock),
+            ),
             PaymentControllerFixture::cipher(),
+            new PaymentMethodRegistry([new PaymentMethod('alipay', 'payment.alipay')]),
         );
     }
 
@@ -292,13 +355,14 @@ class PaymentProviderConfigControllerTest extends TestCase
                 new PaymentConfigField('private_key', 'private_key', PaymentConfigField::TYPE_TEXTAREA, true, true),
             ],
             [
-                'alipay_h5' => new PaymentChannel(
+                'alipay_h5' => new PaymentProduct(
                     'alipay_h5',
                     'alipay',
                     'Alipay H5',
-                    PaymentFlow::REDIRECT,
+                    [PaymentInteraction::REDIRECT],
+                    'alipay',
                     ['CNY'],
-                    [PaymentChannel::DEVICE_WAP, PaymentChannel::DEVICE_WEB],
+                    [new PaymentScene('browser', 'web', 'browser'), new PaymentScene('browser', 'wap', 'browser'), new PaymentScene('browser', 'wap', 'wechat'), new PaymentScene('browser', 'wap', 'alipay')],
                     [
                         new PaymentConfigField('appid', 'appid', PaymentConfigField::TYPE_TEXT, true),
                         new PaymentConfigField('sign_key', 'sign_key', PaymentConfigField::TYPE_TEXT, true, true),
@@ -318,7 +382,7 @@ class PaymentProviderConfigControllerTest extends TestCase
         $config->setUniqueIdentifier($config->id);
         $config->providerTechnicalName = 'alipay';
         $config->enabled = true;
-        $config->credentials = PaymentControllerFixture::cipher()->encrypt(['app_id' => 'platform-app', 'private_key' => 'sk']);
+        $config->accountId = 'abcdef1234567890abcdef1234567890';
         $config->settings = ['sandbox' => '1'];
 
         return $config;
@@ -332,7 +396,6 @@ class PaymentProviderConfigControllerTest extends TestCase
         $config->providerTechnicalName = 'alipay';
         $config->channelTechnicalName = 'alipay_h5';
         $config->enabled = true;
-        $config->params = PaymentControllerFixture::cipher()->encrypt(['appid' => 'wx-appid', 'sign_key' => 'channel-secret']);
 
         return $config;
     }

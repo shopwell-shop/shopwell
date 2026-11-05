@@ -6,9 +6,9 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Payment\Exception\PaymentGatewayException;
 use Shopwell\Core\System\Payment\Integration\Paypal\Api\PaypalApi;
 use Shopwell\Core\System\Payment\Integration\Paypal\Api\PaypalWebhookSignature;
-use Shopwell\Core\System\Payment\PaymentException;
 use Symfony\Component\HttpClient\MockHttpClient;
 use Symfony\Component\HttpClient\Response\MockResponse;
 
@@ -51,7 +51,7 @@ class PaypalWebhookSignatureTest extends TestCase
 
     public function testAnEmptyWebhookIdCannotVerifyAnything(): void
     {
-        $this->expectExceptionObject(PaymentException::missingCredentials(PaypalApi::PROVIDER, PaypalApi::WEBHOOK_ID));
+        $this->expectExceptionObject(PaymentGatewayException::missingCredentials(PaypalApi::PROVIDER, PaypalApi::WEBHOOK_ID));
 
         (new PaypalWebhookSignature(new MockHttpClient(new MockResponse($this->publicKey))))->verify('', '{}', $this->headers());
     }

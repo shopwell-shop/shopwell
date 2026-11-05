@@ -13,11 +13,13 @@ use Shopwell\Core\System\Payment\Integration\Paypal\Action\PaypalTransferQueryAc
 use Shopwell\Core\System\Payment\Integration\Paypal\Api\PaypalApi;
 use Shopwell\Core\System\Payment\Integration\Paypal\Notification\PaypalNotificationExtractor;
 use Shopwell\Core\System\Payment\Integration\Paypal\Notification\PaypalTransferNotificationVerifier;
+use Shopwell\Core\System\Payment\Integration\Paypal\Product\PaypalProducts;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
+use Shopwell\Core\System\Payment\Product\PaymentInteraction;
+use Shopwell\Core\System\Payment\Product\PaymentProduct;
+use Shopwell\Core\System\Payment\Product\PaymentScene;
 use Shopwell\Core\System\Payment\Provider\AbstractPaymentProvider;
 use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
 use Shopwell\Core\System\Payment\Provider\Transfer\PaymentTransferRules;
 use Shopwell\Core\System\Payment\Transfer\Notification\PaymentTransferNotificationVerifierInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
@@ -130,16 +132,18 @@ final class PaypalProvider extends AbstractPaymentProvider
      * Paypal declares no currencies and no devices: what the merchant account can be paid in is a
      * property of that account, which the checkout of paypal decides itself.
      *
-     * @return list<PaymentChannel>
+     * @return list<PaymentProduct>
      */
-    public function getChannels(): array
+    public function getProducts(): array
     {
         return [
-            new PaymentChannel(
-                technicalName: 'paypal_checkout',
+            new PaymentProduct(
+                technicalName: PaypalProducts::CHECKOUT,
+                scenes: [new PaymentScene('browser', 'web'), new PaymentScene('browser', 'wap'), new PaymentScene('native_app', 'app')],
                 providerTechnicalName: 'paypal',
+                method: 'paypal',
                 label: 'sw-settings-payment-provider.channel.paypal_checkout',
-                flow: PaymentFlow::REDIRECT,
+                interactions: [PaymentInteraction::REDIRECT],
             ),
         ];
     }

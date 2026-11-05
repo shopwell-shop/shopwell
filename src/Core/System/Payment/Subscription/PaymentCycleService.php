@@ -4,6 +4,7 @@ namespace Shopwell\Core\System\Payment\Subscription;
 
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Psr\Clock\ClockInterface;
+use Shopwell\Core\Defaults;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
@@ -12,6 +13,8 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\System\NumberRange\ValueGenerator\AbstractNumberRangeValueGenerator;
+use Shopwell\Core\System\Payment\Exception\PaymentProviderException;
+use Shopwell\Core\System\Payment\Exception\PaymentSubscriptionException;
 use Shopwell\Core\System\Payment\PaymentException;
 use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
 use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;
@@ -81,59 +84,77 @@ final class PaymentCycleService
             $provider = $this->providerRegistry->get($subscription->provider);
 
             if (!$provider->supports(PaymentCapability::MANDATE)) {
-                throw PaymentException::providerLacksCapability($provider->technicalName, PaymentCapability::MANDATE->value);
+                throw PaymentProviderException::providerLacksCapability($provider->technicalName, PaymentCapability::MANDATE->value);
             }
         }
 
-        $now = $this->clock->now();
+        return $this->transactions->executeForSubscription($subscription->id, function () use ($subscription, $plan): PaymentSubscriptionCycleEntity {
+            $latest = $this->latestCycle($subscription->id);
+            $now = $this->clock->now();
 
-        $periodStart = \DateTimeImmutable::createFromInterface(
-            $subscription->currentPeriodEnd ?? $subscription->trialEnd ?? $now
-        );
-        $periodEnd = $this->calendar->nextPeriodEnd($periodStart, $plan->intervalUnit, $plan->intervalCount);
+            $periodStart = \DateTimeImmutable::createFromInterface(
+                $subscription->currentPeriodEnd ?? $subscription->trialEnd ?? $latest->periodStart ?? $now
+            );
+            $periodEnd = $this->calendar->nextPeriodEnd($periodStart, $plan->intervalUnit, $plan->intervalCount);
 
-        $cycleNo = $this->nextCycleNo($subscription->id);
-        $id = Uuid::randomHex();
-
-        $row = [
-            'id' => $id,
-            'subscriptionId' => $subscription->id,
-            'cycleNo' => $cycleNo,
-            'periodStart' => $periodStart,
-            'periodEnd' => $periodEnd,
-            'amount' => $plan->amount,
-            'currency' => $this->currencyOf($plan),
-            'stateId' => $this->initialStateIdLoader->get(PaymentSubscriptionCycleStates::STATE_MACHINE),
-            'outTradeNo' => $this->numberRanges->getValue(
-                PaymentSubscriptionCycleEntity::ENTITY_NAME,
-                Context::createDefaultContext(),
-                null
-            ),
-            // the dal never writes the property initial value - it only consults
-            // EntityDefinition::getDefaults(), and the column is not nullable without a ddl default,
-            // so an insert that leaves the field out fails. Same story as paidAmount and
-            // refundedAmount in PaymentOrderService::create().
-            'attemptCount' => 0,
-        ];
-
-        try {
-            $this->cycleRepository->create([$row], Context::createDefaultContext());
-        } catch (UniqueConstraintViolationException) {
-            // the unique key over the subscription and the cycle number was hit: someone else
-            // already booked this period, and the cycle they created is the answer - not a second
-            // charge for the same period
-            $existing = $this->findByCycleNo($subscription->id, $cycleNo);
-
-            if ($existing === null) {
-                // the conflicting row is not readable in this request, so its id is not known
-                // either - reporting the period is the only honest answer
-                throw PaymentException::paymentCycleConflict($subscription->id, $cycleNo);
+            if ($latest !== null && $latest->periodStart->format('U.u') === $periodStart->format('U.u')) {
+                return $latest;
             }
 
-            return $existing;
-        }
+            // A stale subscription can point to an older period than the latest cycle.
+            if ($latest !== null && $latest->periodStart > $periodStart) {
+                $criteria = new Criteria();
+                $criteria->addFilter(new EqualsFilter('subscriptionId', $subscription->id), new EqualsFilter('periodStart', $periodStart->format(Defaults::STORAGE_DATE_TIME_FORMAT)));
+                $criteria->setLimit(1);
+                $existing = $this->cycleRepository->search($criteria, Context::createDefaultContext())->getEntities()->first();
+                if ($existing !== null) {
+                    return $existing;
+                }
+            }
 
-        return $this->getById($id);
+            $cycleNo = ($latest->cycleNo ?? 0) + 1;
+            $id = Uuid::randomHex();
+
+            $row = [
+                'id' => $id,
+                'subscriptionId' => $subscription->id,
+                'cycleNo' => $cycleNo,
+                'periodStart' => $periodStart,
+                'periodEnd' => $periodEnd,
+                'amount' => $plan->amount,
+                'currency' => $this->currencyOf($plan),
+                'stateId' => $this->initialStateIdLoader->get(PaymentSubscriptionCycleStates::STATE_MACHINE),
+                'outTradeNo' => $this->numberRanges->getValue(
+                    PaymentSubscriptionCycleEntity::ENTITY_NAME,
+                    Context::createDefaultContext(),
+                    null
+                ),
+                // the dal never writes the property initial value - it only consults
+                // EntityDefinition::getDefaults(), and the column is not nullable without a ddl default,
+                // so an insert that leaves the field out fails. Same story as paidAmount and
+                // refundedAmount in PaymentOrderService::create().
+                'attemptCount' => 0,
+            ];
+
+            try {
+                $this->cycleRepository->create([$row], Context::createDefaultContext());
+            } catch (UniqueConstraintViolationException) {
+                // the unique key over the subscription and the cycle number was hit: someone else
+                // already booked this period, and the cycle they created is the answer - not a second
+                // charge for the same period
+                $existing = $this->findByCycleNo($subscription->id, $cycleNo);
+
+                if ($existing === null) {
+                    // the conflicting row is not readable in this request, so its id is not known
+                    // either - reporting the period is the only honest answer
+                    throw PaymentSubscriptionException::paymentCycleConflict($subscription->id, $cycleNo);
+                }
+
+                return $existing;
+            }
+
+            return $this->getById($id);
+        });
     }
 
     /**
@@ -281,12 +302,8 @@ final class PaymentCycleService
     /**
      * Re-arms a cycle for one more charge attempt.
      *
-     * Two transitions rather than one: the machine has no `unknown -> scheduled`, so a cycle the
-     * channel reported as inconclusive first resolves to `failed_retryable`
-     * (`unknown --fail--> failed_retryable`) and then goes back to the queue
-     * (`--reschedule--> scheduled`). A closed or definitively failed trade moved no money, which is
-     * exactly what makes the retry safe - so only call this once the channel answered definitively.
-     * An in-flight trade has to stay `unknown`.
+     * Only a definitively retryable failure can be re-armed. An unknown attempt must remain unknown
+     * until a channel query proves its outcome; a caller's boolean cannot supply that evidence.
      *
      * @param bool $tradeIsDead the channel refuses the current out trade number (`ORDERCLOSED`,
      *                          `ACQ.TRADE_HAS_CLOSE`); the number is rotated, every other retry
@@ -302,14 +319,9 @@ final class PaymentCycleService
             $current = $this->getById($cycle->id);
             $state = $current->stateMachineState?->getTechnicalName();
 
-            if ($state === PaymentSubscriptionCycleStates::STATE_UNKNOWN) {
-                // the channel's answer was inconclusive, but a dead trade is an answer: resolving it to
-                // `failed_retryable` is the first of the two transitions into the queue. The raw code
-                // and class of the inconclusive attempt stay untouched - they are what it really was.
-                $this->cycleStateHandler->failRetryable($current->id);
-            } elseif ($state !== PaymentSubscriptionCycleStates::STATE_FAILED_RETRYABLE) {
+            if ($state !== PaymentSubscriptionCycleStates::STATE_FAILED_RETRYABLE) {
                 // an in-flight or already settled cycle has no queued attempt to go back to
-                throw PaymentException::paymentCycleNotRearmable($current->id, (string) $state);
+                throw PaymentSubscriptionException::paymentCycleNotRearmable($current->id, (string) $state);
             }
 
             $this->reschedule($current, $tradeIsDead);
@@ -343,7 +355,7 @@ final class PaymentCycleService
         $cycle = $this->cycleRepository->search($criteria, Context::createDefaultContext())->getEntities()->first();
 
         if (!$cycle instanceof PaymentSubscriptionCycleEntity) {
-            throw PaymentException::paymentCycleNotFound($id);
+            throw PaymentSubscriptionException::paymentCycleNotFound($id);
         }
 
         return $cycle;
@@ -419,7 +431,7 @@ final class PaymentCycleService
         $subscription = $this->subscriptionRepository->search($criteria, Context::createDefaultContext())->getEntities()->first();
 
         if (!$subscription instanceof PaymentSubscriptionEntity) {
-            throw PaymentException::subscriptionNotFound($id);
+            throw PaymentSubscriptionException::subscriptionNotFound($id);
         }
 
         return $subscription;
@@ -431,10 +443,10 @@ final class PaymentCycleService
     }
 
     /**
-     * The highest cycle number of the subscription plus one - the cycle number is the identity of a
-     * period, so it may never be reused, even if an earlier cycle was closed.
+     * The latest period is read while scheduling holds the subscription lock. A repeated period
+     * reuses this cycle; a later period receives its successor number.
      */
-    private function nextCycleNo(string $subscriptionId): int
+    private function latestCycle(string $subscriptionId): ?PaymentSubscriptionCycleEntity
     {
         $criteria = new Criteria();
         $criteria->addFilter(new EqualsFilter('subscriptionId', $subscriptionId));
@@ -443,7 +455,7 @@ final class PaymentCycleService
 
         $latest = $this->cycleRepository->search($criteria, Context::createDefaultContext())->getEntities()->first();
 
-        return $latest instanceof PaymentSubscriptionCycleEntity ? $latest->cycleNo + 1 : 1;
+        return $latest instanceof PaymentSubscriptionCycleEntity ? $latest : null;
     }
 
     private function findByCycleNo(string $subscriptionId, int $cycleNo): ?PaymentSubscriptionCycleEntity

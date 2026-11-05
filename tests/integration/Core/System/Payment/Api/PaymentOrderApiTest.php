@@ -65,7 +65,8 @@ class PaymentOrderApiTest extends TestCase
      * keep the answers of the tests apart.
      */
     private const CREATE_DEFAULTS = [
-        'channel' => 'alipay_h5',
+        'product' => 'alipay_h5',
+        'context' => ['scene' => ['name' => 'browser', 'device' => 'wap', 'environment' => 'browser']],
         'amount' => 100,
         'currency' => 'CNY',
         'subject' => '测试商品',
@@ -161,7 +162,8 @@ class PaymentOrderApiTest extends TestCase
 
         $payload = $this->signedPayload('POST', self::PATH_ORDERS, [
             'out_trade_no' => 'OT' . bin2hex(random_bytes(8)),
-            'channel' => 'alipay_h5',
+            'product' => 'alipay_h5',
+            'context' => ['scene' => ['name' => 'browser', 'device' => 'wap', 'environment' => 'browser']],
             'amount' => 100,
             'currency' => 'CNY',
         ]);
@@ -177,7 +179,8 @@ class PaymentOrderApiTest extends TestCase
 
         $payload = $this->signedPayload('POST', self::PATH_ORDERS, [
             'out_trade_no' => 'OT' . bin2hex(random_bytes(8)),
-            'channel' => 'alipay_h5',
+            'product' => 'alipay_h5',
+            'context' => ['scene' => ['name' => 'browser', 'device' => 'wap', 'environment' => 'browser']],
             'amount' => 0,
             'currency' => 'CNY',
             'subject' => '测试商品',
@@ -194,7 +197,8 @@ class PaymentOrderApiTest extends TestCase
 
         $payload = $this->signedPayload('POST', self::PATH_ORDERS, [
             'out_trade_no' => 'OT' . bin2hex(random_bytes(8)),
-            'channel' => 'alipay_h5',
+            'product' => 'alipay_h5',
+            'context' => ['scene' => ['name' => 'browser', 'device' => 'wap', 'environment' => 'browser']],
             'amount' => '12.50',
             'currency' => 'CNY',
             'subject' => '测试商品',
@@ -211,7 +215,8 @@ class PaymentOrderApiTest extends TestCase
 
         $payload = $this->signedPayload('POST', self::PATH_ORDERS, [
             'out_trade_no' => 'OT' . bin2hex(random_bytes(8)),
-            'channel' => 'unknown_channel',
+            'product' => 'unknown_channel',
+            'context' => ['scene' => ['name' => 'browser', 'device' => 'wap', 'environment' => 'browser']],
             'amount' => 100,
             'currency' => 'CNY',
             'subject' => '测试商品',
@@ -229,7 +234,8 @@ class PaymentOrderApiTest extends TestCase
         // alipay_web is declared by the interface, but the app only has alipay_h5 enabled
         $payload = $this->signedPayload('POST', self::PATH_ORDERS, [
             'out_trade_no' => 'OT' . bin2hex(random_bytes(8)),
-            'channel' => 'alipay_web',
+            'product' => 'alipay_web',
+            'context' => ['scene' => ['name' => 'browser', 'device' => 'web', 'environment' => 'browser']],
             'amount' => 100,
             'currency' => 'CNY',
             'subject' => '测试商品',
@@ -246,7 +252,8 @@ class PaymentOrderApiTest extends TestCase
 
         $payload = $this->signedPayload('POST', self::PATH_ORDERS, [
             'out_trade_no' => 'OT' . bin2hex(random_bytes(8)),
-            'channel' => 'alipay_h5',
+            'product' => 'alipay_h5',
+            'context' => ['scene' => ['name' => 'browser', 'device' => 'wap', 'environment' => 'browser']],
             'amount' => 100,
             'currency' => 'USD',
             'subject' => '测试商品',
@@ -260,13 +267,14 @@ class PaymentOrderApiTest extends TestCase
     public function testCreateProviderNotAuthorized(): void
     {
         // an app without the authorization for the interface behind the channel
-        $this->createContractApp(withProvider: false, withChannel: false);
+        $this->createContractApp(withProvider: false);
 
         $client = $this->getBrowser();
 
         $payload = $this->signedPayload('POST', self::PATH_ORDERS, [
             'out_trade_no' => 'OT' . bin2hex(random_bytes(8)),
-            'channel' => 'alipay_h5',
+            'product' => 'alipay_h5',
+            'context' => ['scene' => ['name' => 'browser', 'device' => 'wap', 'environment' => 'browser']],
             'amount' => 100,
             'currency' => 'CNY',
             'subject' => '测试商品',
@@ -418,7 +426,7 @@ class PaymentOrderApiTest extends TestCase
      * generated key pair can never succeed against the real interface. The state itself is what the
      * contract tests are about.
      *
-     * @return array{id: string, paymentNo: string, outTradeNo: string}
+     * @return array{id: string, paymentNo: string, outTradeNo: string, attemptNo: string}
      */
     private function seedClosedOrder(): array
     {

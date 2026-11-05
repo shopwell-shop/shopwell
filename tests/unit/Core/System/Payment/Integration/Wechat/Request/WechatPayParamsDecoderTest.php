@@ -6,10 +6,10 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\System\Payment\Api\Struct\PayParams;
+use Shopwell\Core\System\Payment\Gateway\Struct\PaymentHandover;
 use Shopwell\Core\System\Payment\Integration\Wechat\Action\WechatCaptureAction;
 use Shopwell\Core\System\Payment\Integration\Wechat\Request\WechatPayParamsDecoder;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
+use Shopwell\Core\System\Payment\Product\PaymentInteraction;
 
 /**
  * The answers below are the ones {@see WechatCaptureAction} records, so a change of the recorded shape
@@ -25,7 +25,7 @@ use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
 class WechatPayParamsDecoderTest extends TestCase
 {
     /**
-     * @return iterable<string, array{array<string, mixed>, PayParams}>
+     * @return iterable<string, array{array<string, mixed>, PaymentHandover}>
      */
     public static function recordedAnswerProvider(): iterable
     {
@@ -34,8 +34,8 @@ class WechatPayParamsDecoderTest extends TestCase
                 WechatCaptureAction::RESPONSE_H5_URL => 'https://wx.tenpay.com/cgi-bin/mmpayweb-bin/checkmweb?prepay_id=wx1',
                 'prepay_id' => 'wx1',
             ],
-            new PayParams(
-                flow: PaymentFlow::REDIRECT,
+            new PaymentHandover(
+                flow: PaymentInteraction::REDIRECT,
                 payUrl: 'https://wx.tenpay.com/cgi-bin/mmpayweb-bin/checkmweb?prepay_id=wx1',
                 httpMethod: 'GET'
             ),
@@ -46,7 +46,7 @@ class WechatPayParamsDecoderTest extends TestCase
                 WechatCaptureAction::RESPONSE_CODE_URL => 'weixin://wxpay/bizpayurl?pr=abc',
                 'prepay_id' => 'wx2',
             ],
-            new PayParams(flow: PaymentFlow::QRCODE, extra: ['qr_code' => 'weixin://wxpay/bizpayurl?pr=abc']),
+            new PaymentHandover(flow: PaymentInteraction::QRCODE, extra: ['qr_code' => 'weixin://wxpay/bizpayurl?pr=abc']),
         ];
     }
 
@@ -54,7 +54,7 @@ class WechatPayParamsDecoderTest extends TestCase
      * @param array<string, mixed> $response
      */
     #[DataProvider('recordedAnswerProvider')]
-    public function testDecodesTheRecordedAnswer(array $response, PayParams $expected): void
+    public function testDecodesTheRecordedAnswer(array $response, PaymentHandover $expected): void
     {
         static::assertEquals($expected, (new WechatPayParamsDecoder())->payParamsFromResponse($response));
     }
