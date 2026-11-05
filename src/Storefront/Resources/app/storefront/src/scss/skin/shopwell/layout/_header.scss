@@ -20,6 +20,26 @@
         min-height: 72px;
         padding: 0.5rem 0;
     }
+
+    /* Rebalance the single-line header so the main navigation keeps enough
+       room for a realistic top-level category count. The logo column is
+       capped and the search column yields down to a minimum instead of
+       holding a fixed 400px (structure layer), which used to starve the
+       navigation and squeeze CJK labels into vertical one-character columns. */
+    .header-logo-col {
+        flex: 0 1 auto;
+    }
+
+    .header-logo-picture {
+        max-width: 220px;
+        min-width: 0;
+    }
+
+    .header-search-col {
+        flex: 0 1 400px;
+        min-width: 300px;
+        width: auto;
+    }
 }
 
 /*

@@ -16,6 +16,12 @@
         --#{$prefix}navbar-color: #{$sw-nav-link};
         --#{$prefix}navbar-nav-link-padding-x: 0;
 
+        /* Items never shrink below their label: squeezed flex items would
+           otherwise wrap CJK labels character-per-line. When the row runs
+           out of space, whole pills flow to a second line instead. */
+        flex-wrap: wrap;
+        row-gap: 0.25rem;
+
         /* Gap between the flyout panel and the nav row; also covered by the
            hover bridge (`.dropdown-menu::after`) from the base skin. */
         --#{$prefix}dropdown-spacer: 0.5rem;
@@ -24,7 +30,11 @@
         --#{$prefix}dropdown-bg: #{$white};
 
         .nav-item:not(:last-child) {
-            padding-right: 0.25rem;
+            padding-right: 0.5rem;
+        }
+
+        .nav-item {
+            flex: 0 0 auto;
         }
     }
 
@@ -36,7 +46,8 @@
         font-size: $font-size-sm;
         font-weight: 500;
         gap: 0.3rem;
-        padding: 0.5rem 0.875rem;
+        padding: 0.5rem 1rem;
+        white-space: nowrap;
         transition:
             color 0.15s ease,
             background-color 0.15s ease;
