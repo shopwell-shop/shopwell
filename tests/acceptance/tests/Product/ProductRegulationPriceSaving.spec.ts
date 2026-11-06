@@ -8,7 +8,14 @@ test(
             '@Storefront',
         ],
     },
-    async ({ ShopCustomer, TestDataService, StorefrontHome, StorefrontProductDetail, SalesChannelBaseConfig }) => {
+    async ({
+        Translate,
+        ShopCustomer,
+        TestDataService,
+        StorefrontHome,
+        StorefrontProductDetail,
+        SalesChannelBaseConfig,
+    }) => {
         const currency = await TestDataService.getCurrency(getCurrencyCodeFromLocale());
         const getPrices = (unitPrice: number) =>
             [currency.id, SalesChannelBaseConfig.defaultCurrencyId].map((currencyId) => ({
@@ -32,9 +39,11 @@ test(
             await ShopCustomer.expects(StorefrontProductDetail.productSinglePrice).toContainText(formatPrice(75.0));
             await ShopCustomer.expects(StorefrontProductDetail.productListingPrice).not.toBeVisible();
             await ShopCustomer.expects(StorefrontProductDetail.page.locator('.regulation-price')).toContainText(
-                `Lowest price (last 30 days): ${formatPrice(80.0)}`,
+                Translate('storefront:product:pricing.regulationPrice', { price: formatPrice(80.0) }),
             );
-            await ShopCustomer.expects(StorefrontProductDetail.productListingPricePercentage).toContainText('(6.25% saved)');
+            await ShopCustomer.expects(StorefrontProductDetail.productListingPricePercentage).toContainText(
+                Translate('storefront:product:pricing.saving', { price: '6.25' }),
+            );
             await ShopCustomer.expects(StorefrontProductDetail.productListingPriceBadge).toBeVisible();
         });
 
@@ -43,7 +52,7 @@ test(
             await ShopCustomer.expects(StorefrontProductDetail.productSinglePrice).toContainText(formatPrice(85.0));
             await ShopCustomer.expects(StorefrontProductDetail.productListingPrice).not.toBeVisible();
             await ShopCustomer.expects(StorefrontProductDetail.page.locator('.regulation-price')).toContainText(
-                `Lowest price (last 30 days): ${formatPrice(80.0)}`,
+                Translate('storefront:product:pricing.regulationPrice', { price: formatPrice(80.0) }),
             );
             await ShopCustomer.expects(StorefrontProductDetail.productListingPricePercentage).not.toBeVisible();
             await ShopCustomer.expects(StorefrontProductDetail.productListingPriceBadge).not.toBeVisible();
@@ -54,7 +63,9 @@ test(
 
             const reducedItem = await StorefrontHome.getListingItemByProductName(reducedProduct.name);
             await ShopCustomer.expects(reducedItem.productListingPrice).not.toBeVisible();
-            await ShopCustomer.expects(reducedItem.productListingPricePercentage).toContainText('(6.25% saved)');
+            await ShopCustomer.expects(reducedItem.productListingPricePercentage).toContainText(
+                Translate('storefront:product:pricing.saving', { price: '6.25' }),
+            );
             await ShopCustomer.expects(reducedItem.productListingPriceBadge).toBeVisible();
 
             const raisedItem = await StorefrontHome.getListingItemByProductName(raisedProduct.name);

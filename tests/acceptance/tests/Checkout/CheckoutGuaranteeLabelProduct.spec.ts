@@ -23,6 +23,7 @@ const testLegalGuaranteeNotice = (showTosCheckbox: boolean) =>
             ProceedFromProductToCheckout,
             ConfirmTermsAndConditions,
             SelectPaymentMethod,
+            Translate,
             SelectShippingMethod,
             SubmitOrder,
         }) => {
@@ -136,7 +137,7 @@ const testLegalGuaranteeNotice = (showTosCheckbox: boolean) =>
             let orderNumber: string;
 
             await test.step('Customer can complete checkout.', async () => {
-                await ShopCustomer.attemptsTo(SelectPaymentMethod('Invoice'));
+                await ShopCustomer.attemptsTo(SelectPaymentMethod(Translate('storefront:checkout:common.invoice')));
                 await ShopCustomer.attemptsTo(SelectShippingMethod('Standard'));
                 await ShopCustomer.attemptsTo(ConfirmTermsAndConditions());
                 await ShopCustomer.attemptsTo(SubmitOrder());
@@ -196,6 +197,7 @@ test(
         ProceedFromProductToCheckout,
         ConfirmTermsAndConditions,
         SelectPaymentMethod,
+        Translate,
         SelectShippingMethod,
         SubmitOrder,
     }) => {
@@ -238,7 +240,7 @@ test(
         let orderNumber: string;
 
         await test.step('Customer can complete checkout.', async () => {
-            await ShopCustomer.attemptsTo(SelectPaymentMethod('Invoice'));
+            await ShopCustomer.attemptsTo(SelectPaymentMethod(Translate('storefront:checkout:common.invoice')));
             await ShopCustomer.attemptsTo(SelectShippingMethod('Standard'));
             await ShopCustomer.attemptsTo(ConfirmTermsAndConditions());
             await ShopCustomer.attemptsTo(SubmitOrder());

@@ -10,6 +10,7 @@ test(
         ],
     },
     async ({
+        Translate,
         ShopCustomer,
         TestDataService,
         StorefrontCheckoutCart,
@@ -24,31 +25,31 @@ test(
         await test.step('Testing price ranges are available on product detail page @product', async () => {
             await ShopCustomer.goesTo(StorefrontProductDetail.url(product));
             await ShopCustomer.expects(StorefrontProductDetail.productPriceRangesRow.locator('th').nth(0)).toContainText(
-                'Quantity',
+                Translate('storefront:product:pricing.quantity'),
             );
             await ShopCustomer.expects(StorefrontProductDetail.productPriceRangesRow.locator('th').nth(1)).toContainText(
-                'Unit price',
+                Translate('storefront:product:pricing.unitPrice'),
             );
             await ShopCustomer.expects(StorefrontProductDetail.productPriceRangesRow.locator('th').nth(2)).toContainText(
-                'To 10',
+                `${Translate('storefront:product:pricing.to')} 10`,
             );
             await ShopCustomer.expects(StorefrontProductDetail.productPriceRangesRow.locator('td').nth(0)).toContainText(
                 formatPrice(100.0),
             );
             await ShopCustomer.expects(StorefrontProductDetail.productPriceRangesRow.locator('th').nth(3)).toContainText(
-                'To 20',
+                `${Translate('storefront:product:pricing.to')} 20`,
             );
             await ShopCustomer.expects(StorefrontProductDetail.productPriceRangesRow.locator('td').nth(1)).toContainText(
                 formatPrice(90.0),
             );
             await ShopCustomer.expects(StorefrontProductDetail.productPriceRangesRow.locator('th').nth(4)).toContainText(
-                'To 50',
+                `${Translate('storefront:product:pricing.to')} 50`,
             );
             await ShopCustomer.expects(StorefrontProductDetail.productPriceRangesRow.locator('td').nth(2)).toContainText(
                 formatPrice(80.0),
             );
             await ShopCustomer.expects(StorefrontProductDetail.productPriceRangesRow.locator('th').nth(5)).toContainText(
-                'From 51',
+                `${Translate('storefront:product:pricing.from')} 51`,
             );
             await ShopCustomer.expects(StorefrontProductDetail.productPriceRangesRow.locator('td').nth(3)).toContainText(
                 formatPrice(70.0),
@@ -90,7 +91,9 @@ test(
             });
 
             await ShopCustomer.expects(
-                StorefrontHome.productListItems.filter({ hasText: product.name }).getByText('Details'),
+                StorefrontHome.productListItems
+                    .filter({ hasText: product.name })
+                    .getByText(Translate('storefront:product:pricing.details')),
             ).toBeVisible();
         });
     },

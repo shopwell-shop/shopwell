@@ -17,6 +17,7 @@ test(
         AddProductToCart,
         TestDataService,
         Register,
+        Translate,
     }) => {
         const product = await TestDataService.createBasicProduct();
 
@@ -28,7 +29,7 @@ test(
         await ShopCustomer.presses(StorefrontProductDetail.offCanvasCartGoToCheckoutButton);
         await StorefrontCheckoutRegister.page.waitForURL('**/checkout/register', { waitUntil: 'commit' });
         await ShopCustomer.expects(StorefrontCheckoutRegister.page.locator('.register-submit button')).toContainText(
-            /Continue|Weiter/i,
+            Translate('storefront:account:registration.continue'),
         );
 
         await ShopCustomer.attemptsTo(Register({ isGuest: true }));
@@ -69,7 +70,7 @@ test(
         await StorefrontCheckoutRegister.page.waitForURL('**/checkout/register', { waitUntil: 'commit' });
 
         await ShopCustomer.presses(StorefrontAccountLogin.accountTypeSelect);
-        await StorefrontAccountLogin.accountTypeSelect.selectOption('Commercial');
+        await StorefrontAccountLogin.accountTypeSelect.selectOption('business');
         await ShopCustomer.attemptsTo(Register({ isCommercial: true, isGuest: true }));
         await ShopCustomer.goesTo(StorefrontHome.url());
         await ShopCustomer.presses(StorefrontHome.accountMenuButton);

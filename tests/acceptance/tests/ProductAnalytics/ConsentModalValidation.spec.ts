@@ -273,7 +273,7 @@ test.describe('Product Analytics - Consent Modal Validation', { tag: '@ProductAn
                 await expect(AdminConsentModal.shareUsageDataText).toBeVisible();
                 await expect(AdminConsentModal.privacyPolicyLink).toBeVisible();
 
-                await AdminConsentModal.page.getByRole('button', { name: 'Decline' }).click();
+                await AdminConsentModal.declineUsageDataButton.click();
 
                 await expect(AdminYourProfile.dataSharingUsageDataCheckbox).toBeEditable();
                 await expect(AdminYourProfile.dataSharingUsageDataCheckbox).not.toBeChecked();

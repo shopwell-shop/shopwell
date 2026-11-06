@@ -25,7 +25,7 @@ test(
         await ShopCustomer.presses(orderItemLocators.orderRepeatButton);
 
         await ShopCustomer.expects(StorefrontOffCanvasCart.itemCount).toBeVisible();
-        await ShopCustomer.expects(StorefrontOffCanvasCart.itemCount).toContainText('1 item');
+        await ShopCustomer.expects(StorefrontOffCanvasCart.itemCount).toHaveText(/^\s*1\s+\D+$/);
         const cartProduct = await StorefrontOffCanvasCart.getLineItemByProductNumber(product.productNumber);
         await ShopCustomer.expects(cartProduct.productQuantityInput).toHaveValue(productQuantity.toString());
     },

@@ -2,7 +2,7 @@ import { test as base } from '@playwright/test';
 import type { FixtureTypes, Task } from '@fixtures/AcceptanceTest';
 
 export const AddCreditItem = base.extend<{ AddCreditItem: Task }, FixtureTypes>({
-    AddCreditItem: async ({ AdminApiContext, ShopAdmin }, use) => {
+    AddCreditItem: async ({ AdminApiContext, ShopAdmin, Translate }, use) => {
         const task = (orderId: string) => {
             return async function AddCreditItem() {
                 const creditItem = {
@@ -10,7 +10,7 @@ export const AddCreditItem = base.extend<{ AddCreditItem: Task }, FixtureTypes>(
                     orderId: orderId,
                     type: 'credit',
                     quantity: 1,
-                    label: 'CreditItem',
+                    label: Translate('storefront:account:orders.creditItem'),
                     payload: [],
                     good: true,
                     removable: true,

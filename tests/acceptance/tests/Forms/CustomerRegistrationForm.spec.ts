@@ -1,4 +1,4 @@
-import { test, getLocale } from '@fixtures/AcceptanceTest';
+import { test, expect, getLocale, getLanguageCode } from '@fixtures/AcceptanceTest';
 import { getAddressDataFromLocale } from '../../helpers/locale-helpers';
 
 test.describe('Customer Registration Form', () => {
@@ -30,6 +30,18 @@ test.describe('Customer Registration Form', () => {
             ],
         },
         async ({ ShopCustomer, StorefrontAccountLogin, TestDataService }) => {
+            const messages = {
+                'en-GB': {
+                    privacy: 'Please note our privacy policy and general terms and conditions.',
+                    register: 'Register',
+                    guarantee: 'Your legal guarantee rights',
+                },
+                'zh-CN': {
+                    privacy: '请查阅我们的 隐私政策 和 服务条款。',
+                    register: '注册',
+                    guarantee: '您的法定保修权益',
+                },
+            }[getLanguageCode()];
             const privacyNotice = StorefrontAccountLogin.page.locator('.register-form .privacy-notice');
             const dataProtectionCheckbox = privacyNotice.locator('input[name="acceptedDataProtection"]');
             const privacyLabel = privacyNotice.locator('label[for="acceptedDataProtection"], .data-protection-information');
@@ -45,10 +57,10 @@ test.describe('Customer Registration Form', () => {
             await ShopCustomer.goesTo(`${StorefrontAccountLogin.url()}?privacy-checkbox=disabled&guarantee=disabled`);
 
             await ShopCustomer.expects(dataProtectionCheckbox).toHaveCount(0);
-            await ShopCustomer.expects(privacyLabel).toContainText(/Please note|Bitte beachten/i);
+            await ShopCustomer.expects(privacyLabel).toHaveText(messages.privacy);
             await ShopCustomer.expects(legalGuaranteeNoticeParagraph).toHaveCount(0);
             await ShopCustomer.expects(legalGuaranteeNoticeLink).toHaveCount(0);
-            await ShopCustomer.expects(StorefrontAccountLogin.registerButton).toContainText(/Register|Registrieren/i);
+            await ShopCustomer.expects(StorefrontAccountLogin.registerButton).toHaveText(messages.register);
 
             // Checkbox disabled, legal guarantee notice enabled: the notice is shown as its own paragraph.
             await TestDataService.setSystemConfig({
@@ -63,9 +75,7 @@ test.describe('Customer Registration Form', () => {
             await legalGuaranteeNoticeLink.click();
 
             await ShopCustomer.expects(legalGuaranteeNoticeModal).toBeVisible();
-            await ShopCustomer.expects(legalGuaranteeNoticeModal).toContainText(
-                /Your legal guarantee rights|Ihre gesetzlichen Gewährleistungsrechte/i,
-            );
+            await ShopCustomer.expects(legalGuaranteeNoticeModal).toContainText(messages.guarantee);
             await ShopCustomer.expects(legalGuaranteeNoticeModal.getByRole('link')).toBeVisible();
 
             // Checkbox enabled, legal guarantee notice enabled: both the checkbox and the notice paragraph are shown.
@@ -75,7 +85,7 @@ test.describe('Customer Registration Form', () => {
             await ShopCustomer.goesTo(`${StorefrontAccountLogin.url()}?privacy-checkbox=enabled&guarantee=enabled`);
 
             await ShopCustomer.expects(dataProtectionCheckbox).toBeVisible();
-            await ShopCustomer.expects(privacyLabel).not.toContainText(/Please note|Bitte beachten/i);
+            await ShopCustomer.expects(privacyLabel).not.toContainText(messages.privacy);
             await ShopCustomer.expects(legalGuaranteeNoticeParagraph).toBeVisible();
             await ShopCustomer.expects(legalGuaranteeNoticeLink).toBeVisible();
 
@@ -121,7 +131,17 @@ test.describe('Customer Registration Form', () => {
                 '@Storefront',
             ],
         },
-        async ({ ShopCustomer, StorefrontAccountLogin, StorefrontAccount, IdProvider, TestDataService }) => {
+        async ({
+            ShopCustomer,
+            StorefrontAccountLogin,
+            StorefrontAccount,
+            StorefrontProductDetail,
+            StorefrontCheckoutRegister,
+            StorefrontCheckoutConfirm,
+            AddProductToCart,
+            IdProvider,
+            TestDataService,
+        }) => {
             const locale = getLocale();
             const addressData = getAddressDataFromLocale(locale);
 
@@ -135,7 +155,12 @@ test.describe('Customer Registration Form', () => {
                 postalCode: addressData.postalCode,
             };
 
-            await ShopCustomer.goesTo(StorefrontAccountLogin.url());
+            const product = await TestDataService.createBasicProduct();
+            await ShopCustomer.goesTo(StorefrontProductDetail.url(product));
+            await ShopCustomer.attemptsTo(AddProductToCart(product));
+            await ShopCustomer.presses(StorefrontProductDetail.offCanvasCartGoToCheckoutButton);
+            await StorefrontCheckoutRegister.page.waitForURL('**/checkout/register', { waitUntil: 'commit' });
+            await StorefrontAccountLogin.page.locator('[name="createCustomerAccount"]').check();
 
             await StorefrontAccountLogin.nameInput.fill(customer.name);
             await StorefrontAccountLogin.registerEmailInput.fill(customer.email);
@@ -145,13 +170,25 @@ test.describe('Customer Registration Form', () => {
             await StorefrontAccountLogin.postalCodeInput.fill(customer.postalCode);
             await StorefrontAccountLogin.cityInput.fill(customer.city);
             await StorefrontAccountLogin.countryInput.selectOption({ label: customer.country });
+            const countryId = await StorefrontAccountLogin.countryInput.inputValue();
 
             await StorefrontAccountLogin.registerButton.click();
 
-            await StorefrontAccountLogin.page.waitForURL('**/account', { waitUntil: 'commit' });
+            await ShopCustomer.expects(StorefrontCheckoutConfirm.headline).toBeVisible();
             const registeredCustomer = await TestDataService.getCustomerByEmail(customer.email);
             TestDataService.addCreatedRecord('customer', registeredCustomer.id);
+            expect(registeredCustomer.guest).toBe(false);
+            expect(registeredCustomer.name).toBe(customer.name);
+            const billingAddress = await TestDataService.getCustomerAddress(registeredCustomer.defaultBillingAddressId);
+            expect(billingAddress).toMatchObject({
+                name: customer.name,
+                street: customer.street,
+                city: customer.city,
+                zipcode: customer.postalCode,
+                countryId,
+            });
 
+            await ShopCustomer.goesTo(StorefrontAccount.url());
             await ShopCustomer.expects(StorefrontAccount.page.getByText(customer.email, { exact: true })).toBeVisible();
         },
     );
@@ -165,7 +202,17 @@ test.describe('Customer Registration Form', () => {
                 '@Storefront',
             ],
         },
-        async ({ ShopCustomer, StorefrontAccountLogin, IdProvider, TestDataService }) => {
+        async ({
+            ShopCustomer,
+            StorefrontAccountLogin,
+            StorefrontProductDetail,
+            StorefrontCheckoutRegister,
+            StorefrontCheckoutConfirm,
+            StorefrontAccount,
+            AddProductToCart,
+            IdProvider,
+            TestDataService,
+        }) => {
             const locale = getLocale();
             const addressData = getAddressDataFromLocale(locale);
 
@@ -179,7 +226,12 @@ test.describe('Customer Registration Form', () => {
                 postalCode: addressData.postalCode,
             };
 
-            await ShopCustomer.goesTo(StorefrontAccountLogin.url());
+            const product = await TestDataService.createBasicProduct();
+            await ShopCustomer.goesTo(StorefrontProductDetail.url(product));
+            await ShopCustomer.attemptsTo(AddProductToCart(product));
+            await ShopCustomer.presses(StorefrontProductDetail.offCanvasCartGoToCheckoutButton);
+            await StorefrontCheckoutRegister.page.waitForURL('**/checkout/register', { waitUntil: 'commit' });
+            await StorefrontAccountLogin.page.locator('[name="createCustomerAccount"]').check();
 
             await StorefrontAccountLogin.registerEmailInput.fill(customer.email);
             await StorefrontAccountLogin.registerPasswordInput.fill(customer.password);
@@ -188,18 +240,32 @@ test.describe('Customer Registration Form', () => {
             await StorefrontAccountLogin.postalCodeInput.fill(customer.postalCode);
             await StorefrontAccountLogin.cityInput.fill(customer.city);
             await StorefrontAccountLogin.countryInput.selectOption({ label: customer.country });
+            const countryId = await StorefrontAccountLogin.countryInput.inputValue();
 
             await StorefrontAccountLogin.registerButton.click();
 
             await ShopCustomer.expects(StorefrontAccountLogin.nameInput).toHaveClass(/(^|\s)is-invalid(\s|$)/);
+            await ShopCustomer.expects(StorefrontCheckoutRegister.page).toHaveURL(/\/checkout\/register$/);
+            expect(await TestDataService.getCustomerByEmail(customer.email)).toBeUndefined();
 
             await StorefrontAccountLogin.nameInput.fill('Jeff Goldblum');
             await StorefrontAccountLogin.registerButton.click();
 
-            await StorefrontAccountLogin.page.waitForURL('**/account', { waitUntil: 'commit' });
+            await ShopCustomer.expects(StorefrontCheckoutConfirm.headline).toBeVisible();
             const registeredCustomer = await TestDataService.getCustomerByEmail(customer.email);
             TestDataService.addCreatedRecord('customer', registeredCustomer.id);
+            expect(registeredCustomer.guest).toBe(false);
+            expect(registeredCustomer.name).toBe('Jeff Goldblum');
+            const billingAddress = await TestDataService.getCustomerAddress(registeredCustomer.defaultBillingAddressId);
+            expect(billingAddress).toMatchObject({
+                name: 'Jeff Goldblum',
+                street: customer.street,
+                city: customer.city,
+                zipcode: customer.postalCode,
+                countryId,
+            });
 
+            await ShopCustomer.goesTo(StorefrontAccount.url());
             await ShopCustomer.expects(StorefrontAccountLogin.page.getByText(customer.email, { exact: true })).toBeVisible();
         },
     );

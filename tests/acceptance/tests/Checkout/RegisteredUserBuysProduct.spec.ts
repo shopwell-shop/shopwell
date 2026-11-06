@@ -9,6 +9,7 @@ test(
         ],
     },
     async ({
+        Translate,
         ShopCustomer,
         TestDataService,
         DefaultSalesChannel,
@@ -37,7 +38,7 @@ test(
         await ShopCustomer.attemptsTo(ProceedFromProductToCheckout());
 
         await ShopCustomer.attemptsTo(ConfirmTermsAndConditions());
-        await ShopCustomer.attemptsTo(SelectPaymentMethod('Invoice'));
+        await ShopCustomer.attemptsTo(SelectPaymentMethod(Translate('storefront:checkout:common.invoice')));
         await ShopCustomer.attemptsTo(SelectShippingMethod('Standard'));
 
         await ShopCustomer.expects(StorefrontCheckoutConfirm.grandTotalPrice).toContainText(formatPrice(10.0));

@@ -3,7 +3,7 @@ import type { FixtureTypes, Task } from '@fixtures/AcceptanceTest';
 
 export const CreateLandingPage = base.extend<{ CreateLandingPage: Task }, FixtureTypes>({
     CreateLandingPage: async (
-        { ShopAdmin, AdminCategories, AdminLandingPageCreate, AdminLandingPageDetail, TestDataService },
+        { ShopAdmin, AdminCategories, AdminLandingPageCreate, AdminLandingPageDetail, TestDataService, Translate },
         use,
     ) => {
         const task = (layoutName: string, landingPageData) => {
@@ -12,7 +12,9 @@ export const CreateLandingPage = base.extend<{ CreateLandingPage: Task }, Fixtur
                 await AdminCategories.addLandingPageButton.click();
 
                 await ShopAdmin.expects(AdminLandingPageDetail.saveLandingPageButton).toBeVisible();
-                await ShopAdmin.expects(AdminLandingPageDetail.saveLandingPageButton).toContainText('Save');
+                await ShopAdmin.expects(AdminLandingPageDetail.saveLandingPageButton).toContainText(
+                    Translate('administration:landingPage:general.save'),
+                );
 
                 //Fill details and save
                 await AdminLandingPageCreate.nameInput.fill(landingPageData.name);
