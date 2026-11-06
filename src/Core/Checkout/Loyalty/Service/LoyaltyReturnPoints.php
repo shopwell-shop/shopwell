@@ -14,7 +14,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\System\Payment\Gateway\Request\Money;
+use Shopwell\Core\System\Currency\CurrencyAmountConverter;
 
 /**
  * What a return does to the points of an order - in both directions.
@@ -182,7 +182,7 @@ class LoyaltyReturnPoints
             $total += abs($lineItem->getPrice()?->getTotalPrice() ?? 0.0);
         }
 
-        return Money::fromFloat($total, $currency);
+        return CurrencyAmountConverter::fromFloat($total, $currency);
     }
 
     /**
@@ -201,7 +201,7 @@ class LoyaltyReturnPoints
             $total += $lineItem->getUnitPrice() * $lineItem->getQuantity();
         }
 
-        return Money::fromFloat($total, $currency);
+        return CurrencyAmountConverter::fromFloat($total, $currency);
     }
 
     /**
