@@ -1,4 +1,4 @@
-import { test } from '@fixtures/AcceptanceTest';
+import { test, expect } from '@fixtures/AcceptanceTest';
 import { FlowConfig } from '@shopwell-ag/acceptance-test-suite';
 
 test(
@@ -10,22 +10,47 @@ test(
             description: 'https://github.com/shopwell-shop/shopwell/issues/15749',
         },
     },
-    async ({ ShopAdmin, AdminFlowBuilderListing, AdminFlowBuilderDetail, IdProvider, TestDataService, CreateFlow }) => {
+    async ({
+        ShopAdmin,
+        AdminFlowBuilderListing,
+        AdminFlowBuilderDetail,
+        IdProvider,
+        TestDataService,
+        CreateFlow,
+        AdminApiContext,
+        Translate,
+    }) => {
         const uniqueId = IdProvider.getIdPair().uuid;
         const tagName = `Test tag - ${uniqueId}`;
         const flowName = `Test flow - ${uniqueId}`;
         await TestDataService.createTag(tagName);
+        const mailTemplatesResponse = await AdminApiContext.post('search/mail-template', {
+            data: {
+                limit: 2,
+                filter: [{ type: 'equals', field: 'mailTemplateType.technicalName', value: 'order_confirmation_mail' }],
+                associations: { mailTemplateType: {} },
+            },
+        });
+        expect(mailTemplatesResponse.ok()).toBeTruthy();
+        const { data: mailTemplates } = await mailTemplatesResponse.json();
+        expect(mailTemplates).toHaveLength(1);
+        const mailTemplateName = mailTemplates[0].mailTemplateType.translated.name;
+        expect(mailTemplateName).toBeTruthy();
         const testConfig = {
             name: flowName,
             description: 'This flow is being created to test the creation of flows.',
             priority: '1',
             active: true,
-            triggerSearchTerm: 'placed',
-            triggerLabel: 'Checkout / Order / Placed',
+            triggerSearchTerm: Translate('administration:flowBuilder:triggers.placed'),
+            triggerLabel: [
+                Translate('administration:flowBuilder:triggers.checkout'),
+                Translate('administration:flowBuilder:triggers.order'),
+                Translate('administration:flowBuilder:triggers.placed'),
+            ].join(' / '),
             condition: 'Shopping cart / Order with digital products',
-            trueAction: 'Send email',
-            trueActionIdentifier: 'Order confirmation',
-            falseAction: 'Add tag',
+            trueAction: Translate('administration:flowBuilder:actions.mailSend'),
+            trueActionIdentifier: mailTemplateName,
+            falseAction: Translate('administration:flowBuilder:actions.addTag'),
             falseActionIdentifier: tagName,
         };
 

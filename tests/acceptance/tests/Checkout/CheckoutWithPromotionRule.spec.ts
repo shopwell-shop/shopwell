@@ -69,6 +69,7 @@ test.describe('Newsletter recipient promotion', () => {
                 ],
             },
             async ({
+                Translate,
                 IdProvider,
                 DefaultSalesChannel,
                 TestDataService,
@@ -125,7 +126,7 @@ test.describe('Newsletter recipient promotion', () => {
                 await StorefrontCheckoutConfirm.page.waitForURL('**/checkout/confirm', { waitUntil: 'commit' });
                 await ShopCustomer.expects(StorefrontCheckoutConfirm.headline).toBeVisible();
 
-                await ShopCustomer.attemptsTo(SelectPaymentMethod('Invoice'));
+                await ShopCustomer.attemptsTo(SelectPaymentMethod(Translate('storefront:checkout:common.invoice')));
                 await ShopCustomer.attemptsTo(SelectShippingMethod('Standard'));
 
                 const productLineItem = StorefrontCheckoutConfirm.getLineItemByProductName(product.translated.name);

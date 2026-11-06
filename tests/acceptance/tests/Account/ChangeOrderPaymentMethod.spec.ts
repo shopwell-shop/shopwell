@@ -16,6 +16,7 @@ test(
         TestDataService,
         Login,
         SelectPaymentMethod,
+        Translate,
     }) => {
         const product = await TestDataService.createBasicProduct();
         const customer = await TestDataService.createCustomer();
@@ -30,10 +31,14 @@ test(
         await ShopCustomer.goesTo(StorefrontAccountOrder.url());
 
         const untouchedOrderItemLocators = await StorefrontAccountOrder.getOrderByOrderNumber(untouchedOrder.orderNumber);
-        await ShopCustomer.expects(untouchedOrderItemLocators.orderPaymentMethod).toContainText('Invoice');
+        await ShopCustomer.expects(untouchedOrderItemLocators.orderPaymentMethod).toContainText(
+            Translate('storefront:checkout:common.invoice'),
+        );
 
         const orderItemLocators = await StorefrontAccountOrder.getOrderByOrderNumber(order.orderNumber);
-        await ShopCustomer.expects(orderItemLocators.orderPaymentMethod).toContainText('Invoice');
+        await ShopCustomer.expects(orderItemLocators.orderPaymentMethod).toContainText(
+            Translate('storefront:checkout:common.invoice'),
+        );
 
         await ShopCustomer.presses(orderItemLocators.orderActionsButton);
         await ShopCustomer.presses(orderItemLocators.orderChangePaymentMethodButton);
@@ -44,6 +49,8 @@ test(
         await ShopCustomer.goesTo(StorefrontAccountOrder.url());
         await ShopCustomer.expects(orderItemLocators.orderPaymentMethod).toContainText(newPaymentMethod.name);
         // check that other order is not touched
-        await ShopCustomer.expects(untouchedOrderItemLocators.orderPaymentMethod).toContainText('Invoice');
+        await ShopCustomer.expects(untouchedOrderItemLocators.orderPaymentMethod).toContainText(
+            Translate('storefront:checkout:common.invoice'),
+        );
     },
 );

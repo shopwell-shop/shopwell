@@ -26,6 +26,7 @@ test(
         SelectShippingMethod,
         SubmitOrder,
         InstanceMeta,
+        Translate,
     }) => {
         const product = await TestDataService.createBasicProduct();
         const currency = await TestDataService.createCurrency({ taxFreeFrom: 5 });
@@ -61,7 +62,7 @@ test(
         await ShopCustomer.attemptsTo(ProceedFromProductToCheckout());
 
         await ShopCustomer.attemptsTo(ConfirmTermsAndConditions());
-        await ShopCustomer.attemptsTo(SelectPaymentMethod('Invoice'));
+        await ShopCustomer.attemptsTo(SelectPaymentMethod(Translate('storefront:payment:methods.invoice')));
         await ShopCustomer.attemptsTo(SelectShippingMethod('Standard'));
 
         await ShopCustomer.expects(StorefrontCheckoutConfirm.taxPrice).not.toBeVisible();

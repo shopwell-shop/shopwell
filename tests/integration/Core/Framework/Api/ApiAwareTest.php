@@ -69,6 +69,12 @@ class ApiAwareTest extends TestCase
             // because defineFields() now overrides the ApiAware default field
             $expected = array_values(array_diff($expected, [
                 'user_recovery.createdAt',
+                'organization.createdAt',
+                'organization.updatedAt',
+                'position.createdAt',
+                'position.updatedAt',
+                'admin_menu_item.createdAt',
+                'admin_menu_item.updatedAt',
                 'category.cmsPageIdSwitched',
                 'product.states',
                 'order_address.vatId',

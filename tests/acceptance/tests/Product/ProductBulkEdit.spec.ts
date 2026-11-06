@@ -1,4 +1,4 @@
-import { test } from '@fixtures/AcceptanceTest';
+import { test, getLanguageCode } from '@fixtures/AcceptanceTest';
 
 const TIMEOUT = 15_000;
 
@@ -45,7 +45,7 @@ test(
             changedProduct2,
         ];
         const changedManufacturer = await TestDataService.createBasicManufacturer();
-        const changedReleaseDate = '20/05/2025, 00:00';
+        const changedReleaseDate = { 'en-GB': '20/05/2025, 00:00', 'zh-CN': '2025/05/20 00:00' }[getLanguageCode()];
 
         const changes = {
             grossPrice: { value: '99.99', method: '' },
@@ -80,7 +80,7 @@ test(
                 await ShopAdmin.expects(AdminProductDetail.manufacturerDropdownText).toHaveText(
                     changes['manufacturer'].value,
                 );
-                await ShopAdmin.expects(AdminProductDetail.releaseDateInput).toHaveValue('20/05/2025, 00:00');
+                await ShopAdmin.expects(AdminProductDetail.releaseDateInput).toHaveValue(changedReleaseDate);
                 await ShopAdmin.expects(AdminProductDetail.stockInput).toHaveValue(changes['stock'].value);
                 await ShopAdmin.expects(AdminProductDetail.restockTimeInput).toHaveValue('');
                 await ShopAdmin.expects(AdminProductDetail.tagsInput).toContainText(originalTag.name);
@@ -94,7 +94,9 @@ test(
                 timeout: TIMEOUT,
             });
             await ShopAdmin.expects(AdminProductDetail.activeForAllSalesChannelsToggle).toBeChecked();
-            await ShopAdmin.expects(AdminProductDetail.manufacturerDropdownText).toHaveText('Enter product manufacturer...');
+            await ShopAdmin.expects(AdminProductDetail.manufacturerDropdownText).toHaveText(
+                { 'en-GB': 'Enter product manufacturer...', 'zh-CN': '输入商品制造商…' }[getLanguageCode()],
+            );
             await ShopAdmin.expects(AdminProductDetail.releaseDateInput).toHaveValue('');
             await ShopAdmin.expects(AdminProductDetail.stockInput).toHaveValue(originalStock.toString());
             await ShopAdmin.expects(AdminProductDetail.restockTimeInput).toHaveValue(originalRestockTime.toString());

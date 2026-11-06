@@ -19,6 +19,7 @@ test(
         StorefrontCheckoutRegister,
         StorefrontAccountLogin,
         StorefrontCheckoutConfirm,
+        StorefrontCheckoutFinish,
         StorefrontAccountProfile,
         AddProductToCart,
         Register,
@@ -45,7 +46,7 @@ test(
             await StorefrontCheckoutRegister.page.waitForURL('**/checkout/register', { waitUntil: 'commit' });
 
             await ShopCustomer.presses(StorefrontAccountLogin.accountTypeSelect);
-            await StorefrontAccountLogin.accountTypeSelect.selectOption('Commercial');
+            await StorefrontAccountLogin.accountTypeSelect.selectOption('business');
             await ShopCustomer.attemptsTo(
                 Register({ isCommercial: true, isGuest: true, country: country.name, vatRegNo: '' }),
             );
@@ -84,6 +85,7 @@ test(
             await ShopCustomer.expects(vatIdErrorLink).toHaveCount(0);
             await ShopCustomer.attemptsTo(ConfirmTermsAndConditions());
             await ShopCustomer.attemptsTo(SubmitOrder());
+            TestDataService.addCreatedRecord('order', StorefrontCheckoutFinish.getOrderId());
         });
     },
 );
