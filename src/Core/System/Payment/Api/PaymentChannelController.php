@@ -5,7 +5,7 @@ namespace Shopwell\Core\System\Payment\Api;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\PlatformRequest;
 use Shopwell\Core\System\Payment\App\PaymentAppAuthenticator;
-use Shopwell\Core\System\Payment\Provider\PaymentConfigResolver;
+use Shopwell\Core\System\Payment\Provider\Config\PaymentConfigResolver;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;

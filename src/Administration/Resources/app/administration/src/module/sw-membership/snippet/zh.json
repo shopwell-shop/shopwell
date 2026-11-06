@@ -1,0 +1,31 @@
+{
+  "sw-membership": {
+    "purchase": {
+      "general": {
+        "mainMenuItemGeneral": "会员订单",
+        "description": "客户购买的会员订单，每次购买一条记录。"
+      },
+      "list": {
+        "placeholderSearchBar": "搜索会员订单...",
+        "titleSidebarItemRefresh": "刷新",
+        "columnCustomer": "客户",
+        "columnPlan": "套餐",
+        "columnAmount": "金额",
+        "columnState": "状态",
+        "columnPaidAt": "支付时间",
+        "columnCreatedAt": "创建时间",
+        "filterStateLabel": "状态",
+        "filterStatePlaceholder": "选择状态...",
+        "filterPlanLabel": "套餐",
+        "filterPlanPlaceholder": "按套餐搜索...",
+        "emptyStateHeadline": "还没有会员订单",
+        "emptyStateDescription": "客户发起支付后，套餐购买记录就会出现在这里。"
+      },
+      "state": {
+        "open": "待支付",
+        "activated": "已生效",
+        "failed": "失败"
+      }
+    }
+  }
+}

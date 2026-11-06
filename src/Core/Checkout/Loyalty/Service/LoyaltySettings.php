@@ -4,6 +4,7 @@ namespace Shopwell\Core\Checkout\Loyalty\Service;
 
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\SystemConfig\SystemConfigService;
+use Shopwell\Core\System\SystemConfig\Util\ConfigBool;
 
 /**
  * The membership settings of the shop, read in one place.
@@ -22,7 +23,9 @@ class LoyaltySettings
 
     final public const CONFIG_KEY_POINTS_PER_CURRENCY_UNIT = 'core.loyalty.pointsPerCurrencyUnit';
 
-    final public const CONFIG_KEY_GROWTH_PER_CURRENCY_UNIT = 'core.loyalty.growthPerCurrencyUnit';
+    final public const CONFIG_KEY_TOP_UP_POINTS_PER_CURRENCY_UNIT = 'core.loyalty.topUpPointsPerCurrencyUnit';
+
+    final public const CONFIG_KEY_TIER_POINTS_PER_CURRENCY_UNIT = 'core.loyalty.tierPointsPerCurrencyUnit';
 
     final public const CONFIG_KEY_POINT_VALUE_IN_CURRENCY = 'core.loyalty.pointValueInCurrency';
 
@@ -38,7 +41,9 @@ class LoyaltySettings
 
     final public const DEFAULT_POINTS_PER_CURRENCY_UNIT = 1;
 
-    final public const DEFAULT_GROWTH_PER_CURRENCY_UNIT = 1;
+    final public const DEFAULT_TOP_UP_POINTS_PER_CURRENCY_UNIT = 0;
+
+    final public const DEFAULT_TIER_POINTS_PER_CURRENCY_UNIT = 1;
 
     final public const DEFAULT_POINT_VALUE_IN_CURRENCY = 0.01;
 
@@ -65,7 +70,9 @@ class LoyaltySettings
     {
         $value = $this->systemConfigService->get(self::CONFIG_KEY_ENABLED, $salesChannelId);
 
-        return $value === null ? self::DEFAULT_ENABLED : (bool) $value;
+        // `system:config:set` writes the string "false" without `--json`, so the value is
+        // normalized instead of cast - a saved "false" must switch the programme off
+        return $value === null ? self::DEFAULT_ENABLED : ConfigBool::normalize($value);
     }
 
     public function pointsPerCurrencyUnit(?string $salesChannelId = null): int
@@ -74,10 +81,32 @@ class LoyaltySettings
             ?? self::DEFAULT_POINTS_PER_CURRENCY_UNIT;
     }
 
-    public function growthPerCurrencyUnit(?string $salesChannelId = null): int
+    /**
+     * What topping up the wallet earns, per currency unit. Zero - the default - pays nothing.
+     *
+     * It is a rate of its own instead of reusing {@see pointsPerCurrencyUnit()} because paying money
+     * into the wallet is not buying something: the money earns here, and it cannot earn again when it
+     * is spent, since the order total a wallet payment is taken off is the one points are counted on.
+     * A shop that leaves this at zero therefore gives no points for wallet money at all - deliberately
+     * visible in the settings card rather than hidden in the code.
+     *
+     * The wallet belongs to the customer and not to a sales channel, so this is read without one: a
+     * channel scoped rate would not know which channel the money came in through.
+     */
+    public function topUpPointsPerCurrencyUnit(?string $salesChannelId = null): int
     {
-        return $this->int(self::CONFIG_KEY_GROWTH_PER_CURRENCY_UNIT, $salesChannelId)
-            ?? self::DEFAULT_GROWTH_PER_CURRENCY_UNIT;
+        return $this->int(self::CONFIG_KEY_TOP_UP_POINTS_PER_CURRENCY_UNIT, $salesChannelId)
+            ?? self::DEFAULT_TOP_UP_POINTS_PER_CURRENCY_UNIT;
+    }
+
+    /**
+     * Tier points an order earns per currency unit. They are the unit a tier is reached in, and
+     * they are never spent - redeeming takes points, not tier points.
+     */
+    public function tierPointsPerCurrencyUnit(?string $salesChannelId = null): int
+    {
+        return $this->int(self::CONFIG_KEY_TIER_POINTS_PER_CURRENCY_UNIT, $salesChannelId)
+            ?? self::DEFAULT_TIER_POINTS_PER_CURRENCY_UNIT;
     }
 
     /**
@@ -120,7 +149,7 @@ class LoyaltySettings
     {
         $value = $this->systemConfigService->get(self::CONFIG_KEY_TIER_AUTO_GROUP_SYNC, $salesChannelId);
 
-        return $value === null ? self::DEFAULT_TIER_AUTO_GROUP_SYNC : (bool) $value;
+        return $value === null ? self::DEFAULT_TIER_AUTO_GROUP_SYNC : ConfigBool::normalize($value);
     }
 
     private function int(string $key, ?string $salesChannelId): ?int

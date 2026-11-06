@@ -1,0 +1,226 @@
+{% sw_extends '@Storefront/storefront/page/account/_page.html.twig' %}
+
+{% block page_account_main_content %}
+    {% block page_account_rewards %}
+        {% set rewards = page.rewards %}
+        {% set isoCode = context.currency.isoCode %}
+
+        <div class="account-rewards">
+            {% block page_account_rewards_welcome %}
+                <div class="account-welcome">
+                    {% block page_account_rewards_welcome_headline %}
+                        <h1>{{ 'account.rewardsTitle'|trans|sw_sanitize }}</h1>
+                    {% endblock %}
+
+                    {% block page_account_rewards_welcome_intro %}
+                        <p>{{ 'account.rewardsWelcome'|trans|sw_sanitize }}</p>
+                    {% endblock %}
+                </div>
+            {% endblock %}
+
+            {% block page_account_rewards_overview %}
+                <div class="card account-rewards-overview">
+                    <div class="card-body">
+                        {% block page_account_rewards_overview_metrics %}
+                            <div class="account-rewards-metrics">
+                                {% block page_account_rewards_balance %}
+                                    <div class="account-rewards-metric">
+                                        <div class="account-rewards-metric-value">{{ rewards.pointsBalance }}</div>
+                                        <div class="account-rewards-metric-label">
+                                            {{ 'account.rewardsPointsBalance'|trans|sw_sanitize }}
+                                        </div>
+                                    </div>
+                                {% endblock %}
+
+                                {% block page_account_rewards_value %}
+                                    <div class="account-rewards-metric">
+                                        <div class="account-rewards-metric-value">
+                                            {{ rewards.pointValueInCurrency|currency(isoCode) }}
+                                        </div>
+                                        <div class="account-rewards-metric-label">
+                                            {{ 'account.rewardsPointValue'|trans|sw_sanitize }}
+                                        </div>
+                                    </div>
+                                {% endblock %}
+
+                                {% block page_account_rewards_tier %}
+                                    <div class="account-rewards-metric">
+                                        <div class="account-rewards-metric-value">
+                                            {% if page.currentTier %}
+                                                {{ page.currentTier.name }}
+                                            {% else %}
+                                                {{ 'account.rewardsNoTier'|trans|sw_sanitize }}
+                                            {% endif %}
+                                        </div>
+                                        <div class="account-rewards-metric-label">
+                                            {{ 'account.rewardsTier'|trans|sw_sanitize }}
+                                        </div>
+                                    </div>
+                                {% endblock %}
+                            </div>
+                        {% endblock %}
+
+                        {% block page_account_rewards_progress %}
+                            {% if page.nextTier %}
+                                {% set currentTierPoints = page.currentTier ? page.currentTier.minTierPoints : 0 %}
+                                {% set targetTierPoints = page.nextTier.minTierPoints %}
+                                {% set progressRange = targetTierPoints - currentTierPoints %}
+                                {% set progress = progressRange > 0 ? ((rewards.tierPoints - currentTierPoints) / progressRange * 100)|round(0, 'floor') : 0 %}
+                                {% set progress = progress < 0 ? 0 : (progress > 100 ? 100 : progress) %}
+
+                                <div class="account-rewards-progress">
+                                    {% block page_account_rewards_progress_header %}
+                                        <div class="account-rewards-progress-header">
+                                            <span>{{ 'account.rewardsProgressTo'|trans({ '%tier%': page.nextTier.name })|sw_sanitize }}</span>
+                                            <span>{{ rewards.tierPoints }} / {{ targetTierPoints }}</span>
+                                        </div>
+                                    {% endblock %}
+
+                                    {% block page_account_rewards_progress_bar %}
+                                        <div class="progress account-rewards-progress-bar"
+                                             role="progressbar"
+                                             aria-valuenow="{{ progress }}"
+                                             aria-valuemin="0"
+                                             aria-valuemax="100">
+                                            <div class="progress-bar" style="width: {{ progress }}%"></div>
+                                        </div>
+                                    {% endblock %}
+                                </div>
+                            {% endif %}
+                        {% endblock %}
+                    </div>
+                </div>
+            {% endblock %}
+
+            {% block page_account_rewards_redeem %}
+                {% set levels = rewards.redemptionLevels ?? [] %}
+
+                <div class="account-rewards-redeem mt-4">
+                    {% block page_account_rewards_redeem_title %}
+                        <h2 class="account-rewards-section-title">{{ 'account.rewardsRedeemTitle'|trans|sw_sanitize }}</h2>
+                    {% endblock %}
+
+                    {% block page_account_rewards_redeem_levels %}
+                        {% if levels is empty %}
+                            {% sw_include '@Storefront/storefront/utilities/alert.html.twig' with {
+                                type: 'info',
+                                content: 'account.rewardsRedeemEmpty'|trans|sw_sanitize
+                            } %}
+                        {% else %}
+                            <div class="account-rewards-redeem-grid">
+                                {% for level in levels %}
+                                    <div class="account-rewards-redeem-level{% if rewards.pointsBalance < level.points %} is-locked{% endif %}">
+                                        <div class="account-rewards-redeem-points">
+                                            {{ 'account.rewardsRedeemFrom'|trans({ '%points%': level.points })|sw_sanitize }}
+                                        </div>
+                                        <div class="account-rewards-redeem-rate">
+                                            {{ 'account.rewardsRedeemRate'|trans({
+                                                '%value%': level.valuePerPoint|number_format(4),
+                                                '%currency%': isoCode
+                                            })|sw_sanitize }}
+                                        </div>
+                                        {% if rewards.pointsBalance < level.points %}
+                                            <div class="account-rewards-redeem-locked">
+                                                {{ 'account.rewardsRedeemLocked'|trans({ '%points%': level.points - rewards.pointsBalance })|sw_sanitize }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    {% endblock %}
+
+                    {% block page_account_rewards_redeem_hint %}
+                        <p class="account-rewards-redeem-hint">
+                            {{ 'account.rewardsRedeemHint'|trans({
+                                '%min%': rewards.minRedeemablePoints,
+                                '%percent%': rewards.maxRedeemablePercent
+                            })|sw_sanitize }}
+                        </p>
+                    {% endblock %}
+                </div>
+            {% endblock %}
+
+            {% block page_account_rewards_earn %}
+                <div class="card account-rewards-earn mt-4">
+                    <div class="card-body">
+                        {% block page_account_rewards_earn_title %}
+                            <h2 class="card-title">{{ 'account.rewardsEarnTitle'|trans|sw_sanitize }}</h2>
+                        {% endblock %}
+
+                        {% block page_account_rewards_earn_rules %}
+                            <ul class="account-rewards-earn-rules">
+                                <li>
+                                    {{ 'account.rewardsEarnPoints'|trans({
+                                        '%currency%': isoCode,
+                                        '%points%': rewards.pointsPerCurrencyUnit
+                                    })|sw_sanitize }}
+                                </li>
+                                <li>
+                                    {{ 'account.rewardsEarnTierPoints'|trans({
+                                        '%points%': rewards.tierPointsPerCurrencyUnit
+                                    })|sw_sanitize }}
+                                </li>
+                                {% if page.currentTier and page.currentTier.benefits.earn_multiplier|default(1) > 1 %}
+                                    <li>
+                                        {{ 'account.rewardsEarnMultiplier'|trans({
+                                            '%tier%': page.currentTier.name,
+                                            '%multiplier%': page.currentTier.benefits.earn_multiplier|default(1)
+                                        })|sw_sanitize }}
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        {% endblock %}
+                    </div>
+                </div>
+            {% endblock %}
+
+            {% block page_account_rewards_tiers %}
+                {% if rewards.tiers is not empty %}
+                    <div class="card account-rewards-tiers mt-4">
+                        <div class="card-body">
+                            {% block page_account_rewards_tiers_title %}
+                                <h2 class="card-title">{{ 'account.rewardsTiersTitle'|trans|sw_sanitize }}</h2>
+                            {% endblock %}
+
+                            {% block page_account_rewards_tiers_table %}
+                                <div class="table-responsive">
+                                    <table class="table account-rewards-tiers-table">
+                                        <thead>
+                                            {% block page_account_rewards_tiers_table_head %}
+                                                <tr>
+                                                    <th scope="col">{{ 'account.rewardsTierColumnName'|trans|sw_sanitize }}</th>
+                                                    <th scope="col">{{ 'account.rewardsTierColumnTierPoints'|trans|sw_sanitize }}</th>
+                                                    <th scope="col">{{ 'account.rewardsTierColumnMultiplier'|trans|sw_sanitize }}</th>
+                                                    <th scope="col">{{ 'account.rewardsTierColumnDiscount'|trans|sw_sanitize }}</th>
+                                                </tr>
+                                            {% endblock %}
+                                        </thead>
+                                        <tbody>
+                                            {% block page_account_rewards_tiers_table_body %}
+                                                {% for tier in rewards.tiers %}
+                                                    <tr class="{% if page.currentTier and tier.id is same as(page.currentTier.id) %}account-rewards-tier-current fw-bold{% endif %}">
+                                                        <td>{{ tier.name }}</td>
+                                                        <td>{{ tier.minTierPoints }}</td>
+                                                        <td>{{ tier.benefits.earn_multiplier|default(1) }}</td>
+                                                        <td>
+                                                            {% if tier.benefits.cart_discount|default(0) > 0 %}
+                                                                {{ tier.benefits.cart_discount }}%
+                                                            {% else %}
+                                                                &ndash;
+                                                            {% endif %}
+                                                        </td>
+                                                    </tr>
+                                                {% endfor %}
+                                            {% endblock %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            {% endblock %}
+                        </div>
+                    </div>
+                {% endif %}
+            {% endblock %}
+        </div>
+    {% endblock %}
+{% endblock %}

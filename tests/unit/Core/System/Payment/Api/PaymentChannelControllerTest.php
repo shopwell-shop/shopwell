@@ -7,8 +7,8 @@ use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Payment\Api\PaymentChannelController;
 use Shopwell\Core\System\Payment\App\PaymentAppAuthenticator;
-use Shopwell\Core\System\Payment\PaymentException;
-use Shopwell\Core\System\Payment\Provider\PaymentConfigResolver;
+use Shopwell\Core\System\Payment\Exception\PaymentAppException;
+use Shopwell\Core\System\Payment\Provider\Config\PaymentConfigResolver;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 
@@ -25,7 +25,7 @@ class PaymentChannelControllerTest extends TestCase
     {
         $controller = $this->controller(PaymentControllerFixture::authenticator([]), $this->resolver());
 
-        $this->expectExceptionObject(PaymentException::missingAuthParameters(['app_id']));
+        $this->expectExceptionObject(PaymentAppException::missingAuthParameters(['app_id']));
 
         $controller->list(new Request());
     }
@@ -50,7 +50,7 @@ class PaymentChannelControllerTest extends TestCase
         $resolver = PaymentControllerFixture::configResolver(
             $providerRegistry,
             PaymentControllerFixture::channelRegistry($providerRegistry),
-            appProviders: [PaymentControllerFixture::appProvider($app->id)],
+            appAccounts: [PaymentControllerFixture::appAccount($app->id)],
             appChannels: [PaymentControllerFixture::appChannel($app->id)],
         );
 
@@ -63,9 +63,8 @@ class PaymentChannelControllerTest extends TestCase
         static::assertCount(1, $data['channels']);
         static::assertSame('alipay_h5', $data['channels'][0]['channel']);
         static::assertSame('alipay', $data['channels'][0]['provider']);
-        static::assertSame('redirect', $data['channels'][0]['flow']);
-        static::assertNull($data['channels'][0]['source_app_id']);
-        static::assertFalse($data['channels'][0]['inherited']);
+        static::assertSame(['redirect'], $data['channels'][0]['interactions']);
+        static::assertArrayNotHasKey('source_app_id', $data['channels'][0]);
     }
 
     public function testAnInvalidSignatureIsRejected(): void
@@ -76,7 +75,7 @@ class PaymentChannelControllerTest extends TestCase
 
         $request = PaymentControllerFixture::signedRequest('client-a', 'wrong-secret', Request::METHOD_GET, self::PATH);
 
-        $this->expectExceptionObject(PaymentException::invalidSignature('client-a'));
+        $this->expectExceptionObject(PaymentAppException::invalidSignature('client-a'));
 
         $controller->list($request);
     }

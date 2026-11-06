@@ -5,7 +5,6 @@ namespace Shopwell\Core\Framework\Script\Api;
 use Psr\Log\LoggerInterface;
 use Shopwell\Core\Framework\Adapter\Cache\CacheCompressor;
 use Shopwell\Core\Framework\Adapter\Cache\Http\HttpCacheKeyGenerator;
-use Shopwell\Core\Framework\Adapter\Request\RequestParamHelper;
 use Shopwell\Core\Framework\Feature;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Routing\StoreApiRouteScope;
@@ -62,10 +61,7 @@ class ScriptStoreApiRoute
         // hook: store-api-{hook}
         $this->executor->execute($responseHook);
 
-        $fields = new ResponseFields(
-            RequestParamHelper::get($request, 'includes', []),
-            RequestParamHelper::get($request, 'excludes', []),
-        );
+        $fields = ResponseFields::fromRequest($request);
 
         $symfonyResponse = $this->scriptResponseEncoder->encodeToSymfonyResponse(
             $responseHook->getScriptResponse(),

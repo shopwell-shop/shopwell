@@ -24,4 +24,3 @@ Shopwell.Service('privileges').addPrivilegeMappingEntry({
         },
     },
 });
-

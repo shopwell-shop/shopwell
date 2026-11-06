@@ -12,20 +12,21 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
 use Shopwell\Core\Framework\Event\NestedEventCollection;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Payment\Account\PaymentAccountEntity;
+use Shopwell\Core\System\Payment\Api\Struct\PaymentTransferDraft;
+use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppAccount\PaymentAppAccountEntity;
 use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppChannel\PaymentAppChannelEntity;
-use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppProvider\PaymentAppProviderEntity;
 use Shopwell\Core\System\Payment\App\PaymentAppCollection;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
 use Shopwell\Core\System\Payment\App\PaymentCredentialCipher;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayFactory;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
 use Shopwell\Core\System\Payment\PaymentException;
+use Shopwell\Core\System\Payment\Product\PaymentInteraction;
+use Shopwell\Core\System\Payment\Product\PaymentProduct;
 use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
 use Shopwell\Core\System\Payment\Provider\PaymentProvider;
 use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;
-use Shopwell\Core\System\Payment\Transfer\Api\Struct\PaymentTransferDraft;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferBooking;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferCollection;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferEntity;
@@ -36,6 +37,8 @@ use Shopwell\Core\System\Payment\Transfer\PaymentTransferService;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferStateHandler;
 use Shopwell\Core\System\StateMachine\Loader\InitialStateIdLoader;
 use Shopwell\Core\System\StateMachine\StateMachineRegistry;
+use Shopwell\Tests\Unit\Core\System\Payment\Account\_fixtures\PaymentAccountLockStub;
+use Shopwell\Tests\Unit\Core\System\Payment\NumberRangeFixture;
 use Symfony\Component\Clock\MockClock;
 
 /**
@@ -146,7 +149,7 @@ class PaymentTransferBookingTest extends TestCase
     public function testAProviderTheAppDidNotAuthorizeIsRefused(): void
     {
         $app = $this->payableApp();
-        $app->providers = [self::PROVIDER => $this->authorization(self::PROVIDER, false)];
+        $app->accounts = [self::PROVIDER => $this->authorization(self::PROVIDER, false)];
 
         $booking = $this->booking($app);
 
@@ -361,7 +364,7 @@ class PaymentTransferBookingTest extends TestCase
         static::assertSame('CNY', $row['currency']);
         static::assertSame(['note' => 'October rent'], $row['metadata']);
         static::assertSame(0, $row['submitAttempts']);
-        static::assertSame('state-created', $row['stateId']);
+        static::assertSame('state-created', $row['statusId']);
         // two characters of prefix, the moment of the booking, eight random ones - far below the 30 the
         // interfaces allow, and unique enough for two operators booking in the same second
         static::assertMatchesRegularExpression('/^TF261021120000[0-9A-F]{8}$/', $row['outNo']);
@@ -466,7 +469,17 @@ class PaymentTransferBookingTest extends TestCase
 
         $this->repository = new RecordingTransferRepository($existing, $booked);
 
-        $recipientService = new PaymentTransferRecipientService($recipientRepository, $cipher, $clock);
+        if ($providers === false) {
+            $registry = new PaymentProviderRegistry([]);
+        } else {
+            $registry = new PaymentProviderRegistry($providers === []
+                ? [$this->provider(self::PROVIDER, [self::CHANNEL => ['CNY']])]
+                : $providers);
+        }
+
+        // the services read the payout rules from the very same registry the booking resolves the
+        // interface with - two registries in one test would be two truths
+        $recipientService = new PaymentTransferRecipientService($recipientRepository, $cipher, $clock, $registry);
 
         $transferService = new PaymentTransferService(
             $this->repository,
@@ -476,15 +489,11 @@ class PaymentTransferBookingTest extends TestCase
             $cipher,
             $this->initialStateIdLoader(),
             $clock,
+            $registry,
+            NumberRangeFixture::generator('PT1001'),
+            PaymentTransferRulesFixture::resolvedConfig($registry),
+            new PaymentAccountLockStub(),
         );
-
-        if ($providers === false) {
-            $registry = new PaymentProviderRegistry([]);
-        } else {
-            $registry = new PaymentProviderRegistry($providers === []
-                ? [$this->provider(self::PROVIDER, [self::CHANNEL => ['CNY']])]
-                : $providers);
-        }
 
         return new PaymentTransferBooking($appRepository, $registry, $recipientService, $transferService, $clock);
     }
@@ -517,7 +526,7 @@ class PaymentTransferBookingTest extends TestCase
     private function payableApp(): PaymentAppEntity
     {
         $app = $this->app();
-        $app->providers = [self::PROVIDER => $this->authorization(self::PROVIDER, true)];
+        $app->accounts = [self::PROVIDER => $this->authorization(self::PROVIDER, true)];
         $app->channels = [self::CHANNEL => $this->appChannel(self::CHANNEL, true)];
 
         return $app;
@@ -536,11 +545,16 @@ class PaymentTransferBookingTest extends TestCase
         return $app;
     }
 
-    private function authorization(string $provider, bool $enabled): PaymentAppProviderEntity
+    private function authorization(string $provider, bool $enabled): PaymentAppAccountEntity
     {
-        $authorization = new PaymentAppProviderEntity();
+        $authorization = new PaymentAppAccountEntity();
         $authorization->id = 'authorization-' . $provider;
-        $authorization->providerTechnicalName = $provider;
+        $authorization->accountId = 'account-id';
+        $account = new PaymentAccountEntity();
+        $account->id = 'account-id';
+        $account->providerTechnicalName = $provider;
+        $account->active = true;
+        $authorization->account = $account;
         $authorization->enabled = $enabled;
 
         return $authorization;
@@ -565,11 +579,12 @@ class PaymentTransferBookingTest extends TestCase
         $declared = [];
 
         foreach ($channels as $channel => $currencies) {
-            $declared[$channel] = new PaymentChannel(
+            $declared[$channel] = new PaymentProduct(
                 technicalName: $channel,
                 providerTechnicalName: $name,
+                method: $name,
                 label: $channel,
-                flow: PaymentFlow::REDIRECT,
+                interactions: [PaymentInteraction::REDIRECT],
                 currencies: $currencies,
             );
         }
@@ -578,10 +593,12 @@ class PaymentTransferBookingTest extends TestCase
             technicalName: $name,
             label: $name,
             credentials: [],
-            channels: $declared,
+            products: $declared,
             gatewayFactory: static::createStub(PaymentGatewayFactory::class),
             notificationExtractor: static::createStub(PaymentNotificationExtractorInterface::class),
             capabilities: $capabilities,
+            // the rules of the real declaration of this interface, never a matrix invented by the test
+            transferRules: PaymentTransferRulesFixture::rulesOf($name),
         );
     }
 
@@ -608,6 +625,7 @@ class PaymentTransferBookingTest extends TestCase
         $transfer = new PaymentTransferEntity();
         $transfer->id = 'transfer-id';
         $transfer->paymentAppId = 'app-id';
+        $transfer->accountId = 'account-id';
         $transfer->transferNo = 'PT2610211200ABCDEF0123';
         $transfer->outNo = 'TAKEN0001';
         $transfer->recipientId = 'recipient-id';

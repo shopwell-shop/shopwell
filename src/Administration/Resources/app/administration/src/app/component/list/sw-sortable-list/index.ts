@@ -60,6 +60,8 @@ const defaultScrollOnDragConf = {
 export default Shopwell.Component.wrapComponentConfig({
     template,
 
+    emits: ['items-sorted'],
+
     props: {
         items: {
             type: Array as PropType<Array<Entity<keyof EntitySchema.EntityKeys>>>,

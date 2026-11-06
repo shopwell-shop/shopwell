@@ -81,7 +81,7 @@
                         {{ paymentOrderLabel(item) }}
                     </router-link>
 
-                    <span v-else>-</span>
+                    <span v-else>–</span>
                 </template>
                 {% endblock %}
 
@@ -108,7 +108,7 @@
                         v-if="item.refundedAt"
                         :date="item.refundedAt"
                     />
-                    <span v-else>-</span>
+                    <span v-else>–</span>
                 </template>
                 {% endblock %}
 

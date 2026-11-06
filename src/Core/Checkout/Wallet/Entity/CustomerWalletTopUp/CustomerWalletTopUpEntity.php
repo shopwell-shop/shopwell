@@ -17,8 +17,6 @@ class CustomerWalletTopUpEntity extends Entity
 
     final public const STATE_OPEN = 'open';
 
-    final public const STATE_PAID = 'paid';
-
     final public const STATE_CREDITED = 'credited';
 
     final public const STATE_FAILED = 'failed';
@@ -36,8 +34,6 @@ class CustomerWalletTopUpEntity extends Entity
     protected string $state = self::STATE_OPEN;
 
     protected ?string $paymentNo = null;
-
-    protected ?string $providerTechnicalName = null;
 
     protected ?string $channelTechnicalName = null;
 
@@ -113,16 +109,6 @@ class CustomerWalletTopUpEntity extends Entity
     public function setPaymentNo(?string $paymentNo): void
     {
         $this->paymentNo = $paymentNo;
-    }
-
-    public function getProviderTechnicalName(): ?string
-    {
-        return $this->providerTechnicalName;
-    }
-
-    public function setProviderTechnicalName(?string $providerTechnicalName): void
-    {
-        $this->providerTechnicalName = $providerTechnicalName;
     }
 
     public function getChannelTechnicalName(): ?string

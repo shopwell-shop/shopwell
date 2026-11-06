@@ -3,6 +3,7 @@
 namespace Shopwell\Tests\Unit\Core\Checkout\Wallet\Subscriber;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Checkout\Cart\LineItem\LineItem;
 use Shopwell\Core\Checkout\Order\Aggregate\OrderCustomer\OrderCustomerEntity;
@@ -12,7 +13,8 @@ use Shopwell\Core\Checkout\Order\OrderCollection;
 use Shopwell\Core\Checkout\Order\OrderEntity;
 use Shopwell\Core\Checkout\Order\OrderStates;
 use Shopwell\Core\Checkout\Wallet\Cart\WalletCartProcessor;
-use Shopwell\Core\Checkout\Wallet\Service\WalletService;
+use Shopwell\Core\Checkout\Wallet\Service\WalletAccountService;
+use Shopwell\Core\Checkout\Wallet\Service\WalletPaymentService;
 use Shopwell\Core\Checkout\Wallet\Subscriber\WalletOrderSubscriber;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\Log\Package;
@@ -32,50 +34,35 @@ class WalletOrderSubscriberTest extends TestCase
     {
         $context = Context::createDefaultContext()->createWithVersionId(Uuid::randomHex());
 
-        $walletService = static::createMock(WalletService::class);
-        $walletService->expects($this->never())->method('consume');
-
-        $this->createSubscriber($walletService, [$this->createOrder('customer-id', Uuid::randomHex(), [])])
+        $this->createSubscriber([$this->createOrder('customer-id', Uuid::randomHex(), [])], $this->paymentsThatNeverDebit())
             ->onOrderStateChange($this->createEvent('order', Uuid::randomHex(), OrderStates::STATE_COMPLETED, $context));
     }
 
     public function testIgnoresEntityOtherThanOrder(): void
     {
-        $walletService = static::createMock(WalletService::class);
-        $walletService->expects($this->never())->method('consume');
-
-        $this->createSubscriber($walletService, [$this->createOrder('customer-id', Uuid::randomHex(), [])])
+        $this->createSubscriber([$this->createOrder('customer-id', Uuid::randomHex(), [])], $this->paymentsThatNeverDebit())
             ->onOrderStateChange($this->createEvent('customer', Uuid::randomHex(), OrderStates::STATE_COMPLETED));
     }
 
     public function testIgnoresStateOtherThanCompleted(): void
     {
-        $walletService = static::createMock(WalletService::class);
-        $walletService->expects($this->never())->method('consume');
-
-        $this->createSubscriber($walletService, [$this->createOrder('customer-id', Uuid::randomHex(), [])])
+        $this->createSubscriber([$this->createOrder('customer-id', Uuid::randomHex(), [])], $this->paymentsThatNeverDebit())
             ->onOrderStateChange($this->createEvent('order', Uuid::randomHex(), OrderStates::STATE_OPEN));
     }
 
     public function testIgnoresUnknownOrder(): void
     {
-        $walletService = static::createMock(WalletService::class);
-        $walletService->expects($this->never())->method('consume');
-
-        $this->createSubscriber($walletService, [])
+        $this->createSubscriber([], $this->paymentsThatNeverDebit())
             ->onOrderStateChange($this->createEvent('order', Uuid::randomHex(), OrderStates::STATE_COMPLETED));
     }
 
     public function testIgnoresOrderWithoutCustomer(): void
     {
-        $walletService = static::createMock(WalletService::class);
-        $walletService->expects($this->never())->method('consume');
-
-        $this->createSubscriber($walletService, [$this->createOrder(null, Uuid::randomHex(), [])])
+        $this->createSubscriber([$this->createOrder(null, Uuid::randomHex(), [])], $this->paymentsThatNeverDebit())
             ->onOrderStateChange($this->createEvent('order', Uuid::randomHex(), OrderStates::STATE_COMPLETED));
     }
 
-    public function testConsumesWalletPaymentWhilePlacingTheOrder(): void
+    public function testDebitsTheWalletPaymentWhilePlacingTheOrder(): void
     {
         $customerId = Uuid::randomHex();
         $currencyId = Uuid::randomHex();
@@ -83,18 +70,19 @@ class WalletOrderSubscriberTest extends TestCase
 
         $lineItem = $this->createCreditLineItem(WalletCartProcessor::LINE_ITEM_ID, ['amount' => 30]);
 
-        $walletService = static::createMock(WalletService::class);
-        $walletService->method('getBalance')->willReturn(100.0);
-        $walletService->expects($this->once())->method('consume')
-            ->with($customerId, $currencyId, 30.0, $orderId, static::anything());
+        $payments = $this->createMock(WalletPaymentService::class);
+        $payments->expects($this->once())
+            ->method('debitForOrder')
+            ->with($orderId, $customerId, $currencyId, 30.0, static::anything());
 
         $this->createSubscriber(
-            $walletService,
             [$this->createOrder($customerId, $currencyId, [$lineItem], $orderId)],
+            $payments,
+            balance: 100.0,
         )->onOrderStateChange($this->createEvent('order', $orderId, OrderStates::STATE_COMPLETED));
     }
 
-    public function testCapsConsumptionToAvailableBalance(): void
+    public function testCapsTheDebitToTheAvailableBalance(): void
     {
         $customerId = Uuid::randomHex();
         $currencyId = Uuid::randomHex();
@@ -102,37 +90,57 @@ class WalletOrderSubscriberTest extends TestCase
 
         $lineItem = $this->createCreditLineItem(WalletCartProcessor::LINE_ITEM_ID, ['amount' => 150]);
 
-        $walletService = static::createMock(WalletService::class);
-        $walletService->method('getBalance')->willReturn(40.0);
-        $walletService->expects($this->once())->method('consume')
-            ->with($customerId, $currencyId, 40.0, $orderId, static::anything());
+        $payments = $this->createMock(WalletPaymentService::class);
+        $payments->expects($this->once())
+            ->method('debitForOrder')
+            ->with($orderId, $customerId, $currencyId, 40.0, static::anything());
 
         $this->createSubscriber(
-            $walletService,
             [$this->createOrder($customerId, $currencyId, [$lineItem], $orderId)],
+            $payments,
+            balance: 40.0,
         )->onOrderStateChange($this->createEvent('order', $orderId, OrderStates::STATE_COMPLETED));
     }
 
-    public function testDoesNotConsumeWithoutPaymentPayload(): void
+    public function testDoesNotDebitWithoutPaymentPayload(): void
     {
-        $walletService = static::createMock(WalletService::class);
-        $walletService->expects($this->never())->method('getBalance');
-        $walletService->expects($this->never())->method('consume');
+        $wallets = $this->createMock(WalletAccountService::class);
+        $wallets->expects($this->never())->method('balance');
 
         $this->createSubscriber(
-            $walletService,
             [$this->createOrder(Uuid::randomHex(), Uuid::randomHex(), [])],
+            $this->paymentsThatNeverDebit(),
+            $wallets,
         )->onOrderStateChange($this->createEvent('order', Uuid::randomHex(), OrderStates::STATE_COMPLETED));
+    }
+
+    private function paymentsThatNeverDebit(): WalletPaymentService&MockObject
+    {
+        $payments = $this->createMock(WalletPaymentService::class);
+        $payments->expects($this->never())->method('debitForOrder');
+
+        return $payments;
     }
 
     /**
      * @param list<OrderEntity> $orders
      */
-    private function createSubscriber(WalletService $walletService, array $orders): WalletOrderSubscriber
-    {
+    private function createSubscriber(
+        array $orders,
+        WalletPaymentService $payments,
+        ?WalletAccountService $wallets = null,
+        float $balance = 0.0,
+    ): WalletOrderSubscriber {
+        if ($wallets === null) {
+            $stub = static::createStub(WalletAccountService::class);
+            $stub->method('balance')->willReturn($balance);
+            $wallets = $stub;
+        }
+
         return new WalletOrderSubscriber(
             StaticEntityRepository::of(OrderCollection::class, $orders === [] ? [[]] : [$orders]),
-            $walletService,
+            $wallets,
+            $payments,
         );
     }
 

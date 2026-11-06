@@ -9,7 +9,7 @@ use Payum\Core\GatewayAwareInterface;
 use Payum\Core\GatewayAwareTrait;
 use Payum\Core\Request\Generic;
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\System\Payment\PaymentException;
+use Shopwell\Core\System\Payment\Exception\PaymentGatewayException;
 use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
 
 /**
@@ -22,6 +22,11 @@ use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
  * Every action names the api it works with in `$apiClass` - payum validates what it injects against
  * it - and overrides `api()` with a covariant return type, so it can call the methods of its concrete
  * api without a cast.
+ *
+ * That injection is also why an action is **not** a stateless service: the api and the gateway are
+ * written onto it at execution time. The instance the container holds is therefore only a prototype,
+ * and {@see PaymentGatewayFactory::create()} gives every gateway its own clone - otherwise the api of
+ * one payment would leak into the next one that runs on the same action.
  *
  * Every action also names the capability it implements. That is the single source of truth for what an
  * interface can do: the capability set of an interface is the union of the capabilities of its actions,
@@ -54,13 +59,13 @@ abstract class AbstractPaymentAction implements ActionInterface, ApiAwareInterfa
     public function setApi($api): void
     {
         if (!$api instanceof $this->apiClass) {
-            throw PaymentException::unsupportedApi(static::class, \is_object($api) ? $api::class : \gettype($api));
+            throw PaymentGatewayException::unsupportedApi(static::class, \is_object($api) ? $api::class : \gettype($api));
         }
 
         // a declaration may name a class the api does not extend, so the guarantee of the base class
         // is re-checked instead of assumed
         if (!$api instanceof AbstractPaymentApi) {
-            throw PaymentException::unsupportedApi(static::class, $api::class);
+            throw PaymentGatewayException::unsupportedApi(static::class, $api::class);
         }
 
         $this->api = $api;
@@ -69,7 +74,7 @@ abstract class AbstractPaymentAction implements ActionInterface, ApiAwareInterfa
     protected function api(): AbstractPaymentApi
     {
         if (!$this->api instanceof AbstractPaymentApi) {
-            throw PaymentException::actionWithoutApi(static::class);
+            throw PaymentGatewayException::actionWithoutApi(static::class);
         }
 
         return $this->api;

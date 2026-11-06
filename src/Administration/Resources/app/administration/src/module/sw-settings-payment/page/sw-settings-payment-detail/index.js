@@ -40,11 +40,11 @@ export default {
             showDeleteModal: false,
             deletionInProcess: false,
             // the gateway channel of this payment method, loadable only for a saved method
-            gatewayProviders: [],
             gatewayApps: [],
             gatewayBinding: null,
             gatewayApp: null,
-            gatewayChannel: null,
+            gatewayMethod: null,
+            gatewayRoutingPolicy: 'priority',
             gatewayTaken: [],
             gatewayCollectThroughGateway: true,
             isGatewayLoading: false,
@@ -174,76 +174,35 @@ export default {
             return this.gatewaySelectedApp ? this.appLabel(this.gatewaySelectedApp) : '';
         },
 
-        /**
-         * Every channel the code knows, keyed by its technical name: the label lives in the interface
-         * declaration, the app only knows which channels it offers.
-         */
-        gatewayChannelCatalog() {
-            const catalog = {};
-
-            this.gatewayProviders.forEach((provider) => {
-                (provider.channels || []).forEach((channel) => {
-                    catalog[channel.channel] = {
-                        provider: provider.technicalName,
-                        label: channel.label,
-                        flow: channel.flow,
-                        // whether the platform offers the channel at all, i.e. the merchant switched it on
-                        platformEnabled: channel.enabled,
-                    };
-                });
-            });
-
-            return catalog;
-        },
-
-        /**
-         * The channels of the selected app, as far as the platform offers them. A channel another
-         * payment method already collects through on that app is offered but disabled and names the
-         * method in the way: the operator sees why it is not selectable instead of learning it from a
-         * rejected save.
-         *
-         * A channel that is opened by an sdk (`flow === 'sdk'`) is not offered at all: it belongs to an
-         * app that renders the payment itself, and the checkout refuses to hand a storefront payer over
-         * to it - after the order was placed. Binding one would produce a method that always fails.
-         */
-        gatewayChannelOptions() {
+        gatewayMethodOptions() {
             const app = this.gatewaySelectedApp;
-
             if (!app) {
                 return [];
             }
 
-            const catalog = this.gatewayChannelCatalog;
+            const methods = new Map();
+            (app.methods || []).forEach((method) => {
+                const taken = this.gatewayTaken.find(
+                    (item) => item.paymentAppId === app.id && item.methodTechnicalName === method.technicalName,
+                );
+                const label = this.displayLabel(method.translationKey);
+                methods.set(method.technicalName, {
+                    value: method.technicalName,
+                    label: taken
+                        ? this.$t('sw-settings-payment.detail.gatewayChannel.optionTakenBy', {
+                              name: taken.paymentMethodName,
+                              label,
+                          })
+                        : label,
+                    disabled: !!taken,
+                });
+            });
 
-            return (app.channels || [])
-                .filter((channel) => channel.enabled)
-                .map((channel) => {
-                    const known = catalog[channel.channelTechnicalName];
-
-                    if (!known || !known.platformEnabled || known.flow === 'sdk') {
-                        return null;
-                    }
-
-                    const taken = this.gatewayTaken.find((item) => {
-                        return item.paymentAppId === app.id && item.channelTechnicalName === channel.channelTechnicalName;
-                    });
-
-                    return {
-                        value: channel.channelTechnicalName,
-                        label: taken
-                            ? this.$t('sw-settings-payment.detail.gatewayChannel.optionTakenBy', {
-                                  name: taken.paymentMethodName,
-                                  label: this.displayLabel(known.label),
-                              })
-                            : this.displayLabel(known.label),
-                        disabled: !!taken,
-                    };
-                })
-                .filter((option) => option !== null);
+            return Array.from(methods.values());
         },
 
         gatewayHasChannels() {
-            return this.gatewayChannelOptions.length > 0;
+            return this.gatewayMethodOptions.length > 0;
         },
 
         gatewayBindingAppLabel() {
@@ -256,14 +215,17 @@ export default {
             return app ? this.appLabel(app) : this.gatewayBinding.paymentAppId;
         },
 
-        gatewayBindingChannelLabel() {
+        gatewayBindingMethodLabel() {
             if (!this.gatewayBinding) {
                 return '';
             }
 
-            const channel = this.gatewayChannelCatalog[this.gatewayBinding.channelTechnicalName];
+            const app = this.gatewayApps.find((item) => item.id === this.gatewayBinding.paymentAppId);
+            const method = (app?.methods || []).find(
+                (item) => item.technicalName === this.gatewayBinding.methodTechnicalName,
+            );
 
-            return channel ? this.displayLabel(channel.label) : this.gatewayBinding.channelTechnicalName;
+            return method ? this.displayLabel(method.translationKey) : this.gatewayBinding.methodTechnicalName;
         },
 
         /**
@@ -275,7 +237,7 @@ export default {
                 return true;
             }
 
-            if (!this.gatewayApp || !this.gatewayChannel) {
+            if (!this.gatewayApp || !this.gatewayMethod || !this.gatewayRoutingPolicy.trim()) {
                 return true;
             }
 
@@ -285,7 +247,8 @@ export default {
 
             return (
                 this.gatewayBinding.paymentAppId === this.gatewayApp &&
-                this.gatewayBinding.channelTechnicalName === this.gatewayChannel
+                this.gatewayBinding.methodTechnicalName === this.gatewayMethod &&
+                this.gatewayBinding.routingPolicy === this.gatewayRoutingPolicy
             );
         },
 
@@ -294,7 +257,7 @@ export default {
          * the gateway. Saving is what changes the handler, so the operator is told that.
          */
         gatewayShowCollectHint() {
-            return !this.gatewayCollectThroughGateway && !!this.gatewayChannel;
+            return !this.gatewayCollectThroughGateway && !!this.gatewayMethod;
         },
 
         ...mapPropertyErrors('paymentMethod', ['name', 'technicalName']),
@@ -312,10 +275,10 @@ export default {
          * not a valid selection anymore once the account changes.
          */
         gatewayApp() {
-            const available = this.gatewayChannelOptions.map((option) => option.value);
+            const available = this.gatewayMethodOptions.map((option) => option.value);
 
-            if (this.gatewayChannel && !available.includes(this.gatewayChannel)) {
-                this.gatewayChannel = null;
+            if (this.gatewayMethod && !available.includes(this.gatewayMethod)) {
+                this.gatewayMethod = null;
             }
         },
     },
@@ -493,7 +456,6 @@ export default {
          */
         async loadGatewayChannel() {
             if (!this.paymentMethod || this.isNewPaymentMethod) {
-                this.gatewayProviders = [];
                 this.gatewayApps = [];
                 this.gatewayBinding = null;
 
@@ -503,15 +465,7 @@ export default {
             this.isGatewayLoading = true;
 
             try {
-                const [providers, apps, channel] = await Promise.all([
-                    this.paymentGatewayService.listProviders(),
-                    this.paymentGatewayService.listApps(),
-                    this.paymentGatewayService.getPaymentMethodChannel(this.paymentMethodId),
-                ]);
-
-                this.gatewayProviders = providers;
-                // a switched off app cannot collect, so it is not offered as an account
-                this.gatewayApps = apps.filter((app) => app.active);
+                const channel = await this.paymentGatewayService.getPaymentMethodChannel(this.paymentMethodId);
                 this.applyGatewayChannel(channel);
             } catch (error) {
                 this.createNotificationError({
@@ -531,6 +485,9 @@ export default {
         applyGatewayChannel(channel) {
             const answer = channel || {};
 
+            if (answer.apps) {
+                this.gatewayApps = answer.apps.filter((app) => app.active);
+            }
             this.gatewayBinding = answer.binding || null;
             this.gatewayTaken = answer.taken || [];
             this.gatewayCollectThroughGateway = answer.collectThroughGateway !== false;
@@ -539,7 +496,8 @@ export default {
                 : answer.paymentApp
                   ? answer.paymentApp.id
                   : null;
-            this.gatewayChannel = this.gatewayBinding ? this.gatewayBinding.channelTechnicalName : null;
+            this.gatewayMethod = this.gatewayBinding ? this.gatewayBinding.methodTechnicalName : null;
+            this.gatewayRoutingPolicy = this.gatewayBinding?.routingPolicy || 'priority';
         },
 
         /**
@@ -563,8 +521,9 @@ export default {
             try {
                 const channel = await this.paymentGatewayService.savePaymentMethodChannel(
                     this.paymentMethodId,
-                    this.gatewayChannel,
+                    this.gatewayMethod,
                     this.gatewayApp,
+                    this.gatewayRoutingPolicy,
                 );
 
                 this.applyGatewayChannel(channel);

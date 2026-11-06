@@ -1,0 +1,338 @@
+{% block sw_system_user_list %}
+<sw-page class="sw-system-user-list">
+
+    {% block sw_system_user_list_search_bar %}
+    <template #search-bar>
+        <sw-search-bar
+            initial-search-type="user"
+            :initial-search="term"
+            @search="onSearch"
+        />
+    </template>
+    {% endblock %}
+
+    {% block sw_system_user_list_smart_bar_header %}
+    <template #smart-bar-header>
+        <h2>
+            {% block sw_system_user_list_smart_bar_header_title %}
+            <span>{{ $t('sw-system.general.mainMenuItemSystem') }}</span>
+
+            <mt-icon
+                name="regular-chevron-right-xs"
+                size="12px"
+            />
+
+            <span>{{ $t('sw-system.navigation.user') }}</span>
+            {% endblock %}
+
+            {% block sw_system_user_list_smart_bar_header_amount %}
+            <span
+                v-if="!isLoading"
+                class="sw-page__smart-bar-amount"
+            >
+                ({{ total }})
+            </span>
+            {% endblock %}
+        </h2>
+    </template>
+    {% endblock %}
+
+    {% block sw_system_user_list_smart_bar_actions %}
+    <template #smart-bar-actions>
+        {% block sw_system_user_list_smart_bar_actions_invite %}
+        <mt-button
+            v-if="isSso"
+            v-tooltip="{
+                message: $t('sw-privileges.tooltip.warning'),
+                disabled: acl.can('users_and_permissions.creator'),
+                showOnDisabledElements: true
+            }"
+            class="sw-system-user-list__button-invite"
+            variant="primary"
+            :disabled="!acl.can('users_and_permissions.creator') || undefined"
+            size="default"
+            @click="openInvitationModal"
+        >
+            {{ $t('sw-system.sso.inviteButtonLabel') }}
+        </mt-button>
+        {% endblock %}
+
+        {% block sw_system_user_list_smart_bar_actions_create %}
+        <mt-button
+            v-else
+            v-tooltip="{
+                message: $t('sw-privileges.tooltip.warning'),
+                disabled: acl.can('users_and_permissions.creator'),
+                showOnDisabledElements: true
+            }"
+            class="sw-system-user-list__button-create"
+            variant="primary"
+            :disabled="!acl.can('users_and_permissions.creator') || undefined"
+            size="default"
+            @click="$router.push({ name: 'sw.system.user.create' })"
+        >
+            {{ $t('sw-system.users.general.labelCreateNewUser') }}
+        </mt-button>
+        {% endblock %}
+    </template>
+    {% endblock %}
+
+    {% block sw_system_user_list_content %}
+    <template #content>
+        {% block sw_system_user_list_content_inner %}
+        <div class="sw-system-user-list__content">
+
+            {% block sw_system_user_list_empty_state %}
+            <mt-empty-state
+                v-if="!isLoading && !total"
+                centered
+                :icon="$route.meta.$module.icon"
+                :headline="hasActiveSearchOrFilter ? $t('sw-system.users.emptyState.noResultTitle') : $t('sw-system.users.emptyState.noUserTitle')"
+                :description="hasActiveSearchOrFilter ? $t('sw-empty-state.messageNoResultSubline') : $t('sw-system.users.emptyState.description')"
+            >
+                <template
+                    v-if="!hasActiveSearchOrFilter"
+                    #button
+                >
+                    <mt-button
+                        v-tooltip="{
+                            message: $t('sw-privileges.tooltip.warning'),
+                            disabled: acl.can('users_and_permissions.creator'),
+                            showOnDisabledElements: true
+                        }"
+                        variant="primary"
+                        :disabled="!acl.can('users_and_permissions.creator') || undefined"
+                        @click="$router.push({ name: 'sw.system.user.create' })"
+                    >
+                        {{ $t('sw-system.users.general.labelCreateNewUser') }}
+                    </mt-button>
+                </template>
+            </mt-empty-state>
+            {% endblock %}
+
+            {% block sw_system_user_list_grid %}
+            <sw-entity-listing
+                v-else-if="isLoading || users"
+                ref="swSystemUserGrid"
+                class="sw-system-user-list-grid"
+                identifier="sw-system-user-list"
+                :data-source="users"
+                :columns="userColumns"
+                :repository="userRepository"
+                :sort-by="currentSortBy"
+                :sort-direction="sortDirection"
+                :detail-route="userDetailRoute"
+                :show-selection="false"
+                :is-loading="isLoading"
+                :disable-data-fetching="true"
+                :allow-inline-edit="false"
+                :allow-view="acl.can('users_and_permissions.viewer') || undefined"
+                :allow-edit="acl.can('users_and_permissions.editor') || undefined"
+                :allow-delete="acl.can('users_and_permissions.deleter') || undefined"
+                @page-change="onPageChange"
+                @column-sort="onSortColumn"
+            >
+                {% block sw_system_user_list_grid_columns_username %}
+                <template #column-username="{ item }">
+                    <div class="sw-system-user-list__user-cell">
+                        <sw-avatar
+                            size="32px"
+                            :name="item.name || item.username"
+                            variant="square"
+                            :source-context="item"
+                        />
+
+                        <div class="sw-system-user-list__user-cell-labels">
+                            <mt-link
+                                class="sw-system-user-list__user-cell-username"
+                                :to="{ name: userDetailRouterLink, params: { id: item.id } }"
+                            >
+                                {{ item.username }}
+                            </mt-link>
+
+                            <span
+                                v-if="item.name && item.name !== item.username"
+                                class="sw-system-user-list__user-cell-name"
+                            >
+                                {{ item.name }}
+                            </span>
+                        </div>
+                    </div>
+                </template>
+                {% endblock %}
+
+                {% block sw_system_user_list_grid_columns_acl_roles %}
+                <template #column-aclRoles="{ item }">
+                    <div
+                        v-if="item.aclRoles && item.aclRoles.length > 0"
+                        class="sw-system-user-list__roles"
+                    >
+                        <mt-badge
+                            v-for="role in item.aclRoles.slice(0, 3)"
+                            :key="role.id"
+                            class="sw-system-user-list__role-badge"
+                            size="small"
+                            variant="neutral"
+                        >
+                            {{ role.name }}
+                        </mt-badge>
+
+                        <mt-badge
+                            v-if="item.aclRoles.length > 3"
+                            class="sw-system-user-list__role-badge-more"
+                            size="small"
+                            variant="tertiary"
+                        >
+                            +{{ item.aclRoles.length - 3 }}
+                        </mt-badge>
+                    </div>
+
+                    <span
+                        v-else-if="item.admin"
+                        class="sw-data-grid__cell-value"
+                    >
+                        {{ $t('sw-system.users.user-detail.labelAdministrator') }}
+                    </span>
+
+                    <span
+                        v-else
+                        class="sw-system-user-list__roles-empty"
+                    >
+                        {{ $t('sw-system.users.user-grid.noRoles') }}
+                    </span>
+                </template>
+                {% endblock %}
+
+                {% block sw_system_user_list_grid_columns_active %}
+                <template #column-active="{ item }">
+                    <sw-system-user-sso-status-label :user="item" />
+                </template>
+                {% endblock %}
+
+                {% block sw_system_user_list_grid_columns_created_at %}
+                <template #column-createdAt="{ item }">
+                    <sw-time-ago :date="item.createdAt" />
+                </template>
+                {% endblock %}
+
+                {% block sw_system_user_list_grid_columns_actions %}
+                <template #more-actions="{ item }">
+                    {% block sw_system_user_list_grid_columns_actions_toggle_active %}
+                    <sw-context-menu-item
+                        class="sw-system-user-list__user-toggle-active-action"
+                        :disabled="!acl.can('users_and_permissions.editor') || undefined"
+                        @click="onToggleActive(item)"
+                    >
+                        {{ item.active ? $t('sw-system.users.user-grid.actionDisable') : $t('sw-system.users.user-grid.actionEnable') }}
+                    </sw-context-menu-item>
+                    {% endblock %}
+                </template>
+                {% endblock %}
+
+                {% block sw_system_user_list_grid_columns_delete_action %}
+                <template #delete-action="{ item }">
+                    <sw-context-menu-item
+                        class="sw-system-user-list__user-delete-action"
+                        variant="danger"
+                        :disabled="!acl.can('users_and_permissions.deleter') || undefined"
+                        @click="onDelete(item)"
+                    >
+                        {{ $t('global.default.delete') }}
+                    </sw-context-menu-item>
+                </template>
+                {% endblock %}
+
+                {% block sw_system_user_list_grid_pagination %}
+                <template #pagination>
+                    <sw-pagination
+                        :page="page"
+                        :limit="limit"
+                        :total="total"
+                        :total-visible="7"
+                        @page-change="onPageChange"
+                    />
+                </template>
+                {% endblock %}
+            </sw-entity-listing>
+            <sw-extension-component-section position-identifier="sw-system-user-list" />
+            {% endblock %}
+        </div>
+        {% endblock %}
+    </template>
+    {% endblock %}
+
+    {% block sw_system_user_list_sidebar %}
+    <template #sidebar>
+        <sw-sidebar class="sw-system-user-list__sidebar">
+            {% block sw_system_user_list_sidebar_refresh %}
+            <sw-sidebar-item
+                icon="regular-undo"
+                :title="$t('sw-system.users.list.titleSidebarItemRefresh')"
+                @click="onRefresh"
+            />
+            {% endblock %}
+
+            {% block sw_system_user_list_sidebar_filter %}
+            <sw-sidebar-filter-panel
+                entity="user"
+                :store-key="storeKey"
+                :filters="listFilters"
+                :defaults="defaultFilters"
+                :active-filter-number="activeFilterNumber"
+                @criteria-changed="updateCriteria"
+            />
+            {% endblock %}
+        </sw-sidebar>
+    </template>
+    {% endblock %}
+
+    {% block sw_system_user_list_delete_modal %}
+    <sw-modal
+        v-if="isConfirmDeleteModalOpen && itemToDelete"
+        :title="$t('global.default.warning')"
+        variant="small"
+        class="sw-system-user-list__delete-modal"
+        @modal-close="onCloseDeleteModal"
+    >
+        <p class="sw-system-user-list__confirm-delete-text">
+            {{ $t('sw-system.users.user-grid.textModalDelete', { name: itemToDelete.name }, 0) }}
+        </p>
+
+        <template #modal-footer>
+            <mt-button
+                size="small"
+                variant="secondary"
+                @click="onCloseDeleteModal"
+            >
+                {{ $t('global.default.cancel') }}
+            </mt-button>
+
+            <mt-button
+                variant="critical"
+                size="small"
+                @click="onConfirmDelete(itemToDelete)"
+            >
+                {{ $t('global.default.delete') }}
+            </mt-button>
+        </template>
+    </sw-modal>
+    {% endblock %}
+
+    {% block sw_system_user_list_invitation_modal %}
+    <sw-system-user-sso-invitation-modal
+        v-if="showInvitationModal"
+        @modal-close="closeInvitationModal"
+        @user-invited="onUserInvited"
+        @invitation-failed="invitationFailed"
+    />
+    {% endblock %}
+
+    {% block sw_system_user_list_verify_user_modal %}
+    <sw-verify-user-modal
+        v-if="isConfirmingPasswordModalOpen"
+        @verified="deleteUser"
+        @close="onCloseConfirmPasswordModal"
+    />
+    {% endblock %}
+</sw-page>
+{% endblock %}

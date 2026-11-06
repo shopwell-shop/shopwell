@@ -51,11 +51,14 @@
                         {% block sw_blog_detail_meta %}
                             <div class="blog-detail__meta">
                                 {% if page.showAuthor and page.author %}
-                                    <span class="blog-detail__author">{{ page.author.name }}</span>
+                                    <span class="blog-detail__author">
+                                        <span class="blog-detail__avatar" aria-hidden="true">{{ page.author.name|slice(0, 1) }}</span>
+                                        {{ page.author.name }}
+                                    </span>
                                 {% endif %}
 
                                 {% if blog.publishedAt %}
-                                    <time datetime="{{ blog.publishedAt|date('c') }}">{{ blog.publishedAt|date('Y-m-d') }}</time>
+                                    <time datetime="{{ blog.publishedAt|date('c') }}">{{ blog.publishedAt|format_date('medium', locale=app.request.locale) }}</time>
                                 {% endif %}
 
                                 {% if page.showReadingTime %}
@@ -63,6 +66,30 @@
                                         {{ 'blog.detail.readingTime'|trans({ '%minutes%': page.readingTimeMinutes })|sw_sanitize }}
                                     </span>
                                 {% endif %}
+                            </div>
+                        {% endblock %}
+
+                        {% block sw_blog_detail_share %}
+                            <div class="blog-detail__share">
+                                <span class="blog-detail__share-label">{{ 'blog.detail.share.label'|trans|sw_sanitize }}</span>
+
+                                {% block sw_blog_detail_share_copy %}
+                                    <button type="button"
+                                            class="blog-detail__share-button"
+                                            data-blog-share-copy
+                                            data-blog-share-copy-copied-label="{{ 'blog.detail.share.copied'|trans|striptags }}">
+                                        {{ 'blog.detail.share.copyLink'|trans|sw_sanitize }}
+                                    </button>
+                                {% endblock %}
+
+                                {% block sw_blog_detail_share_x %}
+                                    <a class="blog-detail__share-button"
+                                       href="https://twitter.com/intent/tweet?text={{ blog.title|url_encode }}&url={{ app.request.uri|url_encode }}"
+                                       target="_blank"
+                                       rel="noopener noreferrer">
+                                        {{ 'blog.detail.share.x'|trans|sw_sanitize }}
+                                    </a>
+                                {% endblock %}
                             </div>
                         {% endblock %}
                     </header>
@@ -85,6 +112,29 @@
                     <div class="blog-detail__layout">
                         {% block sw_blog_detail_content %}
                             <div class="blog-detail__content">
+                                {% block sw_blog_detail_toc_mobile %}
+                                    {#
+                                        The desktop table of contents lives in the sticky rail. On a phone
+                                        the rail is gone, so the same entries render as a collapsible
+                                        block at the top of the body - a reader on a phone loses the
+                                        outline entirely otherwise.
+                                    #}
+                                    {% if page.tocEnabled and page.toc is not empty %}
+                                        <details class="blog-detail__toc-mobile">
+                                            <summary class="blog-detail__toc-mobile-summary">
+                                                {{ 'blog.detail.toc'|trans|sw_sanitize }}
+                                            </summary>
+                                            <ul class="blog-detail__toc-mobile-list">
+                                                {% for entry in page.toc %}
+                                                    <li class="blog-detail__toc-mobile-item blog-detail__toc-mobile-item--h{{ entry.level }}">
+                                                        <a href="#{{ entry.id }}">{{ entry.title }}</a>
+                                                    </li>
+                                                {% endfor %}
+                                            </ul>
+                                        </details>
+                                    {% endif %}
+                                {% endblock %}
+
                                 {% block sw_blog_detail_content_text %}
                                     {#
                                         The layout of the entry replaces the body and nothing else: the
@@ -144,6 +194,37 @@
                             {% endif %}
                         {% endblock %}
                     </div>
+                {% endblock %}
+
+                {% block sw_blog_detail_prev_next %}
+                    {# Both sides are optional: the first entry has no previous one, the last has no next. #}
+                    {% if page.previousBlog is not null or page.nextBlog is not null %}
+                        <nav class="blog-detail__prev-next" aria-label="{{ 'blog.detail.prevNextLabel'|trans|striptags }}">
+                            <div class="blog-detail__prev-next-slot">
+                                {% block sw_blog_detail_prev_next_previous %}
+                                    {% if page.previousBlog is not null %}
+                                        <a href="{{ seoUrl('frontend.blog.detail', { blogId: page.previousBlog.id }) }}"
+                                           class="blog-detail__prev-next-link blog-detail__prev-next-link--previous">
+                                            <span class="blog-detail__prev-next-direction">{{ 'blog.detail.previous'|trans|sw_sanitize }}</span>
+                                            <span class="blog-detail__prev-next-title">{{ page.previousBlog.title }}</span>
+                                        </a>
+                                    {% endif %}
+                                {% endblock %}
+                            </div>
+
+                            <div class="blog-detail__prev-next-slot blog-detail__prev-next-slot--next">
+                                {% block sw_blog_detail_prev_next_next %}
+                                    {% if page.nextBlog is not null %}
+                                        <a href="{{ seoUrl('frontend.blog.detail', { blogId: page.nextBlog.id }) }}"
+                                           class="blog-detail__prev-next-link blog-detail__prev-next-link--next">
+                                            <span class="blog-detail__prev-next-direction">{{ 'blog.detail.next'|trans|sw_sanitize }}</span>
+                                            <span class="blog-detail__prev-next-title">{{ page.nextBlog.title }}</span>
+                                        </a>
+                                    {% endif %}
+                                {% endblock %}
+                            </div>
+                        </nav>
+                    {% endif %}
                 {% endblock %}
 
                 {% block sw_blog_detail_comments %}

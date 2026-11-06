@@ -23,7 +23,7 @@ type OrderReturnReason = EntitySchema.Entity<'order_return_reason'>;
  * Editing happens in a modal and not inline: the label is translated, so a row carries one label per
  * language and an inline cell would always silently write the current one.
  */
-// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+/** @private */
 export default defineComponent({
     template,
 

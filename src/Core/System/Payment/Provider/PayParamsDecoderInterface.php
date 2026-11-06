@@ -3,7 +3,7 @@
 namespace Shopwell\Core\System\Payment\Provider;
 
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\System\Payment\Api\Struct\PayParams;
+use Shopwell\Core\System\Payment\Gateway\Struct\PaymentHandover;
 
 /**
  * Turns the answer an interface recorded for its last capture back into the parameters a payer has to
@@ -23,7 +23,7 @@ interface PayParamsDecoderInterface
     /**
      * @param array<string, mixed> $response the recorded response payload of the last capture
      *
-     * @return PayParams|null null when the answer does not carry enough to hand the payer over
+     * @return PaymentHandover|null null when the answer does not carry enough to hand the payer over
      */
-    public function payParamsFromResponse(array $response): ?PayParams;
+    public function payParamsFromResponse(array $response): ?PaymentHandover;
 }

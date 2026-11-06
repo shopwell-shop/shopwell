@@ -67,7 +67,7 @@ const TYPE_VARIANTS: Record<string, string> = {
  * shape as every other list of the administration: full page, entity listing, sidebar filter panel and
  * two empty states.
  */
-// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+/** @private */
 export default defineComponent({
     template,
 
@@ -132,8 +132,7 @@ export default defineComponent({
             if (term !== '') {
                 criteria.addFilter(
                     Criteria.multi('OR', [
-                        Criteria.contains('wallet.customer.firstName', term),
-                        Criteria.contains('wallet.customer.lastName', term),
+                        Criteria.contains('wallet.customer.name', term),
                         Criteria.contains('wallet.customer.customerNumber', term),
                         Criteria.contains('externalReference', term),
                     ]),
@@ -229,7 +228,7 @@ export default defineComponent({
         async getList(): Promise<void> {
             this.isLoading = true;
 
-            const filterService = Shopwell.Service('filterService') as unknown as {
+            const filterService = Shopwell.Service('filterService') as {
                 mergeWithStoredFilters: (storeKey: string, criteria: CriteriaType) => Promise<CriteriaType>;
             };
 
@@ -314,18 +313,13 @@ export default defineComponent({
         },
 
         customerLabel(transaction: WalletTransaction): string {
-            const customer = transaction.wallet?.customer as {
-                firstName?: string | null;
-                lastName?: string | null;
-                customerNumber?: string | null;
-            } | null;
+            const customer = transaction.wallet?.customer;
 
             if (!customer) {
                 return transaction.wallet?.customerId ?? '–';
             }
 
-            // the association is loaded as a plain entity, so the two name fields are read off a record
-            const name = [customer.firstName, customer.lastName].filter(Boolean).join(' ');
+            const name = customer.name;
 
             return customer.customerNumber ? `${name} (${customer.customerNumber})` : name;
         },

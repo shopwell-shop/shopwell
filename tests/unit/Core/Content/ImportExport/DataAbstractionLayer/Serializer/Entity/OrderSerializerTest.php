@@ -381,7 +381,6 @@ class OrderSerializerTest extends TestCase
                 'name' => 'customer-first-name customer-last-name',
                 'remoteAddress' => null,
                 'gender' => 'customer-salutation-id',
-                'title' => null,
                 'vatIds' => null,
             ]),
             'orderNumber' => '10000',
@@ -515,7 +514,6 @@ class OrderSerializerTest extends TestCase
                     'name' => 'customer-first-name customer-last-name',
                     'remoteAddress' => null,
                     'gender' => 'customer-salutation-id',
-                    'title' => null,
                     'vatIds' => null,
                 ]),
                 'transactions' => null,
@@ -546,9 +544,10 @@ class OrderSerializerTest extends TestCase
                 'primaryOrderDeliveryVersionId' => null,
                 'primaryOrderTransactionVersionId' => null,
                 // the reverse sides of the loyalty, wallet and payment domains
-                'customerPointTransactions' => null,
+                'loyaltyPointTransactions' => null,
                 'customerWalletTransactions' => null,
                 'paymentOrders' => null,
+                'pointLots' => null,
             ]
         );
     }

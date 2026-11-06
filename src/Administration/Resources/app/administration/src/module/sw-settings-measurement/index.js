@@ -34,6 +34,18 @@ Shopwell.Module.register('sw-settings-measurement', {
         },
     },
 
+    navigation: [
+        {
+            id: 'sw-settings-measurement',
+            label: 'sw-settings-measurement.general.mainMenuItemGeneral',
+            parent: 'sw-settings',
+            path: 'sw.settings.measurement.index',
+            icon: 'regular-balance-scale',
+            position: 130,
+            privilege: 'system.system_config',
+        },
+    ],
+
     settingsItem: {
         group: 'general',
         to: 'sw.settings.measurement.index',

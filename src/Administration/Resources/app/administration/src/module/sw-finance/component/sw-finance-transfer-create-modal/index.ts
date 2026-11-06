@@ -4,7 +4,7 @@
 import { defineComponent } from 'vue';
 import template from './sw-finance-transfer-create-modal.html.twig';
 import './sw-finance-transfer-create-modal.scss';
-import { providerLabelKey, yuanToMinorUnits } from '../../service/payment-transfer.api.service';
+import { providerLabelKey, toMinorUnits } from '../../service/payment-transfer.api.service';
 import type { PaymentTransferPayload } from '../../service/payment-transfer.api.service';
 
 const { Mixin } = Shopwell;
@@ -98,10 +98,10 @@ type BankInfo = {
  * fields it insists on. The matrix is deliberately not re-implemented here - a second truth in the
  * browser would silently diverge from the one the server validates against.
  *
- * The one conversion the form owns is yuan to fen, and it is a string split (`yuanToMinorUnits`), never
- * a float multiplication.
+ * The one conversion the form owns is the typed amount to the smallest unit of the selected currency,
+ * and it is a string split (`toMinorUnits`), never a float multiplication.
  */
-// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+/** @private */
 export default defineComponent({
     template,
 
@@ -259,11 +259,13 @@ export default defineComponent({
         },
 
         /**
-         * The amount the booking is sent with. `yuanToMinorUnits()` already refuses zero and the shape of
-         * a non amount, so this is the stored form of a payable input and nothing else.
+         * The amount the booking is sent with, converted with the exponent of the currency the operator
+         * picked - a payout in JPY has no minor unit, so a fixed "yuan times a hundred" would book a
+         * hundred times the amount. `toMinorUnits()` already refuses zero and the shape of a non
+         * amount, so this is the stored form of a payable input and nothing else.
          */
         amountInMinorUnits(): number | null {
-            return yuanToMinorUnits(this.amount);
+            return toMinorUnits(this.amount, this.currency);
         },
 
         isIdentityValueTooLong(): boolean {
@@ -282,6 +284,21 @@ export default defineComponent({
             return this.holderName.length > HOLDER_NAME_MAX_LENGTH;
         },
 
+        isRecipientIncomplete(): boolean {
+            if (this.recipientSource === 'existing') {
+                return this.recipientId === null;
+            }
+
+            return (
+                this.identityType === null ||
+                this.identityValue.trim() === '' ||
+                this.isIdentityValueTooLong ||
+                this.isHolderNameTooLong ||
+                (this.requiresHolderName && this.holderName.trim() === '') ||
+                (this.requiresBankInfo && this.bankAccountType === null)
+            );
+        },
+
         /**
          * The same conditions the server enforces, evaluated in the browser so the operator learns about
          * a mistake before a round trip - the server stays the authority.
@@ -295,18 +312,7 @@ export default defineComponent({
                 return true;
             }
 
-            if (this.recipientSource === 'existing') {
-                if (this.recipientId === null) {
-                    return true;
-                }
-            } else if (
-                this.identityType === null ||
-                this.identityValue.trim() === '' ||
-                this.isIdentityValueTooLong ||
-                this.isHolderNameTooLong ||
-                (this.requiresHolderName && this.holderName.trim() === '') ||
-                (this.requiresBankInfo && this.bankAccountType === null)
-            ) {
+            if (this.isRecipientIncomplete) {
                 return true;
             }
 

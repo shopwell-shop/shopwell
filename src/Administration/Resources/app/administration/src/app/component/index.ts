@@ -100,6 +100,7 @@ export default () => {
     );
     Shopwell.Component.register('sw-hidden-iframes', () => import('src/app/component/structure/sw-hidden-iframes/index'));
     Shopwell.Component.register('sw-error', () => import('src/app/component/structure/sw-error/index'));
+    Shopwell.Component.register('sw-not-found', () => import('src/app/component/structure/sw-not-found/index'));
     Shopwell.Component.register(
         'sw-discard-changes-modal',
         () => import('src/app/component/structure/sw-discard-changes-modal/index'),

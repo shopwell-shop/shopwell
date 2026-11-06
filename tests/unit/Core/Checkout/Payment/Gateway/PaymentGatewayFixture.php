@@ -2,6 +2,7 @@
 
 namespace Shopwell\Tests\Unit\Core\Checkout\Payment\Gateway;
 
+use Doctrine\DBAL\Connection;
 use Payum\Core\GatewayInterface;
 use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\TestCase;
@@ -23,44 +24,55 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Currency\CurrencyEntity;
+use Shopwell\Core\System\Payment\Account\PaymentAccountCollection;
+use Shopwell\Core\System\Payment\Account\PaymentAccountEntity;
+use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppAccount\PaymentAppAccountCollection;
+use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppAccount\PaymentAppAccountEntity;
+use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppChannel\PaymentAppChannelCollection;
 use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppChannel\PaymentAppChannelEntity;
-use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppProvider\PaymentAppProviderEntity;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
 use Shopwell\Core\System\Payment\App\PaymentCredentialCipher;
 use Shopwell\Core\System\Payment\App\PaymentSignatureService;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayFactory;
+use Shopwell\Core\System\Payment\Integration\Alipay\Request\AlipayPayParamsDecoder;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
 use Shopwell\Core\System\Payment\Notification\PaymentNotifyUrlBuilder;
+use Shopwell\Core\System\Payment\Order\Aggregate\PaymentAttempt\PaymentAttemptCollection;
+use Shopwell\Core\System\Payment\Order\Aggregate\PaymentRefund\PaymentRefundCollection;
 use Shopwell\Core\System\Payment\Order\Aggregate\PaymentTransaction\PaymentTransactionCollection;
 use Shopwell\Core\System\Payment\Order\Aggregate\PaymentTransaction\PaymentTransactionEntity;
-use Shopwell\Core\System\Payment\Order\PaymentOrderCapture;
 use Shopwell\Core\System\Payment\Order\PaymentOrderCollection;
 use Shopwell\Core\System\Payment\Order\PaymentOrderEntity;
 use Shopwell\Core\System\Payment\Order\PaymentOrderPaidHandler;
 use Shopwell\Core\System\Payment\Order\PaymentOrderQueryResultHandler;
 use Shopwell\Core\System\Payment\Order\PaymentOrderReconciler;
 use Shopwell\Core\System\Payment\Order\PaymentOrderService;
+use Shopwell\Core\System\Payment\Order\PaymentOrderStarter;
 use Shopwell\Core\System\Payment\Order\PaymentOrderStateHandler;
-use Shopwell\Core\System\Payment\Order\Refund\PaymentRefundCollection;
-use Shopwell\Core\System\Payment\Order\Refund\PaymentRefundService;
-use Shopwell\Core\System\Payment\Order\Refund\PaymentRefundStateHandler;
-use Shopwell\Core\System\Payment\Provider\Alipay\AlipayPayParamsDecoder;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannelRegistry;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
-use Shopwell\Core\System\Payment\Provider\PaymentChannelConfigEntity;
-use Shopwell\Core\System\Payment\Provider\PaymentConfigResolver;
+use Shopwell\Core\System\Payment\Order\PaymentRefundService;
+use Shopwell\Core\System\Payment\Order\PaymentRefundStateHandler;
+use Shopwell\Core\System\Payment\Product\PaymentInteraction;
+use Shopwell\Core\System\Payment\Product\PaymentProduct;
+use Shopwell\Core\System\Payment\Product\PaymentProductRegistry;
+use Shopwell\Core\System\Payment\Product\PaymentScene;
+use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
+use Shopwell\Core\System\Payment\Provider\Config\PaymentChannelConfigEntity;
+use Shopwell\Core\System\Payment\Provider\Config\PaymentConfigResolver;
+use Shopwell\Core\System\Payment\Provider\Config\PaymentProviderConfigEntity;
 use Shopwell\Core\System\Payment\Provider\PaymentProvider;
-use Shopwell\Core\System\Payment\Provider\PaymentProviderConfigEntity;
 use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;
 use Shopwell\Core\System\Payment\Webhook\PaymentWebhookDispatcher;
 use Shopwell\Core\System\Payment\Webhook\PaymentWebhookSigner;
 use Shopwell\Core\System\StateMachine\Loader\InitialStateIdLoader;
 use Shopwell\Core\System\StateMachine\StateMachineRegistry;
+use Shopwell\Tests\Unit\Core\System\Payment\Account\_fixtures\PaymentAccountLockStub;
+use Shopwell\Tests\Unit\Core\System\Payment\Api\PaymentControllerFixture;
+use Shopwell\Tests\Unit\Core\System\Payment\NumberRangeFixture;
+use Shopwell\Tests\Unit\Core\System\Payment\Order\_fixtures\PaymentOrderRowLockStub;
+use Shopwell\Tests\Unit\Core\System\Payment\PaymentEventDispatcherFixture;
 use Symfony\Component\Clock\MockClock;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Routing\RouterInterface;
-use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 /**
@@ -134,23 +146,25 @@ final class PaymentGatewayFixture extends TestCase
     /**
      * @param list<string> $devices
      */
-    public static function channel(PaymentFlow $flow = PaymentFlow::REDIRECT, array $devices = []): PaymentChannel
+    public static function channel(string $flow = PaymentInteraction::REDIRECT, array $devices = []): PaymentProduct
     {
-        return new PaymentChannel(
+        return new PaymentProduct(
             technicalName: self::CHANNEL,
             providerTechnicalName: self::PROVIDER,
+            method: self::PROVIDER,
             label: 'Alipay H5',
-            flow: $flow,
-            devices: $devices,
+            interactions: [$flow],
+            capabilities: [PaymentCapability::CAPTURE, PaymentCapability::QUERY, PaymentCapability::REFUND, PaymentCapability::CLOSE],
+            scenes: array_map(static fn (string $device): PaymentScene => new PaymentScene('browser', $device), $devices),
         );
     }
 
     /**
      * @param list<string> $devices
      */
-    public static function channelRegistry(PaymentFlow $flow = PaymentFlow::REDIRECT, array $devices = []): PaymentChannelRegistry
+    public static function channelRegistry(string $flow = PaymentInteraction::REDIRECT, array $devices = []): PaymentProductRegistry
     {
-        return new PaymentChannelRegistry(self::providerRegistry($flow, devices: $devices));
+        return new PaymentProductRegistry(self::providerRegistry($flow, devices: $devices));
     }
 
     /**
@@ -159,7 +173,7 @@ final class PaymentGatewayFixture extends TestCase
      * @param list<string> $devices
      */
     public static function providerRegistry(
-        PaymentFlow $flow = PaymentFlow::REDIRECT,
+        string $flow = PaymentInteraction::REDIRECT,
         ?GatewayInterface $gateway = null,
         array $devices = []
     ): PaymentProviderRegistry {
@@ -174,10 +188,11 @@ final class PaymentGatewayFixture extends TestCase
                 technicalName: self::PROVIDER,
                 label: 'Alipay',
                 credentials: [],
-                channels: [self::CHANNEL => self::channel($flow, $devices)],
+                products: [self::CHANNEL => self::channel($flow, $devices)],
                 gatewayFactory: $gatewayFactory,
                 notificationExtractor: static::createStub(PaymentNotificationExtractorInterface::class),
                 payParamsDecoder: new AlipayPayParamsDecoder(),
+                capabilities: PaymentCapability::cases(),
             ),
         ]);
     }
@@ -188,15 +203,7 @@ final class PaymentGatewayFixture extends TestCase
      */
     public static function platformApp(): PlatformPaymentApp
     {
-        return new PlatformPaymentApp(
-            self::repository([self::platformAppEntity()]),
-            self::repository([self::appProvider()]),
-            self::repository([self::appChannel()]),
-            self::repository([self::providerConfig()]),
-            self::repository([self::channelConfig()]),
-            new PaymentChannelRegistry(self::providerRegistry()),
-            self::providerRegistry(),
-        );
+        return new PlatformPaymentApp(self::repository([self::platformAppEntity()]));
     }
 
     public static function platformAppEntity(): PaymentAppEntity
@@ -233,18 +240,32 @@ final class PaymentGatewayFixture extends TestCase
         return $app;
     }
 
-    public static function appProvider(): PaymentAppProviderEntity
+    public static function appAccount(): PaymentAppAccountEntity
     {
-        $appProvider = new PaymentAppProviderEntity();
+        $appProvider = new PaymentAppAccountEntity();
         $appProvider->id = 'app-provider-id';
         $appProvider->setUniqueIdentifier($appProvider->id);
         $appProvider->paymentAppId = self::PLATFORM_APP_ID;
-        $appProvider->providerTechnicalName = self::PROVIDER;
         $appProvider->enabled = true;
-        // the platform tenant collects on the platform level configuration, it inherits from nobody
-        $appProvider->sourceAppId = null;
+        $appProvider->accountId = self::account()->id;
+        $appProvider->account = self::account();
+        $appProvider->position = 0;
 
         return $appProvider;
+    }
+
+    public static function account(): PaymentAccountEntity
+    {
+        $account = new PaymentAccountEntity();
+        $account->id = 'platform-account-id';
+        $account->setUniqueIdentifier($account->id);
+        $account->providerTechnicalName = self::PROVIDER;
+        $account->name = 'Platform merchant';
+        $account->active = true;
+        $account->enabledProducts = [self::CHANNEL];
+        $account->credentials = self::cipher()->encrypt(['app_id' => 'platform-app-id']);
+
+        return $account;
     }
 
     public static function appChannel(): PaymentAppChannelEntity
@@ -266,7 +287,7 @@ final class PaymentGatewayFixture extends TestCase
         $providerConfig->setUniqueIdentifier($providerConfig->id);
         $providerConfig->providerTechnicalName = self::PROVIDER;
         $providerConfig->enabled = true;
-        $providerConfig->credentials = self::cipher()->encrypt(['app_id' => 'platform-app-id']);
+        $providerConfig->accountId = self::account()->id;
 
         return $providerConfig;
     }
@@ -285,18 +306,17 @@ final class PaymentGatewayFixture extends TestCase
 
     public static function configResolver(
         ?GatewayInterface $gateway = null,
-        PaymentFlow $flow = PaymentFlow::REDIRECT
+        string $flow = PaymentInteraction::REDIRECT
     ): PaymentConfigResolver {
         $providerRegistry = self::providerRegistry($flow, $gateway);
 
         return new PaymentConfigResolver(
             $providerRegistry,
-            new PaymentChannelRegistry($providerRegistry),
-            self::repository([self::appProvider()]),
-            self::repository([self::providerConfig()]),
-            self::repository([self::appChannel()]),
-            self::repository([self::channelConfig()]),
+            new PaymentProductRegistry($providerRegistry),
+            PaymentControllerFixture::repository(PaymentAppAccountCollection::class, [self::appAccount()]),
+            PaymentControllerFixture::repository(PaymentAppChannelCollection::class, [self::appChannel()]),
             self::cipher(),
+            PaymentControllerFixture::repository(PaymentAccountCollection::class, [self::account()]),
         );
     }
 
@@ -304,35 +324,38 @@ final class PaymentGatewayFixture extends TestCase
      * @param EntityRepository<PaymentOrderCollection> $paymentOrderRepository
      */
     public static function paymentOrderService(
-        EntityRepository $paymentOrderRepository,
-        ?PaymentConfigResolver $configResolver = null
+        EntityRepository $paymentOrderRepository
     ): PaymentOrderService {
         $initialStateIdLoader = static::createStub(InitialStateIdLoader::class);
         $initialStateIdLoader->method('get')->willReturn(self::createdStateId());
 
         return new PaymentOrderService(
             $paymentOrderRepository,
-            $configResolver ?? self::configResolver(),
             $initialStateIdLoader,
             new PaymentOrderStateHandler(static::createStub(StateMachineRegistry::class)),
             self::clock(),
+            NumberRangeFixture::generator('PG1001'),
+            new PaymentOrderRowLockStub(),
+            PaymentControllerFixture::repository(PaymentAttemptCollection::class),
         );
     }
 
     /**
      * @param EntityRepository<PaymentTransactionCollection> $transactionRepository
      */
-    public static function captureService(
+    public static function starterService(
         EntityRepository $transactionRepository,
-        PaymentConfigResolver $configResolver,
         PaymentOrderService $orderService
-    ): PaymentOrderCapture {
-        return new PaymentOrderCapture(
+    ): PaymentOrderStarter {
+        return new PaymentOrderStarter(
             $transactionRepository,
-            $configResolver,
+            PaymentControllerFixture::repository(PaymentAttemptCollection::class),
+            PaymentControllerFixture::repository(PaymentOrderCollection::class),
             $orderService,
             new PaymentNotifyUrlBuilder(new RequestStack(), 'https://shop.example.test'),
-            self::clock(),
+            NumberRangeFixture::generator('PX1001'),
+            new PaymentOrderRowLockStub(),
+            new PaymentAccountLockStub(),
         );
     }
 
@@ -344,25 +367,18 @@ final class PaymentGatewayFixture extends TestCase
         EntityRepository $paymentOrderRepository,
         EntityRepository $transactionRepository,
         ?GatewayInterface $gateway = null,
-        PaymentFlow $flow = PaymentFlow::REDIRECT
+        string $flow = PaymentInteraction::REDIRECT
     ): OrderPaymentStarter {
-        $configResolver = self::configResolver($gateway, $flow);
-        $orderService = self::paymentOrderService($paymentOrderRepository, $configResolver);
+        $orderService = self::paymentOrderService($paymentOrderRepository);
 
-        return new OrderPaymentStarter(
-            self::platformApp(),
-            self::providerRegistry($flow),
-            $orderService,
-            self::captureService($transactionRepository, $configResolver, $orderService),
-            self::router(),
-        );
+        return new OrderPaymentStarter($orderService, self::starterService($transactionRepository, $orderService), self::router());
     }
 
     public static function router(): RouterInterface
     {
         $router = static::createStub(RouterInterface::class);
         $router->method('generate')->willReturnCallback(
-            static fn (string $name, array $parameters = []): string => '/generated/' . $name . '/' . (string) ($parameters['paymentNo'] ?? '')
+            static fn (string $name, array $parameters = []): string => '/generated/' . $name . '/' . (string) ($parameters['orderId'] ?? '') . '/' . (string) ($parameters['paymentNo'] ?? '')
         );
 
         return $router;
@@ -379,8 +395,7 @@ final class PaymentGatewayFixture extends TestCase
         $webhooks = self::webhookService();
         $paidHandler = new PaymentOrderPaidHandler(
             $orderService,
-            $webhooks,
-            static::createStub(EventDispatcherInterface::class)
+            PaymentEventDispatcherFixture::create($webhooks)
         );
 
         return new PaymentOrderReconciler(
@@ -404,6 +419,7 @@ final class PaymentGatewayFixture extends TestCase
             static::createStub(HttpClientInterface::class),
             self::clock(),
             static::createStub(LoggerInterface::class),
+            static::createStub(Connection::class),
         );
     }
 
@@ -421,12 +437,13 @@ final class PaymentGatewayFixture extends TestCase
             $refundRepository,
             $configResolver,
             $orderService,
-            self::webhookService(),
+            PaymentEventDispatcherFixture::create(self::webhookService()),
             new PaymentNotifyUrlBuilder(new RequestStack(), 'https://shop.example.test'),
             new PaymentRefundStateHandler(static::createStub(StateMachineRegistry::class)),
             static::createStub(InitialStateIdLoader::class),
-            static::createStub(EventDispatcherInterface::class),
             self::clock(),
+            NumberRangeFixture::generator('PR1001'),
+            new PaymentOrderRowLockStub(),
         );
     }
 
@@ -446,10 +463,13 @@ final class PaymentGatewayFixture extends TestCase
         $order->paymentNo = 'PG-1';
         $order->outTradeNo = 'order-transaction-id';
         $order->paymentAppId = self::PLATFORM_APP_ID;
+        $attempt = PaymentControllerFixture::paymentAttempt($order->id, self::PLATFORM_APP_ID, self::PROVIDER, self::CHANNEL);
+        $attempt->accountId = self::account()->id;
+        $order->activeAttempt = $attempt;
+        $order->activeAttemptId = $attempt->id;
+        $order->attempts = [$attempt->id => $attempt];
         $order->orderId = 'order-id';
         $order->orderTransactionId = 'order-transaction-id';
-        $order->providerTechnicalName = self::PROVIDER;
-        $order->channelTechnicalName = self::CHANNEL;
         $order->amount = 1999;
         $order->currency = 'EUR';
         $order->subject = 'SW-1000';

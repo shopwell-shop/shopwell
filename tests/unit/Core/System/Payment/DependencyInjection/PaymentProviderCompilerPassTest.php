@@ -6,6 +6,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Payment\DependencyInjection\PaymentProviderCompilerPass;
+use Shopwell\Core\System\Payment\Exception\PaymentProviderException;
 use Shopwell\Core\System\Payment\PaymentException;
 use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;
 use Shopwell\Tests\Unit\Core\System\Payment\Provider\Fixtures\TestPaymentDecorator;
@@ -76,7 +77,7 @@ class PaymentProviderCompilerPassTest extends TestCase
         $container->register(TestPaymentProvider::class)
             ->addTag(PaymentProviderCompilerPass::PROVIDER_TAG, ['key' => 'test pay']);
 
-        $this->expectExceptionObject(PaymentException::invalidProviderName('test pay'));
+        $this->expectExceptionObject(PaymentProviderException::invalidProviderName('test pay'));
 
         (new PaymentProviderCompilerPass())->process($container);
     }
@@ -103,7 +104,7 @@ class PaymentProviderCompilerPassTest extends TestCase
         $container->register(TestPaymentProviderDuplicate::class)
             ->addTag(PaymentProviderCompilerPass::PROVIDER_TAG, ['key' => 'testpay', 'priority' => 0]);
 
-        $this->expectExceptionObject(PaymentException::duplicateProvider(
+        $this->expectExceptionObject(PaymentProviderException::duplicateProvider(
             'testpay',
             TestPaymentProvider::class,
             TestPaymentProviderDuplicate::class
@@ -160,7 +161,7 @@ class PaymentProviderCompilerPassTest extends TestCase
         $container->register(TestPaymentDecorator::class)
             ->addTag(PaymentProviderCompilerPass::PROVIDER_TAG, ['key' => 'testpay', 'priority' => 0]);
 
-        $this->expectExceptionObject(PaymentException::ambiguousProviderPriority(
+        $this->expectExceptionObject(PaymentProviderException::ambiguousProviderPriority(
             'testpay',
             0,
             TestPaymentProvider::class,

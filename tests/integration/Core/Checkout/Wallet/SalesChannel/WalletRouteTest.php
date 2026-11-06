@@ -4,7 +4,7 @@ namespace Shopwell\Tests\Integration\Core\Checkout\Wallet\SalesChannel;
 
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
-use Shopwell\Core\Checkout\Wallet\Service\WalletService;
+use Shopwell\Core\Checkout\Wallet\WalletTransactionTypes;
 use Shopwell\Core\Defaults;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
@@ -68,7 +68,7 @@ class WalletRouteTest extends TestCase
         static::getContainer()->get('customer_wallet_transaction.repository')->create([
             [
                 'customerWalletId' => $walletId,
-                'type' => WalletService::TRANSACTION_TYPE_TOP_UP,
+                'type' => WalletTransactionTypes::TOP_UP,
                 'amount' => 50.0,
                 'balanceAfter' => 50.0,
                 'currencyId' => Defaults::CURRENCY,
@@ -84,7 +84,7 @@ class WalletRouteTest extends TestCase
         static::assertSame(Defaults::CURRENCY, $response['wallets'][0]['currencyId']);
         static::assertEquals(50.0, $response['wallets'][0]['balance']);
         static::assertCount(1, $response['transactions']);
-        static::assertSame(WalletService::TRANSACTION_TYPE_TOP_UP, $response['transactions'][0]['type']);
+        static::assertSame(WalletTransactionTypes::TOP_UP, $response['transactions'][0]['type']);
         static::assertEquals(50.0, $response['transactions'][0]['amount']);
     }
 

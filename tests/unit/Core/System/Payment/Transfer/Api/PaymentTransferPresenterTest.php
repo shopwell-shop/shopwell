@@ -6,19 +6,16 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Payment\Account\PaymentAccountEntity;
+use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppAccount\PaymentAppAccountEntity;
 use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppChannel\PaymentAppChannelEntity;
-use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppProvider\PaymentAppProviderEntity;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
 use Shopwell\Core\System\Payment\App\PaymentCredentialCipher;
-use Shopwell\Core\System\Payment\Gateway\AbstractPaymentAction;
-use Shopwell\Core\System\Payment\Gateway\AbstractPaymentApi;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayFactory;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
-use Shopwell\Core\System\Payment\PaymentException;
-use Shopwell\Core\System\Payment\Provider\AbstractPaymentProvider;
+use Shopwell\Core\System\Payment\Product\PaymentInteraction;
+use Shopwell\Core\System\Payment\Product\PaymentProduct;
 use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
 use Shopwell\Core\System\Payment\Provider\PaymentProvider;
 use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;
 use Shopwell\Core\System\Payment\Provider\Transfer\PaymentTransferRules;
@@ -64,7 +61,7 @@ class PaymentTransferPresenterTest extends TestCase
     public function testAnEncryptedIdentityIsDecryptedAndMasked(): void
     {
         $cipher = $this->cipher();
-        $presenter = $this->presenter([]);
+        $presenter = $this->presenter();
 
         static::assertSame('zh****23', $presenter->maskIdentity($cipher->encryptValue('zhangsan123')));
         static::assertNull($presenter->maskIdentity(null));
@@ -77,8 +74,8 @@ class PaymentTransferPresenterTest extends TestCase
      */
     public function testAnUndecryptableIdentityYieldsNull(): void
     {
-        static::assertNull($this->presenter([])->maskIdentity('not-a-ciphertext'));
-        static::assertNull($this->presenter([])->maskIdentity(base64_encode('too-short')));
+        static::assertNull($this->presenter()->maskIdentity('not-a-ciphertext'));
+        static::assertNull($this->presenter()->maskIdentity(base64_encode('too-short')));
     }
 
     /**
@@ -87,7 +84,7 @@ class PaymentTransferPresenterTest extends TestCase
      */
     public function testATransferIsPresentedWithoutTheCredentialFields(): void
     {
-        $presenter = $this->presenter([]);
+        $presenter = $this->presenter();
         $recipient = $this->recipient();
         $transfer = $this->transfer([
             'recipient' => $recipient,
@@ -118,14 +115,14 @@ class PaymentTransferPresenterTest extends TestCase
 
     public function testATransferWithoutAConfirmPayloadSaysSo(): void
     {
-        $presented = $this->presenter([])->transfer($this->transfer());
+        $presented = $this->presenter()->transfer($this->transfer());
 
         static::assertFalse($presented['hasConfirmPayload']);
     }
 
     public function testTheStateIsPresentedWithItsTechnicalName(): void
     {
-        $presented = $this->presenter([])->transfer($this->transfer());
+        $presented = $this->presenter()->transfer($this->transfer());
 
         static::assertSame('created', $presented['state']['technicalName']);
         static::assertSame('state-created', $presented['state']['id']);
@@ -134,7 +131,7 @@ class PaymentTransferPresenterTest extends TestCase
 
     public function testARecipientsAnswerCarriesNoIdentityValue(): void
     {
-        $presented = $this->presenter([])->recipients([$this->recipient()]);
+        $presented = $this->presenter()->recipients([$this->recipient()]);
 
         static::assertCount(1, $presented);
         static::assertArrayNotHasKey('identityValue', $presented[0]);
@@ -157,20 +154,17 @@ class PaymentTransferPresenterTest extends TestCase
             holderNameThreshold: 200000,
         );
 
-        $presenter = $this->presenter([
-            $this->declaration('alipay', $alipayRules),
-            // declares capabilities but no payout rules - must not appear
-            $this->declaration('paypal', null),
-        ]);
+        $presenter = $this->presenter();
 
         $registry = $this->registry([
-            $this->provider('alipay', ['alipay_transfer' => $this->channel('alipay_transfer', 'alipay', ['CNY'])]),
+            $this->provider('alipay', ['alipay_transfer' => $this->channel('alipay_transfer', 'alipay', ['CNY'])], $alipayRules),
+            // declares capabilities but no payout rules - must not appear
             $this->provider('paypal', ['paypal_payout' => $this->channel('paypal_payout', 'paypal', ['USD'])]),
         ]);
 
         $app = $this->app('app-id', PaymentAppEntity::TYPE_PLATFORM);
         $app->assign([
-            'providers' => [
+            'accounts' => [
                 $this->authorization('alipay', true),
                 $this->authorization('paypal', true),
                 $this->authorization('stripe', false),
@@ -189,10 +183,11 @@ class PaymentTransferPresenterTest extends TestCase
         static::assertCount(1, $options['apps']);
         static::assertTrue($options['apps'][0]['isPlatform']);
 
-        static::assertCount(1, $options['apps'][0]['providers']);
-        $alipay = $options['apps'][0]['providers'][0];
+        static::assertCount(1, $options['apps'][0]['accounts']);
+        $alipay = $options['apps'][0]['accounts'][0];
 
         static::assertSame('alipay', $alipay['technicalName']);
+        static::assertSame('account-alipay', $alipay['accountId']);
         static::assertSame(['alipay_logon_id', 'bankcard'], $alipay['identityTypes']);
         static::assertSame(['CNY'], $alipay['currencies']);
         static::assertSame(['1', '2'], $alipay['bankAccountTypes']);
@@ -206,20 +201,20 @@ class PaymentTransferPresenterTest extends TestCase
 
     public function testAnAppWithoutPayoutCapableInterfacesOffersNoProviders(): void
     {
-        $presenter = $this->presenter([$this->declaration('alipay', null)]);
+        $presenter = $this->presenter();
         $registry = $this->registry([
             $this->provider('alipay', ['alipay_transfer' => $this->channel('alipay_transfer', 'alipay', ['CNY'])]),
         ]);
 
         $app = $this->app('app-id', PaymentAppEntity::TYPE_EXTERNAL);
         $app->assign([
-            'providers' => [$this->authorization('alipay', true)],
+            'accounts' => [$this->authorization('alipay', true)],
             'channels' => [$this->appChannel('alipay_transfer', true)],
         ]);
 
         $options = $presenter->options([$app], $registry);
 
-        static::assertSame([], $options['apps'][0]['providers']);
+        static::assertSame([], $options['apps'][0]['accounts']);
         static::assertFalse($options['apps'][0]['isPlatform']);
     }
 
@@ -228,12 +223,9 @@ class PaymentTransferPresenterTest extends TestCase
         return new PaymentCredentialCipher(self::SECRET);
     }
 
-    /**
-     * @param list<AbstractPaymentProvider> $declarations
-     */
-    private function presenter(array $declarations): PaymentTransferPresenter
+    private function presenter(): PaymentTransferPresenter
     {
-        return new PaymentTransferPresenter($this->cipher(), $declarations);
+        return new PaymentTransferPresenter($this->cipher());
     }
 
     /**
@@ -251,87 +243,50 @@ class PaymentTransferPresenterTest extends TestCase
         return new PaymentProviderRegistry($keyed);
     }
 
-    private function declaration(string $name, ?PaymentTransferRules $rules): AbstractPaymentProvider
-    {
-        return new class($name, $rules) extends AbstractPaymentProvider {
-            public function __construct(
-                private readonly string $name,
-                private readonly ?PaymentTransferRules $transferRules,
-            ) {
-            }
-
-            public function getName(): string
-            {
-                return $this->name;
-            }
-
-            public function getLabel(): string
-            {
-                return $this->name;
-            }
-
-            public function getApiClass(): string
-            {
-                return AbstractPaymentApi::class;
-            }
-
-            public function getActions(): array
-            {
-                return [];
-            }
-
-            public function getCaptureAction(): AbstractPaymentAction
-            {
-                throw PaymentException::invalidProviderDeclaration('a declaration of the presenter test captures nothing');
-            }
-
-            public function getNotificationExtractor(): PaymentNotificationExtractorInterface
-            {
-                throw PaymentException::invalidProviderDeclaration('a declaration of the presenter test notifies nothing');
-            }
-
-            public function getTransferRules(): ?PaymentTransferRules
-            {
-                return $this->transferRules;
-            }
-        };
-    }
-
     /**
-     * @param array<string, PaymentChannel> $channels
+     * @param array<string, PaymentProduct> $channels
      */
-    private function provider(string $name, array $channels): PaymentProvider
+    private function provider(string $name, array $channels, ?PaymentTransferRules $rules = null): PaymentProvider
     {
         return new PaymentProvider(
             technicalName: $name,
             label: $name,
             credentials: [],
-            channels: $channels,
+            products: $channels,
             gatewayFactory: static::createStub(PaymentGatewayFactory::class),
             notificationExtractor: static::createStub(PaymentNotificationExtractorInterface::class),
             capabilities: [PaymentCapability::TRANSFER],
+            // the presenter reads the rules from this snapshot, exactly like the services do
+            transferRules: $rules,
         );
     }
 
     /**
      * @param list<string> $currencies
      */
-    private function channel(string $name, string $provider, array $currencies): PaymentChannel
+    private function channel(string $name, string $provider, array $currencies): PaymentProduct
     {
-        return new PaymentChannel(
+        return new PaymentProduct(
             technicalName: $name,
             providerTechnicalName: $provider,
+            method: $provider,
             label: $name,
-            flow: PaymentFlow::REDIRECT,
+            interactions: [PaymentInteraction::REDIRECT],
             currencies: $currencies,
         );
     }
 
-    private function authorization(string $provider, bool $enabled): PaymentAppProviderEntity
+    private function authorization(string $provider, bool $enabled): PaymentAppAccountEntity
     {
-        $authorization = new PaymentAppProviderEntity();
+        $authorization = new PaymentAppAccountEntity();
         $authorization->id = 'authorization-' . $provider;
-        $authorization->providerTechnicalName = $provider;
+        $authorization->accountId = 'account-' . $provider;
+        $account = new PaymentAccountEntity();
+        $account->id = $authorization->accountId;
+        $account->name = $provider;
+        $account->providerTechnicalName = $provider;
+        $account->active = true;
+        $authorization->account = $account;
         $authorization->enabled = $enabled;
 
         return $authorization;

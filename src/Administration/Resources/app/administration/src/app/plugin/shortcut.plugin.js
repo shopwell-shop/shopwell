@@ -100,6 +100,13 @@ export default {
         }
 
         function handleKeyDown(event) {
+            // Not every `keydown` carries a key, browsers and extensions dispatch plain events under
+            // that name too. They can never match a shortcut, and reading `key` would crash the
+            // globally registered listener for the rest of the session.
+            if (typeof event.key !== 'string') {
+                return;
+            }
+
             if (event.repeat) {
                 return;
             }

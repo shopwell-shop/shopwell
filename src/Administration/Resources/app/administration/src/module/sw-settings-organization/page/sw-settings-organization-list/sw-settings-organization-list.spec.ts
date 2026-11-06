@@ -1,38 +1,18 @@
 /**
  * @sw-package framework
  */
-import { mount } from '@vue/test-utils';
+import { shallowMount } from '@vue/test-utils';
 import type { VueWrapper } from '@vue/test-utils';
 
-type OrganizationVm = {
-    organizations: Array<{
-        id: string;
-        name: string;
-        active: boolean;
-        units?: Array<{ id: string; parentId: string | null }>;
-    }>;
-    newOrganization: {
-        id: string;
-        name: string | null;
-        active: boolean;
-    };
-    showDeleteModal: string | null;
-    organizationRepository: {
-        save: jest.Mock;
-        delete: jest.Mock;
-    };
-    $router: { push: jest.Mock };
-    getUnitCount: (item: { units?: unknown[] }) => number;
-    onAddOrganization: () => void;
-    onCreateSave: () => Promise<void>;
-    onDelete: (id: string) => void;
-    onConfirmDelete: (id: string) => Promise<void>;
-};
+let saveSpy: jest.Mock;
+let deleteSpy: jest.Mock;
+let routerPushSpy: jest.Mock;
 
-type TypedWrapper = { vm: OrganizationVm } & VueWrapper;
-
-async function createWrapper(privileges: string[] = []): Promise<TypedWrapper> {
-    return mount(
+async function createWrapper(privileges: string[] = []): Promise<VueWrapper> {
+    saveSpy = jest.fn(() => Promise.resolve());
+    deleteSpy = jest.fn(() => Promise.resolve());
+    routerPushSpy = jest.fn(() => Promise.resolve());
+    return shallowMount(
         await wrapTestComponent('sw-settings-organization-list', {
             sync: true,
         }),
@@ -40,6 +20,7 @@ async function createWrapper(privileges: string[] = []): Promise<TypedWrapper> {
             global: {
                 renderStubDefaultSlot: true,
                 mocks: {
+                    $router: { push: routerPushSpy },
                     $route: {
                         query: {
                             page: 1,
@@ -67,8 +48,8 @@ async function createWrapper(privileges: string[] = []): Promise<TypedWrapper> {
                                         ],
                                     },
                                 ]),
-                            save: () => Promise.resolve(),
-                            delete: () => Promise.resolve(),
+                            save: saveSpy,
+                            delete: deleteSpy,
                             create: () => ({
                                 id: 'new-org-id',
                                 name: null,
@@ -91,25 +72,43 @@ async function createWrapper(privileges: string[] = []): Promise<TypedWrapper> {
                     <div class="sw-page">
                         <slot name="smart-bar-actions"></slot>
                         <slot name="content"></slot>
-                        <slot></slot>
                     </div>
                 `,
                     },
-                    'sw-card-view': true,
+                    'sw-card-view': { template: '<div><slot /></div>' },
+                    'mt-card': { template: '<section><slot name="grid"/><slot /></section>' },
+                    'mt-button': { props: ['disabled'], template: '<button :disabled="disabled"><slot /></button>' },
+                    'mt-text-field': {
+                        props: ['modelValue'],
+                        emits: ['update:modelValue'],
+                        template: `<input :value="modelValue" @input="$emit('update:modelValue', $event.target.value)" />`,
+                    },
+                    'mt-number-field': {
+                        props: ['modelValue'],
+                        emits: ['update:modelValue'],
+                        template: `<input type="number" :value="modelValue" @input="$emit('update:modelValue', Number($event.target.value))" />`,
+                    },
+                    'mt-switch': {
+                        props: ['modelValue'],
+                        emits: ['update:modelValue'],
+                        template: `<input type="checkbox" :checked="modelValue" @change="$emit('update:modelValue', $event.target.checked)" />`,
+                    },
                     'sw-ignore-class': true,
                     'sw-entity-listing': {
                         props: ['items', 'dataSource'],
                         template: `
                     <div>
-                        <template v-for="item in (dataSource || items)" :key="item.id">
+                        <div v-for="item in (dataSource || items)" :key="item.id" :data-row="item.id"><span>{{ item.name }}</span><span class="unit-count"><slot name="column-units" :item="item" /></span>
                             <slot name="actions" v-bind="{ item }"></slot>
-                            <slot name="action-modals" v-bind="{ item }"></slot>
-                        </template>
+                            <slot name="action-modals" v-bind="{ item }"></slot></div>
                     </div>`,
                     },
                     'sw-language-switch': true,
                     'sw-search-bar': true,
-                    'sw-context-menu-item': true,
+                    'sw-context-menu-item': {
+                        props: ['disabled'],
+                        template: '<button :disabled="disabled"><slot /></button>',
+                    },
                     'sw-loader': true,
                     'sw-extension-component-section': true,
                     'sw-label': true,
@@ -125,11 +124,11 @@ async function createWrapper(privileges: string[] = []): Promise<TypedWrapper> {
                 },
             },
         },
-    ) as unknown as TypedWrapper;
+    );
 }
 
 describe('module/sw-settings-organization/page/sw-settings-organization-list', () => {
-    let wrapper: TypedWrapper;
+    let wrapper: VueWrapper;
 
     beforeEach(async () => {
         wrapper = await createWrapper();
@@ -152,24 +151,18 @@ describe('module/sw-settings-organization/page/sw-settings-organization-list', (
     });
 
     it('should load organizations with their unit count', () => {
-        expect(wrapper.vm.organizations).toHaveLength(1);
-        expect(wrapper.vm.getUnitCount(wrapper.vm.organizations[0])).toBe(2);
+        expect(wrapper.findAll('[data-row]')).toHaveLength(1);
+        expect(wrapper.get('.unit-count').text()).toBe('2');
     });
 
     it('should create an organization and route to its detail page', async () => {
         wrapper = await createWrapper(['organization.creator']);
         await flushPromises();
 
-        const routerPushSpy = jest.fn(() => Promise.resolve());
-        wrapper.vm.$router.push = routerPushSpy;
-
-        wrapper.vm.onAddOrganization();
-        wrapper.vm.newOrganization.name = 'Shopwell HQ';
-
-        const saveSpy = jest.fn(() => Promise.resolve());
-        wrapper.vm.organizationRepository.save = saveSpy;
-
-        await wrapper.vm.onCreateSave();
+        await wrapper.get('.sw-settings-organization-list__add-organization').trigger('click');
+        await wrapper.get('.sw-settings-organization-list__create-name').setValue('Shopwell HQ');
+        await wrapper.findAll('.sw-settings-organization-list__create-modal button')[1].trigger('click');
+        await flushPromises();
 
         expect(saveSpy).toHaveBeenCalledWith(
             expect.objectContaining({
@@ -183,12 +176,9 @@ describe('module/sw-settings-organization/page/sw-settings-organization-list', (
         wrapper = await createWrapper(['organization.creator']);
         await flushPromises();
 
-        wrapper.vm.onAddOrganization();
-
-        const saveSpy = jest.fn(() => Promise.resolve());
-        wrapper.vm.organizationRepository.save = saveSpy;
-
-        await wrapper.vm.onCreateSave();
+        await wrapper.get('.sw-settings-organization-list__add-organization').trigger('click');
+        await wrapper.findAll('.sw-settings-organization-list__create-modal button')[1].trigger('click');
+        await flushPromises();
 
         expect(saveSpy).not.toHaveBeenCalled();
     });
@@ -197,13 +187,11 @@ describe('module/sw-settings-organization/page/sw-settings-organization-list', (
         wrapper = await createWrapper(['organization.deleter']);
         await flushPromises();
 
-        const deleteSpy = jest.fn(() => Promise.resolve());
-        wrapper.vm.organizationRepository.delete = deleteSpy;
-
-        wrapper.vm.onDelete('org-id');
-        expect(wrapper.vm.showDeleteModal).toBe('org-id');
-
-        await wrapper.vm.onConfirmDelete('org-id');
+        await wrapper.get('.sw-entity-listing__context-menu-delete').trigger('click');
+        expect(wrapper.find('.sw-modal').exists()).toBe(true);
+        expect(deleteSpy).not.toHaveBeenCalled();
+        await wrapper.findAll('.sw-modal button')[1].trigger('click');
+        await flushPromises();
 
         expect(deleteSpy).toHaveBeenCalledWith('org-id');
     });

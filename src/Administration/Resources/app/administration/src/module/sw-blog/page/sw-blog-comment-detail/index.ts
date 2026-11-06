@@ -2,7 +2,6 @@
  * @sw-package discovery
  */
 import { defineComponent } from 'vue';
-import type { PropType } from 'vue';
 import type CriteriaType from 'src/core/data/criteria.data';
 import type RepositoryType from 'src/core/data/repository.data';
 import template from './sw-blog-comment-detail.html.twig';
@@ -27,7 +26,7 @@ type BlogComment = EntitySchema.Entity<'blog_comment'> & {
  * offers the same decision as a row action for the comments whose state is obvious from the excerpt;
  * both write the same column, so the two screens can not disagree.
  */
-// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+/** @private */
 export default defineComponent({
     template,
 
@@ -37,7 +36,7 @@ export default defineComponent({
 
     props: {
         commentId: {
-            type: String as unknown as PropType<EntitySchema.EntityKey<'blog_comment'>>,
+            type: String,
             required: true,
         },
     },
@@ -118,7 +117,9 @@ export default defineComponent({
          * The state as a word, for the tooltip of the switch and the subtitle of the card.
          */
         statusLabel(): string {
-            return this.comment?.status ? this.$t('sw-blog.comment.filterApproved') : this.$t('sw-blog.comment.filterPending');
+            return this.comment?.status
+                ? this.$t('sw-blog.comment.filterApproved')
+                : this.$t('sw-blog.comment.filterPending');
         },
     },
 
@@ -139,7 +140,11 @@ export default defineComponent({
             try {
                 const criteria = blogApi(this).commentDetailCriteria(this.commentId);
 
-                this.comment = await this.commentRepository.get(this.commentId, Shopwell.Context.api, criteria);
+                this.comment = await this.commentRepository.get(
+                    this.commentId as EntitySchema.BlogCommentId,
+                    Shopwell.Context.api,
+                    criteria,
+                );
 
                 await this.loadCustomer();
             } catch {
@@ -174,7 +179,7 @@ export default defineComponent({
                 return;
             }
 
-            this.customerName = [customer.firstName, customer.lastName].filter(Boolean).join(' ') || customer.email;
+            this.customerName = customer.name || customer.email;
             this.customerEmail = customer.email;
         },
 

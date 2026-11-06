@@ -6,10 +6,10 @@ use Payum\Core\Request\Capture;
 use Payum\Core\Request\Notify;
 use Payum\Core\Request\Refund;
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\System\Payment\Gateway\PaymentClose;
-use Shopwell\Core\System\Payment\Gateway\PaymentQuery;
-use Shopwell\Core\System\Payment\Gateway\PaymentTransferQuery;
-use Shopwell\Core\System\Payment\Gateway\PaymentTransferRequest;
+use Shopwell\Core\System\Payment\Gateway\Request\PaymentClose;
+use Shopwell\Core\System\Payment\Gateway\Request\PaymentQuery;
+use Shopwell\Core\System\Payment\Gateway\Request\PaymentTransferQuery;
+use Shopwell\Core\System\Payment\Gateway\Request\PaymentTransferRequest;
 
 /**
  * One thing a payment interface can do, named explicitly instead of being derived from the classes it

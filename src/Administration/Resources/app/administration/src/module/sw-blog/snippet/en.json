@@ -147,7 +147,8 @@
             "messageDeleteSuccess": "Deleted",
             "messageLoadError": "Could not be loaded, please try again",
             "messageTitleRequired": "Please enter a title",
-            "messageSlugRequired": "Please enter an url name"
+            "messageSlugRequired": "Please enter an url name",
+            "helpTextType": "The type decides which editor the entry gets. It is locked after the first save."
         },
         "category": {
             "cardEntries": "Articles in this category",

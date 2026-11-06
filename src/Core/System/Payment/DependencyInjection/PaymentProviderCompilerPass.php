@@ -3,6 +3,7 @@
 namespace Shopwell\Core\System\Payment\DependencyInjection;
 
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Payment\Exception\PaymentProviderException;
 use Shopwell\Core\System\Payment\PaymentException;
 use Shopwell\Core\System\Payment\Provider\AbstractPaymentProvider;
 use Shopwell\Core\System\Payment\Provider\PaymentProvider;
@@ -27,7 +28,7 @@ use Symfony\Component\DependencyInjection\Reference;
  *     interface whose callbacks can never arrive - a failure that is otherwise only noticed when a
  *     payment stays unpaid.
  *  2. **Is a second implementation of the same name a decorator?** A technical name is a foreign key
- *     value in `payment_order`, `payment_provider_config` and `payment_app_provider`, so a second
+ *     value in `payment_order`, `payment_provider_config` and `payment_app_account`, so a second
  *     implementation that simply took over would leave every historic row uninterpretable. Extending
  *     an interface is done through `getDecorated()`, replacing it by using a technical name of its own.
  *  3. **Which instance represents the interface?** The highest priority one, because that is the
@@ -69,7 +70,7 @@ final class PaymentProviderCompilerPass implements CompilerPassInterface
     /**
      * The character set the notify url route accepts for the provider segment.
      */
-    private const NAME_PATTERN = '/^[A-Za-z0-9_-]+$/';
+    private const NAME_PATTERN = '/^[A-Za-z0-9_-]+\z/';
 
     public function process(ContainerBuilder $container): void
     {
@@ -128,11 +129,11 @@ final class PaymentProviderCompilerPass implements CompilerPassInterface
                 $key = $attributes['key'] ?? null;
 
                 if (!\is_string($key) || $key === '') {
-                    throw PaymentException::invalidProviderName($id);
+                    throw PaymentProviderException::invalidProviderName($id);
                 }
 
                 if (preg_match(self::NAME_PATTERN, $key) !== 1) {
-                    throw PaymentException::invalidProviderName($key);
+                    throw PaymentProviderException::invalidProviderName($key);
                 }
 
                 $priority = $attributes['priority'] ?? 0;
@@ -156,7 +157,7 @@ final class PaymentProviderCompilerPass implements CompilerPassInterface
     private function classOf(ContainerBuilder $container, string $id): string
     {
         if (!$container->hasDefinition($id)) {
-            throw PaymentException::invalidProviderDeclaration(\sprintf(
+            throw PaymentProviderException::invalidProviderDeclaration(\sprintf(
                 'The service "%s" is tagged as a payment provider, but it is not a definition this container can build.',
                 $id
             ));
@@ -168,7 +169,7 @@ final class PaymentProviderCompilerPass implements CompilerPassInterface
         $reflection = $container->getReflectionClass($class, false);
 
         if ($reflection === null || !$reflection->isSubclassOf(AbstractPaymentProvider::class)) {
-            throw PaymentException::invalidProviderDeclaration(\sprintf(
+            throw PaymentProviderException::invalidProviderDeclaration(\sprintf(
                 'The service "%s" is tagged as a payment provider, but "%s" does not extend %s.',
                 $id,
                 $class,
@@ -204,7 +205,7 @@ final class PaymentProviderCompilerPass implements CompilerPassInterface
             $priority = $declaration['priority'];
 
             if (isset($seen[$priority])) {
-                throw PaymentException::ambiguousProviderPriority(
+                throw PaymentProviderException::ambiguousProviderPriority(
                     $key,
                     $priority,
                     $seen[$priority]['class'],
@@ -247,12 +248,12 @@ final class PaymentProviderCompilerPass implements CompilerPassInterface
                 continue;
             }
 
-            throw PaymentException::duplicateProvider($key, $base['class'], $ordered[$i]['class']);
+            throw PaymentProviderException::duplicateProvider($key, $base['class'], $ordered[$i]['class']);
         }
 
         if ($baseDeclaringClass !== null && $baseDeclaringClass !== AbstractPaymentProvider::class) {
             // the base implementation overrides getDecorated() as well, so there is no end of the chain
-            throw PaymentException::invalidProviderDeclaration(\sprintf(
+            throw PaymentProviderException::invalidProviderDeclaration(\sprintf(
                 'The payment interface "%s" is declared by "%s", which overrides getDecorated() without decorating anything - the chain has no base implementation.',
                 $key,
                 $base['class']

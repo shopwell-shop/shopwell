@@ -1,0 +1,408 @@
+{% block sw_system_menu_list %}
+<sw-page class="sw-system-menu-list">
+    {% block sw_system_menu_list_search_bar %}
+    <template #search-bar>
+        <sw-search-bar
+            ref="searchBar"
+            initial-search-type="admin_menu_item"
+            :initial-search="searchTerm"
+            @search="onSearch"
+        />
+    </template>
+    {% endblock %}
+
+    {% block sw_system_menu_list_smart_bar_header %}
+    <template #smart-bar-header>
+        <h2>{{ selectedItem ? selectedItem.label : $t('sw-system.menu.headline') }}</h2>
+    </template>
+    {% endblock %}
+
+    {% block sw_system_menu_list_language_switch %}
+    <template #language-switch>
+        <sw-language-switch
+            :save-changes-function="saveOnLanguageChange"
+            :abort-change-function="abortOnLanguageChange"
+            @on-change="onLanguageChange"
+        />
+    </template>
+    {% endblock %}
+
+    {% block sw_system_menu_list_smart_bar_actions %}
+    <template #smart-bar-actions>
+        {% block sw_system_menu_list_smart_bar_actions_cancel %}
+        <mt-button
+            v-if="draft"
+            class="sw-system-menu-list__button-cancel"
+            variant="secondary"
+            @click="onCancelEdit"
+        >
+            {{ $t('global.default.cancel') }}
+        </mt-button>
+        {% endblock %}
+
+        {% block sw_system_menu_list_smart_bar_actions_save %}
+        <mt-button
+            v-if="draft && canSaveDraft"
+            class="sw-system-menu-list__button-save"
+            variant="primary"
+            :is-loading="isSaving"
+            @click="onSave"
+        >
+            {{ $t('global.default.save') }}
+        </mt-button>
+        {% endblock %}
+
+        {% block sw_system_menu_list_smart_bar_actions_create %}
+        <mt-button
+            v-if="canCreate && !draft"
+            class="sw-system-menu-list__button-create"
+            variant="primary"
+            @click="onCreateNew"
+        >
+            {{ $t('sw-system.menu.createAction') }}
+        </mt-button>
+        {% endblock %}
+    </template>
+    {% endblock %}
+
+    {% block sw_system_menu_list_side_content %}
+    <template #side-content>
+        {% block sw_system_menu_list_collapse %}
+        <sw-sidebar-collapse
+            class="sw-system-menu-list__menu-collapse"
+            :expand-on-loading="true"
+        >
+            <template #header>
+                {% block sw_system_menu_list_collapse_header %}
+                <div class="sw-system-menu-list__collapse-headline">
+                    {{ $t('sw-system.menu.treeHeadline') }}
+                </div>
+                {% endblock %}
+            </template>
+
+            <template #actions>
+                {% block sw_system_menu_list_collapse_actions %}
+                <mt-button
+                    class="sw-system-menu-list__button-expand"
+                    variant="secondary"
+                    square
+                    size="small"
+                    :disabled="!hasTree || undefined"
+                    :title="isAllExpanded ? $t('sw-system.menu.collapseAll') : $t('sw-system.menu.expandAll')"
+                    @click="onToggleAll"
+                >
+                    <mt-icon
+                        :name="isAllExpanded ? 'regular-chevron-down-xs' : 'regular-chevron-right-xs'"
+                        size="12px"
+                    />
+                </mt-button>
+                {% endblock %}
+            </template>
+
+            <template #content>
+                {% block sw_system_menu_list_tree %}
+                <sw-extension-component-section position-identifier="sw-system-menu-list-tree" />
+                <sw-system-menu-tree
+                    v-if="hasTree"
+                    :items="filteredTree"
+                    :expanded-ids="effectiveExpandedIds"
+                    :selected-id="selectedId"
+                    :sortable="canEdit"
+                    :editable="canEdit"
+                    :deletable="canDelete"
+                    @toggle="onToggle"
+                    @select="onItemSelect"
+                    @edit="onItemSelect"
+                    @create-above="onCreateAbove"
+                    @create-below="onCreateBelow"
+                    @add-child="onAddChild"
+                    @remove="onDelete"
+                    @move="onMove"
+                />
+
+                <p
+                    v-else
+                    class="sw-system-menu-list__tree-empty"
+                >
+                    {{ $t(isSearching ? 'sw-system.menu.searchEmptyHeadline' : 'sw-system.menu.treeEmpty') }}
+                </p>
+                {% endblock %}
+            </template>
+        </sw-sidebar-collapse>
+        {% endblock %}
+    </template>
+    {% endblock %}
+
+    {% block sw_system_menu_list_content %}
+    <template #content>
+        <template v-if="isLoading">
+            <sw-skeleton variant="detail-bold" />
+            <sw-skeleton />
+        </template>
+
+        <div
+            v-else
+            class="sw-system-menu-list__content"
+        >
+            {% block sw_system_menu_list_detail_form %}
+            <div
+                v-if="draft"
+                class="sw-system-menu-list__form"
+            >
+                {% block sw_system_menu_list_detail_form_locked %}
+                <mt-banner
+                    v-if="isLocked"
+                    class="sw-system-menu-list__locked-hint"
+                    variant="info"
+                >
+                    {{ $t('sw-system.menu.hintLockedItem') }}
+                </mt-banner>
+                {% endblock %}
+
+                {% block sw_system_menu_list_detail_form_basics %}
+                <mt-card
+                    class="sw-system-menu-list__card"
+                    position-identifier="sw-system-menu-list-basics"
+                    :title="$t('sw-system.menu.sectionBasics')"
+                >
+                    <div class="sw-system-menu-list__form-grid">
+                        {% block sw_system_menu_list_detail_form_title %}
+                        <mt-text-field
+                            v-model="draft.title"
+                            class="sw-system-menu-list__field-title"
+                            name="sw-field--menu-item-title"
+                            :label="$t('sw-system.menu.labelTitle')"
+                            :placeholder="$t('sw-system.menu.placeholderTitle')"
+                            :help-text="$t('sw-system.menu.helpTitle', { language: languageLabel })"
+                            :disabled="!canEdit || undefined"
+                            required
+                        />
+                        {% endblock %}
+
+                        {% block sw_system_menu_list_detail_form_active %}
+                        <mt-switch
+                            v-model="draft.active"
+                            class="sw-system-menu-list__field-active"
+                            :label="$t('sw-system.menu.labelActive')"
+                            :help-text="$t('sw-system.menu.helpActive')"
+                            :disabled="!canEdit || undefined"
+                            :bordered="true"
+                        />
+                        {% endblock %}
+
+                        {% block sw_system_menu_list_detail_form_type %}
+                        <mt-select
+                            class="sw-system-menu-list__field-type"
+                            :label="$t('sw-system.menu.labelType')"
+                            :model-value="draft.type"
+                            :options="typeOptions"
+                            :disabled="!canEdit || undefined"
+                            required
+                            @update:model-value="onTypeChange"
+                        />
+                        {% endblock %}
+
+                        {% block sw_system_menu_list_detail_form_parent %}
+                        <mt-select
+                            class="sw-system-menu-list__field-parent"
+                            :label="$t('sw-system.menu.labelParent')"
+                            :model-value="parentIdValue"
+                            :options="parentOptions"
+                            :disabled="!canEdit || undefined"
+                            @update:model-value="onParentChange"
+                        />
+                        {% endblock %}
+
+                        {% block sw_system_menu_list_detail_form_icon %}
+                        <div class="sw-system-menu-list__icon-field">
+                            <mt-text-field
+                                v-model="draft.icon"
+                                class="sw-system-menu-list__field-icon"
+                                name="sw-field--menu-item-icon"
+                                :label="$t('sw-system.menu.labelIcon')"
+                                :placeholder="$t('sw-system.menu.placeholderIcon')"
+                                :help-text="$t('sw-system.menu.helpIcon')"
+                                :disabled="!canEdit || undefined"
+                            />
+
+                            <mt-icon
+                                class="sw-system-menu-list__icon-preview"
+                                :name="draft.icon || 'regular-link'"
+                                size="20px"
+                            />
+                        </div>
+                        {% endblock %}
+                    </div>
+                </mt-card>
+                {% endblock %}
+
+                {% block sw_system_menu_list_detail_form_target %}
+                <mt-card
+                    class="sw-system-menu-list__card"
+                    position-identifier="sw-system-menu-list-target"
+                    :title="$t('sw-system.menu.sectionTarget')"
+                >
+                    {% block sw_system_menu_list_detail_form_target_fields %}
+                    <mt-select
+                        v-if="draft.type === 'menu' || draft.type === 'folder'"
+                        class="sw-system-menu-list__field-target"
+                        :label="$t('sw-system.menu.labelTarget')"
+                        :help-text="$t('sw-system.menu.helpTarget')"
+                        :model-value="draft.internalKey"
+                        :options="routeOptions"
+                        :disabled="!canEdit || undefined"
+                        required
+                        @update:model-value="draft.internalKey = $event"
+                    />
+
+                    <mt-text-field
+                        v-else-if="draft.type === 'link'"
+                        v-model="draft.linkTarget"
+                        class="sw-system-menu-list__field-target"
+                        name="sw-field--menu-item-link-target"
+                        :label="$t('sw-system.menu.labelLinkTarget')"
+                        :placeholder="$t('sw-system.menu.placeholderLinkTarget')"
+                        :disabled="!canEdit || undefined"
+                        required
+                    />
+
+                    <mt-text-field
+                        v-else
+                        v-model="draft.internalKey"
+                        class="sw-system-menu-list__field-target"
+                        name="sw-field--menu-item-internal-key"
+                        :label="$t('sw-system.menu.labelTarget')"
+                        :help-text="$t('sw-system.menu.helpHiddenTarget')"
+                        :disabled="!canEdit || undefined"
+                    />
+                    {% endblock %}
+                </mt-card>
+                {% endblock %}
+
+                {% block sw_system_menu_list_detail_form_access %}
+                <mt-card
+                    class="sw-system-menu-list__card"
+                    position-identifier="sw-system-menu-list-access"
+                    :title="$t('sw-system.menu.sectionAccess')"
+                >
+                    <div class="sw-system-menu-list__form-grid">
+                        {% block sw_system_menu_list_detail_form_group %}
+                        <mt-text-field
+                            v-if="isTopLevel"
+                            v-model="draft.groupName"
+                            class="sw-system-menu-list__field-group"
+                            name="sw-field--menu-item-group"
+                            :label="$t('sw-system.menu.labelGroup')"
+                            :placeholder="$t('sw-system.menu.placeholderGroup')"
+                            :help-text="$t('sw-system.menu.helpGroup')"
+                            :suggestions="groupOptions"
+                            :disabled="!canEdit || undefined"
+                        />
+                        {% endblock %}
+
+                        {% block sw_system_menu_list_detail_form_group_title %}
+                        <mt-text-field
+                            v-if="isTopLevel"
+                            v-model="draft.groupTitle"
+                            class="sw-system-menu-list__field-group-title"
+                            name="sw-field--menu-item-group-title"
+                            :label="$t('sw-system.menu.labelGroupTitle')"
+                            :placeholder="$t('sw-system.menu.placeholderGroupTitle')"
+                            :help-text="$t('sw-system.menu.helpGroupTitle', { language: languageLabel })"
+                            :disabled="!canEdit || undefined"
+                        />
+                        {% endblock %}
+
+                        {% block sw_system_menu_list_detail_form_privilege %}
+                        <mt-select
+                            class="sw-system-menu-list__field-privilege"
+                            :label="$t('sw-system.menu.labelPrivilege')"
+                            :help-text="$t('sw-system.menu.helpPrivilege')"
+                            :model-value="privilegeValue"
+                            :options="privilegeOptions"
+                            :disabled="!canEdit || undefined"
+                            @update:model-value="draft.privilege = $event === '' ? null : $event"
+                        />
+                        {% endblock %}
+
+                        {% block sw_system_menu_list_detail_form_roles %}
+                        <sw-entity-multi-id-select
+                            v-model:value="draft.roleIds"
+                            class="sw-system-menu-list__field-roles"
+                            name="sw-field--menu-item-roles"
+                            :label="$t('sw-system.menu.labelRoles')"
+                            :help-text="$t('sw-system.menu.hintRoles')"
+                            :repository="aclRoleRepository"
+                            :criteria="roleCriteria"
+                            :disabled="!canEdit || undefined"
+                        />
+                        {% endblock %}
+                    </div>
+                </mt-card>
+                {% endblock %}
+            </div>
+            {% endblock %}
+
+            {% block sw_system_menu_list_content_empty %}
+            <mt-empty-state
+                v-else
+                class="sw-system-menu-list__empty-state"
+                centered
+                icon="regular-list"
+                :headline="$t('sw-system.menu.emptyStateHeadline')"
+                :description="$t('sw-system.menu.emptyStateDescription')"
+            >
+                <template
+                    v-if="canCreate"
+                    #button
+                >
+                    <mt-button
+                        variant="primary"
+                        size="default"
+                        @click="onCreateNew"
+                    >
+                        {{ $t('sw-system.menu.createAction') }}
+                    </mt-button>
+                </template>
+            </mt-empty-state>
+            {% endblock %}
+        </div>
+
+        {% block sw_system_menu_list_delete_modal %}
+        <sw-modal
+            v-if="showDeleteModal"
+            :title="$t('sw-system.menu.deleteModalTitle')"
+            variant="small"
+            class="sw-system-menu-list__delete-modal"
+            @modal-close="onCloseDeleteModal"
+        >
+            <p class="sw-system-menu-list__delete-confirm">
+                {{ deleteConfirmMessage }}
+            </p>
+
+            <template #modal-footer>
+                <mt-button
+                    size="small"
+                    variant="secondary"
+                    @click="onCloseDeleteModal"
+                >
+                    {{ $t('global.default.cancel') }}
+                </mt-button>
+
+                <mt-button
+                    class="sw-system-menu-list__confirm-delete-button"
+                    variant="critical"
+                    size="small"
+                    :is-loading="isDeleting"
+                    @click="onConfirmDelete"
+                >
+                    {{ $t('global.default.delete') }}
+                </mt-button>
+            </template>
+        </sw-modal>
+        {% endblock %}
+    </template>
+    {% endblock %}
+
+</sw-page>
+{% endblock %}

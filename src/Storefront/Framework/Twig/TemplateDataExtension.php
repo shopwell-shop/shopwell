@@ -5,6 +5,7 @@ namespace Shopwell\Storefront\Framework\Twig;
 use Doctrine\DBAL\Connection;
 use Shopwell\Core\Framework\Adapter\Request\RequestParamHelper;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Term\Filter\AbstractTokenFilter;
+use Shopwell\Core\Framework\Feature;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\PlatformRequest;
@@ -43,8 +44,6 @@ class TemplateDataExtension extends AbstractExtension implements GlobalsInterfac
             return [];
         }
 
-        [$controllerName, $controllerAction] = $this->getControllerInfo($request);
-
         $themeId = $request->attributes->get(SalesChannelRequest::ATTRIBUTE_THEME_ID);
 
         // check attribute bag for path parameter first (category routes), fallback to other request parameters (product routes)
@@ -68,7 +67,7 @@ class TemplateDataExtension extends AbstractExtension implements GlobalsInterfac
             $navigationPathIdList,
         );
 
-        return [
+        $globals = [
             'shopwell' => [
                 'dateFormat' => \DATE_ATOM,
                 'navigation' => $navigationInfo,
@@ -76,10 +75,6 @@ class TemplateDataExtension extends AbstractExtension implements GlobalsInterfac
                 'showStagingBanner' => $this->showStagingBanner,
             ],
             'themeId' => $themeId, /** Not used in Twig template directly, but in @see \Shopwell\Storefront\Framework\Twig\Extension\ConfigExtension::getThemeId */
-            /** @deprecated tag:v6.8.0 - Will be removed. Use the "activeRoute" variable instead */
-            'controllerName' => $controllerName,
-            /** @deprecated tag:v6.8.0 - Will be removed. Use the "activeRoute" variable instead */
-            'controllerAction' => $controllerAction,
             'context' => $context,
             'activeRoute' => $request->attributes->get('_route'),
             'formViolations' => $request->attributes->get('formViolations'),
@@ -88,6 +83,17 @@ class TemplateDataExtension extends AbstractExtension implements GlobalsInterfac
             // |escape('js') is not suitable because it escapes double quotes, breaking the JSON structure.
             'jsonLdFlags' => \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE | \JSON_HEX_TAG | \JSON_HEX_AMP,
         ];
+
+        if (!Feature::isActive('v6.8.0.0')) {
+            [$controllerName, $controllerAction] = $this->getControllerInfo($request);
+
+            /** @deprecated tag:v6.8.0 - Will be removed. Use the "activeRoute" variable instead */
+            $globals['controllerName'] = $controllerName;
+            /** @deprecated tag:v6.8.0 - Will be removed. Use the "activeRoute" variable instead */
+            $globals['controllerAction'] = $controllerAction;
+        }
+
+        return $globals;
     }
 
     /**

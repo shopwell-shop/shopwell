@@ -2,13 +2,12 @@
 
 namespace Shopwell\Tests\Unit\Core\System\Payment\Transfer\Api;
 
+use Doctrine\DBAL\Connection;
 use Payum\Core\GatewayInterface;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Context;
-use Shopwell\Core\Framework\DataAbstractionLayer\Entity;
-use Shopwell\Core\Framework\DataAbstractionLayer\EntityCollection;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Event\EntityWrittenContainerEvent;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
@@ -16,23 +15,21 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
 use Shopwell\Core\Framework\Event\NestedEventCollection;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\PlatformRequest;
-use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppChannel\PaymentAppChannelEntity;
-use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppProvider\PaymentAppProviderEntity;
 use Shopwell\Core\System\Payment\App\PaymentAppCollection;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
 use Shopwell\Core\System\Payment\App\PaymentCredentialCipher;
+use Shopwell\Core\System\Payment\Exception\PaymentGatewayException;
+use Shopwell\Core\System\Payment\Exception\PaymentTransferException;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayFactory;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
-use Shopwell\Core\System\Payment\Gateway\PaymentTransferRequest;
-use Shopwell\Core\System\Payment\Gateway\TransferResult;
+use Shopwell\Core\System\Payment\Gateway\Request\PaymentTransferRequest;
+use Shopwell\Core\System\Payment\Gateway\Request\TransferResult;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
 use Shopwell\Core\System\Payment\PaymentException;
+use Shopwell\Core\System\Payment\Product\PaymentInteraction;
+use Shopwell\Core\System\Payment\Product\PaymentProduct;
 use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannelRegistry;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
-use Shopwell\Core\System\Payment\Provider\PaymentChannelConfigEntity;
-use Shopwell\Core\System\Payment\Provider\PaymentConfigResolver;
+use Shopwell\Core\System\Payment\Provider\Config\PaymentConfigResolver;
 use Shopwell\Core\System\Payment\Provider\PaymentProvider;
 use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;
 use Shopwell\Core\System\Payment\Transfer\Api\PaymentTransferController;
@@ -43,6 +40,7 @@ use Shopwell\Core\System\Payment\Transfer\PaymentTransferEntity;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferRecipientCollection;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferRecipientEntity;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferRecipientService;
+use Shopwell\Core\System\Payment\Transfer\PaymentTransferResultBooker;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferService;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferStateHandler;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferStates;
@@ -51,6 +49,9 @@ use Shopwell\Core\System\StateMachine\Aggregation\StateMachineState\StateMachine
 use Shopwell\Core\System\StateMachine\Aggregation\StateMachineState\StateMachineStateEntity;
 use Shopwell\Core\System\StateMachine\Loader\InitialStateIdLoader;
 use Shopwell\Core\System\StateMachine\StateMachineRegistry;
+use Shopwell\Tests\Unit\Core\System\Payment\Account\_fixtures\PaymentAccountLockStub;
+use Shopwell\Tests\Unit\Core\System\Payment\NumberRangeFixture;
+use Shopwell\Tests\Unit\Core\System\Payment\Transfer\PaymentTransferRulesFixture;
 use Symfony\Component\Clock\MockClock;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -142,7 +143,7 @@ class PaymentTransferControllerTest extends TestCase
                 null,
                 $this->transfer(['state' => PaymentTransferStates::STATE_SUBMITTED]),
                 $this->transfer(['state' => PaymentTransferStates::STATE_SUBMITTED]),
-                PaymentException::transferAlreadyFinalized('TF-1', 'submitted')
+                PaymentTransferException::transferAlreadyFinalized('TF-1', 'submitted')
             )
         );
     }
@@ -158,7 +159,7 @@ class PaymentTransferControllerTest extends TestCase
                 null,
                 $this->transfer(),
                 $this->transfer(['state' => PaymentTransferStates::STATE_SUBMITTED, 'submitAttempts' => 1]),
-                PaymentException::gatewayError('alipay_transfer', 'the channel answered nothing')
+                PaymentGatewayException::gatewayError('alipay_transfer', 'the channel answered nothing')
             )
         );
     }
@@ -175,7 +176,7 @@ class PaymentTransferControllerTest extends TestCase
                 null,
                 $this->transfer(['submitAttempts' => 0]),
                 $this->transfer(['submitAttempts' => 1]),
-                PaymentException::gatewayError('alipay_transfer', 'timeout')
+                PaymentGatewayException::gatewayError('alipay_transfer', 'timeout')
             )
         );
     }
@@ -357,7 +358,7 @@ class PaymentTransferControllerTest extends TestCase
 
         $stateMachineRegistry = static::createStub(StateMachineRegistry::class);
 
-        $recipientService = new PaymentTransferRecipientService($recipientRepository, $cipher, $clock);
+        $recipientService = new PaymentTransferRecipientService($recipientRepository, $cipher, $clock, $providerRegistry);
         $transferService = new PaymentTransferService(
             $transferRepository,
             $recipientRepository,
@@ -366,17 +367,13 @@ class PaymentTransferControllerTest extends TestCase
             $cipher,
             $this->initialStateIdLoader(),
             $clock,
+            $providerRegistry,
+            NumberRangeFixture::generator('PT1001'),
+            PaymentTransferRulesFixture::resolvedConfig(),
+            new PaymentAccountLockStub(),
         );
 
-        $configResolver = new PaymentConfigResolver(
-            $providerRegistry,
-            new PaymentChannelRegistry($providerRegistry),
-            static::createStub(EntityRepository::class),
-            static::createStub(EntityRepository::class),
-            static::createStub(EntityRepository::class),
-            static::createStub(EntityRepository::class),
-            $cipher,
-        );
+        $configResolver = static::createStub(PaymentConfigResolver::class);
 
         return new PaymentTransferController(
             $appRepository,
@@ -388,10 +385,15 @@ class PaymentTransferControllerTest extends TestCase
                 $transferService,
                 $clock,
             ),
-            new PaymentTransferSubmitter($configResolver, $transferService),
+            new PaymentTransferSubmitter(
+                $configResolver,
+                $transferService,
+                $this->resultBooker($transferService),
+            ),
             $transferService,
-            new PaymentTransferPresenter($cipher, []),
+            new PaymentTransferPresenter($cipher),
             $providerRegistry,
+            $this->resultBooker($transferService),
         );
     }
 
@@ -409,11 +411,12 @@ class PaymentTransferControllerTest extends TestCase
         $cipher = new PaymentCredentialCipher(self::SECRET);
         $clock = new MockClock(self::NOW);
 
-        $channel = new PaymentChannel(
+        $channel = new PaymentProduct(
             technicalName: 'alipay_h5',
             providerTechnicalName: 'alipay',
+            method: 'alipay',
             label: 'Alipay H5',
-            flow: PaymentFlow::REDIRECT,
+            interactions: [PaymentInteraction::REDIRECT],
         );
 
         $gateway = static::createStub(GatewayInterface::class);
@@ -432,34 +435,13 @@ class PaymentTransferControllerTest extends TestCase
             technicalName: 'alipay',
             label: 'Alipay',
             credentials: [],
-            channels: ['alipay_h5' => $channel],
+            products: ['alipay_h5' => $channel],
             gatewayFactory: $gatewayFactory,
             notificationExtractor: static::createStub(PaymentNotificationExtractorInterface::class),
             capabilities: [PaymentCapability::CAPTURE, PaymentCapability::TRANSFER],
         );
 
         $providerRegistry = new PaymentProviderRegistry([$provider]);
-
-        $appProvider = new PaymentAppProviderEntity();
-        $appProvider->setUniqueIdentifier('app-provider-id');
-        $appProvider->paymentAppId = 'app-id';
-        $appProvider->providerTechnicalName = 'alipay';
-        $appProvider->enabled = true;
-        $appProvider->credentials = $cipher->encrypt(['app_id' => 'own-app-id']);
-
-        $appChannel = new PaymentAppChannelEntity();
-        $appChannel->setUniqueIdentifier('app-channel-id');
-        $appChannel->paymentAppId = 'app-id';
-        $appChannel->channelTechnicalName = 'alipay_h5';
-        $appChannel->enabled = true;
-        $appChannel->params = $cipher->encrypt(['appid' => 'own-appid']);
-
-        $channelConfig = new PaymentChannelConfigEntity();
-        $channelConfig->setUniqueIdentifier('channel-config-id');
-        $channelConfig->providerTechnicalName = 'alipay';
-        $channelConfig->channelTechnicalName = 'alipay_h5';
-        $channelConfig->enabled = true;
-        $channelConfig->params = $cipher->encrypt(['appid' => 'platform-appid']);
 
         $app = new PaymentAppEntity();
         $app->id = 'app-id';
@@ -519,7 +501,7 @@ class PaymentTransferControllerTest extends TestCase
         $stateMachineRegistry = static::createStub(StateMachineRegistry::class);
         $stateMachineRegistry->method('transition')->willReturn(new StateMachineStateCollection());
 
-        $recipientService = new PaymentTransferRecipientService($recipientRepository, $cipher, $clock);
+        $recipientService = new PaymentTransferRecipientService($recipientRepository, $cipher, $clock, $providerRegistry);
         $transferService = new PaymentTransferService(
             $transferRepository,
             $recipientRepository,
@@ -528,26 +510,13 @@ class PaymentTransferControllerTest extends TestCase
             $cipher,
             $this->initialStateIdLoader(),
             $clock,
-        );
-
-        $appProviderRepository = static::createStub(EntityRepository::class);
-        $appProviderRepository->method('search')->willReturn($this->entityResult('payment_app_provider', $appProvider));
-
-        $appChannelRepository = static::createStub(EntityRepository::class);
-        $appChannelRepository->method('search')->willReturn($this->entityResult('payment_app_channel', $appChannel));
-
-        $channelConfigRepository = static::createStub(EntityRepository::class);
-        $channelConfigRepository->method('search')->willReturn($this->entityResult('payment_channel_config', $channelConfig));
-
-        $configResolver = new PaymentConfigResolver(
             $providerRegistry,
-            new PaymentChannelRegistry($providerRegistry),
-            $appProviderRepository,
-            static::createStub(EntityRepository::class),
-            $appChannelRepository,
-            $channelConfigRepository,
-            $cipher,
+            NumberRangeFixture::generator('PT1001'),
+            PaymentTransferRulesFixture::resolvedConfig(),
+            new PaymentAccountLockStub(),
         );
+
+        $configResolver = PaymentTransferRulesFixture::boundResolver($provider, $cipher);
 
         return new PaymentTransferController(
             $appRepository,
@@ -559,29 +528,27 @@ class PaymentTransferControllerTest extends TestCase
                 $transferService,
                 $clock,
             ),
-            new PaymentTransferSubmitter($configResolver, $transferService),
+            new PaymentTransferSubmitter(
+                $configResolver,
+                $transferService,
+                $this->resultBooker($transferService),
+            ),
             $transferService,
-            new PaymentTransferPresenter($cipher, []),
+            new PaymentTransferPresenter($cipher),
             $providerRegistry,
+            $this->resultBooker($transferService),
         );
     }
 
-    /**
-     * A search result with the given entity in it - how a stub repository answers the lookups of the
-     * resolver of the interface.
-     *
-     * @return EntitySearchResult<EntityCollection<Entity>>
-     */
-    private function entityResult(string $entityName, Entity $entity): EntitySearchResult
+    private function resultBooker(PaymentTransferService $transferService): PaymentTransferResultBooker
     {
-        return new EntitySearchResult(
-            $entityName,
-            1,
-            new EntityCollection([$entity]),
-            null,
-            new Criteria(),
-            Context::createDefaultContext()
+        $connection = static::createStub(Connection::class);
+        $connection->method('executeStatement')->willReturn(1);
+        $connection->method('transactional')->willReturnCallback(
+            static fn (\Closure $closure): mixed => $closure($connection)
         );
+
+        return new PaymentTransferResultBooker($transferService, $connection);
     }
 
     private function initialStateIdLoader(): InitialStateIdLoader
@@ -605,8 +572,10 @@ class PaymentTransferControllerTest extends TestCase
         $stateEntity->setTechnicalName($state);
 
         $transfer = new PaymentTransferEntity();
-        $transfer->id = 'transfer-id';
+        $transfer->id = str_repeat('a', 32);
         $transfer->paymentAppId = 'app-id';
+        $transfer->accountId = 'account-id';
+        $transfer->accountId = 'account-id';
         $transfer->transferNo = 'PT2610211200ABCDEF0123';
         $transfer->outNo = 'TF2610211200A1B2';
         $transfer->recipientId = 'recipient-id';
@@ -614,7 +583,7 @@ class PaymentTransferControllerTest extends TestCase
         $transfer->channel = 'alipay_transfer';
         $transfer->amount = 10;
         $transfer->currency = 'CNY';
-        $transfer->statusId = $state;
+        $transfer->statusId = str_repeat('b', 32);
         $transfer->submitAttempts = 0;
         $transfer->statusMachineState = $stateEntity;
         $transfer->assign($overrides);

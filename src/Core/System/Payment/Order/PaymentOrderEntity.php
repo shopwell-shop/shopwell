@@ -12,6 +12,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\ManyToOne;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\OnDelete;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\OneToMany;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\PrimaryKey;
+use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\Protection;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\ReferenceVersion;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\Required;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\SearchRanking;
@@ -21,9 +22,9 @@ use Shopwell\Core\Framework\DataAbstractionLayer\EntityCustomFieldsTrait;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationEntity;
+use Shopwell\Core\System\Payment\Order\Aggregate\PaymentAttempt\PaymentAttemptEntity;
+use Shopwell\Core\System\Payment\Order\Aggregate\PaymentRefund\PaymentRefundEntity;
 use Shopwell\Core\System\Payment\Order\Aggregate\PaymentTransaction\PaymentTransactionEntity;
-use Shopwell\Core\System\Payment\Order\Refund\PaymentRefundEntity;
-use Shopwell\Core\System\Payment\Security\PaymentGatewayTokenEntity;
 use Shopwell\Core\System\Payment\Webhook\PaymentWebhookDeliveryEntity;
 use Shopwell\Core\System\StateMachine\Aggregation\StateMachineState\StateMachineStateEntity;
 
@@ -46,6 +47,7 @@ class PaymentOrderEntity extends EntityStruct
     final public const ENTITY_NAME = 'payment_order';
 
     #[PrimaryKey]
+    #[Protection(write: [Protection::SYSTEM_SCOPE])]
     #[Field(type: FieldType::UUID, api: ['admin-api' => true, 'store-api' => false])]
     public string $id;
 
@@ -53,6 +55,7 @@ class PaymentOrderEntity extends EntityStruct
      * The payment number of the platform, the identifier the app works with.
      */
     #[Required]
+    #[Protection(write: [Protection::SYSTEM_SCOPE])]
     #[Field(type: FieldType::STRING, api: ['admin-api' => true, 'store-api' => false], maxLength: 64)]
     #[SearchRanking(SearchRanking::HIGH_SEARCH_RANKING)]
     public string $paymentNo;
@@ -61,11 +64,13 @@ class PaymentOrderEntity extends EntityStruct
      * The trade number of the app, unique per app.
      */
     #[Required]
+    #[Protection(write: [Protection::SYSTEM_SCOPE])]
     #[Field(type: FieldType::STRING, api: ['admin-api' => true, 'store-api' => false], maxLength: 128)]
     #[SearchRanking(SearchRanking::HIGH_SEARCH_RANKING)]
     public string $outTradeNo;
 
     #[Required]
+    #[Protection(write: [Protection::SYSTEM_SCOPE])]
     #[ForeignKey(entity: 'payment_app', api: ['admin-api' => true, 'store-api' => false])]
     public string $paymentAppId;
 
@@ -73,6 +78,7 @@ class PaymentOrderEntity extends EntityStruct
      * The order of the checkout this payment was opened for. It stays empty for the order of an
      * external app, which is complete without the shop's order.
      */
+    #[Protection(write: [Protection::SYSTEM_SCOPE])]
     #[ForeignKey(entity: 'order', api: false)]
     public ?string $orderId = null;
 
@@ -80,6 +86,7 @@ class PaymentOrderEntity extends EntityStruct
      * The version the order reference points into. The order is versioned, so a reference into it
      * always spans the id and the version - the same way a transaction references its order.
      */
+    #[Protection(write: [Protection::SYSTEM_SCOPE])]
     #[ReferenceVersion(entity: 'order')]
     public ?string $orderVersionId = null;
 
@@ -87,72 +94,58 @@ class PaymentOrderEntity extends EntityStruct
      * The transaction of that order. The paid state is written back to it, therefore a checkout order
      * always has it while an app order never does.
      */
+    #[Protection(write: [Protection::SYSTEM_SCOPE])]
     #[ForeignKey(entity: 'order_transaction', api: false)]
     public ?string $orderTransactionId = null;
 
+    #[Protection(write: [Protection::SYSTEM_SCOPE])]
     #[ReferenceVersion(entity: 'order_transaction')]
     public ?string $orderTransactionVersionId = null;
 
-    /**
-     * The payment interface that is charged and holds the merchant account, e.g. `alipay`. It decides
-     * whose credentials are used to query, refund or verify the payment.
-     */
     #[Required]
-    #[Field(type: FieldType::STRING, api: ['admin-api' => true, 'store-api' => false], maxLength: 64)]
-    public string $providerTechnicalName;
-
-    /**
-     * The channel the app asked for, e.g. `alipay_h5`. It only decides how the payer was handed over
-     * to the interface; everything after that runs on the interface alone.
-     */
-    #[Required]
-    #[Field(type: FieldType::STRING, api: ['admin-api' => true, 'store-api' => false], maxLength: 64)]
-    public string $channelTechnicalName;
-
-    /**
-     * The parameters the channel needs for this very payment, e.g. the openid of a wechat jsapi payment.
-     * They are handed in by the app when the order is created.
-     *
-     * @var array<string, mixed>|null
-     */
-    #[Field(type: FieldType::JSON, api: ['admin-api' => true, 'store-api' => false])]
-    public ?array $channelParams = null;
-
-    #[Required]
+    #[Protection(write: [Protection::SYSTEM_SCOPE])]
     #[Field(type: FieldType::INT, api: ['admin-api' => true, 'store-api' => false])]
     public int $amount;
 
+    #[Protection(write: [Protection::SYSTEM_SCOPE])]
     #[Field(type: FieldType::INT, api: ['admin-api' => true, 'store-api' => false])]
     public int $paidAmount = 0;
 
+    #[Protection(write: [Protection::SYSTEM_SCOPE])]
     #[Field(type: FieldType::INT, api: ['admin-api' => true, 'store-api' => false])]
     public int $refundedAmount = 0;
 
     #[Required]
+    #[Protection(write: [Protection::SYSTEM_SCOPE])]
     #[Field(type: FieldType::STRING, api: ['admin-api' => true, 'store-api' => false], maxLength: 3)]
     public string $currency;
 
     #[Required]
+    #[Protection(write: [Protection::SYSTEM_SCOPE])]
     #[Field(type: FieldType::STRING, api: ['admin-api' => true, 'store-api' => false])]
     #[SearchRanking(SearchRanking::MIDDLE_SEARCH_RANKING)]
     public string $subject;
 
+    #[Protection(write: [Protection::SYSTEM_SCOPE])]
     #[Field(type: FieldType::STRING, api: ['admin-api' => true, 'store-api' => false], maxLength: 512)]
     public ?string $body = null;
 
     /**
      * Handed back unchanged in the notification to the app.
      */
+    #[Protection(write: [Protection::SYSTEM_SCOPE])]
     #[Field(type: FieldType::STRING, api: ['admin-api' => true, 'store-api' => false], maxLength: 1024)]
     public ?string $attach = null;
 
     #[Required]
+    #[Protection(write: [Protection::SYSTEM_SCOPE])]
     #[State(machine: PaymentOrderStates::STATE_MACHINE, api: ['admin-api' => true, 'store-api' => false])]
     public string $stateId;
 
     /**
      * The trade number of the channel, e.g. the alipay trade_no.
      */
+    #[Protection(write: [Protection::SYSTEM_SCOPE])]
     #[Field(type: FieldType::STRING, api: ['admin-api' => true, 'store-api' => false], maxLength: 128)]
     #[SearchRanking(SearchRanking::LOW_SEARCH_RANKING)]
     public ?string $outPaymentNo = null;
@@ -162,36 +155,62 @@ class PaymentOrderEntity extends EntityStruct
      *
      * @var array<string, mixed>|null
      */
+    #[Protection(write: [Protection::SYSTEM_SCOPE])]
     #[Field(type: FieldType::JSON, api: ['admin-api' => true, 'store-api' => false])]
     public ?array $channelData = null;
 
+    #[Protection(write: [Protection::SYSTEM_SCOPE])]
     #[Field(type: FieldType::STRING, api: ['admin-api' => true, 'store-api' => false], maxLength: 45)]
     public ?string $clientIp = null;
 
-    #[Field(type: FieldType::STRING, api: ['admin-api' => true, 'store-api' => false], maxLength: 32)]
-    public ?string $device = null;
-
+    #[Protection(write: [Protection::SYSTEM_SCOPE])]
     #[Field(type: FieldType::STRING, api: ['admin-api' => true, 'store-api' => false], maxLength: 1024)]
     public ?string $notifyUrl = null;
 
+    #[Protection(write: [Protection::SYSTEM_SCOPE])]
     #[Field(type: FieldType::STRING, api: ['admin-api' => true, 'store-api' => false], maxLength: 1024)]
     public ?string $returnUrl = null;
 
+    #[Protection(write: [Protection::SYSTEM_SCOPE])]
     #[Field(type: FieldType::STRING, api: ['admin-api' => true, 'store-api' => false], maxLength: 128)]
     public ?string $idempotencyKey = null;
 
+    #[Protection(write: [Protection::SYSTEM_SCOPE])]
     #[Field(type: FieldType::DATETIME, api: ['admin-api' => true, 'store-api' => false])]
     public ?\DateTimeInterface $expireAt = null;
 
+    #[Protection(write: [Protection::SYSTEM_SCOPE])]
     #[Field(type: FieldType::DATETIME, api: ['admin-api' => true, 'store-api' => false])]
     public ?\DateTimeInterface $paidAt = null;
+
+    #[Protection(write: [Protection::SYSTEM_SCOPE])]
+    #[Field(type: FieldType::DATETIME, api: false)]
+    public ?\DateTimeInterface $eventDispatchedAt = null;
+
+    #[Protection(write: [Protection::SYSTEM_SCOPE])]
+    #[Field(type: FieldType::DATETIME, api: ['admin-api' => true, 'store-api' => false])]
+    public ?\DateTimeInterface $eventDispatchAttemptedAt = null;
 
     /**
      * The order is not payable anymore: the app closed it, or the platform expired it because the payer
      * never showed up. Which of the two happened is told by the state of the order.
      */
+    #[Protection(write: [Protection::SYSTEM_SCOPE])]
     #[Field(type: FieldType::DATETIME, api: ['admin-api' => true, 'store-api' => false])]
     public ?\DateTimeInterface $closedAt = null;
+
+    #[Protection(write: [Protection::SYSTEM_SCOPE])]
+    #[ForeignKey(entity: 'payment_attempt', api: false)]
+    public ?string $activeAttemptId = null;
+
+    #[ManyToOne(entity: 'payment_attempt', column: 'active_attempt_id', api: false)]
+    public ?PaymentAttemptEntity $activeAttempt = null;
+
+    /**
+     * @var array<string, PaymentAttemptEntity>|null
+     */
+    #[OneToMany(entity: 'payment_attempt', ref: 'payment_order_id', onDelete: OnDelete::CASCADE, api: false)]
+    public ?array $attempts = null;
 
     #[ManyToOne(entity: 'payment_app', onDelete: OnDelete::RESTRICT, api: ['admin-api' => true, 'store-api' => false])]
     public ?PaymentAppEntity $paymentApp = null;
@@ -216,15 +235,6 @@ class PaymentOrderEntity extends EntityStruct
 
     #[ManyToOne(entity: 'order_transaction', api: false)]
     public ?OrderTransactionEntity $orderTransaction = null;
-
-    /**
-     * The access tokens issued for this order. They are deleted together with the order, a credential
-     * that outlives what it grants access to is worse than no credential at all.
-     *
-     * @var array<string, PaymentGatewayTokenEntity>|null
-     */
-    #[OneToMany(entity: 'payment_gateway_token', ref: 'order_id', onDelete: OnDelete::CASCADE, api: false)]
-    public ?array $gatewayTokens = null;
 
     /**
      * The attempts to pay this order, they only exist together with the order.

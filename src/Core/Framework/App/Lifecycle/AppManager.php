@@ -27,6 +27,7 @@ use Shopwell\Core\Framework\App\Event\Hooks\AppInstalledHook;
 use Shopwell\Core\Framework\App\Event\Hooks\AppUpdatedHook;
 use Shopwell\Core\Framework\App\Event\PostAppDeletedEvent;
 use Shopwell\Core\Framework\App\Exception\AppRegistrationException;
+use Shopwell\Core\Framework\App\Exception\AppUrlFailedVerificationException;
 use Shopwell\Core\Framework\App\Lifecycle\Context\AppActivationContext;
 use Shopwell\Core\Framework\App\Lifecycle\Context\AppPersistContext;
 use Shopwell\Core\Framework\App\Lifecycle\Context\AppRemovalContext;
@@ -426,7 +427,7 @@ class AppManager
         if ((!$app->getAppSecret() || $install) && $manifest->getSetup()) {
             try {
                 $this->registrationService->registerApp($manifest, $id, $secretAccessKey, $context);
-            } catch (AppRegistrationException $e) {
+            } catch (AppRegistrationException|AppUrlFailedVerificationException $e) {
                 // An ambiguous failure leaves an unconfirmed secret the app may already hold, so deleting
                 // the app would lose it — keep the half-installed app for a later installation repair.
                 if ($this->loadApp($id, $context)->getUnconfirmedAppSecrets() === null) {

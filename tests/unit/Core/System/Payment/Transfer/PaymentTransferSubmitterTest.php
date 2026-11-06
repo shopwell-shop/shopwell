@@ -2,35 +2,32 @@
 
 namespace Shopwell\Tests\Unit\Core\System\Payment\Transfer;
 
+use Doctrine\DBAL\Connection;
 use Payum\Core\GatewayInterface;
 use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Context;
-use Shopwell\Core\Framework\DataAbstractionLayer\Entity;
-use Shopwell\Core\Framework\DataAbstractionLayer\EntityCollection;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Event\EntityWrittenContainerEvent;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
 use Shopwell\Core\Framework\Event\NestedEventCollection;
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppChannel\PaymentAppChannelEntity;
-use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppProvider\PaymentAppProviderEntity;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
 use Shopwell\Core\System\Payment\App\PaymentCredentialCipher;
+use Shopwell\Core\System\Payment\Exception\PaymentProviderException;
+use Shopwell\Core\System\Payment\Exception\PaymentTransferException;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayFactory;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
-use Shopwell\Core\System\Payment\Gateway\PaymentTransferRequest;
-use Shopwell\Core\System\Payment\Gateway\TransferResult;
+use Shopwell\Core\System\Payment\Gateway\Request\PaymentTransferRequest;
+use Shopwell\Core\System\Payment\Gateway\Request\TransferResult;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
 use Shopwell\Core\System\Payment\PaymentException;
+use Shopwell\Core\System\Payment\Product\PaymentInteraction;
+use Shopwell\Core\System\Payment\Product\PaymentProduct;
+use Shopwell\Core\System\Payment\Product\PaymentProductRegistry;
 use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannelRegistry;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
-use Shopwell\Core\System\Payment\Provider\PaymentChannelConfigEntity;
-use Shopwell\Core\System\Payment\Provider\PaymentConfigResolver;
+use Shopwell\Core\System\Payment\Provider\Config\PaymentConfigResolver;
 use Shopwell\Core\System\Payment\Provider\PaymentProvider;
 use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferCollection;
@@ -38,7 +35,7 @@ use Shopwell\Core\System\Payment\Transfer\PaymentTransferEntity;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferRecipientCollection;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferRecipientEntity;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferRecipientService;
-use Shopwell\Core\System\Payment\Transfer\PaymentTransferReconciler;
+use Shopwell\Core\System\Payment\Transfer\PaymentTransferResultBooker;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferService;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferStateHandler;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferStates;
@@ -47,11 +44,13 @@ use Shopwell\Core\System\StateMachine\Aggregation\StateMachineState\StateMachine
 use Shopwell\Core\System\StateMachine\Aggregation\StateMachineState\StateMachineStateEntity;
 use Shopwell\Core\System\StateMachine\Loader\InitialStateIdLoader;
 use Shopwell\Core\System\StateMachine\StateMachineRegistry;
+use Shopwell\Core\Test\Stub\DataAbstractionLayer\StaticEntityRepository;
+use Shopwell\Tests\Unit\Core\System\Payment\Account\_fixtures\PaymentAccountLockStub;
+use Shopwell\Tests\Unit\Core\System\Payment\NumberRangeFixture;
 use Symfony\Component\Clock\MockClock;
 
 /**
- * What a channel answer means for the state of the transfer. The pure part carries the money-critical
- * knowledge, so it is asserted directly - the service behind it is final and can not be doubled.
+ * The submission guards, channel failure audit and booking boundaries.
  *
  * @internal
  */
@@ -72,124 +71,6 @@ class PaymentTransferSubmitterTest extends TestCase
         PaymentCapability::TRANSFER,
         PaymentCapability::TRANSFER_QUERY,
     ];
-
-    /**
-     * A channel that hands out the final state immediately still walks the money path: the machine has
-     * no shortcut from `submitted` that could be relied on, and every step is a real observation.
-     */
-    public function testASucceededAnswerWalksTheWholeMoneyPath(): void
-    {
-        static::assertSame(
-            [
-                PaymentTransferSubmitter::STEP_SUBMIT,
-                PaymentTransferSubmitter::STEP_PROCESS,
-                PaymentTransferSubmitter::STEP_SUCCEED,
-            ],
-            PaymentTransferSubmitter::stepNames(
-                new TransferResult(TransferResult::STATE_SUCCEEDED, 'po_1')
-            )
-        );
-    }
-
-    /**
-     * Wechat hands out the `package_info` and waits for the shopper - there is nothing to process yet.
-     */
-    public function testAnAwaitingConfirmAnswerOnlyWaits(): void
-    {
-        static::assertSame(
-            [PaymentTransferSubmitter::STEP_SUBMIT, PaymentTransferSubmitter::STEP_AWAIT_CONFIRM],
-            PaymentTransferSubmitter::stepNames(
-                new TransferResult(TransferResult::STATE_AWAITING_CONFIRM, 'transfer-bill-1', confirmPayload: 'MchId=1')
-            )
-        );
-    }
-
-    /**
-     * `accepted` and `processing` are the same fact for the state machine: the interface took the
-     * payout and moves the money by itself.
-     */
-    #[DataProvider('movingStates')]
-    public function testAMovingAnswerIsSubmittedAndProcessing(string $state): void
-    {
-        static::assertSame(
-            [PaymentTransferSubmitter::STEP_SUBMIT, PaymentTransferSubmitter::STEP_PROCESS],
-            PaymentTransferSubmitter::stepNames(new TransferResult($state, 'order-1'))
-        );
-    }
-
-    /**
-     * @return iterable<string, array{string}>
-     */
-    public static function movingStates(): iterable
-    {
-        yield 'processing' => [TransferResult::STATE_PROCESSING];
-        yield 'accepted' => [TransferResult::STATE_ACCEPTED];
-    }
-
-    /**
-     * The interface opened an object and then refused the payout - the object is the record of the
-     * attempt and the transfer has been submitted, so the failure is booked from `submitted`.
-     */
-    public function testAFailureWithAnObjectIsSubmittedFirst(): void
-    {
-        static::assertSame(
-            [PaymentTransferSubmitter::STEP_SUBMIT, PaymentTransferSubmitter::STEP_FAIL],
-            PaymentTransferSubmitter::stepNames(
-                new TransferResult(TransferResult::STATE_FAILED, 'order-1', failureCode: 'PAYEE_NOT_EXIST')
-            )
-        );
-    }
-
-    /**
-     * A refusal that never opened an object leaves nothing to submit. Fabricating a `submit` would
-     * mean inventing a reference no query could ever use - `created -> failed` is the edge for this.
-     */
-    public function testAFailureWithoutAnObjectIsAFailureFromCreated(): void
-    {
-        static::assertSame(
-            [PaymentTransferSubmitter::STEP_FAIL],
-            PaymentTransferSubmitter::stepNames(
-                new TransferResult(TransferResult::STATE_FAILED, failureCode: 'PAYEE_NOT_EXIST')
-            )
-        );
-    }
-
-    /**
-     * A transfer that never left `created` can not have arrived and come back: a channel answering
-     * `RETURNED` to a fresh payout has simply not moved the money. `mark_returned` is the reconciler's
-     * step, never the submitter's.
-     */
-    public function testAReturnedAnswerAtSubmissionIsAFailureNotAReturn(): void
-    {
-        $steps = PaymentTransferSubmitter::stepNames(new TransferResult(TransferResult::STATE_RETURNED, 'order-1'));
-
-        static::assertSame(
-            [PaymentTransferSubmitter::STEP_SUBMIT, PaymentTransferSubmitter::STEP_PROCESS, PaymentTransferSubmitter::STEP_FAIL],
-            $steps
-        );
-        static::assertNotContains(PaymentTransferReconciler::STEP_MARK_RETURNED, $steps);
-    }
-
-    /**
-     * The interface named the object but said nothing about its fate - the submission is a fact worth
-     * recording (it is what the query is addressed to), the outcome is not.
-     */
-    public function testAnUnknownAnswerWithAnObjectOnlyRecordsTheSubmission(): void
-    {
-        static::assertSame(
-            [PaymentTransferSubmitter::STEP_SUBMIT],
-            PaymentTransferSubmitter::stepNames(new TransferResult(TransferResult::STATE_UNKNOWN, 'order-1'))
-        );
-    }
-
-    /**
-     * Nothing was learned at all - the transfer stays `created` and the caller may send the very same
-     * out number again.
-     */
-    public function testAnUnknownAnswerWithoutAnObjectRecordsNothing(): void
-    {
-        static::assertSame([], PaymentTransferSubmitter::stepNames(new TransferResult(TransferResult::STATE_UNKNOWN)));
-    }
 
     /**
      * The credentials are resolved from the app, so a transfer of another app would be paid out of this
@@ -231,6 +112,32 @@ class PaymentTransferSubmitterTest extends TestCase
      * A transfer whose state was not read can not be classified, and sending it is the one thing that
      * must never happen - the guard fails closed instead of assuming `created`.
      */
+    public function testAStaleUnclaimedEntityCannotResubmitAnAlreadyClaimedPayout(): void
+    {
+        $gateway = static::createMock(GatewayInterface::class);
+        $gateway->expects($this->never())->method('execute');
+        $connection = static::createStub(Connection::class);
+        $connection->method('executeStatement')->willReturn(0);
+        $transfer = $this->createdTransfer();
+
+        $this->expectExceptionObject(PaymentTransferException::transferAlreadyFinalized($transfer->outNo, 'unknown'));
+
+        $this->submitter($gateway, connection: $connection)->submit($this->app('app-id'), $transfer);
+    }
+
+    public function testAnUnansweredPayoutCannotBeResubmittedAfterTheIdempotencyWindow(): void
+    {
+        $transfer = $this->createdTransfer();
+        $transfer->submitAttempts = 1;
+        $transfer->setCreatedAt(new \DateTimeImmutable('2026-10-16T08:00:00+00:00'));
+        $gateway = static::createMock(GatewayInterface::class);
+        $gateway->expects($this->never())->method('execute');
+
+        $this->expectExceptionObject(PaymentTransferException::transferAlreadyFinalized($transfer->outNo, 'unknown'));
+
+        $this->submitter($gateway)->submit($this->app('app-id'), $transfer);
+    }
+
     public function testATransferWithoutAStateIsRefused(): void
     {
         try {
@@ -288,12 +195,14 @@ class PaymentTransferSubmitterTest extends TestCase
         $transfers = static::createMock(EntityRepository::class);
         $transfers->expects($this->never())->method('update');
 
+        $transferService = $this->transferService($transfers);
         $submitter = new PaymentTransferSubmitter(
             $this->resolverFor($gateway, [PaymentCapability::CAPTURE, PaymentCapability::REFUND]),
-            $this->transferService($transfers)
+            $transferService,
+            new PaymentTransferResultBooker($transferService, $this->connection()),
         );
 
-        $this->expectExceptionObject(PaymentException::providerLacksCapability('alipay', PaymentCapability::TRANSFER->value));
+        $this->expectExceptionObject(PaymentProviderException::providerLacksCapability('alipay', PaymentCapability::TRANSFER->value));
 
         $submitter->submit($this->app('app-id'), $this->createdTransfer());
     }
@@ -360,6 +269,24 @@ class PaymentTransferSubmitterTest extends TestCase
         static::assertSame(255, mb_strlen((string) $written[1]['failureReason']));
     }
 
+    public function testAnUnknownAnswerWithoutAnObjectIsNotBooked(): void
+    {
+        $transfers = StaticEntityRepository::of(PaymentTransferCollection::class);
+
+        $connection = static::createStub(Connection::class);
+        $connection->method('executeStatement')->willReturn(1);
+        $connection->method('transactional')->willThrowException(new \LogicException('Unknown answers do not book transitions.'));
+
+        $result = $this->submitter(
+            $this->answeringGateway([], new TransferResult(TransferResult::STATE_UNKNOWN)),
+            $transfers,
+            $connection,
+        )->submit($this->app('app-id'), $this->createdTransfer());
+
+        static::assertSame(TransferResult::STATE_UNKNOWN, $result->state);
+        static::assertSame(1, $transfers->updates[0][0]['submitAttempts']);
+    }
+
     /**
      * A channel that answers `processing` without naming the object it created violates its contract,
      * and booking that answer would produce a payout nobody can ever query.
@@ -388,7 +315,7 @@ class PaymentTransferSubmitterTest extends TestCase
         // nothing was booked, so the attempt is the only write - and the row it is counted on is the
         // one that was read back, not the stale object of the caller
         static::assertCount(1, $written);
-        static::assertSame('transfer-id', $written[0]['id']);
+        static::assertSame(str_repeat('a', 32), $written[0]['id']);
         static::assertSame(1, $written[0]['submitAttempts']);
         static::assertStringContainsString('without an object reference', (string) $written[0]['failureReason']);
     }
@@ -429,16 +356,94 @@ class PaymentTransferSubmitterTest extends TestCase
         static::assertSame('order-1', $written[0]['providerRef']);
     }
 
+    public function testTheChannelCallIsOutsideTheSingleResultBookingTransaction(): void
+    {
+        $transactionCalls = 0;
+        $transactionNestingLevel = 0;
+        $observations = [];
+
+        $connection = static::createStub(Connection::class);
+        $connection->method('executeStatement')->willReturn(1);
+        $connection->method('getTransactionNestingLevel')->willReturnCallback(
+            static function () use (&$transactionNestingLevel): int {
+                return $transactionNestingLevel;
+            }
+        );
+        $connection->method('transactional')->willReturnCallback(
+            static function (\Closure $closure) use ($connection, &$transactionCalls, &$transactionNestingLevel): mixed {
+                ++$transactionCalls;
+                ++$transactionNestingLevel;
+
+                try {
+                    return $closure($connection);
+                } finally {
+                    --$transactionNestingLevel;
+                }
+            }
+        );
+
+        $gateway = static::createStub(GatewayInterface::class);
+        $gateway->method('execute')->willReturnCallback(
+            static function (PaymentTransferRequest $request) use ($connection, &$observations): void {
+                $observations[] = ['channel', $connection->getTransactionNestingLevel()];
+                $model = $request->getModel();
+                static::assertInstanceOf(PaymentGatewayModel::class, $model);
+                $model->offsetSet(
+                    PaymentGatewayModel::RESULT,
+                    new TransferResult(TransferResult::STATE_SUCCEEDED, 'order-1')
+                );
+            }
+        );
+
+        $transfers = static::createStub(EntityRepository::class);
+        $transfers->method('update')->willReturnCallback(
+            function (array $data) use ($connection, &$observations): EntityWrittenContainerEvent {
+                $observations[] = ['write', $connection->getTransactionNestingLevel()];
+
+                return $this->written();
+            }
+        );
+
+        $this->submitter($gateway, $transfers, $connection)
+            ->submit($this->app('app-id'), $this->createdTransfer());
+
+        static::assertSame(1, $transactionCalls);
+        static::assertSame([
+            ['channel', 0],
+            ['write', 1],
+            ['write', 1],
+        ], $observations);
+    }
+
     /**
      * @param EntityRepository<PaymentTransferCollection>|null $transfers
      */
-    private function submitter(?GatewayInterface $gateway = null, ?EntityRepository $transfers = null): PaymentTransferSubmitter
-    {
+    private function submitter(
+        ?GatewayInterface $gateway = null,
+        ?EntityRepository $transfers = null,
+        ?Connection $connection = null,
+    ): PaymentTransferSubmitter {
         $resolver = $gateway instanceof GatewayInterface
             ? $this->resolverFor($gateway)
             : $this->resolverWithoutChannels();
+        $transferService = $this->transferService($transfers);
 
-        return new PaymentTransferSubmitter($resolver, $this->transferService($transfers));
+        return new PaymentTransferSubmitter(
+            $resolver,
+            $transferService,
+            new PaymentTransferResultBooker($transferService, $connection ?? $this->connection()),
+        );
+    }
+
+    private function connection(): Connection
+    {
+        $connection = static::createStub(Connection::class);
+        $connection->method('executeStatement')->willReturn(1);
+        $connection->method('transactional')->willReturnCallback(
+            static fn (\Closure $closure): mixed => $closure($connection)
+        );
+
+        return $connection;
     }
 
     private function gatewayThatThrows(PaymentException $error): GatewayInterface
@@ -547,12 +552,11 @@ class PaymentTransferSubmitterTest extends TestCase
 
         return new PaymentConfigResolver(
             $providers,
-            new PaymentChannelRegistry($providers),
-            static::createStub(EntityRepository::class),
-            static::createStub(EntityRepository::class),
+            new PaymentProductRegistry($providers),
             static::createStub(EntityRepository::class),
             static::createStub(EntityRepository::class),
             new PaymentCredentialCipher(self::SECRET),
+            static::createStub(EntityRepository::class),
         );
     }
 
@@ -566,11 +570,12 @@ class PaymentTransferSubmitterTest extends TestCase
     {
         $cipher = new PaymentCredentialCipher(self::SECRET);
 
-        $channel = new PaymentChannel(
+        $channel = new PaymentProduct(
             technicalName: 'alipay_h5',
             providerTechnicalName: 'alipay',
+            method: 'alipay',
             label: 'Alipay H5',
-            flow: PaymentFlow::REDIRECT,
+            interactions: [PaymentInteraction::REDIRECT],
         );
 
         $gatewayFactory = static::createStub(PaymentGatewayFactory::class);
@@ -580,68 +585,13 @@ class PaymentTransferSubmitterTest extends TestCase
             technicalName: 'alipay',
             label: 'Alipay',
             credentials: [],
-            channels: ['alipay_h5' => $channel],
+            products: ['alipay_h5' => $channel],
             gatewayFactory: $gatewayFactory,
             notificationExtractor: static::createStub(PaymentNotificationExtractorInterface::class),
             capabilities: $capabilities,
         );
 
-        $providers = new PaymentProviderRegistry([$provider]);
-
-        $appProvider = new PaymentAppProviderEntity();
-        $appProvider->setUniqueIdentifier('app-provider-id');
-        $appProvider->paymentAppId = 'app-id';
-        $appProvider->providerTechnicalName = 'alipay';
-        $appProvider->enabled = true;
-        $appProvider->credentials = $cipher->encrypt(['app_id' => 'own-app-id']);
-
-        $appChannel = new PaymentAppChannelEntity();
-        $appChannel->setUniqueIdentifier('app-channel-id');
-        $appChannel->paymentAppId = 'app-id';
-        $appChannel->channelTechnicalName = 'alipay_h5';
-        $appChannel->enabled = true;
-        $appChannel->params = $cipher->encrypt(['appid' => 'own-appid']);
-
-        $channelConfig = new PaymentChannelConfigEntity();
-        $channelConfig->setUniqueIdentifier('channel-config-id');
-        $channelConfig->providerTechnicalName = 'alipay';
-        $channelConfig->channelTechnicalName = 'alipay_h5';
-        $channelConfig->enabled = true;
-        $channelConfig->params = $cipher->encrypt(['appid' => 'platform-appid']);
-
-        $appProviderRepository = static::createStub(EntityRepository::class);
-        $appProviderRepository->method('search')->willReturn($this->entityResult('payment_app_provider', $appProvider));
-
-        $appChannelRepository = static::createStub(EntityRepository::class);
-        $appChannelRepository->method('search')->willReturn($this->entityResult('payment_app_channel', $appChannel));
-
-        $channelConfigRepository = static::createStub(EntityRepository::class);
-        $channelConfigRepository->method('search')->willReturn($this->entityResult('payment_channel_config', $channelConfig));
-
-        return new PaymentConfigResolver(
-            $providers,
-            new PaymentChannelRegistry($providers),
-            $appProviderRepository,
-            static::createStub(EntityRepository::class),
-            $appChannelRepository,
-            $channelConfigRepository,
-            $cipher,
-        );
-    }
-
-    /**
-     * @return EntitySearchResult<EntityCollection<Entity>>
-     */
-    private function entityResult(string $entityName, Entity $entity): EntitySearchResult
-    {
-        return new EntitySearchResult(
-            $entityName,
-            1,
-            new EntityCollection([$entity]),
-            null,
-            new Criteria(),
-            Context::createDefaultContext()
-        );
+        return PaymentTransferRulesFixture::boundResolver($provider, $cipher);
     }
 
     /**
@@ -673,10 +623,14 @@ class PaymentTransferSubmitterTest extends TestCase
             $transfers,
             $recipients,
             new PaymentTransferStateHandler($registry),
-            new PaymentTransferRecipientService($recipients, $cipher, new MockClock(self::NOW)),
+            new PaymentTransferRecipientService($recipients, $cipher, new MockClock(self::NOW), PaymentTransferRulesFixture::registry()),
             $cipher,
             $initialStateIdLoader,
             new MockClock(self::NOW),
+            PaymentTransferRulesFixture::registry(),
+            NumberRangeFixture::generator('PT1001'),
+            PaymentTransferRulesFixture::resolvedConfig(),
+            new PaymentAccountLockStub(),
         );
     }
 
@@ -712,6 +666,7 @@ class PaymentTransferSubmitterTest extends TestCase
     {
         $app = new PaymentAppEntity();
         $app->id = $id;
+        $app->type = PaymentAppEntity::TYPE_EXTERNAL;
 
         return $app;
     }
@@ -722,8 +677,9 @@ class PaymentTransferSubmitterTest extends TestCase
     private function transfer(array $overrides = []): PaymentTransferEntity
     {
         $transfer = new PaymentTransferEntity();
-        $transfer->id = 'transfer-id';
+        $transfer->id = str_repeat('a', 32);
         $transfer->paymentAppId = 'app-id';
+        $transfer->accountId = 'account-id';
         $transfer->transferNo = 'PT261018090000ABCDEF0123';
         $transfer->outNo = 'commission0001';
         $transfer->recipientId = 'recipient-id';
@@ -731,7 +687,7 @@ class PaymentTransferSubmitterTest extends TestCase
         $transfer->channel = 'alipay_h5';
         $transfer->amount = 100;
         $transfer->currency = 'CNY';
-        $transfer->statusId = 'status-id';
+        $transfer->statusId = str_repeat('b', 32);
         $transfer->submitAttempts = 0;
         $transfer->assign($overrides);
 

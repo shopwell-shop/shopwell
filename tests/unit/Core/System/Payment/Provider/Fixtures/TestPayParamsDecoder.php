@@ -3,7 +3,7 @@
 namespace Shopwell\Tests\Unit\Core\System\Payment\Provider\Fixtures;
 
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\System\Payment\Api\Struct\PayParams;
+use Shopwell\Core\System\Payment\Gateway\Struct\PaymentHandover;
 use Shopwell\Core\System\Payment\Provider\PayParamsDecoderInterface;
 
 /**
@@ -14,7 +14,7 @@ use Shopwell\Core\System\Payment\Provider\PayParamsDecoderInterface;
 #[Package('framework')]
 final class TestPayParamsDecoder implements PayParamsDecoderInterface
 {
-    public function payParamsFromResponse(array $response): ?PayParams
+    public function payParamsFromResponse(array $response): ?PaymentHandover
     {
         return null;
     }

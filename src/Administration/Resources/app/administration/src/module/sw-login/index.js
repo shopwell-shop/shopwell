@@ -5,7 +5,7 @@ import OAuth2LoginService from './service/oauth2-login.api.service';
 
 const { Component, Module } = Shopwell;
 
-// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+/** @private */
 Shopwell.Service().register('oauth2LoginService', () => {
     return new OAuth2LoginService(Shopwell.Application.getContainer('init').httpClient);
 });
@@ -21,7 +21,7 @@ Component.register('sw-login-login', () => import('./view/sw-login-login'));
 /** @private */
 Component.register('sw-login', () => import('./page/index'));
 
-// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+/** @private */
 Module.register('sw-login', {
     type: 'core',
     name: 'login',

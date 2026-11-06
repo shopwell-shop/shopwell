@@ -3,23 +3,22 @@
 namespace Shopwell\Tests\Migration\Core;
 
 use Doctrine\DBAL\Connection;
+use PHPUnit\Framework\Attributes\After;
 use PHPUnit\Framework\Attributes\CoversNothing;
-use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 use PHPUnit\Framework\TestCase;
 use Psr\Clock\ClockInterface;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use Shopwell\Core\Defaults;
+use Shopwell\Core\Framework\Adapter\Database\MySQLFactory;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Migration\MigrationCollection;
 use Shopwell\Core\Framework\Migration\MigrationCollectionLoader;
-use Shopwell\Core\Framework\Test\TestCaseBase\DatabaseTransactionBehaviour;
 use Shopwell\Core\Framework\Test\TestCaseBase\KernelTestBehaviour;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\Maintenance\System\Service\ShopConfigurator;
 use Shopwell\Core\Migration\V6_3\Migration1536233560BasicData;
 use Shopwell\Core\Migration\V6_3\Migration1589357321AddCountries;
 use Shopwell\Core\Migration\V6_4\Migration1636964297AddDefaultTaxRate;
-use Shopwell\Tests\Migration\MigrationUntouchedDbTestTrait;
 
 /**
  * @internal
@@ -29,20 +28,16 @@ use Shopwell\Tests\Migration\MigrationUntouchedDbTestTrait;
  * valid target here; the replayed migrations must not receive smoke-level attribution either.
  */
 #[Package('framework')]
-#[RunTestsInSeparateProcesses]
 #[CoversNothing]
 class MigrationForeignDefaultLanguageTest extends TestCase
 {
-    use DatabaseTransactionBehaviour;
     use KernelTestBehaviour;
-    use MigrationUntouchedDbTestTrait;
+
+    private ?Connection $replayConnection = null;
 
     public function testFreshInstallationUsesChineseDefaults(): void
     {
-        $orgConnection = static::getContainer()->get(Connection::class);
-        $orgConnection->rollBack();
-
-        $connection = $this->setupDB($orgConnection);
+        $connection = $this->setupDB();
 
         foreach ($this->collectMigrations()->getMigrationSteps() as $className => $migration) {
             $migration->update($connection);
@@ -210,8 +205,6 @@ class MigrationForeignDefaultLanguageTest extends TestCase
             Uuid::fromBytesToHex($zeroTaxId),
             json_decode($defaultTaxConfig, true, 512, \JSON_THROW_ON_ERROR)['_value']
         );
-
-        $orgConnection->beginTransaction();
     }
 
     /**
@@ -220,10 +213,7 @@ class MigrationForeignDefaultLanguageTest extends TestCase
      */
     public function testMigrationWithoutEnGb(): void
     {
-        $orgConnection = static::getContainer()->get(Connection::class);
-        $orgConnection->rollBack();
-
-        $connection = $this->setupDB($orgConnection);
+        $connection = $this->setupDB();
 
         $migrationCollection = $this->collectMigrations();
 
@@ -292,8 +282,6 @@ class MigrationForeignDefaultLanguageTest extends TestCase
 
         static::assertIsArray($templateZhCn);
         static::assertSame('密码找回', $templateZhCn['subject']);
-
-        $orgConnection->beginTransaction();
     }
 
     /**
@@ -303,10 +291,7 @@ class MigrationForeignDefaultLanguageTest extends TestCase
      */
     public function testMigrationWithoutEnGbOrDe(): void
     {
-        $orgConnection = static::getContainer()->get(Connection::class);
-        $orgConnection->rollBack();
-
-        $connection = $this->setupDB($orgConnection);
+        $connection = $this->setupDB();
 
         $migrationCollection = $this->collectMigrations();
 
@@ -392,8 +377,6 @@ class MigrationForeignDefaultLanguageTest extends TestCase
             ]
         );
         static::assertFalse($templateDeLu);
-
-        $orgConnection->beginTransaction();
     }
 
     /**
@@ -402,10 +385,7 @@ class MigrationForeignDefaultLanguageTest extends TestCase
      */
     public function testMigrationWithEnGbAndDeButDifferentDefault(): void
     {
-        $orgConnection = static::getContainer()->get(Connection::class);
-        $orgConnection->rollBack();
-
-        $connection = $this->setupDB($orgConnection);
+        $connection = $this->setupDB();
 
         $migrationCollection = $this->collectMigrations();
         $enGbId = Uuid::randomBytes();
@@ -484,8 +464,15 @@ class MigrationForeignDefaultLanguageTest extends TestCase
         );
         static::assertIsArray($templateEnGb);
         static::assertSame('Password recovery', $templateEnGb['subject']);
+    }
 
-        $orgConnection->beginTransaction();
+    #[After]
+    public function dropReplayDatabase(): void
+    {
+        $this->replayConnection?->close();
+        $this->replayConnection = null;
+
+        static::getContainer()->get(Connection::class)->executeStatement('DROP DATABASE IF EXISTS `' . $this->replayDatabaseName() . '`');
     }
 
     private function isBasicDataMigration(string $className): bool
@@ -503,22 +490,18 @@ class MigrationForeignDefaultLanguageTest extends TestCase
             );
     }
 
-    private function setupDB(Connection $orgConnection): Connection
+    private function setupDB(): Connection
     {
-        // Be sure that we are on the no migrations db
-        static::assertStringContainsString('_no_migrations', $this->databaseName, 'Wrong DB ' . $this->databaseName);
+        $orgConnection = static::getContainer()->get(Connection::class);
+        $databaseName = $this->replayDatabaseName();
 
-        $orgConnection->executeStatement('DROP DATABASE IF EXISTS `' . $this->databaseName . '`');
+        $orgConnection->executeStatement('DROP DATABASE IF EXISTS `' . $databaseName . '`');
+        $orgConnection->executeStatement('CREATE DATABASE `' . $databaseName . '` DEFAULT CHARACTER SET utf8mb4 DEFAULT COLLATE utf8mb4_unicode_ci');
 
-        $orgConnection->executeStatement('CREATE DATABASE `' . $this->databaseName . '` DEFAULT CHARACTER SET utf8mb4 DEFAULT COLLATE utf8mb4_unicode_ci');
+        $orgConnection = MySQLFactory::createMigrationConnection($orgConnection);
 
-        $connection = new Connection(
-            array_merge(
-                $orgConnection->getParams(),
-                [
-                    'dbname' => $this->databaseName,
-                ]
-            ),
+        $this->replayConnection = new Connection(
+            array_merge($orgConnection->getParams(), ['dbname' => $databaseName]),
             $orgConnection->getDriver(),
             $orgConnection->getConfiguration(),
         );
@@ -526,8 +509,14 @@ class MigrationForeignDefaultLanguageTest extends TestCase
         $dumpFile = file_get_contents(__DIR__ . '/../../../src/Core/schema.sql');
         static::assertIsString($dumpFile);
 
-        $connection->executeStatement($dumpFile);
+        $this->replayConnection->executeStatement($dumpFile);
 
-        return $connection;
+        return $this->replayConnection;
+    }
+
+    // the replay runs on its own database, so the shared test database and its transaction stay untouched
+    private function replayDatabaseName(): string
+    {
+        return static::getContainer()->get(Connection::class)->getDatabase() . '_no_migrations';
     }
 }

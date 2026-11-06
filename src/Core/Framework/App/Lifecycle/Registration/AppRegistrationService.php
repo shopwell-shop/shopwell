@@ -12,11 +12,13 @@ use Psr\Log\LoggerInterface;
 use Shopwell\Core\Framework\App\AppCollection;
 use Shopwell\Core\Framework\App\AppEntity;
 use Shopwell\Core\Framework\App\AppException;
-use Shopwell\Core\Framework\App\Exception\AppRegistrationException;
 use Shopwell\Core\Framework\App\Exception\ShopIdChangeSuggestedException;
 use Shopwell\Core\Framework\App\Hmac\Guzzle\AuthMiddleware;
 use Shopwell\Core\Framework\App\Manifest\Manifest;
+use Shopwell\Core\Framework\App\ShopId\ShopId;
 use Shopwell\Core\Framework\App\ShopId\ShopIdProvider;
+use Shopwell\Core\Framework\App\Url\AppUrlVerifier;
+use Shopwell\Core\Framework\App\Url\VerificationStatus;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
@@ -47,6 +49,7 @@ class AppRegistrationService
         private readonly string $shopwellVersion,
         private readonly ClockInterface $clock,
         private readonly LoggerInterface $logger,
+        private readonly AppUrlVerifier $appUrlVerifier,
     ) {
     }
 
@@ -86,6 +89,9 @@ class AppRegistrationService
         }
 
         $app = $this->fetchApp($id, $context);
+        $shopId = $this->fetchShopId($app);
+        $this->verifyAppUrl();
+
         $currentSecret = $appHeldSecret ?? $app->getAppSecret();
         $logContext = ['appId' => $app->getId(), 'appName' => $app->getName()];
 
@@ -107,9 +113,7 @@ class AppRegistrationService
             );
         }
 
-        // Build the payload first — a failure here (e.g. the shop id lookup) must not leave a false
-        // unconfirmed record, since no confirm was ever sent.
-        $confirmationPayload = $this->getConfirmationPayload($app, $secretAccessKey);
+        $confirmationPayload = $this->getConfirmationPayload($app, $secretAccessKey, $shopId);
 
         // Save the minted secret as unconfirmed BEFORE the confirm leaves. If we crash between confirm and
         // commit, this is the only record of a secret the app may already hold — what recovery re-registers
@@ -141,6 +145,24 @@ class AppRegistrationService
         $this->commitAppSecret($app->getId(), $context, $secret);
 
         $this->logger->info('App secret committed after confirmation', $logContext);
+    }
+
+    private function fetchShopId(AppEntity $app): ShopId
+    {
+        try {
+            return $this->shopIdProvider->getShopId();
+        } catch (ShopIdChangeSuggestedException $e) {
+            throw AppException::registrationFailed($app->getName(), $e->getMessage());
+        }
+    }
+
+    private function verifyAppUrl(): void
+    {
+        $state = $this->appUrlVerifier->forceVerify();
+
+        if (!$state->is(VerificationStatus::PASS)) {
+            throw AppException::appUrlFailedVerification($state);
+        }
     }
 
     private function registrationFailedFromResponse(AppEntity $app, GuzzleException $e): AppException
@@ -294,17 +316,8 @@ class AppRegistrationService
     /**
      * @return array<string, string>
      */
-    private function getConfirmationPayload(AppEntity $app, #[\SensitiveParameter] string $secretAccessKey): array
+    private function getConfirmationPayload(AppEntity $app, #[\SensitiveParameter] string $secretAccessKey, ShopId $shopId): array
     {
-        try {
-            $shopId = $this->shopIdProvider->getShopId();
-        } catch (ShopIdChangeSuggestedException $e) {
-            throw AppRegistrationException::registrationFailed(
-                $app->getName(),
-                $e->getMessage(),
-            );
-        }
-
         // We can safely assume that the app has an integration because it is created together with the app
         // and explicitly fetched in the ::getApp() method below.
         $integration = $app->getIntegration();

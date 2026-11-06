@@ -28,7 +28,7 @@ type DeleteTarget = {
  *
  * The categories have no menu entry of their own: the toolbar of the entry list is the door.
  */
-// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+/** @private */
 export default defineComponent({
     template,
 

@@ -76,9 +76,9 @@ class PaymentNotifyTest extends TestCase
 
         $seed = $this->seedPaymentOrder();
         $paymentNo = $seed['paymentNo'];
-        $body = $this->alipayNotificationBody($paymentNo);
+        $body = $this->alipayNotificationBody($seed['attemptNo']);
 
-        $client->request('POST', '/payment-api/v1/notify/alipay/' . $paymentNo, [], [], [
+        $client->request('POST', '/payment-api/v1/notify/alipay/' . $seed['attemptNo'], [], [], [
             'CONTENT_TYPE' => 'application/x-www-form-urlencoded',
         ], $body);
 

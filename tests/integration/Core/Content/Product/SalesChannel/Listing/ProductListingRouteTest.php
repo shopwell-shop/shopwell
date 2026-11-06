@@ -8,6 +8,7 @@ use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Content\Category\CategoryCollection;
 use Shopwell\Core\Content\Product\Aggregate\ProductVisibility\ProductVisibilityDefinition;
+use Shopwell\Core\Content\Product\Events\ProductListingCriteriaEvent;
 use Shopwell\Core\Content\Product\ProductCollection;
 use Shopwell\Core\Content\Product\SalesChannel\Listing\ProductListingRoute;
 use Shopwell\Core\Content\ProductStream\Aggregate\ProductStreamFilter\ProductStreamFilterCollection;
@@ -22,8 +23,10 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopwell\Core\Framework\Test\TestCaseBase\SalesChannelApiTestBehaviour;
+use Shopwell\Core\Framework\Util\Base64;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextFactory;
+use Shopwell\Core\Test\Integration\EventDispatcher\EventHookDispatcher;
 use Shopwell\Core\Test\Stub\Framework\IdsCollection;
 use Shopwell\Core\Test\TestDefaults;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
@@ -107,6 +110,32 @@ class ProductListingRouteTest extends TestCase
         static::assertSame('product_listing', $response['apiAlias']);
         static::assertCount(6, $response['elements']);
         static::assertSame('product', $response['elements'][0]['apiAlias']);
+    }
+
+    public function testCustomListingParametersOfTheCompressedCriteriaAreReadLikeQueryParameters(): void
+    {
+        $this->createData();
+
+        $queries = [];
+        EventHookDispatcher::fromContainer(static::getContainer())->on(
+            ProductListingCriteriaEvent::class,
+            static function (ProductListingCriteriaEvent $event) use (&$queries): void {
+                $query = $event->getRequest()->query->all();
+                unset($query['_criteria']);
+                $queries[] = $query;
+            }
+        );
+
+        $url = '/store-api/product-listing/' . $this->ids->get('category');
+        $this->browser->request('GET', $url, ['custom-filter' => '0', 'custom-flag' => '1', 'custom-number' => '5']);
+
+        $compressed = gzencode(json_encode(['custom-filter' => false, 'custom-flag' => true, 'custom-number' => 5, 'custom-empty' => null], \JSON_THROW_ON_ERROR));
+        static::assertNotFalse($compressed, 'Gzip compressing failed');
+        $this->browser->request('GET', $url, ['_criteria' => Base64::urlEncode($compressed)]);
+
+        static::assertCount(2, $queries);
+        static::assertSame(['custom-filter' => '0', 'custom-flag' => '1', 'custom-number' => '5'], $queries[0]);
+        static::assertSame($queries[0], $queries[1], 'Listing processors of extensions read the same values as from plain query parameters');
     }
 
     public function testReturnsHttpNotFoundWhenRequestedPageExceedsLastPage(): void

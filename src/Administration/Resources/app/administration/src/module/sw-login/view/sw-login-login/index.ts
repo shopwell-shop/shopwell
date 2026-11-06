@@ -100,7 +100,7 @@ export default Component.wrapComponentConfig({
                 this.loginConfig = await this.loginService.getLoginTemplateConfig();
             } catch {
                 // Fall back to the password login when the SSO config cannot be loaded.
-                this.loginConfig = { useDefault: true, url: '' };
+                this.loginConfig = { useDefault: true, url: '', passwordRecoveryEnabled: true };
             }
 
             this.$emit('config-loaded', this.loginConfig);
@@ -120,8 +120,7 @@ export default Component.wrapComponentConfig({
          */
         async loadOAuth2LoginChannels() {
             try {
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-                this.oauth2Channels = (await this.oauth2LoginService.listChannels()) as OAuth2LoginChannel[];
+                this.oauth2Channels = await this.oauth2LoginService.listChannels();
             } catch {
                 this.oauth2Channels = [];
             }
@@ -240,7 +239,7 @@ export default Component.wrapComponentConfig({
             });
 
             if (this.licenseViolationService) {
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access -- The license service is provided by the extension container.
                 this.licenseViolationService.removeTimeFromLocalStorage(this.licenseViolationService.key.showViolationsKey);
             }
 
@@ -260,7 +259,7 @@ export default Component.wrapComponentConfig({
         },
 
         async forwardLogin() {
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- JSON.parse reads the route persisted by the router.
             const previousRoute = JSON.parse(sessionStorage.getItem('sw-admin-previous-route') as string);
             sessionStorage.removeItem('sw-admin-previous-route');
 
@@ -269,7 +268,7 @@ export default Component.wrapComponentConfig({
             if (
                 firstRunWizard &&
                 // @ts-expect-error
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-call -- Router names support strings and symbols in the legacy router types.
                 !this.$router?.currentRoute?.value?.name?.startsWith('sw.first.run.wizard') &&
                 this.$router.hasRoute('sw.first.run.wizard.index')
             ) {
@@ -277,9 +276,9 @@ export default Component.wrapComponentConfig({
                 return;
             }
 
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access -- The persisted route uses the router fullPath property.
             if (previousRoute?.fullPath) {
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access -- The route was persisted from the router on navigation.
                 void (await this.$router.push(previousRoute.fullPath));
                 return;
             }
@@ -305,14 +304,14 @@ export default Component.wrapComponentConfig({
                 return;
             }
 
-            /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access */
+            /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access -- Error payloads come from the API transport. */
             // @ts-expect-error
             const url = response.config?.url as string | undefined;
             // @ts-expect-error
             let error = response.response.data?.errors;
             error = Array.isArray(error) ? error[0] : error;
 
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument -- The transport may represent an HTTP status as a string.
             if (parseInt(error?.status, 10) === 429) {
                 const seconds = Number(error?.meta?.parameters?.seconds) || 10;
                 this.loginAlertMessage = this.$t('sw-login.index.messageAuthThrottled', { seconds }, 0);

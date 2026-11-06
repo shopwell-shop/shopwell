@@ -74,7 +74,7 @@ function orderReturnFilterFactory(vm: unknown): FilterFactory {
  *  3. **The money is read, not entered.** The refund amount is computed by the server from the line
  *     items it accepted; the operator never types an amount here.
  */
-// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+/** @private */
 export default defineComponent({
     template,
 
@@ -270,7 +270,7 @@ export default defineComponent({
         async getList(): Promise<void> {
             this.isLoading = true;
 
-            const filterService = Shopwell.Service('filterService') as unknown as {
+            const filterService = Shopwell.Service('filterService') as {
                 mergeWithStoredFilters: (storeKey: string, criteria: CriteriaType) => Promise<CriteriaType>;
             };
 
@@ -353,7 +353,7 @@ export default defineComponent({
          * with - the email is the only identity the queue can show for it.
          */
         customerLabel(item: OrderReturn): string {
-            const customer = item.customer as unknown as CustomerName | null | undefined;
+            const customer = item.customer as CustomerName | null | undefined;
 
             if (customer) {
                 const name = [customer.firstName, customer.lastName].filter(Boolean).join(' ').trim();

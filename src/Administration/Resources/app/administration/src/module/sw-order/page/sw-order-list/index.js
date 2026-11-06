@@ -122,7 +122,9 @@ export default {
                     .getAssociation('deliveries')
                     .addAssociation('stateMachineState')
                     .addAssociation('shippingOrderAddress')
-                    .addAssociation('shippingMethod');
+                    .addAssociation('shippingMethod')
+                    .addSorting(Criteria.sort('shippingCosts.unitPrice', 'DESC'))
+                    .addSorting(Criteria.sort('id', 'ASC'));
             }
 
             return criteria;
@@ -533,11 +535,7 @@ export default {
         },
 
         getStatusCriteria(value) {
-            const criteria = new Criteria(1, 25);
-
-            criteria.addFilter(Criteria.equals('stateMachine.technicalName', value));
-
-            return criteria;
+            return new Criteria(1, 25).addFilter(Criteria.equals('stateMachine.technicalName', value));
         },
 
         async onBulkEditItems() {

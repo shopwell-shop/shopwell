@@ -6,6 +6,7 @@ use Doctrine\DBAL\Connection;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\MockObject\Stub;
 use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Checkout\Ledger\RowLock;
 use Shopwell\Core\Checkout\Wallet\Entity\CustomerWallet\CustomerWalletCollection;
 use Shopwell\Core\Checkout\Wallet\Entity\CustomerWalletTransaction\CustomerWalletTransactionCollection;
 use Shopwell\Core\Checkout\Wallet\Event\WalletBalanceChangedEvent;
@@ -13,6 +14,7 @@ use Shopwell\Core\Checkout\Wallet\Service\WalletLedger;
 use Shopwell\Core\Checkout\Wallet\WalletException;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\Test\Stub\DataAbstractionLayer\StaticEntityRepository;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 
@@ -75,15 +77,10 @@ class WalletLedgerTest extends TestCase
                 return ($this->rowResolver)();
             }
 
-            return ['id' => self::WALLET_ID, 'balance' => 10.0];
+            return ['id' => Uuid::fromHexToBytes(self::WALLET_ID), 'balance' => 10.0];
         });
 
-        $this->ledger = new WalletLedger(
-            $this->walletRepository,
-            $this->walletTransactionRepository,
-            $this->connection,
-            $this->eventDispatcher,
-        );
+        $this->ledger = $this->createLedger($this->connection);
     }
 
     public function testBooksTheEntryAndMovesTheBalance(): void
@@ -133,7 +130,7 @@ class WalletLedgerTest extends TestCase
             ++$calls;
 
             // the first lookup misses, the wallet is created, the second one finds it
-            return $calls === 1 ? false : ['id' => self::WALLET_ID, 'balance' => 0.0];
+            return $calls === 1 ? false : ['id' => Uuid::fromHexToBytes(self::WALLET_ID), 'balance' => 0.0];
         };
 
         $this->ledger->book(self::CUSTOMER_ID, self::CURRENCY_ID, 'top_up', 10.0, $this->context);
@@ -187,22 +184,39 @@ class WalletLedgerTest extends TestCase
         static::assertSame([], $this->walletRepository->updates);
     }
 
+    public function testSkipsAReturnThatWasAlreadyRefunded(): void
+    {
+        // the reference was booked before - a return of the same order it is not
+        $this->connection->method('fetchOne')->willReturn(1);
+
+        $balanceAfter = $this->ledger->book(
+            self::CUSTOMER_ID,
+            self::CURRENCY_ID,
+            'refund',
+            20.0,
+            $this->context,
+            orderId: self::ORDER_ID,
+            externalReference: 'RT-1',
+            oncePerReference: true
+        );
+
+        static::assertSame(10.0, $balanceAfter);
+        static::assertSame([], $this->walletTransactionRepository->creates);
+        static::assertSame([], $this->walletRepository->updates);
+    }
+
     public function testDoesNotLookForADuplicateWithoutAnOrder(): void
     {
         // this is the only test that asserts on the lookup itself, so it brings its own double
         $connection = $this->createMock(Connection::class);
         $connection->expects($this->never())->method('fetchOne');
         $connection->method('transactional')->willReturnCallback(static fn (callable $callback) => $callback());
-        $connection->method('fetchAssociative')->willReturn(['id' => self::WALLET_ID, 'balance' => 10.0]);
+        $connection->method('fetchAssociative')->willReturn([
+            'id' => Uuid::fromHexToBytes(self::WALLET_ID),
+            'balance' => 10.0,
+        ]);
 
-        $ledger = new WalletLedger(
-            $this->walletRepository,
-            $this->walletTransactionRepository,
-            $connection,
-            $this->eventDispatcher,
-        );
-
-        $ledger->book(
+        $this->createLedger($connection)->book(
             self::CUSTOMER_ID,
             self::CURRENCY_ID,
             'consume',
@@ -212,5 +226,16 @@ class WalletLedgerTest extends TestCase
         );
 
         static::assertCount(1, $this->walletTransactionRepository->creates);
+    }
+
+    private function createLedger(Connection $connection): WalletLedger
+    {
+        return new WalletLedger(
+            $this->walletRepository,
+            $this->walletTransactionRepository,
+            $connection,
+            new RowLock($connection),
+            $this->eventDispatcher,
+        );
     }
 }

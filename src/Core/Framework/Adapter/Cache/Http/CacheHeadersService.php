@@ -3,6 +3,7 @@
 namespace Shopwell\Core\Framework\Adapter\Cache\Http;
 
 use Shopwell\Core\Checkout\Cart\Cart;
+use Shopwell\Core\Checkout\Cart\Price\TaxRuleFingerprint;
 use Shopwell\Core\Framework\Adapter\Cache\Event\HttpCacheCookieEvent;
 use Shopwell\Core\Framework\Adapter\Cache\Http\Extension\CacheHashRequiredExtension;
 use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
@@ -101,6 +102,11 @@ class CacheHeadersService
             HttpCacheCookieEvent::LANGUAGE_ID => $context->getLanguageId(),
         ];
 
+        $taxRuleFingerprint = TaxRuleFingerprint::build($context);
+        if ($taxRuleFingerprint !== null) {
+            $parts[HttpCacheCookieEvent::TAX_RULES] = $taxRuleFingerprint;
+        }
+
         foreach ($this->cookies as $cookie) {
             if ($request->cookies->has($cookie)) {
                 $parts[$cookie] = $request->cookies->get($cookie);
@@ -134,6 +140,12 @@ class CacheHeadersService
         // (tax state, country, payment method, shipping method conditioned rules)
         if ($salesChannelContext->getShippingLocation()->getCountry()->getId()
             !== $salesChannelContext->getSalesChannel()->getCountryId()
+        ) {
+            return true;
+        }
+
+        if ($salesChannelContext->getShippingLocation()->getState() !== null
+            && TaxRuleFingerprint::derivesPricesFromTaxRates($salesChannelContext)
         ) {
             return true;
         }

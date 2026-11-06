@@ -3,10 +3,10 @@
  */
 import './acl';
 
-/* eslint-disable sw-deprecation-rules/private-feature-declarations */
+/** @private */
 Shopwell.Component.register('sw-settings-dictionary-list', () => import('./page/sw-settings-dictionary-list'));
+/** @private */
 Shopwell.Component.register('sw-settings-dictionary-detail', () => import('./page/sw-settings-dictionary-detail'));
-/* eslint-enable sw-deprecation-rules/private-feature-declarations */
 
 const { Module } = Shopwell;
 
@@ -16,7 +16,7 @@ const { Module } = Shopwell;
  * entries from the detail page; both are plain DAL resources, so the pages only differ in which
  * repository they read and which fields they edit.
  */
-// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+/** @private */
 Module.register('sw-settings-dictionary', {
     type: 'core',
     name: 'settings-dictionary',
@@ -50,6 +50,18 @@ Module.register('sw-settings-dictionary', {
             },
         },
     },
+
+    navigation: [
+        {
+            id: 'sw-settings-dictionary',
+            label: 'sw-settings-dictionary.general.mainMenuItemGeneral',
+            parent: 'sw-settings',
+            path: 'sw.settings.dictionary.index',
+            icon: 'regular-layer-group',
+            position: 120,
+            privilege: 'dictionary.viewer',
+        },
+    ],
 
     settingsItem: {
         group: 'general',

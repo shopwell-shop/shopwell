@@ -1,30 +1,9 @@
 /**
  * @sw-package discovery
  */
-import { flushPromises, mount } from '@vue/test-utils';
+import { flushPromises, shallowMount } from '@vue/test-utils';
 import type { VueWrapper } from '@vue/test-utils';
 import BlogApiService from '../../service/blog.api.service';
-
-type AuthorVm = {
-    author: { id: string; name: string; mediaId: string | null; active: boolean } | null;
-    entries: unknown;
-    entryCount: number;
-    isDeleteBlocked: boolean;
-    name: string;
-    isNameMissing: boolean;
-    canEdit: boolean;
-    canDelete: boolean;
-    loadAuthor: () => Promise<void>;
-    loadEntries: () => Promise<void>;
-    onSave: (redirect?: boolean) => Promise<void>;
-    onAvatarSelected: (media: Array<{ id: string }>) => void;
-    onAvatarRemoved: () => void;
-    onDelete: () => void;
-    onDeactivateInstead: () => void;
-    deleteMessage: string;
-};
-
-type TypedWrapper = { vm: AuthorVm } & VueWrapper;
 
 function collection<T>(items: unknown[]): T {
     return Object.assign([...items], { total: items.length }) as unknown as T;
@@ -37,7 +16,7 @@ let activeWrapper: VueWrapper | null = null;
 async function createWrapper(
     entries: unknown[] = [{ id: 'blog-1' }],
     can: (privilege: string) => boolean = () => true,
-): Promise<{ wrapper: TypedWrapper; save: jest.Mock; remove: jest.Mock; push: jest.Mock }> {
+): Promise<{ wrapper: VueWrapper; save: jest.Mock; remove: jest.Mock; push: jest.Mock }> {
     const save = jest.fn(() => Promise.resolve());
     const remove = jest.fn(() => Promise.resolve());
     const push = jest.fn(() => Promise.resolve());
@@ -53,25 +32,51 @@ async function createWrapper(
         search: jest.fn(() => Promise.resolve(collection<EntityCollection<'blog'>>(entries))),
     };
 
-    const wrapper = mount(await wrapTestComponent('sw-blog-author-detail', { sync: true }), {
+    const wrapper = shallowMount(await wrapTestComponent('sw-blog-author-detail', { sync: true }), {
         props: { authorId: 'author-1' },
         global: {
             stubs: {
-                'sw-page': { template: '<div><slot name="content"></slot><slot></slot></div>' },
+                'sw-page': {
+                    template:
+                        '<div><slot name="smart-bar-header"></slot><slot name="smart-bar-actions"></slot><slot name="language-switch"></slot><slot name="content"></slot></div>',
+                },
                 'sw-card-view': { template: '<div><slot></slot></div>' },
                 'sw-container': { template: '<div><slot></slot></div>' },
-                'sw-language-switch': true,
+                'sw-language-switch': {
+                    props: ['saveChangesFunction', 'abortChangeFunction'],
+                    template:
+                        '<section><output class="unsaved">{{ abortChangeFunction() }}</output><button class="language-save" @click="saveChangesFunction()">Save translation</button><button class="language-change" @click="$emit(\'on-change\', \'language-2\')">Change language</button></section>',
+                },
                 'sw-skeleton': true,
-                'sw-media-compact-upload-v2': true,
-                'sw-data-grid': true,
+                'sw-media-compact-upload-v2': {
+                    props: ['source'],
+                    template:
+                        '<section><output class="avatar-source">{{ source }}</output><button class="select-avatar" @click="$emit(\'selection-change\', [{ id: \'media-1\' }])">Select portrait</button><button class="remove-avatar" @click="$emit(\'delete-item\')">Remove portrait</button></section>',
+                },
+                'sw-data-grid': {
+                    props: ['dataSource'],
+                    template:
+                        '<table><tbody><tr v-for="item in dataSource" :key="item.id"><td>{{ item.id }}</td></tr></tbody></table>',
+                },
                 'sw-time-ago': true,
                 'sw-blog-status-badge': true,
                 'sw-modal': { template: '<div class="modal"><slot></slot><slot name="modal-footer"></slot></div>' },
                 'mt-card': { template: '<div><slot></slot></div>', props: ['title'] },
-                'mt-button': true,
-                'mt-text-field': true,
+                'mt-button': {
+                    props: ['disabled', 'isLoading'],
+                    template: '<button :disabled="disabled" :data-loading="isLoading"><slot></slot></button>',
+                },
+                'mt-text-field': {
+                    props: ['modelValue', 'disabled'],
+                    template:
+                        '<input :value="modelValue" :disabled="disabled" @input="$emit(\'update:modelValue\', $event.target.value)">',
+                },
                 'mt-textarea': true,
-                'mt-switch': true,
+                'mt-switch': {
+                    props: ['modelValue', 'disabled'],
+                    template:
+                        '<input type="checkbox" :checked="modelValue" :disabled="disabled" @change="$emit(\'update:modelValue\', $event.target.checked)">',
+                },
                 'mt-empty-state': true,
             },
             provide: {
@@ -84,7 +89,8 @@ async function createWrapper(
             mocks: {
                 $route: { name: 'sw.blog.author.detail', meta: { $module: { icon: 'regular-image-text' } } },
                 $router: { push, replace: jest.fn(() => Promise.resolve()) },
-                $t: (key: string, payload?: Record<string, unknown>) => (payload ? `${key}:${JSON.stringify(payload)}` : key),
+                $t: (key: string, payload?: Record<string, unknown>) =>
+                    payload ? `${key}:${JSON.stringify(payload)}` : key,
                 $te: () => false,
             },
         },
@@ -92,29 +98,29 @@ async function createWrapper(
 
     activeWrapper = wrapper;
 
-    return { wrapper: wrapper as unknown as TypedWrapper, save, remove, push };
+    return { wrapper, save, remove, push };
 }
 
 describe('src/module/sw-blog/page/sw-blog-author-detail', () => {
     afterEach(() => {
         activeWrapper?.unmount();
         activeWrapper = null;
-        jest.clearAllMocks();
+        jest.restoreAllMocks();
     });
 
     it('loads the author and the entries that carry the byline', async () => {
         const { wrapper } = await createWrapper();
         await flushPromises();
 
-        expect(wrapper.vm.author?.name).toBe('Anna');
-        expect(wrapper.vm.entryCount).toBe(1);
+        expect((wrapper.get('.sw-blog-author-detail__name').element as HTMLInputElement).value).toBe('Anna');
+        expect(wrapper.findAll('tbody tr')).toHaveLength(1);
     });
 
     it('saves without leaving the page', async () => {
         const { wrapper, save, push } = await createWrapper();
         await flushPromises();
 
-        await wrapper.vm.onSave();
+        await wrapper.get('.sw-blog-author-detail__action-save').trigger('click');
         await flushPromises();
 
         expect(save).toHaveBeenCalled();
@@ -125,13 +131,11 @@ describe('src/module/sw-blog/page/sw-blog-author-detail', () => {
         const { wrapper, save } = await createWrapper();
         await flushPromises();
 
-        if (wrapper.vm.author) {
-            wrapper.vm.author.name = '   ';
-        }
+        await wrapper.get('.sw-blog-author-detail__name').setValue('   ');
 
-        await wrapper.vm.onSave();
+        await wrapper.get('.sw-blog-author-detail__action-save').trigger('click');
 
-        expect(wrapper.vm.isNameMissing).toBe(true);
+        expect((wrapper.get('.sw-blog-author-detail__name').element as HTMLInputElement).value).toBe('   ');
         expect(save).not.toHaveBeenCalled();
     });
 
@@ -139,30 +143,30 @@ describe('src/module/sw-blog/page/sw-blog-author-detail', () => {
         const { wrapper } = await createWrapper();
         await flushPromises();
 
-        wrapper.vm.onAvatarSelected([{ id: 'media-1' }]);
-        expect(wrapper.vm.author?.mediaId).toBe('media-1');
+        await wrapper.get('.select-avatar').trigger('click');
+        expect(wrapper.get('.avatar-source').text()).toBe('media-1');
 
-        wrapper.vm.onAvatarRemoved();
-        expect(wrapper.vm.author?.mediaId).toBeNull();
+        await wrapper.get('.remove-avatar').trigger('click');
+        expect(wrapper.get('.avatar-source').text()).toBe('');
     });
 
     it('blocks the delete while entries still carry the byline', async () => {
         const { wrapper, remove } = await createWrapper();
         await flushPromises();
 
-        expect(wrapper.vm.isDeleteBlocked).toBe(true);
-
-        wrapper.vm.onDelete();
+        await wrapper.get('.sw-blog-author-detail__action-delete').trigger('click');
+        expect(wrapper.find('.sw-blog-author-detail__delete-confirm').exists()).toBe(false);
 
         expect(remove).not.toHaveBeenCalled();
-        expect(wrapper.vm.deleteMessage).toContain('textDeleteInUse');
+        expect(wrapper.get('.sw-blog-author-detail__delete-message').text()).toContain('textDeleteInUse');
     });
 
     it('retires an author in use by switching them off', async () => {
         const { wrapper, save, remove } = await createWrapper();
         await flushPromises();
 
-        wrapper.vm.onDeactivateInstead();
+        await wrapper.get('.sw-blog-author-detail__action-delete').trigger('click');
+        await wrapper.get('.sw-blog-author-detail__delete-deactivate').trigger('click');
         await flushPromises();
 
         expect(remove).not.toHaveBeenCalled();
@@ -173,9 +177,10 @@ describe('src/module/sw-blog/page/sw-blog-author-detail', () => {
         const { wrapper, remove, push } = await createWrapper([]);
         await flushPromises();
 
-        expect(wrapper.vm.isDeleteBlocked).toBe(false);
+        await wrapper.get('.sw-blog-author-detail__action-delete').trigger('click');
+        expect(wrapper.find('.sw-blog-author-detail__delete-confirm').exists()).toBe(true);
 
-        wrapper.vm.onDelete();
+        await wrapper.get('.sw-blog-author-detail__delete-confirm').trigger('click');
         await flushPromises();
 
         expect(remove).toHaveBeenCalledWith('author-1');

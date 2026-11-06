@@ -1,0 +1,38 @@
+.sw-payment-identifier {
+    display: inline-flex;
+    gap: var(--scale-size-6);
+    align-items: center;
+    max-width: 100%;
+
+    &__value {
+        overflow: hidden;
+        font-family: ui-monospace, SFMono-Regular, menlo, monaco, consolas, monospace;
+        font-size: var(--font-size-xs);
+        line-height: var(--font-line-height-s);
+        color: var(--color-text-primary-default);
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        user-select: all;
+    }
+
+    &__copy {
+        display: inline-flex;
+        flex: none;
+        align-items: center;
+        justify-content: center;
+        width: var(--scale-size-20);
+        height: var(--scale-size-20);
+        padding: 0;
+        color: var(--color-text-secondary-default);
+        cursor: pointer;
+        background: transparent;
+        border: 0;
+        border-radius: var(--border-radius-xs);
+
+        &:hover,
+        &:focus-visible {
+            color: var(--color-text-primary-default);
+            background: var(--color-elevation-surface-hover);
+        }
+    }
+}

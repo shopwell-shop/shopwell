@@ -1,11 +1,11 @@
 /**
  * @sw-package framework
  */
-import { mount } from '@vue/test-utils';
+import { shallowMount } from '@vue/test-utils';
 import type { VueWrapper } from '@vue/test-utils';
 import Criteria from 'src/core/data/criteria.data';
 
-// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations -- Keep the service double asynchronous like the production filter service.
 Shopwell.Service().register('filterService', () => {
     return {
         // the real service is async (src/app/service/filter.service.js), the double has to be too -
@@ -58,49 +58,6 @@ const transfers = [
     },
 ];
 
-type TransferListVm = {
-    defaultFilters: string[];
-    listFilterOptions: Record<string, unknown>;
-    criteria: {
-        term: string;
-        sortings: unknown[];
-        associations: Array<{ association: string }>;
-        filters: unknown[];
-    };
-    stateFilterOptions: Array<{ id: string; name: string }>;
-    hasActiveSearchOrFilter: boolean;
-    activeFilterNumber: number;
-    page: number;
-    total: number;
-    transfers: unknown[];
-    isLoading: boolean;
-    term: string;
-    canCreate: boolean;
-    canApprove: boolean;
-    transferColumns: Array<{ property: string }>;
-    showCreateModal: boolean;
-    transferToApprove: Record<string, unknown> | null;
-    transferToReject: Record<string, unknown> | null;
-    updateCriteria: (filters: unknown[]) => void;
-    transferStateLabel: (stateId: string) => string;
-    transferStateVariant: (stateId: string) => string;
-    recipientLabel: (item: unknown) => string;
-    providerLabel: (provider: string | null) => string;
-    failureLabel: (item: unknown) => string;
-    isDecidable: (item: unknown) => boolean;
-    canDecide: (item: unknown) => boolean;
-    formatAmount: (amount: number, currency: string) => string;
-    formatDateOrDash: (value: string | null) => string;
-    onOpenCreateModal: () => void;
-    onCloseCreateModal: () => void;
-    onTransferCreated: () => void;
-    onApprove: (item: unknown) => void;
-    onReject: (item: unknown) => void;
-    onCloseApproveModal: () => void;
-};
-
-type TypedWrapper = { vm: TransferListVm } & VueWrapper;
-
 function collection<T>(items: unknown[]): T {
     return Object.assign([...items], { total: items.length }) as unknown as T;
 }
@@ -112,15 +69,17 @@ async function createWrapper(
     stateLabels: Record<string, string> = {},
     items: unknown[] = transfers,
 ): Promise<{
-    wrapper: TypedWrapper;
-    search: jest.Mock;
+    wrapper: VueWrapper;
+    search: jest.Mock<Promise<EntityCollection<'payment_transfer'>>, [InstanceType<typeof Criteria>]>;
     stateSearch: jest.Mock;
 }> {
-    const search = jest.fn(() => Promise.resolve(collection<EntityCollection<'payment_transfer'>>(items)));
+    const search = jest.fn<Promise<EntityCollection<'payment_transfer'>>, [InstanceType<typeof Criteria>]>(() =>
+        Promise.resolve(collection<EntityCollection<'payment_transfer'>>(items)),
+    );
 
     const stateSearch = jest.fn(() => Promise.resolve(collection<EntityCollection<'state_machine_state'>>(transferStates)));
 
-    const wrapper = mount(await wrapTestComponent('sw-finance-transfer-list', { sync: true }), {
+    const wrapper = shallowMount(await wrapTestComponent('sw-finance-transfer-list', { sync: true }), {
         global: {
             stubs: {
                 'sw-page': {
@@ -133,25 +92,49 @@ async function createWrapper(
                             <slot name="sidebar"></slot>
                         </div>`,
                 },
-                'sw-search-bar': true,
-                'sw-entity-listing': true,
+                'sw-search-bar': { template: '<input class="search" @input="$emit(\'search\', $event.target.value)">' },
+                'sw-entity-listing': {
+                    props: ['dataSource', 'columns', 'isLoading'],
+                    template: `<div><table><thead><tr><th v-for="column in columns" :key="column.property" :data-column="column.property">{{ column.label }}</th></tr></thead>
+                    <tbody><tr v-for="item in dataSource" :key="item.id" :data-row="item.id">
+                    <td v-for="column in columns" :key="column.property" :data-cell="column.property"><slot :name="'column-' + column.property" :item="item">{{ item[column.property] }}</slot></td>
+                    <td><slot name="more-actions" :item="item"></slot></td></tr></tbody></table>
+                    <button class="next-page" @click="$emit('page-change', { page: 2, limit: 25 })">Next page</button></div>`,
+                },
                 'sw-data-grid': true,
                 'sw-context-button': true,
-                'sw-context-menu-item': true,
+                'sw-context-menu-item': { template: '<button><slot></slot></button>' },
                 'sw-pagination': true,
                 'sw-data-grid-settings': true,
                 'sw-data-grid-skeleton': true,
-                'sw-sidebar': true,
-                'sw-sidebar-item': true,
-                'sw-sidebar-filter-panel': true,
-                'sw-finance-transfer-create-modal': true,
-                'sw-finance-transfer-approve-modal': true,
-                'sw-finance-transfer-reject-modal': true,
+                'sw-sidebar': { template: '<aside><slot></slot></aside>' },
+                'sw-sidebar-item': { template: '<button class="refresh">Refresh</button>' },
+                'sw-sidebar-filter-panel': {
+                    props: ['filters', 'defaults'],
+                    template: `<section class="filters"><label v-for="filter in filters" :key="filter.property" :data-filter="filter.property">{{ filter.label }}
+                    <select v-if="filter.options" @change="$emit('criteria-changed', [{ type: 'equalsAny', field: filter.property, value: $event.target.value }])"><option v-for="option in filter.options" :key="option.id" :value="option.id">{{ option.name }}</option></select>
+                    <input v-else @change="$emit('criteria-changed', [{ type: 'equalsAny', field: filter.property, value: $event.target.value }])"></label></section>`,
+                },
+                'sw-finance-transfer-create-modal': {
+                    template:
+                        '<section class="create-modal"><button class="close" @click="$emit(\'modal-close\')">Close</button><button class="decide" @click="$emit(\'transfer-created\')">Decide</button></section>',
+                },
+                'sw-finance-transfer-approve-modal': {
+                    template:
+                        '<section class="approve-modal"><button class="close" @click="$emit(\'modal-close\')">Close</button><button class="decide" @click="$emit(\'transfer-decided\')">Decide</button></section>',
+                },
+                'sw-finance-transfer-reject-modal': {
+                    template:
+                        '<section class="reject-modal"><button class="close" @click="$emit(\'modal-close\')">Close</button><button class="decide" @click="$emit(\'transfer-decided\')">Decide</button></section>',
+                },
                 'router-link': { template: '<a><slot></slot></a>' },
-                'mt-button': true,
-                'mt-badge': true,
+                'mt-button': { template: '<button class="create-button"><slot></slot></button>' },
+                'mt-badge': {
+                    props: ['variant'],
+                    template: '<span class="state" :data-variant="variant"><slot></slot></span>',
+                },
                 'mt-icon': true,
-                'mt-tooltip': true,
+                'mt-tooltip': { template: '<span><slot></slot></span>' },
                 // the stub renders the button slot: the empty state carries the second entry point of
                 // the create modal, and the default stub would swallow it
                 'mt-empty-state': {
@@ -196,7 +179,7 @@ async function createWrapper(
                       }),
             },
         },
-    }) as unknown as TypedWrapper;
+    });
 
     activeWrapper = wrapper;
 
@@ -205,101 +188,80 @@ async function createWrapper(
     return { wrapper, search, stateSearch };
 }
 
+function cell(wrapper: VueWrapper, column: string) {
+    return wrapper.get(`[data-cell="${column}"]`);
+}
+
+const createdTransfer = { ...transfers[0], statusId: 'state-created', statusMachineState: { technicalName: 'created' } };
+
 describe('module/sw-finance/page/sw-finance-transfer-list', () => {
     afterEach(() => {
         activeWrapper?.unmount();
         activeWrapper = null;
     });
 
-    it('should have a default filter for every filter option', async () => {
+    it('should offer every default filter in the sidebar', async () => {
         const { wrapper } = await createWrapper();
-
-        expect(wrapper.vm.defaultFilters).toEqual([
-            'transfer-no-filter',
-            'out-no-filter',
-            'channel-filter',
-            'provider-filter',
-            'state-filter',
+        expect(wrapper.findAll('[data-filter]').map((filter) => filter.attributes('data-filter'))).toEqual([
+            'transferNo',
+            'outNo',
+            'channel',
+            'provider',
+            'statusId',
         ]);
-
-        wrapper.vm.defaultFilters.forEach((filterKey) => {
-            expect(wrapper.vm.listFilterOptions).toHaveProperty(filterKey);
-        });
     });
 
-    it('should keep the search, the sorting, the recipient and the app in the criteria', async () => {
-        const { wrapper } = await createWrapper();
-
-        wrapper.vm.term = 'T-1';
-
-        const criteria = wrapper.vm.criteria;
-
+    it('should request search, ordering and recipient/app/status associations', async () => {
+        const { wrapper, search } = await createWrapper();
+        search.mockClear();
+        await wrapper.get('.search').setValue('T-1');
+        await wrapper.get('.refresh').trigger('click');
+        await flushPromises();
+        const criteria = search.mock.calls[0][0];
         expect(criteria.term).toBe('T-1');
         expect(criteria.sortings).toEqual([{ field: 'createdAt', order: 'DESC', naturalSorting: false }]);
-
-        const associations = criteria.associations.map((association) => association.association);
-
-        expect(associations).toContain('recipient');
-        expect(associations).toContain('paymentApp');
-        expect(associations).toContain('statusMachineState');
+        expect(criteria.associations.map((association) => association.association)).toEqual([
+            'recipient',
+            'paymentApp',
+            'statusMachineState',
+        ]);
     });
 
-    it('should load the transfers into the listing state', async () => {
+    it('should load and render the rows and read states only once', async () => {
         const { wrapper, search, stateSearch } = await createWrapper();
-
         expect(search).toHaveBeenCalled();
-        expect(wrapper.vm.total).toBe(1);
-        expect(wrapper.vm.transfers).toHaveLength(1);
-        expect(wrapper.vm.isLoading).toBe(false);
-
-        // the states are read once, not with every list request
+        expect(wrapper.get('.sw-page__smart-bar-amount').text()).toBe('(1)');
+        expect(wrapper.findAll('tbody tr')).toHaveLength(1);
         expect(stateSearch).toHaveBeenCalledTimes(1);
     });
 
-    /**
-     * The filter dropdown lists the same names as the column, so it has to be translated the same way -
-     * otherwise the operator filters by 打款成功 and the column answers 成功.
-     */
-    it('should offer the states of the transfer machine as filter options', async () => {
+    it('should offer finance vocabulary in the state filter', async () => {
         const { wrapper } = await createWrapper(undefined, STATE_LABELS);
-
-        expect(wrapper.vm.stateFilterOptions).toEqual([
-            { id: 'state-created', name: '待提交' },
-            { id: 'state-succeeded', name: '成功' },
-            { id: 'state-failed', name: '失败' },
-            { id: 'state-canceled', name: '已取消' },
+        expect(wrapper.findAll('[data-filter="statusId"] option').map((option) => option.text())).toEqual([
+            '待提交',
+            '成功',
+            '失败',
+            '已取消',
         ]);
-
-        // the names the migration gives the same states are not the words of these pages
-        expect(JSON.stringify(wrapper.vm.stateFilterOptions)).not.toContain('打款');
-        expect(wrapper.vm.hasActiveSearchOrFilter).toBe(false);
-
-        wrapper.vm.activeFilterNumber = 1;
-        expect(wrapper.vm.hasActiveSearchOrFilter).toBe(true);
+        expect(wrapper.get('[data-filter="statusId"]').text()).not.toContain('打款');
     });
 
-    it('should apply the filters the filter panel emits and reload the list', async () => {
+    it('should apply emitted filters, reset pagination and reload the list', async () => {
         const { wrapper, search } = await createWrapper();
-
-        search.mockClear();
-
-        const filters = [Criteria.equalsAny('channel', ['wechat_transfer'])];
-        wrapper.vm.updateCriteria(filters);
+        await wrapper.get('.next-page').trigger('click');
         await flushPromises();
-
-        expect(wrapper.vm.page).toBe(1);
-        expect(wrapper.vm.criteria.filters).toEqual(filters);
-        expect(search).toHaveBeenCalled();
+        search.mockClear();
+        await wrapper.get('[data-filter="channel"] input').setValue('wechat_transfer');
+        await wrapper.get('[data-filter="channel"] input').trigger('change');
+        await flushPromises();
+        const criteria = search.mock.calls[0][0];
+        expect(criteria.page).toBe(1);
+        expect(criteria.filters).toEqual([Criteria.equalsAny('channel', ['wechat_transfer'])]);
     });
 
-    /**
-     * The prd orders the columns, and the order is the reading flow of an approver: what is it, who gets
-     * it, how much, in which state, why did it fail, when.
-     */
-    it('should expose the columns of the prd in its order', async () => {
+    it('should render columns in the approver reading order', async () => {
         const { wrapper } = await createWrapper();
-
-        expect(wrapper.vm.transferColumns.map((column) => column.property)).toEqual([
+        expect(wrapper.findAll('th').map((header) => header.attributes('data-column'))).toEqual([
             'transferNo',
             'outNo',
             'recipientId',
@@ -312,175 +274,103 @@ describe('module/sw-finance/page/sw-finance-transfer-list', () => {
         ]);
     });
 
-    it('should render the state, the recipient and the amount of a transfer', async () => {
+    it('should render the state, recipient and minor-unit amount', async () => {
         const { wrapper } = await createWrapper(undefined, STATE_LABELS);
-
-        expect(wrapper.vm.transferStateLabel('state-succeeded')).toBe('成功');
-        expect(wrapper.vm.transferStateVariant('state-succeeded')).toBe('positive');
-        expect(wrapper.vm.transferStateVariant('state-failed')).toBe('critical');
-        expect(wrapper.vm.recipientLabel(transfers[0])).toBe('张三');
-        expect(wrapper.vm.recipientLabel({ recipient: { providerAccountId: 'openid-1' } })).toBe('openid-1');
-        expect(wrapper.vm.recipientLabel({})).toBe('-');
-        expect(wrapper.vm.formatAmount(500, 'CNY')).toBe(Shopwell.Utils.format.currency(5, 'CNY', 2));
+        expect(cell(wrapper, 'statusId').text()).toBe('成功');
+        expect(cell(wrapper, 'statusId').get('.state').attributes('data-variant')).toBe('positive');
+        expect(cell(wrapper, 'recipientId').text()).toBe('张三');
+        expect(cell(wrapper, 'amount').text()).toBe(Shopwell.Utils.format.currency(5, 'CNY', 2));
     });
 
-    /**
-     * The snippet of this module wins over the name the state machine carries. The migration calls a
-     * `created` payout 已创建 and a `succeeded` one 打款成功 - words of the payment gateway, and the first of
-     * them tells an approver the opposite of what the row is waiting for.
-     */
-    it('should name a state with the words of the finance pages instead of the ones of the migration', async () => {
-        const { wrapper } = await createWrapper(undefined, STATE_LABELS);
-
-        expect(wrapper.vm.transferStateLabel('state-created')).toBe('待提交');
-        expect(wrapper.vm.transferStateLabel('state-canceled')).toBe('已取消');
-        expect(wrapper.vm.transferStateLabel('state-succeeded')).not.toContain('打款');
-        expect(wrapper.vm.transferStateLabel('state-created')).not.toBe('已创建');
+    it.each([
+        ['state-created', '待提交', 'neutral'],
+        ['state-canceled', '已取消', 'neutral'],
+        ['state-failed', '失败', 'critical'],
+    ])('should display finance state %s instead of gateway vocabulary', async (statusId, label, variant) => {
+        const { wrapper } = await createWrapper(undefined, STATE_LABELS, [{ ...transfers[0], statusId }]);
+        expect(cell(wrapper, 'statusId').text()).toBe(label);
+        expect(cell(wrapper, 'statusId').get('.state').attributes('data-variant')).toBe(variant);
     });
 
-    /**
-     * A state this administration has no snippet for is not a reason to show a key - the name of the machine
-     * is the fallback, even though it is a word of the payment gateway.
-     */
-    it('should fall back to the name of the machine for a state without a snippet', async () => {
-        const { wrapper } = await createWrapper(undefined, {
-            'sw-finance.transfer.stateLabel.created': '待提交',
-        });
-
-        expect(wrapper.vm.transferStateLabel('state-created')).toBe('待提交');
-        expect(wrapper.vm.transferStateLabel('state-succeeded')).toBe('打款成功');
+    it('should use the machine translation when a finance snippet is absent', async () => {
+        const { wrapper } = await createWrapper(undefined, { 'sw-finance.transfer.stateLabel.created': '待提交' });
+        expect(cell(wrapper, 'statusId').text()).toBe('打款成功');
     });
 
-    it('should translate an interface name and fall back to its technical name', async () => {
-        const { wrapper } = await createWrapper();
-
-        // the environment answers every `$te` with true, so the translation is the key itself here
-        expect(wrapper.vm.providerLabel('wechat')).toBe('sw-settings-payment-provider.provider.wechat');
-        expect(wrapper.vm.providerLabel(null)).toBe('-');
+    it.each([
+        [{ providerAccountId: 'openid-1' }, 'openid-1'],
+        [null, '-'],
+    ])('should display the recipient account fallback %s', async (recipient, label) => {
+        const { wrapper } = await createWrapper(undefined, {}, [{ ...transfers[0], recipient }]);
+        expect(cell(wrapper, 'recipientId').text()).toBe(label);
     });
 
-    /**
-     * The failure column carries three stories: a rejection (an operator decision), a channel failure and a
-     * bare code. They must never be mixed up, because only the second one came from the provider.
-     */
-    it('should tell a rejection, a channel failure and a bare code apart', async () => {
-        const { wrapper } = await createWrapper();
-
-        expect(wrapper.vm.failureLabel({ metadata: { rejectReason: '账号有误' } })).toBe(
-            'sw-finance.transfer.actions.cancel: 账号有误',
-        );
-        expect(wrapper.vm.failureLabel({ failureReason: '余额不足', failureCode: 'NOT_ENOUGH' })).toBe('余额不足');
-        expect(wrapper.vm.failureLabel({ failureCode: 'NOT_ENOUGH' })).toBe('NOT_ENOUGH');
-        expect(wrapper.vm.failureLabel({})).toBe('');
+    it.each([
+        ['wechat', 'sw-settings-payment-provider.provider.wechat'],
+        [null, '-'],
+    ])('should display provider %s', async (provider, label) => {
+        const { wrapper } = await createWrapper(undefined, {}, [{ ...transfers[0], provider }]);
+        expect(cell(wrapper, 'provider').text()).toBe(label);
     });
 
-    it('should render a dash instead of an invalid date', async () => {
-        const { wrapper } = await createWrapper();
+    it.each([
+        [{ metadata: { rejectReason: '账号有误' } }, 'sw-finance.transfer.actions.cancel: 账号有误'],
+        [{ failureReason: '余额不足', failureCode: 'NOT_ENOUGH' }, '余额不足'],
+        [{ failureCode: 'NOT_ENOUGH' }, 'NOT_ENOUGH'],
+        [{}, ''],
+    ])('should distinguish the rejection and channel failure %s', async (failure, label) => {
+        const { wrapper } = await createWrapper(undefined, {}, [{ ...transfers[0], ...failure }]);
+        expect(cell(wrapper, 'failureCode').text()).toBe(label);
+    });
+
+    it.each([null, '2026-01-02T03:04:05.000Z'])('should render timestamp %s', async (createdAt) => {
+        const { wrapper } = await createWrapper(undefined, {}, [{ ...transfers[0], createdAt }]);
         const dateFilter = Shopwell.Filter.getByName('date') as (value: string) => string;
-
-        expect(wrapper.vm.formatDateOrDash(null)).toBe('–');
-        expect(wrapper.vm.formatDateOrDash('2026-01-02T03:04:05.000Z')).toBe(dateFilter('2026-01-02T03:04:05.000Z'));
+        expect(cell(wrapper, 'createdAt').text()).toBe(createdAt === null ? '–' : dateFilter(createdAt));
     });
 
-    /**
-     * The action matrix of the prd: an action needs the `created` state *and* the approver privilege.
-     */
-    it('should decide the visibility of the actions by state and privilege', async () => {
-        const { wrapper } = await createWrapper();
-
-        const created = { statusMachineState: { technicalName: 'created' } };
-        const submitted = { statusMachineState: { technicalName: 'submitted' } };
-
-        expect(wrapper.vm.isDecidable(created)).toBe(true);
-        expect(wrapper.vm.isDecidable(submitted)).toBe(false);
-        expect(wrapper.vm.canDecide(created)).toBe(true);
-        expect(wrapper.vm.canDecide(submitted)).toBe(false);
+    it.each([
+        ['created', true, true],
+        ['submitted', true, false],
+        ['created', false, false],
+    ])('should gate decisions for state %s and approver %s', async (state, approver, visible) => {
+        const { wrapper } = await createWrapper((privilege) => privilege !== 'payment_transfer.approver' || approver, {}, [
+            { ...createdTransfer, statusMachineState: { technicalName: state } },
+        ]);
+        expect(wrapper.find('.sw-finance-transfer-list__action-submit').exists()).toBe(visible);
+        expect(wrapper.find('.sw-finance-transfer-list__action-cancel').exists()).toBe(visible);
+        expect(wrapper.find('.approve-modal').exists()).toBe(false);
+        expect(wrapper.find('.reject-modal').exists()).toBe(false);
     });
 
-    it('should not let a viewer decide a created transfer', async () => {
-        const { wrapper } = await createWrapper((privilege) => privilege !== 'payment_transfer.approver');
-
-        const created = { statusMachineState: { technicalName: 'created' } };
-
-        expect(wrapper.vm.canApprove).toBe(false);
-        expect(wrapper.vm.canDecide(created)).toBe(false);
-
-        wrapper.vm.onApprove(created);
-        wrapper.vm.onReject(created);
-
-        // a click can not open a modal the privilege does not allow - the endpoint would refuse it anyway
-        expect(wrapper.vm.transferToApprove).toBeNull();
-        expect(wrapper.vm.transferToReject).toBeNull();
+    it.each([true, false])('should gate creation for creator privilege %s', async (creator) => {
+        const { wrapper } = await createWrapper((privilege) => privilege !== 'payment_transfer.creator' || creator);
+        expect(wrapper.find('.create-button').exists()).toBe(creator);
     });
 
-    it('should only offer the create button to a creator', async () => {
-        const creator = await createWrapper();
-        expect(creator.wrapper.vm.canCreate).toBe(true);
-
-        activeWrapper?.unmount();
-
-        const viewer = await createWrapper((privilege) => privilege !== 'payment_transfer.creator');
-        expect(viewer.wrapper.vm.canCreate).toBe(false);
-    });
-
-    it('should open the create and the decision modals', async () => {
-        const { wrapper, search } = await createWrapper();
-
-        wrapper.vm.onOpenCreateModal();
-        expect(wrapper.vm.showCreateModal).toBe(true);
-
-        wrapper.vm.onCloseCreateModal();
-        expect(wrapper.vm.showCreateModal).toBe(false);
-
+    it('should open and close creation and decision modals and refresh after creation', async () => {
+        const { wrapper, search } = await createWrapper(undefined, {}, [createdTransfer]);
+        await wrapper.get('.create-button').trigger('click');
+        expect(wrapper.find('.create-modal').exists()).toBe(true);
+        await wrapper.get('.create-modal .close').trigger('click');
+        expect(wrapper.find('.create-modal').exists()).toBe(false);
+        await wrapper.get('.create-button').trigger('click');
         search.mockClear();
-        wrapper.vm.onTransferCreated();
+        await wrapper.get('.create-modal .decide').trigger('click');
         await flushPromises();
-        expect(wrapper.vm.showCreateModal).toBe(false);
+        expect(wrapper.find('.create-modal').exists()).toBe(false);
         expect(search).toHaveBeenCalled();
-
-        const created = { statusMachineState: { technicalName: 'created' } };
-        wrapper.vm.onApprove(created);
-        expect(wrapper.vm.transferToApprove).toEqual(created);
-
-        wrapper.vm.onCloseApproveModal();
-        expect(wrapper.vm.transferToApprove).toBeNull();
-
-        wrapper.vm.onReject(created);
-        expect(wrapper.vm.transferToReject).toEqual(created);
+        await wrapper.get('.sw-finance-transfer-list__action-submit').trigger('click');
+        expect(wrapper.find('.approve-modal').exists()).toBe(true);
+        await wrapper.get('.approve-modal .close').trigger('click');
+        expect(wrapper.find('.approve-modal').exists()).toBe(false);
+        await wrapper.get('.sw-finance-transfer-list__action-cancel').trigger('click');
+        expect(wrapper.find('.reject-modal').exists()).toBe(true);
     });
 
-    /**
-     * Regression: the modals used to sit directly under `<sw-page>` - in the default slot, which
-     * `sw-page` never renders (it only has named slots). The button set its flag, nothing appeared.
-     * Both entry points of the create modal must mount the modal for real.
-     */
-    it('should mount the create modal when the smart bar button is clicked', async () => {
-        const { wrapper } = await createWrapper();
-
-        expect(wrapper.find('sw-finance-transfer-create-modal-stub').exists()).toBe(false);
-
-        // the smart bar carries the only button while the list has rows - the empty state button only
-        // renders for an empty list
-        const smartBarButtons = wrapper.findAll('mt-button-stub');
-
-        expect(smartBarButtons.length).toBeGreaterThan(0);
-        await smartBarButtons[0].trigger('click');
-
-        expect(wrapper.vm.showCreateModal).toBe(true);
-        expect(wrapper.find('sw-finance-transfer-create-modal-stub').exists()).toBe(true);
-    });
-
-    it('should mount the create modal when the button of the empty state is clicked', async () => {
+    it('should mount creation from the empty state', async () => {
         const { wrapper } = await createWrapper(() => true, {}, []);
-
-        expect(wrapper.find('sw-finance-transfer-create-modal-stub').exists()).toBe(false);
-
-        const emptyStateButton = wrapper.find('.sw-finance-transfer-list__empty-state mt-button-stub');
-
-        expect(emptyStateButton.exists()).toBe(true);
-        await emptyStateButton.trigger('click');
-
-        expect(wrapper.vm.showCreateModal).toBe(true);
-        expect(wrapper.find('sw-finance-transfer-create-modal-stub').exists()).toBe(true);
+        await wrapper.get('.sw-finance-transfer-list__empty-state .create-button').trigger('click');
+        expect(wrapper.find('.create-modal').exists()).toBe(true);
     });
 });

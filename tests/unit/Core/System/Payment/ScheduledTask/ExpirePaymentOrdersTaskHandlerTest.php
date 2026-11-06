@@ -10,17 +10,15 @@ use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\System\Payment\App\PaymentCredentialCipher;
 use Shopwell\Core\System\Payment\Order\PaymentOrderCollection;
 use Shopwell\Core\System\Payment\Order\PaymentOrderEntity;
 use Shopwell\Core\System\Payment\Order\PaymentOrderService;
 use Shopwell\Core\System\Payment\Order\PaymentOrderStateHandler;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannelRegistry;
-use Shopwell\Core\System\Payment\Provider\PaymentConfigResolver;
-use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;
 use Shopwell\Core\System\Payment\ScheduledTask\ExpirePaymentOrdersTaskHandler;
 use Shopwell\Core\System\StateMachine\Loader\InitialStateIdLoader;
 use Shopwell\Core\System\StateMachine\StateMachineRegistry;
+use Shopwell\Tests\Unit\Core\System\Payment\NumberRangeFixture;
+use Shopwell\Tests\Unit\Core\System\Payment\Order\_fixtures\PaymentOrderRowLockStub;
 use Symfony\Component\Clock\MockClock;
 
 /**
@@ -38,8 +36,7 @@ class ExpirePaymentOrdersTaskHandlerTest extends TestCase
         $order->paymentNo = 'PG0001';
         $order->outTradeNo = 'app-trade-1';
         $order->paymentAppId = 'app-id';
-        $order->providerTechnicalName = 'alipay';
-        $order->channelTechnicalName = 'alipay_h5';
+
         $order->amount = 1000;
         $order->currency = 'CNY';
         $order->subject = 'An order';
@@ -92,27 +89,17 @@ class ExpirePaymentOrdersTaskHandlerTest extends TestCase
      */
     private function orderService(EntityRepository $orderRepository): PaymentOrderService
     {
-        $providerRegistry = new PaymentProviderRegistry([]);
-
-        $configResolver = new PaymentConfigResolver(
-            $providerRegistry,
-            new PaymentChannelRegistry($providerRegistry),
-            static::createStub(EntityRepository::class),
-            static::createStub(EntityRepository::class),
-            static::createStub(EntityRepository::class),
-            static::createStub(EntityRepository::class),
-            new PaymentCredentialCipher('test-secret')
-        );
-
         $initialStateIdLoader = static::createStub(InitialStateIdLoader::class);
         $initialStateIdLoader->method('get')->willReturn('state-created');
 
         return new PaymentOrderService(
             $orderRepository,
-            $configResolver,
             $initialStateIdLoader,
             new PaymentOrderStateHandler(static::createStub(StateMachineRegistry::class)),
-            new MockClock('2024-01-01T00:00:00+00:00')
+            new MockClock('2024-01-01T00:00:00+00:00'),
+            NumberRangeFixture::generator('PG1001'),
+            new PaymentOrderRowLockStub(),
+            static::createStub(EntityRepository::class)
         );
     }
 }

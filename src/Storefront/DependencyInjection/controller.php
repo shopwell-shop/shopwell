@@ -32,8 +32,8 @@ use Shopwell\Core\Checkout\Customer\SalesChannel\UpsertAddressRoute;
 use Shopwell\Core\Checkout\Customer\Service\SmsLoginService;
 use Shopwell\Core\Checkout\DocumentV2\SalesChannel\DocumentRoute;
 use Shopwell\Core\Checkout\Loyalty\SalesChannel\LoyaltyRedeemRoute;
-use Shopwell\Core\Checkout\Loyalty\SalesChannel\MembershipPurchaseRoute;
 use Shopwell\Core\Checkout\Loyalty\Service\LoyaltySettings;
+use Shopwell\Core\Checkout\Membership\SalesChannel\MembershipPurchaseRoute;
 use Shopwell\Core\Checkout\Order\SalesChannel\CancelOrderRoute;
 use Shopwell\Core\Checkout\Order\SalesChannel\OrderRoute;
 use Shopwell\Core\Checkout\Order\SalesChannel\OrderService;
@@ -41,15 +41,16 @@ use Shopwell\Core\Checkout\Order\SalesChannel\SetPaymentOrderRoute;
 use Shopwell\Core\Checkout\OrderReturn\SalesChannel\OrderReturnGuestRoute;
 use Shopwell\Core\Checkout\OrderReturn\SalesChannel\OrderReturnRoute;
 use Shopwell\Core\Checkout\OrderReturn\Service\OrderReturnSettings;
+use Shopwell\Core\Checkout\Payment\Gateway\OrderPaymentStarter;
 use Shopwell\Core\Checkout\Payment\PaymentProcessor;
 use Shopwell\Core\Checkout\Payment\SalesChannel\HandlePaymentMethodRoute;
-use Shopwell\Core\Checkout\Promotion\Cart\PromotionItemBuilder;
 use Shopwell\Core\Checkout\Wallet\SalesChannel\WalletPaymentRoute;
 use Shopwell\Core\Checkout\Wallet\SalesChannel\WalletTopUpCreateRoute;
 use Shopwell\Core\Checkout\Wallet\SalesChannel\WalletTopUpStatusRoute;
 use Shopwell\Core\Checkout\Wallet\Service\WalletSettings;
 use Shopwell\Core\Content\Blog\SalesChannel\Review\BlogCommentRoute;
 use Shopwell\Core\Content\Blog\Service\BlogTypeRegistry;
+use Shopwell\Core\Content\Breadcrumb\SalesChannel\BreadcrumbRoute;
 use Shopwell\Core\Content\Category\SalesChannel\CategoryRoute;
 use Shopwell\Core\Content\Category\Service\CategoryUrlGenerator;
 use Shopwell\Core\Content\Cms\SalesChannel\CmsRoute;
@@ -77,16 +78,19 @@ use Shopwell\Core\Framework\RateLimiter\RateLimiter;
 use Shopwell\Core\Framework\Script\Api\ScriptResponseEncoder;
 use Shopwell\Core\Framework\Sso\Service\OAuth2LoginService;
 use Shopwell\Core\Framework\Util\HtmlSanitizer;
+use Shopwell\Core\System\Payment\Order\PaymentOrderService;
 use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextService;
 use Shopwell\Core\System\SalesChannel\SalesChannel\ContextSwitchRoute;
 use Shopwell\Core\System\SystemConfig\SystemConfigService;
 use Shopwell\Storefront\Checkout\Cart\SalesChannel\StorefrontCartFacade;
-use Shopwell\Storefront\Controller\AccountLoyaltyController;
+use Shopwell\Storefront\Controller\AccountMembershipController;
 use Shopwell\Storefront\Controller\AccountOrderController;
 use Shopwell\Storefront\Controller\AccountOrderReturnController;
 use Shopwell\Storefront\Controller\AccountProfileController;
+use Shopwell\Storefront\Controller\AccountRewardsController;
 use Shopwell\Storefront\Controller\AccountWalletController;
 use Shopwell\Storefront\Controller\AddressController;
+use Shopwell\Storefront\Controller\AnalyticsController;
 use Shopwell\Storefront\Controller\Api\CaptchaController as ApiCaptchaController;
 use Shopwell\Storefront\Controller\AppController;
 use Shopwell\Storefront\Controller\AuthController;
@@ -109,6 +113,7 @@ use Shopwell\Storefront\Controller\NavigationController;
 use Shopwell\Storefront\Controller\NewsletterController;
 use Shopwell\Storefront\Controller\OAuth2LoginController;
 use Shopwell\Storefront\Controller\OrderReturnGuestController;
+use Shopwell\Storefront\Controller\PaymentGatewayController;
 use Shopwell\Storefront\Controller\ProductController;
 use Shopwell\Storefront\Controller\RegisterController;
 use Shopwell\Storefront\Controller\RobotsController;
@@ -126,7 +131,7 @@ use Shopwell\Storefront\Framework\Routing\MaintenanceModeResolver;
 use Shopwell\Storefront\Framework\Twig\ErrorTemplateResolver;
 use Shopwell\Storefront\Page\Account\CustomerGroupRegistration\CustomerGroupRegistrationPageLoader;
 use Shopwell\Storefront\Page\Account\Login\AccountLoginPageLoader;
-use Shopwell\Storefront\Page\Account\Loyalty\AccountLoyaltyPageLoader;
+use Shopwell\Storefront\Page\Account\Membership\AccountMembershipPageLoader;
 use Shopwell\Storefront\Page\Account\Order\AccountEditOrderPageLoader;
 use Shopwell\Storefront\Page\Account\Order\AccountOrderDetailPageLoader;
 use Shopwell\Storefront\Page\Account\Order\AccountOrderPageLoader;
@@ -135,6 +140,7 @@ use Shopwell\Storefront\Page\Account\OrderReturn\GuestOrderReturnPageLoader;
 use Shopwell\Storefront\Page\Account\Overview\AccountOverviewPageLoader;
 use Shopwell\Storefront\Page\Account\Profile\AccountProfilePageLoader;
 use Shopwell\Storefront\Page\Account\RecoverPassword\AccountRecoverPasswordPageLoader;
+use Shopwell\Storefront\Page\Account\Rewards\AccountRewardsPageLoader;
 use Shopwell\Storefront\Page\Account\Wallet\AccountWalletPageLoader;
 use Shopwell\Storefront\Page\Address\Detail\AddressDetailPageLoader;
 use Shopwell\Storefront\Page\Address\Listing\AddressListingPageLoader;
@@ -167,6 +173,7 @@ use Shopwell\Storefront\Pagelet\Menu\Offcanvas\MenuOffcanvasPageletLoader;
 use Shopwell\Storefront\Pagelet\Newsletter\Account\NewsletterAccountPageletLoader;
 use Shopwell\Storefront\Pagelet\Wishlist\GuestWishlistPageletLoader;
 use Shopwell\Storefront\Storybook\StorybookService;
+use Shopwell\Storefront\System\SalesChannel\SalesChannelAnalyticsLoader;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
 use function Symfony\Component\DependencyInjection\Loader\Configurator\param;
@@ -183,6 +190,13 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->public()
         ->args([
             tagged_iterator('shopwell.storefront.captcha'),
+        ])
+        ->call('setContainer', [service('service_container')]);
+
+    $services->set(PaymentGatewayController::class)
+        ->args([
+            service(PaymentOrderService::class),
+            service(OrderPaymentStarter::class),
         ])
         ->call('setContainer', [service('service_container')]);
 
@@ -217,10 +231,17 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ])
         ->call('setContainer', [service('service_container')]);
 
-    $services->set(AccountLoyaltyController::class)
+    $services->set(AccountRewardsController::class)
         ->args([
-            service(AccountLoyaltyPageLoader::class),
+            service(AccountRewardsPageLoader::class),
             service(LoyaltyRedeemRoute::class),
+            service(LoyaltySettings::class),
+        ])
+        ->call('setContainer', [service('service_container')]);
+
+    $services->set(AccountMembershipController::class)
+        ->args([
+            service(AccountMembershipPageLoader::class),
             service(MembershipPurchaseRoute::class),
             service(LoyaltySettings::class),
         ])
@@ -263,6 +284,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(DeleteAddressRoute::class),
             service(ContextSwitchRoute::class),
             service(SalesChannelContextService::class),
+            service(ChangeCustomerProfileRoute::class),
         ])
         ->call('setContainer', [service('service_container')]);
 
@@ -290,7 +312,6 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(CartLineItemController::class)
         ->args([
             service(CartService::class),
-            service(PromotionItemBuilder::class),
             service(ProductLineItemFactory::class),
             service(HtmlSanitizer::class),
             service(ProductListRoute::class),
@@ -319,6 +340,13 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service(ContextGatewayRoute::class),
             service(CartService::class),
+        ])
+        ->call('setContainer', [service('service_container')]);
+
+    $services->set(AnalyticsController::class)
+        ->args([
+            service(BreadcrumbRoute::class),
+            service(SalesChannelAnalyticsLoader::class),
         ])
         ->call('setContainer', [service('service_container')]);
 

@@ -15,12 +15,12 @@ use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\Migration\V6_7\Migration1791856510CreatePaymentTables;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
 use Shopwell\Core\System\Payment\App\PaymentCredentialCipher;
+use Shopwell\Core\System\Payment\Integration\Alipay\Api\AlipayApi;
+use Shopwell\Core\System\Payment\Integration\Paypal\Api\PaypalApi;
+use Shopwell\Core\System\Payment\Integration\Stripe\Api\StripeApi;
+use Shopwell\Core\System\Payment\Integration\Wechat\Api\WechatApi;
 use Shopwell\Core\System\Payment\Order\PaymentOrderStates;
-use Shopwell\Core\System\Payment\Order\Refund\PaymentRefundStates;
-use Shopwell\Core\System\Payment\Provider\Alipay\AlipayApi;
-use Shopwell\Core\System\Payment\Provider\Paypal\PaypalApi;
-use Shopwell\Core\System\Payment\Provider\Stripe\StripeApi;
-use Shopwell\Core\System\Payment\Provider\Wechat\WechatApi;
+use Shopwell\Core\System\Payment\Order\PaymentRefundStates;
 use Shopwell\Core\System\Payment\Subscription\PaymentMandateStates;
 use Shopwell\Core\System\Payment\Subscription\PaymentSubscriptionCycleStates;
 use Shopwell\Core\System\Payment\Subscription\PaymentSubscriptionStates;
@@ -34,17 +34,19 @@ class Migration1791856510CreatePaymentTablesTest extends TestCase
 {
     /**
      * The tables of the gateway in their final shape - the configuration matrix first, then the
-     * bookkeeping, then the payum tokens of the running checkouts and the binding of a checkout
-     * payment method to the channel it collects through.
+     * bookkeeping and the binding of a checkout payment method to the channel it collects through.
      */
     private const TABLES = [
         'payment_app',
+        'payment_account',
+        'payment_attempt',
+        'payment_cashier_config',
+        'payment_cashier_session',
         'payment_provider_config',
         'payment_channel_config',
-        'payment_app_provider',
+        'payment_app_account',
         'payment_app_channel',
         'payment_order',
-        'payment_gateway_token',
         'payment_transaction',
         'payment_refund',
         'payment_notification',
@@ -79,36 +81,122 @@ class Migration1791856510CreatePaymentTablesTest extends TestCase
         }
     }
 
-    /**
-     * The tables are created in the shape the model ended up with, not in the shape of the structure
-     * they were once migrated from: the provider sits next to the channel on the order and on the
-     * attempt, the channel keeps its parameters, and the credentials live on the interface.
-     */
     public function testTablesAreCreatedInTheFinalModel(): void
     {
+        $this->connection->executeStatement('DROP TABLE IF EXISTS `payment_app_channel`');
         (new Migration1791856510CreatePaymentTables())->update($this->connection);
 
         $orderColumns = array_column(TableHelper::getTable($this->connection, 'payment_order')->columns, 'name');
-        static::assertContains('provider_technical_name', $orderColumns);
-        static::assertContains('channel_params', $orderColumns);
-
-        $transactionColumns = array_column(TableHelper::getTable($this->connection, 'payment_transaction')->columns, 'name');
-        static::assertContains('provider_technical_name', $transactionColumns);
-
-        $notificationColumns = array_column(TableHelper::getTable($this->connection, 'payment_notification')->columns, 'name');
-        static::assertContains('provider_technical_name', $notificationColumns);
-        static::assertNotContains('channel_technical_name', $notificationColumns);
-
-        $channelConfigColumns = array_column(TableHelper::getTable($this->connection, 'payment_channel_config')->columns, 'name');
-        static::assertContains('provider_technical_name', $channelConfigColumns);
-        static::assertContains('params', $channelConfigColumns);
-        static::assertNotContains('credentials', $channelConfigColumns);
-        static::assertTrue(TableHelper::indexSpansColumns($this->connection, 'payment_channel_config', 'uniq.payment_channel_config.provider_channel', ['provider_technical_name', 'channel_technical_name']));
-
+        static::assertContains('active_attempt_id', $orderColumns);
+        foreach (['provider_technical_name', 'channel_technical_name', 'channel_params', 'account_app_id', 'uses_platform_account'] as $column) {
+            static::assertNotContains($column, $orderColumns);
+        }
+        $attemptColumns = array_column(TableHelper::getTable($this->connection, 'payment_attempt')->columns, 'name');
+        foreach (['account_id', 'provider_technical_name', 'channel_technical_name', 'method', 'interaction', 'configuration', 'context', 'handover'] as $column) {
+            static::assertContains($column, $attemptColumns);
+        }
+        $accountColumns = array_column(TableHelper::getTable($this->connection, 'payment_account')->columns, 'name');
+        foreach (['provider_technical_name', 'credentials', 'product_params', 'owner_app_id', 'enabled_products'] as $column) {
+            static::assertContains($column, $accountColumns);
+        }
+        $grants = array_column(TableHelper::getTable($this->connection, 'payment_app_account')->columns, 'name');
+        static::assertContains('account_id', $grants);
+        foreach (['source_app_id', 'provider_technical_name', 'credentials'] as $column) {
+            static::assertNotContains($column, $grants);
+        }
+        $providerColumns = array_column(TableHelper::getTable($this->connection, 'payment_provider_config')->columns, 'name');
+        static::assertContains('account_id', $providerColumns);
+        static::assertNotContains('credentials', $providerColumns);
         $appChannelColumns = array_column(TableHelper::getTable($this->connection, 'payment_app_channel')->columns, 'name');
-        static::assertContains('params', $appChannelColumns);
+        static::assertNotContains('params', $appChannelColumns);
         static::assertNotContains('credentials', $appChannelColumns);
-        static::assertNotContains('mode', $appChannelColumns);
+        static::assertNotContains('params', array_column(TableHelper::getTable($this->connection, 'payment_channel_config')->columns, 'name'));
+        static::assertNull(TableHelper::getColumnOfTable($this->connection, 'payment_account', 'enabled_products')->defaultValue);
+    }
+
+    public function testFreshAccountTableSeedsExplicitEnabledProducts(): void
+    {
+        $tables = ['payment_app_channel', 'payment_channel_config', 'payment_app_account', 'payment_provider_config', 'payment_account'];
+        $rows = [];
+        foreach ($tables as $table) {
+            $rows[$table] = $this->connection->fetchAllAssociative('SELECT * FROM `' . $table . '`');
+        }
+        try {
+            $this->connection->executeStatement('SET FOREIGN_KEY_CHECKS = 0');
+            foreach ($tables as $table) {
+                $this->connection->executeStatement('DROP TABLE `' . $table . '`');
+            }
+            $this->connection->executeStatement('SET FOREIGN_KEY_CHECKS = 1');
+            (new Migration1791856510CreatePaymentTables())->update($this->connection);
+            $accounts = $this->connection->fetchAllAssociative('SELECT provider_technical_name, name, enabled_products, settings FROM payment_account ORDER BY provider_technical_name');
+            static::assertCount(3, $accounts);
+            $expected = [
+                AlipayApi::PROVIDER => ['alipay_h5', 'alipay_web'],
+                PaypalApi::PROVIDER => [Migration1791856510CreatePaymentTables::PAYMENT_METHOD_PAYPAL_CHANNEL],
+                StripeApi::PROVIDER => [Migration1791856510CreatePaymentTables::PAYMENT_METHOD_STRIPE_CHANNEL],
+            ];
+            foreach ($accounts as $account) {
+                static::assertSame($account['provider_technical_name'], $account['name']);
+                static::assertSame($expected[$account['provider_technical_name']], json_decode($account['enabled_products'], true, 512, \JSON_THROW_ON_ERROR));
+                static::assertArrayNotHasKey('http_method', json_decode($account['settings'], true, 512, \JSON_THROW_ON_ERROR));
+            }
+            static::assertSame(['alipay_h5', 'alipay_web'], $this->connection->fetchFirstColumn('SELECT channel_technical_name FROM payment_channel_config WHERE provider_technical_name = :provider AND enabled = 1 ORDER BY channel_technical_name', ['provider' => AlipayApi::PROVIDER]));
+            static::assertSame(['alipay_h5', 'alipay_web'], $this->connection->fetchFirstColumn('SELECT c.channel_technical_name FROM payment_app_channel c INNER JOIN payment_app a ON a.id = c.payment_app_id WHERE a.technical_name = :app AND c.channel_technical_name LIKE :products AND c.enabled = 1 ORDER BY c.channel_technical_name', ['app' => PaymentAppEntity::PLATFORM_TECHNICAL_NAME, 'products' => 'alipay_%']));
+        } finally {
+            $this->connection->executeStatement('SET FOREIGN_KEY_CHECKS = 0');
+            foreach ($tables as $table) {
+                $this->connection->executeStatement('DELETE FROM `' . $table . '`');
+                foreach ($rows[$table] as $row) {
+                    $this->connection->insert($table, $row);
+                }
+            }
+            $this->connection->executeStatement('SET FOREIGN_KEY_CHECKS = 1');
+        }
+    }
+
+    public function testExistingAppRolesReceiveOnlyTheirCorrespondingCashierPrivileges(): void
+    {
+        $roles = [
+            'viewer' => ['payment_app:read'],
+            'editor' => ['payment_app:update'],
+            'account_viewer' => ['payment_provider_config:read'],
+            'account_editor' => ['payment_provider_config:update'],
+            'account_deleter' => ['payment_provider_config:delete'],
+            'unrelated' => ['customer:read'],
+        ];
+        $ids = [];
+        try {
+            foreach ($roles as $name => $privileges) {
+                $ids[$name] = Uuid::randomBytes();
+                $this->connection->insert('acl_role', [
+                    'id' => $ids[$name],
+                    'name' => 'payment cashier migration ' . $name,
+                    'privileges' => json_encode($privileges, \JSON_THROW_ON_ERROR),
+                    'created_at' => '2026-11-05 00:00:00.000',
+                ]);
+            }
+            $migration = new Migration1791856510CreatePaymentTables();
+            $migration->update($this->connection);
+            $migration->update($this->connection);
+            foreach ($ids as $name => $id) {
+                $privileges = json_decode((string) $this->connection->fetchOne('SELECT `privileges` FROM `acl_role` WHERE `id` = :id', ['id' => $id]), true, 512, \JSON_THROW_ON_ERROR);
+                static::assertIsArray($privileges);
+                static::assertTrue(array_is_list($privileges));
+                $expected = match ($name) {
+                    'viewer' => ['payment_app:read', 'payment_cashier_config:read'],
+                    'editor' => ['payment_app:update', 'payment_cashier_config:create', 'payment_cashier_config:update', 'payment_cashier_config:delete'],
+                    'account_viewer' => ['payment_provider_config:read', 'payment_account:read'],
+                    'account_editor' => ['payment_provider_config:update', 'payment_account:create', 'payment_account:update'],
+                    'account_deleter' => ['payment_provider_config:delete', 'payment_account:delete'],
+                    default => ['customer:read'],
+                };
+                static::assertEqualsCanonicalizing($expected, $privileges);
+            }
+        } finally {
+            foreach ($ids as $id) {
+                $this->connection->delete('acl_role', ['id' => $id]);
+            }
+        }
     }
 
     public function testMigrationImportsTheStateMachines(): void
@@ -156,32 +244,6 @@ class Migration1791856510CreatePaymentTablesTest extends TestCase
     }
 
     /**
-     * A token is the bearer credential an interface redirects the shopper back with: it is looked up by
-     * its hash on every node.
-     */
-    public function testPaymentGatewayTokenTable(): void
-    {
-        // the shape is asserted on the table this migration creates, not on one an earlier run left behind
-        $this->connection->executeStatement('DROP TABLE IF EXISTS `payment_gateway_token`');
-
-        (new Migration1791856510CreatePaymentTables())->update($this->connection);
-
-        $table = TableHelper::getTable($this->connection, 'payment_gateway_token');
-
-        static::assertSame(
-            ['id', 'hash', 'order_id', 'target_url', 'after_url', 'gateway_name', 'created_at', 'updated_at'],
-            array_column($table->columns, 'name')
-        );
-
-        static::assertTrue(TableHelper::indexSpansColumns($this->connection, 'payment_gateway_token', 'uniq.payment_gateway_token.hash', ['hash']));
-        static::assertTrue(TableHelper::indexExists($this->connection, 'payment_gateway_token', 'idx.payment_gateway_token.order_id'));
-
-        // a token grants access to one order and must not outlive it
-        static::assertTrue(TableHelper::foreignKeyExists($this->connection, 'payment_gateway_token', 'fk.payment_gateway_token.order_id'));
-        static::assertSame('CASCADE', $this->deleteRuleOf('payment_gateway_token', 'fk.payment_gateway_token.order_id'));
-    }
-
-    /**
      * An event is announced once per subject: `order` for an event that happens once per order, the
      * refund id for a refund event. The subject therefore belongs to the unique key - without it the
      * second refund of one order would collide with the event of the first one.
@@ -207,6 +269,35 @@ class Migration1791856510CreatePaymentTablesTest extends TestCase
     }
 
     /**
+     * A worker leases a delivery before sending it. The token distinguishes the current worker from
+     * a late one, and the lease index makes abandoned processing rows discoverable again.
+     */
+    public function testPaymentWebhookDeliverySupportsLeasedClaims(): void
+    {
+        $this->connection->executeStatement('DROP TABLE IF EXISTS `payment_webhook_delivery`');
+
+        (new Migration1791856510CreatePaymentTables())->update($this->connection);
+
+        $claimToken = TableHelper::getColumnOfTable($this->connection, 'payment_webhook_delivery', 'claim_token');
+        static::assertFalse($claimToken->isNotNull);
+        static::assertSame(32, $claimToken->length);
+
+        static::assertFalse(TableHelper::getColumnOfTable($this->connection, 'payment_webhook_delivery', 'claim_expires_at')->isNotNull);
+        static::assertTrue(TableHelper::indexSpansColumns(
+            $this->connection,
+            'payment_webhook_delivery',
+            'idx.payment_webhook_delivery.claim',
+            ['status', 'claim_expires_at']
+        ));
+        static::assertTrue(TableHelper::indexSpansColumns(
+            $this->connection,
+            'payment_webhook_delivery',
+            'idx.payment_webhook_delivery.retry',
+            ['status', 'next_retry_at']
+        ));
+    }
+
+    /**
      * A payment method and a gateway channel are bound one to one, and both directions are enforced by
      * the database: a method collects through exactly one channel, a channel is claimed by exactly one
      * method - otherwise the shopper's choice would make no difference.
@@ -219,7 +310,7 @@ class Migration1791856510CreatePaymentTablesTest extends TestCase
 
         $table = TableHelper::getTable($this->connection, 'payment_method_gateway_channel');
         static::assertSame(
-            ['id', 'payment_method_id', 'payment_app_id', 'channel_technical_name', 'created_at', 'updated_at'],
+            ['id', 'payment_method_id', 'payment_app_id', 'method_technical_name', 'routing_policy', 'created_at', 'updated_at'],
             array_column($table->columns, 'name')
         );
 
@@ -237,7 +328,7 @@ class Migration1791856510CreatePaymentTablesTest extends TestCase
             $this->connection,
             'payment_method_gateway_channel',
             'uniq.payment_method_gateway_channel.channel',
-            ['payment_app_id', 'channel_technical_name']
+            ['payment_app_id', 'method_technical_name']
         ));
         static::assertSame('UNIQUE', TableHelper::getIndexOfTable($this->connection, 'payment_method_gateway_channel', 'uniq.payment_method_gateway_channel.channel')->type);
 
@@ -268,6 +359,33 @@ class Migration1791856510CreatePaymentTablesTest extends TestCase
                 $column . ' must not declare a default the entity cannot express'
             );
         }
+    }
+
+    public function testPaymentAccountIdentityIsRequiredAndDomainEventDeliveryCanBeRetried(): void
+    {
+        $migration = new Migration1791856510CreatePaymentTables();
+        $migration->update($this->connection);
+        $migration->update($this->connection);
+
+        foreach (['payment_attempt', 'payment_mandate', 'payment_subscription'] as $table) {
+            static::assertTrue(TableHelper::getColumnOfTable($this->connection, $table, 'account_id')->isNotNull);
+            static::assertNull(TableHelper::getColumnOfTable($this->connection, $table, 'account_id')->defaultValue);
+        }
+
+        foreach (['payment_order', 'payment_refund'] as $table) {
+            static::assertFalse(TableHelper::getColumnOfTable($this->connection, $table, 'event_dispatched_at')->isNotNull);
+            static::assertNull(TableHelper::getColumnOfTable($this->connection, $table, 'event_dispatched_at')->defaultValue);
+            static::assertFalse(TableHelper::getColumnOfTable($this->connection, $table, 'event_dispatch_attempted_at')->isNotNull);
+            static::assertNull(TableHelper::getColumnOfTable($this->connection, $table, 'event_dispatch_attempted_at')->defaultValue);
+        }
+    }
+
+    public function testAccountDeletionCannotChangeTheCollectingMerchant(): void
+    {
+        $this->connection->executeStatement('DROP TABLE IF EXISTS `payment_app_account`');
+        (new Migration1791856510CreatePaymentTables())->update($this->connection);
+
+        static::assertSame('RESTRICT', $this->deleteRuleOf('payment_app_account', 'fk.payment_app_account.account_id'));
     }
 
     /**
@@ -408,15 +526,15 @@ class Migration1791856510CreatePaymentTablesTest extends TestCase
         ];
 
         $authorizations = $this->connection->fetchAllAssociative(
-            'SELECT `provider_technical_name`, `enabled`, `source_app_id` FROM `payment_app_provider` WHERE `payment_app_id` = :app',
+            'SELECT `a`.`provider_technical_name`, `g`.`enabled`, `a`.`owner_app_id` FROM `payment_app_account` `g` INNER JOIN `payment_account` `a` ON `a`.`id` = `g`.`account_id` WHERE `g`.`payment_app_id` = :app ORDER BY `a`.`provider_technical_name`',
             ['app' => $app['id']]
         );
         static::assertSame($seededProviders, array_column($authorizations, 'provider_technical_name'));
 
         foreach ($authorizations as $authorization) {
             static::assertSame(1, (int) $authorization['enabled']);
-            // the tenant of the platform is the root of the chain and inherits from nobody
-            static::assertNull($authorization['source_app_id']);
+            // Platform accounts have no owning external app.
+            static::assertNull($authorization['owner_app_id']);
         }
 
         // the channels the checkout collects through, and the ones the seeded payment methods are
@@ -483,12 +601,11 @@ class Migration1791856510CreatePaymentTablesTest extends TestCase
         (new Migration1791856510CreatePaymentTables())->update($this->connection);
 
         $provider = $this->connection->fetchAssociative(
-            'SELECT `enabled`, `credentials`, `settings` FROM `payment_provider_config` WHERE `provider_technical_name` = :provider',
+            'SELECT `c`.`enabled`, `a`.`credentials`, `c`.`settings` FROM `payment_provider_config` `c` INNER JOIN `payment_account` `a` ON `a`.`id` = `c`.`account_id` WHERE `c`.`provider_technical_name` = :provider',
             ['provider' => Migration1791856510CreatePaymentTables::PROVIDER]
         );
         static::assertIsArray($provider);
         static::assertSame(1, (int) $provider['enabled']);
-        static::assertSame(['http_method' => 'GET'], json_decode((string) $provider['settings'], true, 512, \JSON_THROW_ON_ERROR));
 
         $credentials = $this->cipher()->decrypt(json_decode((string) $provider['credentials'], true, 512, \JSON_THROW_ON_ERROR));
         static::assertSame(Migration1791856510CreatePaymentTables::SANDBOX_APP_ID, $credentials[AlipayApi::APP_ID]);
@@ -510,7 +627,7 @@ class Migration1791856510CreatePaymentTablesTest extends TestCase
             ['name' => PaymentAppEntity::PLATFORM_TECHNICAL_NAME]
         );
         static::assertIsArray($app);
-        static::assertSame('Platform Payment App', $app['name']);
+        static::assertSame('platform', $app['name']);
         static::assertSame(PaymentAppEntity::TYPE_PLATFORM, $app['type']);
         static::assertSame(1, (int) $app['active']);
 
@@ -531,7 +648,7 @@ class Migration1791856510CreatePaymentTablesTest extends TestCase
         // the authorization is not lazy for the seeded channel: the default app has to be able to
         // collect the moment the installation is finished
         static::assertSame(1, (int) $this->connection->fetchOne(
-            'SELECT COUNT(*) FROM `payment_app_provider` WHERE `payment_app_id` = :app AND `provider_technical_name` = :provider',
+            'SELECT COUNT(*) FROM `payment_app_account` `g` INNER JOIN `payment_account` `a` ON `a`.`id` = `g`.`account_id` WHERE `g`.`payment_app_id` = :app AND `a`.`provider_technical_name` = :provider',
             ['app' => $app['id'], 'provider' => Migration1791856510CreatePaymentTables::PROVIDER]
         ));
         static::assertSame(1, (int) $this->connection->fetchOne(
@@ -560,7 +677,7 @@ class Migration1791856510CreatePaymentTablesTest extends TestCase
         (new Migration1791856510CreatePaymentTables())->update($this->connection);
 
         $paypal = $this->connection->fetchAssociative(
-            'SELECT `id`, `enabled`, `credentials` FROM `payment_provider_config` WHERE `provider_technical_name` = :provider',
+            'SELECT `a`.`id`, `c`.`enabled`, `a`.`credentials` FROM `payment_provider_config` `c` INNER JOIN `payment_account` `a` ON `a`.`id` = `c`.`account_id` WHERE `c`.`provider_technical_name` = :provider',
             ['provider' => PaypalApi::PROVIDER]
         );
         static::assertIsArray($paypal);
@@ -572,7 +689,7 @@ class Migration1791856510CreatePaymentTablesTest extends TestCase
         static::assertSame('sandbox', $paypalCredentials[PaypalApi::ENVIRONMENT]);
 
         $stripe = $this->connection->fetchAssociative(
-            'SELECT `enabled`, `credentials` FROM `payment_provider_config` WHERE `provider_technical_name` = :provider',
+            'SELECT `c`.`enabled`, `a`.`credentials` FROM `payment_provider_config` `c` INNER JOIN `payment_account` `a` ON `a`.`id` = `c`.`account_id` WHERE `c`.`provider_technical_name` = :provider',
             ['provider' => StripeApi::PROVIDER]
         );
         static::assertIsArray($stripe);
@@ -584,7 +701,7 @@ class Migration1791856510CreatePaymentTablesTest extends TestCase
 
         // a merchant who configured paypal himself keeps his row
         $this->connection->update(
-            'payment_provider_config',
+            'payment_account',
             ['credentials' => (string) json_encode($this->cipher()->encrypt([PaypalApi::CLIENT_ID => 'a-live-client-id']), \JSON_THROW_ON_ERROR)],
             ['id' => $paypal['id']]
         );
@@ -594,7 +711,7 @@ class Migration1791856510CreatePaymentTablesTest extends TestCase
         // the column is a json column, so the stored payload is compared after opening it and not as
         // the string it was written as
         $kept = $this->cipher()->decrypt(json_decode((string) $this->connection->fetchOne(
-            'SELECT `credentials` FROM `payment_provider_config` WHERE `provider_technical_name` = :provider',
+            'SELECT `a`.`credentials` FROM `payment_provider_config` `c` INNER JOIN `payment_account` `a` ON `a`.`id` = `c`.`account_id` WHERE `c`.`provider_technical_name` = :provider',
             ['provider' => PaypalApi::PROVIDER]
         ), true, 512, \JSON_THROW_ON_ERROR));
         static::assertSame(['client_id' => 'a-live-client-id'], $kept);
@@ -633,8 +750,8 @@ class Migration1791856510CreatePaymentTablesTest extends TestCase
         static::assertIsString($appId);
 
         $this->connection->update(
-            'payment_app_provider',
-            ['enabled' => 0, 'source_app_id' => null],
+            'payment_app_account',
+            ['enabled' => 0],
             ['payment_app_id' => $appId]
         );
         $this->connection->update('payment_app_channel', ['enabled' => 0], ['payment_app_id' => $appId]);
@@ -649,7 +766,7 @@ class Migration1791856510CreatePaymentTablesTest extends TestCase
         ]);
 
         static::assertSame(3, (int) $this->connection->fetchOne(
-            'SELECT COUNT(*) FROM `payment_app_provider` WHERE `payment_app_id` = :app',
+            'SELECT COUNT(*) FROM `payment_app_account` WHERE `payment_app_id` = :app',
             ['app' => $appId]
         ));
         static::assertSame(\count($offeredChannels), (int) $this->connection->fetchOne(
@@ -658,13 +775,13 @@ class Migration1791856510CreatePaymentTablesTest extends TestCase
         ));
 
         $authorizations = $this->connection->fetchAllAssociative(
-            'SELECT `enabled`, `source_app_id` FROM `payment_app_provider` WHERE `payment_app_id` = :app',
+            'SELECT `g`.`enabled`, `a`.`owner_app_id` FROM `payment_app_account` `g` INNER JOIN `payment_account` `a` ON `a`.`id` = `g`.`account_id` WHERE `g`.`payment_app_id` = :app',
             ['app' => $appId]
         );
 
         foreach ($authorizations as $authorization) {
             static::assertSame(0, (int) $authorization['enabled']);
-            static::assertNull($authorization['source_app_id']);
+            static::assertNull($authorization['owner_app_id']);
         }
 
         // every offered channel keeps the switch the merchant turned off
@@ -686,7 +803,7 @@ class Migration1791856510CreatePaymentTablesTest extends TestCase
      * empty until somebody bound a method by hand.
      *
      * Four methods are seeded now, all of them collecting on the account of the platform tenant. The
-     * channels are the ones a browser can be handed over to - `alipay_qr` for alipay, `wechat_native`
+     * channels are the ones a browser can be handed over to - `alipay_web` and `alipay_h5` for alipay, `wechat_native`
      * for wechat pay and the redirect checkout of paypal and stripe - and they differ in their
      * readiness, which is data and not code: alipay, paypal and stripe are switched on and collectable
      * right away, wechat pay waits for the merchant id and the certificate of this very shop and stays
@@ -743,7 +860,7 @@ class Migration1791856510CreatePaymentTablesTest extends TestCase
             ],
         ];
 
-        foreach ($expected as $technicalName => [$position, $channelTechnicalName, $chineseName, $englishName]) {
+        foreach ($expected as $technicalName => [$position, $_channelTechnicalName, $chineseName, $englishName]) {
             $method = $this->connection->fetchAssociative(
                 'SELECT * FROM `payment_method` WHERE `technical_name` = :name',
                 ['name' => $technicalName]
@@ -762,12 +879,13 @@ class Migration1791856510CreatePaymentTablesTest extends TestCase
 
             // the binding names the app whose merchant account is charged and one channel of it
             $binding = $this->connection->fetchAssociative(
-                'SELECT `payment_app_id`, `channel_technical_name` FROM `payment_method_gateway_channel` WHERE `payment_method_id` = :method',
+                'SELECT `payment_app_id`, `method_technical_name`, `routing_policy` FROM `payment_method_gateway_channel` WHERE `payment_method_id` = :method',
                 ['method' => $method['id']]
             );
             static::assertIsArray($binding);
             static::assertSame($platformAppId, $binding['payment_app_id']);
-            static::assertSame($channelTechnicalName, $binding['channel_technical_name']);
+            static::assertSame($technicalName, $binding['method_technical_name']);
+            static::assertSame('priority', $binding['routing_policy']);
 
             // the name per language, matched on the locale of the language and never on a language id
             $translations = $this->connection->fetchAllAssociative(

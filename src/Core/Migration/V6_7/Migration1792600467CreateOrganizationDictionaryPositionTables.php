@@ -17,8 +17,11 @@ use Shopwell\Core\Framework\Migration\MigrationStep;
  * child count for cheap subtree queries) and each unit is named per language. A position is a
  * flat catalog entry with a sort order and a name, also translated.
  *
- * `user_organization_unit` and `user_position` are the pure mapping tables - the pair of columns
- * is the primary key, no surrogate id. The ids of both mappings are additionally mirrored into the
+ * `user_organization_unit` and `user_position` are the mapping tables that attach units and
+ * positions to a user. `user_organization_unit` carries a surrogate id, because the administration
+ * reads and diffs the rows directly (the `is_primary` flag lives on the row, not on the user), and
+ * the dal can only hydrate entities with a single primary key. The pair of `user_id` and
+ * `organization_unit_id` stays unique. The ids of both mappings are additionally mirrored into the
  * JSON columns `user.organization_unit_ids` / `user.position_ids` by the ManyToManyIdFieldUpdater
  * indexer, so filters on the user listing do not have to join the mapping tables.
  *
@@ -164,10 +167,14 @@ class Migration1792600467CreateOrganizationDictionaryPositionTables extends Migr
     {
         $connection->executeStatement(
             'CREATE TABLE IF NOT EXISTS `user_organization_unit` (
+                `id` BINARY(16) NOT NULL,
                 `user_id` BINARY(16) NOT NULL,
                 `organization_unit_id` BINARY(16) NOT NULL,
                 `is_primary` TINYINT(1) NOT NULL DEFAULT 0,
-                PRIMARY KEY (`user_id`, `organization_unit_id`),
+                `created_at` DATETIME(3) NOT NULL,
+                `updated_at` DATETIME(3) NULL,
+                PRIMARY KEY (`id`),
+                UNIQUE KEY `uniq.user_organization_unit.user_unit` (`user_id`, `organization_unit_id`),
                 KEY `fk.user_organization_unit.organization_unit_id` (`organization_unit_id`),
                 CONSTRAINT `fk.user_organization_unit.user_id` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
                 CONSTRAINT `fk.user_organization_unit.organization_unit_id` FOREIGN KEY (`organization_unit_id`) REFERENCES `organization_unit` (`id`) ON DELETE CASCADE ON UPDATE CASCADE

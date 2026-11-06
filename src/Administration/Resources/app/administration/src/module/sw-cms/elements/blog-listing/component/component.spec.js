@@ -98,7 +98,6 @@ describe('src/module/sw-cms/elements/blog-listing/component', () => {
     it('falls back to the classic arrangement when the element was saved without one', async () => {
         const wrapper = await createWrapper({ layout: null });
 
-        expect(wrapper.vm.layout).toBe('classic');
         expect(wrapper.classes()).toContain('sw-cms-el-blog-listing--classic');
     });
 });

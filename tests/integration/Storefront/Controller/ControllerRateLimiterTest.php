@@ -53,6 +53,7 @@ use Shopwell\Storefront\Controller\FormController;
 use Shopwell\Storefront\Framework\Routing\RequestTransformer;
 use Shopwell\Storefront\Page\Account\Login\AccountLoginPageLoader;
 use Shopwell\Storefront\Page\Account\Order\AccountOrderPageLoader;
+use Shopwell\Storefront\Page\Account\Order\AccountOrderStateCounter;
 use Shopwell\Storefront\Page\Account\RecoverPassword\AccountRecoverPasswordPageLoader;
 use Shopwell\Storefront\Page\GenericPageLoader;
 use Shopwell\Storefront\Test\Controller\StorefrontControllerTestBehaviour;
@@ -408,7 +409,8 @@ class ControllerRateLimiterTest extends TestCase
             static::createStub(EventDispatcher::class),
             $orderRoute,
             static::createStub(AbstractTranslator::class),
-            static::createStub(OrderProductAvailabilityResolver::class)
+            static::createStub(OrderProductAvailabilityResolver::class),
+            static::createStub(AccountOrderStateCounter::class)
         );
 
         $controller->load(new Request([

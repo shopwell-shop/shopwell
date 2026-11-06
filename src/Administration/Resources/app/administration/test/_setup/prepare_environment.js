@@ -73,16 +73,18 @@ import {
 import findByText from '../_helper_/find-by-text';
 import findByLabel from '../_helper_/find-by-label';
 import findByPlaceholder from '../_helper_/find-by-placeholder';
+import { getDefaultActiveFeatureFlags, setDefaultActiveFeatureFlags } from '../_helper_/defaultActiveFeatureFlags';
+import { endDeprecationLog, startDeprecationLog } from '../_helper_/deprecations';
 import CacheService from '../../src/app/service/cache.service';
 
-const defaultActiveFeatureFlagsSymbol = Symbol.for('shopwell.defaultActiveFeatureFlags');
-global[defaultActiveFeatureFlagsSymbol] = [...global.activeFeatureFlags];
+setDefaultActiveFeatureFlags([...global.activeFeatureFlags]);
 
 // initialize the Stores
 import '../../src/module/sw-cms/store/cms-page.store';
 import '../../src/app/store/teaser-popover.store';
 import '../../src/app/store/topbar-button.store';
 import '../../src/app/store/admin-menu.store';
+import '../../src/app/store/admin-menu-config.store';
 import '../../src/app/store/extension-component-sections.store';
 import '../../src/app/store/extension-entry-routes.store';
 import '../../src/app/store/extension-sdk-module.store';
@@ -708,6 +710,7 @@ global.console.warn = (...args) => {
 
 // eslint-disable-next-line jest/require-top-level-describe
 beforeEach(() => {
+    startDeprecationLog();
     hasActiveTest = true;
     consoleHasError = false;
     consoleHasWarning = false;
@@ -715,7 +718,7 @@ beforeEach(() => {
     warnArgs = null;
     warnTrace = null;
     unhandledRejectionError = null;
-    global.activeFeatureFlags = global.activeFeatureFlagsForCurrentTest ?? [...global[defaultActiveFeatureFlagsSymbol]];
+    global.activeFeatureFlags = global.activeFeatureFlagsForCurrentTest ?? [...getDefaultActiveFeatureFlags()];
 
     if (typeof Shopwell?.Service !== 'function' || typeof Shopwell?.Application?.getContainer !== 'function') {
         return;
@@ -774,6 +777,10 @@ afterEach(() => {
         throw new Error('A console.warn occurred without any arguments.');
     }
 });
+
+// A hook of its own, so a failing deprecation check never skips the console and rejection checks above.
+// eslint-disable-next-line jest/require-top-level-describe, jest/no-duplicate-hooks
+afterEach(endDeprecationLog);
 
 // eslint-disable-next-line listeners/no-inline-function-event-listener,listeners/no-missing-remove-event-listener
 process.on('unhandledRejection', (reason) => {

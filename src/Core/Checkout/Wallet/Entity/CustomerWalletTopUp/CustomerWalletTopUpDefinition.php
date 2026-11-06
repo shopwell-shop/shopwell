@@ -67,7 +67,6 @@ class CustomerWalletTopUpDefinition extends EntityDefinition
             (new StringField('state', 'state', 32))->addFlags(new ApiAware(), new Required()),
 
             (new StringField('payment_no', 'paymentNo', 64))->addFlags(new ApiAware()),
-            (new StringField('provider_technical_name', 'providerTechnicalName', 64))->addFlags(new ApiAware()),
             (new StringField('channel_technical_name', 'channelTechnicalName', 64))->addFlags(new ApiAware()),
 
             (new DateTimeField('paid_at', 'paidAt'))->addFlags(new ApiAware()),

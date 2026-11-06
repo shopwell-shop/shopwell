@@ -108,15 +108,15 @@ All available Hooks that can be used to load additional data.
 | **Available Services** | [repository](./data-loading-script-services-reference#RepositoryFacade)<br>[config](./miscellaneous-script-services-reference#SystemConfigFacade)<br>[store](./data-loading-script-services-reference#SalesChannelRepositoryFacade)<br>[request](./miscellaneous-script-services-reference#RequestFacade)<br>[acl](./miscellaneous-script-services-reference#AclFacade)<br> |
 | **Stoppable**          | `false`                  |
 
-### account-loyalty-page-loaded
+### account-membership-page-loaded
 
 | <!-- -->               | <!-- -->                                |
 |:-----------------------|:----------------------------------------|
-| **Name**               | account-loyalty-page-loaded                         |
+| **Name**               | account-membership-page-loaded                         |
 | **Since**              | 6.7.18.0                        |
-| **Class**              | `Shopwell\Storefront\Page\Account\Loyalty\AccountLoyaltyPageLoadedHook`                      |
-| **Description**        | Triggered when the AccountLoyaltyPage is loaded<br>                  |
-| **Available Data**     | context: [`Shopwell\Core\Framework\Context`](https://github.com/shopwell-shop/shopwell/blob/trunk/src/Core/Framework/Context.php)<br>page: [`Shopwell\Storefront\Page\Account\Loyalty\AccountLoyaltyPage`](https://github.com/shopwell-shop/shopwell/blob/trunk/src/Storefront/Page/Account/Loyalty/AccountLoyaltyPage.php)<br>salesChannelContext: [`Shopwell\Core\System\SalesChannel\SalesChannelContext`](https://github.com/shopwell-shop/shopwell/blob/trunk/src/Core/System/SalesChannel/SalesChannelContext.php)<br>        |
+| **Class**              | `Shopwell\Storefront\Page\Account\Membership\AccountMembershipPageLoadedHook`                      |
+| **Description**        | Triggered when the AccountMembershipPage is loaded<br>                  |
+| **Available Data**     | context: [`Shopwell\Core\Framework\Context`](https://github.com/shopwell-shop/shopwell/blob/trunk/src/Core/Framework/Context.php)<br>page: [`Shopwell\Storefront\Page\Account\Membership\AccountMembershipPage`](https://github.com/shopwell-shop/shopwell/blob/trunk/src/Storefront/Page/Account/Membership/AccountMembershipPage.php)<br>salesChannelContext: [`Shopwell\Core\System\SalesChannel\SalesChannelContext`](https://github.com/shopwell-shop/shopwell/blob/trunk/src/Core/System/SalesChannel/SalesChannelContext.php)<br>        |
 | **Available Services** | [repository](./data-loading-script-services-reference#RepositoryFacade)<br>[config](./miscellaneous-script-services-reference#SystemConfigFacade)<br>[store](./data-loading-script-services-reference#SalesChannelRepositoryFacade)<br>[request](./miscellaneous-script-services-reference#RequestFacade)<br>[acl](./miscellaneous-script-services-reference#AclFacade)<br> |
 | **Stoppable**          | `false`                  |
 
@@ -225,6 +225,18 @@ All available Hooks that can be used to load additional data.
 | **Class**              | `Shopwell\Storefront\Page\Account\Register\AccountRegisterPageLoadedHook`                      |
 | **Description**        | Triggered when the AccountLoginPage is loaded<br>                  |
 | **Available Data**     | context: [`Shopwell\Core\Framework\Context`](https://github.com/shopwell-shop/shopwell/blob/trunk/src/Core/Framework/Context.php)<br>page: [`Shopwell\Storefront\Page\Account\Login\AccountLoginPage`](https://github.com/shopwell-shop/shopwell/blob/trunk/src/Storefront/Page/Account/Login/AccountLoginPage.php)<br>salesChannelContext: [`Shopwell\Core\System\SalesChannel\SalesChannelContext`](https://github.com/shopwell-shop/shopwell/blob/trunk/src/Core/System/SalesChannel/SalesChannelContext.php)<br>        |
+| **Available Services** | [repository](./data-loading-script-services-reference#RepositoryFacade)<br>[config](./miscellaneous-script-services-reference#SystemConfigFacade)<br>[store](./data-loading-script-services-reference#SalesChannelRepositoryFacade)<br>[request](./miscellaneous-script-services-reference#RequestFacade)<br>[acl](./miscellaneous-script-services-reference#AclFacade)<br> |
+| **Stoppable**          | `false`                  |
+
+### account-rewards-page-loaded
+
+| <!-- -->               | <!-- -->                                |
+|:-----------------------|:----------------------------------------|
+| **Name**               | account-rewards-page-loaded                         |
+| **Since**              | 6.7.18.0                        |
+| **Class**              | `Shopwell\Storefront\Page\Account\Rewards\AccountRewardsPageLoadedHook`                      |
+| **Description**        | Triggered when the AccountRewardsPage is loaded<br>                  |
+| **Available Data**     | context: [`Shopwell\Core\Framework\Context`](https://github.com/shopwell-shop/shopwell/blob/trunk/src/Core/Framework/Context.php)<br>page: [`Shopwell\Storefront\Page\Account\Rewards\AccountRewardsPage`](https://github.com/shopwell-shop/shopwell/blob/trunk/src/Storefront/Page/Account/Rewards/AccountRewardsPage.php)<br>salesChannelContext: [`Shopwell\Core\System\SalesChannel\SalesChannelContext`](https://github.com/shopwell-shop/shopwell/blob/trunk/src/Core/System/SalesChannel/SalesChannelContext.php)<br>        |
 | **Available Services** | [repository](./data-loading-script-services-reference#RepositoryFacade)<br>[config](./miscellaneous-script-services-reference#SystemConfigFacade)<br>[store](./data-loading-script-services-reference#SalesChannelRepositoryFacade)<br>[request](./miscellaneous-script-services-reference#RequestFacade)<br>[acl](./miscellaneous-script-services-reference#AclFacade)<br> |
 | **Stoppable**          | `false`                  |
 

@@ -5,7 +5,7 @@ namespace Shopwell\Tests\Unit\Core\Checkout\Wallet\Subscriber;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Checkout\Customer\CustomerEvents;
-use Shopwell\Core\Checkout\Wallet\Service\WalletService;
+use Shopwell\Core\Checkout\Wallet\Service\WalletAccountService;
 use Shopwell\Core\Checkout\Wallet\Subscriber\WalletAccountProvisionSubscriber;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityWriteResult;
@@ -22,7 +22,7 @@ class WalletAccountProvisionSubscriberTest extends TestCase
 {
     public function testSubscribesToCustomerWrites(): void
     {
-        $subscriber = new WalletAccountProvisionSubscriber(static::createStub(WalletService::class));
+        $subscriber = new WalletAccountProvisionSubscriber(static::createStub(WalletAccountService::class));
 
         static::assertSame(
             [CustomerEvents::CUSTOMER_WRITTEN_EVENT => 'onCustomerWritten'],
@@ -38,10 +38,10 @@ class WalletAccountProvisionSubscriberTest extends TestCase
 
         $provisioned = [];
 
-        $walletService = static::createMock(WalletService::class);
+        $walletService = static::createMock(WalletAccountService::class);
         $walletService->expects($this->exactly(2))
-            ->method('provisionAccount')
-            ->willReturnCallback(function (string $customerId, Context $receivedContext) use (&$provisioned, $context): void {
+            ->method('open')
+            ->willReturnCallback(function (string $customerId, string $currencyId, Context $receivedContext) use (&$provisioned, $context): void {
                 static::assertSame($context, $receivedContext);
 
                 $provisioned[] = $customerId;
@@ -58,15 +58,15 @@ class WalletAccountProvisionSubscriberTest extends TestCase
     {
         $context = Context::createDefaultContext()->createWithVersionId(Uuid::randomHex());
 
-        $walletService = static::createMock(WalletService::class);
-        $walletService->expects($this->never())->method('provisionAccount');
+        $walletService = static::createMock(WalletAccountService::class);
+        $walletService->expects($this->never())->method('open');
 
         $this->createSubscriber($walletService)->onCustomerWritten(
             $this->createCustomerWrittenEvent($context, Uuid::randomHex())
         );
     }
 
-    private function createSubscriber(WalletService $walletService): WalletAccountProvisionSubscriber
+    private function createSubscriber(WalletAccountService $walletService): WalletAccountProvisionSubscriber
     {
         return new WalletAccountProvisionSubscriber($walletService);
     }

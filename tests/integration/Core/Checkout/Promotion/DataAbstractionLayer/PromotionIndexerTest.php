@@ -2,6 +2,7 @@
 
 namespace Shopwell\Tests\Integration\Core\Checkout\Promotion\DataAbstractionLayer;
 
+use Doctrine\DBAL\Connection;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Checkout\Promotion\Aggregate\PromotionIndividualCode\PromotionIndividualCodeCollection;
 use Shopwell\Core\Checkout\Promotion\DataAbstractionLayer\PromotionIndexer;
@@ -11,6 +12,7 @@ use Shopwell\Core\Checkout\Promotion\PromotionDefinition;
 use Shopwell\Core\Framework\Api\Context\AdminApiSource;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopwell\Core\Framework\Uuid\Uuid;
@@ -87,6 +89,28 @@ class PromotionIndexerTest extends TestCase
         $result = $indexer->update($writtenEvent);
 
         static::assertInstanceOf(PromotionIndexingMessage::class, $result);
+    }
+
+    public function testSavingAPromotionKeepsItsOrderCount(): void
+    {
+        /** @var EntityRepository<PromotionCollection> $promotionRepository */
+        $promotionRepository = static::getContainer()->get('promotion.repository');
+
+        $promotionId = $this->ids->create('voucherA');
+        $this->createPromotion($promotionId, $promotionId, $promotionRepository, $this->createSalesChannelContext());
+
+        // no order carries the promotion, so a recount would reset it to 0
+        static::getContainer()->get(Connection::class)->executeStatement(
+            'UPDATE promotion SET order_count = 3 WHERE id = :id',
+            ['id' => Uuid::fromHexToBytes($promotionId)]
+        );
+
+        $promotionRepository->update([['id' => $promotionId, 'priority' => 42]], Context::createDefaultContext());
+
+        $promotion = $promotionRepository->search(new Criteria([$promotionId]), Context::createDefaultContext())->getEntities()->first();
+
+        static::assertNotNull($promotion);
+        static::assertSame(3, $promotion->getOrderCount());
     }
 
     /**

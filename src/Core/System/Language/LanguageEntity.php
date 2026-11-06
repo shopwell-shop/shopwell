@@ -6,7 +6,7 @@ use Shopwell\Core\Checkout\Customer\Aggregate\CustomerGroupTranslation\CustomerG
 use Shopwell\Core\Checkout\Customer\CustomerCollection;
 use Shopwell\Core\Checkout\Document\Aggregate\DocumentTypeTranslation\DocumentTypeTranslationCollection;
 use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyTier\Aggregate\LoyaltyTierTranslation\LoyaltyTierTranslationCollection;
-use Shopwell\Core\Checkout\Loyalty\Entity\MembershipPlan\Aggregate\MembershipPlanTranslation\MembershipPlanTranslationCollection;
+use Shopwell\Core\Checkout\Membership\Entity\MembershipPlan\Aggregate\MembershipPlanTranslation\MembershipPlanTranslationCollection;
 use Shopwell\Core\Checkout\Order\OrderCollection;
 use Shopwell\Core\Checkout\Payment\Aggregate\PaymentMethodTranslation\PaymentMethodTranslationCollection;
 use Shopwell\Core\Checkout\Promotion\Aggregate\PromotionTranslation\PromotionTranslationCollection;
@@ -35,9 +35,6 @@ use Shopwell\Core\Content\Property\Aggregate\PropertyGroupOptionTranslation\Prop
 use Shopwell\Core\Content\Property\Aggregate\PropertyGroupTranslation\PropertyGroupTranslationCollection;
 use Shopwell\Core\Content\Seo\SeoUrl\SeoUrlCollection;
 use Shopwell\Core\Framework\App\Aggregate\ActionButtonTranslation\ActionButtonTranslationCollection;
-use Shopwell\Core\Framework\App\Aggregate\AppMcpPromptTranslation\AppMcpPromptTranslationCollection;
-use Shopwell\Core\Framework\App\Aggregate\AppMcpResourceTranslation\AppMcpResourceTranslationCollection;
-use Shopwell\Core\Framework\App\Aggregate\AppMcpToolTranslation\AppMcpToolTranslationCollection;
 use Shopwell\Core\Framework\App\Aggregate\AppScriptConditionTranslation\AppScriptConditionTranslationCollection;
 use Shopwell\Core\Framework\App\Aggregate\AppTranslation\AppTranslationCollection;
 use Shopwell\Core\Framework\App\Aggregate\CmsBlockTranslation\AppCmsBlockTranslationCollection;
@@ -50,6 +47,7 @@ use Shopwell\Core\Framework\Feature;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Plugin\Aggregate\PluginTranslation\PluginTranslationCollection;
 use Shopwell\Core\Framework\Struct\Collection;
+use Shopwell\Core\System\AdminMenu\Aggregate\AdminMenuItemTranslation\AdminMenuItemTranslationCollection;
 use Shopwell\Core\System\Country\Aggregate\CountryCityTranslation\CountryCityTranslationCollection;
 use Shopwell\Core\System\Country\Aggregate\CountryDistrictTranslation\CountryDistrictTranslationCollection;
 use Shopwell\Core\System\Country\Aggregate\CountryStateTranslation\CountryStateTranslationCollection;
@@ -229,12 +227,6 @@ class LanguageEntity extends Entity
 
     protected ?AppScriptConditionTranslationCollection $appScriptConditionTranslations = null;
 
-    protected ?AppMcpToolTranslationCollection $appMcpToolTranslations = null;
-
-    protected ?AppMcpPromptTranslationCollection $appMcpPromptTranslations = null;
-
-    protected ?AppMcpResourceTranslationCollection $appMcpResourceTranslations = null;
-
     protected ?AppFlowActionTranslationCollection $appFlowActionTranslations = null;
 
     protected ?TaxProviderTranslationCollection $taxProviderTranslations = null;
@@ -242,6 +234,8 @@ class LanguageEntity extends Entity
     protected ?LoyaltyTierTranslationCollection $loyaltyTierTranslations = null;
 
     protected ?MembershipPlanTranslationCollection $membershipPlanTranslations = null;
+
+    protected ?AdminMenuItemTranslationCollection $adminMenuItemTranslations = null;
 
     public function getMailHeaderFooterTranslations(): ?MailHeaderFooterCollection
     {
@@ -963,36 +957,6 @@ class LanguageEntity extends Entity
         $this->appScriptConditionTranslations = $appScriptConditionTranslations;
     }
 
-    public function getAppMcpToolTranslations(): ?AppMcpToolTranslationCollection
-    {
-        return $this->appMcpToolTranslations;
-    }
-
-    public function setAppMcpToolTranslations(AppMcpToolTranslationCollection $appMcpToolTranslations): void
-    {
-        $this->appMcpToolTranslations = $appMcpToolTranslations;
-    }
-
-    public function getAppMcpPromptTranslations(): ?AppMcpPromptTranslationCollection
-    {
-        return $this->appMcpPromptTranslations;
-    }
-
-    public function setAppMcpPromptTranslations(AppMcpPromptTranslationCollection $appMcpPromptTranslations): void
-    {
-        $this->appMcpPromptTranslations = $appMcpPromptTranslations;
-    }
-
-    public function getAppMcpResourceTranslations(): ?AppMcpResourceTranslationCollection
-    {
-        return $this->appMcpResourceTranslations;
-    }
-
-    public function setAppMcpResourceTranslations(AppMcpResourceTranslationCollection $appMcpResourceTranslations): void
-    {
-        $this->appMcpResourceTranslations = $appMcpResourceTranslations;
-    }
-
     public function getAppFlowActionTranslations(): ?AppFlowActionTranslationCollection
     {
         return $this->appFlowActionTranslations;
@@ -1036,5 +1000,15 @@ class LanguageEntity extends Entity
     public function setMembershipPlanTranslations(MembershipPlanTranslationCollection $membershipPlanTranslations): void
     {
         $this->membershipPlanTranslations = $membershipPlanTranslations;
+    }
+
+    public function getAdminMenuItemTranslations(): ?AdminMenuItemTranslationCollection
+    {
+        return $this->adminMenuItemTranslations;
+    }
+
+    public function setAdminMenuItemTranslations(AdminMenuItemTranslationCollection $adminMenuItemTranslations): void
+    {
+        $this->adminMenuItemTranslations = $adminMenuItemTranslations;
     }
 }

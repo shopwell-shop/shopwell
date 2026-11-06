@@ -13,16 +13,21 @@ use Shopwell\Core\Framework\Util\Hasher;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
 use Shopwell\Core\System\Payment\App\PaymentCredentialCipher;
+use Shopwell\Core\System\Payment\Exception\PaymentTransferException;
 use Shopwell\Core\System\Payment\PaymentException;
+use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;
+use Shopwell\Core\System\Payment\Provider\Transfer\PaymentTransferRules;
 
 /**
  * Keeps the recipients of payouts, one row per identity per app and interface.
  *
- * The interfaces disagree on what identifies a recipient, and the matrix below is that disagreement
- * written down: an alipay uid is the same person under every app, a wechat openid only exists inside
- * the very app that issued it, and paypal accepts an email long before the person has an account.
- * Accepting an identity the interface cannot pay out to would produce a request that is guaranteed to
- * be refused - so the identity types are validated here, at intake, and not in the channel adapters.
+ * The interfaces disagree on what identifies a recipient, and each interface writes that disagreement
+ * down in its own {@see PaymentTransferRules}: an alipay uid is the same person under every app, a
+ * wechat openid only exists inside the very app that issued it, and paypal accepts an email long before
+ * the person has an account. Accepting an identity the interface cannot pay out to would produce a
+ * request that is guaranteed to be refused - so the rules are validated here, at intake, and not in the
+ * channel adapters. Nothing in this class names a channel: a further interface joins by declaring its
+ * rules, not by being added to a matrix here.
  *
  * The identity value is a credential (a card number, an openid, an account id) and is encrypted with
  * the same cipher as the app secret. The cipher is not deterministic, so a unique key can not span the
@@ -34,43 +39,13 @@ use Shopwell\Core\System\Payment\PaymentException;
 #[Package('framework')]
 final class PaymentTransferRecipientService
 {
-    private const PROVIDER_ALIPAY = 'alipay';
-    private const PROVIDER_WECHAT = 'wechat';
-    private const PROVIDER_STRIPE = 'stripe';
-    private const PROVIDER_PAYPAL = 'paypal';
-
-    /**
-     * Only these identities can be paid out to, per interface. Wechat has no "transfer by logon id" -
-     * the openid of the very app is the only handle - and stripe pays out to a connected account, not
-     * to a bank card of the platform.
-     *
-     * @var array<string, list<string>>
-     */
-    private const IDENTITY_TYPES = [
-        self::PROVIDER_ALIPAY => ['alipay_user_id', 'alipay_logon_id', 'alipay_open_id', 'bankcard'],
-        self::PROVIDER_WECHAT => ['wechat_open_id'],
-        self::PROVIDER_STRIPE => ['stripe_account'],
-        self::PROVIDER_PAYPAL => ['paypal_email', 'paypal_phone', 'paypal_payer_id'],
-    ];
-
-    /**
-     * The bank account type alipay accepts in `bankcard_ext_info`: 1 is a company account, 2 a private
-     * one. Anything else is refused by the interface.
-     */
-    private const BANK_ACCOUNT_TYPES = ['1', '2'];
-
-    /**
-     * From 2000 yuan on wechat demands the name of the holder, encrypted with the platform key.
-     */
-    private const WECHAT_HOLDER_NAME_THRESHOLD = 200000;
-
     /**
      * The identity is stored encrypted, and the ciphertext has to fit into the `identity_value`
      * column (`VARCHAR(255)`): the cipher returns `base64_encode(nonce(24) + secretbox(plain + 16))`,
      * which is `4 * ceil((n + 40) / 3)` characters, so the plain text may be at most 149 bytes. The
      * guard measures bytes, not characters - the cipher and the column both do. Checking it here
      * turns a "Data too long" 500 into a readable 422; see
-     * {@see PaymentException::transferIdentityValueTooLong()}.
+     * {@see PaymentTransferException::transferIdentityValueTooLong()}.
      */
     private const MAX_IDENTITY_LENGTH = 149;
 
@@ -81,6 +56,7 @@ final class PaymentTransferRecipientService
         private readonly EntityRepository $recipientRepository,
         private readonly PaymentCredentialCipher $cipher,
         private readonly ClockInterface $clock,
+        private readonly PaymentProviderRegistry $providers,
     ) {
     }
 
@@ -90,11 +66,11 @@ final class PaymentTransferRecipientService
      * The lookup is by the identity hash, not by the identity value: the value is encrypted with a
      * random nonce and a second call with the same plain text would produce different ciphertext.
      *
-     * The payout readiness differs by interface and is written explicitly, not left to a default:
-     * stripe has to wait for the `account.updated` webhook to mirror `payouts_enabled`, while the
-     * other three have no "recipient onboarding" concept at all - a recipient they accept is payable
-     * immediately. Unifying both branches into `true` would make the platform promise payouts stripe
-     * refuses, unifying them into `false` would block every alipay transfer.
+     * The payout readiness differs by interface and is written explicitly, not left to a default: an
+     * interface whose rules demand an onboarding (stripe) has to wait for the `account.updated`
+     * webhook to mirror `payouts_enabled`, while an interface without that concept pays out to a
+     * recipient it accepts immediately. Unifying both branches into `true` would make the platform
+     * promise payouts the interface refuses, unifying them into `false` would block every transfer.
      *
      * @param array<string, mixed>|null $bankInfo alipay's `bankcard_ext_info`, only a card needs it
      *
@@ -108,8 +84,8 @@ final class PaymentTransferRecipientService
         ?string $holderName,
         ?array $bankInfo,
     ): PaymentTransferRecipientEntity {
-        $this->assertIdentitySupported($provider, $identityType);
-        $this->assertIdentityComplete($provider, $identityType, $identityValue, $holderName, $bankInfo);
+        $rules = $this->rulesOf($provider, $identityType);
+        $this->assertIdentityComplete($rules, $identityType, $identityValue, $holderName, $bankInfo);
 
         $hash = $this->hashIdentity($app->id, $provider, $identityType, $identityValue);
 
@@ -118,7 +94,7 @@ final class PaymentTransferRecipientService
             return $existing;
         }
 
-        $stripe = $provider === self::PROVIDER_STRIPE;
+        $requiresOnboarding = $rules->requiresOnboarding;
         $id = Uuid::randomHex();
 
         $row = [
@@ -133,10 +109,10 @@ final class PaymentTransferRecipientService
             'bankInfo' => $bankInfo,
             // written explicitly - the dal only consults EntityDefinition::getDefaults() and never
             // writes a property initial value, and the column has no ddl default
-            'onboardingStatus' => $stripe
+            'onboardingStatus' => $requiresOnboarding
                 ? PaymentTransferStates::ONBOARDING_PENDING
                 : PaymentTransferStates::ONBOARDING_REGISTERED,
-            'payoutEnabled' => !$stripe,
+            'payoutEnabled' => !$requiresOnboarding,
         ];
 
         try {
@@ -147,7 +123,7 @@ final class PaymentTransferRecipientService
             $race = $this->findByHash($app->id, $provider, $identityType, $hash);
 
             if ($race === null) {
-                throw PaymentException::transferConflict($hash);
+                throw PaymentTransferException::transferConflict($hash);
             }
 
             return $race;
@@ -164,7 +140,7 @@ final class PaymentTransferRecipientService
         $recipient = $this->recipientRepository->search(new Criteria([$id]), Context::createDefaultContext())->getEntities()->first();
 
         if (!$recipient instanceof PaymentTransferRecipientEntity) {
-            throw PaymentException::transferRecipientNotFound($id);
+            throw PaymentTransferException::transferRecipientNotFound($id);
         }
 
         return $recipient;
@@ -202,45 +178,59 @@ final class PaymentTransferRecipientService
 
     /**
      * A transfer may only be booked to a recipient that can actually receive the money at this
-     * amount. Wechat is the only interface whose requirement depends on the amount: from 2000 yuan on
-     * the name of the holder has to be sent along, and it is a property of the recipient.
+     * amount. An interface may make a field mandatory from an amount on - wechat demands the name of
+     * the holder from 2000 yuan on - and the threshold is read from its rules, not hardcoded here.
      *
      * @throws PaymentException
      */
     public function assertPayoutReady(PaymentTransferRecipientEntity $recipient, int $amount): void
     {
-        if ($recipient->provider === self::PROVIDER_WECHAT && $amount >= self::WECHAT_HOLDER_NAME_THRESHOLD && $recipient->holderName === null) {
-            throw PaymentException::transferRecipientIncomplete('holderName');
+        $rules = $this->providers->has($recipient->provider)
+            ? $this->providers->get($recipient->provider)->transferRules
+            : null;
+
+        if ($rules !== null && $rules->requiresHolderNameFor($amount) && $recipient->holderName === null) {
+            throw PaymentTransferException::transferRecipientIncomplete('holderName');
         }
     }
 
     /**
+     * The payout rules of the interface, or a refusal when it declared none: an interface without
+     * rules can not pay out to anything, and the safe answer is to reject the identity here instead of
+     * building a request the interface would refuse anyway.
+     *
      * @throws PaymentException
      */
-    private function assertIdentitySupported(string $provider, string $identityType): void
+    private function rulesOf(string $provider, string $identityType): PaymentTransferRules
     {
-        if (!\in_array($identityType, self::IDENTITY_TYPES[$provider] ?? [], true)) {
-            throw PaymentException::transferIdentityNotSupported($provider, $identityType);
+        $rules = $this->providers->has($provider)
+            ? $this->providers->get($provider)->transferRules
+            : null;
+
+        if ($rules === null || !$rules->supportsIdentityType($identityType)) {
+            throw PaymentTransferException::transferIdentityNotSupported($provider, $identityType);
         }
+
+        return $rules;
     }
 
     /**
-     * The fields the interface demands for this very combination - alipay needs the name of the holder
-     * for a logon id, and the name plus the bank details for a card.
+     * The fields the interface demands for this very combination, taken from its rules - alipay needs
+     * the name of the holder for a logon id, and the name plus the bank details for a card.
      *
      * @param array<string, mixed>|null $bankInfo
      *
      * @throws PaymentException
      */
     private function assertIdentityComplete(
-        string $provider,
+        PaymentTransferRules $rules,
         string $identityType,
         string $identityValue,
         ?string $holderName,
         ?array $bankInfo,
     ): void {
         if (trim($identityValue) === '') {
-            throw PaymentException::transferRecipientIncomplete('identityValue');
+            throw PaymentTransferException::transferRecipientIncomplete('identityValue');
         }
 
         // before the hash is computed and the plain text is encrypted: the ciphertext is what has to
@@ -249,33 +239,27 @@ final class PaymentTransferRecipientService
         // multibyte identity runs out of room long before it runs out of characters.
         $length = \strlen($identityValue);
         if ($length > self::MAX_IDENTITY_LENGTH) {
-            throw PaymentException::transferIdentityValueTooLong($length);
+            throw PaymentTransferException::transferIdentityValueTooLong($length);
         }
 
-        if ($provider !== self::PROVIDER_ALIPAY) {
+        foreach ($rules->requiredFieldsFor($identityType) as $field) {
+            if ($field === PaymentTransferRules::FIELD_HOLDER_NAME && $holderName === null) {
+                throw PaymentTransferException::transferRecipientIncomplete('holderName');
+            }
+
+            if ($field === PaymentTransferRules::FIELD_BANK_INFO && $bankInfo === null) {
+                throw PaymentTransferException::transferRecipientIncomplete('bankInfo');
+            }
+        }
+
+        if ($bankInfo === null || $rules->bankAccountTypes === []) {
             return;
-        }
-
-        if ($identityType === 'alipay_logon_id' && $holderName === null) {
-            throw PaymentException::transferRecipientIncomplete('holderName');
-        }
-
-        if ($identityType !== 'bankcard') {
-            return;
-        }
-
-        if ($holderName === null) {
-            throw PaymentException::transferRecipientIncomplete('holderName');
-        }
-
-        if ($bankInfo === null) {
-            throw PaymentException::transferRecipientIncomplete('bankInfo');
         }
 
         $accountType = $bankInfo['account_type'] ?? null;
 
-        if (!\is_scalar($accountType) || !\in_array((string) $accountType, self::BANK_ACCOUNT_TYPES, true)) {
-            throw PaymentException::transferRecipientIncomplete('bankInfo.account_type');
+        if (!\is_scalar($accountType) || !$rules->supportsBankAccountType((string) $accountType)) {
+            throw PaymentTransferException::transferRecipientIncomplete('bankInfo.account_type');
         }
     }
 

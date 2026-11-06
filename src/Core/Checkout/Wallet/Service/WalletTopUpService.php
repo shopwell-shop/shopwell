@@ -2,9 +2,7 @@
 
 namespace Shopwell\Core\Checkout\Wallet\Service;
 
-use Doctrine\DBAL\Connection;
-use Doctrine\DBAL\ParameterType;
-use Psr\Clock\ClockInterface;
+use Shopwell\Core\Checkout\Payment\Storefront\Settlement\PurchaseAttach;
 use Shopwell\Core\Checkout\Payment\Storefront\StorefrontPaymentService;
 use Shopwell\Core\Checkout\Wallet\Entity\CustomerWalletTopUp\CustomerWalletTopUpCollection;
 use Shopwell\Core\Checkout\Wallet\Entity\CustomerWalletTopUp\CustomerWalletTopUpEntity;
@@ -16,7 +14,8 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Uuid\Uuid;
-use Shopwell\Core\System\Payment\Gateway\Money;
+use Shopwell\Core\System\Currency\CurrencyAmountConverter;
+use Shopwell\Core\System\Payment\Routing\PaymentContext;
 
 /**
  * The top-ups a customer pays online.
@@ -25,7 +24,7 @@ use Shopwell\Core\System\Payment\Gateway\Money;
  * amount in a currency - and the payment order of the gateway is how it is collected. Keeping them
  * apart is what makes the settlement safe: the payment may be reported more than once, the customer
  * may retry with another channel, and the credit still happens exactly once, decided on the top-up row
- * that is locked while it is credited.
+ * that is locked while it is credited - see {@see \Shopwell\Core\Checkout\Wallet\Purchase\WalletTopUpPurchaseStore}.
  *
  * The amount is always converted with the exponent of the currency, never with a fixed 100: a shop that
  * sells in JPY would otherwise charge the payer a hundredth of what it meant to.
@@ -36,22 +35,15 @@ use Shopwell\Core\System\Payment\Gateway\Money;
 class WalletTopUpService
 {
     /**
-     * The marker that tells a paid payment order apart from other payments of the shop.
-     */
-    final public const ATTACH_PREFIX = 'wallet_top_up:';
-
-    /**
      * @internal
      *
      * @param EntityRepository<CustomerWalletTopUpCollection> $topUpRepository
      */
     public function __construct(
         private readonly EntityRepository $topUpRepository,
-        private readonly WalletService $walletService,
         private readonly StorefrontPaymentService $payments,
         private readonly WalletSettings $settings,
-        private readonly Connection $connection,
-        private readonly ClockInterface $clock,
+        private readonly PurchaseAttach $attach,
     ) {
     }
 
@@ -60,13 +52,13 @@ class WalletTopUpService
      *
      * @return array{min: float, max: float, presets: list<float>, channels: list<array<string, string>>}
      */
-    public function options(string $currency, ?string $device, ?string $salesChannelId = null): array
+    public function options(PaymentContext $paymentContext, ?string $salesChannelId = null): array
     {
         return [
             'min' => $this->settings->minTopUpAmount($salesChannelId),
             'max' => $this->settings->maxTopUpAmount($salesChannelId),
             'presets' => $this->settings->topUpPresets($salesChannelId),
-            'channels' => $this->payments->channels($currency, $device),
+            'channels' => $this->payments->options($paymentContext),
         ];
     }
 
@@ -80,12 +72,11 @@ class WalletTopUpService
     public function create(
         string $customerId,
         string $currencyId,
-        string $currency,
+        PaymentContext $paymentContext,
         float $amount,
-        string $channel,
+        string $method,
         ?string $returnUrl,
         ?string $clientIp,
-        ?string $device,
         Context $context,
         ?string $salesChannelId = null,
     ): array {
@@ -93,10 +84,13 @@ class WalletTopUpService
             throw WalletException::walletDisabled();
         }
 
-        $currency = strtoupper($currency);
-        $amount = round($amount, Money::exponent($currency));
+        $currency = strtoupper($paymentContext->currency);
+        $minorAmount = CurrencyAmountConverter::fromFloat($amount, $currency);
+        $amount = CurrencyAmountConverter::toFloat($minorAmount, $currency);
 
         $this->assertAmount($amount, $salesChannelId);
+
+        $this->payments->resolveMethod($method, $paymentContext);
 
         $id = Uuid::randomHex();
 
@@ -107,20 +101,18 @@ class WalletTopUpService
             'currency' => $currency,
             'amount' => $amount,
             'state' => CustomerWalletTopUpEntity::STATE_OPEN,
-            'channelTechnicalName' => $channel,
         ]], $context);
 
         try {
             $payment = $this->payments->open(
                 outTradeNo: $id,
-                channel: $channel,
-                amount: $this->toMinor($amount, $currency),
-                currency: $currency,
+                method: $method,
+                amount: $minorAmount,
                 subject: 'Wallet top-up',
-                attach: self::ATTACH_PREFIX . $id,
+                attach: $this->attach->forPurchase($id),
                 returnUrl: $returnUrl,
                 clientIp: $clientIp,
-                device: $device,
+                paymentContext: $paymentContext,
             );
         } catch (\Throwable $exception) {
             // the attempt stays visible in the administration instead of disappearing silently
@@ -135,7 +127,7 @@ class WalletTopUpService
         $this->topUpRepository->update([[
             'id' => $id,
             'paymentNo' => $payment['payment_no'],
-            'channelTechnicalName' => $channel,
+            'channelTechnicalName' => $payment['channel'],
         ]], $context);
 
         return ['id' => $id, 'amount' => $amount, 'currency' => $currency] + $payment;
@@ -148,9 +140,9 @@ class WalletTopUpService
      * payer closed the channel, or the notification has not arrived yet - stays visible instead of
      * looking like it never happened.
      *
-     * @return list<array<string, mixed>>
+     * @return list<CustomerWalletTopUpEntity>
      */
-    public function recent(string $customerId, int $limit, Context $context): array
+    public function recentTopUps(string $customerId, int $limit, Context $context): array
     {
         $criteria = new Criteria();
         $criteria->addFilter(new EqualsFilter('customerId', $customerId));
@@ -160,11 +152,9 @@ class WalletTopUpService
         $topUps = [];
 
         foreach ($this->topUpRepository->search($criteria, $context)->getEntities() as $topUp) {
-            if (!$topUp instanceof CustomerWalletTopUpEntity) {
-                continue;
+            if ($topUp instanceof CustomerWalletTopUpEntity) {
+                $topUps[] = $topUp;
             }
-
-            $topUps[] = $this->present($topUp);
         }
 
         return $topUps;
@@ -172,10 +162,8 @@ class WalletTopUpService
 
     /**
      * @throws WalletException
-     *
-     * @return array<string, mixed>
      */
-    public function status(string $topUpId, string $customerId, Context $context): array
+    public function find(string $topUpId, string $customerId, Context $context): CustomerWalletTopUpEntity
     {
         $criteria = new Criteria();
         $criteria->addFilter(
@@ -190,107 +178,7 @@ class WalletTopUpService
             throw WalletException::topUpNotFound($topUpId);
         }
 
-        return $this->present($topUp);
-    }
-
-    /**
-     * Credits a paid top-up exactly once.
-     *
-     * The row is locked, so two notifications of the same payment cannot both pass the state check, and
-     * the credit is booked in the very same transaction: either the customer has the money and the
-     * top-up says it was credited, or neither happened. A payment whose amount does not match the
-     * top-up is never credited - it is marked as failed and stays visible for the operator.
-     *
-     * @param int $paidAmount the amount the channel confirmed, in the smallest unit of the currency
-     *
-     * @return bool whether this call credited the top-up
-     */
-    public function settle(string $topUpId, int $paidAmount, string $paymentNo, Context $context): bool
-    {
-        return (bool) $this->connection->transactional(function () use ($topUpId, $paidAmount, $paymentNo, $context): bool {
-            $topUp = $this->lockTopUp($topUpId);
-
-            if ($topUp === null || $topUp['state'] === CustomerWalletTopUpEntity::STATE_CREDITED) {
-                return false;
-            }
-
-            $now = $this->clock->now();
-
-            if ($this->toMinor($topUp['amount'], $topUp['currency']) !== $paidAmount) {
-                $this->topUpRepository->update([[
-                    'id' => $topUpId,
-                    'state' => CustomerWalletTopUpEntity::STATE_FAILED,
-                    'paymentNo' => $paymentNo,
-                    'paidAt' => $now,
-                ]], $context);
-
-                return false;
-            }
-
-            $this->walletService->creditPaidTopUp(
-                $topUp['customerId'],
-                $topUp['currencyId'],
-                $topUp['amount'],
-                $topUpId,
-                $context
-            );
-
-            $this->topUpRepository->update([[
-                'id' => $topUpId,
-                'state' => CustomerWalletTopUpEntity::STATE_CREDITED,
-                'paymentNo' => $paymentNo,
-                'paidAt' => $now,
-                'creditedAt' => $now,
-            ]], $context);
-
-            return true;
-        });
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function present(CustomerWalletTopUpEntity $topUp): array
-    {
-        return [
-            'id' => $topUp->getId(),
-            'amount' => $topUp->getAmount(),
-            'currency' => $topUp->getCurrency(),
-            'state' => $topUp->getState(),
-            'paymentNo' => $topUp->getPaymentNo(),
-            'channel' => $topUp->getChannelTechnicalName(),
-            'creditedAt' => $topUp->getCreditedAt()?->format(\DATE_ATOM),
-            'createdAt' => $topUp->getCreatedAt()?->format(\DATE_ATOM),
-        ];
-    }
-
-    /**
-     * @return array{id: string, customerId: string, currencyId: string, currency: string, amount: float, state: string}|null
-     */
-    private function lockTopUp(string $topUpId): ?array
-    {
-        $row = $this->connection->fetchAssociative(
-            'SELECT LOWER(HEX(`id`)) AS `id`, LOWER(HEX(`customer_id`)) AS `customer_id`,
-                    LOWER(HEX(`currency_id`)) AS `currency_id`, `currency`, `amount`, `state`
-             FROM `customer_wallet_top_up`
-             WHERE `id` = :id
-             FOR UPDATE',
-            ['id' => Uuid::fromHexToBytes($topUpId)],
-            ['id' => ParameterType::BINARY]
-        );
-
-        if (!\is_array($row)) {
-            return null;
-        }
-
-        return [
-            'id' => (string) $row['id'],
-            'customerId' => (string) $row['customer_id'],
-            'currencyId' => (string) $row['currency_id'],
-            'currency' => strtoupper((string) $row['currency']),
-            'amount' => (float) $row['amount'],
-            'state' => (string) $row['state'],
-        ];
+        return $topUp;
     }
 
     /**
@@ -313,10 +201,5 @@ class WalletTopUpService
         if ($maximum > 0.0 && $amount > $maximum) {
             throw WalletException::topUpAboveMaximum($amount, $maximum);
         }
-    }
-
-    private function toMinor(float $amount, string $currency): int
-    {
-        return Money::toMinor(number_format($amount, Money::exponent($currency), '.', ''), $currency);
     }
 }

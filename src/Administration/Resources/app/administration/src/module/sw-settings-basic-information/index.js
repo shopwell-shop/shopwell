@@ -38,6 +38,18 @@ Module.register('sw-settings-basic-information', {
         },
     },
 
+    navigation: [
+        {
+            id: 'sw-settings-basic-information',
+            label: 'sw-settings-basic-information.general.mainMenuItemGeneral',
+            parent: 'sw-settings',
+            path: 'sw.settings.basic.information.index',
+            icon: 'regular-bars',
+            position: 100,
+            privilege: 'system.system_config',
+        },
+    ],
+
     settingsItem: {
         group: 'general',
         to: 'sw.settings.basic.information.index',

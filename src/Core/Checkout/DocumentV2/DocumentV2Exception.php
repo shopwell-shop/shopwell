@@ -2,9 +2,11 @@
 
 namespace Shopwell\Core\Checkout\DocumentV2;
 
+use Shopwell\Core\Framework\Api\Exception\MissingPrivilegeException;
 use Shopwell\Core\Framework\Feature;
 use Shopwell\Core\Framework\HttpException;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\ShopwellHttpException;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -26,6 +28,10 @@ class DocumentV2Exception extends HttpException
     public const ORDER_NOT_FOUND = 'DOCUMENT_V2__ORDER_NOT_FOUND';
 
     public const DOCUMENT_NOT_FOUND = 'DOCUMENT_V2__DOCUMENT_NOT_FOUND';
+
+    public const MEDIA_NOT_FOUND = 'DOCUMENT_V2__MEDIA_NOT_FOUND';
+
+    public const DOCUMENT_MEDIA_NOT_ALLOWED = 'DOCUMENT_V2__DOCUMENT_MEDIA_NOT_ALLOWED';
 
     public const RENDERER_NOT_FOUND = 'DOCUMENT_V2__RENDERER_NOT_FOUND';
 
@@ -100,6 +106,14 @@ class DocumentV2Exception extends HttpException
      */
     public const DOCUMENT_TYPE_RESERVED_IDENTIFIER = 'DOCUMENT_V2__DOCUMENT_TYPE_RESERVED_IDENTIFIER';
 
+    /**
+     * @param list<string> $privileges
+     */
+    public static function missingPrivileges(array $privileges): ShopwellHttpException
+    {
+        return new MissingPrivilegeException($privileges);
+    }
+
     public static function unknownRenderData(string $key, string $expectedClass): self
     {
         return new self(
@@ -156,6 +170,26 @@ class DocumentV2Exception extends HttpException
             self::DOCUMENT_NOT_FOUND,
             'Document with id "{{ documentId }}" not found.',
             ['documentId' => $documentId],
+        );
+    }
+
+    public static function mediaNotFound(string $mediaId): self
+    {
+        return new self(
+            Response::HTTP_NOT_FOUND,
+            self::MEDIA_NOT_FOUND,
+            'Media with id "{{ mediaId }}" not found.',
+            ['mediaId' => $mediaId],
+        );
+    }
+
+    public static function documentMediaNotAllowed(string $mediaId): self
+    {
+        return new self(
+            Response::HTTP_FORBIDDEN,
+            self::DOCUMENT_MEDIA_NOT_ALLOWED,
+            'Media with id "{{ mediaId }}" is private and not a document media file.',
+            ['mediaId' => $mediaId],
         );
     }
 
@@ -328,13 +362,13 @@ class DocumentV2Exception extends HttpException
         );
     }
 
-    public static function documentNumberAlreadyExists(string $documentNumber): self
+    public static function documentNumberAlreadyExists(string $documentNumber, string $documentType): self
     {
         return new self(
             Response::HTTP_CONFLICT,
             self::DOCUMENT_NUMBER_ALREADY_EXISTS,
-            'Document with number "{{ documentNumber }}" already exists.',
-            ['documentNumber' => $documentNumber],
+            'Document with number "{{ documentNumber }}" already exists for document type "{{ documentType }}".',
+            ['documentNumber' => $documentNumber, 'documentType' => $documentType],
         );
     }
 

@@ -6,15 +6,22 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Payment\Api\PaymentContextParser;
 use Shopwell\Core\System\Payment\Api\PaymentOrderController;
+use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppAccount\PaymentAppAccountEntity;
 use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppChannel\PaymentAppChannelEntity;
-use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppProvider\PaymentAppProviderEntity;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
+use Shopwell\Core\System\Payment\Exception\PaymentAppException;
+use Shopwell\Core\System\Payment\Exception\PaymentOrderException;
+use Shopwell\Core\System\Payment\Exception\PaymentProviderException;
 use Shopwell\Core\System\Payment\Order\Aggregate\PaymentTransaction\PaymentTransactionCollection;
 use Shopwell\Core\System\Payment\Order\PaymentOrderCollection;
 use Shopwell\Core\System\Payment\PaymentException;
-use Shopwell\Core\System\Payment\Provider\PaymentChannelConfigEntity;
-use Shopwell\Core\System\Payment\Provider\PaymentProviderConfigEntity;
+use Shopwell\Core\System\Payment\Provider\Config\PaymentChannelConfigEntity;
+use Shopwell\Core\System\Payment\Provider\Config\PaymentProviderConfigEntity;
+use Shopwell\Core\System\Payment\Routing\DefaultPaymentRoutingPolicy;
+use Shopwell\Core\System\Payment\Routing\PaymentProductEligibility;
+use Shopwell\Core\System\Payment\Routing\PaymentRouteResolver;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 
@@ -33,7 +40,7 @@ class PaymentOrderControllerTest extends TestCase
     {
         $app = PaymentControllerFixture::app('client-a', 'secret-a');
 
-        $this->expectExceptionObject(PaymentException::missingAuthParameters(['app_id']));
+        $this->expectExceptionObject(PaymentAppException::missingAuthParameters(['app_id']));
 
         $this->controller($app, PaymentControllerFixture::repository(PaymentOrderCollection::class))->create(new Request());
     }
@@ -71,15 +78,17 @@ class PaymentOrderControllerTest extends TestCase
 
         $request = PaymentControllerFixture::signedRequest('client-a', 'secret-a', Request::METHOD_POST, self::CREATE_PATH, [
             'out_trade_no' => 'T-1',
-            'channel' => 'unknown_channel',
+            'product' => 'unknown_channel',
+            'context' => ['scene' => ['name' => 'browser', 'device' => 'web', 'environment' => 'browser']],
             'amount' => 1000,
             'currency' => 'CNY',
             'subject' => 'Order',
         ]);
 
-        $this->expectExceptionObject(PaymentException::unknownChannel('unknown_channel'));
+        $this->expectExceptionObject(PaymentProviderException::unknownChannel('unknown_channel'));
 
-        $this->controller($app, PaymentControllerFixture::repository(PaymentOrderCollection::class))->create($request);
+        $order = PaymentControllerFixture::order($app->id, ['activeAttemptId' => null, 'activeAttempt' => null]);
+        $this->controller($app, PaymentControllerFixture::repository(PaymentOrderCollection::class, [$order]))->create($request);
     }
 
     public function testACreateOfAnAlreadyPaidOutTradeNoIsAnsweredWithTheState(): void
@@ -96,7 +105,7 @@ class PaymentOrderControllerTest extends TestCase
         ]);
 
         $controller = $this->controller($app, PaymentControllerFixture::repository(PaymentOrderCollection::class, [$order]), [
-            'appProviders' => [PaymentControllerFixture::appProvider($app->id, credentials: ['app_id' => 'platform-app'])],
+            'appProviders' => [PaymentControllerFixture::appAccount($app->id, credentials: ['app_id' => 'platform-app'])],
             'appChannels' => [PaymentControllerFixture::appChannel($app->id)],
             'channelConfigs' => [PaymentControllerFixture::channelConfig()],
             'providerConfigs' => [PaymentControllerFixture::providerConfig()],
@@ -117,7 +126,7 @@ class PaymentOrderControllerTest extends TestCase
     {
         $app = PaymentControllerFixture::app('client-a', 'secret-a');
 
-        $this->expectExceptionObject(PaymentException::missingAuthParameters(['app_id']));
+        $this->expectExceptionObject(PaymentAppException::missingAuthParameters(['app_id']));
 
         $this->controller($app, PaymentControllerFixture::repository(PaymentOrderCollection::class))->get(new Request(), 'PG-1');
     }
@@ -128,7 +137,7 @@ class PaymentOrderControllerTest extends TestCase
 
         $request = PaymentControllerFixture::signedRequest('client-a', 'secret-a', Request::METHOD_GET, self::ORDER_PATH);
 
-        $this->expectExceptionObject(PaymentException::orderNotFound('PG-1'));
+        $this->expectExceptionObject(PaymentOrderException::orderNotFound('PG-1'));
 
         $this->controller($app, PaymentControllerFixture::repository(PaymentOrderCollection::class))->get($request, 'PG-1');
     }
@@ -140,7 +149,7 @@ class PaymentOrderControllerTest extends TestCase
 
         $request = PaymentControllerFixture::signedRequest('client-a', 'secret-a', Request::METHOD_GET, self::ORDER_PATH);
 
-        $this->expectExceptionObject(PaymentException::foreignApp('client-a', 'PG-1'));
+        $this->expectExceptionObject(PaymentAppException::foreignApp('client-a', 'PG-1'));
 
         $this->controller($app, PaymentControllerFixture::repository(PaymentOrderCollection::class, [$order]))->get($request, 'PG-1');
     }
@@ -170,7 +179,7 @@ class PaymentOrderControllerTest extends TestCase
     {
         $app = PaymentControllerFixture::app('client-a', 'secret-a');
 
-        $this->expectExceptionObject(PaymentException::missingAuthParameters(['app_id']));
+        $this->expectExceptionObject(PaymentAppException::missingAuthParameters(['app_id']));
 
         $this->controller($app, PaymentControllerFixture::repository(PaymentOrderCollection::class))->close(new Request(), 'PG-1');
     }
@@ -185,7 +194,7 @@ class PaymentOrderControllerTest extends TestCase
         $request = PaymentControllerFixture::signedRequest('client-a', 'secret-a', Request::METHOD_POST, self::ORDER_PATH . '/close');
 
         $controller = $this->controller($app, PaymentControllerFixture::repository(PaymentOrderCollection::class, [$order]), [
-            'appProviders' => [PaymentControllerFixture::appProvider($app->id, credentials: ['app_id' => 'platform-app'])],
+            'appProviders' => [PaymentControllerFixture::appAccount($app->id, credentials: ['app_id' => 'platform-app'])],
             'appChannels' => [PaymentControllerFixture::appChannel($app->id)],
             'channelConfigs' => [PaymentControllerFixture::channelConfig()],
             'providerConfigs' => [PaymentControllerFixture::providerConfig()],
@@ -205,14 +214,14 @@ class PaymentOrderControllerTest extends TestCase
 
         $request = PaymentControllerFixture::signedRequest('client-a', 'secret-a', Request::METHOD_POST, self::ORDER_PATH . '/close');
 
-        $this->expectExceptionObject(PaymentException::orderAlreadyClosed('PG-1'));
+        $this->expectExceptionObject(PaymentOrderException::orderAlreadyClosed('PG-1'));
 
         $this->controller($app, PaymentControllerFixture::repository(PaymentOrderCollection::class, [$order]))->close($request, 'PG-1');
     }
 
     /**
      * @param array{
-     *     appProviders?: list<PaymentAppProviderEntity>,
+     *     appProviders?: list<PaymentAppAccountEntity>,
      *     appChannels?: list<PaymentAppChannelEntity>,
      *     channelConfigs?: list<PaymentChannelConfigEntity>,
      *     providerConfigs?: list<PaymentProviderConfigEntity>,
@@ -233,10 +242,10 @@ class PaymentOrderControllerTest extends TestCase
             $options['appProviders'] ?? [],
             $options['appChannels'] ?? [],
             $options['channelConfigs'] ?? [],
-            $options['providerConfigs'] ?? [],
+            array_values(array_filter(array_map(static fn ($grant) => $grant->account, $options['appProviders'] ?? []))),
         );
 
-        $orderService = PaymentControllerFixture::orderService($orderRepository, $resolver);
+        $orderService = PaymentControllerFixture::orderService($orderRepository);
 
         $states = array_map(PaymentControllerFixture::stateName(...), $options['states'] ?? []);
 
@@ -245,9 +254,11 @@ class PaymentOrderControllerTest extends TestCase
         return new PaymentOrderController(
             PaymentControllerFixture::authenticator([$app]),
             $orderService,
-            PaymentControllerFixture::captureService($transactions, $resolver, $orderService),
+            PaymentControllerFixture::starterService($transactions, $orderService),
             PaymentControllerFixture::closer($orderRepository, $transactions, $resolver, $orderService),
             PaymentControllerFixture::presenter($states),
+            new PaymentRouteResolver(PaymentControllerFixture::channelRegistry($providers), new PaymentProductEligibility(), $resolver, [new DefaultPaymentRoutingPolicy()]),
+            new PaymentContextParser(),
         );
     }
 

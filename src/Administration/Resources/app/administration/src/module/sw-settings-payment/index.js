@@ -61,6 +61,18 @@ Module.register('sw-settings-payment', {
         },
     },
 
+    navigation: [
+        {
+            id: 'sw-settings-payment',
+            label: 'sw-settings-payment.general.mainMenuItemGeneral',
+            parent: 'sw-settings',
+            path: 'sw.settings.payment.overview',
+            icon: 'regular-credit-card',
+            position: 640,
+            privilege: 'payment.viewer',
+        },
+    ],
+
     settingsItem: {
         group: 'commerce',
         to: 'sw.settings.payment.overview',

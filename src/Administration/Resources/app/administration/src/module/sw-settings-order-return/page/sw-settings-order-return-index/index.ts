@@ -14,7 +14,7 @@ const { Mixin } = Shopwell;
  * `core.orderReturn`, so the labels, the help texts and the defaults live in the config xml next to the
  * keys the server reads - and not twice.
  */
-// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+/** @private */
 export default defineComponent({
     template,
 

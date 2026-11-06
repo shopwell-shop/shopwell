@@ -15,24 +15,8 @@ use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
 
 /**
- * The pair a checkout payment method collects through: the app that is charged and one of its channels.
- *
- * A `payment_method` is what the shopper picks, a payment order is what the gateway opens - and a
- * payment order always belongs to an app, because the credentials that are charged belong to it. The
- * binding therefore names exactly that pair: the collecting app and the channel of it, e.g. the tenant
- * of the platform and its `alipay_h5`.
- *
- * The interface is deliberately not part of the row. It is not an independent fact: a channel is
- * declared by one interface and one interface only - {@see \Shopwell\Core\System\Payment\Provider\Channel\PaymentChannelRegistry}
- * refuses two declarations of the same channel name - so the interface follows from the channel and can
- * never disagree with it. Storing it as well would only create a second place that can be wrong.
- *
- * The binding is one to one in both directions and both directions are enforced by the database, not by
- * the administration: a second channel on the same method and the same app/channel pair on a second
- * method are both configuration errors that would silently charge the wrong account.
- *
- * Only redirect and qr code channels may be bound: a channel that is pulled up by an sdk belongs to an
- * app, which renders it itself.
+ * A checkout payment method chooses a global gateway method and a routing policy for one app.
+ * Product and merchant account are selected only when the payment context is known.
  *
  * @codeCoverageIgnore
  */
@@ -69,7 +53,11 @@ class PaymentMethodGatewayChannelEntity extends EntityStruct
      */
     #[Required]
     #[Field(type: FieldType::STRING, api: ['admin-api' => true, 'store-api' => false], maxLength: 64)]
-    public string $channelTechnicalName;
+    public string $methodTechnicalName;
+
+    #[Required]
+    #[Field(type: FieldType::STRING, api: ['admin-api' => true, 'store-api' => false], maxLength: 64)]
+    public string $routingPolicy = 'priority';
 
     /**
      * The binding does not outlive the payment method, the cascade is declared here and not left to

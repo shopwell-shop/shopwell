@@ -49,6 +49,7 @@ class System extends Bundle
         $phpLoader->load('unit.php');
         $phpLoader->load('user.php');
         $phpLoader->load('integration.php');
+        $phpLoader->load('admin_menu.php');
         $phpLoader->load('state_machine.php');
         $phpLoader->load('configuration.php');
         $phpLoader->load('number_range.php');

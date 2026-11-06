@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopwell-shop/shopwell/trunk/src/Core/System/Payment/Provider/Schema/payment-provider.xsd">
+    <card>
+        <title>WeChat Pay credentials</title><title lang="zh-CN">微信支付凭据</title><name>credentials</name>
+        <input-field><name>mch_id</name><label>Merchant number</label><label lang="zh-CN">商户号</label><required>true</required></input-field>
+        <input-field><name>mch_serial</name><label>Merchant certificate serial</label><label lang="zh-CN">商户证书序列号</label><required>true</required><secret>true</secret></input-field>
+        <input-field type="textarea"><name>mch_private_key</name><label>Merchant private key</label><label lang="zh-CN">商户私钥</label><required>true</required><secret>true</secret></input-field>
+        <input-field type="password"><name>apiv3_key</name><label>APIv3 key</label><label lang="zh-CN">APIv3 密钥</label><required>true</required><secret>true</secret></input-field>
+        <input-field><name>platform_serial</name><label>WeChat Pay platform certificate serial</label><label lang="zh-CN">微信支付平台证书序列号</label><secret>true</secret></input-field>
+        <input-field type="textarea"><name>platform_cert</name><label>WeChat Pay platform certificate</label><label lang="zh-CN">微信支付平台证书</label><secret>true</secret></input-field>
+        <input-field type="textarea">
+            <name>platform_certs</name><label>Platform certificates for rotation</label><label lang="zh-CN">微信支付平台证书（轮换用）</label>
+            <helpText>A JSON object keyed by certificate serial. Configure the old and new certificates together during rotation to avoid verification downtime.</helpText>
+            <helpText lang="zh-CN">JSON 对象，键为证书序列号、值为证书内容；平台证书轮换时可同时配置新旧两张，避免验签中断。</helpText>
+            <secret>true</secret>
+        </input-field>
+    </card>
+    <card>
+        <title>WeChat H5</title><title lang="zh-CN">微信 H5</title><name>channelWechatH5</name>
+        <input-field><name>appid</name><label>Official account / app appid</label><label lang="zh-CN">公众号 / APP 的 appid</label><required>true</required></input-field>
+        <input-field type="single-select">
+            <name>h5_type</name><label>H5 scene type</label><label lang="zh-CN">H5 场景类型</label>
+            <options>
+                <option><id>Wap</id><name>Wap (mobile browser)</name><name lang="zh-CN">Wap（手机浏览器）</name></option>
+                <option><id>iOS</id><name>iOS (inside an iOS app)</name><name lang="zh-CN">iOS（iOS 应用内）</name></option>
+                <option><id>Android</id><name>Android (inside an Android app)</name><name lang="zh-CN">Android（Android 应用内）</name></option>
+            </options>
+            <defaultValue>Wap</defaultValue>
+            <helpText>WeChat uses the scene type for risk control. Select the actual terminal: Wap for a mobile browser, iOS or Android inside the corresponding app.</helpText>
+            <helpText lang="zh-CN">微信按场景类型做风险控制，须与用户实际终端一致：手机浏览器选 Wap，内嵌在 iOS / Android 应用里则选 iOS / Android。</helpText>
+        </input-field>
+    </card>
+    <card><title>WeChat Native</title><title lang="zh-CN">微信 Native</title><name>channelWechatNative</name><input-field><name>appid</name><label>Official account / app appid</label><label lang="zh-CN">公众号 / APP 的 appid</label><required>true</required></input-field></card>
+    <card><title>WeChat JSAPI</title><title lang="zh-CN">微信 JSAPI</title><name>channelWechatJsapi</name><input-field><name>appid</name><label>Official account appid</label><label lang="zh-CN">公众号的 appid</label><required>true</required></input-field></card>
+    <card><title>WeChat Mini</title><title lang="zh-CN">微信小程序</title><name>channelWechatMini</name><input-field><name>appid</name><label>Mini-program appid</label><label lang="zh-CN">小程序的 appid</label><required>true</required></input-field></card>
+    <card><title>WeChat App</title><title lang="zh-CN">微信 APP</title><name>channelWechatApp</name><input-field><name>appid</name><label>App appid</label><label lang="zh-CN">APP 的 appid</label><required>true</required></input-field></card>
+</config>

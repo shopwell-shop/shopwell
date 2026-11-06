@@ -2,13 +2,9 @@
 
 namespace Shopwell\Core\System\Payment\Order;
 
-use Shopwell\Core\Defaults;
-use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\System\Payment\Order\Event\PaymentOrderPaidEvent;
+use Shopwell\Core\System\Payment\Order\Event\PaymentEventDispatcher;
 use Shopwell\Core\System\Payment\PaymentException;
-use Shopwell\Core\System\Payment\Webhook\PaymentWebhookDispatcher;
-use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 /**
  * The one path a payment order becomes paid.
@@ -30,8 +26,7 @@ final class PaymentOrderPaidHandler
 {
     public function __construct(
         private readonly PaymentOrderService $orderService,
-        private readonly PaymentWebhookDispatcher $webhookService,
-        private readonly EventDispatcherInterface $eventDispatcher,
+        private readonly PaymentEventDispatcher $eventDispatcher,
     ) {
     }
 
@@ -65,17 +60,7 @@ final class PaymentOrderPaidHandler
     {
         $paid = $this->orderService->getById($order->id);
 
-        $this->eventDispatcher->dispatch(new PaymentOrderPaidEvent($paid, Context::createDefaultContext()));
-
-        $this->webhookService->enqueue($paid, PaymentWebhookDispatcher::EVENT_ORDER_PAID, [
-            'amount' => $paid->paidAmount,
-            'currency' => $paid->currency,
-            'provider' => $paid->providerTechnicalName,
-            'channel' => $paid->channelTechnicalName,
-            'out_payment_no' => $paid->outPaymentNo,
-            'paid_at' => $paid->paidAt?->format(Defaults::STORAGE_DATE_TIME_FORMAT),
-            'state' => PaymentOrderStates::STATE_PAID,
-        ]);
+        $this->eventDispatcher->dispatchPaid($paid);
 
         return $paid;
     }

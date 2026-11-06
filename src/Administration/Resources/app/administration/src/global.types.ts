@@ -66,6 +66,9 @@ import type cmsBlockFavoritesService from './module/sw-cms/service/cms-block-fav
 import type CheckoutStoreService from './core/service/api/checkout-store.api.service';
 import type ExtensionHelperService from './app/service/extension-helper.service';
 import type PaymentTransferApiService from './module/sw-finance/service/payment-transfer.api.service';
+import type OAuth2IdentityService from './module/sw-profile/service/oauth2-identity.api.service';
+import type OAuth2LoginService from './module/sw-login/service/oauth2-login.api.service';
+import type PaymentGatewayService from './module/sw-payment/service/payment-gateway.api.service';
 import type OrderReturnApiService from './module/sw-order-return/service/order-return.api.service';
 import type AsyncComponentFactory from './core/factory/async-component.factory';
 import type FilterFactory from './core/factory/filter.factory';
@@ -107,6 +110,7 @@ import type { CmsPageStore } from './module/sw-cms/store/cms-page.store';
 import type { TopBarButtonStore } from './app/store/topbar-button.store';
 import type { TeaserPopoverStore } from './app/store/teaser-popover.store';
 import type { AdminMenuStore } from './app/store/admin-menu.store';
+import type { AdminMenuConfigStore } from './app/store/admin-menu-config.store';
 import type { InAppPurchasesStore } from './app/store/in-app-purchase-checkout.store';
 import type { CmsService } from './module/sw-cms/service/cms.service';
 import type { ExtensionComponentSectionsStore } from './app/store/extension-component-sections.store';
@@ -239,6 +243,7 @@ declare global {
      */
     interface ServiceContainer extends SubContainer<'service'> {
         acl: AclService;
+        adminMenuApiService: $TSFixMe;
         appAclService: $TSFixMe;
         appCmsService: $TSFixMe;
         appModulesService: AppModulesService;
@@ -279,11 +284,12 @@ declare global {
         menuService: $TSFixMe;
         numberRangeService: $TSFixMe;
         oauth2ChannelService: OAuth2ChannelService;
-        oauth2IdentityService: $TSFixMe;
-        oauth2LoginService: $TSFixMe;
+        oauth2IdentityService: OAuth2IdentityService;
+        oauth2LoginService: OAuth2LoginService;
         oauthAuthorizeApiService: OAuthAuthorizeApiService;
         orderStateMachineService: OrderStateMachineApiService;
         orderReturnApiService: OrderReturnApiService;
+        paymentGatewayService: PaymentGatewayService;
         paymentTransferApiService: PaymentTransferApiService;
         privileges: PrivilegesService;
         productStreamConditionService: $TSFixMe;
@@ -411,6 +417,7 @@ declare global {
         topBarButton: TopBarButtonStore;
         teaserPopover: TeaserPopoverStore;
         adminMenu: AdminMenuStore;
+        adminMenuConfig: AdminMenuConfigStore;
         inAppPurchaseCheckout: InAppPurchasesStore;
         extensionComponentSections: ExtensionComponentSectionsStore;
         blockOverride: BlockOverrideStore;

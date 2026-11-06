@@ -12,6 +12,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\Required;
 use Shopwell\Core\Framework\DataAbstractionLayer\Entity as EntityStruct;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityCustomFieldsTrait;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Payment\Order\Aggregate\PaymentAttempt\PaymentAttemptEntity;
 use Shopwell\Core\System\Payment\Order\PaymentOrderEntity;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferEntity;
 
@@ -39,6 +40,12 @@ class PaymentNotificationEntity extends EntityStruct
     #[PrimaryKey]
     #[Field(type: FieldType::UUID, api: ['admin-api' => true, 'store-api' => false])]
     public string $id;
+
+    #[ManyToOne(entity: 'payment_attempt', api: false)]
+    public ?PaymentAttemptEntity $paymentAttempt = null;
+
+    #[ForeignKey(entity: 'payment_attempt', api: false)]
+    public ?string $paymentAttemptId = null;
 
     #[ForeignKey(entity: 'payment_order', api: ['admin-api' => true, 'store-api' => false])]
     public ?string $paymentOrderId = null;

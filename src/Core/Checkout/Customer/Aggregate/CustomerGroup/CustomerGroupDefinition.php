@@ -9,22 +9,23 @@ use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyTier\LoyaltyTierDefinition;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityDefinition;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\BoolField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\ApiAware;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\Choice;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\PrimaryKey;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\Required;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\RestrictDelete;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\SearchRanking;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\Since;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\IdField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\ManyToManyAssociationField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\OneToManyAssociationField;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\StringField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\TranslatedField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\TranslationsAssociationField;
 use Shopwell\Core\Framework\DataAbstractionLayer\FieldCollection;
+use Shopwell\Core\Framework\Feature;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\SalesChannel\SalesChannelDefinition;
 
-/**
- * @codeCoverageIgnore
- */
 #[Package('discovery')]
 class CustomerGroupDefinition extends EntityDefinition
 {
@@ -50,12 +51,33 @@ class CustomerGroupDefinition extends EntityDefinition
         return '6.0.0.0';
     }
 
+    public function getDefaults(): array
+    {
+        if (!Feature::isActive('v6.8.0.0')) {
+            return [];
+        }
+
+        return [
+            'displayGross' => true,
+            'priceBasis' => CustomerGroupEntity::PRICE_BASIS_GROSS,
+        ];
+    }
+
     protected function defineFields(): FieldCollection
     {
+        $displayGross = (new BoolField('display_gross', 'displayGross'))->addFlags(new ApiAware())->setDescription('If boolean value is `true` gross value is displayed else, net value will be displayed to the customer.');
+        $priceBasis = (new StringField('price_basis', 'priceBasis'))->addFlags(new ApiAware(), new Since('6.7.17.0'), new Choice([CustomerGroupEntity::PRICE_BASIS_NET, CustomerGroupEntity::PRICE_BASIS_GROSS], strict: true))->setDescription('Defines which stored price value is authoritative when the tax display shows the other one. With `net` the gross is derived from the stored net value, with `gross` the net is derived from the stored gross value.');
+
+        if (Feature::isActive('v6.8.0.0')) {
+            $displayGross->addFlags(new Required());
+            $priceBasis->addFlags(new Required());
+        }
+
         return new FieldCollection([
             (new IdField('id', 'id'))->addFlags(new ApiAware(), new PrimaryKey(), new Required())->setDescription('Unique identity of the customer\'s group.'),
             (new TranslatedField('name'))->addFlags(new ApiAware(), new SearchRanking(SearchRanking::HIGH_SEARCH_RANKING)),
-            (new BoolField('display_gross', 'displayGross'))->addFlags(new ApiAware())->setDescription('If boolean value is `true` gross value is displayed else, net value will be displayed to the customer.'),
+            $displayGross,
+            $priceBasis,
             (new TranslatedField('customFields'))->addFlags(new ApiAware()),
             // Merchant Registration
             (new BoolField('registration_active', 'registrationActive'))->addFlags(new ApiAware())->setDescription('To enable the registration of partner customer group.'),

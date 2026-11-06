@@ -72,6 +72,18 @@ Module.register('sw-settings-product-feature-sets', {
         },
     },
 
+    navigation: [
+        {
+            id: 'sw-settings-product-feature-sets',
+            label: 'sw-settings-product-feature-sets.general.mainMenuItemGeneral',
+            parent: 'sw-settings',
+            path: 'sw.settings.product.feature.sets.index',
+            icon: 'regular-check-square',
+            position: 650,
+            privilege: 'product_feature_sets.viewer',
+        },
+    ],
+
     settingsItem: {
         group: 'commerce',
         to: 'sw.settings.product.feature.sets.index',

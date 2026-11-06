@@ -3,15 +3,12 @@
 namespace Shopwell\Core\Checkout\Loyalty\Service;
 
 use Psr\Clock\ClockInterface;
-use Shopwell\Core\Checkout\Loyalty\Entity\CustomerLoyalty\CustomerLoyaltyCollection;
-use Shopwell\Core\Checkout\Loyalty\Entity\CustomerLoyalty\CustomerLoyaltyEntity;
+use Psr\Log\LoggerInterface;
 use Shopwell\Core\Checkout\Loyalty\Event\LoyaltyPointsAwardedEvent;
 use Shopwell\Core\Checkout\Loyalty\Event\LoyaltyPointsRedeemedEvent;
 use Shopwell\Core\Checkout\Loyalty\LoyaltyException;
+use Shopwell\Core\Checkout\Loyalty\LoyaltyPointTransactionTypes;
 use Shopwell\Core\Framework\Context;
-use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
-use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
-use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopwell\Core\Framework\Log\Package;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
@@ -19,60 +16,44 @@ use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
  * The business rules of the loyalty program: what a point booking means, how long points live and
  * when a booking is allowed.
  *
- * The balances are written by {@see LoyaltyLedger}, never here - this service validates, delegates and
- * announces. Events are only dispatched for bookings that really happened, so a redelivered webhook
- * does not tell the shop twice that points were awarded.
+ * The balances and the batches behind them are written by {@see LoyaltyLedger}, never here - this
+ * service validates, delegates and announces. Events are only dispatched for bookings that really
+ * happened, so a redelivered webhook does not tell the shop twice that points were awarded.
+ *
+ * What a return does to the points of an order is a rule of its own and lives in
+ * {@see LoyaltyReturnPoints}: it moves points in both directions and touches the batches by hand,
+ * which is why it is not another method here.
+ *
+ * Expiry is the one place where this class loops over a set of customers, and it is deliberate: the
+ * ledger can only expire one customer atomically, so the job that expires many has to decide what
+ * happens when one of them is broken. Skipping that account and carrying on is the answer - keeping
+ * the whole night's run back because one balance drifted would leave every other customer's points
+ * unexpired, and the broken one is reported every night until somebody fixes it.
+ *
+ * Reading the account is {@see LoyaltyAccountService}'s job; this class only changes it.
  *
  * @final
  */
 #[Package('checkout')]
 class LoyaltyPointService
 {
-    final public const TRANSACTION_TYPE_AWARD = 'award';
-
-    final public const TRANSACTION_TYPE_REDEEM = 'redeem';
-
-    final public const TRANSACTION_TYPE_ADJUST = 'adjust';
-
-    final public const TRANSACTION_TYPE_EXPIRE = 'expire';
+    /**
+     * How many customers one run of the expiration job handles. Large enough for a normal night,
+     * small enough that a stuck account is reported within the run instead of after it.
+     */
+    private const EXPIRY_BATCH_SIZE = 500;
 
     /**
      * @internal
-     *
-     * @param EntityRepository<CustomerLoyaltyCollection> $customerLoyaltyRepository
      */
     public function __construct(
-        private readonly EntityRepository $customerLoyaltyRepository,
         private readonly LoyaltyLedger $ledger,
+        private readonly LoyaltyPointLots $lots,
         private readonly LoyaltySettings $settings,
         private readonly EventDispatcherInterface $eventDispatcher,
         private readonly ClockInterface $clock,
-        private readonly TierResolver $tierResolver
+        private readonly LoggerInterface $logger,
     ) {
-    }
-
-    public function getBalance(string $customerId, Context $context): int
-    {
-        return $this->findLoyalty($customerId, $context)?->getPointsBalance() ?? 0;
-    }
-
-    /**
-     * Opens the membership of a customer with a zero balance and the tier a growth value of zero
-     * unlocks, so a customer owns a membership from the moment it exists instead of from its first
-     * booking. A membership that is already there is left untouched - including its balance and its
-     * tier - which makes the call safe to repeat.
-     */
-    public function provisionMembership(string $customerId, Context $context): void
-    {
-        if ($this->findLoyalty($customerId, $context) !== null) {
-            return;
-        }
-
-        $this->customerLoyaltyRepository->create([[
-            'customerId' => $customerId,
-            'pointsBalance' => 0,
-            'membershipTierId' => $this->tierResolver->findTierIdForGrowthValue(0, $context),
-        ]], $context);
     }
 
     public function award(string $customerId, int $points, ?string $orderId, string $idempotencyKey, Context $context): void
@@ -83,7 +64,7 @@ class LoyaltyPointService
 
         $balanceAfter = $this->ledger->bookPoints(
             customerId: $customerId,
-            type: self::TRANSACTION_TYPE_AWARD,
+            type: LoyaltyPointTransactionTypes::AWARD,
             points: $points,
             context: $context,
             orderId: $orderId,
@@ -109,7 +90,7 @@ class LoyaltyPointService
 
         $balanceAfter = $this->ledger->bookPoints(
             customerId: $customerId,
-            type: self::TRANSACTION_TYPE_REDEEM,
+            type: LoyaltyPointTransactionTypes::REDEEM,
             points: -$points,
             context: $context,
             orderId: $orderId,
@@ -125,20 +106,32 @@ class LoyaltyPointService
     }
 
     /**
-     * Books an expiry of previously awarded points. Used by the scheduled expiration task.
+     * Expires every batch that has run out and answers how many points that freed.
+     *
+     * Called by the daily task. Each customer is one transaction, so a crash halfway leaves the
+     * customers before it expired and the ones after it untouched - never a booking that says
+     * "expired" while the points are still spendable.
+     *
+     * @return int the number of points expired in this run
      */
-    public function expire(string $customerId, int $points, Context $context): void
+    public function expireDue(Context $context, ?\DateTimeInterface $now = null): int
     {
-        if ($points <= 0) {
-            return;
+        $now ??= $this->clock->now();
+
+        $expired = 0;
+
+        foreach ($this->lots->customersWithExpiredLots($now, self::EXPIRY_BATCH_SIZE) as $customerId) {
+            try {
+                $expired += $this->ledger->expireLots($customerId, LoyaltyPointTransactionTypes::EXPIRE, $now, $context);
+            } catch (LoyaltyException $exception) {
+                $this->logger->error('Could not expire the points of a customer.', [
+                    'customerId' => $customerId,
+                    'exception' => $exception,
+                ]);
+            }
         }
 
-        $this->ledger->bookPoints(
-            customerId: $customerId,
-            type: self::TRANSACTION_TYPE_EXPIRE,
-            points: -$points,
-            context: $context
-        );
+        return $expired;
     }
 
     /**
@@ -154,7 +147,7 @@ class LoyaltyPointService
 
         $this->ledger->bookPoints(
             customerId: $customerId,
-            type: self::TRANSACTION_TYPE_ADJUST,
+            type: LoyaltyPointTransactionTypes::ADJUST,
             points: $points,
             context: $context,
             comment: $comment,
@@ -164,11 +157,12 @@ class LoyaltyPointService
     }
 
     /**
-     * Adds the growth value a completed order earned and answers the new value.
+     * Adds the tier points a completed order earned and answers the new total. This is how a customer
+     * climbs a tier; redeeming spends points and leaves tier points alone.
      */
-    public function addGrowthValue(string $customerId, int $growth, Context $context): int
+    public function addTierPoints(string $customerId, int $earned, Context $context): int
     {
-        return $this->ledger->addGrowthValue($customerId, $growth, $context);
+        return $this->ledger->addTierPoints($customerId, $earned, $context);
     }
 
     private function resolveExpiresAt(): ?\DateTimeInterface
@@ -180,16 +174,5 @@ class LoyaltyPointService
         }
 
         return $this->clock->now()->modify(\sprintf('+%d days', $validityDays));
-    }
-
-    private function findLoyalty(string $customerId, Context $context): ?CustomerLoyaltyEntity
-    {
-        $criteria = new Criteria();
-        $criteria->addFilter(new EqualsFilter('customerId', $customerId));
-        $criteria->setLimit(1);
-
-        $loyalty = $this->customerLoyaltyRepository->search($criteria, $context)->getEntities()->first();
-
-        return $loyalty instanceof CustomerLoyaltyEntity ? $loyalty : null;
     }
 }

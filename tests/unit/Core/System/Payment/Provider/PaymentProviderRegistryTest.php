@@ -5,9 +5,9 @@ namespace Shopwell\Tests\Unit\Core\System\Payment\Provider;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Payment\Exception\PaymentProviderException;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayFactory;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
-use Shopwell\Core\System\Payment\PaymentException;
 use Shopwell\Core\System\Payment\Provider\PaymentProvider;
 use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;
 
@@ -66,7 +66,7 @@ class PaymentProviderRegistryTest extends TestCase
     {
         $registry = new PaymentProviderRegistry([$this->provider('alipay')]);
 
-        $this->expectExceptionObject(PaymentException::unknownProvider('wechat'));
+        $this->expectExceptionObject(PaymentProviderException::unknownProvider('wechat'));
 
         $registry->get('wechat');
     }
@@ -86,7 +86,7 @@ class PaymentProviderRegistryTest extends TestCase
             technicalName: $technicalName,
             label: $label,
             credentials: [],
-            channels: [],
+            products: [],
             gatewayFactory: static::createStub(PaymentGatewayFactory::class),
             notificationExtractor: static::createStub(PaymentNotificationExtractorInterface::class),
         );

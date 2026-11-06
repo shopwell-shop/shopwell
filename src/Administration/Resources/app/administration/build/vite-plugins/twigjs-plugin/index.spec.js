@@ -1,6 +1,7 @@
 /**
  * @sw-package framework
  */
+import path from 'path';
 import TwigjsPlugin from './index';
 
 describe('build/vite-plugins/twigjs-plugin', () => {
@@ -22,14 +23,24 @@ describe('build/vite-plugins/twigjs-plugin', () => {
         expect(plugin).toHaveProperty('transform');
     });
 
-    it('should not transform index.html', async () => {
+    it('should not transform the index.html of the Administration', async () => {
         const plugin = TwigjsPlugin();
-        const fileContent = 'file content';
-        const id = 'src/Administration/Resources/app/administration/index.html';
+        const fileContent = '<!DOCTYPE html><html><head><meta charset="utf-8"></head></html>';
+        const id = path.resolve(__dirname, '../../../index.html');
 
         const result = await plugin.transform(fileContent, id);
 
         expect(result).toBeUndefined();
+    });
+
+    it('should transform other index.html files', async () => {
+        const plugin = TwigjsPlugin();
+        const fileContent = 'file content';
+        const id = '/var/www/html/custom/plugins/SwagExample/src/Resources/app/administration/src/index.html';
+
+        const result = await plugin.transform(fileContent, id);
+
+        expect(result.code).toBe(`export default "${fileContent}"`);
     });
 
     it('should transform twig file', async () => {
@@ -69,5 +80,17 @@ describe('build/vite-plugins/twigjs-plugin', () => {
         expect(result.code).toBe(
             `export default "{% block content %} <div> <h1>Test</h1> <input type=\\"text\\" value=\\"test\\"> </div> {% endblock %}"`,
         );
+    });
+    it.each([
+        ['a<!-- ordinary -->b', 'a b'],
+        ['a<!-->b', 'a b'],
+        ['a<!--->b', 'a b'],
+        ['a<!-- hidden --!>b', 'a b'],
+        ['a<!-- unfinished', 'a'],
+        ['<!<!-- hidden -->--><div>visible</div>', '<! --><div>visible</div>'],
+    ])('removes HTML comment tokens without joining surrounding markup: %s', async (source, expected) => {
+        const result = await TwigjsPlugin().transform(source, 'template.html.twig');
+
+        expect(result.code).toBe(`export default "${expected}"`);
     });
 });

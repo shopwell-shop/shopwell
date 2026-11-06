@@ -213,11 +213,11 @@ export default Shopwell.Component.wrapComponentConfig({
         },
 
         canSubmit(mapping: EntitySchema.Entity<'sms_template_mapping'>): boolean {
-            return this.auditOf(mapping).canSubmit === true;
+            return this.auditOf(mapping).canSubmit;
         },
 
         canReadStatus(mapping: EntitySchema.Entity<'sms_template_mapping'>): boolean {
-            return this.auditOf(mapping).canReadStatus === true;
+            return this.auditOf(mapping).canReadStatus;
         },
 
         /**
@@ -228,7 +228,7 @@ export default Shopwell.Component.wrapComponentConfig({
         canConfirmStatus(mapping: EntitySchema.Entity<'sms_template_mapping'>): boolean {
             const audit = this.auditOf(mapping);
 
-            return audit.requiresApproval === true && audit.canReadStatus !== true;
+            return audit.requiresApproval && !audit.canReadStatus;
         },
 
         isBusy(mapping: EntitySchema.Entity<'sms_template_mapping'>): boolean {

@@ -60,6 +60,18 @@ Module.register('sw-settings-currency', {
         },
     },
 
+    navigation: [
+        {
+            id: 'sw-settings-currency',
+            label: 'sw-settings-currency.general.mainMenuItemGeneral',
+            parent: 'sw-settings',
+            path: 'sw.settings.currency.index',
+            icon: 'regular-euro',
+            position: 410,
+            privilege: 'currencies.viewer',
+        },
+    ],
+
     settingsItem: {
         group: 'localization',
         to: 'sw.settings.currency.index',

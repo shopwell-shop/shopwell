@@ -909,4 +909,35 @@ describe('app/plugins/shortcut.plugin', () => {
 
         wrapper.unmount();
     });
+
+    it('should ignore keydown events which carry no key', async () => {
+        const onToggleMock = jest.fn();
+        const addEventListenerSpy = jest.spyOn(document, 'addEventListener');
+
+        wrapper = await createWrapper({
+            shortcuts: {
+                S: 'onToggle',
+            },
+            methods: {
+                onToggle() {
+                    onToggleMock();
+                },
+            },
+        });
+
+        const keyDownListener = addEventListenerSpy.mock.calls.find(([type]) => type === 'keydown')?.[1];
+        expect(keyDownListener).toBeDefined();
+
+        // Plain events dispatched under the `keydown` name have no `key` property at all
+        expect(() => keyDownListener(new Event('keydown'))).not.toThrow();
+        expect(onToggleMock).not.toHaveBeenCalled();
+
+        // the listener keeps working for real key presses
+        await wrapper.trigger('keydown', { key: 's' });
+
+        expect(onToggleMock).toHaveBeenCalledTimes(1);
+
+        addEventListenerSpy.mockRestore();
+        wrapper.unmount();
+    });
 });

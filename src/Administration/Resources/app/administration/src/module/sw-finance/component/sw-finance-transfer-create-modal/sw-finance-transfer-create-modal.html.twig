@@ -171,8 +171,9 @@
 
             {% block sw_finance_transfer_create_modal_field_amount %}
             {#
-            The amount stays a string from the input to the request body: `yuanToMinorUnits()` splits
-            the digits the operator typed, so `0.10` becomes exactly 10 fen.
+            The amount stays a string from the input to the request body: `toMinorUnits()` splits
+            the digits the operator typed with the exponent of the selected currency, so `0.10` CNY
+            becomes exactly 10 fen and `12` JPY stays 12.
             #}
             <mt-text-field
                 v-model="amount"

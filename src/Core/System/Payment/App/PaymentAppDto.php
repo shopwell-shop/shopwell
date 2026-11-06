@@ -18,8 +18,8 @@ readonly class PaymentAppDto
 {
     /**
      * @param list<string> $allowedIps
-     * @param list<PaymentAppProviderDto>|null $providers null leaves the authorizations untouched,
-     *                                                    an empty list revokes all of them
+     * @param list<PaymentAppAccountDto>|null $accounts null leaves the authorizations untouched,
+     *                                                  an empty list revokes all of them
      * @param list<PaymentAppChannelDto>|null $channels same for the enabled channels
      */
     public function __construct(
@@ -35,7 +35,7 @@ readonly class PaymentAppDto
         #[Assert\Positive]
         public ?int $rateLimit = null,
         public ?string $appSecret = null,
-        public ?array $providers = null,
+        public ?array $accounts = null,
         public ?array $channels = null,
     ) {
     }

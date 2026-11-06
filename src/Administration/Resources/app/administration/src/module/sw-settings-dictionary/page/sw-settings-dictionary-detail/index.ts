@@ -13,7 +13,7 @@ const { Criteria } = Shopwell.Data;
 type DictionaryTypeEntity = EntitySchema.Entity<'dictionary_type'>;
 type DictionaryEntryEntity = EntitySchema.Entity<'dictionary_entry'>;
 
-// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+/** @private */
 export default defineComponent({
     template,
 
@@ -106,7 +106,9 @@ export default defineComponent({
             this.isLoading = true;
 
             try {
-                this.dictionaryType = await this.dictionaryTypeRepository.get(this.dictionaryTypeId as EntitySchema.DictionaryTypeId);
+                this.dictionaryType = await this.dictionaryTypeRepository.get(
+                    this.dictionaryTypeId as EntitySchema.DictionaryTypeId,
+                );
                 await this.loadEntries();
             } catch {
                 this.createNotificationError({
@@ -136,7 +138,7 @@ export default defineComponent({
 
         onAddEntry(): void {
             this.newEntry = this.entryRepository.create();
-            this.newEntry.dictionaryTypeId = this.dictionaryTypeId as EntitySchema.DictionaryEntryId;
+            this.newEntry.dictionaryTypeId = this.dictionaryTypeId as EntitySchema.DictionaryTypeId;
             this.newEntry.position = this.nextFreePosition();
             this.newEntry.active = true;
             this.showCreateModal = true;
@@ -176,9 +178,7 @@ export default defineComponent({
                 return;
             }
 
-            const isDuplicate = (this.entries ?? []).some(
-                (entry) => entry.technicalName === newEntry.technicalName,
-            );
+            const isDuplicate = (this.entries ?? []).some((entry) => entry.technicalName === newEntry.technicalName);
 
             if (isDuplicate) {
                 this.createNotificationError({
@@ -205,7 +205,11 @@ export default defineComponent({
                 .then(() => {
                     this.dictionaryService.invalidateCaches();
                     this.createNotificationSuccess({
-                        message: this.$t('sw-settings-dictionary.entryList.messageSaveSuccess', { name: item.technicalName }, 0),
+                        message: this.$t(
+                            'sw-settings-dictionary.entryList.messageSaveSuccess',
+                            { name: item.technicalName },
+                            0,
+                        ),
                     });
                 })
                 .catch(() => {

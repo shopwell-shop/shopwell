@@ -7,16 +7,11 @@ use Shopwell\Core\Content\Media\Upload\MediaUploadService;
 use Shopwell\Core\Framework\Api\Acl\AclCriteriaValidator;
 use Shopwell\Core\Framework\Api\OAuth\ClientRepository;
 use Shopwell\Core\Framework\Api\Serializer\JsonEntityEncoder;
-use Shopwell\Core\Framework\App\Aggregate\AppMcpPrompt\AppMcpPromptDefinition;
-use Shopwell\Core\Framework\App\Aggregate\AppMcpPromptTranslation\AppMcpPromptTranslationDefinition;
-use Shopwell\Core\Framework\App\Aggregate\AppMcpResource\AppMcpResourceDefinition;
-use Shopwell\Core\Framework\App\Aggregate\AppMcpResourceTranslation\AppMcpResourceTranslationDefinition;
-use Shopwell\Core\Framework\App\Aggregate\AppMcpTool\AppMcpToolDefinition;
-use Shopwell\Core\Framework\App\Aggregate\AppMcpToolTranslation\AppMcpToolTranslationDefinition;
-use Shopwell\Core\Framework\App\Lifecycle\Handler\McpLifecycleHandler;
-use Shopwell\Core\Framework\App\Lifecycle\Persister\McpPromptPersister;
-use Shopwell\Core\Framework\App\Lifecycle\Persister\McpResourcePersister;
-use Shopwell\Core\Framework\App\Lifecycle\Persister\McpToolPersister;
+use Shopwell\Core\Framework\App\AppSecretResolver;
+use Shopwell\Core\Framework\App\Feature\AppFeatureStorage;
+use Shopwell\Core\Framework\App\Mcp\Feature\McpPromptFeatureDefinition;
+use Shopwell\Core\Framework\App\Mcp\Feature\McpResourceFeatureDefinition;
+use Shopwell\Core\Framework\App\Mcp\Feature\McpToolFeatureDefinition;
 use Shopwell\Core\Framework\App\ShopId\ShopIdProvider;
 use Shopwell\Core\Framework\DataAbstractionLayer\DefinitionInstanceRegistry;
 use Shopwell\Core\Framework\DependencyInjection\CompilerPass\McpToolDiscoveryCompilerPass;
@@ -85,6 +80,7 @@ use Shopwell\Core\Framework\Mcp\Tool\ToolsetEnableTool;
 use Shopwell\Core\Framework\Mcp\Tool\ToolsetsListTool;
 use Shopwell\Core\Framework\Mcp\ToolResultCacheStorage;
 use Shopwell\Core\Framework\RateLimiter\RateLimiter;
+use Shopwell\Core\System\Locale\LanguageLocaleCodeProvider;
 use Shopwell\Core\System\SalesChannel\Mcp\Resource\StoreApiToolResultResource;
 use Shopwell\Core\System\SalesChannel\Mcp\Tool\StoreApiContextTool;
 use Shopwell\Core\System\SalesChannel\Mcp\Tool\StoreApiToolSearchTool;
@@ -119,7 +115,7 @@ return static function (ContainerConfigurator $container): void {
         ->tag('monolog.logger', ['channel' => 'mcp']);
 
     $services->set(AppMcpCapabilityDetector::class)
-        ->args([service(Connection::class)]);
+        ->args([service(AppFeatureStorage::class)]);
 
     $services->set(AppMcpCapabilityLifecycleSubscriber::class)
         ->args([
@@ -254,8 +250,7 @@ return static function (ContainerConfigurator $container): void {
         ->tag('monolog.logger', ['channel' => 'mcp']);
 
     $services->set(AppMcpPrivilegeProvider::class)
-        ->args([service(Connection::class), service('logger')])
-        ->tag('monolog.logger', ['channel' => 'mcp']);
+        ->args([service(AppFeatureStorage::class)]);
 
     $services->set(McpCapabilityCatalog::class)
         ->args([
@@ -463,6 +458,7 @@ return static function (ContainerConfigurator $container): void {
             service('mcp.store_api.toolset_registry'),
             service(McpToolsetSessionStorage::class),
             service('request_stack'),
+            service(McpRequestedToolsetResolver::class),
         ])
         ->tag('shopwell.store_api_mcp.tool');
 
@@ -471,6 +467,7 @@ return static function (ContainerConfigurator $container): void {
             service('mcp.store_api.toolset_registry'),
             service(McpToolsetSessionStorage::class),
             service('request_stack'),
+            service(McpRequestedToolsetResolver::class),
         ])
         ->tag('shopwell.store_api_mcp.tool');
 
@@ -482,6 +479,7 @@ return static function (ContainerConfigurator $container): void {
             service(McpToolsetRegistry::class),
             service(McpToolsetSessionStorage::class),
             service('request_stack'),
+            service(McpRequestedToolsetResolver::class),
         ])
         ->tag('mcp.tool');
 
@@ -490,6 +488,7 @@ return static function (ContainerConfigurator $container): void {
             service(McpToolsetRegistry::class),
             service(McpToolsetSessionStorage::class),
             service('request_stack'),
+            service(McpRequestedToolsetResolver::class),
         ])
         ->tag('mcp.tool');
 
@@ -558,13 +557,15 @@ return static function (ContainerConfigurator $container): void {
             service('kernel'),
             service('request_stack'),
             service('router'),
+            service(AppSecretResolver::class),
         ])
         ->tag('monolog.logger', ['channel' => 'mcp']);
 
     $services->set(AppMcpToolLoader::class)
         ->args([
-            service(Connection::class),
+            service(AppFeatureStorage::class),
             service(AppMcpCapabilityExecutor::class),
+            service(LanguageLocaleCodeProvider::class),
             service('logger'),
             param('shopwell.mcp.allowed_tools'),
         ])
@@ -572,8 +573,9 @@ return static function (ContainerConfigurator $container): void {
 
     $services->set(AppMcpPromptLoader::class)
         ->args([
-            service(Connection::class),
+            service(AppFeatureStorage::class),
             service(AppMcpCapabilityExecutor::class),
+            service(LanguageLocaleCodeProvider::class),
             service('logger'),
         ])
         ->tag('mcp.loader')
@@ -581,48 +583,20 @@ return static function (ContainerConfigurator $container): void {
 
     $services->set(AppMcpResourceLoader::class)
         ->args([
-            service(Connection::class),
+            service(AppFeatureStorage::class),
             service(AppMcpCapabilityExecutor::class),
+            service(LanguageLocaleCodeProvider::class),
             service('logger'),
         ])
         ->tag('mcp.loader')
         ->tag('monolog.logger', ['channel' => 'mcp']);
 
-    $services->set(McpToolPersister::class)
-        ->args([service('app_mcp_tool.repository')]);
+    $services->set(McpToolFeatureDefinition::class)
+        ->tag('shopwell.app_feature.definition');
 
-    $services->set(McpPromptPersister::class)
-        ->args([service('app_mcp_prompt.repository')]);
+    $services->set(McpPromptFeatureDefinition::class)
+        ->tag('shopwell.app_feature.definition');
 
-    $services->set(McpResourcePersister::class)
-        ->args([service('app_mcp_resource.repository')]);
-
-    $services->set(McpLifecycleHandler::class)
-        ->args([
-            service(McpToolPersister::class),
-            service(McpPromptPersister::class),
-            service(McpResourcePersister::class),
-            service(AppMcpCapabilityDetector::class),
-            service(McpListChangedNotifier::class),
-        ])
-        ->tag('shopwell.app_lifecycle.handler', ['priority' => -1300]);
-
-    // DAL definitions
-    $services->set(AppMcpToolDefinition::class)
-        ->tag('shopwell.entity.definition');
-
-    $services->set(AppMcpToolTranslationDefinition::class)
-        ->tag('shopwell.entity.definition');
-
-    $services->set(AppMcpPromptDefinition::class)
-        ->tag('shopwell.entity.definition');
-
-    $services->set(AppMcpPromptTranslationDefinition::class)
-        ->tag('shopwell.entity.definition');
-
-    $services->set(AppMcpResourceDefinition::class)
-        ->tag('shopwell.entity.definition');
-
-    $services->set(AppMcpResourceTranslationDefinition::class)
-        ->tag('shopwell.entity.definition');
+    $services->set(McpResourceFeatureDefinition::class)
+        ->tag('shopwell.app_feature.definition');
 };

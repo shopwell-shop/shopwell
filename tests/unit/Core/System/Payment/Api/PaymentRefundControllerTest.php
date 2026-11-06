@@ -8,8 +8,10 @@ use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Payment\Api\PaymentRefundController;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
+use Shopwell\Core\System\Payment\Exception\PaymentAppException;
+use Shopwell\Core\System\Payment\Exception\PaymentOrderException;
+use Shopwell\Core\System\Payment\Order\Aggregate\PaymentRefund\PaymentRefundCollection;
 use Shopwell\Core\System\Payment\Order\PaymentOrderCollection;
-use Shopwell\Core\System\Payment\Order\Refund\PaymentRefundCollection;
 use Shopwell\Core\System\Payment\PaymentException;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -27,7 +29,7 @@ class PaymentRefundControllerTest extends TestCase
     {
         $app = PaymentControllerFixture::app('client-a', 'secret-a');
 
-        $this->expectExceptionObject(PaymentException::missingAuthParameters(['app_id']));
+        $this->expectExceptionObject(PaymentAppException::missingAuthParameters(['app_id']));
 
         $this->controller($app, PaymentControllerFixture::repository(PaymentOrderCollection::class), PaymentControllerFixture::repository(PaymentRefundCollection::class))
             ->create(new Request(), 'PG-1');
@@ -37,7 +39,7 @@ class PaymentRefundControllerTest extends TestCase
     {
         $app = PaymentControllerFixture::app('client-a', 'secret-a');
 
-        $this->expectExceptionObject(PaymentException::orderNotFound('PG-1'));
+        $this->expectExceptionObject(PaymentOrderException::orderNotFound('PG-1'));
 
         $this->controller($app, PaymentControllerFixture::repository(PaymentOrderCollection::class), PaymentControllerFixture::repository(PaymentRefundCollection::class))
             ->create($this->refundRequest(), 'PG-1');
@@ -48,7 +50,7 @@ class PaymentRefundControllerTest extends TestCase
         $app = PaymentControllerFixture::app('client-a', 'secret-a');
         $order = PaymentControllerFixture::order($app->id, ['paidAt' => null]);
 
-        $this->expectExceptionObject(PaymentException::refundNotAllowed('PG-1'));
+        $this->expectExceptionObject(PaymentOrderException::refundNotAllowed('PG-1'));
 
         $this->controller($app, PaymentControllerFixture::repository(PaymentOrderCollection::class, [$order]), PaymentControllerFixture::repository(PaymentRefundCollection::class))
             ->create($this->refundRequest(), 'PG-1');
@@ -74,7 +76,7 @@ class PaymentRefundControllerTest extends TestCase
         $app = PaymentControllerFixture::app('client-a', 'secret-a');
         $order = PaymentControllerFixture::order($app->id, ['paidAt' => PaymentControllerFixture::clock()->now(), 'paidAmount' => 1000]);
 
-        $this->expectExceptionObject(PaymentException::invalidAmount(0));
+        $this->expectExceptionObject(PaymentOrderException::invalidAmount(0));
 
         $this->controller($app, PaymentControllerFixture::repository(PaymentOrderCollection::class, [$order]), PaymentControllerFixture::repository(PaymentRefundCollection::class))
             ->create($this->refundRequest(0), 'PG-1');
@@ -85,7 +87,7 @@ class PaymentRefundControllerTest extends TestCase
         $app = PaymentControllerFixture::app('client-a', 'secret-a');
         $order = PaymentControllerFixture::order($app->id, ['paidAt' => PaymentControllerFixture::clock()->now(), 'paidAmount' => 1000]);
 
-        $this->expectExceptionObject(PaymentException::refundAmountExceedsOrder('PG-1', 1500, 1000));
+        $this->expectExceptionObject(PaymentOrderException::refundAmountExceedsOrder('PG-1', 1500, 1000));
 
         $this->controller($app, PaymentControllerFixture::repository(PaymentOrderCollection::class, [$order]), PaymentControllerFixture::repository(PaymentRefundCollection::class))
             ->create($this->refundRequest(1500), 'PG-1');
@@ -95,7 +97,7 @@ class PaymentRefundControllerTest extends TestCase
     {
         $app = PaymentControllerFixture::app('client-a', 'secret-a');
         $order = PaymentControllerFixture::order($app->id, ['paidAt' => PaymentControllerFixture::clock()->now(), 'paidAmount' => 1000]);
-        $refund = PaymentControllerFixture::refund($order->id);
+        $refund = PaymentControllerFixture::refund($order->id, ['reason' => 'customer request']);
 
         $controller = $this->controller(
             $app,
@@ -139,7 +141,7 @@ class PaymentRefundControllerTest extends TestCase
     ): PaymentRefundController {
         $providers = PaymentControllerFixture::providerRegistry(PaymentControllerFixture::provider('alipay', [PaymentControllerFixture::channel('alipay_h5', 'alipay')]));
         $resolver = PaymentControllerFixture::configResolver($providers, PaymentControllerFixture::channelRegistry($providers));
-        $orderService = PaymentControllerFixture::orderService($orderRepository, $resolver);
+        $orderService = PaymentControllerFixture::orderService($orderRepository);
 
         return new PaymentRefundController(
             PaymentControllerFixture::authenticator([$app]),

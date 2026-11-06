@@ -33,6 +33,18 @@ Module.register('sw-settings-seo', {
         },
     },
 
+    navigation: [
+        {
+            id: 'sw-settings-seo',
+            label: 'sw-settings-seo.general.mainMenuItemGeneral',
+            parent: 'sw-settings',
+            path: 'sw.settings.seo.index',
+            icon: 'regular-search',
+            position: 530,
+            privilege: 'system.system_config',
+        },
+    ],
+
     settingsItem: {
         group: 'content',
         to: 'sw.settings.seo.index',

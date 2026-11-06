@@ -33,7 +33,7 @@ class PaymentMethodChannelSaveDtoTest extends TestCase
         $violations = $this->validator->validate(new PaymentMethodChannelSaveDto());
 
         static::assertCount(1, $violations);
-        static::assertSame('channelTechnicalName', $violations->get(0)->getPropertyPath());
+        static::assertSame('methodTechnicalName', $violations->get(0)->getPropertyPath());
     }
 
     public function testAChannelWithoutAnAppIsAccepted(): void
@@ -54,15 +54,15 @@ class PaymentMethodChannelSaveDtoTest extends TestCase
     {
         $dto = new PaymentMethodChannelSaveDto();
 
-        static::assertNull($dto->channelTechnicalName);
+        static::assertNull($dto->methodTechnicalName);
         static::assertNull($dto->paymentAppId);
     }
 
     public function testTheFieldsAreReadableByName(): void
     {
-        $dto = new PaymentMethodChannelSaveDto(channelTechnicalName: 'paypal', paymentAppId: 'app-id');
+        $dto = new PaymentMethodChannelSaveDto(methodTechnicalName: 'paypal', paymentAppId: 'app-id');
 
-        static::assertSame('paypal', $dto->channelTechnicalName);
+        static::assertSame('paypal', $dto->methodTechnicalName);
         static::assertSame('app-id', $dto->paymentAppId);
     }
 
@@ -79,6 +79,6 @@ class PaymentMethodChannelSaveDtoTest extends TestCase
         $violations = $this->validator->validate(new PaymentMethodChannelSaveDto(''));
 
         static::assertCount(1, $violations);
-        static::assertSame('channelTechnicalName', $violations->get(0)->getPropertyPath());
+        static::assertSame('methodTechnicalName', $violations->get(0)->getPropertyPath());
     }
 }

@@ -4,6 +4,7 @@ namespace Shopwell\Core\System\DependencyInjection;
 
 use Doctrine\DBAL\Connection;
 use Shopwell\Core\Framework\DataAbstractionLayer\DefinitionInstanceRegistry;
+use Shopwell\Core\Framework\DataAbstractionLayer\Write\EntityWriter;
 use Shopwell\Core\System\StateMachine\Aggregation\StateMachineHistory\StateMachineHistoryDefinition;
 use Shopwell\Core\System\StateMachine\Aggregation\StateMachineState\StateMachineStateDefinition;
 use Shopwell\Core\System\StateMachine\Aggregation\StateMachineState\StateMachineStateTranslationDefinition;
@@ -42,6 +43,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(DefinitionInstanceRegistry::class),
             service(StateMachineLocker::class),
             service(Connection::class),
+            service(EntityWriter::class),
         ])
         ->tag('kernel.reset', ['method' => 'reset']);
 

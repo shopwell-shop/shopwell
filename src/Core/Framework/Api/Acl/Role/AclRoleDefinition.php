@@ -19,6 +19,8 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Field\OneToOneAssociationField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\StringField;
 use Shopwell\Core\Framework\DataAbstractionLayer\FieldCollection;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\AdminMenu\AdminMenuItemDefinition;
+use Shopwell\Core\System\AdminMenu\Aggregate\AdminMenuItemRole\AdminMenuItemRoleDefinition;
 use Shopwell\Core\System\Integration\Aggregate\IntegrationRole\IntegrationRoleDefinition;
 use Shopwell\Core\System\Integration\IntegrationDefinition;
 use Shopwell\Core\System\User\UserDefinition;
@@ -88,6 +90,7 @@ class AclRoleDefinition extends EntityDefinition
             new ManyToManyAssociationField('users', UserDefinition::class, AclUserRoleDefinition::class, 'acl_role_id', 'user_id'),
             (new OneToOneAssociationField('app', 'id', 'acl_role_id', AppDefinition::class, false))->addFlags(new RestrictDelete()),
             new ManyToManyAssociationField('integrations', IntegrationDefinition::class, IntegrationRoleDefinition::class, 'acl_role_id', 'integration_id'),
+            new ManyToManyAssociationField('adminMenuItems', AdminMenuItemDefinition::class, AdminMenuItemRoleDefinition::class, 'acl_role_id', 'admin_menu_item_id'),
         ]);
     }
 }

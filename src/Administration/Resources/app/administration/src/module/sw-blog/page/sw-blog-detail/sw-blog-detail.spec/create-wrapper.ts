@@ -1,7 +1,7 @@
 /**
  * @sw-package discovery
  */
-import { mount } from '@vue/test-utils';
+import { shallowMount } from '@vue/test-utils';
 import type { VueWrapper } from '@vue/test-utils';
 import BlogApiService from '../../../service/blog.api.service';
 import { assignments, blog } from './fixtures';
@@ -21,62 +21,6 @@ export function associationNames(criteria: { associations: unknown }, prefix: st
         return [name, ...associationNames(association.criteria, `${name}.`)];
     });
 }
-
-/**
- * The surface of the page the tests drive.
- *
- * @private
- */
-export type DetailVm = {
-    blog: Record<string, unknown> | null;
-    video: Record<string, unknown> | null;
-    cmsPage: Record<string, unknown> | null;
-    assignments: Array<{ id: string; blogCategoryId: string | null }>;
-    selectedCategoryIds: string[];
-    categories: unknown[];
-    pendingCommentCount: number;
-    isLoading: boolean;
-    isSaving: boolean;
-    showDeleteModal: boolean;
-    showCategoryModal: boolean;
-    showAuthorModal: boolean;
-    newCategoryName: string;
-    newAuthorName: string;
-    canEdit: boolean;
-    canDelete: boolean;
-    isNew: boolean;
-    isTitleMissing: boolean;
-    isCreateCategoryDisabled: boolean;
-    isCreateAuthorDisabled: boolean;
-    title: string;
-    loadBlog: () => Promise<void>;
-    ensureVideo: () => void;
-    isCategorySelected: (categoryId: string) => boolean;
-    onToggleCategory: (categoryId: string) => void;
-    onOpenCategoryModal: () => void;
-    onCreateCategory: () => void;
-    onOpenAuthorModal: () => void;
-    onCreateAuthor: () => void;
-    onPublishNow: () => void;
-    onClearSchedule: () => void;
-    onCoverSelected: (media: Array<{ id: string }>) => void;
-    onCoverRemoved: () => void;
-    onSave: (redirect?: boolean) => Promise<void>;
-    onCancel: () => void;
-    onOpenDeleteModal: () => void;
-    onCloseDeleteModal: () => void;
-    onDelete: () => void;
-    abortOnLanguageChange: () => boolean;
-    saveOnLanguageChange: () => Promise<void>;
-    onChangeLanguage: (languageId: string) => void;
-};
-
-/**
- * The mounted page, typed with the surface above.
- *
- * @private
- */
-export type TypedWrapper = { vm: DetailVm } & VueWrapper;
 
 function collection<T>(items: unknown[]): T {
     return Object.assign([...items], { total: items.length }) as unknown as T;
@@ -112,7 +56,7 @@ export async function createWrapper(
         blogId?: string | null;
     } = {},
 ): Promise<{
-    wrapper: TypedWrapper;
+    wrapper: VueWrapper;
     getBlog: jest.Mock;
     saveBlog: jest.Mock;
     deleteBlog: jest.Mock;
@@ -124,10 +68,10 @@ export async function createWrapper(
 }> {
     const { can = () => true, entry = blog, hasChanges = false, blogId = 'blog-1' } = options;
 
-    const saveBlog = jest.fn(() => Promise.resolve());
+    const saveBlog = jest.fn<Promise<void>, [Record<string, unknown>]>(() => Promise.resolve());
     const deleteBlog = jest.fn(() => Promise.resolve());
     const getBlog = jest.fn(() => Promise.resolve({ ...entry }));
-    const saveVideo = jest.fn(() => Promise.resolve());
+    const saveVideo = jest.fn<Promise<void>, [Record<string, unknown>]>(() => Promise.resolve());
     const saveAssignment = jest.fn(() => Promise.resolve());
     const deleteAssignment = jest.fn(() => Promise.resolve());
     const push = jest.fn(() => Promise.resolve());
@@ -173,9 +117,16 @@ export async function createWrapper(
         search: jest.fn(() => Promise.resolve(collection<EntityCollection<'cms_page'>>([]))),
     };
 
+    const categories: Array<Record<string, unknown>> = [
+        { id: 'category-1', name: 'First' },
+        { id: 'category-2', name: 'Second' },
+    ];
     const categoryRepository = {
-        search: jest.fn(() => Promise.resolve(collection<EntityCollection<'blog_category'>>([]))),
-        save: jest.fn(() => Promise.resolve()),
+        search: jest.fn(() => Promise.resolve(collection<EntityCollection<'blog_category'>>(categories))),
+        save: jest.fn((category: Record<string, unknown>) => {
+            categories.push(category);
+            return Promise.resolve();
+        }),
         create: () => {
             return { id: 'category-new', name: null, slug: null, active: true };
         },
@@ -193,11 +144,14 @@ export async function createWrapper(
         search: jest.fn(() => Promise.resolve(Object.assign([], { total: 2 }))),
     };
 
-    const wrapper = mount(await wrapTestComponent('sw-blog-detail', { sync: true }), {
+    const wrapper = shallowMount(await wrapTestComponent('sw-blog-detail', { sync: true }), {
         props: { blogId },
         global: {
             stubs: {
-                'sw-page': { template: '<div><slot name="content"></slot><slot name="sidebar"></slot><slot></slot></div>' },
+                'sw-page': {
+                    template:
+                        '<div><slot name="smart-bar-header"></slot><slot name="smart-bar-actions"></slot><slot name="language-switch"></slot><slot name="content"></slot><slot name="sidebar"></slot></div>',
+                },
                 'sw-card-view': { template: '<div><slot></slot></div>' },
                 'mt-card': { template: '<div><slot name="toolbar"></slot><slot></slot></div>' },
                 'sw-container': { template: '<div><slot></slot></div>' },
@@ -205,21 +159,49 @@ export async function createWrapper(
                 'sw-sidebar-item': { template: '<div><slot></slot></div>' },
                 'sw-skeleton': true,
                 'sw-modal': { template: '<div class="modal"><slot></slot><slot name="modal-footer"></slot></div>' },
-                'sw-language-switch': true,
-                'sw-media-compact-upload-v2': true,
-                'sw-entity-single-select': true,
+                'sw-language-switch': {
+                    props: ['saveChangesFunction', 'abortChangeFunction'],
+                    template:
+                        '<section><output class="unsaved">{{ abortChangeFunction() }}</output><button class="language-save" @click="saveChangesFunction()">Save translation</button><button class="language-change" @click="$emit(\'on-change\', \'language-2\')">Change language</button></section>',
+                },
+                'sw-media-compact-upload-v2': {
+                    props: ['source'],
+                    template:
+                        '<section><output class="cover-source">{{ source }}</output><button class="select-cover" @click="$emit(\'selection-change\', [{ id: \'media-1\' }])">Select cover</button><button class="remove-cover" @click="$emit(\'delete-item\')">Remove cover</button></section>',
+                },
+                'sw-entity-single-select': {
+                    props: ['value', 'disabled'],
+                    template:
+                        '<input :value="value" :disabled="disabled" @input="$emit(\'update:value\', $event.target.value)">',
+                },
                 'sw-entity-multi-id-select': true,
-                'sw-cms-page-form': true,
-                'sw-blog-detail-content': true,
+                'sw-cms-page-form': { props: ['page'], template: '<output class="cms-page-id">{{ page.id }}</output>' },
+                'sw-blog-detail-content': {
+                    props: ['blog', 'video'],
+                    template:
+                        '<section class="content-editor"><output class="video-id">{{ video?.id }}</output><output class="video-blog">{{ video?.blogId }}</output><output class="video-provider">{{ video?.provider }}</output></section>',
+                },
                 'sw-blog-status-badge': true,
-                'mt-text-field': true,
+                'mt-text-field': {
+                    props: ['modelValue', 'disabled'],
+                    template:
+                        '<input :value="modelValue" :disabled="disabled" @input="$emit(\'update:modelValue\', $event.target.value)">',
+                },
                 'mt-textarea': true,
-                'mt-select': true,
+                'mt-select': {
+                    props: ['modelValue', 'disabled', 'options'],
+                    template:
+                        '<select :value="modelValue" :disabled="disabled" @change="$emit(\'update:modelValue\', $event.target.value)"><option v-for="option in options" :key="option.value" :value="option.value">{{ option.label }}</option></select>',
+                },
                 'mt-switch': true,
-                'mt-checkbox': true,
+                'mt-checkbox': {
+                    props: ['checked', 'label', 'disabled'],
+                    template:
+                        '<label>{{ label }}<input type="checkbox" :checked="checked" :disabled="disabled" @change="$emit(\'update:checked\', $event.target.checked)"></label>',
+                },
                 'mt-badge': true,
                 'mt-datepicker': true,
-                'mt-button': true,
+                'mt-button': { props: ['disabled'], template: '<button :disabled="disabled"><slot></slot></button>' },
             },
             provide: {
                 repositoryFactory: {
@@ -266,7 +248,7 @@ export async function createWrapper(
     activeWrapper = wrapper;
 
     return {
-        wrapper: wrapper as unknown as TypedWrapper,
+        wrapper,
         getBlog,
         saveBlog,
         deleteBlog,

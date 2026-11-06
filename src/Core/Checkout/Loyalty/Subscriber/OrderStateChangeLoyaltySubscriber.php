@@ -4,6 +4,8 @@ namespace Shopwell\Core\Checkout\Loyalty\Subscriber;
 
 use Shopwell\Core\Checkout\Cart\LineItem\LineItem;
 use Shopwell\Core\Checkout\Loyalty\Cart\LoyaltyPointCartProcessor;
+use Shopwell\Core\Checkout\Loyalty\Service\LoyaltyAccountService;
+use Shopwell\Core\Checkout\Loyalty\Service\LoyaltyBenefitResolver;
 use Shopwell\Core\Checkout\Loyalty\Service\LoyaltyPointService;
 use Shopwell\Core\Checkout\Loyalty\Service\LoyaltySettings;
 use Shopwell\Core\Checkout\Loyalty\Service\TierResolver;
@@ -30,7 +32,9 @@ class OrderStateChangeLoyaltySubscriber implements EventSubscriberInterface
     public function __construct(
         private readonly EntityRepository $orderRepository,
         private readonly LoyaltyPointService $loyaltyPointService,
+        private readonly LoyaltyAccountService $accounts,
         private readonly TierResolver $tierResolver,
+        private readonly LoyaltyBenefitResolver $benefits,
         private readonly LoyaltySettings $settings,
     ) {
     }
@@ -87,7 +91,7 @@ class OrderStateChangeLoyaltySubscriber implements EventSubscriberInterface
         }
 
         // the balance may have changed while the order was open, so it is capped to what is still available
-        $balance = $this->loyaltyPointService->getBalance($customerId, $context);
+        $balance = $this->accounts->balance($customerId, $context);
         $points = min($redeemed, $balance);
 
         if ($points <= 0) {
@@ -108,25 +112,25 @@ class OrderStateChangeLoyaltySubscriber implements EventSubscriberInterface
         $amountTotal = $order->getAmountTotal();
 
         $pointsPerUnit = $this->settings->pointsPerCurrencyUnit($salesChannelId);
-        $growthPerUnit = $this->settings->growthPerCurrencyUnit($salesChannelId);
-        $multiplier = $this->tierResolver->getPointsMultiplier($customerId, $context);
+        $tierPointsPerUnit = $this->settings->tierPointsPerCurrencyUnit($salesChannelId);
+        $multiplier = $this->benefits->earnMultiplier($customerId, $context);
 
         $points = (int) floor($amountTotal * $pointsPerUnit * $multiplier);
-        $growth = (int) floor($amountTotal * $growthPerUnit);
+        $earnedTierPoints = (int) floor($amountTotal * $tierPointsPerUnit);
 
         if ($points > 0) {
             $this->loyaltyPointService->award($customerId, $points, $order->getId(), $order->getId() . '-earned', $context);
         }
 
-        if ($growth <= 0) {
+        if ($earnedTierPoints <= 0) {
             return;
         }
 
-        // the growth value is written under the same lock as the points, so two completed orders at
-        // the same time cannot overwrite each other's growth
-        $growthValue = $this->loyaltyPointService->addGrowthValue($customerId, $growth, $context);
+        // tier points are written under the same lock as the points, so two completed orders at
+        // the same time cannot overwrite each other's tier points
+        $tierPoints = $this->loyaltyPointService->addTierPoints($customerId, $earnedTierPoints, $context);
 
-        $this->tierResolver->resolve($customerId, $growthValue, $context);
+        $this->tierResolver->resolve($customerId, $tierPoints, $context);
     }
 
     /**

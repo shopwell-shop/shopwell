@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config>
+    <card>
+        <title>Credentials</title><name>credentials</name>
+        <input-field type="bool">
+            <name>sandbox_mode</name><label>Sandbox</label><label lang="zh-CN">沙箱</label>
+            <defaultValue>false</defaultValue>
+        </input-field>
+        <input-field type="textarea">
+            <name>private_key</name><label>Private key</label><secret>true</secret>
+            <helpText>Signing key</helpText><helpText lang="zh-CN">签名密钥</helpText>
+        </input-field>
+        <input-field type="single-select">
+            <name>environment</name><label>Environment</label>
+            <options><option><id>live</id><name>Live</name><name lang="zh-CN">正式</name></option></options>
+        </input-field>
+    </card>
+    <card><title>One</title><name>channelOne</name><input-field><name>shared_name</name><label>One</label></input-field></card>
+    <card><title>Two</title><name>channelTwo</name><input-field><name>shared_name</name><label>Two</label></input-field></card>
+</config>

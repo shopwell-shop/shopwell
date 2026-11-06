@@ -32,6 +32,7 @@
     {% if page.author %}
         {% block sw_blog_sidebar_author %}
             <section class="blog-author-card">
+                <div class="blog-author-card__avatar" aria-hidden="true">{{ page.author.name|slice(0, 1) }}</div>
                 <p class="blog-author-card__heading">{{ 'blog.detail.authorHeading'|trans|sw_sanitize }}</p>
                 <p class="blog-author-card__name">{{ page.author.name }}</p>
 

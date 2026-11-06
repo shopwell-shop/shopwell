@@ -63,6 +63,18 @@ Module.register('sw-settings-shipping', {
         },
     },
 
+    navigation: [
+        {
+            id: 'sw-settings-shipping',
+            label: 'sw-settings-shipping.general.mainMenuItemGeneral',
+            parent: 'sw-settings',
+            path: 'sw.settings.shipping.index',
+            icon: 'regular-truck',
+            position: 660,
+            privilege: 'shipping.viewer',
+        },
+    ],
+
     settingsItem: {
         group: 'commerce',
         to: 'sw.settings.shipping.index',

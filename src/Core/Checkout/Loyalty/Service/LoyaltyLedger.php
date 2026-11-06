@@ -3,32 +3,43 @@
 namespace Shopwell\Core\Checkout\Loyalty\Service;
 
 use Doctrine\DBAL\Connection;
-use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
-use Doctrine\DBAL\ParameterType;
-use Psr\Clock\ClockInterface;
-use Shopwell\Core\Checkout\Loyalty\Entity\CustomerLoyalty\CustomerLoyaltyCollection;
-use Shopwell\Core\Checkout\Loyalty\Entity\CustomerPointTransaction\CustomerPointTransactionCollection;
+use Shopwell\Core\Checkout\Ledger\RowLock;
+use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyAccount\LoyaltyAccountCollection;
+use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyPointTransaction\LoyaltyPointTransactionCollection;
 use Shopwell\Core\Checkout\Loyalty\LoyaltyException;
+use Shopwell\Core\Checkout\Loyalty\LoyaltyPointTransactionTypes;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Uuid\Uuid;
 
 /**
- * The only writer of a customer loyalty account.
+ * The only writer of the points and the tier points of a customer.
  *
- * Points, growth value and the membership of a customer live on one row, and every one of them is a
- * projection: points from the point ledger, growth from the completed orders, the membership from the
- * purchases. All three are written here inside one transaction on a locked row, because the previous
- * read-modify-write spread over several services lost one of two concurrent bookings - and a lost
- * point booking is a customer complaint nobody can reconstruct afterwards.
+ * Three things describe the same points and are therefore written together: the booking (what
+ * happened), the balance (the sum today) and the batches (which points those are). Spread over three
+ * transactions, a crash in between leaves a booking without its balance or points that belong to no
+ * batch - and both are only noticeable when a customer complains. They live in one transaction on a
+ * locked account row, and a second concurrent booking waits for that lock instead of overwriting it.
+ *
+ * The batches are moved by {@see LoyaltyPointLots}; this class only decides the order of the writes,
+ * because the use rows of an allocation point at the booking they belong to.
  *
  * The ledger stays free of business rules that belong to a caller: it does not decide how many points
- * an order earns or which tier a growth value unlocks. It refuses an overdraft, because only the
- * balance it locked can be judged safely, and it keeps the point booking idempotent by the key the
- * caller brings.
+ * an order earns, which tier tier points unlock, or how much of a return is paid out in points.
+ * It refuses an overdraft, because only the balance it locked can be judged safely, and it keeps the
+ * point booking idempotent by the key the caller brings.
  *
- * @final
+ * The paid membership is not its business either. `tier_id` and `membership_paid_until`
+ * are written by {@see \Shopwell\Core\Checkout\Membership\Service\MembershipSubscriptionService}
+ * while a membership runs, and `tier_id` is also what {@see TierResolver} keeps up to date
+ * with the tier the tier points reach - the column is the effective tier, the date is the paid
+ * period, and neither is a balance this class owns.
+ *
+ * @internal the write order and the row lock are the whole point of this class and cannot be varied
+ *           by a caller. Bookings go through {@see LoyaltyPointService}, which keeps the rules and
+ *           calls this; a booking kind that service cannot express is an extension point to be added
+ *           there, not a reason to call the ledger directly.
  */
 #[Package('checkout')]
 class LoyaltyLedger
@@ -36,25 +47,31 @@ class LoyaltyLedger
     /**
      * @internal
      *
-     * @param EntityRepository<CustomerLoyaltyCollection> $customerLoyaltyRepository
-     * @param EntityRepository<CustomerPointTransactionCollection> $pointTransactionRepository
+     * @param EntityRepository<LoyaltyAccountCollection> $loyaltyAccountRepository
+     * @param EntityRepository<LoyaltyPointTransactionCollection> $pointTransactionRepository
      */
     public function __construct(
-        private readonly EntityRepository $customerLoyaltyRepository,
+        private readonly EntityRepository $loyaltyAccountRepository,
         private readonly EntityRepository $pointTransactionRepository,
         private readonly Connection $connection,
-        private readonly ClockInterface $clock,
+        private readonly RowLock $rows,
+        private readonly LoyaltyPointLots $lots,
     ) {
     }
 
     /**
      * Books one point entry and answers the balance after it.
      *
+     * A positive amount opens a batch that expires when the caller says so. A negative amount is taken
+     * from the batches that expire first, so the booking records the points the customer actually
+     * still owned rather than a number derived from the balance.
+     *
      * A booking that carries an idempotency key is written once: the key is unique, and a repeated
      * call - a redelivered webhook, a retried message - answers the current balance instead of booking
      * a second time.
      *
-     * @throws LoyaltyException when the booking would take the balance below zero
+     * @throws LoyaltyException when the booking would take the balance below zero, or when the batches
+     *                          do not add up to the balance it locked
      *
      * @return int|null the balance after the booking, or null when the key was already booked
      */
@@ -88,151 +105,290 @@ class LoyaltyLedger
                 return null;
             }
 
-            $balanceAfter = $account['pointsBalance'] + $points;
-
-            if ($rejectNegativeBalance && $balanceAfter < 0) {
+            if ($rejectNegativeBalance && $account['pointsBalance'] + $points < 0) {
                 throw LoyaltyException::insufficientPoints($customerId, abs($points), $account['pointsBalance']);
             }
 
-            $this->pointTransactionRepository->create([[
-                'customerId' => $customerId,
-                'type' => $type,
-                'points' => $points,
-                'balanceAfter' => $balanceAfter,
-                'idempotencyKey' => $idempotencyKey,
+            $transactionId = Uuid::randomHex();
+            $allocation = [];
+            $booked = $points;
+
+            if ($points < 0) {
+                $allocation = $this->lots->allocate($this->lots->lockOpenLots($customerId), -$points);
+                $booked = -array_sum(array_column($allocation, 'points'));
+
+                // the balance said the points were there, the batches say otherwise: the two have drifted
+                if ($booked !== $points) {
+                    throw LoyaltyException::lotBalanceMismatch($customerId, $this->lots->remaining($customerId), $account['pointsBalance']);
+                }
+            }
+
+            $balanceAfter = $account['pointsBalance'] + $booked;
+
+            $this->record($account, $transactionId, $customerId, $type, $booked, $balanceAfter, $context, [
                 'orderId' => $orderId,
+                'idempotencyKey' => $idempotencyKey,
                 'expiresAt' => $expiresAt,
                 'comment' => $comment,
                 'administratorId' => $administratorId,
-            ]], $context);
+            ]);
 
-            $this->customerLoyaltyRepository->update([[
-                'id' => $account['id'],
-                'pointsBalance' => $balanceAfter,
-            ]], $context);
+            // the batch is opened after the booking for the same reason the use rows come after it:
+            // everything that points at the booking has to exist second
+            if ($booked > 0) {
+                $this->lots->deposit($customerId, $booked, $expiresAt, $orderId, $context);
+            }
+
+            $this->lots->commit($allocation, $transactionId, null, $context);
 
             return $balanceAfter;
         });
     }
 
     /**
-     * Adds the growth value an order earned and answers the new value. Growth is not part of the point
-     * ledger - it never gets spent - so it is only a counter, but it is counted under the same lock for
-     * the same reason.
+     * Expires every batch of one customer that has run out by the given moment.
+     *
+     * The batches are re-read under the account lock, so a second worker arriving for the same
+     * customer finds nothing left instead of expiring the same points twice. The booking, the drained
+     * batches and the new balance are one transaction: the half-done state the previous implementation
+     * could leave behind - points marked as expired but still spendable - cannot happen here.
+     *
+     * Answering the expired amount lets the caller sum up the night's work; a customer whose batches do
+     * not add up to their balance is reported instead of being quietly skipped.
+     *
+     * @throws LoyaltyException when the batches do not add up to the balance
+     *
+     * @return int the number of points expired
      */
-    public function addGrowthValue(string $customerId, int $growth, Context $context): int
+    public function expireLots(string $customerId, string $type, \DateTimeInterface $now, Context $context): int
     {
-        return $this->connection->transactional(function () use ($customerId, $growth, $context): int {
+        return $this->connection->transactional(function () use ($customerId, $type, $now, $context): int {
             $account = $this->lockAccount($customerId, $context);
-            $growthValue = $account['growthValue'] + $growth;
 
-            $this->customerLoyaltyRepository->update([[
-                'id' => $account['id'],
-                'growthValue' => $growthValue,
-            ]], $context);
+            $lotTotal = $this->lots->remaining($customerId);
 
-            return $growthValue;
+            if ($lotTotal !== $account['pointsBalance']) {
+                throw LoyaltyException::lotBalanceMismatch($customerId, $lotTotal, $account['pointsBalance']);
+            }
+
+            $lots = $this->lots->lockOpenLots($customerId, $now);
+
+            $due = 0;
+            foreach ($lots as $lot) {
+                $due += $lot['remaining'];
+            }
+
+            if ($due === 0) {
+                return 0;
+            }
+
+            $allocation = $this->lots->allocate($lots, $due);
+            $transactionId = Uuid::randomHex();
+
+            $this->record($account, $transactionId, $customerId, $type, -$due, $account['pointsBalance'] - $due, $context);
+            $this->lots->commit($allocation, $transactionId, $now, $context);
+
+            return $due;
         });
     }
 
     /**
-     * Puts a purchased membership on the customer and answers the period it runs.
+     * Gives back the points an order spent, into the batches they were taken from.
      *
-     * A renewal of the very same tier continues where the running membership ends - a customer who
-     * renews early must not lose the days that are already paid. Everything else starts now: buying a
-     * different tier replaces the current one, and the paid remainder of the old one is not silently
-     * swallowed into the new period.
+     * This is the return of a paid-with-points order: the customer gets the discount back as points,
+     * not as money, because that is the form it was taken in. The batches are re-read under the account
+     * lock and only the withdrawals that are still out are touched, so a return that comes in parts
+     * settles each part once - a repeated call finds nothing left and answers 0.
      *
-     * The row is locked while it is read and written, so two settlements of the same purchase cannot
-     * both extend the membership.
+     * The caller passes points, not money: what a point is worth is the caller's rule, and this class
+     * must not learn how a discount was calculated.
      *
-     * @return array{startsAt: \DateTimeInterface, expiresAt: \DateTimeInterface}
+     * @return int the number of points given back
      */
-    public function activateMembership(string $customerId, string $tierId, int $durationDays, Context $context): array
-    {
-        return $this->connection->transactional(function () use ($customerId, $tierId, $durationDays, $context): array {
+    public function giveBackPoints(
+        string $customerId,
+        string $type,
+        string $orderId,
+        int $points,
+        Context $context,
+        ?string $comment = null,
+    ): int {
+        if ($points <= 0) {
+            return 0;
+        }
+
+        return $this->connection->transactional(function () use ($customerId, $type, $orderId, $points, $context, $comment): int {
             $account = $this->lockAccount($customerId, $context);
 
-            $now = $this->clock->now();
-            $runningUntil = $account['membershipValidUntil'] !== null
-                ? new \DateTimeImmutable($account['membershipValidUntil'])
-                : null;
+            $plan = $this->lots->planGiveBack(
+                $this->lots->lockUsage($orderId, LoyaltyPointTransactionTypes::REDEEM),
+                $points
+            );
 
-            $continues = $runningUntil !== null && $runningUntil > $now && $account['membershipTierId'] === $tierId;
+            if ($plan === []) {
+                // every batch of the order has either been given back or has died in the meantime
+                return 0;
+            }
 
-            $startsAt = $continues ? $runningUntil : $now;
-            $expiresAt = $startsAt->modify(\sprintf('+%d days', $durationDays));
+            $given = array_sum(array_column($plan, 'points'));
+            $transactionId = Uuid::randomHex();
 
-            $this->customerLoyaltyRepository->update([[
-                'id' => $account['id'],
-                'membershipTierId' => $tierId,
-                'membershipValidUntil' => $expiresAt,
-            ]], $context);
+            $this->record($account, $transactionId, $customerId, $type, $given, $account['pointsBalance'] + $given, $context, [
+                'orderId' => $orderId,
+                'comment' => $comment,
+            ]);
 
-            return ['startsAt' => $startsAt, 'expiresAt' => $expiresAt];
+            $this->lots->giveBack($plan, $context);
+
+            return $given;
         });
     }
 
     /**
-     * @return array{id: string, pointsBalance: int, growthValue: int, membershipTierId: ?string, membershipValidUntil: ?string}
+     * Takes back the points an order earned, as far as its batches still hold them.
+     *
+     * The batches are the limit on purpose: points the customer already spent are not turned into a
+     * debt, because a negative balance is either impossible to spend or a claim nobody agreed to. What
+     * is still there goes, what is gone stays gone.
+     *
+     * @return int the number of points taken back
+     */
+    public function revokeOrderPoints(
+        string $customerId,
+        string $type,
+        string $orderId,
+        int $points,
+        Context $context,
+        ?string $comment = null,
+    ): int {
+        if ($points <= 0) {
+            return 0;
+        }
+
+        return $this->connection->transactional(function () use ($customerId, $type, $orderId, $points, $context, $comment): int {
+            $account = $this->lockAccount($customerId, $context);
+
+            $allocation = $this->lots->allocate($this->lots->lockLotsOfOrder($customerId, $orderId), $points);
+            $taken = array_sum(array_column($allocation, 'points'));
+
+            if ($taken === 0) {
+                return 0;
+            }
+
+            $transactionId = Uuid::randomHex();
+
+            $this->record($account, $transactionId, $customerId, $type, -$taken, $account['pointsBalance'] - $taken, $context, [
+                'orderId' => $orderId,
+                'comment' => $comment,
+            ]);
+
+            $this->lots->commit($allocation, $transactionId, null, $context);
+
+            return $taken;
+        });
+    }
+
+    /**
+     * Adds the tier points an order earned and answers the new total. Tier points are not part of the
+     * point ledger - they are never spent - so they are only a counter, but they are counted under the
+     * same lock for the same reason.
+     */
+    public function addTierPoints(string $customerId, int $earned, Context $context): int
+    {
+        return $this->connection->transactional(function () use ($customerId, $earned, $context): int {
+            $account = $this->lockAccount($customerId, $context);
+            $tierPoints = $account['tierPoints'] + $earned;
+
+            $this->loyaltyAccountRepository->update([[
+                'id' => $account['id'],
+                'tierPoints' => $tierPoints,
+            ]], $context);
+
+            return $tierPoints;
+        });
+    }
+
+    /**
+     * Writes the booking and the balance it results in - the two rows every booking has.
+     *
+     * The columns a type does not use are absent rather than empty, so a booking whose caller brought
+     * no order does not pretend to belong to one. The batches are not touched here: they are moved by
+     * {@see LoyaltyPointLots} around this call, inside the same transaction.
+     *
+     * @param array{id: string, pointsBalance: int, tierPoints: int} $account
+     * @param array<string, mixed> $columns orderId, idempotencyKey, expiresAt, comment, administratorId
+     */
+    private function record(
+        array $account,
+        string $transactionId,
+        string $customerId,
+        string $type,
+        int $points,
+        int $balanceAfter,
+        Context $context,
+        array $columns = [],
+    ): void {
+        $this->pointTransactionRepository->create([array_filter([
+            'id' => $transactionId,
+            'customerId' => $customerId,
+            'type' => $type,
+            'points' => $points,
+            'balanceAfter' => $balanceAfter,
+        ] + $columns, static fn (mixed $value): bool => $value !== null)], $context);
+
+        $this->loyaltyAccountRepository->update([[
+            'id' => $account['id'],
+            'pointsBalance' => $balanceAfter,
+        ]], $context);
+    }
+
+    /**
+     * @return array{id: string, pointsBalance: int, tierPoints: int}
      */
     private function lockAccount(string $customerId, Context $context): array
     {
-        $account = $this->selectForUpdate($customerId);
+        $account = $this->rows->lock('loyalty_account', ['customer_id' => $customerId]);
 
         if ($account !== null) {
-            return $account;
+            return $this->toAccount($account);
         }
 
         $id = Uuid::randomHex();
 
-        try {
-            $this->customerLoyaltyRepository->create([[
-                'id' => $id,
-                'customerId' => $customerId,
-                'pointsBalance' => 0,
-                'growthValue' => 0,
-            ]], $context);
-        } catch (UniqueConstraintViolationException) {
-            // a parallel booking opened the very same account first, its row is the one to book onto
-        }
+        $this->rows->createUnlessExists($this->loyaltyAccountRepository, [
+            'id' => $id,
+            'customerId' => $customerId,
+            'pointsBalance' => 0,
+            'tierPoints' => 0,
+        ], $context);
 
-        return $this->selectForUpdate($customerId)
-            ?? ['id' => $id, 'pointsBalance' => 0, 'growthValue' => 0, 'membershipTierId' => null, 'membershipValidUntil' => null];
+        $account = $this->rows->lock('loyalty_account', ['customer_id' => $customerId]) ?? [
+            'id' => $id,
+            'points_balance' => 0,
+            'tier_points' => 0,
+        ];
+
+        return $this->toAccount($account);
     }
 
     /**
-     * @return array{id: string, pointsBalance: int, growthValue: int, membershipTierId: ?string, membershipValidUntil: ?string}|null
+     * @param array<string, mixed> $account
+     *
+     * @return array{id: string, pointsBalance: int, tierPoints: int}
      */
-    private function selectForUpdate(string $customerId): ?array
+    private function toAccount(array $account): array
     {
-        $row = $this->connection->fetchAssociative(
-            'SELECT LOWER(HEX(`id`)) AS `id`, `points_balance`, `growth_value`,
-                    LOWER(HEX(`membership_tier_id`)) AS `membership_tier_id`, `membership_valid_until`
-             FROM `customer_loyalty`
-             WHERE `customer_id` = :customerId
-             FOR UPDATE',
-            ['customerId' => Uuid::fromHexToBytes($customerId)],
-            ['customerId' => ParameterType::BINARY]
-        );
-
-        if (!\is_array($row)) {
-            return null;
-        }
-
         return [
-            'id' => (string) $row['id'],
-            'pointsBalance' => (int) $row['points_balance'],
-            'growthValue' => (int) $row['growth_value'],
-            'membershipTierId' => $row['membership_tier_id'] === null ? null : (string) $row['membership_tier_id'],
-            'membershipValidUntil' => $row['membership_valid_until'] === null ? null : (string) $row['membership_valid_until'],
+            'id' => (string) $account['id'],
+            'pointsBalance' => (int) $account['points_balance'],
+            'tierPoints' => (int) $account['tier_points'],
         ];
     }
 
     private function hasPointTransaction(string $idempotencyKey): bool
     {
         return (bool) $this->connection->fetchOne(
-            'SELECT 1 FROM `customer_point_transaction` WHERE `idempotency_key` = :key LIMIT 1',
+            'SELECT 1 FROM `loyalty_point_transaction` WHERE `idempotency_key` = :key LIMIT 1',
             ['key' => $idempotencyKey]
         );
     }

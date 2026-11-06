@@ -20,6 +20,7 @@ use Shopwell\Administration\Dashboard\OrderAmountService;
 use Shopwell\Administration\Framework\Adapter\Cache\Http\AdministrationCacheControlListener;
 use Shopwell\Administration\Framework\Routing\KnownIps\KnownIpsCollector;
 use Shopwell\Administration\Service\AdminSearcher;
+use Shopwell\Administration\Snippet\AdministrationSnippetService;
 use Shopwell\Administration\Snippet\AppAdministrationSnippetDefinition;
 use Shopwell\Administration\Snippet\AppAdministrationSnippetPersister;
 use Shopwell\Administration\Snippet\AppLifecycleSubscriber;
@@ -105,7 +106,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service(TemplateFinder::class),
             service(FirstRunWizardService::class),
-            service(SnippetFinder::class),
+            service(AdministrationSnippetService::class),
             param('kernel.supported_api_versions'),
             service(KnownIpsCollector::class),
             service(Connection::class),
@@ -119,7 +120,6 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('shopwell.filesystem.asset'),
             param('shopwell.service_registry.url'),
             service('language.repository'),
-            service(SymfonyBearerTokenValidator::class),
             env('PRODUCT_ANALYTICS_GATEWAY_URL'),
             service(CustomerEmailUniqueChecker::class),
             param('shopwell.api.refresh_token_ttl'),
@@ -207,6 +207,12 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service(CachedSnippetFinder::class . '.inner'),
             service('cache.object'),
+        ]);
+
+    $services->set(AdministrationSnippetService::class)
+        ->args([
+            service(SnippetFinder::class),
+            service(SymfonyBearerTokenValidator::class),
         ]);
 
     $services->set(AppLifecycleSubscriber::class)

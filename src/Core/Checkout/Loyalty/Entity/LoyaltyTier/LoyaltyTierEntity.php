@@ -3,10 +3,12 @@
 namespace Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyTier;
 
 use Shopwell\Core\Checkout\Customer\Aggregate\CustomerGroup\CustomerGroupEntity;
-use Shopwell\Core\Checkout\Loyalty\Entity\CustomerLoyalty\CustomerLoyaltyCollection;
+use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyAccount\LoyaltyAccountCollection;
 use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyTier\Aggregate\LoyaltyTierTranslation\LoyaltyTierTranslationCollection;
-use Shopwell\Core\Checkout\Loyalty\Entity\MembershipOrder\MembershipOrderCollection;
-use Shopwell\Core\Checkout\Loyalty\Entity\MembershipPlan\MembershipPlanCollection;
+use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyTierBenefit\LoyaltyTierBenefitCollection;
+use Shopwell\Core\Checkout\Membership\Entity\MembershipPlan\MembershipPlanCollection;
+use Shopwell\Core\Checkout\Membership\Entity\MembershipPurchase\MembershipPurchaseCollection;
+use Shopwell\Core\Checkout\Membership\Entity\MembershipSubscription\MembershipSubscriptionCollection;
 use Shopwell\Core\Framework\DataAbstractionLayer\Entity;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityIdTrait;
 use Shopwell\Core\Framework\Log\Package;
@@ -23,13 +25,7 @@ class LoyaltyTierEntity extends Entity
 
     protected int $level;
 
-    protected ?int $minGrowthValue = null;
-
-    protected ?float $pointsMultiplier = null;
-
-    protected ?float $discountPercent = null;
-
-    protected ?bool $freeShipping = null;
+    protected ?int $minTierPoints = null;
 
     protected ?bool $active = null;
 
@@ -41,13 +37,17 @@ class LoyaltyTierEntity extends Entity
 
     protected ?CustomerGroupEntity $customerGroup = null;
 
-    protected ?CustomerLoyaltyCollection $customers = null;
+    protected ?LoyaltyAccountCollection $customers = null;
 
     protected ?LoyaltyTierTranslationCollection $translations = null;
 
     protected ?MembershipPlanCollection $membershipPlans = null;
 
-    protected ?MembershipOrderCollection $membershipOrders = null;
+    protected ?MembershipPurchaseCollection $membershipPurchases = null;
+
+    protected ?MembershipSubscriptionCollection $membershipSubscriptions = null;
+
+    protected ?LoyaltyTierBenefitCollection $benefits = null;
 
     public function getTechnicalName(): string
     {
@@ -69,44 +69,14 @@ class LoyaltyTierEntity extends Entity
         $this->level = $level;
     }
 
-    public function getMinGrowthValue(): ?int
+    public function getMinTierPoints(): ?int
     {
-        return $this->minGrowthValue;
+        return $this->minTierPoints;
     }
 
-    public function setMinGrowthValue(?int $minGrowthValue): void
+    public function setMinTierPoints(?int $minTierPoints): void
     {
-        $this->minGrowthValue = $minGrowthValue;
-    }
-
-    public function getPointsMultiplier(): ?float
-    {
-        return $this->pointsMultiplier;
-    }
-
-    public function setPointsMultiplier(?float $pointsMultiplier): void
-    {
-        $this->pointsMultiplier = $pointsMultiplier;
-    }
-
-    public function getDiscountPercent(): ?float
-    {
-        return $this->discountPercent;
-    }
-
-    public function setDiscountPercent(?float $discountPercent): void
-    {
-        $this->discountPercent = $discountPercent;
-    }
-
-    public function getFreeShipping(): ?bool
-    {
-        return $this->freeShipping;
-    }
-
-    public function setFreeShipping(?bool $freeShipping): void
-    {
-        $this->freeShipping = $freeShipping;
+        $this->minTierPoints = $minTierPoints;
     }
 
     public function getActive(): ?bool
@@ -159,12 +129,12 @@ class LoyaltyTierEntity extends Entity
         $this->customerGroup = $customerGroup;
     }
 
-    public function getCustomers(): ?CustomerLoyaltyCollection
+    public function getCustomers(): ?LoyaltyAccountCollection
     {
         return $this->customers;
     }
 
-    public function setCustomers(CustomerLoyaltyCollection $customers): void
+    public function setCustomers(LoyaltyAccountCollection $customers): void
     {
         $this->customers = $customers;
     }
@@ -189,13 +159,33 @@ class LoyaltyTierEntity extends Entity
         $this->membershipPlans = $membershipPlans;
     }
 
-    public function getMembershipOrders(): ?MembershipOrderCollection
+    public function getMembershipPurchases(): ?MembershipPurchaseCollection
     {
-        return $this->membershipOrders;
+        return $this->membershipPurchases;
     }
 
-    public function setMembershipOrders(MembershipOrderCollection $membershipOrders): void
+    public function setMembershipPurchases(MembershipPurchaseCollection $membershipPurchases): void
     {
-        $this->membershipOrders = $membershipOrders;
+        $this->membershipPurchases = $membershipPurchases;
+    }
+
+    public function getMembershipSubscriptions(): ?MembershipSubscriptionCollection
+    {
+        return $this->membershipSubscriptions;
+    }
+
+    public function setMembershipSubscriptions(MembershipSubscriptionCollection $membershipSubscriptions): void
+    {
+        $this->membershipSubscriptions = $membershipSubscriptions;
+    }
+
+    public function getBenefits(): ?LoyaltyTierBenefitCollection
+    {
+        return $this->benefits;
+    }
+
+    public function setBenefits(LoyaltyTierBenefitCollection $benefits): void
+    {
+        $this->benefits = $benefits;
     }
 }

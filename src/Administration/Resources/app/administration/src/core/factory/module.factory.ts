@@ -69,6 +69,7 @@ interface SettingsItem {
         | 'localization'
         | 'customer'
         | 'commerce'
+        | 'payment'
         | 'content'
         | 'automation'
         | 'system'

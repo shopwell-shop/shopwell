@@ -8,14 +8,21 @@ use Psr\Clock\ClockInterface;
 use Shopwell\Core\Framework\App\AppException;
 use Shopwell\Core\Framework\App\Event\AppDeletedEvent;
 use Shopwell\Core\Framework\App\Lifecycle\Context\AppPersistContext;
+use Shopwell\Core\Framework\App\Lifecycle\Context\AppRemovalContext;
 use Shopwell\Core\Framework\App\Lifecycle\Handler\WebhookLifecycleHandler;
 use Shopwell\Core\Framework\App\Manifest\Xml\Webhook\Webhook;
 use Shopwell\Core\Framework\Context;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
+use Shopwell\Core\Framework\Test\TestCaseHelper\TestUser;
 use Shopwell\Core\Framework\Webhook\Service\WebhookManager;
 use Shopwell\Core\Framework\Webhook\Validation\WebhookTargetValidator;
 use Shopwell\Core\Framework\Webhook\WebhookCacheClearer;
+use Shopwell\Core\Framework\Webhook\WebhookCollection;
+use Shopwell\Core\Framework\Webhook\WebhookEntity;
+use Shopwell\Core\Test\Integration\Builder\Webhook\WebhookBuilder;
 use Shopwell\Core\Test\Stub\Framework\Util\StaticFilesystem;
 use Shopwell\Tests\Integration\Core\Framework\App\AppFixture;
 use Shopwell\Tests\Unit\Core\Framework\App\Manifest\ManifestFixture;
@@ -206,5 +213,39 @@ class WebhookLifecycleHandlerTest extends TestCase
 
         // should now be three
         static::assertCount(3, $webhookCache);
+    }
+
+    public function testUninstallDeletesWebhooksTheAppCreatedThroughTheApi(): void
+    {
+        $app = $this->appFixture->createApp(ManifestFixture::empty());
+        $appWebhookId = WebhookBuilder::ownedByIntegration($app->getIntegrationId())->insert($this->connection);
+        $userWebhookId = WebhookBuilder::ownedByUser(TestUser::createNewTestUser($this->connection)->getUserId())
+            ->insert($this->connection);
+
+        $this->handler->uninstall(new AppRemovalContext($app, Context::createDefaultContext()));
+
+        static::assertNull($this->findWebhook($appWebhookId));
+        static::assertTrue($this->findWebhook($userWebhookId)?->isActive());
+    }
+
+    public function testDeleteDeletesWebhooksTheAppCreatedThroughTheApi(): void
+    {
+        $app = $this->appFixture->createApp(ManifestFixture::empty());
+        $appWebhookId = WebhookBuilder::ownedByIntegration($app->getIntegrationId())->insert($this->connection);
+
+        $this->handler->delete(new AppRemovalContext($app, Context::createDefaultContext()));
+
+        static::assertNull($this->findWebhook($appWebhookId));
+    }
+
+    private function findWebhook(string $webhookId): ?WebhookEntity
+    {
+        /** @var EntityRepository<WebhookCollection> $webhookRepository */
+        $webhookRepository = static::getContainer()->get('webhook.repository');
+
+        return $webhookRepository
+            ->search(new Criteria([$webhookId]), Context::createDefaultContext())
+            ->getEntities()
+            ->first();
     }
 }

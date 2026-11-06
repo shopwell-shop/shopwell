@@ -4,6 +4,7 @@ namespace Shopwell\Core\Checkout\Wallet\Service;
 
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\SystemConfig\SystemConfigService;
+use Shopwell\Core\System\SystemConfig\Util\ConfigBool;
 
 /**
  * The wallet settings of the shop, read in one place.
@@ -54,7 +55,9 @@ class WalletSettings
     {
         $value = $this->systemConfigService->get(self::CONFIG_KEY_ENABLED, $salesChannelId);
 
-        return $value === null ? self::DEFAULT_ENABLED : (bool) $value;
+        // `system:config:set` writes the string "false" without `--json`, so the value is
+        // normalized instead of cast - a saved "false" must switch the wallet off
+        return $value === null ? self::DEFAULT_ENABLED : ConfigBool::normalize($value);
     }
 
     /**

@@ -4,6 +4,7 @@ namespace Shopwell\Tests\Unit\Core\System\Payment\Order;
 
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopwell\Core\Checkout\Order\OrderEntity;
@@ -17,29 +18,23 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\System\Payment\Api\Struct\PaymentOrderRequest;
-use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppChannel\PaymentAppChannelEntity;
-use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppProvider\PaymentAppProviderEntity;
+use Shopwell\Core\System\NumberRange\ValueGenerator\AbstractNumberRangeValueGenerator;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
-use Shopwell\Core\System\Payment\App\PaymentCredentialCipher;
-use Shopwell\Core\System\Payment\Gateway\PaymentGatewayFactory;
-use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
+use Shopwell\Core\System\Payment\Exception\PaymentAppException;
+use Shopwell\Core\System\Payment\Exception\PaymentOrderException;
+use Shopwell\Core\System\Payment\Order\Aggregate\PaymentAttempt\PaymentAttemptCollection;
 use Shopwell\Core\System\Payment\Order\PaymentOrderCollection;
 use Shopwell\Core\System\Payment\Order\PaymentOrderEntity;
+use Shopwell\Core\System\Payment\Order\PaymentOrderRowLock;
 use Shopwell\Core\System\Payment\Order\PaymentOrderService;
 use Shopwell\Core\System\Payment\Order\PaymentOrderStateHandler;
 use Shopwell\Core\System\Payment\Order\PaymentOrderStates;
+use Shopwell\Core\System\Payment\Order\Struct\PaymentOrderRequest;
 use Shopwell\Core\System\Payment\PaymentException;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannelRegistry;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
-use Shopwell\Core\System\Payment\Provider\PaymentChannelConfigEntity;
-use Shopwell\Core\System\Payment\Provider\PaymentConfigResolver;
-use Shopwell\Core\System\Payment\Provider\PaymentProvider;
-use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;
 use Shopwell\Core\System\StateMachine\Loader\InitialStateIdLoader;
 use Shopwell\Core\System\StateMachine\StateMachineRegistry;
 use Shopwell\Core\System\StateMachine\Transition;
+use Shopwell\Core\Test\Stub\DataAbstractionLayer\StaticEntityRepository;
 use Symfony\Component\Clock\MockClock;
 
 /**
@@ -52,6 +47,76 @@ class PaymentOrderServiceTest extends TestCase
     private const CREATED_STATE = 'state-created';
 
     private const NOW = '2024-01-01T00:00:00+00:00';
+
+    #[DataProvider('conflictingPaymentRequests')]
+    public function testCreateRejectsAnIdempotentReplayWithDifferentBusinessTerms(int $amount, string $currency): void
+    {
+        $order = $this->order();
+        $repository = new StaticEntityRepository([new PaymentOrderCollection([$order])]);
+        $service = $this->service($repository);
+
+        $this->expectExceptionObject(PaymentOrderException::idempotencyMismatch('app-trade-1'));
+
+        $service->create($this->app('app-id'), new PaymentOrderRequest(
+            outTradeNo: 'app-trade-1',
+            amount: $amount,
+            currency: $currency,
+            subject: 'An order',
+        ));
+    }
+
+    public static function conflictingPaymentRequests(): \Generator
+    {
+        yield 'a different amount cannot reuse the payment' => [1100, 'CNY'];
+        yield 'another currency is a different payment' => [1000, 'USD'];
+    }
+
+    public function testChangingTheSelectedProductDoesNotCreateAnotherBusinessObligation(): void
+    {
+        $order = $this->order();
+        $repository = new StaticEntityRepository([new PaymentOrderCollection([$order])]);
+        $request = PaymentOrderRequest::fromArray(['out_trade_no' => 'app-trade-1', 'amount' => 1000, 'currency' => 'CNY', 'subject' => 'An order', 'product' => 'wechat_native']);
+
+        static::assertSame($order, $this->service($repository)->create($this->app('app-id'), $request));
+        static::assertSame([], $repository->creates);
+    }
+
+    public function testCreateReturnsAReplayBeforeCheckingNewPaymentAdmission(): void
+    {
+        $order = $this->order();
+        $repository = new StaticEntityRepository([new PaymentOrderCollection([$order])]);
+
+        static::assertSame($order, $this->service($repository)->create($this->app('app-id'), $this->request()));
+        static::assertSame([], $repository->creates);
+    }
+
+    #[DataProvider('replayLookupKeys')]
+    public function testCreateReplaysWithTheExecutionAssociations(bool $useIdempotencyKey): void
+    {
+        $order = $this->order();
+        $select = static function (Criteria $criteria) use ($order): PaymentOrderCollection {
+            static::assertTrue($criteria->hasAssociation('activeAttempt'));
+            static::assertTrue($criteria->hasAssociation('paymentApp'));
+            static::assertTrue($criteria->hasAssociation('attempts'));
+            static::assertTrue($criteria->hasAssociation('transactions'));
+
+            return new PaymentOrderCollection([$order]);
+        };
+        $repository = StaticEntityRepository::of(PaymentOrderCollection::class, $useIdempotencyKey ? [new PaymentOrderCollection(), $select] : [$select]);
+        $request = $this->request();
+        if ($useIdempotencyKey) {
+            $request = new PaymentOrderRequest('different-trade', 1000, 'CNY', 'An order', idempotencyKey: 'same-key');
+        }
+
+        static::assertSame($order, $this->service($repository)->create($this->app('app-id'), $request));
+        static::assertSame([], $repository->creates);
+    }
+
+    public static function replayLookupKeys(): \Generator
+    {
+        yield 'business trade number' => [false];
+        yield 'idempotency key' => [true];
+    }
 
     public function testIsPayableForAnOpenOrder(): void
     {
@@ -97,7 +162,7 @@ class PaymentOrderServiceTest extends TestCase
     {
         $service = $this->service($this->orderRepository());
 
-        $this->expectExceptionObject(PaymentException::orderNotFound('missing-id'));
+        $this->expectExceptionObject(PaymentOrderException::orderNotFound('missing-id'));
 
         $service->getById('missing-id');
     }
@@ -126,7 +191,7 @@ class PaymentOrderServiceTest extends TestCase
     {
         $service = $this->service($this->orderRepository());
 
-        $this->expectExceptionObject(PaymentException::orderNotFound('PG0001'));
+        $this->expectExceptionObject(PaymentOrderException::orderNotFound('PG0001'));
 
         $service->getByPaymentNo('PG0001', $this->app('app-id'));
     }
@@ -136,7 +201,7 @@ class PaymentOrderServiceTest extends TestCase
         $order = $this->order();
         $service = $this->service($this->orderRepository([$order]));
 
-        $this->expectExceptionObject(PaymentException::foreignApp('other-app', 'PG0001'));
+        $this->expectExceptionObject(PaymentAppException::foreignApp('other-app', 'PG0001'));
 
         $service->getByPaymentNo('PG0001', $this->app('other-app-id', 'other-app'));
     }
@@ -161,14 +226,14 @@ class PaymentOrderServiceTest extends TestCase
             ->method('transition')
             ->with(static::callback(static fn (Transition $t): bool => $t->getTransitionName() === PaymentOrderStates::ACTION_CLOSE));
 
-        $this->service($repository, null, null, $stateMachine)->close($this->order());
+        $this->service($repository, stateMachineRegistry: $stateMachine)->close($this->order());
     }
 
     public function testCloseThrowsWhenTheOrderIsAlreadyClosed(): void
     {
         $order = $this->order(['closedAt' => new \DateTimeImmutable(self::NOW)]);
 
-        $this->expectExceptionObject(PaymentException::orderAlreadyClosed('PG0001'));
+        $this->expectExceptionObject(PaymentOrderException::orderAlreadyClosed('PG0001'));
 
         $this->service($this->orderRepository())->close($order);
     }
@@ -181,7 +246,7 @@ class PaymentOrderServiceTest extends TestCase
     {
         $order = $this->order(['paidAt' => new \DateTimeImmutable(self::NOW)]);
 
-        $this->expectExceptionObject(PaymentException::orderAlreadyPaid('PG0001'));
+        $this->expectExceptionObject(PaymentOrderException::orderAlreadyPaid('PG0001'));
 
         $this->service($this->orderRepository())->close($order);
     }
@@ -190,7 +255,7 @@ class PaymentOrderServiceTest extends TestCase
     {
         $order = $this->order(['paidAt' => new \DateTimeImmutable(self::NOW)]);
 
-        $this->expectExceptionObject(PaymentException::orderAlreadyPaid('PG0001'));
+        $this->expectExceptionObject(PaymentOrderException::orderAlreadyPaid('PG0001'));
 
         $this->service($this->orderRepository())->expire($order);
     }
@@ -199,7 +264,7 @@ class PaymentOrderServiceTest extends TestCase
     {
         $order = $this->order(['closedAt' => new \DateTimeImmutable(self::NOW)]);
 
-        $this->expectExceptionObject(PaymentException::orderAlreadyClosed('PG0001'));
+        $this->expectExceptionObject(PaymentOrderException::orderAlreadyClosed('PG0001'));
 
         $this->service($this->orderRepository())->expire($order);
     }
@@ -211,7 +276,7 @@ class PaymentOrderServiceTest extends TestCase
             ->method('transition')
             ->with(static::callback(static fn (Transition $t): bool => $t->getTransitionName() === PaymentOrderStates::ACTION_PROCESS));
 
-        $this->service($this->orderRepository(), null, null, $stateMachine)->markOpened($this->order());
+        $this->service($this->orderRepository(), stateMachineRegistry: $stateMachine)->markOpened($this->order());
     }
 
     public function testMarkOpenedDoesNothingWhenTheOrderWasAlreadyOpened(): void
@@ -221,7 +286,7 @@ class PaymentOrderServiceTest extends TestCase
 
         $order = $this->order(['stateId' => 'state-opened']);
 
-        $this->service($this->orderRepository(), null, null, $stateMachine)->markOpened($order);
+        $this->service($this->orderRepository(), stateMachineRegistry: $stateMachine)->markOpened($order);
     }
 
     public function testMarkPaidTransitionsAndPersistsTheConfirmation(): void
@@ -246,18 +311,20 @@ class PaymentOrderServiceTest extends TestCase
             ->method('transition')
             ->with(static::callback(static fn (Transition $t): bool => $t->getTransitionName() === PaymentOrderStates::ACTION_PAY));
 
-        $this->service($repository, null, null, $stateMachine)
+        $this->service($repository, stateMachineRegistry: $stateMachine)
             ->markPaid($this->order(), 1000, 'channel-trade-1', ['trade' => 'raw']);
     }
 
-    public function testMarkFailedTransitionsTheOrder(): void
+    public function testFailedAttemptLeavesTheBusinessObligationPayable(): void
     {
         $stateMachine = static::createMock(StateMachineRegistry::class);
-        $stateMachine->expects($this->once())
-            ->method('transition')
-            ->with(static::callback(static fn (Transition $t): bool => $t->getTransitionName() === PaymentOrderStates::ACTION_FAIL));
+        $stateMachine->expects($this->never())->method('transition');
+        $order = $this->order(['stateId' => 'state-opened']);
+        $service = $this->service($this->orderRepository(), stateMachineRegistry: $stateMachine);
+        $service->markFailed($order);
 
-        $this->service($this->orderRepository(), null, null, $stateMachine)->markFailed($this->order());
+        static::assertTrue($service->isPayable($order));
+        static::assertSame('state-opened', $order->stateId);
     }
 
     public function testApplyRefundKeepsAPartiallyRefundedOrderOpen(): void
@@ -280,7 +347,7 @@ class PaymentOrderServiceTest extends TestCase
             ->with(static::callback(static fn (Transition $t): bool => $t->getTransitionName() === PaymentOrderStates::ACTION_REFUND_PARTIALLY));
 
         $order = $this->order(['paidAmount' => 1000]);
-        $result = $this->service($repository, null, null, $stateMachine)->applyRefund($order, 300);
+        $result = $this->service($repository, stateMachineRegistry: $stateMachine)->applyRefund($order, 300);
 
         static::assertSame($refunded, $result);
     }
@@ -298,9 +365,54 @@ class PaymentOrderServiceTest extends TestCase
             ->with(static::callback(static fn (Transition $t): bool => $t->getTransitionName() === PaymentOrderStates::ACTION_REFUND));
 
         $order = $this->order(['paidAmount' => 1000]);
-        $result = $this->service($repository, null, null, $stateMachine)->applyRefund($order, 1000);
+        $result = $this->service($repository, stateMachineRegistry: $stateMachine)->applyRefund($order, 1000);
 
         static::assertSame(1000, $result->refundedAmount);
+    }
+
+    public function testApplyRefundUsesTheAmountsReadUnderTheOrderLock(): void
+    {
+        $refunded = $this->order(['refundedAmount' => 1000, 'paidAmount' => 1000, 'stateId' => 'state-refunded']);
+
+        $repository = static::createMock(EntityRepository::class);
+        $repository->expects($this->once())
+            ->method('update')
+            ->with(static::callback(function (array $data): bool {
+                static::assertSame(1000, $data[0]['refundedAmount']);
+
+                return true;
+            }));
+        $repository->method('search')->willReturn($this->searchResult([$refunded]));
+
+        $stateMachine = static::createMock(StateMachineRegistry::class);
+        $stateMachine->expects($this->once())
+            ->method('transition')
+            ->with(static::callback(static fn (Transition $t): bool => $t->getTransitionName() === PaymentOrderStates::ACTION_REFUND));
+
+        // The caller's entity still says zero. The database row already contains 600, and those
+        // locked amounts are the only safe base for this booking.
+        $order = $this->order(['paidAmount' => 1000, 'refundedAmount' => 0]);
+        $rowLock = $this->rowLock(['paidAmount' => 1000, 'refundedAmount' => 600]);
+
+        $result = $this->service($repository, stateMachineRegistry: $stateMachine, rowLock: $rowLock)->applyRefund($order, 400);
+
+        static::assertSame($refunded, $result);
+    }
+
+    public function testApplyRefundRejectsAnOverRefundAgainstTheLockedAmounts(): void
+    {
+        $repository = static::createMock(EntityRepository::class);
+        $repository->expects($this->never())->method('update');
+
+        $stateMachine = static::createMock(StateMachineRegistry::class);
+        $stateMachine->expects($this->never())->method('transition');
+
+        $order = $this->order(['paidAmount' => 1000, 'refundedAmount' => 0]);
+        $rowLock = $this->rowLock(['paidAmount' => 1000, 'refundedAmount' => 600]);
+
+        $this->expectExceptionObject(PaymentOrderException::refundAmountExceedsOrder('PG0001', 401, 400));
+
+        $this->service($repository, stateMachineRegistry: $stateMachine, rowLock: $rowLock)->applyRefund($order, 401);
     }
 
     public function testExpireDueExpiresOnlyThePayableOrders(): void
@@ -323,7 +435,7 @@ class PaymentOrderServiceTest extends TestCase
             ->method('transition')
             ->with(static::callback(static fn (Transition $t): bool => $t->getTransitionName() === PaymentOrderStates::ACTION_EXPIRE));
 
-        static::assertSame(1, $this->service($repository, null, null, $stateMachine)->expireDue());
+        static::assertSame(1, $this->service($repository, stateMachineRegistry: $stateMachine)->expireDue());
     }
 
     public function testExpireDueReturnsZeroWhenNothingIsDue(): void
@@ -349,9 +461,9 @@ class PaymentOrderServiceTest extends TestCase
         $stateMachine = static::createMock(StateMachineRegistry::class);
         $stateMachine->expects($this->never())->method('transition');
 
-        $this->expectExceptionObject(PaymentException::orderNotExpirable('PG0001'));
+        $this->expectExceptionObject(PaymentOrderException::orderNotExpirable('PG0001'));
 
-        $this->service($repository, null, null, $stateMachine)->expire($order);
+        $this->service($repository, stateMachineRegistry: $stateMachine)->expire($order);
     }
 
     public function testCreateReturnsTheExistingOrderForAKnownOutTradeNo(): void
@@ -362,7 +474,7 @@ class PaymentOrderServiceTest extends TestCase
         $repository->method('search')->willReturn($this->searchResult([$existing]));
         $repository->expects($this->never())->method('create');
 
-        $result = $this->service($repository, $this->workingConfigResolver())
+        $result = $this->service($repository)
             ->create($this->app('app-id'), $this->request());
 
         static::assertSame($existing, $result);
@@ -377,7 +489,7 @@ class PaymentOrderServiceTest extends TestCase
         $existing = $this->order();
 
         $repository = static::createMock(EntityRepository::class);
-        $repository->expects($this->exactly(3))
+        $repository->expects($this->exactly(2))
             ->method('search')
             ->willReturnCallback(function (Criteria $criteria) use ($existing): EntitySearchResult {
                 $fields = array_map(
@@ -389,13 +501,10 @@ class PaymentOrderServiceTest extends TestCase
                     ? $this->searchResult([$existing])
                     : $this->searchResult([]);
             });
-        $repository->expects($this->once())
-            ->method('create')
-            ->willThrowException(static::createStub(UniqueConstraintViolationException::class));
+        $repository->expects($this->never())->method('create');
 
         $request = new PaymentOrderRequest(
             outTradeNo: 'app-trade-2',
-            channel: 'alipay_h5',
             amount: 1000,
             currency: 'CNY',
             subject: 'An order',
@@ -404,7 +513,7 @@ class PaymentOrderServiceTest extends TestCase
 
         static::assertSame(
             $existing,
-            $this->service($repository, $this->workingConfigResolver())->create($this->app('app-id'), $request)
+            $this->service($repository)->create($this->app('app-id'), $request)
         );
     }
 
@@ -421,7 +530,7 @@ class PaymentOrderServiceTest extends TestCase
             ->willThrowException(static::createStub(UniqueConstraintViolationException::class));
 
         try {
-            $this->service($repository, $this->workingConfigResolver())->create($this->app('app-id'), $this->request());
+            $this->service($repository)->create($this->app('app-id'), $this->request());
             static::fail('the conflict has to be reported');
         } catch (PaymentException $exception) {
             static::assertSame(PaymentException::ORDER_CONFLICT, $exception->getErrorCode());
@@ -443,12 +552,9 @@ class PaymentOrderServiceTest extends TestCase
             ->with(static::callback(function (array $data): bool {
                 $row = $data[0];
 
-                static::assertStringStartsWith('PG20240101000000', $row['paymentNo']);
+                static::assertSame('PG1001', $row['paymentNo']);
                 static::assertSame('app-trade-1', $row['outTradeNo']);
                 static::assertSame('app-id', $row['paymentAppId']);
-                static::assertSame('alipay', $row['providerTechnicalName']);
-                static::assertSame('alipay_h5', $row['channelTechnicalName']);
-                static::assertNull($row['channelParams']);
                 static::assertSame(1000, $row['amount']);
                 // a fresh order is neither paid nor refunded, the create has to say so
                 static::assertSame(0, $row['paidAmount']);
@@ -466,7 +572,7 @@ class PaymentOrderServiceTest extends TestCase
                 return true;
             }));
 
-        $result = $this->service($repository, $this->workingConfigResolver())
+        $result = $this->service($repository)
             ->create($this->app('app-id'), $this->request());
 
         static::assertSame($created, $result);
@@ -490,14 +596,13 @@ class PaymentOrderServiceTest extends TestCase
 
         $request = new PaymentOrderRequest(
             outTradeNo: 'app-trade-1',
-            channel: 'alipay_h5',
             amount: 1000,
             currency: 'CNY',
             subject: 'An order',
             expireMinutes: 10,
         );
 
-        $this->service($repository, $this->workingConfigResolver())->create($this->app('app-id'), $request);
+        $this->service($repository)->create($this->app('app-id'), $request);
     }
 
     /**
@@ -521,7 +626,7 @@ class PaymentOrderServiceTest extends TestCase
                 return true;
             }));
 
-        $this->service($repository, $this->workingConfigResolver())
+        $this->service($repository)
             ->create(
                 $this->app('app-id'),
                 $this->request(),
@@ -549,7 +654,7 @@ class PaymentOrderServiceTest extends TestCase
                 return true;
             }));
 
-        $this->service($repository, $this->workingConfigResolver())
+        $this->service($repository)
             ->create($this->app('app-id'), $this->request(), $this->checkoutOrder(), $this->checkoutTransaction());
     }
 
@@ -574,7 +679,7 @@ class PaymentOrderServiceTest extends TestCase
                 return true;
             }));
 
-        $this->service($repository, $this->workingConfigResolver())->create($this->app('app-id'), $this->request());
+        $this->service($repository)->create($this->app('app-id'), $this->request());
     }
 
     public function testFindLatestByOrderTransactionAsksForTheNewestPaymentOfTheTransaction(): void
@@ -626,17 +731,42 @@ class PaymentOrderServiceTest extends TestCase
      */
     private function service(
         EntityRepository $repository,
-        ?PaymentConfigResolver $configResolver = null,
         ?InitialStateIdLoader $initialStateIdLoader = null,
-        ?StateMachineRegistry $stateMachineRegistry = null
+        ?StateMachineRegistry $stateMachineRegistry = null,
+        ?PaymentOrderRowLock $rowLock = null
     ): PaymentOrderService {
         return new PaymentOrderService(
             $repository,
-            $configResolver ?? $this->inertConfigResolver(),
             $initialStateIdLoader ?? $this->initialStateIdLoader(),
             new PaymentOrderStateHandler($stateMachineRegistry ?? static::createStub(StateMachineRegistry::class)),
-            new MockClock(self::NOW)
+            new MockClock(self::NOW),
+            $this->numberRanges(),
+            $rowLock ?? $this->rowLock(),
+            StaticEntityRepository::of(PaymentAttemptCollection::class),
         );
+    }
+
+    /**
+     * @param array{paidAmount: int, refundedAmount: int} $amounts
+     */
+    private function rowLock(array $amounts = ['paidAmount' => 1000, 'refundedAmount' => 0]): PaymentOrderRowLock
+    {
+        $rowLock = static::createStub(PaymentOrderRowLock::class);
+        $rowLock->method('transaction')->willReturnCallback(static fn (\Closure $write): mixed => $write());
+        $rowLock->method('lockOrder')->willReturn($amounts);
+        $rowLock->method('lockRefund')->willReturn(false);
+        $rowLock->method('reservedRefundAmount')->willReturn(0);
+
+        return $rowLock;
+    }
+
+    private function numberRanges(): AbstractNumberRangeValueGenerator
+    {
+        $generator = static::createStub(AbstractNumberRangeValueGenerator::class);
+        // the number range answers the number, the service must not build one of its own
+        $generator->method('getValue')->willReturn('PG1001');
+
+        return $generator;
     }
 
     private function initialStateIdLoader(): InitialStateIdLoader
@@ -645,84 +775,6 @@ class PaymentOrderServiceTest extends TestCase
         $loader->method('get')->willReturn(self::CREATED_STATE);
 
         return $loader;
-    }
-
-    private function inertConfigResolver(): PaymentConfigResolver
-    {
-        $providerRegistry = new PaymentProviderRegistry([]);
-
-        return new PaymentConfigResolver(
-            $providerRegistry,
-            new PaymentChannelRegistry($providerRegistry),
-            static::createStub(EntityRepository::class),
-            static::createStub(EntityRepository::class),
-            static::createStub(EntityRepository::class),
-            static::createStub(EntityRepository::class),
-            new PaymentCredentialCipher('test-secret')
-        );
-    }
-
-    private function workingConfigResolver(): PaymentConfigResolver
-    {
-        $cipher = new PaymentCredentialCipher('test-secret');
-
-        $channel = new PaymentChannel(
-            technicalName: 'alipay_h5',
-            providerTechnicalName: 'alipay',
-            label: 'Alipay H5',
-            flow: PaymentFlow::REDIRECT,
-        );
-
-        $provider = new PaymentProvider(
-            technicalName: 'alipay',
-            label: 'Alipay',
-            credentials: [],
-            channels: ['alipay_h5' => $channel],
-            gatewayFactory: static::createStub(PaymentGatewayFactory::class),
-            notificationExtractor: static::createStub(PaymentNotificationExtractorInterface::class),
-        );
-
-        $providerRegistry = new PaymentProviderRegistry([$provider]);
-
-        $appProvider = new PaymentAppProviderEntity();
-        $appProvider->setUniqueIdentifier('app-provider-id');
-        $appProvider->paymentAppId = 'app-id';
-        $appProvider->providerTechnicalName = 'alipay';
-        $appProvider->enabled = true;
-        $appProvider->credentials = $cipher->encrypt(['app_id' => 'own-app-id']);
-
-        $appChannel = new PaymentAppChannelEntity();
-        $appChannel->setUniqueIdentifier('app-channel-id');
-        $appChannel->paymentAppId = 'app-id';
-        $appChannel->channelTechnicalName = 'alipay_h5';
-        $appChannel->enabled = true;
-        $appChannel->params = $cipher->encrypt(['appid' => 'own-appid']);
-
-        $channelConfig = new PaymentChannelConfigEntity();
-        $channelConfig->setUniqueIdentifier('channel-config-id');
-        $channelConfig->providerTechnicalName = 'alipay';
-        $channelConfig->channelTechnicalName = 'alipay_h5';
-        $channelConfig->enabled = true;
-        $channelConfig->params = $cipher->encrypt(['appid' => 'platform-appid']);
-
-        $appProviderRepository = static::createStub(EntityRepository::class);
-        $appProviderRepository->method('search')->willReturn($this->searchResult([$appProvider], 'payment_app_provider'));
-
-        $appChannelRepository = static::createStub(EntityRepository::class);
-        $appChannelRepository->method('search')->willReturn($this->searchResult([$appChannel], 'payment_app_channel'));
-
-        $channelConfigRepository = static::createStub(EntityRepository::class);
-        $channelConfigRepository->method('search')->willReturn($this->searchResult([$channelConfig], 'payment_channel_config'));
-
-        return new PaymentConfigResolver(
-            $providerRegistry,
-            new PaymentChannelRegistry($providerRegistry),
-            $appProviderRepository,
-            static::createStub(EntityRepository::class),
-            $appChannelRepository,
-            $channelConfigRepository,
-            $cipher
-        );
     }
 
     /**
@@ -778,8 +830,6 @@ class PaymentOrderServiceTest extends TestCase
         $order->paymentNo = 'PG0001';
         $order->outTradeNo = 'app-trade-1';
         $order->paymentAppId = 'app-id';
-        $order->providerTechnicalName = 'alipay';
-        $order->channelTechnicalName = 'alipay_h5';
         $order->amount = 1000;
         $order->currency = 'CNY';
         $order->subject = 'An order';
@@ -856,7 +906,6 @@ class PaymentOrderServiceTest extends TestCase
     {
         return new PaymentOrderRequest(
             outTradeNo: 'app-trade-1',
-            channel: 'alipay_h5',
             amount: 1000,
             currency: 'CNY',
             subject: 'An order',

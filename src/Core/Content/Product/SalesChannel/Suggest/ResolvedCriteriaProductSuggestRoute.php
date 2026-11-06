@@ -5,6 +5,7 @@ namespace Shopwell\Core\Content\Product\SalesChannel\Suggest;
 use Shopwell\Core\Content\Product\Aggregate\ProductVisibility\ProductVisibilityDefinition;
 use Shopwell\Core\Content\Product\Events\ProductSuggestCriteriaEvent;
 use Shopwell\Core\Content\Product\Events\ProductSuggestResultEvent;
+use Shopwell\Core\Content\Product\Extension\ProductSuggestResolveCriteriaExtension;
 use Shopwell\Core\Content\Product\ProductEvents;
 use Shopwell\Core\Content\Product\ProductException;
 use Shopwell\Core\Content\Product\SalesChannel\Listing\Processor\CompositeListingProcessor;
@@ -12,6 +13,7 @@ use Shopwell\Core\Content\Product\SalesChannel\ProductAvailableFilter;
 use Shopwell\Core\Content\Product\SearchKeyword\ProductSearchBuilderInterface;
 use Shopwell\Core\Framework\Adapter\Request\RequestParamHelper;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\Request;
@@ -27,7 +29,8 @@ class ResolvedCriteriaProductSuggestRoute extends AbstractProductSuggestRoute
         private readonly ProductSearchBuilderInterface $searchBuilder,
         private readonly EventDispatcherInterface $eventDispatcher,
         private readonly AbstractProductSuggestRoute $decorated,
-        private readonly CompositeListingProcessor $processor
+        private readonly CompositeListingProcessor $processor,
+        private readonly ExtensionDispatcher $extensions,
     ) {
     }
 
@@ -37,6 +40,15 @@ class ResolvedCriteriaProductSuggestRoute extends AbstractProductSuggestRoute
     }
 
     public function load(Request $request, SalesChannelContext $context, Criteria $criteria): ProductSuggestRouteResponse
+    {
+        return $this->extensions->publish(
+            name: ProductSuggestResolveCriteriaExtension::NAME,
+            extension: new ProductSuggestResolveCriteriaExtension($request, $context, $criteria),
+            function: $this->_load(...),
+        );
+    }
+
+    private function _load(Request $request, SalesChannelContext $context, Criteria $criteria): ProductSuggestRouteResponse
     {
         if (!RequestParamHelper::get($request, 'search')) {
             throw ProductException::missingRequestParameter('search');

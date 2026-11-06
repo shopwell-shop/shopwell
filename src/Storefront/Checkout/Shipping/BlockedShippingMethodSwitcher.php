@@ -9,7 +9,6 @@ use Shopwell\Core\Checkout\Shipping\SalesChannel\AbstractShippingMethodRoute;
 use Shopwell\Core\Checkout\Shipping\ShippingMethodCollection;
 use Shopwell\Core\Checkout\Shipping\ShippingMethodEntity;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
-use Shopwell\Core\Framework\Feature;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
 use Shopwell\Storefront\Checkout\Cart\Error\ShippingMethodChangedError;
@@ -90,12 +89,8 @@ class BlockedShippingMethodSwitcher
      */
     private function getBlockedShippingMethodLookup(ErrorCollection $errors): array
     {
-        if (!Feature::isActive('v6.8.0.0')) {
-            // @deprecated tag:v6.8.0 - remove this branch; keep only the id-based lookup below
-            return \array_flip($errors->fmap(static fn (Error $error) => $error instanceof ShippingMethodBlockedError ? $error->getName() : null));
-        }
-
-        return \array_flip($errors->fmap(static fn (Error $error) => $error instanceof ShippingMethodBlockedError ? $error->getShippingMethodId() : null));
+        // @deprecated tag:v6.8.0 - remove the name fallback, the error always carries the id
+        return \array_flip($errors->fmap(static fn (Error $error) => $error instanceof ShippingMethodBlockedError ? ($error->getShippingMethodId() ?? $error->getName()) : null));
     }
 
     /**
@@ -103,14 +98,14 @@ class BlockedShippingMethodSwitcher
      */
     private function isBlocked(ShippingMethodEntity $shippingMethod, array $blocked): bool
     {
-        if (!Feature::isActive('v6.8.0.0')) {
-            // @deprecated tag:v6.8.0 - remove this branch; keep only the id-based check below
-            $name = $shippingMethod->getName();
-
-            return $name !== null && isset($blocked[$name]);
+        if (isset($blocked[$shippingMethod->getId()])) {
+            return true;
         }
 
-        return isset($blocked[$shippingMethod->getId()]);
+        // @deprecated tag:v6.8.0 - remove the name check together with the name fallback in the lookup
+        $name = $shippingMethod->getName();
+
+        return $name !== null && isset($blocked[$name]);
     }
 
     private function addNoticeToCart(ErrorCollection $cartErrors, ShippingMethodEntity $shippingMethod): void

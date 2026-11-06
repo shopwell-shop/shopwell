@@ -14,13 +14,15 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\RangeFilter;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
+use Shopwell\Core\System\Payment\Exception\PaymentProviderException;
+use Shopwell\Core\System\Payment\Exception\PaymentTransferException;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
-use Shopwell\Core\System\Payment\Gateway\PaymentTransferQuery;
-use Shopwell\Core\System\Payment\Gateway\TransferQueryResult;
-use Shopwell\Core\System\Payment\Gateway\TransferResult;
+use Shopwell\Core\System\Payment\Gateway\Request\PaymentTransferQuery;
+use Shopwell\Core\System\Payment\Gateway\Request\TransferQueryResult;
+use Shopwell\Core\System\Payment\Gateway\Request\TransferResult;
 use Shopwell\Core\System\Payment\PaymentException;
 use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
-use Shopwell\Core\System\Payment\Provider\PaymentConfigResolver;
+use Shopwell\Core\System\Payment\Provider\Config\PaymentConfigResolver;
 use Shopwell\Core\System\StateMachine\Aggregation\StateMachineState\StateMachineStateCollection;
 use Shopwell\Core\System\StateMachine\Aggregation\StateMachineState\StateMachineStateEntity;
 
@@ -115,9 +117,8 @@ final class PaymentTransferReconciler
         $criteria->addAssociation('statusMachineState');
         $criteria->addAssociation('paymentApp');
         $criteria->addAssociation('recipient');
-        // oldest first: a payout that has been waiting longest must not be pushed out of every batch
-        // by younger ones. The age bound keeps the queue finite, so this cannot starve the young
-        $criteria->addSorting(new FieldSorting('createdAt', FieldSorting::ASCENDING));
+        // An attempted query yields its place, even if its result is unchanged or fails.
+        $criteria->addSorting(new FieldSorting('updatedAt'), new FieldSorting('id'));
         $criteria->setLimit($limit);
 
         $transfers = $this->transferRepository->search($criteria, Context::createDefaultContext())->getEntities();
@@ -128,22 +129,26 @@ final class PaymentTransferReconciler
                 continue;
             }
 
-            $app = $transfer->paymentApp;
-
-            if (!$app instanceof PaymentAppEntity) {
-                // the foreign key is required, so an app that did not load is a defect of the query -
-                // and a defect the batch has to report instead of hiding, while the other payouts are
-                // still asked about
-                $this->logger->warning('The payout cannot be asked about, its app was not loaded.', [
-                    'outNo' => $transfer->outNo,
-                    'provider' => $transfer->provider,
-                    'channel' => $transfer->channel,
-                ]);
-
-                continue;
-            }
-
             try {
+                $this->transferRepository->update([[
+                    'id' => $transfer->id,
+                    'updatedAt' => $this->clock->now(),
+                ]], Context::createDefaultContext());
+
+                $app = $transfer->paymentApp;
+
+                if (!$app instanceof PaymentAppEntity) {
+                    // the foreign key is required, so an app that did not load is a defect of the query -
+                    // and a defect the batch has to report instead of hiding, while the other payouts are
+                    // still asked about
+                    $this->logger->warning('The payout cannot be asked about, its app was not loaded.', [
+                        'outNo' => $transfer->outNo,
+                        'provider' => $transfer->provider,
+                        'channel' => $transfer->channel,
+                    ]);
+
+                    continue;
+                }
                 $this->reconcile($app, $transfer);
             } catch (\Throwable $exception) {
                 // one payout the channel cannot be asked about must not keep the others from being
@@ -195,7 +200,7 @@ final class PaymentTransferReconciler
         // the credentials are resolved from the app - a transfer of another app would be asked about,
         // and possibly moved, on the merchant account of this one
         if ($transfer->paymentAppId !== $app->id) {
-            throw PaymentException::transferForeignApp($app->id, $transfer->outNo);
+            throw PaymentTransferException::transferForeignApp($app->id, $transfer->outNo);
         }
 
         $state = $transfer->statusMachineState?->getTechnicalName();
@@ -208,20 +213,14 @@ final class PaymentTransferReconciler
         // open state without one is a defect of the submission, and asking by the out number alone
         // would be a different question than the one the channel answered
         if ($transfer->providerRef === null || $transfer->providerRef === '') {
-            throw PaymentException::transferProviderRefMissing($transfer->outNo);
+            throw PaymentTransferException::transferProviderRefMissing($transfer->outNo);
         }
 
         $recipient = $this->transferService->recipientOf($app, $transfer);
 
         // a payout has no device - null is the "no restriction" of the channel lookup, exactly like
         // the submission resolves it
-        $resolved = $this->configResolver->resolve(
-            $app,
-            $transfer->channel,
-            $transfer->currency,
-            null,
-            $transfer->channelParams ?? []
-        );
+        $resolved = $this->configResolver->resolveForTransfer($app, $transfer);
 
         $model = PaymentGatewayModel::forTransfer($transfer);
 
@@ -231,7 +230,7 @@ final class PaymentTransferReconciler
         // a payout that is never asked about stays open forever. The guard reads the resolved provider,
         // so a plugin that adds the query action makes the reconciliation reachable for that interface.
         if (!$resolved->provider->supports(PaymentCapability::TRANSFER_QUERY)) {
-            throw PaymentException::providerLacksCapability($resolved->provider->technicalName, PaymentCapability::TRANSFER_QUERY->value);
+            throw PaymentProviderException::providerLacksCapability($resolved->provider->technicalName, PaymentCapability::TRANSFER_QUERY->value);
         }
 
         // no transfer action reads the notification or the return url - only capture and refund do.
@@ -276,12 +275,12 @@ final class PaymentTransferReconciler
         return match ($result->state) {
             TransferResult::STATE_SUCCEEDED => $currentState === PaymentTransferStates::STATE_SUCCEEDED
                 ? []
-                : [...$process, PaymentTransferSubmitter::STEP_SUCCEED],
+                : [...$process, PaymentTransferResultBooker::STEP_SUCCEED],
             TransferResult::STATE_PROCESSING, TransferResult::STATE_ACCEPTED => $process,
             TransferResult::STATE_AWAITING_CONFIRM => $currentState === PaymentTransferStates::STATE_SUBMITTED
-                ? [PaymentTransferSubmitter::STEP_AWAIT_CONFIRM]
+                ? [PaymentTransferResultBooker::STEP_AWAIT_CONFIRM]
                 : [],
-            TransferResult::STATE_FAILED => [PaymentTransferSubmitter::STEP_FAIL],
+            TransferResult::STATE_FAILED => [PaymentTransferResultBooker::STEP_FAIL],
             TransferResult::STATE_RETURNED => [...$process, self::STEP_MARK_RETURNED],
             // a channel that answers nothing must not move a transfer
             default => [],
@@ -335,7 +334,7 @@ final class PaymentTransferReconciler
     private static function processStep(string $currentState): array
     {
         return match ($currentState) {
-            PaymentTransferStates::STATE_SUBMITTED, PaymentTransferStates::STATE_AWAITING_USER_CONFIRM => [PaymentTransferSubmitter::STEP_PROCESS],
+            PaymentTransferStates::STATE_SUBMITTED, PaymentTransferStates::STATE_AWAITING_USER_CONFIRM => [PaymentTransferResultBooker::STEP_PROCESS],
             default => [],
         };
     }
@@ -347,22 +346,22 @@ final class PaymentTransferReconciler
     {
         foreach (self::stepNames($result, $currentState) as $step) {
             switch ($step) {
-                case PaymentTransferSubmitter::STEP_PROCESS:
+                case PaymentTransferResultBooker::STEP_PROCESS:
                     $this->transferService->markProcessing($transfer);
 
                     break;
 
-                case PaymentTransferSubmitter::STEP_SUCCEED:
+                case PaymentTransferResultBooker::STEP_SUCCEED:
                     $this->transferService->markSucceeded($transfer);
 
                     break;
 
-                case PaymentTransferSubmitter::STEP_AWAIT_CONFIRM:
+                case PaymentTransferResultBooker::STEP_AWAIT_CONFIRM:
                     $this->transferService->markAwaitingConfirm($transfer, $result->confirmPayload);
 
                     break;
 
-                case PaymentTransferSubmitter::STEP_FAIL:
+                case PaymentTransferResultBooker::STEP_FAIL:
                     // the raw status of the interface is the free text the row has for a failure that
                     // arrived after the submission - the code alone often only says `FAILED`
                     $this->transferService->markFailed($transfer, $result->failureCode, $result->providerStatus);

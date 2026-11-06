@@ -16,6 +16,7 @@ use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Payment\Api\Struct\PaymentTransferRequest;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
 use Shopwell\Core\System\Payment\App\PaymentCredentialCipher;
+use Shopwell\Core\System\Payment\Exception\PaymentTransferException;
 use Shopwell\Core\System\Payment\PaymentException;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferCollection;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferEntity;
@@ -30,6 +31,9 @@ use Shopwell\Core\System\StateMachine\Aggregation\StateMachineState\StateMachine
 use Shopwell\Core\System\StateMachine\Loader\InitialStateIdLoader;
 use Shopwell\Core\System\StateMachine\StateMachineRegistry;
 use Shopwell\Core\System\StateMachine\Transition;
+use Shopwell\Core\Test\Stub\DataAbstractionLayer\StaticEntityRepository;
+use Shopwell\Tests\Unit\Core\System\Payment\Account\_fixtures\PaymentAccountLockStub;
+use Shopwell\Tests\Unit\Core\System\Payment\NumberRangeFixture;
 use Symfony\Component\Clock\MockClock;
 
 /**
@@ -72,6 +76,7 @@ class PaymentTransferServiceTest extends TestCase
 
         static::assertSame($created, $result);
         static::assertSame('app-id', $written['paymentAppId']);
+        static::assertSame('account-id', $written['accountId']);
         static::assertSame('commission0001', $written['outNo']);
         static::assertSame('recipient-id', $written['recipientId']);
         static::assertSame('alipay', $written['provider']);
@@ -79,12 +84,13 @@ class PaymentTransferServiceTest extends TestCase
         // the amount is booked as it came in - in the smallest unit of the currency
         static::assertSame(100, $written['amount']);
         static::assertSame('CNY', $written['currency']);
-        static::assertSame(self::CREATED_STATE, $written['stateId']);
+        static::assertSame(self::CREATED_STATE, $written['statusId']);
         // not nullable, no ddl default and the dal never writes the property initial value
         static::assertSame(0, $written['submitAttempts']);
         static::assertNull($written['expireAt']);
         static::assertSame(['source' => 'test'], $written['metadata']);
-        static::assertMatchesRegularExpression('/^PT\d{12}[0-9A-F]{10}$/', $written['transferNo']);
+        // the number comes from the number range of the platform, not from a date plus random suffix
+        static::assertSame('PT1001', $written['transferNo']);
         // nothing to keep when the channel needs no parameter of its own
         static::assertNull($written['channelParams']);
     }
@@ -113,6 +119,50 @@ class PaymentTransferServiceTest extends TestCase
      * The out number is the idempotency key of the payout: asking twice for the same one returns the
      * row that exists instead of paying a second time.
      */
+    /**
+     * @param array<string, mixed> $changed
+     */
+    #[DataProvider('differentPayouts')]
+    public function testAnOutNoCannotReplayDifferentPayoutDetails(array $changed): void
+    {
+        $transfers = new StaticEntityRepository([new PaymentTransferCollection([$this->transfer()])]);
+
+        $this->expectExceptionObject(PaymentTransferException::transferOutNoTaken('commission0001'));
+
+        $this->service($transfers)->create($this->app(), $this->request($changed));
+    }
+
+    /**
+     * @return iterable<string, array{array<string, mixed>}>
+     */
+    public static function differentPayouts(): iterable
+    {
+        yield 'another amount' => [['amount' => 101]];
+        yield 'another recipient' => [['recipientId' => 'another-recipient']];
+        yield 'another currency' => [['currency' => 'USD']];
+        yield 'another provider' => [['provider' => 'paypal']];
+        yield 'another channel' => [['channel' => 'alipay_app']];
+        yield 'different runtime parameters' => [['channelParams' => ['scene' => 'different']]];
+    }
+
+    public function testAnUnansweredPayoutCannotBeCanceledLocally(): void
+    {
+        $transfer = $this->transfer(['submitAttempts' => 1, 'status' => PaymentTransferStates::STATE_CREATED]);
+        $transfers = StaticEntityRepository::of(PaymentTransferCollection::class);
+
+        $this->expectExceptionObject(PaymentTransferException::transferAlreadyFinalized($transfer->outNo, 'unknown'));
+
+        $this->service($transfers)->cancel($transfer);
+    }
+
+    public function testAnOutNoCannotBeReboundToAnotherAccount(): void
+    {
+        $transfers = new StaticEntityRepository([new PaymentTransferCollection([$this->transfer()])]);
+        $this->expectExceptionObject(PaymentTransferException::transferConflict('commission0001'));
+
+        $this->service($transfers)->create($this->app(), $this->request(['accountId' => 'another-account']));
+    }
+
     public function testCreateIsIdempotentByOutNo(): void
     {
         $existing = $this->transfer();
@@ -691,10 +741,14 @@ class PaymentTransferServiceTest extends TestCase
             $transfers ?? $this->transferRepository(),
             $recipients,
             new PaymentTransferStateHandler($registry),
-            new PaymentTransferRecipientService($recipients, $cipher, new MockClock(self::NOW)),
+            new PaymentTransferRecipientService($recipients, $cipher, new MockClock(self::NOW), PaymentTransferRulesFixture::registry()),
             $cipher,
             $this->initialStateIdLoader(),
             new MockClock(self::NOW),
+            PaymentTransferRulesFixture::registry(),
+            NumberRangeFixture::generator('PT1001'),
+            PaymentTransferRulesFixture::resolvedConfig(),
+            new PaymentAccountLockStub(),
         );
     }
 
@@ -733,10 +787,14 @@ class PaymentTransferServiceTest extends TestCase
             'currency' => 'CNY',
             'metadata' => ['source' => 'test'],
             'channelParams' => [],
+            'accountId' => null,
         ];
 
         foreach ($overrides as $property => $value) {
             $values[$property] = $value;
+        }
+        if (!isset($overrides['channel'])) {
+            $values['channel'] = $values['provider'] . '_h5';
         }
 
         return new PaymentTransferRequest(
@@ -748,6 +806,7 @@ class PaymentTransferServiceTest extends TestCase
             currency: $values['currency'],
             metadata: $values['metadata'],
             channelParams: $values['channelParams'],
+            accountId: $values['accountId'],
         );
     }
 
@@ -786,6 +845,7 @@ class PaymentTransferServiceTest extends TestCase
         $transfer = new PaymentTransferEntity();
         $transfer->id = 'transfer-id';
         $transfer->paymentAppId = 'app-id';
+        $transfer->accountId = 'account-id';
         $transfer->transferNo = 'PT261018090000ABCDEF0123';
         $transfer->outNo = 'commission0001';
         $transfer->recipientId = 'recipient-id';

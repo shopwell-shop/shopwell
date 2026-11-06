@@ -2,7 +2,6 @@
  * @sw-package discovery
  */
 import { defineComponent } from 'vue';
-import type { PropType } from 'vue';
 import type CriteriaType from 'src/core/data/criteria.data';
 import type RepositoryType from 'src/core/data/repository.data';
 import template from './sw-blog-detail.html.twig';
@@ -11,7 +10,12 @@ import type { BlogCategoryAssignment } from '../../service/blog.api.service';
 import { blogApi } from '../../service/blog.api.service';
 import { registeredBlogTypes } from '../../service/blog-type.registry';
 
-type Blog = EntitySchema.Entity<'blog'>;
+type Blog = Omit<EntitySchema.Entity<'blog'>, 'publishedAt'> & { publishedAt?: EntitySchema.DateTime | null };
+
+type BlogRepository = Omit<RepositoryType<'blog'>, 'save' | 'hasChanges'> & {
+    save(entity: Blog): ReturnType<RepositoryType<'blog'>['save']>;
+    hasChanges(entity: Blog): boolean;
+};
 
 type BlogVideo = EntitySchema.Entity<'blog_video'>;
 
@@ -37,7 +41,7 @@ type CmsPage = EntitySchema.Entity<'cms_page'>;
  * The content card is a host, not an editor: which component edits `blog.type` is decided by the type
  * registry, so a type a plugin brought is edited here as well.
  */
-// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+/** @private */
 export default defineComponent({
     template,
 
@@ -54,7 +58,7 @@ export default defineComponent({
          * Nothing is written to the api until the merchant saves - an abandoned draft leaves no row.
          */
         blogId: {
-            type: String as unknown as PropType<EntitySchema.EntityKey<'blog'> | null>,
+            type: String,
             required: false,
             default: null,
         },
@@ -67,7 +71,6 @@ export default defineComponent({
         assignments: BlogCategoryAssignment[];
         selectedCategoryIds: Array<EntitySchema.EntityKey<'blog_category'>>;
         categories: BlogCategory[];
-        pendingCommentCount: number;
         isLoading: boolean;
         isSaving: boolean;
         mediaUploadTag: string;
@@ -86,7 +89,6 @@ export default defineComponent({
             assignments: [],
             selectedCategoryIds: [],
             categories: [],
-            pendingCommentCount: 0,
             isLoading: false,
             isSaving: false,
             mediaUploadTag: 'sw-blog-detail-cover',
@@ -101,7 +103,7 @@ export default defineComponent({
     },
 
     computed: {
-        blogRepository(): RepositoryType<'blog'> {
+        blogRepository(): BlogRepository {
             return this.repositoryFactory.create('blog');
         },
 
@@ -109,7 +111,7 @@ export default defineComponent({
          * The id the page works on: the prop, or the id the new entry got from its first save.
          */
         effectiveId(): EntitySchema.EntityKey<'blog'> | null {
-            return this.blog?.id ?? this.blogId ?? null;
+            return this.blog?.id ?? (this.blogId as EntitySchema.BlogId | null);
         },
 
         isNew(): boolean {
@@ -134,10 +136,6 @@ export default defineComponent({
 
         authorRepository(): RepositoryType<'blog_author'> {
             return this.repositoryFactory.create('blog_author');
-        },
-
-        commentRepository(): RepositoryType<'blog_comment'> {
-            return this.repositoryFactory.create('blog_comment');
         },
 
         canEdit(): boolean {
@@ -217,13 +215,13 @@ export default defineComponent({
     created() {
         void this.loadBlog();
         void this.loadCategories();
-        void this.loadPendingCommentCount();
     },
 
     methods: {
         /**
          * A new entry: nothing is written until the merchant saves, so an abandoned draft leaves no
-         * row behind. The type is preset because the editor of the body is chosen by it.
+         * row behind. The type is preset because the editor of the body is chosen by it, and the
+         * select locks as soon as the entry exists.
          */
         createBlog(): Blog {
             const blog = this.blogRepository.create();
@@ -294,25 +292,6 @@ export default defineComponent({
 
             await this.categoryRepository.search(criteria).then((result) => {
                 this.categories = [...result];
-            });
-        },
-
-        /**
-         * How many comments of this entry still wait, for the door to the queue.
-         */
-        async loadPendingCommentCount(): Promise<void> {
-            const id = this.effectiveId;
-
-            if (!id) {
-                this.pendingCommentCount = 0;
-
-                return;
-            }
-
-            const criteria = blogApi(this).pendingCommentsOfBlogCriteria(id);
-
-            await this.commentRepository.search(criteria).then((result) => {
-                this.pendingCommentCount = result.total ?? 0;
             });
         },
 
@@ -427,7 +406,7 @@ export default defineComponent({
                 return;
             }
 
-            this.blog.publishedAt = new Date().toISOString();
+            this.blog.publishedAt = new Date().toISOString() as EntitySchema.DateTime;
 
             void this.onSave();
         },
@@ -445,10 +424,6 @@ export default defineComponent({
             this.blog.publishedAt = null;
 
             void this.onSave();
-        },
-
-        onOpenCommentList(): void {
-            void this.$router.push({ name: 'sw.blog.comment.list' });
         },
 
         /**

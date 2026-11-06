@@ -1,7 +1,7 @@
 /**
  * @sw-package framework
  */
-import { mount } from '@vue/test-utils';
+import { shallowMount } from '@vue/test-utils';
 import type { VueWrapper } from '@vue/test-utils';
 
 const transfer = {
@@ -10,51 +10,36 @@ const transfer = {
     outNo: 'O-1',
 };
 
-type Notification = {
-    variant: string;
-    message: string;
-};
-
-type RejectModalVm = {
-    reason: string;
-    reasonLength: number;
-    reasonLimit: number;
-    rejectInProgress: boolean;
-    isReasonTooLong: boolean;
-    isConfirmDisabled: boolean;
-    onClose: () => void;
-    onConfirm: () => void;
-    createNotification: jest.Mock<void, [Notification]>;
-};
-
-type TypedWrapper = { vm: RejectModalVm } & VueWrapper;
-
 let activeWrapper: VueWrapper | null = null;
 
-async function createWrapper(
-    cancelTransfer: jest.Mock,
-): Promise<{ wrapper: TypedWrapper; notify: jest.Mock<void, [Notification]> }> {
-    const wrapper = mount(await wrapTestComponent('sw-finance-transfer-reject-modal', { sync: true }), {
+async function createWrapper(cancelTransfer: jest.Mock): Promise<{ wrapper: VueWrapper; notify: jest.SpyInstance }> {
+    const notify = jest.spyOn(Shopwell.Store.get('notification'), 'createNotification').mockReturnValue('notification-1');
+    const wrapper = shallowMount(await wrapTestComponent('sw-finance-transfer-reject-modal', { sync: true }), {
         props: {
             transfer,
         },
         global: {
             stubs: {
                 'sw-modal': {
-                    template: '<div><slot></slot><slot name="modal-footer"></slot></div>',
+                    template:
+                        '<div><slot></slot><slot name="modal-footer"></slot><button class="modal-close" @click="$emit(\'modal-close\')">Close</button></div>',
                 },
                 'mt-banner': { template: '<div><slot></slot></div>' },
-                'mt-textarea': true,
-                'mt-button': true,
+                'mt-textarea': {
+                    props: ['modelValue', 'error', 'maxLength'],
+                    template:
+                        '<label><textarea :value="modelValue" :maxlength="maxLength" @input="$emit(\'update:modelValue\', $event.target.value)"></textarea><span v-if="error" role="alert">{{ error }}</span></label>',
+                },
+                'mt-button': {
+                    props: ['disabled', 'isLoading'],
+                    template: '<button :disabled="disabled" :data-loading="isLoading"><slot></slot></button>',
+                },
             },
             provide: {
                 paymentTransferApiService: { cancelTransfer },
             },
         },
-    }) as unknown as TypedWrapper;
-
-    const notify = jest.fn<void, [Notification]>();
-    wrapper.vm.createNotification = notify;
+    });
 
     activeWrapper = wrapper;
 
@@ -67,6 +52,7 @@ describe('module/sw-finance/component/sw-finance-transfer-reject-modal', () => {
     afterEach(() => {
         activeWrapper?.unmount();
         activeWrapper = null;
+        jest.restoreAllMocks();
     });
 
     /**
@@ -76,46 +62,57 @@ describe('module/sw-finance/component/sw-finance-transfer-reject-modal', () => {
         const cancelTransfer = jest.fn();
         const { wrapper } = await createWrapper(cancelTransfer);
 
-        expect(wrapper.vm.isConfirmDisabled).toBe(true);
+        expect(wrapper.get('.sw-finance-transfer-reject-modal__button-confirm').attributes('disabled') !== undefined).toBe(
+            true,
+        );
 
-        wrapper.vm.reason = '   ';
+        await wrapper.get('textarea').setValue('   ');
         await flushPromises();
-        expect(wrapper.vm.isConfirmDisabled).toBe(true);
+        expect(wrapper.get('.sw-finance-transfer-reject-modal__button-confirm').attributes('disabled') !== undefined).toBe(
+            true,
+        );
 
-        wrapper.vm.onConfirm();
+        await wrapper.get('.sw-finance-transfer-reject-modal__button-confirm').trigger('click');
         await flushPromises();
         expect(cancelTransfer).not.toHaveBeenCalled();
 
-        wrapper.vm.reason = '收款账号有误';
+        await wrapper.get('textarea').setValue('收款账号有误');
         await flushPromises();
-        expect(wrapper.vm.isConfirmDisabled).toBe(false);
+        expect(wrapper.get('.sw-finance-transfer-reject-modal__button-confirm').attributes('disabled') !== undefined).toBe(
+            false,
+        );
     });
 
     it('should refuse a reason longer than the column allows', async () => {
         const { wrapper } = await createWrapper(jest.fn());
 
-        wrapper.vm.reason = 'a'.repeat(256);
+        await wrapper.get('textarea').setValue('a'.repeat(256));
         await flushPromises();
 
-        expect(wrapper.vm.isReasonTooLong).toBe(true);
-        expect(wrapper.vm.isConfirmDisabled).toBe(true);
-        expect(wrapper.vm.reasonLimit).toBe(255);
+        expect(wrapper.find('[role="alert"]').exists()).toBe(true);
+        expect(wrapper.get('.sw-finance-transfer-reject-modal__button-confirm').attributes('disabled') !== undefined).toBe(
+            true,
+        );
+        expect(wrapper.get('textarea').attributes('maxlength')).toBe('255');
+        expect(wrapper.get('.sw-finance-transfer-reject-modal__counter').text()).toBe('256 / 255');
     });
 
     it('should send the trimmed reason and close afterwards', async () => {
         const cancelTransfer = jest.fn(() => Promise.resolve({ outcome: 'canceled', transfer }));
         const { wrapper, notify } = await createWrapper(cancelTransfer);
 
-        wrapper.vm.reason = '  收款账号有误  ';
+        await wrapper.get('textarea').setValue('  收款账号有误  ');
         await flushPromises();
 
-        wrapper.vm.onConfirm();
+        await wrapper.get('.sw-finance-transfer-reject-modal__button-confirm').trigger('click');
         await flushPromises();
 
         expect(cancelTransfer).toHaveBeenCalledWith('transfer-1', '收款账号有误');
-        expect(notify.mock.calls[0][0].variant).toBe('success');
+        expect(notify).toHaveBeenCalledWith(expect.objectContaining({ variant: 'success' }));
         expect(wrapper.emitted('transfer-decided')).toHaveLength(1);
-        expect(wrapper.vm.rejectInProgress).toBe(false);
+        expect(wrapper.get('.sw-finance-transfer-reject-modal__button-confirm').attributes('data-loading') === 'true').toBe(
+            false,
+        );
     });
 
     /**
@@ -132,43 +129,48 @@ describe('module/sw-finance/component/sw-finance-transfer-reject-modal', () => {
 
         const { wrapper } = await createWrapper(cancelTransfer);
 
-        wrapper.vm.reason = '收款账号有误';
+        await wrapper.get('textarea').setValue('收款账号有误');
         await flushPromises();
 
-        wrapper.vm.onConfirm();
-        wrapper.vm.onConfirm();
+        await wrapper.get('.sw-finance-transfer-reject-modal__button-confirm').trigger('click');
+        await wrapper.get('.sw-finance-transfer-reject-modal__button-confirm').trigger('click');
         await flushPromises();
 
         expect(cancelTransfer).toHaveBeenCalledTimes(1);
-        expect(wrapper.vm.rejectInProgress).toBe(true);
+        expect(wrapper.get('.sw-finance-transfer-reject-modal__button-confirm').attributes('data-loading') === 'true').toBe(
+            true,
+        );
 
-        wrapper.vm.onClose();
+        await wrapper.get('.modal-close').trigger('click');
         expect(wrapper.emitted('modal-close')).toBeUndefined();
 
         resolveCancel({ outcome: 'canceled', transfer });
         await flushPromises();
 
-        expect(wrapper.vm.rejectInProgress).toBe(false);
+        expect(wrapper.get('.sw-finance-transfer-reject-modal__button-confirm').attributes('data-loading') === 'true').toBe(
+            false,
+        );
     });
 
     it('should show the readable error of a failed request', async () => {
         const cancelTransfer = jest.fn(() =>
-            // the admin api rejects with a response object, not with an Error - the message of the
-            // server is the whole point of the assertion below
-            // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors
-            Promise.reject({ response: { data: { errors: [{ detail: 'PAYMENT__TRANSFER_ALREADY_FINALIZED' }] } } }),
+            Promise.reject(
+                Object.assign(new Error('Transfer failed'), {
+                    response: { data: { errors: [{ detail: 'PAYMENT__TRANSFER_ALREADY_FINALIZED' }] } },
+                }),
+            ),
         );
 
         const { wrapper, notify } = await createWrapper(cancelTransfer);
 
-        wrapper.vm.reason = '收款账号有误';
+        await wrapper.get('textarea').setValue('收款账号有误');
         await flushPromises();
 
-        wrapper.vm.onConfirm();
+        await wrapper.get('.sw-finance-transfer-reject-modal__button-confirm').trigger('click');
         await flushPromises();
 
-        expect(notify.mock.calls[0][0].variant).toBe('error');
-        expect(notify.mock.calls[0][0].message).toBe('PAYMENT__TRANSFER_ALREADY_FINALIZED');
+        expect(notify).toHaveBeenCalledWith(expect.objectContaining({ variant: 'error' }));
+        expect(notify).toHaveBeenCalledWith(expect.objectContaining({ message: 'PAYMENT__TRANSFER_ALREADY_FINALIZED' }));
         expect(wrapper.emitted('transfer-decided')).toBeUndefined();
     });
 });

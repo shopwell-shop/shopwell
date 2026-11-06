@@ -2,13 +2,14 @@
 
 namespace Shopwell\Core\Checkout\Loyalty\Api;
 
-use Shopwell\Core\Checkout\Loyalty\Entity\CustomerLoyalty\CustomerLoyaltyCollection;
-use Shopwell\Core\Checkout\Loyalty\Entity\CustomerLoyalty\CustomerLoyaltyEntity;
-use Shopwell\Core\Checkout\Loyalty\Entity\CustomerPointTransaction\CustomerPointTransactionCollection;
+use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyAccount\LoyaltyAccountCollection;
+use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyAccount\LoyaltyAccountEntity;
+use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyPointTransaction\LoyaltyPointTransactionCollection;
 use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyTier\LoyaltyTierCollection;
 use Shopwell\Core\Checkout\Loyalty\LoyaltyException;
-use Shopwell\Core\Checkout\Loyalty\Service\LoyaltyLedger;
+use Shopwell\Core\Checkout\Loyalty\Service\LoyaltyBenefitResolver;
 use Shopwell\Core\Checkout\Loyalty\Service\LoyaltyPointService;
+use Shopwell\Core\Checkout\Membership\Service\MembershipSubscriptionService;
 use Shopwell\Core\Framework\Api\Context\AdminApiSource;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
@@ -34,16 +35,17 @@ class LoyaltyController
     /**
      * @internal
      *
-     * @param EntityRepository<CustomerLoyaltyCollection> $customerLoyaltyRepository
-     * @param EntityRepository<CustomerPointTransactionCollection> $pointTransactionRepository
+     * @param EntityRepository<LoyaltyAccountCollection> $loyaltyAccountRepository
+     * @param EntityRepository<LoyaltyPointTransactionCollection> $pointTransactionRepository
      * @param EntityRepository<LoyaltyTierCollection> $loyaltyTierRepository
      */
     public function __construct(
-        private readonly EntityRepository $customerLoyaltyRepository,
+        private readonly EntityRepository $loyaltyAccountRepository,
         private readonly EntityRepository $pointTransactionRepository,
         private readonly EntityRepository $loyaltyTierRepository,
         private readonly LoyaltyPointService $loyaltyPointService,
-        private readonly LoyaltyLedger $loyaltyLedger,
+        private readonly MembershipSubscriptionService $subscriptions,
+        private readonly LoyaltyBenefitResolver $benefits,
     ) {
     }
 
@@ -117,8 +119,8 @@ class LoyaltyController
 
     /**
      * Grants a membership the operator decided on - a goodwill upgrade, a correction, or a membership
-     * that was paid outside of the shop. The period is written by the ledger, so an extension of the
-     * same tier continues where the running one ends instead of restarting today.
+     * that was paid outside of the shop. It goes through the membership itself, so granting the tier the
+     * customer already holds continues where the running membership ends instead of restarting today.
      */
     #[Route(
         path: '/api/_action/loyalty/customer/{customerId}/membership',
@@ -131,17 +133,13 @@ class LoyaltyController
         $tierId = (string) $request->request->get('tierId', '');
         $durationDays = $request->request->getInt('durationDays');
 
-        if ($durationDays < 1) {
-            throw LoyaltyException::invalidMembershipDuration($durationDays);
-        }
-
         $this->assertTierExists($tierId, $context);
 
-        $period = $this->loyaltyLedger->activateMembership($customerId, $tierId, $durationDays, $context);
+        $subscription = $this->subscriptions->grant($customerId, $tierId, $durationDays, $context);
 
         return new JsonResponse([
-            'startsAt' => $period['startsAt']->format(\DATE_ATOM),
-            'expiresAt' => $period['expiresAt']->format(\DATE_ATOM),
+            'startsAt' => $subscription->getStartsAt()->format(\DATE_ATOM),
+            'expiresAt' => $subscription->getEndsAt()->format(\DATE_ATOM),
         ]);
     }
 
@@ -155,33 +153,35 @@ class LoyaltyController
     {
         $criteria = new Criteria();
         $criteria->addFilter(new EqualsFilter('customerId', $customerId));
-        $criteria->addAssociation('membershipTier');
+        $criteria->addAssociation('tier');
         $criteria->setLimit(1);
 
-        $loyalty = $this->customerLoyaltyRepository->search($criteria, $context)->getEntities()->first();
+        $loyalty = $this->loyaltyAccountRepository->search($criteria, $context)->getEntities()->first();
 
-        if (!$loyalty instanceof CustomerLoyaltyEntity) {
+        if (!$loyalty instanceof LoyaltyAccountEntity) {
             return new JsonResponse([
                 'pointsBalance' => 0,
-                'growthValue' => 0,
-                'membershipTier' => null,
-                'membershipValidUntil' => null,
+                'tierPoints' => 0,
+                'tier' => null,
+                'membershipPaidUntil' => null,
             ]);
         }
 
-        $tier = $loyalty->getMembershipTier();
+        $tier = $loyalty->getTier();
 
         return new JsonResponse([
             'pointsBalance' => $loyalty->getPointsBalance(),
-            'growthValue' => $loyalty->getGrowthValue(),
-            'membershipTier' => $tier === null ? null : [
+            'tierPoints' => $loyalty->getTierPoints(),
+            'tier' => $tier === null ? null : [
                 'id' => $tier->getId(),
                 'technicalName' => $tier->getTechnicalName(),
                 'name' => $tier->getName(),
                 'level' => $tier->getLevel(),
-                'pointsMultiplier' => $tier->getPointsMultiplier(),
+                // the tier's grants travel with the summary so the customer tab does not need a second
+                // request; the multiplier the tab prints is one entry of this map
+                'benefits' => $this->benefits->forTier($tier, $context)->all(),
             ],
-            'membershipValidUntil' => $loyalty->getMembershipValidUntil()?->format(\DATE_ATOM),
+            'membershipPaidUntil' => $loyalty->getMembershipPaidUntil()?->format(\DATE_ATOM),
         ]);
     }
 

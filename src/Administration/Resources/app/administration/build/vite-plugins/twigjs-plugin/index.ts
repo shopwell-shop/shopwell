@@ -1,3 +1,4 @@
+import path from 'path';
 import type { Plugin } from 'vite';
 
 /**
@@ -9,13 +10,16 @@ import type { Plugin } from 'vite';
 const isTwigFile = /\.twig$/;
 const isHTMLFile = /\.html$/;
 
+// Resolved from this file, so it also matches when Shopwell is installed in `vendor/shopwell/administration`.
+const administrationIndexHtml = path.resolve(__dirname, '../../../index.html').replace(/\\/g, '/');
+
 /* @private */
 export default function twigPlugin(): Plugin {
     return {
         name: 'shopwell-vite-plugin-twigjs',
 
         transform(fileContent, id) {
-            if (id.endsWith('src/Administration/Resources/app/administration/index.html')) {
+            if (id === administrationIndexHtml) {
                 return;
             }
 
@@ -25,7 +29,7 @@ export default function twigPlugin(): Plugin {
 
             // Trim the content and remove HTML comments
             fileContent = fileContent
-                .replace(/<!--[\s\S]*?-->/gm, '') // Remove HTML comments first
+                .replace(/<!--(?:>|->|[\s\S]*?(?:--!?>|$))/g, ' ') // Keep surrounding markup separated
                 .trim()
                 .replace(/\s+/g, ' '); // Normalize whitespace
 

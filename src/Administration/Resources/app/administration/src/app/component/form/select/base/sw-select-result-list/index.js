@@ -156,6 +156,11 @@ export default {
         },
 
         navigate({ key }) {
+            // Plain events dispatched under the `keydown` name have no `key` at all
+            if (typeof key !== 'string') {
+                return;
+            }
+
             key = key.toUpperCase();
             if (key === 'ARROWDOWN') {
                 this.navigateNext();
@@ -199,25 +204,7 @@ export default {
         updateScrollPosition() {
             // wait until the new active item is rendered and has the active class
             this.$nextTick(() => {
-                const resultContainer = document.querySelector('.sw-select-result-list__content');
-                const activeItem = resultContainer.querySelector('.is--active');
-                const itemHeight = activeItem.offsetHeight;
-                const activeItemPosition = activeItem.offsetTop;
-                const actualScrollTop = resultContainer.scrollTop;
-
-                if (activeItemPosition === 0) {
-                    return;
-                }
-
-                // Check if we need to scroll down
-                if (resultContainer.offsetHeight + actualScrollTop < activeItemPosition + itemHeight) {
-                    resultContainer.scrollTop += itemHeight;
-                }
-
-                // Check if we need to scroll up
-                if (actualScrollTop !== 0 && activeItemPosition - actualScrollTop - itemHeight <= 0) {
-                    resultContainer.scrollTop -= itemHeight;
-                }
+                this.$refs.popoverContent?.querySelector('.is--active')?.scrollIntoView({ block: 'nearest' });
             });
         },
 

@@ -22,6 +22,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\ApiAware;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\CascadeDelete;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\PrimaryKey;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\Required;
+use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\RestrictDelete;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\SearchRanking;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\SetNullOnDelete;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\WriteProtected;
@@ -37,6 +38,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Field\StringField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\TimeZoneField;
 use Shopwell\Core\Framework\DataAbstractionLayer\FieldCollection;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Webhook\WebhookDefinition;
 use Shopwell\Core\System\Locale\LocaleDefinition;
 use Shopwell\Core\System\Organization\Aggregate\OrganizationUnit\OrganizationUnitDefinition;
 use Shopwell\Core\System\Position\PositionDefinition;
@@ -131,6 +133,8 @@ class UserDefinition extends EntityDefinition
             (new OneToManyAssociationField('media', MediaDefinition::class, 'user_id'))->addFlags(new SetNullOnDelete()),
             (new OneToManyAssociationField('accessKeys', UserAccessKeyDefinition::class, 'user_id', 'id'))->addFlags(new CascadeDelete()),
             (new OneToManyAssociationField('configs', UserConfigDefinition::class, 'user_id', 'id'))->addFlags(new CascadeDelete()),
+            // a user that still owns webhooks cannot be deleted, so its webhooks are not lost unnoticed
+            (new OneToManyAssociationField('webhooks', WebhookDefinition::class, 'owner_user_id', 'id'))->removeFlag(ApiAware::class)->addFlags(new RestrictDelete()),
             new OneToManyAssociationField('stateMachineHistoryEntries', StateMachineHistoryDefinition::class, 'user_id', 'id'),
             (new OneToManyAssociationField('importExportLogEntries', ImportExportLogDefinition::class, 'user_id', 'id'))->addFlags(new SetNullOnDelete()),
             new ManyToManyAssociationField('aclRoles', AclRoleDefinition::class, AclUserRoleDefinition::class, 'user_id', 'acl_role_id'),
@@ -141,7 +145,8 @@ class UserDefinition extends EntityDefinition
             new OneToManyAssociationField('createdCustomers', CustomerDefinition::class, 'created_by_id', 'id'),
             new OneToManyAssociationField('updatedCustomers', CustomerDefinition::class, 'updated_by_id', 'id'),
             (new OneToManyAssociationField('orderReturns', 'order_return', 'administrator_id'))->addFlags(new SetNullOnDelete()),
-            (new ManyToManyAssociationField('organizationUnits', OrganizationUnitDefinition::class, UserOrganizationUnitDefinition::class, 'user_id', 'organization_unit_id'))->addFlags(new ApiAware()),
+            (new OneToManyAssociationField('organizationUnitMappings', UserOrganizationUnitDefinition::class, 'user_id'))->addFlags(new CascadeDelete()),
+            (new ManyToManyAssociationField('organizationUnits', OrganizationUnitDefinition::class, UserOrganizationUnitDefinition::class, 'user_id', 'organization_unit_id'))->addFlags(new ApiAware(), new WriteProtected()),
             (new ManyToManyIdField('organization_unit_ids', 'organizationUnitIds', 'organizationUnits'))->addFlags(new ApiAware()),
             (new ManyToManyAssociationField('positions', PositionDefinition::class, UserPositionDefinition::class, 'user_id', 'position_id'))->addFlags(new ApiAware()),
             (new ManyToManyIdField('position_ids', 'positionIds', 'positions'))->addFlags(new ApiAware()),

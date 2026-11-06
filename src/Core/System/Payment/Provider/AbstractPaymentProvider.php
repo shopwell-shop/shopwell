@@ -7,8 +7,9 @@ use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
 use Shopwell\Core\System\Payment\Gateway\AbstractPaymentAction;
 use Shopwell\Core\System\Payment\Gateway\AbstractPaymentApi;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
+use Shopwell\Core\System\Payment\Product\PaymentProduct;
 use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
+use Shopwell\Core\System\Payment\Provider\Config\PaymentConfigField;
 use Shopwell\Core\System\Payment\Provider\Cycle\PaymentCycleRules;
 use Shopwell\Core\System\Payment\Provider\Transfer\PaymentTransferRules;
 use Shopwell\Core\System\Payment\Transfer\Notification\PaymentTransferNotificationVerifierInterface;
@@ -30,7 +31,7 @@ use Shopwell\Core\System\Payment\Transfer\Notification\PaymentTransferNotificati
  *
  * The `key` of the tag is the technical name the interface is addressed by: it appears in the notify
  * url (`/payment-api/v1/notify/mypay/…`), in `payment_order.provider_technical_name`, in
- * `payment_provider_config` and in `payment_app_provider`. It therefore has to match
+ * `payment_provider_config` and in `payment_app_account`. It therefore has to match
  * `[A-Za-z0-9_-]+` and it may never be reused for a different implementation - historic rows would
  * become uninterpretable. `priority` orders several implementations of the *same* key: the lowest
  * priority is the base implementation (the core interfaces use `-100`) and every other one has to be a
@@ -92,13 +93,6 @@ abstract class AbstractPaymentProvider
     abstract public function getActions(): array;
 
     /**
-     * The action that opens a payment for a channel that has no more specific one.
-     *
-     * @see self::getChannelCaptureActions() for the per channel override
-     */
-    abstract public function getCaptureAction(): AbstractPaymentAction;
-
-    /**
      * The service that reads the references out of an incoming notification.
      *
      * It has to work without credentials: the platform needs to know which payment order a notification
@@ -115,10 +109,20 @@ abstract class AbstractPaymentProvider
     }
 
     /**
-     * The fields of the merchant account, in the order the administration renders them.
+     * The plugin-config compatible XML that declares the merchant and channel fields. Labels, help
+     * texts and option names use the existing `lang` translations of config.xsd. Null means the
+     * interface declares its fields in PHP only.
+     */
+    public function getConfigFile(): ?string
+    {
+        return null;
+    }
+
+    /**
+     * Additional fields of the merchant account, in the order the administration renders them.
      *
-     * Every channel of the interface is charged on this very account, which is why the credentials live
-     * here and not on the channel. A field marked secret is never echoed back to the administration.
+     * The XML returned by {@see self::getConfigFile()} is read first; this method is the code extension
+     * point for computed fields or for a decorator adding to an existing declaration.
      *
      * @return list<PaymentConfigField>
      */
@@ -134,9 +138,9 @@ abstract class AbstractPaymentProvider
      * technical name is unique across **all** interfaces - two interfaces offering the same name would
      * leave the platform unable to tell which merchant account to charge.
      *
-     * @return list<PaymentChannel>
+     * @return list<PaymentProduct>
      */
-    public function getChannels(): array
+    public function getProducts(): array
     {
         return [];
     }
@@ -145,7 +149,7 @@ abstract class AbstractPaymentProvider
      * The capture action of a single channel, for an interface whose channels open differently enough
      * that one action cannot serve them all.
      *
-     * A channel that is not named here falls back to {@see self::getCaptureAction()}.
+     * A channel that is not named here is served by the capture actions in {@see self::getActions()}.
      *
      * @return array<string, AbstractPaymentAction> channel technical name => action
      */

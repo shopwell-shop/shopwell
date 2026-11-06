@@ -113,6 +113,8 @@ class BlogPageLoader
         $page->setShowAuthor($detail->getShowAuthor());
         $page->setShowReadingTime($detail->getShowReadingTime());
         $page->setRelatedBlogs($detail->getRelatedBlogs() ?? new BlogCollection());
+        $page->setPreviousBlog($detail->getPreviousBlog());
+        $page->setNextBlog($detail->getNextBlog());
         $page->setCommentsEnabled($detail->getCommentsEnabled());
         $page->setCommentsAutoPublish($detail->getCommentsAutoPublish());
         $page->setCommentsPerPage($detail->getCommentsPerPage());

@@ -18,7 +18,7 @@ type OrganizationUnitEntity = EntitySchema.Entity<'organization_unit'>;
  * collection - the second case is what makes search work, because a filtered set is re-rooted at
  * the highest surviving ancestor instead of orphaning the matches.
  */
-// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+/** @private */
 export default defineComponent({
     template,
 
@@ -112,7 +112,7 @@ export default defineComponent({
         },
 
         isExpanded(unit: OrganizationUnitEntity): boolean {
-            return this.isSearching || !!this.expandedIds[unit.id];
+            return this.isSearching || (this.expandedIds[unit.id] ?? false);
         },
 
         toggleExpand(unit: OrganizationUnitEntity): void {

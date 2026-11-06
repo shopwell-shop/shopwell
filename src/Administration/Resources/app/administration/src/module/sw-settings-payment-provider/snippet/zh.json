@@ -1,16 +1,16 @@
 {
     "sw-settings-payment-provider": {
         "general": {
-            "mainMenuItemGeneral": "支付接口",
-            "description": "配置平台在各支付接口（支付宝、微信支付等）的商户账户信息，以及每个接口下开放给应用的支付渠道。",
-            "emptyStateTitle": "暂无支付接口",
-            "emptyState": "当前安装未提供任何支付接口。"
+            "mainMenuItemGeneral": "支付账户",
+            "description": "管理支付服务商、平台支付账户及支付产品。",
+            "emptyStateTitle": "暂无支付服务商",
+            "emptyState": "请先安装支付服务商集成，再配置收款。"
         },
         "provider": {
-            "cardTitle": "商户账户",
-            "cardSubtitle": "这些信息由支付接口分配，同一接口下的全部渠道共用。",
-            "enabled": "启用该支付接口",
-            "enabledHelpText": "启用后，使用平台账户的应用才能通过该接口收款。",
+            "cardTitle": "默认支付账户",
+            "cardSubtitle": "由支付服务商签发的商户凭证保存在此账户中，业务入口通过账户授权使用，无需重复配置。",
+            "enabled": "启用平台账户",
+            "enabledHelpText": "仅已获此支付账户授权的应用可通过该账户收款。",
             "configured": "已配置",
             "notConfigured": "未配置",
             "reset": "清除账户信息",
@@ -21,28 +21,24 @@
             "paypal": "PayPal",
             "stripe": "Stripe"
         },
-        "channels": {
-            "title": "收款渠道",
-            "subtitle": "渠道是该接口提供给应用的具体支付方式。未启用的渠道，应用无法开通使用。"
-        },
         "channel": {
-            "emptyStateTitle": "未声明收款渠道",
-            "emptyState": "该接口未声明任何收款渠道。这属于接口代码的问题，不是本页可配置的项。",
+            "emptyStateTitle": "暂无支付产品",
+            "emptyState": "此服务商暂无可用支付产品，请检查支付集成是否安装完整。",
             "enabled": "启用",
-            "enabledHelpText": "关闭后，所有应用都无法再使用该渠道收款。",
+            "enabledHelpText": "允许平台支付账户使用此产品。",
             "reset": "清除",
-            "resetModalTitle": "清除渠道配置",
-            "resetModalMessage": "确定要清除「{name}」的渠道参数吗？清除后该渠道将不再对应用开放。",
-            "expand": "展开参数",
-            "collapse": "收起参数",
-            "noParams": "该渠道无需额外参数。",
-            "columnLabel": "渠道",
-            "columnFlow": "结算流程",
+            "resetModalTitle": "清除产品配置",
+            "resetModalMessage": "清除平台支付账户中“{name}”的产品参数？",
+            "expand": "产品详情和设置",
+            "collapse": "收起产品设置",
+            "noParams": "此产品无需额外配置。",
+            "columnLabel": "支付产品",
+            "columnFlow": "交互方式",
             "columnCurrencies": "币种",
             "columnDevices": "终端",
             "allCurrencies": "全部币种",
             "allDevices": "全部终端",
-            "runtimeHint": "该渠道下单时还需应用传入运行时参数：{params}。",
+            "runtimeHint": "发起支付时，此产品需要以下付款人信息：{params}。",
             "alipay_h5": "支付宝 手机网站支付",
             "alipay_web": "支付宝 电脑网站支付",
             "alipay_qr": "支付宝 当面付（扫码）",
@@ -57,8 +53,8 @@
             "stripe_checkout": "Stripe Checkout"
         },
         "danger": {
-            "title": "危险操作",
-            "description": "清除账户信息会移除平台在该接口下的商户账户。在重新填写账户信息之前，所有使用平台账户的应用都无法收款。"
+            "title": "清除平台账户",
+            "description": "清除凭证后，所有已获此平台账户授权的应用将暂停收款，直至重新配置凭证。"
         },
         "flow": {
             "redirect": "跳转收银台",
@@ -72,25 +68,57 @@
             "mini": "小程序"
         },
         "notification": {
-            "saveSuccess": "支付接口设置已保存。",
-            "resetSuccess": "支付接口配置已清除。",
+            "saveSuccess": "支付账户已保存。",
+            "resetSuccess": "支付账户已清除。",
             "missingFields": "「{name}」已启用，请先填写全部必填项。",
             "nothingToSave": "没有需要保存的改动。"
         },
         "list": {
-            "enableModalTitle": "启用支付接口",
+            "enableModalTitle": "启用平台支付账户",
             "enableModalText": "启用后，使用平台账户的应用才能通过该接口收款。",
-            "disableModalTitle": "禁用支付接口",
-            "disableModalText": "禁用后，应用将无法再通过该接口收款。"
+            "disableModalTitle": "停用平台支付账户",
+            "disableModalText": "停用平台支付账户后，已获该账户授权的应用将无法通过此账户收款。"
+        },
+        "products": {
+            "title": "支付产品",
+            "subtitle": "选择此服务商平台账户可用的支付产品。"
+        },
+        "accounts": {
+            "title": "支付账户",
+            "description": "管理支付账户、商户凭证及可用产品，再授权给支付应用使用。",
+            "create": "新增支付账户",
+            "empty": "新增支付账户后即可配置收款。",
+            "name": "账户名称",
+            "provider": "支付服务商",
+            "active": "状态",
+            "actions": "操作",
+            "enabled": "启用",
+            "disabled": "已停用",
+            "identity": "支付账户",
+            "credentials": "商户凭证",
+            "credentialsHelp": "商户凭证仅保存在此账户中。密钥留空表示保留已保存的值。",
+            "defaultName": "{provider}默认支付账户",
+            "saved": "支付账户已保存。",
+            "loadError": "支付账户加载失败，请重试。",
+            "saveError": "账户保存失败，请检查必填项后重试。",
+            "deleteError": "此账户无法删除。已被使用的账户请停用，以保留支付记录。",
+            "productEnabled": "允许此账户使用此产品",
+            "products": "收款产品",
+            "search": "搜索支付账户...",
+            "deleteTitle": "删除支付账户",
+            "deleteMessage": "确定要删除「{name}」吗？已被使用的支付账户请停用。"
         }
     },
     "sw-privileges": {
         "permissions": {
             "payment_provider_config": {
-                "label": "支付接口"
+                "label": "支付账户"
             },
             "payment_channel_config": {
-                "label": "支付渠道"
+                "label": "支付产品"
+            },
+            "payment_account": {
+                "label": "支付账户"
             }
         }
     }

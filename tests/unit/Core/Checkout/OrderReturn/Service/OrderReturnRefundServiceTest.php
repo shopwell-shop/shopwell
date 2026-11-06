@@ -9,17 +9,20 @@ use Shopwell\Core\Checkout\OrderReturn\Entity\OrderReturnCollection;
 use Shopwell\Core\Checkout\OrderReturn\Entity\OrderReturnEntity;
 use Shopwell\Core\Checkout\OrderReturn\OrderReturnException;
 use Shopwell\Core\Checkout\OrderReturn\Service\OrderReturnRefundService;
+use Shopwell\Core\Checkout\OrderReturn\Service\OrderReturnRefundSource;
 use Shopwell\Core\Checkout\OrderReturn\Service\OrderReturnStateHandler;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Payment\App\PaymentAppCollection;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
+use Shopwell\Core\System\Payment\Exception\PaymentOrderException;
+use Shopwell\Core\System\Payment\Order\Aggregate\PaymentRefund\PaymentRefundCollection;
+use Shopwell\Core\System\Payment\Order\Aggregate\PaymentRefund\PaymentRefundEntity;
 use Shopwell\Core\System\Payment\Order\PaymentOrderCollection;
 use Shopwell\Core\System\Payment\Order\PaymentOrderEntity;
 use Shopwell\Core\System\Payment\Order\PaymentOrderService;
-use Shopwell\Core\System\Payment\Order\Refund\PaymentRefundCollection;
-use Shopwell\Core\System\Payment\Order\Refund\PaymentRefundEntity;
-use Shopwell\Core\System\Payment\Order\Refund\PaymentRefundService;
+use Shopwell\Core\System\Payment\Order\PaymentRefundService;
+use Shopwell\Core\System\Payment\PaymentException;
 use Shopwell\Core\Test\Stub\DataAbstractionLayer\StaticEntityRepository;
 use Shopwell\Tests\Unit\Core\Checkout\Payment\Gateway\PaymentGatewayFixture;
 
@@ -128,15 +131,65 @@ class OrderReturnRefundServiceTest extends TestCase
     }
 
     /**
+     * A source that holds 500 of the 1999 leaves 1499 for the gateway - which only collected 1000 and
+     * therefore refuses. The exception carries the requested amount, so it pins the split: the gateway
+     * must never be asked for money it did not collect.
+     */
+    public function testTheSourcesPayTheirPartBeforeTheGatewayIsAskedForTheRest(): void
+    {
+        $source = $this->source(refundable: 500);
+
+        try {
+            $this->service(sources: [$source])->refund($this->orderReturn(), $this->order(), $this->context);
+            static::fail('the gateway has to refuse an amount it never collected');
+        } catch (PaymentException $exception) {
+            static::assertSame(
+                PaymentOrderException::refundAmountExceedsOrder('PG-1', 1499, 1000)->getMessage(),
+                $exception->getMessage()
+            );
+        }
+
+        static::assertSame([500], $source->refunded);
+    }
+
+    public function testASourceThatCoversTheWholeReturnKeepsTheGatewayOut(): void
+    {
+        $source = $this->source(refundable: 1999);
+        $repository = $this->returnRepository();
+
+        $stateHandler = $this->createMock(OrderReturnStateHandler::class);
+        $stateHandler->expects($this->once())->method('refund')->with('return-id');
+        $stateHandler->expects($this->once())->method('finish')->with('return-id');
+
+        $this->service(paymentRefundService: $this->paymentRefundService(null), stateHandler: $stateHandler, repository: $repository, sources: [$source])
+            ->refund($this->orderReturn(), $this->order(), $this->context);
+
+        static::assertSame([1999], $source->refunded);
+        // no gateway refund was started, so the return carries no refund number of one
+        static::assertSame([], $repository->updates);
+    }
+
+    public function testASourceIsNeverAskedForMoreThanTheReturnIsWorth(): void
+    {
+        $source = $this->source(refundable: 5000);
+
+        $this->service(sources: [$source])->refund($this->orderReturn(), $this->order(), $this->context);
+
+        static::assertSame([1999], $source->refunded);
+    }
+
+    /**
      * @param list<PaymentAppEntity>|null $apps null means "the app of the payment exists"
      * @param StaticEntityRepository<OrderReturnCollection>|null $repository
+     * @param list<OrderReturnRefundSource> $sources
      */
     private function service(
-        ?PaymentRefundService $refundService = null,
+        ?PaymentRefundService $paymentRefundService = null,
         ?OrderReturnStateHandler $stateHandler = null,
         ?StaticEntityRepository $repository = null,
         ?PaymentOrderEntity $paymentOrder = null,
         ?array $apps = null,
+        array $sources = [],
     ): OrderReturnRefundService {
         $paymentApps = new PaymentAppCollection();
 
@@ -149,9 +202,18 @@ class OrderReturnRefundServiceTest extends TestCase
             new StaticEntityRepository([$paymentApps]),
             $repository ?? $this->returnRepository(),
             $this->paymentOrderService($paymentOrder ?? $this->paymentOrder()),
-            $refundService ?? $this->paymentRefundService(null),
+            $paymentRefundService ?? $this->paymentRefundService(null),
             $stateHandler ?? static::createStub(OrderReturnStateHandler::class),
+            $sources,
         );
+    }
+
+    /**
+     * A refund source that holds a fixed amount and records what it was asked to pay out.
+     */
+    private function source(int $refundable): RecordingRefundSource
+    {
+        return new RecordingRefundSource($refundable);
     }
 
     private function paymentApp(): PaymentAppEntity
@@ -229,8 +291,12 @@ class OrderReturnRefundServiceTest extends TestCase
     {
         return (new PaymentOrderEntity())->assign([
             'id' => 'payment-order-id',
+            'paymentNo' => 'PG-1',
             'paymentAppId' => 'payment-app-id',
             'paidAt' => $paid ? new \DateTimeImmutable('2026-10-01 10:00:00') : null,
+            // what the channel really collected: less than the order, because the wallet paid part of it
+            'paidAmount' => 1000,
+            'refundedAmount' => 0,
         ]);
     }
 
@@ -240,7 +306,37 @@ class OrderReturnRefundServiceTest extends TestCase
             'id' => 'refund-id',
             'refundNo' => $refundNo,
             'outRefundNo' => 'RT-1',
+            'amount' => 1999,
+            'reason' => 'Return RT-1',
             'refundedAt' => $refundedAt,
         ]);
+    }
+}
+
+/**
+ * A refund source that holds a fixed amount and records what it was asked to pay out.
+ *
+ * @internal
+ */
+#[Package('after-sales')]
+final class RecordingRefundSource implements OrderReturnRefundSource
+{
+    /**
+     * @var list<int>
+     */
+    public array $refunded = [];
+
+    public function __construct(private readonly int $refundable)
+    {
+    }
+
+    public function refundableAmount(OrderReturnEntity $orderReturn, OrderEntity $order, Context $context): int
+    {
+        return $this->refundable;
+    }
+
+    public function refund(OrderReturnEntity $orderReturn, OrderEntity $order, int $amount, Context $context): void
+    {
+        $this->refunded[] = $amount;
     }
 }

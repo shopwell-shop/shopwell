@@ -24,6 +24,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Field\TranslationsAssociationFi
 use Shopwell\Core\Framework\DataAbstractionLayer\FieldCollection;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Plugin\Aggregate\PluginTranslation\PluginTranslationDefinition;
+use Shopwell\Core\System\AdminMenu\AdminMenuItemDefinition;
 
 #[Package('framework')]
 class PluginDefinition extends EntityDefinition
@@ -78,6 +79,7 @@ class PluginDefinition extends EntityDefinition
 
             (new TranslationsAssociationField(PluginTranslationDefinition::class, 'plugin_id'))->addFlags(new Required(), new CascadeDelete()),
             (new OneToManyAssociationField('paymentMethods', PaymentMethodDefinition::class, 'plugin_id', 'id'))->addFlags(new SetNullOnDelete()),
+            (new OneToManyAssociationField('adminMenuItems', AdminMenuItemDefinition::class, 'plugin_id', 'id'))->addFlags(new SetNullOnDelete()),
         ]);
     }
 }

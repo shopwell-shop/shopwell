@@ -1,0 +1,82 @@
+{% block sw_payment_order_summary %}
+<div class="sw-payment-order-summary">
+    {% block sw_payment_order_summary_amount %}
+    <div class="sw-payment-order-summary__amount">
+        <span class="sw-payment-order-summary__amount-label">{{ headlineLabel }}</span>
+
+        {% block sw_payment_order_summary_amount_value %}
+        <span class="sw-payment-order-summary__amount-value">
+            {{ formatAmount(headlineAmount, order.currency) }}
+        </span>
+        {% endblock %}
+
+        {% block sw_payment_order_summary_amount_refunded %}
+        <span
+            v-if="hasRefund"
+            class="sw-payment-order-summary__amount-refunded"
+        >
+            {{ refundedText }}
+        </span>
+        {% endblock %}
+    </div>
+    {% endblock %}
+
+    {% block sw_payment_order_summary_facts %}
+    <dl class="sw-payment-order-summary__facts">
+        {% block sw_payment_order_summary_fact_order_amount %}
+        <div class="sw-payment-order-summary__fact">
+            <dt>{{ $t('sw-payment.order.detail.labelAmount') }}</dt>
+            <dd>{{ formatAmount(order.amount, order.currency) }}</dd>
+        </div>
+        {% endblock %}
+
+        {% block sw_payment_order_summary_fact_refunded_amount %}
+        <div class="sw-payment-order-summary__fact">
+            <dt>{{ $t('sw-payment.order.detail.labelRefundedAmount') }}</dt>
+            <dd>{{ formatAmount(refundedAmount, order.currency) }}</dd>
+        </div>
+        {% endblock %}
+
+        {% block sw_payment_order_summary_fact_provider %}
+        <div class="sw-payment-order-summary__fact">
+            <dt>{{ $t('sw-payment.order.detail.labelProvider') }}</dt>
+            <dd>{{ order.providerTechnicalName }}</dd>
+        </div>
+        {% endblock %}
+
+        {% block sw_payment_order_summary_fact_channel %}
+        <div class="sw-payment-order-summary__fact">
+            <dt>{{ $t('sw-payment.order.detail.labelChannel') }}</dt>
+            <dd>{{ order.channelTechnicalName }}</dd>
+        </div>
+        {% endblock %}
+
+        {% block sw_payment_order_summary_fact_payment_app %}
+        <div class="sw-payment-order-summary__fact">
+            <dt>{{ $t('sw-payment.order.detail.labelPaymentApp') }}</dt>
+            <dd>{{ paymentAppLabel }}</dd>
+        </div>
+        {% endblock %}
+
+        {% block sw_payment_order_summary_fact_paid_at %}
+        <div class="sw-payment-order-summary__fact">
+            <dt>{{ $t('sw-payment.order.detail.labelPaidAt') }}</dt>
+            <dd>{{ formatDateOrDash(order.paidAt) }}</dd>
+        </div>
+        {% endblock %}
+    </dl>
+    {% endblock %}
+
+    {% block sw_payment_order_summary_progress %}
+    <div
+        v-if="hasRefund"
+        class="sw-payment-order-summary__progress"
+    >
+        <mt-progress-bar
+            :model-value="refundedAmount"
+            :max-value="headlineAmount"
+        />
+    </div>
+    {% endblock %}
+</div>
+{% endblock %}

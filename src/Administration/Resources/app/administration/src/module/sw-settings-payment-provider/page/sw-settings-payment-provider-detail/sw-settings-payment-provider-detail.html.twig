@@ -1,463 +1,122 @@
 {% block sw_settings_payment_provider_detail %}
 <sw-page class="sw-settings-payment-provider-detail">
-
-    {% block sw_settings_payment_provider_detail_smart_bar_header %}
     <template #smart-bar-header>
-        {% block sw_settings_payment_provider_detail_smart_bar_header_title %}
-        <h2>
-            {% block sw_settings_payment_provider_detail_smart_bar_header_title_text %}
-            <template v-if="provider">
-                {{ $te(provider.label) ? $t(provider.label) : provider.label }}
-            </template>
-            <template v-else>
-                {{ $t('sw-settings-payment-provider.general.mainMenuItemGeneral') }}
-            </template>
-            {% endblock %}
-        </h2>
-        {% endblock %}
+        <h2>{{ $t('sw-settings-payment-provider.accounts.title') }}</h2>
     </template>
-    {% endblock %}
-
-    {% block sw_settings_payment_provider_detail_smart_bar_actions %}
     <template #smart-bar-actions>
-        {% block sw_settings_payment_provider_detail_smart_bar_actions_cancel %}
         <mt-button
-            :disabled="isSaving || undefined"
             variant="secondary"
-            size="default"
-            @click="onCancel"
+            @click="$router.push({ name: 'sw.settings.payment.provider.index' })"
         >
             {{ $t('global.default.cancel') }}
         </mt-button>
-        {% endblock %}
-
-        {% block sw_settings_payment_provider_detail_smart_bar_actions_save %}
         <mt-button
-            class="sw-settings-payment-provider-detail__save-action"
+            class="sw-payment-account-detail__save"
             variant="primary"
-            size="default"
             :is-loading="isSaving"
-            :disabled="isLoading || isSaving || !canEditProvider || !isDirty || undefined"
-            @click="onSave"
+            :disabled="isLoading || isSaving || !canEdit || !account || !account.name.trim() || !provider || undefined"
+            @click="save"
         >
             {{ $t('global.default.save') }}
         </mt-button>
-        {% endblock %}
     </template>
-    {% endblock %}
-
-    {% block sw_settings_payment_provider_detail_content %}
     <template #content>
         <sw-card-view>
-            {% block sw_settings_payment_provider_detail_content_loading %}
-            <template v-if="isLoading">
-                <sw-skeleton />
-                <sw-skeleton />
-            </template>
-            {% endblock %}
-
-            {% block sw_settings_payment_provider_detail_content_provider %}
-            <template v-if="!isLoading && provider">
-
-                {% block sw_settings_payment_provider_detail_content_credentials %}
-                <mt-card
-                    position-identifier="sw-settings-payment-provider-detail-credentials"
-                    :title="$t('sw-settings-payment-provider.provider.cardTitle')"
-                    :subtitle="$t('sw-settings-payment-provider.provider.cardSubtitle')"
-                >
-                    <template #headerRight>
-                        {% block sw_settings_payment_provider_detail_content_credentials_state %}
-                        <mt-badge
-                            v-if="provider.configured"
-                            class="sw-settings-payment-provider-detail__state"
-                            variant="positive"
-                        >
-                            {{ $t('sw-settings-payment-provider.provider.configured') }}
-                        </mt-badge>
-                        {% endblock %}
-
-                        {% block sw_settings_payment_provider_detail_content_credentials_reset %}
-                        <mt-button
-                            v-if="provider.configured"
-                            class="sw-settings-payment-provider-detail__reset"
-                            variant="critical"
-                            ghost
-                            size="small"
-                            :disabled="!canDeleteProvider || undefined"
-                            @click="onOpenResetProvider"
-                        >
-                            {{ $t('sw-settings-payment-provider.provider.reset') }}
-                        </mt-button>
-                        {% endblock %}
-                    </template>
-
-                    {% block sw_settings_payment_provider_detail_content_credentials_enabled %}
-                    <mt-switch
-                        v-model="provider.enabled"
-                        class="sw-settings-payment-provider-detail__enabled"
-                        bordered
-                        :disabled="!canEditProvider || undefined"
-                        :label="$t('sw-settings-payment-provider.provider.enabled')"
-                        :help-text="$t('sw-settings-payment-provider.provider.enabledHelpText')"
-                    />
-                    {% endblock %}
-
-                    {% block sw_settings_payment_provider_detail_content_credentials_fields %}
-                    <sw-container
-                        class="sw-settings-payment-provider-detail__grid"
-                        columns="1fr 1fr"
-                        gap="0px 30px"
-                    >
-                        <sw-payment-config-field
-                            v-for="field in provider.credentialFields"
-                            :key="field.name"
-                            v-model="provider.credentialInput[field.name]"
-                            class="sw-settings-payment-provider-detail__field"
-                            :field="field"
-                            :disabled="!canEditProvider"
-                        />
-                    </sw-container>
-                    {% endblock %}
-                </mt-card>
-                {% endblock %}
-
-                {% block sw_settings_payment_provider_detail_content_channels %}
-                <mt-card
-                    position-identifier="sw-settings-payment-provider-detail-channels"
-                    :title="$t('sw-settings-payment-provider.channels.title')"
-                    :subtitle="$t('sw-settings-payment-provider.channels.subtitle')"
-                >
-                    <template #headerRight>
-                        {% block sw_settings_payment_provider_detail_content_channels_count %}
-                        <mt-badge
-                            class="sw-settings-payment-provider-detail__channels-count"
-                            variant="neutral"
-                        >
-                            {{ channelCount }}
-                        </mt-badge>
-                        {% endblock %}
-                    </template>
-
-                    {% block sw_settings_payment_provider_detail_content_channels_empty %}
-                    <mt-empty-state
-                        v-if="provider.channels.length === 0"
-                        class="sw-settings-payment-provider-detail__channels-empty"
-                        centered
-                        icon="regular-credit-card"
-                        :headline="$t('sw-settings-payment-provider.channel.emptyStateTitle')"
-                        :description="$t('sw-settings-payment-provider.channel.emptyState')"
-                    />
-                    {% endblock %}
-
-                    {% block sw_settings_payment_provider_detail_content_channels_table %}
-                    <!-- an interface may declare many channels with long names: the table keeps its
-                         columns readable and scrolls sideways instead of squeezing the cells -->
-                    <div
-                        v-else
-                        class="sw-settings-payment-provider-detail__channel-table-wrapper"
-                    >
-                        <table class="sw-settings-payment-provider-detail__channel-table">
-                        {% block sw_settings_payment_provider_detail_content_channels_table_head %}
-                            <thead class="sw-settings-payment-provider-detail__channel-head">
-                                <tr>
-                                    <th
-                                        scope="col"
-                                        class="sw-settings-payment-provider-detail__channel-cell"
-                                    >
-                                        {{ $t('sw-settings-payment-provider.channel.columnLabel') }}
-                                    </th>
-                                    <th
-                                        scope="col"
-                                        class="sw-settings-payment-provider-detail__channel-cell"
-                                    >
-                                        {{ $t('sw-settings-payment-provider.channel.columnFlow') }}
-                                    </th>
-                                    <th
-                                        scope="col"
-                                        class="sw-settings-payment-provider-detail__channel-cell"
-                                    >
-                                        {{ $t('sw-settings-payment-provider.channel.columnCurrencies') }}
-                                    </th>
-                                    <th
-                                        scope="col"
-                                        class="sw-settings-payment-provider-detail__channel-cell"
-                                    >
-                                        {{ $t('sw-settings-payment-provider.channel.columnDevices') }}
-                                    </th>
-                                    <th
-                                        scope="col"
-                                        class="sw-settings-payment-provider-detail__channel-cell"
-                                    >
-                                        {{ $t('sw-settings-payment-provider.channel.enabled') }}
-                                    </th>
-                                </tr>
-                            </thead>
-                        {% endblock %}
-
-                        {% block sw_settings_payment_provider_detail_content_channels_table_body %}
-                            <tbody class="sw-settings-payment-provider-detail__channel-body">
-                            {% block sw_settings_payment_provider_detail_content_channel %}
-                                <template
-                                    v-for="channel in provider.channels"
-                                    :key="channel.technicalName"
-                                >
-                                {% block sw_settings_payment_provider_detail_content_channel_row %}
-                                    <tr class="sw-settings-payment-provider-detail__channel-row">
-                                    {% block sw_settings_payment_provider_detail_content_channel_info %}
-                                        <!-- the whole cell folds the parameters out: the row has no separate
-                                             toggle column anymore, so the name is the control -->
-                                        <td
-                                            class="sw-settings-payment-provider-detail__channel-cell sw-settings-payment-provider-detail__channel-cell--channel"
-                                            role="button"
-                                            tabindex="0"
-                                            :aria-expanded="isChannelExpanded(channel) ? 'true' : 'false'"
-                                            :aria-label="isChannelExpanded(channel)
-                                                ? $t('sw-settings-payment-provider.channel.collapse')
-                                                : $t('sw-settings-payment-provider.channel.expand')"
-                                            @click="toggleChannel(channel)"
-                                            @keydown.enter.prevent="toggleChannel(channel)"
-                                            @keydown.space.prevent="toggleChannel(channel)"
-                                        >
-                                            <div class="sw-settings-payment-provider-detail__channel-select">
-                                                <span class="sw-settings-payment-provider-detail__channel-select-icon">
-                                                    <mt-icon
-                                                        v-if="isChannelExpanded(channel)"
-                                                        name="regular-chevron-down-xs"
-                                                        size="var(--scale-size-16)"
-                                                    />
-                                                    <mt-icon
-                                                        v-else
-                                                        name="regular-chevron-right-xs"
-                                                        size="var(--scale-size-16)"
-                                                    />
-                                                </span>
-
-                                                <span class="sw-settings-payment-provider-detail__channel-info">
-                                                    <span class="sw-settings-payment-provider-detail__channel-label">
-                                                        {{ $te(channel.label) ? $t(channel.label) : channel.label }}
-                                                    </span>
-
-                                                    <span class="sw-settings-payment-provider-detail__channel-technical-name">
-                                                        {{ channel.technicalName }}
-                                                    </span>
-                                                </span>
-                                            </div>
-                                        </td>
-                                    {% endblock %}
-
-                                    {% block sw_settings_payment_provider_detail_content_channel_flow %}
-                                        <td class="sw-settings-payment-provider-detail__channel-cell">
-                                            <mt-badge
-                                                class="sw-settings-payment-provider-detail__meta-badge"
-                                                size="small"
-                                                variant="neutral"
-                                            >
-                                                {{ flowLabel(channel.flow) }}
-                                            </mt-badge>
-                                        </td>
-                                    {% endblock %}
-
-                                    {% block sw_settings_payment_provider_detail_content_channel_currencies %}
-                                        <td class="sw-settings-payment-provider-detail__channel-cell">
-                                            {{ currencyList(channel) }}
-                                        </td>
-                                    {% endblock %}
-
-                                    {% block sw_settings_payment_provider_detail_content_channel_devices %}
-                                        <td class="sw-settings-payment-provider-detail__channel-cell">
-                                            {{ deviceList(channel) }}
-                                        </td>
-                                    {% endblock %}
-
-                                    {% block sw_settings_payment_provider_detail_content_channel_enabled %}
-                                        <td class="sw-settings-payment-provider-detail__channel-cell">
-                                            <mt-switch
-                                                v-model="channel.enabled"
-                                                v-tooltip.bottom="$t('sw-settings-payment-provider.channel.enabledHelpText')"
-                                                class="sw-settings-payment-provider-detail__channel-enabled"
-                                                :aria-label="$t('sw-settings-payment-provider.channel.enabled')"
-                                                :disabled="!canEditChannel || undefined"
-                                            />
-                                        </td>
-                                    {% endblock %}
-
-                                    </tr>
-                                {% endblock %}
-
-                                {% block sw_settings_payment_provider_detail_content_channel_params_row %}
-                                    <tr
-                                        v-if="isChannelExpanded(channel)"
-                                        class="sw-settings-payment-provider-detail__channel-row sw-settings-payment-provider-detail__channel-row--params"
-                                    >
-                                        <td
-                                            class="sw-settings-payment-provider-detail__channel-cell sw-settings-payment-provider-detail__channel-cell--params"
-                                            colspan="5"
-                                        >
-                                        {% block sw_settings_payment_provider_detail_content_channel_params %}
-                                            <sw-container
-                                                v-if="channel.paramFields.length > 0"
-                                                class="sw-settings-payment-provider-detail__channel-params"
-                                                columns="1fr 1fr"
-                                                gap="0px 30px"
-                                            >
-                                                <sw-payment-config-field
-                                                    v-for="field in channel.paramFields"
-                                                    :key="field.name"
-                                                    v-model="channel.paramInput[field.name]"
-                                                    class="sw-settings-payment-provider-detail__field"
-                                                    :field="field"
-                                                    :disabled="!canEditChannel"
-                                                />
-                                            </sw-container>
-                                        {% endblock %}
-
-                                        {% block sw_settings_payment_provider_detail_content_channel_params_empty %}
-                                            <p
-                                                v-else
-                                                class="sw-settings-payment-provider-detail__channel-params-empty"
-                                            >
-                                                {{ $t('sw-settings-payment-provider.channel.noParams') }}
-                                            </p>
-                                        {% endblock %}
-
-                                        {% block sw_settings_payment_provider_detail_content_channel_runtime_hint %}
-                                            <mt-banner
-                                                v-if="runtimeParamList(channel).length > 0"
-                                                class="sw-settings-payment-provider-detail__hint"
-                                                variant="attention"
-                                            >
-                                                {{ $t('sw-settings-payment-provider.channel.runtimeHint', {
-                                                params: runtimeParamList(channel).join(' / '),
-                                                }) }}
-                                            </mt-banner>
-                                        {% endblock %}
-
-                                        {% block sw_settings_payment_provider_detail_content_channel_params_reset %}
-                                            <!-- the parameters are the only thing a channel can be cleared of, so
-                                                 the action lives with them: a channel without a stored value
-                                                 shows no button instead of an empty column -->
-                                            <div
-                                                v-if="hasStoredParams(channel)"
-                                                class="sw-settings-payment-provider-detail__channel-params-actions"
-                                            >
-                                                <mt-button
-                                                    class="sw-settings-payment-provider-detail__channel-reset"
-                                                    variant="critical"
-                                                    ghost
-                                                    size="small"
-                                                    :disabled="!canDeleteChannel || undefined"
-                                                    @click="onOpenResetChannel(channel)"
-                                                >
-                                                    {{ $t('sw-settings-payment-provider.channel.reset') }}
-                                                </mt-button>
-                                            </div>
-                                        {% endblock %}
-                                        </td>
-                                    </tr>
-                                {% endblock %}
-                                </template>
-                            {% endblock %}
-                            </tbody>
-                        {% endblock %}
-                        </table>
-                    </div>
-                    {% endblock %}
-                </mt-card>
-                {% endblock %}
-
-                {% block sw_settings_payment_provider_detail_content_danger %}
-                <mt-card
-                    class="sw-settings-payment-provider-detail__danger-card"
-                    position-identifier="sw-settings-payment-provider-detail-danger"
-                    :title="$t('sw-settings-payment-provider.danger.title')"
-                >
-                    {% block sw_settings_payment_provider_detail_content_danger_description %}
-                    <p class="sw-settings-payment-provider-detail__danger-message">
-                        {{ $t('sw-settings-payment-provider.danger.description') }}
-                    </p>
-                    {% endblock %}
-
-                    {% block sw_settings_payment_provider_detail_content_danger_action %}
-                    <mt-button
-                        class="sw-settings-payment-provider-detail__danger-action"
-                        variant="critical"
-                        size="small"
-                        :disabled="!canDeleteProvider || !provider.configured || undefined"
-                        @click="onOpenResetProvider"
-                    >
-                        {{ $t('sw-settings-payment-provider.provider.reset') }}
-                    </mt-button>
-                    {% endblock %}
-                </mt-card>
-                {% endblock %}
-            </template>
-            {% endblock %}
-
-            {% block sw_settings_payment_provider_detail_content_extension %}
-            <sw-extension-component-section position-identifier="sw-settings-payment-provider-detail__after-content" />
-            {% endblock %}
-        </sw-card-view>
-
-        {% block sw_settings_payment_provider_detail_reset_modal %}
-        <mt-modal-root
-            v-if="resetTarget"
-            is-open
-            @change="onResetModalChange"
-        >
-            <mt-modal
-                width="s"
-                :title="resetTarget.type === 'provider'
-                    ? $t('sw-settings-payment-provider.provider.resetModalTitle')
-                    : $t('sw-settings-payment-provider.channel.resetModalTitle')"
+            <mt-banner
+                v-if="error"
+                variant="critical"
             >
-                {% block sw_settings_payment_provider_detail_reset_modal_content %}
-                <p class="sw-settings-payment-provider-detail__reset-modal-message">
-                    <template v-if="resetTarget.type === 'provider'">
-                        {{ $t('sw-settings-payment-provider.provider.resetModalMessage', { name: displayLabel(resetTarget.label) }) }}
-                    </template>
-                    <template v-else>
-                        {{ $t('sw-settings-payment-provider.channel.resetModalMessage', { name: displayLabel(resetTarget.label) }) }}
-                    </template>
-                </p>
-                {% endblock %}
-
-                {% block sw_settings_payment_provider_detail_reset_modal_footer %}
-                <template #footer>
-                    {% block sw_settings_payment_provider_detail_reset_modal_footer_cancel %}
-                    <mt-modal-close
-                        as="mt-button"
-                        variant="secondary"
-                        size="small"
-                    >
-                        {{ $t('global.default.cancel') }}
-                    </mt-modal-close>
-                    {% endblock %}
-
-                    {% block sw_settings_payment_provider_detail_reset_modal_footer_confirm %}
-                    <mt-modal-action
-                        as="mt-button"
-                        variant="critical"
-                        size="small"
-                        :is-loading="isSaving"
-                        @click="onConfirmReset"
-                    >
-                        {{ $t('global.default.delete') }}
-                    </mt-modal-action>
-                    {% endblock %}
-                </template>
-                {% endblock %}
-            </mt-modal>
-        </mt-modal-root>
-        {% endblock %}
-
-        {% block sw_settings_payment_provider_detail_discard_changes_modal %}
-        <sw-discard-changes-modal
-            v-if="isDisplayingLeavePageWarning"
-            @keep-editing="onLeaveModalClose"
-            @discard-changes="onLeaveModalConfirm"
-        />
-        {% endblock %}
+                {{ error }}
+            </mt-banner>
+            <sw-skeleton v-if="isLoading" />
+            <template v-else-if="account">
+                <mt-card
+                    position-identifier="sw-payment-account-identity"
+                    :title="$t('sw-settings-payment-provider.accounts.identity')"
+                >
+                    <div class="sw-payment-account-detail__identity">
+                        <mt-text-field
+                            v-model="accountName"
+                            class="sw-payment-account-detail__name"
+                            :label="$t('sw-settings-payment-provider.accounts.name')"
+                            :disabled="!canEdit || undefined"
+                            required
+                        />
+                        <mt-select
+                            class="sw-payment-account-detail__provider"
+                            :model-value="account.providerTechnicalName"
+                            :options="providerOptions"
+                            :label="$t('sw-settings-payment-provider.accounts.provider')"
+                            :disabled="!!accountId || !canEdit || undefined"
+                            @update:model-value="selectProvider"
+                        />
+                        <mt-switch
+                            v-model="account.active"
+                            class="sw-payment-account-detail__active"
+                            :label="$t('sw-settings-payment-provider.accounts.enabled')"
+                            :disabled="!canEdit || undefined"
+                        />
+                    </div>
+                </mt-card>
+                <mt-card
+                    v-if="provider"
+                    position-identifier="sw-payment-account-credentials"
+                    :title="$t('sw-settings-payment-provider.accounts.credentials')"
+                    :subtitle="$t('sw-settings-payment-provider.accounts.credentialsHelp')"
+                >
+                    <div class="sw-payment-account-detail__fields">
+                        <sw-payment-config-field
+                            v-for="field in shortFields"
+                            :key="field.name"
+                            v-model="credentials[field.name]"
+                            :field="field"
+                            :disabled="!canEdit"
+                        />
+                    </div>
+                    <div class="sw-payment-account-detail__keys">
+                        <sw-payment-config-field
+                            v-for="field in multilineFields"
+                            :key="field.name"
+                            v-model="credentials[field.name]"
+                            :field="field"
+                            :disabled="!canEdit"
+                        />
+                    </div>
+                </mt-card>
+                <mt-card
+                    v-if="products.length"
+                    position-identifier="sw-payment-account-products"
+                    :title="$t('sw-settings-payment-provider.accounts.products')"
+                >
+                    <div class="sw-payment-account-detail__products">
+                        <section
+                            v-for="product in products"
+                            :key="product.product"
+                            class="sw-payment-account-detail__product"
+                        >
+                            <mt-switch
+                                :model-value="account.enabledProducts.includes(product.product)"
+                                :label="label(product.label)"
+                                :disabled="!canEdit || undefined"
+                                @update:model-value="setProduct(product.product, $event)"
+                            />
+                            <div
+                                v-if="product.paramFields.length"
+                                class="sw-payment-account-detail__fields"
+                            >
+                                <sw-payment-config-field
+                                    v-for="field in product.paramFields"
+                                    :key="field.name"
+                                    v-model="productParams[product.product][field.name]"
+                                    :field="field"
+                                    :disabled="!canEdit"
+                                />
+                            </div>
+                        </section>
+                    </div>
+                </mt-card>
+            </template>
+        </sw-card-view>
     </template>
-    {% endblock %}
 </sw-page>
 {% endblock %}

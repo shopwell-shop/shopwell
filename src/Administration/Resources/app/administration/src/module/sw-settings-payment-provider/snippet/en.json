@@ -1,16 +1,16 @@
 {
     "sw-settings-payment-provider": {
         "general": {
-            "mainMenuItemGeneral": "Payment providers",
-            "description": "Configures the merchant credentials of the platform for every payment provider (Alipay, WeChat Pay, ...) and the channels each provider offers to apps.",
+            "mainMenuItemGeneral": "Payment accounts",
+            "description": "Manage payment providers, the platform payment accounts and their payment products.",
             "emptyStateTitle": "No payment providers",
-            "emptyState": "The current installation does not provide any payment provider."
+            "emptyState": "Install a payment provider to configure collection."
         },
         "provider": {
-            "cardTitle": "Merchant account",
-            "cardSubtitle": "The credentials are issued by the payment provider and shared by all of its channels.",
-            "enabled": "Enable this provider",
-            "enabledHelpText": "Apps that pay with the platform credentials can only collect through this provider once it is enabled.",
+            "cardTitle": "Default payment account",
+            "cardSubtitle": "The merchant credentials issued by this payment provider belong to this account. Business entry points use the account through an explicit grant.",
+            "enabled": "Enable platform account",
+            "enabledHelpText": "Only apps granted this payment account can collect through it.",
             "configured": "Configured",
             "notConfigured": "Not configured",
             "reset": "Clear credentials",
@@ -21,28 +21,24 @@
             "paypal": "PayPal",
             "stripe": "Stripe"
         },
-        "channels": {
-            "title": "Payment channels",
-            "subtitle": "A channel is one way of paying that the provider offers. A channel that is switched off here cannot be enabled by any app."
-        },
         "channel": {
-            "emptyStateTitle": "No payment channels",
-            "emptyState": "This provider does not declare any payment channel. That is a defect of the code that ships the provider, not a setting of this page.",
+            "emptyStateTitle": "No payment products",
+            "emptyState": "This provider has no available payment products. Check that its integration is installed correctly.",
             "enabled": "Enabled",
-            "enabledHelpText": "Once switched off, no app can collect through this channel anymore.",
+            "enabledHelpText": "Allow this product for the platform payment account.",
             "reset": "Clear",
-            "resetModalTitle": "Clear channel configuration",
-            "resetModalMessage": "Clear the parameters of “{name}”? The channel will no longer be offered to any app.",
-            "expand": "Show parameters",
-            "collapse": "Hide parameters",
-            "noParams": "This channel needs no further parameters.",
-            "columnLabel": "Channel",
-            "columnFlow": "Flow",
+            "resetModalTitle": "Clear product configuration",
+            "resetModalMessage": "Clear the parameters of “{name}” for the platform payment account?",
+            "expand": "Product details and settings",
+            "collapse": "Hide product settings",
+            "noParams": "No additional product settings are needed.",
+            "columnLabel": "Product",
+            "columnFlow": "Interaction",
             "columnCurrencies": "Currencies",
             "columnDevices": "Devices",
             "allCurrencies": "All currencies",
             "allDevices": "All devices",
-            "runtimeHint": "When paying through this channel the app also has to hand in the runtime parameters: {params}.",
+            "runtimeHint": "This product requires payer information when a payment starts: {params}.",
             "alipay_h5": "Alipay Mobile Web",
             "alipay_web": "Alipay Desktop Web",
             "alipay_qr": "Alipay Face to Face (QR code)",
@@ -57,8 +53,8 @@
             "stripe_checkout": "Stripe Checkout"
         },
         "danger": {
-            "title": "Danger zone",
-            "description": "Clearing the credentials removes the merchant account of the platform for this provider. Every app that collects with the platform credentials stops working until the credentials are entered again."
+            "title": "Clear platform account",
+            "description": "Clearing credentials stops every app granted this platform payment account until credentials are configured again."
         },
         "flow": {
             "redirect": "Redirect",
@@ -72,25 +68,57 @@
             "mini": "Mini program"
         },
         "notification": {
-            "saveSuccess": "The payment provider settings have been saved.",
-            "resetSuccess": "The payment provider configuration has been cleared.",
+            "saveSuccess": "Payment accounts saved.",
+            "resetSuccess": "Payment accounts cleared.",
             "missingFields": "“{name}” is enabled, please fill in every required field first.",
             "nothingToSave": "There is nothing to save."
         },
         "list": {
-            "enableModalTitle": "Enable payment provider",
+            "enableModalTitle": "Enable platform payment account",
             "enableModalText": "Apps that collect with the platform credentials can only use this provider once it is enabled.",
-            "disableModalTitle": "Disable payment provider",
-            "disableModalText": "Once this provider is disabled, no app can collect through it anymore."
+            "disableModalTitle": "Disable platform payment account",
+            "disableModalText": "Disabling the platform payment account stops payments for apps granted this account."
+        },
+        "products": {
+            "title": "Payment products",
+            "subtitle": "Choose the executable products available through this provider’s platform payment account."
+        },
+        "accounts": {
+            "title": "Payment accounts",
+            "description": "Manage payment accounts, merchant credentials and available products, then grant accounts to payment apps.",
+            "create": "Add payment account",
+            "empty": "Add a payment account to start collecting payments.",
+            "name": "Account name",
+            "provider": "Payment provider",
+            "active": "Status",
+            "actions": "Actions",
+            "enabled": "Enabled",
+            "disabled": "Disabled",
+            "identity": "Payment account",
+            "credentials": "Merchant credentials",
+            "credentialsHelp": "Credentials belong to this account. Leave secret fields empty to keep stored values.",
+            "defaultName": "{provider} default payment account",
+            "saved": "Payment account saved.",
+            "loadError": "Payment accounts could not be loaded. Please retry.",
+            "saveError": "Could not save the account. Check required fields and try again.",
+            "deleteError": "This account could not be deleted. Accounts already in use must be disabled instead.",
+            "productEnabled": "Enable this product for this account",
+            "products": "Collection products",
+            "search": "Search payment accounts...",
+            "deleteTitle": "Delete payment account",
+            "deleteMessage": "Delete “{name}”? Accounts that have been used must be disabled instead."
         }
     },
     "sw-privileges": {
         "permissions": {
             "payment_provider_config": {
-                "label": "Payment providers"
+                "label": "Payment accounts"
             },
             "payment_channel_config": {
-                "label": "Payment channels"
+                "label": "Payment products"
+            },
+            "payment_account": {
+                "label": "Payment accounts"
             }
         }
     }

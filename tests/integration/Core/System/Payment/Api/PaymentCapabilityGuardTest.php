@@ -7,17 +7,15 @@ use Doctrine\DBAL\Connection;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
-use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
-use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
+use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppAccount\PaymentAppAccountCollection;
 use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppChannel\PaymentAppChannelCollection;
-use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppProvider\PaymentAppProviderCollection;
-use Shopwell\Core\System\Payment\App\PaymentCredentialCipher;
+use Shopwell\Core\System\Payment\Integration\Alipay\Api\AlipayApi;
 use Shopwell\Core\System\Payment\PaymentException;
-use Shopwell\Core\System\Payment\Provider\Alipay\AlipayApi;
-use Shopwell\Core\System\Payment\Provider\PaymentChannelConfigCollection;
-use Shopwell\Core\System\Payment\Provider\PaymentProviderConfigCollection;
+use Shopwell\Core\System\Payment\Product\PaymentProductRegistry;
+use Shopwell\Core\System\Payment\Provider\Config\PaymentProviderConfigService;
+use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -45,6 +43,8 @@ class PaymentCapabilityGuardTest extends TestCase
 
     private const STRIPE_CHANNEL = 'stripe_checkout';
 
+    private string $stripeAccountId;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -64,6 +64,7 @@ class PaymentCapabilityGuardTest extends TestCase
         $seed = $this->seedPaymentOrder([
             'providerTechnicalName' => self::STRIPE_PROVIDER,
             'channelTechnicalName' => self::STRIPE_CHANNEL,
+            'accountId' => $this->stripeAccountId,
         ]);
 
         $path = \sprintf(self::CLOSE_PATH, $seed['paymentNo']);
@@ -119,98 +120,30 @@ class PaymentCapabilityGuardTest extends TestCase
      */
     private function authorizeStripe(): void
     {
-        $cipher = static::getContainer()->get(PaymentCredentialCipher::class);
+        $container = static::getContainer();
         $context = Context::createDefaultContext();
+        $service = $container->get(PaymentProviderConfigService::class);
+        $service->saveProvider($container->get(PaymentProviderRegistry::class)->get(self::STRIPE_PROVIDER), true, [
+            'secret_key' => 'sk_test_contract',
+            'publishable_key' => 'pk_test_contract',
+            'webhook_secret' => 'whsec_contract',
+        ], []);
+        $service->saveChannel($container->get(PaymentProductRegistry::class)->get(self::STRIPE_CHANNEL), true, [], []);
+        $config = $service->findProviderConfig(self::STRIPE_PROVIDER);
+        static::assertNotNull($config);
+        $this->stripeAccountId = $config->accountId;
 
-        /** @var EntityRepository<PaymentProviderConfigCollection> $providerRepository */
-        $providerRepository = static::getContainer()->get('payment_provider_config.repository');
-        $providerId = $providerRepository->searchIds(
-            (new Criteria())
-                ->addFilter(new EqualsFilter('providerTechnicalName', self::STRIPE_PROVIDER))
-                ->setLimit(1),
-            $context
-        )->firstId();
-
-        $providerData = [
-            'providerTechnicalName' => self::STRIPE_PROVIDER,
-            'enabled' => true,
-            'credentials' => $cipher->encrypt([
-                'secret_key' => 'sk_test_contract',
-                'publishable_key' => 'pk_test_contract',
-                'webhook_secret' => 'whsec_contract',
-            ]),
-        ];
-
-        if ($providerId !== null) {
-            $providerRepository->update([['id' => $providerId] + $providerData], $context);
-        } else {
-            $providerRepository->create([$providerData], $context);
-        }
-
-        /** @var EntityRepository<PaymentChannelConfigCollection> $channelRepository */
-        $channelRepository = static::getContainer()->get('payment_channel_config.repository');
-        $channelId = $channelRepository->searchIds(
-            (new Criteria())
-                ->addFilter(
-                    new EqualsFilter('providerTechnicalName', self::STRIPE_PROVIDER),
-                    new EqualsFilter('channelTechnicalName', self::STRIPE_CHANNEL)
-                )
-                ->setLimit(1),
-            $context
-        )->firstId();
-
-        if ($channelId !== null) {
-            $channelRepository->update([['id' => $channelId, 'enabled' => true]], $context);
-        } else {
-            $channelRepository->create([[
-                'providerTechnicalName' => self::STRIPE_PROVIDER,
-                'channelTechnicalName' => self::STRIPE_CHANNEL,
-                'enabled' => true,
-            ]], $context);
-        }
-
-        /** @var EntityRepository<PaymentAppProviderCollection> $appProviderRepository */
-        $appProviderRepository = static::getContainer()->get('payment_app_provider.repository');
-        $appProviderRepository->create([[
+        /** @var EntityRepository<PaymentAppAccountCollection> $grantRepository */
+        $grantRepository = $container->get('payment_app_account.repository');
+        $grantRepository->create([[
             'paymentAppId' => $this->paymentAppId,
-            'providerTechnicalName' => self::STRIPE_PROVIDER,
-            // the app collects on the merchant account of the platform tenant, which is what the
-            // retired `mode = 'platform'` used to say
-            'sourceAppId' => $this->platformTenantId($context),
+            'accountId' => $this->stripeAccountId,
+            'position' => 1,
             'enabled' => true,
         ]], $context);
-
-        // the account an app inherits is only charged for an interface the account holder collects
-        // through itself: the chain is followed through the authorizations of every hop, so the tenant
-        // of the platform needs its own stripe authorization before the app can inherit it. Without
-        // this row the chain stops at the platform and the caller reads "not enabled" instead of the
-        // answer of the declaration this test is about.
-        $platformId = $this->platformTenantId($context);
-        $platformAuthorization = $appProviderRepository->searchIds(
-            (new Criteria())
-                ->addFilter(
-                    new EqualsFilter('paymentAppId', $platformId),
-                    new EqualsFilter('providerTechnicalName', self::STRIPE_PROVIDER)
-                )
-                ->setLimit(1),
-            $context
-        )->firstId();
-
-        if ($platformAuthorization === null) {
-            $appProviderRepository->create([[
-                'paymentAppId' => $platformId,
-                'providerTechnicalName' => self::STRIPE_PROVIDER,
-                // the tenant is the root of every chain: it collects on its own account
-                'sourceAppId' => null,
-                'enabled' => true,
-            ]], $context);
-        } else {
-            $appProviderRepository->update([['id' => $platformAuthorization, 'enabled' => true]], $context);
-        }
-
-        /** @var EntityRepository<PaymentAppChannelCollection> $appChannelRepository */
-        $appChannelRepository = static::getContainer()->get('payment_app_channel.repository');
-        $appChannelRepository->create([[
+        /** @var EntityRepository<PaymentAppChannelCollection> $appProductRepository */
+        $appProductRepository = $container->get('payment_app_channel.repository');
+        $appProductRepository->create([[
             'paymentAppId' => $this->paymentAppId,
             'channelTechnicalName' => self::STRIPE_CHANNEL,
             'enabled' => true,
@@ -223,30 +156,11 @@ class PaymentCapabilityGuardTest extends TestCase
      */
     private function pointAlipayAtAnUnreachableGateway(): void
     {
-        $cipher = static::getContainer()->get(PaymentCredentialCipher::class);
-        $context = Context::createDefaultContext();
-
-        /** @var EntityRepository<PaymentProviderConfigCollection> $providerRepository */
-        $providerRepository = static::getContainer()->get('payment_provider_config.repository');
-        $id = $providerRepository->searchIds(
-            (new Criteria())
-                ->addFilter(new EqualsFilter('providerTechnicalName', AlipayApi::PROVIDER))
-                ->setLimit(1),
-            $context
-        )->firstId();
-
-        static::assertIsString($id, 'the alipay platform of the fixture has to exist');
-
-        $config = $providerRepository->search(new Criteria([$id]), $context)->getEntities()->first();
-        static::assertNotNull($config);
-
-        $credentials = $cipher->decrypt($config->credentials);
-        $credentials[AlipayApi::GATEWAY_URL] = 'http://127.0.0.1:1';
-
-        $providerRepository->update([[
-            'id' => $id,
-            'credentials' => $cipher->encrypt($credentials),
-        ]], $context);
+        $container = static::getContainer();
+        $service = $container->get(PaymentProviderConfigService::class);
+        $service->saveProvider($container->get(PaymentProviderRegistry::class)->get(AlipayApi::PROVIDER), true, [
+            AlipayApi::GATEWAY_URL => 'http://127.0.0.1:1',
+        ], []);
     }
 
     /**

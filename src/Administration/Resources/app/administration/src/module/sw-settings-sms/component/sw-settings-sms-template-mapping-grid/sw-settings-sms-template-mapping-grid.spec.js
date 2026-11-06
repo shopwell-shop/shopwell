@@ -94,6 +94,7 @@ async function createWrapper({
     templateId = 'template-1',
     answered = { status: 'approved', templateCode: 'SMS_1', errorCode: null, errorMessage: null },
     serviceThrows = false,
+    pendingConfirm = null,
 } = {}) {
     const created = [];
     const repository = {
@@ -114,7 +115,7 @@ async function createWrapper({
 
             return Promise.resolve(answered);
         }),
-        confirm: jest.fn(() => Promise.resolve(answered)),
+        confirm: jest.fn(() => pendingConfirm ?? Promise.resolve(answered)),
     };
 
     const providerService = {
@@ -147,16 +148,47 @@ async function createWrapper({
                 smsTemplateAuditService: auditService,
             },
             stubs: {
-                'sw-data-grid': true,
-                'sw-context-menu-item': true,
-                'sw-settings-sms-template-submission-modal': true,
-                'mt-select': true,
+                'sw-data-grid': {
+                    name: 'sw-data-grid',
+                    props: ['dataSource', 'columns'],
+                    template: `<div><article v-for="item in dataSource" :key="item.id" :data-row="item.id">
+                        <slot v-for="(_, name) in $slots" :name="name" :item="item"/>
+                    </article></div>`,
+                },
+                'sw-context-menu-item': { props: ['disabled'], template: '<button :disabled="disabled"><slot/></button>' },
+                'sw-settings-sms-template-submission-modal': {
+                    name: 'sw-settings-sms-template-submission-modal',
+                    props: ['mapping', 'submissionFields'],
+                    template: `<div><button class="finish-submission" @click="$emit('submitted')">Submitted</button></div>`,
+                },
+                'mt-select': {
+                    name: 'mt-select',
+                    props: [
+                        'modelValue',
+                        'options',
+                        'name',
+                        'disabled',
+                    ],
+                    template: `<select :name="name" :value="modelValue" :disabled="disabled" @change="$emit('update:modelValue', $event.target.value)">
+                        <option value="">Choose</option><option v-for="option in options" :value="option.value">{{ option.label }}</option></select>`,
+                },
                 'mt-empty-state': true,
-                'mt-text-field': true,
-                'mt-textarea': true,
-                'mt-button': true,
+                'mt-text-field': {
+                    props: [
+                        'modelValue',
+                        'name',
+                        'required',
+                        'disabled',
+                    ],
+                    template: `<input :name="name" :value="modelValue" :required="required" :disabled="disabled" @input="$emit('update:modelValue', $event.target.value)"/>`,
+                },
+                'mt-textarea': {
+                    props: ['modelValue', 'name', 'disabled'],
+                    template: `<textarea :name="name" :value="modelValue" :disabled="disabled" @input="$emit('update:modelValue', $event.target.value)"/>`,
+                },
+                'mt-button': { props: ['disabled'], template: '<button :disabled="disabled"><slot/></button>' },
                 'mt-modal-root': {
-                    template: '<div class="mt-modal-root"><slot></slot></div>',
+                    template: `<div class="mt-modal-root"><button class="dismiss-modal" @click="$emit('change', false)">Dismiss</button><slot/></div>`,
                     props: ['isOpen'],
                 },
                 'mt-modal': {
@@ -164,7 +196,11 @@ async function createWrapper({
                     props: ['title', 'width'],
                 },
                 'mt-modal-close': true,
-                'mt-modal-action': true,
+                'mt-modal-action': {
+                    props: ['disabled', 'isLoading'],
+                    template:
+                        '<button class="confirm-audit" :disabled="disabled" :data-loading="isLoading"><slot/></button>',
+                },
             },
         },
     });
@@ -174,31 +210,41 @@ async function createWrapper({
     return { wrapper, template, repository, auditService, providerService };
 }
 
+function row(wrapper, id = 'mapping-1') {
+    return wrapper.get(`[data-row="${id}"]`);
+}
+
+async function openConfirmation(wrapper) {
+    await row(wrapper).get('.sw-settings-sms-template-mapping-grid__confirm').trigger('click');
+    await flushPromises();
+}
+
+async function confirm(wrapper) {
+    await wrapper.get('.confirm-audit').trigger('click');
+    await flushPromises();
+}
+
 describe('src/module/sw-settings-sms/component/sw-settings-sms-template-mapping-grid', () => {
     let wrapper;
     let template;
     let auditService;
 
     afterEach(() => {
-        if (wrapper) {
-            wrapper.unmount();
-        }
+        wrapper?.unmount();
+        jest.restoreAllMocks();
     });
 
     it('should list the rows of the template', async () => {
         ({ wrapper } = await createWrapper({ mappings: [mapping({ auditStatus: 'approved' })] }));
-
-        expect(wrapper.vm.mappings).toHaveLength(1);
-        expect(wrapper.vm.mappings[0].templateCode).toBe('SMS_1');
+        expect(wrapper.findAll('[data-row]')).toHaveLength(1);
+        expect(row(wrapper).get('[name="templateCode"]').element.value).toBe('SMS_1');
     });
 
     it('should add a row that holds for the first provider of the server', async () => {
         ({ wrapper, template } = await createWrapper());
-
-        wrapper.vm.onAddMapping();
-
+        await wrapper.get('.sw-settings-sms-template-mapping-grid__add').trigger('click');
         expect(template.mappings).toHaveLength(1);
-        expect(wrapper.vm.mappings[0]).toEqual(
+        expect(template.mappings.first()).toEqual(
             expect.objectContaining({
                 id: 'mapping-1',
                 templateId: 'template-1',
@@ -206,54 +252,48 @@ describe('src/module/sw-settings-sms/component/sw-settings-sms-template-mapping-
                 auditStatus: 'pending',
             }),
         );
+        expect(row(wrapper).get('[name="technicalName"]').element.value).toBe('reports-itself');
     });
 
     it('should add a row without an account, so it holds for every account of the provider', async () => {
-        ({ wrapper } = await createWrapper());
-
-        wrapper.vm.onAddMapping();
-
-        expect(wrapper.vm.mappings[0].gatewayId).toBeUndefined();
+        ({ wrapper, template } = await createWrapper());
+        await wrapper.get('.sw-settings-sms-template-mapping-grid__add').trigger('click');
+        expect(template.mappings.first().gatewayId).toBeUndefined();
     });
 
     it('should remove a row', async () => {
         ({ wrapper, template } = await createWrapper({ mappings: [mapping()] }));
-
-        wrapper.vm.onRemoveMapping(wrapper.vm.mappings[0]);
-
+        await row(wrapper).get('.sw-settings-sms-template-mapping-grid__remove').trigger('click');
         expect(template.mappings).toHaveLength(0);
+        expect(wrapper.findAll('[data-row]')).toHaveLength(0);
     });
 
-    it('should ask for a template id only from a provider that reports templates', async () => {
-        ({ wrapper } = await createWrapper());
-
-        expect(wrapper.vm.needsTemplateCode({ technicalName: 'reports-itself' })).toBe(true);
-        expect(wrapper.vm.needsTemplateCode({ technicalName: 'free-text' })).toBe(false);
-        expect(wrapper.vm.needsTemplateCode({ technicalName: 'unknown' })).toBe(false);
+    it.each([
+        ['reports-itself', true],
+        ['free-text', false],
+        ['unknown', false],
+    ])('should require a template code for %s (%s)', async (technicalName, required) => {
+        ({ wrapper } = await createWrapper({ mappings: [mapping({ technicalName })] }));
+        expect(row(wrapper).get('[name="templateCode"]').attributes('required') !== undefined).toBe(required);
     });
 
     it('should offer every provider of the server and label the accounts with their provider', async () => {
-        ({ wrapper } = await createWrapper());
-
-        expect(wrapper.vm.providerOptions.map((option) => option.value)).toEqual([
-            'reports-itself',
-            'console-only',
-            'free-text',
-        ]);
-        expect(wrapper.vm.gatewayOptions).toHaveLength(1);
-        expect(wrapper.vm.gatewayOptions[0].value).toBe('gateway-1');
-        expect(wrapper.vm.gatewayOptions[0].label).toContain('main');
+        ({ wrapper } = await createWrapper({ mappings: [mapping()] }));
+        const providerOptions = row(wrapper).getComponent('[name="technicalName"]').props('options');
+        const gatewayOptions = row(wrapper).getComponent('[name="gatewayId"]').props('options');
+        expect(providerOptions.map((option) => option.value)).toEqual(['reports-itself', 'console-only', 'free-text']);
+        expect(gatewayOptions).toHaveLength(1);
+        expect(gatewayOptions[0].value).toBe('gateway-1');
+        expect(gatewayOptions[0].label).toContain('main');
     });
 
-    it('should show the audit state the server answered instead of offering a list of states', async () => {
-        ({ wrapper } = await createWrapper({
-            mappings: [mapping({ auditStatus: 'rejected' })],
-        }));
-
-        expect(wrapper.vm.auditStatusLabel('rejected')).toBe('sms.approval.status.rejected');
-        expect(wrapper.vm.auditStatusLabel(null)).toBe('—');
-        // nothing to type the state with any more
-        expect(wrapper.vm.auditStatusOptions).toBeUndefined();
+    it.each([
+        ['rejected', 'sms.approval.status.rejected'],
+        [null, '—'],
+    ])('should render the answered state %s without an editable state field', async (auditStatus, label) => {
+        ({ wrapper } = await createWrapper({ mappings: [mapping({ auditStatus })] }));
+        expect(row(wrapper).get('.sw-settings-sms-template-mapping-grid__audit-status').text()).toBe(label);
+        expect(row(wrapper).find('[name="auditStatus"]').exists()).toBe(false);
     });
 
     it('should show the answer of the provider next to the state', async () => {
@@ -270,78 +310,60 @@ describe('src/module/sw-settings-sms/component/sw-settings-sms-template-mapping-
                 }),
             ],
         }));
-
-        const row = wrapper.vm.mappings[0];
-
-        expect(wrapper.vm.statusCodeOf(row)).toBe('2');
-        expect(wrapper.vm.statusMessageOf(row)).toBe('The body names a forbidden word.');
-        expect(wrapper.vm.lastSyncedAtOf(row)).toBe('2026-10-19 10:00:00.000');
+        expect(row(wrapper).get('.sw-settings-sms-template-mapping-grid__audit-code').text()).toContain('2');
+        expect(row(wrapper).get('.sw-settings-sms-template-mapping-grid__audit-message').text()).toBe(
+            'The body names a forbidden word.',
+        );
+        expect(row(wrapper).get('.sw-settings-sms-template-mapping-grid__audit-last-synced').text()).toContain(
+            '2026-10-19 10:00:00.000',
+        );
     });
 
     it('should show nothing for a row the provider never answered for', async () => {
         ({ wrapper } = await createWrapper({ mappings: [mapping({ customFields: null })] }));
-
-        const row = wrapper.vm.mappings[0];
-
-        expect(wrapper.vm.statusCodeOf(row)).toBeNull();
-        expect(wrapper.vm.statusMessageOf(row)).toBeNull();
-        expect(wrapper.vm.lastSyncedAtOf(row)).toBeNull();
+        expect(row(wrapper).find('.sw-settings-sms-template-mapping-grid__audit-code').exists()).toBe(false);
+        expect(row(wrapper).find('.sw-settings-sms-template-mapping-grid__audit-message').exists()).toBe(false);
+        expect(row(wrapper).find('.sw-settings-sms-template-mapping-grid__audit-last-synced').exists()).toBe(false);
     });
 
-    it('should offer the three steps only where the provider of the row declares them', async () => {
-        ({ wrapper } = await createWrapper());
-
-        const reported = { technicalName: 'reports-itself' };
-        const consoleOnly = { technicalName: 'console-only' };
-        const freeText = { technicalName: 'free-text' };
-
-        expect(wrapper.vm.canSubmit(reported)).toBe(true);
-        expect(wrapper.vm.canReadStatus(reported)).toBe(true);
-        // a state the shop can read itself must not be overridable by hand
-        expect(wrapper.vm.canConfirmStatus(reported)).toBe(false);
-
-        expect(wrapper.vm.canSubmit(consoleOnly)).toBe(false);
-        expect(wrapper.vm.canReadStatus(consoleOnly)).toBe(false);
-        expect(wrapper.vm.canConfirmStatus(consoleOnly)).toBe(true);
-
-        // nothing to audit where no template has to be approved
-        expect(wrapper.vm.canConfirmStatus(freeText)).toBe(false);
-    });
-
-    it('should offer nothing for a provider the server did not describe', async () => {
-        ({ wrapper } = await createWrapper());
-
-        const unknown = { technicalName: 'an-extension-that-was-removed' };
-
-        expect(wrapper.vm.canSubmit(unknown)).toBe(false);
-        expect(wrapper.vm.canReadStatus(unknown)).toBe(false);
-        expect(wrapper.vm.canConfirmStatus(unknown)).toBe(false);
+    it.each([
+        ['reports-itself', ['submit', 'refresh']],
+        ['console-only', ['confirm']],
+        ['free-text', []],
+        ['an-extension-that-was-removed', []],
+    ])('should offer only the audit steps declared by %s', async (technicalName, actions) => {
+        ({ wrapper } = await createWrapper({ mappings: [mapping({ technicalName })] }));
+        expect(row(wrapper).find('.sw-settings-sms-template-mapping-grid__submit').exists()).toBe(
+            actions.includes('submit'),
+        );
+        expect(row(wrapper).find('.sw-settings-sms-template-mapping-grid__refresh').exists()).toBe(
+            actions.includes('refresh'),
+        );
+        expect(row(wrapper).find('.sw-settings-sms-template-mapping-grid__confirm').exists()).toBe(
+            actions.includes('confirm'),
+        );
     });
 
     it('should take the fields of the submission form from the provider of the row', async () => {
-        ({ wrapper } = await createWrapper());
-
-        wrapper.vm.onOpenSubmission(mapping());
-
-        expect(wrapper.vm.submissionTarget.id).toBe('mapping-1');
-        expect(wrapper.vm.submissionFields.map((field) => field.name)).toEqual(['templateName', 'templateContent']);
+        ({ wrapper } = await createWrapper({ mappings: [mapping()] }));
+        await row(wrapper).get('.sw-settings-sms-template-mapping-grid__submit').trigger('click');
+        const modal = wrapper.getComponent({ name: 'sw-settings-sms-template-submission-modal' });
+        expect(modal.props('mapping').id).toBe('mapping-1');
+        expect(modal.props('submissionFields').map((field) => field.name)).toEqual(['templateName', 'templateContent']);
     });
 
     it('should close the submission and read the template again after a report', async () => {
-        ({ wrapper } = await createWrapper());
-
-        wrapper.vm.onOpenSubmission(mapping());
-        wrapper.vm.onSubmissionFinished();
-
-        expect(wrapper.vm.submissionTarget).toBeNull();
+        ({ wrapper } = await createWrapper({ mappings: [mapping()] }));
+        await row(wrapper).get('.sw-settings-sms-template-mapping-grid__submit').trigger('click');
+        await wrapper.get('.finish-submission').trigger('click');
+        expect(wrapper.find('.finish-submission').exists()).toBe(false);
         expect(wrapper.emitted('reload')).toEqual([[]]);
     });
 
     it('should read the state back and reload the row', async () => {
         ({ wrapper, auditService } = await createWrapper({ mappings: [mapping()] }));
-
-        await wrapper.vm.onRefresh(wrapper.vm.mappings[0]);
-
+        await row(wrapper).get('.sw-settings-sms-template-mapping-grid__refresh').trigger('click');
+        await flushPromises();
         expect(auditService.refresh).toHaveBeenCalledWith('mapping-1');
         expect(wrapper.emitted('reload')).toEqual([[]]);
     });
@@ -356,76 +378,71 @@ describe('src/module/sw-settings-sms/component/sw-settings-sms-template-mapping-
                 errorMessage: 'The provider cannot be asked for the state of a template.',
             },
         }));
-        const notification = jest.spyOn(wrapper.vm, 'createNotificationError');
-
-        await wrapper.vm.onRefresh(wrapper.vm.mappings[0]);
-
-        expect(notification).toHaveBeenCalledWith({
-            message: 'The provider cannot be asked for the state of a template.',
-        });
+        const notification = jest.spyOn(Shopwell.Store.get('notification'), 'createNotification');
+        await row(wrapper).get('.sw-settings-sms-template-mapping-grid__refresh').trigger('click');
+        await flushPromises();
+        expect(notification).toHaveBeenCalledWith(
+            expect.objectContaining({ message: 'The provider cannot be asked for the state of a template.' }),
+        );
         expect(wrapper.emitted('reload')).toEqual([[]]);
     });
 
     it('should show the message of a request that never reached the server', async () => {
         ({ wrapper } = await createWrapper({ mappings: [mapping()], serviceThrows: true }));
-        const notification = jest.spyOn(wrapper.vm, 'createNotificationError');
-
-        await wrapper.vm.onRefresh(wrapper.vm.mappings[0]);
-
-        expect(notification).toHaveBeenCalledWith({ message: 'Network Error' });
-        expect(wrapper.vm.busyMappingId).toBeNull();
+        const notification = jest.spyOn(Shopwell.Store.get('notification'), 'createNotification');
+        await row(wrapper).get('.sw-settings-sms-template-mapping-grid__refresh').trigger('click');
+        await flushPromises();
+        expect(notification).toHaveBeenCalledWith(expect.objectContaining({ message: 'Network Error' }));
+        expect(row(wrapper).get('.sw-settings-sms-template-mapping-grid__refresh').attributes('disabled')).toBeUndefined();
     });
 
     it('should offer the states an operator may record, with the labels of the server', async () => {
-        ({ wrapper } = await createWrapper());
-
-        wrapper.vm.onOpenConfirmation(mapping());
-        await flushPromises();
-
-        expect(wrapper.vm.confirmationStatusOptions).toEqual([
-            { value: 'approved', label: 'sms.approval.status.approved' },
-            { value: 'rejected', label: 'sms.approval.status.rejected' },
-            { value: 'suspended', label: 'sms.approval.status.suspended' },
-        ]);
+        ({ wrapper } = await createWrapper({ mappings: [mapping({ technicalName: 'console-only' })] }));
+        await openConfirmation(wrapper);
+        expect(wrapper.getComponent('.sw-settings-sms-template-mapping-grid__confirmation-status').props('options')).toEqual(
+            [
+                { value: 'approved', label: 'sms.approval.status.approved' },
+                { value: 'rejected', label: 'sms.approval.status.rejected' },
+                { value: 'suspended', label: 'sms.approval.status.suspended' },
+            ],
+        );
     });
 
-    it('should keep the state the row already has when it may be recorded', async () => {
-        ({ wrapper } = await createWrapper());
-
-        wrapper.vm.onOpenConfirmation(mapping({ auditStatus: 'suspended' }));
-        expect(wrapper.vm.confirmationStatus).toBe('suspended');
-
-        wrapper.vm.onOpenConfirmation(mapping({ auditStatus: 'pending' }));
-        expect(wrapper.vm.confirmationStatus).toBe('');
+    it.each([
+        ['suspended', 'suspended'],
+        ['pending', ''],
+    ])('should initialize the confirmation of %s as %s', async (auditStatus, expected) => {
+        ({ wrapper } = await createWrapper({ mappings: [mapping({ technicalName: 'console-only', auditStatus })] }));
+        await openConfirmation(wrapper);
+        expect(wrapper.get('[name="confirmationStatus"]').element.value).toBe(expected);
     });
 
     it('should not record a state without a note', async () => {
-        ({ wrapper, auditService } = await createWrapper());
-        const notification = jest.spyOn(wrapper.vm, 'createNotificationError');
-
-        wrapper.vm.onOpenConfirmation(mapping({ auditStatus: 'approved' }));
-        wrapper.vm.onConfirm();
-
-        expect(notification).toHaveBeenCalled();
+        ({ wrapper, auditService } = await createWrapper({
+            mappings: [mapping({ technicalName: 'console-only', auditStatus: 'approved' })],
+        }));
+        const notification = jest.spyOn(Shopwell.Store.get('notification'), 'createNotification');
+        await openConfirmation(wrapper);
+        await confirm(wrapper);
+        expect(notification).toHaveBeenCalledWith(expect.objectContaining({ variant: 'error' }));
         expect(auditService.confirm).not.toHaveBeenCalled();
     });
 
     it('should record the state with its note and reload the row', async () => {
-        ({ wrapper, auditService } = await createWrapper());
-        await flushPromises();
-
-        wrapper.vm.onOpenConfirmation(mapping({ auditStatus: 'approved' }));
-        wrapper.vm.confirmationNote = 'read at the console';
-        await wrapper.vm.onConfirm();
-        await flushPromises();
-
+        ({ wrapper, auditService } = await createWrapper({
+            mappings: [mapping({ technicalName: 'console-only', auditStatus: 'approved' })],
+        }));
+        await openConfirmation(wrapper);
+        await wrapper.get('[name="confirmationNote"]').setValue('read at the console');
+        await confirm(wrapper);
         expect(auditService.confirm).toHaveBeenCalledWith('mapping-1', 'approved', 'read at the console');
-        expect(wrapper.vm.confirmationTarget).toBeNull();
+        expect(wrapper.find('.confirm-audit').exists()).toBe(false);
         expect(wrapper.emitted('reload')).toEqual([[]]);
     });
 
     it('should keep the confirmation open while the recorded state was refused', async () => {
         ({ wrapper } = await createWrapper({
+            mappings: [mapping({ technicalName: 'console-only', auditStatus: 'approved' })],
             answered: {
                 status: null,
                 templateCode: null,
@@ -433,33 +450,41 @@ describe('src/module/sw-settings-sms/component/sw-settings-sms-template-mapping-
                 errorMessage: 'A note is required.',
             },
         }));
-
-        wrapper.vm.onOpenConfirmation(mapping({ auditStatus: 'approved' }));
-        wrapper.vm.confirmationNote = 'x';
-        await wrapper.vm.onConfirm();
-
-        expect(wrapper.vm.confirmationTarget).not.toBeNull();
+        await openConfirmation(wrapper);
+        await wrapper.get('[name="confirmationNote"]').setValue('x');
+        await confirm(wrapper);
+        expect(wrapper.find('.confirm-audit').exists()).toBe(true);
         expect(wrapper.emitted('reload')).toEqual([[]]);
     });
 
     it('should not close the confirmation while the state is still being recorded', async () => {
-        ({ wrapper } = await createWrapper());
-
-        wrapper.vm.onOpenConfirmation(mapping({ auditStatus: 'approved' }));
-        wrapper.vm.isConfirming = true;
-        wrapper.vm.onCloseConfirmation();
-
-        expect(wrapper.vm.confirmationTarget).not.toBeNull();
+        let finish;
+        const pendingConfirm = new Promise((resolve) => {
+            finish = resolve;
+        });
+        ({ wrapper } = await createWrapper({
+            pendingConfirm,
+            mappings: [mapping({ technicalName: 'console-only', auditStatus: 'approved' })],
+        }));
+        await openConfirmation(wrapper);
+        await wrapper.get('[name="confirmationNote"]').setValue('checked');
+        await wrapper.get('.confirm-audit').trigger('click');
+        expect(wrapper.get('.confirm-audit').attributes('disabled')).toBeDefined();
+        await wrapper.get('.dismiss-modal').trigger('click');
+        expect(wrapper.find('.confirm-audit').exists()).toBe(true);
+        finish({ status: 'approved', templateCode: null, errorCode: null, errorMessage: null });
+        await flushPromises();
     });
 
-    it('should close the confirmation when it is dismissed', async () => {
-        ({ wrapper } = await createWrapper());
-
-        wrapper.vm.onOpenConfirmation(mapping({ auditStatus: 'approved' }));
-        wrapper.vm.onConfirmationModalChange(false);
-
-        expect(wrapper.vm.confirmationTarget).toBeNull();
-        expect(wrapper.vm.confirmationStatus).toBe('');
-        expect(wrapper.vm.confirmationNote).toBe('');
+    it('should close and clear the confirmation when it is dismissed', async () => {
+        ({ wrapper } = await createWrapper({
+            mappings: [mapping({ technicalName: 'console-only', auditStatus: 'approved' })],
+        }));
+        await openConfirmation(wrapper);
+        await wrapper.get('[name="confirmationNote"]').setValue('not saved');
+        await wrapper.get('.dismiss-modal').trigger('click');
+        expect(wrapper.find('.confirm-audit').exists()).toBe(false);
+        await openConfirmation(wrapper);
+        expect(wrapper.get('[name="confirmationNote"]').element.value).toBe('');
     });
 });

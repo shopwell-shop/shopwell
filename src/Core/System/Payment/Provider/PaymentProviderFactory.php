@@ -4,12 +4,19 @@ namespace Shopwell\Core\System\Payment\Provider;
 
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
+use Shopwell\Core\System\Payment\Exception\PaymentProviderException;
 use Shopwell\Core\System\Payment\Gateway\AbstractPaymentAction;
 use Shopwell\Core\System\Payment\Gateway\AbstractPaymentApi;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayFactory;
+use Shopwell\Core\System\Payment\Method\PaymentMethodRegistry;
 use Shopwell\Core\System\Payment\PaymentException;
+use Shopwell\Core\System\Payment\Product\Event\PaymentProductsEvent;
+use Shopwell\Core\System\Payment\Product\PaymentProduct;
 use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
+use Shopwell\Core\System\Payment\Provider\Config\PaymentConfigField;
+use Shopwell\Core\System\Payment\Provider\Config\PaymentConfigReader;
+use Shopwell\Core\System\Payment\Provider\Cycle\PaymentCycleRules;
+use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 /**
  * Turns the declaration of an interface into the immutable snapshot the platform works with.
@@ -45,12 +52,19 @@ final class PaymentProviderFactory
     /**
      * The technical names the notify url can carry, see `Api/NotifyController`.
      */
-    private const NAME_PATTERN = '/^[A-Za-z0-9_-]+$/';
+    private const NAME_PATTERN = '/^[A-Za-z0-9_-]+\z/';
 
     /**
      * A declaration that decorates itself would make the chain walk below endless.
      */
     private const MAX_DECORATION_DEPTH = 32;
+
+    public function __construct(
+        private readonly PaymentConfigReader $configReader,
+        private readonly PaymentMethodRegistry $methods,
+        private readonly EventDispatcherInterface $events,
+    ) {
+    }
 
     /**
      * @param string|null $expectedName the technical name the service was tagged with, when the caller
@@ -68,7 +82,7 @@ final class PaymentProviderFactory
         // key and name disagree would therefore be configured under one name and paid under the other,
         // so the two are compared before anything is built out of the object.
         if ($expectedName !== null && $expectedName !== $name) {
-            throw PaymentException::invalidProviderDeclaration(\sprintf(
+            throw PaymentProviderException::invalidProviderDeclaration(\sprintf(
                 'The declaration "%s" is tagged as the payment interface "%s" but names itself "%s". The tag key and the technical name have to be the same.',
                 $declaration::class,
                 $expectedName,
@@ -77,13 +91,18 @@ final class PaymentProviderFactory
         }
 
         if (preg_match(self::NAME_PATTERN, $name) !== 1) {
-            throw PaymentException::invalidProviderName($name);
+            throw PaymentProviderException::invalidProviderName($name);
         }
 
         $credentials = $this->credentialFieldsOf($declaration, $name);
-        $channels = $this->channelsOf($declaration, $name);
         $actions = $this->actionsOf($declaration, $name);
         $capabilities = $this->capabilitiesOf($declaration, $actions, $name);
+        $channels = $this->productsOf($declaration, $name, $capabilities);
+
+        // the schedule that acts on `MANDATE` needs the cycle rules of the very interface; one half
+        // without the other is a declaration the platform cannot act on
+        $cycleRules = $declaration->getCycleRules();
+        $this->assertCycleRulesMatchDeclaration($capabilities, $cycleRules, $name);
 
         // the chain is walked once: it is where a decorator that renamed the interface is refused, and
         // the credential rule below is the second thing that needs the whole chain
@@ -93,7 +112,7 @@ final class PaymentProviderFactory
         $apiClass = $declaration->getApiClass();
 
         if (!is_a($apiClass, AbstractPaymentApi::class, true)) {
-            throw PaymentException::invalidProviderDeclaration(\sprintf(
+            throw PaymentProviderException::invalidProviderDeclaration(\sprintf(
                 'The payment interface "%s" names the api "%s", which does not extend %s.',
                 $name,
                 $apiClass,
@@ -105,11 +124,16 @@ final class PaymentProviderFactory
             technicalName: $name,
             label: $declaration->getLabel(),
             credentials: $credentials,
-            channels: $channels,
+            products: $channels,
             gatewayFactory: new PaymentGatewayFactory($name, $apiClass, $actions, array_values($declaration->getApiArguments())),
             notificationExtractor: $declaration->getNotificationExtractor(),
             payParamsDecoder: $declaration->getPayParamsDecoder(),
             capabilities: $capabilities,
+            cycleRules: $cycleRules,
+            // the payout rules travel in the same snapshot as the cycle rules: the recipient service,
+            // the transfer service and the administration all read them from here, so the matrix of
+            // identities, required fields and currencies exists only in the declaration
+            transferRules: $declaration->getTransferRules(),
         );
     }
 
@@ -120,27 +144,45 @@ final class PaymentProviderFactory
      */
     private function credentialFieldsOf(AbstractPaymentProvider $declaration, string $name): array
     {
+        return $this->validatedFields([
+            ...$this->configReader->fields($declaration->getConfigFile(), 'credentials'),
+            ...$declaration->getCredentials(),
+        ], $name);
+    }
+
+    /**
+     * XML is the base declaration and PHP fields are appended to it. The same validation applies to
+     * merchant fields and channel parameters: a duplicate name would silently overwrite a stored value.
+     *
+     * @param list<mixed> $declared
+     *
+     * @throws PaymentException
+     *
+     * @return list<PaymentConfigField>
+     */
+    private function validatedFields(array $declared, string $name): array
+    {
         $fields = [];
         $seen = [];
 
-        foreach ($declaration->getCredentials() as $field) {
+        foreach ($declared as $field) {
             if (!$field instanceof PaymentConfigField) {
-                throw PaymentException::invalidProviderDeclaration(\sprintf(
-                    'The payment interface "%s" declares a credential that is not a %s.',
+                throw PaymentProviderException::invalidProviderDeclaration(\sprintf(
+                    'The payment interface "%s" declares a configuration value that is not a %s.',
                     $name,
                     PaymentConfigField::class
                 ));
             }
 
             if ($field->name === '') {
-                throw PaymentException::invalidProviderDeclaration(\sprintf(
+                throw PaymentProviderException::invalidProviderDeclaration(\sprintf(
                     'The payment interface "%s" declares a configuration field without a name.',
                     $name
                 ));
             }
 
             if (isset($seen[$field->name])) {
-                throw PaymentException::invalidProviderDeclaration(\sprintf(
+                throw PaymentProviderException::invalidProviderDeclaration(\sprintf(
                     'The payment interface "%s" declares the configuration field "%s" twice.',
                     $name,
                     $field->name
@@ -155,32 +197,37 @@ final class PaymentProviderFactory
     }
 
     /**
+     * @param list<PaymentCapability> $capabilities
+     *
      * @throws PaymentException
      *
-     * @return array<string, PaymentChannel>
+     * @return array<string, PaymentProduct>
      */
-    private function channelsOf(AbstractPaymentProvider $declaration, string $name): array
+    private function productsOf(AbstractPaymentProvider $declaration, string $name, array $capabilities): array
     {
         $channels = [];
 
-        foreach ($declaration->getChannels() as $channel) {
-            if (!$channel instanceof PaymentChannel) {
-                throw PaymentException::invalidProviderDeclaration(\sprintf(
+        $event = new PaymentProductsEvent($name, $declaration->getProducts());
+        $this->events->dispatch($event);
+
+        foreach ($event->products() as $channel) {
+            if (!$channel instanceof PaymentProduct) {
+                throw PaymentProviderException::invalidProviderDeclaration(\sprintf(
                     'The payment interface "%s" declares a channel that is not a %s.',
                     $name,
-                    PaymentChannel::class
+                    PaymentProduct::class
                 ));
             }
 
             if ($channel->technicalName === '') {
-                throw PaymentException::invalidProviderDeclaration(\sprintf(
+                throw PaymentProviderException::invalidProviderDeclaration(\sprintf(
                     'The payment interface "%s" declares a channel without a name.',
                     $name
                 ));
             }
 
             if (isset($channels[$channel->technicalName])) {
-                throw PaymentException::invalidProviderDeclaration(\sprintf(
+                throw PaymentProviderException::invalidProviderDeclaration(\sprintf(
                     'The channel "%s" is declared twice by the payment interface "%s".',
                     $channel->technicalName,
                     $name
@@ -188,13 +235,45 @@ final class PaymentProviderFactory
             }
 
             if ($channel->providerTechnicalName !== $name) {
-                throw PaymentException::invalidProviderDeclaration(\sprintf(
+                throw PaymentProviderException::invalidProviderDeclaration(\sprintf(
                     'The channel "%s" claims to belong to the payment interface "%s", but it is declared by "%s".',
                     $channel->technicalName,
                     $channel->providerTechnicalName,
                     $name
                 ));
             }
+
+            $method = $this->methods->get($channel->method);
+            $effectiveCapabilities = array_values(array_filter(
+                $channel->capabilities ?? $method->capabilities,
+                static fn (PaymentCapability $capability): bool => \in_array($capability, $capabilities, true)
+                    && \in_array($capability, $method->capabilities, true),
+            ));
+            if ($channel->interactions === [] || !\in_array(PaymentCapability::CAPTURE, $effectiveCapabilities, true)
+                || ($channel->capabilities !== null && \count($effectiveCapabilities) !== \count($channel->capabilities))) {
+                throw PaymentProviderException::invalidProviderDeclaration('The product "' . $channel->technicalName . '" declares unsupported capabilities or no handover.');
+            }
+
+            $params = $this->validatedFields([
+                ...$this->configReader->fields(
+                    $declaration->getConfigFile(),
+                    PaymentConfigReader::channelCard($channel->technicalName)
+                ),
+                ...$channel->params,
+            ], $name);
+
+            $channel = new PaymentProduct(
+                technicalName: $channel->technicalName,
+                providerTechnicalName: $channel->providerTechnicalName,
+                method: $channel->method,
+                label: $channel->label,
+                interactions: $channel->interactions,
+                currencies: $channel->currencies,
+                params: $params,
+                runtimeParams: $channel->runtimeParams,
+                scenes: $channel->scenes,
+                capabilities: $effectiveCapabilities,
+            );
 
             $channels[$channel->technicalName] = $channel;
         }
@@ -219,7 +298,7 @@ final class PaymentProviderFactory
 
         foreach ($declaration->getActions() as $action) {
             if (!$action instanceof AbstractPaymentAction) {
-                throw PaymentException::invalidProviderDeclaration(\sprintf(
+                throw PaymentProviderException::invalidProviderDeclaration(\sprintf(
                     'The payment interface "%s" declares an action that is not a %s.',
                     $name,
                     AbstractPaymentAction::class
@@ -233,7 +312,7 @@ final class PaymentProviderFactory
 
         foreach ($declaration->getChannelCaptureActions() as $channel => $action) {
             if (!$action instanceof AbstractPaymentAction) {
-                throw PaymentException::invalidProviderDeclaration(\sprintf(
+                throw PaymentProviderException::invalidProviderDeclaration(\sprintf(
                     'The payment interface "%s" names an action for the channel "%s" that is not a %s.',
                     $name,
                     (string) $channel,
@@ -268,7 +347,7 @@ final class PaymentProviderFactory
             $capability = $action->capability();
 
             if (!$capability->isRequestCapability()) {
-                throw PaymentException::invalidProviderDeclaration(\sprintf(
+                throw PaymentProviderException::invalidProviderDeclaration(\sprintf(
                     'The action "%s" of the payment interface "%s" declares the capability "%s", which has no request - declare it in getDeclaredCapabilities() instead.',
                     $action::class,
                     $name,
@@ -281,7 +360,7 @@ final class PaymentProviderFactory
 
         foreach ($declaration->getDeclaredCapabilities() as $capability) {
             if (!$capability instanceof PaymentCapability) {
-                throw PaymentException::invalidProviderDeclaration(\sprintf(
+                throw PaymentProviderException::invalidProviderDeclaration(\sprintf(
                     'The payment interface "%s" declares a capability that is not a %s.',
                     $name,
                     PaymentCapability::class
@@ -289,7 +368,7 @@ final class PaymentProviderFactory
             }
 
             if ($capability->isRequestCapability()) {
-                throw PaymentException::invalidProviderDeclaration(\sprintf(
+                throw PaymentProviderException::invalidProviderDeclaration(\sprintf(
                     'The payment interface "%s" declares the capability "%s", which is backed by an action - a request capability cannot be declared, it is read off the actions.',
                     $name,
                     $capability->value
@@ -302,7 +381,7 @@ final class PaymentProviderFactory
         $capabilities = [...array_values($fromActions), ...array_values(array_diff_key($fromDeclaration, $fromActions))];
 
         if (!isset($fromActions[PaymentCapability::CAPTURE->value])) {
-            throw PaymentException::invalidProviderDeclaration(\sprintf(
+            throw PaymentProviderException::invalidProviderDeclaration(\sprintf(
                 'The payment interface "%s" declares no capture action, so it cannot collect a payment at all.',
                 $name
             ));
@@ -312,7 +391,7 @@ final class PaymentProviderFactory
         $declaresTransferNotification = \in_array(PaymentCapability::TRANSFER_NOTIFICATION, $capabilities, true);
 
         if ($declaresTransferNotification && $verifier === null) {
-            throw PaymentException::invalidProviderDeclaration(\sprintf(
+            throw PaymentProviderException::invalidProviderDeclaration(\sprintf(
                 'The payment interface "%s" declares the capability "%s" but no transfer notification verifier, so it would have to trust unverified payout notifications.',
                 $name,
                 PaymentCapability::TRANSFER_NOTIFICATION->value
@@ -320,7 +399,7 @@ final class PaymentProviderFactory
         }
 
         if (!$declaresTransferNotification && $verifier !== null) {
-            throw PaymentException::invalidProviderDeclaration(\sprintf(
+            throw PaymentProviderException::invalidProviderDeclaration(\sprintf(
                 'The payment interface "%s" ships a transfer notification verifier but does not declare the capability "%s", so the verifier can never be reached.',
                 $name,
                 PaymentCapability::TRANSFER_NOTIFICATION->value
@@ -328,6 +407,38 @@ final class PaymentProviderFactory
         }
 
         return $capabilities;
+    }
+
+    /**
+     * `MANDATE` is the capability the subscription schedule acts on, and the cycle rules are what it
+     * needs to act at all - one half without the other is a declaration nothing can follow.
+     *
+     * Without the rules a plan would be accepted and then fail at the first deduction; without the
+     * capability the rules would describe a charge no code is allowed to send.
+     *
+     * @param list<PaymentCapability> $capabilities
+     *
+     * @throws PaymentException
+     */
+    private function assertCycleRulesMatchDeclaration(array $capabilities, ?PaymentCycleRules $cycleRules, string $name): void
+    {
+        $declaresMandate = \in_array(PaymentCapability::MANDATE, $capabilities, true);
+
+        if ($declaresMandate && $cycleRules === null) {
+            throw PaymentProviderException::invalidProviderDeclaration(\sprintf(
+                'The payment interface "%s" declares the capability "%s" but no cycle rules, so a subscription it accepts would fail at the first deduction.',
+                $name,
+                PaymentCapability::MANDATE->value
+            ));
+        }
+
+        if (!$declaresMandate && $cycleRules !== null) {
+            throw PaymentProviderException::invalidProviderDeclaration(\sprintf(
+                'The payment interface "%s" ships cycle rules but does not declare the capability "%s", so no schedule may ever charge with them.',
+                $name,
+                PaymentCapability::MANDATE->value
+            ));
+        }
     }
 
     /**
@@ -344,10 +455,10 @@ final class PaymentProviderFactory
     private function assertDecoratorsKeepTheCredentials(array $declarations, string $name): void
     {
         for ($i = 0, $count = \count($declarations); $i < $count - 1; ++$i) {
-            $inner = $declarations[$i + 1]->getCredentials();
+            $inner = $this->credentialFieldsOf($declarations[$i + 1], $name);
             $outerNames = array_map(
                 static fn (PaymentConfigField $field): string => $field->name,
-                $declarations[$i]->getCredentials()
+                $this->credentialFieldsOf($declarations[$i], $name)
             );
 
             foreach ($inner as $field) {
@@ -355,7 +466,7 @@ final class PaymentProviderFactory
                     continue;
                 }
 
-                throw PaymentException::invalidProviderDeclaration(\sprintf(
+                throw PaymentProviderException::invalidProviderDeclaration(\sprintf(
                     'The decoration "%s" of the payment interface "%s" no longer declares the credential field "%s" of the declaration it decorates - a stored field has to stay reachable.',
                     $declarations[$i]::class,
                     $name,
@@ -384,7 +495,7 @@ final class PaymentProviderFactory
             $chain[] = $current;
 
             if (\count($chain) > self::MAX_DECORATION_DEPTH) {
-                throw PaymentException::invalidProviderDeclaration(\sprintf(
+                throw PaymentProviderException::invalidProviderDeclaration(\sprintf(
                     'The decoration chain of the payment interface "%s" is deeper than %d entries, which means a declaration decorates itself.',
                     $name,
                     self::MAX_DECORATION_DEPTH
@@ -398,7 +509,7 @@ final class PaymentProviderFactory
             }
 
             if ($current->getName() !== $name) {
-                throw PaymentException::invalidProviderDeclaration(\sprintf(
+                throw PaymentProviderException::invalidProviderDeclaration(\sprintf(
                     'The decoration "%s" of the payment interface "%s" decorates "%s" - a decorator has to keep the technical name of the declaration it decorates.',
                     $chain[0]::class,
                     $name,

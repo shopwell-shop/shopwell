@@ -1,7 +1,7 @@
 /**
  * @sw-package framework
  */
-import { mount } from '@vue/test-utils';
+import { shallowMount } from '@vue/test-utils';
 import type { VueWrapper } from '@vue/test-utils';
 
 /**
@@ -63,37 +63,6 @@ const transfer = {
     statusMachineState: { id: 'state-awaiting', technicalName: 'awaiting_user_confirm' },
 };
 
-type TransferDetailVm = {
-    transfer: Record<string, unknown> | null;
-    isLoading: boolean;
-    transferStates: unknown[] | null;
-    paymentAppLabel: string;
-    providerLabel: string;
-    isAwaitingUserConfirm: boolean;
-    hasConfirmPayload: boolean;
-    hasFailure: boolean;
-    note: string;
-    rejectReason: string;
-    metadataJson: string;
-    isDecidable: boolean;
-    canApprove: boolean;
-    canDecide: boolean;
-    showApproveModal: boolean;
-    showRejectModal: boolean;
-    transferStateLabel: (stateId: string) => string;
-    transferStateVariant: (stateId: string) => string;
-    formatAmount: (amount: number, currency: string) => string;
-    formatDateOrDash: (value: string | null | undefined) => string;
-    onRefresh: () => Promise<void>;
-    onApprove: () => void;
-    onReject: () => void;
-    onTransferDecided: () => void;
-    onCloseApproveModal: () => void;
-    onCloseRejectModal: () => void;
-};
-
-type TypedWrapper = { vm: TransferDetailVm } & VueWrapper;
-
 function collection<T>(items: unknown[]): T {
     return Object.assign([...items], { total: items.length }) as unknown as T;
 }
@@ -105,7 +74,7 @@ async function createWrapper(
     can: (privilege: string) => boolean = () => true,
     stateLabels: Record<string, string> = {},
 ): Promise<{
-    wrapper: TypedWrapper;
+    wrapper: VueWrapper;
     get: jest.Mock;
     stateSearch: jest.Mock;
 }> {
@@ -113,7 +82,7 @@ async function createWrapper(
 
     const stateSearch = jest.fn(() => Promise.resolve(collection<EntityCollection<'state_machine_state'>>(transferStates)));
 
-    const wrapper = mount(await wrapTestComponent('sw-finance-transfer-detail', { sync: true }), {
+    const wrapper = shallowMount(await wrapTestComponent('sw-finance-transfer-detail', { sync: true }), {
         props: {
             transferId: 'transfer-1',
         },
@@ -131,13 +100,22 @@ async function createWrapper(
                 'sw-description-list': { template: '<dl><slot></slot></dl>' },
                 'mt-card': { template: '<div class="mt-card"><slot></slot></div>' },
                 'router-link': { template: '<a><slot></slot></a>' },
-                'mt-button': true,
-                'mt-badge': true,
+                'mt-button': { props: ['disabled'], template: '<button :disabled="disabled"><slot></slot></button>' },
+                'mt-badge': {
+                    props: ['variant'],
+                    template: '<span class="transfer-state" :data-variant="variant"><slot></slot></span>',
+                },
                 'mt-icon': true,
                 'mt-link': true,
                 'mt-empty-state': true,
-                'sw-finance-transfer-approve-modal': true,
-                'sw-finance-transfer-reject-modal': true,
+                'sw-finance-transfer-approve-modal': {
+                    template:
+                        '<section class="approve-modal"><button class="close" @click="$emit(\'modal-close\')">Close</button><button class="decide" @click="$emit(\'transfer-decided\')">Decide</button></section>',
+                },
+                'sw-finance-transfer-reject-modal': {
+                    template:
+                        '<section class="reject-modal"><button class="close" @click="$emit(\'modal-close\')">Close</button><button class="decide" @click="$emit(\'transfer-decided\')">Decide</button></section>',
+                },
             },
             provide: {
                 repositoryFactory: {
@@ -164,7 +142,7 @@ async function createWrapper(
                       }),
             },
         },
-    }) as unknown as TypedWrapper;
+    });
 
     activeWrapper = wrapper;
 
@@ -179,163 +157,151 @@ describe('module/sw-finance/page/sw-finance-transfer-detail', () => {
         activeWrapper = null;
     });
 
-    it('should load the transfer with its recipient, app and status', async () => {
+    it('should load and display the transfer, recipient and app', async () => {
         const { wrapper, get, stateSearch } = await createWrapper();
-
         expect(get).toHaveBeenCalledWith('transfer-1', Shopwell.Context.api, expect.anything());
-        expect(wrapper.vm.transfer).toEqual(transfer);
-        expect(wrapper.vm.transferStates).toHaveLength(3);
-
-        // the states are read once, not with every refresh
+        expect(wrapper.text()).toContain('T-1');
+        expect(wrapper.text()).toContain('张三');
+        expect(wrapper.text()).toContain('演示应用');
         expect(stateSearch).toHaveBeenCalledTimes(1);
     });
 
-    /**
-     * The snippet of this module wins over the name the state machine carries: the migration calls the same
-     * state 打款成功 and a `created` payout 已创建, which are words of the payment gateway and not of these
-     * pages.
-     */
-    it('should render the state, the amount and the app of the transfer', async () => {
-        const { wrapper } = await createWrapper(transfer, undefined, STATE_LABELS);
-
-        expect(wrapper.vm.transferStateLabel('state-awaiting')).toBe('待用户确认');
-        expect(wrapper.vm.transferStateLabel('state-succeeded')).toBe('成功');
-        expect(wrapper.vm.transferStateLabel('state-created')).toBe('待提交');
-        expect(wrapper.vm.transferStateLabel('state-succeeded')).not.toContain('打款');
-        expect(wrapper.vm.transferStateVariant('state-awaiting')).toBe('attention');
-        expect(wrapper.vm.transferStateVariant('state-succeeded')).toBe('positive');
-        expect(wrapper.vm.formatAmount(1250, 'CNY')).toBe(Shopwell.Utils.format.currency(12.5, 'CNY', 2));
-        expect(wrapper.vm.paymentAppLabel).toBe('演示应用');
+    it.each([
+        [
+            'state-awaiting',
+            'awaiting_user_confirm',
+            '待用户确认',
+            'attention',
+        ],
+        [
+            'state-succeeded',
+            'succeeded',
+            '成功',
+            'positive',
+        ],
+        [
+            'state-created',
+            'created',
+            '待提交',
+            'neutral',
+        ],
+    ])('should display the finance state %s with its amount and app', async (id, technicalName, label, variant) => {
+        const { wrapper } = await createWrapper(
+            { ...transfer, statusId: id, statusMachineState: { id, technicalName } },
+            undefined,
+            STATE_LABELS,
+        );
+        expect(wrapper.get('.transfer-state').text()).toBe(label);
+        expect(wrapper.get('.transfer-state').attributes('data-variant')).toBe(variant);
+        expect(wrapper.get('.transfer-state').text()).not.toContain('打款');
+        expect(wrapper.text()).toContain(Shopwell.Utils.format.currency(12.5, 'CNY', 2));
+        expect(wrapper.text()).toContain('演示应用');
     });
 
-    it('should show a dash for every missing timestamp instead of an invalid date', async () => {
-        const { wrapper } = await createWrapper();
+    it('should display a dash for missing timestamps and format the supplied dates', async () => {
+        const { wrapper } = await createWrapper({ ...transfer, returnedAt: undefined });
         const dateFilter = Shopwell.Filter.getByName('date') as (value: string) => string;
-
-        expect(wrapper.vm.formatDateOrDash(null)).toBe('–');
-        expect(wrapper.vm.formatDateOrDash(undefined)).toBe('–');
-        expect(wrapper.vm.formatDateOrDash('2026-01-02T03:04:05.000Z')).toBe(dateFilter('2026-01-02T03:04:05.000Z'));
+        const timestamps = wrapper
+            .get('[position-identifier="sw-finance-transfer-detail-timeline"]')
+            .findAll('dd')
+            .map((item) => item.text());
+        expect(timestamps).toEqual([
+            dateFilter('2026-01-02T03:04:05.000Z'),
+            dateFilter('2026-01-02T04:05:06.000Z'),
+            '–',
+            '–',
+            '–',
+            dateFilter('2026-01-03T04:05:06.000Z'),
+        ]);
     });
 
-    it('should report the failure of the channel as it came', async () => {
+    it('should display the raw channel failure and metadata', async () => {
         const { wrapper } = await createWrapper();
-
-        expect(wrapper.vm.hasFailure).toBe(true);
-        expect(wrapper.vm.metadataJson).toBe(JSON.stringify({ note: '九月供应商结算', rejectReason: null }, null, 2));
+        const failure = wrapper.get('[position-identifier="sw-finance-transfer-detail-failure"]');
+        expect(failure.text()).toContain('NOT_ENOUGH');
+        expect(failure.text()).toContain('余额不足');
+        expect(wrapper.get('pre').text()).toBe(JSON.stringify({ note: '九月供应商结算', rejectReason: null }, null, 2));
     });
 
-    it('should show the note of the creator and the reason of a rejection', async () => {
+    it('should display the creator note without inventing a rejection', async () => {
         const { wrapper } = await createWrapper();
-
-        expect(wrapper.vm.note).toBe('九月供应商结算');
-        expect(wrapper.vm.rejectReason).toBe('');
-
-        activeWrapper?.unmount();
-
-        const rejected = await createWrapper({
-            ...transfer,
-            statusId: 'state-succeeded',
-            statusMachineState: { id: 'state-succeeded', technicalName: 'succeeded' },
-            metadata: { note: null, rejectReason: '收款账号有误' },
-        });
-
-        expect(rejected.wrapper.vm.note).toBe('');
-        expect(rejected.wrapper.vm.rejectReason).toBe('收款账号有误');
+        expect(wrapper.get('[position-identifier="sw-finance-transfer-detail-note"]').text()).toContain('九月供应商结算');
+        expect(wrapper.find('[position-identifier="sw-finance-transfer-detail-reject"]').exists()).toBe(false);
     });
 
-    it('should never render the wechat confirmation payload', async () => {
+    it('should display the rejection reason without inventing a creator note', async () => {
+        const { wrapper } = await createWrapper({ ...transfer, metadata: { note: null, rejectReason: '收款账号有误' } });
+        expect(wrapper.find('[position-identifier="sw-finance-transfer-detail-note"]').exists()).toBe(false);
+        expect(wrapper.get('[position-identifier="sw-finance-transfer-detail-reject"]').text()).toContain('收款账号有误');
+    });
+
+    it('should report a generated confirmation without rendering its secret payload', async () => {
         const { wrapper } = await createWrapper();
-
-        expect(wrapper.vm.isAwaitingUserConfirm).toBe(true);
-        expect(wrapper.vm.hasConfirmPayload).toBe(true);
-
-        const html = wrapper.html();
-
-        expect(html).toContain('sw-finance.transfer.detail.cardConfirmationTitle');
-        expect(html).not.toContain('SECRET-PACKAGE-INFO');
-        expect(html).not.toContain('package_info');
+        expect(wrapper.get('[position-identifier="sw-finance-transfer-detail-confirmation"]').text()).toContain(
+            'valueConfirmationGenerated',
+        );
+        expect(wrapper.html()).not.toContain('SECRET-PACKAGE-INFO');
+        expect(wrapper.html()).not.toContain('package_info');
     });
 
-    it('should not offer the confirmation card outside of the confirmation state', async () => {
+    it('should omit the confirmation card outside the confirmation state', async () => {
         const { wrapper } = await createWrapper({
             ...transfer,
             confirmPayload: null,
             statusId: 'state-succeeded',
             statusMachineState: { id: 'state-succeeded', technicalName: 'succeeded' },
         });
-
-        expect(wrapper.vm.isAwaitingUserConfirm).toBe(false);
-        expect(wrapper.vm.hasConfirmPayload).toBe(false);
-        expect(wrapper.html()).not.toContain('sw-finance.transfer.detail.cardConfirmationTitle');
+        expect(wrapper.find('[position-identifier="sw-finance-transfer-detail-confirmation"]').exists()).toBe(false);
     });
 
-    /**
-     * The action visibility matrix of the detail page: a decision needs the `created` state *and* the
-     * approver privilege. Either one alone must not put a button on the screen.
-     */
-    it('should offer the decisions only for a created transfer and with the approver privilege', async () => {
-        const decidable = {
-            ...transfer,
-            statusId: 'state-created',
-            statusMachineState: { id: 'state-created', technicalName: 'created' },
-        };
-
-        // The buttons are stubbed, so they are matched by their class instead of their slot text.
-        const approver = await createWrapper(decidable);
-        expect(approver.wrapper.vm.isDecidable).toBe(true);
-        expect(approver.wrapper.vm.canDecide).toBe(true);
-        expect(approver.wrapper.find('.sw-finance-transfer-detail__button-submit').exists()).toBe(true);
-        expect(approver.wrapper.find('.sw-finance-transfer-detail__button-reject').exists()).toBe(true);
-
-        activeWrapper?.unmount();
-
-        const viewer = await createWrapper(decidable, (privilege) => privilege !== 'payment_transfer.approver');
-        expect(viewer.wrapper.vm.isDecidable).toBe(true);
-        expect(viewer.wrapper.vm.canDecide).toBe(false);
-        expect(viewer.wrapper.find('.sw-finance-transfer-detail__button-submit').exists()).toBe(false);
-
-        activeWrapper?.unmount();
-
-        const finished = await createWrapper();
-        expect(finished.wrapper.vm.isDecidable).toBe(false);
-        expect(finished.wrapper.vm.canDecide).toBe(false);
-        expect(finished.wrapper.find('.sw-finance-transfer-detail__button-submit').exists()).toBe(false);
+    it.each([
+        ['created', true, true],
+        ['created', false, false],
+        ['awaiting_user_confirm', true, false],
+    ])('should gate decisions for state %s and approver %s', async (state, canApprove, visible) => {
+        const { wrapper } = await createWrapper(
+            {
+                ...transfer,
+                statusId: 'state-created',
+                statusMachineState: { technicalName: state },
+            },
+            (privilege) => privilege !== 'payment_transfer.approver' || canApprove,
+        );
+        expect(wrapper.find('.sw-finance-transfer-detail__button-submit').exists()).toBe(visible);
+        expect(wrapper.find('.sw-finance-transfer-detail__button-reject').exists()).toBe(visible);
     });
 
-    it('should open the confirmation and the rejection modal and reload after a decision', async () => {
-        const decidable = {
+    it('should mount both decision modals and reload the transfer after a decision', async () => {
+        const { wrapper, get } = await createWrapper({
             ...transfer,
             statusId: 'state-created',
-            statusMachineState: { id: 'state-created', technicalName: 'created' },
-        };
-
-        const { wrapper, get } = await createWrapper(decidable);
-
-        wrapper.vm.onApprove();
-        await flushPromises();
-        expect(wrapper.vm.showApproveModal).toBe(true);
-
-        wrapper.vm.onCloseApproveModal();
-        expect(wrapper.vm.showApproveModal).toBe(false);
-
-        wrapper.vm.onReject();
-        await flushPromises();
-        expect(wrapper.vm.showRejectModal).toBe(true);
-
+            statusMachineState: { technicalName: 'created' },
+        });
+        await wrapper.get('.sw-finance-transfer-detail__button-submit').trigger('click');
+        expect(wrapper.find('.approve-modal').exists()).toBe(true);
+        await wrapper.get('.approve-modal .close').trigger('click');
+        expect(wrapper.find('.approve-modal').exists()).toBe(false);
+        await wrapper.get('.sw-finance-transfer-detail__button-reject').trigger('click');
+        expect(wrapper.find('.reject-modal').exists()).toBe(true);
         get.mockClear();
-        wrapper.vm.onTransferDecided();
+        await wrapper.get('.reject-modal .decide').trigger('click');
         await flushPromises();
-
-        expect(wrapper.vm.showRejectModal).toBe(false);
+        expect(wrapper.find('.reject-modal').exists()).toBe(false);
         expect(get).toHaveBeenCalledTimes(1);
     });
 
-    it('should reload the transfer on refresh', async () => {
+    it('should reload the transfer when refresh is clicked', async () => {
         const { wrapper, get } = await createWrapper();
-
         get.mockClear();
-        await wrapper.vm.onRefresh();
-
+        const refresh = wrapper
+            .findAll('button')
+            .find((button) => button.text() === 'sw-finance.transfer.detail.buttonRefresh');
+        expect(refresh).toBeDefined();
+        await wrapper
+            .findAll('button')
+            .filter((button) => button.text() === 'sw-finance.transfer.detail.buttonRefresh')[0]
+            .trigger('click');
+        await flushPromises();
         expect(get).toHaveBeenCalledTimes(1);
     });
 });

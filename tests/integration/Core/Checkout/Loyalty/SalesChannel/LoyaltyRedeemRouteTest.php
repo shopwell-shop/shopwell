@@ -108,7 +108,7 @@ class LoyaltyRedeemRouteTest extends TestCase
      */
     private function setPoints(string $customerId, int $points): void
     {
-        $repository = static::getContainer()->get('customer_loyalty.repository');
+        $repository = static::getContainer()->get('loyalty_account.repository');
         $context = Context::createDefaultContext();
 
         $criteria = new Criteria();

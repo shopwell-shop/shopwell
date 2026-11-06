@@ -62,7 +62,6 @@ export default {
         languageId() {
             return this.loadLanguage(this.customer?.salesChannelId);
         },
-
     },
 
     watch: {

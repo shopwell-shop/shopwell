@@ -133,11 +133,15 @@ export default Shopwell.Component.wrapComponentConfig({
             const criteria = new Criteria(1, 5);
             criteria.addFilter(Criteria.equals('type', 'product'));
             criteria.addFilter(Criteria.range('order.orderDateTime', { gte: since.toISOString() }));
-            criteria.addAggregation(Criteria.terms('topProducts', 'productId', 'qtySum', null, Criteria.sum('qtySum', 'quantity')));
+            criteria.addAggregation(
+                Criteria.terms('topProducts', 'productId', null, null, Criteria.sum('qtySum', 'quantity')),
+            );
 
-            return (this.orderLineItemRepository as {
-                search: (c: unknown) => Promise<{ aggregations: Record<string, { buckets?: ProductBucket[] }> }>;
-            })
+            return (
+                this.orderLineItemRepository as {
+                    search: (c: unknown) => Promise<{ aggregations: Record<string, { buckets?: ProductBucket[] }> }>;
+                }
+            )
                 .search(criteria)
                 .then((result) => {
                     const buckets = result.aggregations?.topProducts?.buckets ?? [];
@@ -164,9 +168,11 @@ export default Shopwell.Component.wrapComponentConfig({
             const criteria = new Criteria(1, ids.length);
             criteria.addFilter(Criteria.equalsAny('id', ids));
 
-            return (this.productRepository as {
-                search: (c: unknown) => Promise<Array<{ id: string; translated?: { name?: string }; name?: string }>>;
-            })
+            return (
+                this.productRepository as {
+                    search: (c: unknown) => Promise<Array<{ id: string; translated?: { name?: string }; name?: string }>>;
+                }
+            )
                 .search(criteria)
                 .then((products) => {
                     return new Map(

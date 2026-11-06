@@ -18,6 +18,7 @@ return static function (RoutingConfigurator $routes): void {
     $routes->import('../../SalesChannel/SalesChannel/**/*Controller.php', 'attribute');
     $routes->import('../../SalesChannel/SalesChannel/**/*Route.php', 'attribute');
     $routes->import('../../SalesChannel/File/**/*Controller.php', 'attribute');
+    $routes->import('../../SalesChannel/ProductAssignment/**/*Controller.php', 'attribute');
     $routes->import('../../StateMachine/Api/*Controller.php', 'attribute');
     $routes->import('../../Currency/SalesChannel/**/*Route.php', 'attribute');
     $routes->import('../../Language/SalesChannel/**/*Route.php', 'attribute');
@@ -27,4 +28,7 @@ return static function (RoutingConfigurator $routes): void {
     // the generic payment gateway is a plain json api of its own, see PaymentApiRouteScope
     $routes->import('../../Payment/**/*Controller.php', 'attribute');
     $routes->import('../../Sms/Api/*Controller.php', 'attribute');
+
+    // the database driven administration navigation, see AdminMenuItemDefinition
+    $routes->import('../../AdminMenu/**/*Controller.php', 'attribute');
 };

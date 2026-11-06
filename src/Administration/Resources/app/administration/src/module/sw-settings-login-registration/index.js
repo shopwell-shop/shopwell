@@ -29,6 +29,18 @@ Module.register('sw-settings-login-registration', {
         },
     },
 
+    navigation: [
+        {
+            id: 'sw-settings-login-registration',
+            label: 'sw-settings-login-registration.general.mainMenuItemGeneral',
+            parent: 'sw-settings',
+            path: 'sw.settings.login.registration.index',
+            icon: 'regular-sign-in',
+            position: 210,
+            privilege: 'system.system_config',
+        },
+    ],
+
     settingsItem: {
         group: 'customer',
         to: 'sw.settings.login.registration.index',

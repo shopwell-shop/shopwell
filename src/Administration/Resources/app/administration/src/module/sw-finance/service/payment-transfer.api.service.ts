@@ -6,6 +6,7 @@
  */
 import type { HttpClient } from 'src/core/factory/http-client.types';
 import type { LoginService } from 'src/core/service/login.service';
+import { getCurrencyFractionDigits } from '../../sw-payment/service/payment-gateway.api.service';
 
 /**
  * What the server answered about a submission.
@@ -148,35 +149,44 @@ export function providerLabelKey(technicalName: string | null | undefined): stri
 }
 
 /**
- * Converts the yuan an operator types into the integer fen the server stores.
+ * Converts the amount an operator types into the integer the server stores in the smallest unit.
  *
  * `parseFloat(value) * 100` is what must never be used here: `1.005 * 100` is `100.49999999999999` in
  * binary floating point and `Math.round` would book one fen too little or too much. The conversion is
  * therefore a string split - the digits the operator typed are the digits that are stored.
+ *
+ * The exponent belongs to the currency, not to the form: a channel that pays out in JPY or KRW has no
+ * minor unit at all, and multiplying by a hundred there would book a payout a hundred times as large
+ * as the operator typed. The digits come from the same helper the amounts are rendered with.
  *
  * Zero is not an amount. A payout of nothing is not a payout the platform can send, so the conversion
  * answers `null` for it exactly like it does for a typo: the caller has one question - "is this a
  * payable amount?" - and its answer must not be two different checks in two different files.
  *
  * @param value the amount as typed, e.g. `'12.05'`
+ * @param currency the ISO code the payout is sent in, e.g. `'CNY'` or `'JPY'`
  * @returns the amount in the smallest unit, or null when the input is not a positive amount
  * @private
  */
-export function yuanToMinorUnits(value: string | number | null | undefined): number | null {
+export function toMinorUnits(value: string | number | null | undefined, currency = 'CNY'): number | null {
     if (value === null || value === undefined || value === '') {
         return null;
     }
 
     const text = String(value).trim();
+    const digits = getCurrencyFractionDigits(currency);
 
-    // one optional decimal point with one or two digits: `12`, `12.0`, `12.05`. A third digit is a typo
-    // and not a rounding problem, so it is refused instead of being rounded away
-    if (!/^\d+(\.\d{1,2})?$/.test(text)) {
+    // one optional decimal point with at most as many digits as the currency has: `12`, `12.0`, `12.05`.
+    // A further digit is a typo and not a rounding problem, so it is refused instead of rounded away -
+    // and a currency without minor units accepts no decimal point at all
+    const pattern = digits === 0 ? /^\d+$/ : new RegExp(`^\\d+(\\.\\d{1,${digits}})?$`);
+
+    if (!pattern.test(text)) {
         return null;
     }
 
-    const [yuan, fraction = ''] = text.split('.');
-    const minorUnits = Number(yuan) * 100 + Number(fraction.padEnd(2, '0'));
+    const [integer, fraction = ''] = text.split('.');
+    const minorUnits = Number(integer) * 10 ** digits + Number(fraction.padEnd(digits, '0'));
 
     if (!Number.isSafeInteger(minorUnits) || minorUnits <= 0) {
         return null;
@@ -186,21 +196,28 @@ export function yuanToMinorUnits(value: string | number | null | undefined): num
 }
 
 /**
- * The inverse of {@see yuanToMinorUnits()}, for prefilling a form from a stored amount.
+ * The inverse of {@see toMinorUnits()}, for prefilling a form from a stored amount.
  *
  * @private
  */
-export function minorUnitsToYuan(minorUnits: number | null | undefined): string {
+export function fromMinorUnits(minorUnits: number | null | undefined, currency = 'CNY'): string {
     if (minorUnits === null || minorUnits === undefined || !Number.isFinite(minorUnits)) {
         return '';
     }
 
+    const digits = getCurrencyFractionDigits(currency);
+    const factor = 10 ** digits;
     const sign = minorUnits < 0 ? '-' : '';
     const absolute = Math.abs(Math.trunc(minorUnits));
-    const yuan = Math.floor(absolute / 100);
-    const fen = String(absolute % 100).padStart(2, '0');
+    const integer = Math.floor(absolute / factor);
 
-    return `${sign}${yuan}.${fen}`;
+    if (digits === 0) {
+        return `${sign}${integer}`;
+    }
+
+    const fraction = String(absolute % factor).padStart(digits, '0');
+
+    return `${sign}${integer}.${fraction}`;
 }
 
 /**
@@ -339,7 +356,7 @@ type CancelResponse = {
  * of the transfer row, so a request can not name a different one), and a rejection always carries the
  * reason that ends up in the audit trail.
  */
-// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+/** @private */
 export default class PaymentTransferApiService {
     public readonly name = 'paymentTransferApiService';
 

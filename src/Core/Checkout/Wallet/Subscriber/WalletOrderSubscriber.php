@@ -7,7 +7,8 @@ use Shopwell\Core\Checkout\Order\OrderCollection;
 use Shopwell\Core\Checkout\Order\OrderEntity;
 use Shopwell\Core\Checkout\Order\OrderStates;
 use Shopwell\Core\Checkout\Wallet\Cart\WalletCartProcessor;
-use Shopwell\Core\Checkout\Wallet\Service\WalletService;
+use Shopwell\Core\Checkout\Wallet\Service\WalletAccountService;
+use Shopwell\Core\Checkout\Wallet\Service\WalletPaymentService;
 use Shopwell\Core\Defaults;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
@@ -27,7 +28,8 @@ class WalletOrderSubscriber implements EventSubscriberInterface
      */
     public function __construct(
         private readonly EntityRepository $orderRepository,
-        private readonly WalletService $walletService,
+        private readonly WalletAccountService $wallets,
+        private readonly WalletPaymentService $payments,
     ) {
     }
 
@@ -71,7 +73,7 @@ class WalletOrderSubscriber implements EventSubscriberInterface
         }
 
         $currencyId = $order->getCurrencyId();
-        $balance = $this->walletService->getBalance($customerId, $currencyId, $context);
+        $balance = $this->wallets->balance($customerId, $currencyId, $context);
 
         // the balance may have changed while the order was open, so the debit is capped to what is still available
         $amount = min($amount, $balance);
@@ -80,7 +82,7 @@ class WalletOrderSubscriber implements EventSubscriberInterface
             return;
         }
 
-        $this->walletService->consume($customerId, $currencyId, $amount, $order->getId(), $context);
+        $this->payments->debitForOrder($order->getId(), $customerId, $currencyId, $amount, $context);
     }
 
     /**
