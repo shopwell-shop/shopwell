@@ -110,7 +110,7 @@ export default {
                 return;
             }
 
-            const keyWords = value.split(/[\W_]+/gi);
+            const keyWords = value.split(/[^\p{L}\p{N}]+/gu);
 
             this.searchResult = this.triggerEvents.filter((event) => {
                 const eventName = this.getEventName(event.name).toLowerCase();
