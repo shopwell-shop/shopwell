@@ -36,6 +36,7 @@
     <template #content>
         {% block sw_loyalty_order_list_content %}
         <div class="sw-membership-purchase-list__content">
+            <sw-extension-component-section position-identifier="sw-membership-purchase-list" />
 
             {% block sw_loyalty_order_list_empty_state %}
             <mt-empty-state

@@ -5,15 +5,15 @@ import './acl';
 
 const { Module } = Shopwell;
 
-/* eslint-disable sw-deprecation-rules/private-feature-declarations -- Existing module registrations retain their extension names. */
+/** @private */
 Shopwell.Component.register('sw-settings-payment-provider-list', () => import('./page/sw-settings-payment-provider-list'));
+/** @private */
 Shopwell.Component.register(
     'sw-settings-payment-provider-detail',
     () => import('./page/sw-settings-payment-provider-detail'),
 );
-/* eslint-enable sw-deprecation-rules/private-feature-declarations */
 
-// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations -- Existing module registration remains compatible.
+/** @private */
 Module.register('sw-settings-payment-provider', {
     type: 'core',
     name: 'settings-payment-provider',
@@ -50,7 +50,7 @@ Module.register('sw-settings-payment-provider', {
                 privilege: 'payment_account.viewer',
             },
             props: {
-                default(route) {
+                default(route: { params: { id: string } }) {
                     return { accountId: route.params.id };
                 },
             },

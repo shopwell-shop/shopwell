@@ -258,7 +258,7 @@ export default defineComponent({
                 return purchase.customerId;
             }
 
-            return `${customer.firstName} ${customer.lastName} (${customer.customerNumber ?? purchase.customerId})`;
+            return `${customer.name} (${customer.customerNumber ?? purchase.customerId})`;
         },
 
         formatDate(date: string | null): string {

@@ -151,7 +151,7 @@ class Migration1792700010CreatePaymentTransferTablesTest extends TestCase
 
         static::assertSame(
             [
-                'id', 'payment_app_id', 'transfer_no', 'out_no', 'recipient_id', 'provider', 'channel',
+                'id', 'payment_app_id', 'account_id', 'transfer_no', 'out_no', 'recipient_id', 'provider', 'channel',
                 'amount', 'currency', 'channel_params', 'status_id', 'provider_ref', 'provider_stage_ref',
                 'confirm_payload', 'failure_code', 'failure_reason', 'submit_attempts', 'expire_at',
                 'submitted_at', 'settled_at', 'returned_at', 'canceled_at', 'metadata', 'created_at',

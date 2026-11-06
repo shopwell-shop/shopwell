@@ -1,4 +1,4 @@
-import { mount } from '@vue/test-utils';
+import { shallowMount } from '@vue/test-utils';
 
 function createRepositoryFactory(overrides = {}) {
     const repositories = {
@@ -18,7 +18,7 @@ function createRepositoryFactory(overrides = {}) {
 }
 
 async function createWrapper(privileges = ['loyalty.viewer'], factory = createRepositoryFactory()) {
-    return mount(await wrapTestComponent('sw-dashboard-loyalty-distribution', { sync: true }), {
+    return shallowMount(await wrapTestComponent('sw-dashboard-loyalty-distribution', { sync: true }), {
         global: {
             stubs: {
                 'mt-card': {
@@ -27,8 +27,13 @@ async function createWrapper(privileges = ['loyalty.viewer'], factory = createRe
                     props: ['title', 'isLoading', 'positionIdentifier'],
                 },
                 'sw-chart': {
-                    props: ['type', 'series', 'options', 'height'],
-                    template: '<div class="sw-chart" :data-type="type"></div>',
+                    props: [
+                        'type',
+                        'series',
+                        'options',
+                        'height',
+                    ],
+                    template: `<div class="sw-chart" :data-type="type"><div v-for="row in series" :key="row.name" class="chart-series"><span class="chart-series-name">{{ row.name }}</span><span v-for="point in row.data" :key="point.x" class="chart-point" :data-value="point.y">{{ point.x }}</span></div></div>`,
                 },
                 'sw-extension-component-section': true,
             },
@@ -63,8 +68,8 @@ describe('module/sw-dashboard/component/sw-dashboard-loyalty-distribution', () =
         const wrapper = await createWrapper([]);
         await flushPromises();
 
-        expect(wrapper.vm.canViewLoyalty).toBe(false);
-        expect(wrapper.vm.tiers).toEqual([]);
+        expect(wrapper.find('.mt-card').exists()).toBe(false);
+        expect(wrapper.find('.sw-chart').exists()).toBe(false);
     });
 
     it('renders the empty state without buckets', async () => {
@@ -99,13 +104,13 @@ describe('module/sw-dashboard/component/sw-dashboard-loyalty-distribution', () =
         const wrapper = await createWrapper(['loyalty.viewer'], factory);
         await flushPromises();
 
-        expect(wrapper.vm.tiers).toEqual([
-            { name: '铜牌', count: 120 },
-            { name: '金牌', count: 30 },
-        ]);
-        expect(wrapper.vm.series[0].data).toEqual([
-            { x: '铜牌', y: 120 },
-            { x: '金牌', y: 30 },
+        expect(
+            wrapper
+                .findAll('.chart-point')
+                .map((point) => ({ label: point.text(), value: Number(point.attributes('data-value')) })),
+        ).toEqual([
+            { label: '铜牌', value: 120 },
+            { label: '金牌', value: 30 },
         ]);
     });
 
@@ -125,6 +130,6 @@ describe('module/sw-dashboard/component/sw-dashboard-loyalty-distribution', () =
         const wrapper = await createWrapper(['loyalty.viewer'], factory);
         await flushPromises();
 
-        expect(wrapper.vm.tiers[0].name).toBe('deleted-tier');
+        expect(wrapper.get('.chart-point').text()).toBe('deleted-tier');
     });
 });

@@ -28,10 +28,10 @@ test(
             await ShopCustomer.expects(vatIdInput).toHaveValue('DE123456789');
         });
 
-        await test.step('Changing only the first name keeps account type, company and VAT Reg.No.', async () => {
-            await ShopCustomer.fillsIn(StorefrontAccountProfile.firstNameInput, 'Jane');
+        await test.step('Changing only the name keeps account type, company and VAT Reg.No.', async () => {
+            await ShopCustomer.fillsIn(StorefrontAccountProfile.nameInput, 'Jane');
             await ShopCustomer.presses(StorefrontAccountProfile.saveProfileButton);
-            await ShopCustomer.expects(StorefrontAccountProfile.firstNameInput).toHaveValue('Jane');
+            await ShopCustomer.expects(StorefrontAccountProfile.nameInput).toHaveValue('Jane');
 
             const response = await AdminApiContext.get(`customer/${customer.id}`);
             expect(response.ok()).toBeTruthy();
@@ -39,7 +39,7 @@ test(
             const { data } = await response.json();
             expect(data).toEqual(
                 expect.objectContaining({
-                    firstName: 'Jane',
+                    name: 'Jane',
                     accountType: 'business',
                     company: 'Example Inc.',
                     vatIds: ['DE123456789'],

@@ -1,5 +1,57 @@
 # 6.7.18.0
 
+## Payment, wallet and membership development contracts
+
+The payment and loyalty development modules use the current architecture directly. The previous
+provider-bound execution and combined loyalty/membership contracts have no compatibility aliases.
+Extensions built against those development contracts must adapt before using this version.
+
+* Manage merchant credentials through `System/Payment/Account/PaymentAccountService` and grant an
+  application access through `PaymentAppAccount`. Application product grants select enabled products;
+  they do not own merchant credentials. Provider configuration types live in `Provider/Config`.
+* Build a `Routing/PaymentContext` for the caller's currency, scene and supported interactions. Resolve
+  an authorized account and product through routing, then start a payment attempt. Historical query,
+  refund and close operations use the recorded attempt and account, rather than current routing.
+* Use `Order/Aggregate/PaymentRefund` and `Order/PaymentRefundStates` for refunds. Payment order
+  execution state and transaction records belong to attempts; remove dependencies on gateway-token
+  entities and provider/channel associations that no longer exist.
+* Cycle and retry schedules use `Provider/Cycle/PaymentCycleRules` and the current
+  `Subscription/Schedule` services. Update callers to the current rule objects and arguments instead
+  of constructing removed schedule constants or invoking the former signatures.
+* Wallet top-ups use the shared storefront payment context and order flow. Use `WalletAccountService`,
+  `WalletPaymentService` and `WalletAdjustmentService` for their respective responsibilities; replace
+  calls to the removed combined `WalletService` and top-up `recent`, `status` and `settle` helpers.
+* Loyalty balances use `LoyaltyAccount`, `LoyaltyPointTransaction`, point lots and tier benefits.
+  Replace `CustomerLoyalty`, `CustomerPointTransaction` and fixed benefit accessors with the current
+  account, ledger and benefit services. Update the corresponding customer, order and sales-channel
+  association names as well.
+* Paid membership plans and their translations now live under `Checkout/Membership`. A
+  `MembershipPurchase` records what was bought and a `MembershipSubscription` records the running
+  entitlement. Replace `MembershipOrder` and the former combined `MembershipService`; read the
+  purchased plan name and dates from the subscription rather than the loyalty account projection.
+* The account rewards and membership pages have separate page objects, loaders and loaded hooks.
+  Theme integrations should use `Account/Rewards` or `Account/Membership` in place of the removed
+  `Account/Loyalty` page types. `/account/loyalty` redirects to the rewards page while the programme is
+  enabled.
+* `UserOrganizationUnitDefinition` represents an explicit mapping entity with its own ID. Write
+  organization membership through mapping rows, retaining their IDs for updates. The convenience
+  many-to-many associations are read-only.
+
+## Customer return actions use a dedicated Store API namespace
+
+Update direct Store API requests for customer return actions:
+
+| Previous POST URL | New POST URL |
+| --- | --- |
+| `/store-api/order-return/{id}/cancel` | `/store-api/order-return/actions/{id}/cancel` |
+| `/store-api/order-return/{id}/ship` | `/store-api/order-return/actions/{id}/ship` |
+| `/store-api/order-return/{id}/message` | `/store-api/order-return/actions/{id}/message` |
+
+The previous URLs are removed. The route names `store-api.order-return.cancel`, `store-api.order-return.ship`, and
+`store-api.order-return.message`, customer authentication, request payloads, and responses remain the same. URL generation
+through these route names automatically uses the new paths. The return positions endpoint and all guest return URLs keep
+their existing paths. Storefront account form URLs and Administration action URLs are unchanged.
+
 ## Payment interfaces are declared as services, not in XML
 
 A payment interface used to be described by an XML file under `src/Core/System/Payment/Provider/Resources/config/`, read by `PaymentProviderSchemaReader` and validated against `payment-provider.xsd`. Its actions were then wired by name in `src/Core/System/DependencyInjection/payment.php`, so an extension could neither ship an interface of its own nor replace one of the four that ship with the platform.

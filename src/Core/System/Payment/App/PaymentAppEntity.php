@@ -13,6 +13,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\SearchRanking;
 use Shopwell\Core\Framework\DataAbstractionLayer\Entity as EntityStruct;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityCustomFieldsTrait;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Payment\Account\PaymentAccountCollection;
 use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppAccount\PaymentAppAccountEntity;
 use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppChannel\PaymentAppChannelEntity;
 use Shopwell\Core\System\Payment\Order\PaymentOrderEntity;
@@ -181,4 +182,7 @@ class PaymentAppEntity extends EntityStruct
      */
     #[OneToMany(entity: 'payment_method_gateway_channel', ref: 'payment_app_id', onDelete: OnDelete::CASCADE, api: ['admin-api' => true, 'store-api' => false])]
     public ?array $gatewayChannels = null;
+
+    #[OneToMany(entity: 'payment_account', ref: 'owner_app_id', api: false)]
+    public ?PaymentAccountCollection $ownedAccounts = null;
 }

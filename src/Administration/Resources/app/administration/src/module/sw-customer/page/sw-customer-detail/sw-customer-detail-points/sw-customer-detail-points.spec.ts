@@ -167,9 +167,9 @@ describe('src/module/sw-customer/page/sw-customer-detail/sw-customer-detail-poin
         expect(membership.find('.mt-card-stub__title').text()).toBe('sw-customer.detailPoints.cardMembershipTitle');
 
         const values = membership.findAll('.sw-customer-detail-points__item-value');
-        expect(values.at(0).text()).toBe('sw-customer.detailPoints.tierValue');
-        expect(values.at(1).text()).toContain('2099');
-        expect(values.at(2).text()).toBe('250');
+        expect(values[0].text()).toBe('sw-customer.detailPoints.tierValue');
+        expect(values[1].text()).toContain('2099');
+        expect(values[2].text()).toBe('250');
 
         const state = membership.find('.sw-customer-detail-points__membership-state');
         expect(state.text()).toBe('sw-customer.detailPoints.membershipRunning');
@@ -232,9 +232,9 @@ describe('src/module/sw-customer/page/sw-customer-detail/sw-customer-detail-poin
 
         const membership = wrapper.find('.sw-customer-detail-points__membership');
         const values = membership.findAll('.sw-customer-detail-points__item-value');
-        expect(values.at(0).text()).toBe('sw-customer.detailPoints.noTier');
-        expect(values.at(1).text()).toBe('sw-customer.detailPoints.membershipExpiresNever');
-        expect(values.at(2).text()).toBe('0');
+        expect(values[0].text()).toBe('sw-customer.detailPoints.noTier');
+        expect(values[1].text()).toBe('sw-customer.detailPoints.membershipExpiresNever');
+        expect(values[2].text()).toBe('0');
 
         expect(membership.find('.sw-customer-detail-points__membership-state').exists()).toBe(false);
 
@@ -284,9 +284,7 @@ describe('src/module/sw-customer/page/sw-customer-detail/sw-customer-detail-poin
         const { wrapper } = await createWrapper(['loyalty.editor']);
 
         expect(wrapper.find('.sw-customer-detail-points__adjust-points-action').attributes('disabled')).toBeUndefined();
-        expect(
-            wrapper.find('.sw-customer-detail-points__grant-membership-action').attributes('disabled'),
-        ).toBeUndefined();
+        expect(wrapper.find('.sw-customer-detail-points__grant-membership-action').attributes('disabled')).toBeUndefined();
     });
 
     it('books a points adjustment and reloads the balance and the ledger', async () => {
@@ -367,9 +365,7 @@ describe('src/module/sw-customer/page/sw-customer-detail/sw-customer-detail-poin
         await wrapper.find('.sw-customer-detail-points__grant-membership-action').trigger('click');
         await wrapper.find('.sw-customer-detail-points__membership-tier').setValue('');
 
-        expect(
-            wrapper.find('.sw-customer-detail-points__membership-modal-save').attributes('disabled'),
-        ).toBeDefined();
+        expect(wrapper.find('.sw-customer-detail-points__membership-modal-save').attributes('disabled')).toBeDefined();
 
         await wrapper.find('.sw-customer-detail-points__membership-modal-save').trigger('click');
         await flushPromises();

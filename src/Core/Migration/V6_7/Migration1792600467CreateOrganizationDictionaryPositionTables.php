@@ -171,6 +171,8 @@ class Migration1792600467CreateOrganizationDictionaryPositionTables extends Migr
                 `user_id` BINARY(16) NOT NULL,
                 `organization_unit_id` BINARY(16) NOT NULL,
                 `is_primary` TINYINT(1) NOT NULL DEFAULT 0,
+                `created_at` DATETIME(3) NOT NULL,
+                `updated_at` DATETIME(3) NULL,
                 PRIMARY KEY (`id`),
                 UNIQUE KEY `uniq.user_organization_unit.user_unit` (`user_id`, `organization_unit_id`),
                 KEY `fk.user_organization_unit.organization_unit_id` (`organization_unit_id`),

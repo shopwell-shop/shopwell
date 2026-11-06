@@ -7,12 +7,17 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\Field;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\FieldType;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\ForeignKey;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\ManyToOne;
+use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\OneToMany;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\PrimaryKey;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\Protection;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\Required;
 use Shopwell\Core\Framework\DataAbstractionLayer\Entity as EntityStruct;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Payment\Account\PaymentAccountEntity;
+use Shopwell\Core\System\Payment\Notification\PaymentNotificationCollection;
+use Shopwell\Core\System\Payment\Order\Aggregate\PaymentRefund\PaymentRefundCollection;
+use Shopwell\Core\System\Payment\Order\Aggregate\PaymentTransaction\PaymentTransactionCollection;
+use Shopwell\Core\System\Payment\Order\PaymentOrderCollection;
 use Shopwell\Core\System\Payment\Order\PaymentOrderEntity;
 
 /**
@@ -122,4 +127,16 @@ class PaymentAttemptEntity extends EntityStruct
 
     #[ManyToOne(entity: 'payment_order', api: false)]
     public ?PaymentOrderEntity $paymentOrder = null;
+
+    #[OneToMany(entity: 'payment_order', ref: 'active_attempt_id', api: false)]
+    public ?PaymentOrderCollection $activePaymentOrders = null;
+
+    #[OneToMany(entity: 'payment_transaction', ref: 'payment_attempt_id', api: false)]
+    public ?PaymentTransactionCollection $transactions = null;
+
+    #[OneToMany(entity: 'payment_refund', ref: 'payment_attempt_id', api: false)]
+    public ?PaymentRefundCollection $refunds = null;
+
+    #[OneToMany(entity: 'payment_notification', ref: 'payment_attempt_id', api: false)]
+    public ?PaymentNotificationCollection $notifications = null;
 }

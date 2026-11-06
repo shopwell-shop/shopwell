@@ -20,6 +20,7 @@ use Shopwell\Core\System\Position\PositionCollection;
 use Shopwell\Core\System\StateMachine\Aggregation\StateMachineHistory\StateMachineHistoryCollection;
 use Shopwell\Core\System\User\Aggregate\UserAccessKey\UserAccessKeyCollection;
 use Shopwell\Core\System\User\Aggregate\UserConfig\UserConfigCollection;
+use Shopwell\Core\System\User\Aggregate\UserOrganizationUnit\UserOrganizationUnitCollection;
 use Shopwell\Core\System\User\Aggregate\UserRecovery\UserRecoveryEntity;
 
 #[Package('fundamentals@framework')]
@@ -27,6 +28,8 @@ class UserEntity extends Entity
 {
     use EntityCustomFieldsTrait;
     use EntityIdTrait;
+
+    protected ?UserOrganizationUnitCollection $organizationUnitMappings = null;
 
     protected string $localeId;
 
@@ -479,5 +482,15 @@ class UserEntity extends Entity
     public function setWebhooks(WebhookCollection $webhooks): void
     {
         $this->webhooks = $webhooks;
+    }
+
+    public function getOrganizationUnitMappings(): ?UserOrganizationUnitCollection
+    {
+        return $this->organizationUnitMappings;
+    }
+
+    public function setOrganizationUnitMappings(UserOrganizationUnitCollection $organizationUnitMappings): void
+    {
+        $this->organizationUnitMappings = $organizationUnitMappings;
     }
 }

@@ -12,7 +12,7 @@ const { Criteria } = Shopwell.Data;
 
 type DictionaryTypeEntity = EntitySchema.Entity<'dictionary_type'>;
 
-// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+/** @private */
 export default defineComponent({
     template,
 
@@ -165,7 +165,11 @@ export default defineComponent({
                 .then(() => {
                     this.dictionaryService.invalidateCaches();
                     this.createNotificationSuccess({
-                        message: this.$t('sw-settings-dictionary.typeList.messageSaveSuccess', { name: item.technicalName }, 0),
+                        message: this.$t(
+                            'sw-settings-dictionary.typeList.messageSaveSuccess',
+                            { name: item.technicalName },
+                            0,
+                        ),
                     });
                 })
                 .catch(() => {

@@ -4,7 +4,6 @@ namespace Shopwell\Tests\Unit\Core\System\Payment\Subscription\Schedule;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
-use PHPUnit\Framework\Attributes\RunInSeparateProcess;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Payment\PaymentException;
@@ -169,7 +168,6 @@ class PaymentCycleCalendarTest extends TestCase
         $this->addToAssertionCount(1);
     }
 
-    #[RunInSeparateProcess]
     public function testResultsAreIndependentOfTheServerTimezone(): void
     {
         $previous = \date_default_timezone_get();

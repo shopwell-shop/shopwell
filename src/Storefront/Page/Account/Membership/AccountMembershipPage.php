@@ -9,6 +9,8 @@ use Shopwell\Storefront\Page\Page;
 /**
  * What the customer can buy and what they already hold: the plans, how they can be paid, the running
  * membership and the recent orders.
+ *
+ * @codeCoverageIgnore
  */
 #[Package('checkout')]
 class AccountMembershipPage extends Page

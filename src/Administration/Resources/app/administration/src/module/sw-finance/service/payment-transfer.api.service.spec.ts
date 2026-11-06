@@ -6,10 +6,8 @@ import type { LoginService } from 'src/core/service/login.service';
 import PaymentTransferApiService, {
     OUTCOME,
     fromMinorUnits,
-    minorUnitsToYuan,
     providerLabelKey,
     toMinorUnits,
-    yuanToMinorUnits,
 } from './payment-transfer.api.service';
 import type { PaymentTransferPayload } from './payment-transfer.api.service';
 
@@ -39,7 +37,7 @@ const payload: PaymentTransferPayload = {
  * The conversion between the yuan an operator types and the fen the server stores is the only place of the
  * administration where an amount is transformed. Everything below is one way to get it wrong.
  */
-describe('module/sw-finance/service/payment-transfer.api.service - yuanToMinorUnits', () => {
+describe('module/sw-finance/service/payment-transfer.api.service - CNY minor units', () => {
     it.each([
         ['0.1', 10],
         ['0.01', 1],
@@ -53,7 +51,7 @@ describe('module/sw-finance/service/payment-transfer.api.service - yuanToMinorUn
         [12.05, 1205],
         [7, 700],
     ])('should convert %p into %p fen', (input, expected) => {
-        expect(yuanToMinorUnits(input)).toBe(expected);
+        expect(toMinorUnits(input, 'CNY')).toBe(expected);
     });
 
     /**
@@ -61,7 +59,7 @@ describe('module/sw-finance/service/payment-transfer.api.service - yuanToMinorUn
      * did not type.
      */
     it.each([['1.005'], ['0.001'], ['12.345']])('should refuse the number of decimals of %p', (input) => {
-        expect(yuanToMinorUnits(input)).toBeNull();
+        expect(toMinorUnits(input, 'CNY')).toBeNull();
     });
 
     it.each([
@@ -77,7 +75,7 @@ describe('module/sw-finance/service/payment-transfer.api.service - yuanToMinorUn
         ['1,5'],
         ['1e3'],
     ])('should refuse %p', (input) => {
-        expect(yuanToMinorUnits(input)).toBeNull();
+        expect(toMinorUnits(input, 'CNY')).toBeNull();
     });
 
     /**
@@ -91,14 +89,14 @@ describe('module/sw-finance/service/payment-transfer.api.service - yuanToMinorUn
         [0],
         ['00'],
     ])('should refuse the empty amount %p', (input) => {
-        expect(yuanToMinorUnits(input)).toBeNull();
+        expect(toMinorUnits(input, 'CNY')).toBeNull();
     });
 
     it('should convert back for the prefill of a form', () => {
-        expect(minorUnitsToYuan(10)).toBe('0.10');
-        expect(minorUnitsToYuan(1205)).toBe('12.05');
-        expect(minorUnitsToYuan(100000)).toBe('1000.00');
-        expect(minorUnitsToYuan(null)).toBe('');
+        expect(fromMinorUnits(10, 'CNY')).toBe('0.10');
+        expect(fromMinorUnits(1205, 'CNY')).toBe('12.05');
+        expect(fromMinorUnits(100000, 'CNY')).toBe('1000.00');
+        expect(fromMinorUnits(null, 'CNY')).toBe('');
     });
 });
 

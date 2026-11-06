@@ -3,7 +3,6 @@
 namespace Shopwell\Tests\Unit\Core\Checkout\Loyalty\Service;
 
 use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Checkout\Cart\LineItem\LineItem;
 use Shopwell\Core\Checkout\Cart\Price\Struct\CalculatedPrice;
@@ -159,14 +158,17 @@ class LoyaltyReturnPointsTest extends TestCase
             ->revokeEarned($this->orderReturn(customerId: null), $this->order(), $this->context);
     }
 
+    /**
+     * @param StaticEntityRepository<LoyaltyPointTransactionCollection> $repository
+     */
     private function points(LoyaltyPointLots $lots, LoyaltyLedger $ledger, StaticEntityRepository $repository): LoyaltyReturnPoints
     {
         return new LoyaltyReturnPoints($repository, $lots, $ledger);
     }
 
-    private function lots(int $taken = 600, int $outstanding = 600): LoyaltyPointLots&MockObject
+    private function lots(int $taken = 600, int $outstanding = 600): LoyaltyPointLots
     {
-        $lots = $this->createMock(LoyaltyPointLots::class);
+        $lots = static::createStub(LoyaltyPointLots::class);
         $lots->method('usageOf')->willReturn(['taken' => $taken, 'outstanding' => $outstanding]);
 
         return $lots;

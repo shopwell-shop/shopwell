@@ -46,7 +46,7 @@ type DraftPosition = OrderReturnPosition & {
  *  3. **What can not go back is not offered.** The positions come from the server, which subtracts what
  *     running returns of the same order already claimed.
  */
-// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+/** @private */
 export default defineComponent({
     template,
 

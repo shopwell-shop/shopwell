@@ -48,7 +48,7 @@ export default Shopwell.Component.wrapComponentConfig({
     props: {
         gatewayId: {
             // the route hands the id over, so the type of the key is already known here
-            type: String as unknown as PropType<EntityKey<'sms_gateway'> | null>,
+            type: String,
             required: false,
             default: null,
         },
@@ -172,7 +172,10 @@ export default Shopwell.Component.wrapComponentConfig({
                 return;
             }
 
-            this.gateway = await this.gatewayRepository.get(this.gatewayId, Shopwell.Context.api);
+            this.gateway = await this.gatewayRepository.get(
+                this.gatewayId as EntitySchema.SmsGatewayId,
+                Shopwell.Context.api,
+            );
             this.optionsText = this.gateway?.options ? JSON.stringify(this.gateway.options, null, 2) : '';
             this.acceptUnknownRegion = this.storedAcceptUnknownRegion();
         },

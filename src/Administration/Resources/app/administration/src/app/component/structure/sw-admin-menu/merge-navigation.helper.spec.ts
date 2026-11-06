@@ -8,7 +8,13 @@ import type { DatabaseMenuNode, NavigationEntryLike } from './merge-navigation.h
 const declared: NavigationEntryLike[] = [
     { id: 'sw-dashboard', label: 'sw-dashboard.general.mainMenuItemGeneral', path: 'sw.dashboard.index', position: 10 },
     { id: 'sw-catalogue', label: 'global.sw-admin-menu.navigation.mainMenuItemProducts', position: 20 },
-    { id: 'sw-product', label: 'sw-product.general.mainMenuItemOverview', path: 'sw.product.index', position: 10, parent: 'sw-catalogue' },
+    {
+        id: 'sw-product',
+        label: 'sw-product.general.mainMenuItemOverview',
+        path: 'sw.product.index',
+        position: 10,
+        parent: 'sw-catalogue',
+    },
     { id: 'sw-order', label: 'sw-order.general.mainMenuItemGeneral', path: 'sw.order.index', position: 40 },
     { id: 'custom-app-entry', label: 'My app', path: 'my.app.index', position: 110 },
 ];
@@ -160,8 +166,19 @@ describe('src/app/component/structure/sw-admin-menu/merge-navigation.helper', ()
         // second navigation with the same list would be the flyout an operator just closed.
         const declaredWithSettings: NavigationEntryLike[] = [
             ...declared,
-            { id: 'sw-settings', label: 'sw-settings.general.mainMenuItemGeneral', path: 'sw.settings.index', position: 990 },
-            { id: 'sw-settings-tax', label: 'sw-settings-tax.general.mainMenuItemGeneral', path: 'sw.settings.tax.index', position: 100, parent: 'sw-settings' },
+            {
+                id: 'sw-settings',
+                label: 'sw-settings.general.mainMenuItemGeneral',
+                path: 'sw.settings.index',
+                position: 990,
+            },
+            {
+                id: 'sw-settings-tax',
+                label: 'sw-settings-tax.general.mainMenuItemGeneral',
+                path: 'sw.settings.tax.index',
+                position: 100,
+                parent: 'sw-settings',
+            },
         ];
 
         const tree = [
@@ -169,7 +186,9 @@ describe('src/app/component/structure/sw-admin-menu/merge-navigation.helper', ()
                 id: 's',
                 internalKey: 'sw-settings',
                 title: 'sw-settings.general.mainMenuItemGeneral',
-                children: [node({ id: 's1', internalKey: 'sw-settings-tax', title: 'sw-settings-tax.general.mainMenuItemGeneral' })],
+                children: [
+                    node({ id: 's1', internalKey: 'sw-settings-tax', title: 'sw-settings-tax.general.mainMenuItemGeneral' }),
+                ],
             }),
         ];
 

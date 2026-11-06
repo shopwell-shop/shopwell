@@ -193,8 +193,7 @@ class CoreMenuSynchronizer
                     ->addFilter(new EqualsAnyFilter('parentId', $ghostIds))
                     ->setLimit(null),
                 $context
-            )
-            ->getIds();
+            )->getEntities()->getIds();
 
         $survivors = array_values(array_diff($children, $placed));
 

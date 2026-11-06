@@ -8,6 +8,12 @@
  * currency and the states arrive as plain ids. Both are translated here once, for the payment pages
  * and for the payout pages that read the same entities.
  */
+import type {
+    PaymentProviderView,
+    PaymentAppView,
+    PaymentAccountChoice,
+    PaymentAccountView,
+} from 'src/app/service/payment-gateway.types';
 import type CriteriaType from 'src/core/data/criteria.data';
 import type { HttpRequestConfig } from 'src/core/factory/http-client.types';
 
@@ -47,36 +53,14 @@ export interface PaymentState {
     } | null;
 }
 
-/**
- * A payment interface as the settings page renders it: the declaration of its credentials and of its
- * channels, and whether the shop has configured it.
- *
- * @private
- */
-export type PaymentProviderView = Record<string, unknown>;
-
 /** @private */
-export type PaymentAppView = Record<string, unknown>;
-
-/** @private */
-export interface PaymentAccountView {
-    id: string;
-    name: string;
-    providerTechnicalName: string;
-    active: boolean;
-    ownerAppId: string | null;
-    isDefault: boolean;
-    enabledProducts: string[];
-    credentials: Record<string, string | number | boolean | null>;
-    productParams: Record<string, Record<string, string | number | boolean | null>>;
-    settings: Record<string, unknown>;
-}
-
-/** @private */
-export type PaymentAccountChoice = Pick<
+export type {
+    PaymentProviderView,
+    PaymentProductDefinition,
+    PaymentAppView,
     PaymentAccountView,
-    'id' | 'name' | 'providerTechnicalName' | 'active' | 'ownerAppId' | 'isDefault'
->;
+    PaymentAccountChoice,
+} from 'src/app/service/payment-gateway.types';
 
 /**
  * The badge variants of `mt-badge`.
@@ -404,9 +388,9 @@ export default class PaymentGatewayService {
      * The apps that are allowed to call the payment api. The secrets never leave the server, so an
      * app only tells whether it has one.
      */
-    public listApps(): Promise<Array<Record<string, unknown>>> {
+    public listApps(): Promise<PaymentAppView[]> {
         return this.httpClient
-            .get<{ apps?: Array<Record<string, unknown>> }>('/_action/payment/apps', { headers: this.getAuthHeaders() })
+            .get<{ apps?: PaymentAppView[] }>('/_action/payment/apps', { headers: this.getAuthHeaders() })
             .then((response) => response.data.apps ?? []);
     }
 
@@ -414,9 +398,12 @@ export default class PaymentGatewayService {
      * Creates or updates an app. An app that is created without a secret gets a generated one, which
      * is part of the response and never readable again.
      */
-    public saveApp(app: Record<string, unknown>): Promise<Record<string, unknown>> {
+    public saveApp(app: Record<string, unknown>): Promise<{ app: PaymentAppView; appSecret?: string }> {
         return this.httpClient
-            .post<Record<string, unknown>>('/_action/payment/apps', app, { headers: this.getAuthHeaders() })
+            .post<{
+                app: PaymentAppView;
+                appSecret?: string;
+            }>('/_action/payment/apps', app, { headers: this.getAuthHeaders() })
             .then((response) => response.data);
     }
 

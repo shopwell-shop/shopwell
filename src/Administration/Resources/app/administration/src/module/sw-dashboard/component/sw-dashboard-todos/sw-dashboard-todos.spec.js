@@ -1,4 +1,4 @@
-import { mount } from '@vue/test-utils';
+import { shallowMount } from '@vue/test-utils';
 
 function createRepositoryFactory(overrides = {}) {
     const repositories = {
@@ -24,7 +24,7 @@ function createRepositoryFactory(overrides = {}) {
 }
 
 async function createWrapper(privileges = ['order.viewer'], factory = createRepositoryFactory()) {
-    return mount(await wrapTestComponent('sw-dashboard-todos', { sync: true }), {
+    return shallowMount(await wrapTestComponent('sw-dashboard-todos', { sync: true }), {
         global: {
             stubs: {
                 'mt-card': {
@@ -37,7 +37,10 @@ async function createWrapper(privileges = ['order.viewer'], factory = createRepo
                     template: '<span class="mt-badge"><slot></slot></span>',
                     props: ['variant'],
                 },
-                'router-link': true,
+                'router-link': {
+                    props: ['to'],
+                    template: '<a :data-route="to.name" :data-query="JSON.stringify(to.query)"><slot /></a>',
+                },
                 'sw-extension-component-section': true,
             },
             mocks: {
@@ -91,9 +94,11 @@ describe('module/sw-dashboard/component/sw-dashboard-todos', () => {
         const wrapper = await createWrapper(['order.viewer', 'order_return.viewer'], factory);
         await flushPromises();
 
-        expect(wrapper.vm.items.map((item) => item.key)).toEqual(['returnRequests', 'ordersToShip']);
-        expect(wrapper.vm.items[0].count).toBe(3);
-        expect(wrapper.vm.items[1].count).toBe(12);
+        expect(wrapper.findAll('.sw-dashboard-todos__item-label').map((label) => label.text())).toEqual([
+            'sw-dashboard.todos.returnRequests',
+            'sw-dashboard.todos.ordersToShip',
+        ]);
+        expect(wrapper.findAll('.sw-dashboard-todos__item-badge').map((badge) => badge.text())).toEqual(['3', '12']);
         expect(wrapper.find('.sw-dashboard-todos__empty').exists()).toBe(false);
     });
 
@@ -107,7 +112,7 @@ describe('module/sw-dashboard/component/sw-dashboard-todos', () => {
         const wrapper = await createWrapper(['order.viewer'], factory);
         await flushPromises();
 
-        expect(wrapper.vm.items.map((item) => item.key)).toEqual([]);
+        expect(wrapper.find('.sw-dashboard-todos__list').exists()).toBe(false);
     });
 
     it('shows the review counter with review permission', async () => {
@@ -120,7 +125,10 @@ describe('module/sw-dashboard/component/sw-dashboard-todos', () => {
         const wrapper = await createWrapper(['order.viewer', 'review.viewer'], factory);
         await flushPromises();
 
-        expect(wrapper.vm.items.map((item) => item.key)).toEqual(['reviewsWaiting']);
+        expect(wrapper.findAll('.sw-dashboard-todos__item-label').map((label) => label.text())).toEqual([
+            'sw-dashboard.todos.reviewsWaiting',
+        ]);
+        expect(wrapper.get('.sw-dashboard-todos__item-badge').text()).toBe('8');
     });
 
     it('links the ship todo to the order list filtered by open deliveries', async () => {
@@ -136,10 +144,9 @@ describe('module/sw-dashboard/component/sw-dashboard-todos', () => {
         const wrapper = await createWrapper(['order.viewer'], factory);
         await flushPromises();
 
-        const shipItem = wrapper.vm.items.find((item) => item.key === 'ordersToShip');
-        const filters = JSON.parse(decodeURIComponent(shipItem.link.query['grid.filter.order']));
-
-        expect(shipItem.link.name).toBe('sw.order.index');
+        const shipLink = wrapper.get('a[data-route="sw.order.index"]');
+        const query = JSON.parse(shipLink.attributes('data-query'));
+        const filters = JSON.parse(decodeURIComponent(query['grid.filter.order']));
         expect(filters['delivery-status-filter'].criteria[0]).toEqual({
             type: 'equalsAny',
             field: 'primaryOrderDelivery.stateMachineState.id',
@@ -157,7 +164,6 @@ describe('module/sw-dashboard/component/sw-dashboard-todos', () => {
         const wrapper = await createWrapper(['order.viewer', 'order_return.viewer'], factory);
         await flushPromises();
 
-        const returnItem = wrapper.vm.items.find((item) => item.key === 'returnRequests');
-        expect(returnItem.link.name).toBe('sw.order.return.list');
+        expect(wrapper.find('a[data-route="sw.order.return.list"]').exists()).toBe(true);
     });
 });

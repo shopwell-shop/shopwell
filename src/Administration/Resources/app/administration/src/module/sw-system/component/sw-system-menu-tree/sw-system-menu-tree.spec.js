@@ -74,11 +74,18 @@ async function createWrapper(props = {}) {
                 'mt-icon': { template: '<span class="mt-icon-stub"></span>', props: ['name', 'size'] },
                 'mt-button': {
                     template: '<button class="mt-button-stub" @click="$emit(\'click\')"><slot></slot></button>',
-                    props: ['size', 'variant', 'square', 'title', 'disabled'],
+                    props: [
+                        'size',
+                        'variant',
+                        'square',
+                        'title',
+                        'disabled',
+                    ],
                 },
                 'sw-context-button': { template: '<span class="sw-context-button-stub"><slot></slot></span>' },
                 'sw-context-menu-item': {
-                    template: '<button class="sw-context-menu-item-stub" :data-variant="variant" :disabled="disabled" @click="$emit(\'click\')"><slot></slot></button>',
+                    template:
+                        '<button class="sw-context-menu-item-stub" :data-variant="variant" :disabled="disabled" @click="$emit(\'click\')"><slot></slot></button>',
                     props: ['disabled', 'variant'],
                 },
                 'sw-context-menu-divider': { template: '<hr class="sw-context-menu-divider-stub" />' },

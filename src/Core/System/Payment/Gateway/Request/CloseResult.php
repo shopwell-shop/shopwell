@@ -13,6 +13,8 @@ use Shopwell\Core\Framework\Log\Package;
  * or unknown trade may be closed locally, a paid one may not, or the payment would be lost.
  *
  * @internal
+ *
+ * @codeCoverageIgnore
  */
 #[Package('framework')]
 final readonly class CloseResult

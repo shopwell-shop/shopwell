@@ -95,7 +95,6 @@ export default {
 
             return this.activeCustomer.addresses;
         },
-
     },
 
     watch: {

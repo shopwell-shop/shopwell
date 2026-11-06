@@ -209,61 +209,63 @@
             </mt-card>
             {% endblock %}
         </sw-card-view>
+
+        {% block sw_settings_position_edit_modal %}
+        <sw-modal
+            v-if="showEditModal && editedPosition"
+            class="sw-settings-position-list__edit-modal"
+            :title="modalTitle"
+            variant="small"
+            @modal-close="onCloseEditModal"
+        >
+            {% block sw_settings_position_edit_modal_fields %}
+            <mt-text-field
+                v-model="editedPosition.name"
+                class="sw-settings-position-list__edit-name"
+                required
+                :label="$t('sw-settings-position.list.labelName')"
+                :placeholder="$t('sw-settings-position.list.placeholderName')"
+            />
+
+            <mt-number-field
+                v-model="editedPosition.position"
+                class="sw-settings-position-list__edit-position"
+                :label="$t('sw-settings-position.list.columnPosition')"
+                :help-text="$t('sw-settings-position.list.helpTextPosition')"
+            />
+
+            <mt-switch
+                v-model="editedPosition.active"
+                class="sw-settings-position-list__edit-active"
+                :label="$t('sw-settings-position.list.labelActive')"
+            />
+            {% endblock %}
+
+            {% block sw_settings_position_edit_modal_footer %}
+            <template #modal-footer>
+                <mt-button
+                    size="small"
+                    variant="secondary"
+                    @click="onCloseEditModal"
+                >
+                    {{ $t('global.default.cancel') }}
+                </mt-button>
+
+                <mt-button
+                    variant="primary"
+                    size="small"
+                    @click="onEditModalSave"
+                >
+                    {{ $t('global.default.save') }}
+                </mt-button>
+            </template>
+            {% endblock %}
+        </sw-modal>
+        {% endblock %}
+
     </template>
     {% endblock %}
 
-    {% block sw_settings_position_edit_modal %}
-    <sw-modal
-        v-if="showEditModal && editedPosition"
-        class="sw-settings-position-list__edit-modal"
-        :title="modalTitle"
-        variant="small"
-        @modal-close="onCloseEditModal"
-    >
-        {% block sw_settings_position_edit_modal_fields %}
-        <mt-text-field
-            v-model="editedPosition.name"
-            class="sw-settings-position-list__edit-name"
-            required
-            :label="$t('sw-settings-position.list.labelName')"
-            :placeholder="$t('sw-settings-position.list.placeholderName')"
-        />
-
-        <mt-number-field
-            v-model="editedPosition.position"
-            class="sw-settings-position-list__edit-position"
-            :label="$t('sw-settings-position.list.columnPosition')"
-            :help-text="$t('sw-settings-position.list.helpTextPosition')"
-        />
-
-        <mt-switch
-            v-model="editedPosition.active"
-            class="sw-settings-position-list__edit-active"
-            :label="$t('sw-settings-position.list.labelActive')"
-        />
-        {% endblock %}
-
-        {% block sw_settings_position_edit_modal_footer %}
-        <template #modal-footer>
-            <mt-button
-                size="small"
-                variant="secondary"
-                @click="onCloseEditModal"
-            >
-                {{ $t('global.default.cancel') }}
-            </mt-button>
-
-            <mt-button
-                variant="primary"
-                size="small"
-                @click="onEditModalSave"
-            >
-                {{ $t('global.default.save') }}
-            </mt-button>
-        </template>
-        {% endblock %}
-    </sw-modal>
-    {% endblock %}
 </sw-page>
 {% endblock %}
 {% endblock %}

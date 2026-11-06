@@ -112,7 +112,7 @@ class PaymentAccountLockTest extends TestCase
 
     public function testIdentityValidationSeesAFirstBindingCommittedAfterItsRepeatableReadSnapshot(): void
     {
-        $app = static::getContainer()->get('payment_app.repository')->search(new Criteria([$this->appId]), Context::createDefaultContext())->first();
+        $app = static::getContainer()->get('payment_app.repository')->search(new Criteria([$this->appId]), Context::createDefaultContext())->getEntities()->first();
         static::assertInstanceOf(PaymentAppEntity::class, $app);
         $order = static::getContainer()->get(PaymentOrderService::class)->create($app, new PaymentOrderRequest('lock-' . Uuid::randomHex(), 1000, 'CNY', 'Concurrent identity'));
         $this->contender->beginTransaction();
@@ -149,7 +149,7 @@ class PaymentAccountLockTest extends TestCase
 
     public function testFirstBindingCanCreateItsAccountInTheSameDalWrite(): void
     {
-        $app = static::getContainer()->get('payment_app.repository')->search(new Criteria([$this->appId]), Context::createDefaultContext())->first();
+        $app = static::getContainer()->get('payment_app.repository')->search(new Criteria([$this->appId]), Context::createDefaultContext())->getEntities()->first();
         static::assertInstanceOf(PaymentAppEntity::class, $app);
         $order = static::getContainer()->get(PaymentOrderService::class)->create($app, new PaymentOrderRequest('nested-' . Uuid::randomHex(), 1000, 'CNY', 'Nested account binding'));
         $accountId = Uuid::randomHex();

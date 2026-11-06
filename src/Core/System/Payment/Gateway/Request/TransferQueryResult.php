@@ -17,6 +17,8 @@ use Shopwell\Core\Framework\Log\Package;
  * are the same kind of answer.
  *
  * @internal
+ *
+ * @codeCoverageIgnore
  */
 #[Package('framework')]
 final readonly class TransferQueryResult

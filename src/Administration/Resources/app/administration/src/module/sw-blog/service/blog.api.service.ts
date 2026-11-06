@@ -351,7 +351,12 @@ export default class BlogApiService {
      *
      * `null` reads both states, the way the review list treats its status filter.
      */
-    public commentListCriteria(page: number, limit: number, status: boolean | null, term: string | null = null): CriteriaType {
+    public commentListCriteria(
+        page: number,
+        limit: number,
+        status: boolean | null,
+        term: string | null = null,
+    ): CriteriaType {
         const criteria = new Criteria(page, limit);
         criteria.addAssociation('blog');
         criteria.addAssociation('blog.author');

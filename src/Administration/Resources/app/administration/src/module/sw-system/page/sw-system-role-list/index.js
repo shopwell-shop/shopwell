@@ -148,7 +148,7 @@ export default {
 
         onConfirmDelete() {
             this.isLoading = true;
-            this.onCloseDeleteModal();
+            this.isConfirmDeleteModalOpen = false;
 
             this.ssoSettingsService.isSso().then((response) => {
                 this.isLoading = false;
@@ -173,7 +173,11 @@ export default {
                 .delete(role.id, context)
                 .then(() => {
                     this.createNotificationSuccess({
-                        message: this.$t('sw-system.roles.role-grid.notification.deleteSuccess.message', { name: role.name }, 0),
+                        message: this.$t(
+                            'sw-system.roles.role-grid.notification.deleteSuccess.message',
+                            { name: role.name },
+                            0,
+                        ),
                     });
 
                     this.getList();
@@ -181,7 +185,11 @@ export default {
                 .catch(() => {
                     this.isLoading = false;
                     this.createNotificationError({
-                        message: this.$t('sw-system.roles.role-grid.notification.deleteError.message', { name: role.name }, 0),
+                        message: this.$t(
+                            'sw-system.roles.role-grid.notification.deleteError.message',
+                            { name: role.name },
+                            0,
+                        ),
                     });
                 });
         },

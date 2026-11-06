@@ -103,6 +103,16 @@
                 @column-sort="onSortColumn"
                 @inline-edit-save="onInlineEditSave"
             >
+                <template #delete-action="{ item }">
+                    <sw-context-menu-item
+                        :disabled="!canDelete || undefined"
+                        variant="danger"
+                        @click="onDelete(item)"
+                    >
+                        {{ $t('global.default.delete') }}
+                    </sw-context-menu-item>
+                </template>
+
                 {% block sw_blog_category_list_grid_column_active %}
                 <template #column-active="{ item, isInlineEdit }">
                     <mt-checkbox

@@ -74,6 +74,8 @@ class FinishControllerTest extends TestCase
 
     public function testFinishLocksSystemAndRedirectsWithCookie(): void
     {
+        $this->adminMenuSeeder->expects($this->once())->method('seed');
+
         $this->systemLocker
             ->expects($this->once())
             ->method('lock');
@@ -108,6 +110,8 @@ class FinishControllerTest extends TestCase
 
     public function testFinishUsesCustomAdminPathNameForRedirectAndCookiePath(): void
     {
+        $this->adminMenuSeeder->expects($this->once())->method('seed');
+
         $this->systemLocker
             ->expects($this->once())
             ->method('lock');
@@ -169,6 +173,8 @@ class FinishControllerTest extends TestCase
 
     public function testFinishIgnoresTransferException(): void
     {
+        $this->adminMenuSeeder->expects($this->once())->method('seed');
+
         $this->systemLocker
             ->expects($this->once())
             ->method('lock');

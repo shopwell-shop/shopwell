@@ -1916,9 +1916,7 @@ describe('src/module/sw-system/components/sw-system-permissions-grid', () => {
         expect(catalogueAllCheckbox.props().partial).toBe(false);
 
         const productRow = wrapper.find('.sw-system-permissions-grid__entry_product');
-        const productAllCheckbox = productRow.find(
-            '.sw-system-permissions-grid__role_all .mt-field--checkbox__container',
-        );
+        const productAllCheckbox = productRow.find('.sw-system-permissions-grid__role_all .mt-field--checkbox__container');
 
         await productAllCheckbox.find('input').setChecked();
 
@@ -2953,9 +2951,7 @@ describe('src/module/sw-system/components/sw-system-permissions-grid', () => {
 
         // get product viewer checkbox
         const catalogueRow = wrapper.find('.sw-system-permissions-grid__parent_catalogue');
-        const catalogueViewer = catalogueRow.find(
-            '.sw-system-permissions-grid__role_viewer .mt-field--checkbox__container',
-        );
+        const catalogueViewer = catalogueRow.find('.sw-system-permissions-grid__role_viewer .mt-field--checkbox__container');
 
         // get product viewer checkbox
         const productRow = wrapper.find('.sw-system-permissions-grid__entry_product');
@@ -3020,9 +3016,7 @@ describe('src/module/sw-system/components/sw-system-permissions-grid', () => {
 
         // get product viewer checkbox
         const catalogueRow = wrapper.find('.sw-system-permissions-grid__parent_catalogue');
-        const catalogueViewer = catalogueRow.find(
-            '.sw-system-permissions-grid__role_viewer .mt-field--checkbox__container',
-        );
+        const catalogueViewer = catalogueRow.find('.sw-system-permissions-grid__role_viewer .mt-field--checkbox__container');
 
         // get product viewer checkbox
         const productRow = wrapper.find('.sw-system-permissions-grid__entry_product');
@@ -3032,9 +3026,7 @@ describe('src/module/sw-system/components/sw-system-permissions-grid', () => {
 
         // get property viewer checkbox
         const propertyRow = wrapper.find('.sw-system-permissions-grid__entry_property');
-        const propertyViewer = propertyRow.find(
-            '.sw-system-permissions-grid__role_viewer .mt-field--checkbox__container',
-        );
+        const propertyViewer = propertyRow.find('.sw-system-permissions-grid__role_viewer .mt-field--checkbox__container');
 
         // assert that catalogue parent does exist
         expect(catalogueViewer.exists()).toBe(true);
@@ -3147,9 +3139,7 @@ describe('src/module/sw-system/components/sw-system-permissions-grid', () => {
         const headerDeleter = headerRow
             .find('.sw-system-permissions-grid__role_deleter')
             .findComponent('.mt-field--checkbox__container');
-        const headerAll = headerRow
-            .find('.sw-system-permissions-grid__all')
-            .findComponent('.mt-field--checkbox__container');
+        const headerAll = headerRow.find('.sw-system-permissions-grid__all').findComponent('.mt-field--checkbox__container');
 
         // assert that viewer header checkbox as not value and no partial value
         expect(headerViewer.props('partial')).toBe(false);
@@ -3283,7 +3273,12 @@ describe('src/module/sw-system/components/sw-system-permissions-grid', () => {
 
             const wrapper = await createWrapper({
                 privilegesMappings: dependencyMappings(),
-                rolePrivileges: ['product.viewer', 'product.editor', 'product.creator', 'product.deleter'],
+                rolePrivileges: [
+                    'product.viewer',
+                    'product.editor',
+                    'product.creator',
+                    'product.deleter',
+                ],
             });
             wrapper.vm.createNotificationInfo = createNotificationInfo;
 

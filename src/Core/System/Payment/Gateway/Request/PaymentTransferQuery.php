@@ -21,6 +21,8 @@ use Shopwell\Core\System\Payment\Transfer\PaymentTransferRecipientEntity;
  * was built with, and those follow the identity type of the recipient.
  *
  * @internal
+ *
+ * @codeCoverageIgnore
  */
 #[Package('framework')]
 final class PaymentTransferQuery extends Generic

@@ -12,10 +12,7 @@ Shopwell.Component.register(
     'sw-system-additional-permissions',
     () => import('./components/sw-system-additional-permissions'),
 );
-Shopwell.Component.register(
-    'sw-system-permissions-grid',
-    () => import('./components/sw-system-permissions-grid'),
-);
+Shopwell.Component.register('sw-system-permissions-grid', () => import('./components/sw-system-permissions-grid'));
 Shopwell.Component.register(
     'sw-system-detailed-permissions-grid',
     () => import('./components/sw-system-detailed-permissions-grid'),
@@ -25,25 +22,15 @@ Shopwell.Component.register(
     () => import('./components/sw-system-detailed-additional-permissions'),
 );
 Shopwell.Component.register('sw-system-user-detail', () => import('./page/sw-system-user-detail'));
-Shopwell.Component.extend(
-    'sw-system-user-create',
-    'sw-system-user-detail',
-    () => import('./page/sw-system-user-create'),
-);
+Shopwell.Component.extend('sw-system-user-create', 'sw-system-user-detail', () => import('./page/sw-system-user-create'));
 Shopwell.Component.register('sw-system-role-detail', () => import('./page/sw-system-role-detail'));
+Shopwell.Component.register('sw-system-role-view-general', () => import('./view/sw-system-role-view-general'));
+Shopwell.Component.register('sw-system-role-view-detailed', () => import('./view/sw-system-role-view-detailed'));
+Shopwell.Component.register('sw-system-sso-user-detail', () => import('./page/sw-system-sso-user-detail'));
 Shopwell.Component.register(
-    'sw-system-role-view-general',
-    () => import('./view/sw-system-role-view-general'),
+    'sw-system-user-sso-invitation-modal',
+    () => import('./components/sw-system-user-sso-invitation-modal'),
 );
-Shopwell.Component.register(
-    'sw-system-role-view-detailed',
-    () => import('./view/sw-system-role-view-detailed'),
-);
-Shopwell.Component.register(
-    'sw-system-sso-user-detail',
-    () => import('./page/sw-system-sso-user-detail'),
-);
-Shopwell.Component.register('sw-system-user-sso-invitation-modal', () => import('./components/sw-system-user-sso-invitation-modal'));
 Shopwell.Component.register('sw-system-user-sso-status-label', () => import('./components/sw-system-user-sso-status-label'));
 Shopwell.Component.register(
     'sw-system-user-sso-access-key-create-modal',

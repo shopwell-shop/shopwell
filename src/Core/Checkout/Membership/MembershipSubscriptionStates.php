@@ -14,6 +14,8 @@ use Shopwell\Core\Framework\Log\Package;
  * and would have to be touched again each time a new way is added.
  *
  * @final
+ *
+ * @codeCoverageIgnore
  */
 #[Package('checkout')]
 class MembershipSubscriptionStates

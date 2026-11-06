@@ -1646,7 +1646,7 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
 
     private function createCashierTables(Connection $connection): void
     {
-        $connection->executeStatement(<<<SQL
+        $connection->executeStatement(<<<'SQL'
             CREATE TABLE IF NOT EXISTS `payment_cashier_config` (
                 `id` BINARY(16) NOT NULL,
                 `payment_app_id` BINARY(16) NOT NULL,
@@ -1663,7 +1663,7 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
             SQL);
 
-        $connection->executeStatement(<<<SQL
+        $connection->executeStatement(<<<'SQL'
             CREATE TABLE IF NOT EXISTS `payment_cashier_session` (
                 `id` BINARY(16) NOT NULL,
                 `payment_app_id` BINARY(16) NOT NULL,

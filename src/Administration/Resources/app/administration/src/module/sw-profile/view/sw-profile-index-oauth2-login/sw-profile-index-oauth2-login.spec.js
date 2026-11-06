@@ -52,7 +52,7 @@ async function createWrapper({
             stubs: {
                 // The modal teleports into the body and traps the focus, the view only needs its slots.
                 'mt-modal-root': {
-                    template: '<div class="mt-modal-root"><slot></slot></div>',
+                    template: `<div class="mt-modal-root"><button class="keep-open" @click="$emit('change', true)"/><button class="dismiss" @click="$emit('change', false)"/><slot></slot></div>`,
                     props: ['isOpen'],
                 },
                 'mt-modal': {
@@ -74,7 +74,7 @@ describe('src/module/sw-profile/view/sw-profile-index-oauth2-login', () => {
         const { wrapper, oauth2IdentityService } = await createWrapper();
 
         expect(oauth2IdentityService.listBindings).toHaveBeenCalledTimes(1);
-        expect(wrapper.vm.isLoading).toBe(false);
+        expect(wrapper.getComponent({ name: 'mt-card' }).props('isLoading')).toBe(false);
 
         const rows = wrapper.findAll('.sw-profile-index-oauth2-login__binding');
 
@@ -86,14 +86,14 @@ describe('src/module/sw-profile/view/sw-profile-index-oauth2-login', () => {
         const unbindButtons = wrapper.findAll('.sw-profile-index-oauth2-login__binding-unbind');
 
         expect(unbindButtons).toHaveLength(1);
-        expect(wrapper.vm.bindings[0].linked).toBe(true);
-        expect(wrapper.vm.bindings[1].linked).toBe(false);
+        expect(rows[0].text()).toContain('["sw-profile.oauth2Login.linked"]');
+        expect(rows[1].text()).toContain('["sw-profile.oauth2Login.notLinked"]');
     });
 
     it('should tell the administrator when the shop offers no channel at all', async () => {
         const { wrapper } = await createWrapper({ bindings: [] });
 
-        expect(wrapper.vm.isLoading).toBe(false);
+        expect(wrapper.getComponent({ name: 'mt-card' }).props('isLoading')).toBe(false);
 
         expect(wrapper.find('.sw-profile-index-oauth2-login__empty-state').exists()).toBe(true);
         expect(wrapper.find('.sw-profile-index-oauth2-login__bindings').exists()).toBe(false);
@@ -102,26 +102,26 @@ describe('src/module/sw-profile/view/sw-profile-index-oauth2-login', () => {
     it('should resolve the label of a channel through its snippet and fall back to the technical name', async () => {
         const { wrapper } = await createWrapper({ $te: () => false });
 
-        expect(wrapper.vm.channelLabel(googleBinding)).toBe('google');
-        expect(wrapper.vm.channelLabel({ technicalName: 'wechat', labelSnippet: null })).toBe('wechat');
+        expect(wrapper.findAll('.sw-profile-index-oauth2-login__binding-label')[0].text()).toBe('google');
+        expect(wrapper.findAll('.sw-profile-index-oauth2-login__binding-label')[1].text()).toBe('wechat');
 
         const { wrapper: translatedWrapper } = await createWrapper();
 
-        expect(translatedWrapper.vm.channelLabel(googleBinding)).toBe('["sso.oauth2.channel.google"]');
+        expect(translatedWrapper.findAll('.sw-profile-index-oauth2-login__binding-label')[0].text()).toBe(
+            '["sso.oauth2.channel.google"]',
+        );
     });
 
     it('should warn and stay usable when the bindings cannot be loaded', async () => {
+        const notification = jest.spyOn(Shopwell.Store.get('notification'), 'createNotification');
         const { wrapper } = await createWrapper({ listFails: true });
-        const notification = jest.spyOn(wrapper.vm, 'createNotificationError');
 
-        // The failed request of `created` happened before the spy was installed, so repeat it.
-        await wrapper.vm.loadBindings();
-
-        expect(notification).toHaveBeenCalledWith({
-            message: '["sw-profile.oauth2Login.notificationLoadError"]',
-        });
-        expect(wrapper.vm.bindings).toEqual([]);
-        expect(wrapper.vm.isLoading).toBe(false);
+        expect(notification).toHaveBeenCalledWith(
+            expect.objectContaining({
+                message: '["sw-profile.oauth2Login.notificationLoadError"]',
+            }),
+        );
+        expect(wrapper.getComponent({ name: 'mt-card' }).props('isLoading')).toBe(false);
         expect(wrapper.find('.sw-profile-index-oauth2-login__empty-state').exists()).toBe(true);
     });
 
@@ -130,37 +130,40 @@ describe('src/module/sw-profile/view/sw-profile-index-oauth2-login', () => {
 
         expect(wrapper.find('.sw-profile-index-oauth2-login__remove-modal').exists()).toBe(false);
 
-        wrapper.vm.onOpenRemoveModal(googleBinding);
+        await wrapper.get('.sw-profile-index-oauth2-login__binding-unbind').trigger('click');
         await flushPromises();
 
-        expect(wrapper.vm.removeTarget).toEqual(googleBinding);
+        expect(wrapper.get('.sw-profile-index-oauth2-login__remove-modal').text()).toContain('sso.oauth2.channel.google');
         expect(wrapper.find('.sw-profile-index-oauth2-login__remove-modal').exists()).toBe(true);
 
-        wrapper.vm.onRemoveModalChange(true);
+        await wrapper.get('.keep-open').trigger('click');
         await flushPromises();
-        expect(wrapper.vm.removeTarget).toEqual(googleBinding);
+        expect(wrapper.get('.sw-profile-index-oauth2-login__remove-modal').text()).toContain('sso.oauth2.channel.google');
 
-        wrapper.vm.onRemoveModalChange(false);
+        await wrapper.get('.dismiss').trigger('click');
         await flushPromises();
 
-        expect(wrapper.vm.removeTarget).toBeNull();
+        expect(wrapper.find('.sw-profile-index-oauth2-login__remove-modal').exists()).toBe(false);
         expect(oauth2IdentityService.unbind).not.toHaveBeenCalled();
         expect(wrapper.find('.sw-profile-index-oauth2-login__remove-modal').exists()).toBe(false);
     });
 
     it('should remove the link of the chosen channel and reload the state afterwards', async () => {
         const { wrapper, oauth2IdentityService } = await createWrapper();
-        const success = jest.spyOn(wrapper.vm, 'createNotificationSuccess');
+        const success = jest.spyOn(Shopwell.Store.get('notification'), 'createNotification');
 
-        wrapper.vm.onOpenRemoveModal(googleBinding);
-        await wrapper.vm.onConfirmRemove();
+        await wrapper.get('.sw-profile-index-oauth2-login__binding-unbind').trigger('click');
+        await wrapper.get('mt-modal-action-stub').trigger('click');
+        await flushPromises();
 
         expect(oauth2IdentityService.unbind).toHaveBeenCalledWith('google');
-        expect(success).toHaveBeenCalledWith({
-            message: '["sw-profile.oauth2Login.notificationUnbindSuccess"]',
-        });
-        expect(wrapper.vm.removeTarget).toBeNull();
-        expect(wrapper.vm.isUnbinding).toBe(false);
+        expect(success).toHaveBeenCalledWith(
+            expect.objectContaining({
+                message: '["sw-profile.oauth2Login.notificationUnbindSuccess"]',
+            }),
+        );
+        expect(wrapper.find('.sw-profile-index-oauth2-login__remove-modal').exists()).toBe(false);
+        expect(wrapper.find('mt-modal-action-stub[is-loading="true"]').exists()).toBe(false);
 
         // Once for `created`, once to refresh the list after the removal.
         expect(oauth2IdentityService.listBindings).toHaveBeenCalledTimes(2);
@@ -168,26 +171,29 @@ describe('src/module/sw-profile/view/sw-profile-index-oauth2-login', () => {
 
     it('should keep the confirmation open and warn when the removal fails', async () => {
         const { wrapper, oauth2IdentityService } = await createWrapper({ unbindFails: true });
-        const error = jest.spyOn(wrapper.vm, 'createNotificationError');
+        const error = jest.spyOn(Shopwell.Store.get('notification'), 'createNotification');
 
-        wrapper.vm.onOpenRemoveModal(googleBinding);
-        await wrapper.vm.onConfirmRemove();
+        await wrapper.get('.sw-profile-index-oauth2-login__binding-unbind').trigger('click');
+        await wrapper.get('mt-modal-action-stub').trigger('click');
+        await flushPromises();
 
         expect(oauth2IdentityService.unbind).toHaveBeenCalledWith('google');
-        expect(error).toHaveBeenCalledWith({
-            message: '["sw-profile.oauth2Login.notificationUnbindError"]',
-        });
-        expect(wrapper.vm.removeTarget).toEqual(googleBinding);
-        expect(wrapper.vm.isUnbinding).toBe(false);
+        expect(error).toHaveBeenCalledWith(
+            expect.objectContaining({
+                message: '["sw-profile.oauth2Login.notificationUnbindError"]',
+            }),
+        );
+        expect(wrapper.get('.sw-profile-index-oauth2-login__remove-modal').text()).toContain('sso.oauth2.channel.google');
+        expect(wrapper.find('mt-modal-action-stub[is-loading="true"]').exists()).toBe(false);
         expect(oauth2IdentityService.listBindings).toHaveBeenCalledTimes(1);
     });
 
-    it('should not call the server when the confirmation arrives without a channel', async () => {
+    it('should expose no confirmation before a channel is chosen', async () => {
         const { wrapper, oauth2IdentityService } = await createWrapper();
 
-        await wrapper.vm.onConfirmRemove();
+        expect(wrapper.find('mt-modal-action-stub').exists()).toBe(false);
 
         expect(oauth2IdentityService.unbind).not.toHaveBeenCalled();
-        expect(wrapper.vm.isUnbinding).toBe(false);
+        expect(wrapper.find('mt-modal-action-stub[is-loading="true"]').exists()).toBe(false);
     });
 });

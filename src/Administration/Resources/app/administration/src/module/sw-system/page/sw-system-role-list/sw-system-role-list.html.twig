@@ -211,15 +211,15 @@
             </mt-card>
             {% endblock %}
         </sw-card-view>
-    </template>
-    {% endblock %}
 
-    {% block sw_system_role_list_verify_user_modal %}
-    <sw-verify-user-modal
-        v-if="isConfirmingPasswordModalOpen"
-        @verified="deleteRole"
-        @close="onCloseConfirmPasswordModal"
-    />
+        {% block sw_system_role_list_verify_user_modal %}
+        <sw-verify-user-modal
+            v-if="isConfirmingPasswordModalOpen"
+            @verified="deleteRole"
+            @close="onCloseConfirmPasswordModal"
+        />
+        {% endblock %}
+    </template>
     {% endblock %}
 </sw-page>
 {% endblock %}

@@ -3,6 +3,7 @@
 namespace Shopwell\Core\System\User\Aggregate\UserOrganizationUnit;
 
 use Shopwell\Core\Framework\DataAbstractionLayer\Entity;
+use Shopwell\Core\Framework\DataAbstractionLayer\EntityIdTrait;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Organization\Aggregate\OrganizationUnit\OrganizationUnitEntity;
 use Shopwell\Core\System\User\UserEntity;
@@ -20,6 +21,8 @@ use Shopwell\Core\System\User\UserEntity;
 #[Package('fundamentals@framework')]
 class UserOrganizationUnitEntity extends Entity
 {
+    use EntityIdTrait;
+
     protected string $userId;
 
     protected string $organizationUnitId;

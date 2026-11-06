@@ -204,7 +204,7 @@ export default class SmsGatewayProviderService {
             technicalName: provider.technicalName,
             labelSnippet: provider.labelSnippet,
             supportedRegions: Array.isArray(provider.supportedRegions) ? provider.supportedRegions : [],
-            supportsTemplateMode: provider.supportsTemplateMode === true,
+            supportsTemplateMode: provider.supportsTemplateMode,
             credentialDefinitions: Array.isArray(provider.credentialDefinitions) ? provider.credentialDefinitions : [],
             audit: SmsGatewayProviderService.normalizeAudit(provider.audit),
         };

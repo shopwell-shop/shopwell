@@ -45,7 +45,7 @@ type CustomerName = {
  * The server refuses both wrong cases with a 409 and a 403; the page only keeps the operator from
  * clicking into a refusal.
  */
-// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+/** @private */
 export default defineComponent({
     template,
 
@@ -159,7 +159,7 @@ export default defineComponent({
                 return '–';
             }
 
-            const customer = orderReturn.customer as unknown as CustomerName | null | undefined;
+            const customer = orderReturn.customer as CustomerName | null | undefined;
 
             if (customer) {
                 const name = [customer.firstName, customer.lastName].filter(Boolean).join(' ').trim();

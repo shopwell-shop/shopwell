@@ -58,9 +58,7 @@ describe('module/sw-system/view/sw-system-role-view-general', () => {
         const wrapper = await createWrapper();
 
         const fieldRoleName = wrapper.find('input[aria-label="sw-system.roles.detail.labelName"]');
-        const fieldRoleDescription = wrapper.find(
-            'mt-textarea-stub[label="sw-system.roles.detail.labelDescription"]',
-        );
+        const fieldRoleDescription = wrapper.find('mt-textarea-stub[label="sw-system.roles.detail.labelDescription"]');
         const permissionsGrid = wrapper.find('sw-system-permissions-grid-stub');
         const additionalPermissionsGrid = wrapper.find('sw-system-additional-permissions-stub');
 
@@ -134,9 +132,7 @@ describe('module/sw-system/view/sw-system-role-view-general', () => {
         const wrapper = await createWrapper(['users_and_permissions.editor']);
 
         const fieldRoleName = wrapper.find('input[aria-label="sw-system.roles.detail.labelName"]');
-        const fieldRoleDescription = wrapper.find(
-            'mt-textarea-stub[label="sw-system.roles.detail.labelDescription"]',
-        );
+        const fieldRoleDescription = wrapper.find('mt-textarea-stub[label="sw-system.roles.detail.labelDescription"]');
         const permissionsGrid = wrapper.find('sw-system-permissions-grid-stub');
         const additionalPermissionsGrid = wrapper.find('sw-system-additional-permissions-stub');
 

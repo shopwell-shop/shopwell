@@ -48,7 +48,12 @@ type DeleteContext = Parameters<RepositoryType<'user'>['delete']>[1];
 export default defineComponent({
     template,
 
-    inject: ['repositoryFactory', 'acl', 'ssoSettingsService', 'filterFactory'],
+    inject: [
+        'repositoryFactory',
+        'acl',
+        'ssoSettingsService',
+        'filterFactory',
+    ],
 
     mixins: [Mixin.getByName('listing'), Mixin.getByName('notification')],
 
@@ -294,14 +299,22 @@ export default defineComponent({
                 .then(() => {
                     this.createNotificationSuccess({
                         title: this.$t('global.default.success'),
-                        message: this.$t('sw-system.users.user-grid.notification.deleteSuccess.message', { name: username }, 0),
+                        message: this.$t(
+                            'sw-system.users.user-grid.notification.deleteSuccess.message',
+                            { name: username },
+                            0,
+                        ),
                     });
                     this.getList();
                 })
                 .catch(() => {
                     this.createNotificationError({
                         title: this.$t('global.default.error'),
-                        message: this.$t('sw-system.users.user-grid.notification.deleteError.message', { name: username }, 0),
+                        message: this.$t(
+                            'sw-system.users.user-grid.notification.deleteError.message',
+                            { name: username },
+                            0,
+                        ),
                     });
                 });
 
@@ -327,8 +340,16 @@ export default defineComponent({
                     this.createNotificationSuccess({
                         title: this.$t('global.default.success'),
                         message: nextActive
-                            ? this.$t('sw-system.users.user-grid.notification.enableSuccess.message', { name: user.username }, 0)
-                            : this.$t('sw-system.users.user-grid.notification.disableSuccess.message', { name: user.username }, 0),
+                            ? this.$t(
+                                  'sw-system.users.user-grid.notification.enableSuccess.message',
+                                  { name: user.username },
+                                  0,
+                              )
+                            : this.$t(
+                                  'sw-system.users.user-grid.notification.disableSuccess.message',
+                                  { name: user.username },
+                                  0,
+                              ),
                     });
                     this.getList();
                 })
@@ -336,7 +357,11 @@ export default defineComponent({
                     user.active = !nextActive;
                     this.createNotificationError({
                         title: this.$t('global.default.error'),
-                        message: this.$t('sw-system.users.user-grid.notification.toggleActiveError.message', { name: user.username }, 0),
+                        message: this.$t(
+                            'sw-system.users.user-grid.notification.toggleActiveError.message',
+                            { name: user.username },
+                            0,
+                        ),
                     });
                 });
         },

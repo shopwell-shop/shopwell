@@ -12,19 +12,20 @@
  */
 const { Module } = Shopwell;
 
-/* eslint-disable sw-deprecation-rules/private-feature-declarations */
+/** @private */
 Shopwell.Component.register('sw-settings-order-return-index', () => import('./page/sw-settings-order-return-index'));
+/** @private */
 Shopwell.Component.register(
     'sw-settings-order-return-reason-list',
     () => import('./page/sw-settings-order-return-reason-list'),
 );
+/** @private */
 Shopwell.Component.register(
     'sw-settings-order-return-reason-modal',
     () => import('./component/sw-settings-order-return-reason-modal'),
 );
-/* eslint-enable sw-deprecation-rules/private-feature-declarations */
 
-// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+/** @private */
 Module.register('sw-settings-order-return', {
     type: 'core',
     name: 'settings-order-return',
@@ -80,5 +81,5 @@ Module.register('sw-settings-order-return', {
 
 // A module file without an import of its own is a global script, and its `const { Module }` would
 // collide with the one of every other module. An empty export makes it a module; it exports nothing.
-// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+/** @private */
 export {};

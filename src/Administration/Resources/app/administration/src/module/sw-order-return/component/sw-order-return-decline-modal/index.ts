@@ -16,7 +16,7 @@ const REASON_LIMIT = 500;
  * The modal does not call the server itself. It hands the reason back to the page, which owns the
  * decision and already knows how to report a refusal of the server - one decision, one path.
  */
-// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+/** @private */
 export default defineComponent({
     template,
 

@@ -8,7 +8,12 @@ const { Criteria } = Shopwell.Data;
  * The ledger types `WalletService` writes. Anything else is translated as the
  * raw value, so a new backend type degrades to text instead of a snippet key.
  */
-const KNOWN_TRANSACTION_TYPES = ['top_up', 'consume', 'refund', 'adjust'];
+const KNOWN_TRANSACTION_TYPES = [
+    'top_up',
+    'consume',
+    'refund',
+    'adjust',
+];
 
 type Transaction = {
     id: string;
@@ -17,9 +22,7 @@ type Transaction = {
     createdAt: string;
     wallet?: {
         customer?: {
-            firstName?: string;
-            lastName?: string;
-            company?: string;
+            name?: string;
         } | null;
     } | null;
 };
@@ -113,12 +116,17 @@ export default Shopwell.Component.wrapComponentConfig({
             criteria.addFilter(Criteria.range('paidAt', { gte: getDayBounds(new Date()).from }));
             criteria.addAggregation(Criteria.sum('topUpToday', 'amount'));
 
-            return (this.walletTopUpRepository as {
-                search: (c: unknown) => Promise<{ aggregations: Record<string, { sum?: number }> }>;
-            })
+            return (
+                this.walletTopUpRepository as {
+                    search: (c: unknown) => Promise<{ aggregations: Record<string, { sum?: number }> }>;
+                }
+            )
                 .search(criteria)
                 .then((result) => result.aggregations?.topUpToday?.sum ?? 0)
-                .catch(() => 0);
+                .catch(() => {
+                    // Optional dashboard totals must not prevent opening the overview when a source is unavailable.
+                    return 0;
+                });
         },
 
         /**
@@ -143,11 +151,7 @@ export default Shopwell.Component.wrapComponentConfig({
                 return this.$t('sw-dashboard.wallet.unknownCustomer');
             }
 
-            if (customer.company) {
-                return customer.company;
-            }
-
-            return `${customer.firstName ?? ''} ${customer.lastName ?? ''}`.trim();
+            return customer.name?.trim() || this.$t('sw-dashboard.wallet.unknownCustomer');
         },
 
         typeLabel(transaction: Transaction): string {

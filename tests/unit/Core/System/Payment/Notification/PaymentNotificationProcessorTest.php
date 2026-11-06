@@ -189,7 +189,7 @@ class PaymentNotificationProcessorTest extends TestCase
     {
         $order = $this->order();
         $order->paymentNo = 'BUSINESS-OBLIGATION';
-        $attempt = $this->attempt();
+        $attempt = $this->paymentAttempt();
         $attempt->attemptNo = 'ORIGINAL-EXTERNAL-REQUEST';
         $attempt->accountId = 'original-merchant-account';
         $gateway = $this->gateway(new NotificationResult(paymentNo: $attempt->attemptNo, signatureValid: true, succeeded: false, amount: 1000));
@@ -219,7 +219,7 @@ class PaymentNotificationProcessorTest extends TestCase
 
     public function testAttemptFromAnotherProviderCannotSelectTheVerificationAccount(): void
     {
-        $attempt = $this->attempt();
+        $attempt = $this->paymentAttempt();
         $attempt->providerTechnicalName = 'wechat';
         $gateway = static::createMock(GatewayInterface::class);
         $gateway->expects($this->never())->method('execute');
@@ -708,7 +708,7 @@ class PaymentNotificationProcessorTest extends TestCase
             $refundService,
             $configResolver ?? $this->configResolver($gateway),
             $paidHandler,
-            new StaticEntityRepository([new PaymentAttemptCollection($knownAttempt ? [$matchedAttempt ?? $this->attempt()] : [])]),
+            new StaticEntityRepository([new PaymentAttemptCollection($knownAttempt ? [$matchedAttempt ?? $this->paymentAttempt()] : [])]),
         );
     }
 
@@ -1077,7 +1077,7 @@ class PaymentNotificationProcessorTest extends TestCase
         $order->outTradeNo = 'app-trade-1';
         $order->paymentAppId = 'app-id';
         $order->activeAttemptId = 'attempt-id';
-        $order->activeAttempt = $this->attempt();
+        $order->activeAttempt = $this->paymentAttempt();
         $order->amount = 1000;
         $order->currency = 'CNY';
         $order->subject = 'An order';
@@ -1128,7 +1128,7 @@ class PaymentNotificationProcessorTest extends TestCase
         return $refund;
     }
 
-    private function attempt(): PaymentAttemptEntity
+    private function paymentAttempt(): PaymentAttemptEntity
     {
         $attempt = new PaymentAttemptEntity();
         $attempt->id = 'attempt-id';

@@ -28,7 +28,7 @@ const benefitRepository = {
     create: jest.fn(() => {
         return { id: 'new-benefit' };
     }),
-    save: jest.fn(() => Promise.resolve()),
+    save: jest.fn<Promise<void>, [Record<string, unknown>]>(() => Promise.resolve()),
     delete: jest.fn(() => Promise.resolve()),
 };
 
@@ -45,7 +45,8 @@ async function createWrapper(privileges: string[] = []): Promise<VueWrapper> {
             },
             stubs: {
                 'sw-page': {
-                    template: '<div><slot name="smart-bar-header"></slot><slot name="smart-bar-actions"></slot><slot name="content"></slot></div>',
+                    template:
+                        '<div><slot name="smart-bar-header"></slot><slot name="smart-bar-actions"></slot><slot name="content"></slot></div>',
                 },
                 'sw-card-view': { template: '<div><slot></slot></div>' },
                 'mt-card': { template: '<div><slot></slot></div>' },
@@ -55,12 +56,14 @@ async function createWrapper(privileges: string[] = []): Promise<VueWrapper> {
                     // `emits` keeps the parent listener from also running as a native click handler on the
                     // button, which would call onSave twice
                     emits: ['click'],
-                    template: '<button class="sw-membership-tier-detail__save" :disabled="disabled" @click="$emit(\'click\')" />',
+                    template:
+                        '<button class="sw-membership-tier-detail__save" :disabled="disabled" @click="$emit(\'click\')" />',
                 },
                 'mt-button': { template: '<button><slot></slot></button>' },
                 'mt-text-field': {
                     props: ['modelValue'],
-                    template: '<input class="mt-text-field" :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" />',
+                    template:
+                        '<input class="mt-text-field" :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" />',
                 },
                 'mt-number-field': {
                     props: ['modelValue'],

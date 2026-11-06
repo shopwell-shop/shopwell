@@ -147,7 +147,9 @@ async function createWrapper(user) {
                     'sw-data-grid': true,
                     'sw-data-grid-column-boolean': await wrapTestComponent('sw-data-grid-column-boolean'),
                     'sw-card-view': await wrapTestComponent('sw-card-view'),
-                    'sw-system-user-sso-access-key-create-modal': await wrapTestComponent('sw-system-user-sso-access-key-create-modal'),
+                    'sw-system-user-sso-access-key-create-modal': await wrapTestComponent(
+                        'sw-system-user-sso-access-key-create-modal',
+                    ),
                     'sw-page': await wrapTestComponent('sw-page'),
                     'sw-app-topbar-button': await wrapTestComponent('sw-app-topbar-button'),
                     'sw-app-topbar-sidebar': true,
@@ -269,9 +271,7 @@ describe('module/sw-system/page/sw-system-sso-user-detail', () => {
 
         const invitationBanner = wrapper.find('.sw-sso-user-invitation-info');
         expect(invitationBanner.exists()).toBeTruthy();
-        expect(invitationBanner.find('.mt-banner__message').text()).toBe(
-            'sw-system.sso.invitationNotYetAccepted',
-        );
+        expect(invitationBanner.find('.mt-banner__message').text()).toBe('sw-system.sso.invitationNotYetAccepted');
     });
 
     it('should not be possible to edit name and email', async () => {

@@ -42,7 +42,8 @@ async function createWrapper(privileges: string[] = []): Promise<VueWrapper> {
                 },
                 stubs: {
                     'sw-page': {
-                        template: '<div><slot name="smart-bar-actions"></slot><slot name="content"></slot><slot></slot></div>',
+                        template:
+                            '<div><slot name="smart-bar-actions"></slot><slot name="content"></slot><slot></slot></div>',
                     },
                     'sw-card-view': {
                         template: '<div><slot></slot></div>',
@@ -60,7 +61,8 @@ async function createWrapper(privileges: string[] = []): Promise<VueWrapper> {
                         // `emits` keeps the parent listener from also running as a native click handler on
                         // the button, which would call onSave twice
                         emits: ['click'],
-                        template: '<button class="sw-membership-plan-detail__save" :disabled="disabled" @click="$emit(\'click\')" />',
+                        template:
+                            '<button class="sw-membership-plan-detail__save" :disabled="disabled" @click="$emit(\'click\')" />',
                     },
                     'sw-entity-single-select': true,
                     'mt-text-field': true,

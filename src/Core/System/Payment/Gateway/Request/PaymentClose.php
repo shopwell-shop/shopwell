@@ -15,6 +15,8 @@ use Shopwell\Core\Framework\Log\Package;
  * The service that drives the gateway is {@see PaymentChannelCloser}; this request only carries the model.
  *
  * @internal
+ *
+ * @codeCoverageIgnore
  */
 #[Package('framework')]
 final class PaymentClose extends Generic

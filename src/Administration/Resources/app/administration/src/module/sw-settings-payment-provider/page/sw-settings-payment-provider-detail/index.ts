@@ -144,7 +144,7 @@ export default Shopwell.Component.wrapComponentConfig({
             this.isSaving = true;
             this.error = null;
             try {
-                this.account = await this.paymentGatewayService.saveAccount(this.accountId, {
+                const account = await this.paymentGatewayService.saveAccount(this.accountId, {
                     name: this.account.name.trim(),
                     providerTechnicalName: this.account.providerTechnicalName,
                     active: this.account.active,
@@ -153,6 +153,7 @@ export default Shopwell.Component.wrapComponentConfig({
                     productParams: this.productParams,
                     settings: this.account.settings,
                 });
+                this.account = account;
                 this.initializeFields();
                 useNotification().createNotificationSuccess({
                     message: this.$t('sw-settings-payment-provider.accounts.saved'),
@@ -160,7 +161,7 @@ export default Shopwell.Component.wrapComponentConfig({
                 if (!this.accountId)
                     void this.$router.replace({
                         name: 'sw.settings.payment.provider.detail',
-                        params: { id: this.account.id },
+                        params: { id: account.id },
                     });
             } catch {
                 this.error = this.$t('sw-settings-payment-provider.accounts.saveError');

@@ -1,8 +1,25 @@
 /**
  * @sw-package framework
  */
+import type {
+    PaymentAppView,
+    PaymentProviderView,
+    PaymentProductDefinition,
+    PaymentAccountChoice,
+} from 'src/app/service/payment-gateway.types';
 import template from './sw-settings-payment-gateway-detail.html.twig';
 import './sw-settings-payment-gateway-detail.scss';
+
+type AccountGrant = { key: string; accountId: string | null; enabled: boolean; position: number };
+type ProductState = {
+    technicalName: string;
+    label: string;
+    interactions: string[];
+    methodTranslationKey: string;
+    enabled: boolean;
+    settings: Record<string, unknown>;
+    providerTechnicalName: string;
+};
 
 const { Mixin } = Shopwell;
 
@@ -10,7 +27,7 @@ const NEW_APP_ID = 'new';
 const GENERATED_SECRET_BYTES = 32;
 
 /** @private */
-export default {
+export default Shopwell.Component.wrapComponentConfig({
     template,
 
     inject: ['paymentGatewayService', 'acl'],
@@ -32,7 +49,22 @@ export default {
         };
     },
 
-    data() {
+    data(): {
+        app: PaymentAppView | null;
+        registryProviders: PaymentProviderView[];
+        apps: PaymentAppView[];
+        availableAccounts: PaymentAccountChoice[];
+        providers: AccountGrant[];
+        products: ProductState[];
+        allowedIpsInput: string;
+        appSecretInput: string;
+        generatedSecret: string;
+        isSecretModalOpen: boolean;
+        isLoading: boolean;
+        isSaving: boolean;
+        isDeleting: boolean;
+        isDeleteModalOpen: boolean;
+    } {
         return {
             app: null,
             registryProviders: [],
@@ -69,7 +101,7 @@ export default {
         },
 
         methodOptions() {
-            const options = new Map();
+            const options = new Map<string, { value: string; label: string }>();
             this.registryProviders.forEach((provider) =>
                 (provider.products || []).forEach((product) => {
                     if (product.method) {
@@ -132,11 +164,11 @@ export default {
     },
 
     created() {
-        this.createdComponent();
+        void this.createdComponent();
     },
 
     methods: {
-        displayLabel(label) {
+        displayLabel(label: string | undefined) {
             if (!label) {
                 return '';
             }
@@ -177,14 +209,14 @@ export default {
             } catch (error) {
                 this.createNotificationError({
                     title: this.$t('global.default.error'),
-                    message: error.message,
+                    message: error instanceof Error ? error.message : this.$t('global.default.error'),
                 });
             } finally {
                 this.isLoading = false;
             }
         },
 
-        createEmptyApp() {
+        createEmptyApp(): PaymentAppView {
             return {
                 id: null,
                 technicalName: '',
@@ -202,7 +234,7 @@ export default {
         },
 
         createAccountStates() {
-            return (this.app.accounts || []).map((grant) => ({ ...grant, key: grant.accountId }));
+            return (this.app?.accounts ?? []).map((grant) => ({ ...grant, key: grant.accountId }));
         },
 
         addAccount() {
@@ -218,26 +250,26 @@ export default {
             });
         },
 
-        removeAccount(grant) {
+        removeAccount(grant: AccountGrant) {
             this.providers = this.providers.filter((item) => item.key !== grant.key);
         },
 
-        selectedAccount(grant) {
+        selectedAccount(grant: AccountGrant) {
             return this.availableAccounts.find((account) => account.id === grant.accountId) || null;
         },
 
-        providerLabel(technicalName) {
+        providerLabel(technicalName: string) {
             const provider = this.registryProviders.find((item) => item.technicalName === technicalName);
             return this.displayLabel(provider?.label || technicalName);
         },
 
-        accountLabel(account) {
+        accountLabel(account: PaymentAccountChoice) {
             return account.isDefault && account.name === `${account.providerTechnicalName} platform`
                 ? account.providerTechnicalName
                 : account.name;
         },
 
-        accountOptions(grant) {
+        accountOptions(grant: AccountGrant) {
             return this.availableAccounts
                 .filter(
                     (account) =>
@@ -247,7 +279,7 @@ export default {
                 .map((account) => ({ value: account.id, label: this.accountLabel(account) }));
         },
 
-        createProductStates(registry) {
+        createProductStates(registry: PaymentProviderView[]): ProductState[] {
             return registry.flatMap((provider) =>
                 (provider.products || []).map((product) => ({
                     ...this.createChannelState(product),
@@ -256,15 +288,15 @@ export default {
             );
         },
 
-        hasGrantedAccount(product) {
+        hasGrantedAccount(product: ProductState) {
             return this.providers.some(
                 (grant) =>
                     this.selectedAccount(grant)?.providerTechnicalName === product.providerTechnicalName && grant.enabled,
             );
         },
 
-        createChannelState(channel) {
-            const assignment = (this.app.channels || []).find((item) => item.channelTechnicalName === channel.product);
+        createChannelState(channel: PaymentProductDefinition) {
+            const assignment = (this.app?.channels ?? []).find((item) => item.channelTechnicalName === channel.product);
 
             return {
                 technicalName: channel.product,
@@ -292,6 +324,10 @@ export default {
         },
 
         buildPayload() {
+            if (!this.app) {
+                throw new Error(this.$t('sw-settings-payment-gateway.detail.notFound'));
+            }
+
             return {
                 id: this.app.id,
                 technicalName: this.app.technicalName,
@@ -324,7 +360,7 @@ export default {
                 const response = await this.paymentGatewayService.saveApp(this.buildPayload());
 
                 this.app = response.app;
-                this.apps = [...this.apps.filter((app) => app.id !== this.app.id), this.app];
+                this.apps = [...this.apps.filter((app) => app.id !== response.app.id), this.app];
                 this.allowedIpsInput = (this.app.allowedIps || []).join('\n');
                 this.appSecretInput = '';
 
@@ -342,12 +378,15 @@ export default {
                 });
 
                 if (this.isNew) {
-                    void this.$router.replace({ name: 'sw.settings.payment.gateway.detail', params: { id: this.app.id } });
+                    void this.$router.replace({
+                        name: 'sw.settings.payment.gateway.detail',
+                        params: { id: this.app.id as string },
+                    });
                 }
             } catch (error) {
                 this.createNotificationError({
                     title: this.$t('global.default.error'),
-                    message: error.message,
+                    message: error instanceof Error ? error.message : this.$t('global.default.error'),
                 });
             } finally {
                 this.isSaving = false;
@@ -359,7 +398,7 @@ export default {
             this.generatedSecret = '';
         },
 
-        onSecretModalChange(isOpen) {
+        onSecretModalChange(isOpen: boolean) {
             if (!isOpen) {
                 this.onCloseSecretModal();
             }
@@ -369,7 +408,7 @@ export default {
             this.isDeleteModalOpen = true;
         },
 
-        onDeleteModalChange(isOpen) {
+        onDeleteModalChange(isOpen: boolean) {
             if (!isOpen) {
                 this.isDeleteModalOpen = false;
             }
@@ -379,6 +418,10 @@ export default {
             this.isDeleting = true;
 
             try {
+                if (!this.app?.id) {
+                    return;
+                }
+
                 await this.paymentGatewayService.deleteApp(this.app.id);
                 this.isDeleteModalOpen = false;
 
@@ -391,11 +434,11 @@ export default {
             } catch (error) {
                 this.createNotificationError({
                     title: this.$t('global.default.error'),
-                    message: error.message,
+                    message: error instanceof Error ? error.message : this.$t('global.default.error'),
                 });
             } finally {
                 this.isDeleting = false;
             }
         },
     },
-};
+});

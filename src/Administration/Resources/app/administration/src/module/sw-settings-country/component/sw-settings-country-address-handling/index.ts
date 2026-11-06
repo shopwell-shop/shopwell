@@ -116,9 +116,7 @@ export default Component.wrapComponentConfig({
     computed: {
         customerCriteria(): CriteriaType {
             const criteria = new Criteria(1, null);
-            criteria
-                .addAssociation('defaultBillingAddress.country')
-                .addAssociation('defaultBillingAddress.countryState');
+            criteria.addAssociation('defaultBillingAddress.country').addAssociation('defaultBillingAddress.countryState');
 
             return criteria;
         },

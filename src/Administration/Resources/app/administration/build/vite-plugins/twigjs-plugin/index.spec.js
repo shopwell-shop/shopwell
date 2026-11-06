@@ -81,4 +81,16 @@ describe('build/vite-plugins/twigjs-plugin', () => {
             `export default "{% block content %} <div> <h1>Test</h1> <input type=\\"text\\" value=\\"test\\"> </div> {% endblock %}"`,
         );
     });
+    it.each([
+        ['a<!-- ordinary -->b', 'a b'],
+        ['a<!-->b', 'a b'],
+        ['a<!--->b', 'a b'],
+        ['a<!-- hidden --!>b', 'a b'],
+        ['a<!-- unfinished', 'a'],
+        ['<!<!-- hidden -->--><div>visible</div>', '<! --><div>visible</div>'],
+    ])('removes HTML comment tokens without joining surrounding markup: %s', async (source, expected) => {
+        const result = await TwigjsPlugin().transform(source, 'template.html.twig');
+
+        expect(result.code).toBe(`export default "${expected}"`);
+    });
 });

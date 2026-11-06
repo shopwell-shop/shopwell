@@ -7,13 +7,16 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\Field;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\FieldType;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\ForeignKey;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\ManyToOne;
+use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\OneToMany;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\PrimaryKey;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\Protection;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\Required;
 use Shopwell\Core\Framework\DataAbstractionLayer\Entity as EntityStruct;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityCustomFieldsTrait;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppAccount\PaymentAppAccountCollection;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
+use Shopwell\Core\System\Payment\Order\Aggregate\PaymentAttempt\PaymentAttemptCollection;
 
 /**
  * A merchant identity. Orders retain this identity while its credentials can rotate.
@@ -77,4 +80,10 @@ class PaymentAccountEntity extends EntityStruct
 
     #[ManyToOne(entity: 'payment_app', api: ['admin-api' => true, 'store-api' => false])]
     public ?PaymentAppEntity $ownerApp = null;
+
+    #[OneToMany(entity: 'payment_app_account', ref: 'account_id', api: false)]
+    public ?PaymentAppAccountCollection $appGrants = null;
+
+    #[OneToMany(entity: 'payment_attempt', ref: 'account_id', api: false)]
+    public ?PaymentAttemptCollection $attempts = null;
 }

@@ -15,6 +15,8 @@ use Shopwell\Storefront\Page\PageLoadedHook;
  * @hook-use-case data_loading
  *
  * @final
+ *
+ * @codeCoverageIgnore
  */
 #[Package('checkout')]
 class AccountMembershipPageLoadedHook extends PageLoadedHook

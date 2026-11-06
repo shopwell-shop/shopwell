@@ -6,6 +6,8 @@ use Shopwell\Core\Framework\Log\Package;
 
 /**
  * Built-in product identifiers. Plugins may register additional identifiers.
+ *
+ * @codeCoverageIgnore
  */
 #[Package('framework')]
 final class StripeProducts

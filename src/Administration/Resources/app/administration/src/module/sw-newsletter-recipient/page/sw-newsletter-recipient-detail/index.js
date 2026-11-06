@@ -10,7 +10,12 @@ const { Criteria } = Shopwell.Data;
 export default {
     template,
 
-    inject: ['repositoryFactory', 'acl', 'customFieldDataProviderService', 'dictionaryService'],
+    inject: [
+        'repositoryFactory',
+        'acl',
+        'customFieldDataProviderService',
+        'dictionaryService',
+    ],
 
     mixins: ['notification'],
 

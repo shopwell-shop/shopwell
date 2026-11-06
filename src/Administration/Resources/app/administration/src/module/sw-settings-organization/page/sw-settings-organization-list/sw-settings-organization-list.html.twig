@@ -217,54 +217,55 @@
             </mt-card>
             {% endblock %}
         </sw-card-view>
+
+        {% block sw_settings_organization_create_modal %}
+        <sw-modal
+            v-if="showCreateModal && newOrganization"
+            class="sw-settings-organization-list__create-modal"
+            :title="$t('sw-settings-organization.list.modalTitleCreate')"
+            variant="small"
+            @modal-close="onCloseCreateModal"
+        >
+            {% block sw_settings_organization_create_modal_fields %}
+            <mt-text-field
+                v-model="newOrganization.name"
+                class="sw-settings-organization-list__create-name"
+                required
+                :label="$t('sw-settings-organization.list.labelName')"
+                :placeholder="$t('sw-settings-organization.list.placeholderName')"
+            />
+
+            <mt-switch
+                v-model="newOrganization.active"
+                class="sw-settings-organization-list__create-active"
+                :label="$t('sw-settings-organization.list.labelActive')"
+            />
+            {% endblock %}
+
+            {% block sw_settings_organization_create_modal_footer %}
+            <template #modal-footer>
+                <mt-button
+                    size="small"
+                    variant="secondary"
+                    @click="onCloseCreateModal"
+                >
+                    {{ $t('global.default.cancel') }}
+                </mt-button>
+
+                <mt-button
+                    variant="primary"
+                    size="small"
+                    @click="onCreateSave"
+                >
+                    {{ $t('global.default.save') }}
+                </mt-button>
+            </template>
+            {% endblock %}
+        </sw-modal>
+        {% endblock %}
     </template>
     {% endblock %}
 
-    {% block sw_settings_organization_create_modal %}
-    <sw-modal
-        v-if="showCreateModal && newOrganization"
-        class="sw-settings-organization-list__create-modal"
-        :title="$t('sw-settings-organization.list.modalTitleCreate')"
-        variant="small"
-        @modal-close="onCloseCreateModal"
-    >
-        {% block sw_settings_organization_create_modal_fields %}
-        <mt-text-field
-            v-model="newOrganization.name"
-            class="sw-settings-organization-list__create-name"
-            required
-            :label="$t('sw-settings-organization.list.labelName')"
-            :placeholder="$t('sw-settings-organization.list.placeholderName')"
-        />
-
-        <mt-switch
-            v-model="newOrganization.active"
-            class="sw-settings-organization-list__create-active"
-            :label="$t('sw-settings-organization.list.labelActive')"
-        />
-        {% endblock %}
-
-        {% block sw_settings_organization_create_modal_footer %}
-        <template #modal-footer>
-            <mt-button
-                size="small"
-                variant="secondary"
-                @click="onCloseCreateModal"
-            >
-                {{ $t('global.default.cancel') }}
-            </mt-button>
-
-            <mt-button
-                variant="primary"
-                size="small"
-                @click="onCreateSave"
-            >
-                {{ $t('global.default.save') }}
-            </mt-button>
-        </template>
-        {% endblock %}
-    </sw-modal>
-    {% endblock %}
 </sw-page>
 {% endblock %}
 {% endblock %}

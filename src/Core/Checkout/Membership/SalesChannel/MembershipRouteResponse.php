@@ -8,6 +8,8 @@ use Shopwell\Core\System\SalesChannel\StoreApiResponse;
 
 /**
  * @extends StoreApiResponse<ArrayStruct<array<string, mixed>>>
+ *
+ * @codeCoverageIgnore
  */
 #[Package('checkout')]
 class MembershipRouteResponse extends StoreApiResponse

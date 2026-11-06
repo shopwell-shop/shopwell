@@ -47,8 +47,8 @@ test(
             await ShopCustomer.expects(StorefrontAccountLogin.page.locator('[name^="billingAddress"]')).toHaveCount(0);
             await ShopCustomer.expects(StorefrontAccountLogin.page.locator('[name^="shippingAddress"]')).toHaveCount(0);
             // The credentials are rendered inside the `register-personal` fieldset, only the personal data
-            // fields (salutation, first and last name, company) are dropped from the form.
-            await ShopCustomer.expects(StorefrontAccountLogin.salutationSelect).toHaveCount(0);
+            // fields (gender, name and company) are collected during checkout.
+            await ShopCustomer.expects(StorefrontAccountLogin.page.locator('[name*="salutation"]')).toHaveCount(0);
             await ShopCustomer.expects(StorefrontAccountLogin.nameInput).toHaveCount(0);
             await ShopCustomer.expects(StorefrontAccountLogin.postalCodeInput).toHaveCount(0);
             await ShopCustomer.expects(StorefrontAccountLogin.differentShippingAddressCheckbox).toHaveCount(0);

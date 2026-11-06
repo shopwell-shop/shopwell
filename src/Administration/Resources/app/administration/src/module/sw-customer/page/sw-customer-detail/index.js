@@ -176,7 +176,6 @@ export default {
                 : true;
         },
 
-
         ...mapPageErrors(errorConfig),
     },
 

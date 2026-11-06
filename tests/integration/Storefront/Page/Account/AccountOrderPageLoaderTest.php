@@ -99,6 +99,8 @@ class AccountOrderPageLoaderTest extends TestCase
             $this->salesChannel
         );
 
+        static::assertSame([], $page->getOrderStateCounts());
+
         static::assertSame(
             $expectedCustomer->getId(),
             $page->getOrders()->getEntities()->first()?->getOrderCustomer()?->getCustomerId(),

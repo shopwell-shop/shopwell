@@ -3,15 +3,20 @@
  */
 import './acl';
 
-/* eslint-disable sw-deprecation-rules/private-feature-declarations */
+/** @private */
 Shopwell.Component.register('sw-settings-organization-list', () => import('./page/sw-settings-organization-list'));
+/** @private */
 Shopwell.Component.register('sw-settings-organization-detail', () => import('./page/sw-settings-organization-detail'));
-Shopwell.Component.register('sw-settings-organization-unit-tree', () => import('./component/sw-settings-organization-unit-tree'));
+/** @private */
+Shopwell.Component.register(
+    'sw-settings-organization-unit-tree',
+    () => import('./component/sw-settings-organization-unit-tree'),
+);
+/** @private */
 Shopwell.Component.register(
     'sw-settings-organization-unit-tree-item',
     () => import('./component/sw-settings-organization-unit-tree-item'),
 );
-/* eslint-enable sw-deprecation-rules/private-feature-declarations */
 
 const { Module } = Shopwell;
 
@@ -21,7 +26,7 @@ const { Module } = Shopwell;
  * level a unit sits on carries the meaning (ADR-002), so the tree shows no type badge and the
  * detail form asks no type.
  */
-// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+/** @private */
 Module.register('sw-settings-organization', {
     type: 'core',
     name: 'settings-organization',

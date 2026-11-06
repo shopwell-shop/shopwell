@@ -1,16 +1,13 @@
 /**
  * @sw-package discovery
  */
-import { mount } from '@vue/test-utils';
+import { shallowMount } from '@vue/test-utils';
 import type { VueWrapper } from '@vue/test-utils';
-
-type UnknownVm = { type: string };
-type TypedWrapper = { vm: UnknownVm } & VueWrapper;
 
 let activeWrapper: VueWrapper | null = null;
 
-async function createWrapper(): Promise<TypedWrapper> {
-    const wrapper = mount(await wrapTestComponent('sw-blog-detail-content-unknown', { sync: true }), {
+async function createWrapper(): Promise<VueWrapper> {
+    const wrapper = shallowMount(await wrapTestComponent('sw-blog-detail-content-unknown', { sync: true }), {
         props: { blog: { id: 'blog-1', type: 'podcast', publishedAt: '2026-01-01T00:00:00.000Z' } },
         global: {
             stubs: {
@@ -30,7 +27,7 @@ async function createWrapper(): Promise<TypedWrapper> {
 
     activeWrapper = wrapper;
 
-    return wrapper as unknown as TypedWrapper;
+    return wrapper;
 }
 
 describe('src/module/sw-blog/component/sw-blog-detail-content-unknown', () => {
@@ -42,7 +39,8 @@ describe('src/module/sw-blog/component/sw-blog-detail-content-unknown', () => {
     it('says that the type is provided by a plugin instead of white-screening', async () => {
         const wrapper = await createWrapper();
 
-        expect(wrapper.vm.type).toBe('podcast');
+        expect(wrapper.get('dd').text()).toBe('podcast');
+        expect(wrapper.get('.banner').text()).toContain('podcast');
         expect(wrapper.find('.banner').exists()).toBe(true);
     });
 

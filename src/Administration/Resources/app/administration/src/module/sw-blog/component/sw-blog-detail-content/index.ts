@@ -16,7 +16,7 @@ import { getBlogTypeComponent } from '../../service/blog-type.registry';
  * component, which keeps the entry from white-screening and from silently dropping the fields the
  * plugin owns.
  */
-// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+/** @private */
 export default defineComponent({
     template,
 

@@ -338,8 +338,10 @@
                                             }
                                         },
                                         "subscription": {
-                                            "type": "object",
-                                            "nullable": true,
+                                            "type": [
+                                                "object",
+                                                "null"
+                                            ],
                                             "additionalProperties": true
                                         }
                                     }

@@ -1,7 +1,7 @@
 /**
  * @sw-package discovery
  */
-import { flushPromises, mount } from '@vue/test-utils';
+import { flushPromises, shallowMount } from '@vue/test-utils';
 import type { VueWrapper } from '@vue/test-utils';
 import BlogApiService from '../../service/blog.api.service';
 
@@ -13,30 +13,6 @@ type AuthorRow = {
     active: boolean;
     entries?: unknown[];
 };
-
-type AuthorListVm = {
-    authors: unknown;
-    total: number;
-    canCreate: boolean;
-    canDelete: boolean;
-    canEdit: boolean;
-    isCreateDisabled: boolean;
-    isDeleteBlocked: boolean;
-    deleteTarget: { id: string; name: string; entryCount: number } | null;
-    newAuthorName: string;
-    getList: () => Promise<void>;
-    entryCountOf: (author: AuthorRow) => number;
-    initialOf: (author: AuthorRow) => string;
-    onOpenCreateModal: () => void;
-    onCreateAuthor: () => void;
-    onDelete: (author: AuthorRow) => void;
-    onConfirmDelete: () => void;
-    onDeactivateInstead: () => void;
-    onOpenAuthorEntries: (author: AuthorRow) => void;
-    onChangeActive: (author: AuthorRow) => void;
-};
-
-type TypedWrapper = { vm: AuthorListVm } & VueWrapper;
 
 function collection<T>(items: unknown[]): T {
     return Object.assign([...items], { total: items.length }) as unknown as T;
@@ -66,13 +42,14 @@ const authors: AuthorRow[] = [
 let activeWrapper: VueWrapper | null = null;
 
 async function createWrapper(can: (privilege: string) => boolean = () => true): Promise<{
-    wrapper: TypedWrapper;
+    wrapper: VueWrapper;
     search: jest.Mock;
     save: jest.Mock;
     remove: jest.Mock;
     push: jest.Mock;
 }> {
-    const search = jest.fn(() => Promise.resolve(collection<EntityCollection<'blog_author'>>(authors)));
+    const rows = authors.map((row) => ({ ...row }));
+    const search = jest.fn(() => Promise.resolve(collection<EntityCollection<'blog_author'>>(rows)));
     const save = jest.fn(() => Promise.resolve());
     const remove = jest.fn(() => Promise.resolve());
     const push = jest.fn(() => Promise.resolve());
@@ -87,19 +64,53 @@ async function createWrapper(can: (privilege: string) => boolean = () => true): 
         },
     };
 
-    const wrapper = mount(await wrapTestComponent('sw-blog-author-list', { sync: true }), {
+    const wrapper = shallowMount(await wrapTestComponent('sw-blog-author-list', { sync: true }), {
         global: {
             stubs: {
-                'sw-page': { template: '<div><slot name="content"></slot><slot></slot></div>' },
+                'sw-page': {
+                    template:
+                        '<div><slot name="smart-bar-header"/><slot name="smart-bar-actions"/><slot name="content"/></div>',
+                },
                 'sw-search-bar': true,
-                'sw-entity-listing': true,
+                'sw-entity-listing': {
+                    props: [
+                        'dataSource',
+                        'repository',
+                        'allowDelete',
+                        'allowInlineEdit',
+                    ],
+                    emits: ['inline-edit-save'],
+                    template: `<table><tbody><tr v-for="item in dataSource" :key="item.id" :data-row="item.id">
+                        <td><slot name="column-mediaId" :item="item" /></td>
+                        <td><slot name="column-name" :item="item" :is-inline-edit="false">{{ item.name }}</slot>
+                            <input v-if="allowInlineEdit" class="inline-name" :value="item.name" @input="item.name = $event.target.value" />
+                            <button v-if="allowInlineEdit" class="inline-save" @click="$emit('inline-edit-save', item)">Save row</button>
+                        </td>
+                        <td><slot name="column-email" :item="item" /></td>
+                        <td><slot name="column-entries" :item="item" /><slot name="column-assignments" :item="item" /></td>
+                        <td><slot name="column-active" :item="item" :is-inline-edit="false" /></td>
+                        <td class="delete-action"><slot name="delete-action" :item="item"><button :disabled="!allowDelete">Delete</button></slot></td>
+                    </tr></tbody></table>`,
+                },
                 'sw-sidebar': true,
                 'sw-sidebar-item': true,
                 'sw-media-preview-v2': true,
                 'sw-modal': { template: '<div class="modal"><slot></slot><slot name="modal-footer"></slot></div>' },
-                'mt-button': true,
-                'mt-switch': true,
-                'mt-text-field': true,
+                'mt-button': {
+                    props: ['disabled', 'isLoading'],
+                    template: '<button :disabled="disabled" :data-loading="isLoading"><slot /></button>',
+                },
+                'sw-context-menu-item': { props: ['disabled'], template: '<button :disabled="disabled"><slot /></button>' },
+                'mt-switch': {
+                    props: ['modelValue', 'disabled'],
+                    emits: ['update:modelValue', 'change'],
+                    template: `<input type="checkbox" :checked="modelValue" :disabled="disabled" @change="$emit('update:modelValue', $event.target.checked); $emit('change', $event.target.checked)" />`,
+                },
+                'mt-text-field': {
+                    props: ['modelValue'],
+                    emits: ['update:modelValue'],
+                    template: `<input :value="modelValue" @input="$emit('update:modelValue', $event.target.value)" />`,
+                },
                 'mt-empty-state': true,
             },
             provide: {
@@ -125,8 +136,9 @@ async function createWrapper(can: (privilege: string) => boolean = () => true): 
     });
 
     activeWrapper = wrapper;
+    await flushPromises();
 
-    return { wrapper: wrapper as unknown as TypedWrapper, search, save, remove, push };
+    return { wrapper, search, save, remove, push };
 }
 
 describe('src/module/sw-blog/page/sw-blog-author-list', () => {
@@ -146,16 +158,16 @@ describe('src/module/sw-blog/page/sw-blog-author-list', () => {
 
         expect(criteria.sortings).toEqual([expect.objectContaining({ field: 'name', order: 'ASC' })]);
         expect(associationNames(criteria)).toContain('entries');
-        expect(wrapper.vm.total).toBe(2);
-        expect(wrapper.vm.entryCountOf(authors[0])).toBe(3);
+        expect(wrapper.get('.sw-page__smart-bar-amount').text()).toBe('(2)');
+        expect(wrapper.get('.sw-blog-author-list__entry-count').text()).toBe('3');
     });
 
     it('creates an author with a name and opens it, because a byline needs a place to be written', async () => {
         const { wrapper, save, push } = await createWrapper();
 
-        wrapper.vm.onOpenCreateModal();
-        wrapper.vm.newAuthorName = 'Anna Schmidt';
-        wrapper.vm.onCreateAuthor();
+        await wrapper.get('.sw-blog-author-list__button-create').trigger('click');
+        await wrapper.get('.sw-blog-author-list__create-name').setValue('Anna Schmidt');
+        await wrapper.findAll('.sw-blog-author-list__create-modal button')[1].trigger('click');
         await flushPromises();
 
         const created = callArgument<{ name: string; active: boolean }>(save);
@@ -168,22 +180,21 @@ describe('src/module/sw-blog/page/sw-blog-author-list', () => {
     it('refuses to create an author without a name', async () => {
         const { wrapper, save } = await createWrapper();
 
-        wrapper.vm.onOpenCreateModal();
-        wrapper.vm.newAuthorName = '   ';
-        wrapper.vm.onCreateAuthor();
+        await wrapper.get('.sw-blog-author-list__button-create').trigger('click');
+        await wrapper.get('.sw-blog-author-list__create-name').setValue('   ');
 
-        expect(wrapper.vm.isCreateDisabled).toBe(true);
+        expect(wrapper.findAll('.sw-blog-author-list__create-modal button')[1].attributes('disabled')).toBeDefined();
         expect(save).not.toHaveBeenCalled();
     });
 
     it('does not delete an author who still signs entries', async () => {
         const { wrapper, remove } = await createWrapper();
 
-        wrapper.vm.onDelete(authors[0]);
+        await wrapper.get('[data-row="author-1"] .delete-action button').trigger('click');
 
-        expect(wrapper.vm.isDeleteBlocked).toBe(true);
-
-        wrapper.vm.onConfirmDelete();
+        expect(wrapper.find('.sw-blog-author-list__delete-modal').exists()).toBe(true);
+        expect(wrapper.find('.sw-blog-author-list__delete-deactivate').exists()).toBe(true);
+        expect(wrapper.find('.sw-blog-author-list__delete-confirm').exists()).toBe(false);
 
         expect(remove).not.toHaveBeenCalled();
     });
@@ -191,8 +202,8 @@ describe('src/module/sw-blog/page/sw-blog-author-list', () => {
     it('switches an author off instead of deleting them', async () => {
         const { wrapper, save, remove } = await createWrapper();
 
-        wrapper.vm.onDelete(authors[0]);
-        wrapper.vm.onDeactivateInstead();
+        await wrapper.get('[data-row="author-1"] .delete-action button').trigger('click');
+        await wrapper.get('.sw-blog-author-list__delete-deactivate').trigger('click');
         await flushPromises();
 
         expect(remove).not.toHaveBeenCalled();
@@ -202,8 +213,9 @@ describe('src/module/sw-blog/page/sw-blog-author-list', () => {
     it('deletes an author without entries after the confirmation', async () => {
         const { wrapper, remove } = await createWrapper();
 
-        wrapper.vm.onDelete(authors[1]);
-        wrapper.vm.onConfirmDelete();
+        await wrapper.get('[data-row="author-2"] .delete-action button').trigger('click');
+        expect(remove).not.toHaveBeenCalled();
+        await wrapper.get('.sw-blog-author-list__delete-confirm').trigger('click');
         await flushPromises();
 
         expect(remove).toHaveBeenCalledWith('author-2');
@@ -212,7 +224,7 @@ describe('src/module/sw-blog/page/sw-blog-author-list', () => {
     it('opens the entries of one author in the filtered entry list', async () => {
         const { wrapper, push } = await createWrapper();
 
-        wrapper.vm.onOpenAuthorEntries(authors[0]);
+        await wrapper.get('.sw-blog-author-list__entry-count').trigger('click');
 
         expect(push).toHaveBeenCalledWith({ name: 'sw.blog.list', query: { authorId: 'author-1' } });
     });
@@ -220,21 +232,25 @@ describe('src/module/sw-blog/page/sw-blog-author-list', () => {
     it('falls back to the first letter when an author has no portrait', async () => {
         const { wrapper } = await createWrapper();
 
-        expect(wrapper.vm.initialOf(authors[0])).toBe('A');
+        expect(wrapper.findAll('.sw-blog-author-list__avatar-initial')[0].text()).toBe('A');
     });
 
     it('hides creating and deleting from a role that may only read', async () => {
         const { wrapper } = await createWrapper((privilege) => privilege === 'blog.viewer');
 
-        expect(wrapper.vm.canCreate).toBe(false);
-        expect(wrapper.vm.canDelete).toBe(false);
-        expect(wrapper.vm.canEdit).toBe(false);
+        expect(wrapper.get('.sw-blog-author-list__button-create').attributes('disabled')).toBeDefined();
+        expect(wrapper.findAll('.delete-action button').every((button) => button.attributes('disabled') !== undefined)).toBe(
+            true,
+        );
+        expect(wrapper.findAll('input[type="checkbox"]').every((input) => input.attributes('disabled') !== undefined)).toBe(
+            true,
+        );
     });
 
     it('saves the switch of the active column', async () => {
         const { wrapper, save } = await createWrapper();
 
-        wrapper.vm.onChangeActive({ ...authors[1], active: true });
+        await wrapper.get('[data-row="author-2"] input[type="checkbox"]').setValue(true);
 
         expect(save).toHaveBeenCalledWith(expect.objectContaining({ id: 'author-2', active: true }));
     });

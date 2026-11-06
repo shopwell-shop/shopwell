@@ -1,32 +1,32 @@
 /**
  * @sw-package discovery
  */
-import { mount } from '@vue/test-utils';
+import { shallowMount } from '@vue/test-utils';
 import type { VueWrapper } from '@vue/test-utils';
-
-type VideoVm = {
-    providerOptions: Array<{ value: string; label: string }>;
-    posterSource: string | null;
-    onPosterSelected: (media: Array<{ id: string }>) => void;
-    onPosterRemoved: () => void;
-};
-
-type TypedWrapper = { vm: VideoVm } & VueWrapper;
+import { reactive } from 'vue';
 
 type Video = { posterMediaId: string | null; videoUrl: string; provider: string | null };
 
 let activeWrapper: VueWrapper | null = null;
 
-async function createWrapper(video: Video | null): Promise<TypedWrapper> {
-    const wrapper = mount(await wrapTestComponent('sw-blog-detail-content-video', { sync: true }), {
-        props: { blog: { type: 'video' }, video },
+async function createWrapper(video: Video | null): Promise<VueWrapper> {
+    const wrapper = shallowMount(await wrapTestComponent('sw-blog-detail-content-video', { sync: true }), {
+        props: { blog: { type: 'video' }, video: video === null ? null : reactive(video) },
         global: {
             stubs: {
                 'mt-empty-state': { template: '<div class="empty"></div>' },
                 'mt-text-field': true,
-                'mt-select': true,
+                'mt-select': {
+                    props: ['options', 'modelValue'],
+                    template:
+                        '<select :value="modelValue"><option v-for="option in options" :key="option.value" :value="option.value">{{ option.label }}</option></select>',
+                },
                 'mt-number-field': true,
-                'sw-media-compact-upload-v2': true,
+                'sw-media-compact-upload-v2': {
+                    props: ['source'],
+                    template:
+                        '<section><output>{{ source }}</output><button class="select-poster" @click="$emit(\'selection-change\', [{ id: \'media-1\' }])">Select</button><button class="remove-poster" @click="$emit(\'delete-item\')">Remove</button></section>',
+                },
             },
             mocks: {
                 $t: (key: string) => key,
@@ -37,7 +37,7 @@ async function createWrapper(video: Video | null): Promise<TypedWrapper> {
 
     activeWrapper = wrapper;
 
-    return wrapper as unknown as TypedWrapper;
+    return wrapper;
 }
 
 describe('src/module/sw-blog/component/sw-blog-detail-content-video', () => {
@@ -55,25 +55,30 @@ describe('src/module/sw-blog/component/sw-blog-detail-content-video', () => {
     it('offers the three platforms the core knows', async () => {
         const wrapper = await createWrapper({ posterMediaId: null, videoUrl: '', provider: 'youtube' });
 
-        expect(wrapper.vm.providerOptions.map((option) => option.value)).toEqual(['youtube', 'vimeo', 'self-hosted']);
+        expect(wrapper.findAll('option').map((option) => option.attributes('value'))).toEqual([
+            'youtube',
+            'vimeo',
+            'self-hosted',
+        ]);
     });
 
     it('writes the chosen poster into the video row', async () => {
         const video = { posterMediaId: null, videoUrl: '', provider: 'youtube' };
         const wrapper = await createWrapper(video);
 
-        wrapper.vm.onPosterSelected([{ id: 'media-1' }]);
+        await wrapper.get('.select-poster').trigger('click');
 
         expect(video.posterMediaId).toBe('media-1');
-        expect(wrapper.vm.posterSource).toBe('media-1');
+        expect(wrapper.get('output').text()).toBe('media-1');
     });
 
     it('clears the poster when the image is removed', async () => {
         const video = { posterMediaId: 'media-1', videoUrl: '', provider: 'youtube' };
         const wrapper = await createWrapper(video);
 
-        wrapper.vm.onPosterRemoved();
+        await wrapper.get('.remove-poster').trigger('click');
 
         expect(video.posterMediaId).toBeNull();
+        expect(wrapper.get('output').text()).toBe('');
     });
 });

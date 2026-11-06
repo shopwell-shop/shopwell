@@ -1,8 +1,9 @@
 /**
  * @sw-package framework
  */
-import { mount } from '@vue/test-utils';
+import { shallowMount } from '@vue/test-utils';
 import type { VueWrapper } from '@vue/test-utils';
+import type { NotificationType } from 'src/app/store/notification.store';
 
 const transfer = {
     id: 'transfer-1',
@@ -17,11 +18,6 @@ const transfer = {
     failureCode: null,
     failureReason: null,
     statusMachineState: { technicalName: 'created' },
-};
-
-type Notification = {
-    variant: string;
-    message: string;
 };
 
 /**
@@ -46,42 +42,33 @@ function translate(key: string, params?: Record<string, unknown>): string {
     });
 }
 
-type ApproveModalVm = {
-    confirmed: boolean;
-    submitInProgress: boolean;
-    providerLabel: string;
-    channelLabel: string;
-    amountLabel: string;
-    recipientLabel: string;
-    appLabel: string;
-    warningText: string;
-    isConfirmDisabled: boolean;
-    onClose: () => void;
-    onConfirm: () => void;
-    handleOutcome: (result: unknown) => void;
-    createNotification: jest.Mock<void, [Notification]>;
-};
-
-type TypedWrapper = { vm: ApproveModalVm } & VueWrapper;
-
 let activeWrapper: VueWrapper | null = null;
 
 async function createWrapper(
     submitTransfer: jest.Mock,
-): Promise<{ wrapper: TypedWrapper; notify: jest.Mock<void, [Notification]> }> {
-    const wrapper = mount(await wrapTestComponent('sw-finance-transfer-approve-modal', { sync: true }), {
+): Promise<{ wrapper: VueWrapper; notify: jest.SpyInstance<string | null, [NotificationType]>; submitTransfer: jest.Mock }> {
+    const notify = jest.spyOn(Shopwell.Store.get('notification'), 'createNotification').mockReturnValue('notification-1');
+    const wrapper = shallowMount(await wrapTestComponent('sw-finance-transfer-approve-modal', { sync: true }), {
         props: {
             transfer,
         },
         global: {
             stubs: {
                 'sw-modal': {
-                    template: '<div><slot></slot><slot name="modal-footer"></slot></div>',
+                    template:
+                        '<div><slot></slot><slot name="modal-footer"></slot><button class="modal-close" @click="$emit(\'modal-close\')">Close</button></div>',
                 },
                 'sw-description-list': { template: '<dl><slot></slot></dl>' },
                 'mt-banner': { template: '<div><slot></slot></div>' },
-                'mt-checkbox': true,
-                'mt-button': true,
+                'mt-checkbox': {
+                    props: ['checked', 'disabled'],
+                    template:
+                        '<input type="checkbox" :checked="checked" :disabled="disabled" @change="$emit(\'update:checked\', $event.target.checked)">',
+                },
+                'mt-button': {
+                    props: ['disabled', 'isLoading'],
+                    template: '<button :disabled="disabled" :data-loading="isLoading"><slot></slot></button>',
+                },
             },
             mocks: {
                 $t: translate,
@@ -90,34 +77,40 @@ async function createWrapper(
                 paymentTransferApiService: { submitTransfer },
             },
         },
-    }) as unknown as TypedWrapper;
-
-    const notify = jest.fn<void, [Notification]>();
-    wrapper.vm.createNotification = notify;
+    });
 
     activeWrapper = wrapper;
 
     await flushPromises();
 
-    return { wrapper, notify };
+    return { wrapper, notify, submitTransfer };
 }
 
 describe('module/sw-finance/component/sw-finance-transfer-approve-modal', () => {
     afterEach(() => {
         activeWrapper?.unmount();
         activeWrapper = null;
+        jest.restoreAllMocks();
+    });
+
+    it('leaves the amount empty when the transfer has no currency', async () => {
+        const { wrapper } = await createWrapper(jest.fn());
+        await wrapper.setProps({ transfer: { ...transfer, currency: null } });
+        expect(wrapper.findAll('dd')[3].text()).toBe('');
     });
 
     it('should summarise the payout before anything is submitted', async () => {
         const { wrapper } = await createWrapper(jest.fn());
 
-        expect(wrapper.vm.recipientLabel).toBe('张三');
-        expect(wrapper.vm.appLabel).toBe('演示应用');
+        expect(wrapper.findAll('dd')[0].text()).toBe('张三');
+        expect(wrapper.findAll('dd')[1].text()).toBe('演示应用');
         // the snippet of the interface is not translated in a unit test, its key is the label
-        expect(wrapper.vm.channelLabel).toBe('sw-settings-payment-provider.provider.alipay · alipay_transfer');
-        expect(wrapper.vm.amountLabel).toBe(Shopwell.Utils.format.currency(12.5, 'CNY', 2));
+        expect(wrapper.findAll('dd')[2].text()).toBe('sw-settings-payment-provider.provider.alipay · alipay_transfer');
+        expect(wrapper.findAll('dd')[3].text()).toBe(Shopwell.Utils.format.currency(12.5, 'CNY', 2));
         // `$t` answers with the key in the test environment - the interpolation needs the real snippet
-        expect(wrapper.vm.warningText).toBe('sw-finance.transfer.approve.warning');
+        expect(wrapper.get('.sw-finance-transfer-approve-modal__warning').text()).toBe(
+            'sw-finance.transfer.approve.warning',
+        );
     });
 
     /**
@@ -126,12 +119,16 @@ describe('module/sw-finance/component/sw-finance-transfer-approve-modal', () => 
     it('should keep the confirmation disabled until the operator ticks the box', async () => {
         const { wrapper } = await createWrapper(jest.fn());
 
-        expect(wrapper.vm.isConfirmDisabled).toBe(true);
+        expect(wrapper.get('.sw-finance-transfer-approve-modal__button-confirm').attributes('disabled') !== undefined).toBe(
+            true,
+        );
 
-        wrapper.vm.confirmed = true;
+        await wrapper.get('input[type="checkbox"]').setValue(true);
         await flushPromises();
 
-        expect(wrapper.vm.isConfirmDisabled).toBe(false);
+        expect(wrapper.get('.sw-finance-transfer-approve-modal__button-confirm').attributes('disabled') !== undefined).toBe(
+            false,
+        );
     });
 
     /**
@@ -149,27 +146,33 @@ describe('module/sw-finance/component/sw-finance-transfer-approve-modal', () => 
 
         const { wrapper } = await createWrapper(submitTransfer);
 
-        wrapper.vm.confirmed = true;
+        await wrapper.get('input[type="checkbox"]').setValue(true);
         await flushPromises();
 
-        wrapper.vm.onConfirm();
-        wrapper.vm.onConfirm();
-        wrapper.vm.onConfirm();
+        await wrapper.get('.sw-finance-transfer-approve-modal__button-confirm').trigger('click');
+        await wrapper.get('.sw-finance-transfer-approve-modal__button-confirm').trigger('click');
+        await wrapper.get('.sw-finance-transfer-approve-modal__button-confirm').trigger('click');
         await flushPromises();
 
         expect(submitTransfer).toHaveBeenCalledTimes(1);
         expect(submitTransfer).toHaveBeenCalledWith('transfer-1');
-        expect(wrapper.vm.submitInProgress).toBe(true);
-        expect(wrapper.vm.isConfirmDisabled).toBe(true);
+        expect(wrapper.get('.sw-finance-transfer-approve-modal__button-confirm').attributes('data-loading') === 'true').toBe(
+            true,
+        );
+        expect(wrapper.get('.sw-finance-transfer-approve-modal__button-confirm').attributes('disabled') !== undefined).toBe(
+            true,
+        );
 
         // the modal can not be closed while the request runs either
-        wrapper.vm.onClose();
+        await wrapper.get('.modal-close').trigger('click');
         expect(wrapper.emitted('modal-close')).toBeUndefined();
 
         resolveSubmit({ outcome: 'accepted', transfer, message: null });
         await flushPromises();
 
-        expect(wrapper.vm.submitInProgress).toBe(false);
+        expect(wrapper.get('.sw-finance-transfer-approve-modal__button-confirm').attributes('data-loading') === 'true').toBe(
+            false,
+        );
     });
 
     /**
@@ -188,11 +191,13 @@ describe('module/sw-finance/component/sw-finance-transfer-approve-modal', () => 
 
         const { wrapper, notify } = await createWrapper(submitTransfer);
 
-        wrapper.vm.handleOutcome({ outcome: 'accepted', transfer: answered, message: null });
+        submitTransfer.mockResolvedValueOnce({ outcome: 'accepted', transfer: answered, message: null });
+        await wrapper.get('input[type="checkbox"]').setValue(true);
+        await wrapper.get('.sw-finance-transfer-approve-modal__button-confirm').trigger('click');
         await flushPromises();
 
         expect(notify).toHaveBeenCalledTimes(1);
-        expect(notify.mock.calls[0][0].variant).toBe('success');
+        expect(notify).toHaveBeenCalledWith(expect.objectContaining({ variant: 'success' }));
         expect(notify.mock.calls[0][0].message).toContain('处理中');
         // the merchant transfer no. is not a state and must not stand in for one
         expect(notify.mock.calls[0][0].message).not.toContain('T-1');
@@ -200,26 +205,30 @@ describe('module/sw-finance/component/sw-finance-transfer-approve-modal', () => 
     });
 
     it('should report an accepted submission without a state without inventing one', async () => {
-        const { wrapper, notify } = await createWrapper(jest.fn());
+        const { wrapper, notify, submitTransfer } = await createWrapper(jest.fn());
 
-        wrapper.vm.handleOutcome({ outcome: 'accepted', transfer: { id: 'transfer-1' }, message: null });
+        submitTransfer.mockResolvedValueOnce({ outcome: 'accepted', transfer: { id: 'transfer-1' }, message: null });
+        await wrapper.get('input[type="checkbox"]').setValue(true);
+        await wrapper.get('.sw-finance-transfer-approve-modal__button-confirm').trigger('click');
         await flushPromises();
 
-        expect(notify.mock.calls[0][0].variant).toBe('success');
-        expect(notify.mock.calls[0][0].message).toBe('已提交至渠道，刷新后可查看当前状态。');
+        expect(notify).toHaveBeenCalledWith(expect.objectContaining({ variant: 'success' }));
+        expect(notify).toHaveBeenCalledWith(expect.objectContaining({ message: '已提交至渠道，刷新后可查看当前状态。' }));
     });
 
     it('should report a refusal of the channel with its code and reason', async () => {
-        const { wrapper, notify } = await createWrapper(jest.fn());
+        const { wrapper, notify, submitTransfer } = await createWrapper(jest.fn());
 
-        wrapper.vm.handleOutcome({
+        submitTransfer.mockResolvedValueOnce({
             outcome: 'failed',
             transfer: { ...transfer, failureCode: 'PAYEE_NOT_EXIST', failureReason: '收款方不存在' },
             message: null,
         });
+        await wrapper.get('input[type="checkbox"]').setValue(true);
+        await wrapper.get('.sw-finance-transfer-approve-modal__button-confirm').trigger('click');
         await flushPromises();
 
-        expect(notify.mock.calls[0][0].variant).toBe('error');
+        expect(notify).toHaveBeenCalledWith(expect.objectContaining({ variant: 'error' }));
         expect(wrapper.emitted('transfer-decided')).toHaveLength(1);
     });
 
@@ -228,36 +237,44 @@ describe('module/sw-finance/component/sw-finance-transfer-approve-modal', () => 
      * must not be retried automatically.
      */
     it('should report an inconclusive answer as a warning without retrying', async () => {
-        const submitTransfer = jest.fn(() => Promise.resolve({ outcome: 'unknown', transfer, message: null }));
+        const submitTransfer = jest.fn<
+            Promise<{ outcome: string; transfer: typeof transfer; message: string | null }>,
+            [string]
+        >(() => Promise.resolve({ outcome: 'unknown', transfer, message: null }));
 
         const { wrapper, notify } = await createWrapper(submitTransfer);
 
-        wrapper.vm.handleOutcome({ outcome: 'unknown', transfer, message: '渠道未返回明确结果' });
+        submitTransfer.mockResolvedValueOnce({ outcome: 'unknown', transfer, message: '渠道未返回明确结果' });
+        await wrapper.get('input[type="checkbox"]').setValue(true);
+        await wrapper.get('.sw-finance-transfer-approve-modal__button-confirm').trigger('click');
         await flushPromises();
 
-        expect(notify.mock.calls[0][0].variant).toBe('warning');
+        expect(notify).toHaveBeenCalledWith(expect.objectContaining({ variant: 'warning' }));
         expect(wrapper.emitted('transfer-decided')).toHaveLength(1);
-        expect(submitTransfer).not.toHaveBeenCalled();
+        expect(submitTransfer).toHaveBeenCalledTimes(1);
     });
 
     it('should show the readable error of a failed request', async () => {
         const submitTransfer = jest.fn(() =>
-            // the admin api rejects with a response object, not with an Error - the message of the
-            // server is the whole point of the assertion below
-            // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors
-            Promise.reject({ response: { data: { errors: [{ detail: 'PAYMENT__TRANSFER_OUT_NO_TAKEN' }] } } }),
+            Promise.reject(
+                Object.assign(new Error('Transfer failed'), {
+                    response: { data: { errors: [{ detail: 'PAYMENT__TRANSFER_OUT_NO_TAKEN' }] } },
+                }),
+            ),
         );
 
         const { wrapper, notify } = await createWrapper(submitTransfer);
 
-        wrapper.vm.confirmed = true;
+        await wrapper.get('input[type="checkbox"]').setValue(true);
         await flushPromises();
 
-        wrapper.vm.onConfirm();
+        await wrapper.get('.sw-finance-transfer-approve-modal__button-confirm').trigger('click');
         await flushPromises();
 
-        expect(notify.mock.calls[0][0].variant).toBe('error');
-        expect(notify.mock.calls[0][0].message).toBe('PAYMENT__TRANSFER_OUT_NO_TAKEN');
-        expect(wrapper.vm.submitInProgress).toBe(false);
+        expect(notify).toHaveBeenCalledWith(expect.objectContaining({ variant: 'error' }));
+        expect(notify).toHaveBeenCalledWith(expect.objectContaining({ message: 'PAYMENT__TRANSFER_OUT_NO_TAKEN' }));
+        expect(wrapper.get('.sw-finance-transfer-approve-modal__button-confirm').attributes('data-loading') === 'true').toBe(
+            false,
+        );
     });
 });

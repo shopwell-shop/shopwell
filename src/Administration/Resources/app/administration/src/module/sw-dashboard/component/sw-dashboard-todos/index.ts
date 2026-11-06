@@ -142,7 +142,12 @@ export default Shopwell.Component.wrapComponentConfig({
             this.isLoading = true;
 
             try {
-                const [returnRequests, deliveryState, ordersToShip, reviewsWaiting] = await Promise.all([
+                const [
+                    returnRequests,
+                    deliveryState,
+                    ordersToShip,
+                    reviewsWaiting,
+                ] = await Promise.all([
                     this.fetchReturnRequestCount(),
                     this.fetchDeliveryOpenState(),
                     this.fetchOrdersToShipCount(),
@@ -176,7 +181,10 @@ export default Shopwell.Component.wrapComponentConfig({
             return (this.orderReturnRepository as { search: (c: unknown) => Promise<{ total: number }> })
                 .search(criteria)
                 .then((result) => result.total)
-                .catch(() => 0);
+                .catch(() => {
+                    // Optional dashboard totals must not prevent opening the overview when a source is unavailable.
+                    return 0;
+                });
         },
 
         /**
@@ -210,7 +218,10 @@ export default Shopwell.Component.wrapComponentConfig({
                         name: state.translated?.name ?? state.name,
                     };
                 })
-                .catch(() => null);
+                .catch(() => {
+                    // Without a delivery state the overview hides the shipping deep link instead of creating an invalid route.
+                    return null;
+                });
         },
 
         fetchOrdersToShipCount(): Promise<number> {
@@ -225,7 +236,10 @@ export default Shopwell.Component.wrapComponentConfig({
             return (this.orderRepository as { search: (c: unknown) => Promise<{ total: number }> })
                 .search(criteria)
                 .then((result) => result.total)
-                .catch(() => 0);
+                .catch(() => {
+                    // Optional dashboard totals must not prevent opening the overview when a source is unavailable.
+                    return 0;
+                });
         },
 
         /**
@@ -244,7 +258,10 @@ export default Shopwell.Component.wrapComponentConfig({
             return (this.reviewRepository as { search: (c: unknown) => Promise<{ total: number }> })
                 .search(criteria)
                 .then((result) => result.total)
-                .catch(() => 0);
+                .catch(() => {
+                    // Optional dashboard totals must not prevent opening the overview when a source is unavailable.
+                    return 0;
+                });
         },
 
         /**

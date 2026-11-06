@@ -7,7 +7,7 @@ import OAuth2IdentityService from './service/oauth2-identity.api.service';
 
 const { Module } = Shopwell;
 
-// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+/** @private */
 Shopwell.Service().register('oauth2IdentityService', () => {
     return new OAuth2IdentityService(
         Shopwell.Application.getContainer('init').httpClient,
@@ -15,15 +15,17 @@ Shopwell.Service().register('oauth2IdentityService', () => {
     );
 });
 
-/* eslint-disable sw-deprecation-rules/private-feature-declarations */
+/** @private */
 Shopwell.Component.register('sw-profile-index', () => import('./page/sw-profile-index'));
+/** @private */
 Shopwell.Component.register('sw-profile-index-general', () => import('./view/sw-profile-index-general'));
+/** @private */
 Shopwell.Component.register(
     'sw-profile-index-search-preferences',
     () => import('./view/sw-profile-index-search-preferences'),
 );
+/** @private */
 Shopwell.Component.register('sw-profile-index-oauth2-login', () => import('./view/sw-profile-index-oauth2-login'));
-/* eslint-enable sw-deprecation-rules/private-feature-declarations */
 
 /**
  * @private
@@ -33,7 +35,7 @@ Shopwell.Component.register(
     () => import('./view/sw-profile-index-privacy-preferences'),
 );
 
-// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+/** @private */
 Module.register('sw-profile', {
     type: 'core',
     name: 'profile',
