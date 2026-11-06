@@ -9,6 +9,7 @@ test(
         ],
     },
     async ({
+        Translate,
         ShopCustomer,
         TestDataService,
         StorefrontProductDetail,
@@ -70,7 +71,7 @@ test(
         await test.step('Logged-In shop customer should be able to see the cover image on the checkout confirm page.', async () => {
             await ShopCustomer.attemptsTo(ProceedFromProductToCheckout());
             await ShopCustomer.attemptsTo(ConfirmTermsAndConditions());
-            await ShopCustomer.attemptsTo(SelectPaymentMethod('Invoice'));
+            await ShopCustomer.attemptsTo(SelectPaymentMethod(Translate('storefront:checkout:common.invoice')));
             await ShopCustomer.attemptsTo(SelectShippingMethod('Standard'));
             await ShopCustomer.expects(StorefrontCheckoutConfirm.cartLineItemImages.getByAltText(media.alt)).toBeVisible();
         });

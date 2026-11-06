@@ -5,6 +5,9 @@ test('Install a new Shopwell instance.', { tag: '@Install' }, async ({ InstallPa
 
     await page.goto(process.env.APP_URL);
 
+    await page.locator('#language').selectOption('en');
+    await expect(page.locator('#language')).toHaveValue('en');
+
     await page.getByRole('link', { name: 'Next' }).click();
     await page.getByRole('button', { name: 'Next' }).click();
     await page.getByText('I agree to the General Terms and Conditions of Business (GTC)').click();

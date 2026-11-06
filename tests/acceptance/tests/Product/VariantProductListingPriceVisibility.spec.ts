@@ -8,7 +8,14 @@ test(
             '@Storefront',
         ],
     },
-    async ({ ShopCustomer, TestDataService, StorefrontHome, StorefrontProductDetail, SalesChannelBaseConfig }) => {
+    async ({
+        Translate,
+        ShopCustomer,
+        TestDataService,
+        StorefrontHome,
+        StorefrontProductDetail,
+        SalesChannelBaseConfig,
+    }) => {
         const currency = await TestDataService.getCurrency(getCurrencyCodeFromLocale());
         const prices = [
             {
@@ -73,7 +80,9 @@ test(
                 'text-decoration-line',
                 'line-through',
             );
-            await ShopCustomer.expects(productItemLocators.productListingPricePercentage).toContainText('(50% saved)');
+            await ShopCustomer.expects(productItemLocators.productListingPricePercentage).toContainText(
+                Translate('storefront:product:pricing.saving', { price: '50' }),
+            );
             await ShopCustomer.expects(productItemLocators.productListingPriceBadge).toContainText('%');
         });
 
@@ -88,7 +97,7 @@ test(
                     'line-through',
                 );
                 await ShopCustomer.expects(StorefrontProductDetail.productListingPricePercentage).toContainText(
-                    '(50% saved)',
+                    Translate('storefront:product:pricing.saving', { price: '50' }),
                 );
             }
         });

@@ -8,7 +8,7 @@ test(
             '@Storefront',
         ],
     },
-    async ({ ShopCustomer, StorefrontHome }) => {
+    async ({ Translate, ShopCustomer, StorefrontHome }) => {
         await test.step('Navigate to homepage and verify initial cookie banner visibility and content', async () => {
             await ShopCustomer.goesTo(StorefrontHome.url());
             await ShopCustomer.expects(StorefrontHome.consentCookieBannerContainer).toBeVisible();
@@ -22,7 +22,7 @@ test(
             await ShopCustomer.expects(StorefrontHome.consentOnlyTechnicallyRequiredButton).toBeVisible();
             await ShopCustomer.expects(StorefrontHome.consentConfigureButton).toBeVisible();
             await ShopCustomer.expects(StorefrontHome.consentCookiePermissionContent).toContainText(
-                'This website uses cookies to ensure the best experience possible.',
+                Translate('storefront:home:consent.description'),
             );
         });
 

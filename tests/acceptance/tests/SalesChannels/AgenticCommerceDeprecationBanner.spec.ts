@@ -26,7 +26,7 @@ test(
             '@AgenticCommerce',
         ],
     },
-    async ({ ShopAdmin, TestDataService, page }) => {
+    async ({ Translate, ShopAdmin, TestDataService, page }) => {
         // Create an Agentic Commerce sales channel
         const sc = TestDataService.defaultSalesChannel as unknown as {
             paymentMethodId: string;
@@ -87,7 +87,12 @@ test(
                     }
                 });
 
-                await deprecationBanner.getByRole('button', { name: 'Install extension', exact: true }).click();
+                await deprecationBanner
+                    .getByRole('button', {
+                        name: Translate('administration:salesChannel:buttons.installExtension'),
+                        exact: true,
+                    })
+                    .click();
                 await page.waitForTimeout(500);
 
                 if (pageErrors.length > 0) {

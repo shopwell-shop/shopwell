@@ -7,6 +7,7 @@ test(
         tag: '@SalesChannel',
     },
     async ({
+        Translate,
         ShopAdmin,
         TestDataService,
         AdminSalesChannelDetail,
@@ -44,7 +45,9 @@ test(
         const { data: defaultPaymentMethod } = await paymentMethodResponse.json();
         const defaultPaymentMethodName = defaultPaymentMethod.name;
 
-        const defaultPaymentMethodInput = defaultPaymentMethodField.getByLabel('Default payment method');
+        const defaultPaymentMethodInput = defaultPaymentMethodField.getByLabel(
+            Translate('administration:salesChannel:fields.defaultPaymentMethod'),
+        );
         await ShopAdmin.expects(selectedText).toContainText(defaultPaymentMethodName);
         await ShopAdmin.expects(loadingIndicator).toBeHidden();
 

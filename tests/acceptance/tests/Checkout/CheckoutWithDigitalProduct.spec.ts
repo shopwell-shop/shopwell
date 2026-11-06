@@ -10,6 +10,7 @@ test(
         ],
     },
     async ({
+        Translate,
         ShopCustomer,
         AdminApiContext,
         TestDataService,
@@ -38,7 +39,7 @@ test(
 
         await ShopCustomer.attemptsTo(ConfirmTermsAndConditions());
         await ShopCustomer.attemptsTo(ConfirmImmediateAccessToDigitalProduct());
-        await ShopCustomer.attemptsTo(SelectPaymentMethod('Invoice'));
+        await ShopCustomer.attemptsTo(SelectPaymentMethod(Translate('storefront:checkout:common.invoice')));
 
         await ShopCustomer.attemptsTo(SubmitOrder());
 

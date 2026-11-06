@@ -1,12 +1,19 @@
-import { test } from '@fixtures/AcceptanceTest';
+import { getLanguageCode, test } from '@fixtures/AcceptanceTest';
 
 test(
     'As an admin user, I want to create a rule',
     { tag: '@Rule' },
-    async ({ AdminRuleDetail, AdminRuleListing, ShopAdmin, IdProvider, TestDataService }) => {
+    async ({ Translate, AdminRuleDetail, AdminRuleListing, ShopAdmin, IdProvider, TestDataService }) => {
         const { id: uniqueId } = IdProvider.getIdPair();
         const { id: taxId, name: taxName } = await TestDataService.createTaxRate();
         const { id: ruleTagId, name: ruleTag } = await TestDataService.createTag(`Test tag - ${uniqueId}`);
+
+        const dateFormatter = new Intl.DateTimeFormat(getLanguageCode(), {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            timeZone: 'UTC',
+        });
 
         const testConfig = {
             ruleName: `Test rule - ${uniqueId}`,
@@ -146,7 +153,12 @@ test(
             await ShopAdmin.expects(AdminRuleDetail.priorityInput).toHaveValue(testConfig.rulePriority.toString());
             await ShopAdmin.expects(AdminRuleDetail.descriptionInput).toHaveValue(testConfig.ruleDescription);
 
-            for (const ruleType of testConfig.ruleTypes) {
+            for (const ruleType of [
+                Translate('administration:rule:types.price'),
+                Translate('administration:rule:types.shipping'),
+                Translate('administration:rule:types.payment'),
+                Translate('administration:rule:types.flowBuilder'),
+            ]) {
                 await ShopAdmin.expects(AdminRuleDetail.typeItem.getByText(ruleType)).toBeVisible();
             }
 
@@ -157,10 +169,10 @@ test(
             await ShopAdmin.expects(AdminRuleDetail.conditionORContainer.first()).toBeVisible();
 
             await ShopAdmin.expects(
-                AdminRuleDetail.conditionSelectField.getByText('Total product quantity (units)'),
+                AdminRuleDetail.conditionSelectField.getByText(Translate('administration:rule:conditions.quantity')),
             ).toBeVisible();
             await ShopAdmin.expects(AdminRuleDetail.conditionLineItemGoodsTotalOperator).toHaveText(
-                'Is greater than / equal to',
+                Translate('administration:rule:conditions.greaterThanEquals'),
             );
             await ShopAdmin.expects(AdminRuleDetail.conditionLineItemGoodsTotalValue).toHaveValue(
                 testConfig.quantity.toString(),
@@ -168,34 +180,52 @@ test(
             await AdminRuleDetail.conditionLineItemGoodsTotalFilter.click();
 
             await ShopAdmin.expects(AdminRuleDetail.conditionFilterModal).toBeVisible();
-            await ShopAdmin.expects(AdminRuleDetail.conditionSelectField.getByText('Item in stock')).toBeVisible();
+            await ShopAdmin.expects(
+                AdminRuleDetail.conditionSelectField.getByText(Translate('administration:rule:conditions.inStock')),
+            ).toBeVisible();
             await ShopAdmin.expects(AdminRuleDetail.conditionCartLineItemInStockOperator).toHaveText(
-                'Is greater than / equal to',
+                Translate('administration:rule:conditions.greaterThanEquals'),
             );
             await ShopAdmin.expects(AdminRuleDetail.conditionCartLineItemInStockValue).toHaveValue(
                 testConfig.stock.toString(),
             );
             await AdminRuleDetail.conditionFilterModalCloseButtonX.click();
 
-            await ShopAdmin.expects(AdminRuleDetail.conditionSelectField.getByText('Date range')).toBeVisible();
-            await ShopAdmin.expects(AdminRuleDetail.conditionDateRangeOperator.first()).toHaveText('Excluding timestamp');
+            await ShopAdmin.expects(
+                AdminRuleDetail.conditionSelectField.getByText(Translate('administration:rule:conditions.dateRange')),
+            ).toBeVisible();
+            await ShopAdmin.expects(AdminRuleDetail.conditionDateRangeOperator.first()).toHaveText(
+                Translate('administration:rule:conditions.withoutTime'),
+            );
             await ShopAdmin.expects(AdminRuleDetail.conditionDateRangeDateFieldFirst).toHaveValue(
-                testConfig.fromDate.split('T')[0].split('-').reverse().join('/'),
+                dateFormatter.format(new Date(`${testConfig.fromDate}Z`)),
             );
             await ShopAdmin.expects(AdminRuleDetail.conditionDateRangeDateFieldSecond).toHaveValue(
-                testConfig.toDate.split('T')[0].split('-').reverse().join('/'),
+                dateFormatter.format(new Date(`${testConfig.toDate}Z`)),
             );
 
-            await ShopAdmin.expects(AdminRuleDetail.conditionSelectField.getByText('Customer name')).toBeVisible();
-            await ShopAdmin.expects(AdminRuleDetail.conditionCustomerNameOperator).toHaveText('Is equal to');
+            await ShopAdmin.expects(
+                AdminRuleDetail.conditionSelectField.getByText(Translate('administration:rule:conditions.customerName')),
+            ).toBeVisible();
+            await ShopAdmin.expects(AdminRuleDetail.conditionCustomerNameOperator).toHaveText(
+                Translate('administration:rule:conditions.equals'),
+            );
             await ShopAdmin.expects(AdminRuleDetail.conditionCustomerNameValue).toHaveValue(testConfig.customerName);
 
-            await ShopAdmin.expects(AdminRuleDetail.conditionSelectField.getByText('Item with tax rate')).toBeVisible();
-            await ShopAdmin.expects(AdminRuleDetail.conditionCartLineItemTaxationMatchOperator).toHaveText('At least one');
-            await ShopAdmin.expects(AdminRuleDetail.conditionCartLineItemTaxationOperator).toHaveText('Is one of');
+            await ShopAdmin.expects(
+                AdminRuleDetail.conditionSelectField.getByText(Translate('administration:rule:conditions.taxRate')),
+            ).toBeVisible();
+            await ShopAdmin.expects(AdminRuleDetail.conditionCartLineItemTaxationMatchOperator).toHaveText(
+                Translate('administration:rule:conditions.any'),
+            );
+            await ShopAdmin.expects(AdminRuleDetail.conditionCartLineItemTaxationOperator).toHaveText(
+                Translate('administration:rule:conditions.isOneOf'),
+            );
             await ShopAdmin.expects(AdminRuleDetail.conditionCartLineItemTaxationValue).toHaveText(testConfig.taxName);
 
-            await ShopAdmin.expects(AdminRuleDetail.conditionSelectField.getByText('Time range')).toBeVisible();
+            await ShopAdmin.expects(
+                AdminRuleDetail.conditionSelectField.getByText(Translate('administration:rule:conditions.timeRange')),
+            ).toBeVisible();
             await ShopAdmin.expects(AdminRuleDetail.conditionTimeRangeValueFirst).toHaveValue(
                 testConfig.fromDate.split('T')[1].substring(0, 5),
             );
@@ -204,9 +234,11 @@ test(
             );
 
             await ShopAdmin.expects(
-                AdminRuleDetail.conditionSelectField.getByText('Order created by administrator'),
+                AdminRuleDetail.conditionSelectField.getByText(Translate('administration:rule:conditions.adminOrder')),
             ).toBeVisible();
-            await ShopAdmin.expects(AdminRuleDetail.conditionOrderCreatedByAdminValue).toHaveValue('No');
+            await ShopAdmin.expects(AdminRuleDetail.conditionOrderCreatedByAdminValue).toHaveValue(
+                Translate('administration:rule:conditions.no'),
+            );
         });
     },
 );

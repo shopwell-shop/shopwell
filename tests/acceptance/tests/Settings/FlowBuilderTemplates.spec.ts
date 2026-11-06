@@ -5,6 +5,7 @@ test(
     'As an admin, I want to create new flows from templates, so that I can easily create new ones based on the default flows.',
     { tag: '@Flow' },
     async ({
+        Translate,
         ShopAdmin,
         AdminFlowBuilderTemplates,
         AdminFlowBuilderCreate,
@@ -41,7 +42,9 @@ test(
             await templateRow.templateDetailLink.click();
             await ShopAdmin.expects(AdminFlowBuilderDetail.generalTab).toBeVisible();
             await ShopAdmin.expects(AdminFlowBuilderDetail.templateName).toHaveValue(flowTemplateName);
-            await ShopAdmin.expects(AdminFlowBuilderDetail.alertWarning).toContainText('Flow templates cannot be edited.');
+            await ShopAdmin.expects(AdminFlowBuilderDetail.alertWarning).toContainText(
+                Translate('administration:flowBuilder:messages.templateReadOnly'),
+            );
         });
 
         await test.step('Create flow from template and compare it with template', async () => {

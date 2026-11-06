@@ -1,4 +1,4 @@
-import { formatPrice, getLanguageData, getSnippetSetId, test } from '@fixtures/AcceptanceTest';
+import { getLanguageData, getSnippetSetId, test } from '@fixtures/AcceptanceTest';
 
 test(
     'Shop customers should be able to view products in different languages.',
@@ -8,16 +8,30 @@ test(
             '@Storefront',
         ],
     },
-    async ({ ShopCustomer, TestDataService, StorefrontHome }, testInfo) => {
+    async ({ ShopCustomer, TestDataService, StorefrontHome }) => {
         const product = await TestDataService.createBasicProduct();
 
         const salesChannelId = TestDataService.defaultSalesChannel.id;
         const language = await getLanguageData(TestDataService.AdminApiClient, 'zh-CN');
         const englishLanguage = await getLanguageData(TestDataService.AdminApiClient, 'en-GB');
         const snippetSetId = await getSnippetSetId(TestDataService.AdminApiClient, 'zh-CN');
-        const zhCnDomainUrl = `${(process.env.APP_URL || 'http://localhost:8000').replace(/\/$/, '')}/zh-CN-${testInfo.repeatEachIndex}-${testInfo.workerIndex}/`;
+        const appUrl = (process.env.APP_URL || 'http://localhost:8000').replace(/\/$/, '');
+        const zhCnDomainUrl = `${appUrl}/zh-CN-${salesChannelId}/`;
+        const englishDomainUrl = `${appUrl}/en-GB-${salesChannelId}/`;
 
-        await TestDataService.assignSalesChannelLanguage(salesChannelId, language.id);
+        const languagesResponse = await TestDataService.AdminApiClient.get(`sales-channel/${salesChannelId}/languages`);
+        await ShopCustomer.expects(languagesResponse.ok()).toBeTruthy();
+        const { data: assignedLanguages } = (await languagesResponse.json()) as { data: { id: string }[] };
+        for (const requiredLanguage of [language, englishLanguage]) {
+            if (!assignedLanguages.some((assignedLanguage) => assignedLanguage.id === requiredLanguage.id)) {
+                await TestDataService.assignSalesChannelLanguage(salesChannelId, requiredLanguage.id);
+            }
+        }
+        await TestDataService.createSalesChannelDomain({
+            languageId: englishLanguage.id,
+            snippetSetId: await getSnippetSetId(TestDataService.AdminApiClient, 'en-GB'),
+            url: englishDomainUrl,
+        });
         await TestDataService.createSalesChannelDomain({
             languageId: language.id,
             snippetSetId: snippetSetId,

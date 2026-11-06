@@ -89,7 +89,7 @@ test(
 test(
     'Shop administrator should be able to duplicate a section that is followed by another section.',
     { tag: '@ShoppingExperiences' },
-    async ({ ShopAdmin, IdProvider, TestDataService, AdminApiContext }) => {
+    async ({ ShopAdmin, IdProvider, TestDataService, AdminApiContext, Translate }) => {
         const firstSectionId = IdProvider.getIdPair().uuid;
         const lastSectionId = IdProvider.getIdPair().uuid;
         const layout = await TestDataService.createBasicPageLayout('landingpage', {
@@ -107,7 +107,7 @@ test(
 
             const cloneResponse = ShopAdmin.page.waitForResponse(`**/api/_action/clone/cms-section/${firstSectionId}`);
             const pageSaveResponse = waitForPageSave(ShopAdmin.page, layout.id);
-            await ShopAdmin.page.getByRole('button', { name: 'Duplicate' }).click();
+            await ShopAdmin.page.getByRole('button', { name: Translate('administration:layout:detail.duplicate') }).click();
 
             const response = await cloneResponse;
             expect(response.ok()).toBeTruthy();
@@ -136,7 +136,7 @@ test(
 test(
     'Shop administrator should be able to duplicate a block that is followed by another block.',
     { tag: '@ShoppingExperiences' },
-    async ({ ShopAdmin, IdProvider, TestDataService, AdminApiContext }) => {
+    async ({ ShopAdmin, IdProvider, TestDataService, AdminApiContext, Translate }) => {
         const sectionId = IdProvider.getIdPair().uuid;
         const firstBlockId = IdProvider.getIdPair().uuid;
         const lastBlockId = IdProvider.getIdPair().uuid;
@@ -156,7 +156,7 @@ test(
 
             const cloneResponse = ShopAdmin.page.waitForResponse(`**/api/_action/clone/cms-block/${firstBlockId}`);
             const pageSaveResponse = waitForPageSave(ShopAdmin.page, layout.id);
-            await ShopAdmin.page.getByRole('button', { name: 'Duplicate' }).click();
+            await ShopAdmin.page.getByRole('button', { name: Translate('administration:layout:detail.duplicate') }).click();
 
             const response = await cloneResponse;
             expect(response.ok()).toBeTruthy();
