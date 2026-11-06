@@ -390,5 +390,11 @@ return [
         '^' . preg_quote('REMOVED: Class Shopwell\\Storefront\\Page\\Account\\Loyalty\\AccountLoyaltyPageLoader has been deleted', '/') . '$',
         '^' . preg_quote('REMOVED: Class Shopwell\\Storefront\\Page\\Account\\Loyalty\\AccountLoyaltyPageLoadedHook has been deleted', '/') . '$',
         '^' . preg_quote('REMOVED: Class Shopwell\\Storefront\\Page\\Account\\Loyalty\\AccountLoyaltyPageLoadedEvent has been deleted', '/') . '$',
+
+        // Extension store identifiers preserve UUIDs and normalize numeric inputs to strings.
+        '^' . preg_quote('CHANGED: Type of property Shopwell\\Core\\Framework\\Store\\Struct\\ExtensionStruct#$id changed from int|null to string|null', '/') . '$',
+        '^' . preg_quote('CHANGED: The return type of Shopwell\\Core\\Framework\\Store\\Struct\\ExtensionStruct#getId() changed from int|null to the non-covariant string|null', '/') . '$',
+        '^' . preg_quote('CHANGED: The return type of Shopwell\\Core\\Framework\\Store\\Struct\\ExtensionStruct#getId() changed from int|null to string|null', '/') . '$',
+        '^' . preg_quote('CHANGED: The parameter $id of Shopwell\\Core\\Framework\\Store\\Struct\\ExtensionStruct#setId() changed from int|null to string|int|null', '/') . '$',
     ],
 ];
