@@ -1,4 +1,4 @@
-import { test } from '@fixtures/AcceptanceTest';
+import { test, getLanguageCode } from '@fixtures/AcceptanceTest';
 import {
     acceptTechnicalRequiredCookiesWithRecaptcha,
     verifyRecaptchaProtectionNotice,
@@ -52,7 +52,10 @@ test.describe('Google reCAPTCHA V2 UI', () => {
                 // For visible V2, we need to check specific elements after script loads
                 const reCaptchaContainer = StorefrontAccountLogin.page.locator('.captcha-google-re-captcha-v2').first();
                 const reCaptchaFrame = reCaptchaContainer.locator('iframe').first();
-                const reCaptchaCheckbox = reCaptchaFrame.contentFrame().getByRole('checkbox', { name: `I'm not a robot` });
+                const reCaptchaCheckbox = reCaptchaFrame.contentFrame().getByRole('checkbox', {
+                    name: { 'en-GB': `I'm not a robot`, 'zh-CN': '进行人机身份验证' }[getLanguageCode()],
+                    exact: true,
+                });
 
                 await test.step('Verify the reCaptcha V2 is loaded and visible after cookie consent', async () => {
                     await ShopCustomer.expects(reCaptchaFrame).toBeVisible();
@@ -120,13 +123,7 @@ test.describe('Google reCAPTCHA V2 UI', () => {
                     '@Storefront',
                 ],
             },
-            async ({
-                ShopCustomer,
-                StorefrontHome,
-                StorefrontContactForm,
-                StorefrontFooter,
-                acceptTechnicalRequiredCookies,
-            }) => {
+            async ({ ShopCustomer, StorefrontHome, StorefrontContactForm, Translate, acceptTechnicalRequiredCookies }) => {
                 await test.step('Open the contact form modal on home page', async () => {
                     await ShopCustomer.goesTo(StorefrontHome.url());
 
@@ -134,8 +131,10 @@ test.describe('Google reCAPTCHA V2 UI', () => {
 
                     await acceptTechnicalRequiredCookies();
 
-                    await ShopCustomer.presses(StorefrontFooter.footerContactFormLink);
-                    await ShopCustomer.expects(StorefrontContactForm.cardTitle).toContainText('Contact');
+                    await ShopCustomer.presses(StorefrontHome.contactFormLink);
+                    await ShopCustomer.expects(StorefrontContactForm.cardTitle).toContainText(
+                        Translate('storefront:contact:title'),
+                    );
                 });
 
                 await waitForRecaptchaScriptLoaded(StorefrontContactForm.page);

@@ -85,6 +85,7 @@ test(
         StorefrontCheckoutConfirm,
         StorefrontCheckoutFinish,
         SelectShippingMethod,
+        Translate,
         Login,
         AddProductToCart,
         ProceedFromProductToCheckout,
@@ -106,7 +107,7 @@ test(
 
         await test.step('Submit the order, navigate to checkout finish page and validate the tax price.', async () => {
             await ShopCustomer.attemptsTo(ConfirmTermsAndConditions());
-            await ShopCustomer.attemptsTo(SelectPaymentMethod('Invoice'));
+            await ShopCustomer.attemptsTo(SelectPaymentMethod(Translate('storefront:checkout:common.invoice')));
             await ShopCustomer.attemptsTo(SelectShippingMethod('Standard'));
 
             await ShopCustomer.attemptsTo(SubmitOrder());
@@ -141,6 +142,7 @@ test(
         StorefrontCheckoutConfirm,
         StorefrontCheckoutFinish,
         SelectShippingMethod,
+        Translate,
         Login,
         AddProductToCart,
         ProceedFromProductToCheckout,
@@ -165,7 +167,7 @@ test(
 
         await test.step('Submit the order, navigate to checkout finish page and validate the tax price.', async () => {
             await ShopCustomer.attemptsTo(ConfirmTermsAndConditions());
-            await ShopCustomer.attemptsTo(SelectPaymentMethod('Invoice'));
+            await ShopCustomer.attemptsTo(SelectPaymentMethod(Translate('storefront:checkout:common.invoice')));
             await ShopCustomer.attemptsTo(SelectShippingMethod('Standard'));
 
             await ShopCustomer.attemptsTo(SubmitOrder());
@@ -200,6 +202,7 @@ test(
         StorefrontCheckoutConfirm,
         StorefrontCheckoutFinish,
         SelectShippingMethod,
+        Translate,
         Login,
         AddProductToCart,
         ProceedFromProductToCheckout,
@@ -225,7 +228,7 @@ test(
 
         await test.step('Submit the order, navigate to checkout finish page and validate the tax price.', async () => {
             await ShopCustomer.attemptsTo(ConfirmTermsAndConditions());
-            await ShopCustomer.attemptsTo(SelectPaymentMethod('Invoice'));
+            await ShopCustomer.attemptsTo(SelectPaymentMethod(Translate('storefront:checkout:common.invoice')));
             await ShopCustomer.attemptsTo(SelectShippingMethod('Standard'));
 
             await ShopCustomer.attemptsTo(SubmitOrder());
@@ -262,6 +265,7 @@ test(
         StorefrontCheckoutConfirm,
         StorefrontCheckoutFinish,
         SelectShippingMethod,
+        Translate,
         Login,
         AddProductToCart,
         ProceedFromProductToCheckout,
@@ -283,7 +287,7 @@ test(
 
         await test.step('Submit the order, navigate to checkout finish page and validate the tax price.', async () => {
             await ShopCustomer.attemptsTo(ConfirmTermsAndConditions());
-            await ShopCustomer.attemptsTo(SelectPaymentMethod('Invoice'));
+            await ShopCustomer.attemptsTo(SelectPaymentMethod(Translate('storefront:checkout:common.invoice')));
             await ShopCustomer.attemptsTo(SelectShippingMethod('Standard'));
 
             await ShopCustomer.attemptsTo(SubmitOrder());

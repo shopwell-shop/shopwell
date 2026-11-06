@@ -3,7 +3,7 @@ import { test } from '@fixtures/AcceptanceTest';
 test(
     'Shop administrator should be able to create a internal link type of category.',
     { tag: '@Categories' },
-    async ({ ShopAdmin, IdProvider, AdminCategories, CreateLinkTypeCategory, TestDataService }) => {
+    async ({ ShopAdmin, IdProvider, AdminCategories, CreateLinkTypeCategory, TestDataService, Translate }) => {
         const categoryData = {
             name: `00_category_link_${IdProvider.getIdPair().uuid}`,
             categoryType: 'Link',
@@ -33,8 +33,12 @@ test(
             await ShopAdmin.expects(AdminCategories.nameInput).toHaveValue(categoryData.name);
             await ShopAdmin.expects(AdminCategories.activeCheckbox).toBeChecked({ checked: categoryData.status });
             // Verify category customisable link data
-            await ShopAdmin.expects(AdminCategories.linkTypeSelectionList).toHaveText(categoryCustomizableLinkData.linkType);
-            await ShopAdmin.expects(AdminCategories.entitySelectionList).toHaveText(categoryCustomizableLinkData.entity);
+            await ShopAdmin.expects(AdminCategories.linkTypeSelectionList).toHaveText(
+                Translate('administration:category:linkTypes.internal'),
+            );
+            await ShopAdmin.expects(AdminCategories.entitySelectionList).toHaveText(
+                Translate('administration:category:entities.category'),
+            );
             await ShopAdmin.expects(AdminCategories.categorySelectionList).toHaveText(categoryCustomizableLinkData.category);
             await ShopAdmin.expects(AdminCategories.openInNewTabCheckbox).toBeChecked({
                 checked: categoryCustomizableLinkData.openInNewTab,
@@ -46,7 +50,7 @@ test(
 test(
     'Shop administrator should be able to create a internal link type of product.',
     { tag: '@Categories' },
-    async ({ ShopAdmin, IdProvider, AdminCategories, CreateLinkTypeCategory, TestDataService }) => {
+    async ({ ShopAdmin, IdProvider, AdminCategories, CreateLinkTypeCategory, TestDataService, Translate }) => {
         const product = await TestDataService.createBasicProduct();
         const categoryData = {
             name: `00_product_link_${IdProvider.getIdPair().uuid}`,
@@ -78,8 +82,12 @@ test(
             await ShopAdmin.expects(AdminCategories.nameInput).toHaveValue(categoryData.name);
             await ShopAdmin.expects(AdminCategories.activeCheckbox).toBeChecked({ checked: categoryData.status });
             // Verify category customisable link data
-            await ShopAdmin.expects(AdminCategories.linkTypeSelectionList).toHaveText(categoryCustomizableLinkData.linkType);
-            await ShopAdmin.expects(AdminCategories.entitySelectionList).toHaveText(categoryCustomizableLinkData.entity);
+            await ShopAdmin.expects(AdminCategories.linkTypeSelectionList).toHaveText(
+                Translate('administration:category:linkTypes.internal'),
+            );
+            await ShopAdmin.expects(AdminCategories.entitySelectionList).toHaveText(
+                Translate('administration:category:entities.product'),
+            );
             await ShopAdmin.expects(AdminCategories.productSelectionList).toContainText(
                 categoryCustomizableLinkData.product,
             );
@@ -93,7 +101,15 @@ test(
 test(
     'Shop administrator should be able to create a internal link type of landing page.',
     { tag: '@Categories' },
-    async ({ ShopAdmin, IdProvider, AdminCategories, CreateLinkTypeCategory, CreateLandingPage, TestDataService }) => {
+    async ({
+        ShopAdmin,
+        IdProvider,
+        AdminCategories,
+        CreateLinkTypeCategory,
+        CreateLandingPage,
+        TestDataService,
+        Translate,
+    }) => {
         const landingPageData = {
             name: `landing_page_${IdProvider.getIdPair().uuid}`,
             status: true,
@@ -136,8 +152,12 @@ test(
             await ShopAdmin.expects(AdminCategories.nameInput).toHaveValue(categoryData.name);
             await ShopAdmin.expects(AdminCategories.activeCheckbox).toBeChecked({ checked: categoryData.status });
             // Verify category customisable link data
-            await ShopAdmin.expects(AdminCategories.linkTypeSelectionList).toHaveText(categoryCustomizableLinkData.linkType);
-            await ShopAdmin.expects(AdminCategories.entitySelectionList).toHaveText(categoryCustomizableLinkData.entity);
+            await ShopAdmin.expects(AdminCategories.linkTypeSelectionList).toHaveText(
+                Translate('administration:category:linkTypes.internal'),
+            );
+            await ShopAdmin.expects(AdminCategories.entitySelectionList).toHaveText(
+                Translate('administration:category:entities.landingPage'),
+            );
             await ShopAdmin.expects(AdminCategories.landingPageSelectionList).toContainText(
                 categoryCustomizableLinkData.landingPage,
             );

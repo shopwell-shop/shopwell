@@ -28,6 +28,7 @@ test(
         SelectShippingMethod,
         SubmitOrder,
         InstanceMeta,
+        Translate,
     }) => {
         const product = HomeProduct;
         const currency = await TestDataService.createCurrency({ factor: 2.25555 });
@@ -79,7 +80,7 @@ test(
         await ShopCustomer.attemptsTo(ProceedFromProductToCheckout());
 
         await ShopCustomer.attemptsTo(ConfirmTermsAndConditions());
-        await ShopCustomer.attemptsTo(SelectPaymentMethod('Invoice'));
+        await ShopCustomer.attemptsTo(SelectPaymentMethod(Translate('storefront:payment:methods.invoice')));
         await ShopCustomer.attemptsTo(SelectShippingMethod('Standard'));
 
         await ShopCustomer.expects(StorefrontCheckoutConfirm.grandTotalPrice).toContainText(currency.isoCode + ' 22.556');

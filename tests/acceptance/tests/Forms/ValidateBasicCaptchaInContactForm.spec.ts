@@ -1,4 +1,4 @@
-import { test } from '@fixtures/AcceptanceTest';
+import { test, getLanguageCode } from '@fixtures/AcceptanceTest';
 import { satisfies } from 'compare-versions';
 
 test(
@@ -11,7 +11,7 @@ test(
             '@Contact',
         ],
     },
-    async ({ ShopCustomer, StorefrontHome, StorefrontContactForm, TestDataService, InstanceMeta }) => {
+    async ({ ShopCustomer, StorefrontHome, StorefrontContactForm, TestDataService, InstanceMeta, Translate }) => {
         test.skip(InstanceMeta.isSaaS, 'SaaS just support FriendlyCaptcha');
 
         await TestDataService.setSystemConfig({
@@ -21,7 +21,7 @@ test(
         await test.step('Open the contact form modal on home page.', async () => {
             await ShopCustomer.goesTo(StorefrontHome.url());
             await ShopCustomer.presses(StorefrontHome.contactFormLink);
-            await ShopCustomer.expects(StorefrontContactForm.cardTitle).toContainText('Contact');
+            await ShopCustomer.expects(StorefrontContactForm.cardTitle).toContainText(Translate('storefront:contact:title'));
         });
 
         await test.step('Fill out all necessary contact information.', async () => {
@@ -65,11 +65,11 @@ test(
                 if (!InstanceMeta.features['ACCESSIBILITY_TWEAKS'] && satisfies(InstanceMeta.version, '<6.7')) {
                     await ShopCustomer.expects(StorefrontContactForm.formAlert.last()).toBeVisible();
                     await ShopCustomer.expects(StorefrontContactForm.formAlert.last()).toContainText(
-                        'Incorrect input. Please try again.',
+                        { 'en-GB': 'Incorrect input. Please try again.', 'zh-CN': '验证码错误，请重试' }[getLanguageCode()],
                     );
                 } else {
                     await ShopCustomer.expects(StorefrontContactForm.basicCaptchaInput).toHaveAccessibleDescription(
-                        'Incorrect input. Please try again.',
+                        { 'en-GB': 'Incorrect input. Please try again.', 'zh-CN': '验证码错误，请重试' }[getLanguageCode()],
                     );
                 }
             });
