@@ -1,4 +1,4 @@
-import { expect, test } from '@fixtures/AcceptanceTest';
+import { expect, test, getLanguageCode } from '@fixtures/AcceptanceTest';
 
 test(
     'As a customer, the contact form only asks me to acknowledge the privacy policy.',
@@ -20,21 +20,42 @@ test(
             await ShopCustomer.presses(StorefrontHome.contactFormLink);
         };
 
+        const messages = {
+            'en-GB': {
+                passive: 'Please note our privacy policy.',
+                required: 'I have read and acknowledge the privacy policy.',
+                terms: 'general terms and conditions',
+                privacy: 'privacy policy',
+            },
+            'zh-CN': {
+                passive: '请查阅我们的 隐私政策。',
+                required: '我已阅读 隐私政策 并同意。',
+                terms: '服务条款',
+                privacy: '隐私政策',
+            },
+        }[getLanguageCode()];
         const privacyNotice = StorefrontContactForm.page.locator('#cms-form-contact .privacy-notice');
         const dataProtectionCheckbox = privacyNotice.locator('input[name="acceptedDataProtection"]');
+        const privacyLabel = privacyNotice.locator('label[for="acceptedDataProtection"], .data-protection-information');
 
         await test.step('Shows a passive privacy-only notice without a checkbox', async () => {
             await openContactForm(false);
             await expect(privacyNotice).not.toContainText(/general terms and conditions|AGB/i);
+            await expect(privacyNotice).not.toContainText(messages.terms);
             await expect(dataProtectionCheckbox).toHaveCount(0);
-            await expect(privacyNotice).toContainText(/Please note|Bitte beachten/i);
+            await expect(privacyLabel).toHaveText(messages.passive);
+            await expect(privacyNotice.getByRole('button', { name: messages.privacy, exact: true })).toBeVisible();
         });
 
         await test.step('Shows a privacy-only checkbox when the checkbox is required', async () => {
             await openContactForm(true);
             await expect(privacyNotice).not.toContainText(/general terms and conditions|AGB/i);
+            await expect(privacyNotice).not.toContainText(messages.terms);
             await expect(dataProtectionCheckbox).toBeVisible();
+            await expect(privacyLabel).toHaveText(`${messages.required} *`);
             await expect(privacyNotice).not.toContainText(/Please note|Bitte beachten/i);
+            await expect(privacyLabel).not.toContainText(messages.passive);
+            await expect(dataProtectionCheckbox).toHaveCount(1);
         });
     },
 );
@@ -48,16 +69,18 @@ test(
             '@Storefront',
         ],
     },
-    async ({ ShopCustomer, StorefrontHome, StorefrontContactForm, DefaultSalesChannel }) => {
+    async ({ ShopCustomer, StorefrontHome, StorefrontContactForm, DefaultSalesChannel, Translate }) => {
         test.slow(); //Necessary for multiple retries due to rate limiting
 
         await test.step('Open the contact form modal on home page.', async () => {
             await ShopCustomer.goesTo(StorefrontHome.url());
             await ShopCustomer.presses(StorefrontHome.contactFormLink);
-            await ShopCustomer.expects(StorefrontContactForm.cardTitle).toContainText('Contact');
+            await ShopCustomer.expects(StorefrontContactForm.cardTitle).toContainText(Translate('storefront:contact:title'));
         });
 
         await test.step('Fill out all necessary contact information.', async () => {
+            await StorefrontContactForm.genderSelect.selectOption('not_specified');
+            await ShopCustomer.expects(StorefrontContactForm.genderSelect).toHaveValue('not_specified');
             await ShopCustomer.fillsIn(StorefrontContactForm.nameInput, 'John Doe');
             await ShopCustomer.fillsIn(StorefrontContactForm.emailInput, 'mail@test.com');
             await ShopCustomer.fillsIn(StorefrontContactForm.phoneInput, '0123456789');
@@ -94,16 +117,16 @@ test(
             '@Storefront',
         ],
     },
-    async ({ ShopCustomer, StorefrontHome, StorefrontContactForm, InstanceMeta }) => {
+    async ({ ShopCustomer, StorefrontHome, StorefrontContactForm, InstanceMeta, Translate }) => {
         await test.step('Open the contact form modal on home page.', async () => {
             await ShopCustomer.goesTo(StorefrontHome.url());
             await ShopCustomer.presses(StorefrontHome.contactFormLink);
-            await ShopCustomer.expects(StorefrontContactForm.cardTitle).toContainText('Contact');
+            await ShopCustomer.expects(StorefrontContactForm.cardTitle).toContainText(Translate('storefront:contact:title'));
         });
 
         await test.step('Send and validate the negative contact form result.', async () => {
             await ShopCustomer.presses(StorefrontContactForm.submitButton);
-            await ShopCustomer.expects(StorefrontContactForm.cardTitle).toContainText('Contact');
+            await ShopCustomer.expects(StorefrontContactForm.cardTitle).toContainText(Translate('storefront:contact:title'));
 
             await ShopCustomer.expects(StorefrontContactForm.nameInput).toHaveCSS('border-color', 'rgb(194, 0, 23)');
             await ShopCustomer.expects(StorefrontContactForm.emailInput).toHaveCSS('border-color', 'rgb(194, 0, 23)');

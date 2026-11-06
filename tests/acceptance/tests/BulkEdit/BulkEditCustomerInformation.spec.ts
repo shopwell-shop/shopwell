@@ -1,4 +1,4 @@
-import { test } from '@fixtures/AcceptanceTest';
+import { test, getLocale } from '@fixtures/AcceptanceTest';
 
 const TIMEOUT = 15_000;
 
@@ -12,7 +12,7 @@ test(
         AdminCustomerDetail,
         BulkEditCustomers,
         IdProvider,
-        DefaultSalesChannel,
+        Translate,
     }) => {
         let i = 1;
         const customer1 = await TestDataService.createCustomer({ name: `Bulk edit ${i++}` });
@@ -21,14 +21,19 @@ test(
         const currentCustomerGroup = await TestDataService.getCustomerGroupById(customer3.groupId);
         const customerGroupToUpdate = await TestDataService.createCustomerGroup();
         const currentLanguage = await TestDataService.getLanguageById(customer3.languageId);
-        const languageToUpdate = await TestDataService.getLanguageData('zh-CN');
-        await TestDataService.assignSalesChannelLanguage(DefaultSalesChannel.salesChannel.id, languageToUpdate.id);
+        const englishLanguage = await TestDataService.getLanguageData('en-GB');
+        const languageToUpdate =
+            englishLanguage.id === currentLanguage.id ? await TestDataService.getLanguageData('zh-CN') : englishLanguage;
+        ShopAdmin.expects(languageToUpdate.id).not.toBe(currentLanguage.id);
+        const accountStatusLabels = getLocale().startsWith('zh')
+            ? { active: '启用', inactive: '未启用' }
+            : { active: 'Active', inactive: 'Inactive' };
         const tagName1 = `001_bulk_edit_${customer1.id}`;
         const tagName2 = `002_bulk_edit_${customer2.id}`;
         await TestDataService.createTag(tagName1);
         await TestDataService.createTag(tagName2);
         const tagData = {
-            changeType: 'Overwrite',
+            changeType: Translate('administration:product:bulkEdit.methods.overwrite'),
             tags: [
                 tagName1,
                 tagName2,
@@ -56,6 +61,7 @@ test(
                 config: {
                     label: {
                         'en-GB': customFieldTextName,
+                        'zh-CN': customFieldTextName,
                     },
                 },
             });
@@ -80,7 +86,9 @@ test(
                 const userCustomerGroup = await AdminCustomerDetail.getCustomerGroup();
                 await ShopAdmin.expects(userCustomerGroup).toHaveText(accountData.customerGroup, { timeout: TIMEOUT });
                 const accountStatus = await AdminCustomerDetail.getAccountStatus();
-                await ShopAdmin.expects(accountStatus).toHaveText(accountData.accountStatus ? 'Active' : 'Inactive');
+                await ShopAdmin.expects(accountStatus).toHaveText(
+                    accountData.accountStatus ? accountStatusLabels.active : accountStatusLabels.inactive,
+                );
                 const language = await AdminCustomerDetail.getLanguage();
                 await ShopAdmin.expects(language).toHaveText(accountData.language);
                 //verify tags
@@ -109,7 +117,9 @@ test(
             const userCustomerGroup = await AdminCustomerDetail.getCustomerGroup();
             await ShopAdmin.expects(userCustomerGroup).toHaveText(currentCustomerGroup.name, { timeout: TIMEOUT });
             const accountStatus = await AdminCustomerDetail.getAccountStatus();
-            await ShopAdmin.expects(accountStatus).toHaveText(customer3.active ? 'Active' : 'Inactive');
+            await ShopAdmin.expects(accountStatus).toHaveText(
+                customer3.active ? accountStatusLabels.active : accountStatusLabels.inactive,
+            );
             const language = await AdminCustomerDetail.getLanguage();
             await ShopAdmin.expects(language).toHaveText(currentLanguage.name);
             ShopAdmin.expects(await AdminCustomerDetail.tagItems.all()).toHaveLength(0);
