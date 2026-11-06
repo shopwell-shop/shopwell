@@ -1,4 +1,4 @@
-import { mount } from '@vue/test-utils';
+import { shallowMount } from '@vue/test-utils';
 
 function createRepositoryFactory(overrides = {}) {
     const repositories = {
@@ -18,7 +18,7 @@ function createRepositoryFactory(overrides = {}) {
 }
 
 async function createWrapper(privileges = ['order.viewer'], factory = createRepositoryFactory()) {
-    return mount(await wrapTestComponent('sw-dashboard-order-states', { sync: true }), {
+    return shallowMount(await wrapTestComponent('sw-dashboard-order-states', { sync: true }), {
         global: {
             stubs: {
                 'mt-card': {
@@ -27,8 +27,13 @@ async function createWrapper(privileges = ['order.viewer'], factory = createRepo
                     props: ['title', 'isLoading', 'positionIdentifier'],
                 },
                 'sw-chart': {
-                    props: ['type', 'series', 'options', 'height'],
-                    template: '<div class="sw-chart" :data-type="type"></div>',
+                    props: [
+                        'type',
+                        'series',
+                        'options',
+                        'height',
+                    ],
+                    template: `<div class="sw-chart" :data-type="type"><div v-for="row in series" :key="row.name" class="chart-series"><span class="chart-series-name">{{ row.name }}</span><span v-for="point in row.data" :key="point.x" class="chart-point" :data-value="point.y">{{ point.x }}</span></div></div>`,
                 },
                 'sw-extension-component-section': true,
             },
@@ -63,8 +68,7 @@ describe('module/sw-dashboard/component/sw-dashboard-order-states', () => {
         const wrapper = await createWrapper([]);
         await flushPromises();
 
-        expect(wrapper.find('mt-card-stub').exists()).toBe(false);
-        expect(wrapper.vm.canViewOrders).toBe(false);
+        expect(wrapper.find('.mt-card').exists()).toBe(false);
     });
 
     it('renders the empty state without buckets', async () => {
@@ -100,12 +104,16 @@ describe('module/sw-dashboard/component/sw-dashboard-order-states', () => {
         const wrapper = await createWrapper(['order.viewer'], factory);
         await flushPromises();
 
-        expect(wrapper.vm.buckets).toEqual([
-            { name: 'Offen', count: 4 },
-            { name: 'Abgeschlossen', count: 9 },
+        expect(wrapper.findAll('.chart-series-name').map((series) => series.text())).toEqual(['Offen', 'Abgeschlossen']);
+        expect(
+            wrapper
+                .findAll('.chart-point')
+                .map((point) => ({ label: point.text(), value: Number(point.attributes('data-value')) })),
+        ).toEqual([
+            { label: 'Offen', value: 4 },
+            { label: 'Abgeschlossen', value: 9 },
         ]);
-        expect(wrapper.vm.series[0].data).toEqual([{ x: 'Offen', y: 4 }]);
-        expect(wrapper.vm.hasData).toBe(true);
+        expect(wrapper.find('.sw-dashboard-order-states__empty').exists()).toBe(false);
     });
 
     it('aggregates the states of the last 30 days', async () => {
@@ -137,6 +145,6 @@ describe('module/sw-dashboard/component/sw-dashboard-order-states', () => {
         const wrapper = await createWrapper(['order.viewer'], factory);
         await flushPromises();
 
-        expect(wrapper.vm.buckets[0].name).toBe('custom_state');
+        expect(wrapper.get('.chart-point').text()).toBe('custom_state');
     });
 });

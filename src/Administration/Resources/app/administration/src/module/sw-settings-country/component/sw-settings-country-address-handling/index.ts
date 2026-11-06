@@ -61,6 +61,8 @@ export default Component.wrapComponentConfig({
 
     inject: ['acl', 'customSnippetApiService'],
 
+    emits: ['update:country'],
+
     props: {
         country: {
             type: Object as PropType<Entity<'country'>>,
@@ -114,9 +116,7 @@ export default Component.wrapComponentConfig({
     computed: {
         customerCriteria(): CriteriaType {
             const criteria = new Criteria(1, null);
-            criteria
-                .addAssociation('defaultBillingAddress.country')
-                .addAssociation('defaultBillingAddress.countryState');
+            criteria.addAssociation('defaultBillingAddress.country').addAssociation('defaultBillingAddress.countryState');
 
             return criteria;
         },

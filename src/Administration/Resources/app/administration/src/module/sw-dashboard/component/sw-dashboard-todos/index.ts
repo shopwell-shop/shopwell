@@ -13,7 +13,6 @@ type TodoCount = {
     returnRequests: number;
     ordersToShip: number;
     reviewsWaiting: number;
-    outOfStock: number;
 };
 
 type TodoLink = { name: string; query: Record<string, string> } | null;
@@ -31,7 +30,6 @@ const EMPTY_COUNTS: TodoCount = {
     returnRequests: 0,
     ordersToShip: 0,
     reviewsWaiting: 0,
-    outOfStock: 0,
 };
 
 /**
@@ -40,8 +38,8 @@ const EMPTY_COUNTS: TodoCount = {
  * The radar part of the dashboard: every entry is a non-zero counter of work
  * that waits for an operator, ordered by how much it can hurt - open return
  * requests hold back refunds, unshipped orders hold back the customer promise,
- * unseen reviews hold back trust, empty shelves hold back revenue. A counter
- * of zero never renders: an empty dashboard is a good dashboard.
+ * unseen reviews hold back trust. A counter of zero never renders: an empty
+ * dashboard is a good dashboard.
  *
  * @private
  */
@@ -75,10 +73,6 @@ export default Shopwell.Component.wrapComponentConfig({
             return this.repositoryFactory.create('product_review');
         },
 
-        productWarehouseRepository(): unknown {
-            return this.repositoryFactory.create('product_warehouse');
-        },
-
         stateMachineStateRepository(): unknown {
             return this.repositoryFactory.create('state_machine_state');
         },
@@ -93,10 +87,6 @@ export default Shopwell.Component.wrapComponentConfig({
 
         canViewReviews(): boolean {
             return this.acl.can('review.viewer');
-        },
-
-        canViewInventory(): boolean {
-            return this.acl.can('inventory.viewer');
         },
 
         items(): TodoItem[] {
@@ -135,17 +125,6 @@ export default Shopwell.Component.wrapComponentConfig({
                 });
             }
 
-            if (this.canViewInventory && this.counts.outOfStock > 0) {
-                items.push({
-                    key: 'outOfStock',
-                    icon: 'regular-box',
-                    label: this.$t('sw-dashboard.todos.outOfStock'),
-                    count: this.counts.outOfStock,
-                    variant: 'attention',
-                    link: { name: 'sw.inventory.warehouse.list', query: {} },
-                });
-            }
-
             return items;
         },
 
@@ -163,12 +142,16 @@ export default Shopwell.Component.wrapComponentConfig({
             this.isLoading = true;
 
             try {
-                const [returnRequests, deliveryState, ordersToShip, reviewsWaiting, outOfStock] = await Promise.all([
+                const [
+                    returnRequests,
+                    deliveryState,
+                    ordersToShip,
+                    reviewsWaiting,
+                ] = await Promise.all([
                     this.fetchReturnRequestCount(),
                     this.fetchDeliveryOpenState(),
                     this.fetchOrdersToShipCount(),
                     this.fetchReviewsWaitingCount(),
-                    this.fetchOutOfStockCount(),
                 ]);
 
                 this.deliveryState = deliveryState;
@@ -176,7 +159,6 @@ export default Shopwell.Component.wrapComponentConfig({
                     returnRequests,
                     ordersToShip: deliveryState === null ? 0 : ordersToShip,
                     reviewsWaiting,
-                    outOfStock,
                 };
             } finally {
                 this.isLoading = false;
@@ -199,7 +181,10 @@ export default Shopwell.Component.wrapComponentConfig({
             return (this.orderReturnRepository as { search: (c: unknown) => Promise<{ total: number }> })
                 .search(criteria)
                 .then((result) => result.total)
-                .catch(() => 0);
+                .catch(() => {
+                    // Optional dashboard totals must not prevent opening the overview when a source is unavailable.
+                    return 0;
+                });
         },
 
         /**
@@ -233,7 +218,10 @@ export default Shopwell.Component.wrapComponentConfig({
                         name: state.translated?.name ?? state.name,
                     };
                 })
-                .catch(() => null);
+                .catch(() => {
+                    // Without a delivery state the overview hides the shipping deep link instead of creating an invalid route.
+                    return null;
+                });
         },
 
         fetchOrdersToShipCount(): Promise<number> {
@@ -248,7 +236,10 @@ export default Shopwell.Component.wrapComponentConfig({
             return (this.orderRepository as { search: (c: unknown) => Promise<{ total: number }> })
                 .search(criteria)
                 .then((result) => result.total)
-                .catch(() => 0);
+                .catch(() => {
+                    // Optional dashboard totals must not prevent opening the overview when a source is unavailable.
+                    return 0;
+                });
         },
 
         /**
@@ -267,26 +258,10 @@ export default Shopwell.Component.wrapComponentConfig({
             return (this.reviewRepository as { search: (c: unknown) => Promise<{ total: number }> })
                 .search(criteria)
                 .then((result) => result.total)
-                .catch(() => 0);
-        },
-
-        /**
-         * Stock rows live per warehouse, so an SKU out in one warehouse counts
-         * once per location - the operator has to fix the location, not the SKU.
-         */
-        fetchOutOfStockCount(): Promise<number> {
-            if (!this.canViewInventory) {
-                return Promise.resolve(0);
-            }
-
-            const criteria = new Criteria(1, 1);
-            criteria.addFilter(Criteria.range('stock', { lte: 0 }));
-            criteria.setTotalCountMode(1);
-
-            return (this.productWarehouseRepository as { search: (c: unknown) => Promise<{ total: number }> })
-                .search(criteria)
-                .then((result) => result.total)
-                .catch(() => 0);
+                .catch(() => {
+                    // Optional dashboard totals must not prevent opening the overview when a source is unavailable.
+                    return 0;
+                });
         },
 
         /**

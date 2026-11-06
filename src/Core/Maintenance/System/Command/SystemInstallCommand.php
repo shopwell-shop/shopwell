@@ -114,6 +114,16 @@ class SystemInstallCommand extends Command
         ];
 
         $application = $this->getConsoleApplication();
+
+        // The navigation rows are data the administration reads, not something a request may
+        // create: an installation ends with the menu in the table, so the management page and
+        // the sidebar work before the first person logs in.
+        if ($application->has('admin-menu:sync')) {
+            $commands[] = [
+                'command' => 'admin-menu:sync',
+            ];
+        }
+
         if ($application->has('theme:refresh')) {
             $commands[] = [
                 'command' => 'theme:refresh',

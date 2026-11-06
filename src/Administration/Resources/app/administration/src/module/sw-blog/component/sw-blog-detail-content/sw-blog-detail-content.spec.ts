@@ -5,21 +5,11 @@ import { flushPromises, mount } from '@vue/test-utils';
 import type { VueWrapper } from '@vue/test-utils';
 import { registerBlogType, resetBlogTypes } from '../../service/blog-type.registry';
 
-type ContentVm = {
-    contentType: unknown;
-    isUnknownType: boolean;
-    isLoading: boolean;
-    type: string;
-    loadTypeComponent: () => Promise<void>;
-};
-
-type TypedWrapper = { vm: ContentVm } & VueWrapper;
-
 const loadedComponent = { template: '<div class="loaded-type">post editor</div>' };
 
 let activeWrapper: VueWrapper | null = null;
 
-async function createWrapper(blog: { type: string }): Promise<TypedWrapper> {
+async function createWrapper(blog: { type: string }): Promise<VueWrapper> {
     const wrapper = mount(await wrapTestComponent('sw-blog-detail-content', { sync: true }), {
         props: { blog },
         global: {
@@ -38,7 +28,7 @@ async function createWrapper(blog: { type: string }): Promise<TypedWrapper> {
 
     activeWrapper = wrapper;
 
-    return wrapper as unknown as TypedWrapper;
+    return wrapper;
 }
 
 describe('src/module/sw-blog/component/sw-blog-detail-content', () => {
@@ -54,7 +44,7 @@ describe('src/module/sw-blog/component/sw-blog-detail-content', () => {
         const wrapper = await createWrapper({ type: 'post' });
         await flushPromises();
 
-        expect(wrapper.vm.isUnknownType).toBe(false);
+        expect(wrapper.find('.unknown-type').exists()).toBe(false);
         expect(wrapper.find('.loaded-type').exists()).toBe(true);
     });
 
@@ -62,21 +52,26 @@ describe('src/module/sw-blog/component/sw-blog-detail-content', () => {
         const wrapper = await createWrapper({ type: 'podcast' });
         await flushPromises();
 
-        expect(wrapper.vm.isUnknownType).toBe(true);
-        expect(wrapper.vm.contentType).toBeNull();
+        expect(wrapper.find('.unknown-type').exists()).toBe(true);
+        expect(wrapper.find('.loaded-type').exists()).toBe(false);
         expect(wrapper.find('.unknown-type').exists()).toBe(true);
     });
 
-    it('drops a downloaded component when the type changed while it was loading', async () => {
-        registerBlogType('post', () => Promise.resolve({ default: loadedComponent }));
-
+    it('drops a downloaded component when the type changes while loading', async () => {
+        let resolvePost: (module: { default: typeof loadedComponent }) => void = () => {};
+        registerBlogType(
+            'post',
+            () =>
+                new Promise((resolve) => {
+                    resolvePost = resolve;
+                }),
+        );
         const wrapper = await createWrapper({ type: 'post' });
-
-        wrapper.vm.contentType = null;
+        expect(wrapper.find('.skeleton').exists()).toBe(true);
         await wrapper.setProps({ blog: { type: 'video' } });
+        resolvePost({ default: loadedComponent });
         await flushPromises();
-
-        expect(wrapper.vm.contentType).toBeNull();
-        expect(wrapper.vm.isUnknownType).toBe(true);
+        expect(wrapper.find('.loaded-type').exists()).toBe(false);
+        expect(wrapper.find('.unknown-type').exists()).toBe(true);
     });
 });

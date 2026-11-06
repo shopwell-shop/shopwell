@@ -92,12 +92,10 @@ const formFieldRendererStub = {
         value: { default: null },
         disabled: { default: undefined },
     },
-    template: '<div class="sw-form-field-renderer"></div>',
-    methods: {
-        setValue(value) {
-            this.$emit('update:value', value);
-        },
-    },
+    template: `<div class="sw-form-field-renderer">
+        <input :value="value" :disabled="disabled" @input="$emit('update:value', $event.target.value)" />
+        <button class="choose-scope" @click="$emit('update:value', ['snsapi_userinfo'])">Choose scope</button>
+    </div>`,
 };
 
 /**
@@ -162,10 +160,27 @@ export async function createWrapper({
                 'sw-container': await wrapTestComponent('sw-container'),
                 'sw-extension-component-section': await wrapTestComponent('sw-extension-component-section'),
                 'sw-skeleton': true,
+                'mt-tabs': {
+                    name: 'mt-tabs',
+                    props: ['items', 'defaultItem'],
+                    template: `<div class="channel-tabs"><button v-for="item in items" :key="item.name"
+                        :data-channel="item.name" :data-error="item.hasError"
+                        @click="$emit('new-item-active', item.name)">{{ item.label }}</button></div>`,
+                },
+                'mt-card': {
+                    name: 'mt-card',
+                    props: ['title', 'subtitle', 'positionIdentifier'],
+                    template: '<div class="mt-card"><h3>{{ title }}</h3><slot name="headerRight"/><slot/></div>',
+                },
+                'mt-switch': {
+                    props: ['modelValue', 'disabled'],
+                    template: `<input type="checkbox" :checked="modelValue" :disabled="disabled"
+                        @change="$emit('update:modelValue', $event.target.checked)" />`,
+                },
                 'sw-form-field-renderer': formFieldRendererStub,
                 // The modal teleports into the body and traps the focus, the page only needs its slots here.
                 'mt-modal-root': {
-                    template: '<div class="mt-modal-root"><slot></slot></div>',
+                    template: `<div class="mt-modal-root"><button class="dismiss-modal" @click="$emit('change', false)">Dismiss</button><slot/></div>`,
                 },
                 'mt-modal': {
                     template: '<div class="mt-modal"><slot></slot><slot name="footer"></slot></div>',
@@ -179,4 +194,21 @@ export async function createWrapper({
     await flushPromises();
 
     return { wrapper, repository };
+}
+
+export async function selectChannel(wrapper, name) {
+    await wrapper.get(`[data-channel="${name}"]`).trigger('click');
+}
+
+export async function setField(wrapper, name, value) {
+    await wrapper.get(`.sw-settings-oauth2-login__field-${name} input`).setValue(value);
+}
+
+export async function enableChannel(wrapper) {
+    await wrapper.get('.sw-settings-oauth2-login__channel-enabled').setValue(true);
+}
+
+export async function save(wrapper) {
+    await wrapper.get('.sw-settings-oauth2-login__save-action').trigger('click');
+    await flushPromises();
 }

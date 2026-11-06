@@ -7,6 +7,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Content\Product\Events\ProductSuggestCriteriaEvent;
 use Shopwell\Core\Content\Product\Events\ProductSuggestResultEvent;
+use Shopwell\Core\Content\Product\Extension\ProductSuggestResolveCriteriaExtension;
 use Shopwell\Core\Content\Product\ProductCollection;
 use Shopwell\Core\Content\Product\SalesChannel\Listing\Filter\ManufacturerListingFilterHandler;
 use Shopwell\Core\Content\Product\SalesChannel\Listing\Filter\PriceListingFilterHandler;
@@ -22,10 +23,12 @@ use Shopwell\Core\Content\Product\SalesChannel\Suggest\ResolvedCriteriaProductSu
 use Shopwell\Core\Content\Product\SearchKeyword\ProductSearchBuilderInterface;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
 use Shopwell\Core\Framework\Test\TestCaseHelper\CallableClass;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+use Shopwell\Core\Test\Generator;
 use Shopwell\Core\Test\Stub\SystemConfigService\StaticSystemConfigService;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\HttpFoundation\Request;
@@ -61,7 +64,8 @@ class ResolvedCriteriaProductSuggestRouteTest extends TestCase
                     new EventDispatcher()
                 ),
                 new BehaviorListingProcessor(),
-            ])
+            ]),
+            new ExtensionDispatcher(new EventDispatcher()),
         );
 
         $request = new Request(array_merge(['search' => 'foo'], $query));
@@ -98,10 +102,65 @@ class ResolvedCriteriaProductSuggestRouteTest extends TestCase
             $builder,
             $dispatcher,
             static::createStub(AbstractProductSuggestRoute::class),
-            new CompositeListingProcessor([])
+            new CompositeListingProcessor([]),
+            new ExtensionDispatcher(new EventDispatcher()),
         );
 
         $route->load($request, $context, $criteria);
+    }
+
+    public function testPublishesExtensionBeforeTheSearchParameterIsRequired(): void
+    {
+        $request = new Request();
+        $context = Generator::generateSalesChannelContext();
+        $criteria = new Criteria();
+        $response = static::createStub(ProductSuggestRouteResponse::class);
+
+        $builder = $this->createMock(ProductSearchBuilderInterface::class);
+        $builder->expects($this->never())->method('build');
+
+        $decorated = $this->createMock(AbstractProductSuggestRoute::class);
+        $decorated->expects($this->never())->method('load');
+
+        $dispatcher = new EventDispatcher();
+        $dispatcher->addListener('product-suggest-route.resolve-criteria.pre', static function (ProductSuggestResolveCriteriaExtension $extension) use ($request, $context, $criteria, $response): void {
+            static::assertSame(['request' => $request, 'context' => $context, 'criteria' => $criteria], $extension->getParams());
+
+            $extension->result = $response;
+            $extension->stopPropagation();
+        });
+
+        $route = new ResolvedCriteriaProductSuggestRoute(
+            $builder,
+            new EventDispatcher(),
+            $decorated,
+            new CompositeListingProcessor([]),
+            new ExtensionDispatcher($dispatcher),
+        );
+
+        static::assertSame($response, $route->load($request, $context, $criteria));
+    }
+
+    public function testPreListenersRunBeforeTheCriteriaAreResolved(): void
+    {
+        $decorated = new SuggestRouteStub();
+
+        $dispatcher = new EventDispatcher();
+        $dispatcher->addListener(ProductSuggestResolveCriteriaExtension::onPre(), static function (ProductSuggestResolveCriteriaExtension $extension): void {
+            $extension->request->query->set('limit', 7);
+        });
+
+        $route = new ResolvedCriteriaProductSuggestRoute(
+            static::createStub(ProductSearchBuilderInterface::class),
+            new EventDispatcher(),
+            $decorated,
+            new CompositeListingProcessor([new PagingListingProcessor(new StaticSystemConfigService())]),
+            new ExtensionDispatcher($dispatcher),
+        );
+
+        $route->load(new Request(['search' => 'foo']), Generator::generateSalesChannelContext(), new Criteria());
+
+        static::assertSame(7, $decorated->criteria?->getLimit());
     }
 
     public static function loadProvider(): \Generator

@@ -9,6 +9,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\EntityIdTrait;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Plugin;
 use Shopwell\Core\Framework\Plugin\Aggregate\PluginTranslation\PluginTranslationCollection;
+use Shopwell\Core\System\AdminMenu\AdminMenuItemCollection;
 
 #[Package('framework')]
 class PluginEntity extends Entity
@@ -63,6 +64,8 @@ class PluginEntity extends Entity
     protected ?PluginTranslationCollection $translations = null;
 
     protected ?PaymentMethodCollection $paymentMethods = null;
+
+    protected ?AdminMenuItemCollection $adminMenuItems = null;
 
     /**
      * @var array<string, array<string, list<string>|string>>
@@ -301,6 +304,20 @@ class PluginEntity extends Entity
     public function setPaymentMethods(PaymentMethodCollection $paymentMethods): void
     {
         $this->paymentMethods = $paymentMethods;
+    }
+
+    /**
+     * The menu items this plugin declared. A plugin uninstalled with user data kept leaves them in
+     * place, archived, so a reinstall can claim them again.
+     */
+    public function getAdminMenuItems(): ?AdminMenuItemCollection
+    {
+        return $this->adminMenuItems;
+    }
+
+    public function setAdminMenuItems(AdminMenuItemCollection $adminMenuItems): void
+    {
+        $this->adminMenuItems = $adminMenuItems;
     }
 
     /**

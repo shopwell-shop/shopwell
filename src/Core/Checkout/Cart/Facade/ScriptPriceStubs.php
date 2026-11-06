@@ -5,10 +5,13 @@ namespace Shopwell\Core\Checkout\Cart\Facade;
 use Doctrine\DBAL\Connection;
 use Shopwell\Core\Checkout\Cart\CartException;
 use Shopwell\Core\Checkout\Cart\Price\PercentagePriceCalculator;
+use Shopwell\Core\Checkout\Cart\Price\PriceSelector;
 use Shopwell\Core\Checkout\Cart\Price\QuantityPriceCalculator;
 use Shopwell\Core\Checkout\Cart\Price\Struct\CalculatedPrice;
 use Shopwell\Core\Checkout\Cart\Price\Struct\PriceCollection as CalculatedPriceCollection;
 use Shopwell\Core\Checkout\Cart\Price\Struct\QuantityPriceDefinition;
+use Shopwell\Core\Checkout\Cart\Price\Struct\SelectedPrice;
+use Shopwell\Core\Checkout\Cart\Tax\Struct\TaxRuleCollection;
 use Shopwell\Core\Defaults;
 use Shopwell\Core\Framework\DataAbstractionLayer\Pricing\Price;
 use Shopwell\Core\Framework\DataAbstractionLayer\Pricing\PriceCollection;
@@ -33,13 +36,19 @@ class ScriptPriceStubs implements ResetInterface
     public function __construct(
         private readonly Connection $connection,
         private readonly QuantityPriceCalculator $quantityCalculator,
-        private readonly PercentagePriceCalculator $percentageCalculator
+        private readonly PercentagePriceCalculator $percentageCalculator,
+        private readonly PriceSelector $priceSelector
     ) {
     }
 
     public function calculateQuantity(QuantityPriceDefinition $definition, SalesChannelContext $context): CalculatedPrice
     {
         return $this->quantityCalculator->calculate($definition, $context);
+    }
+
+    public function select(Price $price, TaxRuleCollection $taxRules, SalesChannelContext $context): SelectedPrice
+    {
+        return $this->priceSelector->select($price, $taxRules, $context);
     }
 
     public function calculatePercentage(float $percentage, CalculatedPriceCollection $prices, SalesChannelContext $context): CalculatedPrice

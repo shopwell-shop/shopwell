@@ -212,6 +212,7 @@
             "topBarButton": [],
             "teaserPopover": [],
             "adminMenu": [],
+            "adminMenuConfig": [],
             "inAppPurchaseCheckout": [],
             "extensionComponentSections": [],
             "blockOverride": [],

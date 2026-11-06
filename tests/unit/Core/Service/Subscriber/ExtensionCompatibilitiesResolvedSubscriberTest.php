@@ -13,6 +13,7 @@ use Shopwell\Core\Framework\Update\Services\ExtensionCompatibility;
 use Shopwell\Core\Framework\Update\Struct\Version;
 use Shopwell\Core\Service\ServiceRegistry\Client as ServiceRegistryClient;
 use Shopwell\Core\Service\ServiceRegistry\ServiceEntry;
+use Shopwell\Core\Service\ServiceRegistry\ServiceStatus;
 use Shopwell\Core\Service\Subscriber\ExtensionCompatibilitiesResolvedSubscriber;
 
 /**
@@ -53,9 +54,9 @@ class ExtensionCompatibilitiesResolvedSubscriberTest extends TestCase
         ];
 
         $this->serviceRegistryClient->expects($this->once())
-            ->method('getAll')
+            ->method('getActive')
             ->willReturn([
-                new ServiceEntry('TestApp', 'TestApp', 'https://www.testapp.com', '/'),
+                new ServiceEntry('TestApp', 'TestApp', 'https://www.testapp.com', '/', true, ServiceStatus::ACTIVE),
             ]);
 
         $subscriber = new ExtensionCompatibilitiesResolvedSubscriber(
@@ -93,7 +94,7 @@ class ExtensionCompatibilitiesResolvedSubscriberTest extends TestCase
         ];
 
         $this->serviceRegistryClient->expects($this->once())
-            ->method('getAll')
+            ->method('getActive')
             ->willReturn([]);
 
         $subscriber = new ExtensionCompatibilitiesResolvedSubscriber(

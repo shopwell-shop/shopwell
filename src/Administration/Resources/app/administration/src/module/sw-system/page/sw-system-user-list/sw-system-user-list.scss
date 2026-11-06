@@ -1,0 +1,32 @@
+.sw-system-user-list {
+    &__user-cell {
+        display: flex;
+        gap: var(--scale-size-12);
+        align-items: center;
+    }
+
+    &__user-cell-labels {
+        display: flex;
+        flex-direction: column;
+        line-height: 1.2;
+    }
+
+    &__user-cell-name {
+        color: var(--color-text-secondary-default);
+        font-size: var(--font-size-xs);
+    }
+
+    &__roles {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--scale-size-4);
+    }
+
+    &__roles-empty {
+        color: var(--color-text-secondary-default);
+    }
+
+    &__confirm-delete-text {
+        margin-bottom: var(--scale-size-24);
+    }
+}

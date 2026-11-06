@@ -1,4 +1,4 @@
-import { mount } from '@vue/test-utils';
+import { shallowMount } from '@vue/test-utils';
 
 function createRepositoryFactory(overrides = {}) {
     const repositories = {
@@ -18,7 +18,7 @@ function createRepositoryFactory(overrides = {}) {
 }
 
 async function createWrapper(privileges = ['order.viewer'], factory = createRepositoryFactory()) {
-    return mount(await wrapTestComponent('sw-dashboard-top-products', { sync: true }), {
+    return shallowMount(await wrapTestComponent('sw-dashboard-top-products', { sync: true }), {
         global: {
             stubs: {
                 'mt-card': {
@@ -27,8 +27,13 @@ async function createWrapper(privileges = ['order.viewer'], factory = createRepo
                     props: ['title', 'isLoading', 'positionIdentifier'],
                 },
                 'sw-chart': {
-                    props: ['type', 'series', 'options', 'height'],
-                    template: '<div class="sw-chart" :data-type="type"></div>',
+                    props: [
+                        'type',
+                        'series',
+                        'options',
+                        'height',
+                    ],
+                    template: `<div class="sw-chart" :data-type="type"><div v-for="row in series" :key="row.name" class="chart-series"><span class="chart-series-name">{{ row.name }}</span><span v-for="point in row.data" :key="point.x" class="chart-point" :data-value="point.y">{{ point.x }}</span></div></div>`,
                 },
                 'router-link': true,
                 'sw-extension-component-section': true,
@@ -64,8 +69,8 @@ describe('module/sw-dashboard/component/sw-dashboard-top-products', () => {
         const wrapper = await createWrapper([]);
         await flushPromises();
 
-        expect(wrapper.vm.canViewOrders).toBe(false);
-        expect(wrapper.vm.products).toEqual([]);
+        expect(wrapper.find('.mt-card').exists()).toBe(false);
+        expect(wrapper.find('.sw-chart').exists()).toBe(false);
     });
 
     it('renders the empty state without buckets', async () => {
@@ -100,13 +105,13 @@ describe('module/sw-dashboard/component/sw-dashboard-top-products', () => {
         const wrapper = await createWrapper(['order.viewer'], factory);
         await flushPromises();
 
-        expect(wrapper.vm.products).toEqual([
-            { name: 'Produkt A', quantity: 30 },
-            { name: 'Produkt B', quantity: 12 },
-        ]);
-        expect(wrapper.vm.series[0].data).toEqual([
-            { x: 'Produkt A', y: 30 },
-            { x: 'Produkt B', y: 12 },
+        expect(
+            wrapper
+                .findAll('.chart-point')
+                .map((point) => ({ label: point.text(), value: Number(point.attributes('data-value')) })),
+        ).toEqual([
+            { label: 'Produkt A', value: 30 },
+            { label: 'Produkt B', value: 12 },
         ]);
     });
 
@@ -135,7 +140,28 @@ describe('module/sw-dashboard/component/sw-dashboard-top-products', () => {
         const wrapper = await createWrapper(['order.viewer'], factory);
         await flushPromises();
 
-        expect(wrapper.vm.products.map((product) => product.quantity)).toEqual([9, 8, 7, 5, 3]);
+        expect(wrapper.findAll('.chart-point').map((point) => Number(point.attributes('data-value')))).toEqual([
+            9,
+            8,
+            7,
+            5,
+            3,
+        ]);
+    });
+
+    it('requests all quantity buckets before ranking the top five', async () => {
+        const factory = createRepositoryFactory();
+        await createWrapper(['order.viewer'], factory);
+        await flushPromises();
+        const criteria = factory.repositories.order_line_item.search.mock.calls[0][0];
+        expect(criteria.aggregations[0]).toEqual({
+            name: 'topProducts',
+            type: 'terms',
+            field: 'productId',
+            limit: null,
+            sort: null,
+            aggregation: { name: 'qtySum', type: 'sum', field: 'quantity' },
+        });
     });
 
     it('falls back to the product id when the product is gone', async () => {
@@ -157,6 +183,6 @@ describe('module/sw-dashboard/component/sw-dashboard-top-products', () => {
         const wrapper = await createWrapper(['order.viewer'], factory);
         await flushPromises();
 
-        expect(wrapper.vm.products[0].name).toBe('deleted-product');
+        expect(wrapper.get('.chart-point').text()).toBe('deleted-product');
     });
 });

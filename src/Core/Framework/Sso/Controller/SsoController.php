@@ -3,10 +3,10 @@
 namespace Shopwell\Core\Framework\Sso\Controller;
 
 use League\OAuth2\Server\AuthorizationServer;
-use Shopwell\Core\DevOps\Environment\EnvironmentHelper;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Routing\ApiRouteScope;
+use Shopwell\Core\Framework\Routing\TrustedOriginUrlGenerator;
 use Shopwell\Core\Framework\Sso\Config\LoginConfigService;
 use Shopwell\Core\Framework\Sso\Exceptions\SsoUserNotFoundException;
 use Shopwell\Core\Framework\Sso\LoginResponseService;
@@ -23,8 +23,6 @@ use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
-use Symfony\Component\Routing\Exception\RouteNotFoundException;
-use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Routing\RouterInterface;
 
 /**
@@ -94,14 +92,7 @@ class SsoController extends AbstractController
     {
         $random = $request->getSession()->get(StateValidator::SESSION_KEY);
         if ($random === null) {
-            try {
-                $url = $this->router->generate('administration.index', [], UrlGeneratorInterface::ABSOLUTE_URL);
-            } catch (RouteNotFoundException) {
-                // fallback if admin bundle is not installed, the url should work once the bundle is installed
-                $url = EnvironmentHelper::getVariable('APP_URL') . '/admin';
-            }
-
-            return $this->redirect($url);
+            return $this->redirect(TrustedOriginUrlGenerator::generateAdministrationUrl($this->router));
         }
 
         $url = $this->loginConfigService->createRedirectUrl($random, $request->query->getBoolean('usePromptLogin'));

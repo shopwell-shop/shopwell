@@ -13,6 +13,7 @@ use Shopwell\Core\Checkout\Cart\Tax\TaxDetector;
 use Shopwell\Core\Checkout\Customer\SalesChannel\AccountService;
 use Shopwell\Core\Checkout\Customer\SalesChannel\RegisterRoute;
 use Shopwell\Core\Content\Media\MediaUrlPlaceholderHandlerInterface;
+use Shopwell\Core\Content\ProductStream\Service\ProductStreamBuilder;
 use Shopwell\Core\Content\Seo\SeoUrlPlaceholderHandlerInterface;
 use Shopwell\Core\Framework\Adapter\Cache\CacheInvalidator;
 use Shopwell\Core\Framework\Adapter\Cache\CacheTagCollector;
@@ -83,6 +84,8 @@ use Shopwell\Core\System\SalesChannel\File\SalesChannelFileCacheInvalidator;
 use Shopwell\Core\System\SalesChannel\File\SalesChannelFileNotFoundSubscriber;
 use Shopwell\Core\System\SalesChannel\File\SalesChannelFileRequestPathResolver;
 use Shopwell\Core\System\SalesChannel\File\SalesChannelFileTemplateResolver;
+use Shopwell\Core\System\SalesChannel\ProductAssignment\Api\SalesChannelProductAssignmentController;
+use Shopwell\Core\System\SalesChannel\ProductAssignment\SalesChannelProductAssigner;
 use Shopwell\Core\System\SalesChannel\SalesChannel\ContextRoute;
 use Shopwell\Core\System\SalesChannel\SalesChannel\ContextSwitchRoute;
 use Shopwell\Core\System\SalesChannel\SalesChannel\SalesChannelContextSwitcher;
@@ -225,6 +228,20 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ])
         ->call('setContainer', [
             service('service_container'),
+        ]);
+
+    $services->set(SalesChannelProductAssigner::class)
+        ->args([
+            service('product.repository'),
+            service('product_visibility.repository'),
+            service('sales_channel.repository'),
+            service(ProductStreamBuilder::class),
+        ]);
+
+    $services->set(SalesChannelProductAssignmentController::class)
+        ->public()
+        ->args([
+            service(SalesChannelProductAssigner::class),
         ]);
 
     $services->set(SalesChannelContextPersister::class)

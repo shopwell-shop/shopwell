@@ -7,8 +7,8 @@ use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\System\Payment\Gateway\PayResult;
-use Shopwell\Core\System\Payment\Order\Refund\PaymentRefundEntity;
+use Shopwell\Core\System\Payment\Gateway\Struct\PaymentStartResult;
+use Shopwell\Core\System\Payment\Order\Aggregate\PaymentRefund\PaymentRefundEntity;
 use Shopwell\Core\System\StateMachine\Aggregation\StateMachineState\StateMachineStateCollection;
 use Shopwell\Core\System\StateMachine\Aggregation\StateMachineState\StateMachineStateEntity;
 
@@ -32,13 +32,13 @@ final class PaymentOrderPresenter
     /**
      * @return array<string, mixed>
      */
-    public function order(PaymentOrderEntity $order, ?PayResult $result = null): array
+    public function order(PaymentOrderEntity $order, ?PaymentStartResult $result = null): array
     {
         return [
             'payment_no' => $order->paymentNo,
             'out_trade_no' => $order->outTradeNo,
-            'provider' => $order->providerTechnicalName,
-            'channel' => $order->channelTechnicalName,
+            'provider' => $order->activeAttempt?->providerTechnicalName,
+            'channel' => $order->activeAttempt?->channelTechnicalName,
             'amount' => $order->amount,
             'paid_amount' => $order->paidAmount,
             'refunded_amount' => $order->refundedAmount,

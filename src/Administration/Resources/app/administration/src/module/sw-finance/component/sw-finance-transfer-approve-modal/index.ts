@@ -45,7 +45,7 @@ type TransferLike = {
  *  3. **"Unknown" is not a failure.** When the channel does not answer conclusively the row stays
  *     `created` and the operator is told to check the channel backend first. Never retried here.
  */
-// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+/** @private */
 export default defineComponent({
     template,
 
@@ -92,7 +92,9 @@ export default defineComponent({
         },
 
         amountLabel(): string {
-            return formatPaymentAmount(this.transfer.amount ?? null, this.transfer.currency ?? null);
+            const currency = this.transfer.currency;
+
+            return currency ? formatPaymentAmount(this.transfer.amount ?? null, currency) : '';
         },
 
         recipientLabel(): string {

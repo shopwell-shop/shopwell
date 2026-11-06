@@ -4,9 +4,6 @@ namespace Shopwell\Core\Framework\App;
 
 use Shopwell\Core\Framework\Api\Acl\Role\AclRoleDefinition;
 use Shopwell\Core\Framework\App\Aggregate\ActionButton\ActionButtonDefinition;
-use Shopwell\Core\Framework\App\Aggregate\AppMcpPrompt\AppMcpPromptDefinition;
-use Shopwell\Core\Framework\App\Aggregate\AppMcpResource\AppMcpResourceDefinition;
-use Shopwell\Core\Framework\App\Aggregate\AppMcpTool\AppMcpToolDefinition;
 use Shopwell\Core\Framework\App\Aggregate\AppPaymentMethod\AppPaymentMethodDefinition;
 use Shopwell\Core\Framework\App\Aggregate\AppScriptCondition\AppScriptConditionDefinition;
 use Shopwell\Core\Framework\App\Aggregate\AppShippingMethod\AppShippingMethodDefinition;
@@ -147,9 +144,6 @@ class AppDefinition extends EntityDefinition
             (new OneToManyAssociationField('flowActions', AppFlowActionDefinition::class, 'app_id'))->addFlags(new CascadeDelete()),
             (new OneToManyAssociationField('flowEvents', AppFlowEventDefinition::class, 'app_id'))->addFlags(new CascadeDelete()),
             (new OneToManyAssociationField('appShippingMethods', AppShippingMethodDefinition::class, 'app_id'))->addFlags(new SetNullOnDelete()),
-            (new OneToManyAssociationField('mcpTools', AppMcpToolDefinition::class, 'app_id'))->addFlags(new CascadeDelete()),
-            (new OneToManyAssociationField('mcpPrompts', AppMcpPromptDefinition::class, 'app_id'))->addFlags(new CascadeDelete()),
-            (new OneToManyAssociationField('mcpResources', AppMcpResourceDefinition::class, 'app_id'))->addFlags(new CascadeDelete()),
         ]);
     }
 }

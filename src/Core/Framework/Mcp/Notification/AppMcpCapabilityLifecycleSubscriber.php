@@ -6,6 +6,8 @@ use Shopwell\Core\Framework\App\Event\AppActivatedEvent;
 use Shopwell\Core\Framework\App\Event\AppChangedEvent;
 use Shopwell\Core\Framework\App\Event\AppDeactivatedEvent;
 use Shopwell\Core\Framework\App\Event\AppDeletedEvent;
+use Shopwell\Core\Framework\App\Event\AppInstalledEvent;
+use Shopwell\Core\Framework\App\Event\AppUpdatedEvent;
 use Shopwell\Core\Framework\Log\Package;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
@@ -29,7 +31,14 @@ class AppMcpCapabilityLifecycleSubscriber implements EventSubscriberInterface
             AppActivatedEvent::class => 'onAppChanged',
             AppDeactivatedEvent::class => 'onAppChanged',
             AppDeletedEvent::class => 'onAppDeleted',
+            AppInstalledEvent::class => 'onAppInstalledOrUpdated',
+            AppUpdatedEvent::class => 'onAppInstalledOrUpdated',
         ];
+    }
+
+    public function onAppInstalledOrUpdated(): void
+    {
+        $this->notifier->notify(new McpListChangedNotificationSet(tools: true, resources: true, prompts: true));
     }
 
     public function onAppChanged(AppChangedEvent $event): void

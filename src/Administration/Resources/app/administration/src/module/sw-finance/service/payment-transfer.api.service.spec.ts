@@ -5,9 +5,9 @@ import type { HttpClient } from 'src/core/factory/http-client.types';
 import type { LoginService } from 'src/core/service/login.service';
 import PaymentTransferApiService, {
     OUTCOME,
-    minorUnitsToYuan,
+    fromMinorUnits,
     providerLabelKey,
-    yuanToMinorUnits,
+    toMinorUnits,
 } from './payment-transfer.api.service';
 import type { PaymentTransferPayload } from './payment-transfer.api.service';
 
@@ -37,7 +37,7 @@ const payload: PaymentTransferPayload = {
  * The conversion between the yuan an operator types and the fen the server stores is the only place of the
  * administration where an amount is transformed. Everything below is one way to get it wrong.
  */
-describe('module/sw-finance/service/payment-transfer.api.service - yuanToMinorUnits', () => {
+describe('module/sw-finance/service/payment-transfer.api.service - CNY minor units', () => {
     it.each([
         ['0.1', 10],
         ['0.01', 1],
@@ -51,7 +51,7 @@ describe('module/sw-finance/service/payment-transfer.api.service - yuanToMinorUn
         [12.05, 1205],
         [7, 700],
     ])('should convert %p into %p fen', (input, expected) => {
-        expect(yuanToMinorUnits(input)).toBe(expected);
+        expect(toMinorUnits(input, 'CNY')).toBe(expected);
     });
 
     /**
@@ -59,7 +59,7 @@ describe('module/sw-finance/service/payment-transfer.api.service - yuanToMinorUn
      * did not type.
      */
     it.each([['1.005'], ['0.001'], ['12.345']])('should refuse the number of decimals of %p', (input) => {
-        expect(yuanToMinorUnits(input)).toBeNull();
+        expect(toMinorUnits(input, 'CNY')).toBeNull();
     });
 
     it.each([
@@ -75,7 +75,7 @@ describe('module/sw-finance/service/payment-transfer.api.service - yuanToMinorUn
         ['1,5'],
         ['1e3'],
     ])('should refuse %p', (input) => {
-        expect(yuanToMinorUnits(input)).toBeNull();
+        expect(toMinorUnits(input, 'CNY')).toBeNull();
     });
 
     /**
@@ -89,14 +89,52 @@ describe('module/sw-finance/service/payment-transfer.api.service - yuanToMinorUn
         [0],
         ['00'],
     ])('should refuse the empty amount %p', (input) => {
-        expect(yuanToMinorUnits(input)).toBeNull();
+        expect(toMinorUnits(input, 'CNY')).toBeNull();
     });
 
     it('should convert back for the prefill of a form', () => {
-        expect(minorUnitsToYuan(10)).toBe('0.10');
-        expect(minorUnitsToYuan(1205)).toBe('12.05');
-        expect(minorUnitsToYuan(100000)).toBe('1000.00');
-        expect(minorUnitsToYuan(null)).toBe('');
+        expect(fromMinorUnits(10, 'CNY')).toBe('0.10');
+        expect(fromMinorUnits(1205, 'CNY')).toBe('12.05');
+        expect(fromMinorUnits(100000, 'CNY')).toBe('1000.00');
+        expect(fromMinorUnits(null, 'CNY')).toBe('');
+    });
+});
+
+describe('module/sw-finance/service/payment-transfer.api.service - toMinorUnits', () => {
+    /**
+     * The exponent belongs to the currency: a payout in JPY has no minor unit, so "yuan times a hundred"
+     * would book a payout a hundred times as large as the operator typed.
+     */
+    it.each([
+        ['12', 'JPY', 12],
+        ['1234', 'JPY', 1234],
+        ['7', 'KRW', 7],
+        ['12.05', 'CNY', 1205],
+        ['1.234', 'KWD', 1234],
+        ['1.2', 'KWD', 1200],
+    ])('should convert %p %p into %p minor units', (input, currency, expected) => {
+        expect(toMinorUnits(input, currency)).toBe(expected);
+    });
+
+    it.each([
+        ['12.05', 'JPY'],
+        ['12.0', 'JPY'],
+        ['1.2345', 'KWD'],
+        ['1.005', 'CNY'],
+    ])('should refuse %p for %p, whose exponent does not allow it', (input, currency) => {
+        expect(toMinorUnits(input, currency)).toBeNull();
+    });
+
+    it('should convert back with the exponent of the currency', () => {
+        expect(fromMinorUnits(1234, 'JPY')).toBe('1234');
+        expect(fromMinorUnits(1234, 'KWD')).toBe('1.234');
+        expect(fromMinorUnits(1205, 'CNY')).toBe('12.05');
+        expect(fromMinorUnits(null, 'JPY')).toBe('');
+    });
+
+    it('should stay the CNY conversion when no currency is given', () => {
+        expect(toMinorUnits('12.05')).toBe(1205);
+        expect(fromMinorUnits(1205)).toBe('12.05');
     });
 });
 

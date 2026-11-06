@@ -13,6 +13,7 @@ use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\Framework\Webhook\Authorization\Policy\PolicyRegistry;
+use Shopwell\Core\Framework\Webhook\Authorization\Subscription\SubscriptionValidator;
 use Shopwell\Core\Framework\Webhook\Hookable\HookableEventCollector;
 use Shopwell\Core\Framework\Webhook\Hookable\HookableEventDescriber;
 use Shopwell\Core\Framework\Webhook\Hookable\HookableEventDescription;
@@ -33,12 +34,15 @@ class HookableEventDescriberValidationTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->hookableValidator = new HookableValidator(new HookableEventCollector(
-            static::createStub(BusinessEventCollector::class),
-            static::createStub(DefinitionInstanceRegistry::class),
-            new \ArrayIterator([]),
-            new \ArrayIterator([new TestHookableEventDescriber()])
-        ), new PolicyRegistry([]));
+        $this->hookableValidator = new HookableValidator(new SubscriptionValidator(
+            new HookableEventCollector(
+                static::createStub(BusinessEventCollector::class),
+                static::createStub(DefinitionInstanceRegistry::class),
+                new \ArrayIterator([]),
+                new \ArrayIterator([new TestHookableEventDescriber()])
+            ),
+            new PolicyRegistry([])
+        ));
         $this->roleId = Uuid::randomHex();
     }
 

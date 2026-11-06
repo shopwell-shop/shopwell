@@ -5,7 +5,9 @@ namespace Shopwell\Storefront\DependencyInjection;
 use Doctrine\DBAL\Connection;
 use Psr\Clock\ClockInterface;
 use Shopwell\Core\Checkout\Cart\CartCalculator;
+use Shopwell\Core\Checkout\Cart\CartFactory;
 use Shopwell\Core\Checkout\Cart\CartPersister;
+use Shopwell\Core\Checkout\Cart\CartRuleLoader;
 use Shopwell\Core\Checkout\Cart\Order\OrderRestorer;
 use Shopwell\Core\Checkout\Cart\SalesChannel\CartService;
 use Shopwell\Core\Checkout\Customer\SalesChannel\AccountNewsletterRecipientRoute;
@@ -17,6 +19,9 @@ use Shopwell\Core\Checkout\Customer\SalesChannel\LoadWishlistRoute;
 use Shopwell\Core\Checkout\Customer\Validation\AddressValidationFactory;
 use Shopwell\Core\Checkout\Gateway\SalesChannel\CheckoutGatewayRoute;
 use Shopwell\Core\Checkout\Loyalty\SalesChannel\LoyaltyRoute;
+use Shopwell\Core\Checkout\Loyalty\Service\LoyaltySettings;
+use Shopwell\Core\Checkout\Loyalty\Service\LoyaltyTierProgress;
+use Shopwell\Core\Checkout\Membership\SalesChannel\MembershipRoute;
 use Shopwell\Core\Checkout\Order\SalesChannel\OrderRoute;
 use Shopwell\Core\Checkout\Order\SalesChannel\OrderService;
 use Shopwell\Core\Checkout\OrderReturn\SalesChannel\OrderReturnGuestRoute;
@@ -24,6 +29,7 @@ use Shopwell\Core\Checkout\OrderReturn\SalesChannel\OrderReturnRoute;
 use Shopwell\Core\Checkout\Payment\SalesChannel\PaymentMethodRoute;
 use Shopwell\Core\Checkout\Shipping\SalesChannel\ShippingMethodRoute;
 use Shopwell\Core\Checkout\Wallet\SalesChannel\WalletRoute;
+use Shopwell\Core\Checkout\Wallet\Service\WalletSettings;
 use Shopwell\Core\Content\Blog\Service\BlogDetailReader;
 use Shopwell\Core\Content\Blog\Service\BlogListingReader;
 use Shopwell\Core\Content\Blog\Service\BlogSettings;
@@ -118,6 +124,7 @@ use Shopwell\Storefront\Framework\Store\ThemeExtensionRemovalValidator;
 use Shopwell\Storefront\Framework\SystemCheck\ProductDetailReadinessCheck;
 use Shopwell\Storefront\Framework\SystemCheck\ProductListingReadinessCheck;
 use Shopwell\Storefront\Framework\SystemCheck\SalesChannelsReadinessCheck;
+use Shopwell\Storefront\Framework\SystemCheck\Util\SalesChannelDomainContextFactory;
 use Shopwell\Storefront\Framework\SystemCheck\Util\SalesChannelDomainProvider;
 use Shopwell\Storefront\Framework\SystemCheck\Util\SalesChannelDomainUtil;
 use Shopwell\Storefront\Framework\Twig\Components\TwigComponentRenderEventListener;
@@ -134,15 +141,17 @@ use Shopwell\Storefront\Framework\Twig\TwigDateRequestListener;
 use Shopwell\Storefront\Page\Account\CustomerGroupRegistration\CustomerGroupRegistrationPageLoader;
 use Shopwell\Storefront\Page\Account\Login\AccountLoginPageLoader;
 use Shopwell\Storefront\Page\Account\Login\OAuth2LoginPageSubscriber;
-use Shopwell\Storefront\Page\Account\Loyalty\AccountLoyaltyPageLoader;
+use Shopwell\Storefront\Page\Account\Membership\AccountMembershipPageLoader;
 use Shopwell\Storefront\Page\Account\Order\AccountEditOrderPageLoader;
 use Shopwell\Storefront\Page\Account\Order\AccountOrderDetailPageLoader;
 use Shopwell\Storefront\Page\Account\Order\AccountOrderPageLoader;
+use Shopwell\Storefront\Page\Account\Order\AccountOrderStateCounter;
 use Shopwell\Storefront\Page\Account\OrderReturn\AccountOrderReturnPageLoader;
 use Shopwell\Storefront\Page\Account\OrderReturn\GuestOrderReturnPageLoader;
 use Shopwell\Storefront\Page\Account\Overview\AccountOverviewPageLoader;
 use Shopwell\Storefront\Page\Account\Profile\AccountProfilePageLoader;
 use Shopwell\Storefront\Page\Account\RecoverPassword\AccountRecoverPasswordPageLoader;
+use Shopwell\Storefront\Page\Account\Rewards\AccountRewardsPageLoader;
 use Shopwell\Storefront\Page\Account\Wallet\AccountWalletPageLoader;
 use Shopwell\Storefront\Page\Address\Detail\AddressDetailPageLoader;
 use Shopwell\Storefront\Page\Address\Listing\AddressListingPageLoader;
@@ -640,11 +649,20 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(Translator::class),
         ]);
 
-    $services->set(AccountLoyaltyPageLoader::class)
+    $services->set(AccountRewardsPageLoader::class)
         ->args([
             service(GenericPageLoader::class),
             service('event_dispatcher'),
             service(LoyaltyRoute::class),
+            service(Translator::class),
+            service(LoyaltyTierProgress::class),
+        ]);
+
+    $services->set(AccountMembershipPageLoader::class)
+        ->args([
+            service(GenericPageLoader::class),
+            service('event_dispatcher'),
+            service(MembershipRoute::class),
             service(Translator::class),
         ]);
 
@@ -682,6 +700,12 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(NewsletterAccountPageletLoader::class),
             service(Translator::class),
             service(OrderProductAvailabilityResolver::class),
+            service(WalletRoute::class),
+            service(WalletSettings::class),
+            service(LoyaltyRoute::class),
+            service(LoyaltySettings::class),
+            service(LoyaltyTierProgress::class),
+            service(AccountOrderStateCounter::class),
         ]);
 
     $services->set(AccountOrderPageLoader::class)
@@ -691,6 +715,15 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(OrderRoute::class),
             service(Translator::class),
             service(OrderProductAvailabilityResolver::class),
+            service(AccountOrderStateCounter::class),
+        ]);
+
+    // pure route reader shared by the order list and the dashboard, so a badge and its tag
+    // can never disagree
+    $services->set(AccountOrderStateCounter::class)
+        ->args([
+            service(OrderRoute::class),
+            service('event_dispatcher'),
         ]);
 
     $services->set(OrderProductAvailabilityResolver::class)
@@ -898,6 +931,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(KernelInterface::class),
             service('logger'),
             service(ClockInterface::class),
+            service('services_resetter'),
         ]);
 
     $services->set(SalesChannelsReadinessCheck::class)
@@ -910,8 +944,11 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(ProductDetailReadinessCheck::class)
         ->args([
             service(SalesChannelDomainUtil::class),
-            service(Connection::class),
             service(SalesChannelDomainProvider::class),
+            service('sales_channel.product.repository'),
+            service(SalesChannelDomainContextFactory::class),
+            service(ProductCloseoutFilterFactory::class),
+            service(SystemConfigService::class),
         ])
         ->tag('shopwell.system_check');
 
@@ -920,12 +957,21 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(SalesChannelDomainUtil::class),
             service(Connection::class),
             service(SalesChannelDomainProvider::class),
+            service('sales_channel.category.repository'),
+            service(SalesChannelDomainContextFactory::class),
         ])
         ->tag('shopwell.system_check');
 
     $services->set(SalesChannelDomainProvider::class)
         ->args([
             service(Connection::class),
+        ]);
+
+    $services->set(SalesChannelDomainContextFactory::class)
+        ->args([
+            service(SalesChannelContextFactory::class),
+            service(CartRuleLoader::class),
+            service(CartFactory::class),
         ]);
 
     $services->set(RobotsDirectiveParser::class)

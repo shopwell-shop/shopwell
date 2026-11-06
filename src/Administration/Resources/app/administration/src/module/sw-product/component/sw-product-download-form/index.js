@@ -149,6 +149,8 @@ export default {
             productDownload.media = await this.mediaRepository.get(targetId);
 
             this.product.downloads.add(productDownload);
+            Shopwell.Store.get('swProductDetail').isDownloadExternallyManaged = false;
+
             if (this.error) {
                 Shopwell.Store.get('error').removeApiError(this.error.selfLink);
             }

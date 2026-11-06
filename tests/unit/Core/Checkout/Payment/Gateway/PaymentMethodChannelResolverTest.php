@@ -12,9 +12,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\System\Payment\PaymentException;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannelRegistry;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
+use Shopwell\Core\System\Payment\Exception\PaymentCheckoutBindingException;
 
 /**
  * @internal
@@ -48,7 +46,7 @@ class PaymentMethodChannelResolverTest extends TestCase
 
         $resolver = $this->resolver($repository);
 
-        $this->expectExceptionObject(PaymentException::paymentMethodChannelMissing(self::PAYMENT_METHOD_ID));
+        $this->expectExceptionObject(PaymentCheckoutBindingException::paymentMethodChannelMissing(self::PAYMENT_METHOD_ID));
 
         $resolver->resolve(self::PAYMENT_METHOD_ID, Context::createDefaultContext());
     }
@@ -57,20 +55,9 @@ class PaymentMethodChannelResolverTest extends TestCase
     {
         $resolver = $this->resolver(PaymentGatewayFixture::repository());
 
-        $this->expectExceptionObject(PaymentException::paymentMethodChannelMissing(self::PAYMENT_METHOD_ID));
+        $this->expectExceptionObject(PaymentCheckoutBindingException::paymentMethodChannelMissing(self::PAYMENT_METHOD_ID));
 
         $resolver->resolve(self::PAYMENT_METHOD_ID, Context::createDefaultContext());
-    }
-
-    public function testChannelOfReturnsTheDeclaredChannelOfTheBinding(): void
-    {
-        $resolver = $this->resolver(PaymentGatewayFixture::repository([$this->binding()]));
-
-        $channel = $resolver->channelOf(self::PAYMENT_METHOD_ID, Context::createDefaultContext());
-
-        static::assertSame(PaymentGatewayFixture::CHANNEL, $channel->technicalName);
-        static::assertSame(PaymentGatewayFixture::PROVIDER, $channel->providerTechnicalName);
-        static::assertSame(PaymentFlow::REDIRECT, $channel->flow);
     }
 
     /**
@@ -79,8 +66,7 @@ class PaymentMethodChannelResolverTest extends TestCase
     private function resolver(?EntityRepository $bindingRepository = null): PaymentMethodChannelResolver
     {
         return new PaymentMethodChannelResolver(
-            $bindingRepository ?? PaymentGatewayFixture::repository(),
-            new PaymentChannelRegistry(PaymentGatewayFixture::providerRegistry())
+            $bindingRepository ?? PaymentGatewayFixture::repository()
         );
     }
 
@@ -91,7 +77,7 @@ class PaymentMethodChannelResolverTest extends TestCase
         $binding->setUniqueIdentifier($binding->id);
         $binding->paymentMethodId = self::PAYMENT_METHOD_ID;
         $binding->paymentAppId = PaymentGatewayFixture::PLATFORM_APP_ID;
-        $binding->channelTechnicalName = PaymentGatewayFixture::CHANNEL;
+        $binding->methodTechnicalName = PaymentGatewayFixture::CHANNEL;
 
         return $binding;
     }

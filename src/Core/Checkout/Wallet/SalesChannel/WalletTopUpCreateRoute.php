@@ -3,6 +3,7 @@
 namespace Shopwell\Core\Checkout\Wallet\SalesChannel;
 
 use Shopwell\Core\Checkout\Customer\CustomerEntity;
+use Shopwell\Core\Checkout\Payment\Storefront\StorefrontPaymentContextResolver;
 use Shopwell\Core\Checkout\Wallet\Extension\WalletTopUpCreateRouteExtension;
 use Shopwell\Core\Checkout\Wallet\Service\WalletTopUpService;
 use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
@@ -24,6 +25,7 @@ class WalletTopUpCreateRoute
     public function __construct(
         private readonly WalletTopUpService $topUpService,
         private readonly ExtensionDispatcher $extensions,
+        private readonly StorefrontPaymentContextResolver $paymentContextResolver,
     ) {
     }
 
@@ -47,12 +49,11 @@ class WalletTopUpCreateRoute
         $result = $this->topUpService->create(
             customerId: $customer->getId(),
             currencyId: $context->getCurrency()->getId(),
-            currency: $context->getCurrency()->getIsoCode(),
+            paymentContext: $this->paymentContextResolver->resolve($request, $context->getCurrency()->getIsoCode()),
             amount: (float) $request->request->get('amount', 0),
-            channel: (string) $request->request->get('channel', ''),
+            method: (string) $request->request->get('method', ''),
             returnUrl: $this->returnUrlOf($request),
             clientIp: $request->getClientIp(),
-            device: $this->deviceOf($request),
             context: $context->getContext(),
             salesChannelId: $context->getSalesChannelId(),
         );
@@ -73,12 +74,5 @@ class WalletTopUpCreateRoute
         }
 
         return $request->getSchemeAndHttpHost() . '/account/wallet';
-    }
-
-    private function deviceOf(Request $request): ?string
-    {
-        $device = $request->request->get('device') ?? $request->query->get('device');
-
-        return \is_string($device) && $device !== '' ? strtolower($device) : null;
     }
 }

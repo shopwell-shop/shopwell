@@ -8,6 +8,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\EntityIdTrait;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Organization\Aggregate\OrganizationUnit\Aggregate\OrganizationUnitTranslation\OrganizationUnitTranslationCollection;
 use Shopwell\Core\System\Organization\OrganizationEntity;
+use Shopwell\Core\System\User\Aggregate\UserOrganizationUnit\UserOrganizationUnitCollection;
 use Shopwell\Core\System\User\UserCollection;
 
 /**
@@ -18,6 +19,8 @@ class OrganizationUnitEntity extends Entity
 {
     use EntityCustomFieldsTrait;
     use EntityIdTrait;
+
+    protected ?UserOrganizationUnitCollection $userMappings = null;
 
     protected string $organizationId;
 
@@ -161,5 +164,15 @@ class OrganizationUnitEntity extends Entity
     public function setUsers(UserCollection $users): void
     {
         $this->users = $users;
+    }
+
+    public function getUserMappings(): ?UserOrganizationUnitCollection
+    {
+        return $this->userMappings;
+    }
+
+    public function setUserMappings(UserOrganizationUnitCollection $userMappings): void
+    {
+        $this->userMappings = $userMappings;
     }
 }

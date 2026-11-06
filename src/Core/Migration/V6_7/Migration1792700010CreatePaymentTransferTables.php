@@ -140,6 +140,15 @@ class Migration1792700010CreatePaymentTransferTables extends MigrationStep
      *
      * `submit_attempts` carries no ddl default for the same reason `onboarding_status` carries none -
      * the writer spells `0` out.
+     *
+     * `channel_params` keeps the parameters a payout is built from with the payout itself. They are
+     * neither configuration nor derivable: alipay demands the `transfer_scene_name` it was applied for
+     * and the per-case `transfer_scene_report_infos`, and the business case decides both when it files
+     * the payout. A transfer is submitted later and may be sent again days afterwards - the channel
+     * answered `SYSTEM_ERROR`, the query task found nothing, the process that created the payout is
+     * gone - and nothing at that moment can ask the caller for the scene it wanted. Nullable because
+     * the parameters are optional for every interface except alipay, and an empty map says nothing
+     * that `NULL` does not say as well.
      */
     private function createPaymentTransferTable(Connection $connection): void
     {
@@ -147,6 +156,7 @@ class Migration1792700010CreatePaymentTransferTables extends MigrationStep
             'CREATE TABLE IF NOT EXISTS `payment_transfer` (
                 `id` BINARY(16) NOT NULL,
                 `payment_app_id` BINARY(16) NOT NULL,
+                `account_id` BINARY(16) NOT NULL,
                 `transfer_no` VARCHAR(64) NOT NULL,
                 `out_no` VARCHAR(64) NOT NULL,
                 `recipient_id` BINARY(16) NOT NULL,
@@ -154,6 +164,7 @@ class Migration1792700010CreatePaymentTransferTables extends MigrationStep
                 `channel` VARCHAR(64) NOT NULL,
                 `amount` INT NOT NULL,
                 `currency` VARCHAR(3) NOT NULL,
+                `channel_params` JSON NULL,
                 `status_id` BINARY(16) NOT NULL,
                 `provider_ref` VARCHAR(255) NULL,
                 `provider_stage_ref` VARCHAR(255) NULL,
@@ -174,6 +185,7 @@ class Migration1792700010CreatePaymentTransferTables extends MigrationStep
                 UNIQUE KEY `uniq.payment_transfer.out_no` (`payment_app_id`, `out_no`),
                 KEY `idx.payment_transfer.status_id` (`status_id`),
                 KEY `idx.payment_transfer.recipient_id` (`recipient_id`),
+                CONSTRAINT `fk.payment_transfer.account_id` FOREIGN KEY (`account_id`) REFERENCES `payment_account` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
                 CONSTRAINT `fk.payment_transfer.payment_app_id` FOREIGN KEY (`payment_app_id`) REFERENCES `payment_app` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
                 CONSTRAINT `fk.payment_transfer.recipient_id` FOREIGN KEY (`recipient_id`) REFERENCES `payment_transfer_recipient` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
                 CONSTRAINT `fk.payment_transfer.status_id` FOREIGN KEY (`status_id`) REFERENCES `state_machine_state` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE

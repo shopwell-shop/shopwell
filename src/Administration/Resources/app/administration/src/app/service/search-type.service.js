@@ -149,6 +149,12 @@ export default function createSearchTypeService() {
             listingRoute: 'sw.payment.transfer',
             hideOnGlobalSearchBar: true,
         },
+        membership_purchase: {
+            entityName: 'membership_purchase',
+            placeholderSnippet: 'sw-membership.purchase.list.placeholderSearchBar',
+            listingRoute: 'sw.membership.purchases',
+            hideOnGlobalSearchBar: true,
+        },
         customer_wallet_transaction: {
             entityName: 'customer_wallet_transaction',
             placeholderSnippet: 'sw-finance.walletTransactions.list.placeholderSearchBar',
@@ -183,6 +189,18 @@ export default function createSearchTypeService() {
             entityName: 'order_return_reason',
             placeholderSnippet: 'sw-settings-order-return.reason.placeholderSearchBar',
             listingRoute: 'sw.settings.order.return.reason',
+            hideOnGlobalSearchBar: true,
+        },
+        user: {
+            entityName: 'user',
+            placeholderSnippet: 'sw-system.users.general.placeholderSearchBar',
+            listingRoute: 'sw.system.user',
+            hideOnGlobalSearchBar: true,
+        },
+        admin_menu_item: {
+            entityName: 'admin_menu_item',
+            placeholderSnippet: 'sw-system.menu.placeholderSearchBar',
+            listingRoute: 'sw.system.menu',
             hideOnGlobalSearchBar: true,
         },
         blog: {

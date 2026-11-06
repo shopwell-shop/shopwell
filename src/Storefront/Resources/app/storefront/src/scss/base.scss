@@ -53,7 +53,6 @@ https://sass-guidelin.es/#the-7-1-pattern
 @import 'component/flags';
 @import 'component/icon';
 @import 'component/pagination';
-@import 'component/blog';
 @import 'component/cms-sections';
 @import 'component/cms-block';
 @import 'component/cms-element';
@@ -114,8 +113,6 @@ https://sass-guidelin.es/#the-7-1-pattern
 @import 'page/account/order';
 @import 'page/account/edit-order';
 @import 'page/account/order-detail';
-@import 'page/account/wallet';
-@import 'page/account/loyalty';
 
 @import 'page/checkout/checkout';
 @import 'page/checkout/aside';
@@ -128,3 +125,8 @@ https://sass-guidelin.es/#the-7-1-pattern
 @import 'page/search/search';
 
 @import 'page/wishlist/wishlist';
+
+@import 'component/blog';
+@import 'page/account/wallet';
+@import 'page/account/rewards';
+@import 'page/account/membership';

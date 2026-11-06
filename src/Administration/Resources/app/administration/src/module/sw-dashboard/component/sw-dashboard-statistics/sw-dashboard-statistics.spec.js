@@ -1,4 +1,4 @@
-import { mount } from '@vue/test-utils';
+import { shallowMount } from '@vue/test-utils';
 import dictionary from 'src/module/sw-dashboard/snippet/en.json';
 
 let statisticResponse = {
@@ -16,7 +16,7 @@ async function createWrapper(privileges = ['order.viewer'], repository = {}) {
 
     Shopwell.Store.get('session').setCurrentUser({});
 
-    return mount(await wrapTestComponent('sw-dashboard-statistics', { sync: true }), {
+    return shallowMount(await wrapTestComponent('sw-dashboard-statistics', { sync: true }), {
         global: {
             stubs: {
                 'mt-card': {
@@ -33,7 +33,8 @@ async function createWrapper(privileges = ['order.viewer'], repository = {}) {
                 'mt-select': {
                     name: 'mt-select',
                     props: ['modelValue', 'options'],
-                    template: '<select class="mt-select"></select>',
+                    emits: ['update:modelValue'],
+                    template: `<select class="mt-select" :value="modelValue" @change="$emit('update:modelValue', $event.target.value)"><option v-for="option in options" :key="option.value" :value="option.value">{{ option.label }}</option></select>`,
                 },
                 'mt-icon': true,
                 'sw-chart': {
@@ -45,9 +46,15 @@ async function createWrapper(privileges = ['order.viewer'], repository = {}) {
                         'height',
                         'sort',
                     ],
-                    template: '<div class="sw-chart" :data-series="JSON.stringify(series)"></div>',
+                    template:
+                        '<div class="sw-chart" :data-series="JSON.stringify(series)" :data-axes="JSON.stringify(options.yaxis)" :data-aggregation="fillEmptyValues"></div>',
                 },
                 'sw-extension-component-section': true,
+            },
+            directives: {
+                tooltip: (element, binding) => {
+                    element.setAttribute('title', binding.value);
+                },
             },
             mocks: {
                 $t: (key) => key,
@@ -127,17 +134,18 @@ describe('module/sw-dashboard/component/sw-dashboard-statistics', () => {
         const wrapper = await createWrapper();
         await flushPromises();
 
-        const today = { x: wrapper.vm.getToday().getTime(), y: 0 };
+        const today = { x: new Date(2026, 5, 15).getTime(), y: 0 };
+        const series = JSON.parse(wrapper.get('.sw-chart').attributes('data-series'));
 
-        expect(wrapper.vm.series[0].name).toBe('sw-dashboard.statistics.metricTurnover');
-        expect(wrapper.vm.series[0].data).toEqual([
-            { x: wrapper.vm.parseDate('2026-06-14'), y: 150 },
+        expect(series[0].name).toBe('sw-dashboard.statistics.metricTurnover');
+        expect(series[0].data).toEqual([
+            { x: new Date(2026, 5, 14).getTime(), y: 150 },
             today,
         ]);
 
-        expect(wrapper.vm.series[1].name).toBe('sw-dashboard.statistics.metricOrderCount');
-        expect(wrapper.vm.series[1].data).toEqual([
-            { x: wrapper.vm.parseDate('2026-06-14'), y: 9 },
+        expect(series[1].name).toBe('sw-dashboard.statistics.metricOrderCount');
+        expect(series[1].data).toEqual([
+            { x: new Date(2026, 5, 14).getTime(), y: 9 },
             today,
         ]);
     });
@@ -146,28 +154,25 @@ describe('module/sw-dashboard/component/sw-dashboard-statistics', () => {
         const wrapper = await createWrapper();
         await flushPromises();
 
-        expect(wrapper.vm.options.yaxis).toHaveLength(2);
-        expect(wrapper.vm.options.yaxis[0].opposite).toBeFalsy();
-        expect(wrapper.vm.options.yaxis[1].opposite).toBe(true);
+        const axes = JSON.parse(wrapper.get('.sw-chart').attributes('data-axes'));
+        expect(axes).toHaveLength(2);
+        expect(axes[0].opposite).toBeFalsy();
+        expect(axes[1].opposite).toBe(true);
     });
 
     it('offers all supported ranges', async () => {
         const wrapper = await createWrapper();
         await flushPromises();
 
-        expect(wrapper.vm.rangeOptions.map((option) => option.value)).toEqual([
+        expect(wrapper.findAll('option').map((option) => option.attributes('value'))).toEqual([
             '30Days',
             '14Days',
             '7Days',
             '24Hours',
             'yesterday',
         ]);
-        expect(wrapper.vm.activeRange).toEqual({
-            label: '30Days',
-            range: 30,
-            interval: 'day',
-            aggregate: 'day',
-        });
+        expect(wrapper.get('select').element.value).toBe('30Days');
+        expect(wrapper.get('.sw-chart').attributes('data-aggregation')).toBe('day');
     });
 
     it('requests both the paid and the overall revenue', async () => {
@@ -188,10 +193,11 @@ describe('module/sw-dashboard/component/sw-dashboard-statistics', () => {
         const wrapper = await createWrapper();
         await flushPromises();
 
-        const today = { x: wrapper.vm.getToday().getTime(), y: 0 };
+        const today = { x: new Date(2026, 5, 15).getTime(), y: 0 };
+        const series = JSON.parse(wrapper.get('.sw-chart').attributes('data-series'));
 
-        expect(wrapper.vm.series[0].data).toEqual([
-            { x: wrapper.vm.parseDate('2026-06-14'), y: 150 },
+        expect(series[0].data).toEqual([
+            { x: new Date(2026, 5, 14).getTime(), y: 150 },
             today,
         ]);
     });
@@ -200,7 +206,9 @@ describe('module/sw-dashboard/component/sw-dashboard-statistics', () => {
         const wrapper = await createWrapper();
         await flushPromises();
 
-        expect(wrapper.vm.series[0].data).toEqual([{ x: wrapper.vm.getToday().getTime(), y: 0 }]);
+        expect(JSON.parse(wrapper.get('.sw-chart').attributes('data-series'))[0].data).toEqual([
+            { x: new Date(2026, 5, 15).getTime(), y: 0 },
+        ]);
     });
 
     it('does not plot buckets after today', async () => {
@@ -215,7 +223,10 @@ describe('module/sw-dashboard/component/sw-dashboard-statistics', () => {
         const wrapper = await createWrapper();
         await flushPromises();
 
-        expect(wrapper.vm.paidBuckets).toEqual([{ date: '2026-06-14', count: 1, amount: 10 }]);
+        expect(JSON.parse(wrapper.get('.sw-chart').attributes('data-series'))[0].data).toEqual([
+            { x: new Date(2026, 5, 14).getTime(), y: 10 },
+            { x: new Date(2026, 5, 15).getTime(), y: 0 },
+        ]);
     });
 
     it('reloads the data when the range changes', async () => {
@@ -224,26 +235,29 @@ describe('module/sw-dashboard/component/sw-dashboard-statistics', () => {
 
         expect(requestedUrls).toHaveLength(2);
 
-        wrapper.vm.selectedRange = '7Days';
+        await wrapper.get('select').setValue('7Days');
         await flushPromises();
 
         expect(requestedUrls).toHaveLength(4);
-        expect(wrapper.vm.activeRange.range).toBe(7);
+        expect(wrapper.get('select').element.value).toBe('7Days');
+        expect(requestedUrls[2]).toContain('2026-06-08');
     });
 
     it('explains the paid only revenue', async () => {
         const wrapper = await createWrapper();
         await flushPromises();
 
-        expect(wrapper.vm.helpText).toBe('sw-dashboard.statistics.helpText');
+        expect(wrapper.get('.sw-dashboard-statistics__title-help-text').attributes('title')).toBe(
+            'sw-dashboard.statistics.helpText',
+        );
     });
 
     it('ships the labels of every range', async () => {
         const wrapper = await createWrapper();
         await flushPromises();
 
-        wrapper.vm.rangesValueMap.forEach((range) => {
-            expect(dictionary['sw-dashboard'].statistics.dateRanges[range.label]).toBeDefined();
+        wrapper.findAll('option').forEach((option) => {
+            expect(dictionary['sw-dashboard'].statistics.dateRanges[option.attributes('value')]).toBeDefined();
         });
     });
 });

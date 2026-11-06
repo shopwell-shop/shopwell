@@ -1,7 +1,7 @@
 /**
  * @sw-package discovery
  */
-import { flushPromises, mount } from '@vue/test-utils';
+import { flushPromises, shallowMount } from '@vue/test-utils';
 import type { VueWrapper } from '@vue/test-utils';
 import BlogApiService from '../../service/blog.api.service';
 
@@ -17,35 +17,6 @@ type CommentRow = {
 };
 
 type FilterDefinition = { name?: string; property: string; type?: string };
-
-type CommentListVm = {
-    comments: unknown;
-    customerNames: Record<string, string>;
-    total: number;
-    isLoading: boolean;
-    listFilters: FilterDefinition[];
-    activeFilterNumber: number;
-    deleteTarget: { id: string } | null;
-    canEdit: boolean;
-    canDelete: boolean;
-    buildCriteria: () => { filters: unknown[]; sortings: Array<{ field: string; order: string }> };
-    getList: () => Promise<void>;
-    updateCriteria: (filters: unknown[]) => void;
-    onRefresh: () => void;
-    titleOf: (item: CommentRow) => string;
-    authorOf: (item: CommentRow) => string;
-    blogTitleOf: (item: CommentRow) => string;
-    excerptOf: (item: CommentRow) => string;
-    onApprove: (item: CommentRow) => void;
-    onHide: (item: CommentRow) => void;
-    onBulkApprove: () => void;
-    onDelete: (item: CommentRow) => void;
-    onCloseDeleteModal: () => void;
-    onConfirmDelete: () => void;
-    onOpenBlogList: () => void;
-};
-
-type TypedWrapper = { vm: CommentListVm } & VueWrapper;
 
 function collection<T>(items: unknown[]): T {
     return Object.assign([...items], { total: items.length }) as unknown as T;
@@ -80,21 +51,21 @@ const comments: CommentRow[] = [
     },
 ];
 
-const customers = [{ id: 'customer-1', firstName: 'Grace', lastName: 'Lee', email: 'grace@example.com' }];
+const customers = [{ id: 'customer-1', name: 'Grace Lee', email: 'grace@example.com' }];
 
 let activeWrapper: VueWrapper | null = null;
 
 async function createWrapper(can: (privilege: string) => boolean = () => true): Promise<{
-    wrapper: TypedWrapper;
+    wrapper: VueWrapper;
     search: jest.Mock;
     customerSearch: jest.Mock;
     save: jest.Mock;
     remove: jest.Mock;
     push: jest.Mock;
     mergeWithStoredFilters: jest.Mock;
-    setStoredFilters: (filters: unknown[]) => void;
 }> {
-    const search = jest.fn(() => Promise.resolve(collection<EntityCollection<'blog_comment'>>(comments)));
+    const rows = comments.map((row) => ({ ...row }));
+    const search = jest.fn(() => Promise.resolve(collection<EntityCollection<'blog_comment'>>(rows)));
     const customerSearch = jest.fn(() => Promise.resolve(collection<EntityCollection<'customer'>>(customers)));
     const save = jest.fn(() => Promise.resolve());
     const remove = jest.fn(() => Promise.resolve());
@@ -127,29 +98,50 @@ async function createWrapper(can: (privilege: string) => boolean = () => true): 
         return {};
     }) as unknown as typeof Shopwell.Service);
 
-    const wrapper = mount(await wrapTestComponent('sw-blog-comment-list', { sync: true }), {
+    const wrapper = shallowMount(await wrapTestComponent('sw-blog-comment-list', { sync: true }), {
         global: {
             stubs: {
-                'sw-page': { template: '<div><slot name="content"></slot><slot></slot></div>' },
+                'sw-page': {
+                    template:
+                        '<div><slot name="smart-bar-header"/><slot name="smart-bar-actions"/><slot name="content"/><slot name="sidebar"/></div>',
+                },
                 'sw-search-bar': true,
                 // the listing owns the selection in the real administration, so the stub has to own
                 // one too - the page reads it from the ref
                 'sw-entity-listing': {
-                    name: 'SwEntityListingStub',
-                    template: '<div></div>',
+                    props: ['dataSource', 'allowDelete', 'showSelection'],
                     data() {
                         return { selection: {} as Record<string, CommentRow> };
                     },
+                    template: `<div><table><tbody><tr v-for="item in dataSource" :key="item.id" :data-row="item.id">
+                        <td><input v-if="showSelection" type="checkbox" :checked="Boolean(selection[item.id])" @change="$event.target.checked ? selection[item.id] = item : delete selection[item.id]" /></td>
+                        <td class="title"><slot name="column-title" :item="item" /></td>
+                        <td class="content"><slot name="column-content" :item="item" /></td>
+                        <td class="blog"><slot name="column-blog" :item="item" /></td>
+                        <td class="author"><slot name="column-author" :item="item" /></td>
+                        <td><slot name="column-status" :item="item" /></td>
+                        <td><slot name="more-actions" :item="item" /></td>
+                        <td class="delete-action"><slot name="delete-action" :item="item"><button :disabled="!allowDelete">Delete</button></slot></td>
+                    </tr></tbody></table><slot name="bulk-additional" :selection-count="Object.keys(selection).length" /></div>`,
                 },
-                'sw-sidebar': true,
+                'sw-sidebar': { template: '<aside><slot /></aside>' },
                 'sw-sidebar-item': true,
-                'sw-sidebar-filter-panel': true,
+                'sw-sidebar-filter-panel': {
+                    props: ['filters', 'activeFilterNumber'],
+                    emits: ['criteria-changed'],
+                    methods: {
+                        applyFilter() {
+                            storedFilters = [{ field: 'status', value: false, type: 'equals' }];
+                        },
+                    },
+                    template: `<div class="filter-panel" :data-active-count="activeFilterNumber"><span v-for="filter in filters" :key="filter.property" class="filter-property" :data-filter-type="filter.type">{{ filter.property }}</span><select class="status-filter" @change="applyFilter(); $emit('criteria-changed', [{field: 'status'}])"><option value="">All</option><option value="pending">Pending</option></select></div>`,
+                },
                 'sw-modal': { template: '<div class="modal"><slot></slot><slot name="modal-footer"></slot></div>' },
                 'sw-time-ago': true,
-                'sw-context-menu-item': true,
+                'sw-context-menu-item': { props: ['disabled'], template: '<button :disabled="disabled"><slot /></button>' },
                 'router-link': { template: '<a><slot></slot></a>' },
-                'mt-button': true,
-                'mt-badge': true,
+                'mt-button': { props: ['disabled'], template: '<button :disabled="disabled"><slot /></button>' },
+                'mt-badge': { props: ['variant'], template: '<span :data-variant="variant"><slot /></span>' },
                 'mt-tooltip': { template: '<span><slot></slot></span>', props: ['content'] },
                 'mt-empty-state': true,
             },
@@ -181,18 +173,16 @@ async function createWrapper(can: (privilege: string) => boolean = () => true): 
     });
 
     activeWrapper = wrapper;
+    await flushPromises();
 
     return {
-        wrapper: wrapper as unknown as TypedWrapper,
+        wrapper,
         search,
         customerSearch,
         save,
         remove,
         push,
         mergeWithStoredFilters,
-        setStoredFilters: (filters: unknown[]) => {
-            storedFilters = filters;
-        },
     };
 }
 
@@ -213,28 +203,33 @@ describe('src/module/sw-blog/page/sw-blog-comment-list', () => {
         expect(mergeWithStoredFilters).toHaveBeenCalledTimes(1);
         expect(mergeWithStoredFilters).toHaveBeenCalledWith('grid.filter.blog_comment', expect.anything());
         expect(criteria.sortings).toEqual([expect.objectContaining({ field: 'createdAt', order: 'DESC' })]);
-        expect(wrapper.vm.activeFilterNumber).toBe(0);
-        expect(wrapper.vm.total).toBe(2);
-        expect(wrapper.vm.isLoading).toBe(false);
+        expect(wrapper.get('.filter-panel').attributes('data-active-count')).toBe('0');
+        expect(wrapper.get('.sw-page__smart-bar-amount').text()).toBe('(2)');
+        expect(wrapper.findAll('tbody tr')).toHaveLength(2);
     });
 
     it('offers the moderation state and the entry as filters of the sidebar panel', async () => {
         const { wrapper } = await createWrapper();
         await flushPromises();
 
-        expect(wrapper.vm.listFilters.map((filter) => filter.property)).toEqual(['status', 'blog']);
-        expect(wrapper.vm.listFilters.map((filter) => filter.type)).toEqual(['boolean-filter', undefined]);
+        expect(wrapper.findAll('.filter-property').map((filter) => filter.text())).toEqual(['status', 'blog']);
+        expect(wrapper.findAll('.filter-property').map((filter) => filter.attributes('data-filter-type'))).toEqual([
+            'boolean-filter',
+            undefined,
+        ]);
     });
 
     it('starts the list over on page one when a filter changes', async () => {
-        const { wrapper, search, setStoredFilters } = await createWrapper();
+        const { wrapper, search } = await createWrapper();
         await flushPromises();
 
-        setStoredFilters([{ field: 'status', value: false, type: 'equals' }]);
-        wrapper.vm.updateCriteria([{ field: 'status' }]);
+        await wrapper.get('.status-filter').setValue('pending');
         await flushPromises();
 
-        expect(wrapper.vm.activeFilterNumber).toBe(1);
+        expect(wrapper.get('.filter-panel').attributes('data-active-count')).toBe('1');
+        expect(search).toHaveBeenLastCalledWith(
+            expect.objectContaining({ page: 1, filters: [expect.objectContaining({ field: 'status', value: false })] }),
+        );
         expect(search.mock.calls).toHaveLength(2);
     });
 
@@ -244,32 +239,31 @@ describe('src/module/sw-blog/page/sw-blog-comment-list', () => {
 
         // the customer is read in a second request: the comment has no association into that domain
         expect(customerSearch).toHaveBeenCalledTimes(1);
-        expect(wrapper.vm.customerNames).toEqual({ 'customer-1': 'Grace Lee' });
+        expect(wrapper.get('[data-row="comment-2"] .author').text()).toBe('Grace Lee');
 
-        expect(wrapper.vm.authorOf(comments[0])).toBe('Ada');
-        expect(wrapper.vm.authorOf(comments[1])).toBe('Grace Lee');
-        expect(wrapper.vm.blogTitleOf(comments[0])).toBe('Winter guide');
+        expect(wrapper.get('[data-row="comment-1"] .author').text()).toBe('Ada');
+        expect(wrapper.get('[data-row="comment-1"] .blog').text()).toBe('Winter guide');
         // an entry that is gone does not blank the row
-        expect(wrapper.vm.blogTitleOf(comments[1])).toBe('blog-2');
+        expect(wrapper.get('[data-row="comment-2"] .blog').text()).toBe('blog-2');
     });
 
     it('stands in the first words of the text when a comment has no headline', async () => {
         const { wrapper } = await createWrapper();
         await flushPromises();
 
-        expect(wrapper.vm.titleOf(comments[1])).toBe('Thank you');
+        expect(wrapper.get('[data-row="comment-2"] .title').text()).toBe('Thank you');
 
         // the column shows a headline, so the stand-in is shorter than the cell of the text
         const flat = comments[0].content.replace(/\s+/g, ' ').trim();
 
-        expect(wrapper.vm.titleOf(comments[0])).toBe(`${flat.slice(0, 60)}…`);
+        expect(wrapper.get('[data-row="comment-1"] .title').text()).toBe(`${flat.slice(0, 60)}…`);
     });
 
     it('approves a single comment and reloads the list', async () => {
         const { wrapper, search, save } = await createWrapper();
         await flushPromises();
 
-        wrapper.vm.onApprove(comments[0]);
+        await wrapper.get('[data-row="comment-1"] .sw-blog-comment-list__action-approve').trigger('click');
         await flushPromises();
 
         expect(save).toHaveBeenCalledWith(expect.objectContaining({ id: 'comment-1', status: true }));
@@ -281,7 +275,7 @@ describe('src/module/sw-blog/page/sw-blog-comment-list', () => {
         const { wrapper, save } = await createWrapper();
         await flushPromises();
 
-        wrapper.vm.onHide(comments[1]);
+        await wrapper.get('[data-row="comment-2"] .sw-blog-comment-list__action-hide').trigger('click');
         await flushPromises();
 
         expect(save).toHaveBeenCalledWith(expect.objectContaining({ id: 'comment-2', status: false }));
@@ -291,13 +285,8 @@ describe('src/module/sw-blog/page/sw-blog-comment-list', () => {
         const { wrapper, save } = await createWrapper();
         await flushPromises();
 
-        const listing = wrapper.findComponent({ name: 'SwEntityListingStub' }) as unknown as {
-            vm: { $data: { selection: Record<string, CommentRow> } };
-        };
-
-        listing.vm.$data.selection = { 'comment-1': comments[0] };
-
-        wrapper.vm.onBulkApprove();
+        await wrapper.get('[data-row="comment-1"] input[type="checkbox"]').setValue(true);
+        await wrapper.get('.sw-blog-comment-list__bulk-approve').trigger('click');
         await flushPromises();
 
         expect(save).toHaveBeenCalledWith(expect.objectContaining({ id: 'comment-1', status: true }));
@@ -306,34 +295,38 @@ describe('src/module/sw-blog/page/sw-blog-comment-list', () => {
     it('hides moderation and deleting from a role that may only read', async () => {
         const { wrapper } = await createWrapper((privilege) => privilege === 'blog.viewer');
 
-        expect(wrapper.vm.canEdit).toBe(false);
-        expect(wrapper.vm.canDelete).toBe(false);
+        expect(wrapper.find('.sw-blog-comment-list__action-approve').exists()).toBe(false);
+        expect(wrapper.find('.sw-blog-comment-list__action-hide').exists()).toBe(false);
+        expect(wrapper.find('input[type="checkbox"]').exists()).toBe(false);
+        expect(wrapper.findAll('.delete-action button').every((button) => button.attributes('disabled') !== undefined)).toBe(
+            true,
+        );
     });
 
     it('deletes only after the confirmation of the modal', async () => {
         const { wrapper, remove } = await createWrapper();
         await flushPromises();
 
-        wrapper.vm.onDelete(comments[0]);
+        await wrapper.get('[data-row="comment-1"] .delete-action button').trigger('click');
 
-        expect(wrapper.vm.deleteTarget).not.toBeNull();
+        expect(wrapper.find('.sw-blog-comment-list__delete-modal').exists()).toBe(true);
         expect(remove).not.toHaveBeenCalled();
 
-        wrapper.vm.onConfirmDelete();
+        await wrapper.findAll('.sw-blog-comment-list__delete-modal button')[1].trigger('click');
         await flushPromises();
 
         expect(remove).toHaveBeenCalledWith('comment-1');
-        expect(wrapper.vm.deleteTarget).toBeNull();
+        expect(wrapper.find('.sw-blog-comment-list__delete-modal').exists()).toBe(false);
     });
 
     it('does not delete anything when the modal is closed', async () => {
         const { wrapper, remove } = await createWrapper();
         await flushPromises();
 
-        wrapper.vm.onDelete(comments[0]);
-        wrapper.vm.onCloseDeleteModal();
+        await wrapper.get('[data-row="comment-1"] .delete-action button').trigger('click');
+        await wrapper.findAll('.sw-blog-comment-list__delete-modal button')[0].trigger('click');
 
-        expect(wrapper.vm.deleteTarget).toBeNull();
+        expect(wrapper.find('.sw-blog-comment-list__delete-modal').exists()).toBe(false);
         expect(remove).not.toHaveBeenCalled();
     });
 
@@ -341,7 +334,7 @@ describe('src/module/sw-blog/page/sw-blog-comment-list', () => {
         const { wrapper, push } = await createWrapper();
         await flushPromises();
 
-        wrapper.vm.onOpenBlogList();
+        await wrapper.get('.sw-blog-comment-list__button-entries').trigger('click');
 
         expect(push).toHaveBeenCalledWith({ name: 'sw.blog.list' });
     });

@@ -6,9 +6,15 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Payment\Provider\Cycle\PaymentCycleRules;
 use Shopwell\Core\System\Payment\Subscription\Schedule\PaymentRetryPolicy;
+use Shopwell\Tests\Unit\Core\System\Payment\Provider\Fixtures\PlatformProviders;
 
 /**
+ * The policy reads the rules of the interface it is asked about and holds no list of its own - the
+ * fixtures are therefore the real declarations, and a code that moves between lists there has to
+ * move the answer here.
+ *
  * @internal
  */
 #[Package('framework')]
@@ -19,27 +25,33 @@ class PaymentRetryPolicyTest extends TestCase
 
     private PaymentRetryPolicy $policy;
 
+    private PaymentCycleRules $alipay;
+
+    private PaymentCycleRules $wechat;
+
     protected function setUp(): void
     {
         $this->policy = new PaymentRetryPolicy();
+        $this->alipay = PlatformProviders::alipay()->getCycleRules();
+        $this->wechat = PlatformProviders::wechat()->getCycleRules();
     }
 
     #[DataProvider('classifications')]
-    public function testClassify(string $provider, ?string $failureCode, string $expected): void
+    public function testClassify(string $interface, ?string $failureCode, string $expected): void
     {
-        static::assertSame($expected, $this->policy->classify($provider, $failureCode));
+        static::assertSame($expected, $this->policy->classify($this->rulesOf($interface), $failureCode));
     }
 
     /**
-     * `$attemptCount` counts the retries already consumed: 0 right after the first failure,
+     * `$consumedAttempts` counts the retries already consumed: 0 right after the first failure,
      * 5 after the fifth retry failed - and that call returns null, the ladder is exhausted.
      */
     #[DataProvider('backoffLadder')]
-    public function testNextAttemptAtFollowsTheBackoffLadder(int $attemptCount, ?string $expected): void
+    public function testNextAttemptAtFollowsTheBackoffLadder(int $consumedAttempts, ?string $expected): void
     {
         $failedAt = $this->shanghai('2025-06-10 14:00:00');
 
-        $result = $this->policy->nextAttemptAt('alipay', 'ACQ.BUYER_BALANCE_NOT_ENOUGH', $attemptCount, $failedAt);
+        $result = $this->policy->nextAttemptAt($this->alipay, 'ACQ.BUYER_BALANCE_NOT_ENOUGH', $consumedAttempts, $failedAt);
 
         static::assertSame($expected, $result?->setTimezone(new \DateTimeZone(self::SHANGHAI))->format('Y-m-d H:i:s'));
     }
@@ -48,29 +60,29 @@ class PaymentRetryPolicyTest extends TestCase
     {
         $failedAt = $this->shanghai('2025-06-10 14:00:00');
 
-        $firstRetry = $this->policy->nextAttemptAt('alipay', 'ACQ.PAYMENT_FAIL', 0, $failedAt);
+        $firstRetry = $this->policy->nextAttemptAt($this->alipay, 'ACQ.PAYMENT_FAIL', 0, $failedAt);
         static::assertSame('2025-06-11 14:00:00', $firstRetry?->format('Y-m-d H:i:s'));
 
         // The generic "payment did not go through" hides permanent causes; alipay's docs advise
         // a single retry and nothing more.
-        static::assertNull($this->policy->nextAttemptAt('alipay', 'ACQ.PAYMENT_FAIL', 1, $failedAt));
+        static::assertNull($this->policy->nextAttemptAt($this->alipay, 'ACQ.PAYMENT_FAIL', 1, $failedAt));
     }
 
     public function testFinalAndUnknownCodesNeverScheduleARetry(): void
     {
         $failedAt = $this->shanghai('2025-06-10 14:00:00');
 
-        static::assertNull($this->policy->nextAttemptAt('alipay', 'ACQ.AGREEMENT_INVALID', 0, $failedAt));
-        static::assertNull($this->policy->nextAttemptAt('alipay', 'ACQ.SYSTEM_ERROR', 0, $failedAt));
-        static::assertNull($this->policy->nextAttemptAt('wechat', 'ORDER_ACCEPTED', 0, $failedAt));
-        static::assertNull($this->policy->nextAttemptAt('alipay', 'ACQ.TRADE_HAS_SUCCESS', 0, $failedAt));
+        static::assertNull($this->policy->nextAttemptAt($this->alipay, 'ACQ.AGREEMENT_INVALID', 0, $failedAt));
+        static::assertNull($this->policy->nextAttemptAt($this->alipay, 'ACQ.SYSTEM_ERROR', 0, $failedAt));
+        static::assertNull($this->policy->nextAttemptAt($this->wechat, 'ORDER_ACCEPTED', 0, $failedAt));
+        static::assertNull($this->policy->nextAttemptAt($this->alipay, 'ACQ.TRADE_HAS_SUCCESS', 0, $failedAt));
     }
 
     public function testWechatRuleLimitDoesNotRetryBeforeTheNextMorning(): void
     {
         // Backoff alone would land at 01:00; the day ban pushes it to the window start.
         $earlyMorning = $this->policy->nextAttemptAt(
-            'wechat',
+            $this->wechat,
             'RULELIMIT',
             0,
             $this->shanghai('2025-06-10 01:00:00')
@@ -79,7 +91,7 @@ class PaymentRetryPolicyTest extends TestCase
 
         // Backoff alone would land at 14:00, which already satisfies the day ban.
         $afternoon = $this->policy->nextAttemptAt(
-            'wechat',
+            $this->wechat,
             'RULELIMIT',
             0,
             $this->shanghai('2025-06-10 14:00:00')
@@ -90,9 +102,9 @@ class PaymentRetryPolicyTest extends TestCase
     public function testBackoffOutsideTheWindowIsClampedIntoIt(): void
     {
         // A failure at 23:00 plus one day is 23:00 again - outside the window, so the retry is
-        // pushed to the next morning instead of violating the providers' hours.
+        // pushed to the next morning instead of violating the interface's hours.
         $result = $this->policy->nextAttemptAt(
-            'alipay',
+            $this->alipay,
             'ACQ.BUYER_BANKCARD_BALANCE_NOT_ENOUGH',
             0,
             $this->shanghai('2025-06-10 23:00:00')
@@ -101,20 +113,32 @@ class PaymentRetryPolicyTest extends TestCase
         static::assertSame('2025-06-12 07:00:00', $result?->format('Y-m-d H:i:s'));
     }
 
-    #[DataProvider('untouchedByProvider')]
-    public function testUnknownProvidersNeverRetry(?string $failureCode): void
+    /**
+     * An interface that cannot be charged repeatedly declares no cycle rules. Nothing is known
+     * about its codes then, and guessing is what produces both double charges and shipped but
+     * unpaid cycles - so every answer is `unknown` and no retry is scheduled.
+     */
+    public function testAnInterfaceWithoutCycleRulesNeverClassifiesOrRetries(): void
     {
-        static::assertSame(
-            PaymentRetryPolicy::UNKNOWN,
-            $this->policy->classify('stripe', $failureCode)
-        );
-        static::assertNull($this->policy->nextAttemptAt('stripe', $failureCode, 0, $this->shanghai('2025-06-10 14:00:00')));
+        $failedAt = $this->shanghai('2025-06-10 14:00:00');
+
+        foreach ([null, 'insufficient_funds', 'ACQ.BUYER_BALANCE_NOT_ENOUGH'] as $code) {
+            static::assertSame(PaymentRetryPolicy::UNKNOWN, $this->policy->classify(null, $code));
+            static::assertNull($this->policy->nextAttemptAt(null, $code, 0, $failedAt));
+        }
+    }
+
+    #[DataProvider('untouchedByProvider')]
+    public function testUnknownInterfacesNeverRetry(?string $failureCode): void
+    {
+        static::assertSame(PaymentRetryPolicy::UNKNOWN, $this->policy->classify(null, $failureCode));
+        static::assertNull($this->policy->nextAttemptAt(null, $failureCode, 0, $this->shanghai('2025-06-10 14:00:00')));
     }
 
     public function testWechatFrequencyLimitedUsesTheStandardLadder(): void
     {
         $result = $this->policy->nextAttemptAt(
-            'wechat',
+            $this->wechat,
             'FREQUENCY_LIMITED',
             0,
             $this->shanghai('2025-06-10 14:00:00')
@@ -126,8 +150,8 @@ class PaymentRetryPolicyTest extends TestCase
     public function testWechatOrderClosedIsNotAutoRetriedAndNotTerminal(): void
     {
         // A closed order needs a fresh out_trade_no - that is a caller decision, not a retry.
-        static::assertSame(PaymentRetryPolicy::UNKNOWN, $this->policy->classify('wechat', 'ORDERCLOSED'));
-        static::assertNull($this->policy->nextAttemptAt('wechat', 'ORDERCLOSED', 0, $this->shanghai('2025-06-10 14:00:00')));
+        static::assertSame(PaymentRetryPolicy::UNKNOWN, $this->policy->classify($this->wechat, 'ORDERCLOSED'));
+        static::assertNull($this->policy->nextAttemptAt($this->wechat, 'ORDERCLOSED', 0, $this->shanghai('2025-06-10 14:00:00')));
     }
 
     /**
@@ -198,7 +222,7 @@ class PaymentRetryPolicyTest extends TestCase
         yield 'wechat order already paid is success territory, query decides' => [
             'wechat', 'ORDERPAID', PaymentRetryPolicy::UNKNOWN,
         ];
-        yield 'a code no provider ever sent must be queried first' => [
+        yield 'a code no interface ever sent must be queried first' => [
             'alipay', 'ACQ.SOMETHING_FUTURE', PaymentRetryPolicy::UNKNOWN,
         ];
         yield 'a missing code cannot be classified' => ['alipay', null, PaymentRetryPolicy::UNKNOWN];
@@ -222,8 +246,17 @@ class PaymentRetryPolicyTest extends TestCase
      */
     public static function untouchedByProvider(): \Generator
     {
-        yield 'a provider-specific code' => ['insufficient_funds'];
+        yield 'a code no declaration names' => ['insufficient_funds'];
         yield 'no code at all' => [null];
+    }
+
+    private function rulesOf(string $interface): ?PaymentCycleRules
+    {
+        return match ($interface) {
+            'alipay' => $this->alipay,
+            'wechat' => $this->wechat,
+            default => null,
+        };
     }
 
     private function shanghai(string $at): \DateTimeImmutable

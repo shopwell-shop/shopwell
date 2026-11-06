@@ -9,6 +9,17 @@ module.exports = {
     parser: '@typescript-eslint/parser',
     plugins: ['@typescript-eslint'],
     root: true,
+    overrides: [
+        {
+            // The fixtures build the entities a test needs and assert that the setup
+            // succeeded. They run outside a test block by design, so the rule that keeps
+            // assertions inside tests cannot apply to them.
+            files: ['fixtures/**/*.ts'],
+            rules: {
+                'playwright/no-standalone-expect': 'off',
+            },
+        },
+    ],
     rules: {
         quotes: [
             'error',

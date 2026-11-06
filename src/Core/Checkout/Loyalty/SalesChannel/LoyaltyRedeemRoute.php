@@ -9,7 +9,7 @@ use Shopwell\Core\Checkout\Customer\CustomerEntity;
 use Shopwell\Core\Checkout\Loyalty\Cart\LoyaltyPointCartProcessor;
 use Shopwell\Core\Checkout\Loyalty\Extension\LoyaltyRedeemRouteExtension;
 use Shopwell\Core\Checkout\Loyalty\LoyaltyException;
-use Shopwell\Core\Checkout\Loyalty\Service\LoyaltyPointService;
+use Shopwell\Core\Checkout\Loyalty\Service\LoyaltyAccountService;
 use Shopwell\Core\Checkout\Loyalty\Service\LoyaltySettings;
 use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Log\Package;
@@ -28,7 +28,7 @@ class LoyaltyRedeemRoute
      * @internal
      */
     public function __construct(
-        private readonly LoyaltyPointService $loyaltyPointService,
+        private readonly LoyaltyAccountService $accounts,
         private readonly LoyaltySettings $settings,
         private readonly CartService $cartService,
         private readonly CartLocker $cartLocker,
@@ -82,7 +82,7 @@ class LoyaltyRedeemRoute
             throw LoyaltyException::belowMinimumPoints($points, $minimum);
         }
 
-        $balance = $this->loyaltyPointService->getBalance($customer->getId(), $context->getContext());
+        $balance = $this->accounts->balance($customer->getId(), $context->getContext());
 
         if ($points > $balance) {
             throw LoyaltyException::insufficientPoints($customer->getId(), $points, $balance);

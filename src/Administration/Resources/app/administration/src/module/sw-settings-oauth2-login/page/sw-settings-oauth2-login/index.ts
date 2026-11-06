@@ -196,7 +196,7 @@ export default defineComponent({
                 field.target === 'settings'
                     ? (client.settings as Record<string, unknown> | null | undefined)?.[field.name]
                     : // The column a field lands in is its target, the field name is the name of that column.
-                      (client as unknown as Record<string, unknown>)[field.name];
+                      (Reflect.get(client, field.name) as unknown);
 
             return stored === null ? undefined : stored;
         },

@@ -31,8 +31,10 @@
                                       action="{{ path('frontend.account.profile.save') }}"
                                       data-form-handler="true">
                                     {% block page_account_profile_personal_fields %}
-                                        {# @deprecated tag:v6.8.0 - Unused variable `showVatIdField` will be removed, use variable showCompanyFields instead #}
-                                        {% set showVatIdField = true %}
+                                        {% if not feature('v6.8.0.0') %}
+                                            {# @deprecated tag:v6.8.0 - Unused variable `showVatIdField` will be removed, use variable showCompanyFields instead #}
+                                            {% set showVatIdField = true %}
+                                        {% endif %}
 
                                         {# If customer is logged in (on profile page), they should be able to freely change their account type #}
                                         {% if context.customer %}
@@ -41,10 +43,13 @@
                                             {% set onlyCompanyRegistration = context.currentCustomerGroup.translated.registrationOnlyCompanyRegistration ?? false %}
                                         {% endif %}
 
+                                        {% set personalData = profileFormData ?? context.customer %}
+
                                         {% sw_include '@Storefront/storefront/component/address/address-personal.html.twig' with {
                                             prefix: '',
                                             showBirthdayField: config('core.loginRegistration.showBirthdayField'),
-                                            data: context.customer,
+                                            data: personalData,
+                                            accountType: personalData.get('accountType'),
                                             onlyCompanyRegistration: onlyCompanyRegistration,
                                             showCompanyFields: true,
                                         } %}
@@ -65,6 +70,12 @@
                                                 } %}
                                             </div>
                                         {% endblock %}
+                                    {% endblock %}
+
+                                    {% block page_account_profile_personal_redirect %}
+                                        {% if redirectTo %}
+                                            <input type="hidden" name="redirectTo" value="{{ redirectTo }}">
+                                        {% endif %}
                                     {% endblock %}
 
                                     {% block page_account_profile_personal_required %}
@@ -144,7 +155,8 @@
                     {% endif %}
                 {% endblock %}
 
-                {% block page_account_profile_credentials %}
+                {% if not context.customer.guest %}
+                    {% block page_account_profile_credentials %}
                     <div class="card account-profile-credentials mb-4">
                         <div class="card-body">
                             {% block page_account_profile_credentials_header %}
@@ -452,6 +464,7 @@
                         </div>
                     {% endif %}
                 {% endblock %}
+                {% endif %}
             {% endblock %}
         </div>
     {% endblock %}

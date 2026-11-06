@@ -3,9 +3,8 @@
  */
 import './acl';
 
-/* eslint-disable sw-deprecation-rules/private-feature-declarations */
+/** @private */
 Shopwell.Component.register('sw-settings-position-list', () => import('./page/sw-settings-position-list'));
-/* eslint-enable sw-deprecation-rules/private-feature-declarations */
 
 const { Module } = Shopwell;
 
@@ -14,7 +13,7 @@ const { Module } = Shopwell;
  * edited in a modal instead of a detail route (uiux 3.3): a page of its own would be empty except
  * for the language switch.
  */
-// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+/** @private */
 Module.register('sw-settings-position', {
     type: 'core',
     name: 'settings-position',
@@ -35,6 +34,18 @@ Module.register('sw-settings-position', {
             },
         },
     },
+
+    navigation: [
+        {
+            id: 'sw-settings-position',
+            label: 'sw-settings-position.general.mainMenuItemGeneral',
+            parent: 'sw-settings',
+            path: 'sw.settings.position.index',
+            icon: 'regular-briefcase',
+            position: 170,
+            privilege: 'position.viewer',
+        },
+    ],
 
     settingsItem: {
         group: 'general',

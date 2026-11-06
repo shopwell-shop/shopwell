@@ -133,7 +133,7 @@ The per-key "Edit MCP allowlist" context menu item and its modal were removed fr
 
 **`user.api.service.js`** — `saveMcpAllowlist(userId, allowlist)` calls `POST /api/_action/user/{id}/mcp-allowlist`.
 
-**ACL entry** in `sw-users-permissions/acl/index.js`: `api_action_user_mcp-allowlist` under `editor`.
+**ACL entry** in `sw-system/acl/index.js`: `api_action_user_mcp-allowlist` under `editor`.
 
 ## Files created / modified
 
@@ -149,10 +149,10 @@ The per-key "Edit MCP allowlist" context menu item and its modal were removed fr
 | Delete | `src/Core/Framework/Mcp/Controller/UserAccessKeyMcpAllowlistController.php` |
 | Create | `src/Core/Framework/Mcp/Controller/UserMcpAllowlistController.php` |
 | Modify | `src/Core/Framework/Mcp/McpException.php` (removed `missingCredentials()`) |
-| Modify | `src/Administration/.../sw-users-permissions-user-detail.html.twig` |
-| Modify | `src/Administration/.../sw-users-permissions-user-detail/index.js` |
-| Modify | `src/Administration/.../sw-users-permissions/acl/index.js` |
-| Modify | `src/Administration/.../sw-users-permissions/snippet/en.json` + `de.json` |
+| Modify | `src/Administration/.../sw-system-user-detail.html.twig` |
+| Modify | `src/Administration/.../sw-system-user-detail/index.js` |
+| Modify | `src/Administration/.../sw-system/acl/index.js` |
+| Modify | `src/Administration/.../sw-system/snippet/en.json` + `de.json` |
 | Modify | `src/Administration/Resources/app/administration/src/core/service/api/user.api.service.js` |
 
 ## Known gaps / parking lot

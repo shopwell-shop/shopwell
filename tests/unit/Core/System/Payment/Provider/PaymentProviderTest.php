@@ -7,9 +7,9 @@ use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayFactory;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
-use Shopwell\Core\System\Payment\Provider\PaymentConfigField;
+use Shopwell\Core\System\Payment\Product\PaymentInteraction;
+use Shopwell\Core\System\Payment\Product\PaymentProduct;
+use Shopwell\Core\System\Payment\Provider\Config\PaymentConfigField;
 use Shopwell\Core\System\Payment\Provider\PaymentProvider;
 
 /**
@@ -31,7 +31,7 @@ class PaymentProviderTest extends TestCase
             technicalName: 'alipay',
             label: '支付宝',
             credentials: [new PaymentConfigField(name: 'app_id')],
-            channels: ['alipay_h5' => $h5, 'alipay_qr' => $qr],
+            products: ['alipay_h5' => $h5, 'alipay_qr' => $qr],
             gatewayFactory: $gatewayFactory,
             notificationExtractor: $extractor,
         );
@@ -40,7 +40,7 @@ class PaymentProviderTest extends TestCase
         static::assertSame('支付宝', $provider->label);
         static::assertSame($gatewayFactory, $provider->gatewayFactory);
         static::assertSame($extractor, $provider->notificationExtractor);
-        static::assertSame(['alipay_h5' => $h5, 'alipay_qr' => $qr], $provider->channels);
+        static::assertSame(['alipay_h5' => $h5, 'alipay_qr' => $qr], $provider->products);
     }
 
     public function testWithoutChannelsYieldsEmptyMap(): void
@@ -49,12 +49,12 @@ class PaymentProviderTest extends TestCase
             technicalName: 'paypal',
             label: 'PayPal',
             credentials: [],
-            channels: [],
+            products: [],
             gatewayFactory: static::createStub(PaymentGatewayFactory::class),
             notificationExtractor: static::createStub(PaymentNotificationExtractorInterface::class),
         );
 
-        static::assertSame([], $provider->channels);
+        static::assertSame([], $provider->products);
         static::assertSame([], $provider->credentialNames());
     }
 
@@ -78,8 +78,8 @@ class PaymentProviderTest extends TestCase
     {
         $provider = $this->provider(channels: ['alipay_h5' => $this->channel('alipay_h5')]);
 
-        static::assertTrue($provider->hasChannel('alipay_h5'));
-        static::assertFalse($provider->hasChannel('alipay_qr'));
+        static::assertTrue($provider->hasProduct('alipay_h5'));
+        static::assertFalse($provider->hasProduct('alipay_qr'));
     }
 
     public function testCredentialNamesKeepTheDeclarationOrder(): void
@@ -95,7 +95,7 @@ class PaymentProviderTest extends TestCase
 
     /**
      * @param list<PaymentConfigField> $credentials
-     * @param array<string, PaymentChannel> $channels
+     * @param array<string, PaymentProduct> $channels
      */
     private function provider(array $credentials = [], array $channels = []): PaymentProvider
     {
@@ -103,19 +103,20 @@ class PaymentProviderTest extends TestCase
             technicalName: 'alipay',
             label: '支付宝',
             credentials: $credentials,
-            channels: $channels,
+            products: $channels,
             gatewayFactory: static::createStub(PaymentGatewayFactory::class),
             notificationExtractor: static::createStub(PaymentNotificationExtractorInterface::class),
         );
     }
 
-    private function channel(string $technicalName): PaymentChannel
+    private function channel(string $technicalName): PaymentProduct
     {
-        return new PaymentChannel(
+        return new PaymentProduct(
             technicalName: $technicalName,
             providerTechnicalName: 'alipay',
+            method: 'alipay',
             label: $technicalName,
-            flow: PaymentFlow::REDIRECT,
+            interactions: [PaymentInteraction::REDIRECT],
         );
     }
 }

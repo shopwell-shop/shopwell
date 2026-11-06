@@ -39,7 +39,7 @@ type DeleteTarget = {
  * to switch the author off instead, which keeps the byline and only removes them from the selector
  * of new entries.
  */
-// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+/** @private */
 export default defineComponent({
     template,
 

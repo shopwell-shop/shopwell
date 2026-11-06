@@ -1,0 +1,31 @@
+{
+  "sw-membership": {
+    "purchase": {
+      "general": {
+        "mainMenuItemGeneral": "Membership orders",
+        "description": "Every membership a customer bought, one row per purchase attempt."
+      },
+      "list": {
+        "placeholderSearchBar": "Search membership orders...",
+        "titleSidebarItemRefresh": "Refresh",
+        "columnCustomer": "Customer",
+        "columnPlan": "Plan",
+        "columnAmount": "Amount",
+        "columnState": "State",
+        "columnPaidAt": "Paid at",
+        "columnCreatedAt": "Created at",
+        "filterStateLabel": "State",
+        "filterStatePlaceholder": "Select a state...",
+        "filterPlanLabel": "Plan",
+        "filterPlanPlaceholder": "Search by plan...",
+        "emptyStateHeadline": "No membership orders yet",
+        "emptyStateDescription": "Purchases of a plan appear here as soon as the customer starts the payment."
+      },
+      "state": {
+        "open": "Awaiting payment",
+        "activated": "Active",
+        "failed": "Failed"
+      }
+    }
+  }
+}

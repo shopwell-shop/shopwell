@@ -28,6 +28,14 @@ class BlogDetailStruct extends Struct
 
     protected ?BlogCollection $relatedBlogs = null;
 
+    /**
+     * The entry published directly before this one, null at the start of the feed. The template
+     * renders the previous/next navigation from the pair, and each side is optional on its own.
+     */
+    protected ?BlogEntity $previousBlog = null;
+
+    protected ?BlogEntity $nextBlog = null;
+
     protected ?BlogAuthorEntity $author = null;
 
     protected ?MediaEntity $coverMedia = null;
@@ -95,6 +103,26 @@ class BlogDetailStruct extends Struct
     public function setRelatedBlogs(BlogCollection $relatedBlogs): void
     {
         $this->relatedBlogs = $relatedBlogs;
+    }
+
+    public function getPreviousBlog(): ?BlogEntity
+    {
+        return $this->previousBlog;
+    }
+
+    public function setPreviousBlog(?BlogEntity $previousBlog): void
+    {
+        $this->previousBlog = $previousBlog;
+    }
+
+    public function getNextBlog(): ?BlogEntity
+    {
+        return $this->nextBlog;
+    }
+
+    public function setNextBlog(?BlogEntity $nextBlog): void
+    {
+        $this->nextBlog = $nextBlog;
     }
 
     public function getAuthor(): ?BlogAuthorEntity

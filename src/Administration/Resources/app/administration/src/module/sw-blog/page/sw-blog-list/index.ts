@@ -63,12 +63,16 @@ function blogFilterFactory(vm: unknown): FilterFactory {
  * narrow the table, the state is a column and not a filter, because "published" is derived and a
  * derived state can not be a stored filter value.
  */
-// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+/** @private */
 export default defineComponent({
     template,
 
-    inject: ['repositoryFactory', 'acl', 'blogApiService', 'filterFactory'],
-
+    inject: [
+        'repositoryFactory',
+        'acl',
+        'blogApiService',
+        'filterFactory',
+    ],
     mixins: [Mixin.getByName('listing')],
 
     data(): {
@@ -81,7 +85,6 @@ export default defineComponent({
         storeKey: string;
         defaultFilters: string[];
         activeFilterNumber: number;
-        pendingCommentCount: number;
         presetAuthorId: string | null;
         presetCategoryId: string | null;
         deleteTarget: DeleteTarget | null;
@@ -96,7 +99,6 @@ export default defineComponent({
             storeKey: 'grid.filter.blog',
             defaultFilters: DEFAULT_FILTERS,
             activeFilterNumber: 0,
-            pendingCommentCount: 0,
             presetAuthorId: null,
             presetCategoryId: null,
             deleteTarget: null,
@@ -122,10 +124,6 @@ export default defineComponent({
             return this.repositoryFactory.create('blog_author');
         },
 
-        commentRepository(): RepositoryType<'blog_comment'> {
-            return this.repositoryFactory.create('blog_comment');
-        },
-
         /**
          * The columns in the order an editor reads them: what it looks like, what it is called, where
          * it is filed, whether it is live, and when it was touched last.
@@ -143,6 +141,12 @@ export default defineComponent({
                     primary: true,
                     inlineEdit: 'string',
                     allowResize: true,
+                },
+                {
+                    property: 'type',
+                    label: 'sw-blog.list.columnType',
+                    width: '110px',
+                    sortable: false,
                 },
                 {
                     property: 'categories',
@@ -267,8 +271,7 @@ export default defineComponent({
 
             if (this.presetCategoryId !== null) {
                 const name =
-                    this.categories.find((category) => category.id === this.presetCategoryId)?.name ??
-                    this.presetCategoryId;
+                    this.categories.find((category) => category.id === this.presetCategoryId)?.name ?? this.presetCategoryId;
 
                 chips.push({ type: 'category', label: `${this.$t('sw-blog.list.filterCategory')}: ${name}` });
             }
@@ -283,7 +286,6 @@ export default defineComponent({
         void this.getList();
         void this.loadCategories();
         void this.loadAuthors();
-        void this.loadPendingCommentCount();
     },
 
     methods: {
@@ -329,7 +331,7 @@ export default defineComponent({
         async getList(): Promise<void> {
             this.isLoading = true;
 
-            const filterService = Shopwell.Service('filterService') as unknown as {
+            const filterService = Shopwell.Service('filterService') as {
                 mergeWithStoredFilters: (storeKey: string, criteria: CriteriaType) => Promise<CriteriaType>;
             };
 
@@ -368,7 +370,6 @@ export default defineComponent({
          */
         updateCriteria(filters: unknown[]): void {
             this.page = 1;
-            this.pendingFilters = filters;
             this.activeFilterNumber = filters.length;
 
             void this.getList();
@@ -394,30 +395,31 @@ export default defineComponent({
             });
         },
 
-        /**
-         * The number in the toolbar that leads to the moderation queue: how much is waiting right now,
-         * read with one count and not by loading the comments.
-         */
-        async loadPendingCommentCount(): Promise<void> {
-            const criteria = blogApi(this).pendingCommentsCriteria();
-
-            await this.commentRepository.search(criteria).then((result) => {
-                this.pendingCommentCount = result.total ?? 0;
-            });
-        },
-
         onRefresh(): void {
             void this.getList();
             void this.loadCategories();
             void this.loadAuthors();
-            void this.loadPendingCommentCount();
         },
 
         onOpenCreateModal(): void {
-            // creating does not ask for a title first: the entry page is where an entry is written,
-            // and a dialog that asks for the headline before the page that owns the headline is one
-            // step that teaches nothing
+            // creating does not ask for anything first: the entry page is where an entry is written,
+            // and the type is one select on that page, the way the product form does it
             void this.$router.push({ name: 'sw.blog.create' });
+        },
+
+        /**
+         * The label of one type, from the snippet when the type has one, otherwise the raw value -
+         * the same fallback the filter dropdown uses, so a plugin type never renders as an empty
+         * badge.
+         */
+        typeLabel(type: string | null | undefined): string {
+            if (typeof type !== 'string' || type === '') {
+                return '';
+            }
+
+            const key = blogApi(this).typeLabelKey(type);
+
+            return this.$te(key) ? this.$t(key) : type;
         },
 
         onInlineEditSave(blog: Blog): void {
@@ -475,10 +477,6 @@ export default defineComponent({
 
         onOpenCategoryList(): void {
             void this.$router.push({ name: 'sw.blog.category.list' });
-        },
-
-        onOpenCommentList(): void {
-            void this.$router.push({ name: 'sw.blog.comment.list' });
         },
     },
 });

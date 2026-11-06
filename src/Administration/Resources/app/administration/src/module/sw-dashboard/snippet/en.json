@@ -37,7 +37,6 @@
             "returnRequests": "Return requests to review",
             "ordersToShip": "Orders waiting for shipment",
             "reviewsWaiting": "Reviews to moderate",
-            "outOfStock": "Out-of-stock items",
             "empty": "Nothing to do - everything is on track."
         },
         "orderStates": {

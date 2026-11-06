@@ -2,6 +2,7 @@
 
 namespace Shopwell\Tests\Unit\Core\System\Payment\Order;
 
+use Doctrine\DBAL\Connection;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -16,7 +17,10 @@ use Shopwell\Core\System\Payment\App\PaymentAppCollection;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
 use Shopwell\Core\System\Payment\App\PaymentCredentialCipher;
 use Shopwell\Core\System\Payment\App\PaymentSignatureService;
-use Shopwell\Core\System\Payment\Gateway\QueryResult;
+use Shopwell\Core\System\Payment\Exception\PaymentOrderException;
+use Shopwell\Core\System\Payment\Gateway\Request\QueryResult;
+use Shopwell\Core\System\Payment\Order\Aggregate\PaymentAttempt\PaymentAttemptCollection;
+use Shopwell\Core\System\Payment\Order\Aggregate\PaymentAttempt\PaymentAttemptEntity;
 use Shopwell\Core\System\Payment\Order\PaymentOrderCollection;
 use Shopwell\Core\System\Payment\Order\PaymentOrderEntity;
 use Shopwell\Core\System\Payment\Order\PaymentOrderPaidHandler;
@@ -24,10 +28,6 @@ use Shopwell\Core\System\Payment\Order\PaymentOrderQueryResultHandler;
 use Shopwell\Core\System\Payment\Order\PaymentOrderService;
 use Shopwell\Core\System\Payment\Order\PaymentOrderStateHandler;
 use Shopwell\Core\System\Payment\Order\PaymentOrderStates;
-use Shopwell\Core\System\Payment\PaymentException;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannelRegistry;
-use Shopwell\Core\System\Payment\Provider\PaymentConfigResolver;
-use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;
 use Shopwell\Core\System\Payment\Webhook\PaymentWebhookDeliveryCollection;
 use Shopwell\Core\System\Payment\Webhook\PaymentWebhookDeliveryEntity;
 use Shopwell\Core\System\Payment\Webhook\PaymentWebhookDispatcher;
@@ -35,8 +35,11 @@ use Shopwell\Core\System\Payment\Webhook\PaymentWebhookSigner;
 use Shopwell\Core\System\StateMachine\Loader\InitialStateIdLoader;
 use Shopwell\Core\System\StateMachine\StateMachineRegistry;
 use Shopwell\Core\System\StateMachine\Transition;
+use Shopwell\Core\Test\Stub\DataAbstractionLayer\StaticEntityRepository;
+use Shopwell\Tests\Unit\Core\System\Payment\NumberRangeFixture;
+use Shopwell\Tests\Unit\Core\System\Payment\Order\_fixtures\PaymentOrderRowLockStub;
+use Shopwell\Tests\Unit\Core\System\Payment\PaymentEventDispatcherFixture;
 use Symfony\Component\Clock\MockClock;
-use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 /**
@@ -135,7 +138,7 @@ class PaymentOrderQueryResultHandlerTest extends TestCase
         $deliveryRepository = static::createMock(EntityRepository::class);
         $deliveryRepository->expects($this->never())->method('create');
 
-        $this->expectExceptionObject(PaymentException::amountMismatch('PG0001', 1000, $actual));
+        $this->expectExceptionObject(PaymentOrderException::amountMismatch('PG0001', 1000, $actual));
 
         $this->handler($orderRepository, $stateMachine, $deliveryRepository)
             ->handle($order, new QueryResult(QueryResult::STATUS_PAID, 'channel-trade-1', $reported, 'CNY'));
@@ -154,7 +157,7 @@ class PaymentOrderQueryResultHandlerTest extends TestCase
         $deliveryRepository = static::createMock(EntityRepository::class);
         $deliveryRepository->expects($this->never())->method('create');
 
-        $this->expectExceptionObject(PaymentException::currencyMismatch('PG0001', 'CNY', 'JPY'));
+        $this->expectExceptionObject(PaymentOrderException::currencyMismatch('PG0001', 'CNY', 'JPY'));
 
         // the same number in another currency is not the payment of this order
         $this->handler($orderRepository, $stateMachine, $deliveryRepository)
@@ -213,36 +216,23 @@ class PaymentOrderQueryResultHandlerTest extends TestCase
             ->handle($order, new QueryResult(QueryResult::STATUS_CLOSED));
     }
 
-    public function testFailedMarksTheOrderFailedAndTellsTheApp(): void
+    public function testFailedAttemptDoesNotCloseOrAnnounceThePayableObligation(): void
     {
-        $order = $this->order();
-        $failed = $this->order(['stateId' => PaymentOrderStates::STATE_FAILED]);
-
+        $order = $this->order(['stateId' => PaymentOrderStates::STATE_OPENED]);
         $orderRepository = static::createMock(EntityRepository::class);
-        $orderRepository->method('search')->willReturn($this->orderSearchResult($failed));
-        // a failed order is a state, not a timestamp - nothing is written on the order itself
+        $orderRepository->expects($this->never())->method('search');
         $orderRepository->expects($this->never())->method('update');
-
         $stateMachine = static::createMock(StateMachineRegistry::class);
-        $stateMachine->expects($this->once())
-            ->method('transition')
-            ->with(static::callback(static fn (Transition $t): bool => $t->getTransitionName() === PaymentOrderStates::ACTION_FAIL));
-
-        $deliveryRepository = $this->deliveryRepository();
-        $deliveryRepository->expects($this->once())
-            ->method('create')
-            ->with(static::callback(static function (array $data): bool {
-                static::assertSame([
-                    'reason' => 'failed',
-                    'state' => PaymentOrderStates::STATE_FAILED,
-                    'closed_at' => null,
-                ], $data[0]['payload']['data']);
-
-                return true;
-            }));
+        $stateMachine->expects($this->never())->method('transition');
+        $deliveryRepository = static::createMock(EntityRepository::class);
+        $deliveryRepository->expects($this->never())->method('search');
+        $deliveryRepository->expects($this->never())->method('create');
 
         $this->handler($orderRepository, $stateMachine, $deliveryRepository)
             ->handle($order, new QueryResult(QueryResult::STATUS_FAILED));
+
+        static::assertNull($order->closedAt);
+        static::assertSame(PaymentOrderStates::STATE_OPENED, $order->stateId);
     }
 
     public function testAbsentLeavesAnOrderAloneThatMayStillExpire(): void
@@ -411,10 +401,12 @@ class PaymentOrderQueryResultHandlerTest extends TestCase
 
         $orderService = new PaymentOrderService(
             $orderRepository,
-            $this->configResolver(),
             $this->initialStateIdLoader(),
             new PaymentOrderStateHandler($stateMachine),
-            new MockClock(self::NOW)
+            new MockClock(self::NOW),
+            NumberRangeFixture::generator('PG1001'),
+            new PaymentOrderRowLockStub(),
+            StaticEntityRepository::of(PaymentAttemptCollection::class),
         );
 
         $webhookService = new PaymentWebhookDispatcher(
@@ -423,33 +415,15 @@ class PaymentOrderQueryResultHandlerTest extends TestCase
             new PaymentWebhookSigner(new PaymentSignatureService(), $cipher, new MockClock(self::NOW)),
             static::createStub(HttpClientInterface::class),
             new MockClock(self::NOW),
-            static::createStub(LoggerInterface::class)
+            static::createStub(LoggerInterface::class),
+            static::createStub(Connection::class)
         );
 
         return new PaymentOrderQueryResultHandler(
             $orderService,
             $webhookService,
-            new PaymentOrderPaidHandler($orderService, $webhookService, static::createStub(EventDispatcherInterface::class)),
+            new PaymentOrderPaidHandler($orderService, PaymentEventDispatcherFixture::create($webhookService)),
             new MockClock(self::NOW)
-        );
-    }
-
-    /**
-     * The handler never resolves a channel - closing, expiring and paying an order only write the
-     * order - so the resolver is deliberately empty and every use of it would fail loudly.
-     */
-    private function configResolver(): PaymentConfigResolver
-    {
-        $providerRegistry = new PaymentProviderRegistry([]);
-
-        return new PaymentConfigResolver(
-            $providerRegistry,
-            new PaymentChannelRegistry($providerRegistry),
-            static::createStub(EntityRepository::class),
-            static::createStub(EntityRepository::class),
-            static::createStub(EntityRepository::class),
-            static::createStub(EntityRepository::class),
-            new PaymentCredentialCipher('test-secret')
         );
     }
 
@@ -559,8 +533,16 @@ class PaymentOrderQueryResultHandlerTest extends TestCase
         $order->paymentNo = 'PG0001';
         $order->outTradeNo = 'app-trade-1';
         $order->paymentAppId = 'app-id';
-        $order->providerTechnicalName = 'alipay';
-        $order->channelTechnicalName = 'alipay_h5';
+        $attempt = new PaymentAttemptEntity();
+        $attempt->id = 'attempt-id';
+        $attempt->paymentOrderId = $order->id;
+        $attempt->attemptNo = 'PG0001';
+        $attempt->accountId = 'account-id';
+        $attempt->providerTechnicalName = 'alipay';
+        $attempt->channelTechnicalName = 'alipay_h5';
+        $attempt->status = PaymentAttemptEntity::STATUS_HANDOVER;
+        $order->activeAttempt = $attempt;
+        $order->activeAttemptId = $attempt->id;
         $order->amount = 1000;
         $order->paidAmount = 0;
         $order->refundedAmount = 0;

@@ -118,8 +118,8 @@ class DictionaryRouteTest extends TestCase
         return new DictionaryRoute(
             $repository,
             $connection,
-            $cacheTagCollector ?? $this->createMock(CacheTagCollector::class),
-            new ExtensionDispatcher($this->createMock(EventDispatcherInterface::class)),
+            $cacheTagCollector ?? static::createStub(CacheTagCollector::class),
+            new ExtensionDispatcher(static::createStub(EventDispatcherInterface::class)),
         );
     }
 }

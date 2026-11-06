@@ -10,10 +10,16 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\System\NumberRange\ValueGenerator\AbstractNumberRangeValueGenerator;
+use Shopwell\Core\System\Payment\Account\PaymentAccountLock;
 use Shopwell\Core\System\Payment\Api\Struct\PaymentTransferRequest;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
 use Shopwell\Core\System\Payment\App\PaymentCredentialCipher;
+use Shopwell\Core\System\Payment\Exception\PaymentProviderException;
+use Shopwell\Core\System\Payment\Exception\PaymentTransferException;
 use Shopwell\Core\System\Payment\PaymentException;
+use Shopwell\Core\System\Payment\Provider\Config\PaymentConfigResolver;
+use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;
 use Shopwell\Core\System\StateMachine\Loader\InitialStateIdLoader;
 
 /**
@@ -37,16 +43,6 @@ use Shopwell\Core\System\StateMachine\Loader\InitialStateIdLoader;
 #[Package('framework')]
 final class PaymentTransferService
 {
-    private const PROVIDER_ALIPAY = 'alipay';
-    private const PROVIDER_WECHAT = 'wechat';
-
-    /**
-     * The interfaces whose payouts are settled in yuan only. Stripe and paypal are deliberately not
-     * on the list: what they can pay out is a property of the merchant account (stripe) or of the
-     * receiving account (paypal) and is validated by the channel adapter, not by the platform.
-     */
-    private const CNY_ONLY_PROVIDERS = [self::PROVIDER_ALIPAY, self::PROVIDER_WECHAT];
-
     /**
      * Wechat caps `out_bill_no` at 32 characters of `[0-9a-zA-Z]`, alipay caps `out_biz_no` at 64,
      * paypal caps the batch and item ids it derives from ours at 30. The strictest limit wins - a
@@ -61,19 +57,13 @@ final class PaymentTransferService
      * interface keeps the derivation an identity, which is the only form that survives a notification
      * that carries the derived id and not the out number.
      */
-    private const OUT_NO_PATTERN = '/^[0-9a-zA-Z]{1,30}$/';
+    private const OUT_NO_PATTERN = '/^[0-9a-zA-Z]{1,30}\z/';
 
     /**
      * The width of `payment_transfer.failure_reason`. Channel messages are not bounded by us, so every
      * writer is cut here instead of trusting that its caller measured right.
      */
     private const FAILURE_REASON_LIMIT = 255;
-
-    /**
-     * Wechat closes a transfer the shopper never confirmed after 24 hours and refunds it. The window
-     * may be exceeded slightly, so the moment is a hint for the query task, not a guarantee.
-     */
-    private const WECHAT_CONFIRM_WINDOW = '+24 hours';
 
     /**
      * @param EntityRepository<PaymentTransferCollection> $transferRepository
@@ -87,6 +77,10 @@ final class PaymentTransferService
         private readonly PaymentCredentialCipher $cipher,
         private readonly InitialStateIdLoader $initialStateIdLoader,
         private readonly ClockInterface $clock,
+        private readonly PaymentProviderRegistry $providers,
+        private readonly AbstractNumberRangeValueGenerator $numberRanges,
+        private readonly PaymentConfigResolver $configResolver,
+        private readonly PaymentAccountLock $accountLock,
     ) {
     }
 
@@ -98,11 +92,11 @@ final class PaymentTransferService
     public function create(PaymentAppEntity $app, PaymentTransferRequest $request): PaymentTransferEntity
     {
         if ($request->amount <= 0) {
-            throw PaymentException::transferAmountInvalid();
+            throw PaymentTransferException::transferAmountInvalid();
         }
 
         if (\preg_match(self::OUT_NO_PATTERN, $request->outNo) !== 1) {
-            throw PaymentException::transferOutNoInvalid($request->outNo);
+            throw PaymentTransferException::transferOutNoInvalid($request->outNo);
         }
 
         // the idempotent replay answers before anything else is validated: the payout of this out
@@ -110,69 +104,76 @@ final class PaymentTransferService
         // turn a harmless replay into an error
         $existing = $this->getByOutNo($app, $request->outNo);
         if ($existing !== null) {
-            return $existing;
+            return $this->replay($existing, $request);
         }
 
-        $recipient = $this->getRecipient($app, $request->recipientId);
-
-        if ($recipient->provider !== $request->provider) {
-            // the recipient was created for another interface: its identity means nothing to this one
-            throw PaymentException::transferIdentityNotSupported($request->provider, $recipient->identityType);
-        }
-
-        $this->assertCurrencySupported($request->provider, $request->currency);
-        $this->recipientService->assertPayoutReady($recipient, $request->amount);
-
-        // the identity of the recipient is a credential and the payout is built from its plain text.
-        // A row that can not be decrypted (a rotated application secret, a row written before the
-        // encryption existed) is refused here, not at the interface after the intent to pay exists.
-        $this->cipher->decryptValue($recipient->identityValue);
-
-        $now = $this->clock->now();
-        $id = Uuid::randomHex();
-
-        $row = [
-            'id' => $id,
-            'paymentAppId' => $app->id,
-            'transferNo' => $this->generateTransferNo($now),
-            'outNo' => $request->outNo,
-            'recipientId' => $recipient->id,
-            'provider' => $request->provider,
-            'channel' => $request->channel,
-            // already in the smallest unit of the currency - converting is the channel's job
-            'amount' => $request->amount,
-            'currency' => $request->currency,
-            // the parameters a payout is built from have to survive the call: the submission happens
-            // later, may be repeated days afterwards and is then built in a task that has no caller to
-            // ask - the adapter refuses a payout whose scene is gone
-            'channelParams' => $request->channelParams === [] ? null : $request->channelParams,
-            'stateId' => $this->initialStateIdLoader->get(PaymentTransferStates::STATE_MACHINE),
-            // the dal never writes the property initial value - it only consults
-            // EntityDefinition::getDefaults(), and the column is not nullable without a ddl default,
-            // so an insert that leaves the field out fails. Same story as paidAmount in
-            // PaymentOrderService::create() and attemptCount in PaymentCycleService::scheduleCycle().
-            'submitAttempts' => 0,
-            'expireAt' => $request->provider === self::PROVIDER_WECHAT
-                ? $now->modify(self::WECHAT_CONFIRM_WINDOW)
-                : null,
-            'metadata' => $request->metadata,
-        ];
-
-        try {
-            $this->transferRepository->create([$row], Context::createDefaultContext());
-        } catch (UniqueConstraintViolationException) {
-            // the unique key over (app, out number) was hit: the same payout was booked between our
-            // lookup and our insert, and that row is the answer - not a second payout
-            $race = $this->getByOutNo($app, $request->outNo);
-
-            if ($race === null) {
-                throw PaymentException::transferConflict($request->outNo);
+        return $this->accountLock->transaction(function () use ($app, $request): PaymentTransferEntity {
+            $resolved = $this->configResolver->resolve($app, $request->channel, $request->currency, runtimeParams: $request->channelParams, accountId: $request->accountId);
+            $this->accountLock->validateConfiguration($resolved);
+            if ($resolved->provider->technicalName !== $request->provider) {
+                throw PaymentTransferException::transferIdentityNotSupported($request->provider, $request->channel);
             }
 
-            return $race;
-        }
+            $recipient = $this->getRecipient($app, $request->recipientId);
 
-        return $this->getById($id);
+            if ($recipient->provider !== $request->provider) {
+                // the recipient was created for another interface: its identity means nothing to this one
+                throw PaymentTransferException::transferIdentityNotSupported($request->provider, $recipient->identityType);
+            }
+
+            $this->assertCurrencySupported($request->provider, $request->currency);
+            $this->recipientService->assertPayoutReady($recipient, $request->amount);
+
+            // the identity of the recipient is a credential and the payout is built from its plain text.
+            // A row that can not be decrypted (a rotated application secret, a row written before the
+            // encryption existed) is refused here, not at the interface after the intent to pay exists.
+            $this->cipher->decryptValue($recipient->identityValue);
+
+            $now = $this->clock->now();
+            $id = Uuid::randomHex();
+
+            $row = [
+                'id' => $id,
+                'paymentAppId' => $app->id,
+                'accountId' => $resolved->accountId,
+                'transferNo' => $this->numberRanges->getValue(PaymentTransferEntity::ENTITY_NAME, Context::createDefaultContext(), null),
+                'outNo' => $request->outNo,
+                'recipientId' => $recipient->id,
+                'provider' => $request->provider,
+                'channel' => $request->channel,
+                // already in the smallest unit of the currency - converting is the channel's job
+                'amount' => $request->amount,
+                'currency' => $request->currency,
+                // the parameters a payout is built from have to survive the call: the submission happens
+                // later, may be repeated days afterwards and is then built in a task that has no caller to
+                // ask - the adapter refuses a payout whose scene is gone
+                'channelParams' => $request->channelParams === [] ? null : $request->channelParams,
+                'statusId' => $this->initialStateIdLoader->get(PaymentTransferStates::STATE_MACHINE),
+                // the dal never writes the property initial value - it only consults
+                // EntityDefinition::getDefaults(), and the column is not nullable without a ddl default,
+                // so an insert that leaves the field out fails. Same story as paidAmount in
+                // PaymentOrderService::create() and attemptCount in PaymentCycleService::scheduleCycle().
+                'submitAttempts' => 0,
+                'expireAt' => $this->expireAtOf($request->provider, $now),
+                'metadata' => $request->metadata,
+            ];
+
+            try {
+                $this->transferRepository->create([$row], Context::createDefaultContext());
+            } catch (UniqueConstraintViolationException) {
+                // the unique key over (app, out number) was hit: the same payout was booked between our
+                // lookup and our insert, and that row is the answer - not a second payout
+                $race = $this->getByOutNo($app, $request->outNo);
+
+                if ($race === null) {
+                    throw PaymentTransferException::transferConflict($request->outNo);
+                }
+
+                return $this->replay($race, $request);
+            }
+
+            return $this->getById($id);
+        });
     }
 
     /**
@@ -197,7 +198,7 @@ final class PaymentTransferService
         $state = $transfer->statusMachineState?->getTechnicalName();
 
         if ($state !== null && $state !== PaymentTransferStates::STATE_CREATED) {
-            throw PaymentException::transferAlreadyFinalized($transfer->outNo, $state);
+            throw PaymentTransferException::transferAlreadyFinalized($transfer->outNo, $state);
         }
 
         $this->stateHandler->submit($transfer->id);
@@ -332,6 +333,10 @@ final class PaymentTransferService
      */
     public function cancel(PaymentTransferEntity $transfer, ?string $reason = null): void
     {
+        if ($transfer->submitAttempts > 0) {
+            throw PaymentTransferException::transferAlreadyFinalized($transfer->outNo, 'unknown');
+        }
+
         $this->stateHandler->cancel($transfer->id);
 
         $row = [
@@ -364,7 +369,7 @@ final class PaymentTransferService
         $transfer = $this->transferRepository->search($criteria, Context::createDefaultContext())->getEntities()->first();
 
         if (!$transfer instanceof PaymentTransferEntity) {
-            throw PaymentException::transferNotFound($id);
+            throw PaymentTransferException::transferNotFound($id);
         }
 
         return $transfer;
@@ -423,8 +428,39 @@ final class PaymentTransferService
     }
 
     /**
-     * @throws PaymentException
+     * @return list<string>
      */
+    public function accountIdsForProvider(PaymentAppEntity $app, string $provider): array
+    {
+        $criteria = new Criteria();
+        $criteria->addFilter(new EqualsFilter('paymentAppId', $app->id), new EqualsFilter('provider', $provider));
+        $ids = [];
+        foreach ($this->transferRepository->search($criteria, Context::createDefaultContext())->getEntities() as $transfer) {
+            $ids[$transfer->accountId] = true;
+        }
+
+        return array_keys($ids);
+    }
+
+    private function replay(PaymentTransferEntity $transfer, PaymentTransferRequest $request): PaymentTransferEntity
+    {
+        if ($request->accountId !== null && $request->accountId !== $transfer->accountId) {
+            throw PaymentTransferException::transferConflict($request->outNo);
+        }
+
+        if ($transfer->recipientId !== $request->recipientId
+            || $transfer->amount !== $request->amount
+            || strtoupper($transfer->currency) !== strtoupper($request->currency)
+            || $transfer->provider !== $request->provider
+            || $transfer->channel !== $request->channel
+            || ($transfer->channelParams ?? []) !== $request->channelParams
+        ) {
+            throw PaymentTransferException::transferOutNoTaken($request->outNo);
+        }
+
+        return $transfer;
+    }
+
     private function getRecipient(PaymentAppEntity $app, string $recipientId): PaymentTransferRecipientEntity
     {
         $criteria = new Criteria();
@@ -439,7 +475,7 @@ final class PaymentTransferService
         $recipient = $this->recipientRepository->search($criteria, Context::createDefaultContext())->getEntities()->first();
 
         if (!$recipient instanceof PaymentTransferRecipientEntity) {
-            throw PaymentException::transferRecipientNotFound($recipientId);
+            throw PaymentTransferException::transferRecipientNotFound($recipientId);
         }
 
         return $recipient;
@@ -450,9 +486,46 @@ final class PaymentTransferService
      */
     private function assertCurrencySupported(string $provider, string $currency): void
     {
-        if (\in_array($provider, self::CNY_ONLY_PROVIDERS, true) && $currency !== 'CNY') {
-            throw PaymentException::currencyNotSupported($provider, $currency);
+        $rules = $this->providers->has($provider)
+            ? $this->providers->get($provider)->transferRules
+            : null;
+
+        // the rules of the interface decide: alipay and wechat settle in yuan, an interface whose
+        // rules name no currency leaves it to the merchant account - refusing a payout on a list of
+        // provider names here would be a second, diverging truth
+        if ($rules !== null && !$rules->supportsCurrency($currency)) {
+            throw PaymentProviderException::currencyNotSupported($provider, $currency);
         }
+    }
+
+    /**
+     * The moment an unconfirmed payout closes, from the confirm window of the interface (wechat
+     * refunds a transfer the shopper never confirmed after 24 hours). An interface without such a
+     * window keeps the payout open, and the moment is a hint for the query task, not a guarantee.
+     */
+    private function expireAtOf(string $provider, \DateTimeImmutable $now): ?\DateTimeImmutable
+    {
+        $window = $this->providers->has($provider)
+            ? $this->providers->get($provider)->transferRules?->confirmWindow
+            : null;
+
+        if ($window === null) {
+            return null;
+        }
+
+        $expireAt = $now->modify($window);
+
+        if ($expireAt === false) {
+            // a declaration whose window is no relative modifier is a broken declaration, not a payout
+            // without an expiry - silently dropping it would leave the transfer open forever
+            throw PaymentProviderException::invalidProviderDeclaration(\sprintf(
+                'The confirm window "%s" of the payment interface "%s" is not a valid relative date modifier.',
+                $window,
+                $provider
+            ));
+        }
+
+        return $expireAt;
     }
 
     /**
@@ -469,13 +542,5 @@ final class PaymentTransferService
     private function boundedReason(?string $reason): ?string
     {
         return $reason === null ? null : mb_substr($reason, 0, self::FAILURE_REASON_LIMIT);
-    }
-
-    /**
-     * 2 + 12 + 10 = 24 characters, well below the 64 the interfaces allow for a display number.
-     */
-    private function generateTransferNo(\DateTimeImmutable $now): string
-    {
-        return 'PT' . $now->format('ymdHis') . strtoupper(bin2hex(random_bytes(5)));
     }
 }

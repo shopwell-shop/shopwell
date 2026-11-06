@@ -27,6 +27,8 @@ export default class BlogReadingPlugin extends Plugin {
         progressSelector: '[data-blog-reading-progress]',
         tocLinkSelector: '[data-blog-toc-link]',
         sectionSelector: '[id^="section-"]',
+        shareCopySelector: '[data-blog-share-copy]',
+        copiedLabelAttribute: 'data-blog-share-copy-copied-label',
         activeClass: 'is-active',
         reducedClass: 'blog-detail--reduced-motion',
     };
@@ -45,6 +47,7 @@ export default class BlogReadingPlugin extends Plugin {
 
         this._registerScrolling();
         this._registerSections();
+        this._registerShareCopy();
         this._measure();
     }
 
@@ -142,11 +145,53 @@ export default class BlogReadingPlugin extends Plugin {
         });
     }
 
+    /**
+     * The copy-link button of the share row. The button has no href of its own, so without
+     * javascript it does nothing - that is acceptable, because a visitor without javascript
+     * can still copy the address out of the browser bar.
+     */
+    _registerShareCopy() {
+        this._shareCopyElement = this.el.querySelector(this.options.shareCopySelector);
+
+        if (!this._shareCopyElement) {
+            return;
+        }
+
+        this._shareCopyElement.addEventListener('click', this._onShareCopy.bind(this));
+    }
+
+    _onShareCopy() {
+        const url = window.location.href;
+        const restore = () => {
+            const original = this._shareCopyElement.dataset.originalLabel;
+            if (original !== undefined) {
+                this._shareCopyElement.textContent = original;
+                delete this._shareCopyElement.dataset.originalLabel;
+            }
+        };
+
+        if (this._shareCopyElement.dataset.originalLabel === undefined) {
+            this._shareCopyElement.dataset.originalLabel = this._shareCopyElement.textContent;
+        }
+
+        const copiedLabel = this._shareCopyElement.getAttribute(this.options.copiedLabelAttribute) || '';
+        this._shareCopyElement.textContent = copiedLabel;
+        window.setTimeout(restore, 2000);
+
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(url).catch(() => {});
+        }
+    }
+
     destroy() {
         super.destroy();
 
         window.removeEventListener('scroll', this._onScroll);
         window.removeEventListener('resize', this._measure);
+
+        if (this._shareCopyElement) {
+            this._shareCopyElement.removeEventListener('click', this._onShareCopy);
+        }
 
         if (this._observer) {
             this._observer.disconnect();

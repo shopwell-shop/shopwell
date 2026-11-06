@@ -34,4 +34,5 @@ import '../build/vue-setup-transform/shopwell-setup-macros';
 import '../src/module/sw-flow/service';
 import '../src/module/sw-extension/service';
 import '../src/module/sw-settings-services/service';
-import '../src/module/sw-loyalty/service';
+import '../src/module/sw-settings-membership/service';
+import '../src/module/sw-blog';

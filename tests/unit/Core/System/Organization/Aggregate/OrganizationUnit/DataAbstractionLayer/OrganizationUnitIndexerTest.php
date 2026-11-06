@@ -179,10 +179,10 @@ class OrganizationUnitIndexerTest extends TestCase
         $repository->method('getDefinition')->willReturn(static::createStub(EntityDefinition::class));
 
         return new OrganizationUnitIndexer(
-            $iteratorFactory ?? $this->createMock(IteratorFactory::class),
+            $iteratorFactory ?? static::createStub(IteratorFactory::class),
             $repository,
-            $childCountUpdater ?? $this->createMock(ChildCountUpdater::class),
-            $treeUpdater ?? $this->createMock(TreeUpdater::class),
+            $childCountUpdater ?? static::createStub(ChildCountUpdater::class),
+            $treeUpdater ?? static::createStub(TreeUpdater::class),
         );
     }
 }

@@ -72,6 +72,10 @@ final class PaymentTransferNotifyController
                 return new Response('', Response::HTTP_NOT_FOUND);
             }
 
+            if ($exception->getStatusCode() >= Response::HTTP_INTERNAL_SERVER_ERROR) {
+                return new Response('', Response::HTTP_INTERNAL_SERVER_ERROR);
+            }
+
             // the notification cannot be applied and will not become applicable by repeating it
             return $this->acknowledge($ack);
         } catch (\Throwable $exception) {

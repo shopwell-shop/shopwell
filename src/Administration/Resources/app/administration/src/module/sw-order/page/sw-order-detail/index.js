@@ -177,10 +177,7 @@ export default {
         orderCriteria() {
             const criteria = new Criteria(1, 25);
 
-            criteria
-                .addAssociation('currency')
-                .addAssociation('orderCustomer.customer')
-                .addAssociation('language');
+            criteria.addAssociation('currency').addAssociation('orderCustomer.customer').addAssociation('language');
 
             criteria
                 .getAssociation('lineItems')
@@ -216,7 +213,8 @@ export default {
             criteria
                 .getAssociation('deliveries')
                 .addAssociation('stateMachineState')
-                .addSorting(Criteria.sort('shippingCosts.unitPrice', 'DESC'));
+                .addSorting(Criteria.sort('shippingCosts.unitPrice', 'DESC'))
+                .addSorting(Criteria.sort('id', 'ASC'));
 
             criteria
                 .getAssociation('transactions')

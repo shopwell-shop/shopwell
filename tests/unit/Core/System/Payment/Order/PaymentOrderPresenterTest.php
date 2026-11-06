@@ -9,12 +9,13 @@ use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\System\Payment\Api\Struct\PayParams;
-use Shopwell\Core\System\Payment\Gateway\PayResult;
+use Shopwell\Core\System\Payment\Gateway\Struct\PaymentHandover;
+use Shopwell\Core\System\Payment\Gateway\Struct\PaymentStartResult;
+use Shopwell\Core\System\Payment\Order\Aggregate\PaymentAttempt\PaymentAttemptEntity;
+use Shopwell\Core\System\Payment\Order\Aggregate\PaymentRefund\PaymentRefundEntity;
 use Shopwell\Core\System\Payment\Order\PaymentOrderEntity;
 use Shopwell\Core\System\Payment\Order\PaymentOrderPresenter;
-use Shopwell\Core\System\Payment\Order\Refund\PaymentRefundEntity;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
+use Shopwell\Core\System\Payment\Product\PaymentInteraction;
 use Shopwell\Core\System\StateMachine\Aggregation\StateMachineState\StateMachineStateCollection;
 use Shopwell\Core\System\StateMachine\Aggregation\StateMachineState\StateMachineStateEntity;
 
@@ -34,8 +35,9 @@ class PaymentOrderPresenterTest extends TestCase
         $order->paymentNo = 'PG0001';
         $order->outTradeNo = 'app-trade-1';
         $order->paymentAppId = 'app-id';
-        $order->providerTechnicalName = 'alipay';
-        $order->channelTechnicalName = 'alipay_h5';
+        $order->activeAttempt = new PaymentAttemptEntity();
+        $order->activeAttempt->providerTechnicalName = 'alipay';
+        $order->activeAttempt->channelTechnicalName = 'alipay_h5';
         $order->amount = 1000;
         $order->paidAmount = 1000;
         $order->refundedAmount = 250;
@@ -77,16 +79,17 @@ class PaymentOrderPresenterTest extends TestCase
         $order->paymentNo = 'PG0001';
         $order->outTradeNo = 'app-trade-1';
         $order->paymentAppId = 'app-id';
-        $order->providerTechnicalName = 'alipay';
-        $order->channelTechnicalName = 'alipay_h5';
+        $order->activeAttempt = new PaymentAttemptEntity();
+        $order->activeAttempt->providerTechnicalName = 'alipay';
+        $order->activeAttempt->channelTechnicalName = 'alipay_h5';
         $order->amount = 1000;
         $order->currency = 'CNY';
         $order->subject = 'An order';
         $order->stateId = 'state-opened';
         $order->outPaymentNo = 'stale-trade';
 
-        $params = new PayParams(PaymentFlow::REDIRECT, 'https://pay.example.test/redirect');
-        $result = $presenter->order($order, new PayResult($params, 'fresh-trade'));
+        $params = new PaymentHandover(PaymentInteraction::REDIRECT, 'https://pay.example.test/redirect');
+        $result = $presenter->order($order, new PaymentStartResult($params, 'fresh-trade'));
 
         static::assertSame('fresh-trade', $result['out_payment_no']);
         static::assertSame($params, $result['pay']);
@@ -101,15 +104,16 @@ class PaymentOrderPresenterTest extends TestCase
         $order->paymentNo = 'PG0001';
         $order->outTradeNo = 'app-trade-1';
         $order->paymentAppId = 'app-id';
-        $order->providerTechnicalName = 'alipay';
-        $order->channelTechnicalName = 'alipay_h5';
+        $order->activeAttempt = new PaymentAttemptEntity();
+        $order->activeAttempt->providerTechnicalName = 'alipay';
+        $order->activeAttempt->channelTechnicalName = 'alipay_h5';
         $order->amount = 1000;
         $order->currency = 'CNY';
         $order->subject = 'An order';
         $order->stateId = 'state-opened';
         $order->outPaymentNo = 'existing-trade';
 
-        $result = $presenter->order($order, new PayResult(new PayParams(PaymentFlow::REDIRECT)));
+        $result = $presenter->order($order, new PaymentStartResult(new PaymentHandover(PaymentInteraction::REDIRECT)));
 
         static::assertSame('existing-trade', $result['out_payment_no']);
     }
@@ -123,8 +127,9 @@ class PaymentOrderPresenterTest extends TestCase
         $order->paymentNo = 'PG0002';
         $order->outTradeNo = 'app-trade-2';
         $order->paymentAppId = 'app-id';
-        $order->providerTechnicalName = 'wechat';
-        $order->channelTechnicalName = 'wechat_native';
+        $order->activeAttempt = new PaymentAttemptEntity();
+        $order->activeAttempt->providerTechnicalName = 'wechat';
+        $order->activeAttempt->channelTechnicalName = 'wechat_native';
         $order->amount = 500;
         $order->currency = 'CNY';
         $order->subject = 'Another order';

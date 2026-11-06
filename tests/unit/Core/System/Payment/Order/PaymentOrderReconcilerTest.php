@@ -2,45 +2,48 @@
 
 namespace Shopwell\Tests\Unit\Core\System\Payment\Order;
 
+use Doctrine\DBAL\Connection;
 use Payum\Core\GatewayInterface;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use Shopwell\Core\Framework\Context;
-use Shopwell\Core\Framework\DataAbstractionLayer\Entity;
-use Shopwell\Core\Framework\DataAbstractionLayer\EntityCollection;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
-use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppChannel\PaymentAppChannelEntity;
-use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppProvider\PaymentAppProviderEntity;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
 use Shopwell\Core\System\Payment\App\PaymentCredentialCipher;
 use Shopwell\Core\System\Payment\App\PaymentSignatureService;
+use Shopwell\Core\System\Payment\Exception\PaymentProviderException;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayFactory;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
+use Shopwell\Core\System\Payment\Order\Aggregate\PaymentAttempt\PaymentAttemptCollection;
+use Shopwell\Core\System\Payment\Order\Aggregate\PaymentAttempt\PaymentAttemptEntity;
+use Shopwell\Core\System\Payment\Order\PaymentOrderCollection;
 use Shopwell\Core\System\Payment\Order\PaymentOrderEntity;
 use Shopwell\Core\System\Payment\Order\PaymentOrderPaidHandler;
 use Shopwell\Core\System\Payment\Order\PaymentOrderQueryResultHandler;
 use Shopwell\Core\System\Payment\Order\PaymentOrderReconciler;
 use Shopwell\Core\System\Payment\Order\PaymentOrderService;
 use Shopwell\Core\System\Payment\Order\PaymentOrderStateHandler;
-use Shopwell\Core\System\Payment\PaymentException;
+use Shopwell\Core\System\Payment\Product\PaymentInteraction;
+use Shopwell\Core\System\Payment\Product\PaymentProduct;
 use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannelRegistry;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
-use Shopwell\Core\System\Payment\Provider\PaymentChannelConfigEntity;
-use Shopwell\Core\System\Payment\Provider\PaymentConfigResolver;
+use Shopwell\Core\System\Payment\Provider\Config\PaymentConfigResolver;
 use Shopwell\Core\System\Payment\Provider\PaymentProvider;
-use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;
+use Shopwell\Core\System\Payment\Provider\ResolvedPaymentConfig;
 use Shopwell\Core\System\Payment\Webhook\PaymentWebhookDispatcher;
 use Shopwell\Core\System\Payment\Webhook\PaymentWebhookSigner;
+use Shopwell\Core\System\StateMachine\Aggregation\StateMachineState\StateMachineStateCollection;
+use Shopwell\Core\System\StateMachine\Aggregation\StateMachineState\StateMachineStateEntity;
 use Shopwell\Core\System\StateMachine\Loader\InitialStateIdLoader;
 use Shopwell\Core\System\StateMachine\StateMachineRegistry;
+use Shopwell\Core\Test\Stub\DataAbstractionLayer\StaticEntityRepository;
+use Shopwell\Tests\Unit\Core\System\Payment\NumberRangeFixture;
+use Shopwell\Tests\Unit\Core\System\Payment\Order\_fixtures\PaymentOrderRowLockStub;
+use Shopwell\Tests\Unit\Core\System\Payment\PaymentEventDispatcherFixture;
 use Symfony\Component\Clock\MockClock;
-use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 /**
@@ -63,35 +66,76 @@ class PaymentOrderReconcilerTest extends TestCase
      * channel fault (502) although the declaration answered the question already - and the order would
      * be retried against an interface that can never answer.
      */
+    public function testAnUnqueryableOrderYieldsItsBatchPosition(): void
+    {
+        $first = $this->order();
+        $first->id = 'first';
+        $first->paymentApp = null;
+        $second = $this->order();
+        $second->id = 'second';
+        $second->paymentApp = null;
+        $select = static function (Criteria $criteria, Context $context, StaticEntityRepository $repository) use ($first, $second): PaymentOrderCollection {
+            static::assertSame(['updatedAt', 'id'], array_map(static fn (FieldSorting $sort): string => $sort->getField(), array_values($criteria->getSorting())));
+            $alreadyAsked = array_column(array_merge(...$repository->updates), 'id');
+
+            return new PaymentOrderCollection([\in_array('first', $alreadyAsked, true) ? $second : $first]);
+        };
+        $repository = StaticEntityRepository::of(PaymentOrderCollection::class, [$select, $select]);
+        $opened = new StateMachineStateEntity();
+        $opened->setId('state-opened');
+        $states = new StaticEntityRepository([new StateMachineStateCollection([$opened]), new StateMachineStateCollection([$opened])]);
+        $reconciler = $this->reconciler(static::createStub(GatewayInterface::class), [], $repository, $states);
+
+        static::assertSame(0, $reconciler->reconcileDue(1));
+        static::assertSame(0, $reconciler->reconcileDue(1));
+        static::assertSame('first', $repository->updates[0][0]['id']);
+        static::assertSame('second', $repository->updates[1][0]['id']);
+        static::assertEquals(new \DateTimeImmutable(self::NOW), $repository->updates[0][0]['updatedAt']);
+    }
+
     public function testAnInterfaceWithoutQueryIsRefusedBeforeTheChannelIsAsked(): void
     {
         $gateway = static::createMock(GatewayInterface::class);
         $gateway->expects($this->never())->method('execute');
 
-        $this->expectExceptionObject(PaymentException::providerLacksCapability('alipay', PaymentCapability::QUERY->value));
+        $this->expectExceptionObject(PaymentProviderException::providerLacksCapability('alipay', PaymentCapability::QUERY->value));
 
         $this->reconciler($gateway, [PaymentCapability::CAPTURE])->reconcile($this->order());
     }
 
+    public function testProductWithoutQueryIsRefusedWhenTheProviderSupportsIt(): void
+    {
+        $gateway = static::createMock(GatewayInterface::class);
+        $gateway->expects($this->never())->method('execute');
+        $this->expectExceptionObject(PaymentProviderException::providerLacksCapability('alipay', PaymentCapability::QUERY->value));
+
+        $this->reconciler($gateway, [PaymentCapability::QUERY], productCapabilities: [PaymentCapability::CAPTURE])->reconcile($this->order());
+    }
+
     /**
      * @param list<PaymentCapability> $capabilities
+     * @param list<PaymentCapability>|null $productCapabilities
+     * @param EntityRepository<PaymentOrderCollection>|null $orders
+     * @param EntityRepository<StateMachineStateCollection>|null $states
      */
-    private function reconciler(GatewayInterface $gateway, array $capabilities): PaymentOrderReconciler
+    private function reconciler(GatewayInterface $gateway, array $capabilities, ?EntityRepository $orders = null, ?EntityRepository $states = null, ?array $productCapabilities = null): PaymentOrderReconciler
     {
-        $configResolver = $this->configResolver($gateway, $capabilities);
+        $configResolver = $this->configResolver($gateway, $capabilities, $productCapabilities);
         $clock = new MockClock(self::NOW);
 
         $initialStateIdLoader = static::createStub(InitialStateIdLoader::class);
         $initialStateIdLoader->method('get')->willReturn('state-created');
 
-        $orderRepository = static::createStub(EntityRepository::class);
+        $orderRepository = $orders ?? static::createStub(EntityRepository::class);
 
         $orderService = new PaymentOrderService(
             $orderRepository,
-            $configResolver,
             $initialStateIdLoader,
             new PaymentOrderStateHandler(static::createStub(StateMachineRegistry::class)),
             $clock,
+            NumberRangeFixture::generator('PG1001'),
+            new PaymentOrderRowLockStub(),
+            StaticEntityRepository::of(PaymentAttemptCollection::class),
         );
 
         $webhooks = new PaymentWebhookDispatcher(
@@ -101,13 +145,14 @@ class PaymentOrderReconcilerTest extends TestCase
             static::createStub(HttpClientInterface::class),
             $clock,
             static::createStub(LoggerInterface::class),
+            static::createStub(Connection::class),
         );
 
-        $paidHandler = new PaymentOrderPaidHandler($orderService, $webhooks, static::createStub(EventDispatcherInterface::class));
+        $paidHandler = new PaymentOrderPaidHandler($orderService, PaymentEventDispatcherFixture::create($webhooks));
 
         return new PaymentOrderReconciler(
             $orderRepository,
-            static::createStub(EntityRepository::class),
+            $states ?? static::createStub(EntityRepository::class),
             $configResolver,
             $orderService,
             $paidHandler,
@@ -119,16 +164,17 @@ class PaymentOrderReconcilerTest extends TestCase
 
     /**
      * @param list<PaymentCapability> $capabilities
+     * @param list<PaymentCapability>|null $productCapabilities
      */
-    private function configResolver(GatewayInterface $gateway, array $capabilities): PaymentConfigResolver
+    private function configResolver(GatewayInterface $gateway, array $capabilities, ?array $productCapabilities = null): PaymentConfigResolver
     {
-        $cipher = new PaymentCredentialCipher('test-secret');
-
-        $channel = new PaymentChannel(
+        $channel = new PaymentProduct(
             technicalName: 'alipay_h5',
             providerTechnicalName: 'alipay',
+            method: 'alipay',
             label: 'Alipay H5',
-            flow: PaymentFlow::REDIRECT,
+            interactions: [PaymentInteraction::REDIRECT],
+            capabilities: $productCapabilities ?? $capabilities,
         );
 
         $gatewayFactory = static::createStub(PaymentGatewayFactory::class);
@@ -138,68 +184,18 @@ class PaymentOrderReconcilerTest extends TestCase
             technicalName: 'alipay',
             label: 'Alipay',
             credentials: [],
-            channels: ['alipay_h5' => $channel],
+            products: ['alipay_h5' => $channel],
             gatewayFactory: $gatewayFactory,
             notificationExtractor: static::createStub(PaymentNotificationExtractorInterface::class),
             capabilities: $capabilities,
         );
 
-        $providerRegistry = new PaymentProviderRegistry([$provider]);
+        $resolved = new ResolvedPaymentConfig($provider, $channel, [], [], [], [], 'account-id');
+        $resolver = static::createStub(PaymentConfigResolver::class);
+        $resolver->method('resolveForOrder')->willReturn($resolved);
+        $resolver->method('resolveForAttempt')->willReturn($resolved);
 
-        $appProvider = new PaymentAppProviderEntity();
-        $appProvider->setUniqueIdentifier('app-provider-id');
-        $appProvider->paymentAppId = 'app-id';
-        $appProvider->providerTechnicalName = 'alipay';
-        $appProvider->enabled = true;
-        $appProvider->credentials = $cipher->encrypt(['app_id' => 'own-app-id']);
-
-        $appChannel = new PaymentAppChannelEntity();
-        $appChannel->setUniqueIdentifier('app-channel-id');
-        $appChannel->paymentAppId = 'app-id';
-        $appChannel->channelTechnicalName = 'alipay_h5';
-        $appChannel->enabled = true;
-        $appChannel->params = $cipher->encrypt(['appid' => 'own-appid']);
-
-        $channelConfig = new PaymentChannelConfigEntity();
-        $channelConfig->setUniqueIdentifier('channel-config-id');
-        $channelConfig->providerTechnicalName = 'alipay';
-        $channelConfig->channelTechnicalName = 'alipay_h5';
-        $channelConfig->enabled = true;
-        $channelConfig->params = $cipher->encrypt(['appid' => 'platform-appid']);
-
-        $appProviderRepository = static::createStub(EntityRepository::class);
-        $appProviderRepository->method('search')->willReturn($this->entityResult('payment_app_provider', $appProvider));
-
-        $appChannelRepository = static::createStub(EntityRepository::class);
-        $appChannelRepository->method('search')->willReturn($this->entityResult('payment_app_channel', $appChannel));
-
-        $channelConfigRepository = static::createStub(EntityRepository::class);
-        $channelConfigRepository->method('search')->willReturn($this->entityResult('payment_channel_config', $channelConfig));
-
-        return new PaymentConfigResolver(
-            $providerRegistry,
-            new PaymentChannelRegistry($providerRegistry),
-            $appProviderRepository,
-            static::createStub(EntityRepository::class),
-            $appChannelRepository,
-            $channelConfigRepository,
-            $cipher
-        );
-    }
-
-    /**
-     * @return EntitySearchResult<EntityCollection<Entity>>
-     */
-    private function entityResult(string $entityName, Entity $entity): EntitySearchResult
-    {
-        return new EntitySearchResult(
-            $entityName,
-            1,
-            new EntityCollection([$entity]),
-            null,
-            new Criteria(),
-            Context::createDefaultContext()
-        );
+        return $resolver;
     }
 
     private function order(): PaymentOrderEntity
@@ -210,8 +206,16 @@ class PaymentOrderReconcilerTest extends TestCase
         $order->paymentNo = 'PG0001';
         $order->outTradeNo = 'app-trade-1';
         $order->paymentAppId = 'app-id';
-        $order->providerTechnicalName = 'alipay';
-        $order->channelTechnicalName = 'alipay_h5';
+        $attempt = new PaymentAttemptEntity();
+        $attempt->id = 'attempt-id';
+        $attempt->paymentOrderId = $order->id;
+        $attempt->attemptNo = 'PG0001';
+        $attempt->accountId = 'account-id';
+        $attempt->providerTechnicalName = 'alipay';
+        $attempt->channelTechnicalName = 'alipay_h5';
+        $attempt->status = PaymentAttemptEntity::STATUS_HANDOVER;
+        $order->activeAttempt = $attempt;
+        $order->activeAttemptId = $attempt->id;
         $order->amount = 1000;
         $order->currency = 'CNY';
         $order->subject = 'An order';

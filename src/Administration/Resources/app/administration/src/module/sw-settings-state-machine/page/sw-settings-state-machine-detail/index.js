@@ -10,8 +10,6 @@ const { mapPropertyErrors } = Shopwell.Component.getComponentHelper();
 export default Component.wrapComponentConfig({
     template,
 
-    compatConfig: Shopwell.compatConfig,
-
     inject: ['repositoryFactory', 'acl'],
 
     mixins: [

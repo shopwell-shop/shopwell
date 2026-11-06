@@ -5,8 +5,8 @@ namespace Shopwell\Core\System\Payment\Order\Event;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\Event\ShopwellEvent;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Payment\Order\Aggregate\PaymentRefund\PaymentRefundEntity;
 use Shopwell\Core\System\Payment\Order\PaymentOrderEntity;
-use Shopwell\Core\System\Payment\Order\Refund\PaymentRefundEntity;
 use Symfony\Contracts\EventDispatcher\Event;
 
 /**

@@ -12,6 +12,8 @@ const { Criteria } = Shopwell.Data;
 export default Shopwell.Component.wrapComponentConfig({
     template,
 
+    emits: ['filter-update', 'filter-reset'],
+
     props: {
         filter: {
             type: Object,

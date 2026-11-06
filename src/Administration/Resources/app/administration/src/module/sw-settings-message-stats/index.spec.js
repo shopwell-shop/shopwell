@@ -25,6 +25,18 @@ describe('src/module/sw-settings-message-stats/index.js', () => {
             icon: 'regular-bars-square',
             favicon: 'icon-module-settings.svg',
             routes: expect.any(Object),
+            navigation: [
+                {
+                    moduleType: 'core',
+                    id: 'sw-settings-message-stats',
+                    label: 'sw-settings-message-stats.general.mainMenuItemGeneral',
+                    parent: 'sw-settings',
+                    path: 'sw.settings.message.stats.index',
+                    icon: 'regular-bars-square',
+                    position: 730,
+                    privilege: 'system.system_config',
+                },
+            ],
             settingsItem: [
                 {
                     id: 'sw-settings-message-stats',

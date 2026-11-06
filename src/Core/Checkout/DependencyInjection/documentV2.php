@@ -35,6 +35,7 @@ use Shopwell\Core\Checkout\DocumentV2\SalesChannel\DocumentRoute;
 use Shopwell\Core\Checkout\DocumentV2\Service\CreditItemResolver;
 use Shopwell\Core\Checkout\DocumentV2\Service\DocumentFileNameBuilder;
 use Shopwell\Core\Checkout\DocumentV2\Service\DocumentFileResolver;
+use Shopwell\Core\Checkout\DocumentV2\Service\DocumentMediaGuard;
 use Shopwell\Core\Checkout\DocumentV2\Service\DocumentReader;
 use Shopwell\Core\Checkout\DocumentV2\Service\ReferenceInvoiceLoader;
 use Shopwell\Core\Checkout\DocumentV2\Subscriber\DocumentBaseConfigSyncSubscriber;
@@ -87,6 +88,12 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ]);
 
     $services->set(DocumentFileResolver::class);
+
+    $services->set(DocumentMediaGuard::class)
+        ->args([
+            service('media_folder.repository'),
+        ])
+        ->tag('kernel.reset', ['method' => 'reset']);
 
     $services->set(DocumentConfigLoader::class)
         ->args([
@@ -245,6 +252,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(Filesystem::class),
             service(DocumentRendererRegistry::class),
             service(DocumentFileNameBuilder::class),
+            service(DocumentMediaGuard::class),
         ]);
 
     $services->set(DocumentFileNameBuilder::class)
@@ -269,6 +277,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(MediaService::class),
             service(DocumentRendererRegistry::class),
             service(DocumentFileResolver::class),
+            service(DocumentMediaGuard::class),
         ]);
 
     $services->set(ReferenceInvoiceLoader::class)
@@ -326,6 +335,9 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(DocumentPersister::class),
             service(MediaService::class),
             service(FileNameProvider::class),
+            service('media.repository'),
+            service(DocumentMediaGuard::class),
+            service('number_range.repository'),
         ])
         ->call('setContainer', [
             service('service_container'),

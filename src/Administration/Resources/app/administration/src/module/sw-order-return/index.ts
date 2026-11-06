@@ -19,14 +19,16 @@ import OrderReturnApiService from './service/order-return.api.service';
 
 const { Module } = Shopwell;
 
-/* eslint-disable sw-deprecation-rules/private-feature-declarations */
+/** @private */
 Shopwell.Component.register('sw-order-return-list', () => import('./page/sw-order-return-list'));
+/** @private */
 Shopwell.Component.register('sw-order-return-detail', () => import('./page/sw-order-return-detail'));
+/** @private */
 Shopwell.Component.register('sw-order-detail-return', () => import('./page/sw-order-detail-return'));
+/** @private */
 Shopwell.Component.register('sw-order-return-decline-modal', () => import('./component/sw-order-return-decline-modal'));
-/* eslint-enable sw-deprecation-rules/private-feature-declarations */
 
-// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+/** @private */
 Shopwell.Service().register('orderReturnApiService', () => {
     return new OrderReturnApiService(
         Shopwell.Application.getContainer('init').httpClient,
@@ -34,7 +36,7 @@ Shopwell.Service().register('orderReturnApiService', () => {
     );
 });
 
-// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+/** @private */
 Module.register('sw-order-return', {
     type: 'core',
     name: 'order-return',

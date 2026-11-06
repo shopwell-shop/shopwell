@@ -7,18 +7,20 @@ use Payum\Core\Request\Capture;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Payment\Gateway\AbstractPaymentAction;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayFactory;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
+use Shopwell\Core\System\Payment\Integration\Stripe\Action\StripeCaptureAction;
+use Shopwell\Core\System\Payment\Integration\Stripe\Api\StripeApi;
+use Shopwell\Core\System\Payment\Integration\Wechat\Action\WechatCaptureAction;
+use Shopwell\Core\System\Payment\Integration\Wechat\Api\WechatApi;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
 use Shopwell\Core\System\Payment\PaymentException;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
+use Shopwell\Core\System\Payment\Product\PaymentInteraction;
+use Shopwell\Core\System\Payment\Product\PaymentProduct;
+use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
 use Shopwell\Core\System\Payment\Provider\PaymentProvider;
 use Shopwell\Core\System\Payment\Provider\ResolvedPaymentConfig;
-use Shopwell\Core\System\Payment\Provider\Stripe\StripeApi;
-use Shopwell\Core\System\Payment\Provider\Stripe\StripeCaptureAction;
-use Shopwell\Core\System\Payment\Provider\Wechat\WechatApi;
-use Shopwell\Core\System\Payment\Provider\Wechat\WechatCaptureAction;
 
 /**
  * @internal
@@ -108,12 +110,63 @@ class PaymentGatewayFactoryTest extends TestCase
     }
 
     /**
+     * Payum writes the api onto an action at execution time. This test observes the real executions:
+     * every gateway must use a different clone and read its own merchant marker, without ever running
+     * the container prototype.
+     */
+    public function testEveryGatewayIsAssembledWithItsOwnAction(): void
+    {
+        $calls = new \ArrayObject();
+        $prototype = new class($calls) extends AbstractPaymentAction {
+            protected string $apiClass = WechatApi::class;
+
+            /**
+             * @param \ArrayObject<int, array{action: int, marker: mixed}> $calls
+             */
+            public function __construct(private readonly \ArrayObject $calls)
+            {
+            }
+
+            public function capability(): PaymentCapability
+            {
+                return PaymentCapability::CAPTURE;
+            }
+
+            public function supports($request): bool
+            {
+                return $this->isSupported($request, Capture::class);
+            }
+
+            public function execute($request): void
+            {
+                $this->modelOf($request);
+                $this->calls->append([
+                    'action' => spl_object_id($this),
+                    'marker' => $this->api()->credentials()['marker'] ?? null,
+                ]);
+            }
+        };
+        $factory = new PaymentGatewayFactory('wechat', WechatApi::class, [$prototype]);
+
+        $first = $factory->createForPayment($this->resolved('wechat', 'wechat_h5', ['marker' => 'first']), '', '');
+        $second = $factory->createForPayment($this->resolved('wechat', 'wechat_h5', ['marker' => 'second']), '', '');
+
+        $first->execute(new Capture(new PaymentGatewayModel()));
+        $second->execute(new Capture(new PaymentGatewayModel()));
+
+        $executions = array_values($calls->getArrayCopy());
+        static::assertSame(['first', 'second'], array_column($executions, 'marker'));
+        static::assertNotSame($executions[0]['action'], $executions[1]['action']);
+        static::assertNotContains(spl_object_id($prototype), array_column($executions, 'action'));
+    }
+
+    /**
      * @param array<string, mixed> $credentials
      * @param array<string, mixed> $params
      */
     private function resolved(string $provider, string $channel, array $credentials = [], array $params = []): ResolvedPaymentConfig
     {
-        $channelOfPayment = new PaymentChannel($channel, $provider, $channel, PaymentFlow::REDIRECT);
+        $channelOfPayment = new PaymentProduct($channel, $provider, $channel, [PaymentInteraction::REDIRECT], $provider);
 
         return new ResolvedPaymentConfig(
             provider: new PaymentProvider(
@@ -124,12 +177,12 @@ class PaymentGatewayFactoryTest extends TestCase
                 static::createStub(PaymentGatewayFactory::class),
                 static::createStub(PaymentNotificationExtractorInterface::class),
             ),
-            channel: $channelOfPayment,
+            product: $channelOfPayment,
             credentials: $credentials,
             params: $params,
             runtimeParams: [],
             settings: [],
-            usesPlatformAccount: true,
+            accountId: 'test-account',
         );
     }
 }

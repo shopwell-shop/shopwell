@@ -2,6 +2,7 @@
 
 namespace Shopwell\Tests\Unit\Core\System\Payment\Webhook;
 
+use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
@@ -10,13 +11,15 @@ use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
+use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\OrFilter;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\System\Payment\App\PaymentAppCollection;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
 use Shopwell\Core\System\Payment\App\PaymentCredentialCipher;
 use Shopwell\Core\System\Payment\App\PaymentSignatureService;
+use Shopwell\Core\System\Payment\Exception\PaymentNotificationException;
 use Shopwell\Core\System\Payment\Order\PaymentOrderEntity;
-use Shopwell\Core\System\Payment\PaymentException;
 use Shopwell\Core\System\Payment\Webhook\PaymentWebhookDeliveryCollection;
 use Shopwell\Core\System\Payment\Webhook\PaymentWebhookDeliveryEntity;
 use Shopwell\Core\System\Payment\Webhook\PaymentWebhookDispatcher;
@@ -33,6 +36,7 @@ use Symfony\Contracts\HttpClient\ResponseInterface;
 class PaymentWebhookDispatcherTest extends TestCase
 {
     private const APP_ID = 'app-id';
+    private const DELIVERY_ID = '0123456789abcdef0123456789abcdef';
 
     public function testEnqueueReturnsNullWhenTheOrderHasNoNotifyUrl(): void
     {
@@ -60,7 +64,7 @@ class PaymentWebhookDispatcherTest extends TestCase
 
     public function testEnqueuePersistsASignedPendingDelivery(): void
     {
-        $created = $this->delivery('delivery-id', 0);
+        $created = $this->delivery(self::DELIVERY_ID, 0);
 
         $deliveryRepository = static::createMock(EntityRepository::class);
         $deliveryRepository->expects($this->once())
@@ -107,7 +111,7 @@ class PaymentWebhookDispatcherTest extends TestCase
 
     public function testEnqueueReturnsTheQueuedDeliveryInsteadOfQueueingASecondOne(): void
     {
-        $existing = $this->delivery('delivery-id', 0);
+        $existing = $this->delivery(self::DELIVERY_ID, 0);
 
         // the queued row is the retry mechanism itself, queueing it twice would send the event twice
         $deliveryRepository = static::createMock(EntityRepository::class);
@@ -122,7 +126,7 @@ class PaymentWebhookDispatcherTest extends TestCase
 
     public function testEnqueueReturnsTheDeliveredDeliveryWhenTheAppAlreadyKnows(): void
     {
-        $existing = $this->delivery('delivery-id', 1);
+        $existing = $this->delivery(self::DELIVERY_ID, 1);
         $existing->status = PaymentWebhookDeliveryEntity::STATUS_SUCCESS;
 
         $deliveryRepository = static::createMock(EntityRepository::class);
@@ -137,7 +141,7 @@ class PaymentWebhookDispatcherTest extends TestCase
 
     public function testEnqueueDoesNotReArmADeliveryThatWasGivenUp(): void
     {
-        $existing = $this->delivery('delivery-id', PaymentWebhookDispatcher::MAX_ATTEMPTS);
+        $existing = $this->delivery(self::DELIVERY_ID, PaymentWebhookDispatcher::MAX_ATTEMPTS);
         $existing->status = PaymentWebhookDeliveryEntity::STATUS_GIVING_UP;
 
         // giving up is a decision that was made on purpose and logged as such, a duplicate callback
@@ -189,7 +193,7 @@ class PaymentWebhookDispatcherTest extends TestCase
 
     public function testEnqueueStoresTheSubjectOfTheEvent(): void
     {
-        $created = $this->delivery('delivery-id', 0);
+        $created = $this->delivery(self::DELIVERY_ID, 0);
         $created->subject = 'refund-id';
 
         $deliveryRepository = static::createMock(EntityRepository::class);
@@ -212,7 +216,7 @@ class PaymentWebhookDispatcherTest extends TestCase
 
     public function testEnqueueReportsTheDeliveryAConcurrentAnnounceWonTheRaceFor(): void
     {
-        $existing = $this->delivery('delivery-id', 0);
+        $existing = $this->delivery(self::DELIVERY_ID, 0);
 
         $violation = static::createStub(UniqueConstraintViolationException::class);
 
@@ -258,19 +262,20 @@ class PaymentWebhookDispatcherTest extends TestCase
     public function testDeliverMarksTheDeliveryAsSucceededOnA2xxResponse(): void
     {
         $service = $this->service(
-            $this->expectedUpdate(function (array $row): void {
+            static::createStub(EntityRepository::class),
+            $this->appRepository($this->app()),
+            $this->clientWithResponse(200, 'ok'),
+            null,
+            $this->expectedFinish(static function (array $row): void {
                 static::assertSame(PaymentWebhookDeliveryEntity::STATUS_SUCCESS, $row['status']);
-                static::assertSame(1, $row['attemptCount']);
                 static::assertSame(200, $row['lastHttpStatus']);
                 static::assertSame('ok', $row['lastResponse']);
                 static::assertNull($row['nextRetryAt']);
-                static::assertNotNull($row['succeededAt']);
-            }),
-            $this->appRepository($this->app()),
-            $this->clientWithResponse(200, 'ok')
+                static::assertSame('2024-01-01 00:00:00.000', $row['succeededAt']);
+            })
         );
 
-        $service->deliver($this->delivery('delivery-id', 0));
+        static::assertTrue($service->deliver($this->delivery(self::DELIVERY_ID, 0)));
     }
 
     public function testDeliverSchedulesARetryWhenTheResponseIsNotSuccessful(): void
@@ -279,22 +284,19 @@ class PaymentWebhookDispatcherTest extends TestCase
         $logger->expects($this->once())->method('warning');
 
         $service = $this->service(
-            $this->expectedUpdate(function (array $row): void {
-                static::assertSame(PaymentWebhookDeliveryEntity::STATUS_FAILED, $row['status']);
-                static::assertSame(1, $row['attemptCount']);
-                static::assertSame(500, $row['lastHttpStatus']);
-                static::assertNull($row['succeededAt']);
-
-                $nextRetryAt = $row['nextRetryAt'];
-                static::assertInstanceOf(\DateTimeInterface::class, $nextRetryAt);
-                static::assertSame('2024-01-01T00:01:00+00:00', $nextRetryAt->format(\DateTimeInterface::ATOM));
-            }),
+            static::createStub(EntityRepository::class),
             $this->appRepository($this->app()),
             $this->clientWithResponse(500, 'boom'),
-            $logger
+            $logger,
+            $this->expectedFinish(static function (array $row): void {
+                static::assertSame(PaymentWebhookDeliveryEntity::STATUS_FAILED, $row['status']);
+                static::assertSame(500, $row['lastHttpStatus']);
+                static::assertNull($row['succeededAt']);
+                static::assertSame('2024-01-01 00:01:00.000', $row['nextRetryAt']);
+            })
         );
 
-        $service->deliver($this->delivery('delivery-id', 0));
+        $service->deliver($this->delivery(self::DELIVERY_ID, 0));
     }
 
     public function testDeliverGivesUpOnTheLastAttempt(): void
@@ -305,7 +307,7 @@ class PaymentWebhookDispatcherTest extends TestCase
             ->with(
                 'Giving up the payment webhook delivery to the app.',
                 static::callback(static function (array $context): bool {
-                    static::assertSame('delivery-id', $context['deliveryId']);
+                    static::assertSame(self::DELIVERY_ID, $context['deliveryId']);
                     // the log has to name the order the delivery belongs to, so support can find it
                     static::assertSame('order-id', $context['paymentOrderId']);
                     static::assertArrayNotHasKey('paymentNo', $context);
@@ -315,39 +317,37 @@ class PaymentWebhookDispatcherTest extends TestCase
             );
 
         $service = $this->service(
-            $this->expectedUpdate(function (array $row): void {
-                static::assertSame(PaymentWebhookDeliveryEntity::STATUS_GIVING_UP, $row['status']);
-                static::assertSame(PaymentWebhookDispatcher::MAX_ATTEMPTS, $row['attemptCount']);
-                static::assertNull($row['nextRetryAt']);
-            }),
+            static::createStub(EntityRepository::class),
             $this->appRepository($this->app()),
             $this->clientWithResponse(503, 'unavailable'),
-            $logger
+            $logger,
+            $this->expectedFinish(static function (array $row): void {
+                static::assertSame(PaymentWebhookDeliveryEntity::STATUS_GIVING_UP, $row['status']);
+                static::assertNull($row['nextRetryAt']);
+            })
         );
 
-        $service->deliver($this->delivery('delivery-id', PaymentWebhookDispatcher::MAX_ATTEMPTS - 1));
+        $service->deliver($this->delivery(self::DELIVERY_ID, PaymentWebhookDispatcher::MAX_ATTEMPTS - 1));
     }
 
     public function testDeliverStopsWhenTheAppDoesNotExistAnymore(): void
     {
-        $updateRepository = static::createMock(EntityRepository::class);
-        $updateRepository->expects($this->once())
-            ->method('update')
-            ->with(static::callback(function (array $data): bool {
-                // the app is gone, so no attempt is made and the delivery is terminated
-                static::assertNull($data[0]['lastHttpStatus']);
-                static::assertSame(1, $data[0]['attemptCount']);
-                static::assertSame('The payment app does not exist anymore.', $data[0]['lastResponse']);
-
-                return true;
-            }));
-
         $client = static::createMock(HttpClientInterface::class);
         $client->expects($this->never())->method('request');
 
-        $service = $this->service($updateRepository, $this->appRepository(null), $client);
+        $service = $this->service(
+            static::createStub(EntityRepository::class),
+            $this->appRepository(null),
+            $client,
+            null,
+            $this->expectedFinish(static function (array $row): void {
+                // the app is gone, so no request is made and the claimed delivery is terminated
+                static::assertNull($row['lastHttpStatus']);
+                static::assertSame('The payment app does not exist anymore.', $row['lastResponse']);
+            })
+        );
 
-        $service->deliver($this->delivery('delivery-id', 0));
+        static::assertTrue($service->deliver($this->delivery(self::DELIVERY_ID, 0)));
     }
 
     public function testDeliverRetriesWhenTheRequestItselfFails(): void
@@ -359,31 +359,161 @@ class PaymentWebhookDispatcherTest extends TestCase
         $client->method('request')->willThrowException(new \RuntimeException('connection reset'));
 
         $service = $this->service(
-            $this->expectedUpdate(function (array $row): void {
+            static::createStub(EntityRepository::class),
+            $this->appRepository($this->app()),
+            $client,
+            $logger,
+            $this->expectedFinish(static function (array $row): void {
                 static::assertSame(PaymentWebhookDeliveryEntity::STATUS_FAILED, $row['status']);
                 static::assertNull($row['lastHttpStatus']);
                 static::assertSame('connection reset', $row['lastResponse']);
-            }),
-            $this->appRepository($this->app()),
-            $client,
-            $logger
+            })
         );
 
-        $service->deliver($this->delivery('delivery-id', 0));
+        $service->deliver($this->delivery(self::DELIVERY_ID, 0));
+    }
+
+    public function testDeliverClaimsAtomicallyBeforeSending(): void
+    {
+        $claimToken = null;
+        $connection = static::createMock(Connection::class);
+        $connection->expects($this->exactly(2))
+            ->method('executeStatement')
+            ->willReturnCallback(static function (string $sql, array $parameters) use (&$claimToken): int {
+                if (str_contains($sql, '`attempt_count` = `attempt_count` + 1')) {
+                    static::assertSame(PaymentWebhookDeliveryEntity::STATUS_PROCESSING, $parameters['claimedStatus']);
+                    static::assertSame(Uuid::fromHexToBytes(self::DELIVERY_ID), $parameters['id']);
+                    static::assertSame(0, $parameters['previousAttemptCount']);
+                    static::assertSame('2024-01-01 00:01:00.000', $parameters['claimExpiresAt']);
+                    static::assertMatchesRegularExpression('/^[0-9a-f]{32}$/', $parameters['claimToken']);
+                    static::assertStringContainsString('`attempt_count` = :previousAttemptCount', $sql);
+                    static::assertStringContainsString('`next_retry_at` <= :retryNow', $sql);
+                    static::assertStringContainsString('`claim_expires_at` <= :claimNow', $sql);
+                    $claimToken = $parameters['claimToken'];
+
+                    return 1;
+                }
+
+                static::assertSame($claimToken, $parameters['claimToken']);
+
+                return 1;
+            });
+
+        $client = static::createMock(HttpClientInterface::class);
+        $client->expects($this->once())->method('request')->willReturn($this->response(200, 'ok'));
+
+        $service = $this->service(
+            static::createStub(EntityRepository::class),
+            $this->appRepository($this->app()),
+            $client,
+            null,
+            $connection
+        );
+
+        static::assertTrue($service->deliver($this->delivery(self::DELIVERY_ID, 0)));
+    }
+
+    public function testDeliverDoesNotLoadTheAppOrSendWhenTheClaimIsLost(): void
+    {
+        $connection = static::createMock(Connection::class);
+        $connection->expects($this->once())->method('executeStatement')->willReturn(0);
+
+        $appRepository = static::createMock(EntityRepository::class);
+        $appRepository->expects($this->never())->method('search');
+
+        $client = static::createMock(HttpClientInterface::class);
+        $client->expects($this->never())->method('request');
+
+        $service = $this->service(static::createStub(EntityRepository::class), $appRepository, $client, null, $connection);
+
+        static::assertFalse($service->deliver($this->delivery(self::DELIVERY_ID, 0)));
+    }
+
+    public function testLateFinishCannotOverwriteANewerClaim(): void
+    {
+        $logger = static::createMock(LoggerInterface::class);
+        $logger->expects($this->never())->method('warning');
+        $logger->expects($this->never())->method('error');
+
+        $service = $this->service(
+            static::createStub(EntityRepository::class),
+            $this->appRepository($this->app()),
+            $this->clientWithResponse(500, 'late failure'),
+            $logger,
+            $this->expectedFinish(static function (array $row, string $sql): void {
+                static::assertSame(PaymentWebhookDeliveryEntity::STATUS_PROCESSING, $row['processingStatus']);
+                static::assertSame(Uuid::fromHexToBytes(self::DELIVERY_ID), $row['id']);
+                static::assertStringContainsString('AND `status` = :processingStatus', $sql);
+                static::assertStringContainsString('AND `claim_token` = :claimToken', $sql);
+                static::assertStringNotContainsString('`attempt_count` =', $sql);
+            }, 0)
+        );
+
+        static::assertTrue($service->deliver($this->delivery(self::DELIVERY_ID, 0)));
     }
 
     public function testRetryDueDeliversEveryDueDeliveryAndReturnsTheCount(): void
     {
-        $due = $this->delivery('delivery-id', 0);
+        $due = $this->delivery(self::DELIVERY_ID, 0);
 
-        $deliveryRepository = static::createMock(EntityRepository::class);
+        $deliveryRepository = static::createStub(EntityRepository::class);
         $deliveryRepository->method('search')->willReturn($this->deliverySearchResult($due));
-        $deliveryRepository->expects($this->once())->method('update');
 
         $client = static::createMock(HttpClientInterface::class);
         $client->expects($this->once())->method('request')->willReturn($this->response(200, 'ok'));
 
         $service = $this->service($deliveryRepository, $this->appRepository($this->app()), $client);
+
+        static::assertSame(1, $service->retryDue());
+    }
+
+    public function testRetryDueAlsoSelectsExpiredProcessingClaims(): void
+    {
+        $expired = $this->delivery(self::DELIVERY_ID, 1);
+        $expired->status = PaymentWebhookDeliveryEntity::STATUS_PROCESSING;
+        $expired->claimExpiresAt = new \DateTimeImmutable('2023-12-31 23:59:00+00:00');
+
+        $deliveryRepository = static::createMock(EntityRepository::class);
+        $deliveryRepository->expects($this->once())
+            ->method('search')
+            ->with(
+                static::callback(static function (Criteria $criteria): bool {
+                    $filters = $criteria->getFilters();
+                    static::assertCount(1, $filters);
+                    static::assertInstanceOf(OrFilter::class, $filters[0]);
+                    static::assertSame(['status', 'nextRetryAt', 'status', 'claimExpiresAt'], $filters[0]->getFields());
+
+                    return true;
+                }),
+                static::isInstanceOf(Context::class)
+            )
+            ->willReturn($this->deliverySearchResult($expired));
+
+        $client = static::createMock(HttpClientInterface::class);
+        $client->expects($this->once())->method('request')->willReturn($this->response(200, 'ok'));
+
+        $service = $this->service($deliveryRepository, $this->appRepository($this->app()), $client);
+
+        static::assertSame(1, $service->retryDue());
+    }
+
+    public function testRetryDueCountsOnlyClaimsThisWorkerWon(): void
+    {
+        $first = $this->delivery(self::DELIVERY_ID, 0);
+        $second = $this->delivery('1123456789abcdef0123456789abcdef', 0);
+
+        $deliveryRepository = static::createStub(EntityRepository::class);
+        $deliveryRepository->method('search')->willReturn($this->deliverySearchResult($first, $second));
+
+        $connection = static::createMock(Connection::class);
+        $connection->expects($this->exactly(3))
+            ->method('executeStatement')
+            ->willReturnOnConsecutiveCalls(1, 1, 0);
+
+        $client = static::createMock(HttpClientInterface::class);
+        $client->expects($this->once())->method('request')->willReturn($this->response(200, 'ok'));
+
+        $service = $this->service($deliveryRepository, $this->appRepository($this->app()), $client, null, $connection);
 
         static::assertSame(1, $service->retryDue());
     }
@@ -405,7 +535,7 @@ class PaymentWebhookDispatcherTest extends TestCase
 
         $service = $this->service($deliveryRepository, $this->appRepository($this->app()));
 
-        $this->expectExceptionObject(PaymentException::webhookDeliveryNotFound('missing-id'));
+        $this->expectExceptionObject(PaymentNotificationException::webhookDeliveryNotFound('missing-id'));
 
         $service->getDelivery('missing-id');
     }
@@ -418,7 +548,8 @@ class PaymentWebhookDispatcherTest extends TestCase
         EntityRepository $deliveryRepository,
         EntityRepository $appRepository,
         ?HttpClientInterface $client = null,
-        ?LoggerInterface $logger = null
+        ?LoggerInterface $logger = null,
+        ?Connection $connection = null
     ): PaymentWebhookDispatcher {
         return new PaymentWebhookDispatcher(
             $deliveryRepository,
@@ -426,27 +557,38 @@ class PaymentWebhookDispatcherTest extends TestCase
             new PaymentWebhookSigner(new PaymentSignatureService(), new PaymentCredentialCipher('test-secret'), new MockClock('2024-01-01T00:00:00+00:00')),
             $client ?? static::createStub(HttpClientInterface::class),
             new MockClock('2024-01-01T00:00:00+00:00'),
-            $logger ?? static::createStub(LoggerInterface::class)
+            $logger ?? static::createStub(LoggerInterface::class),
+            $connection ?? $this->successfulConnection()
         );
     }
 
     /**
-     * @param callable(array<string, mixed>): void $assertion
-     *
-     * @return EntityRepository<PaymentWebhookDeliveryCollection>
+     * @param callable(array<string, mixed>, string): void $assertion
      */
-    private function expectedUpdate(callable $assertion): EntityRepository
+    private function expectedFinish(callable $assertion, int $finishResult = 1): Connection
     {
-        $repository = static::createMock(EntityRepository::class);
-        $repository->expects($this->once())
-            ->method('update')
-            ->with(static::callback(static function (array $data) use ($assertion): bool {
-                $assertion($data[0]);
+        $connection = static::createMock(Connection::class);
+        $connection->expects($this->exactly(2))
+            ->method('executeStatement')
+            ->willReturnCallback(static function (string $sql, array $parameters) use ($assertion, $finishResult): int {
+                if (str_contains($sql, '`attempt_count` = `attempt_count` + 1')) {
+                    return 1;
+                }
 
-                return true;
-            }));
+                $assertion($parameters, $sql);
 
-        return $repository;
+                return $finishResult;
+            });
+
+        return $connection;
+    }
+
+    private function successfulConnection(): Connection
+    {
+        $connection = static::createStub(Connection::class);
+        $connection->method('executeStatement')->willReturn(1);
+
+        return $connection;
     }
 
     private function order(?string $notifyUrl): PaymentOrderEntity
@@ -457,8 +599,6 @@ class PaymentWebhookDispatcherTest extends TestCase
         $order->paymentNo = 'PG0001';
         $order->outTradeNo = 'app-trade-1';
         $order->paymentAppId = self::APP_ID;
-        $order->providerTechnicalName = 'alipay';
-        $order->channelTechnicalName = 'alipay_h5';
         $order->amount = 1000;
         $order->currency = 'CNY';
         $order->subject = 'An order';

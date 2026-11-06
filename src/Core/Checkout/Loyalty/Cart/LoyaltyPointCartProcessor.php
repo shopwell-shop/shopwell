@@ -9,7 +9,8 @@ use Shopwell\Core\Checkout\Cart\LineItem\CartDataCollection;
 use Shopwell\Core\Checkout\Cart\LineItem\LineItem;
 use Shopwell\Core\Checkout\Cart\Price\AbsolutePriceCalculator;
 use Shopwell\Core\Checkout\Cart\Price\Struct\AbsolutePriceDefinition;
-use Shopwell\Core\Checkout\Loyalty\Service\LoyaltyPointService;
+use Shopwell\Core\Checkout\Loyalty\Service\LoyaltyAccountService;
+use Shopwell\Core\Checkout\Loyalty\Service\LoyaltyRedemptionCalculator;
 use Shopwell\Core\Checkout\Loyalty\Service\LoyaltySettings;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Struct\ArrayStruct;
@@ -22,6 +23,11 @@ use Shopwell\Core\System\SalesChannel\SalesChannelContext;
  * The line item is never created by the Store API route itself but derived from the extension on every
  * recalculation. This keeps the cart consistent when other plugins recalculate it and lets the discount
  * be clamped to the current order total, the customer balance and the configured limits at any time.
+ *
+ * What a point is worth is not decided here: {@see LoyaltyRedemptionCalculator} answers it, so the
+ * ladder can change without this class noticing. All that is left is the order of the clamps - the
+ * request, the balance, then what the order may still give away - because each one can only lower the
+ * result.
  */
 #[Package('checkout')]
 class LoyaltyPointCartProcessor implements CartProcessorInterface
@@ -35,8 +41,9 @@ class LoyaltyPointCartProcessor implements CartProcessorInterface
      */
     public function __construct(
         private readonly AbsolutePriceCalculator $calculator,
+        private readonly LoyaltyRedemptionCalculator $redemption,
         private readonly LoyaltySettings $settings,
-        private readonly LoyaltyPointService $loyaltyPointService
+        private readonly LoyaltyAccountService $accounts
     ) {
     }
 
@@ -56,27 +63,31 @@ class LoyaltyPointCartProcessor implements CartProcessorInterface
         }
 
         $customer = $context->getCustomer();
-        $pointValue = $this->settings->pointValueInCurrency($context->getSalesChannelId());
-        $minimum = $this->settings->minRedeemablePoints($context->getSalesChannelId());
 
-        if ($customer === null || $pointValue <= 0.0) {
+        if ($customer === null) {
             $toCalculate->getLineItems()->remove(self::LINE_ITEM_ID);
 
             return;
         }
 
-        $balance = $this->loyaltyPointService->getBalance($customer->getId(), $context->getContext());
-        $points = min($points, $balance, $this->maxPointsByOrderTotal($toCalculate, $pointValue, $context));
+        $rates = $this->redemption->rates($context->getSalesChannelId(), $context->getContext());
 
-        if ($points < $minimum) {
+        if (!$rates->hasRate()) {
             $toCalculate->getLineItems()->remove(self::LINE_ITEM_ID);
 
             return;
         }
 
-        $amount = $points * $pointValue;
+        $balance = $this->accounts->balance($customer->getId(), $context->getContext());
+        $points = min($points, $balance, $rates->maxPointsFor($this->redeemableAmount($toCalculate, $context)));
 
-        $this->materialize($toCalculate, $context, $points, $amount);
+        if ($points < $this->settings->minRedeemablePoints($context->getSalesChannelId())) {
+            $toCalculate->getLineItems()->remove(self::LINE_ITEM_ID);
+
+            return;
+        }
+
+        $this->materialize($toCalculate, $context, $points, $rates->amountFor($points));
     }
 
     private function materialize(Cart $cart, SalesChannelContext $context, int $points, float $amount): void
@@ -104,15 +115,15 @@ class LoyaltyPointCartProcessor implements CartProcessorInterface
     }
 
     /**
-     * The points must not cover more than the configured share of the goods subtotal that is not already
+     * The amount points may still cover: the configured share of the goods subtotal that is not already
      * discounted by another credit line item.
      */
-    private function maxPointsByOrderTotal(Cart $cart, float $pointValue, SalesChannelContext $context): int
+    private function redeemableAmount(Cart $cart, SalesChannelContext $context): float
     {
         $maxPercent = $this->settings->maxRedeemablePercent($context->getSalesChannelId());
         $available = $this->goodsTotal($cart) - $this->otherCreditAmount($cart);
 
-        return (int) floor(max(0.0, $available) * $maxPercent / 100.0 / $pointValue);
+        return max(0.0, $available) * $maxPercent / 100.0;
     }
 
     private function goodsTotal(Cart $cart): float

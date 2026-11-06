@@ -5,11 +5,14 @@ namespace Shopwell\Tests\Unit\Core\Checkout\Wallet\SalesChannel;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Checkout\Customer\CustomerEntity;
+use Shopwell\Core\Checkout\Payment\Storefront\StorefrontPaymentContextResolver;
 use Shopwell\Core\Checkout\Wallet\SalesChannel\WalletTopUpCreateRoute;
 use Shopwell\Core\Checkout\Wallet\Service\WalletTopUpService;
 use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Currency\CurrencyEntity;
+use Shopwell\Core\System\Payment\Product\PaymentScene;
+use Shopwell\Core\System\Payment\Routing\PaymentContext;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
 use Shopwell\Core\Test\Generator;
 use Symfony\Component\EventDispatcher\EventDispatcher;
@@ -34,17 +37,7 @@ class WalletTopUpCreateRouteTest extends TestCase
         $topUpService = $this->createMock(WalletTopUpService::class);
         $topUpService->expects($this->once())
             ->method('create')
-            ->with(
-                self::CUSTOMER_ID,
-                self::CURRENCY_ID,
-                'CNY',
-                200.0,
-                'alipay_h5',
-                'https://shop.test/account/wallet',
-                '10.0.0.1',
-                'web',
-                $context->getContext(),
-            )
+            ->with(self::CUSTOMER_ID, self::CURRENCY_ID, new PaymentContext('CNY', new PaymentScene('browser', 'web', 'browser')), 200.0, 'alipay', 'https://shop.test/account/wallet', '10.0.0.1', $context->getContext())
             ->willReturn([
                 'id' => 'top-up-id',
                 'amount' => 200.0,
@@ -54,7 +47,7 @@ class WalletTopUpCreateRouteTest extends TestCase
                 'params' => ['url' => 'https://pay.test'],
             ]);
 
-        $route = new WalletTopUpCreateRoute($topUpService, new ExtensionDispatcher(new EventDispatcher()));
+        $route = new WalletTopUpCreateRoute($topUpService, new ExtensionDispatcher(new EventDispatcher()), new StorefrontPaymentContextResolver());
 
         $response = $route->create($this->request(), $context, $customer);
 
@@ -69,22 +62,12 @@ class WalletTopUpCreateRouteTest extends TestCase
         $topUpService = $this->createMock(WalletTopUpService::class);
         $topUpService->expects($this->once())
             ->method('create')
-            ->with(
-                static::anything(),
-                static::anything(),
-                static::anything(),
-                static::anything(),
-                static::anything(),
-                'http://localhost/account/wallet',
-                static::anything(),
-                null,
-                static::anything(),
-            )
-            ->willReturn(['id' => 'top-up-id', 'amount' => 1.0, 'currency' => 'CNY', 'payment_no' => 'PAY-1', 'channel' => 'alipay_h5', 'params' => []]);
+            ->with(static::anything(), static::anything(), static::isInstanceOf(PaymentContext::class), static::anything(), static::anything(), 'http://localhost/account/wallet', static::anything(), static::anything())
+            ->willReturn(['id' => 'top-up-id', 'amount' => 1.0, 'currency' => 'CNY', 'payment_no' => 'PAY-1', 'method' => 'alipay', 'params' => []]);
 
-        $route = new WalletTopUpCreateRoute($topUpService, new ExtensionDispatcher(new EventDispatcher()));
+        $route = new WalletTopUpCreateRoute($topUpService, new ExtensionDispatcher(new EventDispatcher()), new StorefrontPaymentContextResolver());
 
-        $request = Request::create('/store-api/wallet/top-up', Request::METHOD_POST, ['amount' => 1, 'channel' => 'alipay_h5']);
+        $request = Request::create('/store-api/wallet/top-up', Request::METHOD_POST, ['amount' => 1, 'method' => 'alipay']);
 
         $route->create($request, $context, $this->customer());
     }
@@ -93,7 +76,7 @@ class WalletTopUpCreateRouteTest extends TestCase
     {
         return Request::create('/store-api/wallet/top-up', Request::METHOD_POST, [
             'amount' => 200,
-            'channel' => 'alipay_h5',
+            'method' => 'alipay',
             'returnUrl' => 'https://shop.test/account/wallet',
             'device' => 'WEB',
         ], server: ['REMOTE_ADDR' => '10.0.0.1']);

@@ -6,8 +6,8 @@ use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Payment\Gateway\AbstractPaymentAction;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
 use Shopwell\Core\System\Payment\Provider\AbstractPaymentProvider;
+use Shopwell\Core\System\Payment\Provider\Config\PaymentConfigField;
 use Shopwell\Core\System\Payment\Provider\Cycle\PaymentCycleRules;
-use Shopwell\Core\System\Payment\Provider\PaymentConfigField;
 use Shopwell\Core\System\Payment\Provider\PayParamsDecoderInterface;
 use Shopwell\Core\System\Payment\Provider\Transfer\PaymentTransferRules;
 use Shopwell\Core\System\Payment\Transfer\Notification\PaymentTransferNotificationVerifierInterface;
@@ -63,14 +63,14 @@ class TestPaymentDecorator extends AbstractPaymentProvider
         return [...$this->decorated->getActions(), ...$this->extraActions];
     }
 
-    public function getCaptureAction(): AbstractPaymentAction
-    {
-        return $this->decorated->getCaptureAction();
-    }
-
     public function getNotificationExtractor(): PaymentNotificationExtractorInterface
     {
         return $this->decorated->getNotificationExtractor();
+    }
+
+    public function getConfigFile(): ?string
+    {
+        return $this->decorated->getConfigFile();
     }
 
     public function getCredentials(): array
@@ -78,9 +78,9 @@ class TestPaymentDecorator extends AbstractPaymentProvider
         return $this->credentialsOverride ?? $this->decorated->getCredentials();
     }
 
-    public function getChannels(): array
+    public function getProducts(): array
     {
-        return $this->decorated->getChannels();
+        return $this->decorated->getProducts();
     }
 
     public function getChannelCaptureActions(): array

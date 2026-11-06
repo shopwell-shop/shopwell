@@ -39,6 +39,8 @@ class PaymentException extends HttpException
     final public const PAYMENT_VALIDATE_PREPARED_ERROR = 'CHECKOUT__VALIDATE_PREPARED_PAYMENT_ERROR';
     final public const PAYMENT_METHOD_DUPLICATE_TECHNICAL_NAME = 'CHECKOUT__DUPLICATE_PAYMENT_METHOD_TECHNICAL_NAME';
     final public const MISSING_REQUEST_PARAMETER_CODE = 'CHECKOUT__MISSING_REQUEST_PARAMETER';
+    final public const PAYMENT_GATEWAY_RESULT_MISSING = 'CHECKOUT__PAYMENT_GATEWAY_RESULT_MISSING';
+    final public const PAYMENT_CHANNEL_UNAVAILABLE = 'CHECKOUT__PAYMENT_CHANNEL_UNAVAILABLE';
     final public const PAYMENT_CHANNEL_DISABLED = 'CHECKOUT__PAYMENT_CHANNEL_DISABLED';
     final public const PAYMENT_PLATFORM_TENANT_MISSING = 'CHECKOUT__PAYMENT_PLATFORM_TENANT_MISSING';
 
@@ -325,6 +327,26 @@ class PaymentException extends HttpException
     public static function unexpectedConstraintType(Constraint $constraint, string $expectedType): ValidatorException
     {
         return new UnexpectedTypeException($constraint, $expectedType);
+    }
+
+    public static function gatewayResultMissing(string $channel): self
+    {
+        return new self(
+            Response::HTTP_BAD_GATEWAY,
+            self::PAYMENT_GATEWAY_RESULT_MISSING,
+            'The payment channel "{{ channel }}" did not return a result.',
+            ['channel' => $channel],
+        );
+    }
+
+    public static function channelNotAvailableInStorefront(string $technicalName): self
+    {
+        return new self(
+            Response::HTTP_BAD_REQUEST,
+            self::PAYMENT_CHANNEL_UNAVAILABLE,
+            'The payment channel "{{ technicalName }}" cannot be used in this payment scene.',
+            ['technicalName' => $technicalName],
+        );
     }
 
     /**

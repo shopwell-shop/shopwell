@@ -128,10 +128,8 @@ class DebugMcpCommand extends Command
         $toolsAllowlist = null;
         if ($integration !== null && $integration !== '') {
             $allowlist = $this->allowlistProvider->forAccessKey($integration);
-            $toolsAllowlist = $allowlist->tools;
-            if ($toolsAllowlist === null) {
-                $io->note(\sprintf('Integration "%s": no tool restriction (all tools allowed).', $integration));
-            } elseif ($toolsAllowlist === []) {
+            $toolsAllowlist = $allowlist->tools ?? [];
+            if ($toolsAllowlist === []) {
                 $io->note(\sprintf(
                     'Integration "%s": no tools allowed. Integrations have no administrator bypass, so an unset MCP allowlist grants nothing.',
                     $integration,
@@ -347,9 +345,8 @@ class DebugMcpCommand extends Command
     {
         $rows = [];
         $properties = $tool->inputSchema['properties'] ?? [];
-        // sdk 0.8 types 'required' as `string[]|null`, and the SchemaGenerator omits the key
-        // entirely when no parameter is required; third-party registrations may carry anything
-        $required = \is_array($tool->inputSchema['required']) ? $tool->inputSchema['required'] : [];
+        $required = ($tool->inputSchema + ['required' => null])['required'];
+        $required = \is_array($required) ? $required : [];
 
         if (\is_array($properties)) {
             foreach ($properties as $paramName => $def) {

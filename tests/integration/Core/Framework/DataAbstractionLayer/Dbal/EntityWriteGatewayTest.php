@@ -16,6 +16,7 @@ use Shopwell\Core\Defaults;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\Dbal\EntityWriteGateway;
 use Shopwell\Core\Framework\DataAbstractionLayer\Dbal\ExceptionHandlerRegistry;
+use Shopwell\Core\Framework\DataAbstractionLayer\Dbal\RowLoader;
 use Shopwell\Core\Framework\DataAbstractionLayer\DefinitionInstanceRegistry;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityWriteResult;
@@ -439,7 +440,8 @@ class EntityWriteGatewayTest extends TestCase
             $connection,
             static::getContainer()->get('event_dispatcher'),
             static::getContainer()->get(ExceptionHandlerRegistry::class),
-            $definitionRegistry
+            $definitionRegistry,
+            new RowLoader($connection),
         );
 
         $writeContext = WriteContext::createFromContext(Context::createDefaultContext());

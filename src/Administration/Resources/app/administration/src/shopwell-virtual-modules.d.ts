@@ -705,6 +705,13 @@ declare module 'shopwell:stores/adminMenu' {
 }
 
 /** @experimental stableVersion:v6.8.0 */
+declare module 'shopwell:stores/adminMenuConfig' {
+    const useStore: () => PiniaRootState['adminMenuConfig'];
+
+    export default useStore;
+}
+
+/** @experimental stableVersion:v6.8.0 */
 declare module 'shopwell:stores/inAppPurchaseCheckout' {
     const useStore: () => PiniaRootState['inAppPurchaseCheckout'];
 

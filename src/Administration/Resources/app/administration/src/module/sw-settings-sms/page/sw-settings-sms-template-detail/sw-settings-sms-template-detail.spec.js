@@ -87,6 +87,7 @@ async function createWrapper({
         },
         global: {
             mocks: {
+                $t: (key, params) => (params ? `${key} ${JSON.stringify(params)}` : key),
                 $router: {
                     push: routerPush,
                 },
@@ -126,14 +127,35 @@ async function createWrapper({
                 'sw-container': await wrapTestComponent('sw-container'),
                 'sw-extension-component-section': await wrapTestComponent('sw-extension-component-section'),
                 'sw-skeleton': true,
-                'sw-language-switch': true,
+                'sw-language-switch': {
+                    template: `<button class="change-language" @click="$emit('on-change')">Change language</button>`,
+                },
                 'sw-settings-sms-section-tabs': true,
-                'mt-select': true,
-                'sw-settings-sms-template-mapping-grid': true,
-                'sw-data-grid': true,
-                'mt-text-field': true,
-                'mt-number-field': true,
-                'mt-textarea': true,
+                'mt-select': {
+                    name: 'mt-select',
+                    props: ['modelValue', 'disabled', 'options'],
+                    template: `<select :value="modelValue" :disabled="disabled" @change="$emit('update:modelValue', $event.target.value)"><option v-for="option in options" :value="option.value">{{ option.label }}</option></select>`,
+                },
+                'sw-settings-sms-template-mapping-grid': {
+                    template: `<button class="reload-mapping" @click="$emit('reload')">Reload</button>`,
+                },
+                'sw-data-grid': {
+                    name: 'sw-data-grid',
+                    props: ['dataSource', 'columns'],
+                    template: '<div class="ledger"/>',
+                },
+                'mt-text-field': {
+                    props: ['modelValue', 'disabled', 'options'],
+                    template: `<input :value="modelValue" :disabled="disabled" @input="$emit('update:modelValue', $event.target.value)"/>`,
+                },
+                'mt-number-field': {
+                    props: ['modelValue', 'disabled', 'options'],
+                    template: `<input :value="modelValue" :disabled="disabled" @input="$emit('update:modelValue', $event.target.value)"/>`,
+                },
+                'mt-textarea': {
+                    props: ['modelValue', 'disabled', 'options'],
+                    template: `<input :value="modelValue" :disabled="disabled" @input="$emit('update:modelValue', $event.target.value)"/>`,
+                },
                 'mt-banner': {
                     template: '<div class="mt-banner"><slot></slot></div>',
                     props: ['variant', 'title'],
@@ -142,8 +164,11 @@ async function createWrapper({
                     template: '<div class="mt-card"><slot></slot></div>',
                     props: ['title', 'subtitle', 'positionIdentifier'],
                 },
-                'mt-switch': true,
-                'mt-button': true,
+                'mt-switch': {
+                    props: ['modelValue', 'disabled'],
+                    template: `<input type="checkbox" :checked="modelValue" :disabled="disabled" @change="$emit('update:modelValue', $event.target.checked)"/>`,
+                },
+                'mt-button': { props: ['disabled', 'isLoading'], template: '<button :disabled="disabled"><slot/></button>' },
                 'mt-icon': true,
             },
         },
@@ -180,11 +205,16 @@ describe('src/module/sw-settings-sms/page/sw-settings-sms-template-detail', () =
     it('should start a new template as a verification code', async () => {
         ({ wrapper } = await createWrapper());
 
-        expect(wrapper.vm.isNew).toBe(true);
-        expect(wrapper.vm.template.scene).toBe('otp');
-        expect(wrapper.vm.template.enabled).toBe(true);
-        expect(wrapper.vm.paramsSchemaText).toBe('');
-        expect(wrapper.vm.sceneOptions.map((option) => option.value)).toEqual(['otp', 'transaction', 'marketing']);
+        expect(wrapper.find('.sw-settings-sms-template-detail__mapping-save-first').exists()).toBe(true);
+        expect(wrapper.get('.sw-settings-sms-template-detail__scene').element.value).toBe('otp');
+        expect(wrapper.get('.sw-settings-sms-template-detail__enabled').element.checked).toBe(true);
+        expect(wrapper.get('.sw-settings-sms-template-detail__params-schema').element.value).toBe('');
+        expect(
+            wrapper
+                .getComponent('.sw-settings-sms-template-detail__scene')
+                .props('options')
+                .map((option) => option.value),
+        ).toEqual(['otp', 'transaction', 'marketing']);
     });
 
     it('should load the template with its bodies and its mappings', async () => {
@@ -207,8 +237,8 @@ describe('src/module/sw-settings-sms/page/sw-settings-sms-template-detail', () =
             'translations',
             'mappings',
         ]);
-        expect(wrapper.vm.template.technicalName).toBe('customer.otp.login');
-        expect(wrapper.vm.paramsSchemaText).toContain('"name": "code"');
+        expect(wrapper.get('.sw-settings-sms-template-detail__technical-name').element.value).toBe('customer.otp.login');
+        expect(wrapper.get('.sw-settings-sms-template-detail__params-schema').element.value).toContain('"name": "code"');
     });
 
     it('should store the parameter contract as json', async () => {
@@ -223,9 +253,10 @@ describe('src/module/sw-settings-sms/page/sw-settings-sms-template-detail', () =
             },
         }));
 
-        wrapper.vm.paramsSchemaText = '[{"name":"code","required":true}]';
+        await wrapper.get('.sw-settings-sms-template-detail__params-schema').setValue('[{"name":"code","required":true}]');
 
-        await wrapper.vm.onSave();
+        await wrapper.get('.sw-settings-sms-template-detail__save-action').trigger('click');
+        await flushPromises();
 
         expect(templateRepository.save).toHaveBeenCalledWith(
             expect.objectContaining({
@@ -247,9 +278,10 @@ describe('src/module/sw-settings-sms/page/sw-settings-sms-template-detail', () =
             },
         }));
 
-        wrapper.vm.paramsSchemaText = 'not json';
+        await wrapper.get('.sw-settings-sms-template-detail__params-schema').setValue('not json');
 
-        await wrapper.vm.onSave();
+        await wrapper.get('.sw-settings-sms-template-detail__save-action').trigger('click');
+        await flushPromises();
 
         expect(templateRepository.save).not.toHaveBeenCalled();
     });
@@ -257,7 +289,8 @@ describe('src/module/sw-settings-sms/page/sw-settings-sms-template-detail', () =
     it('should navigate to the template it created', async () => {
         ({ wrapper, routerPush } = await createWrapper());
 
-        await wrapper.vm.onSave();
+        await wrapper.get('.sw-settings-sms-template-detail__save-action').trigger('click');
+        await flushPromises();
 
         expect(routerPush).toHaveBeenCalledWith({
             name: 'sw.settings.sms.template.detail',
@@ -277,7 +310,8 @@ describe('src/module/sw-settings-sms/page/sw-settings-sms-template-detail', () =
             },
         }));
 
-        await wrapper.vm.onLanguageChange();
+        await wrapper.get('.change-language').trigger('click');
+        await flushPromises();
 
         expect(templateRepository.search).toHaveBeenCalledTimes(2);
     });
@@ -285,7 +319,8 @@ describe('src/module/sw-settings-sms/page/sw-settings-sms-template-detail', () =
     it('should not read anything for a language switch while the template is new', async () => {
         ({ wrapper, templateRepository } = await createWrapper());
 
-        await wrapper.vm.onLanguageChange();
+        await wrapper.get('.change-language').trigger('click');
+        await flushPromises();
 
         expect(templateRepository.search).not.toHaveBeenCalled();
     });
@@ -315,7 +350,7 @@ describe('src/module/sw-settings-sms/page/sw-settings-sms-template-detail', () =
             ]),
         }));
 
-        expect(wrapper.vm.auditLedger).toEqual([
+        expect(wrapper.getComponent({ name: 'sw-data-grid' }).props('dataSource')).toEqual([
             {
                 mappingId: 'mapping-1',
                 technicalName: 'reports-itself',
@@ -345,7 +380,12 @@ describe('src/module/sw-settings-sms/page/sw-settings-sms-template-detail', () =
             ]),
         }));
 
-        expect(wrapper.vm.auditLedgerColumns.map((column) => column.property)).toEqual([
+        expect(
+            wrapper
+                .getComponent({ name: 'sw-data-grid' })
+                .props('columns')
+                .map((column) => column.property),
+        ).toEqual([
             'providerLabel',
             'templateCode',
             'auditStatusLabel',
@@ -361,10 +401,12 @@ describe('src/module/sw-settings-sms/page/sw-settings-sms-template-detail', () =
             ]),
         }));
 
-        expect(wrapper.vm.providersMissingMapping.map((provider) => provider.technicalName)).toEqual([
-            'console-only',
-        ]);
-        expect(wrapper.vm.missingProviderLabel).toBe('sms.gateway.consoleOnly');
+        expect(wrapper.get('.sw-settings-sms-template-detail__audit-missing-provider').text()).toContain(
+            'sms.gateway.consoleOnly',
+        );
+        expect(wrapper.get('.sw-settings-sms-template-detail__audit-missing-provider').text()).not.toContain(
+            'sms.gateway.reportsItself',
+        );
     });
 
     it('should point out nothing while every provider that requires approval is mapped', async () => {
@@ -376,8 +418,7 @@ describe('src/module/sw-settings-sms/page/sw-settings-sms-template-detail', () =
             ]),
         }));
 
-        expect(wrapper.vm.providersMissingMapping).toEqual([]);
-        expect(wrapper.vm.missingProviderLabel).toBe('');
+        expect(wrapper.find('.sw-settings-sms-template-detail__audit-missing-provider').exists()).toBe(false);
     });
 
     it('should name the default language of the shop in the note next to the mapping', async () => {
@@ -390,7 +431,7 @@ describe('src/module/sw-settings-sms/page/sw-settings-sms-template-detail', () =
 
         expect(criteria.filters[0].field).toBe('id');
         expect(criteria.associations.map((association) => association.association)).toEqual(['locale']);
-        expect(wrapper.vm.defaultLanguageName).toBe('Deutsch (DE)');
+        expect(wrapper.get('.sw-settings-sms-template-detail__audit-language-note').text()).toContain('Deutsch (DE)');
     });
 
     it('should leave the note without a language when the default one cannot be read', async () => {
@@ -400,7 +441,7 @@ describe('src/module/sw-settings-sms/page/sw-settings-sms-template-detail', () =
             language: null,
         }));
 
-        expect(wrapper.vm.defaultLanguageName).toBe('');
+        expect(wrapper.find('.sw-settings-sms-template-detail__audit-language-note').exists()).toBe(false);
     });
 
     it('should read the template again when the grid took one of the audit steps', async () => {
@@ -409,7 +450,8 @@ describe('src/module/sw-settings-sms/page/sw-settings-sms-template-detail', () =
             storedTemplate: storedTemplateWithMappings([]),
         }));
 
-        await wrapper.vm.onMappingChanged();
+        await wrapper.get('.reload-mapping').trigger('click');
+        await flushPromises();
 
         expect(templateRepository.search).toHaveBeenCalledTimes(2);
     });

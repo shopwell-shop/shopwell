@@ -20,7 +20,6 @@ $bundles = [
     Shopwell\Elasticsearch\Elasticsearch::class => ['all' => true],
     Shopwell\Core\Service\Service::class => ['all' => true],
     KnpU\OAuth2ClientBundle\KnpUOAuth2ClientBundle::class => ['all' => true],
-    Payum\Bundle\PayumBundle\PayumBundle::class => ['all' => true],
 ];
 
 if (InstalledVersions::isInstalled('symfony/web-profiler-bundle')) {

@@ -25,11 +25,13 @@ export const registryProviders = [
             },
         ],
         settings: {},
-        channels: [
+        products: [
             {
-                channel: 'alipay_h5',
+                product: 'alipay_h5',
+                method: 'alipay',
+                methodTranslationKey: 'Alipay',
                 label: '支付宝 手机网站支付',
-                flow: 'redirect',
+                interactions: ['redirect'],
                 currencies: ['CNY'],
                 devices: ['wap'],
                 runtimeParams: {},
@@ -71,11 +73,13 @@ export const registryProviders = [
             },
         ],
         settings: {},
-        channels: [
+        products: [
             {
-                channel: 'stripe_checkout',
+                product: 'stripe_checkout',
+                method: 'stripe',
+                methodTranslationKey: 'Stripe',
                 label: 'Stripe Checkout',
-                flow: 'redirect',
+                interactions: ['redirect'],
                 currencies: [],
                 devices: [],
                 runtimeParams: {},
@@ -86,13 +90,57 @@ export const registryProviders = [
             },
         ],
     },
+    ...['wechat', 'paypal'].map((name) => ({
+        technicalName: name,
+        label: name === 'wechat' ? 'WeChat Pay' : 'PayPal',
+        enabled: true,
+        credentialFields: [],
+        products: [
+            {
+                product: name === 'wechat' ? 'wechat_h5' : 'paypal_checkout',
+                label: `${name} checkout`,
+                method: name,
+                interactions: ['redirect'],
+                paramFields: [],
+            },
+        ],
+    })),
 ];
 
-/**
- * The tenant the platform collects through. It is listed by the api as the first app and it is the
- * only account the platform level configuration writes to, so its credentials and its channel
- * parameters are shown but never edited here.
- */
+export const availableAccounts = [
+    {
+        id: 'account-platform',
+        name: 'alipay platform',
+        providerTechnicalName: 'alipay',
+        active: true,
+        ownerAppId: null,
+        isDefault: true,
+    },
+    {
+        id: 'account-alipay',
+        name: 'Merchant',
+        providerTechnicalName: 'alipay',
+        active: true,
+        ownerAppId: 'app-1',
+        isDefault: false,
+    },
+    {
+        id: 'account-shared',
+        name: 'Shared merchant',
+        providerTechnicalName: 'alipay',
+        active: true,
+        ownerAppId: 'app-2',
+        isDefault: false,
+    },
+    {
+        id: 'account-ungranted',
+        name: 'New branch',
+        providerTechnicalName: 'stripe',
+        active: true,
+        ownerAppId: null,
+        isDefault: false,
+    },
+];
 export const platformApp = {
     id: 'app-platform',
     technicalName: 'platform',
@@ -104,97 +152,24 @@ export const platformApp = {
     allowedIps: [],
     rateLimit: null,
     hasSecret: true,
-    providers: [
-        {
-            providerTechnicalName: 'alipay',
-            enabled: true,
-            sourceAppId: null,
-            sourceAppName: '',
-            hasCredentials: true,
-            // the merchant account of the platform lives on the platform level, the api still hands the
-            // values over so the page can show what is configured
-            credentials: { app_id: '2021000000000000' },
-            settings: {},
-        },
-    ],
-    channels: [
-        {
-            channelTechnicalName: 'alipay_h5',
-            enabled: true,
-            hasParams: true,
-            // the parameters of the channel of the platform live on the platform level as well
-            params: { sign_type: 'RSA2' },
-            settings: {},
-        },
-    ],
+    accounts: [{ accountId: 'account-platform', enabled: true, position: 0 }],
+    channels: [{ channelTechnicalName: 'alipay_h5', enabled: true, settings: {} }],
 };
-
-/**
- * The app an external app can inherit the merchant account of.
- */
 export const otherApp = {
+    ...platformApp,
     id: 'app-2',
     technicalName: 'pos-two',
     name: 'POS 二号',
     type: 'external',
-    active: true,
-    notifyUrl: null,
-    returnUrl: null,
-    allowedIps: [],
-    rateLimit: null,
-    hasSecret: true,
-    providers: [
-        {
-            providerTechnicalName: 'alipay',
-            enabled: true,
-            sourceAppId: null,
-            sourceAppName: '',
-            hasCredentials: true,
-            settings: {},
-        },
-    ],
-    channels: [
-        {
-            channelTechnicalName: 'alipay_h5',
-            enabled: true,
-            hasParams: true,
-            settings: {},
-        },
-    ],
+    accounts: [{ accountId: 'account-shared', enabled: true, position: 0 }],
 };
-
-/**
- * The app the page is opened for in most of the tests: it collects on its own accounts.
- */
 export const existingApp = {
+    ...platformApp,
     id: 'app-1',
     technicalName: 'pos',
     name: 'POS 收银',
     type: 'external',
-    active: true,
-    notifyUrl: null,
-    returnUrl: null,
     allowedIps: ['127.0.0.1'],
     rateLimit: 60,
-    hasSecret: true,
-    providers: [
-        {
-            providerTechnicalName: 'alipay',
-            enabled: true,
-            sourceAppId: null,
-            sourceAppName: '',
-            hasCredentials: true,
-            credentials: { app_id: '2021000000000000' },
-            settings: {},
-        },
-    ],
-    channels: [
-        {
-            channelTechnicalName: 'alipay_h5',
-            enabled: true,
-            hasParams: true,
-            params: { sign_type: 'RSA2' },
-            settings: {},
-        },
-    ],
+    accounts: [{ accountId: 'account-alipay', enabled: true, position: 0 }],
 };

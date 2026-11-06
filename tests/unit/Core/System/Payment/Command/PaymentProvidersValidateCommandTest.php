@@ -6,13 +6,13 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Payment\Command\PaymentProvidersValidateCommand;
+use Shopwell\Core\System\Payment\Exception\PaymentProviderException;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayFactory;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
-use Shopwell\Core\System\Payment\PaymentException;
+use Shopwell\Core\System\Payment\Product\PaymentInteraction;
+use Shopwell\Core\System\Payment\Product\PaymentProduct;
 use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
-use Shopwell\Core\System\Payment\Provider\PaymentConfigField;
+use Shopwell\Core\System\Payment\Provider\Config\PaymentConfigField;
 use Shopwell\Core\System\Payment\Provider\PaymentProvider;
 use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;
 use Symfony\Component\Console\Command\Command;
@@ -46,8 +46,8 @@ class PaymentProvidersValidateCommandTest extends TestCase
         static::assertStringContainsString('alipay', $display);
         static::assertStringContainsString('capture, refund', $display);
         static::assertStringContainsString('MyAlipayDecorator < AlipayProvider', $display);
-        static::assertStringContainsString('1 interface(s), 1 channel(s).', $display);
-        static::assertStringContainsString('Every declared payment interface is coherent.', $display);
+        static::assertStringContainsString('1 provider(s), 1 product(s).', $display);
+        static::assertStringContainsString('Every declared payment provider is coherent.', $display);
     }
 
     /**
@@ -79,7 +79,7 @@ class PaymentProvidersValidateCommandTest extends TestCase
         // the declarations are read while the registry is constructed, exactly like a broken declaration
         // makes the real registry throw on the first `get()`
         $broken = (static function (): \Generator {
-            throw PaymentException::invalidProviderDeclaration('The declaration "Broken" names itself "otherpay".');
+            throw PaymentProviderException::invalidProviderDeclaration('The declaration "Broken" names itself "otherpay".');
             // @phpstan-ignore-next-line the generator never reaches this line
             yield;
         })();
@@ -100,7 +100,7 @@ class PaymentProvidersValidateCommandTest extends TestCase
         $tester = $this->tester([], []);
 
         static::assertSame(Command::SUCCESS, $tester->execute([]));
-        static::assertStringContainsString('declares no payment interface at all', $tester->getDisplay());
+        static::assertStringContainsString('declares no payment provider', $tester->getDisplay());
     }
 
     public function testFailsWhenAChannelNameIsClaimedTwice(): void
@@ -119,7 +119,7 @@ class PaymentProvidersValidateCommandTest extends TestCase
         $tester = $this->tester([$this->provider('alipay', channel: null)], []);
 
         static::assertSame(Command::FAILURE, $tester->execute([]));
-        static::assertStringContainsString('declares no payment channel', $tester->getDisplay());
+        static::assertStringContainsString('declares no payment product', $tester->getDisplay());
     }
 
     public function testFailsWhenAnInterfaceDeclaresNoCredential(): void
@@ -157,11 +157,12 @@ class PaymentProvidersValidateCommandTest extends TestCase
         $channels = [];
 
         if ($channel !== null) {
-            $channels[$channel] = new PaymentChannel(
+            $channels[$channel] = new PaymentProduct(
                 technicalName: $channel,
                 providerTechnicalName: $technicalName,
+                method: $technicalName,
                 label: 'test.channel.label',
-                flow: PaymentFlow::REDIRECT,
+                interactions: [PaymentInteraction::REDIRECT],
             );
         }
 
@@ -169,7 +170,7 @@ class PaymentProvidersValidateCommandTest extends TestCase
             technicalName: $technicalName,
             label: 'sw-settings-payment-provider.provider.' . $technicalName,
             credentials: $credentials ?? [new PaymentConfigField(name: 'api_key')],
-            channels: $channels,
+            products: $channels,
             gatewayFactory: static::createStub(PaymentGatewayFactory::class),
             notificationExtractor: static::createStub(PaymentNotificationExtractorInterface::class),
             capabilities: [PaymentCapability::CAPTURE, PaymentCapability::REFUND],

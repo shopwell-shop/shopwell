@@ -19,7 +19,7 @@
 
 import type CriteriaType from 'src/core/data/criteria.data';
 
-// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+/** @private */
 export type DictionaryServiceEntityType = {
     id: string;
     technicalName: string;

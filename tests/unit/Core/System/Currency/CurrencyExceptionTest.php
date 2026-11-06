@@ -23,4 +23,22 @@ class CurrencyExceptionTest extends TestCase
         static::assertSame(CurrencyException::ISO_CODE_NOT_UNIQUE, $exception->getErrorCode());
         static::assertSame('The ISO code "EUR" is already in use.', $exception->getMessage());
     }
+
+    public function testUnsupportedCurrency(): void
+    {
+        $exception = CurrencyException::unsupportedCurrency('ZZZ');
+
+        static::assertSame(Response::HTTP_BAD_REQUEST, $exception->getStatusCode());
+        static::assertSame(CurrencyException::UNSUPPORTED_CURRENCY, $exception->getErrorCode());
+        static::assertStringContainsString('ZZZ', $exception->getMessage());
+    }
+
+    public function testInvalidAmount(): void
+    {
+        $exception = CurrencyException::invalidAmount('invalid', 'EUR');
+
+        static::assertSame(Response::HTTP_BAD_REQUEST, $exception->getStatusCode());
+        static::assertSame(CurrencyException::INVALID_AMOUNT, $exception->getErrorCode());
+        static::assertStringContainsString('invalid', $exception->getMessage());
+    }
 }

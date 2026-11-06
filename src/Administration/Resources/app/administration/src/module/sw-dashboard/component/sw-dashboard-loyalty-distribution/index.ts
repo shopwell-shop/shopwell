@@ -30,8 +30,8 @@ export default Shopwell.Component.wrapComponentConfig({
     },
 
     computed: {
-        customerLoyaltyRepository(): unknown {
-            return this.repositoryFactory.create('customer_loyalty');
+        loyaltyAccountRepository(): unknown {
+            return this.repositoryFactory.create('loyalty_account');
         },
 
         loyaltyTierRepository(): unknown {
@@ -120,11 +120,15 @@ export default Shopwell.Component.wrapComponentConfig({
          */
         fetchTierBuckets(): Promise<TierBucket[]> {
             const criteria = new Criteria(1, 1);
-            criteria.addAggregation(Criteria.terms('tierDistribution', 'membershipTierId', null, null, Criteria.count('tierCount', 'id')));
+            criteria.addAggregation(
+                Criteria.terms('tierDistribution', 'tierId', null, null, Criteria.count('tierCount', 'id')),
+            );
 
-            return (this.customerLoyaltyRepository as {
-                search: (c: unknown) => Promise<{ aggregations: Record<string, { buckets?: TierBucket[] }> }>;
-            })
+            return (
+                this.loyaltyAccountRepository as {
+                    search: (c: unknown) => Promise<{ aggregations: Record<string, { buckets?: TierBucket[] }> }>;
+                }
+            )
                 .search(criteria)
                 .then((result) => result.aggregations?.tierDistribution?.buckets ?? [])
                 .catch(() => [] as TierBucket[]);

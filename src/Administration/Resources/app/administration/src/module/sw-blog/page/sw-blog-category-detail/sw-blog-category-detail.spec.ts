@@ -1,36 +1,9 @@
 /**
  * @sw-package discovery
  */
-import { flushPromises, mount } from '@vue/test-utils';
+import { flushPromises, shallowMount } from '@vue/test-utils';
 import type { VueWrapper } from '@vue/test-utils';
 import BlogApiService from '../../service/blog.api.service';
-
-type CategoryDetailVm = {
-    category: Record<string, unknown> | null;
-    cmsPage: Record<string, unknown> | null;
-    isLoading: boolean;
-    isSaving: boolean;
-    showDeleteModal: boolean;
-    canEdit: boolean;
-    canDelete: boolean;
-    name: string;
-    isNameMissing: boolean;
-    isSlugMissing: boolean;
-    loadCategory: () => Promise<void>;
-    loadCmsPage: () => Promise<void>;
-    applyActiveDefault: () => void;
-    onCmsPageChanged: () => void;
-    onSave: (redirect?: boolean) => Promise<void>;
-    onCancel: () => void;
-    onOpenDeleteModal: () => void;
-    onCloseDeleteModal: () => void;
-    onDelete: () => void;
-    abortOnLanguageChange: () => boolean;
-    saveOnLanguageChange: () => Promise<void>;
-    onChangeLanguage: (languageId: string) => void;
-};
-
-type TypedWrapper = { vm: CategoryDetailVm } & VueWrapper;
 
 function collection<T>(items: unknown[]): T {
     return Object.assign([...items], { total: items.length }) as unknown as T;
@@ -47,7 +20,12 @@ const category = {
 
 const entries = [
     { id: 'blog-1', title: 'Autumn guide', publishedAt: null, updatedAt: '2026-10-01T10:00:00.000Z' },
-    { id: 'blog-2', title: 'Behind the scenes', publishedAt: '2026-10-02T10:00:00.000Z', updatedAt: '2026-10-02T10:00:00.000Z' },
+    {
+        id: 'blog-2',
+        title: 'Behind the scenes',
+        publishedAt: '2026-10-02T10:00:00.000Z',
+        updatedAt: '2026-10-02T10:00:00.000Z',
+    },
 ];
 
 let activeWrapper: VueWrapper | null = null;
@@ -59,7 +37,7 @@ async function createWrapper(
         hasChanges?: boolean;
     } = {},
 ): Promise<{
-    wrapper: TypedWrapper;
+    wrapper: VueWrapper;
     getCategory: jest.Mock;
     saveCategory: jest.Mock;
     deleteCategory: jest.Mock;
@@ -93,22 +71,43 @@ async function createWrapper(
         search: jest.fn(() => Promise.resolve(collection<EntityCollection<'blog'>>(entries))),
     };
 
-    const wrapper = mount(await wrapTestComponent('sw-blog-category-detail', { sync: true }), {
+    const wrapper = shallowMount(await wrapTestComponent('sw-blog-category-detail', { sync: true }), {
         props: { categoryId: 'category-1' },
         global: {
             stubs: {
-                'sw-page': { template: '<div><slot name="content"></slot><slot></slot></div>' },
+                'sw-page': {
+                    template:
+                        '<div><slot name="smart-bar-header"></slot><slot name="smart-bar-actions"></slot><slot name="language-switch"></slot><slot name="content"></slot></div>',
+                },
                 'sw-card-view': { template: '<div><slot></slot></div>' },
                 'mt-card': { template: '<div><slot></slot></div>' },
                 'sw-container': { template: '<div><slot></slot></div>' },
                 'sw-skeleton': true,
                 'sw-modal': { template: '<div class="modal"><slot></slot><slot name="modal-footer"></slot></div>' },
-                'sw-language-switch': true,
-                'sw-entity-single-select': true,
-                'mt-text-field': true,
+                'sw-language-switch': {
+                    props: ['saveChangesFunction', 'abortChangeFunction'],
+                    template:
+                        '<section><output class="unsaved">{{ abortChangeFunction() }}</output><button class="language-save" @click="saveChangesFunction()">Save translation</button><button class="language-change" @click="$emit(\'on-change\', \'language-2\')">Change language</button></section>',
+                },
+                'sw-entity-single-select': {
+                    props: ['value', 'disabled'],
+                    template: '<input :value="value" :disabled="disabled">',
+                },
+                'mt-text-field': {
+                    props: ['modelValue', 'disabled'],
+                    template:
+                        '<input :value="modelValue" :disabled="disabled" @input="$emit(\'update:modelValue\', $event.target.value)">',
+                },
                 'mt-textarea': true,
-                'mt-switch': true,
-                'mt-button': true,
+                'mt-switch': {
+                    props: ['modelValue', 'disabled'],
+                    template:
+                        '<input type="checkbox" :checked="modelValue" :disabled="disabled" @change="$emit(\'update:modelValue\', $event.target.checked)">',
+                },
+                'mt-button': {
+                    props: ['disabled', 'isLoading'],
+                    template: '<button :disabled="disabled" :data-loading="isLoading"><slot></slot></button>',
+                },
             },
             provide: {
                 repositoryFactory: {
@@ -139,7 +138,7 @@ async function createWrapper(
     activeWrapper = wrapper;
 
     return {
-        wrapper: wrapper as unknown as TypedWrapper,
+        wrapper,
         getCategory,
         saveCategory,
         deleteCategory,
@@ -152,7 +151,7 @@ describe('src/module/sw-blog/page/sw-blog-category-detail', () => {
     afterEach(() => {
         activeWrapper?.unmount();
         activeWrapper = null;
-        jest.clearAllMocks();
+        jest.restoreAllMocks();
     });
 
     it('loads the category and the layout it holds', async () => {
@@ -162,16 +161,16 @@ describe('src/module/sw-blog/page/sw-blog-category-detail', () => {
         const criteria = (getCategory.mock.calls as unknown as Array<[string, unknown, { ids: string[] }]>)[0][2];
 
         expect(criteria.ids).toEqual(['category-1']);
-        expect(wrapper.vm.category?.name).toBe('Guides');
-        expect(wrapper.vm.cmsPage?.id).toBe('page-1');
-        expect(wrapper.vm.isLoading).toBe(false);
+        expect((wrapper.get('.sw-blog-category-detail__name').element as HTMLInputElement).value).toBe('Guides');
+        expect((wrapper.get('.sw-blog-category-detail__cms-page').element as HTMLInputElement).value).toBe('page-1');
+        expect(wrapper.find('.sw-blog-category-detail__loading').exists()).toBe(false);
     });
 
     it('saves the category with the version of its layout and stays on the page', async () => {
         const { wrapper, saveCategory, getCategory, push } = await createWrapper();
         await flushPromises();
 
-        await wrapper.vm.onSave();
+        await wrapper.get('.sw-blog-category-detail__action-save').trigger('click');
         await flushPromises();
 
         expect(saveCategory).toHaveBeenCalledWith(
@@ -187,9 +186,9 @@ describe('src/module/sw-blog/page/sw-blog-category-detail', () => {
         const { wrapper, saveCategory } = await createWrapper({ entry: { ...category, active: null } });
         await flushPromises();
 
-        expect(wrapper.vm.category?.active).toBe(true);
+        expect((wrapper.get('.sw-blog-category-detail__active').element as HTMLInputElement).checked).toBe(true);
 
-        await wrapper.vm.onSave();
+        await wrapper.get('.sw-blog-category-detail__action-save').trigger('click');
         await flushPromises();
 
         expect(saveCategory).toHaveBeenCalledWith(expect.objectContaining({ active: true }));
@@ -199,9 +198,9 @@ describe('src/module/sw-blog/page/sw-blog-category-detail', () => {
         const { wrapper, saveCategory } = await createWrapper({ entry: { ...category, active: false } });
         await flushPromises();
 
-        expect(wrapper.vm.category?.active).toBe(false);
+        expect((wrapper.get('.sw-blog-category-detail__active').element as HTMLInputElement).checked).toBe(false);
 
-        await wrapper.vm.onSave();
+        await wrapper.get('.sw-blog-category-detail__action-save').trigger('click');
         await flushPromises();
 
         expect(saveCategory).toHaveBeenCalledWith(expect.objectContaining({ active: false }));
@@ -211,9 +210,9 @@ describe('src/module/sw-blog/page/sw-blog-category-detail', () => {
         const { wrapper, saveCategory } = await createWrapper({ entry: { ...category, name: '  ' } });
         await flushPromises();
 
-        expect(wrapper.vm.isNameMissing).toBe(true);
+        expect((wrapper.get('.sw-blog-category-detail__name').element as HTMLInputElement).value).toBe('  ');
 
-        await wrapper.vm.onSave();
+        await wrapper.get('.sw-blog-category-detail__action-save').trigger('click');
 
         expect(saveCategory).not.toHaveBeenCalled();
     });
@@ -222,9 +221,9 @@ describe('src/module/sw-blog/page/sw-blog-category-detail', () => {
         const { wrapper, saveCategory } = await createWrapper({ entry: { ...category, slug: '' } });
         await flushPromises();
 
-        expect(wrapper.vm.isSlugMissing).toBe(true);
+        expect((wrapper.get('.sw-blog-category-detail__slug').element as HTMLInputElement).value).toBe('');
 
-        await wrapper.vm.onSave();
+        await wrapper.get('.sw-blog-category-detail__action-save').trigger('click');
 
         expect(saveCategory).not.toHaveBeenCalled();
     });
@@ -233,9 +232,9 @@ describe('src/module/sw-blog/page/sw-blog-category-detail', () => {
         const { wrapper, getCategory } = await createWrapper({ hasChanges: true });
         await flushPromises();
 
-        expect(wrapper.vm.abortOnLanguageChange()).toBe(true);
+        expect(wrapper.get('.unsaved').text() === 'true').toBe(true);
 
-        wrapper.vm.onChangeLanguage('language-2');
+        await wrapper.get('.language-change').trigger('click');
         await flushPromises();
 
         expect(getCategory).toHaveBeenCalledTimes(2);
@@ -245,7 +244,7 @@ describe('src/module/sw-blog/page/sw-blog-category-detail', () => {
         const { wrapper, saveCategory, push } = await createWrapper();
         await flushPromises();
 
-        await wrapper.vm.saveOnLanguageChange();
+        await wrapper.get('.language-save').trigger('click');
         await flushPromises();
 
         expect(saveCategory).toHaveBeenCalled();
@@ -256,16 +255,16 @@ describe('src/module/sw-blog/page/sw-blog-category-detail', () => {
         const { wrapper } = await createWrapper({ can: (privilege) => privilege === 'blog.viewer' });
         await flushPromises();
 
-        expect(wrapper.vm.canEdit).toBe(false);
-        expect(wrapper.vm.canDelete).toBe(false);
+        expect(wrapper.get('.sw-blog-category-detail__action-save').attributes('disabled')).toBeDefined();
+        expect(wrapper.find('.sw-blog-category-detail__action-delete').exists()).toBe(false);
     });
 
     it('deletes the category after the confirmation', async () => {
         const { wrapper, deleteCategory, push } = await createWrapper();
         await flushPromises();
 
-        wrapper.vm.onOpenDeleteModal();
-        wrapper.vm.onDelete();
+        await wrapper.get('.sw-blog-category-detail__action-delete').trigger('click');
+        await wrapper.get('.sw-blog-category-detail__delete-modal').findAll('button')[1].trigger('click');
         await flushPromises();
 
         expect(deleteCategory).toHaveBeenCalledWith('category-1');

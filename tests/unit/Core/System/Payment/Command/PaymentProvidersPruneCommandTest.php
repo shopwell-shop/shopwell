@@ -11,21 +11,22 @@ use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Payment\Account\PaymentAccountEntity;
+use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppAccount\PaymentAppAccountCollection;
+use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppAccount\PaymentAppAccountEntity;
 use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppChannel\PaymentAppChannelCollection;
 use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppChannel\PaymentAppChannelEntity;
-use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppProvider\PaymentAppProviderCollection;
-use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppProvider\PaymentAppProviderEntity;
 use Shopwell\Core\System\Payment\Command\PaymentProvidersPruneCommand;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayFactory;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
+use Shopwell\Core\System\Payment\Product\PaymentInteraction;
+use Shopwell\Core\System\Payment\Product\PaymentProduct;
 use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
-use Shopwell\Core\System\Payment\Provider\PaymentChannelConfigCollection;
-use Shopwell\Core\System\Payment\Provider\PaymentChannelConfigEntity;
+use Shopwell\Core\System\Payment\Provider\Config\PaymentChannelConfigCollection;
+use Shopwell\Core\System\Payment\Provider\Config\PaymentChannelConfigEntity;
+use Shopwell\Core\System\Payment\Provider\Config\PaymentProviderConfigCollection;
+use Shopwell\Core\System\Payment\Provider\Config\PaymentProviderConfigEntity;
 use Shopwell\Core\System\Payment\Provider\PaymentProvider;
-use Shopwell\Core\System\Payment\Provider\PaymentProviderConfigCollection;
-use Shopwell\Core\System\Payment\Provider\PaymentProviderConfigEntity;
 use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Tester\CommandTester;
@@ -66,8 +67,8 @@ class PaymentProvidersPruneCommandTest extends TestCase
 
         $appProviders = static::createMock(EntityRepository::class);
         $appProviders->method('search')->willReturn($this->searchResult(
-            PaymentAppProviderEntity::ENTITY_NAME,
-            new PaymentAppProviderCollection([$this->appProvider('alipay')])
+            PaymentAppAccountEntity::ENTITY_NAME,
+            new PaymentAppAccountCollection([$this->appProvider('alipay')])
         ));
         $appProviders->expects($this->never())->method('delete');
 
@@ -109,8 +110,8 @@ class PaymentProvidersPruneCommandTest extends TestCase
 
         $appProviders = static::createMock(EntityRepository::class);
         $appProviders->method('search')->willReturn($this->searchResult(
-            PaymentAppProviderEntity::ENTITY_NAME,
-            new PaymentAppProviderCollection([$this->appProvider('alipay')])
+            PaymentAppAccountEntity::ENTITY_NAME,
+            new PaymentAppAccountCollection([$this->appProvider('alipay')])
         ));
         $appProviders->expects($this->never())->method('delete');
 
@@ -125,7 +126,7 @@ class PaymentProvidersPruneCommandTest extends TestCase
 
         static::assertSame(Command::SUCCESS, $tester->execute(['--force' => true]));
 
-        static::assertStringContainsString('No stored configuration belongs to an interface or channel', $tester->getDisplay());
+        static::assertStringContainsString('No stored configuration belongs to a provider or product', $tester->getDisplay());
     }
 
     public function testForceDeletesTheResidualRowsOfEveryTable(): void
@@ -150,8 +151,8 @@ class PaymentProvidersPruneCommandTest extends TestCase
 
         $appProviders = static::createMock(EntityRepository::class);
         $appProviders->method('search')->willReturn($this->searchResult(
-            PaymentAppProviderEntity::ENTITY_NAME,
-            new PaymentAppProviderCollection([$this->appProvider('alipay_old', 'app-provider-id')])
+            PaymentAppAccountEntity::ENTITY_NAME,
+            new PaymentAppAccountCollection([$this->appProvider('alipay_old', 'app-provider-id')])
         ));
         $appProviders->expects($this->once())
             ->method('delete')
@@ -199,7 +200,7 @@ class PaymentProvidersPruneCommandTest extends TestCase
     /**
      * @param EntityRepository<PaymentProviderConfigCollection> $providerConfigs
      * @param EntityRepository<PaymentChannelConfigCollection> $channelConfigs
-     * @param EntityRepository<PaymentAppProviderCollection> $appProviders
+     * @param EntityRepository<PaymentAppAccountCollection> $appProviders
      * @param EntityRepository<PaymentAppChannelCollection> $appChannels
      */
     private function tester(
@@ -230,12 +231,13 @@ class PaymentProvidersPruneCommandTest extends TestCase
             technicalName: $technicalName,
             label: 'sw-settings-payment-provider.provider.' . $technicalName,
             credentials: [],
-            channels: [
-                $channel => new PaymentChannel(
+            products: [
+                $channel => new PaymentProduct(
                     technicalName: $channel,
                     providerTechnicalName: $technicalName,
+                    method: $technicalName,
                     label: 'test.channel.label',
-                    flow: PaymentFlow::REDIRECT,
+                    interactions: [PaymentInteraction::REDIRECT],
                 ),
             ],
             gatewayFactory: static::createStub(PaymentGatewayFactory::class),
@@ -265,12 +267,15 @@ class PaymentProvidersPruneCommandTest extends TestCase
         return $config;
     }
 
-    private function appProvider(string $provider, string $id = 'id'): PaymentAppProviderEntity
+    private function appProvider(string $provider, string $id = 'id'): PaymentAppAccountEntity
     {
-        $authorization = new PaymentAppProviderEntity();
+        $authorization = new PaymentAppAccountEntity();
         $authorization->id = $id;
         $authorization->setUniqueIdentifier($id);
-        $authorization->providerTechnicalName = $provider;
+        $authorization->accountId = $id . '-account';
+        $authorization->position = 0;
+        $authorization->account = new PaymentAccountEntity();
+        $authorization->account->providerTechnicalName = $provider;
 
         return $authorization;
     }

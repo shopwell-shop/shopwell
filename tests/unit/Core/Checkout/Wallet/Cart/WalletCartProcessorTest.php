@@ -16,7 +16,7 @@ use Shopwell\Core\Checkout\Cart\Price\Struct\CalculatedPrice;
 use Shopwell\Core\Checkout\Cart\Tax\Struct\CalculatedTaxCollection;
 use Shopwell\Core\Checkout\Cart\Tax\Struct\TaxRuleCollection;
 use Shopwell\Core\Checkout\Wallet\Cart\WalletCartProcessor;
-use Shopwell\Core\Checkout\Wallet\Service\WalletService;
+use Shopwell\Core\Checkout\Wallet\Service\WalletAccountService;
 use Shopwell\Core\Checkout\Wallet\Service\WalletSettings;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Struct\ArrayStruct;
@@ -31,7 +31,7 @@ use Shopwell\Core\Test\Stub\SystemConfigService\StaticSystemConfigService;
 #[CoversClass(WalletCartProcessor::class)]
 class WalletCartProcessorTest extends TestCase
 {
-    private WalletService&Stub $walletService;
+    private WalletAccountService&Stub $wallets;
 
     private AbsolutePriceCalculator&Stub $calculator;
 
@@ -39,7 +39,7 @@ class WalletCartProcessorTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->walletService = static::createStub(WalletService::class);
+        $this->wallets = static::createStub(WalletAccountService::class);
         $this->calculator = static::createStub(AbsolutePriceCalculator::class);
         $this->calculatedPrice = new CalculatedPrice(-1.0, -1.0, new CalculatedTaxCollection(), new TaxRuleCollection());
         $this->calculator->method('calculate')->willReturn($this->calculatedPrice);
@@ -69,7 +69,7 @@ class WalletCartProcessorTest extends TestCase
     public function testRemovesLineItemWhenTheWalletIsDisabled(): void
     {
         $cart = $this->createCart(50.0);
-        $this->walletService->method('getBalance')->willReturn(1000.0);
+        $this->wallets->method('balance')->willReturn(1000.0);
 
         $this->createProcessor([WalletSettings::CONFIG_KEY_ENABLED => false])
             ->process(new CartDataCollection(), new Cart('original'), $cart, $this->createContext(), new CartBehavior());
@@ -81,7 +81,7 @@ class WalletCartProcessorTest extends TestCase
     {
         $cart = $this->createCart(1000.0);
         $cart->setLineItems(new LineItemCollection([$this->createGoodsLineItem(500.0)]));
-        $this->walletService->method('getBalance')->willReturn(100.0);
+        $this->wallets->method('balance')->willReturn(100.0);
 
         $this->createProcessor()->process(new CartDataCollection(), new Cart('original'), $cart, $this->createContext(), new CartBehavior());
 
@@ -98,7 +98,7 @@ class WalletCartProcessorTest extends TestCase
     {
         $cart = $this->createCart(1000.0);
         $cart->setLineItems(new LineItemCollection([$this->createGoodsLineItem(500.0)]));
-        $this->walletService->method('getBalance')->willReturn(1000.0);
+        $this->wallets->method('balance')->willReturn(1000.0);
 
         $this->createProcessor([WalletSettings::CONFIG_KEY_MAX_PAYMENT_PERCENT => 40.0])
             ->process(new CartDataCollection(), new Cart('original'), $cart, $this->createContext(), new CartBehavior());
@@ -115,7 +115,7 @@ class WalletCartProcessorTest extends TestCase
             $this->createGoodsLineItem(500.0),
             $this->createCreditLineItem('loyalty-points', 200.0),
         ]));
-        $this->walletService->method('getBalance')->willReturn(1000.0);
+        $this->wallets->method('balance')->willReturn(1000.0);
 
         $this->createProcessor()->process(new CartDataCollection(), new Cart('original'), $cart, $this->createContext(), new CartBehavior());
 
@@ -128,7 +128,7 @@ class WalletCartProcessorTest extends TestCase
     {
         $cart = $this->createCart(50.0);
         $cart->setLineItems(new LineItemCollection([$this->createGoodsLineItem(100.0), $this->createCreditLineItem('other', 100.0)]));
-        $this->walletService->method('getBalance')->willReturn(1000.0);
+        $this->wallets->method('balance')->willReturn(1000.0);
 
         $this->createProcessor()->process(new CartDataCollection(), new Cart('original'), $cart, $this->createContext(), new CartBehavior());
 
@@ -139,7 +139,7 @@ class WalletCartProcessorTest extends TestCase
     {
         $cart = $this->createCart(100.0);
         $cart->setLineItems(new LineItemCollection([$this->createGoodsLineItem(500.0)]));
-        $this->walletService->method('getBalance')->willReturn(100.0);
+        $this->wallets->method('balance')->willReturn(100.0);
 
         $this->createProcessor()->process(new CartDataCollection(), new Cart('original'), $cart, $this->createContext(), new CartBehavior());
 
@@ -165,7 +165,7 @@ class WalletCartProcessorTest extends TestCase
             $this->createGoodsLineItem(500.0),
             new LineItem(WalletCartProcessor::LINE_ITEM_ID, LineItem::CREDIT_LINE_ITEM_TYPE),
         ]));
-        $this->walletService->method('getBalance')->willReturn(100.0);
+        $this->wallets->method('balance')->willReturn(100.0);
 
         $this->createProcessor()->process(new CartDataCollection(), new Cart('original'), $cart, $this->createContext(), new CartBehavior());
 
@@ -192,7 +192,7 @@ class WalletCartProcessorTest extends TestCase
         return new WalletCartProcessor(
             $this->calculator,
             new WalletSettings(new StaticSystemConfigService($config)),
-            $this->walletService
+            $this->wallets
         );
     }
 

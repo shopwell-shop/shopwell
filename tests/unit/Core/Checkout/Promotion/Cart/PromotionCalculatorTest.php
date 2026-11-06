@@ -6,6 +6,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Checkout\Cart\Cart;
 use Shopwell\Core\Checkout\Cart\CartBehavior;
+use Shopwell\Core\Checkout\Cart\CartCompressor;
 use Shopwell\Core\Checkout\Cart\LineItem\Group\LineItemGroupBuilder;
 use Shopwell\Core\Checkout\Cart\LineItem\Group\LineItemQuantity;
 use Shopwell\Core\Checkout\Cart\LineItem\Group\LineItemQuantityCollection;
@@ -29,6 +30,7 @@ use Shopwell\Core\Checkout\Promotion\Cart\Discount\DiscountPackager;
 use Shopwell\Core\Checkout\Promotion\Cart\Discount\Filter\AdvancedPackagePicker;
 use Shopwell\Core\Checkout\Promotion\Cart\Discount\Filter\PackageFilter;
 use Shopwell\Core\Checkout\Promotion\Cart\Discount\Filter\SetGroupScopeFilter;
+use Shopwell\Core\Checkout\Promotion\Cart\Discount\ScopePackager\CartScopeDiscountPackager;
 use Shopwell\Core\Checkout\Promotion\Cart\Error\PromotionDiscountUnknownConditionError;
 use Shopwell\Core\Checkout\Promotion\Cart\Error\PromotionDiscountZeroValueError;
 use Shopwell\Core\Checkout\Promotion\Cart\PromotionCalculator;
@@ -37,6 +39,7 @@ use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Rule\Container\AndRule;
 use Shopwell\Core\Framework\Rule\Container\OrRule;
 use Shopwell\Core\Framework\Rule\Rule;
+use Shopwell\Core\Framework\Rule\SimpleRule;
 use Shopwell\Core\Framework\Rule\UnknownConditionRule;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
@@ -56,6 +59,39 @@ class PromotionCalculatorTest extends TestCase
     {
         $this->promotionCalculator = $this->createPromotionCalculator();
         $this->context = static::createStub(SalesChannelContext::class);
+    }
+
+    public function testRestoredCartWithMissingPluginConditionCanRecalculatePromotions(): void
+    {
+        $product = $this->createProduct();
+        $product->setStackable(true);
+        $discountItem = $this->createDiscountItem(new AndRule([new OrRule([new SimpleRule()])]));
+        $original = new Cart('original');
+        $original->add($product);
+        $original->add($discountItem);
+
+        // Simulate a persisted cart whose plugin rule class has since been removed.
+        $serialized = str_replace(SimpleRule::class, 'Shopwell\Core\Framework\Rule\AbsentRule', serialize($original));
+        $compressed = gzcompress($serialized);
+        static::assertNotFalse($compressed);
+        $compressor = new CartCompressor(compress: true, compressMethod: 'gzip');
+        $restored = $compressor->unserialize($compressed, CartCompressor::COMPRESSION_TYPE_GZIP);
+        static::assertInstanceOf(Cart::class, $restored);
+        static::assertCount(2, $restored->getLineItems());
+        $restoredDiscount = $restored->get($discountItem->getId());
+        static::assertNotNull($restoredDiscount);
+        static::assertStringNotContainsString('AbsentRule', serialize($restoredDiscount));
+        $restoredProduct = $restored->get($product->getId());
+        static::assertNotNull($restoredProduct);
+        $calculated = new Cart('calculated');
+        $calculated->add($restoredProduct);
+
+        $calculator = $this->createPromotionCalculator(cartScopeDiscountPackager: new CartScopeDiscountPackager());
+        $calculator->calculate(new LineItemCollection([$restoredDiscount]), $restored, $calculated, $this->context, new CartBehavior());
+
+        static::assertSame([$product->getId()], $calculated->getLineItems()->getKeys());
+        static::assertSame(10.0, $calculated->get($product->getId())?->getPrice()?->getTotalPrice());
+        static::assertInstanceOf(PromotionDiscountUnknownConditionError::class, $calculated->getErrors()->first());
     }
 
     public function testZeroValueDiscountWithUnknownConditionAddsWarning(): void
@@ -286,12 +322,14 @@ class PromotionCalculatorTest extends TestCase
         );
     }
 
-    private function createPromotionCalculator(?DiscountPackager $setScopeDiscountPackager = null): PromotionCalculator
+    private function createPromotionCalculator(?DiscountPackager $setScopeDiscountPackager = null, ?DiscountPackager $cartScopeDiscountPackager = null): PromotionCalculator
     {
         // a packager without matching items yields a zero-value discount, exactly like a
         // price-definition filter that matches no line items
-        $cartScopeDiscountPackager = static::createStub(DiscountPackager::class);
-        $cartScopeDiscountPackager->method('getMatchingItems')->willReturn(new DiscountPackageCollection([]));
+        if ($cartScopeDiscountPackager === null) {
+            $cartScopeDiscountPackager = static::createStub(DiscountPackager::class);
+            $cartScopeDiscountPackager->method('getMatchingItems')->willReturn(new DiscountPackageCollection([]));
+        }
 
         return new PromotionCalculator(
             static::createStub(AmountCalculator::class),

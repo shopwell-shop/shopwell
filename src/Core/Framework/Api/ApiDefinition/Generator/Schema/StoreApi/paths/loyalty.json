@@ -8,7 +8,7 @@
                     "Loyalty"
                 ],
                 "summary": "Fetch the loyalty summary of the customer",
-                "description": "Returns the points balance, growth value, current membership tier, the redemption settings and the available membership tiers of the authenticated customer.",
+                "description": "Returns the points balance, tier points, current membership tier, the redemption settings and the available membership tiers of the authenticated customer.",
                 "operationId": "readLoyalty",
                 "responses": {
                     "200": {
@@ -22,18 +22,18 @@
                                             "type": "integer",
                                             "description": "The currently available points balance."
                                         },
-                                        "growthValue": {
+                                        "tierPoints": {
                                             "type": "integer",
-                                            "description": "The accumulated growth value."
+                                            "description": "The accumulated tier points."
                                         },
-                                        "membershipTierId": {
+                                        "tierId": {
                                             "type": [
                                                 "string",
                                                 "null"
                                             ],
                                             "description": "The id of the membership tier the customer currently belongs to."
                                         },
-                                        "membershipValidUntil": {
+                                        "membershipPaidUntil": {
                                             "type": [
                                                 "string",
                                                 "null"
@@ -73,29 +73,18 @@
                                                     "level": {
                                                         "type": "integer"
                                                     },
-                                                    "minGrowthValue": {
+                                                    "minTierPoints": {
                                                         "type": [
                                                             "integer",
                                                             "null"
                                                         ]
                                                     },
-                                                    "pointsMultiplier": {
-                                                        "type": [
-                                                            "number",
-                                                            "null"
-                                                        ]
-                                                    },
-                                                    "discountPercent": {
-                                                        "type": [
-                                                            "number",
-                                                            "null"
-                                                        ]
-                                                    },
-                                                    "freeShipping": {
-                                                        "type": [
-                                                            "boolean",
-                                                            "null"
-                                                        ]
+                                                    "benefits": {
+                                                        "type": "object",
+                                                        "description": "What the tier grants, keyed by benefit type (earn_multiplier, cart_discount, free_shipping, birthday_gift, points_expiry_days). A type that is absent grants nothing.",
+                                                        "additionalProperties": {
+                                                            "type": "number"
+                                                        }
                                                     }
                                                 }
                                             }
@@ -202,7 +191,7 @@
                     "Loyalty"
                 ],
                 "summary": "Buy a membership plan and open the payment for it",
-                "description": "Creates a membership order for the authenticated customer and opens the payment of the given channel for it. The membership is activated once the channel confirmed the payment, not when it was opened, so the response carries the data the payer needs to pay it.",
+                "description": "Creates a membership purchase and selects an eligible payment product for the chosen payment method and the browser scene. Membership activates after payment is confirmed.",
                 "operationId": "purchaseMembership",
                 "requestBody": {
                     "required": true,
@@ -215,22 +204,18 @@
                                         "type": "string",
                                         "description": "The id of the membership plan to buy. The plan has to be purchasable in the currency of the context."
                                     },
-                                    "channel": {
-                                        "type": "string",
-                                        "description": "The technical name of the payment channel that collects the money, as listed by the loyalty route."
-                                    },
                                     "returnUrl": {
                                         "type": "string",
                                         "description": "Where the payer lands after a redirect channel. The account page of the loyalty program is used when this is missing."
                                     },
-                                    "device": {
+                                    "method": {
                                         "type": "string",
-                                        "description": "The device the payer uses, for channels that render a different interface per device, e.g. `mobile` or `pc`."
+                                        "description": "The payment method technical name returned by GET /membership, such as alipay or wechat."
                                     }
                                 },
                                 "required": [
                                     "planId",
-                                    "channel"
+                                    "method"
                                 ]
                             }
                         }
@@ -262,7 +247,7 @@
                                         },
                                         "channel": {
                                             "type": "string",
-                                            "description": "The technical name of the channel that collects the money."
+                                            "description": "The actual payment product selected by the server."
                                         },
                                         "params": {
                                             "type": "object",
@@ -275,7 +260,7 @@
                         }
                     },
                     "400": {
-                        "description": "The loyalty program is disabled, the plan is not purchasable or the channel is unknown.",
+                        "description": "The plan is not purchasable or the payment method has no eligible product for this payment scene.",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -294,6 +279,80 @@
                         "ApiKey": []
                     }
                 ]
+            }
+        },
+        "/membership": {
+            "get": {
+                "tags": [
+                    "Loyalty"
+                ],
+                "summary": "Read membership plans and payment options",
+                "description": "Returns purchasable plans, payment methods eligible in the browser scene, recent purchases, and the active subscription.",
+                "operationId": "readMembership",
+                "responses": {
+                    "200": {
+                        "description": "The membership offer for the authenticated customer.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "plans": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "additionalProperties": true
+                                            }
+                                        },
+                                        "channels": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "required": [
+                                                    "method",
+                                                    "channel",
+                                                    "label",
+                                                    "flow"
+                                                ],
+                                                "properties": {
+                                                    "method": {
+                                                        "type": "string"
+                                                    },
+                                                    "channel": {
+                                                        "type": "string"
+                                                    },
+                                                    "label": {
+                                                        "type": "string"
+                                                    },
+                                                    "flow": {
+                                                        "type": "string"
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        "orders": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "additionalProperties": true
+                                            }
+                                        },
+                                        "subscription": {
+                                            "type": [
+                                                "object",
+                                                "null"
+                                            ],
+                                            "additionalProperties": true
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/401"
+                    }
+                }
             }
         }
     }

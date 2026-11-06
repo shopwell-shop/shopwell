@@ -32,12 +32,35 @@ class LoyaltySettingsTest extends TestCase
         static::assertFalse($settings->isEnabled());
     }
 
+    /**
+     * `system:config:set` without `--json` stores the raw argument, so the shop that switched the
+     * programme off through the CLI saves the *string* "false" - which must not read as enabled.
+     */
+    public function testAStringFalseFromTheCliTurnsTheMembershipOff(): void
+    {
+        $settings = new LoyaltySettings(new StaticSystemConfigService([
+            LoyaltySettings::CONFIG_KEY_ENABLED => 'false',
+        ]));
+
+        static::assertFalse($settings->isEnabled());
+    }
+
+    public function testAStringFalseFromTheCliLeavesTheGroupSyncOff(): void
+    {
+        $settings = new LoyaltySettings(new StaticSystemConfigService([
+            LoyaltySettings::CONFIG_KEY_TIER_AUTO_GROUP_SYNC => 'false',
+        ]));
+
+        static::assertFalse($settings->tierAutoGroupSync());
+    }
+
     public function testAnUnsavedShopEarnsAndRedeemsWithTheDefaultsTheSettingsCardShows(): void
     {
         $settings = new LoyaltySettings(new StaticSystemConfigService());
 
         static::assertSame(1, $settings->pointsPerCurrencyUnit());
-        static::assertSame(1, $settings->growthPerCurrencyUnit());
+        static::assertSame(0, $settings->topUpPointsPerCurrencyUnit());
+        static::assertSame(1, $settings->tierPointsPerCurrencyUnit());
         static::assertSame(0.01, $settings->pointValueInCurrency());
         static::assertSame(100, $settings->minRedeemablePoints());
         static::assertSame(50.0, $settings->maxRedeemablePercent());
@@ -49,7 +72,8 @@ class LoyaltySettingsTest extends TestCase
     {
         $settings = new LoyaltySettings(new StaticSystemConfigService([
             LoyaltySettings::CONFIG_KEY_POINTS_PER_CURRENCY_UNIT => 2,
-            LoyaltySettings::CONFIG_KEY_GROWTH_PER_CURRENCY_UNIT => 3,
+            LoyaltySettings::CONFIG_KEY_TOP_UP_POINTS_PER_CURRENCY_UNIT => 5,
+            LoyaltySettings::CONFIG_KEY_TIER_POINTS_PER_CURRENCY_UNIT => 3,
             LoyaltySettings::CONFIG_KEY_POINT_VALUE_IN_CURRENCY => 0.05,
             LoyaltySettings::CONFIG_KEY_MIN_REDEEMABLE_POINTS => 10,
             LoyaltySettings::CONFIG_KEY_MAX_REDEEMABLE_PERCENT => 80.0,
@@ -58,7 +82,8 @@ class LoyaltySettingsTest extends TestCase
         ]));
 
         static::assertSame(2, $settings->pointsPerCurrencyUnit());
-        static::assertSame(3, $settings->growthPerCurrencyUnit());
+        static::assertSame(5, $settings->topUpPointsPerCurrencyUnit());
+        static::assertSame(3, $settings->tierPointsPerCurrencyUnit());
         static::assertSame(0.05, $settings->pointValueInCurrency());
         static::assertSame(10, $settings->minRedeemablePoints());
         static::assertSame(80.0, $settings->maxRedeemablePercent());

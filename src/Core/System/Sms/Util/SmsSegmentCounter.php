@@ -24,7 +24,7 @@ final class SmsSegmentCounter
             return 0;
         }
 
-        $isGsm = mb_check_encoding($text, 'ASCII') && preg_match('/^[\x20-\x7E\r\n]*$/', $text) === 1;
+        $isGsm = mb_check_encoding($text, 'ASCII') && preg_match('/^[\x20-\x7E\r\n]*\z/', $text) === 1;
         $length = $isGsm ? \strlen($text) : mb_strlen($text);
         $perSegment = $isGsm ? self::GSM_CHARS_PER_SEGMENT : self::UNICODE_CHARS_PER_SEGMENT;
 

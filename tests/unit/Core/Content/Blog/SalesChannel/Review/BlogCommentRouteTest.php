@@ -259,7 +259,7 @@ class BlogCommentRouteTest extends TestCase
 
     private function validatorThatPasses(): DataValidator
     {
-        $validator = $this->createMock(DataValidator::class);
+        $validator = static::createStub(DataValidator::class);
         $validator->method('validate');
         $validator->method('getViolations')->willReturn(new ConstraintViolationList());
 

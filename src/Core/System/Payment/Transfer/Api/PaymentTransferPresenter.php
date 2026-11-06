@@ -3,13 +3,12 @@
 namespace Shopwell\Core\System\Payment\Transfer\Api;
 
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppAccount\PaymentAppAccountEntity;
 use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppChannel\PaymentAppChannelEntity;
-use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppProvider\PaymentAppProviderEntity;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
 use Shopwell\Core\System\Payment\App\PaymentCredentialCipher;
-use Shopwell\Core\System\Payment\Provider\AbstractPaymentProvider;
+use Shopwell\Core\System\Payment\Product\PaymentProduct;
 use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
 use Shopwell\Core\System\Payment\Provider\PaymentProvider;
 use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;
 use Shopwell\Core\System\Payment\Provider\Transfer\PaymentTransferRules;
@@ -31,10 +30,11 @@ use Shopwell\Core\System\Payment\Transfer\PaymentTransferRecipientEntity;
  *  3. **`channelParams` is input, not administration data.** It is `api: false` on the entity, and this
  *     presenter keeps it out of the answer on purpose instead of relying on one flag.
  *
- * The transfer rules of the interfaces are read from their declarations: `payment_app_provider` says
- * which interface an app may use, the declaration says which identities such a payout accepts, which
- * fields it insists on and which currencies it settles in. Hard coding that matrix in the admin would be
- * a second, silently diverging truth.
+ * The transfer rules of the interfaces are read from the registry of the call: `payment_app_account`
+ * says which interface an app may use, and the snapshot the factory built for that interface says which
+ * identities such a payout accepts, which fields it insists on and which currencies it settles in. Hard
+ * coding that matrix in the admin - or reading the raw declarations a second time - would be a second,
+ * silently diverging truth.
  *
  * @internal
  */
@@ -47,17 +47,8 @@ final class PaymentTransferPresenter
      */
     private const VISIBLE_METADATA_KEYS = ['note', 'rejectReason', 'approvedBy', 'approvedAt'];
 
-    /**
-     * @var array<string, PaymentTransferRules>|null
-     */
-    private ?array $transferRulesByName = null;
-
-    /**
-     * @param iterable<AbstractPaymentProvider> $transferDeclarations
-     */
     public function __construct(
         private readonly PaymentCredentialCipher $cipher,
-        private readonly iterable $transferDeclarations,
     ) {
     }
 
@@ -170,7 +161,7 @@ final class PaymentTransferPresenter
                 'name' => $app->name,
                 'type' => $app->type,
                 'isPlatform' => $app->type === PaymentAppEntity::TYPE_PLATFORM,
-                'providers' => $this->providersOf($app, $registry),
+                'accounts' => $this->providersOf($app, $registry),
             ];
         }
 
@@ -232,19 +223,23 @@ final class PaymentTransferPresenter
     {
         $providers = [];
 
-        foreach ($app->providers ?? [] as $authorization) {
-            if (!$authorization instanceof PaymentAppProviderEntity || !$authorization->enabled) {
+        foreach ($app->accounts ?? [] as $authorization) {
+            if (!$authorization instanceof PaymentAppAccountEntity || !$authorization->enabled) {
                 continue;
             }
 
-            $name = $authorization->providerTechnicalName;
+            $name = $authorization->account?->providerTechnicalName;
+
+            if ($name === null || !$authorization->account->active) {
+                continue;
+            }
 
             if (!$registry->has($name)) {
                 continue;
             }
 
             $provider = $registry->get($name);
-            $rules = $this->transferRules($name);
+            $rules = $provider->transferRules;
 
             // an interface that cannot pay out, or that declares no payout rules, must not appear in a
             // modal that books a payout - the operator would fill a form that can only be refused
@@ -260,6 +255,8 @@ final class PaymentTransferPresenter
 
             $providers[] = [
                 'technicalName' => $provider->technicalName,
+                'accountId' => $authorization->accountId,
+                'name' => $authorization->account->name,
                 // the label of a provider is a snippet key, the administration translates it
                 'label' => $provider->label,
                 'identityTypes' => $rules->identityTypes,
@@ -288,11 +285,11 @@ final class PaymentTransferPresenter
             }
 
             $name = $row->channelTechnicalName;
-            $channel = $provider->channels[$name] ?? null;
+            $channel = $provider->products[$name] ?? null;
 
             // the declaration is the authority on which interface a channel belongs to - a name prefix
             // would be a guess, and a channel the interface does not declare can never be opened
-            if (!$channel instanceof PaymentChannel || $channel->providerTechnicalName !== $provider->technicalName) {
+            if (!$channel instanceof PaymentProduct || $channel->providerTechnicalName !== $provider->technicalName) {
                 continue;
             }
 
@@ -306,35 +303,6 @@ final class PaymentTransferPresenter
         }
 
         return $channels;
-    }
-
-    /**
-     * The payout rules of one interface, indexed by technical name.
-     *
-     * The declarations are read once and the first one that answers wins: the outermost decorator of an
-     * interface is iterated first, but a decorator that has nothing to add answers `null` - so "the first
-     * non-null" is the declaration that actually knows the payout rules.
-     */
-    private function transferRules(string $providerName): ?PaymentTransferRules
-    {
-        if ($this->transferRulesByName === null) {
-            $this->transferRulesByName = [];
-
-            foreach ($this->transferDeclarations as $declaration) {
-                if (!$declaration instanceof AbstractPaymentProvider) {
-                    continue;
-                }
-
-                $rules = $declaration->getTransferRules();
-                $name = $declaration->getName();
-
-                if ($rules !== null && !isset($this->transferRulesByName[$name])) {
-                    $this->transferRulesByName[$name] = $rules;
-                }
-            }
-        }
-
-        return $this->transferRulesByName[$providerName] ?? null;
     }
 
     /**

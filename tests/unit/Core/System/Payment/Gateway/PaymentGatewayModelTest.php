@@ -5,17 +5,18 @@ namespace Shopwell\Tests\Unit\Core\System\Payment\Gateway;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\System\Payment\Api\Struct\PayParams;
-use Shopwell\Core\System\Payment\Gateway\NotificationResult;
+use Shopwell\Core\System\Payment\Exception\PaymentGatewayException;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
-use Shopwell\Core\System\Payment\Gateway\PayResult;
-use Shopwell\Core\System\Payment\Gateway\QueryResult;
-use Shopwell\Core\System\Payment\Gateway\RefundResult;
+use Shopwell\Core\System\Payment\Gateway\Request\NotificationResult;
+use Shopwell\Core\System\Payment\Gateway\Request\QueryResult;
+use Shopwell\Core\System\Payment\Gateway\Request\RefundResult;
+use Shopwell\Core\System\Payment\Gateway\Struct\PaymentHandover;
+use Shopwell\Core\System\Payment\Gateway\Struct\PaymentStartResult;
+use Shopwell\Core\System\Payment\Order\Aggregate\PaymentAttempt\PaymentAttemptEntity;
+use Shopwell\Core\System\Payment\Order\Aggregate\PaymentRefund\PaymentRefundEntity;
 use Shopwell\Core\System\Payment\Order\PaymentOrderEntity;
-use Shopwell\Core\System\Payment\Order\Refund\PaymentRefundEntity;
-use Shopwell\Core\System\Payment\Order\Refund\PaymentRefundStates;
-use Shopwell\Core\System\Payment\PaymentException;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
+use Shopwell\Core\System\Payment\Order\PaymentRefundStates;
+use Shopwell\Core\System\Payment\Product\PaymentInteraction;
 
 /**
  * @internal
@@ -31,7 +32,7 @@ class PaymentGatewayModelTest extends TestCase
 
         $model = PaymentGatewayModel::forOrder($order);
 
-        static::assertSame('payment-no', $model->offsetGet(PaymentGatewayModel::PAYMENT_NO));
+        static::assertSame('attempt-no', $model->offsetGet(PaymentGatewayModel::PAYMENT_NO));
         static::assertSame('out-trade-no', $model->offsetGet(PaymentGatewayModel::OUT_TRADE_NO));
         static::assertSame(5000, $model->offsetGet(PaymentGatewayModel::AMOUNT));
         static::assertSame('CNY', $model->offsetGet(PaymentGatewayModel::CURRENCY));
@@ -46,9 +47,11 @@ class PaymentGatewayModelTest extends TestCase
     public function testForRefundCombinesTheOrderAndTheRefund(): void
     {
         $order = $this->createOrder();
-        $order->outPaymentNo = 'out-payment-no';
+        static::assertNotNull($order->activeAttempt);
+        $order->activeAttempt->outPaymentNo = 'out-payment-no';
 
         $refund = new PaymentRefundEntity();
+        $refund->paymentAttemptId = 'attempt-id';
         $refund->refundNo = 'refund-no';
         $refund->outRefundNo = 'out-refund-no';
         $refund->amount = 1000;
@@ -57,7 +60,7 @@ class PaymentGatewayModelTest extends TestCase
 
         $model = PaymentGatewayModel::forRefund($order, $refund);
 
-        static::assertSame('payment-no', $model->offsetGet(PaymentGatewayModel::PAYMENT_NO));
+        static::assertSame('attempt-no', $model->offsetGet(PaymentGatewayModel::PAYMENT_NO));
         static::assertSame('out-trade-no', $model->offsetGet(PaymentGatewayModel::OUT_TRADE_NO));
         static::assertSame('out-payment-no', $model->offsetGet(PaymentGatewayModel::OUT_PAYMENT_NO));
         static::assertSame(1000, $model->offsetGet(PaymentGatewayModel::AMOUNT));
@@ -87,7 +90,7 @@ class PaymentGatewayModelTest extends TestCase
 
         $model = PaymentGatewayModel::forQuery($order, ['id' => 'ORDER-1']);
 
-        static::assertSame('payment-no', $model->offsetGet(PaymentGatewayModel::PAYMENT_NO));
+        static::assertSame('attempt-no', $model->offsetGet(PaymentGatewayModel::PAYMENT_NO));
         static::assertSame('out-trade-no', $model->offsetGet(PaymentGatewayModel::OUT_TRADE_NO));
         static::assertSame(5000, $model->offsetGet(PaymentGatewayModel::AMOUNT));
         static::assertSame('CNY', $model->offsetGet(PaymentGatewayModel::CURRENCY));
@@ -133,7 +136,7 @@ class PaymentGatewayModelTest extends TestCase
 
     public function testResultReturnsTheStoredResultOfTheRequestedType(): void
     {
-        $payResult = new PayResult(new PayParams(PaymentFlow::REDIRECT), 'trade-no');
+        $payResult = new PaymentStartResult(new PaymentHandover(PaymentInteraction::REDIRECT), 'trade-no');
         $refundResult = new RefundResult(PaymentRefundStates::STATE_FINISHED, 'refund-id');
         $notificationResult = new NotificationResult(true, true);
         $queryResult = new QueryResult(QueryResult::STATUS_PAID, 'trade-no');
@@ -141,7 +144,7 @@ class PaymentGatewayModelTest extends TestCase
         $model = new PaymentGatewayModel();
 
         $model->offsetSet(PaymentGatewayModel::RESULT, $payResult);
-        static::assertSame($payResult, $model->result(PayResult::class, 'alipay'));
+        static::assertSame($payResult, $model->result(PaymentStartResult::class, 'alipay'));
 
         $model->offsetSet(PaymentGatewayModel::RESULT, $refundResult);
         static::assertSame($refundResult, $model->result(RefundResult::class, 'alipay'));
@@ -155,23 +158,29 @@ class PaymentGatewayModelTest extends TestCase
 
     public function testResultThrowsWhenTheResultIsMissing(): void
     {
-        $this->expectExceptionObject(PaymentException::gatewayResultMissing('alipay'));
+        $this->expectExceptionObject(PaymentGatewayException::gatewayResultMissing('alipay'));
 
-        (new PaymentGatewayModel())->result(PayResult::class, 'alipay');
+        (new PaymentGatewayModel())->result(PaymentStartResult::class, 'alipay');
     }
 
     public function testResultThrowsWhenAnotherResultWasStored(): void
     {
         $model = new PaymentGatewayModel([PaymentGatewayModel::RESULT => new RefundResult(PaymentRefundStates::STATE_FINISHED)]);
 
-        $this->expectExceptionObject(PaymentException::gatewayResultMissing('alipay'));
+        $this->expectExceptionObject(PaymentGatewayException::gatewayResultMissing('alipay'));
 
-        $model->result(PayResult::class, 'alipay');
+        $model->result(PaymentStartResult::class, 'alipay');
     }
 
     private function createOrder(?\DateTimeImmutable $expireAt = null): PaymentOrderEntity
     {
         $order = new PaymentOrderEntity();
+        $order->id = 'order-id';
+        $order->activeAttempt = new PaymentAttemptEntity();
+        $order->activeAttempt->id = 'attempt-id';
+        $order->activeAttempt->paymentOrderId = 'order-id';
+        $order->activeAttempt->attemptNo = 'attempt-no';
+        $order->activeAttempt->context = ['device' => 'web'];
         $order->paymentNo = 'payment-no';
         $order->outTradeNo = 'out-trade-no';
         $order->amount = 5000;
@@ -180,7 +189,6 @@ class PaymentGatewayModelTest extends TestCase
         $order->body = 'body';
         $order->attach = 'attach';
         $order->clientIp = '127.0.0.1';
-        $order->device = 'web';
         $order->expireAt = $expireAt;
 
         return $order;

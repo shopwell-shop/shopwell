@@ -2,31 +2,30 @@
 
 namespace Shopwell\Tests\Unit\Core\System\Payment\Order;
 
+use Doctrine\DBAL\Connection;
 use Payum\Core\GatewayInterface;
 use Payum\Core\Request\Generic;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
-use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\Entity;
-use Shopwell\Core\Framework\DataAbstractionLayer\EntityCollection;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
-use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
-use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppChannel\PaymentAppChannelEntity;
-use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppProvider\PaymentAppProviderEntity;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
 use Shopwell\Core\System\Payment\App\PaymentCredentialCipher;
 use Shopwell\Core\System\Payment\App\PaymentSignatureService;
-use Shopwell\Core\System\Payment\Gateway\CloseResult;
-use Shopwell\Core\System\Payment\Gateway\PaymentClose;
-use Shopwell\Core\System\Payment\Gateway\PaymentCloser;
+use Shopwell\Core\System\Payment\Exception\PaymentGatewayException;
+use Shopwell\Core\System\Payment\Exception\PaymentOrderException;
+use Shopwell\Core\System\Payment\Gateway\PaymentChannelCloser;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayFactory;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
-use Shopwell\Core\System\Payment\Gateway\PaymentQuery;
-use Shopwell\Core\System\Payment\Gateway\QueryResult;
+use Shopwell\Core\System\Payment\Gateway\Request\CloseResult;
+use Shopwell\Core\System\Payment\Gateway\Request\PaymentClose;
+use Shopwell\Core\System\Payment\Gateway\Request\PaymentQuery;
+use Shopwell\Core\System\Payment\Gateway\Request\QueryResult;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
+use Shopwell\Core\System\Payment\Order\Aggregate\PaymentAttempt\PaymentAttemptCollection;
+use Shopwell\Core\System\Payment\Order\Aggregate\PaymentAttempt\PaymentAttemptEntity;
 use Shopwell\Core\System\Payment\Order\PaymentOrderCloser;
 use Shopwell\Core\System\Payment\Order\PaymentOrderCollection;
 use Shopwell\Core\System\Payment\Order\PaymentOrderEntity;
@@ -36,22 +35,22 @@ use Shopwell\Core\System\Payment\Order\PaymentOrderReconciler;
 use Shopwell\Core\System\Payment\Order\PaymentOrderService;
 use Shopwell\Core\System\Payment\Order\PaymentOrderStateHandler;
 use Shopwell\Core\System\Payment\Order\PaymentOrderStates;
-use Shopwell\Core\System\Payment\PaymentException;
+use Shopwell\Core\System\Payment\Product\PaymentInteraction;
+use Shopwell\Core\System\Payment\Product\PaymentProduct;
 use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannelRegistry;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
-use Shopwell\Core\System\Payment\Provider\PaymentChannelConfigEntity;
-use Shopwell\Core\System\Payment\Provider\PaymentConfigResolver;
+use Shopwell\Core\System\Payment\Provider\Config\PaymentConfigResolver;
 use Shopwell\Core\System\Payment\Provider\PaymentProvider;
-use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;
+use Shopwell\Core\System\Payment\Provider\ResolvedPaymentConfig;
 use Shopwell\Core\System\Payment\Webhook\PaymentWebhookDispatcher;
 use Shopwell\Core\System\Payment\Webhook\PaymentWebhookSigner;
 use Shopwell\Core\System\StateMachine\Loader\InitialStateIdLoader;
 use Shopwell\Core\System\StateMachine\StateMachineRegistry;
 use Shopwell\Core\System\StateMachine\Transition;
+use Shopwell\Core\Test\Stub\DataAbstractionLayer\StaticEntityRepository;
+use Shopwell\Tests\Unit\Core\System\Payment\NumberRangeFixture;
+use Shopwell\Tests\Unit\Core\System\Payment\Order\_fixtures\PaymentOrderRowLockStub;
+use Shopwell\Tests\Unit\Core\System\Payment\PaymentEventDispatcherFixture;
 use Symfony\Component\Clock\MockClock;
-use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 /**
@@ -124,7 +123,7 @@ class PaymentOrderCloserTest extends TestCase
 
         $gateway = $this->gateway(CloseResult::STATUS_ALREADY_PAID);
 
-        $this->expectExceptionObject(PaymentException::orderAlreadyPaid('PG0001'));
+        $this->expectExceptionObject(PaymentOrderException::orderAlreadyPaid('PG0001'));
 
         try {
             $this->closer($orderRepository, $gateway, $stateMachine)->close($this->order());
@@ -143,7 +142,7 @@ class PaymentOrderCloserTest extends TestCase
         $stateMachine = static::createMock(StateMachineRegistry::class);
         $stateMachine->expects($this->never())->method('transition');
 
-        $failure = PaymentException::gatewayError('alipay_h5', 'the channel is down');
+        $failure = PaymentGatewayException::gatewayError('alipay_h5', 'the channel is down');
 
         $this->expectExceptionObject($failure);
 
@@ -160,7 +159,7 @@ class PaymentOrderCloserTest extends TestCase
 
         $gateway = $this->failingGateway(new \RuntimeException('the channel must not be asked'));
 
-        $this->expectExceptionObject(PaymentException::orderAlreadyPaid('PG0001'));
+        $this->expectExceptionObject(PaymentOrderException::orderAlreadyPaid('PG0001'));
 
         $this->closer($orderRepository, $gateway, $stateMachine)
             ->close($this->order(['paidAt' => new \DateTimeImmutable(self::NOW)]));
@@ -176,7 +175,7 @@ class PaymentOrderCloserTest extends TestCase
 
         $gateway = $this->failingGateway(new \RuntimeException('the channel must not be asked'));
 
-        $this->expectExceptionObject(PaymentException::orderAlreadyClosed('PG0001'));
+        $this->expectExceptionObject(PaymentOrderException::orderAlreadyClosed('PG0001'));
 
         $this->closer($orderRepository, $gateway, $stateMachine)
             ->close($this->order(['closedAt' => new \DateTimeImmutable(self::NOW)]));
@@ -230,10 +229,12 @@ class PaymentOrderCloserTest extends TestCase
 
         $orderService = new PaymentOrderService(
             $orderRepository,
-            $configResolver,
             $initialStateIdLoader,
             new PaymentOrderStateHandler($stateMachine),
             $clock,
+            NumberRangeFixture::generator('PG1001'),
+            new PaymentOrderRowLockStub(),
+            StaticEntityRepository::of(PaymentAttemptCollection::class),
         );
 
         $webhooks = new PaymentWebhookDispatcher(
@@ -243,12 +244,13 @@ class PaymentOrderCloserTest extends TestCase
             static::createStub(HttpClientInterface::class),
             $clock,
             static::createStub(LoggerInterface::class),
+            static::createStub(Connection::class),
         );
 
-        $paidHandler = new PaymentOrderPaidHandler($orderService, $webhooks, static::createStub(EventDispatcherInterface::class));
+        $paidHandler = new PaymentOrderPaidHandler($orderService, PaymentEventDispatcherFixture::create($webhooks));
 
         return new PaymentOrderCloser(
-            new PaymentCloser(static::createStub(EntityRepository::class), $configResolver, $clock),
+            new PaymentChannelCloser(static::createStub(EntityRepository::class), $configResolver, NumberRangeFixture::generator('PX1001')),
             $orderService,
             new PaymentOrderReconciler(
                 $orderRepository,
@@ -265,13 +267,13 @@ class PaymentOrderCloserTest extends TestCase
 
     private function configResolver(GatewayInterface $gateway): PaymentConfigResolver
     {
-        $cipher = new PaymentCredentialCipher('test-secret');
-
-        $channel = new PaymentChannel(
+        $channel = new PaymentProduct(
             technicalName: 'alipay_h5',
             providerTechnicalName: 'alipay',
+            method: 'alipay',
             label: 'Alipay H5',
-            flow: PaymentFlow::REDIRECT,
+            interactions: [PaymentInteraction::REDIRECT],
+            capabilities: [PaymentCapability::CAPTURE, PaymentCapability::CLOSE, PaymentCapability::QUERY],
         );
 
         $gatewayFactory = static::createStub(PaymentGatewayFactory::class);
@@ -281,69 +283,19 @@ class PaymentOrderCloserTest extends TestCase
             technicalName: 'alipay',
             label: 'Alipay',
             credentials: [],
-            channels: ['alipay_h5' => $channel],
+            products: ['alipay_h5' => $channel],
             gatewayFactory: $gatewayFactory,
             notificationExtractor: static::createStub(PaymentNotificationExtractorInterface::class),
             // alipay closes and queries; the reconciler of the closer needs the query as well
             capabilities: [PaymentCapability::CAPTURE, PaymentCapability::CLOSE, PaymentCapability::QUERY],
         );
 
-        $providerRegistry = new PaymentProviderRegistry([$provider]);
+        $resolved = new ResolvedPaymentConfig($provider, $channel, [], [], [], [], 'account-id');
+        $resolver = static::createStub(PaymentConfigResolver::class);
+        $resolver->method('resolveForOrder')->willReturn($resolved);
+        $resolver->method('resolveForAttempt')->willReturn($resolved);
 
-        $appProvider = new PaymentAppProviderEntity();
-        $appProvider->setUniqueIdentifier('app-provider-id');
-        $appProvider->paymentAppId = 'app-id';
-        $appProvider->providerTechnicalName = 'alipay';
-        $appProvider->enabled = true;
-        $appProvider->credentials = $cipher->encrypt(['app_id' => 'own-app-id']);
-
-        $appChannel = new PaymentAppChannelEntity();
-        $appChannel->setUniqueIdentifier('app-channel-id');
-        $appChannel->paymentAppId = 'app-id';
-        $appChannel->channelTechnicalName = 'alipay_h5';
-        $appChannel->enabled = true;
-        $appChannel->params = $cipher->encrypt(['appid' => 'own-appid']);
-
-        $channelConfig = new PaymentChannelConfigEntity();
-        $channelConfig->setUniqueIdentifier('channel-config-id');
-        $channelConfig->providerTechnicalName = 'alipay';
-        $channelConfig->channelTechnicalName = 'alipay_h5';
-        $channelConfig->enabled = true;
-        $channelConfig->params = $cipher->encrypt(['appid' => 'platform-appid']);
-
-        $appProviderRepository = static::createStub(EntityRepository::class);
-        $appProviderRepository->method('search')->willReturn($this->entityResult('payment_app_provider', $appProvider));
-
-        $appChannelRepository = static::createStub(EntityRepository::class);
-        $appChannelRepository->method('search')->willReturn($this->entityResult('payment_app_channel', $appChannel));
-
-        $channelConfigRepository = static::createStub(EntityRepository::class);
-        $channelConfigRepository->method('search')->willReturn($this->entityResult('payment_channel_config', $channelConfig));
-
-        return new PaymentConfigResolver(
-            $providerRegistry,
-            new PaymentChannelRegistry($providerRegistry),
-            $appProviderRepository,
-            static::createStub(EntityRepository::class),
-            $appChannelRepository,
-            $channelConfigRepository,
-            $cipher
-        );
-    }
-
-    /**
-     * @return EntitySearchResult<EntityCollection<Entity>>
-     */
-    private function entityResult(string $entityName, Entity $entity): EntitySearchResult
-    {
-        return new EntitySearchResult(
-            $entityName,
-            1,
-            new EntityCollection([$entity]),
-            null,
-            new Criteria(),
-            Context::createDefaultContext()
-        );
+        return $resolver;
     }
 
     /**
@@ -357,8 +309,16 @@ class PaymentOrderCloserTest extends TestCase
         $order->paymentNo = 'PG0001';
         $order->outTradeNo = 'app-trade-1';
         $order->paymentAppId = 'app-id';
-        $order->providerTechnicalName = 'alipay';
-        $order->channelTechnicalName = 'alipay_h5';
+        $attempt = new PaymentAttemptEntity();
+        $attempt->id = 'attempt-id';
+        $attempt->paymentOrderId = $order->id;
+        $attempt->attemptNo = 'PG0001';
+        $attempt->accountId = 'account-id';
+        $attempt->providerTechnicalName = 'alipay';
+        $attempt->channelTechnicalName = 'alipay_h5';
+        $attempt->status = PaymentAttemptEntity::STATUS_HANDOVER;
+        $order->activeAttempt = $attempt;
+        $order->activeAttemptId = $attempt->id;
         $order->amount = 1000;
         $order->currency = 'CNY';
         $order->subject = 'An order';

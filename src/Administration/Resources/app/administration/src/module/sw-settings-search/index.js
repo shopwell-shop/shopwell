@@ -93,6 +93,18 @@ Module.register('sw-settings-search', {
         },
     },
 
+    navigation: [
+        {
+            id: 'sw-settings-search',
+            label: 'sw-settings-search.general.mainMenuItemGeneral',
+            parent: 'sw-settings',
+            path: 'sw.settings.search.index',
+            icon: 'regular-search',
+            position: 180,
+            privilege: 'product_search_config.viewer',
+        },
+    ],
+
     settingsItem: {
         group: 'general',
         to: 'sw.settings.search.index',

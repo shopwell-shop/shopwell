@@ -7,6 +7,7 @@ use Psr\Clock\ClockInterface;
 use Shopwell\Core\Checkout\Cart\Order\OrderConverter;
 use Shopwell\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
 use Shopwell\Core\Checkout\Order\Aggregate\OrderTransactionCaptureRefund\OrderTransactionCaptureRefundStateHandler;
+use Shopwell\Core\Checkout\Payment\Aggregate\PaymentMethodGatewayChannel\PaymentMethodGatewayChannelEntity;
 use Shopwell\Core\Checkout\Payment\Aggregate\PaymentMethodTranslation\PaymentMethodTranslationDefinition;
 use Shopwell\Core\Checkout\Payment\Api\PaymentMethodTechnicalNameFkResolver;
 use Shopwell\Core\Checkout\Payment\Cart\PaymentHandler\CashPayment;
@@ -38,26 +39,33 @@ use Shopwell\Core\Checkout\Payment\Gateway\PaymentGatewayHandler;
 use Shopwell\Core\Checkout\Payment\Gateway\PaymentMethodChannelBinder;
 use Shopwell\Core\Checkout\Payment\Gateway\PaymentMethodChannelResolver;
 use Shopwell\Core\Checkout\Payment\Gateway\PaymentMethodCollectability;
+use Shopwell\Core\Checkout\Payment\Install\PaymentMethodIconInstaller;
 use Shopwell\Core\Checkout\Payment\PaymentMethodDefinition;
 use Shopwell\Core\Checkout\Payment\PaymentProcessor;
 use Shopwell\Core\Checkout\Payment\SalesChannel\HandlePaymentMethodRoute;
 use Shopwell\Core\Checkout\Payment\SalesChannel\PaymentMethodRoute;
 use Shopwell\Core\Checkout\Payment\SalesChannel\SalesChannelPaymentMethodDefinition;
 use Shopwell\Core\Checkout\Payment\Storefront\PlatformPaymentApp;
+use Shopwell\Core\Checkout\Payment\Storefront\Settlement\PurchaseSettlement;
+use Shopwell\Core\Checkout\Payment\Storefront\StorefrontPaymentContextResolver;
+use Shopwell\Core\Checkout\Payment\Storefront\StorefrontPaymentService;
+use Shopwell\Core\Content\Media\MediaService;
 use Shopwell\Core\Framework\Adapter\Cache\CacheTagCollector;
+use Shopwell\Core\Framework\Adapter\Translation\Translator;
 use Shopwell\Core\Framework\DataAbstractionLayer\Dbal\Common\IteratorFactory;
 use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Rule\RuleIdMatcher;
 use Shopwell\Core\Framework\Script\Execution\ScriptExecutor;
 use Shopwell\Core\Framework\Validation\DataValidator;
+use Shopwell\Core\System\Payment\Cashier\PaymentCashierService;
+use Shopwell\Core\System\Payment\Method\PaymentMethodRegistry;
 use Shopwell\Core\System\Payment\Order\Event\PaymentOrderPaidEvent;
-use Shopwell\Core\System\Payment\Order\PaymentOrderCapture;
 use Shopwell\Core\System\Payment\Order\PaymentOrderReconciler;
 use Shopwell\Core\System\Payment\Order\PaymentOrderService;
-use Shopwell\Core\System\Payment\Order\Refund\PaymentRefundService;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannelRegistry;
-use Shopwell\Core\System\Payment\Provider\PaymentProviderConfigService;
-use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;
+use Shopwell\Core\System\Payment\Order\PaymentOrderStarter;
+use Shopwell\Core\System\Payment\Order\PaymentRefundService;
+use Shopwell\Core\System\Payment\Product\PaymentProductRegistry;
+use Shopwell\Core\System\Payment\Routing\PaymentRouteResolver;
 use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextService;
 use Shopwell\Core\System\StateMachine\Loader\InitialStateIdLoader;
 use Shopwell\Core\System\SystemConfig\SystemConfigService;
@@ -198,13 +206,27 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ])
         ->tag('shopwell.payment.method');
 
-    // the binding table is the edge between a checkout payment method and a gateway channel; its
-    // entity is registered with the other payment tables in the system payment configuration
-    $services->set(PaymentMethodChannelResolver::class)
+    // ---- Checkout: the channel a payment method of the shop collects through ----
+    $services->set(PaymentMethodGatewayChannelEntity::class)
+        ->tag('shopwell.entity');
+
+    // ---- the pictures of the methods the gateway seeds ----
+    // The icons are uploaded through the media service when the installation completes, not written
+    // to a path of our own: the service decides where a file ends up and files it in the folder of the
+    // payment methods, which is also where a picture a merchant uploads for a method of their own
+    // lands. A shop that installs gets the icons the same way a shop that uploads them does.
+    $services->set(PaymentMethodIconInstaller::class)
         ->args([
-            service('payment_method_gateway_channel.repository'),
-            service(PaymentChannelRegistry::class),
-        ]);
+            service(MediaService::class),
+            service('payment_method.repository'),
+            service('media.repository'),
+            service('logger'),
+        ])
+        ->tag('kernel.event_listener');
+
+    // the binding table is the edge between a checkout payment method and a gateway channel
+    $services->set(PaymentMethodChannelResolver::class)
+        ->args([service('payment_method_gateway_channel.repository')]);
 
     // the write side of the binding: an operator picks a channel, and this service makes the method
     // collect through it - including the gateway handler, which no admin endpoint can write
@@ -213,20 +235,18 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('payment_method_gateway_channel.repository'),
             service('payment_method.repository'),
             service('payment_app.repository'),
-            service(PaymentChannelRegistry::class),
-            service(PaymentProviderConfigService::class),
+            service(PaymentMethodRegistry::class),
+            service(PaymentProductRegistry::class),
         ]);
 
     // the read side that the storefront uses to decide what it offers at all: a method that cannot
     // collect is not a method the shopper may pick
+    $services->set(StorefrontPaymentContextResolver::class);
+
     $services->set(PaymentMethodCollectability::class)
         ->args([
             service('payment_method_gateway_channel.repository'),
-            service('payment_channel_config.repository'),
-            service('payment_provider_config.repository'),
-            service('payment_app.repository'),
-            service('payment_app_channel.repository'),
-            service(PaymentChannelRegistry::class),
+            service(PaymentRouteResolver::class),
         ]);
 
     // the administration configures the binding through this one, so it sits behind the admin session
@@ -243,22 +263,29 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     // the tenant the shop itself collects through. The row is seeded by the payment migration; only
     // the authorizations around it are written here, for the channel that is actually used
     $services->set(PlatformPaymentApp::class)
+        ->args([service('payment_app.repository')]);
+
+    // the payments the shop collects for its own customers - a wallet top-up, a membership. They are
+    // payment orders like the one of an external app, only the app is the platform tenant the payment
+    // migration seeds; the gateway itself is only called, never reworked
+    $services->set(StorefrontPaymentService::class)
         ->args([
-            service('payment_app.repository'),
-            service('payment_app_provider.repository'),
-            service('payment_app_channel.repository'),
-            service('payment_provider_config.repository'),
-            service('payment_channel_config.repository'),
-            service(PaymentChannelRegistry::class),
-            service(PaymentProviderRegistry::class),
+            service(PlatformPaymentApp::class),
+            service(PaymentCashierService::class),
+            service(Translator::class),
+        ]);
+
+    // what a paid payment order turns into, for every kind of purchase the shop sells itself
+    $services->set(PurchaseSettlement::class)
+        ->args([
+            service(Connection::class),
+            service(ClockInterface::class),
         ]);
 
     $services->set(OrderPaymentStarter::class)
         ->args([
-            service(PlatformPaymentApp::class),
-            service(PaymentProviderRegistry::class),
             service(PaymentOrderService::class),
-            service(PaymentOrderCapture::class),
+            service(PaymentOrderStarter::class),
             service('router'),
         ]);
 
@@ -268,13 +295,14 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service('order_transaction.repository'),
             service(PaymentMethodChannelResolver::class),
-            service(PaymentChannelRegistry::class),
             service(OrderPaymentStarter::class),
             service(PaymentOrderService::class),
             service(PaymentOrderReconciler::class),
             service(PaymentRefundService::class),
             service('order_transaction_capture_refund.repository'),
             service('logger'),
+            service(PaymentMethodCollectability::class),
+            service(StorefrontPaymentContextResolver::class),
         ])
         ->tag('shopwell.payment.method');
 
@@ -330,6 +358,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(RuleIdMatcher::class),
             service(ExtensionDispatcher::class),
             service(PaymentMethodCollectability::class),
+            service(StorefrontPaymentContextResolver::class),
         ]);
 
     $services->set(HandlePaymentMethodRoute::class)

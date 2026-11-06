@@ -10,7 +10,6 @@ use Shopwell\Core\Framework\Test\TestCaseBase\KernelLifecycleManager;
 use Shopwell\Core\Framework\Util\Database\TableHelper;
 use Shopwell\Core\Migration\V6_7\Migration1792700010CreatePaymentTransferTables;
 use Shopwell\Core\Migration\V6_7\Migration1792700020AddTransferRecipientIdentityHash;
-use Shopwell\Core\Migration\V6_7\Migration1792700040AddTransferChannelParams;
 use Shopwell\Core\Migration\V6_7\Migration1792700050AddTransferToPaymentNotification;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferStates;
 
@@ -152,7 +151,7 @@ class Migration1792700010CreatePaymentTransferTablesTest extends TestCase
 
         static::assertSame(
             [
-                'id', 'payment_app_id', 'transfer_no', 'out_no', 'recipient_id', 'provider', 'channel',
+                'id', 'payment_app_id', 'account_id', 'transfer_no', 'out_no', 'recipient_id', 'provider', 'channel',
                 'amount', 'currency', 'channel_params', 'status_id', 'provider_ref', 'provider_stage_ref',
                 'confirm_payload', 'failure_code', 'failure_reason', 'submit_attempts', 'expire_at',
                 'submitted_at', 'settled_at', 'returned_at', 'canceled_at', 'metadata', 'created_at',
@@ -346,11 +345,11 @@ class Migration1792700010CreatePaymentTransferTablesTest extends TestCase
      * The transfer references the recipient, which references the state machine and the app - the
      * tables only drop in the reverse order they were built in.
      *
-     * The identity hash and the channel parameters are added by the migrations that follow this one,
-     * and this test asserts the shape the chain produces - the table of a fresh installation, not the
-     * intermediate state of an upgrade. Every later migration of this table has to be appended here:
-     * this helper is what rebuilds the table of the test database, so a migration left out of it means
-     * every later test reads a column that the table does not have.
+     * The identity hash is added by the migration that follows this one, and this test asserts the
+     * shape the chain produces - the table of a fresh installation, not the intermediate state of an
+     * upgrade. Every later migration of this table has to be appended here: this helper is what
+     * rebuilds the table of the test database, so a migration left out of it means every later test
+     * reads a column that the table does not have.
      */
     private function recreateTables(): void
     {
@@ -379,7 +378,6 @@ class Migration1792700010CreatePaymentTransferTablesTest extends TestCase
 
         (new Migration1792700010CreatePaymentTransferTables())->update($this->connection);
         (new Migration1792700020AddTransferRecipientIdentityHash())->update($this->connection);
-        (new Migration1792700040AddTransferChannelParams())->update($this->connection);
         (new Migration1792700050AddTransferToPaymentNotification())->update($this->connection);
     }
 

@@ -8,7 +8,6 @@ use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\Payment\Api\ReturnController;
 use Shopwell\Core\System\Payment\Order\PaymentOrderCollection;
 use Shopwell\Core\System\Payment\Order\PaymentOrderEntity;
-use Shopwell\Core\System\Payment\Provider\PaymentConfigResolver;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -22,7 +21,7 @@ class ReturnControllerTest extends TestCase
     public function testAnUnknownPaymentOrderIsNotFound(): void
     {
         $controller = new ReturnController(
-            PaymentControllerFixture::orderService(PaymentControllerFixture::repository(PaymentOrderCollection::class), $this->resolver()),
+            PaymentControllerFixture::orderService(PaymentControllerFixture::repository(PaymentOrderCollection::class)),
             PaymentControllerFixture::presenter()
         );
 
@@ -100,6 +99,19 @@ class ReturnControllerTest extends TestCase
         );
     }
 
+    public function testReturnParametersPrecedeTheFragment(): void
+    {
+        $controller = $this->controllerFor(PaymentControllerFixture::order('app-1', ['returnUrl' => 'https://app.example.com/return?lang=zh#receipt']), ['paid']);
+
+        $response = $controller->redirectToApp('PG-1');
+
+        static::assertInstanceOf(RedirectResponse::class, $response);
+        static::assertSame(
+            'https://app.example.com/return?lang=zh&payment_no=PG-1&out_trade_no=T-1&state=paid#receipt',
+            $response->getTargetUrl()
+        );
+    }
+
     /**
      * @param list<string> $stateNames
      */
@@ -108,15 +120,8 @@ class ReturnControllerTest extends TestCase
         $states = array_map(PaymentControllerFixture::stateName(...), $stateNames);
 
         return new ReturnController(
-            PaymentControllerFixture::orderService(PaymentControllerFixture::repository(PaymentOrderCollection::class, [$order]), $this->resolver()),
+            PaymentControllerFixture::orderService(PaymentControllerFixture::repository(PaymentOrderCollection::class, [$order])),
             PaymentControllerFixture::presenter($states)
         );
-    }
-
-    private function resolver(): PaymentConfigResolver
-    {
-        $providers = PaymentControllerFixture::providerRegistry();
-
-        return PaymentControllerFixture::configResolver($providers, PaymentControllerFixture::channelRegistry($providers));
     }
 }

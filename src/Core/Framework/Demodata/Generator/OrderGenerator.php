@@ -11,6 +11,7 @@ use Shopwell\Core\Checkout\Cart\Order\OrderConverter;
 use Shopwell\Core\Checkout\Cart\Price\Struct\PercentagePriceDefinition;
 use Shopwell\Core\Checkout\Cart\SalesChannel\CartService;
 use Shopwell\Core\Checkout\Order\OrderDefinition;
+use Shopwell\Core\Checkout\Promotion\Cart\PromotionItemBuilder;
 use Shopwell\Core\Defaults;
 use Shopwell\Core\Framework\DataAbstractionLayer\Write\EntityWriterInterface;
 use Shopwell\Core\Framework\DataAbstractionLayer\Write\WriteContext;
@@ -81,7 +82,7 @@ class OrderGenerator implements DemodataGeneratorInterface
         );
         $promotionLineItems = array_map(
             static function ($promotionCode) {
-                $uniqueKey = 'promotion-' . $promotionCode;
+                $uniqueKey = PromotionItemBuilder::PLACEHOLDER_PREFIX . $promotionCode;
 
                 return (new LineItem(Uuid::fromStringToHex($uniqueKey), LineItem::PROMOTION_LINE_ITEM_TYPE))
                     ->setLabel($uniqueKey)

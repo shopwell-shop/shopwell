@@ -7,7 +7,10 @@ import type CriteriaType from 'src/core/data/criteria.data';
 
 import template from './sw-customer-detail-points.html.twig';
 import './sw-customer-detail-points.scss';
-import type { LoyaltySummary, LoyaltySummaryTransaction } from '../../../../sw-loyalty/service/loyalty.api.service';
+import type {
+    LoyaltySummary,
+    LoyaltySummaryTransaction,
+} from '../../../../sw-settings-membership/service/loyalty.api.service';
 
 const { Mixin } = Shopwell;
 const { Criteria } = Shopwell.Data;
@@ -26,31 +29,19 @@ interface MembershipForm {
     durationDays: number;
 }
 
-interface MembershipTierOption {
-    id: string;
-    name: string;
-    level: number;
-    minGrowthValue: number;
-}
+type TierOption = Pick<EntitySchema.Entity<'loyalty_tier'>, 'id' | 'name' | 'level' | 'minTierPoints'>;
 
-interface MembershipOrder {
-    id: string;
-    planName: string;
-    amount: number;
-    currency: string;
-    state: string;
-    durationDays: number;
-    paidAt: string | null;
-    expiresAt: string | null;
-    createdAt: string | null;
-}
+type MembershipPurchase = Pick<
+    EntitySchema.Entity<'membership_purchase'>,
+    'id' | 'planName' | 'amount' | 'currency' | 'state' | 'durationDays' | 'paidAt' | 'expiresAt' | 'createdAt'
+>;
 
 /**
  * The points and membership tab of a customer: the membership the customer holds, the orders that
  * led to it and the point ledger. A membership can also be granted here, for a goodwill upgrade or a
  * membership that was paid outside of the shop.
  */
-// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations -- the customer tab is reached through the customer detail page, which the membership module owns
 export default defineComponent({
     template,
 
@@ -76,8 +67,8 @@ export default defineComponent({
             typeFilter: null as string | null,
             loyaltySummary: null as LoyaltySummary | null,
             transactions: [] as LoyaltySummaryTransaction[],
-            orders: [] as MembershipOrder[],
-            tiers: [] as MembershipTierOption[],
+            orders: [] as MembershipPurchase[],
+            tiers: [] as TierOption[],
             showPointsModal: false,
             showMembershipModal: false,
             pointsForm: { points: 0, comment: '' } as PointsForm,
@@ -94,8 +85,8 @@ export default defineComponent({
             return this.repositoryFactory.create('loyalty_tier');
         },
 
-        membershipOrderRepository() {
-            return this.repositoryFactory.create('membership_order');
+        membershipPurchaseRepository() {
+            return this.repositoryFactory.create('membership_purchase');
         },
 
         tierCriteria(): CriteriaType {
@@ -116,13 +107,13 @@ export default defineComponent({
             return criteria;
         },
 
-        currentTier(): MembershipTierOption | null {
-            const tierId = this.loyaltySummary?.membershipTier?.id;
+        currentTier(): TierOption | null {
+            const tierId = this.loyaltySummary?.tier?.id;
 
             return this.tiers.find((tier) => tier.id === tierId) ?? null;
         },
 
-        nextTier(): MembershipTierOption | null {
+        nextTier(): TierOption | null {
             const current = this.currentTier;
 
             if (!current) {
@@ -132,53 +123,53 @@ export default defineComponent({
             return this.tiers.find((tier) => tier.level > current.level) ?? null;
         },
 
-        growthValue(): number {
-            return this.loyaltySummary?.growthValue ?? 0;
+        tierPoints(): number {
+            return this.loyaltySummary?.tierPoints ?? 0;
         },
 
         /**
          * How far the customer is on the way to the next tier, 0 when there is no next tier.
          */
-        growthProgress(): number {
+        tierPointsProgress(): number {
             const next = this.nextTier;
 
             if (!next) {
                 return 0;
             }
 
-            const from = this.currentTier?.minGrowthValue ?? 0;
-            const span = next.minGrowthValue - from;
+            const from = this.currentTier?.minTierPoints ?? 0;
+            const span = (next.minTierPoints ?? 0) - from;
 
             if (span <= 0) {
                 return 100;
             }
 
-            const reached = Math.min(Math.max(this.growthValue - from, 0), span);
+            const reached = Math.min(Math.max(this.tierPoints - from, 0), span);
 
             return Math.round((reached / span) * 100);
         },
 
-        membershipValidUntil(): string | null {
-            return this.loyaltySummary?.membershipValidUntil ?? null;
+        membershipPaidUntil(): string | null {
+            return this.loyaltySummary?.membershipPaidUntil ?? null;
         },
 
         membershipIsRunning(): boolean {
-            if (!this.membershipValidUntil) {
+            if (!this.membershipPaidUntil) {
                 return false;
             }
 
-            return new Date(this.membershipValidUntil).getTime() > Date.now();
+            return new Date(this.membershipPaidUntil).getTime() > Date.now();
         },
 
-        membershipTierLabel(): string {
-            const tier = this.loyaltySummary?.membershipTier;
+        tierLabel(): string {
+            const tier = this.loyaltySummary?.tier;
 
             if (!tier) {
-                return this.$t('sw-customer.detailPoints.noMembershipTier');
+                return this.$t('sw-customer.detailPoints.noTier');
             }
 
             return this.$t(
-                'sw-customer.detailPoints.membershipTierValue',
+                'sw-customer.detailPoints.tierValue',
                 {
                     name: tier.name,
                     level: tier.level,
@@ -340,13 +331,32 @@ export default defineComponent({
 
         loadTiers(): Promise<void> {
             return this.loyaltyTierRepository.search(this.tierCriteria).then((tiers) => {
-                this.tiers = tiers as unknown as MembershipTierOption[];
+                this.tiers = tiers.map((tier) => {
+                    return {
+                        id: tier.id,
+                        name: tier.name,
+                        level: tier.level,
+                        minTierPoints: tier.minTierPoints,
+                    };
+                });
             });
         },
 
         loadOrders(): Promise<void> {
-            return this.membershipOrderRepository.search(this.orderCriteria).then((orders) => {
-                this.orders = orders as unknown as MembershipOrder[];
+            return this.membershipPurchaseRepository.search(this.orderCriteria).then((orders) => {
+                this.orders = orders.map((order) => {
+                    return {
+                        id: order.id,
+                        planName: order.planName,
+                        amount: order.amount,
+                        currency: order.currency,
+                        state: order.state,
+                        durationDays: order.durationDays,
+                        paidAt: order.paidAt,
+                        expiresAt: order.expiresAt,
+                        createdAt: order.createdAt,
+                    };
+                });
             });
         },
 

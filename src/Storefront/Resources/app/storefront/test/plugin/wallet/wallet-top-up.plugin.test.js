@@ -88,7 +88,7 @@ describe('WalletTopUpPlugin', () => {
         expect(document.querySelector('[data-wallet-top-up-feedback]').classList.contains('alert-danger')).toBe(true);
     });
 
-    test('posts amount, channel and return url to the top up endpoint', async () => {
+    test('posts amount, payment method and return url to the top up endpoint', async () => {
         const plugin = createPlugin();
         jest.spyOn(plugin, '_watch').mockImplementation(() => {});
 
@@ -109,7 +109,8 @@ describe('WalletTopUpPlugin', () => {
         expect(url).toBe(options.topUpUrl);
         expect(request.method).toBe('POST');
         expect(body.get('amount')).toBe('500');
-        expect(body.get('channel')).toBe('wechat_qr');
+        expect(body.get('method')).toBe('wechat');
+        expect(body.has('channel')).toBe(false);
         expect(body.get('returnUrl')).toBe(options.returnUrl);
     });
 

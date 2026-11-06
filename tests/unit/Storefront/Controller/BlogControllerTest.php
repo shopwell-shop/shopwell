@@ -167,7 +167,7 @@ class BlogControllerTest extends TestCase
         $settings->method('areCommentsEnabled')->willReturn(false);
 
         return new BlogCommentRoute(
-            $this->createMock(EntityRepository::class),
+            static::createStub(EntityRepository::class),
             $this->passingValidator(),
             new BlogCommentService(
                 static::createStub(EntityRepository::class),

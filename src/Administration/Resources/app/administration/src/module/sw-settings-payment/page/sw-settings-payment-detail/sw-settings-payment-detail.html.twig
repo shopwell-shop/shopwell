@@ -222,7 +222,7 @@
                         >
                             <p>{{ $t('sw-settings-payment.detail.gatewayChannel.textNoProviders') }}</p>
 
-                            <router-link :to="{ name: 'sw.settings.payment.provider.index' }">
+                            <router-link :to="{ name: 'sw.settings.payment.gateway.list' }">
                                 {{ $t('sw-settings-payment.detail.gatewayChannel.linkToProviders') }}
                             </router-link>
                         </mt-banner>
@@ -236,7 +236,7 @@
                         >
                             <p>{{ $t('sw-settings-payment.detail.gatewayChannel.textNoChannels') }}</p>
 
-                            <router-link :to="{ name: 'sw.settings.payment.provider.index' }">
+                            <router-link :to="{ name: 'sw.settings.payment.gateway.list' }">
                                 {{ $t('sw-settings-payment.detail.gatewayChannel.linkToProviders') }}
                             </router-link>
                         </mt-banner>
@@ -259,7 +259,7 @@
                         >
                             {{ $t('sw-settings-payment.detail.gatewayChannel.textBound', {
                             app: gatewayBindingAppLabel,
-                            channel: gatewayBindingChannelLabel,
+                            channel: gatewayBindingMethodLabel,
                             }) }}
                         </p>
                         {% endblock %}
@@ -306,15 +306,23 @@
 
                             {% block sw_settings_payment_detail_gateway_channel_select_channel %}
                             <mt-select
-                                v-model="gatewayChannel"
+                                v-model="gatewayMethod"
                                 class="sw-settings-payment-detail__gateway-channel-channel"
                                 name="sw-field--paymentMethod-gateway-channel-channel"
                                 value-property="value"
                                 label-property="label"
                                 :label="$t('sw-settings-payment.detail.gatewayChannel.labelChannel')"
                                 :placeholder="$t('sw-settings-payment.detail.gatewayChannel.placeholderChannel')"
-                                :options="gatewayChannelOptions"
+                                :options="gatewayMethodOptions"
                                 :disabled="!gatewayApp || !gatewayHasChannels || !acl.can('payment.editor') || undefined"
+                            />
+                            {% endblock %}
+                            {% block sw_settings_payment_detail_gateway_routing_policy %}
+                            <mt-text-field
+                                v-model="gatewayRoutingPolicy"
+                                class="sw-settings-payment-detail__gateway-routing-policy"
+                                :label="$t('sw-settings-payment.detail.gatewayChannel.labelRoutingPolicy')"
+                                :disabled="!acl.can('payment.editor') || undefined"
                             />
                             {% endblock %}
                         </sw-container>

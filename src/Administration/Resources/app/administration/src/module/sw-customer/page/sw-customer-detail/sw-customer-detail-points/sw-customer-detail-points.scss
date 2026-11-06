@@ -19,11 +19,11 @@
         margin-top: 8px;
     }
 
-    .sw-customer-detail-points__growth {
+    .sw-customer-detail-points__tier-points {
         margin-top: 8px;
     }
 
-    .sw-customer-detail-points__growth-header {
+    .sw-customer-detail-points__tier-points-header {
         display: flex;
         justify-content: space-between;
         align-items: baseline;
@@ -31,7 +31,7 @@
         margin-bottom: 8px;
     }
 
-    .sw-customer-detail-points__growth-values {
+    .sw-customer-detail-points__tier-points-values {
         color: var(--color-text-secondary-default);
         font-size: var(--font-size-xs);
     }

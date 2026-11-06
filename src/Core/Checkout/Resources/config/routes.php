@@ -26,6 +26,9 @@ return static function (RoutingConfigurator $routes): void {
     $routes->import('../../Wallet/**/*Controller.php', 'attribute');
     $routes->import('../../Loyalty/SalesChannel/**/*Route.php', 'attribute');
     $routes->import('../../Wallet/SalesChannel/**/*Route.php', 'attribute');
+    // membership and loyalty sit on two pages, so each has its own store-api route; without this
+    // import the routes exist as services but never reach the router
+    $routes->import('../../Membership/SalesChannel/**/*Route.php', 'attribute');
     $routes->import('../../OrderReturn/**/*Controller.php', 'attribute');
     $routes->import('../../OrderReturn/SalesChannel/**/*Route.php', 'attribute');
 };

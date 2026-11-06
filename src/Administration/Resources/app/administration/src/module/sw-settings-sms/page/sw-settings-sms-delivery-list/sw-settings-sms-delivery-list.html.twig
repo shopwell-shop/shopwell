@@ -85,7 +85,7 @@
                     >
                         {% block sw_settings_sms_delivery_list_grid_columns_created_at %}
                         <template #column-createdAt="{ item }">
-                            {{ item.createdAt | date({ hour: '2-digit', minute: '2-digit' }) }}
+                            {{ dateFilter(item.createdAt, { hour: '2-digit', minute: '2-digit' }) }}
                         </template>
                         {% endblock %}
 

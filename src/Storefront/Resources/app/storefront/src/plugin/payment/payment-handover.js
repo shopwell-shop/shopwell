@@ -137,6 +137,7 @@ export default class PaymentPoller {
         this._timer = null;
         this._deadline = 0;
         this._running = false;
+        this._generation = 0;
     }
 
     start() {
@@ -144,10 +145,11 @@ export default class PaymentPoller {
         this._running = true;
         this._deadline = Date.now() + this._timeout;
 
-        void this._tick();
+        void this._tick(this._generation);
     }
 
     stop() {
+        this._generation += 1;
         this._running = false;
 
         if (this._timer !== null) {
@@ -156,14 +158,14 @@ export default class PaymentPoller {
         }
     }
 
-    async _tick() {
-        if (!this._running) {
+    async _tick(generation) {
+        if (!this._running || generation !== this._generation) {
             return;
         }
 
         const state = await this._probe();
 
-        if (!this._running) {
+        if (!this._running || generation !== this._generation) {
             return;
         }
 
@@ -179,6 +181,6 @@ export default class PaymentPoller {
             return;
         }
 
-        this._timer = window.setTimeout(() => this._tick(), this._interval);
+        this._timer = window.setTimeout(() => this._tick(generation), this._interval);
     }
 }

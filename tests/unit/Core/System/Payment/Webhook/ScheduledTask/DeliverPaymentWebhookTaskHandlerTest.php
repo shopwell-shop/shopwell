@@ -2,6 +2,7 @@
 
 namespace Shopwell\Tests\Unit\Core\System\Payment\Webhook\ScheduledTask;
 
+use Doctrine\DBAL\Connection;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -33,8 +34,8 @@ class DeliverPaymentWebhookTaskHandlerTest extends TestCase
     public function testRunRetriesTheDueDeliveries(): void
     {
         $delivery = new PaymentWebhookDeliveryEntity();
-        $delivery->setUniqueIdentifier('delivery-id');
-        $delivery->id = 'delivery-id';
+        $delivery->setUniqueIdentifier('0123456789abcdef0123456789abcdef');
+        $delivery->id = '0123456789abcdef0123456789abcdef';
         $delivery->paymentOrderId = 'order-id';
         $delivery->paymentAppId = 'app-id';
         $delivery->event = PaymentWebhookDispatcher::EVENT_ORDER_PAID;
@@ -50,7 +51,7 @@ class DeliverPaymentWebhookTaskHandlerTest extends TestCase
             new Criteria(),
             Context::createDefaultContext()
         ));
-        $deliveryRepository->expects($this->once())->method('update');
+        $deliveryRepository->expects($this->never())->method('update');
 
         $response = static::createStub(ResponseInterface::class);
         $response->method('getStatusCode')->willReturn(200);
@@ -117,13 +118,17 @@ class DeliverPaymentWebhookTaskHandlerTest extends TestCase
             Context::createDefaultContext()
         ));
 
+        $connection = static::createStub(Connection::class);
+        $connection->method('executeStatement')->willReturn(1);
+
         return new PaymentWebhookDispatcher(
             $deliveryRepository,
             $appRepository,
             new PaymentWebhookSigner(new PaymentSignatureService(), $cipher, new MockClock('2024-01-01T00:00:00+00:00')),
             $client,
             new MockClock('2024-01-01T00:00:00+00:00'),
-            static::createStub(LoggerInterface::class)
+            static::createStub(LoggerInterface::class),
+            $connection
         );
     }
 }

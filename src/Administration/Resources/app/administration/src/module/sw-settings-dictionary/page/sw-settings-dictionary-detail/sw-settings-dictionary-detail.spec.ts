@@ -1,7 +1,7 @@
 /**
  * @sw-package framework
  */
-import { mount } from '@vue/test-utils';
+import { shallowMount } from '@vue/test-utils';
 import type { VueWrapper } from '@vue/test-utils';
 
 type DictionaryEntryRow = {
@@ -12,32 +12,15 @@ type DictionaryEntryRow = {
     translated: { label: string };
 };
 
-type DictionaryDetailVm = {
-    dictionaryType: { technicalName: string };
-    entries: DictionaryEntryRow[] | null;
-    newEntry: {
-        dictionaryTypeId: string | null;
-        label: string | null;
-        technicalName: string | null;
-        position: number | null;
-        active: boolean;
-    };
-    showCreateModal: boolean;
-    showDeleteModal: string | null;
-    entryRepository: {
-        save: jest.Mock;
-        delete: jest.Mock;
-    };
-    onAddEntry: () => void;
-    onCreateSave: () => Promise<void>;
-    onDelete: (id: string) => void;
-    onConfirmDelete: (id: string) => Promise<void>;
-};
+let saveSpy: jest.Mock;
+let deleteSpy: jest.Mock;
+let searchSpy: jest.Mock;
 
-type TypedWrapper = { vm: DictionaryDetailVm } & VueWrapper;
-
-async function createWrapper(privileges: string[] = [], entries: DictionaryEntryRow[] = []): Promise<TypedWrapper> {
-    return mount(
+async function createWrapper(privileges: string[] = [], entries: DictionaryEntryRow[] = []): Promise<VueWrapper> {
+    saveSpy = jest.fn(() => Promise.resolve());
+    deleteSpy = jest.fn(() => Promise.resolve());
+    searchSpy = jest.fn(() => Promise.resolve(entries));
+    return shallowMount(
         await wrapTestComponent('sw-settings-dictionary-detail', {
             sync: true,
         }),
@@ -66,12 +49,12 @@ async function createWrapper(privileges: string[] = [], entries: DictionaryEntry
                             get: () =>
                                 Promise.resolve({
                                     id: 'type-id',
-                                    technicalName: 'salutation',
-                                    translated: { label: 'Salutation' },
+                                    technicalName: 'gender',
+                                    translated: { label: 'Gender' },
                                 }),
-                            search: () => Promise.resolve(entries),
-                            save: () => Promise.resolve(),
-                            delete: () => Promise.resolve(),
+                            search: searchSpy,
+                            save: saveSpy,
+                            delete: deleteSpy,
                             create: () => ({
                                 dictionaryTypeId: null,
                                 technicalName: null,
@@ -92,26 +75,45 @@ async function createWrapper(privileges: string[] = [], entries: DictionaryEntry
                     'sw-page': {
                         template: `
                     <div class="sw-page">
+                        <slot name="smart-bar-header"></slot>
                         <slot name="smart-bar-actions"></slot>
                         <slot name="content"></slot>
-                        <slot></slot>
                     </div>
                 `,
                     },
-                    'sw-card-view': true,
+                    'sw-card-view': { template: '<div><slot /></div>' },
+                    'mt-card': { template: '<section><slot name="grid"/><slot /></section>' },
+                    'mt-button': { props: ['disabled'], template: '<button :disabled="disabled"><slot /></button>' },
+                    'mt-text-field': {
+                        props: ['modelValue'],
+                        emits: ['update:modelValue'],
+                        template: `<input :value="modelValue" @input="$emit('update:modelValue', $event.target.value)" />`,
+                    },
+                    'mt-number-field': {
+                        props: ['modelValue'],
+                        emits: ['update:modelValue'],
+                        template: `<input type="number" :value="modelValue" @input="$emit('update:modelValue', Number($event.target.value))" />`,
+                    },
+                    'mt-switch': {
+                        props: ['modelValue'],
+                        emits: ['update:modelValue'],
+                        template: `<input type="checkbox" :checked="modelValue" @change="$emit('update:modelValue', $event.target.checked)" />`,
+                    },
                     'sw-ignore-class': true,
                     'sw-entity-listing': {
                         props: ['items', 'dataSource'],
                         template: `
                     <div>
-                        <template v-for="item in (dataSource || items)" :key="item.id">
+                        <div v-for="item in (dataSource || items)" :key="item.id" :data-row="item.id"><span>{{ item.translated?.label }}</span>
                             <slot name="actions" v-bind="{ item }"></slot>
-                            <slot name="action-modals" v-bind="{ item }"></slot>
-                        </template>
+                            <slot name="action-modals" v-bind="{ item }"></slot></div>
                     </div>`,
                     },
                     'sw-language-switch': true,
-                    'sw-context-menu-item': true,
+                    'sw-context-menu-item': {
+                        props: ['disabled'],
+                        template: '<button :disabled="disabled"><slot /></button>',
+                    },
                     'sw-loader': true,
                     'sw-extension-component-section': true,
                     'sw-label': true,
@@ -127,11 +129,11 @@ async function createWrapper(privileges: string[] = [], entries: DictionaryEntry
                 },
             },
         },
-    ) as unknown as TypedWrapper;
+    );
 }
 
 describe('module/sw-settings-dictionary/page/sw-settings-dictionary-detail', () => {
-    let wrapper: TypedWrapper;
+    let wrapper: VueWrapper;
 
     beforeEach(async () => {
         wrapper = await createWrapper();
@@ -154,37 +156,38 @@ describe('module/sw-settings-dictionary/page/sw-settings-dictionary-detail', () 
     });
 
     it('should load the type and its entries sorted by position', () => {
-        expect(wrapper.vm.dictionaryType.technicalName).toBe('salutation');
+        expect(wrapper.get('h2').text()).toContain('Gender');
+        expect(searchSpy).toHaveBeenCalledWith(
+            expect.objectContaining({ sortings: [expect.objectContaining({ field: 'position', order: 'ASC' })] }),
+        );
     });
 
     it('should save a new entry with the payload of the current language', async () => {
         wrapper = await createWrapper(['dictionary.creator']);
         await flushPromises();
 
-        wrapper.vm.onAddEntry();
+        await wrapper.get('.sw-settings-dictionary-detail__add-entry').trigger('click');
 
-        expect(wrapper.vm.newEntry.dictionaryTypeId).toBe('type-id');
+        expect(wrapper.find('.sw-settings-dictionary-detail__create-modal').exists()).toBe(true);
 
-        wrapper.vm.newEntry.label = '先生';
-        wrapper.vm.newEntry.technicalName = 'mr';
-        wrapper.vm.newEntry.position = 10;
-        wrapper.vm.newEntry.active = true;
+        await wrapper.get('.sw-settings-dictionary-detail__create-label').setValue('男性');
+        await wrapper.get('.sw-settings-dictionary-detail__create-technical-name').setValue('male');
+        await wrapper.get('.sw-settings-dictionary-detail__create-position').setValue(10);
+        await wrapper.get('.sw-settings-dictionary-detail__create-active').setValue(true);
 
-        const saveSpy = jest.fn(() => Promise.resolve());
-        wrapper.vm.entryRepository.save = saveSpy;
-
-        await wrapper.vm.onCreateSave();
+        await wrapper.findAll('.sw-settings-dictionary-detail__create-modal button')[1].trigger('click');
+        await flushPromises();
 
         expect(saveSpy).toHaveBeenCalledWith(
             expect.objectContaining({
                 dictionaryTypeId: 'type-id',
-                technicalName: 'mr',
+                technicalName: 'male',
                 position: 10,
                 active: true,
-                label: '先生',
+                label: '男性',
             }),
         );
-        expect(wrapper.vm.showCreateModal).toBe(false);
+        expect(wrapper.find('.sw-settings-dictionary-detail__create-modal').exists()).toBe(false);
     });
 
     it('should reject an entry whose technical name duplicates an existing entry', async () => {
@@ -193,27 +196,25 @@ describe('module/sw-settings-dictionary/page/sw-settings-dictionary-detail', () 
             [
                 {
                     id: 'entry-1',
-                    technicalName: 'mr',
+                    technicalName: 'male',
                     position: 10,
                     active: true,
-                    translated: { label: 'Mr.' },
+                    translated: { label: '男性' },
                 },
             ],
         );
         await flushPromises();
 
-        wrapper.vm.onAddEntry();
+        await wrapper.get('.sw-settings-dictionary-detail__add-entry').trigger('click');
 
-        wrapper.vm.newEntry.label = '先生';
-        wrapper.vm.newEntry.technicalName = 'mr';
+        await wrapper.get('.sw-settings-dictionary-detail__create-label').setValue('男性');
+        await wrapper.get('.sw-settings-dictionary-detail__create-technical-name').setValue('male');
 
-        const saveSpy = jest.fn(() => Promise.resolve());
-        wrapper.vm.entryRepository.save = saveSpy;
-
-        await wrapper.vm.onCreateSave();
+        await wrapper.findAll('.sw-settings-dictionary-detail__create-modal button')[1].trigger('click');
+        await flushPromises();
 
         expect(saveSpy).not.toHaveBeenCalled();
-        expect(wrapper.vm.showCreateModal).toBe(true);
+        expect(wrapper.find('.sw-settings-dictionary-detail__create-modal').exists()).toBe(true);
     });
 
     it('should pre-fill the position with the next free slot', async () => {
@@ -222,33 +223,36 @@ describe('module/sw-settings-dictionary/page/sw-settings-dictionary-detail', () 
             [
                 {
                     id: 'entry-1',
-                    technicalName: 'mr',
+                    technicalName: 'male',
                     position: 10,
                     active: true,
-                    translated: { label: 'Mr.' },
+                    translated: { label: '男性' },
                 },
             ],
         );
         await flushPromises();
 
-        wrapper.vm.onAddEntry();
+        await wrapper.get('.sw-settings-dictionary-detail__add-entry').trigger('click');
 
-        expect(wrapper.vm.newEntry.position).toBe(20);
+        expect((wrapper.get('.sw-settings-dictionary-detail__create-position').element as HTMLInputElement).value).toBe(
+            '20',
+        );
     });
 
     it('should confirm the delete of an entry', async () => {
-        wrapper = await createWrapper(['dictionary.deleter']);
+        wrapper = await createWrapper(
+            ['dictionary.deleter'],
+            [{ id: 'entry-1', technicalName: 'male', position: 10, active: true, translated: { label: '男性' } }],
+        );
         await flushPromises();
 
-        const deleteSpy = jest.fn(() => Promise.resolve());
-        wrapper.vm.entryRepository.delete = deleteSpy;
-
-        wrapper.vm.onDelete('entry-1');
-        expect(wrapper.vm.showDeleteModal).toBe('entry-1');
-
-        await wrapper.vm.onConfirmDelete('entry-1');
+        await wrapper.get('.sw-entity-listing__context-menu-delete').trigger('click');
+        expect(wrapper.find('.sw-modal').exists()).toBe(true);
+        expect(deleteSpy).not.toHaveBeenCalled();
+        await wrapper.findAll('.sw-modal button')[1].trigger('click');
+        await flushPromises();
 
         expect(deleteSpy).toHaveBeenCalledWith('entry-1');
-        expect(wrapper.vm.showDeleteModal).toBeNull();
+        expect(wrapper.find('.sw-modal').exists()).toBe(false);
     });
 });

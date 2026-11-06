@@ -2,7 +2,7 @@
 
 namespace Shopwell\Core\System\Currency;
 
-use Shopwell\Core\Checkout\Loyalty\Entity\MembershipPlan\MembershipPlanDefinition;
+use Shopwell\Core\Checkout\Membership\Entity\MembershipPlan\MembershipPlanDefinition;
 use Shopwell\Core\Checkout\Order\OrderDefinition;
 use Shopwell\Core\Checkout\Promotion\Aggregate\PromotionDiscountPrice\PromotionDiscountPriceDefinition;
 use Shopwell\Core\Checkout\Wallet\Entity\CustomerWallet\CustomerWalletDefinition;

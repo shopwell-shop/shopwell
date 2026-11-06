@@ -36,7 +36,7 @@ for (const statusCode of [200, 500]) {
             env: {
                 ...process.env,
                 PATH: `${directory}:${process.env.PATH}`,
-                REPO: 'shopwell/shopwell',
+                REPO: 'shopwell-shop/shopwell',
                 RUN_ID: '123',
                 RUN_LABEL: 'Major',
                 SLACK_ATS_WORKFLOW_URL: `http://127.0.0.1:${address.port}`,
@@ -55,7 +55,7 @@ for (const statusCode of [200, 500]) {
         }
         assert.ok(payload);
         assert.match(payload.message, /^\*Major\*\n/);
-        assert.match(payload.message, /❌ .*Platform, major,.*https:\/\/github\.com\/shopwell\/shopwell\/actions\/runs\/123\/job\/456/);
+        assert.match(payload.message, /❌ .*Platform, major,.*https:\/\/github\.com\/shopwell-shop\/shopwell\/actions\/runs\/123\/job\/456/);
         assert.match(payload.message, /✅ .*Platform, major,/);
         assert.doesNotMatch(payload.message, /phpunit-major/);
     });

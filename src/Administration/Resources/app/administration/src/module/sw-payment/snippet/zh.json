@@ -4,7 +4,9 @@
             "mainMenuItemGeneral": "支付",
             "mainMenuItemPaymentOrders": "支付订单",
             "mainMenuItemRefunds": "退款订单",
-            "description": "外部应用通过通用支付网关发起的支付"
+            "description": "外部应用通过通用支付网关发起的支付",
+            "buttonCopy": "复制",
+            "buttonCopied": "已复制"
         },
         "order": {
             "list": {
@@ -14,8 +16,8 @@
                 "columnPaymentNo": "支付单号",
                 "columnOutTradeNo": "商户订单号",
                 "columnPaymentApp": "所属应用",
-                "columnProvider": "支付接口",
-                "columnChannel": "支付渠道",
+                "columnProvider": "支付服务商",
+                "columnChannel": "支付产品",
                 "columnState": "状态",
                 "columnAmount": "金额",
                 "columnCurrency": "货币",
@@ -37,11 +39,11 @@
                     "placeholder": "全部应用..."
                 },
                 "channelFilter": {
-                    "label": "支付渠道",
+                    "label": "支付产品",
                     "placeholder": "多个渠道用逗号分隔..."
                 },
                 "providerFilter": {
-                    "label": "支付接口",
+                    "label": "支付服务商",
                     "placeholder": "多个接口用逗号分隔..."
                 },
                 "stateFilter": {
@@ -52,32 +54,22 @@
             "detail": {
                 "title": "支付订单",
                 "buttonRefresh": "刷新",
-                "tabGeneral": "基本信息",
-                "tabTransactions": "支付交易",
-                "tabRefunds": "退款记录",
-                "tabNotifications": "异步通知",
-                "tabWebhookDeliveries": "Webhook 投递",
-                "tabChannelData": "渠道原始数据",
-                "cardGeneralTitle": "支付订单",
-                "cardAppTitle": "所属应用",
-                "cardAmountTitle": "金额",
-                "cardChannelTitle": "支付渠道",
-                "cardPayerTitle": "付款人与回调地址",
-                "cardChannelDataTitle": "渠道返回的原始报文",
-                "titleTransactions": "支付交易",
-                "titleRefunds": "退款记录",
-                "titleNotifications": "收到的异步通知",
-                "titleWebhookDeliveries": "发出的 Webhook 投递",
+                "buttonShopOrder": "商城订单",
+                "cardActivityTitle": "发生了什么",
+                "cardRefundsTitle": "退款",
+                "cardIdentifiersTitle": "单号",
+                "cardRequestTitle": "下单请求",
+                "cardDatesTitle": "时间",
+                "cardChannelDataTitle": "服务商响应",
+                "textRefundedOf": "已退 {refunded}",
                 "labelPaymentNo": "支付单号",
                 "labelOutTradeNo": "商户订单号",
                 "labelPaymentApp": "所属应用",
-                "labelProvider": "支付接口",
-                "labelChannel": "支付渠道",
-                "labelState": "状态",
+                "labelProvider": "支付服务商",
+                "labelChannel": "支付产品",
                 "labelAmount": "订单金额",
                 "labelPaidAmount": "已付金额",
                 "labelRefundedAmount": "已退金额",
-                "labelCurrency": "货币",
                 "labelSubject": "商品标题",
                 "labelBody": "商品描述",
                 "labelAttach": "附加参数",
@@ -92,43 +84,29 @@
                 "labelClosedAt": "关闭时间",
                 "labelCreatedAt": "创建时间",
                 "labelUpdatedAt": "更新时间",
-                "messageEmptyTransactions": "暂无支付交易记录",
-                "messageEmptyRefunds": "暂无退款记录",
-                "messageEmptyNotifications": "暂无异步通知",
-                "messageEmptyWebhookDeliveries": "暂无 Webhook 投递记录",
-                "sublineTransactions": "该支付单的每一次支付尝试都会记录在这里，包含与渠道交互的报文。",
-                "sublineRefunds": "该支付单产生的退款会显示在这里。",
-                "sublineNotifications": "渠道针对该支付单推送的异步通知会显示在这里。",
-                "sublineWebhookDeliveries": "平台向该支付单所属应用发送的通知会显示在这里。",
-                "messageNoChannelData": "渠道尚未返回数据"
+                "messageNotFound": "找不到该支付订单",
+                "messageNotFoundSubline": "它可能已被删除，或链接指向了另一个环境。"
             },
-            "transaction": {
-                "columnTransactionNo": "交易单号",
-                "columnType": "类型",
-                "columnProvider": "支付接口",
-                "columnChannel": "支付渠道",
-                "columnStatus": "状态",
-                "columnOutTransactionId": "渠道单号",
-                "columnCreatedAt": "创建时间"
+            "activity": {
+                "filterAll": "全部",
+                "kind": {
+                    "transaction": "交易",
+                    "notification": "通知",
+                    "webhook": "Webhook",
+                    "refund": "退款"
+                },
+                "titleTransaction": "交易 {id}",
+                "titleNotification": "来自 {provider} 的通知",
+                "titleWebhook": "Webhook {event}",
+                "titleRefund": "退款 {id}",
+                "linkRecord": "查看",
+                "messageEmpty": "暂无事件",
+                "sublineEmpty": "该支付单的交易、通知、Webhook 与退款，会按发生时间显示在这里。"
             },
-            "notification": {
-                "columnProvider": "支付接口",
-                "columnChannel": "支付渠道",
-                "columnSignature": "验签",
-                "columnProcessResult": "处理结果",
-                "columnRemoteIp": "来源 IP",
-                "columnCreatedAt": "接收时间",
-                "labelSignatureValid": "通过",
-                "labelSignatureInvalid": "未通过"
-            },
-            "webhook": {
-                "columnEvent": "事件",
-                "columnUrl": "地址",
-                "columnStatus": "状态",
-                "columnAttemptCount": "尝试次数",
-                "columnLastHttpStatus": "HTTP 状态",
-                "columnNextRetryAt": "下次重试",
-                "columnCreatedAt": "创建时间"
+            "alert": {
+                "invalidSignature": "有 1 条通知验签失败，已被丢弃。 | 有 {count} 条通知验签失败，已被丢弃。",
+                "notificationMismatch": "有 1 条通知的金额与该支付单不一致。 | 有 {count} 条通知的金额与该支付单不一致。",
+                "webhookFailed": "有 1 条 Webhook 未能送达，应用没有收到通知。 | 有 {count} 条 Webhook 未能送达，应用没有收到通知。"
             }
         },
         "refund": {
@@ -157,7 +135,7 @@
                     "placeholder": "多个单号用逗号分隔..."
                 },
                 "channelFilter": {
-                    "label": "支付渠道",
+                    "label": "支付产品",
                     "placeholder": "多个渠道用逗号分隔..."
                 },
                 "stateFilter": {
@@ -168,28 +146,26 @@
             "detail": {
                 "title": "退款订单",
                 "buttonRefresh": "刷新",
-                "tabGeneral": "基本信息",
-                "tabPayload": "报文",
-                "cardGeneralTitle": "退款订单",
+                "buttonPaymentOrder": "关联支付单",
                 "cardOrderTitle": "关联支付单",
-                "cardAmountTitle": "金额",
                 "cardPayloadTitle": "请求与响应",
+                "cardIdentifiersTitle": "单号",
                 "labelRefundNo": "退款单号",
                 "labelOutRefundNo": "商户退款号",
                 "labelPaymentOrder": "关联支付单",
                 "labelOutPaymentNo": "渠道交易号",
-                "labelChannel": "支付渠道",
+                "labelChannel": "支付产品",
                 "labelPaymentApp": "所属应用",
-                "labelState": "状态",
                 "labelAmount": "退款金额",
-                "labelCurrency": "货币",
                 "labelReason": "退款原因",
-                "labelOutRefundId": "渠道退款号",
+                "labelOutRefundId": "服务商退款号",
                 "labelRefundedAt": "退款时间",
                 "labelCreatedAt": "创建时间",
                 "labelUpdatedAt": "更新时间",
                 "labelRequestPayload": "请求",
-                "labelResponsePayload": "响应"
+                "labelResponsePayload": "响应",
+                "messageNotFound": "找不到该退款订单",
+                "messageNotFoundSubline": "它可能已被删除，或链接指向了另一个环境。"
             }
         },
         "transactionType": {

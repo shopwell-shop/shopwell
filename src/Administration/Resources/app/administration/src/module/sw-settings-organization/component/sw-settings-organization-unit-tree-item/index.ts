@@ -16,7 +16,7 @@ type OrganizationUnitEntity = EntitySchema.Entity<'organization_unit'>;
  * type select. On hover it offers the "add child" action, which opens the create modal of the
  * detail page with this unit as parent.
  */
-// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+/** @private */
 export default defineComponent({
     template,
 
@@ -72,7 +72,7 @@ export default defineComponent({
         },
 
         isOpened(): boolean {
-            return this.isSearching || !!this.expandedIds[this.unit.id];
+            return this.isSearching || (this.expandedIds[this.unit.id] ?? false);
         },
     },
 

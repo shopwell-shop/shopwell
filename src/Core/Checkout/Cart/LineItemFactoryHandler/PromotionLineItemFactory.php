@@ -5,6 +5,7 @@ namespace Shopwell\Core\Checkout\Cart\LineItemFactoryHandler;
 use Shopwell\Core\Checkout\Cart\CartException;
 use Shopwell\Core\Checkout\Cart\LineItem\LineItem;
 use Shopwell\Core\Checkout\Cart\Price\Struct\PercentagePriceDefinition;
+use Shopwell\Core\Checkout\Promotion\Cart\PromotionItemBuilder;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
@@ -23,7 +24,7 @@ class PromotionLineItemFactory implements LineItemFactoryInterface
     public function create(array $data, SalesChannelContext $context): LineItem
     {
         $code = mb_trim($data['referencedId']);
-        $uniqueKey = 'promotion-' . $code;
+        $uniqueKey = PromotionItemBuilder::PLACEHOLDER_PREFIX . $code;
 
         $item = new LineItem(Uuid::fromStringToHex($uniqueKey), LineItem::PROMOTION_LINE_ITEM_TYPE);
         $item->setLabel($uniqueKey);

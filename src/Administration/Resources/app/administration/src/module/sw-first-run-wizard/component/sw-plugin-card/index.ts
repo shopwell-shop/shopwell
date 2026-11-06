@@ -26,6 +26,8 @@ export default Shopwell.Component.wrapComponentConfig({
 
     inject: ['cacheApiService', 'extensionHelperService', 'shopwellExtensionService'],
 
+    emits: ['extension-activated', 'on-plugin-installed'],
+
     mixins: [Shopwell.Mixin.getByName('sw-extension-error')],
 
     props: {

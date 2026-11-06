@@ -23,7 +23,7 @@ type TransferLike = {
  * number of that request is spent. That is why the reason is mandatory - it is the only record of why
  * the money was not sent - and why the modal says so before the operator confirms.
  */
-// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+/** @private */
 export default defineComponent({
     template,
 

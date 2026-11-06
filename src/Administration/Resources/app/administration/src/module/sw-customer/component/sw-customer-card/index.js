@@ -15,7 +15,12 @@ const { CUSTOMER } = Shopwell.Constants;
 export default {
     template,
 
-    inject: ['acl', 'contextStoreService', 'repositoryFactory', 'dictionaryService'],
+    inject: [
+        'acl',
+        'contextStoreService',
+        'repositoryFactory',
+        'dictionaryService',
+    ],
 
     mixins: [Mixin.getByName('notification')],
 

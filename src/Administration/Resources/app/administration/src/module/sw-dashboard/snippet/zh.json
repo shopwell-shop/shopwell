@@ -37,7 +37,6 @@
             "returnRequests": "待审核退货",
             "ordersToShip": "待发货订单",
             "reviewsWaiting": "待审核评价",
-            "outOfStock": "缺货商品",
             "empty": "暂无待办，一切正常。"
         },
         "orderStates": {

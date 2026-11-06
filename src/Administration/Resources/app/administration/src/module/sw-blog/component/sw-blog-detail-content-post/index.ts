@@ -11,7 +11,7 @@ import template from './sw-blog-detail-content-post.html.twig';
  * editor with the field name it is stored under. Everything else of an article - title, teaser, seo -
  * lives in the general and seo tabs, not here.
  */
-// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+/** @private */
 export default defineComponent({
     template,
 

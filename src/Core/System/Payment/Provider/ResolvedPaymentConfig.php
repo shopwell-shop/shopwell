@@ -3,27 +3,13 @@
 namespace Shopwell\Core\System\Payment\Provider;
 
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\System\Payment\Exception\PaymentGatewayException;
+use Shopwell\Core\System\Payment\Exception\PaymentProviderException;
 use Shopwell\Core\System\Payment\PaymentException;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
+use Shopwell\Core\System\Payment\Product\PaymentProduct;
 
 /**
- * Everything one payment needs: the channel the app asked for, the payment interface behind it, and the
- * credentials and parameters that were resolved for the app.
- *
- * The split is the whole point of the model: the credentials belong to the interface and are shared by
- * every channel of it, the parameters belong to the channel, and both follow the account source of the
- * app - its own account, the one of another app it inherits, or the one of the platform.
- *
- * Two different questions are answered by two different members, and neither of them is a synonym of
- * "is this app the platform":
- *
- *  - `$sourceAppId` answers *whose* account is charged. It names the app the account was walked
- *    to, so an app of a merchant that inherits from the platform tenant carries the id of that tenant,
- *    and only the tenant itself carries `null`.
- *  - `$usesPlatformAccount` answers *where the credentials came from*, namely the configuration of
- *    the platform level. That is true for the tenant and for every app that inherits from it at the
- *    same time, which is exactly why `$sourceAppId` alone cannot express it - and it is false for an
- *    app that inherits from another merchant app, even though that one is inherited as well.
+ * Execution configuration for one explicit merchant account and payment product.
  *
  * @internal
  */
@@ -31,40 +17,22 @@ use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
 final readonly class ResolvedPaymentConfig
 {
     /**
-     * @param array<string, mixed> $credentials the merchant credentials of the interface, decrypted
-     * @param array<string, mixed> $params the channel parameters, app overrides applied
+     * @param array<string, mixed> $credentials the account merchant credentials, decrypted
+     * @param array<string, mixed> $params the account product parameters, decrypted
      * @param array<string, mixed> $runtimeParams the parameters of this very payment, handed in by the app
-     * @param array<string, mixed> $settings the free settings of the interface and the channel, app overrides applied
-     * @param string|null $sourceAppId the app the account was inherited from, `null` when the payment is
-     *                                 collected on an account of the app itself. The tenant of the
-     *                                 platform is an app like every other here: an app that collects on
-     *                                 the platform account carries its id, and only the tenant itself
-     *                                 carries `null` - its own credentials *are* the platform ones.
-     * @param bool $usesPlatformAccount whether the credentials are the ones of the platform level
-     *                                  configuration. It is the one thing `sourceAppId` cannot answer
-     *                                  on its own, because both the tenant and every app that inherits
-     *                                  from it are charged on that very account - a caller that has to
-     *                                  tell a merchant account of the platform from one an app brought
-     *                                  has to ask this, not `isInherited()`
+     * @param array<string, mixed> $settings the account settings merged with application grant and product settings
      */
     public function __construct(
         public PaymentProvider $provider,
-        public PaymentChannel $channel,
+        public PaymentProduct $product,
         public array $credentials,
         public array $params,
         public array $runtimeParams,
         public array $settings,
-        public ?string $sourceAppId = null,
-        public bool $usesPlatformAccount = false,
+        public string $accountId,
+        public int $priority = 0,
+        public string $accountFingerprint = '',
     ) {
-    }
-
-    /**
-     * Whether the account of another app is charged, the one of the platform included.
-     */
-    public function isInherited(): bool
-    {
-        return $this->sourceAppId !== null;
     }
 
     public function get(string $key, ?string $default = null): ?string
@@ -80,7 +48,7 @@ final readonly class ResolvedPaymentConfig
         $value = $this->get($key);
 
         if ($value === null) {
-            throw PaymentException::missingCredentials($this->provider->technicalName, $key);
+            throw PaymentGatewayException::missingCredentials($this->provider->technicalName, $key);
         }
 
         return $value;
@@ -99,7 +67,7 @@ final readonly class ResolvedPaymentConfig
         $value = $this->param($key);
 
         if ($value === null) {
-            throw PaymentException::channelNotConfigured($this->channel->technicalName, $key);
+            throw PaymentProviderException::channelNotConfigured($this->product->technicalName, $key);
         }
 
         return $value;

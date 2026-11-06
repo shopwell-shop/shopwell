@@ -20,7 +20,7 @@ const { Criteria } = Shopwell.Data;
 
 type PaymentTransfer = EntitySchema.Entity<'payment_transfer'>;
 
-// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+/** @private */
 export default defineComponent({
     template,
 
@@ -213,14 +213,11 @@ export default defineComponent({
                 | EntitySchema.Entity<'state_machine_state'>
                 | undefined;
 
-            return this.stateLabelOf(
-                state?.technicalName,
-                findPaymentStateLabel(this.transferStates ?? [], stateId) as string,
-            );
+            return this.stateLabelOf(state?.technicalName, findPaymentStateLabel(this.transferStates ?? [], stateId));
         },
 
         transferStateVariant(stateId: string): string {
-            return findPaymentStateVariant(this.transferStates ?? [], stateId) as string;
+            return findPaymentStateVariant(this.transferStates ?? [], stateId);
         },
 
         formatAmount(amount: number, currency: string): string {

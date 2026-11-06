@@ -12,6 +12,7 @@ async function createWrapper(
         routeName = 'sw.settings.country.detail.general',
         routeParams = { id: 'the-id' },
         routerPush = jest.fn(),
+        countryIsNew = false,
     } = {},
 ) {
     return mount(
@@ -46,7 +47,7 @@ async function createWrapper(
                             get: () => {
                                 if (entity === 'country') {
                                     return Promise.resolve({
-                                        isNew: () => false,
+                                        isNew: () => countryIsNew,
                                         active: true,
                                         apiAlias: null,
                                         createdAt: '2020-08-12T02:49:39.974+00:00',
@@ -129,7 +130,11 @@ async function createWrapper(
                     'sw-container': await wrapTestComponent('sw-container'),
                     'sw-language-switch': true,
                     'sw-language-info': true,
-                    'sw-button-process': true,
+                    'sw-button-process': {
+                        props: ['disabled'],
+                        emits: ['click'],
+                        template: '<button :disabled="disabled" @click="$emit(\'click\', $event)"><slot /></button>',
+                    },
                     'sw-field': true,
                     'sw-simple-search-field': true,
                     'sw-context-menu-item': true,
@@ -146,14 +151,26 @@ async function createWrapper(
                         props: ['route'],
                     },
                     'router-link': true,
-                    'router-view': true,
+                    'router-view': {
+                        setup() {
+                            return {
+                                component: {
+                                    props: ['userConfigValues'],
+                                    template:
+                                        '<output data-testid="preview-setting">{{ userConfigValues.showPreview }}</output>',
+                                },
+                            };
+                        },
+                        template: '<slot :Component="component" />',
+                    },
                     'sw-skeleton': true,
                     'sw-settings-country-sidebar': true,
                     'sw-error-summary': true,
                     'sw-custom-field-set-renderer': true,
                     'mt-tabs': {
                         name: 'mt-tabs',
-                        template: '<div class="mt-tabs"></div>',
+                        template:
+                            '<div class="mt-tabs"><button v-for="item in items" :key="item.name" @click="item.onClick">{{ item.label }}</button></div>',
                         props: {
                             defaultItem: {
                                 type: String,
@@ -195,7 +212,7 @@ describe('module/sw-settings-country/page/sw-settings-country-detail', () => {
     it('should render the deprecated tabs when the major feature flag is inactive', async () => {
         const wrapper = await createWrapper(['country.editor']);
 
-        await wrapper.vm.$nextTick();
+        await flushPromises();
 
         const tabs = wrapper.getComponent({ name: 'sw-tabs' });
 
@@ -206,7 +223,7 @@ describe('module/sw-settings-country/page/sw-settings-country-detail', () => {
     it('should keep the fallback tab route contract', async () => {
         const wrapper = await createWrapper(['country.editor']);
 
-        await wrapper.vm.$nextTick();
+        await flushPromises();
 
         const tabItems = wrapper.findAllComponents({ name: 'sw-tabs-item' });
 
@@ -227,7 +244,7 @@ describe('module/sw-settings-country/page/sw-settings-country-detail', () => {
             routeName: 'sw.settings.country.detail.state',
         });
 
-        await wrapper.vm.$nextTick();
+        await flushPromises();
 
         const tabs = wrapper.getComponent({ name: 'mt-tabs' });
 
@@ -260,14 +277,12 @@ describe('module/sw-settings-country/page/sw-settings-country-detail', () => {
             routerPush,
         });
 
-        await wrapper.vm.$nextTick();
+        await flushPromises();
 
-        const tabs = wrapper.getComponent({ name: 'mt-tabs' });
-        const stateTab = tabs.props('items').find((item) => {
-            return item.name === 'sw.settings.country.detail.state';
-        });
-
-        stateTab.onClick();
+        const stateTab = wrapper
+            .findAll('.mt-tabs button')
+            .find((button) => button.text() === 'sw-settings-country.page.stateTab');
+        await stateTab.trigger('click');
 
         expect(routerPush).toHaveBeenCalledWith({ name: 'sw.settings.country.detail.state' });
     });
@@ -275,16 +290,17 @@ describe('module/sw-settings-country/page/sw-settings-country-detail', () => {
     it('should use create routes for meteor tabs when the country is new', async () => {
         const wrapper = await createWrapper(['country.creator'], {
             featureActive: true,
-            routeParams: {},
+            routeParams: { id: 'new-country' },
+            countryIsNew: true,
         });
 
-        await wrapper.setData({
-            country: {
-                isNew: () => true,
-            },
-        });
-
-        expect(wrapper.vm.countryTabs.map((item) => item.name)).toEqual([
+        await flushPromises();
+        expect(
+            wrapper
+                .getComponent({ name: 'mt-tabs' })
+                .props('items')
+                .map((item) => item.name),
+        ).toEqual([
             'sw.settings.country.create.general',
             'sw.settings.country.create.state',
             'sw.settings.country.create.address-handling',
@@ -294,7 +310,7 @@ describe('module/sw-settings-country/page/sw-settings-country-detail', () => {
     it('should be render tab', async () => {
         const wrapper = await createWrapper(['country.editor']);
 
-        await wrapper.vm.$nextTick();
+        await flushPromises();
         const generalTab = wrapper.find('.sw-settings-country__setting-tab');
         const stateTab = wrapper.find('.sw-settings-country__state-tab');
 
@@ -304,7 +320,7 @@ describe('module/sw-settings-country/page/sw-settings-country-detail', () => {
 
     it('should be able to save the country', async () => {
         const wrapper = await createWrapper(['country.editor']);
-        await wrapper.vm.$nextTick();
+        await flushPromises();
 
         const saveButton = wrapper.find('.sw-settings-country-detail__save-action');
 
@@ -313,11 +329,11 @@ describe('module/sw-settings-country/page/sw-settings-country-detail', () => {
 
     it('should not be able to save the country', async () => {
         const wrapper = await createWrapper([]);
-        await wrapper.vm.$nextTick();
+        await flushPromises();
 
         const saveButton = wrapper.find('.sw-settings-country-detail__save-action');
 
-        expect(saveButton.attributes().disabled).toBeTruthy();
+        expect(saveButton.element.disabled).toBe(true);
     });
 
     it('loads country display settings from the user config service', async () => {
@@ -332,27 +348,24 @@ describe('module/sw-settings-country/page/sw-settings-country-detail', () => {
         });
         const wrapper = await createWrapper(['country.editor']);
 
-        wrapper.vm.countryId = 'the-id';
-        await wrapper.vm.loadUserConfig();
+        await flushPromises();
 
         expect(Shopwell.Service('userConfigService').search).toHaveBeenCalledWith(['setting-country']);
-        expect(wrapper.vm.userConfigValues).toEqual({
-            showPreview: true,
-        });
+        expect(wrapper.get('[data-testid="preview-setting"]').text()).toBe('true');
     });
 
     it('saves country display settings through the admin user config store', async () => {
-        const wrapper = await createWrapper(['country.editor']);
-        wrapper.vm.countryId = 'the-id';
-        wrapper.vm.userConfig = {
-            value: {
-                'the-id': {
-                    showPreview: true,
+        Shopwell.Service('userConfigService').search.mockResolvedValue({
+            data: {
+                'setting-country': {
+                    'the-id': { showPreview: true },
                 },
             },
-        };
-
-        await wrapper.vm.onSave();
+        });
+        const wrapper = await createWrapper(['country.editor']);
+        await flushPromises();
+        await wrapper.get('.sw-settings-country-detail__save-action').trigger('click');
+        await flushPromises();
 
         expect(countrySaveMock).toHaveBeenCalled();
         expect(Shopwell.Service('userConfigService').upsert).toHaveBeenCalledWith({

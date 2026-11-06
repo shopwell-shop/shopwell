@@ -40,6 +40,6 @@ describe('components/base/sw-avatar', () => {
             name: '',
         });
 
-        expect(wrapper.vm.avatarInitials).toBe('');
+        expect(wrapper.get('.sw-avatar__initials').text()).toBe('');
     });
 });

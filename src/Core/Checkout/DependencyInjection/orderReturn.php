@@ -25,7 +25,7 @@ use Shopwell\Core\Checkout\OrderReturn\Subscriber\OrderReturnRefundFinishedSubsc
 use Shopwell\Core\Content\Product\Stock\StockStorage;
 use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\System\Payment\Order\PaymentOrderService;
-use Shopwell\Core\System\Payment\Order\Refund\PaymentRefundService;
+use Shopwell\Core\System\Payment\Order\PaymentRefundService;
 use Shopwell\Core\System\StateMachine\Loader\InitialStateIdLoader;
 use Shopwell\Core\System\StateMachine\StateMachineRegistry;
 use Shopwell\Core\System\SystemConfig\SystemConfigService;
@@ -33,6 +33,7 @@ use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigura
 
 use function Symfony\Component\DependencyInjection\Loader\Configurator\param;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
+use function Symfony\Component\DependencyInjection\Loader\Configurator\tagged_iterator;
 
 return static function (ContainerConfigurator $containerConfigurator): void {
     $services = $containerConfigurator->services();
@@ -88,6 +89,8 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(PaymentOrderService::class),
             service(PaymentRefundService::class),
             service(OrderReturnStateHandler::class),
+            // parts of the order that were collected outside the gateway, paid out before the gateway
+            tagged_iterator('shopwell.order_return.refund_source'),
         ]);
 
     $services->set(OrderReturnService::class)

@@ -1,0 +1,90 @@
+.account-membership {
+    &-current-state {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: $spacer * 0.5;
+        margin-bottom: $spacer * 0.25;
+    }
+
+    &-current-plan {
+        font-weight: $font-weight-bold;
+    }
+
+    &-current-valid-until {
+        margin-bottom: 0;
+        color: $secondary;
+        font-size: $font-size-sm;
+    }
+
+    &-plans-header {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: $spacer * 0.75;
+        margin-bottom: $spacer;
+    }
+
+    &-plans-channel {
+        min-width: 12rem;
+    }
+
+    &-section-title {
+        margin-bottom: 0;
+        font-size: $font-size-base;
+        font-weight: $font-weight-bold;
+    }
+
+    &-plan-name {
+        font-size: $font-size-base;
+        font-weight: $font-weight-bold;
+    }
+
+    &-plan-tier,
+    &-plan-duration {
+        color: $secondary;
+        font-size: $font-size-sm;
+    }
+
+    &-plan-price {
+        margin-bottom: $spacer * 0.25;
+        font-size: $font-size-lg;
+        font-weight: $font-weight-bold;
+        font-variant-numeric: tabular-nums;
+    }
+
+    &-plan-description {
+        margin-bottom: $spacer;
+        color: $secondary;
+        font-size: $font-size-sm;
+    }
+
+    &-qrcode-title {
+        font-size: $font-size-base;
+        font-weight: $font-weight-bold;
+    }
+
+    &-qrcode-target {
+        display: flex;
+        justify-content: center;
+        padding: $spacer;
+        background-color: $body-bg;
+        border: 1px solid $border-color;
+        border-radius: $border-radius;
+    }
+
+    &-qrcode-hint {
+        margin-top: $spacer * 0.5;
+        color: $secondary;
+        font-size: $font-size-sm;
+    }
+
+    &-orders-table {
+        margin-bottom: 0;
+
+        td {
+            vertical-align: middle;
+        }
+    }
+}

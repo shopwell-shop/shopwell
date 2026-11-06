@@ -1,0 +1,23 @@
+{% block sw_payment_identifier %}
+<span class="sw-payment-identifier">
+    {% block sw_payment_identifier_value %}
+    <span class="sw-payment-identifier__value">{{ displayValue }}</span>
+    {% endblock %}
+
+    {% block sw_payment_identifier_copy %}
+    <button
+        v-if="hasValue"
+        class="sw-payment-identifier__copy"
+        type="button"
+        :title="copied ? $t('sw-payment.general.buttonCopied') : $t('sw-payment.general.buttonCopy')"
+        :aria-label="copied ? $t('sw-payment.general.buttonCopied') : $t('sw-payment.general.buttonCopy')"
+        @click="onCopy"
+    >
+        <mt-icon
+            :name="copied ? 'regular-checkmark' : 'regular-copy'"
+            size="14px"
+        />
+    </button>
+    {% endblock %}
+</span>
+{% endblock %}

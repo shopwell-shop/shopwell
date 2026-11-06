@@ -7,6 +7,7 @@ use Shopwell\Core\Checkout\Payment\Gateway\PaymentMethodCollectability;
 use Shopwell\Core\Checkout\Payment\Hook\PaymentMethodRouteHook;
 use Shopwell\Core\Checkout\Payment\PaymentMethodCollection;
 use Shopwell\Core\Checkout\Payment\PaymentMethodDefinition;
+use Shopwell\Core\Checkout\Payment\Storefront\StorefrontPaymentContextResolver;
 use Shopwell\Core\Framework\Adapter\Cache\CacheTagCollector;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
@@ -41,6 +42,7 @@ class PaymentMethodRoute extends AbstractPaymentMethodRoute
         private readonly RuleIdMatcher $ruleIdMatcher,
         private readonly ExtensionDispatcher $extensions,
         private readonly PaymentMethodCollectability $collectability,
+        private readonly StorefrontPaymentContextResolver $paymentContextResolver,
     ) {
     }
 
@@ -105,8 +107,7 @@ class PaymentMethodRoute extends AbstractPaymentMethodRoute
         $paymentMethods = $this->collectability->filter(
             $paymentMethods,
             $context->getContext(),
-            $context->getCurrency()->getIsoCode(),
-            $this->deviceOf($request)
+            paymentContext: $this->paymentContextResolver->resolve($request, $context->getCurrency()->getIsoCode())
         );
 
         $result->assign(['entities' => $paymentMethods, 'elements' => $paymentMethods->getElements(), 'total' => $paymentMethods->count()]);
@@ -118,17 +119,5 @@ class PaymentMethodRoute extends AbstractPaymentMethodRoute
         ));
 
         return new PaymentMethodRouteResponse($result);
-    }
-
-    /**
-     * The channels are filtered by device, so a phone is not offered a desktop only channel. The
-     * parameter is optional: a request that does not say what it runs on keeps every channel, because
-     * guessing a device would take a working method away from the device it was declared for.
-     */
-    private function deviceOf(Request $request): ?string
-    {
-        $device = $request->query->get('device');
-
-        return \is_string($device) && $device !== '' ? strtolower($device) : null;
     }
 }

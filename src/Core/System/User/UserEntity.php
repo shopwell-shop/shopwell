@@ -13,12 +13,14 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Entity;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityCustomFieldsTrait;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityIdTrait;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Webhook\WebhookCollection;
 use Shopwell\Core\System\Locale\LocaleEntity;
 use Shopwell\Core\System\Organization\Aggregate\OrganizationUnit\OrganizationUnitCollection;
 use Shopwell\Core\System\Position\PositionCollection;
 use Shopwell\Core\System\StateMachine\Aggregation\StateMachineHistory\StateMachineHistoryCollection;
 use Shopwell\Core\System\User\Aggregate\UserAccessKey\UserAccessKeyCollection;
 use Shopwell\Core\System\User\Aggregate\UserConfig\UserConfigCollection;
+use Shopwell\Core\System\User\Aggregate\UserOrganizationUnit\UserOrganizationUnitCollection;
 use Shopwell\Core\System\User\Aggregate\UserRecovery\UserRecoveryEntity;
 
 #[Package('fundamentals@framework')]
@@ -26,6 +28,8 @@ class UserEntity extends Entity
 {
     use EntityCustomFieldsTrait;
     use EntityIdTrait;
+
+    protected ?UserOrganizationUnitCollection $organizationUnitMappings = null;
 
     protected string $localeId;
 
@@ -66,6 +70,8 @@ class UserEntity extends Entity
     protected ?UserAccessKeyCollection $accessKeys = null;
 
     protected ?UserConfigCollection $configs = null;
+
+    protected ?WebhookCollection $webhooks = null;
 
     protected ?StateMachineHistoryCollection $stateMachineHistoryEntries = null;
 
@@ -458,5 +464,33 @@ class UserEntity extends Entity
     public function setPositionIds(?array $positionIds): void
     {
         $this->positionIds = $positionIds;
+    }
+
+    /**
+     * @internal
+     */
+    public function getWebhooks(): ?WebhookCollection
+    {
+        $this->checkIfPropertyAccessIsAllowed('webhooks');
+
+        return $this->webhooks;
+    }
+
+    /**
+     * @internal
+     */
+    public function setWebhooks(WebhookCollection $webhooks): void
+    {
+        $this->webhooks = $webhooks;
+    }
+
+    public function getOrganizationUnitMappings(): ?UserOrganizationUnitCollection
+    {
+        return $this->organizationUnitMappings;
+    }
+
+    public function setOrganizationUnitMappings(UserOrganizationUnitCollection $organizationUnitMappings): void
+    {
+        $this->organizationUnitMappings = $organizationUnitMappings;
     }
 }

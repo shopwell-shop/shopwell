@@ -13,11 +13,12 @@
      * Canvas and rail.
      *
      * The rail sticks: the publication date stays reachable while the body grows, which is the whole
-     * point of putting the settings beside the canvas instead of below it.
+     * point of putting the settings beside the canvas instead of below it. The canvas wins the
+     * space - writing happens in the left column, the rail only decides about the entry.
      */
     &__layout {
         display: grid;
-        grid-template-columns: minmax(0, 8fr) minmax(280px, 4fr);
+        grid-template-columns: minmax(0, 2.4fr) minmax(300px, 1fr);
         gap: var(--scale-size-24);
         align-items: start;
         padding: var(--scale-size-24);

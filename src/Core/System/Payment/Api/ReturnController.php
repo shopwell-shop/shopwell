@@ -88,8 +88,11 @@ class ReturnController
             'state' => $this->presenter->stateName($order->stateId),
         ];
 
-        $separator = str_contains($url, '?') ? '&' : '?';
+        [$target] = explode('#', $url, 2);
+        $fragment = substr($url, \strlen($target));
+        $separator = str_contains($target, '?') ? '&' : '?';
 
-        return $url . $separator . http_build_query($parameters, '', '&', \PHP_QUERY_RFC3986);
+        return $target . $separator . http_build_query($parameters, '', '&', \PHP_QUERY_RFC3986)
+            . $fragment;
     }
 }

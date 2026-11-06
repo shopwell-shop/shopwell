@@ -29,7 +29,7 @@ export default Shopwell.Mixin.register(
                     return this.$t(key);
                 }
 
-                const fallbackLocale = Shopwell.Context.app.fallbackLocale;
+                const fallbackLocale = Shopwell.Context.app?.fallbackLocale;
                 if (fallbackLocale && this.$te(key, fallbackLocale)) {
                     return this.$t(key, fallbackLocale);
                 }

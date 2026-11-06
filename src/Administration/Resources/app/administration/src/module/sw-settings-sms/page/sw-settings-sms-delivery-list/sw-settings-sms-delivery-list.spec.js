@@ -4,12 +4,11 @@
 import { mount } from '@vue/test-utils';
 
 function collection(items) {
-    return {
+    return Object.assign(items, {
         total: items.length,
-        length: items.length,
         getIds: () => items.map((item) => item.id),
         get: (id) => items.find((item) => item.id === id),
-    };
+    });
 }
 
 async function createWrapper({ rows = [], hasSnippet = false } = {}) {
@@ -45,12 +44,46 @@ async function createWrapper({ rows = [], hasSnippet = false } = {}) {
                 },
                 'sw-card-view': await wrapTestComponent('sw-card-view'),
                 'sw-extension-component-section': await wrapTestComponent('sw-extension-component-section'),
-                'sw-search-bar': true,
-                'sw-entity-listing': true,
+                'sw-search-bar': {
+                    template: `<input class="search-input" @input="$emit('search', $event.target.value)"/>`,
+                },
+                'sw-entity-listing': {
+                    name: 'sw-entity-listing',
+                    props: [
+                        'dataSource',
+                        'isLoading',
+                        'sortBy',
+                        'sortDirection',
+                    ],
+                    template: `<section>
+                        <button class="page-two" @click="$emit('page-change', { page: 2, limit: 10 })">Next</button>
+                        <button class="sort-label" @click="$emit('column-sort', { sortBy: 'label', sortDirection: 'DESC' })">Sort</button>
+                        <article v-for="item in dataSource" :key="item.id" :data-id="item.id">
+                            <slot v-for="(_, name) in $slots" :name="name" :item="item"/>
+                        </article>
+                    </section>`,
+                },
                 'sw-settings-sms-section-tabs': true,
+                'mt-modal-root': {
+                    template: `<div><button class="dismiss-modal" @click="$emit('change', false)">Dismiss</button><slot/></div>`,
+                },
+                'mt-modal': { template: '<div><slot/><slot name="footer"/></div>' },
+                'mt-modal-action': {
+                    emits: ['click'],
+                    template: '<button class="confirm-remove" @click="$emit(\'click\')"><slot/></button>',
+                },
+                'mt-modal-close': true,
+                'mt-card': { template: '<div><slot/><slot name="toolbar"/><slot name="grid"/></div>' },
+                'mt-badge': { props: ['variant'], template: '<span :data-variant="variant"><slot/></span>' },
+
                 'sw-single-select': true,
-                'mt-select': true,
-                'mt-badge': true,
+                'mt-select': {
+                    name: 'mt-select',
+                    props: ['modelValue', 'options'],
+                    template: `<select :value="modelValue" @change="$emit('update:modelValue', $event.target.value || null)">
+                        <option value="">All</option><option v-for="option in options" :value="option.value">{{ option.label }}</option>
+                    </select>`,
+                },
             },
         },
     });
@@ -71,61 +104,39 @@ describe('src/module/sw-settings-sms/page/sw-settings-sms-delivery-list', () => 
     });
 
     it('should load the log newest first', async () => {
-        const rows = [
-            {
-                id: 'delivery-1',
-                templateRef: 'customer.otp.login',
-                technicalName: 'aliyun',
-                phoneMasked: '+86138****0000',
-                status: 'sent',
-                errorCode: null,
-            },
-        ];
-
-        ({ wrapper, repository } = await createWrapper({ rows }));
-
-        const criteria = repository.search.mock.calls[0][0];
-
-        expect(criteria.sortings).toEqual([
+        ({ wrapper, repository } = await createWrapper({ rows: [{ id: 'delivery-1', status: 'sent' }] }));
+        expect(repository.search.mock.calls[0][0].sortings).toEqual([
             expect.objectContaining({ field: 'createdAt', order: 'DESC' }),
         ]);
-        expect(wrapper.vm.deliveries.getIds()).toEqual(['delivery-1']);
-        expect(wrapper.vm.total).toBe(1);
+        expect(wrapper.find('[data-id="delivery-1"]').exists()).toBe(true);
+        expect(wrapper.get('.sw-page__smart-bar-amount').text()).toBe('(1)');
     });
 
-    it('should filter by the state it was set to and search from the first page again', async () => {
+    it('should filter by state and search from the first page again', async () => {
         ({ wrapper, repository } = await createWrapper());
-
-        wrapper.vm.page = 3;
-        wrapper.vm.onFilterStatus('failed');
-
-        expect(wrapper.vm.statusFilter).toBe('failed');
-        expect(wrapper.vm.page).toBe(1);
-
-        const criteria = repository.search.mock.calls[1][0];
-
-        expect(criteria.filters).toEqual([
+        await wrapper.get('.page-two').trigger('click');
+        await wrapper.get('select').setValue('failed');
+        expect(repository.search.mock.calls[2][0].page).toBe(1);
+        expect(repository.search.mock.calls[2][0].filters).toEqual([
             expect.objectContaining({ field: 'status', value: 'failed' }),
         ]);
     });
 
     it('should drop the filter again', async () => {
         ({ wrapper, repository } = await createWrapper());
-
-        wrapper.vm.onFilterStatus('sent');
-        wrapper.vm.onFilterStatus(null);
-
-        expect(wrapper.vm.statusFilter).toBeNull();
+        await wrapper.get('select').setValue('sent');
+        await wrapper.get('select').setValue('');
         expect(repository.search.mock.calls[1][0].filters).toHaveLength(1);
         expect(repository.search.mock.calls[2][0].filters).toHaveLength(0);
     });
 
-    it('should answer the state of a row as a badge', async () => {
-        ({ wrapper } = await createWrapper({ hasSnippet: false }));
-
-        expect(wrapper.vm.statusLabel('sent')).toBe('sent');
-        expect(wrapper.vm.statusVariant('sent')).toBe('positive');
-        expect(wrapper.vm.statusVariant('failed')).toBe('critical');
-        expect(wrapper.vm.statusVariant('queued')).toBe('attention');
+    it.each([
+        ['sent', 'positive'],
+        ['failed', 'critical'],
+        ['queued', 'attention'],
+    ])('should render %s as a %s badge', async (status, variant) => {
+        ({ wrapper } = await createWrapper({ hasSnippet: false, rows: [{ id: 'delivery-1', status }] }));
+        expect(wrapper.get('[data-variant]').attributes('data-variant')).toBe(variant);
+        expect(wrapper.get('[data-variant]').text()).toBe(status);
     });
 });

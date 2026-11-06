@@ -8,6 +8,7 @@ use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Defaults;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopwell\Core\Framework\DataAbstractionLayer\Write\WriteException;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopwell\Core\Framework\Uuid\Uuid;
@@ -37,7 +38,10 @@ class UserOrganizationUnitMappingTest extends TestCase
 
         $payload = [
             'id' => $userId,
-            'organizationUnits' => [['id' => $orgUnitA], ['id' => $orgUnitB]],
+            'organizationUnitMappings' => [
+                ['id' => Uuid::randomHex(), 'organizationUnitId' => $orgUnitA],
+                ['id' => Uuid::randomHex(), 'organizationUnitId' => $orgUnitB],
+            ],
             'positions' => [['id' => $positionId]],
         ];
 
@@ -72,7 +76,7 @@ class UserOrganizationUnitMappingTest extends TestCase
 
         $mappingRepository->create([
             ['userId' => $userId, 'organizationUnitId' => $orgUnitA, 'isPrimary' => true],
-            ['userId' => $userId, 'organizationUnitId' => $orgUnitB, 'isPrimary' => false],
+            ['id' => $mappingBId = Uuid::randomHex(), 'userId' => $userId, 'organizationUnitId' => $orgUnitB, 'isPrimary' => false],
         ], $context);
 
         $connection = static::getContainer()->get(Connection::class);
@@ -85,7 +89,7 @@ class UserOrganizationUnitMappingTest extends TestCase
 
         // switch primary to unit B
         $mappingRepository->upsert([
-            ['userId' => $userId, 'organizationUnitId' => $orgUnitB, 'isPrimary' => true],
+            ['id' => $mappingBId, 'isPrimary' => true],
         ], $context);
 
         $primaryUnit = $connection->fetchOne(
@@ -107,7 +111,7 @@ class UserOrganizationUnitMappingTest extends TestCase
         $userRepository = static::getContainer()->get('user.repository');
         $userRepository->update([[
             'id' => $userId,
-            'organizationUnits' => [['id' => $orgUnitA]],
+            'organizationUnitMappings' => [['id' => Uuid::randomHex(), 'organizationUnitId' => $orgUnitA]],
         ]], $context);
 
         $connection = static::getContainer()->get(Connection::class);
@@ -118,6 +122,25 @@ class UserOrganizationUnitMappingTest extends TestCase
             ['userId' => Uuid::fromHexToBytes($userId)]
         );
         static::assertSame(0, $mappingCount, 'mapping rows must be removed with the unit');
+    }
+
+    public function testConvenienceOrganizationUnitsAssociationIsReadOnly(): void
+    {
+        $context = Context::createDefaultContext();
+        $userId = $this->createUser($context, 'read-only-user');
+        $unitId = $this->createOrganizationUnit('read-only-unit', null);
+        $repository = static::getContainer()->get('user.repository');
+
+        try {
+            $repository->update([[
+                'id' => $userId,
+                'organizationUnits' => [['id' => $unitId]],
+            ]], $context);
+            static::fail('Convenience associations must not write mapping rows.');
+        } catch (WriteException $exception) {
+            static::assertSame('FRAMEWORK__WRITE_ERROR', $exception->getErrorCode());
+            static::assertStringContainsString('This field is write-protected.', $exception->getMessage());
+        }
     }
 
     private function createUser(Context $context, string $key): string

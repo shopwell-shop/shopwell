@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopwell-shop/shopwell/trunk/src/Core/System/Payment/Provider/Schema/payment-provider.xsd">
+    <card>
+        <title>Alipay credentials</title>
+        <title lang="zh-CN">支付宝凭据</title>
+        <name>credentials</name>
+        <input-field>
+            <name>app_id</name>
+            <label>Alipay application APPID</label>
+            <label lang="zh-CN">支付宝应用 APPID</label>
+            <required>true</required>
+        </input-field>
+        <input-field type="bool">
+            <name>sandbox</name>
+            <label>Sandbox mode</label>
+            <label lang="zh-CN">沙箱模式</label>
+            <defaultValue>1</defaultValue>
+            <helpText>Enabled by default. Disable it and use the production gateway before going live.</helpText>
+            <helpText lang="zh-CN">默认开启，走沙箱网关。上线前关闭并使用正式网关。</helpText>
+        </input-field>
+        <input-field type="textarea">
+            <name>private_key</name>
+            <label>Application private key</label>
+            <label lang="zh-CN">应用私钥</label>
+            <required>true</required>
+            <secret>true</secret>
+            <helpText>The signing half generated under Open Platform, Development settings, Interface signing. Upload the application public key to Alipay instead of entering it here.</helpText>
+            <helpText lang="zh-CN">签名用的那一半。在开放平台「开发设置 → 接口加签方式」里生成，与应用公钥成对；应用公钥只上传给支付宝，不要填在这里。</helpText>
+        </input-field>
+        <input-field type="textarea">
+            <name>alipay_public_key</name>
+            <label>Alipay public key</label>
+            <label lang="zh-CN">支付宝公钥</label>
+            <required>true</required>
+            <helpText>The Alipay public key from the same page, used to verify signatures; this is not the application public key.</helpText>
+            <helpText lang="zh-CN">验签用的那一半，是同一页面里「支付宝公钥」那一栏的值，不是你的应用公钥。</helpText>
+            <secret>true</secret>
+        </input-field>
+        <input-field>
+            <name>gateway_url</name>
+            <label>Gateway URL</label>
+            <label lang="zh-CN">网关地址</label>
+            <defaultValue>https://openapi.alipay.com</defaultValue>
+            <helpText>Leave empty for the default gateway. Sandbox mode selects the sandbox gateway automatically.</helpText>
+            <helpText lang="zh-CN">留空使用默认网关；开启沙箱模式时自动使用沙箱网关。</helpText>
+        </input-field>
+    </card>
+
+    <card>
+        <title>Alipay Mini</title><title lang="zh-CN">支付宝小程序</title><name>channelAlipayMini</name>
+        <input-field>
+            <name>op_app_id</name>
+            <label>Mini-program APPID</label><label lang="zh-CN">小程序 APPID</label>
+            <helpText>The mini program that opens the cashier, bound to JSAPI payment in the merchant platform. Leave empty to use the credential application APPID.</helpText>
+            <helpText lang="zh-CN">拉起收银台的小程序 APPID，须在商家平台与 JSAPI 支付产品绑定；留空使用凭据中的应用 APPID。</helpText>
+        </input-field>
+    </card>
+</config>

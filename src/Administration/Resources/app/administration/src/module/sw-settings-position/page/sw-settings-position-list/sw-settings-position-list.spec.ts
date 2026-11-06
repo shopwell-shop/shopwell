@@ -1,29 +1,16 @@
 /**
  * @sw-package framework
  */
-import { mount } from '@vue/test-utils';
+import { shallowMount } from '@vue/test-utils';
 import type { VueWrapper } from '@vue/test-utils';
 
-type PositionVm = {
-    positions: Array<{ id: string; name: string; position: number; active: boolean }>;
-    isNewPosition: boolean;
-    showEditModal: boolean;
-    showDeleteModal: string | null;
-    editedPosition: { id: string; name: string | null; position: number | null; active: boolean };
-    positionRepository: {
-        save: jest.Mock;
-        delete: jest.Mock;
-    };
-    onAddPosition: () => void;
-    onEditModalSave: () => Promise<void>;
-    onDelete: (id: string) => void;
-    onConfirmDelete: (id: string) => Promise<void>;
-};
+let saveSpy: jest.Mock;
+let deleteSpy: jest.Mock;
 
-type TypedWrapper = { vm: PositionVm } & VueWrapper;
-
-async function createWrapper(privileges: string[] = []): Promise<TypedWrapper> {
-    return mount(
+async function createWrapper(privileges: string[] = []): Promise<VueWrapper> {
+    saveSpy = jest.fn(() => Promise.resolve());
+    deleteSpy = jest.fn(() => Promise.resolve());
+    return shallowMount(
         await wrapTestComponent('sw-settings-position-list', {
             sync: true,
         }),
@@ -56,8 +43,8 @@ async function createWrapper(privileges: string[] = []): Promise<TypedWrapper> {
                                         translated: { name: 'Manager' },
                                     },
                                 ]),
-                            save: () => Promise.resolve(),
-                            delete: () => Promise.resolve(),
+                            save: saveSpy,
+                            delete: deleteSpy,
                             create: () => ({
                                 id: 'new-position-id',
                                 name: null,
@@ -81,25 +68,45 @@ async function createWrapper(privileges: string[] = []): Promise<TypedWrapper> {
                     <div class="sw-page">
                         <slot name="smart-bar-actions"></slot>
                         <slot name="content"></slot>
-                        <slot></slot>
-                    </div>
+                        </div>
                 `,
                     },
-                    'sw-card-view': true,
+                    'sw-card-view': { template: '<div><slot /></div>' },
+                    'mt-card': { template: '<section><slot name="grid"/><slot /></section>' },
+                    'mt-button': { props: ['disabled'], template: '<button :disabled="disabled"><slot /></button>' },
+                    'mt-text-field': {
+                        props: ['modelValue'],
+                        emits: ['update:modelValue'],
+                        template: `<input :value="modelValue" @input="$emit('update:modelValue', $event.target.value)" />`,
+                    },
+                    'mt-number-field': {
+                        props: ['modelValue'],
+                        emits: ['update:modelValue'],
+                        template: `<input type="number" :value="modelValue" @input="$emit('update:modelValue', Number($event.target.value))" />`,
+                    },
+                    'mt-switch': {
+                        props: ['modelValue'],
+                        emits: ['update:modelValue'],
+                        template: `<input type="checkbox" :checked="modelValue" @change="$emit('update:modelValue', $event.target.checked)" />`,
+                    },
                     'sw-ignore-class': true,
                     'sw-entity-listing': {
                         props: ['items', 'dataSource'],
                         template: `
                     <div>
-                        <template v-for="item in (dataSource || items)" :key="item.id">
+                        <div v-for="item in (dataSource || items)" :key="item.id" :data-row="item.id">
+                            <span class="row-name">{{ item.name || item.translated?.label }}</span><span class="entry-count"><slot name="column-entries" :item="item" /></span>
                             <slot name="actions" v-bind="{ item }"></slot>
                             <slot name="action-modals" v-bind="{ item }"></slot>
-                        </template>
+                        </div>
                     </div>`,
                     },
                     'sw-language-switch': true,
                     'sw-search-bar': true,
-                    'sw-context-menu-item': true,
+                    'sw-context-menu-item': {
+                        props: ['disabled'],
+                        template: '<button :disabled="disabled"><slot /></button>',
+                    },
                     'sw-loader': true,
                     'sw-extension-component-section': true,
                     'sw-label': true,
@@ -115,11 +122,11 @@ async function createWrapper(privileges: string[] = []): Promise<TypedWrapper> {
                 },
             },
         },
-    ) as unknown as TypedWrapper;
+    );
 }
 
 describe('module/sw-settings-position/page/sw-settings-position-list', () => {
-    let wrapper: TypedWrapper;
+    let wrapper: VueWrapper;
 
     beforeEach(async () => {
         wrapper = await createWrapper();
@@ -142,26 +149,24 @@ describe('module/sw-settings-position/page/sw-settings-position-list', () => {
     });
 
     it('should load positions', () => {
-        expect(wrapper.vm.positions).toHaveLength(1);
-        expect(wrapper.vm.positions[0].name).toBe('Manager');
+        expect(wrapper.findAll('[data-row]')).toHaveLength(1);
+        expect(wrapper.get('.row-name').text()).toBe('Manager');
     });
 
     it('should save a new position with sort order and active flag via the modal', async () => {
         wrapper = await createWrapper(['position.creator']);
         await flushPromises();
 
-        wrapper.vm.onAddPosition();
+        await wrapper.get('.sw-settings-position-list__add-position').trigger('click');
 
-        expect(wrapper.vm.isNewPosition).toBe(true);
+        expect(wrapper.find('.sw-settings-position-list__edit-modal').exists()).toBe(true);
 
-        wrapper.vm.editedPosition.name = 'Manager';
-        wrapper.vm.editedPosition.position = 10;
-        wrapper.vm.editedPosition.active = true;
+        await wrapper.get('.sw-settings-position-list__edit-name').setValue('Manager');
+        await wrapper.get('.sw-settings-position-list__edit-position').setValue(10);
+        await wrapper.get('.sw-settings-position-list__edit-active').setValue(true);
 
-        const saveSpy = jest.fn(() => Promise.resolve());
-        wrapper.vm.positionRepository.save = saveSpy;
-
-        await wrapper.vm.onEditModalSave();
+        await wrapper.findAll('.sw-settings-position-list__edit-modal button')[1].trigger('click');
+        await flushPromises();
 
         expect(saveSpy).toHaveBeenCalledWith(
             expect.objectContaining({
@@ -170,22 +175,20 @@ describe('module/sw-settings-position/page/sw-settings-position-list', () => {
                 active: true,
             }),
         );
-        expect(wrapper.vm.showEditModal).toBe(false);
+        expect(wrapper.find('.sw-settings-position-list__edit-modal').exists()).toBe(false);
     });
 
     it('should reject a position without a name', async () => {
         wrapper = await createWrapper(['position.creator']);
         await flushPromises();
 
-        wrapper.vm.onAddPosition();
+        await wrapper.get('.sw-settings-position-list__add-position').trigger('click');
 
-        const saveSpy = jest.fn(() => Promise.resolve());
-        wrapper.vm.positionRepository.save = saveSpy;
-
-        await wrapper.vm.onEditModalSave();
+        await wrapper.findAll('.sw-settings-position-list__edit-modal button')[1].trigger('click');
+        await flushPromises();
 
         expect(saveSpy).not.toHaveBeenCalled();
-        expect(wrapper.vm.showEditModal).toBe(true);
+        expect(wrapper.find('.sw-settings-position-list__edit-modal').exists()).toBe(true);
     });
 
     it('should not allow deleting without permission', () => {
@@ -198,13 +201,11 @@ describe('module/sw-settings-position/page/sw-settings-position-list', () => {
         wrapper = await createWrapper(['position.deleter']);
         await flushPromises();
 
-        const deleteSpy = jest.fn(() => Promise.resolve());
-        wrapper.vm.positionRepository.delete = deleteSpy;
-
-        wrapper.vm.onDelete('position-1');
-        expect(wrapper.vm.showDeleteModal).toBe('position-1');
-
-        await wrapper.vm.onConfirmDelete('position-1');
+        await wrapper.get('.sw-entity-listing__context-menu-delete').trigger('click');
+        expect(wrapper.find('.sw-modal').exists()).toBe(true);
+        expect(deleteSpy).not.toHaveBeenCalled();
+        await wrapper.findAll('.sw-modal button')[1].trigger('click');
+        await flushPromises();
 
         expect(deleteSpy).toHaveBeenCalledWith('position-1');
     });

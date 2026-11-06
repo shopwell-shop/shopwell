@@ -4,29 +4,27 @@ namespace Shopwell\Tests\Unit\Core\Checkout\Loyalty\Service;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\MockObject\Stub;
 use PHPUnit\Framework\TestCase;
-use Shopwell\Core\Checkout\Customer\CustomerCollection;
-use Shopwell\Core\Checkout\Loyalty\Entity\CustomerLoyalty\CustomerLoyaltyCollection;
-use Shopwell\Core\Checkout\Loyalty\Entity\CustomerLoyalty\CustomerLoyaltyEntity;
-use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyTier\LoyaltyTierCollection;
-use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyTier\LoyaltyTierEntity;
+use Psr\Log\LoggerInterface;
 use Shopwell\Core\Checkout\Loyalty\Event\LoyaltyPointsAwardedEvent;
 use Shopwell\Core\Checkout\Loyalty\Event\LoyaltyPointsRedeemedEvent;
 use Shopwell\Core\Checkout\Loyalty\LoyaltyException;
+use Shopwell\Core\Checkout\Loyalty\LoyaltyPointTransactionTypes;
 use Shopwell\Core\Checkout\Loyalty\Service\LoyaltyLedger;
+use Shopwell\Core\Checkout\Loyalty\Service\LoyaltyPointLots;
 use Shopwell\Core\Checkout\Loyalty\Service\LoyaltyPointService;
 use Shopwell\Core\Checkout\Loyalty\Service\LoyaltySettings;
-use Shopwell\Core\Checkout\Loyalty\Service\TierResolver;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\Test\Stub\DataAbstractionLayer\StaticEntityRepository;
 use Shopwell\Core\Test\Stub\SystemConfigService\StaticSystemConfigService;
 use Symfony\Component\Clock\MockClock;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 
 /**
  * The rules of the loyalty program are tested here, the balances and their locking in
- * {@see \Shopwell\Tests\Unit\Core\Checkout\Loyalty\Service\LoyaltyLedgerTest}.
+ * {@see \Shopwell\Tests\Unit\Core\Checkout\Loyalty\Service\LoyaltyLedgerTest}, the account itself in
+ * {@see \Shopwell\Tests\Unit\Core\Checkout\Loyalty\Service\LoyaltyAccountServiceTest}.
  *
  * @internal
  */
@@ -38,26 +36,15 @@ class LoyaltyPointServiceTest extends TestCase
 
     private const NOW = '2025-01-01 00:00:00';
 
-    /**
-     * @var StaticEntityRepository<CustomerLoyaltyCollection>
-     */
-    private StaticEntityRepository $customerLoyaltyRepository;
-
-    /**
-     * @var StaticEntityRepository<LoyaltyTierCollection>
-     */
-    private StaticEntityRepository $tierRepository;
-
-    /**
-     * @var StaticEntityRepository<CustomerCollection>
-     */
-    private StaticEntityRepository $customerRepository;
-
     private StaticSystemConfigService $systemConfigService;
 
     private EventDispatcher $eventDispatcher;
 
     private LoyaltyLedger&MockObject $ledger;
+
+    private LoyaltyPointLots&Stub $lots;
+
+    private LoggerInterface&Stub $logger;
 
     private LoyaltyPointService $loyaltyPointService;
 
@@ -65,65 +52,14 @@ class LoyaltyPointServiceTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->customerLoyaltyRepository = StaticEntityRepository::of(CustomerLoyaltyCollection::class);
-        $this->tierRepository = StaticEntityRepository::of(LoyaltyTierCollection::class);
-        $this->customerRepository = StaticEntityRepository::of(CustomerCollection::class);
         $this->systemConfigService = new StaticSystemConfigService();
         $this->eventDispatcher = new EventDispatcher();
         $this->ledger = $this->createMock(LoyaltyLedger::class);
+        $this->lots = static::createStub(LoyaltyPointLots::class);
+        $this->logger = static::createStub(LoggerInterface::class);
         $this->context = Context::createDefaultContext();
 
-        $this->loyaltyPointService = new LoyaltyPointService(
-            $this->customerLoyaltyRepository,
-            $this->ledger,
-            new LoyaltySettings($this->systemConfigService),
-            $this->eventDispatcher,
-            new MockClock(self::NOW),
-            new TierResolver(
-                $this->tierRepository,
-                $this->customerLoyaltyRepository,
-                $this->customerRepository,
-                new LoyaltySettings($this->systemConfigService),
-                $this->eventDispatcher,
-                new MockClock(self::NOW),
-            ),
-        );
-    }
-
-    public function testGetBalanceReturnsZeroWithoutLoyalty(): void
-    {
-        $this->ledger->expects($this->never())->method('bookPoints');
-
-        $this->customerLoyaltyRepository->addSearch(new CustomerLoyaltyCollection());
-
-        static::assertSame(0, $this->loyaltyPointService->getBalance(self::CUSTOMER_ID, $this->context));
-    }
-
-    public function testGetBalanceReturnsStoredBalance(): void
-    {
-        $this->ledger->expects($this->never())->method('bookPoints');
-
-        $loyalty = new CustomerLoyaltyEntity();
-        $loyalty->setId('loyalty-id');
-        $loyalty->setPointsBalance(250);
-        $this->customerLoyaltyRepository->addSearch(new CustomerLoyaltyCollection([$loyalty]));
-
-        static::assertSame(250, $this->loyaltyPointService->getBalance(self::CUSTOMER_ID, $this->context));
-    }
-
-    public function testProvisionMembershipOpensAMembershipInTheTierThatZeroGrowthUnlocks(): void
-    {
-        $this->ledger->expects($this->never())->method('bookPoints');
-
-        $this->customerLoyaltyRepository->addSearch(new CustomerLoyaltyCollection());
-        $this->tierRepository->addSearch(new LoyaltyTierCollection([$this->createTier('bronze', 1, 0)]));
-
-        $this->loyaltyPointService->provisionMembership(self::CUSTOMER_ID, $this->context);
-
-        $loyalty = $this->customerLoyaltyRepository->creates[0][0];
-        static::assertSame(self::CUSTOMER_ID, $loyalty['customerId']);
-        static::assertSame(0, $loyalty['pointsBalance']);
-        static::assertSame('bronze', $loyalty['membershipTierId']);
+        $this->loyaltyPointService = $this->service();
     }
 
     public function testAwardDelegatesToTheLedgerAndAnnouncesTheBooking(): void
@@ -132,7 +68,7 @@ class LoyaltyPointServiceTest extends TestCase
             ->method('bookPoints')
             ->with(
                 self::CUSTOMER_ID,
-                LoyaltyPointService::TRANSACTION_TYPE_AWARD,
+                LoyaltyPointTransactionTypes::AWARD,
                 100,
                 $this->context,
                 'order-1',
@@ -218,7 +154,7 @@ class LoyaltyPointServiceTest extends TestCase
             ->method('bookPoints')
             ->with(
                 self::CUSTOMER_ID,
-                LoyaltyPointService::TRANSACTION_TYPE_REDEEM,
+                LoyaltyPointTransactionTypes::REDEEM,
                 -150,
                 $this->context,
                 'order-1',
@@ -268,7 +204,7 @@ class LoyaltyPointServiceTest extends TestCase
             ->method('bookPoints')
             ->with(
                 self::CUSTOMER_ID,
-                LoyaltyPointService::TRANSACTION_TYPE_ADJUST,
+                LoyaltyPointTransactionTypes::ADJUST,
                 -40,
                 $this->context,
                 null,
@@ -283,36 +219,87 @@ class LoyaltyPointServiceTest extends TestCase
         $this->loyaltyPointService->adjust(self::CUSTOMER_ID, -40, 'goodwill', 'admin-id', $this->context);
     }
 
-    public function testExpireBooksExpiredPoints(): void
+    public function testExpireDueDrainsEveryCustomerWithRunOutBatches(): void
     {
-        $this->ledger->expects($this->once())
-            ->method('bookPoints')
-            ->with(
-                self::CUSTOMER_ID,
-                LoyaltyPointService::TRANSACTION_TYPE_EXPIRE,
-                -30,
-                $this->context
-            )
-            ->willReturn(50);
+        $lots = $this->createMock(LoyaltyPointLots::class);
+        $lots->expects($this->once())
+            ->method('customersWithExpiredLots')
+            ->with(static::isInstanceOf(\DateTimeInterface::class), 500)
+            ->willReturn(['customer-a', 'customer-b']);
 
-        $this->loyaltyPointService->expire(self::CUSTOMER_ID, 30, $this->context);
+        $now = new \DateTimeImmutable(self::NOW);
+
+        $this->ledger->expects($this->exactly(2))
+            ->method('expireLots')
+            ->willReturnCallback(static function (string $customerId, string $type, \DateTimeInterface $moment, Context $context) use ($now): int {
+                static::assertSame(LoyaltyPointTransactionTypes::EXPIRE, $type);
+                static::assertSame($now, $moment);
+
+                return $customerId === 'customer-a' ? 30 : 12;
+            });
+
+        static::assertSame(42, $this->service($lots)->expireDue($this->context, $now));
     }
 
-    public function testExpireIgnoresNonPositivePoints(): void
+    public function testExpireDueDoesNothingWhenNothingHasRunOut(): void
     {
-        $this->ledger->expects($this->never())->method('bookPoints');
+        $this->lots->method('customersWithExpiredLots')->willReturn([]);
 
-        $this->loyaltyPointService->expire(self::CUSTOMER_ID, 0, $this->context);
+        $this->ledger->expects($this->never())->method('expireLots');
+
+        static::assertSame(0, $this->loyaltyPointService->expireDue($this->context));
     }
 
-    public function testAddGrowthValueAnswersTheNewValue(): void
+    public function testExpireDueKeepsGoingWhenOneAccountIsBroken(): void
+    {
+        $this->lots->method('customersWithExpiredLots')->willReturn(['broken', 'healthy']);
+
+        $this->ledger->expects($this->exactly(2))
+            ->method('expireLots')
+            ->willReturnCallback(
+                static function (string $customerId): int {
+                    if ($customerId === 'broken') {
+                        throw LoyaltyException::lotBalanceMismatch($customerId, 10, 90);
+                    }
+
+                    return 25;
+                }
+            );
+
+        $logger = $this->createMock(LoggerInterface::class);
+        $logger->expects($this->once())
+            ->method('error')
+            ->with('Could not expire the points of a customer.', static::callback(
+                static fn (array $context): bool => $context['customerId'] === 'broken'
+            ));
+
+        static::assertSame(25, $this->service(null, $logger)->expireDue($this->context));
+    }
+
+    public function testAddTierPointsAnswersTheNewValue(): void
     {
         $this->ledger->expects($this->once())
-            ->method('addGrowthValue')
+            ->method('addTierPoints')
             ->with(self::CUSTOMER_ID, 25, $this->context)
             ->willReturn(125);
 
-        static::assertSame(125, $this->loyaltyPointService->addGrowthValue(self::CUSTOMER_ID, 25, $this->context));
+        static::assertSame(125, $this->loyaltyPointService->addTierPoints(self::CUSTOMER_ID, 25, $this->context));
+    }
+
+    /**
+     * The doubles the class under test needs, with the two that are only relevant for expiring
+     * replaceable: a test that wants to assert on them brings its own.
+     */
+    private function service(?LoyaltyPointLots $lots = null, ?LoggerInterface $logger = null): LoyaltyPointService
+    {
+        return new LoyaltyPointService(
+            $this->ledger,
+            $lots ?? $this->lots,
+            new LoyaltySettings($this->systemConfigService),
+            $this->eventDispatcher,
+            new MockClock(self::NOW),
+            $logger ?? $this->logger,
+        );
     }
 
     private function capturedExpiresAt(): ?\DateTimeInterface
@@ -329,35 +316,16 @@ class LoyaltyPointServiceTest extends TestCase
         );
 
         $service = new LoyaltyPointService(
-            $this->customerLoyaltyRepository,
             $ledger,
+            static::createStub(LoyaltyPointLots::class),
             new LoyaltySettings($this->systemConfigService),
             $this->eventDispatcher,
             new MockClock(self::NOW),
-            new TierResolver(
-                $this->tierRepository,
-                $this->customerLoyaltyRepository,
-                $this->customerRepository,
-                new LoyaltySettings($this->systemConfigService),
-                $this->eventDispatcher,
-                new MockClock(self::NOW),
-            ),
+            static::createStub(LoggerInterface::class),
         );
 
         $service->award(self::CUSTOMER_ID, 10, null, 'key', $this->context);
 
         return $captured;
-    }
-
-    private function createTier(string $technicalName, int $level, int $minGrowthValue): LoyaltyTierEntity
-    {
-        $tier = new LoyaltyTierEntity();
-        $tier->setId($technicalName);
-        $tier->setTechnicalName($technicalName);
-        $tier->setLevel($level);
-        $tier->setMinGrowthValue($minGrowthValue);
-        $tier->setActive(true);
-
-        return $tier;
     }
 }

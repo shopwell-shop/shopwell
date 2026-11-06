@@ -114,6 +114,22 @@ Module.register('sw-settings-rule', {
             },
         },
     },
+
+    // One entry, below the settings: the rule builder is a settings page, so it does not open a
+    // section of its own in the main navigation.
+    navigation: [
+        {
+            id: 'sw-settings-rule',
+            label: 'sw-settings-rule.general.mainMenuItemGeneral',
+            path: 'sw.settings.rule.index',
+            icon: 'regular-rule',
+            color: 'var(--sw-color-module-red-default)',
+            parent: 'sw-settings',
+            privilege: 'rule.viewer',
+            position: 300,
+        },
+    ],
+
     settingsItem: {
         group: 'automation',
         to: 'sw.settings.rule.index',

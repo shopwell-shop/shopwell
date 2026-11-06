@@ -154,7 +154,7 @@ class BlogController extends StorefrontController
      */
     private function backToEntry(string $blogId): RedirectResponse
     {
-        if (preg_match('/^[0-9a-f]{32}$/', $blogId) !== 1) {
+        if (preg_match('/^[0-9a-f]{32}\z/', $blogId) !== 1) {
             return $this->redirectToRoute('frontend.blog.index');
         }
 

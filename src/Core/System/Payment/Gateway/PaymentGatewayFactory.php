@@ -33,7 +33,8 @@ class PaymentGatewayFactory implements GatewayFactoryInterface
 
     /**
      * @param class-string<AbstractPaymentApi> $apiClass the api of the interface, built per payment
-     * @param list<ActionInterface> $actions the actions of the interface, shared services without state
+     * @param list<ActionInterface> $actions the prototypes of the actions of the interface - every
+     *                                       gateway is assembled with its own copy of them, see {@see create()}
      * @param list<mixed> $apiArguments the services the api needs besides the payment
      */
     public function __construct(
@@ -69,7 +70,13 @@ class PaymentGatewayFactory implements GatewayFactoryInterface
         $gateway->addApi($this->newApi($config));
 
         foreach ($this->actions as $action) {
-            $gateway->addAction($action);
+            // payum injects the api and the gateway into the action at execution time, so an action
+            // instance can never serve two gateways: the second execution would overwrite the
+            // credentials of the first one. That is invisible in a sequential php-fpm request and
+            // fatal in a long running worker or a re-entrant call - the payout of one merchant would
+            // be sent with the configuration of another. Every gateway therefore gets its own copy;
+            // only the action itself is cloned, its collaborators stay the shared services they are.
+            $gateway->addAction(clone $action);
         }
 
         return $gateway;

@@ -11,6 +11,7 @@ use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\PlatformRequest;
 use Shopwell\Core\SalesChannelRequest;
+use Shopwell\Core\Test\Annotation\DisabledFeatures;
 use Shopwell\Core\Test\Generator;
 use Shopwell\Core\Test\Stub\Doctrine\FakeConnection;
 use Shopwell\Storefront\Controller\NavigationController;
@@ -101,10 +102,9 @@ class TemplateDataExtensionTest extends TestCase
         static::assertArrayHasKey('themeId', $globals);
         static::assertSame($themeId, $globals['themeId']);
 
-        static::assertArrayHasKey('controllerName', $globals);
-        static::assertSame('Navigation', $globals['controllerName']);
-        static::assertArrayHasKey('controllerAction', $globals);
-        static::assertSame('index', $globals['controllerAction']);
+        // @deprecated tag:v6.8.0 - Remove these assertions when the controllerName and controllerAction globals are removed permanently.
+        static::assertArrayNotHasKey('controllerName', $globals);
+        static::assertArrayNotHasKey('controllerAction', $globals);
 
         static::assertArrayHasKey('context', $globals);
         static::assertSame($salesChannelContext, $globals['context']);
@@ -114,6 +114,24 @@ class TemplateDataExtensionTest extends TestCase
 
         static::assertArrayHasKey('formViolations', $globals);
         static::assertNull($globals['formViolations']);
+    }
+
+    #[DisabledFeatures(['v6.8.0.0'])]
+    public function testLegacyControllerGlobalsAreAvailableBeforeV68(): void
+    {
+        $request = new Request(attributes: [
+            PlatformRequest::ATTRIBUTE_SALES_CHANNEL_CONTEXT_OBJECT => Generator::generateSalesChannelContext(),
+            '_controller' => NavigationController::class . '::index',
+        ]);
+
+        $globals = (new TemplateDataExtension(
+            new RequestStack([$request]),
+            true,
+            new FakeConnection([]),
+        ))->getGlobals();
+
+        static::assertSame('Navigation', $globals['controllerName']);
+        static::assertSame('index', $globals['controllerAction']);
     }
 
     public function testLandingPageResolvesNavigationIdFromLinkedCategory(): void

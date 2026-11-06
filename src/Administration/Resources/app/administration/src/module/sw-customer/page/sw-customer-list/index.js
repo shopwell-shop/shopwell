@@ -12,7 +12,12 @@ const { Criteria } = Shopwell.Data;
 export default {
     template,
 
-    inject: ['repositoryFactory', 'acl', 'filterFactory', 'dictionaryService'],
+    inject: [
+        'repositoryFactory',
+        'acl',
+        'filterFactory',
+        'dictionaryService',
+    ],
 
     mixins: [Mixin.getByName('notification'), Mixin.getByName('listing')],
 
@@ -237,11 +242,7 @@ export default {
             promise
                 .then(() => {
                     this.createNotificationSuccess({
-                        message: this.$t(
-                            'sw-customer.detail.messageSaveSuccess',
-                            { name: customer.name },
-                            0,
-                        ),
+                        message: this.$t('sw-customer.detail.messageSaveSuccess', { name: customer.name }, 0),
                     });
                 })
                 .catch(() => {

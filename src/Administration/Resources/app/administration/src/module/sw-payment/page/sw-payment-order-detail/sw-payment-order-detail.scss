@@ -1,10 +1,67 @@
+/**
+ * A payment order: the incident report on the left, the identifiers on the right.
+ */
 .sw-payment-order-detail {
+    &__header {
+        display: flex;
+        gap: var(--scale-size-8);
+        align-items: center;
+    }
+
+    &__header-state {
+        flex: none;
+    }
+
     &__breadcrumb {
         font-weight: var(--font-weight-regular);
     }
 
+    &__loading,
+    &__not-found {
+        padding: var(--scale-size-24);
+    }
+
     &__loading-placeholder {
         min-height: var(--scale-size-160);
+    }
+
+    /**
+     * The page scrolls as a whole, so the rail can stick: the identifiers stay reachable while the
+     * timeline grows.
+     */
+    &__layout {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        grid-template-columns: minmax(0, 8fr) minmax(300px, 4fr);
+        gap: var(--scale-size-24);
+        align-items: start;
+        padding: var(--scale-size-24);
+        overflow-y: auto;
+
+        @media screen and (max-width: 1100px) {
+            grid-template-columns: minmax(0, 1fr);
+        }
+    }
+
+    &__main {
+        display: flex;
+        flex-direction: column;
+        gap: var(--scale-size-16);
+        min-width: 0;
+    }
+
+    &__rail {
+        position: sticky;
+        top: 0;
+        display: flex;
+        flex-direction: column;
+        gap: var(--scale-size-16);
+        min-width: 0;
+    }
+
+    &__alert {
+        margin: 0;
     }
 
     &__payload {
@@ -19,5 +76,65 @@
         overflow-wrap: anywhere;
         background: var(--color-background-secondary-default);
         border-radius: var(--border-radius-xs);
+    }
+
+    &__refund-list {
+        display: flex;
+        flex-direction: column;
+        gap: var(--scale-size-12);
+        padding: 0;
+        margin: 0;
+        list-style: none;
+    }
+
+    &__refund {
+        display: flex;
+        flex-direction: column;
+        gap: var(--scale-size-4);
+        padding-bottom: var(--scale-size-12);
+        border-bottom: 1px solid var(--color-border-secondary-default);
+
+        &:last-child {
+            padding-bottom: 0;
+            border-bottom: 0;
+        }
+    }
+
+    &__refund-head {
+        display: flex;
+        gap: var(--scale-size-8);
+        align-items: baseline;
+        justify-content: space-between;
+    }
+
+    &__refund-link {
+        overflow: hidden;
+        font-family: ui-monospace, SFMono-Regular, menlo, monaco, consolas, monospace;
+        font-size: var(--font-size-xs);
+        color: var(--color-text-brand-default);
+        text-decoration: none;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+
+        &:hover,
+        &:focus-visible {
+            text-decoration: underline;
+        }
+    }
+
+    &__refund-amount {
+        flex: none;
+        font-size: var(--font-size-s);
+        font-weight: var(--font-weight-medium);
+        color: var(--color-text-primary-default);
+        font-variant-numeric: tabular-nums;
+    }
+
+    &__refund-meta {
+        display: flex;
+        gap: var(--scale-size-8);
+        align-items: center;
+        font-size: var(--font-size-2xs);
+        color: var(--color-text-secondary-default);
     }
 }

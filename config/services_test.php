@@ -5,6 +5,7 @@ use Shopwell\Core\Content\Category\SalesChannel\CategoryRoute;
 use Shopwell\Core\Content\Product\ProductDefinition;
 use Shopwell\Core\Content\Test\TestNavigationSeoUrlRoute;
 use Shopwell\Core\Content\Test\TestProductSeoUrlRoute;
+use Shopwell\Core\Framework\App\Url\AppUrlVerifier;
 use Shopwell\Core\Framework\Telemetry\Metrics\Config\TransportConfigProvider;
 use Shopwell\Core\Framework\Telemetry\Metrics\Transport\TransportCollection;
 use Shopwell\Core\Framework\Test\DataAbstractionLayer\Field\TestDefinition\CalculatedPriceFieldTestDefinition;
@@ -13,6 +14,7 @@ use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextFactory;
 use Shopwell\Tests\Integration\Core\Content\Seo\SalesChannel\FixturesPhp\StoreApiSeoResolverTestRoute;
 use Shopwell\Tests\Integration\Core\Framework\Api\EventListener\FixturesPhp\SalesChannelAuthenticationListenerTestRoute;
 use Shopwell\Tests\Integration\Core\Framework\App\AppFixture;
+use Shopwell\Tests\Integration\Core\Framework\App\PassingAppUrlVerifier;
 use Shopwell\Tests\Integration\Core\Framework\DataAbstractionLayer\fixture\AttributeEntity;
 use Shopwell\Tests\Integration\Core\Framework\DataAbstractionLayer\fixture\AttributeEntityAgg;
 use Shopwell\Tests\Integration\Core\Framework\DataAbstractionLayer\fixture\AttributeEntityWithHydrator;
@@ -91,6 +93,8 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service('service_container'),
         ]);
+
+    $services->set(AppUrlVerifier::class, PassingAppUrlVerifier::class);
 
     $services->set(AppFixture::class)
         ->public()

@@ -55,6 +55,7 @@ export default Shopwell.Component.wrapComponentConfig({
     created() {
         this.heightHandler = Shopwell.ExtensionAPI.handle('locationUpdateHeight', ({ height, locationId }) => {
             if (locationId === this.locationId) {
+                // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-conversion -- extensions post the height, so it can arrive as a string
                 const parsed = Number(height);
                 this.locationHeight = Number.isNaN(parsed) ? null : parsed;
             }

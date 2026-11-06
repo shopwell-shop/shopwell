@@ -14,7 +14,7 @@ import template from './sw-blog-detail-content-video.html.twig';
  * The row exists before the component is rendered: the detail page creates an unsaved `blog_video`
  * and hands it down, so the fields here always have something to write into.
  */
-// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+/** @private */
 export default defineComponent({
     template,
 

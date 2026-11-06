@@ -247,7 +247,7 @@ describe('module/sw-integration/page/sw-integration-list', () => {
         await editMenuItem.trigger('click');
         await flushPromises();
 
-        const adminRoleSwitch = wrapper.findComponent('.sw-settings-user-detail__grid-is-admin');
+        const adminRoleSwitch = wrapper.findComponent('.sw-system-user-detail__grid-is-admin');
         expect(adminRoleSwitch.props().disabled).toBe(true);
     });
 

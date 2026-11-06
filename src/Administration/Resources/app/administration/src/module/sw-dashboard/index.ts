@@ -5,7 +5,10 @@ Shopwell.Component.register('sw-dashboard-statistics', () => import('./component
 Shopwell.Component.register('sw-dashboard-todos', () => import('./component/sw-dashboard-todos'));
 Shopwell.Component.register('sw-dashboard-order-states', () => import('./component/sw-dashboard-order-states'));
 Shopwell.Component.register('sw-dashboard-top-products', () => import('./component/sw-dashboard-top-products'));
-Shopwell.Component.register('sw-dashboard-loyalty-distribution', () => import('./component/sw-dashboard-loyalty-distribution'));
+Shopwell.Component.register(
+    'sw-dashboard-loyalty-distribution',
+    () => import('./component/sw-dashboard-loyalty-distribution'),
+);
 Shopwell.Component.register('sw-dashboard-wallet', () => import('./component/sw-dashboard-wallet'));
 Shopwell.Component.register('sw-dashboard-latest-orders', () => import('./component/sw-dashboard-latest-orders'));
 Shopwell.Component.register('sw-dashboard-index', () => import('./page/sw-dashboard-index'));

@@ -1,0 +1,9 @@
+{
+    "sw-settings-user-permission": {
+        "general": {
+            "mainMenuItemGeneral": "Users & login",
+            "description": "Configure password policy and store-wide login and registration rules",
+            "cardLabel": "Users & login"
+        }
+    }
+}

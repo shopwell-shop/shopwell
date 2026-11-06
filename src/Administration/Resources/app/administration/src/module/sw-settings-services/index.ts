@@ -47,6 +47,18 @@ Shopwell.Module.register('sw-settings-services', {
         },
     },
 
+    navigation: [
+        {
+            id: 'sw-settings-services',
+            label: 'sw-settings-services.general.title',
+            parent: 'sw-settings',
+            path: 'sw.settings.services.index',
+            icon: 'regular-view-grid',
+            position: 740,
+            privilege: 'system.plugin_maintain',
+        },
+    ],
+
     settingsItem: {
         group: 'system',
         to: 'sw.settings.services.index',

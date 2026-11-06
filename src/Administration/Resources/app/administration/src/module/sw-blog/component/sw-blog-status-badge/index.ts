@@ -17,7 +17,7 @@ import { blogStatusOf } from '../../service/blog.api.service';
  * administration maps onto: an entry that is live is `positive`, an entry waiting for its moment is
  * `attention` - the colour a pending transaction wears as well.
  */
-// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+/** @private */
 export default defineComponent({
     template,
 

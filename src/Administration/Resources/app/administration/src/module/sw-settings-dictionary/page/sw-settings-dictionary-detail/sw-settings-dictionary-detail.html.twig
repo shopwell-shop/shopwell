@@ -207,68 +207,70 @@
             </mt-card>
             {% endblock %}
         </sw-card-view>
+
+        {% block sw_settings_dictionary_detail_create_modal %}
+        <sw-modal
+            v-if="showCreateModal && newEntry"
+            class="sw-settings-dictionary-detail__create-modal"
+            :title="$t('sw-settings-dictionary.entryList.modalTitleCreate')"
+            variant="small"
+            @modal-close="onCloseCreateModal"
+        >
+            {% block sw_settings_dictionary_detail_create_modal_fields %}
+            <mt-text-field
+                v-model="newEntry.label"
+                class="sw-settings-dictionary-detail__create-label"
+                required
+                :label="$t('sw-settings-dictionary.entryList.columnLabel')"
+                :placeholder="$t('sw-settings-dictionary.entryList.placeholderLabel')"
+            />
+
+            <mt-text-field
+                v-model="newEntry.technicalName"
+                class="sw-settings-dictionary-detail__create-technical-name"
+                required
+                :help-text="$t('sw-settings-dictionary.entryList.helpTextTechnicalName')"
+                :label="$t('sw-settings-dictionary.entryList.columnTechnicalName')"
+                :placeholder="$t('sw-settings-dictionary.entryList.placeholderTechnicalName')"
+            />
+
+            <mt-number-field
+                v-model="newEntry.position"
+                class="sw-settings-dictionary-detail__create-position"
+                :label="$t('sw-settings-dictionary.entryList.columnPosition')"
+            />
+
+            <mt-switch
+                v-model="newEntry.active"
+                class="sw-settings-dictionary-detail__create-active"
+                :label="$t('sw-settings-dictionary.entryList.columnActive')"
+            />
+            {% endblock %}
+
+            {% block sw_settings_dictionary_detail_create_modal_footer %}
+            <template #modal-footer>
+                <mt-button
+                    size="small"
+                    variant="secondary"
+                    @click="onCloseCreateModal"
+                >
+                    {{ $t('global.default.cancel') }}
+                </mt-button>
+
+                <mt-button
+                    variant="primary"
+                    size="small"
+                    @click="onCreateSave"
+                >
+                    {{ $t('global.default.save') }}
+                </mt-button>
+            </template>
+            {% endblock %}
+        </sw-modal>
+        {% endblock %}
+
     </template>
     {% endblock %}
 
-    {% block sw_settings_dictionary_detail_create_modal %}
-    <sw-modal
-        v-if="showCreateModal && newEntry"
-        class="sw-settings-dictionary-detail__create-modal"
-        :title="$t('sw-settings-dictionary.entryList.modalTitleCreate')"
-        variant="small"
-        @modal-close="onCloseCreateModal"
-    >
-        {% block sw_settings_dictionary_detail_create_modal_fields %}
-        <mt-text-field
-            v-model="newEntry.label"
-            class="sw-settings-dictionary-detail__create-label"
-            required
-            :label="$t('sw-settings-dictionary.entryList.columnLabel')"
-            :placeholder="$t('sw-settings-dictionary.entryList.placeholderLabel')"
-        />
-
-        <mt-text-field
-            v-model="newEntry.technicalName"
-            class="sw-settings-dictionary-detail__create-technical-name"
-            required
-            :help-text="$t('sw-settings-dictionary.entryList.helpTextTechnicalName')"
-            :label="$t('sw-settings-dictionary.entryList.columnTechnicalName')"
-            :placeholder="$t('sw-settings-dictionary.entryList.placeholderTechnicalName')"
-        />
-
-        <mt-number-field
-            v-model="newEntry.position"
-            class="sw-settings-dictionary-detail__create-position"
-            :label="$t('sw-settings-dictionary.entryList.columnPosition')"
-        />
-
-        <mt-switch
-            v-model="newEntry.active"
-            class="sw-settings-dictionary-detail__create-active"
-            :label="$t('sw-settings-dictionary.entryList.columnActive')"
-        />
-        {% endblock %}
-
-        {% block sw_settings_dictionary_detail_create_modal_footer %}
-        <template #modal-footer>
-            <mt-button
-                size="small"
-                variant="secondary"
-                @click="onCloseCreateModal"
-            >
-                {{ $t('global.default.cancel') }}
-            </mt-button>
-
-            <mt-button
-                variant="primary"
-                size="small"
-                @click="onCreateSave"
-            >
-                {{ $t('global.default.save') }}
-            </mt-button>
-        </template>
-        {% endblock %}
-    </sw-modal>
-    {% endblock %}
 </sw-page>
 {% endblock %}

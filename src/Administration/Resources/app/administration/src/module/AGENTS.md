@@ -93,67 +93,119 @@ Shopwell.Service('privileges').addPrivilegeMappingEntry({
 
 ## Page Patterns
 
+Pages follow the component rules from `src/app/AGENTS.md`: TypeScript, `wrapComponentConfig()` and composables instead of mixins.
+
 ### List Page
+
+The `listing` mixin stays on Options API list pages, because `useListing()` only works inside `setup()` and can't call back into a `getList()` method there.
+
 ```ts
-export default {
+import type CriteriaType from 'src/core/data/criteria.data';
+import type RepositoryType from 'src/core/data/repository.data';
+import template from './sw-product-list.html.twig';
+
+const { Mixin } = Shopwell;
+const { Criteria } = Shopwell.Data;
+
+export default Shopwell.Component.wrapComponentConfig({
+  template,
+
   inject: ['repositoryFactory', 'acl'],
-  mixins: [Mixin.getByName('listing'), Mixin.getByName('notification')],
+
+  mixins: [Mixin.getByName('listing')],
+
+  data(): { products: EntityCollection<'product'> | null; isLoading: boolean } {
+    return {
+      products: null,
+      isLoading: false,
+    };
+  },
 
   computed: {
-    repository() {
+    productRepository(): RepositoryType<'product'> {
       return this.repositoryFactory.create('product');
     },
 
-    criteria() {
+    productCriteria(): CriteriaType {
       const criteria = new Criteria(this.page, this.limit);
       criteria.setTerm(this.term);
       criteria.addSorting(Criteria.sort('createdAt', 'DESC'));
+
       return criteria;
-    }
+    },
   },
 
   methods: {
-    async getList() {
+    async getList(): Promise<void> {
       this.isLoading = true;
-      this.items = await this.repository.search(this.criteria, Shopwell.Context.api);
-      this.total = this.items.total;
+      this.products = await this.productRepository.search(this.productCriteria, Shopwell.Context.api);
+      this.total = this.products.total ?? 0;
       this.isLoading = false;
-    }
-  }
-};
+    },
+  },
+});
 ```
 
 ### Detail Page
+
 ```ts
-export default {
+import type RepositoryType from 'src/core/data/repository.data';
+import useNotification from 'src/app/composables/use-notification';
+import template from './sw-product-detail.html.twig';
+
+const { Criteria } = Shopwell.Data;
+const { mapPropertyErrors } = Shopwell.Component.getComponentHelper();
+
+export default Shopwell.Component.wrapComponentConfig({
+  template,
+
   inject: ['repositoryFactory', 'acl'],
-  mixins: [Mixin.getByName('notification'), Mixin.getByName('placeholder')],
+
+  props: {
+    productId: {
+      type: String,
+      required: true,
+    },
+  },
+
+  data(): { product: Entity<'product'> | null } {
+    return {
+      product: null,
+    };
+  },
 
   computed: {
-    repository() {
+    productRepository(): RepositoryType<'product'> {
       return this.repositoryFactory.create('product');
     },
-    ...mapPropertyErrors('product', ['name', 'price'])
+
+    ...mapPropertyErrors('product', ['name', 'price']),
   },
 
   methods: {
-    async loadEntity() {
+    async loadProduct(): Promise<void> {
       const criteria = new Criteria();
       criteria.addAssociation('manufacturer');
 
-      this.entity = await this.repository.get(this.entityId, Shopwell.Context.api, criteria);
+      this.product = await this.productRepository.get(this.productId, Shopwell.Context.api, criteria);
     },
 
-    async onSave() {
-      await this.repository.save(this.entity, Shopwell.Context.api);
+    async onSave(): Promise<void> {
+      if (!this.product) {
+        return;
+      }
+
+      await this.productRepository.save(this.product, Shopwell.Context.api);
+
+      useNotification().createNotificationSuccess({
+        message: this.$t('sw-product.detail.messageSaveSuccess', { name: this.product.name }),
+      });
 
       // ✅ CRITICAL: Reload to sync origin for change tracking
-      this.entity = await this.repository.get(this.entity.id, Shopwell.Context.api);
-
-      this.createNotificationSuccess({ message: this.$t('sw.product.detail.messageSaved') });
-    }
-  }
-};
+      await this.loadProduct();
+    },
+  },
+});
 ```
 
 ## Snippets (i18n)

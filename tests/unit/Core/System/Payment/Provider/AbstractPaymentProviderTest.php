@@ -29,7 +29,7 @@ class AbstractPaymentProviderTest extends TestCase
 
         static::assertNull($provider->getDescription());
         static::assertSame([], $provider->getCredentials());
-        static::assertSame([], $provider->getChannels());
+        static::assertSame([], $provider->getProducts());
         static::assertSame([], $provider->getChannelCaptureActions());
         static::assertSame([], $provider->getApiArguments());
         static::assertNull($provider->getPayParamsDecoder());

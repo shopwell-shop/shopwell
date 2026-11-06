@@ -8,8 +8,6 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use Shopwell\Core\Framework\Context;
-use Shopwell\Core\Framework\DataAbstractionLayer\Entity;
-use Shopwell\Core\Framework\DataAbstractionLayer\EntityCollection;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
@@ -17,23 +15,21 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsAnyFilter;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\RangeFilter;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppChannel\PaymentAppChannelEntity;
-use Shopwell\Core\System\Payment\App\Aggregate\PaymentAppProvider\PaymentAppProviderEntity;
 use Shopwell\Core\System\Payment\App\PaymentAppEntity;
 use Shopwell\Core\System\Payment\App\PaymentCredentialCipher;
+use Shopwell\Core\System\Payment\Exception\PaymentProviderException;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayFactory;
 use Shopwell\Core\System\Payment\Gateway\PaymentGatewayModel;
-use Shopwell\Core\System\Payment\Gateway\PaymentTransferQuery;
-use Shopwell\Core\System\Payment\Gateway\TransferQueryResult;
-use Shopwell\Core\System\Payment\Gateway\TransferResult;
+use Shopwell\Core\System\Payment\Gateway\Request\PaymentTransferQuery;
+use Shopwell\Core\System\Payment\Gateway\Request\TransferQueryResult;
+use Shopwell\Core\System\Payment\Gateway\Request\TransferResult;
 use Shopwell\Core\System\Payment\Notification\PaymentNotificationExtractorInterface;
 use Shopwell\Core\System\Payment\PaymentException;
+use Shopwell\Core\System\Payment\Product\PaymentInteraction;
+use Shopwell\Core\System\Payment\Product\PaymentProduct;
+use Shopwell\Core\System\Payment\Product\PaymentProductRegistry;
 use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannel;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentChannelRegistry;
-use Shopwell\Core\System\Payment\Provider\Channel\PaymentFlow;
-use Shopwell\Core\System\Payment\Provider\PaymentChannelConfigEntity;
-use Shopwell\Core\System\Payment\Provider\PaymentConfigResolver;
+use Shopwell\Core\System\Payment\Provider\Config\PaymentConfigResolver;
 use Shopwell\Core\System\Payment\Provider\PaymentProvider;
 use Shopwell\Core\System\Payment\Provider\PaymentProviderRegistry;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferCollection;
@@ -42,15 +38,18 @@ use Shopwell\Core\System\Payment\Transfer\PaymentTransferRecipientCollection;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferRecipientEntity;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferRecipientService;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferReconciler;
+use Shopwell\Core\System\Payment\Transfer\PaymentTransferResultBooker;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferService;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferStateHandler;
 use Shopwell\Core\System\Payment\Transfer\PaymentTransferStates;
-use Shopwell\Core\System\Payment\Transfer\PaymentTransferSubmitter;
 use Shopwell\Core\System\StateMachine\Aggregation\StateMachineState\StateMachineStateCollection;
 use Shopwell\Core\System\StateMachine\Aggregation\StateMachineState\StateMachineStateEntity;
 use Shopwell\Core\System\StateMachine\Loader\InitialStateIdLoader;
 use Shopwell\Core\System\StateMachine\StateMachineRegistry;
 use Shopwell\Core\System\StateMachine\Transition;
+use Shopwell\Core\Test\Stub\DataAbstractionLayer\StaticEntityRepository;
+use Shopwell\Tests\Unit\Core\System\Payment\Account\_fixtures\PaymentAccountLockStub;
+use Shopwell\Tests\Unit\Core\System\Payment\NumberRangeFixture;
 use Symfony\Component\Clock\MockClock;
 
 /**
@@ -86,7 +85,7 @@ class PaymentTransferReconcilerTest extends TestCase
     public function testASucceededAnswerFromSubmittedProcessesFirst(): void
     {
         static::assertSame(
-            [PaymentTransferSubmitter::STEP_PROCESS, PaymentTransferSubmitter::STEP_SUCCEED],
+            [PaymentTransferResultBooker::STEP_PROCESS, PaymentTransferResultBooker::STEP_SUCCEED],
             PaymentTransferReconciler::stepNames(
                 $this->answer(TransferResult::STATE_SUCCEEDED),
                 PaymentTransferStates::STATE_SUBMITTED
@@ -101,7 +100,7 @@ class PaymentTransferReconcilerTest extends TestCase
     public function testASucceededAnswerFromAwaitingConfirmProcessesFirst(): void
     {
         static::assertSame(
-            [PaymentTransferSubmitter::STEP_PROCESS, PaymentTransferSubmitter::STEP_SUCCEED],
+            [PaymentTransferResultBooker::STEP_PROCESS, PaymentTransferResultBooker::STEP_SUCCEED],
             PaymentTransferReconciler::stepNames(
                 $this->answer(TransferResult::STATE_SUCCEEDED),
                 PaymentTransferStates::STATE_AWAITING_USER_CONFIRM
@@ -115,7 +114,7 @@ class PaymentTransferReconcilerTest extends TestCase
     public function testASucceededAnswerFromProcessingOnlySettles(): void
     {
         static::assertSame(
-            [PaymentTransferSubmitter::STEP_SUCCEED],
+            [PaymentTransferResultBooker::STEP_SUCCEED],
             PaymentTransferReconciler::stepNames(
                 $this->answer(TransferResult::STATE_SUCCEEDED),
                 PaymentTransferStates::STATE_PROCESSING
@@ -141,7 +140,7 @@ class PaymentTransferReconcilerTest extends TestCase
     public function testAMovingAnswerProcessesASubmittedTransfer(string $state): void
     {
         static::assertSame(
-            [PaymentTransferSubmitter::STEP_PROCESS],
+            [PaymentTransferResultBooker::STEP_PROCESS],
             PaymentTransferReconciler::stepNames($this->answer($state), PaymentTransferStates::STATE_SUBMITTED)
         );
     }
@@ -158,7 +157,7 @@ class PaymentTransferReconcilerTest extends TestCase
     public function testAnAwaitingConfirmAnswerMovesASubmittedTransferToTheConfirmation(): void
     {
         static::assertSame(
-            [PaymentTransferSubmitter::STEP_AWAIT_CONFIRM],
+            [PaymentTransferResultBooker::STEP_AWAIT_CONFIRM],
             PaymentTransferReconciler::stepNames(
                 $this->answer(TransferResult::STATE_AWAITING_CONFIRM),
                 PaymentTransferStates::STATE_SUBMITTED
@@ -188,7 +187,7 @@ class PaymentTransferReconcilerTest extends TestCase
     public function testAFailedAnswerFailsEveryOpenState(string $currentState): void
     {
         static::assertSame(
-            [PaymentTransferSubmitter::STEP_FAIL],
+            [PaymentTransferResultBooker::STEP_FAIL],
             PaymentTransferReconciler::stepNames($this->answer(TransferResult::STATE_FAILED), $currentState)
         );
     }
@@ -241,7 +240,7 @@ class PaymentTransferReconcilerTest extends TestCase
     public function testAReturnedAnswerProcessesASubmittedTransferFirst(): void
     {
         static::assertSame(
-            [PaymentTransferSubmitter::STEP_PROCESS, PaymentTransferReconciler::STEP_MARK_RETURNED],
+            [PaymentTransferResultBooker::STEP_PROCESS, PaymentTransferReconciler::STEP_MARK_RETURNED],
             PaymentTransferReconciler::stepNames(
                 $this->answer(TransferResult::STATE_RETURNED),
                 PaymentTransferStates::STATE_SUBMITTED
@@ -252,7 +251,7 @@ class PaymentTransferReconcilerTest extends TestCase
     public function testAReturnedAnswerProcessesAWaitingTransferFirst(): void
     {
         static::assertSame(
-            [PaymentTransferSubmitter::STEP_PROCESS, PaymentTransferReconciler::STEP_MARK_RETURNED],
+            [PaymentTransferResultBooker::STEP_PROCESS, PaymentTransferReconciler::STEP_MARK_RETURNED],
             PaymentTransferReconciler::stepNames(
                 $this->answer(TransferResult::STATE_RETURNED),
                 PaymentTransferStates::STATE_AWAITING_USER_CONFIRM
@@ -284,7 +283,7 @@ class PaymentTransferReconcilerTest extends TestCase
             'providerRef' => 'order-1',
         ]);
 
-        $this->expectExceptionObject(PaymentException::providerLacksCapability('alipay', PaymentCapability::TRANSFER_QUERY->value));
+        $this->expectExceptionObject(PaymentProviderException::providerLacksCapability('alipay', PaymentCapability::TRANSFER_QUERY->value));
 
         $this->reconciler(
             configResolver: $this->resolverFor($gateway, [PaymentCapability::CAPTURE, PaymentCapability::TRANSFER]),
@@ -381,6 +380,26 @@ class PaymentTransferReconcilerTest extends TestCase
      * The batch is the only thing that asks a payout nobody reported on, so what it selects - and what
      * it deliberately does not select - is the whole safety net.
      */
+    public function testAnUnqueryablePayoutYieldsItsBatchPosition(): void
+    {
+        $first = $this->transfer(['id' => 'first', 'paymentApp' => null]);
+        $second = $this->transfer(['id' => 'second', 'paymentApp' => null]);
+        $select = static function (Criteria $criteria, Context $context, StaticEntityRepository $repository) use ($first, $second): PaymentTransferCollection {
+            static::assertSame(['updatedAt', 'id'], array_map(static fn (FieldSorting $sort): string => $sort->getField(), array_values($criteria->getSorting())));
+            $alreadyAsked = array_column(array_merge(...$repository->updates), 'id');
+
+            return new PaymentTransferCollection([\in_array('first', $alreadyAsked, true) ? $second : $first]);
+        };
+        $repository = StaticEntityRepository::of(PaymentTransferCollection::class, [$select, $select]);
+        $reconciler = $this->reconciler($repository);
+
+        static::assertSame(0, $reconciler->reconcileDue(1));
+        static::assertSame(0, $reconciler->reconcileDue(1));
+        static::assertSame('first', $repository->updates[0][0]['id']);
+        static::assertSame('second', $repository->updates[1][0]['id']);
+        static::assertEquals(new \DateTimeImmutable(self::NOW), $repository->updates[0][0]['updatedAt']);
+    }
+
     public function testTheBatchSelectsOnlyThePayoutsTheChannelMayStillMove(): void
     {
         $transferRepository = static::createMock(EntityRepository::class);
@@ -415,11 +434,11 @@ class PaymentTransferReconcilerTest extends TestCase
                     array_keys($criteria->getAssociations())
                 );
 
-                // oldest first - a payout that has been waiting longest is not pushed out of every
-                // batch by younger ones
+                // A queried payout yields its place even while its state remains open.
                 $sorting = array_values($criteria->getSorting());
-                static::assertCount(1, $sorting);
-                static::assertSame('createdAt', $sorting[0]->getField());
+                static::assertCount(2, $sorting);
+                static::assertSame('updatedAt', $sorting[0]->getField());
+                static::assertSame('id', $sorting[1]->getField());
                 static::assertSame(FieldSorting::ASCENDING, $sorting[0]->getDirection());
 
                 static::assertSame(25, $criteria->getLimit());
@@ -651,11 +670,12 @@ class PaymentTransferReconcilerTest extends TestCase
     {
         $cipher = new PaymentCredentialCipher(self::SECRET);
 
-        $channel = new PaymentChannel(
+        $channel = new PaymentProduct(
             technicalName: 'alipay_h5',
             providerTechnicalName: 'alipay',
+            method: 'alipay',
             label: 'Alipay H5',
-            flow: PaymentFlow::REDIRECT,
+            interactions: [PaymentInteraction::REDIRECT],
         );
 
         $gatewayFactory = static::createStub(PaymentGatewayFactory::class);
@@ -665,68 +685,13 @@ class PaymentTransferReconcilerTest extends TestCase
             technicalName: 'alipay',
             label: 'Alipay',
             credentials: [],
-            channels: ['alipay_h5' => $channel],
+            products: ['alipay_h5' => $channel],
             gatewayFactory: $gatewayFactory,
             notificationExtractor: static::createStub(PaymentNotificationExtractorInterface::class),
             capabilities: $capabilities,
         );
 
-        $providers = new PaymentProviderRegistry([$provider]);
-
-        $appProvider = new PaymentAppProviderEntity();
-        $appProvider->setUniqueIdentifier('app-provider-id');
-        $appProvider->paymentAppId = 'app-id';
-        $appProvider->providerTechnicalName = 'alipay';
-        $appProvider->enabled = true;
-        $appProvider->credentials = $cipher->encrypt(['app_id' => 'own-app-id']);
-
-        $appChannel = new PaymentAppChannelEntity();
-        $appChannel->setUniqueIdentifier('app-channel-id');
-        $appChannel->paymentAppId = 'app-id';
-        $appChannel->channelTechnicalName = 'alipay_h5';
-        $appChannel->enabled = true;
-        $appChannel->params = $cipher->encrypt(['appid' => 'own-appid']);
-
-        $channelConfig = new PaymentChannelConfigEntity();
-        $channelConfig->setUniqueIdentifier('channel-config-id');
-        $channelConfig->providerTechnicalName = 'alipay';
-        $channelConfig->channelTechnicalName = 'alipay_h5';
-        $channelConfig->enabled = true;
-        $channelConfig->params = $cipher->encrypt(['appid' => 'platform-appid']);
-
-        $appProviderRepository = static::createStub(EntityRepository::class);
-        $appProviderRepository->method('search')->willReturn($this->singleEntityResult('payment_app_provider', $appProvider));
-
-        $appChannelRepository = static::createStub(EntityRepository::class);
-        $appChannelRepository->method('search')->willReturn($this->singleEntityResult('payment_app_channel', $appChannel));
-
-        $channelConfigRepository = static::createStub(EntityRepository::class);
-        $channelConfigRepository->method('search')->willReturn($this->singleEntityResult('payment_channel_config', $channelConfig));
-
-        return new PaymentConfigResolver(
-            $providers,
-            new PaymentChannelRegistry($providers),
-            $appProviderRepository,
-            static::createStub(EntityRepository::class),
-            $appChannelRepository,
-            $channelConfigRepository,
-            $cipher,
-        );
-    }
-
-    /**
-     * @return EntitySearchResult<EntityCollection<Entity>>
-     */
-    private function singleEntityResult(string $entityName, Entity $entity): EntitySearchResult
-    {
-        return new EntitySearchResult(
-            $entityName,
-            1,
-            new EntityCollection([$entity]),
-            null,
-            new Criteria(),
-            Context::createDefaultContext()
-        );
+        return PaymentTransferRulesFixture::boundResolver($provider, $cipher);
     }
 
     /**
@@ -771,12 +736,11 @@ class PaymentTransferReconcilerTest extends TestCase
 
         return new PaymentConfigResolver(
             $providers,
-            new PaymentChannelRegistry($providers),
-            static::createStub(EntityRepository::class),
-            static::createStub(EntityRepository::class),
+            new PaymentProductRegistry($providers),
             static::createStub(EntityRepository::class),
             static::createStub(EntityRepository::class),
             new PaymentCredentialCipher(self::SECRET),
+            static::createStub(EntityRepository::class),
         );
     }
 
@@ -798,10 +762,14 @@ class PaymentTransferReconcilerTest extends TestCase
             $transfers,
             $recipients,
             new PaymentTransferStateHandler($registry),
-            new PaymentTransferRecipientService($recipients, $cipher, new MockClock(self::NOW)),
+            new PaymentTransferRecipientService($recipients, $cipher, new MockClock(self::NOW), PaymentTransferRulesFixture::registry()),
             $cipher,
             $initialStateIdLoader,
             new MockClock(self::NOW),
+            PaymentTransferRulesFixture::registry(),
+            NumberRangeFixture::generator('PT1001'),
+            PaymentTransferRulesFixture::resolvedConfig(),
+            new PaymentAccountLockStub(),
         );
     }
 
@@ -814,6 +782,7 @@ class PaymentTransferReconcilerTest extends TestCase
     {
         $app = new PaymentAppEntity();
         $app->id = $id;
+        $app->type = PaymentAppEntity::TYPE_EXTERNAL;
 
         return $app;
     }
@@ -826,6 +795,7 @@ class PaymentTransferReconcilerTest extends TestCase
         $transfer = new PaymentTransferEntity();
         $transfer->id = 'transfer-id';
         $transfer->paymentAppId = 'app-id';
+        $transfer->accountId = 'account-id';
         $transfer->transferNo = 'PT261018090000ABCDEF0123';
         $transfer->outNo = 'commission0001';
         $transfer->recipientId = 'recipient-id';

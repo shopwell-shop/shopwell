@@ -8,10 +8,10 @@ use Payum\Core\Request\Refund;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\System\Payment\Gateway\PaymentClose;
-use Shopwell\Core\System\Payment\Gateway\PaymentQuery;
-use Shopwell\Core\System\Payment\Gateway\PaymentTransferQuery;
-use Shopwell\Core\System\Payment\Gateway\PaymentTransferRequest;
+use Shopwell\Core\System\Payment\Gateway\Request\PaymentClose;
+use Shopwell\Core\System\Payment\Gateway\Request\PaymentQuery;
+use Shopwell\Core\System\Payment\Gateway\Request\PaymentTransferQuery;
+use Shopwell\Core\System\Payment\Gateway\Request\PaymentTransferRequest;
 use Shopwell\Core\System\Payment\Provider\Capability\PaymentCapability;
 
 /**

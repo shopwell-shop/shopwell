@@ -1,4 +1,4 @@
-import { mount } from '@vue/test-utils';
+import { shallowMount } from '@vue/test-utils';
 
 const ORDER_SEARCH = jest.fn();
 
@@ -41,7 +41,7 @@ function createRepositoryFactory() {
 async function createWrapper(privileges = ['order.viewer'], orders = ORDERS) {
     ORDER_SEARCH.mockResolvedValue(orders);
 
-    return mount(await wrapTestComponent('sw-dashboard-latest-orders', { sync: true }), {
+    return shallowMount(await wrapTestComponent('sw-dashboard-latest-orders', { sync: true }), {
         global: {
             stubs: {
                 'mt-card': {
@@ -75,7 +75,7 @@ async function createWrapper(privileges = ['order.viewer'], orders = ORDERS) {
                                 <tr><th v-for="col in columns" :key="col.property">{{ col.label }}</th></tr>
                             </thead>
                             <tbody>
-                                <tr v-for="item in dataSource" :key="item.id" :data-id="item.id"></tr>
+                                <tr v-for="item in dataSource" :key="item.id" :data-id="item.id"><td v-for="column in columns" :key="column.property" :data-column="column.property"><slot :name="'column-' + column.property" :item="item">{{ item[column.property] }}</slot></td></tr>
                             </tbody>
                         </table>`,
                 },
@@ -110,6 +110,7 @@ async function createWrapper(privileges = ['order.viewer'], orders = ORDERS) {
 describe('module/sw-dashboard/component/sw-dashboard-latest-orders', () => {
     beforeEach(() => {
         ORDER_SEARCH.mockClear();
+        Shopwell.Context.app.systemCurrencyISOCode = 'EUR';
     });
 
     it('does not render without order permission', async () => {
@@ -165,11 +166,10 @@ describe('module/sw-dashboard/component/sw-dashboard-latest-orders', () => {
         const wrapper = await createWrapper();
         await flushPromises();
 
-        const [first, second] = wrapper.vm.orders;
-
-        expect(wrapper.vm.getVariantFromOrderState(first)).toBe('neutral');
-        expect(wrapper.vm.getVariantFromOrderState(second)).toBe('critical');
-        expect(wrapper.vm.getVariantFromOrderState({ stateMachineState: null })).toBe('neutral');
+        expect(wrapper.findAll('.mt-badge').map((badge) => badge.attributes('data-variant'))).toEqual([
+            'neutral',
+            'critical',
+        ]);
     });
 
     it('falls back to an empty customer name without an order customer', async () => {
@@ -186,7 +186,8 @@ describe('module/sw-dashboard/component/sw-dashboard-latest-orders', () => {
         );
         await flushPromises();
 
-        expect(wrapper.vm.getCustomerName(wrapper.vm.orders[0])).toBe('');
+        expect(wrapper.get('[data-id="order-3"] [data-column="orderCustomer.name"]').text()).toBe('');
+        expect(wrapper.get('[data-id="order-3"] .mt-badge').attributes('data-variant')).toBe('neutral');
     });
 
     it('does not render a link to the full order list', async () => {

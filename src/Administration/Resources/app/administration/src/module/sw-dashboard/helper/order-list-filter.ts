@@ -1,4 +1,3 @@
-/* eslint-disable sw-deprecation-rules/private-feature-declarations */
 import { zonedTimeToUtc } from 'date-fns-tz';
 
 /**
@@ -15,30 +14,40 @@ type StoredFilter = {
     criteria: unknown[];
 };
 
+/** @private */
 export type StoredFilters = Record<string, StoredFilter>;
 
+/** @private */
 export type StateSelection = {
     id: string;
     name: string;
 };
 
+/** @private */
 export type DayBounds = {
     from: string;
     to: string;
 };
 
+/** @private */
 export const ORDER_LIST_STORE_KEY = 'grid.filter.order';
 
+/** @private */
 export const ORDER_DATE_FILTER = 'order-date-filter';
 
+/** @private */
 export const ORDER_PAYMENT_FILTER = 'payment-status-filter';
 
+/** @private */
 export const ORDER_DELIVERY_FILTER = 'delivery-status-filter';
 
+/** @private */
 export const ORDER_PAYMENT_PROPERTY = 'primaryOrderTransaction.stateMachineState';
 
+/** @private */
 export const ORDER_DELIVERY_PROPERTY = 'primaryOrderDelivery.stateMachineState';
 
+/** @private */
 export function getUserTimeZone(): string {
     return (Shopwell.Store.get('session')?.currentUser?.timeZone as string) ?? 'Asia/Shanghai';
 }
@@ -47,6 +56,7 @@ export function getUserTimeZone(): string {
  * Resolves the local calendar day of the given date the same way
  * `sw-date-filter` does, so stored filter values stay comparable.
  */
+/** @private */
 export function getUserTimeZoneDate(date: Date): string {
     const formatter = new Intl.DateTimeFormat('en-CA', {
         timeZone: getUserTimeZone(),
@@ -67,6 +77,7 @@ export function getUserTimeZoneDate(date: Date): string {
  * Start and end of the local calendar day as UTC ISO strings, matching the
  * normalised value `sw-date-filter` emits.
  */
+/** @private */
 export function getDayBounds(date: Date): DayBounds {
     const timeZone = getUserTimeZone();
     const day = getUserTimeZoneDate(date);
@@ -86,6 +97,7 @@ export function getDayBounds(date: Date): DayBounds {
  * the UTC day instead and shift every lookup by one day for users east or west
  * of UTC.
  */
+/** @private */
 export function getDayKeys(reference: Date = new Date()): { today: string; yesterday: string } {
     return {
         today: getUserTimeZoneDate(reference),
@@ -93,6 +105,7 @@ export function getDayKeys(reference: Date = new Date()): { today: string; yeste
     };
 }
 
+/** @private */
 export function getPreviousDay(reference: Date = new Date()): Date {
     const previous = new Date(reference.getTime());
     previous.setDate(previous.getDate() - 1);
@@ -105,6 +118,7 @@ export function getPreviousDay(reference: Date = new Date()): Date {
  * used by the dashboard to aggregate "this month so far" metrics in the
  * user timezone the same way the day bounds are derived.
  */
+/** @private */
 export function getMonthStart(reference: Date = new Date()): string {
     const timeZone = getUserTimeZone();
     const formatter = new Intl.DateTimeFormat('en-CA', {
@@ -121,6 +135,7 @@ export function getMonthStart(reference: Date = new Date()): string {
     return zonedTimeToUtc(`${year}-${month}-01T00:00:00.000`, timeZone).toISOString();
 }
 
+/** @private */
 export function createOrderDateFilter(bounds: DayBounds, timeframe = 'today'): StoredFilter {
     return {
         value: {
@@ -141,6 +156,7 @@ export function createOrderDateFilter(bounds: DayBounds, timeframe = 'today'): S
     };
 }
 
+/** @private */
 export function createStateFilter(property: string, states: StateSelection[]): StoredFilter | null {
     if (states.length === 0) {
         return null;
@@ -158,6 +174,7 @@ export function createStateFilter(property: string, states: StateSelection[]): S
     };
 }
 
+/** @private */
 export function buildOrderListLink(filters: StoredFilters): { name: string; query: Record<string, string> } {
     return {
         name: 'sw.order.index',
@@ -171,6 +188,7 @@ export function buildOrderListLink(filters: StoredFilters): { name: string; quer
  * Convenience wrapper for the most common dashboard use case: a local day
  * range combined with an optional single state machine state.
  */
+/** @private */
 export function buildFilteredOrderListLink(options: {
     date?: Date;
     state?: { filterName: string; property: string; state: StateSelection | null };

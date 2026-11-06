@@ -1,3 +1,21 @@
+{# Keep feature visibility consistent with the backend configuration normalization. #}
+{% set loyaltyRaw = config('core.loyalty.enabled') ?? true %}
+{% set walletRaw = config('core.wallet.enabled') ?? true %}
+{% set loyaltyEnabled = loyaltyRaw is string ? loyaltyRaw|lower|trim : loyaltyRaw %}
+{% set walletEnabled = walletRaw is string ? walletRaw|lower|trim : walletRaw %}
+{% set showLoyaltyEntries = loyaltyEnabled
+    and loyaltyEnabled is not same as('false')
+    and loyaltyEnabled is not same as('0')
+    and loyaltyEnabled is not same as('')
+    and loyaltyEnabled is not same as('off')
+    and loyaltyEnabled is not same as('no') %}
+{% set showWalletEntry = walletEnabled
+    and walletEnabled is not same as('false')
+    and walletEnabled is not same as('0')
+    and walletEnabled is not same as('')
+    and walletEnabled is not same as('off')
+    and walletEnabled is not same as('no') %}
+
 {% block page_account_sidebar_inner %}
     <div class="{% if not headerWidget %}account-aside{% else %}header-account-menu{% endif %}">
         <div class="card account-menu-inner">
@@ -64,21 +82,33 @@
                                 {% endif %}
                             {% endblock %}
 
-                            {% block page_account_sidebar_link_loyalty %}
+                            {% block page_account_sidebar_link_rewards %}
                                 {# an unset key means "not switched off", the same default the backend applies #}
-                                {% if config('core.loyalty.enabled') is not same as(false) %}
-                                    <a href="{{ path('frontend.account.loyalty.page') }}"
-                                       title="{{ 'account.loyaltyLink'|trans|striptags }}"
-                                       class="list-group-item list-group-item-action account-aside-item{% if activeRoute is same as('frontend.account.loyalty.page') %} is-active{% endif %}"
-                                       {% if activeRoute is same as('frontend.account.loyalty.page') %} aria-current="page"{% endif %}>
-                                        {{ 'account.loyaltyLink'|trans|sw_sanitize }}
+                                {% if showLoyaltyEntries %}
+                                    <a href="{{ path('frontend.account.rewards.page') }}"
+                                       title="{{ 'account.rewardsLink'|trans|striptags }}"
+                                       class="list-group-item list-group-item-action account-aside-item{% if activeRoute is same as('frontend.account.rewards.page') %} is-active{% endif %}"
+                                       {% if activeRoute is same as('frontend.account.rewards.page') %} aria-current="page"{% endif %}>
+                                        {{ 'account.rewardsLink'|trans|sw_sanitize }}
+                                    </a>
+                                {% endif %}
+                            {% endblock %}
+
+                            {% block page_account_sidebar_link_membership %}
+                                {# the paid membership is part of the programme: the same switch hides both #}
+                                {% if showLoyaltyEntries %}
+                                    <a href="{{ path('frontend.account.membership.page') }}"
+                                       title="{{ 'account.membershipLink'|trans|striptags }}"
+                                       class="list-group-item list-group-item-action account-aside-item{% if activeRoute is same as('frontend.account.membership.page') %} is-active{% endif %}"
+                                       {% if activeRoute is same as('frontend.account.membership.page') %} aria-current="page"{% endif %}>
+                                        {{ 'account.membershipLink'|trans|sw_sanitize }}
                                     </a>
                                 {% endif %}
                             {% endblock %}
 
                             {% block page_account_sidebar_link_wallet %}
                                 {# an unset key means "not switched off", the same default the backend applies #}
-                                {% if config('core.wallet.enabled') is not same as(false) %}
+                                {% if showWalletEntry %}
                                     <a href="{{ path('frontend.account.wallet.page') }}"
                                        title="{{ 'account.walletLink'|trans|striptags }}"
                                        class="list-group-item list-group-item-action account-aside-item{% if activeRoute is same as('frontend.account.wallet.page') %} is-active{% endif %}"

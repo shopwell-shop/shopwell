@@ -34,6 +34,28 @@ class WalletSettingsTest extends TestCase
         static::assertFalse($settings->isEnabled());
     }
 
+    /**
+     * `system:config:set` without `--json` stores the raw argument, so the shop that switched the
+     * wallet off through the CLI saves the *string* "false" - which must not read as enabled.
+     */
+    public function testAStringFalseFromTheCliTurnsTheWalletOff(): void
+    {
+        $settings = new WalletSettings(new StaticSystemConfigService([
+            WalletSettings::CONFIG_KEY_ENABLED => 'false',
+        ]));
+
+        static::assertFalse($settings->isEnabled());
+    }
+
+    public function testAStringOnKeepsTheWalletRunning(): void
+    {
+        $settings = new WalletSettings(new StaticSystemConfigService([
+            WalletSettings::CONFIG_KEY_ENABLED => 'true',
+        ]));
+
+        static::assertTrue($settings->isEnabled());
+    }
+
     public function testMaxPaymentPercentFallsBackToTheWholeOrder(): void
     {
         static::assertSame(100.0, (new WalletSettings(new StaticSystemConfigService()))->maxPaymentPercent());

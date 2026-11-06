@@ -5,7 +5,9 @@ namespace Shopwell\Tests\Unit\Core\Framework\DependencyInjection;
 use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
-use Shopwell\Core\Framework\App\Lifecycle\Handler\McpLifecycleHandler;
+use Shopwell\Core\Framework\App\Mcp\Feature\McpPromptFeatureDefinition;
+use Shopwell\Core\Framework\App\Mcp\Feature\McpResourceFeatureDefinition;
+use Shopwell\Core\Framework\App\Mcp\Feature\McpToolFeatureDefinition;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Mcp\Controller\McpServerController;
 use Shopwell\Core\Framework\Mcp\Controller\StoreApiMcpServerController;
@@ -109,7 +111,9 @@ class McpServiceConfigTest extends TestCase
      */
     public static function expectedServiceProvider(): iterable
     {
-        yield McpLifecycleHandler::class => [McpLifecycleHandler::class];
+        yield McpToolFeatureDefinition::class => [McpToolFeatureDefinition::class];
+        yield McpPromptFeatureDefinition::class => [McpPromptFeatureDefinition::class];
+        yield McpResourceFeatureDefinition::class => [McpResourceFeatureDefinition::class];
         yield McpServerController::class => [McpServerController::class];
         yield StoreApiMcpServerController::class => [StoreApiMcpServerController::class];
         yield EntitySchemaTool::class => [EntitySchemaTool::class];
