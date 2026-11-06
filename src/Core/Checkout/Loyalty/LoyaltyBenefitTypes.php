@@ -15,6 +15,8 @@ use Shopwell\Core\Framework\Log\Package;
  *
  * A type that is unknown to this class is not an error: it reads back as a row nobody asks for, so a
  * benefit an extension invented stays stored and visible instead of being rejected on save.
+ *
+ * @codeCoverageIgnore
  */
 #[Package('checkout')]
 final class LoyaltyBenefitTypes

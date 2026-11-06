@@ -38,8 +38,7 @@ const purchase = {
     createdAt: '2026-01-02T09:59:00.000Z',
     customer: {
         id: 'customer-1',
-        firstName: 'Ada',
-        lastName: 'Lovelace',
+        name: 'Ada Lovelace',
         customerNumber: '10001',
     },
 };
@@ -61,7 +60,13 @@ const purchaseRepository = {
  */
 const entityListingStub = {
     name: 'sw-entity-listing',
-    props: ['dataSource', 'columns', 'sortBy', 'sortDirection', 'isLoading'],
+    props: [
+        'dataSource',
+        'columns',
+        'sortBy',
+        'sortDirection',
+        'isLoading',
+    ],
     template: `
         <div class="sw-entity-listing">
             <div
@@ -101,7 +106,13 @@ const entityListingStub = {
 
 const sidebarFilterPanelStub = {
     name: 'sw-sidebar-filter-panel',
-    props: ['entity', 'storeKey', 'filters', 'defaults', 'activeFilterNumber'],
+    props: [
+        'entity',
+        'storeKey',
+        'filters',
+        'defaults',
+        'activeFilterNumber',
+    ],
     template: `
         <div class="sw-sidebar-filter-panel">
             <button
@@ -151,8 +162,14 @@ async function createWrapper(): Promise<{
                     props: ['initialSearch'],
                     template: '<button class="sw-search-bar__search" @click="$emit(\'search\', \'Gold\')" />',
                 },
-                'mt-badge': { props: ['variant'], template: '<span class="mt-badge" :data-variant="variant"><slot></slot></span>' },
-                'mt-link': { props: ['to'], template: '<a class="mt-link" :data-target="JSON.stringify(to)"><slot></slot></a>' },
+                'mt-badge': {
+                    props: ['variant'],
+                    template: '<span class="mt-badge" :data-variant="variant"><slot></slot></span>',
+                },
+                'mt-link': {
+                    props: ['to'],
+                    template: '<a class="mt-link" :data-target="JSON.stringify(to)"><slot></slot></a>',
+                },
                 'mt-empty-state': { props: ['headline'], template: '<div class="mt-empty-state">{{ headline }}</div>' },
                 'sw-time-ago': { props: ['date'], template: '<span class="sw-time-ago">{{ date }}</span>' },
                 'mt-icon': true,
@@ -168,7 +185,8 @@ async function createWrapper(): Promise<{
                     },
                 },
                 filterFactory: {
-                    create: (entityName: string, filters: Record<string, unknown>) => Object.entries(filters).map(([name, filter]) => ({ name, ...(filter as object) })),
+                    create: (entityName: string, filters: Record<string, unknown>) =>
+                        Object.entries(filters).map(([name, filter]) => ({ name, ...(filter as object) })),
                 },
                 searchRankingService: {
                     getSearchFieldsByEntity: () => Promise.resolve({}),
@@ -264,7 +282,7 @@ describe('src/module/sw-membership/page/sw-membership-purchase-list', () => {
         await flushPromises();
 
         // the listing mixin writes the term into the route, the route watcher reloads the queue
-        const query = router.push.mock.calls.at(-1)[0].query;
+        const query = router.push.mock.calls[router.push.mock.calls.length - 1][0].query;
 
         expect(query).toMatchObject({ term: 'Gold', page: 1 });
     });
@@ -275,7 +293,7 @@ describe('src/module/sw-membership/page/sw-membership-purchase-list', () => {
         await wrapper.find('.sw-entity-listing__page-change').trigger('click');
         await flushPromises();
 
-        const query = router.push.mock.calls.at(-1)[0].query;
+        const query = router.push.mock.calls[router.push.mock.calls.length - 1][0].query;
 
         expect(query).toMatchObject({ page: 2 });
     });
@@ -286,7 +304,7 @@ describe('src/module/sw-membership/page/sw-membership-purchase-list', () => {
         await wrapper.find('.sw-entity-listing__column-sort').trigger('click');
         await flushPromises();
 
-        const query = router.push.mock.calls.at(-1)[0].query;
+        const query = router.push.mock.calls[router.push.mock.calls.length - 1][0].query;
 
         expect(query).toMatchObject({ sortBy: 'amount', sortDirection: 'ASC' });
     });

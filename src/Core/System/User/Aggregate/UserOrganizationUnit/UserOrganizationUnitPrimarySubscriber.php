@@ -36,7 +36,16 @@ class UserOrganizationUnitPrimarySubscriber implements EventSubscriberInterface
                 continue;
             }
 
-            if (!isset($payload['userId'], $payload['organizationUnitId'])) {
+            if (!isset($payload['id'])) {
+                continue;
+            }
+
+            $mappingId = Uuid::fromHexToBytes($payload['id']);
+            $userId = $this->connection->fetchOne(
+                'SELECT `user_id` FROM `user_organization_unit` WHERE `id` = :id',
+                ['id' => $mappingId]
+            );
+            if (!\is_string($userId)) {
                 continue;
             }
 
@@ -44,12 +53,9 @@ class UserOrganizationUnitPrimarySubscriber implements EventSubscriberInterface
                 'UPDATE `user_organization_unit`
                  SET `is_primary` = 0
                  WHERE `user_id` = :userId
-                   AND `organization_unit_id` != :organizationUnitId
+                   AND `id` != :id
                    AND `is_primary` = 1',
-                [
-                    'userId' => Uuid::fromHexToBytes($payload['userId']),
-                    'organizationUnitId' => Uuid::fromHexToBytes($payload['organizationUnitId']),
-                ]
+                ['userId' => $userId, 'id' => $mappingId]
             );
         }
     }

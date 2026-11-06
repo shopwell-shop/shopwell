@@ -15,6 +15,8 @@ const { Component, Mixin } = Shopwell;
 export default Component.wrapComponentConfig({
     template,
 
+    emits: ['element-update'],
+
     mixins: [Mixin.getByName('cms-element')],
 
     computed: {

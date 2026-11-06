@@ -163,7 +163,7 @@ final class PaymentControllerFixture extends TestCase
         $order->paymentNo = 'PG-1';
         $order->outTradeNo = 'T-1';
         $order->paymentAppId = $paymentAppId;
-        $attempt = self::attempt($order->id, $paymentAppId);
+        $attempt = self::paymentAttempt($order->id, $paymentAppId);
         $order->activeAttemptId = $attempt->id;
         $order->activeAttempt = $attempt;
         $order->attempts = [$attempt->id => $attempt];
@@ -180,7 +180,7 @@ final class PaymentControllerFixture extends TestCase
         return $order;
     }
 
-    public static function attempt(string $orderId, string $appId, string $provider = 'alipay', string $product = 'alipay_h5'): PaymentAttemptEntity
+    public static function paymentAttempt(string $orderId, string $appId, string $provider = 'alipay', string $product = 'alipay_h5'): PaymentAttemptEntity
     {
         $attempt = new PaymentAttemptEntity();
         $attempt->id = md5('attempt-' . $orderId);

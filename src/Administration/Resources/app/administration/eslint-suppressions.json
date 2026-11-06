@@ -2056,11 +2056,6 @@
       "count": 24
     }
   },
-  "src/app/component/structure/sw-admin-menu/sw-admin-menu.spec/database-navigation.spec.js": {
-    "sw-test-rules/no-vm-access": {
-      "count": 6
-    }
-  },
   "src/app/component/structure/sw-admin-menu/sw-admin-menu.spec/flyout-module-colors.spec.js": {
     "sw-test-rules/no-vm-access": {
       "count": 5
@@ -4846,7 +4841,7 @@
       "count": 4
     },
     "@typescript-eslint/no-restricted-types": {
-      "count": 43
+      "count": 41
     },
     "max-lines": {
       "count": 1
@@ -6983,11 +6978,6 @@
       "count": 1
     }
   },
-  "src/module/sw-customer/page/sw-customer-list/sw-customer-list.spec.js": {
-    "sw-test-rules/no-vm-access": {
-      "count": 29
-    }
-  },
   "src/module/sw-customer/view/sw-customer-detail-addresses/index.js": {
     "@eslint-community/eslint-comments/require-description": {
       "count": 1
@@ -6998,7 +6988,7 @@
   },
   "src/module/sw-customer/view/sw-customer-detail-addresses/sw-customer-detail-addresses.spec.js": {
     "sw-test-rules/no-vm-access": {
-      "count": 22
+      "count": 21
     }
   },
   "src/module/sw-customer/view/sw-customer-detail-base/index.js": {
@@ -7020,11 +7010,6 @@
     },
     "filename-rules/not-match": {
       "count": 1
-    }
-  },
-  "src/module/sw-dashboard/component/sw-dashboard-statistics/sw-dashboard-statistics.spec.js": {
-    "sw-test-rules/no-vm-access": {
-      "count": 2
     }
   },
   "src/module/sw-dashboard/index.ts": {
@@ -8215,9 +8200,6 @@
     }
   },
   "src/module/sw-login/index.js": {
-    "@eslint-community/eslint-comments/require-description": {
-      "count": 1
-    },
     "filename-rules/not-match": {
       "count": 1
     }
@@ -8228,9 +8210,6 @@
     }
   },
   "src/module/sw-login/view/sw-login-login/index.ts": {
-    "@eslint-community/eslint-comments/require-description": {
-      "count": 7
-    },
     "@typescript-eslint/ban-ts-comment": {
       "count": 5
     }
@@ -9046,7 +9025,7 @@
   },
   "src/module/sw-order/component/sw-order-new-customer-modal/sw-order-new-customer-modal.spec.js": {
     "sw-test-rules/no-vm-access": {
-      "count": 32
+      "count": 31
     }
   },
   "src/module/sw-order/component/sw-order-product-select/index.js": {
@@ -9290,14 +9269,6 @@
     },
     "max-lines-per-function": {
       "count": 2
-    }
-  },
-  "src/module/sw-order/page/sw-order-list/sw-order-list.spec.js": {
-    "@eslint-community/eslint-comments/require-description": {
-      "count": 1
-    },
-    "sw-test-rules/no-vm-access": {
-      "count": 43
     }
   },
   "src/module/sw-order/service/documentV2.service.ts": {
@@ -10140,9 +10111,6 @@
     }
   },
   "src/module/sw-profile/index.js": {
-    "@eslint-community/eslint-comments/require-description": {
-      "count": 2
-    },
     "filename-rules/not-match": {
       "count": 1
     }
@@ -11111,11 +11079,6 @@
       "count": 1
     }
   },
-  "src/module/sw-settings-country/component/sw-settings-country-state/sw-settings-country-state.spec.js": {
-    "sw-test-rules/no-vm-access": {
-      "count": 4
-    }
-  },
   "src/module/sw-settings-country/index.js": {
     "@eslint-community/eslint-comments/require-description": {
       "count": 2
@@ -11138,11 +11101,6 @@
     },
     "filename-rules/not-match": {
       "count": 1
-    }
-  },
-  "src/module/sw-settings-country/page/sw-settings-country-detail/sw-settings-country-detail.spec.js": {
-    "sw-test-rules/no-vm-access": {
-      "count": 7
     }
   },
   "src/module/sw-settings-country/page/sw-settings-country-list/index.js": {
@@ -11984,11 +11942,6 @@
       "count": 1
     },
     "filename-rules/not-match": {
-      "count": 1
-    }
-  },
-  "src/module/sw-settings-payment/page/sw-settings-payment-detail/sw-settings-payment-detail.spec.js": {
-    "sw-test-rules/no-vm-access": {
       "count": 1
     }
   },
@@ -13275,11 +13228,6 @@
     },
     "filename-rules/not-match": {
       "count": 1
-    }
-  },
-  "src/module/sw-system/page/sw-system-role-list/sw-system-role-list.spec.js": {
-    "sw-test-rules/no-vm-access": {
-      "count": 7
     }
   },
   "src/module/sw-system/page/sw-system-sso-user-detail/index.js": {

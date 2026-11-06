@@ -3,6 +3,7 @@
  */
 
 import { config } from '@vue/test-utils';
+import { nextTick } from 'vue';
 import createWrapper, { registerAdminModules } from './create-wrapper';
 
 /**
@@ -48,18 +49,14 @@ describe('src/app/component/structure/sw-admin-menu (database driven navigation)
     it('renders the stored order and wording over the declarations', async () => {
         store.visibleTree = [
             { id: 'v2', internalKey: 'sw.second.top.level', title: 'Stored second', children: [] },
-            { id: 'v1', internalKey: 'sw.first.top.level', title: 'Stored first', children: [] },
+            { id: 'v1', internalKey: 'children.with.privilege', title: 'Stored first', children: [] },
         ];
-        await wrapper.vm.$nextTick();
+        await nextTick();
 
-        const merged = wrapper.vm.databaseNavigation;
-        const storedFirst = merged.find((entry) => entry.id === 'sw.first.top.level');
-
-        expect(storedFirst.label).toEqual({ label: 'Stored first', translated: true });
-        // the stored chain decides the order, not the positions the modules declare
-        expect(merged.findIndex((entry) => entry.id === 'sw.second.top.level')).toBeLessThan(
-            merged.findIndex((entry) => entry.id === 'sw.first.top.level'),
-        );
+        const roots = wrapper.findAll('.sw-admin-menu__navigation-list > li');
+        const labels = roots.map((root) => root.find('.sw-admin-menu__navigation-link-label').text());
+        expect(labels.indexOf('Stored second')).toBeLessThan(labels.indexOf('Stored first'));
+        expect(labels).toContain('Stored first');
     });
 
     it('builds the sidebar tree out of the stored entries, children included', async () => {
@@ -70,35 +67,29 @@ describe('src/app/component/structure/sw-admin-menu (database driven navigation)
                 title: 'Stored parent',
                 children: [{ id: 'v2', internalKey: 'sw.second.level.first', title: 'Stored child', children: [] }],
             },
-            { id: 'v3', internalKey: 'sw.first.top.level', title: 'Stored first', children: [] },
+            { id: 'v3', internalKey: 'children.with.privilege', title: 'Stored first', children: [] },
         ];
-        await wrapper.vm.$nextTick();
+        await nextTick();
 
-        const roots = wrapper.vm.mainMenuEntries;
-
-        // a stored root without the right parent shape takes its whole subtree with it,
-        // leaving only the modules the store does not know in the sidebar
-        expect(roots.map((entry) => entry.id)).toEqual([
-            'sw.second.top.level',
-            'sw.first.top.level',
-            // declared but not stored: keeps rendering from its declaration
-            'children.with.privilege',
+        const roots = wrapper.findAll('.sw-admin-menu__navigation-list > li');
+        expect(roots.map((root) => root.classes().find((name) => name.startsWith('sw-admin-menu__item--')))).toEqual([
+            'sw-admin-menu__item--sw.second.top.level',
+            'sw-admin-menu__item--children.with.privilege',
         ]);
-        expect(roots[0].children.map((entry) => entry.id)).toContain('sw.second.level.first');
+        await wrapper.get('.sw-second-top-level .sw-admin-menu__navigation-link').trigger('click');
+        expect(wrapper.get('.sw-second-top-level').text()).toContain('Stored child');
     });
 
     it('keeps the declared navigation when the store carries nothing', () => {
-        const merged = wrapper.vm.databaseNavigation;
-
-        expect(merged.some((entry) => entry.id === 'sw.first.top.level')).toBe(true);
-        expect(wrapper.vm.mainMenuEntries.length).toBeGreaterThan(0);
+        expect(wrapper.find('.sw-second-top-level').exists()).toBe(true);
+        expect(wrapper.findAll('.sw-admin-menu__navigation-list > li').length).toBeGreaterThan(0);
     });
 
     it('keeps the declared navigation when the stored navigation could not be loaded', async () => {
         store.visibleTree = [];
         store.isVisibleLoadFailed = true;
-        await wrapper.vm.$nextTick();
+        await nextTick();
 
-        expect(wrapper.vm.mainMenuEntries.length).toBeGreaterThan(0);
+        expect(wrapper.findAll('.sw-admin-menu__navigation-list > li').length).toBeGreaterThan(0);
     });
 });

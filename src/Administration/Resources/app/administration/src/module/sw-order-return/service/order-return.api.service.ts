@@ -234,7 +234,7 @@ function systemCurrencyDecimals(): number {
  * without reloading the row - the server already decided what the state, the stock and the refund came
  * to.
  */
-// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+/** @private */
 export default class OrderReturnApiService {
     public readonly name = 'orderReturnApiService';
 

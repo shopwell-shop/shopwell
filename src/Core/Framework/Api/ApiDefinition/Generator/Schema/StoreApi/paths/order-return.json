@@ -25,6 +25,9 @@
                                 }
                             }
                         }
+                    },
+                    "403": {
+                        "description": "The customer is not logged in."
                     }
                 }
             },
@@ -46,7 +49,7 @@
                     }
                 },
                 "responses": {
-                    "200": {
+                    "201": {
                         "description": "The created order return.",
                         "content": {
                             "application/json": {
@@ -55,6 +58,15 @@
                                 }
                             }
                         }
+                    },
+                    "400": {
+                        "description": "The return payload is invalid or returns are not available for this order."
+                    },
+                    "403": {
+                        "description": "The customer is not logged in."
+                    },
+                    "404": {
+                        "description": "The order does not exist or does not belong to the customer."
                     }
                 }
             }
@@ -99,6 +111,12 @@
                                 }
                             }
                         }
+                    },
+                    "403": {
+                        "description": "The customer is not logged in."
+                    },
+                    "404": {
+                        "description": "The order does not exist or does not belong to the customer."
                     }
                 }
             }
@@ -133,11 +151,17 @@
                                 }
                             }
                         }
+                    },
+                    "403": {
+                        "description": "The customer is not logged in."
+                    },
+                    "404": {
+                        "description": "The return does not exist or does not belong to the customer."
                     }
                 }
             }
         },
-        "/order-return/{id}/cancel": {
+        "/order-return/actions/{id}/cancel": {
             "post": {
                 "tags": [
                     "Order"
@@ -167,11 +191,20 @@
                                 }
                             }
                         }
+                    },
+                    "400": {
+                        "description": "The return cannot be cancelled in its current state."
+                    },
+                    "403": {
+                        "description": "The customer is not logged in."
+                    },
+                    "404": {
+                        "description": "The return does not exist or does not belong to the customer."
                     }
                 }
             }
         },
-        "/order-return/{id}/ship": {
+        "/order-return/actions/{id}/ship": {
             "post": {
                 "tags": [
                     "Order"
@@ -201,11 +234,20 @@
                                 }
                             }
                         }
+                    },
+                    "400": {
+                        "description": "A tracking code is missing or the return cannot be shipped in its current state."
+                    },
+                    "403": {
+                        "description": "The customer is not logged in."
+                    },
+                    "404": {
+                        "description": "The return does not exist or does not belong to the customer."
                     }
                 }
             }
         },
-        "/order-return/{id}/message": {
+        "/order-return/actions/{id}/message": {
             "post": {
                 "tags": [
                     "Order"
@@ -253,6 +295,15 @@
                                 }
                             }
                         }
+                    },
+                    "400": {
+                        "description": "The message is empty."
+                    },
+                    "403": {
+                        "description": "The customer is not logged in."
+                    },
+                    "404": {
+                        "description": "The return does not exist or does not belong to the customer."
                     }
                 }
             }
@@ -286,6 +337,9 @@
                                 }
                             }
                         }
+                    },
+                    "403": {
+                        "description": "The guest return token is missing, invalid, or no longer grants access to the order."
                     }
                 }
             },
@@ -318,7 +372,7 @@
                     }
                 },
                 "responses": {
-                    "200": {
+                    "201": {
                         "description": "The created order return.",
                         "content": {
                             "application/json": {
@@ -327,6 +381,15 @@
                                 }
                             }
                         }
+                    },
+                    "400": {
+                        "description": "The return payload is invalid or returns are not available for this order."
+                    },
+                    "403": {
+                        "description": "The guest return token is missing, invalid, or no longer grants access to the order."
+                    },
+                    "404": {
+                        "description": "The order does not exist."
                     }
                 }
             }
@@ -378,6 +441,12 @@
                                 }
                             }
                         }
+                    },
+                    "400": {
+                        "description": "Guest returns are not available for this order."
+                    },
+                    "404": {
+                        "description": "No guest order matches the supplied order number and email address."
                     }
                 }
             }
@@ -421,6 +490,12 @@
                                 }
                             }
                         }
+                    },
+                    "403": {
+                        "description": "The guest return token is invalid or the return does not belong to it."
+                    },
+                    "404": {
+                        "description": "The return does not exist."
                     }
                 }
             }
@@ -464,6 +539,15 @@
                                 }
                             }
                         }
+                    },
+                    "400": {
+                        "description": "The return cannot be cancelled in its current state."
+                    },
+                    "403": {
+                        "description": "The guest return token is invalid or the return does not belong to it."
+                    },
+                    "404": {
+                        "description": "The return does not exist."
                     }
                 }
             }
@@ -507,6 +591,15 @@
                                 }
                             }
                         }
+                    },
+                    "400": {
+                        "description": "A tracking code is missing or the return cannot be shipped in its current state."
+                    },
+                    "403": {
+                        "description": "The guest return token is invalid or the return does not belong to it."
+                    },
+                    "404": {
+                        "description": "The return does not exist."
                     }
                 }
             }
@@ -568,6 +661,15 @@
                                 }
                             }
                         }
+                    },
+                    "400": {
+                        "description": "The message is empty."
+                    },
+                    "403": {
+                        "description": "The guest return token is invalid or the return does not belong to it."
+                    },
+                    "404": {
+                        "description": "The return does not exist."
                     }
                 }
             }

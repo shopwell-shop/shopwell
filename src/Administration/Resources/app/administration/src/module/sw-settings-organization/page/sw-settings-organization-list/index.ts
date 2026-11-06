@@ -12,7 +12,7 @@ const { Criteria } = Shopwell.Data;
 
 type OrganizationEntity = EntitySchema.Entity<'organization'>;
 
-// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+/** @private */
 export default defineComponent({
     template,
 

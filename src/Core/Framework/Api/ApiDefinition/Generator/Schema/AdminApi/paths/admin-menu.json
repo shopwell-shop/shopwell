@@ -1,0 +1,447 @@
+{
+  "openapi": "3.2.0",
+  "info": [],
+  "paths": {
+    "/_action/admin-menu/tree": {
+      "get": {
+        "tags": [
+          "Admin menu"
+        ],
+        "operationId": "getAdminMenuTree",
+        "summary": "Read all administration menu items",
+        "description": "Requires admin_menu_item:read. Returns stored menu items, translations and role assignments.",
+        "responses": {
+          "200": {
+            "description": "The requested administration navigation data.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/adminManagementMenuItem"
+                      }
+                    }
+                  },
+                  "required": [
+                    "items"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/_action/admin-menu/visible": {
+      "get": {
+        "tags": [
+          "Admin menu"
+        ],
+        "operationId": "getVisibleAdminMenu",
+        "summary": "Read the current user navigation",
+        "description": "Requires authentication. Only returns navigation visible to the current user and active plugins.",
+        "responses": {
+          "200": {
+            "description": "The requested administration navigation data.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "menu": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/adminVisibleMenuNode"
+                      }
+                    }
+                  },
+                  "required": [
+                    "menu"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/_action/admin-menu/route-whitelist": {
+      "get": {
+        "tags": [
+          "Admin menu"
+        ],
+        "operationId": "getAdminMenuRouteWhitelist",
+        "summary": "Read registered administration menu routes",
+        "description": "Requires admin_menu_item:read. Lists declared core routes available for menu configuration.",
+        "responses": {
+          "200": {
+            "description": "The requested administration navigation data.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "routes": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "internalKey": {
+                            "type": "string"
+                          },
+                          "title": {
+                            "type": "string"
+                          },
+                          "type": {
+                            "type": "string"
+                          },
+                          "parent": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "privilege": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "internalKey",
+                          "title",
+                          "type",
+                          "parent",
+                          "privilege"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "routes"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/_action/admin-menu/move": {
+      "post": {
+        "tags": [
+          "Admin menu"
+        ],
+        "operationId": "moveAdminMenuItem",
+        "summary": "Move an administration menu item",
+        "description": "Requires admin_menu_item:update. A null or omitted parent or predecessor places the item at the corresponding root or first position.",
+        "responses": {
+          "204": {
+            "description": "The menu item was moved."
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "pattern": "^[0-9a-f]{32}$"
+                  },
+                  "parentId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "pattern": "^[0-9a-f]{32}$"
+                  },
+                  "afterMenuItemId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "pattern": "^[0-9a-f]{32}$"
+                  }
+                },
+                "required": [
+                  "id"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/_action/admin-menu/assign-roles": {
+      "post": {
+        "tags": [
+          "Admin menu"
+        ],
+        "operationId": "assignAdminMenuItemRoles",
+        "summary": "Assign administration menu roles",
+        "description": "Requires admin_menu_item:update. Replaces the menu role assignments; omitted or empty roleIds removes all role bindings.",
+        "responses": {
+          "204": {
+            "description": "The role assignments were saved."
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "pattern": "^[0-9a-f]{32}$"
+                  },
+                  "roleIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "pattern": "^[0-9a-f]{32}$"
+                    }
+                  }
+                },
+                "required": [
+                  "id"
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "adminManagementMenuItem": {
+        "type": "object",
+        "properties": {
+          "parentId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "afterMenuItemId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "internalKey": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "title": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "icon": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "color": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "linkTarget": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "privilege": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "id": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "groupName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "pluginId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "pluginName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "sysLocked": {
+            "type": "boolean"
+          },
+          "archived": {
+            "type": "boolean"
+          },
+          "configOverridden": {
+            "type": "boolean"
+          },
+          "roleIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{32}$"
+            }
+          },
+          "translations": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "properties": {
+                "title": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "groupTitle": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "title",
+                "groupTitle"
+              ]
+            }
+          }
+        },
+        "required": [
+          "parentId",
+          "afterMenuItemId",
+          "internalKey",
+          "title",
+          "icon",
+          "color",
+          "linkTarget",
+          "privilege",
+          "id",
+          "type",
+          "groupName",
+          "pluginId",
+          "pluginName",
+          "active",
+          "sysLocked",
+          "archived",
+          "configOverridden",
+          "roleIds",
+          "translations"
+        ]
+      },
+      "adminVisibleMenuNode": {
+        "type": "object",
+        "properties": {
+          "parentId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "afterMenuItemId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "internalKey": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "title": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "icon": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "color": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "linkTarget": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "privilege": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "id": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "children": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/adminVisibleMenuNode"
+            }
+          }
+        },
+        "required": [
+          "parentId",
+          "afterMenuItemId",
+          "internalKey",
+          "title",
+          "icon",
+          "color",
+          "linkTarget",
+          "privilege",
+          "id",
+          "type",
+          "children"
+        ]
+      }
+    }
+  }
+}

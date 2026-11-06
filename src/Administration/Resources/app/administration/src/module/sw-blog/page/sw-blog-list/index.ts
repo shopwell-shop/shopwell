@@ -63,11 +63,16 @@ function blogFilterFactory(vm: unknown): FilterFactory {
  * narrow the table, the state is a column and not a filter, because "published" is derived and a
  * derived state can not be a stored filter value.
  */
-// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+/** @private */
 export default defineComponent({
     template,
 
-    inject: ['repositoryFactory', 'acl', 'blogApiService', 'filterFactory'],
+    inject: [
+        'repositoryFactory',
+        'acl',
+        'blogApiService',
+        'filterFactory',
+    ],
     mixins: [Mixin.getByName('listing')],
 
     data(): {
@@ -266,8 +271,7 @@ export default defineComponent({
 
             if (this.presetCategoryId !== null) {
                 const name =
-                    this.categories.find((category) => category.id === this.presetCategoryId)?.name ??
-                    this.presetCategoryId;
+                    this.categories.find((category) => category.id === this.presetCategoryId)?.name ?? this.presetCategoryId;
 
                 chips.push({ type: 'category', label: `${this.$t('sw-blog.list.filterCategory')}: ${name}` });
             }
@@ -327,7 +331,7 @@ export default defineComponent({
         async getList(): Promise<void> {
             this.isLoading = true;
 
-            const filterService = Shopwell.Service('filterService') as unknown as {
+            const filterService = Shopwell.Service('filterService') as {
                 mergeWithStoredFilters: (storeKey: string, criteria: CriteriaType) => Promise<CriteriaType>;
             };
 
@@ -366,7 +370,6 @@ export default defineComponent({
          */
         updateCriteria(filters: unknown[]): void {
             this.page = 1;
-            this.pendingFilters = filters;
             this.activeFilterNumber = filters.length;
 
             void this.getList();

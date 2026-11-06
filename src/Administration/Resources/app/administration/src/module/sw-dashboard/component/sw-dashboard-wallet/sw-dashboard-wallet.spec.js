@@ -1,4 +1,4 @@
-import { mount } from '@vue/test-utils';
+import { shallowMount } from '@vue/test-utils';
 
 function createRepositoryFactory(overrides = {}) {
     const repositories = {
@@ -18,7 +18,7 @@ function createRepositoryFactory(overrides = {}) {
 }
 
 async function createWrapper(privileges = ['wallet.viewer'], factory = createRepositoryFactory()) {
-    return mount(await wrapTestComponent('sw-dashboard-wallet', { sync: true }), {
+    return shallowMount(await wrapTestComponent('sw-dashboard-wallet', { sync: true }), {
         global: {
             stubs: {
                 'mt-card': {
@@ -26,7 +26,7 @@ async function createWrapper(privileges = ['wallet.viewer'], factory = createRep
                         '<div class="mt-card"><slot name="title"></slot><slot name="headerRight"></slot><slot /></div>',
                     props: ['title', 'isLoading', 'positionIdentifier'],
                 },
-                'router-link': true,
+                'router-link': { props: ['to'], template: '<a :data-route="to.name"><slot /></a>' },
                 'sw-extension-component-section': true,
             },
             mocks: {
@@ -61,9 +61,7 @@ describe('module/sw-dashboard/component/sw-dashboard-wallet', () => {
         const wrapper = await createWrapper([]);
         await flushPromises();
 
-        expect(wrapper.vm.canViewWallet).toBe(false);
-        expect(wrapper.vm.topUpToday).toBe(0);
-        expect(wrapper.vm.transactions).toEqual([]);
+        expect(wrapper.find('.mt-card').exists()).toBe(false);
     });
 
     it('sums only the credited top-ups of today', async () => {
@@ -77,7 +75,7 @@ describe('module/sw-dashboard/component/sw-dashboard-wallet', () => {
         const wrapper = await createWrapper(['wallet.viewer'], factory);
         await flushPromises();
 
-        expect(wrapper.vm.topUpToday).toBe(320);
+        expect(wrapper.get('.sw-dashboard-wallet__top-up-value').text()).toContain('320');
         expect(topUpSearch).toHaveBeenCalledTimes(1);
     });
 
@@ -90,14 +88,14 @@ describe('module/sw-dashboard/component/sw-dashboard-wallet', () => {
                         type: 'top_up',
                         amount: 100,
                         createdAt: '2026-06-15T08:00:00.000+00:00',
-                        wallet: { customer: { firstName: 'Max', lastName: 'Mustermann' } },
+                        wallet: { customer: { name: 'Max Mustermann' } },
                     },
                     {
                         id: 'tx-2',
                         type: 'consume',
                         amount: -20,
                         createdAt: '2026-06-15T07:00:00.000+00:00',
-                        wallet: { customer: { company: 'Acme GmbH' } },
+                        wallet: { customer: { name: 'Acme GmbH' } },
                     },
                 ]),
             },
@@ -106,10 +104,12 @@ describe('module/sw-dashboard/component/sw-dashboard-wallet', () => {
         const wrapper = await createWrapper(['wallet.viewer'], factory);
         await flushPromises();
 
-        expect(wrapper.vm.transactions).toHaveLength(2);
-        expect(wrapper.vm.customerName(wrapper.vm.transactions[0])).toBe('Max Mustermann');
-        expect(wrapper.vm.customerName(wrapper.vm.transactions[1])).toBe('Acme GmbH');
-        expect(wrapper.vm.typeLabel(wrapper.vm.transactions[0])).toBe('sw-dashboard.wallet.types.top_up');
+        expect(wrapper.findAll('.sw-dashboard-wallet__item')).toHaveLength(2);
+        expect(wrapper.findAll('.sw-dashboard-wallet__item-customer').map((customer) => customer.text())).toEqual([
+            'Max Mustermann',
+            'Acme GmbH',
+        ]);
+        expect(wrapper.findAll('.sw-dashboard-wallet__item-type')[0].text()).toBe('sw-dashboard.wallet.types.top_up');
     });
 
     it('falls back for unknown customers and unknown types', async () => {
@@ -130,8 +130,8 @@ describe('module/sw-dashboard/component/sw-dashboard-wallet', () => {
         const wrapper = await createWrapper(['wallet.viewer'], factory);
         await flushPromises();
 
-        expect(wrapper.vm.customerName(wrapper.vm.transactions[0])).toBe('sw-dashboard.wallet.unknownCustomer');
-        expect(wrapper.vm.typeLabel(wrapper.vm.transactions[0])).toBe('mystery');
+        expect(wrapper.get('.sw-dashboard-wallet__item-customer').text()).toBe('sw-dashboard.wallet.unknownCustomer');
+        expect(wrapper.get('.sw-dashboard-wallet__item-type').text()).toBe('mystery');
     });
 
     it('shows the empty state without transactions', async () => {

@@ -1,7 +1,7 @@
 /**
  * @sw-package discovery
  */
-import { flushPromises, mount } from '@vue/test-utils';
+import { flushPromises, shallowMount } from '@vue/test-utils';
 import type { VueWrapper } from '@vue/test-utils';
 import BlogApiService from '../../service/blog.api.service';
 import { registerBlogType, resetBlogTypes } from '../../service/blog-type.registry';
@@ -18,35 +18,6 @@ type BlogRow = {
 };
 
 type FilterDefinition = { name?: string; property: string; type: string };
-
-type BlogListVm = {
-    blogs: unknown;
-    total: number;
-    isLoading: boolean;
-    listFilters: FilterDefinition[];
-    activeFilterNumber: number;
-    pendingCommentCount: number;
-    presetAuthorId: string | null;
-    hasActiveSearchOrFilter: boolean;
-    deleteTarget: { id: string; name: string | null } | null;
-    canCreate: boolean;
-    canDelete: boolean;
-    canEdit: boolean;
-    getList: () => Promise<void>;
-    loadCategories: () => Promise<void>;
-    loadAuthors: () => Promise<void>;
-    updateCriteria: (filters: unknown[]) => void;
-    onRefresh: () => void;
-    onOpenCreateModal: () => void;
-    onInlineEditSave: (blog: BlogRow) => void;
-    onDelete: (blog: BlogRow) => void;
-    onConfirmDelete: () => void;
-    onOpenCategoryList: () => void;
-    onOpenCommentList: () => void;
-    categoryNamesOf: (blog: BlogRow) => string[];
-};
-
-type TypedWrapper = { vm: BlogListVm } & VueWrapper;
 
 function collection<T>(items: unknown[]): T {
     return Object.assign([...items], { total: items.length }) as unknown as T;
@@ -76,7 +47,11 @@ const blogs: BlogRow[] = [
         type: 'post',
         publishedAt: null,
         updatedAt: '2026-10-01T10:00:00.000Z',
-        categories: [{ blogCategory: { name: 'Guides' } }, { blogCategory: { name: 'News' } }, { blogCategory: { name: 'Shop' } }],
+        categories: [
+            { blogCategory: { name: 'Guides' } },
+            { blogCategory: { name: 'News' } },
+            { blogCategory: { name: 'Shop' } },
+        ],
         author: { name: 'Grace' },
     },
     {
@@ -98,14 +73,15 @@ async function createWrapper(
     can: (privilege: string) => boolean = () => true,
     query: Record<string, string> = {},
 ): Promise<{
-    wrapper: TypedWrapper;
+    wrapper: VueWrapper;
     search: jest.Mock;
     save: jest.Mock;
     remove: jest.Mock;
     push: jest.Mock;
     mergeWithStoredFilters: jest.Mock;
 }> {
-    const search = jest.fn(() => Promise.resolve(collection<EntityCollection<'blog'>>(blogs)));
+    const rows = blogs.map((row) => ({ ...row }));
+    const search = jest.fn(() => Promise.resolve(collection<EntityCollection<'blog'>>(rows)));
     const categorySearch = jest.fn(() => Promise.resolve(collection<EntityCollection<'blog_category'>>(categories)));
     const authorSearch = jest.fn(() => Promise.resolve(collection<EntityCollection<'blog_author'>>(authors)));
     const commentSearch = jest.fn(() => Promise.resolve(Object.assign([], { total: 3 })));
@@ -153,21 +129,47 @@ async function createWrapper(
         return {};
     }) as unknown as typeof Shopwell.Service);
 
-    const wrapper = mount(await wrapTestComponent('sw-blog-list', { sync: true }), {
+    const wrapper = shallowMount(await wrapTestComponent('sw-blog-list', { sync: true }), {
         global: {
             stubs: {
-                'sw-page': { template: '<div><slot name="content"></slot><slot></slot></div>' },
+                'sw-page': {
+                    template:
+                        '<div><slot name="smart-bar-header"/><slot name="smart-bar-actions"/><slot name="content"/><slot name="sidebar"/></div>',
+                },
                 'sw-search-bar': true,
-                'sw-entity-listing': true,
-                'sw-sidebar': true,
-                'sw-sidebar-item': true,
-                'sw-sidebar-filter-panel': true,
+                'sw-entity-listing': {
+                    props: [
+                        'dataSource',
+                        'repository',
+                        'allowDelete',
+                        'allowInlineEdit',
+                    ],
+                    emits: ['inline-edit-save'],
+                    template: `<table><tbody><tr v-for="item in dataSource" :key="item.id" :data-row="item.id">
+                        <td><slot name="column-coverMediaId" :item="item" /></td>
+                        <td><slot name="column-title" :item="item" :is-inline-edit="false">{{ item.title }}</slot>
+                            <input v-if="allowInlineEdit" class="inline-title" :value="item.title" @input="item.title = $event.target.value" />
+                            <button v-if="allowInlineEdit" class="inline-save" @click="$emit('inline-edit-save', item)">Save row</button>
+                        </td>
+                        <td class="type"><slot name="column-type" :item="item" /></td>
+                        <td><slot name="column-categories" :item="item" /></td>
+                        <td><slot name="column-status" :item="item" :is-inline-edit="false" /></td>
+                        <td class="delete-action"><slot name="delete-action" :item="item"><button :disabled="!allowDelete">Delete</button></slot></td>
+                    </tr></tbody></table>`,
+                },
+                'sw-sidebar': { template: '<aside><slot /></aside>' },
+                'sw-sidebar-item': { props: ['title'], template: '<button>{{ title }}</button>' },
+                'sw-sidebar-filter-panel': {
+                    props: ['filters', 'activeFilterNumber'],
+                    template: `<div class="filter-panel" :data-active-count="activeFilterNumber"><span v-for="filter in filters" :key="filter.property" class="filter-property">{{ filter.property }}</span></div>`,
+                },
                 'sw-modal': { template: '<div class="modal"><slot></slot><slot name="modal-footer"></slot></div>' },
                 'sw-media-preview-v2': true,
                 'sw-time-ago': true,
-                'mt-badge': true,
+                'mt-badge': { template: '<span class="badge"><slot /></span>' },
                 'sw-blog-status-badge': true,
-                'mt-button': true,
+                'mt-button': { props: ['disabled'], template: '<button :disabled="disabled"><slot /></button>' },
+                'sw-context-menu-item': { props: ['disabled'], template: '<button :disabled="disabled"><slot /></button>' },
                 'mt-text-field': true,
                 'mt-empty-state': true,
             },
@@ -197,8 +199,9 @@ async function createWrapper(
     });
 
     activeWrapper = wrapper;
+    await flushPromises();
 
-    return { wrapper: wrapper as unknown as TypedWrapper, search, save, remove, push, mergeWithStoredFilters };
+    return { wrapper, search, save, remove, push, mergeWithStoredFilters };
 }
 
 describe('src/module/sw-blog/page/sw-blog-list', () => {
@@ -229,8 +232,8 @@ describe('src/module/sw-blog/page/sw-blog-list', () => {
             expect.objectContaining({ field: 'createdAt', order: 'DESC' }),
         ]);
         expect(associationNames(criteria)).toEqual(['author', 'categories', 'categories.blogCategory']);
-        expect(wrapper.vm.total).toBe(2);
-        expect(wrapper.vm.isLoading).toBe(false);
+        expect(wrapper.get('.sw-page__smart-bar-amount').text()).toBe('(2)');
+        expect(wrapper.findAll('tbody tr')).toHaveLength(2);
     });
 
     it('merges the stored filters before it searches, and counts them for the panel', async () => {
@@ -238,14 +241,14 @@ describe('src/module/sw-blog/page/sw-blog-list', () => {
         await flushPromises();
 
         expect(mergeWithStoredFilters).toHaveBeenCalledWith('grid.filter.blog', expect.anything());
-        expect(wrapper.vm.activeFilterNumber).toBe(0);
+        expect(wrapper.get('.filter-panel').attributes('data-active-count')).toBe('0');
     });
 
     it('offers type, category and author as filters of the sidebar panel', async () => {
         const { wrapper } = await createWrapper();
         await flushPromises();
 
-        expect(wrapper.vm.listFilters.map((filter) => filter.property)).toEqual([
+        expect(wrapper.findAll('.filter-property').map((filter) => filter.text())).toEqual([
             'type',
             'categories.blogCategoryId',
             'authorId',
@@ -258,11 +261,11 @@ describe('src/module/sw-blog/page/sw-blog-list', () => {
 
         const criteria = callArgument<{ filters: Array<{ type: string; field: string; value: string }> }>(search);
 
-        expect(wrapper.vm.presetAuthorId).toBe('author-1');
+        expect(wrapper.find('.sw-blog-list__preset-badge').exists()).toBe(true);
         expect(criteria.filters).toEqual([
             expect.objectContaining({ type: 'equals', field: 'authorId', value: 'author-1' }),
         ]);
-        expect(wrapper.vm.hasActiveSearchOrFilter).toBe(true);
+        expect(wrapper.find('.sw-blog-list__preset-reset').exists()).toBe(true);
     });
 
     it('keeps moderation out of the entry list', async () => {
@@ -270,22 +273,24 @@ describe('src/module/sw-blog/page/sw-blog-list', () => {
         await flushPromises();
 
         // the queue lives on its own page, like the customer group registration review
-        expect((wrapper.vm as unknown as Record<string, unknown>).pendingCommentCount).toBeUndefined();
+        expect(wrapper.find('.sw-blog-comment-list__status').exists()).toBe(false);
+        expect(wrapper.find('.sw-blog-comment-list__action-approve').exists()).toBe(false);
     });
-
 
     it('hides creating and deleting from a role that may only read', async () => {
         const { wrapper } = await createWrapper((privilege) => privilege === 'blog.viewer');
 
-        expect(wrapper.vm.canCreate).toBe(false);
-        expect(wrapper.vm.canDelete).toBe(false);
-        expect(wrapper.vm.canEdit).toBe(false);
+        expect(wrapper.get('.sw-blog-list__button-create').attributes('disabled')).toBeDefined();
+        expect(wrapper.findAll('.delete-action button').every((button) => button.attributes('disabled') !== undefined)).toBe(
+            true,
+        );
+        expect(wrapper.find('.inline-title').exists()).toBe(false);
     });
 
     it('opens the create page instead of asking for anything in a dialog', async () => {
         const { wrapper, push, save } = await createWrapper();
 
-        wrapper.vm.onOpenCreateModal();
+        await wrapper.get('.sw-blog-list__button-create').trigger('click');
         await flushPromises();
 
         expect(push).toHaveBeenCalledWith({ name: 'sw.blog.create' });
@@ -298,28 +303,29 @@ describe('src/module/sw-blog/page/sw-blog-list', () => {
         await flushPromises();
 
         // $te answers false in the tests, so the raw value is the label
-        expect(wrapper.vm.typeLabel('video')).toBe('video');
-        expect(wrapper.vm.typeLabel(null)).toBe('');
+        expect(wrapper.get('[data-row="blog-2"] .type').text()).toBe('video');
     });
 
     it('deletes only after the confirmation of the modal', async () => {
         const { wrapper, remove } = await createWrapper();
 
-        wrapper.vm.onDelete(blogs[0]);
+        await wrapper.get('[data-row="blog-1"] .delete-action button').trigger('click');
 
-        expect(wrapper.vm.deleteTarget).toEqual({ id: 'blog-1', name: 'Autumn guide' });
+        expect(wrapper.find('.sw-blog-list__delete-modal').exists()).toBe(true);
         expect(remove).not.toHaveBeenCalled();
 
-        wrapper.vm.onConfirmDelete();
+        await wrapper.findAll('.sw-blog-list__delete-modal button')[1].trigger('click');
+        await flushPromises();
 
         expect(remove).toHaveBeenCalledWith('blog-1');
-        expect(wrapper.vm.deleteTarget).toBeNull();
+        expect(wrapper.find('.sw-blog-list__delete-modal').exists()).toBe(false);
     });
 
     it('saves an inline edit of a row', async () => {
         const { wrapper, save } = await createWrapper();
 
-        wrapper.vm.onInlineEditSave({ ...blogs[0], title: 'Autumn guide 2026' });
+        await wrapper.get('[data-row="blog-1"] .inline-title').setValue('Autumn guide 2026');
+        await wrapper.get('[data-row="blog-1"] .inline-save').trigger('click');
 
         expect(save).toHaveBeenCalledWith(expect.objectContaining({ id: 'blog-1', title: 'Autumn guide 2026' }));
     });
@@ -328,18 +334,27 @@ describe('src/module/sw-blog/page/sw-blog-list', () => {
         const { wrapper } = await createWrapper();
         await flushPromises();
 
-        expect(wrapper.vm.categoryNamesOf(blogs[0])).toEqual(['Guides', 'News', 'Shop']);
-        expect(wrapper.vm.categoryNamesOf(blogs[1])).toEqual([]);
+        expect(wrapper.findAll('[data-row="blog-1"] .sw-blog-list__categories .badge').map((badge) => badge.text())).toEqual(
+            ['Guides', 'News'],
+        );
+        expect(wrapper.get('.sw-blog-list__categories-more').text()).toBe('+1');
+        expect(wrapper.get('[data-row="blog-2"] .sw-blog-list__categories-empty').text()).toBe(
+            'sw-blog.list.textNoCategories',
+        );
     });
 
     it('opens the category list from the sidebar and leaves moderation to its own page', async () => {
         const { wrapper, push } = await createWrapper();
 
-        wrapper.vm.onOpenCategoryList();
+        const categoriesButton = wrapper
+            .findAll('aside button')
+            .find((button) => button.text() === 'sw-blog.list.buttonManageCategories');
+        expect(categoriesButton).toBeDefined();
+        await categoriesButton!.trigger('click');
 
         expect(push).toHaveBeenCalledWith({ name: 'sw.blog.category.list' });
         // the comment queue is not reachable from the entry list anymore: it is its own page
         expect(push).not.toHaveBeenCalledWith({ name: 'sw.blog.comment.list' });
-        expect((wrapper.vm as unknown as Record<string, unknown>).onOpenCommentList).toBeUndefined();
+        expect(wrapper.findAll('aside button').some((button) => button.text().includes('comment'))).toBe(false);
     });
 });

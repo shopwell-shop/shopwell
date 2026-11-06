@@ -48,7 +48,7 @@ export default Component.wrapComponentConfig({
         },
 
         blogs(): Array<Entity<'blog'>> {
-            const data = this.element.data as unknown as BlogListingElementData | undefined;
+            const data = this.element.data as BlogListingElementData | undefined;
 
             if (!data?.blogs) {
                 return [];

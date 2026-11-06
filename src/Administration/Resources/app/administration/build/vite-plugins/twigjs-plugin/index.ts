@@ -29,7 +29,7 @@ export default function twigPlugin(): Plugin {
 
             // Trim the content and remove HTML comments
             fileContent = fileContent
-                .replace(/<!--[\s\S]*?-->/gm, '') // Remove HTML comments first
+                .replace(/<!--(?:>|->|[\s\S]*?(?:--!?>|$))/g, ' ') // Keep surrounding markup separated
                 .trim()
                 .replace(/\s+/g, ' '); // Normalize whitespace
 

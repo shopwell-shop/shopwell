@@ -131,7 +131,7 @@ class OrderReturnRoute
     }
 
     #[Route(
-        path: '/store-api/order-return/{id}/cancel',
+        path: '/store-api/order-return/actions/{id}/cancel',
         name: 'store-api.order-return.cancel',
         defaults: [PlatformRequest::ATTRIBUTE_LOGIN_REQUIRED => true],
         methods: [Request::METHOD_POST]
@@ -149,7 +149,7 @@ class OrderReturnRoute
     }
 
     #[Route(
-        path: '/store-api/order-return/{id}/ship',
+        path: '/store-api/order-return/actions/{id}/ship',
         name: 'store-api.order-return.ship',
         defaults: [PlatformRequest::ATTRIBUTE_LOGIN_REQUIRED => true],
         methods: [Request::METHOD_POST]
@@ -167,7 +167,7 @@ class OrderReturnRoute
     }
 
     #[Route(
-        path: '/store-api/order-return/{id}/message',
+        path: '/store-api/order-return/actions/{id}/message',
         name: 'store-api.order-return.message',
         defaults: [PlatformRequest::ATTRIBUTE_LOGIN_REQUIRED => true],
         methods: [Request::METHOD_POST]

@@ -113,11 +113,21 @@ export default Shopwell.Component.wrapComponentConfig({
 
             const criteria = new Criteria(1, 1);
             criteria.addFilter(Criteria.range('orderDateTime', { gte: since.toISOString() }));
-            criteria.addAggregation(Criteria.terms('orderStates', 'stateMachineState.technicalName', null, null, Criteria.count('orderCount', 'id')));
+            criteria.addAggregation(
+                Criteria.terms(
+                    'orderStates',
+                    'stateMachineState.technicalName',
+                    null,
+                    null,
+                    Criteria.count('orderCount', 'id'),
+                ),
+            );
 
-            return (this.orderRepository as {
-                search: (c: unknown) => Promise<{ aggregations: Record<string, { buckets?: StateBucket[] }> }>;
-            })
+            return (
+                this.orderRepository as {
+                    search: (c: unknown) => Promise<{ aggregations: Record<string, { buckets?: StateBucket[] }> }>;
+                }
+            )
                 .search(criteria)
                 .then((result) => result.aggregations?.orderStates?.buckets ?? [])
                 .catch(() => [] as StateBucket[]);
@@ -133,7 +143,9 @@ export default Shopwell.Component.wrapComponentConfig({
 
             return (
                 this.stateMachineStateRepository as {
-                    search: (c: unknown) => Promise<Array<{ technicalName: string; translated?: { name: string }; name: string }>>;
+                    search: (
+                        c: unknown,
+                    ) => Promise<Array<{ technicalName: string; translated?: { name: string }; name: string }>>;
                 }
             )
                 .search(criteria)

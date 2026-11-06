@@ -64,7 +64,9 @@ class AccountOrderPageLoader
 
         // the tag row shows the very numbers the filters produce, so both come from the same counter
         $page->setOrderStateFilter($this->orderStateCounter->resolveFilter($this->requestedOrderState($request)));
-        $page->setOrderStateCounts($this->orderStateCounter->counts($request, $salesChannelContext));
+        if (!$request->attributes->has('deepLinkCode')) {
+            $page->setOrderStateCounts($this->orderStateCounter->counts($request, $salesChannelContext));
+        }
 
         $this->eventDispatcher->dispatch(
             new AccountOrderPageLoadedEvent($page, $salesChannelContext, $request)

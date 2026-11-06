@@ -9,9 +9,7 @@ use Shopwell\Core\Framework\Migration\MigrationStep;
 use Shopwell\Core\Framework\Uuid\Uuid;
 
 /**
- * The wishlist is part of the Shopwell storefront baseline: the header carries the heart icon, the
- * product box the save button, and the S5 prototype reworked the whole page. Upstream only disabled
- * it "temporarily" in 6.4, so the fork turns the global default back on.
+ * Enable the global wishlist default.
  *
  * Only the global row is touched - a value a merchant set for one sales channel keeps winning over
  * the default, exactly like before.

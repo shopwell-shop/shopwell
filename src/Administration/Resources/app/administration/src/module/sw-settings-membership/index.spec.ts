@@ -53,7 +53,7 @@ describe('src/module/sw-settings-membership/index', () => {
     it('keeps the purchases out of the settings navigation', () => {
         const module = Module.getModuleRegistry().get('sw-settings-membership');
 
-        expect((module?.manifest.navigation ?? [])).toHaveLength(0);
+        expect(module?.manifest.navigation ?? []).toHaveLength(0);
     });
 
     it('registers the tier and plan routes', () => {

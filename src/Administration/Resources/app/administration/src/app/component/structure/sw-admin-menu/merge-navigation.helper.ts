@@ -119,9 +119,7 @@ export function mergeDatabaseNavigation(
 
             const entry: NavigationEntryLike = {
                 ...source,
-                label: node.title
-                    ? { label: resolveLabel(node.title), translated: true }
-                    : source.label,
+                label: node.title ? { label: resolveLabel(node.title), translated: true } : source.label,
                 icon: node.icon ?? source.icon,
                 color: node.color ?? source.color,
                 privilege: node.privilege ?? source.privilege,

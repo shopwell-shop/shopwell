@@ -13,7 +13,7 @@ import './sw-blog-detail-content-unknown.scss';
  * fields must not be dropped: the component says who is responsible and prints the fields the
  * administration does own, so a merchant can at least see what the entry is.
  */
-// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+/** @private */
 export default defineComponent({
     template,
 

@@ -35,12 +35,7 @@ const formFieldRendererStub = {
         value: { default: null },
         disabled: { default: undefined },
     },
-    template: '<div class="sw-form-field-renderer"></div>',
-    methods: {
-        setValue(value) {
-            this.$emit('update:value', value);
-        },
-    },
+    template: `<div class="sw-form-field-renderer"><input :value="value" :disabled="disabled" @input="$emit('update:value', $event.target.value)"/></div>`,
 };
 
 async function createWrapper({ providers = [credentialProvider], gatewayId = null, storedGateway = null } = {}) {
@@ -88,18 +83,34 @@ async function createWrapper({ providers = [credentialProvider], gatewayId = nul
                 'sw-extension-component-section': await wrapTestComponent('sw-extension-component-section'),
                 'sw-skeleton': true,
                 'sw-settings-sms-section-tabs': true,
-                'mt-select': true,
+                'mt-select': {
+                    name: 'mt-select',
+                    props: ['modelValue', 'disabled', 'options'],
+                    template: `<select :value="modelValue" :disabled="disabled" @change="$emit('update:modelValue', $event.target.value)"><option v-for="option in options" :value="option.value">{{ option.label }}</option></select>`,
+                },
                 'sw-entity-single-select': true,
-                'mt-text-field': true,
-                'mt-number-field': true,
-                'mt-textarea': true,
+                'mt-text-field': {
+                    props: ['modelValue', 'disabled', 'options'],
+                    template: `<input :value="modelValue" :disabled="disabled" @input="$emit('update:modelValue', $event.target.value)"/>`,
+                },
+                'mt-number-field': {
+                    props: ['modelValue', 'disabled', 'options'],
+                    template: `<input :value="modelValue" :disabled="disabled" @input="$emit('update:modelValue', $event.target.value)"/>`,
+                },
+                'mt-textarea': {
+                    props: ['modelValue', 'disabled', 'options'],
+                    template: `<input :value="modelValue" :disabled="disabled" @input="$emit('update:modelValue', $event.target.value)"/>`,
+                },
                 'sw-form-field-renderer': formFieldRendererStub,
                 'mt-card': {
                     template: '<div class="mt-card"><slot></slot></div>',
                     props: ['title', 'subtitle', 'positionIdentifier'],
                 },
-                'mt-switch': true,
-                'mt-button': true,
+                'mt-switch': {
+                    props: ['modelValue', 'disabled'],
+                    template: `<input type="checkbox" :checked="modelValue" :disabled="disabled" @change="$emit('update:modelValue', $event.target.checked)"/>`,
+                },
+                'mt-button': { props: ['disabled', 'isLoading'], template: '<button :disabled="disabled"><slot/></button>' },
                 'mt-icon': true,
             },
         },
@@ -124,19 +135,19 @@ describe('src/module/sw-settings-sms/page/sw-settings-sms-gateway-detail', () =>
     it('should start a new gateway on the first provider of the server', async () => {
         ({ wrapper } = await createWrapper({ providers: [credentialProvider, freeTextProvider] }));
 
-        expect(wrapper.vm.isNew).toBe(true);
-        expect(wrapper.vm.gateway.technicalName).toBe('with-credentials');
-        expect(wrapper.vm.gateway.enabled).toBe(true);
-        expect(wrapper.vm.credentialFields.map((field) => field.name)).toEqual(['accessKeyId', 'accessKeySecret']);
-        expect(wrapper.vm.credentialValues).toEqual({ accessKeyId: '', accessKeySecret: '' });
+        expect(wrapper.get('.sw-settings-sms-gateway-detail__provider').attributes('disabled')).toBeUndefined();
+        expect(wrapper.get('.sw-settings-sms-gateway-detail__provider').element.value).toBe('with-credentials');
+        expect(wrapper.get('.sw-settings-sms-gateway-detail__enabled').element.checked).toBe(true);
+        expect(wrapper.findAll('.sw-form-field-renderer')).toHaveLength(2);
+        expect(wrapper.findAll('.sw-form-field-renderer input').map((input) => input.element.value)).toEqual(['', '']);
     });
 
     it('should render one form field per credential the provider declares', async () => {
         ({ wrapper } = await createWrapper());
 
         expect(wrapper.findAll('.sw-form-field-renderer')).toHaveLength(2);
-        expect(wrapper.vm.formFieldType(credentialProvider.credentialDefinitions[0])).toBe('text');
-        expect(wrapper.vm.formFieldType(credentialProvider.credentialDefinitions[1])).toBe('password');
+        expect(wrapper.findAllComponents({ name: 'sw-form-field-renderer' })[0].props('type')).toBe('text');
+        expect(wrapper.findAllComponents({ name: 'sw-form-field-renderer' })[1].props('type')).toBe('password');
     });
 
     it('should show the values that were stored for the fields the provider still declares', async () => {
@@ -152,30 +163,32 @@ describe('src/module/sw-settings-sms/page/sw-settings-sms-gateway-detail', () =>
             },
         }));
 
-        expect(wrapper.vm.credentialValues).toEqual({ accessKeyId: 'the-id', accessKeySecret: 'the-secret' });
-        expect(wrapper.vm.credentialFields).toHaveLength(2);
-        expect(wrapper.vm.optionsText).toContain('"signName"');
+        expect(wrapper.findAll('.sw-form-field-renderer input').map((input) => input.element.value)).toEqual([
+            'the-id',
+            'the-secret',
+        ]);
+        expect(wrapper.findAll('.sw-form-field-renderer')).toHaveLength(2);
+        expect(wrapper.get('.sw-settings-sms-gateway-detail__options').element.value).toContain('"signName"');
     });
 
     it('should reset the credentials when another provider is picked', async () => {
-        ({ wrapper } = await createWrapper());
+        ({ wrapper } = await createWrapper({ providers: [credentialProvider, freeTextProvider] }));
 
-        wrapper.vm.setCredentialValue(wrapper.vm.credentialFields[0], 'the-id');
-        expect(wrapper.vm.credentialValues.accessKeyId).toBe('the-id');
+        await wrapper.get('.sw-settings-sms-gateway-detail__credential-accessKeyId input').setValue('the-id');
+        expect(wrapper.get('.sw-settings-sms-gateway-detail__credential-accessKeyId input').element.value).toBe('the-id');
 
         // what the provider that was picked before needed does not belong to the new one
-        wrapper.vm.credentialValues = { accessKeyId: 'the-id', accessKeySecret: '' };
-        wrapper.vm.gateway.technicalName = 'null';
-        wrapper.vm.onProviderChange();
+        await wrapper.get('.sw-settings-sms-gateway-detail__provider').setValue('free-text');
 
-        expect(wrapper.vm.credentialValues).toEqual({});
+        expect(wrapper.findAll('.sw-form-field-renderer')).toHaveLength(0);
     });
 
     it('should not save while a required credential is empty', async () => {
         ({ wrapper, repository } = await createWrapper());
-        const notification = jest.spyOn(wrapper.vm, 'createNotificationError');
+        const notification = jest.spyOn(Shopwell.Store.get('notification'), 'createNotification');
 
-        await wrapper.vm.onSave();
+        await wrapper.get('.sw-settings-sms-gateway-detail__save-action').trigger('click');
+        await flushPromises();
 
         expect(notification).toHaveBeenCalled();
         expect(repository.save).not.toHaveBeenCalled();
@@ -184,10 +197,11 @@ describe('src/module/sw-settings-sms/page/sw-settings-sms-gateway-detail', () =>
     it('should store the credentials in the shape the provider declares', async () => {
         ({ wrapper, repository } = await createWrapper());
 
-        wrapper.vm.setCredentialValue(wrapper.vm.credentialFields[0], 'the-id');
-        wrapper.vm.setCredentialValue(wrapper.vm.credentialFields[1], 'the-secret');
+        await wrapper.get('.sw-settings-sms-gateway-detail__credential-accessKeyId input').setValue('the-id');
+        await wrapper.get('.sw-settings-sms-gateway-detail__credential-accessKeySecret input').setValue('the-secret');
 
-        await wrapper.vm.onSave();
+        await wrapper.get('.sw-settings-sms-gateway-detail__save-action').trigger('click');
+        await flushPromises();
 
         expect(repository.save).toHaveBeenCalledWith(
             expect.objectContaining({
@@ -201,10 +215,11 @@ describe('src/module/sw-settings-sms/page/sw-settings-sms-gateway-detail', () =>
     it('should navigate to the row it created', async () => {
         ({ wrapper, routerPush } = await createWrapper());
 
-        wrapper.vm.setCredentialValue(wrapper.vm.credentialFields[0], 'the-id');
-        wrapper.vm.setCredentialValue(wrapper.vm.credentialFields[1], 'the-secret');
+        await wrapper.get('.sw-settings-sms-gateway-detail__credential-accessKeyId input').setValue('the-id');
+        await wrapper.get('.sw-settings-sms-gateway-detail__credential-accessKeySecret input').setValue('the-secret');
 
-        await wrapper.vm.onSave();
+        await wrapper.get('.sw-settings-sms-gateway-detail__save-action').trigger('click');
+        await flushPromises();
 
         expect(routerPush).toHaveBeenCalledWith({
             name: 'sw.settings.sms.gateway.detail',
@@ -225,15 +240,17 @@ describe('src/module/sw-settings-sms/page/sw-settings-sms-gateway-detail', () =>
             },
         }));
 
-        wrapper.vm.optionsText = '{"signName":"Shop"}';
-        await wrapper.vm.onSave();
+        await wrapper.get('.sw-settings-sms-gateway-detail__options').setValue('{"signName":"Shop"}');
+        await wrapper.get('.sw-settings-sms-gateway-detail__save-action').trigger('click');
+        await flushPromises();
 
         expect(repository.save).toHaveBeenCalledWith(expect.objectContaining({ options: { signName: 'Shop' } }));
 
         repository.save.mockClear();
-        wrapper.vm.optionsText = 'not json';
+        await wrapper.get('.sw-settings-sms-gateway-detail__options').setValue('not json');
 
-        await wrapper.vm.onSave();
+        await wrapper.get('.sw-settings-sms-gateway-detail__save-action').trigger('click');
+        await flushPromises();
 
         expect(repository.save).not.toHaveBeenCalled();
     });
@@ -241,9 +258,10 @@ describe('src/module/sw-settings-sms/page/sw-settings-sms-gateway-detail', () =>
     it('should keep a gateway without credentials free of an empty json object', async () => {
         ({ wrapper, repository } = await createWrapper({ providers: [freeTextProvider] }));
 
-        expect(wrapper.vm.credentialFields).toHaveLength(0);
+        expect(wrapper.findAll('.sw-form-field-renderer')).toHaveLength(0);
 
-        await wrapper.vm.onSave();
+        await wrapper.get('.sw-settings-sms-gateway-detail__save-action').trigger('click');
+        await flushPromises();
 
         expect(repository.save).toHaveBeenCalledWith(expect.objectContaining({ credentials: null }));
     });
@@ -251,7 +269,7 @@ describe('src/module/sw-settings-sms/page/sw-settings-sms-gateway-detail', () =>
     it('should start a gateway that does not take an unknown country', async () => {
         ({ wrapper } = await createWrapper());
 
-        expect(wrapper.vm.acceptUnknownRegion).toBe(false);
+        expect(wrapper.get('.sw-settings-sms-gateway-detail__accept-unknown-region').element.checked).toBe(false);
     });
 
     it('should show the routing flag that was stored for the gateway', async () => {
@@ -268,7 +286,7 @@ describe('src/module/sw-settings-sms/page/sw-settings-sms-gateway-detail', () =>
             },
         }));
 
-        expect(wrapper.vm.acceptUnknownRegion).toBe(true);
+        expect(wrapper.get('.sw-settings-sms-gateway-detail__accept-unknown-region').element.checked).toBe(true);
     });
 
     it('should write the routing flag into the custom fields of the row', async () => {
@@ -285,8 +303,9 @@ describe('src/module/sw-settings-sms/page/sw-settings-sms-gateway-detail', () =>
             },
         }));
 
-        wrapper.vm.acceptUnknownRegion = true;
-        await wrapper.vm.onSave();
+        await wrapper.get('.sw-settings-sms-gateway-detail__accept-unknown-region').setValue(true);
+        await wrapper.get('.sw-settings-sms-gateway-detail__save-action').trigger('click');
+        await flushPromises();
 
         // the flag belongs to the row, not to the options the provider is called with
         expect(repository.save).toHaveBeenCalledWith(

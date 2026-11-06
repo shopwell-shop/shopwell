@@ -90,6 +90,16 @@
                 @page-change="onPageChange"
                 @column-sort="onSortColumn"
             >
+                <template #delete-action="{ item }">
+                    <sw-context-menu-item
+                        :disabled="!canDelete || undefined"
+                        variant="danger"
+                        @click="onDelete(item)"
+                    >
+                        {{ $t('global.default.delete') }}
+                    </sw-context-menu-item>
+                </template>
+
                 {% block sw_blog_comment_list_grid_column_title %}
                 <template #column-title="{ item }">
                     <router-link

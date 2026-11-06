@@ -101,7 +101,7 @@ type BankInfo = {
  * The one conversion the form owns is the typed amount to the smallest unit of the selected currency,
  * and it is a string split (`toMinorUnits`), never a float multiplication.
  */
-// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+/** @private */
 export default defineComponent({
     template,
 
@@ -284,6 +284,21 @@ export default defineComponent({
             return this.holderName.length > HOLDER_NAME_MAX_LENGTH;
         },
 
+        isRecipientIncomplete(): boolean {
+            if (this.recipientSource === 'existing') {
+                return this.recipientId === null;
+            }
+
+            return (
+                this.identityType === null ||
+                this.identityValue.trim() === '' ||
+                this.isIdentityValueTooLong ||
+                this.isHolderNameTooLong ||
+                (this.requiresHolderName && this.holderName.trim() === '') ||
+                (this.requiresBankInfo && this.bankAccountType === null)
+            );
+        },
+
         /**
          * The same conditions the server enforces, evaluated in the browser so the operator learns about
          * a mistake before a round trip - the server stays the authority.
@@ -297,18 +312,7 @@ export default defineComponent({
                 return true;
             }
 
-            if (this.recipientSource === 'existing') {
-                if (this.recipientId === null) {
-                    return true;
-                }
-            } else if (
-                this.identityType === null ||
-                this.identityValue.trim() === '' ||
-                this.isIdentityValueTooLong ||
-                this.isHolderNameTooLong ||
-                (this.requiresHolderName && this.holderName.trim() === '') ||
-                (this.requiresBankInfo && this.bankAccountType === null)
-            ) {
+            if (this.isRecipientIncomplete) {
                 return true;
             }
 

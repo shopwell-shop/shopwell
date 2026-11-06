@@ -4,6 +4,7 @@ namespace Shopwell\Tests\Integration\Core\Checkout\Loyalty\Entity\LoyaltyAccount
 
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use PHPUnit\Framework\TestCase;
+use Shopwell\Core\Checkout\Customer\CustomerEntity;
 use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyAccount\LoyaltyAccountCollection;
 use Shopwell\Core\Checkout\Loyalty\Entity\LoyaltyAccount\LoyaltyAccountEntity;
 use Shopwell\Core\Defaults;
@@ -129,7 +130,7 @@ class LoyaltyAccountRepositoryTest extends TestCase
             ->getEntities()
             ->get($customerId);
 
-        static::assertNotNull($customer);
+        static::assertInstanceOf(CustomerEntity::class, $customer);
         static::assertInstanceOf(LoyaltyAccountEntity::class, $customer->getLoyaltyAccount());
         static::assertSame($customerId, $customer->getLoyaltyAccount()->getCustomerId());
     }

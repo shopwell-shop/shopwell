@@ -62,3 +62,6 @@ Module.register('sw-membership', {
         },
     ],
 });
+
+/** @private */
+export {};

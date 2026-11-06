@@ -529,6 +529,8 @@ class RulePayloadIndexerTest extends TestCase
     public static function dataProviderForTestPostEventNullsPayload(): array
     {
         $plugin = new PluginEntity();
+        $plugin->setId(Uuid::randomHex());
+        $plugin->setActive(true);
         $plugin->setName('TestPlugin');
         $plugin->setBaseClass(RulePlugin::class);
         $plugin->setPath('');

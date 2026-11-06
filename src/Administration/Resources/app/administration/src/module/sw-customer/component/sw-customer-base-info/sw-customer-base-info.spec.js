@@ -103,7 +103,6 @@ describe('module/sw-customer/page/sw-customer-base-info', () => {
                 phoneNumber: null,
             },
         });
-        await wrapper.vm.$nextTick();
 
         expect(wrapper.find('.sw-customer-base__label-phone-number').text()).toBe('-');
     });

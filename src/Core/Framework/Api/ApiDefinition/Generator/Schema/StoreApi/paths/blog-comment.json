@@ -61,6 +61,18 @@
                 "responses": {
                     "204": {
                         "description": "The comment was accepted and is stored (possibly awaiting moderation)."
+                    },
+                    "400": {
+                        "description": "The comment payload or reply relationship is invalid."
+                    },
+                    "403": {
+                        "description": "Comments are disabled for this sales channel."
+                    },
+                    "404": {
+                        "description": "The blog entry does not exist or is not visible."
+                    },
+                    "429": {
+                        "description": "The comment submission limit has been exceeded."
                     }
                 },
                 "security": [

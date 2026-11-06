@@ -1,11 +1,11 @@
 /**
  * @sw-package framework
  */
-import { mount } from '@vue/test-utils';
+import { shallowMount } from '@vue/test-utils';
 import type { VueWrapper } from '@vue/test-utils';
 import Criteria from 'src/core/data/criteria.data';
 
-// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations -- Match the asynchronous production filter-service contract.
 Shopwell.Service().register('filterService', () => {
     return {
         mergeWithStoredFilters: (_storeKey: string, criteria: unknown) => Promise.resolve(criteria),
@@ -24,7 +24,7 @@ const transactions = [
         wallet: {
             id: 'wallet-1',
             customerId: 'customer-1',
-            customer: { id: 'customer-1', firstName: 'Zhang', lastName: 'San', customerNumber: '10001' },
+            customer: { id: 'customer-1', name: 'Zhang San', customerNumber: '10001' },
         },
         currency: { id: 'currency-1', isoCode: 'EUR' },
         order: null,
@@ -47,45 +47,18 @@ const transactions = [
     },
 ];
 
-type WalletTransactionsListVm = {
-    defaultFilters: string[];
-    listFilterOptions: Record<string, unknown>;
-    transactionCriteria: {
-        associations: Array<{ association: string }>;
-        sortings: Array<{ field: string; order: string }>;
-        filters: Array<Record<string, unknown>>;
-        term: string | null;
-    };
-    columns: Array<{ property: string }>;
-    typeFilterOptions: Array<{ id: string; name: string }>;
-    hasActiveSearchOrFilter: boolean;
-    activeFilterNumber: number;
-    total: number;
-    transactions: unknown[] | null;
-    isLoading: boolean;
-    term: string;
-    updateCriteria: (filters: unknown[]) => void;
-    typeLabel: (type: string | null) => string;
-    typeVariant: (type: string | null) => string;
-    formatAmount: (transaction: unknown) => string;
-    formatBalanceAfter: (transaction: unknown) => string;
-    orderNumber: (transaction: unknown) => string;
-    customerLabel: (transaction: unknown) => string;
-    formatDateOrDash: (value: string | null | undefined) => string;
-};
-
-type TypedWrapper = { vm: WalletTransactionsListVm } & VueWrapper;
-
 function collection<T>(items: unknown[]): T {
     return Object.assign([...items], { total: items.length }) as unknown as T;
 }
 
 let activeWrapper: VueWrapper | null = null;
 
-async function createWrapper(): Promise<{ wrapper: TypedWrapper; search: jest.Mock }> {
-    const search = jest.fn(() => Promise.resolve(collection<EntityCollection<'customer_wallet_transaction'>>(transactions)));
+async function createWrapper(items: unknown[] = transactions) {
+    const search = jest.fn<Promise<EntityCollection<'customer_wallet_transaction'>>, [InstanceType<typeof Criteria>]>(() =>
+        Promise.resolve(collection<EntityCollection<'customer_wallet_transaction'>>(items)),
+    );
 
-    const wrapper = mount(await wrapTestComponent('sw-finance-wallet-transactions-list', { sync: true }), {
+    const wrapper = shallowMount(await wrapTestComponent('sw-finance-wallet-transactions-list', { sync: true }), {
         global: {
             stubs: {
                 'sw-page': {
@@ -97,20 +70,35 @@ async function createWrapper(): Promise<{ wrapper: TypedWrapper; search: jest.Mo
                             <slot name="sidebar"></slot>
                         </div>`,
                 },
-                'sw-search-bar': true,
-                'sw-entity-listing': true,
+                'sw-search-bar': { template: '<input class="search" @input="$emit(\'search\', $event.target.value)">' },
+                'sw-entity-listing': {
+                    props: ['dataSource', 'columns'],
+                    template: `<table><thead><tr><th v-for="column in columns" :key="column.property" :data-column="column.property">{{ column.label }}</th></tr></thead>
+                    <tbody><tr v-for="item in dataSource" :key="item.id" :data-row="item.id"><td v-for="column in columns" :key="column.property" :data-cell="column.property"><slot :name="'column-' + column.property" :item="item">{{ item[column.property] }}</slot></td></tr></tbody></table>`,
+                },
                 'sw-data-grid': true,
                 'sw-data-grid-settings': true,
                 'sw-data-grid-skeleton': true,
                 'sw-pagination': true,
-                'sw-sidebar': true,
-                'sw-sidebar-item': true,
-                'sw-sidebar-filter-panel': true,
+                'sw-sidebar': { template: '<aside><slot></slot></aside>' },
+                'sw-sidebar-item': { template: '<button class="refresh">Refresh</button>' },
+                'sw-sidebar-filter-panel': {
+                    props: ['filters'],
+                    template: `<section class="filters"><label v-for="filter in filters" :key="filter.property" :data-filter="filter.property">{{ filter.label }}
+                    <select v-if="filter.options" @change="$emit('criteria-changed', [{ type: 'equalsAny', field: filter.property, value: $event.target.value }])"><option v-for="option in filter.options" :key="option.id" :value="option.id">{{ option.name }}</option></select>
+                    <input v-else></label></section>`,
+                },
                 'mt-button': true,
-                'mt-badge': true,
+                'mt-badge': {
+                    props: ['variant'],
+                    template: '<span class="type-badge" :data-variant="variant"><slot></slot></span>',
+                },
                 'mt-icon': true,
                 'mt-link': { template: '<a><slot></slot></a>' },
-                'mt-empty-state': true,
+                'mt-empty-state': {
+                    props: ['headline', 'description'],
+                    template: '<section class="empty-state"><h3>{{ headline }}</h3><p>{{ description }}</p></section>',
+                },
             },
             provide: {
                 repositoryFactory: {
@@ -142,7 +130,7 @@ async function createWrapper(): Promise<{ wrapper: TypedWrapper; search: jest.Mo
                 },
             },
         },
-    }) as unknown as TypedWrapper;
+    });
 
     activeWrapper = wrapper;
 
@@ -151,74 +139,46 @@ async function createWrapper(): Promise<{ wrapper: TypedWrapper; search: jest.Mo
     return { wrapper, search };
 }
 
+function cell(wrapper: VueWrapper, column: string, row = 0) {
+    return wrapper.findAll(`[data-cell="${column}"]`)[row];
+}
+
 describe('module/sw-finance/page/sw-finance-wallet-transactions-list', () => {
     afterEach(() => {
         activeWrapper?.unmount();
         activeWrapper = null;
     });
 
-    it('should load the transactions with the wallet, the customer and the newest first', async () => {
+    it('should load and display the ledger with wallet/customer/order associations and newest first', async () => {
         const { wrapper, search } = await createWrapper();
-
-        expect(search).toHaveBeenCalled();
-        expect(wrapper.vm.total).toBe(2);
-        expect(wrapper.vm.isLoading).toBe(false);
-
-        const criteria = wrapper.vm.transactionCriteria;
-
-        // `addAssociation` splits a dotted path into nested associations: the top level only knows
-        // `wallet`, the customer hangs in the criteria of that entry one level below
-        const associations = criteria.associations.map((association) => association.association);
-
-        expect(associations).toContain('wallet');
-        expect(associations).toContain('currency');
-        expect(associations).toContain('order');
-
-        const walletEntry = criteria.associations.find((association) => association.association === 'wallet') as unknown as {
-            criteria: { associations: Array<{ association: string }> };
-        };
-
-        expect(walletEntry.criteria.associations.map((association) => association.association)).toContain('customer');
-
+        expect(wrapper.get('.sw-page__smart-bar-amount').text()).toBe('(2)');
+        expect(wrapper.findAll('tbody tr')).toHaveLength(2);
+        const criteria = search.mock.calls[0][0];
+        expect(criteria.associations.map((association) => association.association)).toEqual(['wallet', 'currency', 'order']);
+        expect(criteria.getAssociation('wallet').associations.map((association) => association.association)).toContain(
+            'customer',
+        );
         expect(criteria.sortings).toEqual([{ field: 'createdAt', order: 'DESC', naturalSorting: false }]);
     });
 
-    /**
-     * A ledger entry carries no searchable text of its own: what an operator knows is the name or the
-     * number of the customer, or the reference the entry was booked with. A plain `term` would not find
-     * any of them.
-     */
-    it('should search the customer name, the customer number and the external reference', async () => {
-        const { wrapper } = await createWrapper();
-
-        wrapper.vm.term = '10001';
-
-        const criteria = wrapper.vm.transactionCriteria;
-        const searchFilter = criteria.filters[0] as {
-            type: string;
-            operator: string;
-            queries: Array<{ field: string; type: string; value: string }>;
-        };
-
-        expect(searchFilter.type).toBe('multi');
-        expect(searchFilter.operator).toBe('OR');
-        expect(searchFilter.queries.map((query) => query.field)).toEqual([
-            'wallet.customer.firstName',
-            'wallet.customer.lastName',
-            'wallet.customer.customerNumber',
-            'externalReference',
+    it('should search the actual customer name, customer number and ledger reference', async () => {
+        const { wrapper, search } = await createWrapper();
+        search.mockClear();
+        await wrapper.get('.search').setValue('10001');
+        await wrapper.get('.refresh').trigger('click');
+        await flushPromises();
+        expect(search.mock.calls[0][0].filters).toEqual([
+            Criteria.multi('OR', [
+                Criteria.contains('wallet.customer.name', '10001'),
+                Criteria.contains('wallet.customer.customerNumber', '10001'),
+                Criteria.contains('externalReference', '10001'),
+            ]),
         ]);
-
-        searchFilter.queries.forEach((query) => {
-            expect(query.type).toBe('contains');
-            expect(query.value).toBe('10001');
-        });
     });
 
-    it('should expose the columns of the ledger in its order', async () => {
+    it('should render the columns in ledger reading order', async () => {
         const { wrapper } = await createWrapper();
-
-        expect(wrapper.vm.columns.map((column) => column.property)).toEqual([
+        expect(wrapper.findAll('th').map((header) => header.attributes('data-column'))).toEqual([
             'customer',
             'type',
             'amount',
@@ -228,118 +188,105 @@ describe('module/sw-finance/page/sw-finance-wallet-transactions-list', () => {
         ]);
     });
 
-    it('should have a default filter for every filter option', async () => {
+    it('should offer type and date filters with translated type options', async () => {
         const { wrapper } = await createWrapper();
-
-        expect(wrapper.vm.defaultFilters).toEqual(['type-filter', 'created-filter']);
-
-        wrapper.vm.defaultFilters.forEach((filterKey) => {
-            expect(wrapper.vm.listFilterOptions).toHaveProperty(filterKey);
-        });
-    });
-
-    /**
-     * The badge vocabulary of the component library has five values and neither `success` nor `warning`
-     * is one of them - a type mapped to a word that does not exist renders an unstyled badge.
-     */
-    it('should map every transaction type to a badge variant of the component library', async () => {
-        const { wrapper } = await createWrapper();
-
-        expect(wrapper.vm.typeVariant('top_up')).toBe('positive');
-        expect(wrapper.vm.typeVariant('refund')).toBe('positive');
-        expect(wrapper.vm.typeVariant('consume')).toBe('attention');
-        expect(wrapper.vm.typeVariant('adjust')).toBe('neutral');
-        expect(wrapper.vm.typeVariant('a-type-of-the-future')).toBe('neutral');
-        expect(wrapper.vm.typeVariant(null)).toBe('neutral');
-    });
-
-    it('should label a type through the snippet and fall back to the technical value', async () => {
-        const { wrapper } = await createWrapper();
-
-        expect(wrapper.vm.typeLabel('top_up')).toBe('sw-finance.walletTransactions.type.top_up');
-        // `$te` always answers true in the test environment, so an unknown type yields its key as
-        // well instead of the technical fallback - which is what this asserts.
-        expect(wrapper.vm.typeLabel('a-type-of-the-future')).toBe('sw-finance.walletTransactions.type.a-type-of-the-future');
-        expect(wrapper.vm.typeLabel(null)).toBe('–');
-
-        expect(wrapper.vm.typeFilterOptions).toEqual([
-            { id: 'top_up', name: 'sw-finance.walletTransactions.type.top_up' },
-            { id: 'refund', name: 'sw-finance.walletTransactions.type.refund' },
-            { id: 'consume', name: 'sw-finance.walletTransactions.type.consume' },
-            { id: 'adjust', name: 'sw-finance.walletTransactions.type.adjust' },
+        expect(wrapper.findAll('[data-filter]').map((filter) => filter.attributes('data-filter'))).toEqual([
+            'type',
+            'createdAt',
+        ]);
+        expect(
+            wrapper.findAll('[data-filter="type"] option').map((option) => [option.attributes('value'), option.text()]),
+        ).toEqual([
+            ['top_up', 'sw-finance.walletTransactions.type.top_up'],
+            ['refund', 'sw-finance.walletTransactions.type.refund'],
+            ['consume', 'sw-finance.walletTransactions.type.consume'],
+            ['adjust', 'sw-finance.walletTransactions.type.adjust'],
         ]);
     });
 
-    /**
-     * The amount of a transaction is already in the main unit of its currency - unlike the amount of a
-     * transfer, which is in the smallest unit. Dividing it again would show 1.01 instead of 100.50. An
-     * incoming entry is marked with a plus, an outgoing one keeps the minus of the currency filter.
-     */
-    it('should format the amount with its direction and never divide it', async () => {
-        const { wrapper } = await createWrapper();
-        const currencyFilter = Shopwell.Filter.getByName('currency') as (value: number, currency: string) => string;
-
-        expect(wrapper.vm.formatAmount(transactions[0])).toBe(`+${currencyFilter(100.5, 'EUR')}`);
-        expect(wrapper.vm.formatAmount(transactions[1])).toBe(currencyFilter(-12, 'CNY'));
-        expect(wrapper.vm.formatAmount({ amount: null, currency: { isoCode: 'CNY' } })).toBe('–');
+    it.each([
+        ['top_up', 'positive'],
+        ['refund', 'positive'],
+        ['consume', 'attention'],
+        ['adjust', 'neutral'],
+        ['a-type-of-the-future', 'neutral'],
+    ])('should render type %s with a supported badge variant', async (type, variant) => {
+        const { wrapper } = await createWrapper([{ ...transactions[0], type }]);
+        expect(cell(wrapper, 'type').get('.type-badge').attributes('data-variant')).toBe(variant);
+        expect(cell(wrapper, 'type').text()).toBe(`sw-finance.walletTransactions.type.${type}`);
     });
 
-    it('should format the balance after the entry with the currency of the entry', async () => {
-        const { wrapper } = await createWrapper();
-        const currencyFilter = Shopwell.Filter.getByName('currency') as (value: number, currency: string) => string;
-
-        expect(wrapper.vm.formatBalanceAfter(transactions[0])).toBe(currencyFilter(100.5, 'EUR'));
-        expect(wrapper.vm.formatBalanceAfter(transactions[1])).toBe(currencyFilter(88.5, 'CNY'));
-        expect(wrapper.vm.formatBalanceAfter({ balanceAfter: null, currency: null })).toBe('–');
+    it('should omit a badge when the ledger entry has no type', async () => {
+        const { wrapper } = await createWrapper([{ ...transactions[0], type: null }]);
+        expect(cell(wrapper, 'type').find('.type-badge').exists()).toBe(false);
     });
 
-    it('should show the order number and fall back to a dash', async () => {
+    it('should retain main-unit amounts and show their direction', async () => {
         const { wrapper } = await createWrapper();
-
-        expect(wrapper.vm.orderNumber(transactions[0])).toBe('–');
-        expect(wrapper.vm.orderNumber(transactions[1])).toBe('10042');
+        const format = Shopwell.Filter.getByName('currency') as (value: number, currency: string) => string;
+        expect(cell(wrapper, 'amount', 0).text()).toBe(`+${format(100.5, 'EUR')}`);
+        expect(cell(wrapper, 'amount', 1).text()).toBe(format(-12, 'CNY'));
     });
 
-    it('should show the customer with the customer number and fall back to the wallet', async () => {
+    it('should format each post-entry balance with its own currency', async () => {
         const { wrapper } = await createWrapper();
-
-        expect(wrapper.vm.customerLabel(transactions[0])).toBe('Zhang San (10001)');
-        expect(wrapper.vm.customerLabel(transactions[1])).toBe('customer-2');
-        expect(wrapper.vm.customerLabel({ wallet: null })).toBe('–');
+        const format = Shopwell.Filter.getByName('currency') as (value: number, currency: string) => string;
+        expect(cell(wrapper, 'balanceAfter', 0).text()).toBe(format(100.5, 'EUR'));
+        expect(cell(wrapper, 'balanceAfter', 1).text()).toBe(format(88.5, 'CNY'));
     });
 
-    it('should render a dash for every missing timestamp', async () => {
-        const { wrapper } = await createWrapper();
-        const dateFilter = Shopwell.Filter.getByName('date') as (value: string) => string;
-
-        expect(wrapper.vm.formatDateOrDash(null)).toBe('–');
-        expect(wrapper.vm.formatDateOrDash(undefined)).toBe('–');
-        expect(wrapper.vm.formatDateOrDash('2026-01-02T03:04:05.000Z')).toBe(dateFilter('2026-01-02T03:04:05.000Z'));
+    it('should render missing amounts and balances as dashes', async () => {
+        const { wrapper } = await createWrapper([{ ...transactions[0], amount: null, balanceAfter: null, currency: null }]);
+        expect(cell(wrapper, 'amount').text()).toBe('–');
+        expect(cell(wrapper, 'balanceAfter').text()).toBe('–');
     });
 
-    it('should tell the two empty states apart', async () => {
+    it('should show the linked order number or a dash', async () => {
         const { wrapper } = await createWrapper();
-
-        expect(wrapper.vm.hasActiveSearchOrFilter).toBe(false);
-
-        wrapper.vm.activeFilterNumber = 1;
-        expect(wrapper.vm.hasActiveSearchOrFilter).toBe(true);
-
-        wrapper.vm.term = 'nomatch';
-        wrapper.vm.activeFilterNumber = 0;
-        expect(wrapper.vm.hasActiveSearchOrFilter).toBe(true);
+        expect(cell(wrapper, 'order', 0).text()).toBe('–');
+        expect(cell(wrapper, 'order', 1).text()).toBe('10042');
     });
 
-    it('should apply the filters the filter panel emits and reload the list', async () => {
-        const { wrapper, search } = await createWrapper();
+    it('should show the customer actual name and customer number, or the retained customer id', async () => {
+        const { wrapper } = await createWrapper();
+        expect(cell(wrapper, 'customer', 0).text()).toBe('Zhang San (10001)');
+        expect(cell(wrapper, 'customer', 0).find('a').exists()).toBe(true);
+        expect(cell(wrapper, 'customer', 1).text()).toBe('customer-2');
+        expect(cell(wrapper, 'customer', 1).find('a').exists()).toBe(false);
+    });
 
-        search.mockClear();
+    it('should render a dash when the wallet is absent', async () => {
+        const { wrapper } = await createWrapper([{ ...transactions[0], wallet: null }]);
+        expect(cell(wrapper, 'customer').text()).toBe('–');
+    });
 
-        const filters = [Criteria.equalsAny('type', ['top_up'])];
-        wrapper.vm.updateCriteria(filters);
+    it.each([null, undefined, '2026-01-02T03:04:05.000Z'])('should display timestamp %s', async (createdAt) => {
+        const { wrapper } = await createWrapper([{ ...transactions[0], createdAt }]);
+        const format = Shopwell.Filter.getByName('date') as (value: string) => string;
+        expect(cell(wrapper, 'createdAt').text()).toBe(createdAt ? format(createdAt) : '–');
+    });
+
+    it('should distinguish an empty ledger from an unsuccessful search', async () => {
+        const { wrapper } = await createWrapper([]);
+        expect(wrapper.get('.empty-state h3').text()).toBe('sw-finance.walletTransactions.list.emptyHeadline');
+        await wrapper.get('.search').setValue('nomatch');
+        await wrapper.get('.refresh').trigger('click');
         await flushPromises();
+        expect(wrapper.get('.empty-state h3').text()).toBe('sw-finance.walletTransactions.list.noResultTitle');
+    });
 
-        expect(wrapper.vm.transactionCriteria.filters).toEqual(filters);
-        expect(search).toHaveBeenCalled();
+    it('should distinguish an empty ledger from a filter with no results', async () => {
+        const { wrapper } = await createWrapper([]);
+        await wrapper.get('[data-filter="type"] select').setValue('consume');
+        await flushPromises();
+        expect(wrapper.get('.empty-state h3').text()).toBe('sw-finance.walletTransactions.list.noResultTitle');
+    });
+
+    it('should apply the filter and reload the ledger', async () => {
+        const { wrapper, search } = await createWrapper();
+        search.mockClear();
+        await wrapper.get('[data-filter="type"] select').setValue('consume');
+        await flushPromises();
+        expect(search.mock.calls[0][0].filters).toEqual([Criteria.equalsAny('type', ['consume'])]);
     });
 });

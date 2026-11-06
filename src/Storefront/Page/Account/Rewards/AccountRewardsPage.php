@@ -11,6 +11,8 @@ use Shopwell\Storefront\Page\Page;
  *
  * A paid membership has its own page and its own page object - this one never carries an offer, so a
  * template that renders the rewards page cannot accidentally render a price.
+ *
+ * @codeCoverageIgnore
  */
 #[Package('checkout')]
 class AccountRewardsPage extends Page

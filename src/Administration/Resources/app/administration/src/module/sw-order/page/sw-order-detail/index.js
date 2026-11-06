@@ -177,10 +177,7 @@ export default {
         orderCriteria() {
             const criteria = new Criteria(1, 25);
 
-            criteria
-                .addAssociation('currency')
-                .addAssociation('orderCustomer.customer')
-                .addAssociation('language');
+            criteria.addAssociation('currency').addAssociation('orderCustomer.customer').addAssociation('language');
 
             criteria
                 .getAssociation('lineItems')

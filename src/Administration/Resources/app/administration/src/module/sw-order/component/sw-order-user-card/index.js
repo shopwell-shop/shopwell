@@ -13,7 +13,12 @@ const format = Shopwell.Utils.format;
 export default {
     template,
 
-    inject: ['customSnippetApiService', 'orderService', 'repositoryFactory', 'dictionaryService'],
+    inject: [
+        'customSnippetApiService',
+        'orderService',
+        'repositoryFactory',
+        'dictionaryService',
+    ],
 
     emits: [
         'error',

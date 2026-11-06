@@ -132,7 +132,7 @@
         "tags": [
           "Payment"
         ],
-        "operationId": "deletePaymentApp",
+        "operationId": "deleteExternalPaymentApp",
         "summary": "Delete an external payment app",
         "description": "Requires payment_app:delete. The platform app cannot be deleted. Merchant accounts retained by payment history cannot be reassigned.",
         "parameters": [
@@ -344,7 +344,7 @@
                   },
                   "settings": {
                     "type": "object",
-                    "additionalProperties": {}
+                    "additionalProperties": true
                   }
                 }
               }
@@ -495,7 +495,7 @@
                   },
                   "settings": {
                     "type": "object",
-                    "additionalProperties": {}
+                    "additionalProperties": true
                   }
                 }
               }
@@ -626,7 +626,7 @@
         "tags": [
           "Payment"
         ],
-        "operationId": "createPaymentAccount",
+        "operationId": "createCentralPaymentAccount",
         "summary": "Create a central payment account",
         "description": "Requires payment_account:create.",
         "responses": {
@@ -754,7 +754,7 @@
         "tags": [
           "Payment"
         ],
-        "operationId": "updatePaymentAccount",
+        "operationId": "updateCentralPaymentAccount",
         "summary": "Update a central payment account",
         "description": "Requires payment_account:update.",
         "responses": {
@@ -842,7 +842,7 @@
         "tags": [
           "Payment"
         ],
-        "operationId": "deletePaymentAccount",
+        "operationId": "deleteCentralPaymentAccount",
         "summary": "Delete an unused central payment account",
         "description": "Requires payment_account:delete. An account referenced by payment attempts, transfers, subscriptions, mandates, provider defaults, or app grants cannot be deleted.",
         "responses": {
@@ -1055,7 +1055,7 @@
           },
           "settings": {
             "type": "object",
-            "additionalProperties": {}
+            "additionalProperties": true
           }
         },
         "required": [
@@ -1314,7 +1314,7 @@
           },
           "settings": {
             "type": "object",
-            "additionalProperties": {}
+            "additionalProperties": true
           }
         },
         "required": [
@@ -1353,7 +1353,7 @@
           },
           "settings": {
             "type": "object",
-            "additionalProperties": {}
+            "additionalProperties": true
           },
           "products": {
             "type": "array",
@@ -1423,18 +1423,18 @@
           },
           "credentials": {
             "type": "object",
-            "additionalProperties": {}
+            "additionalProperties": true
           },
           "productParams": {
             "type": "object",
             "additionalProperties": {
               "type": "object",
-              "additionalProperties": {}
+              "additionalProperties": true
             }
           },
           "settings": {
             "type": "object",
-            "additionalProperties": {}
+            "additionalProperties": true
           },
           "ownerAppId": {
             "type": [
@@ -1481,18 +1481,18 @@
           },
           "credentials": {
             "type": "object",
-            "additionalProperties": {}
+            "additionalProperties": true
           },
           "productParams": {
             "type": "object",
             "additionalProperties": {
               "type": "object",
-              "additionalProperties": {}
+              "additionalProperties": true
             }
           },
           "settings": {
             "type": "object",
-            "additionalProperties": {}
+            "additionalProperties": true
           }
         },
         "required": [

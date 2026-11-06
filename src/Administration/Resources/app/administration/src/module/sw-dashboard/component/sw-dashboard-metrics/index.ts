@@ -260,6 +260,7 @@ export default Shopwell.Component.wrapComponentConfig({
                 };
 
                 this.previousMetrics = {
+                    ...EMPTY_METRICS,
                     revenue: this.getBucket(paidBuckets, dayKeys.yesterday).amount,
                     paidOrders: this.getBucket(paidBuckets, dayKeys.yesterday).count,
                     orders: this.getBucket(allBuckets, dayKeys.yesterday).count,
@@ -329,9 +330,11 @@ export default Shopwell.Component.wrapComponentConfig({
             const criteria = new Criteria(1, 1);
             criteria.addAggregation(Criteria.sum('walletBalance', 'balance'));
 
-            return (this.walletRepository as {
-                search: (c: unknown) => Promise<{ aggregations: Record<string, { sum?: number }> }>;
-            })
+            return (
+                this.walletRepository as {
+                    search: (c: unknown) => Promise<{ aggregations: Record<string, { sum?: number }> }>;
+                }
+            )
                 .search(criteria)
                 .then((result) => result.aggregations?.walletBalance?.sum ?? 0)
                 .catch(() => {
@@ -354,9 +357,11 @@ export default Shopwell.Component.wrapComponentConfig({
             criteria.addFilter(Criteria.range('createdAt', { gte: since }));
             criteria.addAggregation(Criteria.sum('monthlyPoints', 'points'));
 
-            return (this.pointTransactionRepository as {
-                search: (c: unknown) => Promise<{ aggregations: Record<string, { sum?: number }> }>;
-            })
+            return (
+                this.pointTransactionRepository as {
+                    search: (c: unknown) => Promise<{ aggregations: Record<string, { sum?: number }> }>;
+                }
+            )
                 .search(criteria)
                 .then((result) => result.aggregations?.monthlyPoints?.sum ?? 0)
                 .catch(() => {

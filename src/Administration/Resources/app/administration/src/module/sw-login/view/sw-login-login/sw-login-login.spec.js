@@ -14,9 +14,13 @@ async function createWrapper(
     ssoUrl = 'https://sso.test',
     loginError = null,
     configFails = false,
-    { oauth2Channels = [], $te = () => true } = {},
+    { oauth2Channels = [], $te = () => true, navigateTo } = {},
 ) {
-    const wrapper = mount(await wrapTestComponent('sw-login-login', { sync: true }), {
+    const component = await wrapTestComponent('sw-login-login', { sync: true });
+    const loginComponent = navigateTo
+        ? { ...component, methods: { ...component.methods, _navigateTo: navigateTo } }
+        : component;
+    const wrapper = mount(loginComponent, {
         global: {
             mocks: {
                 $t: (...args) => JSON.stringify([...args]),
@@ -366,15 +370,16 @@ describe('module/sw-login/view/sw-login-login/sw-login-login.spec.js', () => {
             },
         ];
 
-        const { wrapper } = await createWrapper(true, true, 'https://sso.test', null, false, { oauth2Channels });
+        const navigateToSpy = jest.fn();
+        const { wrapper } = await createWrapper(true, true, 'https://sso.test', null, false, {
+            oauth2Channels,
+            navigateTo: navigateToSpy,
+        });
 
         const buttons = wrapper.findAll('.sw-login__oauth2-button');
 
         expect(buttons).toHaveLength(2);
         expect(buttons[0].text()).toBe('["sso.oauth2.channel.google"]');
-
-        const navigateToSpy = jest.fn();
-        wrapper.vm._navigateTo = navigateToSpy;
 
         await buttons[1].trigger('click');
 
@@ -400,7 +405,9 @@ describe('module/sw-login/view/sw-login-login/sw-login-login.spec.js', () => {
             $te: () => false,
         });
 
-        expect(wrapper.vm.channelLabel(channel)).toBe('["sw-login.index.oauth2LoginWith",{"channel":"unknown"}]');
+        expect(wrapper.get('.sw-login__oauth2-button').text()).toBe(
+            '["sw-login.index.oauth2LoginWith",{"channel":"unknown"}]',
+        );
     });
 
     it('should show the reason of a failed third party login and clear it afterwards', async () => {
@@ -418,17 +425,13 @@ describe('module/sw-login/view/sw-login-login/sw-login-login.spec.js', () => {
         expect(wrapper.find('.sw-login__oauth2-error-banner').exists()).toBe(false);
     });
 
-    it('should map the error codes of the platform to a login message', async () => {
+    it.each([
+        ['SSO_OAUTH2__MISSING_VERIFIED_EMAIL', 'sw-login.index.oauth2ErrorNotLinked'],
+        ['SSO_OAUTH2__CHANNEL_DISABLED', 'sw-login.index.oauth2ErrorNotAvailable'],
+        ['SSO_OAUTH2__AUTHORIZATION_FAILED', 'sw-login.index.oauth2ErrorFailed'],
+    ])('should render login message for %s', async (code, message) => {
+        document.cookie = `oauth2LoginError=${code}; path=/`;
         const { wrapper } = await createWrapper(true);
-
-        expect(wrapper.vm.resolveOAuth2ErrorMessageKey('SSO_OAUTH2__MISSING_VERIFIED_EMAIL')).toBe(
-            'sw-login.index.oauth2ErrorNotLinked',
-        );
-        expect(wrapper.vm.resolveOAuth2ErrorMessageKey('SSO_OAUTH2__CHANNEL_DISABLED')).toBe(
-            'sw-login.index.oauth2ErrorNotAvailable',
-        );
-        expect(wrapper.vm.resolveOAuth2ErrorMessageKey('SSO_OAUTH2__AUTHORIZATION_FAILED')).toBe(
-            'sw-login.index.oauth2ErrorFailed',
-        );
+        expect(wrapper.get('.sw-login__oauth2-error-banner').text()).toBe(JSON.stringify([message]));
     });
 });

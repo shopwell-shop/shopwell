@@ -7,7 +7,10 @@ import type CriteriaType from 'src/core/data/criteria.data';
 
 import template from './sw-customer-detail-points.html.twig';
 import './sw-customer-detail-points.scss';
-import type { LoyaltySummary, LoyaltySummaryTransaction } from '../../../../sw-settings-membership/service/loyalty.api.service';
+import type {
+    LoyaltySummary,
+    LoyaltySummaryTransaction,
+} from '../../../../sw-settings-membership/service/loyalty.api.service';
 
 const { Mixin } = Shopwell;
 const { Criteria } = Shopwell.Data;
@@ -26,24 +29,12 @@ interface MembershipForm {
     durationDays: number;
 }
 
-interface TierOption {
-    id: string;
-    name: string;
-    level: number;
-    minTierPoints: number;
-}
+type TierOption = Pick<EntitySchema.Entity<'loyalty_tier'>, 'id' | 'name' | 'level' | 'minTierPoints'>;
 
-interface MembershipPurchase {
-    id: string;
-    planName: string;
-    amount: number;
-    currency: string;
-    state: string;
-    durationDays: number;
-    paidAt: string | null;
-    expiresAt: string | null;
-    createdAt: string | null;
-}
+type MembershipPurchase = Pick<
+    EntitySchema.Entity<'membership_purchase'>,
+    'id' | 'planName' | 'amount' | 'currency' | 'state' | 'durationDays' | 'paidAt' | 'expiresAt' | 'createdAt'
+>;
 
 /**
  * The points and membership tab of a customer: the membership the customer holds, the orders that
@@ -147,7 +138,7 @@ export default defineComponent({
             }
 
             const from = this.currentTier?.minTierPoints ?? 0;
-            const span = next.minTierPoints - from;
+            const span = (next.minTierPoints ?? 0) - from;
 
             if (span <= 0) {
                 return 100;

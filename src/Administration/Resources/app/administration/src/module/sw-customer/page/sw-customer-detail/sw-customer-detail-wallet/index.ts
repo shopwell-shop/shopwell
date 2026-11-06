@@ -74,7 +74,7 @@ type WalletActionMode = 'topUp' | 'adjust';
  * The wallet tab of a customer: what the customer owns per currency, what is still on its way, and
  * every booking that led there. Balances are never computed here - the server owns them.
  */
-// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+/** @private */
 export default defineComponent({
     template,
 
@@ -316,7 +316,7 @@ export default defineComponent({
 
         loadWallets(): Promise<void> {
             return this.walletRepository.search(this.walletCriteria).then((wallets) => {
-                this.wallets = wallets as unknown as CustomerWallet[];
+                this.wallets = wallets as CustomerWallet[];
             });
         },
 
@@ -329,14 +329,14 @@ export default defineComponent({
             }
 
             return this.walletTransactionRepository.search(this.walletTransactionCriteria).then((transactions) => {
-                this.walletTransactions = transactions as unknown as WalletTransaction[];
+                this.walletTransactions = transactions as WalletTransaction[];
                 this.total = transactions.total ?? this.walletTransactions.length;
             });
         },
 
         loadPendingTopUps(): Promise<void> {
             return this.topUpRepository.search(this.topUpCriteria).then((topUps) => {
-                this.pendingTopUps = topUps as unknown as PendingTopUp[];
+                this.pendingTopUps = topUps as PendingTopUp[];
             });
         },
 

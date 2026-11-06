@@ -64,12 +64,15 @@ class PaymentAppAuthenticatorTest extends TestCase
         $app = $this->app();
         $app->rateLimit = 1;
         $authenticator = $this->authenticator($app);
+        $windowStartedBefore = microtime(true);
         $authenticator->authenticate($this->request(), $this->signedParams());
+        $windowStartedAfter = microtime(true);
 
         $params = $this->signedParams();
         $params[PaymentSignatureService::NONCE] = 'second-request';
         $params[PaymentSignatureService::SIGN] = $this->signatureService->sign(self::SECRET, self::APP_ID, $this->clock->now()->getTimestamp(), 'second-request', self::METHOD, self::PATH, $params);
 
+        $rejectedBefore = microtime(true);
         try {
             $authenticator->authenticate($this->request(), $params);
             static::fail('The second request must be rate limited.');
@@ -79,7 +82,9 @@ class PaymentAppAuthenticatorTest extends TestCase
             $seconds = $exception->getParameter('seconds');
             static::assertIsInt($seconds);
             static::assertGreaterThan(0, $seconds);
-            static::assertLessThanOrEqual(60, $seconds);
+            // Retry-After rounds the window's expiry up to a whole second.
+            static::assertGreaterThanOrEqual(max(1, (int) floor($windowStartedBefore + 60) - time()), $seconds);
+            static::assertLessThanOrEqual((int) ceil($windowStartedAfter + 60) - (int) floor($rejectedBefore), $seconds);
             static::assertSame(['Retry-After' => (string) $seconds], $exception->getHeaders());
         }
     }

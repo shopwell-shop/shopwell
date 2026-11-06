@@ -23,6 +23,18 @@ describe('src/module/sw-settings-media/index.js', () => {
             icon: 'regular-image',
             favicon: 'icon-module-settings.svg',
             routes: expect.any(Object),
+            navigation: [
+                {
+                    moduleType: 'core',
+                    id: 'sw-settings-media',
+                    label: 'sw-settings-media.general.title',
+                    parent: 'sw-settings',
+                    path: 'sw.settings.media.index',
+                    icon: 'regular-image',
+                    position: 510,
+                    privilege: 'system.system_config',
+                },
+            ],
             settingsItem: [
                 {
                     id: 'sw-settings-media',

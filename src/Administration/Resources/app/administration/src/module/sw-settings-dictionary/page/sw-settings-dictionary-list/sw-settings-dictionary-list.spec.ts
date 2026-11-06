@@ -1,38 +1,16 @@
 /**
  * @sw-package framework
  */
-import { mount } from '@vue/test-utils';
+import { shallowMount } from '@vue/test-utils';
 import type { VueWrapper } from '@vue/test-utils';
 
-type DictionaryTypeVm = {
-    dictionaryTypes: Array<{
-        id: string;
-        technicalName: string;
-        active: boolean;
-        entries?: Array<{ id: string; technicalName: string }>;
-    }>;
-    newType: {
-        label: string | null;
-        technicalName: string | null;
-        active: boolean;
-    };
-    showCreateModal: boolean;
-    showDeleteModal: string | null;
-    dictionaryTypeRepository: {
-        save: jest.Mock;
-        delete: jest.Mock;
-    };
-    getEntryCount: (item: { entries?: unknown[] }) => number;
-    onAddType: () => void;
-    onCreateSave: () => Promise<void>;
-    onDelete: (id: string) => void;
-    onConfirmDelete: (id: string) => Promise<void>;
-};
+let saveSpy: jest.Mock;
+let deleteSpy: jest.Mock;
 
-type TypedWrapper = { vm: DictionaryTypeVm } & VueWrapper;
-
-async function createWrapper(privileges: string[] = []): Promise<TypedWrapper> {
-    return mount(
+async function createWrapper(privileges: string[] = []): Promise<VueWrapper> {
+    saveSpy = jest.fn(() => Promise.resolve());
+    deleteSpy = jest.fn(() => Promise.resolve());
+    return shallowMount(
         await wrapTestComponent('sw-settings-dictionary-list', {
             sync: true,
         }),
@@ -59,17 +37,17 @@ async function createWrapper(privileges: string[] = []): Promise<TypedWrapper> {
                                 Promise.resolve([
                                     {
                                         id: 'type-id',
-                                        technicalName: 'salutation',
-                                        translated: { label: 'Salutation' },
+                                        technicalName: 'gender',
+                                        translated: { label: 'Gender' },
                                         active: true,
                                         entries: [
-                                            { id: 'entry-1', technicalName: 'mr' },
-                                            { id: 'entry-2', technicalName: 'mrs' },
+                                            { id: 'entry-1', technicalName: 'male' },
+                                            { id: 'entry-2', technicalName: 'female' },
                                         ],
                                     },
                                 ]),
-                            save: () => Promise.resolve(),
-                            delete: () => Promise.resolve(),
+                            save: saveSpy,
+                            delete: deleteSpy,
                             create: () => ({
                                 technicalName: null,
                                 label: null,
@@ -95,25 +73,45 @@ async function createWrapper(privileges: string[] = []): Promise<TypedWrapper> {
                     <div class="sw-page">
                         <slot name="smart-bar-actions"></slot>
                         <slot name="content"></slot>
-                        <slot></slot>
-                    </div>
+                        </div>
                 `,
                     },
-                    'sw-card-view': true,
+                    'sw-card-view': { template: '<div><slot /></div>' },
+                    'mt-card': { template: '<section><slot name="grid"/><slot /></section>' },
+                    'mt-button': { props: ['disabled'], template: '<button :disabled="disabled"><slot /></button>' },
+                    'mt-text-field': {
+                        props: ['modelValue'],
+                        emits: ['update:modelValue'],
+                        template: `<input :value="modelValue" @input="$emit('update:modelValue', $event.target.value)" />`,
+                    },
+                    'mt-number-field': {
+                        props: ['modelValue'],
+                        emits: ['update:modelValue'],
+                        template: `<input type="number" :value="modelValue" @input="$emit('update:modelValue', Number($event.target.value))" />`,
+                    },
+                    'mt-switch': {
+                        props: ['modelValue'],
+                        emits: ['update:modelValue'],
+                        template: `<input type="checkbox" :checked="modelValue" @change="$emit('update:modelValue', $event.target.checked)" />`,
+                    },
                     'sw-ignore-class': true,
                     'sw-entity-listing': {
                         props: ['items', 'dataSource'],
                         template: `
                     <div>
-                        <template v-for="item in (dataSource || items)" :key="item.id">
+                        <div v-for="item in (dataSource || items)" :key="item.id" :data-row="item.id">
+                            <span class="row-name">{{ item.name || item.translated?.label }}</span><span class="entry-count"><slot name="column-entries" :item="item" /></span>
                             <slot name="actions" v-bind="{ item }"></slot>
                             <slot name="action-modals" v-bind="{ item }"></slot>
-                        </template>
+                        </div>
                     </div>`,
                     },
                     'sw-language-switch': true,
                     'sw-search-bar': true,
-                    'sw-context-menu-item': true,
+                    'sw-context-menu-item': {
+                        props: ['disabled'],
+                        template: '<button :disabled="disabled"><slot /></button>',
+                    },
                     'sw-loader': true,
                     'sw-extension-component-section': true,
                     'sw-label': true,
@@ -129,11 +127,11 @@ async function createWrapper(privileges: string[] = []): Promise<TypedWrapper> {
                 },
             },
         },
-    ) as unknown as TypedWrapper;
+    );
 }
 
 describe('module/sw-settings-dictionary/page/sw-settings-dictionary-list', () => {
-    let wrapper: TypedWrapper;
+    let wrapper: VueWrapper;
 
     beforeEach(async () => {
         wrapper = await createWrapper();
@@ -174,65 +172,58 @@ describe('module/sw-settings-dictionary/page/sw-settings-dictionary-list', () =>
         const entriesColumn = wrapper.find('.sw-settings-dictionary-list-grid');
 
         expect(entriesColumn.exists()).toBe(true);
-        expect(wrapper.vm.dictionaryTypes).toHaveLength(1);
-        expect(wrapper.vm.getEntryCount(wrapper.vm.dictionaryTypes[0])).toBe(2);
+        expect(wrapper.findAll('[data-row]')).toHaveLength(1);
+        expect(wrapper.get('.entry-count').text()).toBe('2');
     });
 
     it('should create a new dictionary type with technical name and active flag', async () => {
         wrapper = await createWrapper(['dictionary.creator']);
         await flushPromises();
 
-        wrapper.vm.onAddType();
+        await wrapper.get('.sw-settings-dictionary-list__add-type').trigger('click');
 
-        expect(wrapper.vm.newType).not.toBeNull();
+        expect(wrapper.find('.sw-settings-dictionary-list__create-modal').exists()).toBe(true);
 
-        wrapper.vm.newType.label = 'Salutation';
-        wrapper.vm.newType.technicalName = 'salutation';
-        wrapper.vm.newType.active = true;
+        await wrapper.get('.sw-settings-dictionary-list__create-label').setValue('Gender');
+        await wrapper.get('.sw-settings-dictionary-list__create-technical-name').setValue('gender');
 
-        const saveSpy = jest.fn(() => Promise.resolve());
-        wrapper.vm.dictionaryTypeRepository.save = saveSpy;
-
-        await wrapper.vm.onCreateSave();
+        await wrapper.findAll('.sw-settings-dictionary-list__create-modal button')[1].trigger('click');
+        await flushPromises();
 
         expect(saveSpy).toHaveBeenCalledWith(
             expect.objectContaining({
-                technicalName: 'salutation',
+                technicalName: 'gender',
                 active: true,
             }),
         );
-        expect(wrapper.vm.showCreateModal).toBe(false);
+        expect(wrapper.find('.sw-settings-dictionary-list__create-modal').exists()).toBe(false);
     });
 
     it('should reject a new type without technical name', async () => {
         wrapper = await createWrapper(['dictionary.creator']);
         await flushPromises();
 
-        wrapper.vm.onAddType();
-        wrapper.vm.newType.label = 'Salutation';
+        await wrapper.get('.sw-settings-dictionary-list__add-type').trigger('click');
+        await wrapper.get('.sw-settings-dictionary-list__create-label').setValue('Gender');
 
-        const saveSpy = jest.fn(() => Promise.resolve());
-        wrapper.vm.dictionaryTypeRepository.save = saveSpy;
-
-        await wrapper.vm.onCreateSave();
+        await wrapper.findAll('.sw-settings-dictionary-list__create-modal button')[1].trigger('click');
+        await flushPromises();
 
         expect(saveSpy).not.toHaveBeenCalled();
-        expect(wrapper.vm.showCreateModal).toBe(true);
+        expect(wrapper.find('.sw-settings-dictionary-list__create-modal').exists()).toBe(true);
     });
 
     it('should confirm the delete of a type', async () => {
         wrapper = await createWrapper(['dictionary.deleter']);
         await flushPromises();
 
-        const deleteSpy = jest.fn(() => Promise.resolve());
-        wrapper.vm.dictionaryTypeRepository.delete = deleteSpy;
-
-        wrapper.vm.onDelete('type-id');
-        expect(wrapper.vm.showDeleteModal).toBe('type-id');
-
-        await wrapper.vm.onConfirmDelete('type-id');
+        await wrapper.get('.sw-entity-listing__context-menu-delete').trigger('click');
+        expect(wrapper.find('.sw-modal').exists()).toBe(true);
+        expect(deleteSpy).not.toHaveBeenCalled();
+        await wrapper.findAll('.sw-modal button')[1].trigger('click');
+        await flushPromises();
 
         expect(deleteSpy).toHaveBeenCalledWith('type-id');
-        expect(wrapper.vm.showDeleteModal).toBeNull();
+        expect(wrapper.find('.sw-modal').exists()).toBe(false);
     });
 });

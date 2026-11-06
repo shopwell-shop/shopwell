@@ -367,7 +367,7 @@ Any other deprecation still throws.
 The "Show empty snippets only" filter in the snippet list now only lists snippets without a value.
 A snippet whose value is `0` counts as translated and is no longer listed.
 
-## API
+### Administration bundled development mode
 
 To try the experimental [bundled dev mode](https://vite.dev/blog/announcing-vite8-1#experimental-bundled-dev-mode) of Vite 8, also set `SHOPWELL_ADMIN_BUNDLED_DEV=1`.
 It bundles the Administration and its plugins, but not apps.

@@ -16,7 +16,7 @@ type OrderReturnReason = EntitySchema.Entity<'order_return_reason'>;
  * is the language of the row the operator sees. `active` and `position` are the same in every language,
  * which is why they sit next to the label instead of in a separate section.
  */
-// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+/** @private */
 export default defineComponent({
     template,
 

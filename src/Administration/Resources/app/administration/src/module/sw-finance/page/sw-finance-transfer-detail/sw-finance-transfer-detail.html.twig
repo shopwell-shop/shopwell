@@ -304,23 +304,23 @@
                 {% endblock %}
             </template>
         </sw-card-view>
+
+        {% block sw_finance_transfer_detail_modals %}
+        <sw-finance-transfer-approve-modal
+            v-if="showApproveModal && transfer"
+            :transfer="transfer"
+            @transfer-decided="onTransferDecided"
+            @modal-close="onCloseApproveModal"
+        />
+
+        <sw-finance-transfer-reject-modal
+            v-if="showRejectModal && transfer"
+            :transfer="transfer"
+            @transfer-decided="onTransferDecided"
+            @modal-close="onCloseRejectModal"
+        />
+        {% endblock %}
     </template>
-    {% endblock %}
-
-    {% block sw_finance_transfer_detail_modals %}
-    <sw-finance-transfer-approve-modal
-        v-if="showApproveModal && transfer"
-        :transfer="transfer"
-        @transfer-decided="onTransferDecided"
-        @modal-close="onCloseApproveModal"
-    />
-
-    <sw-finance-transfer-reject-modal
-        v-if="showRejectModal && transfer"
-        :transfer="transfer"
-        @transfer-decided="onTransferDecided"
-        @modal-close="onCloseRejectModal"
-    />
     {% endblock %}
 
 </sw-page>

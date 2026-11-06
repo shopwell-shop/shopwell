@@ -21,7 +21,7 @@ type OrganizationUnitEntity = EntitySchema.Entity<'organization_unit'>;
  * the form itself: the parent select does not offer the unit or its subtree (AC-06), and a unit
  * whose parent is gone from the options keeps its current parent.
  */
-// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+/** @private */
 export default defineComponent({
     template,
 
@@ -88,7 +88,7 @@ export default defineComponent({
         },
 
         selectedUnit(): OrganizationUnitEntity | null {
-            return this.selectedUnitId ? this.unitById[this.selectedUnitId] ?? null : null;
+            return this.selectedUnitId ? (this.unitById[this.selectedUnitId] ?? null) : null;
         },
 
         descendantIdsOfSelected(): Record<string, boolean> {
@@ -104,9 +104,7 @@ export default defineComponent({
 
                 collected[currentId] = true;
 
-                this.units
-                    .filter((unit) => unit.parentId === currentId)
-                    .forEach((unit) => stack.push(unit.id));
+                this.units.filter((unit) => unit.parentId === currentId).forEach((unit) => stack.push(unit.id));
             }
 
             return collected;
@@ -209,7 +207,7 @@ export default defineComponent({
 
             const unit = this.unitRepository.create();
 
-            unit.organizationId = this.organizationId as unknown as EntitySchema.OrganizationUnitId;
+            unit.organizationId = this.organizationId as EntitySchema.OrganizationId;
             // undefined for a new root unit, the parent id for a child unit
             unit.parentId = this.newUnitParent?.id;
             unit.name = this.newUnitName;
@@ -243,7 +241,7 @@ export default defineComponent({
             }
 
             // null must reach the DAL to detach the unit from its parent (move to root level)
-            unit.parentId = (parentId || null) as unknown as EntitySchema.OrganizationUnitId;
+            unit.parentId = (parentId || null) as EntitySchema.OrganizationUnitId;
 
             await this.onUnitFieldChange();
         },

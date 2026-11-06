@@ -21,11 +21,11 @@ const loyaltyTierRepository = {
 };
 
 const benefitRepository = {
-    search: jest.fn(() => Promise.resolve([])),
+    search: jest.fn<Promise<ReturnType<typeof benefitRow>[]>, [BenefitCriteria]>(() => Promise.resolve([])),
     create: jest.fn(() => {
         return { id: 'new-benefit' };
     }),
-    save: jest.fn(() => Promise.resolve()),
+    save: jest.fn<Promise<void>, [Record<string, unknown>]>(() => Promise.resolve()),
     delete: jest.fn(() => Promise.resolve()),
 };
 
@@ -65,12 +65,14 @@ async function createWrapper(privileges: string[] = ['loyalty.editor']): Promise
                     // `emits` keeps the parent listener from also running as a native click handler on the
                     // button, which would call onSave twice
                     emits: ['click'],
-                    template: '<button class="sw-membership-tier-detail__save" :disabled="disabled" @click="$emit(\'click\')" />',
+                    template:
+                        '<button class="sw-membership-tier-detail__save" :disabled="disabled" @click="$emit(\'click\')" />',
                 },
                 'mt-button': { template: '<button><slot></slot></button>' },
                 'mt-text-field': {
                     props: ['modelValue'],
-                    template: '<input class="mt-text-field" :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" />',
+                    template:
+                        '<input class="mt-text-field" :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" />',
                 },
                 'mt-number-field': {
                     props: ['modelValue'],
@@ -82,7 +84,8 @@ async function createWrapper(privileges: string[] = ['loyalty.editor']): Promise
                 },
                 'mt-switch': {
                     props: ['modelValue'],
-                    template: '<input class="mt-switch" type="checkbox" :checked="modelValue" @change="$emit(\'update:modelValue\', $event.target.checked)" />',
+                    template:
+                        '<input class="mt-switch" type="checkbox" :checked="modelValue" @change="$emit(\'update:modelValue\', $event.target.checked)" />',
                 },
                 'mt-textarea': { template: '<textarea class="mt-textarea" />' },
                 'sw-language-info': true,
@@ -203,7 +206,7 @@ describe('src/module/sw-settings-membership/page/sw-membership-tier-detail', () 
         await wrapper.find('.sw-membership-tier-detail__save').trigger('click');
         await flushPromises();
 
-        const entity = benefitRepository.save.mock.calls[0][0] as Record<string, unknown>;
+        const entity = benefitRepository.save.mock.calls[0][0];
 
         expect(entity).toMatchObject({
             loyaltyTierId: '1',

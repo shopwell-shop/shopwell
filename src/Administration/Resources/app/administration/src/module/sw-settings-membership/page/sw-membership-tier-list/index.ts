@@ -37,7 +37,7 @@ interface TierGrants {
 interface LoyaltyTierColumn {
     property: string;
     label: string;
-    inlineEdit: string;
+    inlineEdit?: string;
     routerLink?: string;
     primary?: boolean;
 }

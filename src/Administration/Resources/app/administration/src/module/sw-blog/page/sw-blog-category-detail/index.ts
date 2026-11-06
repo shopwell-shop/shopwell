@@ -2,7 +2,6 @@
  * @sw-package discovery
  */
 import { defineComponent } from 'vue';
-import type { PropType } from 'vue';
 import type CriteriaType from 'src/core/data/criteria.data';
 import type RepositoryType from 'src/core/data/repository.data';
 import template from './sw-blog-category-detail.html.twig';
@@ -23,7 +22,7 @@ type CmsPage = EntitySchema.Entity<'cms_page'>;
  * The layout belongs to the category and not to a global setting: two categories may want different
  * densities, and a shop wide switch would force one on the other.
  */
-// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+/** @private */
 export default defineComponent({
     template,
 
@@ -33,7 +32,7 @@ export default defineComponent({
 
     props: {
         categoryId: {
-            type: String as unknown as PropType<EntitySchema.EntityKey<'blog_category'>>,
+            type: String,
             required: true,
         },
     },
@@ -136,7 +135,11 @@ export default defineComponent({
 
             try {
                 const criteria = blogApi(this).categoryDetailCriteria(this.categoryId);
-                const category = await this.categoryRepository.get(this.categoryId, Shopwell.Context.api, criteria);
+                const category = await this.categoryRepository.get(
+                    this.categoryId as EntitySchema.BlogCategoryId,
+                    Shopwell.Context.api,
+                    criteria,
+                );
 
                 this.category = category ?? null;
 
@@ -287,7 +290,7 @@ export default defineComponent({
             this.showDeleteModal = false;
 
             void this.categoryRepository
-                .delete(this.categoryId)
+                .delete(this.categoryId as EntitySchema.BlogCategoryId)
                 .then(() => {
                     this.createNotificationSuccess({ message: this.$t('sw-blog.detail.messageDeleteSuccess') });
 

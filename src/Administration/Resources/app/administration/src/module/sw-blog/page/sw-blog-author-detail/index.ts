@@ -2,7 +2,6 @@
  * @sw-package discovery
  */
 import { defineComponent } from 'vue';
-import type { PropType } from 'vue';
 import type RepositoryType from 'src/core/data/repository.data';
 import template from './sw-blog-author-detail.html.twig';
 import './sw-blog-author-detail.scss';
@@ -22,7 +21,7 @@ type BlogAuthor = EntitySchema.Entity<'blog_author'>;
  * carries the association, but a typed entity would have to be widened for it, and the list needs
  * only three columns of the entry.
  */
-// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+/** @private */
 export default defineComponent({
     template,
 
@@ -32,7 +31,7 @@ export default defineComponent({
 
     props: {
         authorId: {
-            type: String as unknown as PropType<EntitySchema.EntityKey<'blog_author'>>,
+            type: String,
             required: true,
         },
     },
@@ -122,7 +121,11 @@ export default defineComponent({
 
             try {
                 const criteria = blogApi(this).authorDetailCriteria(this.authorId);
-                const author = await this.authorRepository.get(this.authorId, Shopwell.Context.api, criteria);
+                const author = await this.authorRepository.get(
+                    this.authorId as EntitySchema.BlogAuthorId,
+                    Shopwell.Context.api,
+                    criteria,
+                );
 
                 this.author = author ?? null;
 
@@ -214,7 +217,7 @@ export default defineComponent({
             this.showDeleteModal = false;
 
             void this.authorRepository
-                .delete(this.authorId)
+                .delete(this.authorId as EntitySchema.BlogAuthorId)
                 .then(() => {
                     this.createNotificationSuccess({ message: this.$t('sw-blog.detail.messageDeleteSuccess') });
 

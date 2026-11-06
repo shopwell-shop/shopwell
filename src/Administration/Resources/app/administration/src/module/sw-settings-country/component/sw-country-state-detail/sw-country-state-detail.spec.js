@@ -30,7 +30,9 @@ async function createWrapper(privileges = [], level = 'state', countryState = { 
 
                 stubs: {
                     'sw-modal': {
-                        template: '<div class="sw-modal"><slot></slot><slot name="modal-footer"></slot></div>',
+                        props: ['title'],
+                        template:
+                            '<div class="sw-modal"><h2>{{ title }}</h2><slot></slot><slot name="modal-footer"></slot></div>',
                     },
                     'sw-container': true,
                     'sw-empty-state': true,
@@ -89,41 +91,57 @@ describe('module/sw-settings-country/component/sw-country-state-detail', () => {
         expect(countryStatePositionField.attributes('disabled')).toBeDefined();
     });
 
-    it('edits the administrative division code on the city and district level', async () => {
-        const city = await createWrapper(['country.editor'], 'city');
+    it.each(['city', 'district'])('edits the administrative division code on the %s level', async (level) => {
+        const region = { code: '1301', shortCode: 'CN-13', isNew: () => false };
+        const wrapper = await createWrapper(['country.editor'], level, region);
+        await flushPromises();
 
-        expect(city.vm.codeProperty).toBe('code');
-        expect(city.vm.codeLabel).toBe('sw-country-state-detail.labelCode');
+        const codeField = wrapper.find('[aria-label="sw-country-state-detail.labelCode"]');
+        expect(codeField.element.value).toBe('1301');
+        expect(wrapper.find('[aria-label="sw-country-state-detail.labelShortCode"]').exists()).toBe(false);
+        await codeField.setValue('1302');
+        await wrapper.get('.sw-country-state-detail__save-button').trigger('click');
 
-        const district = await createWrapper(['country.editor'], 'district');
-
-        expect(district.vm.codeProperty).toBe('code');
-        expect(district.vm.codeLabel).toBe('sw-country-state-detail.labelCode');
+        expect(wrapper.emitted('attribute-edit-save')[0][0]).toEqual(
+            expect.objectContaining({
+                code: '1302',
+                shortCode: 'CN-13',
+            }),
+        );
     });
 
     it('edits the ISO short code on the state level', async () => {
-        const wrapper = await createWrapper(['country.editor'], 'state');
+        const region = { code: '1301', shortCode: 'CN-13', isNew: () => false };
+        const wrapper = await createWrapper(['country.editor'], 'state', region);
+        await flushPromises();
 
-        expect(wrapper.vm.codeProperty).toBe('shortCode');
-        expect(wrapper.vm.codeLabel).toBe('sw-country-state-detail.labelShortCode');
+        const codeField = wrapper.find('[aria-label="sw-country-state-detail.labelShortCode"]');
+        expect(codeField.element.value).toBe('CN-13');
+        expect(wrapper.find('[aria-label="sw-country-state-detail.labelCode"]').exists()).toBe(false);
+        await codeField.setValue('CN-14');
+        await wrapper.get('.sw-country-state-detail__save-button').trigger('click');
+        expect(wrapper.emitted('attribute-edit-save')[0][0]).toEqual(
+            expect.objectContaining({
+                code: '1301',
+                shortCode: 'CN-14',
+            }),
+        );
     });
 
     it('names the dialog after the level that is edited', async () => {
         const newCity = await createWrapper(['country.editor'], 'city', { isNew: () => true });
-
-        expect(newCity.vm.modalTitle).toBe('sw-country-state-detail.titleNewCity');
+        expect(newCity.get('h2').text()).toBe('sw-country-state-detail.titleNewCity');
 
         const existingDistrict = await createWrapper(['country.editor'], 'district', { isNew: () => false });
-
-        expect(existingDistrict.vm.modalTitle).toBe('sw-country-state-detail.titleEditDistrict');
+        expect(existingDistrict.get('h2').text()).toBe('sw-country-state-detail.titleEditDistrict');
     });
 
     it('emits the region on save and cancel', async () => {
         const countryState = { id: 'region-id', isNew: () => false };
         const wrapper = await createWrapper(['country.editor'], 'state', countryState);
-
-        wrapper.vm.onSave();
-        wrapper.vm.onCancel();
+        await wrapper.get('.sw-country-state-detail__save-button').trigger('click');
+        const cancel = wrapper.findAll('button').find((button) => button.text() === 'global.default.cancel');
+        await cancel.trigger('click');
 
         expect(wrapper.emitted('attribute-edit-save')).toEqual([[countryState]]);
         expect(wrapper.emitted('attribute-edit-cancel')).toEqual([[countryState]]);

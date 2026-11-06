@@ -15,28 +15,32 @@ import PaymentTransferApiService from './service/payment-transfer.api.service';
 
 const { Module } = Shopwell;
 
-/* eslint-disable sw-deprecation-rules/private-feature-declarations */
+/** @private */
 Shopwell.Component.register('sw-finance-transfer-list', () => import('./page/sw-finance-transfer-list'));
+/** @private */
 Shopwell.Component.register('sw-finance-transfer-detail', () => import('./page/sw-finance-transfer-detail'));
+/** @private */
 Shopwell.Component.register(
     'sw-finance-wallet-transactions-list',
     () => import('./page/sw-finance-wallet-transactions-list'),
 );
+/** @private */
 Shopwell.Component.register(
     'sw-finance-transfer-create-modal',
     () => import('./component/sw-finance-transfer-create-modal'),
 );
+/** @private */
 Shopwell.Component.register(
     'sw-finance-transfer-approve-modal',
     () => import('./component/sw-finance-transfer-approve-modal'),
 );
+/** @private */
 Shopwell.Component.register(
     'sw-finance-transfer-reject-modal',
     () => import('./component/sw-finance-transfer-reject-modal'),
 );
-/* eslint-enable sw-deprecation-rules/private-feature-declarations */
 
-// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+/** @private */
 Shopwell.Service().register('paymentTransferApiService', () => {
     return new PaymentTransferApiService(
         Shopwell.Application.getContainer('init').httpClient,
@@ -44,7 +48,7 @@ Shopwell.Service().register('paymentTransferApiService', () => {
     );
 });
 
-// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+/** @private */
 Module.register('sw-finance', {
     type: 'core',
     name: 'finance',

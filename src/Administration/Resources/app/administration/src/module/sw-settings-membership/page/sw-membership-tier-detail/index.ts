@@ -260,7 +260,9 @@ export default defineComponent({
 
                 this.loyaltyTier = loyaltyTier;
 
-                await this.loadBenefits(loyaltyTier.id);
+                if (loyaltyTier) {
+                    await this.loadBenefits(loyaltyTier.id);
+                }
             } finally {
                 this.isLoading = false;
             }

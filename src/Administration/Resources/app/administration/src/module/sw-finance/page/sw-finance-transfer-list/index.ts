@@ -63,7 +63,7 @@ function transferFilterFactory(vm: unknown): TransferFilterFactory {
  *  2. **Approving and rejecting are different privileges from viewing.** A reader never sees an action
  *     that would move money - hidden in the UI *and* refused by the acl of the endpoint.
  */
-// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+/** @private */
 export default defineComponent({
     template,
 
@@ -289,7 +289,7 @@ export default defineComponent({
         async getList(): Promise<void> {
             this.isLoading = true;
 
-            const filterService = Shopwell.Service('filterService') as unknown as {
+            const filterService = Shopwell.Service('filterService') as {
                 mergeWithStoredFilters: (storeKey: string, criteria: CriteriaType) => Promise<CriteriaType>;
             };
 
@@ -342,11 +342,11 @@ export default defineComponent({
         transferStateLabel(stateId: string): string {
             const state = [...(this.states ?? [])].find((entry) => entry.id === stateId) as StateMachineState | undefined;
 
-            return this.stateLabelOf(state?.technicalName, findPaymentStateLabel(this.states ?? [], stateId) as string);
+            return this.stateLabelOf(state?.technicalName, findPaymentStateLabel(this.states ?? [], stateId));
         },
 
         transferStateVariant(stateId: string): string {
-            return findPaymentStateVariant(this.states ?? [], stateId) as string;
+            return findPaymentStateVariant(this.states ?? [], stateId);
         },
 
         formatAmount(amount: number, currency: string): string {

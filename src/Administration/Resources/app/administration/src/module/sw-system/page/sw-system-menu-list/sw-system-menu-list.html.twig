@@ -101,6 +101,7 @@
 
             <template #content>
                 {% block sw_system_menu_list_tree %}
+                <sw-extension-component-section position-identifier="sw-system-menu-list-tree" />
                 <sw-system-menu-tree
                     v-if="hasTree"
                     :items="filteredTree"

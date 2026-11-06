@@ -52,6 +52,10 @@ export default Shopwell.Component.wrapComponentConfig({
     },
 
     computed: {
+        dateFilter(): (value: string, options?: Intl.DateTimeFormatOptions) => string {
+            return Shopwell.Filter.getByName('date') as (value: string, options?: Intl.DateTimeFormatOptions) => string;
+        },
+
         deliveryRepository(): RepositoryType<'sms_delivery'> {
             return this.repositoryFactory.create('sms_delivery');
         },

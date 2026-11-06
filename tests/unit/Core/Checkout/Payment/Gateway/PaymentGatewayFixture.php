@@ -463,7 +463,7 @@ final class PaymentGatewayFixture extends TestCase
         $order->paymentNo = 'PG-1';
         $order->outTradeNo = 'order-transaction-id';
         $order->paymentAppId = self::PLATFORM_APP_ID;
-        $attempt = PaymentControllerFixture::attempt($order->id, self::PLATFORM_APP_ID, self::PROVIDER, self::CHANNEL);
+        $attempt = PaymentControllerFixture::paymentAttempt($order->id, self::PLATFORM_APP_ID, self::PROVIDER, self::CHANNEL);
         $attempt->accountId = self::account()->id;
         $order->activeAttempt = $attempt;
         $order->activeAttemptId = $attempt->id;

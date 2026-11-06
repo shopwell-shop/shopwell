@@ -6,6 +6,10 @@ import {
     googleClient,
     keycloakChannel,
     officialAccountChannel,
+    selectChannel,
+    setField,
+    enableChannel,
+    save,
     setupPageHooks,
 } from './sw-settings-oauth2-login.fixtures';
 
@@ -15,84 +19,65 @@ describe('src/module/sw-settings-oauth2-login/page/sw-settings-oauth2-login', ()
     it('should flag an enabled channel without credentials in the tabs', async () => {
         const { wrapper } = await createWrapper();
 
-        expect(wrapper.vm.channelTabs).toEqual([
-            { label: 'sso.oauth2.channel.google', name: 'google', hasError: false },
-            { label: 'sso.oauth2.channel.wechat', name: 'wechat', hasError: false },
-        ]);
-
-        wrapper.vm.channels[1].enabled = true;
-
-        expect(wrapper.vm.channelTabs[1].hasError).toBe(true);
+        expect(wrapper.findAll('[data-error="false"]')).toHaveLength(2);
+        await selectChannel(wrapper, 'wechat');
+        await enableChannel(wrapper);
+        expect(wrapper.get('[data-channel="wechat"]').attributes('data-error')).toBe('true');
     });
 
     it('should flag an enabled channel whose own required field is empty', async () => {
         const { wrapper } = await createWrapper({ channels: [keycloakChannel] });
-        const [keycloak] = wrapper.vm.channels;
 
-        keycloak.enabled = true;
-        wrapper.vm.setFieldValue(keycloak, keycloak.formFields[0], 'keycloak-id');
-        wrapper.vm.setFieldValue(keycloak, keycloak.formFields[1], 'keycloak-secret');
-
-        expect(wrapper.vm.channelTabs[0].hasError).toBe(true);
-
-        wrapper.vm.setFieldValue(keycloak, keycloak.formFields[2], 'https://keycloak.test');
-
-        expect(wrapper.vm.channelTabs[0].hasError).toBe(false);
+        await enableChannel(wrapper);
+        await setField(wrapper, 'clientId', 'keycloak-id');
+        await setField(wrapper, 'clientSecret', 'keycloak-secret');
+        expect(wrapper.get('[data-channel="keycloak"]').attributes('data-error')).toBe('true');
+        await setField(wrapper, 'auth_server_url', 'https://keycloak.test');
+        expect(wrapper.get('[data-channel="keycloak"]').attributes('data-error')).toBe('false');
     });
 
     it('should warn and switch to the channel when an enabled channel has an empty required field', async () => {
         const { wrapper, repository } = await createWrapper();
-        const notification = jest.spyOn(wrapper.vm, 'createNotificationError');
+        const notification = jest.spyOn(Shopwell.Store.get('notification'), 'createNotification');
 
-        wrapper.vm.channels[1].enabled = true;
-
-        await wrapper.vm.onSave();
-
-        expect(notification).toHaveBeenCalled();
-        expect(wrapper.vm.activeChannel).toBe('wechat');
+        await selectChannel(wrapper, 'wechat');
+        await enableChannel(wrapper);
+        await selectChannel(wrapper, 'google');
+        await save(wrapper);
+        expect(notification).toHaveBeenCalledWith(expect.objectContaining({ variant: 'error' }));
+        expect(wrapper.getComponent({ name: 'mt-tabs' }).props('defaultItem')).toBe('wechat');
         expect(repository.save).not.toHaveBeenCalled();
+        notification.mockRestore();
     });
 
     it('should not store a channel that was never configured', async () => {
         const { wrapper, repository } = await createWrapper();
 
-        await wrapper.vm.onSave();
-
+        await save(wrapper);
         expect(repository.create).not.toHaveBeenCalled();
         expect(repository.save).not.toHaveBeenCalled();
     });
 
     it('should not store a channel whose fields are only on the defaults the server sends', async () => {
         const { wrapper, repository } = await createWrapper();
-        const [google] = wrapper.vm.channels;
 
-        // writing the default back is not a configuration
-        wrapper.vm.setFieldValue(google, google.formFields[0], '');
-
-        expect(wrapper.vm.isChannelConfigured(google)).toBe(false);
-
-        await wrapper.vm.onSave();
-
+        await setField(wrapper, 'clientId', '');
+        await save(wrapper);
         expect(repository.save).not.toHaveBeenCalled();
     });
 
     it('should update the configured channels and create the newly filled one', async () => {
         const { wrapper, repository } = await createWrapper({ clients: [googleClient] });
         const created = { technicalName: null };
-
         repository.create.mockReturnValue(created);
 
-        const wechat = wrapper.vm.channels[1];
-
-        wechat.enabled = true;
-        wrapper.vm.setFieldValue(wechat, wechat.formFields[0], 'wechat-id');
-        wrapper.vm.setFieldValue(wechat, wechat.formFields[1], 'wechat-secret');
-
-        await wrapper.vm.onSave();
-
+        await selectChannel(wrapper, 'wechat');
+        await enableChannel(wrapper);
+        await setField(wrapper, 'clientId', 'wechat-id');
+        await setField(wrapper, 'clientSecret', 'wechat-secret');
+        await save(wrapper);
         expect(repository.get).toHaveBeenCalledWith('client-google');
         expect(repository.save).toHaveBeenCalledTimes(2);
-
         expect(created).toEqual({
             technicalName: 'wechat',
             enabled: true,
@@ -104,43 +89,33 @@ describe('src/module/sw-settings-oauth2-login/page/sw-settings-oauth2-login', ()
     });
 
     it('should report a failed save and stop the spinner', async () => {
-        const notificationSpy = jest.spyOn(Shopwell.Store.get('notification'), 'createNotification');
+        const notification = jest.spyOn(Shopwell.Store.get('notification'), 'createNotification');
         const { wrapper, repository } = await createWrapper({ saveError: new Error('Could not save the channel') });
-        const [google] = wrapper.vm.channels;
 
-        google.enabled = true;
-        wrapper.vm.setFieldValue(google, google.formFields[0], 'google-id');
-        wrapper.vm.setFieldValue(google, google.formFields[1], 'google-secret');
-
-        await wrapper.vm.onSave();
-
+        await enableChannel(wrapper);
+        await setField(wrapper, 'clientId', 'google-id');
+        await setField(wrapper, 'clientSecret', 'google-secret');
+        await save(wrapper);
         expect(repository.save).toHaveBeenCalled();
-
-        expect(notificationSpy).toHaveBeenCalledWith({
+        expect(notification).toHaveBeenCalledWith({
             variant: 'error',
             title: 'global.default.error',
             message: 'Could not save the channel',
         });
-        expect(wrapper.vm.isSaving).toBe(false);
-
-        notificationSpy.mockRestore();
+        expect(wrapper.get('.sw-settings-oauth2-login__save-action').attributes('disabled')).toBeUndefined();
+        notification.mockRestore();
     });
 
     it('should store the fields of the channel that go into the settings column', async () => {
         const { wrapper, repository } = await createWrapper({ channels: [keycloakChannel] });
         const created = { technicalName: null };
-
         repository.create.mockReturnValue(created);
 
-        const keycloak = wrapper.vm.channels[0];
-
-        keycloak.enabled = true;
-        wrapper.vm.setFieldValue(keycloak, keycloak.formFields[0], 'keycloak-id');
-        wrapper.vm.setFieldValue(keycloak, keycloak.formFields[1], 'keycloak-secret');
-        wrapper.vm.setFieldValue(keycloak, keycloak.formFields[2], 'https://keycloak.test');
-
-        await wrapper.vm.onSave();
-
+        await enableChannel(wrapper);
+        await setField(wrapper, 'clientId', 'keycloak-id');
+        await setField(wrapper, 'clientSecret', 'keycloak-secret');
+        await setField(wrapper, 'auth_server_url', 'https://keycloak.test');
+        await save(wrapper);
         expect(created.settings).toEqual({ auth_server_url: 'https://keycloak.test' });
     });
 
@@ -160,8 +135,7 @@ describe('src/module/sw-settings-oauth2-login/page/sw-settings-oauth2-login', ()
             ],
         });
 
-        await wrapper.vm.onSave();
-
+        await save(wrapper);
         expect(repository.save).toHaveBeenCalledWith(
             expect.objectContaining({
                 settings: { auth_server_url: 'https://keycloak.test' },
@@ -169,21 +143,16 @@ describe('src/module/sw-settings-oauth2-login/page/sw-settings-oauth2-login', ()
         );
     });
 
-    it('should store the scopes the admin picked and clear them when none is picked', async () => {
+    it('should store the scopes the admin picked', async () => {
         const { wrapper, repository } = await createWrapper({ channels: [officialAccountChannel] });
         const created = { technicalName: null };
-
         repository.create.mockReturnValue(created);
 
-        const channel = wrapper.vm.channels[0];
-
-        channel.enabled = true;
-        wrapper.vm.setFieldValue(channel, channel.formFields[0], 'id');
-        wrapper.vm.setFieldValue(channel, channel.formFields[1], 'secret');
-        wrapper.vm.setFieldValue(channel, channel.formFields[2], ['snsapi_userinfo']);
-
-        await wrapper.vm.onSave();
-
+        await enableChannel(wrapper);
+        await setField(wrapper, 'clientId', 'id');
+        await setField(wrapper, 'clientSecret', 'secret');
+        await wrapper.get('.sw-settings-oauth2-login__field-scopes .choose-scope').trigger('click');
+        await save(wrapper);
         expect(created.scopes).toEqual(['snsapi_userinfo']);
     });
 });

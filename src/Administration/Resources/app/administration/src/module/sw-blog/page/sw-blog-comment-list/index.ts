@@ -40,11 +40,16 @@ type CommentRow = EntitySchema.Entity<'blog_comment'> & {
  * approving twenty comments one page at a time is a chore the selection solves in one click, and
  * `status` is a plain bool, so approving is a write of one column and needs no state machine.
  */
-// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+/** @private */
 export default defineComponent({
     template,
 
-    inject: ['repositoryFactory', 'acl', 'blogApiService', 'filterFactory'],
+    inject: [
+        'repositoryFactory',
+        'acl',
+        'blogApiService',
+        'filterFactory',
+    ],
 
     mixins: [Mixin.getByName('listing')],
 
@@ -171,7 +176,9 @@ export default defineComponent({
         },
 
         deleteMessage(): string {
-            return this.$t('sw-blog.comment.textDelete', { author: this.deleteTarget ? this.authorOf(this.deleteTarget) : '' });
+            return this.$t('sw-blog.comment.textDelete', {
+                author: this.deleteTarget ? this.authorOf(this.deleteTarget) : '',
+            });
         },
     },
 
@@ -200,7 +207,7 @@ export default defineComponent({
         async getList(): Promise<void> {
             this.isLoading = true;
 
-            const filterService = Shopwell.Service('filterService') as unknown as {
+            const filterService = Shopwell.Service('filterService') as {
                 mergeWithStoredFilters: (storeKey: string, criteria: CriteriaType) => Promise<CriteriaType>;
             };
 
@@ -249,7 +256,10 @@ export default defineComponent({
 
             this.customerNames = Object.fromEntries(
                 [...customers].map((customer) => {
-                    return [customer.id, [customer.firstName, customer.lastName].filter(Boolean).join(' ') || customer.email];
+                    return [
+                        customer.id,
+                        customer.name || customer.email,
+                    ];
                 }),
             );
         },

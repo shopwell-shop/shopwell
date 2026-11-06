@@ -77,6 +77,7 @@ async function createWrapper({ privileges = [], isNew = false, states = [], citi
                 renderStubDefaultSlot: true,
 
                 mocks: {
+                    $t: (key, params) => (params ? `${key} ${JSON.stringify(params)}` : key),
                     $route: {
                         params: { id: COUNTRY_ID },
                         meta: {
@@ -88,13 +89,18 @@ async function createWrapper({ privileges = [], isNew = false, states = [], citi
                 },
 
                 stubs: {
-                    'sw-simple-search-field': true,
+                    'sw-simple-search-field': {
+                        props: ['value', 'size'],
+                        emits: ['update:value'],
+                        template: '<input :value="value" @input="$emit(\'update:value\', $event.target.value)">',
+                    },
                     'sw-context-button': true,
                     'sw-context-menu-item': true,
-                    'sw-country-state-detail': {
-                        name: 'sw-country-state-detail',
-                        props: ['countryState', 'level'],
-                        template: '<div class="sw-country-state-detail-stub"></div>',
+                    'sw-country-state-detail': await wrapTestComponent('sw-country-state-detail', { sync: true }),
+                    'sw-container': true,
+                    'sw-modal': {
+                        props: ['title'],
+                        template: '<div class="sw-modal"><h2>{{ title }}</h2><slot /><slot name="modal-footer" /></div>',
                     },
                 },
 
@@ -162,7 +168,7 @@ describe('module/sw-settings-country/component/sw-settings-country-state', () =>
         await wrapper.find('.sw-settings-country-state__item').trigger('click');
         await flushPromises();
 
-        expect(wrapper.vm.selected.state).toBe(state.id);
+        expect(wrapper.findAll('.sw-settings-country-state__item')[0].classes()).toContain('is--selected');
         expect(wrapper.findAll('.sw-settings-country-state__item')).toHaveLength(2);
         expect(repositories.country_city.search).toHaveBeenCalled();
 
@@ -189,7 +195,9 @@ describe('module/sw-settings-country/component/sw-settings-country-state', () =>
         await wrapper.findAll('.sw-settings-country-state__item')[1].trigger('click');
         await flushPromises();
 
-        expect(wrapper.vm.selected.city).toBe(city.id);
+        expect(
+            wrapper.findAll('.sw-settings-country-state__column')[1].find('.sw-settings-country-state__item').classes(),
+        ).toContain('is--selected');
 
         const filter = findFilter(repositories.country_district, 'countryCityId');
 
@@ -210,9 +218,13 @@ describe('module/sw-settings-country/component/sw-settings-country-state', () =>
         });
 
         // jsdom reports a 1024px wide window, which is inside the stacked layout.
-        const querySelectorAll = jest.spyOn(document, 'querySelectorAll').mockReturnValue(columns);
+        const originalQuery = document.querySelectorAll.bind(document);
+        const querySelectorAll = jest.spyOn(document, 'querySelectorAll').mockImplementation((selector) => {
+            return selector === '.sw-settings-country-state__column' ? columns : originalQuery(selector);
+        });
 
-        wrapper.vm.scrollLevelIntoView('city');
+        await wrapper.get('.sw-settings-country-state__item').trigger('click');
+        await flushPromises();
 
         expect(scrollIntoView).toHaveBeenCalledTimes(1);
         expect(scrollIntoView).toHaveBeenCalledWith({ behavior: 'smooth', block: 'start' });
@@ -228,19 +240,19 @@ describe('module/sw-settings-country/component/sw-settings-country-state', () =>
             ],
         });
 
-        wrapper.vm.terms.state = '山';
+        await wrapper.findAll('.sw-settings-country-state__search input')[0].setValue('山');
         await flushPromises();
 
         expect(wrapper.findAll('.sw-settings-country-state__item')).toHaveLength(1);
         expect(wrapper.find('.sw-settings-country-state__item-name').text()).toBe('山西省');
 
-        wrapper.vm.terms.state = 'cn-13';
+        await wrapper.findAll('.sw-settings-country-state__search input')[0].setValue('cn-13');
         await flushPromises();
 
         expect(wrapper.findAll('.sw-settings-country-state__item')).toHaveLength(1);
         expect(wrapper.find('.sw-settings-country-state__item-name').text()).toBe('河北省');
 
-        wrapper.vm.terms.state = 'missing';
+        await wrapper.findAll('.sw-settings-country-state__search input')[0].setValue('missing');
         await flushPromises();
 
         expect(wrapper.findAll('.sw-settings-country-state__item')).toHaveLength(0);
@@ -251,29 +263,36 @@ describe('module/sw-settings-country/component/sw-settings-country-state', () =>
         const { wrapper } = await createWrapper({
             privileges: ['country.editor'],
             states: [createRegion()],
+            cities: [createRegion()],
         });
-
-        expect(wrapper.vm.isLevelDisabled('state')).toBe(false);
-        expect(wrapper.vm.isLevelDisabled('city')).toBe(true);
-        expect(wrapper.vm.isLevelDisabled('district')).toBe(true);
-
-        wrapper.vm.selected.state = wrapper.vm.regions.state[0].id;
-        wrapper.vm.selected.city = 'city-id';
-
-        expect(wrapper.vm.isLevelDisabled('city')).toBe(false);
-        expect(wrapper.vm.isLevelDisabled('district')).toBe(false);
+        const disabledLevels = () =>
+            wrapper.findAll('.sw-settings-country-state__add-button').map((button) => button.element.disabled);
+        expect(disabledLevels()).toEqual([false, true, true]);
+        await wrapper
+            .findAll('.sw-settings-country-state__column')[0]
+            .get('.sw-settings-country-state__item')
+            .trigger('click');
+        await flushPromises();
+        expect(disabledLevels()).toEqual([false, false, true]);
+        await wrapper
+            .findAll('.sw-settings-country-state__column')[1]
+            .get('.sw-settings-country-state__item')
+            .trigger('click');
+        await flushPromises();
+        expect(disabledLevels()).toEqual([false, false, false]);
     });
 
     it('disables every level without the country.editor privilege', async () => {
         const { wrapper } = await createWrapper({ states: [createRegion()] });
-
-        expect(wrapper.vm.isLevelDisabled('state')).toBe(true);
-        expect(wrapper.vm.isLevelDisabled('city')).toBe(true);
-        expect(wrapper.vm.isLevelDisabled('district')).toBe(true);
+        expect(wrapper.findAll('.sw-settings-country-state__add-button').map((button) => button.element.disabled)).toEqual([
+            true,
+            true,
+            true,
+        ]);
     });
 
     it('opens the editor for a new state with the country as parent', async () => {
-        const { wrapper } = await createWrapper({
+        const { wrapper, repositories } = await createWrapper({
             privileges: ['country.editor'],
             states: [createRegion()],
         });
@@ -281,10 +300,19 @@ describe('module/sw-settings-country/component/sw-settings-country-state', () =>
         await wrapper.find('.sw-settings-country-state__add-button').trigger('click');
         await flushPromises();
 
-        expect(wrapper.vm.currentRegion).not.toBeNull();
-        expect(wrapper.vm.currentRegionLevel).toBe('state');
-        expect(wrapper.vm.currentRegion.countryId).toBe(COUNTRY_ID);
-        expect(wrapper.vm.currentRegion.active).toBe(true);
+        expect(wrapper.get('.sw-country-state-detail h2').text()).toBe('sw-country-state-detail.titleNewState');
+        expect(wrapper.get('[name="sw-field--countryState-active"]').element.checked).toBe(true);
+        await wrapper.get('[aria-label="sw-country-state-detail.labelName"]').setValue('New province');
+        await wrapper.get('.sw-country-state-detail__save-button').trigger('click');
+        await flushPromises();
+        expect(repositories.country_state.save).toHaveBeenCalledWith(
+            expect.objectContaining({
+                countryId: COUNTRY_ID,
+                active: true,
+                name: 'New province',
+            }),
+            Shopwell.Context.api,
+        );
     });
 
     it('opens the editor for an existing state when its row is clicked twice', async () => {
@@ -300,8 +328,8 @@ describe('module/sw-settings-country/component/sw-settings-country-state', () =>
         await wrapper.find('.sw-settings-country-state__item').trigger('click');
         await flushPromises();
 
-        expect(wrapper.vm.currentRegion.id).toBe(state.id);
-        expect(wrapper.vm.currentRegionLevel).toBe('state');
+        expect(wrapper.get('.sw-country-state-detail h2').text()).toBe('sw-country-state-detail.titleEditState');
+        expect(wrapper.get('[aria-label="sw-country-state-detail.labelShortCode"]').element.value).toBe(state.shortCode);
     });
 
     it('does not open the editor without the country.editor privilege', async () => {
@@ -313,8 +341,8 @@ describe('module/sw-settings-country/component/sw-settings-country-state', () =>
         await flushPromises();
 
         // Browsing the tree stays possible, editing does not.
-        expect(wrapper.vm.currentRegion).toBeNull();
-        expect(wrapper.vm.selected.state).toBe(state.id);
+        expect(wrapper.find('.sw-country-state-detail').exists()).toBe(false);
+        expect(wrapper.findAll('.sw-settings-country-state__item')[0].classes()).toContain('is--selected');
     });
 
     it('saves a region through its own repository', async () => {
@@ -323,12 +351,16 @@ describe('module/sw-settings-country/component/sw-settings-country-state', () =>
             states: [createRegion({ translated: { name: '河北省' } })],
         });
 
-        const region = wrapper.vm.regions.state[0];
-        await wrapper.vm.onSaveRegion(region);
+        await wrapper.get('.sw-settings-country-state__edit-action').trigger('click');
         await flushPromises();
-
-        expect(repositories.country_state.save).toHaveBeenCalledWith(region, Shopwell.Context.api);
-        expect(wrapper.vm.currentRegion).toBeNull();
+        await wrapper.get('[aria-label="sw-country-state-detail.labelName"]').setValue('Updated province');
+        await wrapper.get('.sw-country-state-detail__save-button').trigger('click');
+        await flushPromises();
+        expect(repositories.country_state.save).toHaveBeenCalledWith(
+            expect.objectContaining({ name: 'Updated province' }),
+            Shopwell.Context.api,
+        );
+        expect(wrapper.find('.sw-country-state-detail').exists()).toBe(false);
     });
 
     it('counts the children before a state is deleted', async () => {
@@ -341,12 +373,13 @@ describe('module/sw-settings-country/component/sw-settings-country-state', () =>
             districts: [createRegion(), createRegion(), createRegion()],
         });
 
-        wrapper.vm.openDeleteModal('state', state);
+        await wrapper.get('.sw-settings-country-state__delete-action').trigger('click');
         await flushPromises();
 
-        expect(wrapper.vm.deleteTarget.level).toBe('state');
-        expect(wrapper.vm.childCounts.city).toBe(2);
-        expect(wrapper.vm.childCounts.district).toBe(3);
+        const message = wrapper.get('.sw-settings-country-state__delete-content').text();
+        expect(message).toContain('sw-settings-country.detail.region.textDeleteStateConfirm');
+        expect(message).toContain('"city":2');
+        expect(message).toContain('"district":3');
         expect(repositories.country_city.search).toHaveBeenCalled();
 
         const filter = findFilter(repositories.country_city, 'countryStateId');
@@ -363,14 +396,15 @@ describe('module/sw-settings-country/component/sw-settings-country-state', () =>
             states: [state],
         });
 
-        wrapper.vm.selected.state = state.id;
-        wrapper.vm.openDeleteModal('state', state);
+        await wrapper.get('.sw-settings-country-state__item').trigger('click');
         await flushPromises();
-        await wrapper.vm.onConfirmDelete();
+        await wrapper.get('.sw-settings-country-state__delete-action').trigger('click');
+        await flushPromises();
+        await wrapper.get('.sw-settings-country-state__confirm-delete-button').trigger('click');
         await flushPromises();
 
         expect(repositories.country_state.delete).toHaveBeenCalledWith(state.id, Shopwell.Context.api);
-        expect(wrapper.vm.selected.state).toBeNull();
-        expect(wrapper.vm.deleteTarget).toBeNull();
+        expect(wrapper.find('.sw-settings-country-state__item.is--selected').exists()).toBe(false);
+        expect(wrapper.find('.sw-settings-country-state__delete-content').exists()).toBe(false);
     });
 });

@@ -120,7 +120,8 @@ async function createWrapper(
                     'router-link': true,
                     'sw-search-bar': {
                         props: ['initialSearch'],
-                        template: '<input class="sw-search-bar" :value="initialSearch" @keyup.enter="$emit(\'search\', $event.target.value)" />',
+                        template:
+                            '<input class="sw-search-bar" :value="initialSearch" @keyup.enter="$emit(\'search\', $event.target.value)" />',
                     },
                     'sw-language-info': true,
                     'sw-language-switch': true,

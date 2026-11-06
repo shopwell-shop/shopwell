@@ -97,7 +97,8 @@ async function createWrapper(privileges: string[] = [], planId: string | null = 
                         // `emits` keeps the parent listener from also running as a native click handler on
                         // the button, which would call onSave twice
                         emits: ['click'],
-                        template: '<button class="sw-membership-plan-detail__save" :disabled="disabled" @click="$emit(\'click\')" />',
+                        template:
+                            '<button class="sw-membership-plan-detail__save" :disabled="disabled" @click="$emit(\'click\')" />',
                     },
                     'sw-entity-single-select': true,
                     'mt-text-field': {

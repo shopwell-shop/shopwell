@@ -3,7 +3,6 @@
 namespace Shopwell\Tests\Unit\Core\Framework;
 
 use Doctrine\DBAL\Connection;
-use Payum\Bundle\PayumBundle\PayumBundle;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\TestDox;
@@ -128,7 +127,7 @@ class FrameworkTest extends TestCase
 
         // buildDefaultConfig() loads Resources/config/packages/*, whose root
         // keys require the extensions of these bundles to be registered
-        foreach ([new FrameworkBundle(), new TwigBundle(), new MonologBundle(), new PayumBundle()] as $bundle) {
+        foreach ([new FrameworkBundle(), new TwigBundle(), new MonologBundle()] as $bundle) {
             $extension = $bundle->getContainerExtension();
             static::assertNotNull($extension);
             $container->registerExtension($extension);

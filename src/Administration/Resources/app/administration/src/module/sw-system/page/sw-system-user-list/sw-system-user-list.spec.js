@@ -126,7 +126,13 @@ async function createWrapper({ rows = [], roles = [], privileges = [], isSso = f
                                 </template>
                                 <slot name="pagination"></slot>
                             </div>`,
-                        props: ['dataSource', 'columns', 'repository', 'sortBy', 'isLoading'],
+                        props: [
+                            'dataSource',
+                            'columns',
+                            'repository',
+                            'sortBy',
+                            'isLoading',
+                        ],
                     },
                     'sw-pagination': true,
                     'sw-sidebar': true,
@@ -141,7 +147,12 @@ async function createWrapper({ rows = [], roles = [], privileges = [], isSso = f
                                     class="sw-sidebar-filter-panel-stub__filter"
                                 >{{ filter.name }}</span>
                             </div>`,
-                        props: ['filters', 'storeKey', 'defaults', 'activeFilterNumber'],
+                        props: [
+                            'filters',
+                            'storeKey',
+                            'defaults',
+                            'activeFilterNumber',
+                        ],
                     },
                     'sw-context-menu-item': {
                         template: '<div class="sw-context-menu-item-stub" :data-disabled="disabled"><slot /></div>',
@@ -244,7 +255,13 @@ describe('module/sw-system/page/sw-system-user-list', () => {
 
         const columns = userList.findComponent({ name: 'SwEntityListing' }).props('columns');
 
-        expect(columns.map((column) => column.property)).toEqual(['username', 'aclRoles', 'email', 'active', 'createdAt']);
+        expect(columns.map((column) => column.property)).toEqual([
+            'username',
+            'aclRoles',
+            'email',
+            'active',
+            'createdAt',
+        ]);
         expect(columns.find((column) => column.property === 'createdAt').label).toBe(
             'sw-system.users.user-grid.labelCreatedAt',
         );

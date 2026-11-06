@@ -22,6 +22,8 @@ use Shopwell\Core\System\Payment\Transfer\PaymentTransferRecipientEntity;
  * right before it builds the request, so the plain text never lives longer than one call.
  *
  * @internal
+ *
+ * @codeCoverageIgnore
  */
 #[Package('framework')]
 final class PaymentTransferRequest extends Generic

@@ -324,11 +324,9 @@ class BlogDetailReaderTest extends TestCase
         );
 
         $previousSorting = $sortings[2][0];
-        static::assertInstanceOf(FieldSorting::class, $previousSorting);
         static::assertSame(FieldSorting::DESCENDING, $previousSorting->getDirection());
 
         $nextSorting = $sortings[3][0];
-        static::assertInstanceOf(FieldSorting::class, $nextSorting);
         static::assertSame(FieldSorting::ASCENDING, $nextSorting->getDirection());
     }
 

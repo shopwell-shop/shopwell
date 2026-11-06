@@ -13,10 +13,18 @@ const { Module } = Shopwell;
 /* eslint-disable sw-deprecation-rules/private-feature-declarations -- see the comment above */
 Shopwell.Component.register('sw-membership-tier-list', () => import('./page/sw-membership-tier-list'));
 Shopwell.Component.register('sw-membership-tier-detail', () => import('./page/sw-membership-tier-detail'));
-Shopwell.Component.extend('sw-membership-tier-create', 'sw-membership-tier-detail', () => import('./page/sw-membership-tier-create'));
+Shopwell.Component.extend(
+    'sw-membership-tier-create',
+    'sw-membership-tier-detail',
+    () => import('./page/sw-membership-tier-create'),
+);
 Shopwell.Component.register('sw-membership-plan-list', () => import('./page/sw-membership-plan-list'));
 Shopwell.Component.register('sw-membership-plan-detail', () => import('./page/sw-membership-plan-detail'));
-Shopwell.Component.extend('sw-membership-plan-create', 'sw-membership-plan-detail', () => import('./page/sw-membership-plan-create'));
+Shopwell.Component.extend(
+    'sw-membership-plan-create',
+    'sw-membership-plan-detail',
+    () => import('./page/sw-membership-plan-create'),
+);
 /* eslint-enable sw-deprecation-rules/private-feature-declarations -- see the comment above */
 
 // A module is a registration, not an import: `manifest` is the public face of it.

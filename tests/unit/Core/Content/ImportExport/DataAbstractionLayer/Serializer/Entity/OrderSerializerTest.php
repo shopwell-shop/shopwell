@@ -381,7 +381,6 @@ class OrderSerializerTest extends TestCase
                 'name' => 'customer-first-name customer-last-name',
                 'remoteAddress' => null,
                 'gender' => 'customer-salutation-id',
-                'title' => null,
                 'vatIds' => null,
             ]),
             'orderNumber' => '10000',
@@ -515,7 +514,6 @@ class OrderSerializerTest extends TestCase
                     'name' => 'customer-first-name customer-last-name',
                     'remoteAddress' => null,
                     'gender' => 'customer-salutation-id',
-                    'title' => null,
                     'vatIds' => null,
                 ]),
                 'transactions' => null,
@@ -549,6 +547,7 @@ class OrderSerializerTest extends TestCase
                 'loyaltyPointTransactions' => null,
                 'customerWalletTransactions' => null,
                 'paymentOrders' => null,
+                'pointLots' => null,
             ]
         );
     }

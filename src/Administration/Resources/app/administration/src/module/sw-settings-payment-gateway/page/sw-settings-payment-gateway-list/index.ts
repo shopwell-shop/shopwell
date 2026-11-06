@@ -1,6 +1,7 @@
 /**
  * @sw-package framework
  */
+import type { PaymentAppView } from 'src/app/service/payment-gateway.types';
 import template from './sw-settings-payment-gateway-list.html.twig';
 import './sw-settings-payment-gateway-list.scss';
 
@@ -14,7 +15,7 @@ const { Mixin } = Shopwell;
 const PLATFORM_TYPE = 'platform';
 
 /** @private */
-export default {
+export default Shopwell.Component.wrapComponentConfig({
     template,
 
     inject: ['paymentGatewayService', 'acl'],
@@ -27,7 +28,13 @@ export default {
         };
     },
 
-    data() {
+    data(): {
+        apps: PaymentAppView[];
+        term: string;
+        isLoading: boolean;
+        isDeleting: boolean;
+        deleteTarget: PaymentAppView | null;
+    } {
         return {
             apps: [],
             term: '',
@@ -96,7 +103,7 @@ export default {
     },
 
     created() {
-        this.createdComponent();
+        void this.createdComponent();
     },
 
     methods: {
@@ -112,14 +119,14 @@ export default {
             } catch (error) {
                 this.createNotificationError({
                     title: this.$t('global.default.error'),
-                    message: error.message,
+                    message: error instanceof Error ? error.message : this.$t('global.default.error'),
                 });
             } finally {
                 this.isLoading = false;
             }
         },
 
-        onSearch(term) {
+        onSearch(term: string) {
             this.term = term;
         },
 
@@ -128,7 +135,7 @@ export default {
          * The server refuses both as well, so hiding them is what keeps the page honest instead of
          * letting an operator run into a refusal.
          */
-        isPlatformApp(app) {
+        isPlatformApp(app: PaymentAppView | null) {
             return app?.type === PLATFORM_TYPE;
         },
 
@@ -136,7 +143,7 @@ export default {
          * An app may be authorized for an interface without offering it, only the switched on ones
          * are the interfaces the app can really collect through.
          */
-        enabledProviderCount(app) {
+        enabledProviderCount(app: PaymentAppView | null) {
             return (app?.accounts ?? []).filter((provider) => provider.enabled).length;
         },
 
@@ -144,7 +151,7 @@ export default {
          * The channels the app offers to its own users - a channel that is not switched on cannot be
          * chosen when a payment is started.
          */
-        enabledChannelCount(app) {
+        enabledChannelCount(app: PaymentAppView | null) {
             return (app?.channels ?? []).filter((channel) => channel.enabled).length;
         },
 
@@ -152,7 +159,7 @@ export default {
             void this.$router.push({ name: 'sw.settings.payment.gateway.detail', params: { id: 'new' } });
         },
 
-        onOpenDeleteModal(app) {
+        onOpenDeleteModal(app: PaymentAppView) {
             // the action is not rendered for the platform row, but a row is also reachable through
             // other entry points - the guard is what makes "read only" hold for all of them
             if (this.isPlatformApp(app)) {
@@ -166,14 +173,14 @@ export default {
             this.deleteTarget = null;
         },
 
-        onDeleteModalChange(isOpen) {
+        onDeleteModalChange(isOpen: boolean) {
             if (!isOpen) {
                 this.onCloseDeleteModal();
             }
         },
 
         async onConfirmDelete() {
-            if (!this.deleteTarget) {
+            if (!this.deleteTarget?.id) {
                 this.onCloseDeleteModal();
 
                 return;
@@ -195,11 +202,11 @@ export default {
             } catch (error) {
                 this.createNotificationError({
                     title: this.$t('global.default.error'),
-                    message: error.message,
+                    message: error instanceof Error ? error.message : this.$t('global.default.error'),
                 });
             } finally {
                 this.isDeleting = false;
             }
         },
     },
-};
+});

@@ -91,10 +91,7 @@ export default {
 
             return [
                 createRouteTab('sw-system.roles.tabs.general', 'sw.system.role.detail.general'),
-                createRouteTab(
-                    'sw-system.roles.tabs.detailed',
-                    'sw.system.role.detail.detailed-privileges',
-                ),
+                createRouteTab('sw-system.roles.tabs.detailed', 'sw.system.role.detail.detailed-privileges'),
             ];
         },
 

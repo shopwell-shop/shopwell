@@ -5,6 +5,7 @@ import { defineComponent } from 'vue';
 import type CriteriaType from 'src/core/data/criteria.data';
 import type RepositoryType from 'src/core/data/repository.data';
 import { systemKey } from '../../service/device.helper';
+import { shortcutAllowsSave } from '../../service/shortcut.helper';
 
 import template from './sw-membership-plan-detail.html.twig';
 import './sw-membership-plan-detail.scss';
@@ -43,10 +44,8 @@ export default defineComponent({
 
     shortcuts: {
         'SYSTEMKEY+S': {
-            // the shortcut registry calls this without typing `this`, so the computed it reads is
-            // reached through an explicit shape instead of being inferred
             active(): boolean {
-                return (this as { allowSave: boolean }).allowSave;
+                return shortcutAllowsSave(this);
             },
             method: 'onSave',
         },

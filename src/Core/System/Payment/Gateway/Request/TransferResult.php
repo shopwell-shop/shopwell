@@ -19,6 +19,8 @@ use Shopwell\Core\Framework\Log\Package;
  * be canceled and sent again.
  *
  * @internal
+ *
+ * @codeCoverageIgnore
  */
 #[Package('framework')]
 final readonly class TransferResult

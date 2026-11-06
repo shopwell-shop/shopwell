@@ -1,6 +1,7 @@
 /**
  * @sw-package fundamentals@framework
  */
+import type { OAuth2IdentityBinding } from '../../service/oauth2-identity.api.service';
 import template from './sw-profile-index-oauth2-login.html.twig';
 
 const { Component, Mixin } = Shopwell;
@@ -21,7 +22,12 @@ export default Component.wrapComponentConfig({
 
     mixins: [Mixin.getByName('notification')],
 
-    data() {
+    data(): {
+        bindings: OAuth2IdentityBinding[];
+        isLoading: boolean;
+        isUnbinding: boolean;
+        removeTarget: OAuth2IdentityBinding | null;
+    } {
         return {
             bindings: [],
             isLoading: true,
@@ -54,13 +60,13 @@ export default Component.wrapComponentConfig({
          * The label of a channel comes from the snippet the platform named, a channel without one
          * falls back to its technical name.
          */
-        channelLabel(binding) {
+        channelLabel(binding: OAuth2IdentityBinding) {
             return binding.labelSnippet && this.$te(binding.labelSnippet)
                 ? this.$t(binding.labelSnippet)
                 : binding.technicalName;
         },
 
-        onOpenRemoveModal(binding) {
+        onOpenRemoveModal(binding: OAuth2IdentityBinding) {
             this.removeTarget = binding;
         },
 
@@ -68,7 +74,7 @@ export default Component.wrapComponentConfig({
             this.removeTarget = null;
         },
 
-        onRemoveModalChange(isOpen) {
+        onRemoveModalChange(isOpen: boolean) {
             if (!isOpen) {
                 this.onCloseRemoveModal();
             }

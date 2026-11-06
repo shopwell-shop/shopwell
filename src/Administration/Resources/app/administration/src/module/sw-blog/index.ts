@@ -43,24 +43,35 @@ declare global {
 
 const { Module } = Shopwell;
 
-/* eslint-disable sw-deprecation-rules/private-feature-declarations */
+/** @private */
 Shopwell.Component.register('sw-blog-list', () => import('./page/sw-blog-list'));
+/** @private */
 Shopwell.Component.register('sw-blog-detail', () => import('./page/sw-blog-detail'));
+/** @private */
 Shopwell.Component.register('sw-blog-category-list', () => import('./page/sw-blog-category-list'));
+/** @private */
 Shopwell.Component.register('sw-blog-category-detail', () => import('./page/sw-blog-category-detail'));
+/** @private */
 Shopwell.Component.register('sw-blog-author-list', () => import('./page/sw-blog-author-list'));
+/** @private */
 Shopwell.Component.register('sw-blog-author-detail', () => import('./page/sw-blog-author-detail'));
+/** @private */
 Shopwell.Component.register('sw-blog-comment-list', () => import('./page/sw-blog-comment-list'));
+/** @private */
 Shopwell.Component.register('sw-blog-comment-detail', () => import('./page/sw-blog-comment-detail'));
 
+/** @private */
 Shopwell.Component.register('sw-blog-status-badge', () => import('./component/sw-blog-status-badge'));
+/** @private */
 Shopwell.Component.register('sw-blog-detail-content', () => import('./component/sw-blog-detail-content'));
+/** @private */
 Shopwell.Component.register('sw-blog-detail-content-post', () => import('./component/sw-blog-detail-content-post'));
+/** @private */
 Shopwell.Component.register('sw-blog-detail-content-video', () => import('./component/sw-blog-detail-content-video'));
+/** @private */
 Shopwell.Component.register('sw-blog-detail-content-unknown', () => import('./component/sw-blog-detail-content-unknown'));
-/* eslint-enable sw-deprecation-rules/private-feature-declarations */
 
-// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+/** @private */
 Shopwell.Service().register('blogApiService', () => {
     return new BlogApiService();
 });
@@ -74,7 +85,7 @@ Shopwell.Service().register('blogApiService', () => {
 registerBlogType('post', () => import('./component/sw-blog-detail-content-post'));
 registerBlogType('video', () => import('./component/sw-blog-detail-content-video'));
 
-// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+/** @private */
 Module.register('sw-blog', {
     type: 'core',
     name: 'blog',

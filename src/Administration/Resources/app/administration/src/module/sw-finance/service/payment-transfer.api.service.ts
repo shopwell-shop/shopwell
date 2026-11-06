@@ -221,26 +221,6 @@ export function fromMinorUnits(minorUnits: number | null | undefined, currency =
 }
 
 /**
- * The CNY-only form of {@see toMinorUnits()}, kept for the callers that convert yuan.
- *
- * @deprecated use toMinorUnits() with the currency of the payout - the exponent is not always two
- * @private
- */
-export function yuanToMinorUnits(value: string | number | null | undefined): number | null {
-    return toMinorUnits(value, 'CNY');
-}
-
-/**
- * The CNY-only form of {@see fromMinorUnits()}.
- *
- * @deprecated use fromMinorUnits() with the currency of the payout
- * @private
- */
-export function minorUnitsToYuan(minorUnits: number | null | undefined): string {
-    return fromMinorUnits(minorUnits, 'CNY');
-}
-
-/**
  * A transfer as the endpoints present it - and **not** the entity.
  *
  * The presenter assembles the answer, so the relations of the row are flattened into `state`, `recipient`
@@ -376,7 +356,7 @@ type CancelResponse = {
  * of the transfer row, so a request can not name a different one), and a rejection always carries the
  * reason that ends up in the audit trail.
  */
-// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
+/** @private */
 export default class PaymentTransferApiService {
     public readonly name = 'paymentTransferApiService';
 

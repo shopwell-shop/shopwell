@@ -8,12 +8,12 @@ const { Module } = Shopwell;
 /** @private */
 Shopwell.Component.register('sw-payment-cashier-profiles', () => import('./component/sw-payment-cashier-profiles'));
 
-/* eslint-disable sw-deprecation-rules/private-feature-declarations -- Existing module registrations retain their extension names. */
+/** @private */
 Shopwell.Component.register('sw-settings-payment-gateway-list', () => import('./page/sw-settings-payment-gateway-list'));
+/** @private */
 Shopwell.Component.register('sw-settings-payment-gateway-detail', () => import('./page/sw-settings-payment-gateway-detail'));
-/* eslint-enable sw-deprecation-rules/private-feature-declarations */
 
-// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations -- Existing module registration remains compatible.
+/** @private */
 Module.register('sw-settings-payment-gateway', {
     type: 'core',
     name: 'settings-payment-gateway',
@@ -44,7 +44,7 @@ Module.register('sw-settings-payment-gateway', {
                 privilege: 'payment_app.viewer',
             },
             props: {
-                default(route) {
+                default(route: { params: { id: string; section?: string } }) {
                     return { appId: route.params.id, section: route.params.section || 'collection' };
                 },
             },

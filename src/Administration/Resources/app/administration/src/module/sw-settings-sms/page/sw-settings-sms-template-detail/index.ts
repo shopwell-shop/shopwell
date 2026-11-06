@@ -55,7 +55,7 @@ export default Shopwell.Component.wrapComponentConfig({
     props: {
         templateId: {
             // the route hands the id over, so the type of the key is already known here
-            type: String as unknown as PropType<EntityKey<'sms_template'> | null>,
+            type: String,
             required: false,
             default: null,
         },
