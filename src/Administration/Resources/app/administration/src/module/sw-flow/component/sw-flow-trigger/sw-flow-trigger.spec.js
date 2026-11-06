@@ -77,7 +77,7 @@ const mockTranslations = {
 };
 
 const pinia = createPinia();
-async function createWrapper(propsData) {
+async function createWrapper(propsData, translations = mockTranslations) {
     return mount(
         await wrapTestComponent('sw-flow-trigger', {
             sync: true,
@@ -91,11 +91,11 @@ async function createWrapper(propsData) {
                 plugins: [pinia],
                 mocks: {
                     $t(translationKey) {
-                        return mockTranslations[translationKey] ? mockTranslations[translationKey] : translationKey;
+                        return translations[translationKey] ? translations[translationKey] : translationKey;
                     },
 
                     $te(translationKey) {
-                        return !!mockTranslations[translationKey];
+                        return !!translations[translationKey];
                     },
                 },
                 provide: {
@@ -512,6 +512,64 @@ describe('src/module/sw-flow/component/sw-flow-trigger', () => {
         result = wrapper.find('sw-highlight-text-stub');
         expect(result.attributes().text).toBe('Checkout / Customer / Deleted');
     });
+
+    it.each(['已下单', '订单_已下单'])('should filter localized Chinese trigger names for %s', async (term) => {
+        const events = [
+            { name: 'checkout.customer.before.login' },
+            { name: 'checkout.order.placed' },
+            { name: 'checkout.order.cancelled' },
+        ];
+        const wrapper = await createWrapper(
+            {},
+            {
+                ...mockTranslations,
+                'sw-flow.triggers.checkout': '结账',
+                'sw-flow.triggers.customer': '客户',
+                'sw-flow.triggers.before': '之前',
+                'sw-flow.triggers.login': '登录',
+                'sw-flow.triggers.order': '订单',
+                'sw-flow.triggers.placed': '已下单',
+                'sw-flow.triggers.cancelled': '已取消',
+            },
+        );
+        await flushPromises();
+        Shopwell.Store.get('swFlow').triggerEvents = events;
+        await flushPromises();
+        const searchField = wrapper.find('.sw-flow-trigger__input-field');
+        await searchField.trigger('focus');
+        await searchField.setValue(term);
+        await flushPromises();
+
+        const results = wrapper.findAll('.sw-flow-trigger__search-result');
+        expect(results).toHaveLength(1);
+        expect(results[0].find('sw-highlight-text-stub').attributes().text).toBe('结账 / 订单 / 已下单');
+        await results[0].trigger('click');
+        expect(wrapper.emitted('option-select')[0]).toEqual(['checkout.order.placed']);
+    });
+
+    it.each(['CHECKOUT_order42', 'checkout order42', 'order42'])(
+        'should preserve Latin and numeric search tokens for %s',
+        async (term) => {
+            const events = [
+                { name: 'checkout.order42.placed' },
+                { name: 'checkout.order43.placed' },
+            ];
+            const wrapper = await createWrapper();
+            await flushPromises();
+            Shopwell.Store.get('swFlow').triggerEvents = events;
+            await flushPromises();
+            const searchField = wrapper.find('.sw-flow-trigger__input-field');
+            await searchField.trigger('focus');
+            await searchField.setValue(term);
+            await flushPromises();
+
+            const results = wrapper.findAll('.sw-flow-trigger__search-result');
+            expect(results).toHaveLength(1);
+            expect(results[0].find('sw-highlight-text-stub').attributes().text).toBe('Checkout / order42 / placed');
+            await results[0].trigger('click');
+            expect(wrapper.emitted('option-select')[0]).toEqual(['checkout.order42.placed']);
+        },
+    );
 
     it('should emit an event when clicking on search item', async () => {
         const wrapper = await createWrapper();

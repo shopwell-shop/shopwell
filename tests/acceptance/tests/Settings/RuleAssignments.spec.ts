@@ -3,19 +3,27 @@ import { test } from '@fixtures/AcceptanceTest';
 test(
     'As an admin user, I want to have an overview of my assigned rules, so that I can easily see where they are used',
     { tag: '@Rule' },
-    async ({ TestDataService, ShopAdmin, AdminRuleDetail, AdminShippingDetail }) => {
+    async ({ Translate, TestDataService, ShopAdmin, AdminRuleDetail, AdminShippingDetail }) => {
         const rule = await TestDataService.createBasicRule();
         const shippingMethod = await TestDataService.createBasicShippingMethod({ availabilityRuleId: rule.id });
 
         await ShopAdmin.goesTo(AdminRuleDetail.url(rule.id, 'assignments'));
         await ShopAdmin.expects(AdminRuleDetail.shippingMethodAvailabilityRulesCardTable).toContainText(shippingMethod.name);
         await ShopAdmin.expects(AdminRuleDetail.paymentMethodsAvailabilityRulesCardEmptyState).toHaveText(
-            'This rule is not in use',
+            Translate('administration:rule:text.ruleNotInUse'),
         );
-        await ShopAdmin.expects(AdminRuleDetail.taxProviderRulesCardEmptyState).toHaveText('This rule is not in use');
-        await ShopAdmin.expects(AdminRuleDetail.promotionOrderRulesCardEmptyState).toHaveText('This rule is not in use');
-        await ShopAdmin.expects(AdminRuleDetail.promotionCustomerRulesCardEmptyState).toHaveText('This rule is not in use');
-        await ShopAdmin.expects(AdminRuleDetail.promotionCartRulesCardEmptyState).toHaveText('This rule is not in use');
+        await ShopAdmin.expects(AdminRuleDetail.taxProviderRulesCardEmptyState).toHaveText(
+            Translate('administration:rule:text.ruleNotInUse'),
+        );
+        await ShopAdmin.expects(AdminRuleDetail.promotionOrderRulesCardEmptyState).toHaveText(
+            Translate('administration:rule:text.ruleNotInUse'),
+        );
+        await ShopAdmin.expects(AdminRuleDetail.promotionCustomerRulesCardEmptyState).toHaveText(
+            Translate('administration:rule:text.ruleNotInUse'),
+        );
+        await ShopAdmin.expects(AdminRuleDetail.promotionCartRulesCardEmptyState).toHaveText(
+            Translate('administration:rule:text.ruleNotInUse'),
+        );
         await AdminRuleDetail.shippingMethodAvailabilityRulesCardLink.getByText(shippingMethod.name).click();
         await AdminShippingDetail.page.waitForLoadState('domcontentloaded');
         await ShopAdmin.expects(AdminShippingDetail.header).toHaveText(shippingMethod.name);

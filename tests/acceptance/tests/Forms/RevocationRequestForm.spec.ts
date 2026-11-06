@@ -10,6 +10,7 @@ test(
         ],
     },
     async ({
+        Translate,
         AddProductToCart,
         ShopCustomer,
         StorefrontCheckoutRegister,
@@ -17,7 +18,7 @@ test(
         StorefrontProductDetail,
         TestDataService,
     }) => {
-        const revocationButtonName = /Revoke a contract|Vertrag widerrufen/i;
+        const revocationButtonName = Translate('storefront:contact:revocation.button');
         const revocationFormButton = () => {
             return StorefrontHome.page.getByRole('link', { name: revocationButtonName });
         };
@@ -28,7 +29,8 @@ test(
         };
         const revocationForm = () => StorefrontHome.page.locator('#cms-form-online-revocation-request');
         const revocationPrivacyNotice = () => revocationForm().locator('.data-protection-information');
-        const revocationPrivacyNoticeLink = () => revocationPrivacyNotice().getByRole('button', { name: /here|hier/i });
+        const revocationPrivacyNoticeLink = () =>
+            revocationPrivacyNotice().getByRole('button', { name: Translate('storefront:contact:revocation.privacyLink') });
 
         const openStorefrontHome = async () => {
             await ShopCustomer.goesTo(`${StorefrontHome.url()}?a=${Date.now()}`);
@@ -75,7 +77,9 @@ test(
 
                 await expect(revocationForm()).toBeVisible();
                 await expect(revocationForm().locator('input[name="acceptedDataProtection"]')).toHaveCount(0);
-                await expect(revocationPrivacyNotice()).toContainText(/Privacy Notice|Datenschutzhinweise/i);
+                await expect(revocationPrivacyNotice()).toContainText(
+                    Translate('storefront:contact:revocation.privacyNotice'),
+                );
                 await expect(revocationPrivacyNoticeLink()).toBeVisible();
             }).toPass({
                 intervals: [

@@ -54,13 +54,7 @@ test.describe('Google reCAPTCHA V3 UI', () => {
                 '@Storefront',
             ],
         },
-        async ({
-            ShopCustomer,
-            StorefrontHome,
-            StorefrontContactForm,
-            StorefrontFooter,
-            acceptTechnicalRequiredCookies,
-        }) => {
+        async ({ ShopCustomer, StorefrontHome, StorefrontContactForm, Translate, acceptTechnicalRequiredCookies }) => {
             await test.step('Open the contact form modal on home page', async () => {
                 await ShopCustomer.goesTo(StorefrontHome.url());
 
@@ -68,8 +62,10 @@ test.describe('Google reCAPTCHA V3 UI', () => {
 
                 await acceptTechnicalRequiredCookies();
 
-                await ShopCustomer.presses(StorefrontFooter.footerContactFormLink);
-                await ShopCustomer.expects(StorefrontContactForm.cardTitle).toContainText('Contact');
+                await ShopCustomer.presses(StorefrontHome.contactFormLink);
+                await ShopCustomer.expects(StorefrontContactForm.cardTitle).toContainText(
+                    Translate('storefront:contact:title'),
+                );
             });
 
             await waitForRecaptchaScriptLoaded(StorefrontContactForm.page);

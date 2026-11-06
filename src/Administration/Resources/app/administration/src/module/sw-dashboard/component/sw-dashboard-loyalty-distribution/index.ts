@@ -59,6 +59,11 @@ export default Shopwell.Component.wrapComponentConfig({
 
         chartOptions(): Record<string, unknown> {
             return {
+                chart: {
+                    zoom: {
+                        enabled: false,
+                    },
+                },
                 plotOptions: {
                     bar: {
                         horizontal: true,

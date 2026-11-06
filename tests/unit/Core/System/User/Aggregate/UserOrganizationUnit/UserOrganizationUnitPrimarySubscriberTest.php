@@ -35,56 +35,90 @@ class UserOrganizationUnitPrimarySubscriberTest extends TestCase
     public function testANewPrimaryDemotesEveryOtherMappingOfTheUser(): void
     {
         $userId = Uuid::randomHex();
-        $unitId = Uuid::randomHex();
+        $mappingId = Uuid::randomHex();
 
         $connection = $this->createMock(Connection::class);
         $connection->expects($this->once())
+            ->method('fetchOne')
+            ->with(
+                'SELECT `user_id` FROM `user_organization_unit` WHERE `id` = :id',
+                ['id' => Uuid::fromHexToBytes($mappingId)]
+            )
+            ->willReturn(Uuid::fromHexToBytes($userId));
+        $connection->expects($this->once())
             ->method('executeStatement')
             ->with(
-                static::stringContains('SET `is_primary` = 0'),
+                static::logicalAnd(
+                    static::stringContains('SET `is_primary` = 0'),
+                    static::stringContains('WHERE `user_id` = :userId'),
+                    static::stringContains('AND `id` != :id')
+                ),
                 [
                     'userId' => Uuid::fromHexToBytes($userId),
-                    'organizationUnitId' => Uuid::fromHexToBytes($unitId),
+                    'id' => Uuid::fromHexToBytes($mappingId),
                 ]
             );
 
         $subscriber = new UserOrganizationUnitPrimarySubscriber($connection);
         $subscriber->enforceSinglePrimary($this->event([
-            ['userId' => $userId, 'organizationUnitId' => $unitId, 'isPrimary' => true],
+            ['id' => $mappingId, 'isPrimary' => true],
         ]));
     }
 
     public function testANonPrimaryMappingDoesNotTouchTheOtherRows(): void
     {
         $connection = $this->createMock(Connection::class);
+        $connection->expects($this->never())->method('fetchOne');
         $connection->expects($this->never())->method('executeStatement');
 
         $subscriber = new UserOrganizationUnitPrimarySubscriber($connection);
         $subscriber->enforceSinglePrimary($this->event([
-            ['userId' => Uuid::randomHex(), 'organizationUnitId' => Uuid::randomHex(), 'isPrimary' => false],
+            ['id' => Uuid::randomHex(), 'isPrimary' => false],
         ]));
     }
 
     public function testATruthyButNotStrictlyBooleanFlagIsNotTreatedAsPrimary(): void
     {
         $connection = $this->createMock(Connection::class);
+        $connection->expects($this->never())->method('fetchOne');
         $connection->expects($this->never())->method('executeStatement');
 
         $subscriber = new UserOrganizationUnitPrimarySubscriber($connection);
         $subscriber->enforceSinglePrimary($this->event([
-            ['userId' => Uuid::randomHex(), 'organizationUnitId' => Uuid::randomHex(), 'isPrimary' => 1],
+            ['id' => Uuid::randomHex(), 'isPrimary' => 1],
         ]));
     }
 
-    public function testAMappingWithoutBothKeysIsSkippedInsteadOfDemotingTheWrongUser(): void
+    public function testAMappingWithoutAnIdIsSkippedInsteadOfDemotingTheWrongUser(): void
     {
         $connection = $this->createMock(Connection::class);
+        $connection->expects($this->never())->method('fetchOne');
         $connection->expects($this->never())->method('executeStatement');
 
         $subscriber = new UserOrganizationUnitPrimarySubscriber($connection);
         $subscriber->enforceSinglePrimary($this->event([
             ['userId' => Uuid::randomHex(), 'isPrimary' => true],
             ['organizationUnitId' => Uuid::randomHex(), 'isPrimary' => true],
+        ]));
+    }
+
+    public function testAMappingWithoutAStoredUserDoesNotTouchTheOtherRows(): void
+    {
+        $mappingId = Uuid::randomHex();
+
+        $connection = $this->createMock(Connection::class);
+        $connection->expects($this->once())
+            ->method('fetchOne')
+            ->with(
+                'SELECT `user_id` FROM `user_organization_unit` WHERE `id` = :id',
+                ['id' => Uuid::fromHexToBytes($mappingId)]
+            )
+            ->willReturn(false);
+        $connection->expects($this->never())->method('executeStatement');
+
+        $subscriber = new UserOrganizationUnitPrimarySubscriber($connection);
+        $subscriber->enforceSinglePrimary($this->event([
+            ['id' => $mappingId, 'isPrimary' => true],
         ]));
     }
 

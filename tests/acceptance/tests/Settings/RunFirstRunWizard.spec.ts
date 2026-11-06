@@ -8,6 +8,7 @@ test(
     { tag: '@FirstRunWizard' },
     async ({
         page,
+        Translate,
         FRWSalesChannelSelectionPossibility,
         SelectExtensionCategory,
         ShopAdmin,
@@ -26,11 +27,11 @@ test(
                     items: [
                         {
                             name: 'dach',
-                            label: 'Germany / Austria / Switzerland',
+                            label: Translate('administration:firstRunWizard:regions.germanRegion'),
                             categories: [
                                 {
                                     name: 'tools',
-                                    label: 'Tools',
+                                    label: Translate('administration:firstRunWizard:regions.tools'),
                                 },
                             ],
                         },

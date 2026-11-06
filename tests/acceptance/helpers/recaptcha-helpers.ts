@@ -54,8 +54,9 @@ export async function verifyRecaptchaProtectionNotice(
     version: 'V2' | 'V3' = 'V3',
 ): Promise<void> {
     await test.step(`Verify reCaptcha ${version} protection notice is visible`, async () => {
-        const reCaptchaNotice = page.getByText('This site is protected by reCAPTCHA');
+        const reCaptchaNotice = page.locator('.grecaptcha-protection-information');
         await expect(reCaptchaNotice).toBeVisible();
+        await expect(reCaptchaNotice).toContainText('reCAPTCHA');
     });
 }
 

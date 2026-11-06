@@ -1,8 +1,7 @@
-import { getCountryCodeFromLocale, test } from '@fixtures/AcceptanceTest';
-import { satisfies } from 'compare-versions';
+import { expect, getCountryAddressData, getCountryCodeFromLocale, getLanguageCode, test } from '@fixtures/AcceptanceTest';
 
 test(
-    'Customers is able to to register an account and selects a non-shippable country for their billing address.',
+    'Customers can use a non-shippable billing country with a shippable delivery address at checkout.',
     {
         tag: [
             '@Account',
@@ -12,61 +11,71 @@ test(
     },
     async ({
         StorefrontAccountLogin,
-        StorefrontAccount,
+        StorefrontProductDetail,
+        StorefrontCheckoutRegister,
+        StorefrontCheckoutConfirm,
         IdProvider,
         ShopCustomer,
         TestDataService,
         DefaultSalesChannel,
+        AddProductToCart,
+        Register,
     }) => {
-        const customer = { email: IdProvider.getIdPair().uuid + '@test.com' };
         const nonShippableCountry = await TestDataService.createCountry({ shippingAvailable: false });
         await TestDataService.assignSalesChannelCountry(DefaultSalesChannel.salesChannel.id, nonShippableCountry.id);
         const shippableCountry = await TestDataService.getCountry(getCountryCodeFromLocale());
-        const registrationData = {
-            name: 'Jeff Goldblum',
+        const product = await TestDataService.createBasicProduct();
+        const address = getCountryAddressData();
+        const customer = {
             email: `${IdProvider.getIdPair().uuid}@test.com`,
-            password: 'shopwell',
-            street: 'Ebbinghof 10',
-            city: 'Schöppingen',
-            country: `${nonShippableCountry.name} (Delivery not possible)`,
-            postalCode: '48624',
+            isGuest: true,
+            name: 'Jeff Goldblum',
+            ...address,
         };
 
-        await test.step('Customer cannot select non-shippable country for shipping address during registration', async () => {
-            await ShopCustomer.goesTo(StorefrontAccountLogin.url());
-            await ShopCustomer.presses(StorefrontAccountLogin.countryInput);
-            await StorefrontAccountLogin.countryInput.selectOption({ label: registrationData.country });
+        await test.step('Checkout allows the billing country but disables it for shipping', async () => {
+            await ShopCustomer.goesTo(StorefrontProductDetail.url(product));
+            await ShopCustomer.attemptsTo(AddProductToCart(product));
+            await ShopCustomer.presses(StorefrontProductDetail.offCanvasCartGoToCheckoutButton);
+            await StorefrontCheckoutRegister.page.waitForURL('**/checkout/register', { waitUntil: 'commit' });
+
+            const billingCountry = StorefrontAccountLogin.countryInput.locator(`option[value="${nonShippableCountry.id}"]`);
+            const shippingCountry = StorefrontAccountLogin.shippingAddressCountryInput.locator(
+                `option[value="${nonShippableCountry.id}"]`,
+            );
+            await ShopCustomer.expects(billingCountry).toBeEnabled();
+            await StorefrontAccountLogin.countryInput.selectOption(nonShippableCountry.id);
+            await StorefrontAccountLogin.differentShippingAddressCheckbox.check();
+            await ShopCustomer.expects(shippingCountry).toBeDisabled();
             await ShopCustomer.expects(
-                await StorefrontAccountLogin.getShippingCountryLocatorByName(registrationData.country),
-            ).toBeDisabled();
+                StorefrontAccountLogin.shippingAddressCountryInput.locator(`option[value="${shippableCountry.id}"]`),
+            ).toBeEnabled();
         });
 
-        await test.step('Customer submits the registration form successfully with a shippable country', async () => {
-            await ShopCustomer.fillsIn(StorefrontAccountLogin.nameInput, registrationData.name);
-            await ShopCustomer.fillsIn(StorefrontAccountLogin.registerEmailInput, customer.email);
-            await ShopCustomer.fillsIn(StorefrontAccountLogin.registerPasswordInput, registrationData.password);
-            await ShopCustomer.fillsIn(StorefrontAccountLogin.streetAddressInput, registrationData.street);
-            await ShopCustomer.fillsIn(StorefrontAccountLogin.postalCodeInput, registrationData.postalCode);
-            await ShopCustomer.fillsIn(StorefrontAccountLogin.cityInput, registrationData.city);
-            await ShopCustomer.presses(StorefrontAccountLogin.countryInput);
-            await StorefrontAccountLogin.countryInput.selectOption({ label: shippableCountry.name });
-            await ShopCustomer.presses(StorefrontAccountLogin.differentShippingAddressCheckbox);
-            await ShopCustomer.fillsIn(StorefrontAccountLogin.shippingAddressNameInput, registrationData.name);
-            await ShopCustomer.fillsIn(StorefrontAccountLogin.shippingAddressStreetAddressInput, registrationData.street);
-            await ShopCustomer.fillsIn(StorefrontAccountLogin.shippingAddressPostalCodeInput, registrationData.postalCode);
-            await ShopCustomer.fillsIn(StorefrontAccountLogin.shippingAddressCityInput, registrationData.city);
-            await ShopCustomer.presses(StorefrontAccountLogin.shippingAddressCountryInput);
-            await StorefrontAccountLogin.shippingAddressCountryInput.selectOption({ label: shippableCountry.name });
-            await ShopCustomer.presses(StorefrontAccountLogin.registerButton);
-            await ShopCustomer.expects(StorefrontAccount.headline).toBeVisible();
-            const customerId = (await TestDataService.getCustomerByEmail(customer.email)).id;
-            TestDataService.addCreatedRecord('customer', customerId);
+        await test.step('Checkout stores the non-shippable billing address and the valid shipping address', async () => {
+            await ShopCustomer.fillsIn(StorefrontAccountLogin.shippingAddressNameInput, customer.name);
+            await ShopCustomer.fillsIn(StorefrontAccountLogin.shippingAddressStreetAddressInput, address.street);
+            await ShopCustomer.fillsIn(StorefrontAccountLogin.shippingAddressPostalCodeInput, address.postalCode);
+            await ShopCustomer.fillsIn(StorefrontAccountLogin.shippingAddressCityInput, address.city);
+            await StorefrontAccountLogin.shippingAddressCountryInput.selectOption(shippableCountry.id);
+
+            const country = await StorefrontAccountLogin.countryInput
+                .locator(`option[value="${nonShippableCountry.id}"]`)
+                .textContent();
+            await ShopCustomer.attemptsTo(Register({ ...customer, country: country.replace(/\s+/g, ' ').trim() }));
+            await ShopCustomer.expects(StorefrontCheckoutConfirm.headline).toBeVisible();
+
+            const registeredCustomer = await TestDataService.getCustomerByEmail(customer.email);
+            const billingAddress = await TestDataService.getCustomerAddress(registeredCustomer.defaultBillingAddressId);
+            const shippingAddress = await TestDataService.getCustomerAddress(registeredCustomer.defaultShippingAddressId);
+            expect(billingAddress.countryId).toBe(nonShippableCountry.id);
+            expect(shippingAddress.countryId).toBe(shippableCountry.id);
         });
     },
 );
 
 test(
-    'Customers is not able to set new shipping address with a non-shippable country.',
+    'Customers can set a non-shippable address as billing but cannot set it as shipping after registration.',
     {
         tag: [
             '@Account',
@@ -80,70 +89,117 @@ test(
         TestDataService,
         DefaultSalesChannel,
         StorefrontAccountLogin,
-        Login,
-        Logout,
         AddNewAddress,
         StorefrontAccount,
         StorefrontAccountAddresses,
         Register,
-        InstanceMeta,
     }) => {
         const nonShippableCountry = await TestDataService.createCountry({ shippingAvailable: false });
         await TestDataService.assignSalesChannelCountry(DefaultSalesChannel.salesChannel.id, nonShippableCountry.id);
-
+        const countryDefaults = getCountryAddressData();
         const address = {
-            name: 'New First Name New Last Name',
+            name: 'Jeff Goldblum',
             company: 'shopwell',
             department: 'Operations',
-            street: 'Ebbinghof 10',
-            zipcode: '48624',
-            city: 'Schöppingen',
-            country: nonShippableCountry.name,
+            street: countryDefaults.street,
+            zipcode: countryDefaults.postalCode,
+            city: countryDefaults.city,
+            country: countryDefaults.country,
         };
+        const nonShippableAddress = { ...address, name: 'Non-shippable Billing Address', country: nonShippableCountry.name };
+        const customer = { email: `${IdProvider.getIdPair().uuid}@test.com`, password: 'shopwell' };
 
-        const customer = {
-            email: `${IdProvider.getIdPair().uuid}@test.com`,
-            password: 'shopwell',
-            country: `${nonShippableCountry.name} (Delivery not possible)`,
-        };
-
-        // StorefrontAccount.cannotDeliverToCountryAlert still expects the old "can not" wording
-        const cannotDeliverToCountryAlert = StorefrontAccount.page.getByText(
-            'We cannot deliver to the country that is stored in your delivery address.',
-        );
-
-        await test.step('Customer select non-shippable country during registration', async () => {
+        await test.step('Customer registers and adds a valid default shipping address', async () => {
             await ShopCustomer.goesTo(StorefrontAccountLogin.url());
             await ShopCustomer.attemptsTo(Register(customer));
-            await ShopCustomer.expects(cannotDeliverToCountryAlert).toBeVisible();
+            await ShopCustomer.expects(StorefrontAccount.headline).toBeVisible();
+            const registeredCustomer = await TestDataService.getCustomerByEmail(customer.email);
+            expect(registeredCustomer.defaultBillingAddressId).toBeNull();
+            expect(registeredCustomer.defaultShippingAddressId).toBeNull();
+
+            await ShopCustomer.goesTo(StorefrontAccountAddresses.url());
+            await ShopCustomer.attemptsTo(AddNewAddress(address));
+            const shippingAddress = await StorefrontAccountAddresses.getAvailableAddress({ name: address.name });
+            await ShopCustomer.presses(shippingAddress.addressActions);
+            await ShopCustomer.expects(shippingAddress.useAsDefaultShippingButton).toBeEnabled();
+            await ShopCustomer.presses(shippingAddress.useAsDefaultShippingButton);
+            await ShopCustomer.expects(
+                await StorefrontAccountAddresses.getDefaultShippingAddress({ name: address.name }),
+            ).toBeVisible();
         });
 
-        await test.step('Customer see cannot deliver warning after re-login', async () => {
-            await ShopCustomer.attemptsTo(Logout());
+        await test.step('Customer saves the non-shippable address and can only use it for billing', async () => {
+            await ShopCustomer.attemptsTo(AddNewAddress(nonShippableAddress));
+            const savedAddress = await StorefrontAccountAddresses.getAvailableAddress({ name: nonShippableAddress.name });
+            await ShopCustomer.expects(savedAddress.address).toContainText(nonShippableAddress.name);
+            await ShopCustomer.expects(savedAddress.address).toContainText(nonShippableAddress.street);
+            await ShopCustomer.expects(savedAddress.address).toContainText(nonShippableAddress.city);
+            await ShopCustomer.expects(savedAddress.address).toContainText(nonShippableAddress.zipcode);
+            await ShopCustomer.expects(savedAddress.address).toContainText(nonShippableAddress.country);
+            await ShopCustomer.expects(savedAddress.address).toContainText(nonShippableAddress.company);
+            await ShopCustomer.expects(savedAddress.address).toContainText(nonShippableAddress.department);
+            await ShopCustomer.presses(savedAddress.addressActions);
+            await ShopCustomer.expects(savedAddress.useAsDefaultShippingButton).toBeDisabled();
+            await ShopCustomer.expects(savedAddress.useAsDefaultBillingButton).toBeEnabled();
+            await ShopCustomer.presses(savedAddress.useAsDefaultBillingButton);
+
+            await ShopCustomer.goesTo(StorefrontAccountAddresses.url());
+            await ShopCustomer.expects(
+                await StorefrontAccountAddresses.getDefaultBillingAddress({ name: nonShippableAddress.name }),
+            ).toBeVisible();
+            await ShopCustomer.expects(
+                await StorefrontAccountAddresses.getDefaultShippingAddress({ name: address.name }),
+            ).toBeVisible();
+            const registeredCustomer = await TestDataService.getCustomerByEmail(customer.email);
+            const billingAddress = await TestDataService.getCustomerAddress(registeredCustomer.defaultBillingAddressId);
+            const shippingAddress = await TestDataService.getCustomerAddress(registeredCustomer.defaultShippingAddressId);
+            expect(billingAddress.countryId).toBe(nonShippableCountry.id);
+            expect(shippingAddress.countryId).toBe(DefaultSalesChannel.salesChannel.countryId);
+        });
+    },
+);
+
+test(
+    'Customers with an existing non-shippable delivery address see the warning after logging in again.',
+    {
+        tag: [
+            '@Account',
+            '@Address',
+            '@Storefront',
+        ],
+    },
+    async ({ ShopCustomer, TestDataService, DefaultSalesChannel, StorefrontAccount, Login, Logout }) => {
+        const nonShippableCountry = await TestDataService.createCountry({ shippingAvailable: false });
+        await TestDataService.assignSalesChannelCountry(DefaultSalesChannel.salesChannel.id, nonShippableCountry.id);
+        const address = getCountryAddressData();
+        const customer = await TestDataService.createCustomer({
+            defaultShippingAddress: {
+                name: 'Jeff Goldblum',
+                street: address.street,
+                zipcode: address.postalCode,
+                city: address.city,
+                countryId: nonShippableCountry.id,
+            },
+        });
+        const warningMessages = {
+            'en-GB': 'We cannot deliver to the country that is stored in your delivery address.',
+            'zh-CN': '您的收货地址所在国家暂不支持配送。',
+        };
+        const cannotDeliverToCountryAlert = StorefrontAccount.page.locator('.account-overview .alert-warning').filter({
+            hasText: warningMessages[getLanguageCode()],
+        });
+
+        await test.step('Customer sees the warning for the stored delivery country', async () => {
             await ShopCustomer.attemptsTo(Login(customer));
             await ShopCustomer.expects(cannotDeliverToCountryAlert).toBeVisible();
         });
 
-        await test.step('Customer add new address with non-shippable country and cannot set it as new shipping address', async () => {
-            await ShopCustomer.goesTo(StorefrontAccountAddresses.url());
-            await ShopCustomer.attemptsTo(AddNewAddress(address));
-            await ShopCustomer.expects(StorefrontAccountAddresses.availableAddresses).toContainText(address.name);
-            await ShopCustomer.expects(StorefrontAccountAddresses.availableAddresses).toContainText(address.street);
-            await ShopCustomer.expects(StorefrontAccountAddresses.availableAddresses).toContainText(address.city);
-            await ShopCustomer.expects(StorefrontAccountAddresses.availableAddresses).toContainText(address.zipcode);
-            await ShopCustomer.expects(StorefrontAccountAddresses.availableAddresses).toContainText(address.country);
-            await ShopCustomer.expects(StorefrontAccountAddresses.availableAddresses).toContainText(address.company);
-            await ShopCustomer.expects(StorefrontAccountAddresses.availableAddresses).toContainText(address.department);
-            // eslint-disable-next-line playwright/no-conditional-in-test
-            if (satisfies(InstanceMeta.version, '<6.7')) {
-                await ShopCustomer.expects(StorefrontAccountAddresses.useDefaultBillingAddressButton).toBeEnabled();
-                await ShopCustomer.expects(StorefrontAccountAddresses.useDefaultShippingAddressButton).toBeDisabled();
-                await ShopCustomer.expects(StorefrontAccountAddresses.deliveryNotPossibleAlert).toBeVisible();
-            } else {
-                await ShopCustomer.presses(StorefrontAccountAddresses.addressDropdownButtons.last());
-                await ShopCustomer.expects(StorefrontAccountAddresses.availableAddressesUseAsBillingAddress).toBeEnabled();
-                await ShopCustomer.expects(StorefrontAccountAddresses.availableAddressesUseAsShippingAddress).toBeDisabled();
-            }
+        await test.step('The same delivery restriction remains after logout and login', async () => {
+            await ShopCustomer.attemptsTo(Logout());
+            await ShopCustomer.attemptsTo(Login(customer));
+            await ShopCustomer.expects(cannotDeliverToCountryAlert).toBeVisible();
+            const shippingAddress = await TestDataService.getCustomerAddress(customer.defaultShippingAddressId);
+            expect(shippingAddress.countryId).toBe(nonShippableCountry.id);
         });
     },
 );

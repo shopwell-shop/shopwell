@@ -1,4 +1,4 @@
-import { test } from '@fixtures/AcceptanceTest';
+import { test, getLocale } from '@fixtures/AcceptanceTest';
 
 test(
     'As a customer, I can request a new password with existing customer email address.',
@@ -84,6 +84,27 @@ test(
         let passwordResetLink = '';
         const newPassword = 'new-password';
         const customer = await TestDataService.createCustomer();
+        const emailContent = getLocale().startsWith('zh')
+            ? {
+                  subject: '密码找回',
+                  greeting: `您好 ${customer.name},`,
+                  request: `您申请为 ${DefaultSalesChannel.salesChannel.name} 账户重置密码。`,
+                  resetLink: '请点击下方链接重置密码：',
+                  validity: '该链接仅在 2 小时内有效。',
+                  ignore: '若您不想重置密码，请忽略本邮件，密码不会发生任何变更。',
+                  closing: '此致',
+                  team: `${DefaultSalesChannel.salesChannel.name} 团队`,
+              }
+            : {
+                  subject: 'Password recovery',
+                  greeting: `Hello ${customer.name},`,
+                  request: `You have requested a new password for your ${DefaultSalesChannel.salesChannel.name} account.`,
+                  resetLink: 'Click on the following link to reset your password:',
+                  validity: 'This link is valid for the next 2 hours.',
+                  ignore: "If you don't want to reset your password, ignore this email and no changes will be made.",
+                  closing: 'Yours sincerely',
+                  team: `Your ${DefaultSalesChannel.salesChannel.name} team`,
+              };
 
         await test.step('Navigate to the login page and click on forgot password', async () => {
             await ShopCustomer.goesTo(StorefrontAccountLogin.url());
@@ -104,20 +125,16 @@ test(
         await test.step('Verify email headers and content', async () => {
             const emailHeaders = await MailpitApiContext.getEmailHeaders(customer.email);
             const emailBody = await MailpitApiContext.getEmailBody(customer.email);
-            ShopCustomer.expects(emailHeaders.subject).toContain('Password recovery');
+            ShopCustomer.expects(emailHeaders.subject).toContain(emailContent.subject);
             ShopCustomer.expects(emailHeaders.toName).toContain(customer.name);
             ShopCustomer.expects(emailHeaders.toAddress).toContain(customer.email);
-            ShopCustomer.expects(emailBody).toContain(`Hello ${customer.name},`);
-            ShopCustomer.expects(emailBody).toContain(
-                `You have requested a new password for your ${DefaultSalesChannel.salesChannel.name} account.`,
-            );
-            ShopCustomer.expects(emailBody).toContain('Click on the following link to reset your password:');
-            ShopCustomer.expects(emailBody).toContain('This link is valid for the next 2 hours.');
-            ShopCustomer.expects(emailBody).toContain(
-                "If you don't want to reset your password, ignore this email and no changes will be made.",
-            );
-            ShopCustomer.expects(emailBody).toContain('Yours sincerely');
-            ShopCustomer.expects(emailBody).toContain(`Your ${DefaultSalesChannel.salesChannel.name} team`);
+            ShopCustomer.expects(emailBody).toContain(emailContent.greeting);
+            ShopCustomer.expects(emailBody).toContain(emailContent.request);
+            ShopCustomer.expects(emailBody).toContain(emailContent.resetLink);
+            ShopCustomer.expects(emailBody).toContain(emailContent.validity);
+            ShopCustomer.expects(emailBody).toContain(emailContent.ignore);
+            ShopCustomer.expects(emailBody).toContain(emailContent.closing);
+            ShopCustomer.expects(emailBody).toContain(emailContent.team);
         });
 
         await test.step('Update password using link in the email and login with new password successfully', async () => {

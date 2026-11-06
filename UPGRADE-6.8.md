@@ -454,6 +454,13 @@ Enable the `v6.8.0.0` feature flag in 6.7 to test your client against the new fo
 
 # Core
 
+## Extension store identifiers are opaque strings
+
+`Shopwell\Core\Framework\Store\Struct\ExtensionStruct::$id` and `getId()` were changed to `?string`.
+`setId()` accepts `int|string|null` and normalizes integer identifiers to strings: `7` becomes `"7"`, UUIDs stay intact, and `null` stays `null`.
+Update code and subclass declarations that expect an integer ID.
+Preserve the identifier as a string when comparing, serializing, or passing it to store detail and review routes; numeric casts can destroy UUID identifiers.
+
 ## Multiple SQL statements restricted to migrations and installation
 
 Application database connections no longer accepted multiple SQL statements in a single call.
