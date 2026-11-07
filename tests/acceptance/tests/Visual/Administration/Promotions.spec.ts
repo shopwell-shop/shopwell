@@ -1,4 +1,4 @@
-import { test, setViewport, assertScreenshot } from '@fixtures/AcceptanceTest';
+import { test, setViewport, assertScreenshot, replaceElements } from '@fixtures/AcceptanceTest';
 
 test(
     'Visual: Promotions Listing Page',
@@ -30,7 +30,7 @@ test(
 test(
     'Visual: Promotion Detail Page',
     { tag: '@Visual' },
-    async ({ ShopAdmin, TestDataService, AdminPromotionCreate, AdminPromotionDetail }) => {
+    async ({ ShopAdmin, TestDataService, AdminPromotionCreate, AdminPromotionDetail, DefaultSalesChannel }) => {
         await test.step('Creates a screenshot of the promotion create page.', async () => {
             await ShopAdmin.goesTo(AdminPromotionCreate.url());
             await setViewport(AdminPromotionCreate.page, {
@@ -57,6 +57,16 @@ test(
             await setViewport(AdminPromotionDetail.page, {
                 waitForSelector: AdminPromotionCreate.saveButton,
             });
+            const salesChannel = AdminPromotionDetail.page.locator(
+                '.sw-promotion-v2-conditions__sales-channel-selection .sw-select-selection-list__item-holder',
+            );
+            await ShopAdmin.expects(salesChannel).toHaveCount(1);
+            await ShopAdmin.expects(salesChannel).toHaveAttribute('data-id', DefaultSalesChannel.salesChannel.id);
+            const salesChannelName = salesChannel.locator('.sw-select-selection-list__item');
+            await ShopAdmin.expects(salesChannelName).toHaveCount(1);
+            await ShopAdmin.expects(salesChannelName).toBeVisible();
+            await ShopAdmin.expects(salesChannelName).toHaveText(DefaultSalesChannel.salesChannel.name);
+            await replaceElements(AdminPromotionDetail.page, [salesChannelName]);
             await assertScreenshot(AdminPromotionDetail.page, 'Detail-Conditions-Tab.png');
         });
 
