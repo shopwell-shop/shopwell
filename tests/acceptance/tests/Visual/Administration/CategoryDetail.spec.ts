@@ -36,9 +36,9 @@ test('Visual: Administration category page', { tag: '@Visual' }, async ({ ShopAd
 
     await test.step('Creates a screenshot of the category page on the layout tab.', async () => {
         await AdminCategories.layoutTab.click();
-        await setViewport(AdminCategories.page, {
-            waitForSelector: '.sw-cms-el-config-product-listing__content-info',
-        });
+        const layoutCard = AdminCategories.page.locator('.sw-category-layout-card');
+        await ShopAdmin.expects(layoutCard).toBeVisible();
+        await setViewport(AdminCategories.page, { waitForSelector: layoutCard });
         await replaceElements(AdminCategories.page, [AdminCategories.categoryItems]);
         await assertScreenshot(AdminCategories.page, 'Category-Layout.png');
     });

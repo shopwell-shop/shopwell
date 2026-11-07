@@ -82,13 +82,3 @@ jobs:
         run: |
           echo DRY_RUN: "${DRY_RUN}"
           bash .github/bin/sbp_release.bash publish "${{ github.ref_name }}"
-
-  post-slack-release-message:
-    if: github.ref_type == 'tag' && github.repository == 'shopwell-shop/shopwell' && github.event.action == 'published'
-    needs: publish-sbp-release
-    runs-on: ubuntu-24.04
-    steps:
-      - name: Post slack message
-        run: |
-          SLACK_PAYLOAD=$(jq --null-input --arg version "${{ github.ref_name }}" '{"version": $version, "github_url": "https://github.com/shopwell-shop/shopwell/releases/tag/\($version)"}');
-          curl --silent --request POST --url "${{ secrets.SLACK_RELEASE_WORKFLOW_URL }}" --header "Content-Type: application/json" --data "${SLACK_PAYLOAD}"

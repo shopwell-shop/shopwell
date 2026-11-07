@@ -1,4 +1,4 @@
-import { test, expect, getCurrencyCodeFromLocale, getLocale } from '@fixtures/AcceptanceTest';
+import { test, expect, getCurrencyCodeFromLocale, replaceElements } from '@fixtures/AcceptanceTest';
 
 test(
     'Creates a screenshot of the Storefront Search Result Page.',
@@ -38,6 +38,7 @@ test(
         await test.step('Search with valid input and sees results and take a screenshot.', async () => {
             await ShopCustomer.goesTo(StorefrontHome.url());
             await CheckVisibilityInHome(product.name);
+            await replaceElements(StorefrontHome.page, [StorefrontHome.categoryTitle]);
             await ShopCustomer.attemptsTo(SearchForTerm(product.name));
             await ShopCustomer.expects(StorefrontSearchSuggest.searchSuggestTotalLink).toBeVisible();
             await expect(StorefrontHome.page).toHaveScreenshot('Search-Result-Dropdown.png', {

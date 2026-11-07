@@ -6,6 +6,13 @@ export const GenerateVariants = base.extend<{ GenerateVariants: Task }, FixtureT
         const task = (colorProperty: string, sizeProperty: string) => {
             return async function GenerateVariants() {
                 // Navigate to variants tab
+                const moreTabs = AdminProductDetail.page
+                    .locator('.sw-product-detail-page__tabs')
+                    .getByRole('button', { name: 'Context menu', exact: true });
+                await ShopAdmin.expects(AdminProductDetail.variantsTabLink.or(moreTabs).first()).toBeVisible();
+                if (!(await AdminProductDetail.variantsTabLink.isVisible())) {
+                    await moreTabs.click();
+                }
                 await AdminProductDetail.variantsTabLink.click();
                 await AdminProductDetail.generateVariantsButton.click();
                 await ShopAdmin.expects(AdminProductDetail.variantsModalHeadline).toBeVisible();

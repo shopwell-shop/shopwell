@@ -118,6 +118,9 @@
         "customer_group": {
           "name": "名称"
         },
+        "loyalty_tier": {
+          "name": "名称"
+        },
         "sales_channel": {
           "name": "名称"
         },

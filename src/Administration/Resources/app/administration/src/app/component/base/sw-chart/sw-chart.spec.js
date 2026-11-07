@@ -65,10 +65,17 @@ const setup = async ({ type, series, options, fillEmptyValues, sort } = {}) => {
 
 describe('asyncComponent/base/sw-chart', () => {
     beforeEach(async () => {
+        jest.useFakeTimers({ doNotFake: ['nextTick', 'setImmediate', 'setTimeout'] });
+        jest.setSystemTime(new Date('2026-11-06T12:34:56.789Z'));
+
         Shopwell.Store.get('session').setAdminLocaleState({
             locale: 'en-GB',
             locales: ['en-GB', 'nl-NL'],
         });
+    });
+
+    afterEach(() => {
+        jest.useRealTimers();
     });
 
     it('should override some default options', async () => {
@@ -94,33 +101,35 @@ describe('asyncComponent/base/sw-chart', () => {
         expect(wrapper.vm.mergedOptions.tooltip.theme).toMatch('dark');
     });
 
-    it('should fill empty day values', async () => {
+    it.each([
+        ['2026-11-06T15:59:59.999Z', '2026-10-07T00:00:00.000Z'],
+        ['2026-11-06T16:00:00.000Z', '2026-10-08T00:00:00.000Z'],
+    ])('should fill empty day values at %s across the user timezone midnight', async (now, firstDay) => {
+        jest.setSystemTime(new Date(now));
         const numberOfDates = 30;
-
-        const dateAgo = new Date();
-        dateAgo.setHours(0, 0, 0, 0);
-        dateAgo.setDate(dateAgo.getDate() - numberOfDates);
+        const dateAgo = new Date(firstDay);
+        const existingPoint = {
+            x: new Date(now).setDate(new Date(now).getDate() - 20),
+            y: 42,
+        };
 
         const wrapper = await setup({
-            series: [
-                {
-                    name: 'Demo dates',
-                    data: [
-                        {
-                            x: new Date().setDate(new Date().getDate() - 20),
-                            y: Math.random() * 100,
-                        },
-                    ],
-                },
-            ],
+            series: [{ name: 'Demo dates', data: [existingPoint] }],
             options: {
                 xaxis: { type: 'datetime', min: dateAgo },
             },
             fillEmptyValues: 'day',
         });
+        const expectedZeroValues = Array.from({ length: numberOfDates }, (_, index) => {
+            const date = new Date(dateAgo);
+            date.setDate(date.getDate() + index);
 
-        // Expect that the number of values are greater or equal the double amount of number of dates
+            return { x: date.getTime(), y: 0 };
+        });
+
+        const renderedSeries = wrapper.findComponent({ name: 'apexchart' }).props('series');
         expect(wrapper.vm.optimizedSeries[0].data).toHaveLength(numberOfDates + 1);
+        expect(renderedSeries[0].data).toEqual([existingPoint, ...expectedZeroValues]);
     });
 
     it('should fill empty hour values', async () => {

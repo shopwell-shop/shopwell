@@ -2,7 +2,7 @@ name: Waiting-on update
 
 # Re-applies the waiting-on rules to one pull request when something happens to it, so its
 # label and project fields do not wait for the daily waiting-on-report.yml sweep. The sweep
-# stays for what only time changes and for the Slack reminders; see
+# stays for what only time changes; see
 # .github/bin/js/waiting-on-event.ts.
 #
 # Only privileged triggers, so a fork's pull request still gets a writing token and the

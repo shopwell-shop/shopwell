@@ -1,3 +1,4 @@
+import { stabilizeDashboardValues } from '@helpers/visual-dashboard-helpers';
 import { test, assertScreenshot, setViewport, Page, replaceElements, hideElements } from '@fixtures/AcceptanceTest';
 import {
     markUiShellUpdateModalSeen,
@@ -60,6 +61,7 @@ test(
             ]);
             await hideElements(AdminDashboard.page, [AdminDashboard.statisticsChart]);
 
+            await stabilizeDashboardValues(AdminDashboard.page);
             await assertScreenshot(AdminDataSharingConsentModal.page, 'Modal-Data-Sharing-Consent.png');
         });
     },

@@ -99,6 +99,7 @@ const testLegalGuaranteeNotice = (showTosCheckbox: boolean) =>
                 await ShopCustomer.expects(garanLabelModal.getByRole('link')).toHaveAttribute('href', garanLabelInfoUrl);
                 await ShopCustomer.presses(garanLabelModal.locator('.btn-close'));
                 await ShopCustomer.expects(garanLabelModal).not.toBeVisible();
+                await ShopCustomer.expects(StorefrontProductDetail.page.locator('body')).not.toHaveClass(/modal-open/);
 
                 await ShopCustomer.attemptsTo(ProceedFromProductToCheckout());
                 await ShopCustomer.expects(StorefrontCheckoutConfirm.lineItemGaranLabel).toBeVisible();

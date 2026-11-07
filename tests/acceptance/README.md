@@ -360,14 +360,12 @@ baseline images are committed to ensure the visual change is intentional.
 
 ### Updating Expected Screenshots in GitHub Actions
 
-The visual suite can be run from GitHub Actions under **Visual Tests**. Three inputs are provided
+The visual suite can be run from GitHub Actions under **Visual Tests**. Two inputs are provided
 by the workflow dispatch form:
 
 - **Update snapshots** – toggles the `--update-snapshots` flag so baselines are refreshed when
   differences are detected. When changes are found, a pull request is opened with the updated
   `*-snapshots/*.png` assets so they can be reviewed and merged.
-- **Report to Currents** – enables the optional [Currents](https://currents.dev/) integration for
-  the execution.
 - **Filter** – passes the provided value through to Playwright's `--grep` option, allowing tests to
   be included or excluded in the CI run using the same filtering syntax used locally.
 

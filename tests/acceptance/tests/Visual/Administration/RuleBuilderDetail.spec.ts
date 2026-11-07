@@ -33,7 +33,10 @@ test('Visual: Rule Builder Detail page', { tag: '@Visual' }, async ({ ShopAdmin,
         await assertScreenshot(AdminRuleDetail.page, 'Rule-Builder-Detail-Assignments.png');
     });
     await test.step('Creates a screenshot of the Rule Builder add assignments modal.', async () => {
-        await AdminRuleDetail.shippingMethodAvailabilityRulesCard.getByText('Add assignment').click();
+        const { addAssignmentButton } = await AdminRuleDetail.getEntityCard(
+            AdminRuleDetail.shippingMethodAvailabilityRulesCard,
+        );
+        await addAssignmentButton.click();
         await setViewport(AdminRuleDetail.page, {
             requestURL: 'api/search/shipping-method',
             width: 800,
