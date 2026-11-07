@@ -10,6 +10,7 @@ import {
     NON_HUMAN_LOGINS,
     PARKED_LABEL,
     planLabelChanges,
+    reportWaitingOn,
     type PullRequestFacts,
     summarizeActivity,
     summarizeOpenThreads,
@@ -470,4 +471,57 @@ test('applyLabelChanges carries on past a failing pull request and reports it', 
 
     assert.deepEqual(failed, [1]);
     assert.deepEqual(calls, ['add #2 waiting-on/author', 'remove #2 waiting-on/shopwell']);
+});
+
+test('report keeps GitHub labels and rows without contacting the retired reminder service', async (t) => {
+    t.mock.timers.enable({ apis: ['Date'], now: new Date('2026-09-15T06:00:00Z') });
+    const pullRequest = node({
+        createdAt: '2026-09-01T00:00:00Z',
+        labels: { nodes: [{ name: 'external-contribution' }, { name: 'domain/checkout' }] },
+    });
+    const labels: unknown[] = [];
+    const outputs = new Map<string, string>();
+    const summary: string[] = [];
+    const github = {
+        graphql: async <T>(): Promise<T> =>
+            ({ repository: { pullRequests: { nodes: [pullRequest], pageInfo: { hasNextPage: false, endCursor: null } } } }) as T,
+        rest: {
+            issues: {
+                addLabels: async (request: unknown) => {
+                    labels.push(request);
+                },
+                removeLabel: async () => assert.fail('no old label needs removal'),
+            },
+        },
+    };
+    const core = {
+        info() {},
+        warning() {},
+        error() {},
+        setOutput: (name: string, value: string) => {
+            outputs.set(name, value);
+        },
+        summary: {
+            addRaw: (value: string) => {
+                summary.push(value);
+            },
+            write: async () => {},
+        },
+    };
+    const previousConfiguration = {
+        dryRun: false,
+        reminders: {
+            channels: JSON.stringify({ 'domain/checkout': 'retired-channel' }),
+            slack: { token: 'unused', fetch: (async () => assert.fail('retired service must not be called')) as typeof fetch },
+        },
+    };
+    await reportWaitingOn({ github, core, context: { repo: { owner: 'shopwell-shop', repo: 'shopwell' } } }, previousConfiguration);
+    assert.deepEqual(labels, [{ owner: 'shopwell-shop', repo: 'shopwell', issue_number: 1, labels: ['waiting-on/shopwell'] }]);
+    const rows = JSON.parse(outputs.get('rows') ?? '[]');
+    assert.equal(rows.length, 1);
+    assert.equal(rows[0].waitingOn, 'shopwell');
+    assert.equal(rows[0].reason, 'never-reviewed');
+    assert.equal(rows[0].days, 14);
+    assert.match(summary.join(''), /#1/);
+    assert.doesNotMatch(summary.join(''), /Slack|reminder/);
 });

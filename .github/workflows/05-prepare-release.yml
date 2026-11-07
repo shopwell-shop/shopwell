@@ -68,6 +68,9 @@ jobs:
         with:
           node-version: lts/*
 
+      - name: Generate installation secret
+        run: echo "APP_SECRET=$(openssl rand -hex 32)" >> "$GITHUB_ENV"
+
       - name: build shopwell
         run: |
           # Composer validates path repositories before lifecycle scripts run.
@@ -171,7 +174,7 @@ jobs:
 
       - name: Require core version
         run: |
-          bash .github/bin/split.bash require_core_version "${{ matrix.package }}" "${{ inputs.release_version || github.ref_name }}" tag
+          bash .github/bin/split.bash require_core_version "${{ matrix.package }}" "${{ inputs.release_version || github.ref_name }}" "${{ inputs.release_version != '' && 'tag' || github.ref_type }}"
 
       - name: Commit assets
         if: matrix.package != 'core'

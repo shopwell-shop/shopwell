@@ -27,6 +27,58 @@ describe('DictionaryService', () => {
         expect(criteria.filters).toContainEqual(Criteria.not('or', [Criteria.equals('technicalName', 'not_specified')]));
     });
 
+    it.each([false, true])('keeps default-choice caches separate when exclusion is initially %s', async (excludeFirst) => {
+        const repository = Shopwell.Service('repositoryFactory').create('dictionary_entry');
+        const entries = ['not_specified', 'male'].map((technicalName) => {
+            const entry = repository.create();
+            entry.technicalName = technicalName;
+            entry.position = technicalName === 'male' ? 1 : 0;
+            entry.active = true;
+            entry.translated = { label: technicalName };
+
+            return entry;
+        });
+        const exclusionFilter = Criteria.not('or', [Criteria.equals('technicalName', 'not_specified')]);
+        const search = jest.spyOn(Repository.prototype, 'search').mockImplementation((criteria) => {
+            const excludesDefault = criteria.filters.some(
+                (filter) => JSON.stringify(filter) === JSON.stringify(exclusionFilter),
+            );
+
+            return Promise.resolve(
+                new EntityCollection(
+                    '/dictionary-entry',
+                    'dictionary_entry',
+                    Shopwell.Context.api,
+                    criteria,
+                    entries.filter((entry) => !excludesDefault || entry.technicalName !== 'not_specified'),
+                ),
+            );
+        });
+        const service = new DictionaryService();
+
+        for (const excludeDefault of [
+            excludeFirst,
+            !excludeFirst,
+            excludeFirst,
+            !excludeFirst,
+        ]) {
+            const result = await service.getGenders(true, excludeDefault);
+
+            expect(Array.from(result, (entry) => entry.technicalName)).toEqual(
+                excludeDefault ? ['male'] : ['not_specified', 'male'],
+            );
+        }
+
+        expect(search).toHaveBeenCalledTimes(2);
+        expect(search.mock.calls.map(([criteria]) => criteria.filters)).toEqual(
+            [excludeFirst, !excludeFirst].map((excludeDefault) => [
+                Criteria.equals('dictionaryType.technicalName', 'gender'),
+                Criteria.equals('active', true),
+                ...(excludeDefault ? [exclusionFilter] : []),
+            ]),
+        );
+    });
+
     it('reloads a dictionary after invalidating its cached entries', async () => {
         const factory = Shopwell.Service('repositoryFactory');
         const repository = factory.create('dictionary_entry');

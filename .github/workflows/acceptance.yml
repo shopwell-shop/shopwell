@@ -11,10 +11,6 @@ on:
       major:
         description: "Filter major variants: '' (all), 'exclude' (non-major only), 'only' (major only)"
         default: ""
-      currents:
-        description: 'Report to currents?'
-        type: boolean
-        default: false
   workflow_call:
     inputs:
       profile:
@@ -23,10 +19,6 @@ on:
       major:
         type: string
         default: ""
-      currents:
-        description: 'Report to currents?'
-        type: boolean
-        default: false
 
 permissions:
   contents: read
@@ -90,31 +82,10 @@ jobs:
           major: ${{ matrix.major }}
           install: ${{ matrix.name != 'Install' && 'true' || 'false' }}
           extra-options: ${{ matrix.name == 'Install' && '--trace=on' || '' }}
-          use-currents: ${{ inputs.currents && matrix.no-currents != 'true' && 'true' || '' }}
-          currents-project-id: ${{ secrets.CURRENTS_PROJECT_ID }}
-          currents-record-key: ${{ secrets.CURRENTS_RECORD_KEY }}
           playwright-role-arn: ${{ secrets.PLAYWRIGHT_TRACES_UPLOAD_ROLE_ARN }}
           playwright-traces-domain: ${{ vars.PLAYWRIGHT_TRACES_DOMAIN }}
           s3-bucket: shopwell-ci-playwright-traces
           report-prefix: playwright-reports
-
-  acceptance-status-check:
-    runs-on: ubuntu-24.04
-    needs: acceptance
-    if: ${{ !cancelled() && inputs.profile == 'nightly' }}
-    permissions:
-      actions: read
-    steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Report acceptance status to Slack
-        env:
-          RUN_ID: ${{ github.run_id }}
-          REPO: ${{ github.repository }}
-          GH_TOKEN: ${{ github.token }}
-          SLACK_ATS_WORKFLOW_URL: ${{ secrets.SLACK_ATS_WORKFLOW_URL }}
-          RUN_LABEL: ${{ inputs.major == 'only' && 'Major' || '' }}
-        run: .github/bin/acceptance-slack-status.bash
 
   acceptance-code-style:
     name: Acceptance code style
