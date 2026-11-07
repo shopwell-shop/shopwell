@@ -5,7 +5,6 @@ name: Nightly Major
 # integration-major PHPUnit suite (tracked under https://github.com/shopwell-shop/shopwell/issues/17978).
 # Once these are green, fold them back into nightly.yml (drop `major: exclude` from its acceptance
 # call and restore the integration-major job) and delete this workflow.
-# Note: only the acceptance arm posts to Slack; integration-major status is its own check.
 
 on:
   schedule:
@@ -26,7 +25,6 @@ jobs:
     if: github.repository == 'shopwell-shop/shopwell' || github.event_name == 'workflow_dispatch'
     with:
       profile: nightly
-      currents: false
       major: only
   integration-major:
     uses: ./.github/workflows/integration-major.yml

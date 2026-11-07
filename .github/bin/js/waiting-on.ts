@@ -36,7 +36,7 @@
  *
  * ## The rule
  *
- * First match wins. The reason in brackets is what a later reminder would say, and it
+ * First match wins. The reason in brackets explains the verdict, and it
  * matters as much as the direction: "we approved this, it needs a rebase" and "changes
  * requested, are you still on this?" both mean `author` and read nothing alike.
  *
@@ -103,11 +103,10 @@ not a question anyone has to answer and is left out.
  *
  * `authorAssociation` reports public org membership. It is the raw GitHub value here and
  * is not read by the rule; a colleague whose membership is private shows up as
- * CONTRIBUTOR, which is fine for a report and not good enough to route a reminder on.
+ * CONTRIBUTOR, which is sufficient for the report.
  */
 
 import { applyProjectChanges, fetchProject, parseTeamProjects, planProjectChanges, summarizeProjectChanges } from './waiting-on-project.ts';
-import { parseChannels, planReminders, postSlackMessage, renderReminder, type Slack } from './waiting-on-slack.ts';
 
 export type WaitingOn = 'author' | 'shopwell' | 'nobody';
 
@@ -812,8 +811,6 @@ export type ReportOptions = {
      * the pull requests carrying that label on top of the main project, which gets all of them.
      */
     project?: { github: GraphqlClient; number: number; teams?: string };
-    /** Where the reminders for external pull requests go; see waiting-on-slack.ts. */
-    reminders?: { slack: Slack; channels: string | undefined };
 };
 
 /**
@@ -821,7 +818,7 @@ export type ReportOptions = {
  * `dryRun` is set. The `rows` output carries the verdicts as JSON so a later stage can
  * consume them without this having to change.
  */
-export async function reportWaitingOn({ github, core, context }: { github: GraphqlClient & IssuesClient; core: Core; context: Context }, { dryRun = false, project, reminders }: ReportOptions = {}): Promise<void> {
+export async function reportWaitingOn({ github, core, context }: { github: GraphqlClient & IssuesClient; core: Core; context: Context }, { dryRun = false, project }: ReportOptions = {}): Promise<void> {
     const nodes = await fetchOpenPullRequests(github, context.repo);
     core.info(`Read ${nodes.length} open pull request(s).`);
 
@@ -830,7 +827,7 @@ export async function reportWaitingOn({ github, core, context }: { github: Graph
     const rows = buildRows(nodes, new Date());
 
     // Every login that was read as a person. A service account in here is a gap in
-    // NON_HUMAN_LOGINS, and it is cheaper to spot now than after a reminder went out.
+    // NON_HUMAN_LOGINS, so the report makes that classification visible.
     const humans = new Set<string>();
     for (const node of nodes) {
         const events = [...toTimelineEvents(node.timelineItems.nodes), ...toReviewThreadEvents(node.reviewThreads.nodes)];
@@ -871,30 +868,12 @@ export async function reportWaitingOn({ github, core, context }: { github: Graph
         }
     }
 
-    const failedReminders: string[] = [];
-    if (reminders !== undefined) {
-        const boardUrl = project !== undefined ? `https://github.com/orgs/${context.repo.owner}/projects/${project.number}` : undefined;
-        const planned = planReminders(rows, parseChannels(reminders.channels), new Date());
-
-        for (const reminder of planned) {
-            // One channel failing must not keep the others from their reminders.
-            try {
-                await postSlackMessage(dryRun ? {} : reminders.slack, core, reminder.channel, renderReminder(reminder, boardUrl));
-            } catch (error) {
-                failedReminders.push(reminder.channel);
-                core.error(error instanceof Error ? error.message : String(error));
-            }
-        }
-        core.summary.addRaw(`\n${planned.reduce((sum, reminder) => sum + reminder.rows.length, 0)} external pull request(s) due for a Slack reminder${dryRun ? ' (dry run, nothing sent)' : ''}.\n`);
-    }
-
     await core.summary.write();
     core.setOutput('rows', JSON.stringify(rows));
 
     const failures = [
         ...(failedLabels.length > 0 ? [`the waiting-on label on ${failedLabels.map((number) => `#${number}`).join(', ')}`] : []),
         ...(failedItems.length > 0 ? [`the project for ${failedItems.join(', ')}`] : []),
-        ...(failedReminders.length > 0 ? [`the Slack reminder for ${failedReminders.join(', ')}`] : []),
     ];
     if (failures.length > 0) {
         throw new Error(`Failed to update ${failures.join(' and ')}`);

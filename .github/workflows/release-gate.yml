@@ -5,7 +5,7 @@ name: Release gate
 # It runs a tuned subset of the nightly suite (see the 'release' profile in
 # acceptance.yml / integration.yml): all supported PHP versions + upgrade tests +
 # acceptance + the admin/php/storefront unit suites, skipping the heavy nightly-only
-# bits (major simulation, visual/Currents, downstream, redis image matrix).
+# bits (major simulation, visual tests, downstream, redis image matrix).
 on:
   push:
     branches:
@@ -32,7 +32,6 @@ jobs:
     if: github.repository == 'shopwell-shop/shopwell' || github.event_name == 'workflow_dispatch'
     with:
       profile: release
-      currents: false
   integration:
     permissions:
       contents: read

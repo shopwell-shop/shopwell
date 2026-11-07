@@ -1,8 +1,7 @@
 /**
  * Re-applies the waiting-on rules to one pull request as soon as something happens to it, so
  * its label and project fields do not wait for the daily sweep in waiting-on.ts. The sweep
- * stays: it is what notices a verdict that changes only because time passes, and it sends the
- * Slack reminders, which this never does.
+ * stays: it is what notices a verdict that changes only because time passes.
  *
  * The rules are the sweep's: the same fields are read and the same functions decide. Only the
  * project items are found differently, through the pull request's own `projectItems`, so a
