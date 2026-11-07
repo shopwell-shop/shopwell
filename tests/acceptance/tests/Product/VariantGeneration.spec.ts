@@ -1,41 +1,69 @@
 import { test } from '@fixtures/AcceptanceTest';
 import { PropertyGroup } from '@shopwell-ag/acceptance-test-suite';
 
-test(
-    'Shop administrator should be able to create product variants.',
-    { tag: '@Product' },
-    async ({ ShopAdmin, TestDataService, AdminProductDetail, GenerateVariants }) => {
-        const product = await TestDataService.createBasicProduct();
-        const color = await TestDataService.createColorPropertyGroup();
-        const size = await TestDataService.createTextPropertyGroup();
-
-        await ShopAdmin.goesTo(AdminProductDetail.url(product.id));
-        await ShopAdmin.page.waitForLoadState('domcontentloaded');
-
-        await ShopAdmin.attemptsTo(GenerateVariants(color.name, size.name));
-
-        /**
-         * The test has to handle random behaviour.
-         * Variants displayed in the admin grid can have different order and naming combinations.
-         */
-        const variantLocators = AdminProductDetail.page.locator('.sw-product-variants-overview__variation-link');
-        const variantTexts = await variantLocators.allInnerTexts();
-        const allowedVariants = [
-            'RedMedium',
-            'RedLarge',
-            'BlueMedium',
-            'BlueLarge',
-            'MediumRed',
-            'MediumBlue',
-            'LargeRed',
-            'LargeBlue',
-        ];
-
-        const validateVariants = variantTexts.every((variant) => allowedVariants.includes(variant.trim()));
-
-        ShopAdmin.expects(validateVariants).toBeTruthy();
+const navigationCases = [
+    {
+        name: 'Shop administrator should be able to create product variants.',
+        css: '',
+        overflow: false,
     },
-);
+    {
+        name: 'Shop administrator should be able to create product variants from the overflow menu.',
+        css: '.sw-product-detail-page__tabs { max-width:160px !important; }',
+        overflow: true,
+    },
+];
+
+for (const navigation of navigationCases) {
+    test(
+        `${navigation.name}`,
+        { tag: '@Product' },
+        async ({ ShopAdmin, TestDataService, AdminProductDetail, GenerateVariants, InstanceMeta }) => {
+            test.skip(
+                navigation.overflow && !InstanceMeta.features['V6_8_0_0'],
+                'Overflow navigation requires Meteor tabs.',
+            );
+
+            const product = await TestDataService.createBasicProduct();
+            const color = await TestDataService.createColorPropertyGroup();
+            const size = await TestDataService.createTextPropertyGroup();
+
+            await AdminProductDetail.page.addStyleTag({ content: navigation.css });
+            await ShopAdmin.goesTo(AdminProductDetail.url(product.id));
+            await ShopAdmin.page.waitForLoadState('domcontentloaded');
+            const tabs = AdminProductDetail.page.locator('.sw-product-detail-page__tabs');
+            await ShopAdmin.expects(tabs).toBeVisible();
+            await ShopAdmin.expects(AdminProductDetail.variantsTabLink).toBeVisible({ visible: !navigation.overflow });
+            await ShopAdmin.expects(tabs.getByRole('button', { name: 'Context menu', exact: true })).toBeVisible({
+                visible: navigation.overflow,
+            });
+
+            await ShopAdmin.attemptsTo(GenerateVariants(color.name, size.name));
+
+            /**
+             * The test has to handle random behaviour.
+             * Variants displayed in the admin grid can have different order and naming combinations.
+             */
+            const variantLocators = AdminProductDetail.page.locator('.sw-product-variants-overview__variation-link');
+            await ShopAdmin.expects(variantLocators).toHaveCount(4);
+            const variantTexts = await variantLocators.allInnerTexts();
+            const allowedVariants = [
+                'RedMedium',
+                'RedLarge',
+                'BlueMedium',
+                'BlueLarge',
+                'MediumRed',
+                'MediumBlue',
+                'LargeRed',
+                'LargeBlue',
+            ];
+
+            const validateVariants = variantTexts.every((variant) => allowedVariants.includes(variant.trim()));
+
+            ShopAdmin.expects(validateVariants).toBeTruthy();
+        },
+    );
+}
 
 test(
     'Customer should be able to see a new property displayed on the product detail page',
