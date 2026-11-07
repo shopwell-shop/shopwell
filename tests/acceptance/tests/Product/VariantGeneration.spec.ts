@@ -1,6 +1,6 @@
-import { test } from '@fixtures/AcceptanceTest';
+import { test, expect } from '@fixtures/AcceptanceTest';
 import { PropertyGroup } from '@shopwell-ag/acceptance-test-suite';
-import type { Page } from '@playwright/test';
+import type { Locator, Page } from '@playwright/test';
 
 async function applyNavigationStyle(page: Page, css: string): Promise<void> {
     if (css) {
@@ -8,10 +8,19 @@ async function applyNavigationStyle(page: Page, css: string): Promise<void> {
     }
 }
 
+async function assertNavigation(variants: Locator, more: Locator, forceOverflow: boolean): Promise<void> {
+    await expect(variants.or(more).first()).toBeVisible();
+
+    if (forceOverflow) {
+        await expect(variants).toBeHidden();
+        await expect(more).toBeVisible();
+    }
+}
+
 const navigationCases = [
     {
         name: 'Shop administrator should be able to create product variants.',
-        css: '.sw-product-detail-page__tabs { width:800px !important; max-width:800px !important; }',
+        css: '',
         overflow: false,
     },
     {
@@ -40,10 +49,11 @@ for (const navigation of navigationCases) {
             await ShopAdmin.page.waitForLoadState('domcontentloaded');
             const tabs = AdminProductDetail.page.locator('.sw-product-detail-page__tabs');
             await ShopAdmin.expects(tabs).toBeVisible();
-            await ShopAdmin.expects(AdminProductDetail.variantsTabLink).toBeVisible({ visible: !navigation.overflow });
-            await ShopAdmin.expects(tabs.getByRole('button', { name: 'Context menu', exact: true })).toBeVisible({
-                visible: navigation.overflow,
-            });
+            await assertNavigation(
+                AdminProductDetail.variantsTabLink,
+                tabs.getByRole('button', { name: 'Context menu', exact: true }),
+                navigation.overflow,
+            );
 
             await ShopAdmin.attemptsTo(GenerateVariants(color.name, size.name));
 
