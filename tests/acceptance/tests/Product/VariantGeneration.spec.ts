@@ -11,7 +11,7 @@ async function applyNavigationStyle(page: Page, css: string): Promise<void> {
 const navigationCases = [
     {
         name: 'Shop administrator should be able to create product variants.',
-        css: '',
+        css: '.sw-product-detail-page__tabs { width:800px !important; max-width:800px !important; }',
         overflow: false,
     },
     {
