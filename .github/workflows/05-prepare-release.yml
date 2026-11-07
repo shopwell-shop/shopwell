@@ -174,7 +174,7 @@ jobs:
 
       - name: Require core version
         run: |
-          bash .github/bin/split.bash require_core_version "${{ matrix.package }}" "${{ inputs.release_version || github.ref_name }}" tag
+          bash .github/bin/split.bash require_core_version "${{ matrix.package }}" "${{ inputs.release_version || github.ref_name }}" "${{ inputs.release_version != '' && 'tag' || github.ref_type }}"
 
       - name: Commit assets
         if: matrix.package != 'core'
