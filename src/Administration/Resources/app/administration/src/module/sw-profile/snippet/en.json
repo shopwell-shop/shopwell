@@ -118,6 +118,9 @@
         "customer_group": {
           "name": "Name"
         },
+        "loyalty_tier": {
+          "name": "Name"
+        },
         "sales_channel": {
           "name": "Name"
         },

@@ -95,7 +95,7 @@ export default class DictionaryService {
         excludeDefault = false,
     ): Promise<DictionaryServiceEntityType[]> {
         const languageId = Shopwell.Context.api.languageId;
-        const cacheKey = `${typeName}:${languageId}:${activeOnly ? 'active' : 'all'}`;
+        const cacheKey = `${typeName}:${languageId}:${activeOnly ? 'active' : 'all'}:${excludeDefault}`;
 
         const cached = this.cachedEntries.get(cacheKey);
 
@@ -104,11 +104,7 @@ export default class DictionaryService {
         }
 
         const repository = Shopwell.Service('repositoryFactory').create('dictionary_entry');
-        const criteria = this.entriesCriteria(typeName, activeOnly);
-
-        if (excludeDefault) {
-            criteria.addFilter(Criteria.not('or', [Criteria.equals('technicalName', NOT_SPECIFIED_ENTRY)]));
-        }
+        const criteria = this.entriesCriteria(typeName, activeOnly, excludeDefault);
 
         const result = await repository.search(criteria);
 

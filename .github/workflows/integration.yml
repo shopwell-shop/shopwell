@@ -93,6 +93,17 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Use InnoDB foreign key checks on MySQL 9.7
+        if: matrix.db == 'mysql:9.7'
+        env:
+          DATABASE_CONTAINER: ${{ job.services.database.id }}
+        run: |
+          set -euo pipefail
+          docker exec "$DATABASE_CONTAINER" mysql --user=root --execute='SET PERSIST_ONLY innodb_native_foreign_keys = ON'
+          docker restart "$DATABASE_CONTAINER"
+          timeout 60s docker exec "$DATABASE_CONTAINER" mysqladmin --user=root --wait=60 ping --silent
+          settings=$(docker exec "$DATABASE_CONTAINER" mysql --user=root --batch --skip-column-names --execute='SELECT @@GLOBAL.innodb_native_foreign_keys, @@GLOBAL.foreign_key_checks')
+          test "$settings" = $'1\t1'
       - name: Setup and install Shopwell
         uses: ./.github/actions/phpunit-prepare
         with:

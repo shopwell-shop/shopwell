@@ -1,3 +1,4 @@
+import { stabilizeDashboardValues } from '@helpers/visual-dashboard-helpers';
 import { test, replaceElements, hideElements, setViewport, assertScreenshot } from '@fixtures/AcceptanceTest';
 
 test('Administration dashboard', { tag: '@Visual' }, async ({ ShopAdmin, AdminDashboard }) => {
@@ -12,6 +13,7 @@ test('Administration dashboard', { tag: '@Visual' }, async ({ ShopAdmin, AdminDa
             AdminDashboard.statisticsDateRange,
         ]);
         await hideElements(AdminDashboard.page, [AdminDashboard.statisticsChart]);
+        await stabilizeDashboardValues(AdminDashboard.page);
         await assertScreenshot(AdminDashboard.page, 'Dashboard.png');
     });
 });

@@ -3,6 +3,7 @@ import { test, setViewport, replaceElements, hideElements, assertScreenshot, Flo
 test('Visual: Flow Builder listing', { tag: '@Visual' }, async ({ ShopAdmin, AdminFlowBuilderListing }) => {
     await test.step('Create a screenshot of the flow listing.', async () => {
         await ShopAdmin.goesTo(AdminFlowBuilderListing.url());
+        await ShopAdmin.expects(AdminFlowBuilderListing.firstFlowName).toBeVisible();
         await setViewport(AdminFlowBuilderListing.page, {
             waitForSelector: AdminFlowBuilderListing.createFlowButton,
         });
@@ -23,22 +24,47 @@ test('Visual: Flow Builder listing', { tag: '@Visual' }, async ({ ShopAdmin, Adm
 test(
     'Visual: Flow Builder detail page',
     { tag: '@Visual' },
-    async ({ ShopAdmin, TestDataService, IdProvider, AdminFlowBuilderListing, AdminFlowBuilderDetail, CreateFlow }) => {
+    async ({
+        ShopAdmin,
+        TestDataService,
+        IdProvider,
+        AdminFlowBuilderListing,
+        AdminFlowBuilderDetail,
+        CreateFlow,
+        AdminApiContext,
+        Translate,
+    }) => {
         const uniqueId = IdProvider.getIdPair().uuid;
         const tagName = `Test tag - ${uniqueId}`;
         const flowName = `Test flow - ${uniqueId}`;
         await TestDataService.createTag(tagName);
+        const mailTemplatesResponse = await AdminApiContext.post('search/mail-template', {
+            data: {
+                limit: 2,
+                filter: [{ type: 'equals', field: 'mailTemplateType.technicalName', value: 'order_confirmation_mail' }],
+                associations: { mailTemplateType: {} },
+            },
+        });
+        await ShopAdmin.expects(mailTemplatesResponse.ok()).toBeTruthy();
+        const { data: mailTemplates } = await mailTemplatesResponse.json();
+        await ShopAdmin.expects(mailTemplates).toHaveLength(1);
+        const mailTemplateName = mailTemplates[0].mailTemplateType.translated.name;
+        await ShopAdmin.expects(mailTemplateName).toBeTruthy();
         const testConfig = {
             name: flowName,
             description: 'This flow is being created to test the creation of flows.',
             priority: '1',
             active: true,
-            triggerSearchTerm: 'placed',
-            triggerLabel: 'Checkout / Order / Placed',
+            triggerSearchTerm: Translate('administration:flowBuilder:triggers.placed'),
+            triggerLabel: [
+                Translate('administration:flowBuilder:triggers.checkout'),
+                Translate('administration:flowBuilder:triggers.order'),
+                Translate('administration:flowBuilder:triggers.placed'),
+            ].join(' / '),
             condition: 'Shopping cart / Order with digital products',
-            trueAction: 'Send email',
-            trueActionIdentifier: 'Order confirmation',
-            falseAction: 'Add tag',
+            trueAction: Translate('administration:flowBuilder:actions.mailSend'),
+            trueActionIdentifier: mailTemplateName,
+            falseAction: Translate('administration:flowBuilder:actions.addTag'),
             falseActionIdentifier: tagName,
         };
 
@@ -62,9 +88,13 @@ test(
             await setViewport(AdminFlowBuilderDetail.page, {
                 waitForSelector: AdminFlowBuilderDetail.falseBlock,
             });
+            const actionTag = AdminFlowBuilderDetail.page
+                .locator('.sw-flow-sequence-action__action-description')
+                .getByText(tagName, { exact: true });
+            await ShopAdmin.expects(actionTag).toHaveCount(1);
             await replaceElements(AdminFlowBuilderDetail.page, [
                 AdminFlowBuilderDetail.header,
-                AdminFlowBuilderDetail.actionContentTag,
+                actionTag,
             ]);
             await assertScreenshot(AdminFlowBuilderDetail.page, 'Flow-Builder-Detail-Flow-Tab.png');
         });

@@ -460,6 +460,7 @@ class CoreMenuSynchronizerTest extends TestCase
      */
     private function removeCoreItems(): void
     {
+        $this->connection()->executeStatement('UPDATE admin_menu_item SET parent_id = NULL, after_menu_item_id = NULL WHERE plugin_id IS NULL');
         $this->connection()->executeStatement('DELETE FROM admin_menu_item WHERE plugin_id IS NULL');
     }
 
