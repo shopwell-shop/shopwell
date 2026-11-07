@@ -8,7 +8,7 @@ export const GenerateVariants = base.extend<{ GenerateVariants: Task }, FixtureT
                 // Navigate to variants tab
                 const moreTabs = AdminProductDetail.page
                     .locator('.sw-product-detail-page__tabs')
-                    .getByRole('button', { name: 'More', exact: true });
+                    .getByRole('button', { name: 'Context menu', exact: true });
                 await ShopAdmin.expects(AdminProductDetail.variantsTabLink.or(moreTabs).first()).toBeVisible();
                 if (!(await AdminProductDetail.variantsTabLink.isVisible())) {
                     await moreTabs.click();
