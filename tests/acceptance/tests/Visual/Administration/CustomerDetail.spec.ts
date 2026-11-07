@@ -1,4 +1,4 @@
-import { test, setViewport, assertScreenshot, hideElements } from '@fixtures/AcceptanceTest';
+import { test, setViewport, assertScreenshot, hideElements, replaceElements } from '@fixtures/AcceptanceTest';
 
 test(
     'Visual: Customer Detail Page',
@@ -41,6 +41,9 @@ test(
                 .filter({ hasText: DefaultSalesChannel.customer.email });
             await ShopAdmin.expects(defaultCustomerRow).toBeVisible();
             await hideElements(AdminCustomerListing.page, [defaultCustomerRow]);
+            const customerGroup = customerLineItem.customerGroup.locator('.sw-data-grid__cell-content');
+            await ShopAdmin.expects(customerGroup).toBeVisible();
+            await replaceElements(AdminCustomerListing.page, [customerGroup]);
 
             await setViewport(AdminCustomerListing.page, {
                 waitForSelector: AdminCustomerListing.addCustomerButton,
@@ -56,6 +59,12 @@ test(
             await setViewport(AdminCustomerDetail.page, {
                 waitForSelector: AdminCustomerDetail.editButton,
             });
+            const customerGroup = AdminCustomerDetail.page
+                .locator('.sw-customer-base-info')
+                .getByText(/^\d+ Acceptance test$/);
+            await ShopAdmin.expects(customerGroup).toHaveCount(1);
+            await ShopAdmin.expects(customerGroup).toBeVisible();
+            await replaceElements(AdminCustomerDetail.page, [customerGroup]);
             await assertScreenshot(AdminCustomerDetail.page, 'Detail-General-Tab.png');
         });
 

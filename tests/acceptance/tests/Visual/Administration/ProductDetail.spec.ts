@@ -1,9 +1,25 @@
-import { test, setViewport, replaceElements, assertScreenshot, getCurrencyCodeFromLocale } from '@fixtures/AcceptanceTest';
+import {
+    test,
+    setViewport,
+    replaceElements,
+    assertScreenshot,
+    getCurrencyCodeFromLocale,
+    getLanguageCode,
+} from '@fixtures/AcceptanceTest';
 
 test(
     'Visual: Product Detail Page',
     { tag: '@Visual' },
-    async ({ ShopAdmin, TestDataService, AdminProductDetail, SalesChannelBaseConfig }) => {
+    async ({ ShopAdmin, TestDataService, AdminProductDetail, SalesChannelBaseConfig, Translate }) => {
+        const labels = {
+            'en-GB': {
+                properties: 'Configure properties',
+                layout: 'Change layout',
+                crossSelling: 'Add new Cross Selling',
+                reviews: 'Go to reviews',
+            },
+            'zh-CN': { properties: '配置属性', layout: '修改布局', crossSelling: '添加关联商品', reviews: '前往评价' },
+        }[getLanguageCode()];
         const currency = await TestDataService.getCurrency(getCurrencyCodeFromLocale());
 
         const product = await TestDataService.createBasicProduct({
@@ -42,11 +58,9 @@ test(
 
         await test.step('Creates a screenshot of the product detail page Specifications tab.', async () => {
             await AdminProductDetail.specificationsTabLink.click();
-            await setViewport(AdminProductDetail.page, {
-                waitForSelector: AdminProductDetail.page.getByRole('button', {
-                    name: 'Configure properties',
-                }),
-            });
+            const sectionButton = AdminProductDetail.page.getByRole('button', { name: labels.properties, exact: true });
+            await ShopAdmin.expects(sectionButton).toBeVisible();
+            await setViewport(AdminProductDetail.page, { waitForSelector: sectionButton });
             await replaceElements(AdminProductDetail.page, [
                 AdminProductDetail.productHeadline,
             ]);
@@ -66,11 +80,9 @@ test(
 
         await test.step('Creates a screenshot of the product detail page Variants tab.', async () => {
             await AdminProductDetail.variantsTabLink.click();
-            await setViewport(AdminProductDetail.page, {
-                waitForSelector: AdminProductDetail.page.getByRole('button', {
-                    name: 'Configure properties',
-                }),
-            });
+            const sectionButton = AdminProductDetail.page.getByRole('button', { name: labels.properties, exact: true });
+            await ShopAdmin.expects(sectionButton).toBeVisible();
+            await setViewport(AdminProductDetail.page, { waitForSelector: sectionButton });
             await replaceElements(AdminProductDetail.page, [
                 AdminProductDetail.productHeadline,
             ]);
@@ -79,11 +91,9 @@ test(
 
         await test.step('Creates a screenshot of the product detail page Layout tab.', async () => {
             await AdminProductDetail.layoutTabLink.click();
-            await setViewport(AdminProductDetail.page, {
-                waitForSelector: AdminProductDetail.page.getByRole('button', {
-                    name: 'Change layout',
-                }),
-            });
+            const sectionButton = AdminProductDetail.page.getByRole('button', { name: labels.layout, exact: true });
+            await ShopAdmin.expects(sectionButton).toBeVisible();
+            await setViewport(AdminProductDetail.page, { waitForSelector: sectionButton });
             await replaceElements(AdminProductDetail.page, [
                 AdminProductDetail.productHeadline,
             ]);
@@ -92,11 +102,11 @@ test(
 
         await test.step('Creates a screenshot of the product detail page SEO tab.', async () => {
             await AdminProductDetail.SEOTabLink.click();
-            await setViewport(AdminProductDetail.page, {
-                waitForSelector: AdminProductDetail.page.getByRole('button', {
-                    name: 'Upload file',
-                }),
-            });
+            const uploadButton = AdminProductDetail.page
+                .locator('.sw-product-seo-form__open-graph')
+                .getByRole('button', { name: Translate('administration:product:buttons.uploadFile'), exact: true });
+            await ShopAdmin.expects(uploadButton).toBeVisible();
+            await setViewport(AdminProductDetail.page, { waitForSelector: uploadButton });
             await replaceElements(AdminProductDetail.page, [
                 AdminProductDetail.productHeadline,
             ]);
@@ -105,11 +115,9 @@ test(
 
         await test.step('Creates a screenshot of the product detail page Cross Selling tab.', async () => {
             await AdminProductDetail.crossSellingTabLink.click();
-            await setViewport(AdminProductDetail.page, {
-                waitForSelector: AdminProductDetail.page.getByRole('button', {
-                    name: 'Add new Cross Selling',
-                }),
-            });
+            const sectionButton = AdminProductDetail.page.getByRole('button', { name: labels.crossSelling, exact: true });
+            await ShopAdmin.expects(sectionButton).toBeVisible();
+            await setViewport(AdminProductDetail.page, { waitForSelector: sectionButton });
             await replaceElements(AdminProductDetail.page, [
                 AdminProductDetail.productHeadline,
             ]);
@@ -118,11 +126,9 @@ test(
 
         await test.step('Creates a screenshot of the product detail page Reviews tab.', async () => {
             await AdminProductDetail.reviewsTabLink.click();
-            await setViewport(AdminProductDetail.page, {
-                waitForSelector: AdminProductDetail.page.getByRole('button', {
-                    name: 'Go to reviews',
-                }),
-            });
+            const sectionButton = AdminProductDetail.page.getByRole('button', { name: labels.reviews, exact: true });
+            await ShopAdmin.expects(sectionButton).toBeVisible();
+            await setViewport(AdminProductDetail.page, { waitForSelector: sectionButton });
             await replaceElements(AdminProductDetail.page, [
                 AdminProductDetail.productHeadline,
             ]);

@@ -1,4 +1,12 @@
-import { test, setViewport, hideElements, replaceElements, assertScreenshot } from '@fixtures/AcceptanceTest';
+import {
+    test,
+    setViewport,
+    hideElements,
+    replaceElements,
+    assertScreenshot,
+    getLanguageCode,
+    getCountryAddressData,
+} from '@fixtures/AcceptanceTest';
 
 test(
     'Visual: Order Detail Page',
@@ -9,6 +17,10 @@ test(
             const order = await TestDataService.createOrder([{ product, quantity: 1 }], DefaultSalesChannel.customer);
             await ShopAdmin.goesTo(AdminOrderDetail.url(order.id));
 
+            await ShopAdmin.expects(AdminOrderDetail.generalTabLink).toBeVisible();
+            await ShopAdmin.expects(AdminOrderDetail.page.locator('.sw-order-line-items-grid__item-label')).toHaveText(
+                product.name,
+            );
             await setViewport(AdminOrderDetail.page);
 
             await replaceElements(AdminOrderDetail.page, [
@@ -28,17 +40,53 @@ test(
                 contentHeight: 2666,
             });
 
-            await replaceElements(AdminOrderDetail.page, [
-                'input[placeholder="Enter email address..."]',
-                '.sw-order-general-info__summary-sub',
-                'div.sw-field[label="Billing address"] .sw-single-select__selection-text',
-                'div.sw-field[label="Shipping address"] .sw-single-select__selection-text',
+            const addresses = AdminOrderDetail.page.locator(
+                '.sw-order-detail-details__billing-address .sw-address__formatting, ' +
+                    '.sw-order-detail-details__shipping-address .sw-address__formatting',
+            );
+            await ShopAdmin.expects(addresses).toHaveCount(2);
+            await ShopAdmin.expects(addresses).toContainText([
+                DefaultSalesChannel.customer.name,
+                DefaultSalesChannel.customer.name,
+            ]);
+            const addressSelections = AdminOrderDetail.page.locator(
+                '.sw-order-detail-details__billing-address .sw-single-select__selection-text, ' +
+                    '.sw-order-detail-details__shipping-address .sw-single-select__selection-text',
+            );
+            await ShopAdmin.expects(addressSelections).toHaveCount(2);
+            await ShopAdmin.expects(addressSelections).toContainText([
+                getCountryAddressData().street,
+                getCountryAddressData().street,
             ]);
 
+            await replaceElements(AdminOrderDetail.page, [
+                '.sw-order-detail-details__email input',
+                '.sw-order-general-info__summary-sub',
+                '.sw-order-detail-details__billing-address .sw-single-select__selection-text',
+                '.sw-order-detail-details__shipping-address .sw-single-select__selection-text',
+            ]);
+
+            await addresses.evaluateAll((elements, customerName) => {
+                for (const element of elements) {
+                    const name = Array.from(element.childNodes).find(
+                        (node) => node.nodeType === 3 && node.textContent?.trim() === customerName,
+                    );
+                    if (!name) {
+                        throw new Error('Order address has no customer name text');
+                    }
+                    name.textContent = '***';
+                }
+            }, DefaultSalesChannel.customer.name);
+
+            const salesChannelLabel = { 'en-GB': 'Sales channel', 'zh-CN': '销售渠道' }[getLanguageCode()];
+            const salesChannel = AdminOrderDetail.page.locator('.sw-entity-single-select').filter({
+                has: AdminOrderDetail.page.getByText(salesChannelLabel, { exact: true }),
+            });
+            await ShopAdmin.expects(salesChannel).toHaveCount(1);
             await hideElements(AdminOrderDetail.page, [
                 '.dp__input_reg',
-                'input[aria-label="Email"]',
-                'div.sw-field[label="Sales channel"] .sw-entity-single-select__selection-text',
+                '.sw-order-detail-details__email input',
+                salesChannel.locator('.sw-entity-single-select__selection-text'),
                 '.dp__input_icon_pad',
             ]);
 

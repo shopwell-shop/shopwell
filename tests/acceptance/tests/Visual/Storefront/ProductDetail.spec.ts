@@ -1,4 +1,4 @@
-import { test, expect } from '@fixtures/AcceptanceTest';
+import { test, expect, getLanguageCode } from '@fixtures/AcceptanceTest';
 
 test(
     'Visual: Storefront Product Detail Page',
@@ -13,7 +13,7 @@ test(
         await test.step('Creates a screenshot of the product detail page General tab.', async () => {
             await CheckVisibilityInHome(product.name);
             await ShopCustomer.goesTo(StorefrontProductDetail.url(product));
-            ShopCustomer.expects(StorefrontProductDetail.addToCartButton).toBeVisible();
+            await ShopCustomer.expects(StorefrontProductDetail.addToCartButton).toBeVisible();
             await expect(StorefrontProductDetail.page).toHaveScreenshot('Product-Detail-Page.png', {
                 fullPage: true,
             });
@@ -48,8 +48,12 @@ test(
             await StorefrontProductDetail.reviewsTab.click();
 
             await ShopCustomer.expects(StorefrontProductDetail.productReviewRating).toBeVisible();
-            await ShopCustomer.expects(StorefrontProductDetail.productReviewsLink).toHaveText('2 Reviews');
-            await ShopCustomer.expects(StorefrontProductDetail.reviewCounter).toContainText('2 reviews');
+            const reviewLabels = {
+                'en-GB': { link: '2 Reviews', counter: '2 reviews' },
+                'zh-CN': { link: '2 条评价', counter: '2 条评价' },
+            }[getLanguageCode()];
+            await ShopCustomer.expects(StorefrontProductDetail.productReviewsLink).toHaveText(reviewLabels.link);
+            await ShopCustomer.expects(StorefrontProductDetail.reviewCounter).toHaveText(reviewLabels.counter);
             await ShopCustomer.expects(StorefrontProductDetail.reviewListingItems).toHaveCount(2);
 
             await expect(StorefrontProductDetail.page).toHaveScreenshot('Product-Detail-Review.png', {

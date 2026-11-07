@@ -18,6 +18,7 @@ test(
         StorefrontCheckoutFinish,
         StorefrontCheckoutConfirm,
         StorefrontCheckoutRegister,
+        Translate,
     }) => {
         const product = await TestDataService.createBasicProduct();
 
@@ -62,7 +63,7 @@ test(
 
         await test.step('Create screenshot of checkout/finish page in storefront.', async () => {
             await ShopCustomer.attemptsTo(ConfirmTermsAndConditions());
-            await ShopCustomer.attemptsTo(SelectPaymentMethod('Invoice'));
+            await ShopCustomer.attemptsTo(SelectPaymentMethod(Translate('storefront:checkout:common.invoice')));
             await ShopCustomer.attemptsTo(SelectShippingMethod('Standard'));
             await ShopCustomer.attemptsTo(SubmitOrder());
             const orderId = StorefrontCheckoutFinish.getOrderId();

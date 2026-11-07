@@ -32,7 +32,7 @@
     "typescript": "5.9.3"
   },
   "dependencies": {
-    "@shopwell-ag/acceptance-test-suite": "14.0.3",
+    "@shopwell-ag/acceptance-test-suite": "14.0.4",
     "@shopwell/api-client": "2.0.0",
     "lighthouse": "12.6.1",
     "playwright-lighthouse": "4.0.0"
