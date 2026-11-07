@@ -68,6 +68,9 @@ jobs:
         with:
           node-version: lts/*
 
+      - name: Generate installation secret
+        run: echo "APP_SECRET=$(openssl rand -hex 32)" >> "$GITHUB_ENV"
+
       - name: build shopwell
         run: |
           # Composer validates path repositories before lifecycle scripts run.

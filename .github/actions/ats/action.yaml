@@ -24,7 +24,7 @@ inputs:
   major:
     default: ""
     required: false
-    description: "Mark this run as the major variant for artifact and Currents naming"
+    description: "Mark this run as the major variant for artifact naming"
   php-version:
     default: "8.4"
     required: false
@@ -33,21 +33,6 @@ inputs:
     default: ""
     required: false
     description: Extra playwright cmd options
-
-  use-currents:
-    default: ""
-    required: false
-    description: Use currents pwc cli instead of playwright
-
-  currents-project-id:
-    default: ""
-    required: false
-    description: Currents project id
-
-  currents-record-key:
-    default: ""
-    required: false
-    description: Currents record key
 
   # optimizations
   workers:
@@ -178,12 +163,7 @@ runs:
     - name: Run your tests
       shell: bash
       working-directory: ${{ inputs.directory }}
-      env:
-        CURRENTS_PROJECT_ID: ${{ inputs.currents-project-id }}
-        CURRENTS_RECORD_KEY: ${{ inputs.currents-record-key }}
-        CURRENTS_BUILD_ID: "${{ format('{0}-{1}-{2}', github.repository, github.run_id, github.run_attempt) }}${{ matrix.major && 'major' }}"
-        ATS_CMD: ${{ inputs.use-currents && 'pwc' || 'playwright'}}
-      run: npx $ATS_CMD test --project=${{ inputs.project }} --workers=${{ inputs.workers }} --shard=${{ inputs.shard }}/${{ inputs.shard-count }} ${{ inputs.extra-options }}
+      run: npx playwright test --project=${{ inputs.project }} --workers=${{ inputs.workers }} --shard=${{ inputs.shard }}/${{ inputs.shard-count }} ${{ inputs.extra-options }}
       continue-on-error: ${{ contains(inputs.project, 'visual') }} # Visual tests are allowed to fail; the results will be uploaded regardless and checked regularly
 
     - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -198,6 +178,15 @@ runs:
         path: ${{ inputs.directory }}/test-results/
         retention-days: 3
       continue-on-error: true
+
+    - name: Upload Playwright HTML report
+      if: always() && hashFiles(format('{0}/playwright-report/index.html', inputs.directory)) != ''
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      with:
+        name: ${{ inputs.artifact-prefix }}-report-${{ inputs.project }}-${{ inputs.shard }}-php${{ inputs.php-version }}${{ inputs.major && format('-{0}', inputs.major) || '' }}
+        path: ${{ inputs.directory }}/playwright-report/
+        retention-days: 3
+        if-no-files-found: error
 
     - name: Check if this run should attempt AWS operations
       id: check-aws-allowed
