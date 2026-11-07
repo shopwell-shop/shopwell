@@ -1,5 +1,12 @@
 import { test } from '@fixtures/AcceptanceTest';
 import { PropertyGroup } from '@shopwell-ag/acceptance-test-suite';
+import type { Page } from '@playwright/test';
+
+async function applyNavigationStyle(page: Page, css: string): Promise<void> {
+    if (css) {
+        await page.addStyleTag({ content: css });
+    }
+}
 
 const navigationCases = [
     {
@@ -28,7 +35,7 @@ for (const navigation of navigationCases) {
             const color = await TestDataService.createColorPropertyGroup();
             const size = await TestDataService.createTextPropertyGroup();
 
-            await AdminProductDetail.page.addStyleTag({ content: navigation.css });
+            await applyNavigationStyle(AdminProductDetail.page, navigation.css);
             await ShopAdmin.goesTo(AdminProductDetail.url(product.id));
             await ShopAdmin.page.waitForLoadState('domcontentloaded');
             const tabs = AdminProductDetail.page.locator('.sw-product-detail-page__tabs');
