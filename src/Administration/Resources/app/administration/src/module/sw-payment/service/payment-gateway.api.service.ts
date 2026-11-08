@@ -56,7 +56,6 @@ export interface PaymentState {
 /** @private */
 export type {
     PaymentProviderView,
-    PaymentProductDefinition,
     PaymentAppView,
     PaymentAccountView,
     PaymentAccountChoice,

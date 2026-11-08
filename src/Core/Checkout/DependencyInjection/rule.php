@@ -22,6 +22,7 @@ use Shopwell\Core\Checkout\Cart\Rule\LineItemCreationDateRule;
 use Shopwell\Core\Checkout\Cart\Rule\LineItemCustomFieldRule;
 use Shopwell\Core\Checkout\Cart\Rule\LineItemDimensionHeightRule;
 use Shopwell\Core\Checkout\Cart\Rule\LineItemDimensionLengthRule;
+use Shopwell\Core\Checkout\Cart\Rule\LineItemDimensionLongestAndGirthRule;
 use Shopwell\Core\Checkout\Cart\Rule\LineItemDimensionVolumeRule;
 use Shopwell\Core\Checkout\Cart\Rule\LineItemDimensionWeightRule;
 use Shopwell\Core\Checkout\Cart\Rule\LineItemDimensionWidthRule;
@@ -163,6 +164,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(LineItemDimensionWidthRule::class)->tag('shopwell.rule.definition');
     $services->set(LineItemDimensionHeightRule::class)->tag('shopwell.rule.definition');
     $services->set(LineItemDimensionLengthRule::class)->tag('shopwell.rule.definition');
+    $services->set(LineItemDimensionLongestAndGirthRule::class)->tag('shopwell.rule.definition');
     $services->set(LineItemDimensionWeightRule::class)->tag('shopwell.rule.definition');
     $services->set(LineItemDimensionVolumeRule::class)->tag('shopwell.rule.definition');
     $services->set(LineItemListPriceRule::class)->tag('shopwell.rule.definition');

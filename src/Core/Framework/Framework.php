@@ -34,6 +34,7 @@ use Shopwell\Core\Framework\DependencyInjection\CompilerPass\RedisPrefixCompiler
 use Shopwell\Core\Framework\DependencyInjection\CompilerPass\RouteScopeCompilerPass;
 use Shopwell\Core\Framework\DependencyInjection\CompilerPass\ScheduledTaskExecutorCompilerPass;
 use Shopwell\Core\Framework\DependencyInjection\CompilerPass\TelemetrySubscriberCompilerPass;
+use Shopwell\Core\Framework\DependencyInjection\CompilerPass\ThemeAssetVersionStrategyCompilerPass;
 use Shopwell\Core\Framework\DependencyInjection\CompilerPass\TwigEnvironmentCompilerPass;
 use Shopwell\Core\Framework\DependencyInjection\CompilerPass\TwigLoaderConfigCompilerPass;
 use Shopwell\Core\Framework\DependencyInjection\FrameworkExtension;
@@ -130,6 +131,7 @@ class Framework extends Bundle
         $container->addCompilerPass(new AssetRegistrationCompilerPass());
         $container->addCompilerPass(new AssetBundleRegistrationCompilerPass());
         $container->addCompilerPass(new FilesystemConfigMigrationCompilerPass());
+        $container->addCompilerPass(new ThemeAssetVersionStrategyCompilerPass());
         $container->addCompilerPass(new RateLimiterCompilerPass());
         $container->addCompilerPass(new IncrementerGatewayCompilerPass());
         $container->addCompilerPass(new CacheCompilerPass());

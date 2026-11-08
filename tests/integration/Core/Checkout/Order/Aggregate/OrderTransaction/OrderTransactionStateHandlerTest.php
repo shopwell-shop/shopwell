@@ -9,7 +9,6 @@ use Shopwell\Core\Checkout\Cart\Tax\Struct\CalculatedTaxCollection;
 use Shopwell\Core\Checkout\Cart\Tax\Struct\TaxRuleCollection;
 use Shopwell\Core\Checkout\Customer\CustomerCollection;
 use Shopwell\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionCollection;
-use Shopwell\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopwell\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
 use Shopwell\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStates;
 use Shopwell\Core\Checkout\Order\OrderCollection;
@@ -302,7 +301,6 @@ class OrderTransactionStateHandlerTest extends TestCase
         $criteria = new Criteria([$this->transactionId]);
         $criteria->addAssociation('stateMachineState');
 
-        /** @var OrderTransactionEntity|null $transaction */
         $transaction = $this->orderTransactionRepository->search($criteria, $this->context)->getEntities()->first();
 
         return $transaction?->getStateMachineState()?->getTechnicalName();

@@ -222,6 +222,15 @@
             <label lang="zh-CN">必须勾选确认隐私政策</label>
         </input-field>
 
+        <input-field type="bool">
+            <name>showLegalGuaranteeNotice</name>
+            <defaultValue>true</defaultValue>
+            <label>Show legal guarantee notice on sign-up</label>
+            <label lang="zh-CN">在注册页显示法定质保提示</label>
+            <helpText>Links the EU-harmonised legal guarantee notice on the sign-up form. Requires the legal guarantee notice to be enabled in the cart settings.</helpText>
+            <helpText lang="zh-CN">在注册表单中显示欧盟统一法定质保提示链接，需先在购物车设置中启用法定质保提示。</helpText>
+        </input-field>
+
         <input-field type="text">
             <name>pwdRecoverUrl</name>
             <label>Password recovery URL</label>

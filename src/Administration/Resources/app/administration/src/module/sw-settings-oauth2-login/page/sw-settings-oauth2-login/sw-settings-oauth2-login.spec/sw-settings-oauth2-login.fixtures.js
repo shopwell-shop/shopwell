@@ -18,7 +18,7 @@ const credentialFields = [
     },
 ];
 
-export const googleChannel = {
+const googleChannel = {
     technicalName: 'google',
     labelSnippet: 'sso.oauth2.channel.google',
     defaultScopes: ['openid', 'email'],
@@ -26,7 +26,7 @@ export const googleChannel = {
     formFields: credentialFields,
 };
 
-export const wechatChannel = {
+const wechatChannel = {
     technicalName: 'wechat',
     labelSnippet: 'sso.oauth2.channel.wechat',
     defaultScopes: ['snsapi_login'],

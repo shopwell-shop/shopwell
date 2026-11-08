@@ -37,6 +37,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Dbal\FieldResolver\ManyToManyAs
 use Shopwell\Core\Framework\DataAbstractionLayer\Dbal\FieldResolver\ManyToOneAssociationFieldResolver;
 use Shopwell\Core\Framework\DataAbstractionLayer\Dbal\FieldResolver\OneToManyAssociationFieldResolver;
 use Shopwell\Core\Framework\DataAbstractionLayer\Dbal\FieldResolver\TranslationFieldResolver;
+use Shopwell\Core\Framework\DataAbstractionLayer\Dbal\ForeignKeyConstraintViolationExceptionHandler;
 use Shopwell\Core\Framework\DataAbstractionLayer\Dbal\JoinGroupBuilder;
 use Shopwell\Core\Framework\DataAbstractionLayer\Dbal\RowLoader;
 use Shopwell\Core\Framework\DataAbstractionLayer\Dbal\SchemaBuilder;
@@ -129,6 +130,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Version\Cleanup\CleanupVersionT
 use Shopwell\Core\Framework\DataAbstractionLayer\Version\Cleanup\CleanupVersionTaskHandler;
 use Shopwell\Core\Framework\DataAbstractionLayer\Version\VersionDefinition;
 use Shopwell\Core\Framework\DataAbstractionLayer\VersionManager;
+use Shopwell\Core\Framework\DataAbstractionLayer\Write\ClonePayloadBuilder;
 use Shopwell\Core\Framework\DataAbstractionLayer\Write\EntityWriteGatewayInterface;
 use Shopwell\Core\Framework\DataAbstractionLayer\Write\EntityWriter;
 use Shopwell\Core\Framework\DataAbstractionLayer\Write\EntityWriteResultFactory;
@@ -541,6 +543,12 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(VersionDefinition::class),
             service('lock.factory'),
             service(ClockInterface::class),
+            service(ClonePayloadBuilder::class),
+        ]);
+
+    $services->set(ClonePayloadBuilder::class)
+        ->args([
+            service(ClockInterface::class),
         ]);
 
     $services->set(CalculatedPriceFieldSerializer::class)
@@ -907,6 +915,12 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ]);
 
     $services->set(TechnicalNameExceptionHandler::class)
+        ->tag('shopwell.dal.exception_handler');
+
+    $services->set(ForeignKeyConstraintViolationExceptionHandler::class)
+        ->args([
+            service(DefinitionInstanceRegistry::class),
+        ])
         ->tag('shopwell.dal.exception_handler');
 
     $services->set(EntityProtectionValidator::class)

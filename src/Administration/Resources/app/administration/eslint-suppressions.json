@@ -57,7 +57,7 @@
   },
   "src/app/adapter/composition-extension-system/index.ts": {
     "@eslint-community/eslint-comments/require-description": {
-      "count": 4
+      "count": 3
     },
     "@typescript-eslint/no-non-null-assertion": {
       "count": 1
@@ -183,11 +183,6 @@
   "src/app/component/app/sw-app-actions/sw-app-actions.spec.js": {
     "sw-test-rules/no-vm-access": {
       "count": 10
-    }
-  },
-  "src/app/component/app/sw-app-shop-id-change-modal/sw-app-shop-id-change-modal.spec.js": {
-    "sw-test-rules/no-vm-access": {
-      "count": 9
     }
   },
   "src/app/component/app/sw-app-topbar-button/index.js": {
@@ -1505,7 +1500,7 @@
       "count": 1
     },
     "sw-test-rules/no-vm-access": {
-      "count": 50
+      "count": 46
     }
   },
   "src/app/component/media/sw-media-url-form/index.js": {
@@ -2172,11 +2167,6 @@
   "src/app/component/structure/sw-media-modal-renderer/index.ts": {
     "@eslint-community/eslint-comments/require-description": {
       "count": 2
-    }
-  },
-  "src/app/component/structure/sw-media-modal-renderer/sw-media-modal-renderer.spec.js": {
-    "sw-test-rules/no-vm-access": {
-      "count": 1
     }
   },
   "src/app/component/structure/sw-modals-renderer/index.ts": {
@@ -3436,7 +3426,7 @@
   },
   "src/app/service/media-format.service.js": {
     "@eslint-community/eslint-comments/require-description": {
-      "count": 5
+      "count": 2
     },
     "filename-rules/not-match": {
       "count": 1
@@ -3561,7 +3551,7 @@
       "count": 1
     },
     "sw-deprecation-rules/private-feature-declarations": {
-      "count": 6
+      "count": 1
     }
   },
   "src/app/store/admin-menu.store.spec.ts": {
@@ -3615,15 +3605,10 @@
   },
   "src/app/store/in-app-purchase-checkout.store.ts": {
     "@eslint-community/eslint-comments/require-description": {
-      "count": 3
+      "count": 2
     }
   },
   "src/app/store/index.ts": {
-    "@eslint-community/eslint-comments/require-description": {
-      "count": 1
-    }
-  },
-  "src/app/store/main-module.store.ts": {
     "@eslint-community/eslint-comments/require-description": {
       "count": 1
     }
@@ -3638,11 +3623,6 @@
       "count": 2
     }
   },
-  "src/app/store/menu-item.store.ts": {
-    "@eslint-community/eslint-comments/require-description": {
-      "count": 1
-    }
-  },
   "src/app/store/modals.store.ts": {
     "@eslint-community/eslint-comments/require-description": {
       "count": 1
@@ -3650,7 +3630,7 @@
   },
   "src/app/store/notification.store.ts": {
     "@eslint-community/eslint-comments/require-description": {
-      "count": 4
+      "count": 3
     }
   },
   "src/app/store/rule-conditions-config.store.ts": {
@@ -3660,12 +3640,7 @@
   },
   "src/app/store/shopwell-apps.store.ts": {
     "@eslint-community/eslint-comments/require-description": {
-      "count": 3
-    }
-  },
-  "src/app/store/sidebar.store.ts": {
-    "@eslint-community/eslint-comments/require-description": {
-      "count": 1
+      "count": 2
     }
   },
   "src/app/store/sw-bulk-edit.store.ts": {
@@ -3929,12 +3904,12 @@
   },
   "src/core/factory/http-client.types.ts": {
     "@eslint-community/eslint-comments/require-description": {
-      "count": 6
+      "count": 3
     }
   },
   "src/core/factory/http.factory.js": {
     "@eslint-community/eslint-comments/require-description": {
-      "count": 2
+      "count": 1
     },
     "complexity": {
       "count": 1
@@ -4724,12 +4699,12 @@
   },
   "src/core/service/util.service.ts": {
     "@eslint-community/eslint-comments/require-description": {
-      "count": 11
+      "count": 6
     }
   },
   "src/core/service/utils/debug.utils.ts": {
     "@eslint-community/eslint-comments/require-description": {
-      "count": 3
+      "count": 2
     },
     "@typescript-eslint/ban-ts-comment": {
       "count": 2
@@ -4747,7 +4722,7 @@
   },
   "src/core/service/utils/format.utils.ts": {
     "@eslint-community/eslint-comments/require-description": {
-      "count": 9
+      "count": 8
     },
     "@typescript-eslint/ban-ts-comment": {
       "count": 3
@@ -4857,11 +4832,6 @@
       "count": 1
     }
   },
-  "src/meta/baseline.ts": {
-    "max-lines": {
-      "count": 1
-    }
-  },
   "src/meta/meta.spec.js": {
     "@eslint-community/eslint-comments/require-description": {
       "count": 2
@@ -4869,7 +4839,7 @@
   },
   "src/module/index.js": {
     "@eslint-community/eslint-comments/require-description": {
-      "count": 3
+      "count": 2
     },
     "filename-rules/not-match": {
       "count": 1
@@ -7408,11 +7378,6 @@
       "count": 1
     }
   },
-  "src/module/sw-extension/service/extension-store-action.service.ts": {
-    "@eslint-community/eslint-comments/require-description": {
-      "count": 1
-    }
-  },
   "src/module/sw-extension/service/shopwell-extension.service.spec.js": {
     "@eslint-community/eslint-comments/require-description": {
       "count": 4
@@ -8554,11 +8519,6 @@
       "count": 1
     }
   },
-  "src/module/sw-media/component/sw-media-modal-v2/sw-media-modal-v2.spec.js": {
-    "sw-test-rules/no-vm-access": {
-      "count": 4
-    }
-  },
   "src/module/sw-media/component/sw-media-save-modal/index.js": {
     "@eslint-community/eslint-comments/require-description": {
       "count": 1
@@ -9425,11 +9385,6 @@
       "count": 12
     }
   },
-  "src/module/sw-product-stream/component/sw-product-stream-filter/type-provider.js": {
-    "filename-rules/not-match": {
-      "count": 1
-    }
-  },
   "src/module/sw-product-stream/component/sw-product-stream-modal-preview/index.js": {
     "filename-rules/not-match": {
       "count": 1
@@ -9470,9 +9425,6 @@
   },
   "src/module/sw-product-stream/page/sw-product-stream-detail/index.js": {
     "filename-rules/not-match": {
-      "count": 1
-    },
-    "max-nested-callbacks": {
       "count": 1
     }
   },
@@ -9725,9 +9677,6 @@
   "src/module/sw-product/component/sw-product-variant-modal/sw-product-variant-modal.spec.js": {
     "@eslint-community/eslint-comments/require-description": {
       "count": 1
-    },
-    "sw-test-rules/no-vm-access": {
-      "count": 14
     }
   },
   "src/module/sw-product/component/sw-product-variants/sw-product-modal-delivery/index.js": {
@@ -11590,7 +11539,7 @@
   },
   "src/module/sw-settings-listing/component/sw-settings-listing-option-criteria-grid/sw-settings-listing-option-criteria-grid.spec.js": {
     "sw-test-rules/no-vm-access": {
-      "count": 24
+      "count": 17
     }
   },
   "src/module/sw-settings-listing/component/sw-settings-listing-option-general-info/index.js": {
@@ -11669,11 +11618,6 @@
       "count": 1
     },
     "filename-rules/not-match": {
-      "count": 1
-    }
-  },
-  "src/module/sw-settings-logging/component/sw-settings-logging-entry-info/sw-settings-logging-entry-info.spec.js": {
-    "sw-test-rules/no-vm-access": {
       "count": 1
     }
   },

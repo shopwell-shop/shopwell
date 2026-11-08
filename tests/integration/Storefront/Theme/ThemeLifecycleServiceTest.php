@@ -474,6 +474,26 @@ class ThemeLifecycleServiceTest extends TestCase
         static::assertCount(0, $this->themeRepository->search(new Criteria([$childId, $themeEntity->getId()]), $this->context)->getEntities());
     }
 
+    public function testItKeepsMediaThatAnotherThemeUsesWhenRemovingATheme(): void
+    {
+        $bundle = $this->getThemeConfig();
+
+        $this->themeLifecycleService->refreshTheme($bundle, $this->context);
+
+        $shopwellLogo = $this->getMedia('shopwell_logo');
+        $this->themeRepository->create([[
+            'name' => 'Theme sharing the logo',
+            'author' => 'Shopwell',
+            'active' => false,
+            'media' => [['id' => $shopwellLogo->getId()]],
+        ]], $this->context);
+
+        $this->themeLifecycleService->removeTheme($bundle->getTechnicalName(), $this->context);
+
+        static::assertFalse($this->hasTheme($bundle));
+        static::assertSame($shopwellLogo->getId(), $this->getMedia('shopwell_logo')->getId());
+    }
+
     public function testItGeneratesAdministrationSnippetsFromLegacyLabelsAndRemovesThemWithTheTheme(): void
     {
         $bundle = $this->getThemeConfigWithLabels();

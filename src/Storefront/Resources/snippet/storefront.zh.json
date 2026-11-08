@@ -891,7 +891,8 @@
     },
     "search": {
         "headline": "{0}未找到“%searchTerm%”相关商品 | {1}找到 1 件“%searchTerm%”相关商品 | [0,Inf[找到 %count% 件“%searchTerm%”相关商品",
-        "metaTitle": "搜索结果"
+        "metaTitle": "搜索结果",
+        "analyticsListName": "搜索结果"
     },
     "detail": {
         "garanLabelShowLink": "显示 GARAN 标识",
@@ -1015,7 +1016,8 @@
         "wishlistEmptyDescription": "把感兴趣的商品加入收藏，方便随时查看。",
         "deliveryTimeRestock": "{1}1 天后发货，%name% 送达 |[0,Inf[%restockTime% 天后发货，%name% 送达",
         "deliveryShipping": "该商品预计于",
-        "remove": "将 %product_name% 移出收藏"
+        "remove": "将 %product_name% 移出收藏",
+        "analyticsListName": "收藏夹"
     },
     "footer": {
         "serviceHotlineHeadline": "服务热线",

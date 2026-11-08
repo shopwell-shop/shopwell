@@ -7,7 +7,6 @@ use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Plugin\Command\Scaffolding\Generator\GitignoreGenerator;
 use Shopwell\Core\Framework\Plugin\Command\Scaffolding\PluginScaffoldConfiguration;
-use Shopwell\Core\Framework\Plugin\Command\Scaffolding\Stub;
 use Shopwell\Core\Framework\Plugin\Command\Scaffolding\StubCollection;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -54,7 +53,6 @@ class GitignoreGeneratorTest extends TestCase
         static::assertCount(1, $stubCollection);
         static::assertTrue($stubCollection->has('.gitignore'));
 
-        /** @var Stub $stub */
         $stub = $stubCollection->get('.gitignore');
 
         $expectedContent = <<<'GITIGNORE'

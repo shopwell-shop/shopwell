@@ -18,7 +18,8 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Query\ScoreQuery;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Struct\ArrayEntity;
-use Shopwell\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
+use Shopwell\Core\Framework\Test\TestCaseBase\DatabaseTransactionBehaviour;
+use Shopwell\Core\Framework\Test\TestCaseBase\KernelTestBehaviour;
 use Shopwell\Core\Framework\Uuid\Uuid;
 
 /**
@@ -27,7 +28,8 @@ use Shopwell\Core\Framework\Uuid\Uuid;
 #[Package('framework')]
 class AdminSearcherTest extends TestCase
 {
-    use IntegrationTestBehaviour;
+    use DatabaseTransactionBehaviour;
+    use KernelTestBehaviour;
 
     /**
      * @var EntityRepository<ProductCollection>
@@ -76,26 +78,21 @@ class AdminSearcherTest extends TestCase
         $result = $this->searcher->search($queries, $this->context);
 
         static::assertCount(1, $result);
-
         static::assertArrayHasKey('product', $result);
+        static::assertSame(1, $result['product']['total']);
 
-        /** @var ProductCollection $products */
         $products = $result['product']['data'];
-        $first = $products->first();
-        $last = $products->last();
+        static::assertInstanceOf(ProductCollection::class, $products);
+        static::assertCount(1, $products);
 
-        static::assertInstanceOf(ProductEntity::class, $first);
-        static::assertInstanceOf(ProductEntity::class, $last);
+        $product = $products->first();
+        static::assertInstanceOf(ProductEntity::class, $product);
+        static::assertSame($productId1, $product->getId());
 
-        /** @var ArrayEntity $firstSearchExtension */
-        $firstSearchExtension = $first->getExtension('search');
-        $firstScore = $firstSearchExtension->get('_score');
-
-        /** @var ArrayEntity $secondSearchExtension */
-        $secondSearchExtension = $first->getExtension('search');
-        $secondScore = $secondSearchExtension->get('_score');
-
-        static::assertSame($secondScore, $firstScore);
+        $searchExtension = $product->getExtension('search');
+        static::assertInstanceOf(ArrayEntity::class, $searchExtension);
+        // 500 for the manufacturer name plus 2500 for the product name, as the database sums it
+        static::assertSame('3000', $searchExtension->get('_score'));
     }
 
     public function testSearchWithoutReadPermission(): void

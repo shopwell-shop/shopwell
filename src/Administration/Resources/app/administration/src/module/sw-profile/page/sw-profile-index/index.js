@@ -362,13 +362,18 @@ export default {
                     })
                     .catch((error) => {
                         if (error?.response?.data?.errors?.[0]) {
+                            const field =
+                                error.response.data.errors[0].code === 'USER__USERNAME_NOT_UNIQUE' ? 'username' : 'password';
                             Shopwell.Store.get('error').addApiError({
-                                expression: `user.${this.user?.id}.password`,
+                                expression: `user.${this.user?.id}.${field}`,
                                 error: new Shopwell.Classes.ShopwellError(error.response.data.errors[0]),
                             });
                         }
                         this.createNotificationError({
-                            message: this.$t('sw-profile.index.notificationSaveErrorMessage'),
+                            message:
+                                error?.response?.data?.errors?.[0]?.code === 'USER__USERNAME_NOT_UNIQUE'
+                                    ? this.$t('global.error-codes.USER__USERNAME_NOT_UNIQUE')
+                                    : this.$t('sw-profile.index.notificationSaveErrorMessage'),
                         });
                         this.isLoading = false;
                         this.isSaveSuccessful = false;
@@ -401,8 +406,8 @@ export default {
                     this.newPassword = '';
                     this.newPasswordConfirm = '';
                 })
-                .catch(() => {
-                    this.handleUserSaveError();
+                .catch((error) => {
+                    this.handleUserSaveError(error);
                     this.isLoading = false;
                     this.isSaveSuccessful = false;
                 });
@@ -446,10 +451,13 @@ export default {
             this.showMediaModal = true;
         },
 
-        handleUserSaveError() {
+        handleUserSaveError(error) {
             if (this.$route.name.includes('sw.profile.index')) {
                 this.createNotificationError({
-                    message: this.$t('sw-profile.index.notificationSaveErrorMessage'),
+                    message:
+                        error?.response?.data?.errors?.[0]?.code === 'USER__USERNAME_NOT_UNIQUE'
+                            ? this.$t('global.error-codes.USER__USERNAME_NOT_UNIQUE')
+                            : this.$t('sw-profile.index.notificationSaveErrorMessage'),
                 });
             }
             this.isLoading = false;

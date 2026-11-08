@@ -8,6 +8,8 @@ use Shopwell\Core\Content\ImportExport\Exception\InvalidIdentifierException;
 use Shopwell\Core\Content\ImportExport\Exception\ProcessingException;
 use Shopwell\Core\Content\ImportExport\Exception\ProfileNotFoundException;
 use Shopwell\Core\Content\ImportExport\Exception\RequiredByUserException;
+use Shopwell\Core\Framework\Deprecation\BCChange\ReturnTypeNarrowing;
+use Shopwell\Core\Framework\Feature;
 use Shopwell\Core\Framework\HttpException;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
@@ -42,6 +44,7 @@ class ImportExportException extends HttpException
     final public const IMPORT_EXPORT_FILE_DOWNLOAD_THROTTLED = 'CONTENT__IMPORT_EXPORT__FILE_DOWNLOAD_THROTTLED';
 
     final public const INVALID_INSTANCE_TYPE = 'CONTENT__IMPORT_EXPORT__INVALID_INSTANCE_TYPE';
+    final public const INVALID_RESOURCE = 'CONTENT__IMPORT_EXPORT__INVALID_RESOURCE';
     final public const SERIALIZER_NOT_FOUND = 'CONTENT__IMPORT_EXPORT__SERIALIZER_NOT_FOUND';
     final public const UPDATE_ENTITY_NOT_FOUND = 'CONTENT__IMPORT_EXPORT__UPDATE_ENTITY_NOT_FOUND';
     /**
@@ -312,6 +315,21 @@ class ImportExportException extends HttpException
             self::INVALID_INSTANCE_TYPE,
             'Expected "{{ argument }}" to be an instance of "{{ expected }}".',
             ['argument' => $argument, 'expected' => $expected],
+        );
+    }
+
+    #[ReturnTypeNarrowing(version: 'v6.8.0', newType: 'self')]
+    public static function invalidResource(string $argument): self|\InvalidArgumentException
+    {
+        if (!Feature::isActive('v6.8.0.0')) {
+            return new \InvalidArgumentException(\sprintf('Argument %s is not a resource', $argument));
+        }
+
+        return new self(
+            Response::HTTP_BAD_REQUEST,
+            self::INVALID_RESOURCE,
+            'Argument {{ argument }} is not a resource',
+            ['argument' => $argument],
         );
     }
 

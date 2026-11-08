@@ -8,6 +8,7 @@ use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Checkout\Cart\Event\CheckoutOrderPlacedEvent;
 use Shopwell\Core\Content\Flow\Dispatching\StorableFlow;
 use Shopwell\Core\Content\Flow\Dispatching\Storer\ScalarValuesStorer;
+use Shopwell\Core\Content\Mail\Service\Mail;
 use Shopwell\Core\Content\MailTemplate\Service\Event\MailBeforeSentEvent;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\Log\Package;
@@ -46,7 +47,7 @@ class MailBeforeSentEventTest extends TestCase
     {
         $context = Context::createDefaultContext();
         $customerId = Uuid::randomHex();
-        $email = (new Email())->subject('test subject')
+        $email = (new Mail())->subject('test subject')
             ->html('content html')
             ->text('content plain')
             ->to('test@shopwell.cn')
@@ -68,9 +69,7 @@ class MailBeforeSentEventTest extends TestCase
             'customerId' => $customerId,
         ], $event->getData());
         static::assertSame([
-            'data' => [
-                'customerId' => $customerId,
-            ],
+            'data' => ['customerId' => $customerId],
             'eventName' => CheckoutOrderPlacedEvent::EVENT_NAME,
             'message' => $email,
         ], $event->getLogData());

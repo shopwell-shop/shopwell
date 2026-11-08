@@ -2,7 +2,7 @@ const { remove } = Shopwell.Utils.array;
 const { Service } = Shopwell;
 const { Criteria } = Shopwell.Data;
 const DEFAULT_TTL = 5 * 60 * 1000;
-const DEFAULT_LIMIT = 25;
+const DEFAULT_LIMIT = null;
 
 /**
  * @sw-package framework

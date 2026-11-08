@@ -172,14 +172,32 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     // endregion Message handlers
 
     // region File Services
-    $services->set(FileService::class);
+    $services->set(FileService::class)
+        ->args([
+            param('shopwell.media.allowed_protocols'),
+        ]);
 
     $services->set(TrustedUrlResolver::class)
         ->args([
             null,
             param('shopwell.media.enable_url_validation'),
+            [],
+            param('shopwell.media.allowed_protocols'),
         ])
         ->tag('kernel.reset', ['method' => 'reset']);
+
+    // external media links accept only http and https, independent of shopwell.media.allowed_protocols
+    $services->set('shopwell.media.external_link.trusted_url_resolver', TrustedUrlResolver::class)
+        ->args([
+            null,
+            param('shopwell.media.enable_url_validation'),
+        ])
+        ->tag('kernel.reset', ['method' => 'reset']);
+
+    $services->set('shopwell.media.external_link.url_validator', FileUrlValidator::class)
+        ->args([
+            service('shopwell.media.external_link.trusted_url_resolver'),
+        ]);
 
     $services->set(FileFetcher::class)
         ->args([
@@ -440,8 +458,8 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('shopwell.media.upload.http_client'),
             service('media_thumbnail.repository'),
             service('media_thumbnail_size.repository'),
-            service(FileUrlValidatorInterface::class),
-            service(TrustedUrlResolver::class),
+            service('shopwell.media.external_link.url_validator'),
+            service('shopwell.media.external_link.trusted_url_resolver'),
             param('shopwell.media.enable_url_validation'),
             param('shopwell.media.external_link_timeout'),
         ]);

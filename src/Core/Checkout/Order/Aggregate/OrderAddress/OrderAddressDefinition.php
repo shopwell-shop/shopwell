@@ -94,7 +94,7 @@ class OrderAddressDefinition extends EntityDefinition
             (new ManyToOneAssociationField('countryDistrict', 'country_district_id', CountryDistrictDefinition::class, 'id', false))->addFlags(new ApiAware()),
             (new ManyToOneAssociationField('order', 'order_id', OrderDefinition::class, 'id', false))->addFlags(new RestrictDelete()),
             // We need to cascade delete the order deliveries, because when deleting an order, the cascade delete will be triggered first
-            (new OneToManyAssociationField('orderDeliveries', OrderDeliveryDefinition::class, 'shipping_order_address_id', 'id'))->addFlags(new CascadeDelete()),
+            (new OneToManyAssociationField('orderDeliveries', OrderDeliveryDefinition::class, 'shipping_order_address_id', 'id'))->addFlags(new CascadeDelete(cloneRelevant: false)),
         ]);
 
         if (!Feature::isActive('v6.8.0.0')) {

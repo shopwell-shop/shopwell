@@ -154,6 +154,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Search\CompressedCriteriaDecode
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\SearchConfigLoader;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Term\Filter\TokenFilter;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Term\Tokenizer;
+use Shopwell\Core\Framework\DataAbstractionLayer\Write\Validation\WriteOutcome;
 use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Script\Execution\ScriptExecutor;
 use Shopwell\Core\Framework\Util\HtmlSanitizer;
@@ -573,7 +574,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(ProductLineItemCommandValidator::class)
         ->args([
-            service(Connection::class),
+            service(WriteOutcome::class),
         ])
         ->tag('kernel.event_subscriber');
 

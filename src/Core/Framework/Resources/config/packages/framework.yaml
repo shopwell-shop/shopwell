@@ -63,6 +63,8 @@ framework:
                 adapter: cache.app
             cache.rate_limiter:
                 adapter: cache.app
+            cache.sms_login:
+                adapter: cache.app
             cache.double_submit:
                 adapter: cache.app
             cache.app_url_verification:
@@ -132,6 +134,8 @@ framework:
         Shopwell\Core\Content\Cms\Exception\PageNotFoundException:
             log_level: notice
         Shopwell\Core\Checkout\Cart\Exception\CustomerNotLoggedInException:
+            log_level: notice
+        Shopwell\Core\Framework\Routing\Exception\CustomerNotLoggedInRoutingException:
             log_level: notice
         Shopwell\Core\Checkout\Customer\Exception\AddressNotFoundException:
             log_level: notice

@@ -114,7 +114,6 @@ use Shopwell\Core\System\SystemConfig\SystemConfigService;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpFoundation\RequestStack;
-use Symfony\Contracts\Cache\CacheInterface;
 
 use function Symfony\Component\DependencyInjection\Loader\Configurator\env;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\param;
@@ -178,7 +177,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service('customer.repository'),
             service(AbstractSmsSender::class),
-            service(CacheInterface::class),
+            service('cache.sms_login'),
             service(PhoneNumberNormalizerInterface::class),
             service(PhoneNumberMaskerInterface::class),
             service('logger'),

@@ -136,22 +136,22 @@ class PaymentDistinguishableNameSubscriberTest extends TestCase
         static::assertNotNull($creditCardPayment);
         static::assertSame('Credit card', $creditCardPayment->getDistinguishableName());
 
-        /** @var PaymentMethodEntity $invoicePaymentByShopwellPlugin */
         $invoicePaymentByShopwellPlugin = $payments->get($invoicePaymentByShopwellPluginId);
+        static::assertInstanceOf(PaymentMethodEntity::class, $invoicePaymentByShopwellPlugin);
         static::assertSame('Invoice | Shopwell (English)', $invoicePaymentByShopwellPlugin->getDistinguishableName());
 
-        /** @var PaymentMethodEntity $invoicePaymentByPlugin */
         $invoicePaymentByPlugin = $payments->get($invoicePaymentByPluginId);
+        static::assertInstanceOf(PaymentMethodEntity::class, $invoicePaymentByPlugin);
         static::assertSame('Invoice | Plugin (English)', $invoicePaymentByPlugin->getDistinguishableName());
 
-        /** @var PaymentMethodEntity $invoicePaymentByApp */
         $invoicePaymentByApp = $payments->get($invoicePaymentByAppId);
+        static::assertInstanceOf(PaymentMethodEntity::class, $invoicePaymentByApp);
         static::assertSame('Invoice | App', $invoicePaymentByApp->getDistinguishableName());
 
-        /** @var PaymentMethodEntity $paidInAdvance */
         $paidInAdvance = $payments
             ->filterByProperty('name', 'Paid in advance')
             ->first();
+        static::assertInstanceOf(PaymentMethodEntity::class, $paidInAdvance);
 
         static::assertSame($paidInAdvance->getTranslation('name'), $paidInAdvance->getTranslation('distinguishableName'));
 
@@ -171,16 +171,16 @@ class PaymentDistinguishableNameSubscriberTest extends TestCase
         static::assertNotNull($creditCardPayment);
         static::assertSame('信用卡', $creditCardPayment->getDistinguishableName());
 
-        /** @var PaymentMethodEntity $invoicePaymentByShopwellPlugin */
         $invoicePaymentByShopwellPlugin = $payments->get($invoicePaymentByShopwellPluginId);
+        static::assertInstanceOf(PaymentMethodEntity::class, $invoicePaymentByShopwellPlugin);
         static::assertSame('发票支付 | Shopwell (中文)', $invoicePaymentByShopwellPlugin->getDistinguishableName());
 
-        /** @var PaymentMethodEntity $invoicePaymentByPlugin */
         $invoicePaymentByPlugin = $payments->get($invoicePaymentByPluginId);
+        static::assertInstanceOf(PaymentMethodEntity::class, $invoicePaymentByPlugin);
         static::assertSame('发票 | Plugin (中文)', $invoicePaymentByPlugin->getDistinguishableName());
 
-        /** @var PaymentMethodEntity $invoicePaymentByApp */
         $invoicePaymentByApp = $payments->get($invoicePaymentByAppId);
+        static::assertInstanceOf(PaymentMethodEntity::class, $invoicePaymentByApp);
         static::assertSame('发票 | App', $invoicePaymentByApp->getDistinguishableName());
     }
 }

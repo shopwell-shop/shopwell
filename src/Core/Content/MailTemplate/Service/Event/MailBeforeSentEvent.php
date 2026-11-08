@@ -6,6 +6,7 @@ use Monolog\Level;
 use Shopwell\Core\Content\Flow\Dispatching\Action\FlowMailVariables;
 use Shopwell\Core\Content\Flow\Dispatching\Aware\MessageAware;
 use Shopwell\Core\Content\Flow\Dispatching\Aware\ScalarValuesAware;
+use Shopwell\Core\Content\Mail\Service\MailLogData;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\Event\EventData\ArrayType;
 use Shopwell\Core\Framework\Event\EventData\EventDataCollection;
@@ -75,6 +76,14 @@ class MailBeforeSentEvent extends Event implements LogAware, MessageAware, Scala
 
     public function getLogData(): array
     {
+        if (MailLogData::isSensitive($this->data, ['eventName' => $this->eventName]) || MailLogData::isSensitiveMessage($this->message)) {
+            return MailLogData::create([
+                ...$this->data,
+                ...MailLogData::fromMessage($this->message),
+                'eventName' => $this->eventName,
+            ]);
+        }
+
         $data = $this->data;
         unset($data['binAttachments']);
 

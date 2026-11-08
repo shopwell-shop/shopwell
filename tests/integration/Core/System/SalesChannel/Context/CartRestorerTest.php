@@ -23,7 +23,6 @@ use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopwell\Core\Framework\Util\Random;
 use Shopwell\Core\Framework\Uuid\Uuid;
-use Shopwell\Core\System\SalesChannel\Context\AbstractSalesChannelContextFactory;
 use Shopwell\Core\System\SalesChannel\Context\CartRestorer;
 use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextFactory;
 use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextPersister;
@@ -82,7 +81,6 @@ class CartRestorerTest extends TestCase
         };
 
         $this->contextPersister = static::getContainer()->get(SalesChannelContextPersister::class);
-        /** @var AbstractSalesChannelContextFactory $contextFactory */
         $contextFactory = static::getContainer()->get(SalesChannelContextFactory::class);
         $cartCalculator = static::getContainer()->get(CartCalculator::class);
         $requestStack = static::getContainer()->get(RequestStack::class);
@@ -516,10 +514,9 @@ class CartRestorerTest extends TestCase
         static::assertArrayHasKey(BeforeCartMergeEvent::class, $this->events);
         static::assertArrayHasKey(CartMergedEvent::class, $this->events);
 
-        /** @var CartMergedEvent $event */
         $event = $this->events[CartMergedEvent::class];
+        static::assertInstanceOf(CartMergedEvent::class, $event);
 
-        static::assertNotNull($event->getPreviousCart());
         static::assertCount(0, $event->getPreviousCart()->getLineItems());
         static::assertSame($event->getCart()->getToken(), $event->getPreviousCart()->getToken());
 
