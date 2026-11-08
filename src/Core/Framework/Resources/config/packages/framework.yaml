@@ -63,6 +63,8 @@ framework:
                 adapter: cache.app
             cache.rate_limiter:
                 adapter: cache.app
+            cache.sms_login:
+                adapter: cache.app
             cache.double_submit:
                 adapter: cache.app
             cache.app_url_verification:
