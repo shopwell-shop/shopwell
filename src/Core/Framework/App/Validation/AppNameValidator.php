@@ -3,8 +3,9 @@
 namespace Shopwell\Core\Framework\App\Validation;
 
 use Shopwell\Core\Framework\App\Manifest\Manifest;
+use Shopwell\Core\Framework\App\Source\SourceResolver;
 use Shopwell\Core\Framework\App\Validation\Error\AppNameError;
-use Shopwell\Core\Framework\App\Validation\Error\ErrorCollection;
+use Shopwell\Core\Framework\App\Validation\Error\Error;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\Log\Package;
 
@@ -14,16 +15,21 @@ use Shopwell\Core\Framework\Log\Package;
 #[Package('framework')]
 class AppNameValidator extends AbstractManifestValidator
 {
-    public function validate(Manifest $manifest, ?Context $context): ErrorCollection
+    public function __construct(private readonly SourceResolver $sourceResolver)
     {
-        $errors = new ErrorCollection();
+    }
 
-        $appName = strtolower(substr($manifest->getPath(), (int) strrpos($manifest->getPath(), '/') + 1));
+    /**
+     * @return list<Error>
+     */
+    public function validate(Manifest $manifest, ?Context $context): array
+    {
+        $directory = strtolower(basename($this->sourceResolver->filesystemForManifest($manifest)->location));
 
-        if ($appName !== strtolower($manifest->getMetadata()->getName())) {
-            $errors->add(new AppNameError($manifest->getMetadata()->getName()));
+        if ($directory === strtolower($manifest->getMetadata()->getName())) {
+            return [];
         }
 
-        return $errors;
+        return [new AppNameError($manifest->getMetadata()->getName())];
     }
 }

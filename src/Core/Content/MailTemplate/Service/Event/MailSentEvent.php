@@ -6,6 +6,7 @@ use Monolog\Level;
 use Shopwell\Core\Content\Flow\Dispatching\Action\FlowMailVariables;
 use Shopwell\Core\Content\Flow\Dispatching\Aware\ScalarValuesAware;
 use Shopwell\Core\Content\Mail\Service\AbstractMailFactory;
+use Shopwell\Core\Content\Mail\Service\MailLogData;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\Event\EventData\ArrayType;
 use Shopwell\Core\Framework\Event\EventData\EventDataCollection;
@@ -136,12 +137,17 @@ class MailSentEvent extends Event implements LogAware, ScalarValuesAware, FlowEv
 
     public function getLogData(): array
     {
-        return [
+        $data = [
             'eventName' => $this->eventName,
             'subject' => $this->subject,
             'recipients' => $this->recipients,
-            'contents' => $this->contents,
         ];
+
+        if (!MailLogData::isSensitive($this->data, ['eventName' => $this->eventName]) && ($this->message === null || !MailLogData::isSensitiveMessage($this->message))) {
+            $data['contents'] = $this->contents;
+        }
+
+        return $data;
     }
 
     public function getLogLevel(): Level

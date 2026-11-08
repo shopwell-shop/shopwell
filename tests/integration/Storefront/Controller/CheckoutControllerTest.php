@@ -152,7 +152,6 @@ class CheckoutControllerTest extends TestCase
         $request = $this->createRequest();
         $request->request->set('fail', true);
 
-        /** @var RedirectResponse|Response $response */
         $response = static::getContainer()->get(CheckoutController::class)->order($requestDataBag, $salesChannelContext, $request);
 
         static::assertInstanceOf(RedirectResponse::class, $response);
@@ -870,7 +869,6 @@ class CheckoutControllerTest extends TestCase
             $request = $this->createRequest();
         }
 
-        /** @var RedirectResponse|Response $response */
         $response = static::getContainer()->get(CheckoutController::class)->order($requestDataBag, $salesChannelContext, $request);
 
         static::assertInstanceOf(RedirectResponse::class, $response);

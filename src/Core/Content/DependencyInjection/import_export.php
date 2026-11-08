@@ -198,13 +198,15 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service('language.repository'),
         ])
-        ->tag('shopwell.import_export.field_serializer', ['priority' => -500]);
+        ->tag('shopwell.import_export.field_serializer', ['priority' => -500])
+        ->tag('kernel.reset', ['method' => 'reset']);
 
     $services->set(PriceSerializer::class)
         ->args([
             service('currency.repository'),
         ])
-        ->tag('shopwell.import_export.field_serializer', ['priority' => -500]);
+        ->tag('shopwell.import_export.field_serializer', ['priority' => -500])
+        ->tag('kernel.reset', ['method' => 'reset']);
 
     $services->set(CustomFieldsSerializer::class)
         ->args([

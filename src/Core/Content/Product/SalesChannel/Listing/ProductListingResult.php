@@ -5,15 +5,13 @@ namespace Shopwell\Core\Content\Product\SalesChannel\Listing;
 use Shopwell\Core\Content\Product\ProductCollection;
 use Shopwell\Core\Content\Product\SalesChannel\Sorting\ProductSortingCollection;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
-use Shopwell\Core\Framework\Deprecation\BCChange\ClassHierarchyChange;
+use Shopwell\Core\Framework\Feature;
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\Framework\Struct\Struct;
 
 /**
  * @extends EntitySearchResult<ProductCollection>
  */
 #[Package('inventory')]
-#[ClassHierarchyChange(version: 'v6.8.0', description: 'Will no longer extend EntitySearchResult, but will keep extending Struct.', newParentClass: Struct::class)]
 class ProductListingResult extends EntitySearchResult
 {
     protected ?string $sorting = null;
@@ -28,7 +26,7 @@ class ProductListingResult extends EntitySearchResult
     protected ?string $streamId = null;
 
     /**
-     * Construction entry point with a stable signature across the v6.8.0 cut. Callers that adopt this method now will keep working after the structural change.
+     * @deprecated tag:v6.8.0 - Will be removed. Use createFrom() and the setters instead.
      *
      * @param EntitySearchResult<ProductCollection> $result
      * @param array<string, int|float|string|bool|array<mixed>|null> $currentFilters
@@ -40,34 +38,15 @@ class ProductListingResult extends EntitySearchResult
         array $currentFilters = [],
         ?string $streamId = null,
     ): self {
-        $instance = self::createFrom($result);
+        Feature::triggerDeprecationOrThrow('v6.8.0.0', Feature::deprecatedMethodMessage(self::class, __FUNCTION__, 'v6.8.0.0', 'createFrom()'));
 
-        if ($availableSortings !== null) {
-            $instance->availableSortings = $availableSortings;
-        }
+        $instance = self::createFrom($result);
+        $instance->availableSortings = $availableSortings ?? $instance->availableSortings ?? new ProductSortingCollection();
         $instance->sorting = $sorting;
         $instance->currentFilters = $currentFilters;
         $instance->streamId = $streamId;
 
         return $instance;
-    }
-
-    /**
-     * Intentionally not deprecated, unlike the parent method: listing processors modify the page after construction by design.
-     */
-    public function setPage(int $page): void
-    {
-        /** @phpstan-ignore shopwell.futureIncompatibility.propertyBecomesReadonly (ProductListingResult no longer extends EntitySearchResult in v6.8.0, so this code path will be removed.) */
-        $this->page = $page;
-    }
-
-    /**
-     * Intentionally not deprecated, unlike the parent method: listing processors modify the limit after construction by design.
-     */
-    public function setLimit(int $limit): void
-    {
-        /** @phpstan-ignore shopwell.futureIncompatibility.propertyBecomesReadonly (ProductListingResult no longer extends EntitySearchResult in v6.8.0, so this code path will be removed.) */
-        $this->limit = $limit;
     }
 
     /**

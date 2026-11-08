@@ -7,12 +7,13 @@ use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Adapter\Database\MySQLFactory;
 use Shopwell\Core\Framework\Adapter\Twig\AppTemplateIterator;
 use Shopwell\Core\Framework\Adapter\Twig\TemplatePathIteratorInterface;
-use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopwell\Core\Framework\App\Template\TemplateCollection;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\AggregationResult\AggregationResultCollection;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\AggregationResult\Bucket\Bucket;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\AggregationResult\Bucket\TermsResult;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Test\TestCaseBase\EnvTestBehaviour;
+use Shopwell\Core\Test\Stub\DataAbstractionLayer\StaticEntityRepository;
 
 /**
  * @internal
@@ -34,8 +35,7 @@ class AppTemplateIteratorTest extends TestCase
         $aggregationResult = new AggregationResultCollection();
         $aggregationResult->add($termsResult);
 
-        $repository = static::createStub(EntityRepository::class);
-        $repository->method('aggregate')->willReturn($aggregationResult);
+        $repository = StaticEntityRepository::of(TemplateCollection::class, [$aggregationResult]);
 
         $iterator = new AppTemplateIterator($filesystemTemplates, $repository);
 
@@ -54,8 +54,7 @@ class AppTemplateIteratorTest extends TestCase
 
         $filesystemTemplates = new AppTemplateIteratorStaticTemplateIterator(['storefront/base.html.twig']);
 
-        $repository = $this->createMock(EntityRepository::class);
-        $repository->expects($this->never())->method('aggregate');
+        $repository = StaticEntityRepository::of(TemplateCollection::class);
 
         $iterator = new AppTemplateIterator($filesystemTemplates, $repository);
 
@@ -73,8 +72,7 @@ class AppTemplateIteratorTest extends TestCase
         $aggregationResult = new AggregationResultCollection();
         $aggregationResult->add($termsResult);
 
-        $repository = static::createStub(EntityRepository::class);
-        $repository->method('aggregate')->willReturn($aggregationResult);
+        $repository = StaticEntityRepository::of(TemplateCollection::class, [$aggregationResult]);
 
         $iterator = new AppTemplateIterator($filesystemTemplates, $repository);
 
@@ -99,8 +97,7 @@ class AppTemplateIteratorTest extends TestCase
         $aggregationResult = new AggregationResultCollection();
         $aggregationResult->add($termsResult);
 
-        $repository = static::createStub(EntityRepository::class);
-        $repository->method('aggregate')->willReturn($aggregationResult);
+        $repository = StaticEntityRepository::of(TemplateCollection::class, [$aggregationResult]);
 
         $iterator = new AppTemplateIterator($filesystemTemplates, $repository);
 
@@ -128,8 +125,7 @@ class AppTemplateIteratorTest extends TestCase
         $aggregationResult = new AggregationResultCollection();
         $aggregationResult->add($termsResult);
 
-        $repository = static::createStub(EntityRepository::class);
-        $repository->method('aggregate')->willReturn($aggregationResult);
+        $repository = StaticEntityRepository::of(TemplateCollection::class, [$aggregationResult]);
 
         $iterator = new AppTemplateIterator($filesystemTemplates, $repository);
 

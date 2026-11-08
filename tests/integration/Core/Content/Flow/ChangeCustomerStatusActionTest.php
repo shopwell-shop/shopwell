@@ -109,11 +109,11 @@ class ChangeCustomerStatusActionTest extends TestCase
 
         $this->login($email, 'shopwell');
 
-        /** @var CustomerEntity $customer */
         $customer = $this->customerRepository->search(
             new Criteria([$this->ids->get('customer')]),
             Context::createDefaultContext()
         )->getEntities()->first();
+        static::assertInstanceOf(CustomerEntity::class, $customer);
 
         static::assertFalse($customer->getActive());
     }

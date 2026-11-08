@@ -11,6 +11,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Store\Event\FirstRunWizardFinishedEvent;
 use Shopwell\Core\System\SalesChannel\SalesChannelCollection;
+use Shopwell\Storefront\Theme\Exception\ThemeException;
 use Shopwell\Storefront\Theme\ThemeCollection;
 use Shopwell\Storefront\Theme\ThemeLifecycleService;
 use Shopwell\Storefront\Theme\ThemeService;
@@ -65,7 +66,7 @@ class FirstRunWizardSubscriber implements EventSubscriberInterface
 
         $theme = $this->themeRepository->search($themeCriteria, $context)->getEntities()->first();
         if (!$theme) {
-            throw new \RuntimeException('Default theme not found');
+            throw ThemeException::couldNotFindThemeByName('Storefront');
         }
 
         $themeSalesChannels = $theme->getSalesChannels();
@@ -77,7 +78,7 @@ class FirstRunWizardSubscriber implements EventSubscriberInterface
         $salesChannelCriteria = (new Criteria())
             ->addFilter(new EqualsFilter('typeId', Defaults::SALES_CHANNEL_TYPE_STOREFRONT));
 
-        $salesChannelIds = $this->salesChannelRepository->search($salesChannelCriteria, $context)->getEntities()->getIds();
+        $salesChannelIds = $this->salesChannelRepository->searchIds($salesChannelCriteria, $context)->getIds();
 
         foreach ($salesChannelIds as $id) {
             $this->themeService->compileTheme($id, $theme->getId(), $context);

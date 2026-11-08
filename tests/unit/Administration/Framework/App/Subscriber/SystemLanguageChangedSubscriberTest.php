@@ -8,12 +8,9 @@ use PHPUnit\Framework\TestCase;
 use Shopwell\Administration\Framework\App\Subscriber\SystemLanguageChangedSubscriber;
 use Shopwell\Administration\Snippet\AppAdministrationSnippetCollection;
 use Shopwell\Administration\Snippet\AppAdministrationSnippetEntity;
-use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
-use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\Maintenance\System\Service\SystemLanguageChangeEvent;
-use Shopwell\Core\System\Locale\LocaleCollection;
 use Shopwell\Core\System\Locale\LocaleEntity;
 use Shopwell\Core\System\Locale\LocaleException;
 use Shopwell\Core\Test\Stub\DataAbstractionLayer\StaticEntityRepository;
@@ -37,42 +34,31 @@ class SystemLanguageChangedSubscriberTest extends TestCase
     {
         $snippetRepository = new StaticEntityRepository([new AppAdministrationSnippetCollection()]);
 
+        $localeRepository = new StaticEntityRepository([]);
+
         $subscriber = new SystemLanguageChangedSubscriber(
-            $localeRepository = $this->createMock(EntityRepository::class),
+            $localeRepository,
             $snippetRepository
         );
-
-        $localeRepository->expects($this->never())
-            ->method('search');
 
         $subscriber->onSystemLanguageChanged(new SystemLanguageChangeEvent(
             'previous-language-id',
             'en-GB',
             'en-US',
         ));
+
+        static::assertSame([], $localeRepository->searchedCriteria);
     }
 
     public function testOnSystemLanguageChangedThrowsExceptionWhenNewLocaleDoesNotExist(): void
     {
-        $localeRepository = static::createStub(EntityRepository::class);
-        $snippetRepository = static::createStub(EntityRepository::class);
-
-        $snippetCollection = new AppAdministrationSnippetCollection([
+        $localeRepository = new StaticEntityRepository([[]]);
+        $snippetRepository = new StaticEntityRepository([new AppAdministrationSnippetCollection([
             (new AppAdministrationSnippetEntity())->assign([
                 'id' => 'snippet-id',
                 'appId' => 'app-id',
             ]),
-        ]);
-
-        $snippetSearchResult = static::createStub(EntitySearchResult::class);
-        $snippetSearchResult->method('getEntities')->willReturn($snippetCollection);
-
-        $snippetRepository->method('search')->willReturn($snippetSearchResult);
-
-        $localeSearchResult = static::createStub(EntitySearchResult::class);
-        $localeSearchResult->method('first')->willReturn(null);
-
-        $localeRepository->method('search')->willReturn($localeSearchResult);
+        ])]);
 
         $subscriber = new SystemLanguageChangedSubscriber(
             $localeRepository,
@@ -90,11 +76,14 @@ class SystemLanguageChangedSubscriberTest extends TestCase
         );
     }
 
-    public function testDoesNotUpdateSnippetsIfSystemLanguageIsChangedFromEnGbToDeDe(): void
+    public function testDoesNotUpdateSnippetsIfSystemLanguageIsChangedFromEnGbToZhCn(): void
     {
+        $previousLocale = $this->createLocale('en-GB');
+        $newLocale = $this->createLocale('zh-CN');
+
         $localeRepository = new StaticEntityRepository([
-            new LocaleCollection([$previousLocale = $this->createLocale('en-GB')]),
-            new LocaleCollection([$newLocale = $this->createLocale('zh-CN')]),
+            [$previousLocale->getId()],
+            [$newLocale->getId()],
         ]);
 
         $snippetRepository = new StaticEntityRepository([new AppAdministrationSnippetCollection([
@@ -121,9 +110,12 @@ class SystemLanguageChangedSubscriberTest extends TestCase
     #[DataProvider('localeCodes')]
     public function testUpdatesSnippetsForPreviousLocaleWithPreviousLocaleId(string $locale): void
     {
+        $previousLocale = $this->createLocale('en-GB');
+        $newLocale = $this->createLocale($locale);
+
         $localeRepository = new StaticEntityRepository([
-            new LocaleCollection([$previousLocale = $this->createLocale('en-GB')]),
-            new LocaleCollection([$newLocale = $this->createLocale($locale)]),
+            [$previousLocale->getId()],
+            [$newLocale->getId()],
         ]);
 
         $snippetRepository = new StaticEntityRepository([new AppAdministrationSnippetCollection([
@@ -158,9 +150,12 @@ class SystemLanguageChangedSubscriberTest extends TestCase
     #[DataProvider('localeCodes')]
     public function testUpdatesSnippetsForNewLocaleWithNewLocaleId(string $locale): void
     {
+        $previousLocale = $this->createLocale('en-GB');
+        $newLocale = $this->createLocale($locale);
+
         $localeRepository = new StaticEntityRepository([
-            new LocaleCollection([$previousLocale = $this->createLocale('en-GB')]),
-            new LocaleCollection([$newLocale = $this->createLocale($locale)]),
+            [$previousLocale->getId()],
+            [$newLocale->getId()],
         ]);
 
         $snippetRepository = new StaticEntityRepository([new AppAdministrationSnippetCollection([

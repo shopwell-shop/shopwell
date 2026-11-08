@@ -300,7 +300,11 @@
         "description": "批量修改已完成，但存在错误。",
         "buttons": {
           "openLog": "打开日志文件"
-        }
+        },
+        "failedStatusChanges": "以下 {count} 项状态更改失败：",
+        "orderNotFound": "订单不存在或已不可用。",
+        "orderLoadFailed": "无法加载订单，尚未尝试更改状态。",
+        "transitionFailed": "更改状态时出错。请核实当前订单状态后再重试。"
       },
       "warningText": "请等待批量修改完成，这可能需要一点时间。如果提前关闭浏览器标签页或中止进程，部分更改可能不会被应用。你可以随时重新执行批量修改。",
       "warningTextDocumentDeletion": "单据与订单关联，可能涉及税务合规。删除单据可能影响账务的可追溯性。请先确认删除在法律上是否允许。",
@@ -350,6 +354,11 @@
             "cancellationInvoices": "冲销发票"
           },
           "skipSentDocuments": "跳过已发送的单据"
+        },
+        "failedFields": {
+          "orderTransactions": "支付状态",
+          "orderDeliveries": "配送状态",
+          "orders": "订单状态"
         }
       },
       "documents": {

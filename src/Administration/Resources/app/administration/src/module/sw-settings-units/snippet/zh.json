@@ -3,7 +3,14 @@
     "detail": {
       "fieldLabels": {
         "name": "商品单位名称",
-        "shortCode": "简称"
+        "shortCode": "简称",
+        "uneceCode": "单位代码（UN/ECE）"
+      },
+      "helpTexts": {
+        "uneceCode": "电子发票和接口使用的标准代码，例如 KGM 表示千克。"
+      },
+      "placeholders": {
+        "uneceCode": "请选择单位代码…"
       }
     },
     "general": {
@@ -14,7 +21,8 @@
     },
     "grid": {
       "columnName": "商品单位",
-      "columnShortCode": "简称"
+      "columnShortCode": "简称",
+      "columnUneceCode": "单位代码"
     },
     "empty-state": {
       "title": "暂无商品单位",
@@ -22,7 +30,49 @@
     },
     "notification": {
       "successMessage": "商品单位已成功保存。",
-      "errorMessage": "商品单位无法保存。请检查所有字段是否已填写。"
+      "errorMessage": "商品单位无法保存。请检查所有字段是否已填写。",
+      "errorLoadingUneceCodes": "无法加载单位代码。"
+    },
+    "uneceCodes": {
+      "H87": "件",
+      "C62": "一（单位）",
+      "SET": "套",
+      "PR": "双",
+      "DZN": "打",
+      "MGM": "毫克",
+      "GRM": "克",
+      "KGM": "千克",
+      "TNE": "吨",
+      "LBR": "磅",
+      "ONZ": "盎司",
+      "MLT": "毫升",
+      "CLT": "厘升",
+      "LTR": "升",
+      "MTQ": "立方米",
+      "MMT": "毫米",
+      "CMT": "厘米",
+      "MTR": "米",
+      "KMT": "千米",
+      "INH": "英寸",
+      "FOT": "英尺",
+      "MTK": "平方米",
+      "MIN": "分钟",
+      "HUR": "小时",
+      "DAY": "天",
+      "WEE": "周",
+      "MON": "月",
+      "ANN": "年",
+      "E48": "服务单位",
+      "LS": "总包",
+      "P1": "百分比",
+      "KWH": "千瓦时",
+      "XBX": "盒",
+      "XCT": "纸箱",
+      "XPK": "包",
+      "XBG": "袋",
+      "XBO": "瓶",
+      "XCA": "罐",
+      "XPX": "托盘"
     }
   },
   "sw-privileges": {

@@ -23,7 +23,6 @@ use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\PlatformRequest;
 use Shopwell\Core\SalesChannelRequest;
 use Shopwell\Core\System\Currency\CurrencyCollection;
-use Shopwell\Core\System\SalesChannel\Context\AbstractSalesChannelContextFactory;
 use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextFactory;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
 use Shopwell\Core\Test\Integration\Traits\CustomerTestTrait;
@@ -60,7 +59,6 @@ class CustomerValueResolverTest extends TestCase
         $this->createTestSalesChannel();
 
         $this->accountService = static::getContainer()->get(AccountService::class);
-        /** @var AbstractSalesChannelContextFactory $salesChannelContextFactory */
         $salesChannelContextFactory = static::getContainer()->get(SalesChannelContextFactory::class);
         $this->salesChannelContext = $salesChannelContextFactory->create(Uuid::randomHex(), TestDefaults::SALES_CHANNEL);
     }

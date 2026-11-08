@@ -31,6 +31,7 @@ rules:
     - Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\Tests\AssertEqualsCanonicalizingListArgumentRule
     - Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\Tests\CoversAttributeRule
     - Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\Tests\DataProviderRowArityRule
+    - Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\Tests\StaticEntityRepositoryVarAnnotationRule
     - Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\Tests\MockingSimpleObjectsNotAllowedRule
     - Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\Tests\NoAnyInvocationMatcherRule
     - Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\Tests\NoAssertEqualsOnClosureRule

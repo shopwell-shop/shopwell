@@ -133,6 +133,8 @@ framework:
             log_level: notice
         Shopwell\Core\Checkout\Cart\Exception\CustomerNotLoggedInException:
             log_level: notice
+        Shopwell\Core\Framework\Routing\Exception\CustomerNotLoggedInRoutingException:
+            log_level: notice
         Shopwell\Core\Checkout\Customer\Exception\AddressNotFoundException:
             log_level: notice
         Shopwell\Core\Checkout\Customer\Exception\BadCredentialsException:

@@ -6,12 +6,12 @@
  * The labels of one language, as an administrator wrote them. A missing entry means the
  * entry still carries the label its module declares.
  */
-export type AdminMenuItemTranslation = {
+type AdminMenuItemTranslation = {
     title: string | null;
     groupTitle: string | null;
 };
 
-export type AdminMenuItem = {
+type AdminMenuItem = {
     id: string;
     parentId: string | null;
     afterMenuItemId: string | null;
@@ -33,7 +33,7 @@ export type AdminMenuItem = {
     roleIds: Array<string>;
 };
 
-export type RouteAllowlistEntry = {
+type RouteAllowlistEntry = {
     internalKey: string;
     title: string;
     type: string;
@@ -41,7 +41,7 @@ export type RouteAllowlistEntry = {
     privilege: string | null;
 };
 
-export type MenuTreeNode = AdminMenuItem & {
+type MenuTreeNode = AdminMenuItem & {
     children: Array<MenuTreeNode>;
 };
 
@@ -50,7 +50,7 @@ export type MenuTreeNode = AdminMenuItem & {
  * archived, hidden and role-restricted entries, with entries the database does not know yet
  * synthesized from their core declaration (`virtual:` ids).
  */
-export type VisibleMenuNode = {
+type VisibleMenuNode = {
     id: string;
     parentId: string | null;
     afterMenuItemId: string | null;

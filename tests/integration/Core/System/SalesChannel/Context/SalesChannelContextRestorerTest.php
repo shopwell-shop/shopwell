@@ -27,7 +27,6 @@ use Shopwell\Core\Framework\Feature;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopwell\Core\Framework\Uuid\Uuid;
-use Shopwell\Core\System\SalesChannel\Context\AbstractSalesChannelContextFactory;
 use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextFactory;
 use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextRestorer;
 use Shopwell\Core\System\SalesChannel\Event\SalesChannelContextRestorerOrderCriteriaEvent;
@@ -71,7 +70,6 @@ class SalesChannelContextRestorerTest extends TestCase
             $this->events[$event::class] = $event;
         };
 
-        /** @var AbstractSalesChannelContextFactory $contextFactory */
         $contextFactory = static::getContainer()->get(SalesChannelContextFactory::class);
         $cartRuleLoader = static::getContainer()->get(CartRuleLoader::class);
 
@@ -352,7 +350,6 @@ class SalesChannelContextRestorerTest extends TestCase
 
         $repo->create([$customer], Context::createDefaultContext());
 
-        /** @var CustomerEntity|null $customer */
         $customer = $repo->search(new Criteria([$customerId]), Context::createDefaultContext())->getEntities()->first();
 
         static::assertNotNull($customer);

@@ -85,6 +85,8 @@ test(
             await ShopCustomer.expects(vatIdErrorLink).toHaveCount(0);
             await ShopCustomer.attemptsTo(ConfirmTermsAndConditions());
             await ShopCustomer.attemptsTo(SubmitOrder());
+
+            // The guest order references the test country, so it must be cleaned up before the country.
             TestDataService.addCreatedRecord('order', StorefrontCheckoutFinish.getOrderId());
         });
     },

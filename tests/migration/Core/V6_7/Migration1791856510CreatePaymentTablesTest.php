@@ -129,17 +129,41 @@ class Migration1791856510CreatePaymentTablesTest extends TestCase
             $this->connection->executeStatement('SET FOREIGN_KEY_CHECKS = 1');
             (new Migration1791856510CreatePaymentTables())->update($this->connection);
             $accounts = $this->connection->fetchAllAssociative('SELECT provider_technical_name, name, enabled_products, settings FROM payment_account ORDER BY provider_technical_name');
-            static::assertCount(3, $accounts);
+            static::assertCount(2, $accounts);
             $expected = [
                 AlipayApi::PROVIDER => ['alipay_h5', 'alipay_web'],
                 PaypalApi::PROVIDER => [Migration1791856510CreatePaymentTables::PAYMENT_METHOD_PAYPAL_CHANNEL],
-                StripeApi::PROVIDER => [Migration1791856510CreatePaymentTables::PAYMENT_METHOD_STRIPE_CHANNEL],
             ];
             foreach ($accounts as $account) {
                 static::assertSame($account['provider_technical_name'], $account['name']);
                 static::assertSame($expected[$account['provider_technical_name']], json_decode($account['enabled_products'], true, 512, \JSON_THROW_ON_ERROR));
                 static::assertArrayNotHasKey('http_method', json_decode($account['settings'], true, 512, \JSON_THROW_ON_ERROR));
             }
+            static::assertSame(0, (int) $this->connection->fetchOne('SELECT COUNT(*) FROM payment_provider_config WHERE provider_technical_name = :provider', ['provider' => StripeApi::PROVIDER]));
+            $stripeAccountId = Uuid::randomBytes();
+            $credentials = json_encode($this->cipher()->encrypt([StripeApi::SECRET_KEY => 'merchant-secret']), \JSON_THROW_ON_ERROR);
+            $this->connection->insert('payment_account', [
+                'id' => $stripeAccountId,
+                'provider_technical_name' => StripeApi::PROVIDER,
+                'name' => 'Merchant Stripe account',
+                'active' => 1,
+                'enabled_products' => json_encode([Migration1791856510CreatePaymentTables::PAYMENT_METHOD_STRIPE_CHANNEL], \JSON_THROW_ON_ERROR),
+                'credentials' => $credentials,
+                'created_at' => '2026-11-08 00:00:00.000',
+            ]);
+            $this->connection->insert('payment_provider_config', [
+                'id' => Uuid::randomBytes(),
+                'provider_technical_name' => StripeApi::PROVIDER,
+                'account_id' => $stripeAccountId,
+                'enabled' => 0,
+                'created_at' => '2026-11-08 00:00:00.000',
+            ]);
+            (new Migration1791856510CreatePaymentTables())->update($this->connection);
+            $stripe = $this->connection->fetchAssociative('SELECT account_id, enabled FROM payment_provider_config WHERE provider_technical_name = :provider', ['provider' => StripeApi::PROVIDER]);
+            static::assertIsArray($stripe);
+            static::assertSame($stripeAccountId, $stripe['account_id']);
+            static::assertSame(0, (int) $stripe['enabled']);
+            static::assertSame([StripeApi::SECRET_KEY => 'merchant-secret'], $this->cipher()->decrypt(json_decode((string) $this->connection->fetchOne('SELECT credentials FROM payment_account WHERE id = :id', ['id' => $stripeAccountId]), true, 512, \JSON_THROW_ON_ERROR)));
             static::assertSame(['alipay_h5', 'alipay_web'], $this->connection->fetchFirstColumn('SELECT channel_technical_name FROM payment_channel_config WHERE provider_technical_name = :provider AND enabled = 1 ORDER BY channel_technical_name', ['provider' => AlipayApi::PROVIDER]));
             static::assertSame(['alipay_h5', 'alipay_web'], $this->connection->fetchFirstColumn('SELECT c.channel_technical_name FROM payment_app_channel c INNER JOIN payment_app a ON a.id = c.payment_app_id WHERE a.technical_name = :app AND c.channel_technical_name LIKE :products AND c.enabled = 1 ORDER BY c.channel_technical_name', ['app' => PaymentAppEntity::PLATFORM_TECHNICAL_NAME, 'products' => 'alipay_%']));
         } finally {
@@ -517,12 +541,11 @@ class Migration1791856510CreatePaymentTablesTest extends TestCase
         $secret = $this->cipher()->decryptValue((string) $app['app_secret']);
         static::assertMatchesRegularExpression('/^[0-9a-f]{64}$/', $secret);
 
-        // the default app can collect right away: the three seeded interfaces are authorized for it,
+        // the default app authorizes the two preconfigured interfaces
         // on the merchant account of the platform
         $seededProviders = [
             Migration1791856510CreatePaymentTables::PROVIDER,
             PaypalApi::PROVIDER,
-            StripeApi::PROVIDER,
         ];
 
         $authorizations = $this->connection->fetchAllAssociative(
@@ -657,15 +680,7 @@ class Migration1791856510CreatePaymentTablesTest extends TestCase
         ));
     }
 
-    /**
-     * The other two interfaces are seeded the way alipay is: paypal with the sandbox app of the
-     * platform, stripe with its test keys. Neither is a production account - paypal names `sandbox` as
-     * its environment and the stripe keys are only valid in the test mode of the account.
-     *
-     * A row that already carries credentials is left alone: it belongs to the merchant, and a
-     * migration run that overwrote a live client id would break a working shop on an upgrade.
-     */
-    public function testSeedsThePaypalAndStripeSandboxAccounts(): void
+    public function testSeedsThePaypalSandboxAccount(): void
     {
         // the migration tests share one database: the seed is what is asserted here, not a row an
         // earlier run or an earlier version of this test left behind
@@ -688,16 +703,10 @@ class Migration1791856510CreatePaymentTablesTest extends TestCase
         static::assertSame(Migration1791856510CreatePaymentTables::PAYPAL_SANDBOX_CLIENT_SECRET, $paypalCredentials[PaypalApi::CLIENT_SECRET]);
         static::assertSame('sandbox', $paypalCredentials[PaypalApi::ENVIRONMENT]);
 
-        $stripe = $this->connection->fetchAssociative(
-            'SELECT `c`.`enabled`, `a`.`credentials` FROM `payment_provider_config` `c` INNER JOIN `payment_account` `a` ON `a`.`id` = `c`.`account_id` WHERE `c`.`provider_technical_name` = :provider',
+        static::assertFalse($this->connection->fetchOne(
+            'SELECT id FROM payment_provider_config WHERE provider_technical_name = :provider',
             ['provider' => StripeApi::PROVIDER]
-        );
-        static::assertIsArray($stripe);
-        static::assertSame(1, (int) $stripe['enabled']);
-
-        $stripeCredentials = $this->cipher()->decrypt(json_decode((string) $stripe['credentials'], true, 512, \JSON_THROW_ON_ERROR));
-        static::assertSame(Migration1791856510CreatePaymentTables::STRIPE_TEST_SECRET_KEY, $stripeCredentials[StripeApi::SECRET_KEY]);
-        static::assertSame(Migration1791856510CreatePaymentTables::STRIPE_TEST_PUBLISHABLE_KEY, $stripeCredentials[StripeApi::PUBLISHABLE_KEY]);
+        ));
 
         // a merchant who configured paypal himself keeps his row
         $this->connection->update(
@@ -765,7 +774,7 @@ class Migration1791856510CreatePaymentTablesTest extends TestCase
             Migration1791856510CreatePaymentTables::PAYMENT_METHOD_STRIPE_CHANNEL,
         ]);
 
-        static::assertSame(3, (int) $this->connection->fetchOne(
+        static::assertSame(2, (int) $this->connection->fetchOne(
             'SELECT COUNT(*) FROM `payment_app_account` WHERE `payment_app_id` = :app',
             ['app' => $appId]
         ));
@@ -805,7 +814,7 @@ class Migration1791856510CreatePaymentTablesTest extends TestCase
      * Four methods are seeded now, all of them collecting on the account of the platform tenant. The
      * channels are the ones a browser can be handed over to - `alipay_web` and `alipay_h5` for alipay, `wechat_native`
      * for wechat pay and the redirect checkout of paypal and stripe - and they differ in their
-     * readiness, which is data and not code: alipay, paypal and stripe are switched on and collectable
+     * readiness: alipay and paypal have sandbox accounts, while stripe needs merchant credentials
      * right away, wechat pay waits for the merchant id and the certificate of this very shop and stays
      * out of the checkout until they exist.
      *
@@ -916,7 +925,7 @@ class Migration1791856510CreatePaymentTablesTest extends TestCase
             ));
         }
 
-        // the three seeded sandbox accounts are collectable the moment the installation finishes: the
+        // the configured channels are enabled and offered to the tenant: the
         // account of the interface is seeded and the channel the method is bound to is switched on and
         // offered to the tenant
         foreach ([

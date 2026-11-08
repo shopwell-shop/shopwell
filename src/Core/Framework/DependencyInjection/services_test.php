@@ -38,6 +38,7 @@ use Shopwell\Core\Framework\Test\MessageQueue\fixtures\TestMessageHandler;
 use Shopwell\Core\Framework\Test\TestCacheClearer;
 use Shopwell\Core\Framework\Test\TestCaseHelper\StoreApiSessionListener;
 use Shopwell\Core\Framework\Test\TestCaseHelper\TestBrowser;
+use Shopwell\Core\Framework\Test\TestResetCounter;
 use Shopwell\Core\Framework\Test\TestSessionStorageFactory;
 use Shopwell\Core\Framework\Test\Webhook\StaticWebhookTargetValidatorFactory;
 use Shopwell\Core\Framework\Webhook\Validation\WebhookTargetValidator;
@@ -179,6 +180,10 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service(CountingEntitySearcher::class . '.inner'),
         ]);
+
+    $services->set(TestResetCounter::class)
+        ->public()
+        ->tag('kernel.reset', ['method' => 'reset']);
 
     $services->set(TestCacheClearer::class)
         ->args([

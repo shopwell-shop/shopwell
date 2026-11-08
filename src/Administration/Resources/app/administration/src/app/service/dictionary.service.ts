@@ -36,14 +36,14 @@ export type DictionaryServiceEntityType = {
  *
  * @private
  */
-export const GENDER_DICTIONARY_TYPE = 'gender';
+const GENDER_DICTIONARY_TYPE = 'gender';
 
 /**
  * The technical name of the entry used as the default gender.
  *
  * @private
  */
-export const NOT_SPECIFIED_ENTRY = 'not_specified';
+const NOT_SPECIFIED_ENTRY = 'not_specified';
 
 /**
  * @private

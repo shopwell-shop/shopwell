@@ -10,7 +10,6 @@ use Shopwell\Core\Checkout\Cart\Price\Struct\QuantityPriceDefinition;
 use Shopwell\Core\Checkout\Cart\Tax\Struct\CalculatedTaxCollection;
 use Shopwell\Core\Checkout\Cart\Tax\Struct\TaxRuleCollection;
 use Shopwell\Core\Checkout\Order\Aggregate\OrderDelivery\OrderDeliveryStates;
-use Shopwell\Core\Checkout\Order\OrderCollection;
 use Shopwell\Core\Checkout\Order\OrderEntity;
 use Shopwell\Core\Checkout\Order\OrderStates;
 use Shopwell\Core\Defaults;
@@ -23,7 +22,6 @@ use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Test\TestCaseBase\BasicTestDataBehaviour;
 use Shopwell\Core\Framework\Test\TestCaseBase\KernelTestBehaviour;
 use Shopwell\Core\Framework\Uuid\Uuid;
-use Shopwell\Core\System\StateMachine\Aggregation\StateMachineTransition\StateMachineTransitionEntity;
 use Shopwell\Core\System\StateMachine\StateMachineCollection;
 use Shopwell\Core\System\StateMachine\StateMachineException;
 use Shopwell\Core\System\StateMachine\StateMachineRegistry;
@@ -124,7 +122,6 @@ EOF;
         $reopenActionExisted = false;
         $retourActionExisted = false;
 
-        /** @var StateMachineTransitionEntity $transition */
         foreach ($availableTransitions as $transition) {
             if ($transition->getActionName() === 'reopen') {
                 $reopenActionExisted = true;
@@ -178,7 +175,6 @@ EOF;
 
         $orderBuilder = new OrderBuilder($ids, 'o-1');
 
-        /** @var EntityRepository<OrderCollection> $orderRepo */
         $orderRepo = self::getContainer()->get('order.repository');
         static::assertInstanceOf(EntityRepository::class, $orderRepo);
         $orderRepo->create([$orderBuilder->build()], Context::createCLIContext());

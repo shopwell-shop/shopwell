@@ -323,15 +323,36 @@ class RegisterRoute extends AbstractRegisterRoute
         // The billing address validation must not be added if the data is neither a data bag nor valid because the validation building will fail.
         // Using a null value must be possible to allow the event based modification (see BuildValidationEvent).
         if ($billingAddress instanceof DataBag) {
-            $definition->addSub('billingAddress', $this->getCreateAddressValidationDefinition($data, $accountType, $billingAddress, $context));
+            $definition->addSub('billingAddress', $this->getCreateAddressValidationDefinition(
+                $data,
+                $accountType,
+                $billingAddress,
+                $context,
+                isBillingAddress: true,
+                isShippingAddress: !$shippingAddress instanceof DataBag,
+            ));
         } elseif ($isGuest && !$shippingAddress instanceof DataBag) {
             // Only guests have to provide the billing address during the registration, see above.
-            $definition->addSub('billingAddress', $this->getCreateAddressValidationDefinition($data, $accountType, new RequestDataBag(), $context));
+            $definition->addSub('billingAddress', $this->getCreateAddressValidationDefinition(
+                $data,
+                $accountType,
+                new RequestDataBag(),
+                $context,
+                isBillingAddress: true,
+                isShippingAddress: true,
+            ));
         }
 
         if ($shippingAddress instanceof DataBag) {
             $shippingAccountType = $shippingAddress->get('accountType', CustomerEntity::ACCOUNT_TYPE_PRIVATE);
-            $definition->addSub('shippingAddress', $this->getCreateAddressValidationDefinition($data, $shippingAccountType, $shippingAddress, $context));
+            $definition->addSub('shippingAddress', $this->getCreateAddressValidationDefinition(
+                $data,
+                $shippingAccountType,
+                $shippingAddress,
+                $context,
+                isBillingAddress: !$billingAddress instanceof DataBag,
+                isShippingAddress: true,
+            ));
         }
 
         if ($this->systemConfigService->get('core.loginRegistration.requireDataProtectionCheckbox', $context->getSalesChannelId())) {
@@ -449,7 +470,9 @@ class RegisterRoute extends AbstractRegisterRoute
         DataBag $data,
         ?string $accountType,
         DataBag $address,
-        SalesChannelContext $context
+        SalesChannelContext $context,
+        bool $isBillingAddress,
+        bool $isShippingAddress
     ): DataValidationDefinition {
         $validation = $this->addressValidationFactory->create($context);
 
@@ -463,6 +486,20 @@ class RegisterRoute extends AbstractRegisterRoute
 
         $validationEvent = new BuildValidationEvent($validation, $data, $context->getContext());
         $this->eventDispatcher->dispatch($validationEvent, $validationEvent->getName());
+
+        if ($isBillingAddress) {
+            $this->eventDispatcher->dispatch(
+                new BuildValidationEvent($validation, $address, $context->getContext()),
+                $validationEvent->getName() . '.billing'
+            );
+        }
+
+        if ($isShippingAddress) {
+            $this->eventDispatcher->dispatch(
+                new BuildValidationEvent($validation, $address, $context->getContext()),
+                $validationEvent->getName() . '.shipping'
+            );
+        }
 
         return $validation;
     }

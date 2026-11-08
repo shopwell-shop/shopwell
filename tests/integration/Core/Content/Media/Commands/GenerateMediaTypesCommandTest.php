@@ -5,7 +5,6 @@ namespace Shopwell\Tests\Integration\Core\Content\Media\Commands;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Content\Media\Commands\GenerateMediaTypesCommand;
 use Shopwell\Core\Content\Media\MediaCollection;
-use Shopwell\Core\Content\Media\MediaEntity;
 use Shopwell\Core\Content\Media\MediaException;
 use Shopwell\Core\Content\Media\MediaType\MediaType;
 use Shopwell\Core\Content\Test\Media\MediaFixtures;
@@ -61,7 +60,6 @@ class GenerateMediaTypesCommandTest extends TestCase
         $commandTester->execute([]);
 
         $mediaResult = $this->getNewMediaEntities();
-        /** @var MediaEntity $updatedMedia */
         foreach ($mediaResult as $updatedMedia) {
             static::assertInstanceOf(MediaType::class, $updatedMedia->getMediaType());
         }
@@ -76,7 +74,6 @@ class GenerateMediaTypesCommandTest extends TestCase
 
         $searchCriteria = new Criteria();
         $mediaResult = $this->mediaRepository->search($searchCriteria, $this->context);
-        /** @var MediaEntity $updatedMedia */
         foreach ($mediaResult->getEntities() as $updatedMedia) {
             static::assertInstanceOf(MediaType::class, $updatedMedia->getMediaType());
         }
@@ -91,7 +88,6 @@ class GenerateMediaTypesCommandTest extends TestCase
         $commandTester->execute([]);
 
         $mediaResult = $this->getNewMediaEntities();
-        /** @var MediaEntity $updatedMedia */
         foreach ($mediaResult as $updatedMedia) {
             static::assertNull($updatedMedia->getMediaType());
         }

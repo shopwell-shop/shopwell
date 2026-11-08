@@ -633,11 +633,14 @@ export default {
             } catch (exception) {
                 this.createNotificationError({
                     title: this.$t('global.default.error'),
-                    message: this.$t(
-                        'sw-system.users.user-detail.notification.saveError.message',
-                        { name: this.fullName },
-                        0,
-                    ),
+                    message:
+                        exception.response?.data?.errors?.[0]?.code === 'USER__USERNAME_NOT_UNIQUE'
+                            ? this.$t('global.error-codes.USER__USERNAME_NOT_UNIQUE')
+                            : this.$t(
+                                  'sw-system.users.user-detail.notification.saveError.message',
+                                  { name: this.fullName },
+                                  0,
+                              ),
                 });
                 warn(this._name, exception.message, exception.response);
                 throw exception;

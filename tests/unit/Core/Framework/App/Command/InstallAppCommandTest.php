@@ -10,16 +10,15 @@ use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\App\AppException;
 use Shopwell\Core\Framework\App\Command\AppPrinter;
 use Shopwell\Core\Framework\App\Command\InstallAppCommand;
-use Shopwell\Core\Framework\App\Exception\AppValidationException;
 use Shopwell\Core\Framework\App\Lifecycle\AbstractAppLifecycle;
 use Shopwell\Core\Framework\App\Lifecycle\AppLoader;
 use Shopwell\Core\Framework\App\Lifecycle\Parameters\AppInstallParameters;
 use Shopwell\Core\Framework\App\Manifest\Manifest;
-use Shopwell\Core\Framework\App\Validation\Error\ErrorCollection;
 use Shopwell\Core\Framework\App\Validation\Error\MissingPermissionError;
 use Shopwell\Core\Framework\App\Validation\ManifestValidator;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Util\Result;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Tester\CommandTester;
 
@@ -57,7 +56,7 @@ class InstallAppCommandTest extends TestCase
     {
         $manifest = $this->createManifest();
         $this->appLoader->method('load')->willReturn(['test' => $manifest]);
-        $this->manifestValidator->expects($this->once())->method('validate')->with($manifest);
+        $this->manifestValidator->expects($this->once())->method('validate')->with($manifest)->willReturn(Result::ok());
         $this->appLifecycle
             ->expects($this->once())
             ->method('install')
@@ -113,9 +112,7 @@ class InstallAppCommandTest extends TestCase
         $this->manifestValidator
             ->expects($this->once())
             ->method('validate')
-            ->willThrowException(new AppValidationException('test', new ErrorCollection([
-                new MissingPermissionError(['product:read']),
-            ])));
+            ->willReturn(Result::failed([new MissingPermissionError(['product:read'])]));
         $this->appLifecycle->expects($this->never())->method('install');
 
         static::assertSame(Command::FAILURE, $this->commandTester->execute([

@@ -9,7 +9,6 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Util\Random;
 use Shopwell\Core\System\User\UserCollection;
-use Shopwell\Core\System\User\UserEntity;
 
 /**
  * @internal
@@ -27,9 +26,7 @@ class SsoUserService
 
     public function inviteUser(string $email, string $localeId, Context $context): void
     {
-        $user = $this->getUserByEmail($email, $context);
-
-        if ($user === null) {
+        if (!$this->userExists($email, $context)) {
             $context->scope(Context::SYSTEM_SCOPE, function (Context $context) use ($email, $localeId): void {
                 $this->userRepository->create([$this->createInitialUserData($email, $localeId)], $context);
             });
@@ -50,11 +47,12 @@ class SsoUserService
         ];
     }
 
-    private function getUserByEmail(string $email, Context $context): ?UserEntity
+    private function userExists(string $email, Context $context): bool
     {
         $criteria = new Criteria();
         $criteria->addFilter(new EqualsFilter('email', $email));
+        $criteria->setLimit(1);
 
-        return $this->userRepository->search($criteria, $context)->getEntities()->first();
+        return $this->userRepository->searchIds($criteria, $context)->firstId() !== null;
     }
 }

@@ -3,7 +3,6 @@
 namespace Shopwell\Tests\Integration\Core\Framework\Seo;
 
 use Doctrine\DBAL\Connection;
-use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Content\Seo\SeoUrl\SeoUrlCollection;
 use Shopwell\Core\Content\Seo\SeoUrlPlaceholderHandler;
@@ -36,7 +35,6 @@ class SeoUrlPlaceholderHandlerTest extends TestCase
 
     protected function setUp(): void
     {
-        /** @var Router|MockObject $router */
         $router = static::createStub(Router::class);
         $router->method('generate')
             ->willReturnCallback(static fn ($name, $params) => match ($name) {
