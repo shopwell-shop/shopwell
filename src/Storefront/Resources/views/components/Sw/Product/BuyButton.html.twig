@@ -42,10 +42,21 @@
     {% set mainCategory = mainCategories|first %}
     {% set seoCategory = mainCategory ? mainCategory.category : null %}
 {% endif %}
-{% set categories = seoCategory ? sw_breadcrumb_full(seoCategory, context)|slice(0, 5) : [] %}
-{% for categoryId, category in categories %}
+{% set categoryNames = seoCategory ? seoCategory.plainBreadcrumb : {} %}
+{% set trimmed = false %}
+{% for entryPoint in [context.salesChannel.navigationCategoryId, context.salesChannel.serviceCategoryId, context.salesChannel.footerCategoryId] %}
+    {% if not trimmed and entryPoint and entryPoint in categoryNames|keys %}
+        {% for categoryId in categoryNames|keys %}
+            {% if categoryId == entryPoint %}
+                {% set categoryNames = categoryNames|slice(loop.index) %}
+            {% endif %}
+        {% endfor %}
+        {% set trimmed = true %}
+    {% endif %}
+{% endfor %}
+{% for categoryId, categoryName in categoryNames|slice(0, 5) %}
     {% set formData = formData|merge({
-        ("lineItems[#{product.id}][payload][categoryNames][#{categoryId}]"): category.translated.name,
+        ("lineItems[#{product.id}][payload][categoryNames][#{categoryId}]"): categoryName,
     }) %}
 {% endfor %}
 

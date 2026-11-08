@@ -172,14 +172,16 @@
       },
       "assignmentModal": {
         "title": "Layout assignments",
-        "description": "Experience Studio assignments take precedence over Shopping Experiences layouts. Entities without an assignment use the default layout of their type, or their Shopping Experiences layout if no default is set.",
+        "description": "Assigned entities use this Experience Studio layout. Entities without an assignment use the default layout for their type.",
         "defaultLabel": {
           "product": "Default layout for products",
-          "category": "Default layout for categories"
+          "category": "Default layout for categories",
+          "landing_page": "Default layout for landing pages"
         },
         "entitiesLabel": {
           "product": "Products",
-          "category": "Categories"
+          "category": "Categories",
+          "landing_page": "Landing pages"
         },
         "entitiesHelpText": "An entity that is already assigned to another layout is moved to this layout.",
         "messageSaved": "Layout assignments saved.",

@@ -61,6 +61,17 @@ class Migration1758018339ContentLayoutTest extends TestCase
                 static::assertNotSame([], json_decode($layout['layout'], true, 512, \JSON_THROW_ON_ERROR));
             }
 
+            $defaults = [];
+            foreach ($layouts as $layout) {
+                $defaults[$layout['name']] = json_decode($layout['layout'], true, 512, \JSON_THROW_ON_ERROR);
+            }
+            static::assertSame('Sw:Content:Text', $defaults['Default category'][0]['component']);
+            static::assertSame('<h1>{{map:category.name}}</h1>', $defaults['Default category'][0]['properties']['text']);
+            static::assertSame('Sw:Content:PageNotFound', $defaults['Page not found'][0]['component']);
+            static::assertContains('Sw:Product:GaranLabel', array_column($defaults['Default product'], 'component'));
+            $garanLabel = array_values(array_filter($defaults['Default product'], static fn (array $element): bool => $element['component'] === 'Sw:Product:GaranLabel'));
+            static::assertEquals(['type' => 'root', 'id' => 'product'], $garanLabel[0]['acceptsContext']['product']['source']);
+
             $table = TableHelper::getTable($this->connection, 'content_layout');
             static::assertCount(7, $table->columns);
 

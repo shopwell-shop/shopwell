@@ -172,14 +172,16 @@
       },
       "assignmentModal": {
         "title": "布局分配",
-        "description": "优先使用已分配的体验工作室布局。未分配布局的对象使用对应类型的默认布局；未设置默认布局时，使用原有内容布局。",
+        "description": "已分配的对象使用此体验工作室布局；未分配布局的对象使用对应类型的默认布局。",
         "defaultLabel": {
           "product": "商品默认布局",
-          "category": "分类默认布局"
+          "category": "分类默认布局",
+          "landing_page": "落地页默认布局"
         },
         "entitiesLabel": {
           "product": "商品",
-          "category": "分类"
+          "category": "分类",
+          "landing_page": "落地页"
         },
         "entitiesHelpText": "已分配到其他布局的对象将改为使用此布局。",
         "messageSaved": "布局分配已保存。",

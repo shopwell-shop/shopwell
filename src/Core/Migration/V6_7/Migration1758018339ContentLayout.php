@@ -46,6 +46,7 @@ class Migration1758018339ContentLayout extends MigrationStep
         $listingContext = ['productListing' => ['type' => 'single', 'required' => false, 'scope' => 'root']];
         $layouts = [
             'category' => ['name' => 'Default category', 'root' => 'category', 'key' => 'core.content_system.default_category_content_layout', 'elements' => [
+                $this->element('category-title', 'Sw:Content:Text', ['text' => '<h1>{{map:category.name}}</h1>']),
                 $this->element('category-filters', 'Sw:Filter:Panel', [], $listingContext),
                 $this->element('category-listing', 'Sw:Product:Listing', [], ['productListing' => [...$listingContext['productListing'], 'propertyAlias' => 'listing']]),
             ]],
@@ -57,6 +58,7 @@ class Migration1758018339ContentLayout extends MigrationStep
                 $this->element('product-variants', 'Sw:Product:VariantSelection', [], $productContext),
                 $this->element('product-price', 'Sw:Product:PriceDisplay', [], $productContext),
                 $this->element('product-buy', 'Sw:Product:BuyButton', ['showQuantitySelect' => true], $productContext),
+                $this->element('product-guarantee', 'Sw:Product:GaranLabel', [], $productContext),
                 $this->element('product-description', 'Sw:Content:Text', ['text' => '{{map:product.description}}']),
                 $this->element('product-reviews', 'Sw:Product:Reviews'),
                 $this->element('product-review-form', 'Sw:Product:ReviewForm'),
@@ -65,6 +67,7 @@ class Migration1758018339ContentLayout extends MigrationStep
         foreach (['tosPage' => 'Terms and conditions', 'revocationPage' => 'Revocation', 'shippingPaymentInfoPage' => 'Shipping and payment', 'privacyPage' => 'Privacy', 'imprintPage' => 'Imprint', 'http404Page' => 'Page not found', 'maintenancePage' => 'Maintenance'] as $key => $title) {
             $layouts[$key] = ['name' => $title, 'root' => 'none', 'key' => 'core.basicInformation.' . $key, 'elements' => [$this->element($key, 'Sw:Content:Text', ['text' => '<h1>' . $title . '</h1>'])]];
         }
+        $layouts['http404Page']['elements'] = [$this->element('http404Page', 'Sw:Content:PageNotFound')];
         foreach (['contactPage' => 'Contact', 'newsletterPage' => 'Newsletter', 'revocationRequestPage' => 'RevocationRequest'] as $key => $component) {
             $element = $this->element($key, 'Sw:Form:' . $component);
             $element['dataRequirements'] = ['genders' => ['key' => 'genders', 'source' => 'form_genders', 'config' => []]];

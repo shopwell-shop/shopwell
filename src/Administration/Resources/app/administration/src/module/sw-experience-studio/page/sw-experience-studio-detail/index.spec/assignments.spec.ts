@@ -1,13 +1,18 @@
 import detailComponent from '../index';
 
-const computed = (detailComponent as unknown as { computed: Record<string, (...args: unknown[]) => unknown> }).computed;
+describe('Experience Studio assignment action', () => {
+    it.each([
+        ['product', false, true],
+        ['category', false, true],
+        ['landing_page', false, true],
+        ['product', true, false],
+        ['category', true, false],
+        ['landing_page', true, false],
+        ['none', false, false],
+        [null, false, false],
+    ])('gates assignments for root %s in create mode %s', (layoutRootSource, isCreateMode, expected) => {
+        const computed = (detailComponent as unknown as { computed: Record<string, () => unknown> }).computed;
 
-describe('Experience Studio layout assignment availability', () => {
-    it('offers layout assignments only for saved product and category layouts', () => {
-        expect(computed.canManageAssignments.call({ isCreateMode: false, layoutRootSource: 'product' })).toBe(true);
-        expect(computed.canManageAssignments.call({ isCreateMode: false, layoutRootSource: 'category' })).toBe(true);
-        expect(computed.canManageAssignments.call({ isCreateMode: true, layoutRootSource: 'category' })).toBe(false);
-        expect(computed.canManageAssignments.call({ isCreateMode: false, layoutRootSource: 'landing_page' })).toBe(false);
-        expect(computed.canManageAssignments.call({ isCreateMode: false, layoutRootSource: null })).toBe(false);
+        expect(computed.canManageAssignments.call({ layoutRootSource, isCreateMode })).toBe(expected);
     });
 });

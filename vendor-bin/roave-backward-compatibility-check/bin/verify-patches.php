@@ -134,6 +134,75 @@ function verifyRoavePatches(): array
             $assert(\count($wrapper($experimental, $experimental)) === 0, 'Experimental declarations must be excluded.');
             $assert(\count($wrapper($stable, $stable)) === 2, 'Ordinary declarations must retain their changes.');
         });
+
+        $probe('Final annotation wiring and API compatibility', static function () use ($toolRoot, $astLocator, $assert): void {
+            $source = file_get_contents($toolRoot . '/vendor/roave/backward-compatibility-check/bin/roave-backward-compatibility-check.php');
+            $ast = (new ParserFactory())->createForNewestSupportedVersion()->parse($source);
+            $ast = (new NodeTraverser(new NameResolver()))->traverse($ast ?? []);
+            $finder = new NodeFinder();
+            $wrapperClass = 'Roave\\ApiCompareCli\\SkipSubclassOnlyChecksOnFinalClasses';
+            $class = $finder->findFirst($ast, static fn (Node $node): bool => $node instanceof Node\Stmt\Class_ && $node->name?->toString() === 'SkipSubclassOnlyChecksOnFinalClasses');
+            $assert($class instanceof Node\Stmt\Class_, 'The installed CLI has no final annotation wrapper.');
+            $wrappers = $finder->find($ast, static fn (Node $node): bool => $node instanceof Node\Expr\New_ && $node->class instanceof Node\Name && $node->class->toString() === $wrapperClass);
+            $checks = [];
+            foreach ($wrappers as $wrapper) {
+                if (!$wrapper instanceof Node\Expr\New_) {
+                    throw new RuntimeException('Expected a final annotation wrapper construction.');
+                }
+                $check = $wrapper->args[0]->value;
+                if (!$check instanceof Node\Expr\New_ || !$check->class instanceof Node\Name) {
+                    throw new RuntimeException('The final annotation wrapper must directly wrap a comparator.');
+                }
+                $name = $check->class->getLast();
+                $checks[$name] = ($checks[$name] ?? 0) + 1;
+            }
+            ksort($checks);
+            $assert($checks === ['ClassBecameFinal' => 1, 'MethodBecameFinal' => 4, 'ParameterTypeChanged' => 4, 'ReturnTypeChanged' => 4], 'All thirteen subclass-only comparator sites must be wrapped, without wrapping caller-facing checks; observed ' . json_encode($checks, \JSON_THROW_ON_ERROR));
+
+            $printer = new Standard();
+            if (!class_exists($wrapperClass, false)) {
+                eval('namespace Roave\\ApiCompareCli; ' . $printer->prettyPrint([$class]));
+            }
+            $comparison = $finder->findFirst($ast, static fn (Node $node): bool => $node instanceof Node\Expr\New_ && $node->class instanceof Node\Name && $node->class->toString() === CompareClasses::class);
+            if (!$comparison instanceof Node\Expr\New_) {
+                throw new RuntimeException('The installed CLI has no API comparator.');
+            }
+            $compare = eval('return ' . $printer->prettyPrintExpr($comparison) . ';');
+            $assert($compare instanceof CompareClasses, 'Cannot load the installed CLI comparator.');
+            $reflect = static fn (string $source): DefaultReflector => new DefaultReflector(new StringSourceLocator('<?php ' . $source, $astLocator));
+            $assertChanges = static function (string $from, string $to, int $expected, string $case) use ($reflect, $compare, $assert): void {
+                $past = $reflect($from);
+                $future = $reflect($to);
+                $changes = iterator_to_array($compare($past, $past, $future));
+                foreach ($changes as $change) {
+                    $assert(!$change->isSkipped(), $case . ': comparator failed: ' . $change->description);
+                }
+                $assert(\count($changes) === $expected, $case . ': expected ' . $expected . ' change(s), observed ' . json_encode(array_map(static fn (Change $change): string => (string) $change, $changes), \JSON_THROW_ON_ERROR));
+            };
+
+            foreach (['/** @final */' => 0, 'final' => 0, '' => 1, '/** @finalized */' => 1] as $prefix => $subclassChanges) {
+                foreach (['public', 'protected'] as $visibility) {
+                    foreach ([
+                        ['function probe(): int { return 1; }', 'final function probe(): int { return 1; }'],
+                        ['function probe(): int|string { return 1; }', 'function probe(): int { return 1; }'],
+                        ['function probe(int $value): void {}', 'function probe(int|string $value): void {}'],
+                    ] as [$from, $to]) {
+                        $assertChanges($prefix . ' class FinalPatchProbe { ' . $visibility . ' ' . $from . ' }', $prefix . ' class FinalPatchProbe { ' . $visibility . ' ' . $to . ' }', $subclassChanges, $prefix . ' ' . $visibility . ' ' . $from);
+                    }
+                }
+                foreach ([
+                    ['function probe(): int { return 1; }', 'function probe(): int|string { return 1; }', 1],
+                    ['function probe(int|string $value): void {}', 'function probe(int $value): void {}', 1],
+                    ['function probe(): void {}', '', 1],
+                ] as [$from, $to, $callerChanges]) {
+                    // Open classes report both the caller and subclass type breaks.
+                    $expected = $to !== '' ? $callerChanges + $subclassChanges : $callerChanges;
+                    $assertChanges($prefix . ' class FinalPatchProbe { public ' . $from . ' }', $prefix . ' class FinalPatchProbe { ' . ($to === '' ? '' : 'public ' . $to) . ' }', $expected, $prefix . ' caller ' . $from);
+                }
+            }
+            $assertChanges('/** @final */ class FinalPatchProbe {}', 'final class FinalPatchProbe {}', 0, 'Documented final class becomes native final');
+            $assertChanges('class FinalPatchProbe {}', 'final class FinalPatchProbe {}', 1, 'Open class becomes final');
+        });
     } finally {
         if ($originalDirectory !== false) {
             chdir($originalDirectory);

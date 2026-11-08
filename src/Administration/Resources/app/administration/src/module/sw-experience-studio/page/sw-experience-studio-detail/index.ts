@@ -279,7 +279,12 @@ export default Shopwell.Component.wrapComponentConfig({
         },
 
         canManageAssignments(): boolean {
-            return !this.isCreateMode && (this.layoutRootSource === 'product' || this.layoutRootSource === 'category');
+            return (
+                !this.isCreateMode &&
+                (this.layoutRootSource === 'product' ||
+                    this.layoutRootSource === 'category' ||
+                    this.layoutRootSource === 'landing_page')
+            );
         },
 
         showCreateWizard(): boolean {

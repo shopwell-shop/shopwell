@@ -16,6 +16,7 @@ use Shopwell\Core\Framework\Test\TestCaseBase\KernelLifecycleManager;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\PlatformRequest;
 use Shopwell\Storefront\Test\Controller\StorefrontControllerTestBehaviour;
+use Shopwell\Tests\Integration\Core\Framework\ContentSystem\PersistentSystemCacheTestKernel;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -42,6 +43,18 @@ class ContentSystemPreviewControllerTest extends TestCase
      * @var list<string>
      */
     private array $storedPreviewTokens = [];
+
+    public static function tearDownAfterClass(): void
+    {
+        KernelLifecycleManager::ensureKernelShutdown();
+        parent::tearDownAfterClass();
+    }
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        PersistentSystemCacheTestKernel::bootForTest();
+    }
 
     protected function tearDown(): void
     {

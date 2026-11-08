@@ -77,6 +77,7 @@ class ProductContentLayoutDefinition extends AbstractContentLayoutAssignableDefi
     {
         return [
             'manufacturer.media',
+            'guaranteeTermsMedia',
             'options.group',
             'properties.group',
             'mainCategories.category',

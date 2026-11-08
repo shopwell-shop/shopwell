@@ -31,6 +31,7 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
+use Shopwell\Core\Framework\Test\TestCaseBase\KernelLifecycleManager;
 use Shopwell\Core\Framework\Test\TestCaseBase\SalesChannelApiTestBehaviour;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\System\SalesChannel\Context\SalesChannelContextFactory;
@@ -38,6 +39,7 @@ use Shopwell\Core\Test\Integration\EventDispatcher\EventHookDispatcher;
 use Shopwell\Core\Test\Stub\Framework\IdsCollection;
 use Shopwell\Core\Test\TestDefaults;
 use Shopwell\Tests\Integration\Core\Framework\ContentSystem\ContentLayoutFixtureBehaviour;
+use Shopwell\Tests\Integration\Core\Framework\ContentSystem\PersistentSystemCacheTestKernel;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Component\Cache\Adapter\AdapterInterface;
 use Symfony\Component\HttpFoundation\Request;
@@ -113,9 +115,16 @@ class ContentRouteRenderingTest extends TestCase
 
     private KernelBrowser $browser;
 
+    public static function tearDownAfterClass(): void
+    {
+        KernelLifecycleManager::ensureKernelShutdown();
+        parent::tearDownAfterClass();
+    }
+
     protected function setUp(): void
     {
         parent::setUp();
+        PersistentSystemCacheTestKernel::bootForTest();
 
         $this->ids = new IdsCollection();
         $this->browser = $this->createSalesChannelBrowser();

@@ -1,0 +1,18 @@
+meta:
+  label: "Page Not Found"
+  description: "Displays the translated page-not-found illustration, heading, message and return-to-shop link."
+  icon: "regular-align-left"
+  illustration: "content-text"
+  category: "content"
+  priority: 59
+
+properties:
+  title:
+    type: string
+    required: false
+    translatable: true
+    title: "Title"
+    description: "Optional heading override. When empty, the heading uses the storefront's translated page-not-found message."
+    default: ""
+    adminUI:
+      component: "text-field"
