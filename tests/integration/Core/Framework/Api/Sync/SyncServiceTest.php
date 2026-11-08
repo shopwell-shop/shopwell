@@ -12,6 +12,7 @@ use Shopwell\Core\Framework\Api\Sync\SyncOperation;
 use Shopwell\Core\Framework\Api\Sync\SyncService;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\Event\EntityWrittenContainerEvent;
+use Shopwell\Core\Framework\DataAbstractionLayer\Exception\InvalidForeignKeyReferenceException;
 use Shopwell\Core\Framework\DataAbstractionLayer\Pricing\CashRoundingConfig;
 use Shopwell\Core\Framework\DataAbstractionLayer\Write\WriteException;
 use Shopwell\Core\Framework\Log\Package;
@@ -332,6 +333,33 @@ class SyncServiceTest extends TestCase
         /** @var WriteConstraintViolationException $first */
         static::assertInstanceOf(WriteConstraintViolationException::class, $first);
         static::assertStringStartsWith('/manufacturers/1/translations', $first->getPath());
+    }
+
+    public function testInvalidProductCategoryReferenceIsReportedWithAFieldSpecificWriteError(): void
+    {
+        $ids = new IdsCollection();
+        static::getContainer()->get('product.repository')->create([
+            (new ProductBuilder($ids, 'product'))->price(100)->build(),
+        ], Context::createDefaultContext());
+
+        $operation = new SyncOperation('mapping', 'product_category', SyncOperation::ACTION_UPSERT, [[
+            'productId' => $ids->get('product'),
+            'categoryId' => Uuid::randomHex(),
+        ]]);
+
+        $exception = null;
+        try {
+            $this->service->sync([$operation], Context::createDefaultContext(), new SyncBehavior());
+        } catch (InvalidForeignKeyReferenceException $exception) {
+        }
+
+        static::assertInstanceOf(InvalidForeignKeyReferenceException::class, $exception, 'The invalid reference should be reported as a write error.');
+        $error = $exception->getErrors()->current();
+        static::assertSame(InvalidForeignKeyReferenceException::ERROR_CODE, $error['code']);
+        static::assertSame('/categoryId', $error['source']['pointer']);
+        static::assertStringContainsString('product_category', (string) $error['detail']);
+        static::assertStringContainsString('category', (string) $error['detail']);
+        static::assertStringContainsString('Integrity constraint violation: 1452', (string) $error['detail']);
     }
 
     public function testDeleteWithWildCards(): void

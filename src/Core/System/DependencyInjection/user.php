@@ -16,6 +16,8 @@ use Shopwell\Core\System\User\Api\UserValidationController;
 use Shopwell\Core\System\User\Recovery\UserRecoveryService;
 use Shopwell\Core\System\User\Service\UserValidationService;
 use Shopwell\Core\System\User\UserDefinition;
+use Shopwell\Core\System\User\UserExceptionHandler;
+use Shopwell\Core\System\User\Validation\UserPreWriteValidator;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
 use function Symfony\Component\DependencyInjection\Loader\Configurator\param;
@@ -32,6 +34,12 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(UserPositionDefinition::class)
         ->tag('shopwell.entity.definition');
+
+    $services->set(UserPreWriteValidator::class)
+        ->tag('kernel.event_subscriber');
+
+    $services->set(UserExceptionHandler::class)
+        ->tag('shopwell.dal.exception_handler');
 
     $services->set(UserConfigDefinition::class)
         ->tag('shopwell.entity.definition');

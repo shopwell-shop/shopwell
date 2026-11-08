@@ -5,7 +5,10 @@ namespace Shopwell\Tests\DevOps\Core\DevOps\StaticAnalyse\PHPStan\Rules\data\Mes
 use Shopwell\Core\Framework\MessageQueue\AsyncMessageInterface;
 
 /**
- * @phpstan-type PrimaryKeyList array<int, array<string, string>>
+ * Message with a multiline type alias.
+ *
+ * @phpstan-type PrimaryKeyList array<int,
+ *     array<string, string>>
  */
 class AsyncMessageUsingPHPStanType implements AsyncMessageInterface
 {

@@ -24,6 +24,7 @@ use Shopwell\Core\Framework\MessageQueue\ScheduledTask\ScheduledTaskDefinition;
 use Shopwell\Core\Framework\MessageQueue\ScheduledTask\ScheduledTaskEntity;
 use Shopwell\Core\Framework\MessageQueue\ScheduledTask\Scheduler\TaskScheduler;
 use Shopwell\Core\Test\Annotation\DisabledFeatures;
+use Shopwell\Core\Test\Stub\DataAbstractionLayer\StaticEntityRepository;
 use Symfony\Component\Clock\NativeClock;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBag;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
@@ -44,8 +45,7 @@ class TaskSchedulerTest extends TestCase
     #[DisabledFeatures(['v6.8.0.0'])]
     public function testGetNextExecutionTime(array $aggregationResult, ?\DateTime $time): void
     {
-        $scheduledTaskRepository = static::createStub(EntityRepository::class);
-        $scheduledTaskRepository->method('aggregate')->willReturn(new AggregationResultCollection($aggregationResult));
+        $scheduledTaskRepository = StaticEntityRepository::of(ScheduledTaskCollection::class, [new AggregationResultCollection($aggregationResult)]);
 
         $scheduler = new TaskScheduler(
             $scheduledTaskRepository,
@@ -94,8 +94,7 @@ class TaskSchedulerTest extends TestCase
     #[DataProvider('providerGetMinRunInterval')]
     public function testGetMinRunInterval(array $aggregationResult, ?int $time): void
     {
-        $scheduledTaskRepository = static::createStub(EntityRepository::class);
-        $scheduledTaskRepository->method('aggregate')->willReturn(new AggregationResultCollection($aggregationResult));
+        $scheduledTaskRepository = StaticEntityRepository::of(ScheduledTaskCollection::class, [new AggregationResultCollection($aggregationResult)]);
 
         $scheduler = new TaskScheduler(
             $scheduledTaskRepository,

@@ -22,7 +22,9 @@
       "THEME__INVALID_SCSS_VAR": "SCSS 值 \"{value}\" 对类型 \"{type}\" 无效。",
       "DOCUMENT_BASE_CONFIG_INVALID_PAYMENT_DUE_DATE": "付款期限必须是相对日期，例如 \"+14 days\"。",
       "INVALID_GARAN_GUARANTEE_MONTHS": "保修时长须为空，或为 30 到 600 个月之间的半年数，例如 30、36 或 42。",
-      "INVALID_GARAN_GUARANTEE_TERMS_URL": "质保条款 URL 须以 http:// 或 https:// 开头。"
+      "INVALID_GARAN_GUARANTEE_TERMS_URL": "质保条款 URL 须以 http:// 或 https:// 开头。",
+      "USER__USERNAME_WHITESPACE": "用户名前后不能有空格。",
+      "USER__USERNAME_NOT_UNIQUE": "该用户名已被使用。"
     },
     "default": {
       "add": "添加",
@@ -915,7 +917,8 @@
         "customerCreatedByAdminRule": "管理员创建的客户",
         "customerSalutationRule": "客户称呼",
         "lineItemPropertyValueRule": "带属性规格的项目",
-        "lineItemVariantValueRule": "带变体规格的项目"
+        "lineItemVariantValueRule": "带变体规格的项目",
+        "lineItemDimensionLongestAndGirthRule": "商品最长边与围长"
       }
     },
     "sw-condition-generic": {
@@ -1364,6 +1367,11 @@
       "redo": "重做",
       "insert-table": "添加表格",
       "code-switch": "切换编辑模式"
+    },
+    "childSearch": {
+      "label": "搜索条目",
+      "placeholder": "搜索…",
+      "noResults": "未找到结果。"
     }
   },
   "sw-tree": {
@@ -1443,7 +1451,8 @@
     "alreadyRemoved": "扩展已被移除",
     "table": {
       "plugin": "扩展"
-    }
+    },
+    "removeExternally": "请在管理后台之外移除此扩展，例如使用 Composer。"
   },
   "sw-sales-channel-switch": {
     "messageModalUnsavedChanges": "此销售渠道还有未保存的更改。是否立即保存？",
@@ -1677,7 +1686,7 @@
         },
         "strategies": {
           "move-shop-permanently": {
-            "description": "如果你已将店铺永久迁移到其他基础设施或新环境，通常应选择此选项。Shopwell 会使用相同的店铺 ID 通知应用（即重新向应用服务器注册），应用保持安装状态。你的店铺将继续以原店铺身份标识。这意味着新实例会覆盖原安装的应用数据。",
+            "description": "仅适用于将正式商店永久迁移到新服务器或新环境的情况。Shopwell 会使用相同的商店 ID 重新注册应用，保留其数据。原安装实例中的应用随后将停止运行，即使该实例仍在运行。",
             "name": "保留商城 ID"
           },
           "reinstall-apps": {
@@ -1688,6 +1697,11 @@
             "name": "卸载应用",
             "description": "如果你复制了店铺（例如生产环境店铺的预发布或测试环境），且不希望在该副本中使用这些应用，通常应选择此选项。Shopwell 会直接删除应用，不通知应用服务器，并生成新的店铺 ID，你的店铺将以新店铺身份标识。"
           }
+        },
+        "moveShopPermanently": {
+          "title": "保留商店 ID？",
+          "text": "仅当正式商店已永久迁移到此安装实例时，才选择此项。应用将迁移至此，原安装实例中的应用将停止运行，即使该实例仍在运行。如果这是预发布或测试副本，请取消并选择“生成新的商店 ID”。",
+          "confirm": "保留商店 ID"
         }
       },
       "sw-app-wrong-app-url-modal": {

@@ -19,7 +19,6 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Write\Validation\WriteOutcome;
 use Shopwell\Core\Framework\Event\BusinessEventCollector;
 use Shopwell\Core\Framework\Event\BusinessEventRegistry;
 use Shopwell\Core\Framework\Webhook\Authorization\EventLog\RestrictEventLogReadSubscriber;
-use Shopwell\Core\Framework\Webhook\Authorization\Ownership\AppIntegrationChangeSubscriber;
 use Shopwell\Core\Framework\Webhook\Authorization\Ownership\RecordOwnerSubscriber;
 use Shopwell\Core\Framework\Webhook\Authorization\Policy\AppEventPolicy;
 use Shopwell\Core\Framework\Webhook\Authorization\Policy\NotHookablePolicy;
@@ -48,7 +47,9 @@ use Shopwell\Core\Framework\Webhook\Service\WebhookHealthService;
 use Shopwell\Core\Framework\Webhook\Service\WebhookLoader;
 use Shopwell\Core\Framework\Webhook\Service\WebhookManager;
 use Shopwell\Core\Framework\Webhook\Service\WebhookSigningSecretResolver;
+use Shopwell\Core\Framework\Webhook\Service\WebhookStore;
 use Shopwell\Core\Framework\Webhook\Subscriber\RetryWebhookMessageFailedSubscriber;
+use Shopwell\Core\Framework\Webhook\Subscriber\WebhookSubscriber;
 use Shopwell\Core\Framework\Webhook\Transport\MySQLWebhookReceiver;
 use Shopwell\Core\Framework\Webhook\Transport\WebhookTransportFactory;
 use Shopwell\Core\Framework\Webhook\Validation\WebhookTargetValidator;
@@ -162,6 +163,11 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(Connection::class),
         ]);
 
+    $services->set(WebhookStore::class)
+        ->args([
+            service(Connection::class),
+        ]);
+
     $services->set(MySQLWebhookReceiver::class)
         ->args([
             service(StreamLockService::class),
@@ -226,8 +232,8 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->tag('shopwell.webhook.policy');
 
     $services->set(PrivilegePolicy::class)
-        ->args([service(AclRoleLoader::class)])
-        ->tag('shopwell.webhook.policy')
+        ->args([service(AclRoleLoader::class), service(WebhookOutboxStore::class)])
+        ->tag('shopwell.webhook.policy', ['priority' => -1000])
         ->tag('kernel.event_subscriber')
         ->tag('kernel.reset', ['method' => 'reset']);
 
@@ -256,9 +262,9 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(RecordOwnerSubscriber::class)
         ->tag('kernel.event_subscriber');
 
-    $services->set(AppIntegrationChangeSubscriber::class)
+    $services->set(WebhookSubscriber::class)
         ->args([
-            service(Connection::class),
+            service(WebhookStore::class),
         ])
         ->tag('kernel.event_subscriber');
 

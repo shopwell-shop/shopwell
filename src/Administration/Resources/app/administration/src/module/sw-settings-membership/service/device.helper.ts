@@ -9,7 +9,7 @@
 /**
  * @private
  */
-export interface DeviceHelper {
+interface DeviceHelper {
     getSystemKey: () => string;
 }
 

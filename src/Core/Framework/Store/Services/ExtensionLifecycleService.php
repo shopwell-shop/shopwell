@@ -8,6 +8,7 @@ use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
 use Shopwell\Core\Framework\Plugin\PluginLifecycleService;
 use Shopwell\Core\Framework\Plugin\PluginManagementService;
 use Shopwell\Core\Framework\Plugin\PluginService;
+use Shopwell\Core\Framework\Store\StoreException;
 
 /**
  * @internal
@@ -87,6 +88,15 @@ class ExtensionLifecycleService extends AbstractExtensionLifecycle
     {
         if ($type === 'plugin') {
             $plugin = $this->pluginService->getPluginByName($technicalName, $context);
+
+            if ($plugin->getManagedByComposer() && !$plugin->isLocatedInCustomPluginDirectory()) {
+                throw StoreException::cannotDeleteManaged($plugin->getName());
+            }
+
+            if ($plugin->getInstalledAt() !== null) {
+                $this->pluginLifecycleService->uninstallPlugin($plugin, $context, $keepUserData);
+            }
+
             $this->pluginManagementService->deletePlugin($plugin, $context);
 
             return;

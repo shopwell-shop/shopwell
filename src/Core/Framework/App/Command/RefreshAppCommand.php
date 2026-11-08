@@ -4,11 +4,11 @@ namespace Shopwell\Core\Framework\App\Command;
 
 use Shopwell\Core\Framework\App\AppException;
 use Shopwell\Core\Framework\App\AppService;
-use Shopwell\Core\Framework\App\Exception\AppValidationException;
 use Shopwell\Core\Framework\App\Exception\UserAbortedCommandException;
 use Shopwell\Core\Framework\App\Lifecycle\Parameters\AppInstallParameters;
 use Shopwell\Core\Framework\App\Lifecycle\RefreshableAppDryRun;
 use Shopwell\Core\Framework\App\Manifest\Manifest;
+use Shopwell\Core\Framework\App\Validation\Error\Error;
 use Shopwell\Core\Framework\App\Validation\ManifestValidator;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\Log\Package;
@@ -115,10 +115,11 @@ class RefreshAppCommand extends Command
         // validate refreshable apps
         $invalids = [];
         foreach ($refreshableManifests as $refreshableManifest) {
-            try {
-                $this->manifestValidator->validate($refreshableManifest, $context);
-            } catch (AppValidationException $e) {
-                $invalids[] = $e->getMessage();
+            $result = $this->manifestValidator->validate($refreshableManifest, $context);
+
+            if (!$result->isOk()) {
+                $messages = implode("\n", array_map(static fn (Error $error): string => $error->getMessage(), $result->errors));
+                $invalids[] = \sprintf("The app \"%s\" is invalid:\n\n%s", $refreshableManifest->getMetadata()->getName(), $messages);
             }
         }
 

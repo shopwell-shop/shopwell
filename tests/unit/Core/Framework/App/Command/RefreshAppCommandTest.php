@@ -9,15 +9,14 @@ use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\App\AppService;
 use Shopwell\Core\Framework\App\Command\AppPrinter;
 use Shopwell\Core\Framework\App\Command\RefreshAppCommand;
-use Shopwell\Core\Framework\App\Exception\AppValidationException;
 use Shopwell\Core\Framework\App\Lifecycle\Parameters\AppInstallParameters;
 use Shopwell\Core\Framework\App\Lifecycle\RefreshableAppDryRun;
 use Shopwell\Core\Framework\App\Manifest\Manifest;
-use Shopwell\Core\Framework\App\Validation\Error\ErrorCollection;
 use Shopwell\Core\Framework\App\Validation\Error\MissingPermissionError;
 use Shopwell\Core\Framework\App\Validation\ManifestValidator;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\Util\Result;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Tester\CommandTester;
 
@@ -65,7 +64,7 @@ class RefreshAppCommandTest extends TestCase
     public function testRefreshesValidApps(): void
     {
         $this->appService->method('getRefreshableAppInfo')->willReturn($this->createDryRunWithInstallableApp());
-        $this->manifestValidator->expects($this->once())->method('validate');
+        $this->manifestValidator->expects($this->once())->method('validate')->willReturn(Result::ok());
         $this->appService
             ->expects($this->once())
             ->method('doRefreshApps')
@@ -92,9 +91,7 @@ class RefreshAppCommandTest extends TestCase
         $this->manifestValidator
             ->expects($this->once())
             ->method('validate')
-            ->willThrowException(new AppValidationException('test', new ErrorCollection([
-                new MissingPermissionError(['product:read']),
-            ])));
+            ->willReturn(Result::failed([new MissingPermissionError(['product:read'])]));
         $this->appService->expects($this->never())->method('doRefreshApps');
         $this->appPrinter->expects($this->never())->method('printInstalledApps');
 

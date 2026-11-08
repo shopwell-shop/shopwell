@@ -18,6 +18,7 @@ use Shopwell\Core\Framework\Event\EventData\ScalarValueType;
 use Shopwell\Core\Framework\Event\FlowEventAware;
 use Shopwell\Core\Framework\Event\MailAware;
 use Shopwell\Core\Framework\Event\SalesChannelContextAware;
+use Shopwell\Core\Framework\Event\SensitiveMail;
 use Shopwell\Core\Framework\Event\ShopwellSalesChannelEvent;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Webhook\NotHookable;
@@ -26,6 +27,7 @@ use Symfony\Contracts\EventDispatcher\Event;
 
 #[Package('checkout')]
 #[NotHookable]
+#[SensitiveMail]
 class CustomerAccountRecoverRequestEvent extends Event implements SalesChannelContextAware, ShopwellSalesChannelEvent, CustomerAware, MailAware, CustomerRecoveryAware, ScalarValuesAware, FlowEventAware
 {
     public const EVENT_NAME = 'customer.recovery.request';

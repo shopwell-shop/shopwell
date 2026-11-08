@@ -8,6 +8,7 @@ use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Content\ImportExport\ImportExportException;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\ShopwellHttpException;
+use Shopwell\Core\Test\Annotation\DisabledFeatures;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -246,5 +247,21 @@ class ImportExportExceptionTest extends TestCase
             'errorCode' => 'CONTENT__IMPORT_EXPORT__SERIALIZER_NOT_FOUND',
             'message' => 'Serializer for "test" not found.',
         ];
+
+        yield [
+            'exceptionFunction' => static fn () => ImportExportException::invalidResource('$resource'),
+            'statusCode' => Response::HTTP_BAD_REQUEST,
+            'errorCode' => 'CONTENT__IMPORT_EXPORT__INVALID_RESOURCE',
+            'message' => 'Argument $resource is not a resource',
+        ];
+    }
+
+    #[DisabledFeatures(['v6.8.0.0'])]
+    public function testInvalidResourceReturnsLegacyExceptionBeforeMajor(): void
+    {
+        $exception = ImportExportException::invalidResource('$resource');
+
+        static::assertInstanceOf(\InvalidArgumentException::class, $exception);
+        static::assertSame('Argument $resource is not a resource', $exception->getMessage());
     }
 }

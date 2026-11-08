@@ -86,7 +86,7 @@
 
         <input-field type="bool">
             <name>showLegalGuaranteeNotice</name>
-            <defaultValue>true</defaultValue>
+            <defaultValue>false</defaultValue>
             <label>Show legal guarantee notice on checkout page</label>
             <label lang="zh-CN">在结算页显示法定质保提示</label>
             <helpText>Displays the EU-harmonised legal guarantee notice in the customer's storefront language.</helpText>

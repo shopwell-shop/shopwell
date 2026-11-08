@@ -230,7 +230,6 @@ class OrderReturnRefundServiceTest extends TestCase
             $paymentOrders->add($paymentOrder);
         }
 
-        /** @var StaticEntityRepository<PaymentOrderCollection> $repository */
         $repository = new StaticEntityRepository([$paymentOrders]);
 
         return PaymentGatewayFixture::paymentOrderService($repository);
@@ -251,7 +250,6 @@ class OrderReturnRefundServiceTest extends TestCase
             $refunds->add($replayed);
         }
 
-        /** @var StaticEntityRepository<PaymentRefundCollection> $repository */
         $repository = new StaticEntityRepository([$refunds]);
 
         return PaymentGatewayFixture::refundService($repository, $this->paymentOrderService($this->paymentOrder()));

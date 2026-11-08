@@ -140,6 +140,7 @@ use Shopwell\Core\Framework\App\Subscriber\AppLoadedSubscriber;
 use Shopwell\Core\Framework\App\Subscriber\AppScriptConditionConstraintsSubscriber;
 use Shopwell\Core\Framework\App\Subscriber\CustomFieldProtectionSubscriber;
 use Shopwell\Core\Framework\App\Subscriber\DiscardUnconfirmedAppSecretsListener;
+use Shopwell\Core\Framework\App\SystemCheck\AppUrlVerificationCheck;
 use Shopwell\Core\Framework\App\TaxProvider\Payload\TaxProviderPayloadService;
 use Shopwell\Core\Framework\App\Telemetry\AppTelemetrySubscriber;
 use Shopwell\Core\Framework\App\Template\TemplateDefinition;
@@ -231,6 +232,9 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->tag('shopwell.app_manifest.validator');
 
     $services->set(AppNameValidator::class)
+        ->args([
+            service(SourceResolver::class),
+        ])
         ->tag('shopwell.app_manifest.validator');
 
     $services->set(ManifestValidator::class)
@@ -241,6 +245,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(ConfigValidator::class)
         ->args([
             service(ConfigReader::class),
+            service(SourceResolver::class),
         ])
         ->tag('shopwell.app_manifest.validator');
 
@@ -361,6 +366,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(CustomFieldLifecycleHandler::class)
         ->args([
             service(CustomFieldSetPersister::class),
+            service('logger'),
         ])
         ->tag('shopwell.app_lifecycle.handler', ['priority' => -1100]);
 
@@ -1092,6 +1098,12 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             env('APP_URL_CHECK_DISABLED')->bool(),
         ])
         ->tag('kernel.reset', ['method' => 'reset']);
+
+    $services->set(AppUrlVerificationCheck::class)
+        ->args([
+            service(AppUrlVerifier::class),
+        ])
+        ->tag('shopwell.system_check');
 
     $services->set(AppUrlVerificationPrinter::class);
 

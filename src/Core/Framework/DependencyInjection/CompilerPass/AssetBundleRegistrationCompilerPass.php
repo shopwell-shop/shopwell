@@ -35,7 +35,7 @@ class AssetBundleRegistrationCompilerPass implements CompilerPassInterface
         }
 
         $arguments = $assetService->getArguments();
-        array_unshift($arguments, new Reference('shopwell.asset.public.version_strategy'));
+        array_unshift($arguments, new Reference('shopwell.asset.asset.version_strategy'));
         array_unshift($arguments, new Reference('shopwell.asset.asset_without_versioning'));
         array_unshift($arguments, $bundleMap);
 

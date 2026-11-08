@@ -33,7 +33,7 @@ export type DayBounds = {
 export const ORDER_LIST_STORE_KEY = 'grid.filter.order';
 
 /** @private */
-export const ORDER_DATE_FILTER = 'order-date-filter';
+const ORDER_DATE_FILTER = 'order-date-filter';
 
 /** @private */
 export const ORDER_PAYMENT_FILTER = 'payment-status-filter';
@@ -48,7 +48,7 @@ export const ORDER_PAYMENT_PROPERTY = 'primaryOrderTransaction.stateMachineState
 export const ORDER_DELIVERY_PROPERTY = 'primaryOrderDelivery.stateMachineState';
 
 /** @private */
-export function getUserTimeZone(): string {
+function getUserTimeZone(): string {
     return (Shopwell.Store.get('session')?.currentUser?.timeZone as string) ?? 'Asia/Shanghai';
 }
 

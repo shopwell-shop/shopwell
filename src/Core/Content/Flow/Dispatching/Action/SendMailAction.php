@@ -9,6 +9,7 @@ use Shopwell\Core\Content\Flow\Dispatching\StorableFlow;
 use Shopwell\Core\Content\Flow\Events\FlowSendMailActionEvent;
 use Shopwell\Core\Content\Mail\Service\AbstractMailService;
 use Shopwell\Core\Content\Mail\Service\MailAttachmentsConfig;
+use Shopwell\Core\Content\Mail\Service\MailLogData;
 use Shopwell\Core\Content\MailTemplate\Aggregate\MailTemplateType\MailTemplateTypeCollection;
 use Shopwell\Core\Content\MailTemplate\Exception\MailEventConfigurationException;
 use Shopwell\Core\Content\MailTemplate\MailTemplateCollection;
@@ -185,6 +186,12 @@ class SendMailAction extends FlowAction implements DelayableAction
                 $templateData
             );
         } catch (\Exception $e) {
+            if (MailLogData::isSensitive($data->all(), $templateData)) {
+                $this->logger->error('Could not send mail.', MailLogData::create($data->all(), $e));
+
+                return;
+            }
+
             $this->logger->error(
                 "Could not send mail:\n"
                 . $e->getMessage() . "\n"
@@ -211,7 +218,7 @@ class SendMailAction extends FlowAction implements DelayableAction
             return;
         }
 
-        if (!$this->updateMailTemplate) {
+        if (!$this->updateMailTemplate || MailLogData::isSensitive([], $templateData)) {
             return;
         }
 

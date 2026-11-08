@@ -9,6 +9,7 @@ use Shopwell\Administration\Command\DeleteAdminFilesAfterBuildCommand;
 use Shopwell\Administration\Command\DeleteExtensionLocalPublicFilesCommand;
 use Shopwell\Administration\Command\GenerateEntitySchemaTypesCommand;
 use Shopwell\Administration\Command\SetupExtensionToolingCommand;
+use Shopwell\Administration\Command\UpgradeExtensionsCommand;
 use Shopwell\Administration\Controller\AdminExtensionApiController;
 use Shopwell\Administration\Controller\AdministrationController;
 use Shopwell\Administration\Controller\AdminProductStreamController;
@@ -83,6 +84,12 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->tag('console.command');
 
     $services->set(SetupExtensionToolingCommand::class)
+        ->args([
+            service('kernel'),
+        ])
+        ->tag('console.command');
+
+    $services->set(UpgradeExtensionsCommand::class)
         ->args([
             service('kernel'),
         ])

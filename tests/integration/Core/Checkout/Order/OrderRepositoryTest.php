@@ -19,7 +19,6 @@ use Shopwell\Core\Checkout\Cart\Tax\Struct\TaxRuleCollection;
 use Shopwell\Core\Checkout\Customer\CustomerCollection;
 use Shopwell\Core\Checkout\Order\Aggregate\OrderDelivery\OrderDeliveryStates;
 use Shopwell\Core\Checkout\Order\OrderCollection;
-use Shopwell\Core\Checkout\Order\OrderEntity;
 use Shopwell\Core\Checkout\Order\OrderStates;
 use Shopwell\Core\Content\Product\Aggregate\ProductVisibility\ProductVisibilityDefinition;
 use Shopwell\Core\Defaults;
@@ -84,7 +83,6 @@ class OrderRepositoryTest extends TestCase
 
         $criteria = new Criteria([$orderId]);
 
-        /** @var OrderEntity|null $order */
         $order = $this->orderRepository->search($criteria, $defaultContext)->getEntities()->first();
 
         static::assertNotNull($order);

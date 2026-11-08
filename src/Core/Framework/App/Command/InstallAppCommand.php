@@ -4,12 +4,12 @@ namespace Shopwell\Core\Framework\App\Command;
 
 use Shopwell\Core\Framework\App\AppException;
 use Shopwell\Core\Framework\App\Exception\AppAlreadyInstalledException;
-use Shopwell\Core\Framework\App\Exception\AppValidationException;
 use Shopwell\Core\Framework\App\Exception\UserAbortedCommandException;
 use Shopwell\Core\Framework\App\Lifecycle\AbstractAppLifecycle;
 use Shopwell\Core\Framework\App\Lifecycle\AppLoader;
 use Shopwell\Core\Framework\App\Lifecycle\Parameters\AppInstallParameters;
 use Shopwell\Core\Framework\App\Manifest\Manifest;
+use Shopwell\Core\Framework\App\Validation\Error\Error;
 use Shopwell\Core\Framework\App\Validation\ManifestValidator;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\Log\Package;
@@ -74,10 +74,11 @@ class InstallAppCommand extends Command
             }
 
             if (!$input->getOption('no-validate')) {
-                try {
-                    $this->manifestValidator->validate($manifest, $context);
-                } catch (AppValidationException $e) {
-                    $io->error(\sprintf('App installation of %s failed due: %s', $name, $e->getMessage()));
+                $result = $this->manifestValidator->validate($manifest, $context);
+
+                if (!$result->isOk()) {
+                    $messages = implode("\n", array_map(static fn (Error $error): string => $error->getMessage(), $result->errors));
+                    $io->error(\sprintf("App installation of %s failed due: The app \"%s\" is invalid:\n\n%s", $name, $manifest->getMetadata()->getName(), $messages));
 
                     $success = self::FAILURE;
 

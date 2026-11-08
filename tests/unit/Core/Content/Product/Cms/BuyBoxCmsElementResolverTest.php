@@ -3,7 +3,6 @@
 namespace Shopwell\Tests\Unit\Core\Content\Product\Cms;
 
 use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Content\Cms\Aggregate\CmsSlot\CmsSlotEntity;
 use Shopwell\Core\Content\Cms\DataResolver\Element\ElementDataCollection;
@@ -17,7 +16,6 @@ use Shopwell\Core\Content\Product\ProductEntity;
 use Shopwell\Core\Content\Product\SalesChannel\Detail\ProductConfiguratorLoader;
 use Shopwell\Core\Content\Product\SalesChannel\SalesChannelProductCollection;
 use Shopwell\Core\Content\Product\SalesChannel\SalesChannelProductEntity;
-use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\AggregationResult\AggregationResultCollection;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
 use Shopwell\Core\Framework\Log\Package;
@@ -34,8 +32,7 @@ class BuyBoxCmsElementResolverTest extends TestCase
 {
     public function testGetType(): void
     {
-        /** @var StaticEntityRepository<ProductReviewCollection> */
-        $repository = new StaticEntityRepository([]);
+        $repository = StaticEntityRepository::of(ProductReviewCollection::class, []);
 
         $resolver = new BuyBoxCmsElementResolver(
             static::createStub(ProductConfiguratorLoader::class),
@@ -48,9 +45,7 @@ class BuyBoxCmsElementResolverTest extends TestCase
     public function testEnrichBuyBox(): void
     {
         $configurationLoader = static::createStub(ProductConfiguratorLoader::class);
-        /** @var EntityRepository<ProductReviewCollection>&MockObject */
-        $repository = static::createStub(EntityRepository::class);
-        $repository->method('aggregate')->willReturn(new AggregationResultCollection());
+        $repository = StaticEntityRepository::of(ProductReviewCollection::class, [new AggregationResultCollection()]);
 
         $resolver = new BuyBoxCmsElementResolver($configurationLoader, $repository);
 
@@ -86,8 +81,7 @@ class BuyBoxCmsElementResolverTest extends TestCase
     {
         $configurationLoader = static::createStub(ProductConfiguratorLoader::class);
 
-        /** @var StaticEntityRepository<ProductReviewCollection> */
-        $repository = new StaticEntityRepository([]);
+        $repository = StaticEntityRepository::of(ProductReviewCollection::class, []);
 
         $resolver = new BuyBoxCmsElementResolver($configurationLoader, $repository);
 

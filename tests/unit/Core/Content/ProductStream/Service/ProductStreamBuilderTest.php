@@ -3,7 +3,6 @@
 namespace Shopwell\Tests\Unit\Core\Content\ProductStream\Service;
 
 use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Content\ProductStream\Exception\EmptyProductStreamException;
 use Shopwell\Core\Content\ProductStream\Exception\NoFilterException;
@@ -13,7 +12,6 @@ use Shopwell\Core\Content\ProductStream\ProductStreamEntity;
 use Shopwell\Core\Content\ProductStream\Service\ProductStreamBuilder;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityDefinition;
-use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Exception\EntityNotFoundException;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\Feature\FeatureException;
@@ -36,8 +34,7 @@ class ProductStreamBuilderTest extends TestCase
      */
     public function testBuildFiltersThrowsWhenV68IsActive(): void
     {
-        /** @var EntityRepository<ProductStreamCollection>&MockObject $repository */
-        $repository = static::createStub(EntityRepository::class);
+        $repository = StaticEntityRepository::of(ProductStreamCollection::class);
         $builder = new ProductStreamBuilder($repository, static::createStub(EntityDefinition::class));
 
         $this->expectException(FeatureException::class);

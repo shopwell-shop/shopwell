@@ -26,6 +26,7 @@ use Shopwell\Storefront\Framework\Seo\App\AppSeoUrlRouteProvider;
 use Shopwell\Storefront\Framework\Seo\App\AppSeoUrlSynchronizer;
 use Shopwell\Storefront\Framework\Seo\App\EntitySeoUrlAppFeatureDefinition;
 use Shopwell\Storefront\Framework\Seo\App\SeoUrlAppFeatureDefinition;
+use Shopwell\Storefront\Framework\Seo\Command\RepairLinkCategorySeoUrlTakeoverCommand;
 use Shopwell\Storefront\Framework\Seo\SeoUrlRoute\BlogCategorySeoUrlRoute;
 use Shopwell\Storefront\Framework\Seo\SeoUrlRoute\BlogSeoUrlRoute;
 use Shopwell\Storefront\Framework\Seo\SeoUrlRoute\LandingPageSeoUrlRoute;
@@ -166,4 +167,12 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(StorefrontCategoryUrlGenerator::class . '.inner'),
             service('router'),
         ]);
+
+    $services->set(RepairLinkCategorySeoUrlTakeoverCommand::class)
+        ->args([
+            service(Connection::class),
+            service(SeoUrlUpdater::class),
+        ])
+        ->tag('console.command')
+        ->tag('shopwell.inactiveFeature', ['flag' => 'v6.9.0.0']);
 };

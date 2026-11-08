@@ -3,8 +3,8 @@
  */
 import { mount } from '@vue/test-utils';
 
-export const LANGUAGE_EN = 'language-en';
-export const LANGUAGE_ZH = 'language-zh';
+const LANGUAGE_EN = 'language-en';
+const LANGUAGE_ZH = 'language-zh';
 
 function createItem(overrides = {}) {
     return {

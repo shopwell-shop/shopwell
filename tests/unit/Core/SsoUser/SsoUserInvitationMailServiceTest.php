@@ -5,9 +5,7 @@ namespace Shopwell\Tests\Unit\Core\SsoUser;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Content\Mail\Service\AbstractMailService;
-use Shopwell\Core\Content\MailTemplate\Aggregate\MailTemplateType\MailTemplateTypeCollection;
 use Shopwell\Core\Content\MailTemplate\Aggregate\MailTemplateType\MailTemplateTypeDefinition;
-use Shopwell\Core\Content\MailTemplate\Aggregate\MailTemplateType\MailTemplateTypeEntity;
 use Shopwell\Core\Content\MailTemplate\MailTemplateCollection;
 use Shopwell\Core\Content\MailTemplate\MailTemplateDefinition;
 use Shopwell\Core\Content\MailTemplate\MailTemplateEntity;
@@ -56,11 +54,8 @@ class SsoUserInvitationMailServiceTest extends TestCase
             new MailTemplateCollection([$mailTemplateEntity]),
         ], new MailTemplateDefinition());
 
-        $mailTemplateTypeEntity = new MailTemplateTypeEntity();
-        $mailTemplateTypeEntity->setUniqueIdentifier(Uuid::randomHex());
-        $mailTemplateTypeEntity->setId(Uuid::randomHex());
         $mailTemplateTypeRepository = new StaticEntityRepository([
-            new MailTemplateTypeCollection([$mailTemplateTypeEntity]),
+            [Uuid::randomHex()],
         ], new MailTemplateTypeDefinition());
 
         $userEntity = new UserEntity();

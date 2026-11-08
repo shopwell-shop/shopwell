@@ -53,19 +53,18 @@ use Shopwell\Core\System\Payment\Subscription\PaymentSubscriptionStates;
  * Four payment methods are seeded on top of that tenant - alipay, wechat pay, paypal and stripe - so
  * the selection of the checkout is not empty after the installation and the merchant configures a
  * method that already works instead of assembling one. What they differ in is their readiness, and
- * that difference is data, not code: alipay, paypal and stripe collect with the sandbox accounts
- * seeded below, wechat pay waits for the merchant id and the certificate of *this* merchant and stays
- * out of the checkout until they exist.
+ * that difference is data, not code: alipay and paypal collect with the sandbox accounts seeded below.
+ * Stripe waits for merchant-configured credentials, and wechat pay waits for the merchant id and
+ * certificate. They stay out of the checkout until their account configuration is complete.
  *
  * The state machines are imported first, because the state fields of the bookkeeping tables reference
  * them.
  *
- * ⚠️ The seeded credentials are sandbox accounts, for all three: alipay is seeded with a sandbox app id
- * and a locally generated dummy key pair, paypal with the sandbox client id and secret, stripe with the
- * test keys. The alipay pair is complete and signs and verifies against itself, but it belongs to no
- * alipay app, so a sandbox request signed with it is rejected - both keys have to be replaced with the
+ * ⚠️ The seeded credentials are sandbox accounts: alipay is seeded with a sandbox app id
+ * and a locally generated dummy key pair, paypal with the sandbox client id and secret.
+ * The alipay pair signs and verifies against itself, but it belongs to no alipay app, so a sandbox request signed with it is rejected - both keys have to be replaced with the
  * ones of the merchant's own sandbox app in the alipay console. Nothing here is a secret and nothing may
- * reach production unchanged; `sandbox`/`environment` are on and the stripe keys are `sk_test_`/`pk_test_`,
+ * reach production unchanged; `sandbox`/`environment` are on,
  * so going live is a deliberate switch.
  *
  * @internal
@@ -152,17 +151,6 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
     final public const PAYPAL_SANDBOX_CLIENT_SECRET = 'EDFbGlvazxMwGyNDWkjx8IgHJKArHOymBd2RfTXnlKTrf51DVn3eNfu7Xrl3NjZv0mjYz5QWbHL__o8o';
 
     /**
-     * The secret key of the stripe test account. Stripe has no sandbox flag: the prefix of the key
-     * decides the environment, `sk_test_` is the test mode the seeded credentials belong to.
-     */
-    final public const STRIPE_TEST_SECRET_KEY = 'sk_test_51UQsKsQM0sYLTkulPaZoETq2ziWyyV8X0TX9327DxBZ979uOlaf9BTDZT5DK3A4ihcbQzR2qXJ4c4MxQ8mIPfxPr00XVLyHE0h';
-
-    /**
-     * The publishable key of the same stripe test account. It is not a secret.
-     */
-    final public const STRIPE_TEST_PUBLISHABLE_KEY = 'pk_test_51UQsKsQM0sYLTkulZTkNnFEpgQKawrIUIXZ6mg4r6grcIlqr8QX8vQwN43WBG2FwCZSpOp4keEwY7KsfNbiOsraL006kbX2Orw';
-
-    /**
      * The gateway the sandbox of the alipay interface answers on. It is not stored: the api picks it
      * from the `sandbox` flag, so switching the flag off goes back to the configured gateway instead of
      * keeping a sandbox url in a row nobody looks at.
@@ -219,7 +207,6 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
 
         $this->seedProviderConfig($connection, $cipher, $now);
         $this->seedPaypalProviderConfig($connection, $cipher, $now);
-        $this->seedStripeProviderConfig($connection, $cipher, $now);
         $this->seedChannelConfig($connection, $now);
         $this->seedPlatformTenant($connection, $cipher, $now);
         $this->seedCashierProfiles($connection, $now);
@@ -1211,6 +1198,10 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
     private function authorizePlatformProvider(Connection $connection, string $appId, string $providerTechnicalName, string $now): void
     {
         $accountId = $connection->fetchOne('SELECT `account_id` FROM `payment_provider_config` WHERE `provider_technical_name` = :provider', ['provider' => $providerTechnicalName]);
+        if ($accountId === false) {
+            return;
+        }
+
         $existing = $connection->fetchOne(
             'SELECT `id` FROM `payment_app_account` WHERE `payment_app_id` = :app AND `account_id` = :account',
             ['app' => $appId, 'account' => $accountId]
@@ -1574,26 +1565,6 @@ class Migration1791856510CreatePaymentTables extends MigrationStep
             PaypalApi::CLIENT_ID => self::PAYPAL_SANDBOX_CLIENT_ID,
             PaypalApi::CLIENT_SECRET => self::PAYPAL_SANDBOX_CLIENT_SECRET,
             PaypalApi::ENVIRONMENT => 'sandbox',
-        ];
-    }
-
-    /**
-     * Seeds the stripe interface with the test account of the platform, the same way as the other two:
-     * the interface is configured the moment an operator opens it, and an existing row is left alone.
-     */
-    private function seedStripeProviderConfig(Connection $connection, PaymentCredentialCipher $cipher, string $now): void
-    {
-        $this->seedMerchantAccount($connection, StripeApi::PROVIDER, $cipher->encrypt($this->stripeTestCredentials()), [], $now);
-    }
-
-    /**
-     * @return array<string, string>
-     */
-    private function stripeTestCredentials(): array
-    {
-        return [
-            StripeApi::SECRET_KEY => self::STRIPE_TEST_SECRET_KEY,
-            StripeApi::PUBLISHABLE_KEY => self::STRIPE_TEST_PUBLISHABLE_KEY,
         ];
     }
 
