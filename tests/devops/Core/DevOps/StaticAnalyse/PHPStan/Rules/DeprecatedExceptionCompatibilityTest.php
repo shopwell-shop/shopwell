@@ -11,7 +11,6 @@ use Shopwell\Core\Checkout\Promotion\Cart\Discount\Filter\Exception\FilterSorter
 use Shopwell\Core\Checkout\Promotion\Exception\DiscountCalculatorNotFoundException;
 use Shopwell\Core\Checkout\Promotion\Exception\InvalidScopeDefinitionException;
 use Shopwell\Core\Checkout\Promotion\Exception\PriceNotFoundException;
-use Shopwell\Core\Content\Cms\Exception\PageNotFoundException;
 use Shopwell\Core\Content\Flow\Exception\CustomTriggerByNameNotFoundException;
 use Shopwell\Core\Content\ImportExport\Exception\LogNotWritableException;
 use Shopwell\Core\Content\ImportExport\Exception\MappingException;
@@ -146,7 +145,6 @@ class DeprecatedExceptionCompatibilityTest extends TestCase
         yield 'missing filter picker' => [FilterPickerNotFoundException::class, ['key']];
         yield 'missing filter sorter' => [FilterSorterNotFoundException::class, ['key']];
         yield 'missing flow trigger' => [CustomTriggerByNameNotFoundException::class, ['event']];
-        yield 'missing CMS page' => [PageNotFoundException::class, ['id']];
         yield 'inactive review' => [ReviewNotActiveExeption::class, []];
     }
 }

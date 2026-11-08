@@ -1,4 +1,7 @@
 import type { ContentElementNode } from 'src/core/service/content-element.types';
+import ContentSystemPreviewApiService from 'src/core/service/api/content-system-preview.api.service';
+import createLoginService from 'src/core/service/login.service';
+import createHTTPClient from 'src/core/factory/http.factory';
 import previewComponent from './index';
 
 describe('module/sw-experience-studio/component/sw-experience-studio-preview', () => {
@@ -148,17 +151,18 @@ describe('module/sw-experience-studio/component/sw-experience-studio-preview', (
     });
 
     it('carries attributed specification values into the preview request body', async () => {
-        const requestBodies: { layout: ContentElementNode[] }[] = [];
-        const previewEntityUrl = jest.fn((payload: { layout: ContentElementNode[] }) => {
+        type PreviewPayload = Parameters<ContentSystemPreviewApiService['previewEntityUrl']>[0];
+        const requestBodies: PreviewPayload[] = [];
+        const client = createHTTPClient(Shopwell.Context.api);
+        const service = new ContentSystemPreviewApiService(client, createLoginService(client, Shopwell.Context.api));
+        jest.spyOn(service, 'previewEntityUrl').mockImplementation((payload: PreviewPayload) => {
             requestBodies.push(payload);
 
             return Promise.resolve('https://storefront.local/preview');
         });
 
         // eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
-        Shopwell.Service().register('contentSystemPreviewService', () => ({
-            previewEntityUrl,
-        }));
+        Shopwell.Service().register('contentSystemPreviewService', () => service);
 
         const element: ContentElementNode = {
             id: 'element-1',
@@ -189,9 +193,13 @@ describe('module/sw-experience-studio/component/sw-experience-studio-preview', (
         await methods.loadPreview.call(vm);
 
         expect(requestBodies).toHaveLength(1);
-        expect(requestBodies[0].layout[0].attributedSpecifications).toEqual({
-            'Sw:Content:Text': 'SwagBlog',
-            headline: 'SwagPromotion',
-        });
+        expect(requestBodies[0].layout[0]).toEqual(
+            expect.objectContaining({
+                attributedSpecifications: {
+                    'Sw:Content:Text': 'SwagBlog',
+                    headline: 'SwagPromotion',
+                },
+            }),
+        );
     });
 });

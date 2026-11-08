@@ -108,7 +108,6 @@
     "PATCH /acl-role/{roleId}",
     "POST /app-system/action-button/run/{id}",
     "GET /app-system/action-button/{entity}/{view}",
-    "GET /app-system/cms/blocks",
     "GET /app-system/modules",
     "POST /app-system/shop-id/change",
     "GET /app-system/shop-id/change-strategies",

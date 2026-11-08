@@ -202,7 +202,7 @@
                                         :field-key="`${field.key}-${viewport}`"
                                         :model-value="String(getResponsiveViewportValue(field.key, viewport, field.property, field) ?? '')"
                                         :disabled="!allowEdit || undefined"
-                                        @update:model-value="onUpdateResponsiveViewportProperty(field.key, field.property, field, viewport, $event)"
+                                        @update:model-value="onUpdateResponsiveViewportProperty(field.key, field, viewport, $event)"
                                     />
 
                                     <mt-slider
@@ -215,7 +215,7 @@
                                         :mark-count="0"
                                         :disabled="!allowEdit || undefined"
                                         :model-value="getResponsiveViewportValue(field.key, viewport, field.property, field)"
-                                        @update:model-value="onUpdateResponsiveViewportProperty(field.key, field.property, field, viewport, $event)"
+                                        @update:model-value="onUpdateResponsiveViewportProperty(field.key, field, viewport, $event)"
                                     />
 
                                     <mt-switch
@@ -224,7 +224,7 @@
                                         remove-top-margin
                                         :model-value="getResponsiveViewportValue(field.key, viewport, field.property, field)"
                                         :disabled="!allowEdit || undefined"
-                                        @update:model-value="onUpdateResponsiveViewportProperty(field.key, field.property, field, viewport, $event)"
+                                        @update:model-value="onUpdateResponsiveViewportProperty(field.key, field, viewport, $event)"
                                     />
 
                                     <mt-select
@@ -235,7 +235,7 @@
                                         :model-value="getResponsiveViewportValue(field.key, viewport, field.property, field)"
                                         :options="getSelectOptions(field.property)"
                                         :disabled="!allowEdit || undefined"
-                                        @update:model-value="onUpdateResponsiveViewportProperty(field.key, field.property, field, viewport, $event)"
+                                        @update:model-value="onUpdateResponsiveViewportProperty(field.key, field, viewport, $event)"
                                     />
 
                                     <sw-button-group
@@ -253,7 +253,7 @@
                                             :disabled="!allowEdit || option.disabled || undefined"
                                             :aria-label="option.label"
                                             :title="option.label"
-                                            @click="onUpdateResponsiveViewportProperty(field.key, field.property, field, viewport, getRadioPanelEmitValue(field.key, field.property, option.value))"
+                                            @click="onUpdateResponsiveViewportProperty(field.key, field, viewport, getRadioPanelEmitValue(field.key, field.property, option.value))"
                                         >
                                             <span
                                                 v-if="option.cornerRadius"
@@ -275,7 +275,7 @@
                                         size="small"
                                         :model-value="getResponsiveViewportValue(field.key, viewport, field.property, field)"
                                         :disabled="!allowEdit || undefined"
-                                        @update:model-value="onUpdateResponsiveViewportProperty(field.key, field.property, field, viewport, $event)"
+                                        @update:model-value="onUpdateResponsiveViewportProperty(field.key, field, viewport, $event)"
                                     />
                                 </div>
                             </div>

@@ -160,7 +160,7 @@ class SnippetFinderTest extends TestCase
         $testSnippet = ['testSnippetKey' => 'testSnippet'];
         $appSnippets = [
             'sw-category' => $testSnippet,
-            'sw-cms' => $testSnippet,
+            'sw-experience-studio' => $testSnippet,
             'sw-wizard' => $testSnippet,
         ];
 

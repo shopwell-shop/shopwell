@@ -5,12 +5,14 @@ namespace Shopwell\Tests\Unit\Core\Content\ContactForm\Service;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Content\ContactForm\Service\FormConfigResolver;
+use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Test\Generator;
 use Shopwell\Core\Test\Stub\SystemConfigService\StaticSystemConfigService;
 
 /**
  * @internal
  */
+#[Package('discovery')]
 #[CoversClass(FormConfigResolver::class)]
 class FormConfigResolverTest extends TestCase
 {

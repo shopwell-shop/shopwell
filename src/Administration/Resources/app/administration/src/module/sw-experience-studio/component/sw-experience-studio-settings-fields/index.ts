@@ -627,11 +627,12 @@ export default Shopwell.Component.wrapComponentConfig({
 
         onUpdateResponsiveViewportProperty(
             key: string,
-            property: ContentSystemElementTypeProperty,
             field: SettingsFieldDefinition,
             viewport: ResponsiveViewport,
             rawValue: unknown,
         ): void {
+            const { property } = field;
+
             if (field.breakpointAware === true) {
                 this.touchedBreakpointAwareProperties[key] = true;
             }

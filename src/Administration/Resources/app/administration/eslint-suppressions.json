@@ -4799,7 +4799,7 @@
       "count": 4
     },
     "@typescript-eslint/no-restricted-types": {
-      "count": 44
+      "count": 40
     },
     "max-lines": {
       "count": 1
@@ -5704,9 +5704,6 @@
   "src/module/sw-experience-studio/component/sw-experience-studio-settings-fields/index.ts": {
     "max-lines": {
       "count": 1
-    },
-    "max-params": {
-      "count": 1
     }
   },
   "src/module/sw-experience-studio/component/sw-experience-studio-settings-fields/sw-experience-studio-settings-fields.html.twig": {
@@ -5744,9 +5741,6 @@
     "max-lines": {
       "count": 1
     },
-    "max-params": {
-      "count": 1
-    },
     "sw-core-rules/no-swallowed-errors": {
       "count": 1
     }
@@ -5754,18 +5748,10 @@
   "src/module/sw-experience-studio/util/box-spacing.util.ts": {
     "@typescript-eslint/no-unnecessary-type-conversion": {
       "count": 2
-    },
-    "complexity": {
-      "count": 1
     }
   },
   "src/module/sw-experience-studio/util/mapping-token-node.ts": {
     "no-restricted-syntax": {
-      "count": 1
-    }
-  },
-  "src/module/sw-experience-studio/util/style-settings.util.ts": {
-    "complexity": {
       "count": 1
     }
   },

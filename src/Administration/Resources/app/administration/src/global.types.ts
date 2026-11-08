@@ -20,6 +20,10 @@ import type CartStoreService from 'src/core/service/api/cart-store-api.api.servi
 import type CustomSnippetApiService from 'src/core/service/api/custom-snippet.api.service';
 import type MediaService from 'src/core/service/api/media.api.service';
 import type ContentSystemElementTypeApiService from 'src/core/service/api/content-system-element-type.api.service';
+import type ContentSystemLayoutDraftMutationApiService from 'src/core/service/api/content-system-layout-draft-mutation.api.service';
+import type ContentSystemEntityTypeApiService from 'src/core/service/api/content-system-entity-type.api.service';
+import type ContentSystemStyleOptionApiService from 'src/core/service/api/content-system-style-option.api.service';
+import type ContentSystemPreviewApiService from 'src/core/service/api/content-system-preview.api.service';
 import type ContentSystemLayoutPresetApiService from 'src/core/service/api/content-system-layout-preset.api.service';
 import type ContentSystemMappingCandidateApiService from 'src/core/service/api/content-system-mapping-candidate.api.service';
 import type LocaleFactory from 'src/core/factory/locale.factory';
@@ -245,13 +249,13 @@ declare global {
         cacheService: CacheService;
         cartStoreService: CartStoreService;
         checkoutStoreService: CheckoutStoreService;
-        contentSystemLayoutDraftMutationService: $TSFixMe;
-        contentSystemEntityTypeService: $TSFixMe;
+        contentSystemLayoutDraftMutationService: ContentSystemLayoutDraftMutationApiService;
+        contentSystemEntityTypeService: ContentSystemEntityTypeApiService;
         contentSystemElementTypeService: ContentSystemElementTypeApiService;
         contentSystemLayoutPresetService: ContentSystemLayoutPresetApiService;
-        contentSystemStyleOptionService: $TSFixMe;
+        contentSystemStyleOptionService: ContentSystemStyleOptionApiService;
         contentSystemMappingCandidateService: ContentSystemMappingCandidateApiService;
-        contentSystemPreviewService: $TSFixMe;
+        contentSystemPreviewService: ContentSystemPreviewApiService;
         configService: ConfigApiService;
         contextStoreService: StoreContextService;
         customEntityDefinitionService: CustomEntityDefinitionService;

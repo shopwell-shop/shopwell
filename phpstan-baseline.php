@@ -626,12 +626,6 @@ $ignoreErrors[] = [
     'path' => __DIR__ . '/src/Core/Maintenance/System/Command/SystemSetupCommand.php',
 ];
 $ignoreErrors[] = [
-    'rawMessage' => 'Construct empty() is not allowed. Use more strict comparison.',
-    'identifier' => 'empty.notAllowed',
-    'count' => 1,
-    'path' => __DIR__ . '/src/Core/Migration/V6_6/Migration1700746995ReplaceSortingOptionKeysWithSortingOptionIds.php',
-];
-$ignoreErrors[] = [
     'rawMessage' => 'Method Shopwell\\Core\\Profiling\\Integration\\Datadog::start() has parameter $tags with no value type specified in iterable type array.',
     'identifier' => 'missingType.iterableValue',
     'count' => 1,

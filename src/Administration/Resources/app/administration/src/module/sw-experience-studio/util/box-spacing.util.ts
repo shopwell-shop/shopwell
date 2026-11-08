@@ -220,7 +220,14 @@ export function serializeBoxSpacing(sides: BoxSpacingSides, options: SerializeBo
     const bottom = normalizeBoxSpacingSide(sides.bottom);
     const left = normalizeBoxSpacingSide(sides.left);
 
-    if (top === '0' && right === '0' && bottom === '0' && left === '0') {
+    if (
+        [
+            top,
+            right,
+            bottom,
+            left,
+        ].every((side) => side === '0')
+    ) {
         return '';
     }
 

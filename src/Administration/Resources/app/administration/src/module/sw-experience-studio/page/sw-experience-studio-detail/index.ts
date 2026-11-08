@@ -861,7 +861,7 @@ export default Shopwell.Component.wrapComponentConfig({
                     return;
                 }
 
-                if (!this.canInsertIntoSlot(parentElement.component, payload.slotName, component, parentElement)) {
+                if (!this.canInsertIntoSlot(payload.slotName, component, parentElement)) {
                     this.createNotificationInfo({
                         message: this.$t('sw-experience-studio.detail.sidebarTree.addElementNotAllowed'),
                     });
@@ -1078,7 +1078,6 @@ export default Shopwell.Component.wrapComponentConfig({
             }
 
             return this.canInsertIntoSlot(
-                targetParentElement.component,
                 payload.newSlotName,
                 draggedElement.component,
                 targetParentElement,
@@ -1364,13 +1363,12 @@ export default Shopwell.Component.wrapComponentConfig({
         },
 
         canInsertIntoSlot(
-            parentComponent: string,
             slotName: string,
             childComponent: string,
             parentElement: ContentElementNode,
             ignoreElementId: string | null = null,
         ): boolean {
-            const parentType = this.elementTypeStore.getByName(parentComponent);
+            const parentType = this.elementTypeStore.getByName(parentElement.component);
             const slotDefinition = parentType?.slots.find((slot) => slot.name === slotName);
 
             if (!slotDefinition) {

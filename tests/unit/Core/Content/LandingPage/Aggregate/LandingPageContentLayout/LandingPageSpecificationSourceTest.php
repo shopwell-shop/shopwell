@@ -23,7 +23,6 @@ use Symfony\Component\HttpFoundation\Request;
  */
 #[Package('discovery')]
 #[CoversClass(LandingPageSpecificationSource::class)]
-#[CoversClass(LandingPageContentLayoutDefinition::class)]
 class LandingPageSpecificationSourceTest extends TestCase
 {
     public function testUnassignedLandingPageUsesSalesChannelDefaultLayout(): void

@@ -83,7 +83,7 @@ class RobotsPageLoaderTest extends TestCase
         $domains = [$domain];
 
         $this->robotsPageLoader = $this->setupLoaderWithDomains($domains, [
-            'core.basicInformation.robotsRules' => "Disallow: /account/\nDisallow: /checkout/\nDisallow: /widgets/\nAllow: /widgets/cms/\nAllow: /widgets/menu/offcanvas",
+            'core.basicInformation.robotsRules' => "Disallow: /account/\nDisallow: /checkout/\nDisallow: /widgets/\nAllow: /widgets/content/\nAllow: /widgets/menu/offcanvas",
         ]);
 
         $this->setupEventDispatcherExpectation();
@@ -105,7 +105,7 @@ class RobotsPageLoaderTest extends TestCase
         static::assertSame(RobotsDirectiveType::DISALLOW, $directives[2]->type);
         static::assertSame('/widgets/', $directives[2]->value);
         static::assertSame(RobotsDirectiveType::ALLOW, $directives[3]->type);
-        static::assertSame('/widgets/cms/', $directives[3]->value);
+        static::assertSame('/widgets/content/', $directives[3]->value);
         static::assertSame(RobotsDirectiveType::ALLOW, $directives[4]->type);
         static::assertSame('/widgets/menu/offcanvas', $directives[4]->value);
 
@@ -126,8 +126,8 @@ class RobotsPageLoaderTest extends TestCase
 
         $this->robotsPageLoader = $this->setupLoaderWithDomains($domains, [
             'core.basicInformation.robotsRules' => [
-                "Disallow: /account/\nDisallow: /checkout/\nDisallow: /widgets/\nAllow: /widgets/cms/\nAllow: /widgets/menu/offcanvas",
-                "Disallow: /private/\nDisallow: /admin/\nAllow: /widgets/cms/",
+                "Disallow: /account/\nDisallow: /checkout/\nDisallow: /widgets/\nAllow: /widgets/content/\nAllow: /widgets/menu/offcanvas",
+                "Disallow: /private/\nDisallow: /admin/\nAllow: /widgets/content/",
             ],
         ]);
 
@@ -158,7 +158,7 @@ class RobotsPageLoaderTest extends TestCase
         static::assertSame(RobotsDirectiveType::DISALLOW, $firstDirectives[2]->type);
         static::assertSame('/widgets/', $firstDirectives[2]->value);
         static::assertSame(RobotsDirectiveType::ALLOW, $firstDirectives[3]->type);
-        static::assertSame('/widgets/cms/', $firstDirectives[3]->value);
+        static::assertSame('/widgets/content/', $firstDirectives[3]->value);
         static::assertSame(RobotsDirectiveType::ALLOW, $firstDirectives[4]->type);
         static::assertSame('/widgets/menu/offcanvas', $firstDirectives[4]->value);
 
@@ -172,7 +172,7 @@ class RobotsPageLoaderTest extends TestCase
         static::assertSame(RobotsDirectiveType::DISALLOW, $secondDirectives[1]->type);
         static::assertSame('/en/admin/', $secondDirectives[1]->value);
         static::assertSame(RobotsDirectiveType::ALLOW, $secondDirectives[2]->type);
-        static::assertSame('/en/widgets/cms/', $secondDirectives[2]->value);
+        static::assertSame('/en/widgets/content/', $secondDirectives[2]->value);
     }
 
     public function testLoadWithEmptyOrMissingRobotsRules(): void

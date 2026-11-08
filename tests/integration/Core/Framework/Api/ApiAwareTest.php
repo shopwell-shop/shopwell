@@ -75,7 +75,6 @@ class ApiAwareTest extends TestCase
                 'position.updatedAt',
                 'admin_menu_item.createdAt',
                 'admin_menu_item.updatedAt',
-                'category.cmsPageIdSwitched',
                 'product.states',
                 'order_address.vatId',
                 'order_line_item.states',

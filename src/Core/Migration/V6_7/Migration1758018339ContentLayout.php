@@ -43,10 +43,11 @@ class Migration1758018339ContentLayout extends MigrationStep
     private function seedLayouts(Connection $connection): void
     {
         $productContext = ['product' => ['type' => 'single', 'required' => false, 'scope' => 'root', 'source' => ['type' => 'root', 'id' => 'product']]];
+        $listingContext = ['productListing' => ['type' => 'single', 'required' => false, 'scope' => 'root']];
         $layouts = [
             'category' => ['name' => 'Default category', 'root' => 'category', 'key' => 'core.content_system.default_category_content_layout', 'elements' => [
-                $this->element('category-filters', 'Sw:Filter:Panel'),
-                $this->element('category-listing', 'Sw:Product:Listing'),
+                $this->element('category-filters', 'Sw:Filter:Panel', [], $listingContext),
+                $this->element('category-listing', 'Sw:Product:Listing', [], ['productListing' => [...$listingContext['productListing'], 'propertyAlias' => 'listing']]),
             ]],
             'landing' => ['name' => 'Default landing page', 'root' => 'landing_page', 'key' => 'core.content_system.default_landing_page_content_layout', 'elements' => [$this->element('landing-title', 'Sw:Content:Text', ['text' => '<h1>{{map:landing_page.name}}</h1>'])]],
             'product' => ['name' => 'Default product', 'root' => 'product', 'key' => 'core.content_system.default_product_content_layout', 'elements' => [

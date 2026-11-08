@@ -12,11 +12,13 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Script\Debugging\ScriptTraces;
 use Shopwell\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
+use Shopwell\Core\Framework\Util\Hasher;
 use Shopwell\Core\System\SalesChannel\SalesChannelEntity;
 use Shopwell\Core\Test\Stub\Framework\IdsCollection;
 use Shopwell\Storefront\Page\Navigation\NavigationPageLoadedHook;
 use Shopwell\Storefront\Pagelet\Menu\Offcanvas\MenuOffcanvasPageletLoadedHook;
 use Shopwell\Storefront\Test\Controller\StorefrontControllerTestBehaviour;
+use Symfony\Component\DomCrawler\Crawler;
 
 /**
  * @internal
@@ -74,7 +76,7 @@ class NavigationControllerTest extends TestCase
 
         $response = $this->request('GET', $seoPath . '?p=99', []);
 
-        static::assertSame(301, $response->getStatusCode());
+        static::assertSame(301, $response->getStatusCode(), (string) $response->getContent());
 
         $location = $response->headers->get('Location');
         static::assertNotNull($location);
@@ -88,7 +90,7 @@ class NavigationControllerTest extends TestCase
 
         $response = $this->request('GET', $seoPath . '?p=99&order=price-asc', []);
 
-        static::assertSame(301, $response->getStatusCode());
+        static::assertSame(301, $response->getStatusCode(), (string) $response->getContent());
 
         $location = $response->headers->get('Location');
         static::assertNotNull($location);
@@ -105,6 +107,8 @@ class NavigationControllerTest extends TestCase
         $response = $this->request('GET', $seoPath . '?p=2&limit=2', []);
 
         static::assertSame(200, $response->getStatusCode());
+        static::assertCount(2, (new Crawler((string) $response->getContent()))->filter('.sw-product-card'));
+        static::assertStringContainsString('Test product', (string) $response->getContent());
 
         $canonicalUrl = $this->extractCanonicalUrl((string) $response->getContent());
         static::assertStringEndsWith('/' . $seoPath . '?p=2', $canonicalUrl);
@@ -112,6 +116,7 @@ class NavigationControllerTest extends TestCase
         $firstPageResponse = $this->request('GET', $seoPath . '?p=1&limit=2', []);
 
         static::assertSame(200, $firstPageResponse->getStatusCode());
+        static::assertCount(2, (new Crawler((string) $firstPageResponse->getContent()))->filter('.sw-product-card'));
         static::assertStringEndsWith('/' . $seoPath, $this->extractCanonicalUrl((string) $firstPageResponse->getContent()));
     }
 
@@ -213,6 +218,7 @@ class NavigationControllerTest extends TestCase
         static::getContainer()->get('category.repository')->create([[
             'id' => $categoryId,
             'name' => 'Out-of-range test category',
+            'contentLayouts' => [['contentLayoutId' => Hasher::hash('shopwell.content-system.default.category', 'md5')]],
             'type' => 'page',
             'parentId' => $salesChannel->getNavigationCategoryId(),
         ]], Context::createDefaultContext());

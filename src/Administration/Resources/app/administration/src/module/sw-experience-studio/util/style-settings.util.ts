@@ -97,6 +97,20 @@ export function compareStyleFieldKeys(left: string, right: string): number {
     return left.localeCompare(right);
 }
 
+function getStyleOptionRangeProps(range: ContentSystemStyleOptionSpecification['range']): Record<string, number> {
+    const props: Record<string, number> = {};
+
+    if (range?.min !== undefined) {
+        props.min = range.min;
+    }
+
+    if (range?.max !== undefined) {
+        props.max = range.max;
+    }
+
+    return props;
+}
+
 /**
  * @private
  * @sw-package discovery
@@ -110,16 +124,6 @@ export function styleOptionToElementProperty(
     const props = {
         ...(typeof adminUI.props === 'object' && adminUI.props !== null ? adminUI.props : {}),
     };
-
-    if (option.range) {
-        if (option.range.min !== undefined) {
-            props.min = option.range.min;
-        }
-
-        if (option.range.max !== undefined) {
-            props.max = option.range.max;
-        }
-    }
 
     let mappedComponent = adminComponent;
 
@@ -152,7 +156,7 @@ export function styleOptionToElementProperty(
         adminUI: {
             ...adminUI,
             component: mappedComponent,
-            props,
+            props: { ...props, ...getStyleOptionRangeProps(option.range) },
         },
     };
 }

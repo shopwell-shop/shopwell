@@ -78,7 +78,7 @@ class HttpRequestMetricSubscriberTest extends TestCase
         // an ESI fragment must not overwrite the page request
         $fragment = Request::create('/');
         $fragment->attributes->set('_sw_esi', true);
-        $fragment->attributes->set('_route', 'frontend.cms.page');
+        $fragment->attributes->set('_route', 'frontend.content.layout');
         $fragment->attributes->set(PlatformRequest::ATTRIBUTE_ROUTE_SCOPE, ['store-api']);
         $subscriber->onKernelResponse($this->createResponseEvent($fragment, HttpKernelInterface::MAIN_REQUEST));
 

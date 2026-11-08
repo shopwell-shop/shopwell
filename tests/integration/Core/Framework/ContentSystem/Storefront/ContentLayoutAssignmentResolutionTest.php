@@ -21,10 +21,8 @@ use Shopwell\Storefront\Test\Controller\StorefrontControllerTestBehaviour;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * Pins the Experience Studio layout resolution order on the real Storefront product and category routes:
- * an explicit Experience Studio assignment, then the Experience Studio default of the entity type, then the
- * untouched legacy CMS resolution. Every scenario keeps a legacy CMS page assigned to the entity, so a
- * rendered Experience Studio layout proves it overrode the CMS assignment rather than filled an empty slot.
+ * Pins Content System layout resolution on real Storefront product and category routes:
+ * explicit assignments override type-specific defaults, and variants inherit parent assignments.
  *
  * @internal
  */
@@ -33,8 +31,6 @@ class ContentLayoutAssignmentResolutionTest extends TestCase
 {
     use IntegrationTestBehaviour;
     use StorefrontControllerTestBehaviour;
-
-    private const LEGACY_CMS_MARKER = 'legacy-cms-layout-marker';
 
     private IdsCollection $ids;
 
@@ -47,12 +43,14 @@ class ContentLayoutAssignmentResolutionTest extends TestCase
         $this->ids = new IdsCollection();
         $this->systemConfigService = static::getContainer()->get(SystemConfigService::class);
 
-        $this->createLegacyCmsPage('legacy-category-page', 'product_list');
-        $this->createLegacyCmsPage('legacy-product-page', 'product_detail');
         $this->createCategory();
         $this->createProduct();
         $this->createContentLayout('category-layout', 'category');
         $this->createContentLayout('product-layout', 'product');
+        $this->createContentLayout('default-category-layout', 'category');
+        $this->createContentLayout('default-product-layout', 'product');
+        $this->systemConfigService->set(CategoryContentLayoutDefinition::CONFIG_KEY_DEFAULT_CONTENT_LAYOUT, $this->ids->get('default-category-layout'));
+        $this->systemConfigService->set(ProductContentLayoutDefinition::CONFIG_KEY_DEFAULT_CONTENT_LAYOUT, $this->ids->get('default-product-layout'));
     }
 
     protected function tearDown(): void
@@ -64,22 +62,23 @@ class ContentLayoutAssignmentResolutionTest extends TestCase
         parent::tearDown();
     }
 
-    #[TestDox('renders the legacy CMS category layout when Experience Studio has no assignment')]
-    public function testCategoryFallsBackToLegacyCmsLayout(): void
+    #[TestDox('renders the default category layout without an explicit assignment')]
+    public function testCategoryUsesDefaultLayoutWithoutAssignment(): void
     {
-        $this->assertRendersLegacyCmsLayout($this->requestCategory());
+        $this->assertRendersContentLayout($this->requestCategory(), 'default-category-layout');
     }
 
-    #[TestDox('renders the explicitly assigned Experience Studio layout instead of the legacy CMS category layout')]
-    public function testExplicitCategoryAssignmentOverridesLegacyCmsLayout(): void
+    #[TestDox('renders an explicit category layout without a configured default')]
+    public function testExplicitCategoryAssignmentWithoutDefault(): void
     {
+        $this->systemConfigService->delete(CategoryContentLayoutDefinition::CONFIG_KEY_DEFAULT_CONTENT_LAYOUT);
         $this->assignLayout('category_content_layout.repository', 'categoryId', 'category', 'category-layout');
 
         $this->assertRendersContentLayout($this->requestCategory(), 'category-layout');
     }
 
-    #[TestDox('renders the default Experience Studio category layout instead of the legacy CMS category layout')]
-    public function testDefaultCategoryLayoutOverridesLegacyCmsLayout(): void
+    #[TestDox('renders a replacement category default')]
+    public function testCategoryUsesReplacementDefault(): void
     {
         $this->systemConfigService->set(CategoryContentLayoutDefinition::CONFIG_KEY_DEFAULT_CONTENT_LAYOUT, $this->ids->get('category-layout'));
 
@@ -89,22 +88,20 @@ class ContentLayoutAssignmentResolutionTest extends TestCase
     #[TestDox('renders the explicitly assigned category layout instead of the default Experience Studio category layout')]
     public function testExplicitCategoryAssignmentOverridesDefaultCategoryLayout(): void
     {
-        $this->createContentLayout('default-category-layout', 'category');
-        $this->systemConfigService->set(CategoryContentLayoutDefinition::CONFIG_KEY_DEFAULT_CONTENT_LAYOUT, $this->ids->get('default-category-layout'));
         $this->assignLayout('category_content_layout.repository', 'categoryId', 'category', 'category-layout');
 
         $this->assertRendersContentLayout($this->requestCategory(), 'category-layout');
     }
 
-    #[TestDox('renders the legacy CMS category layout again once the Experience Studio assignment is removed')]
-    public function testRemovedCategoryAssignmentRestoresLegacyCmsLayout(): void
+    #[TestDox('restores the category default after removing an explicit assignment')]
+    public function testRemovedCategoryAssignmentRestoresDefaultLayout(): void
     {
         $assignmentId = $this->assignLayout('category_content_layout.repository', 'categoryId', 'category', 'category-layout');
         $this->assertRendersContentLayout($this->requestCategory(), 'category-layout');
 
         $this->repository('category_content_layout.repository')->delete([['id' => $assignmentId]], Context::createDefaultContext());
 
-        $this->assertRendersLegacyCmsLayout($this->requestCategory());
+        $this->assertRendersContentLayout($this->requestCategory(), 'default-category-layout');
     }
 
     #[TestDox('does not resolve the default Experience Studio product layout for a category')]
@@ -112,40 +109,41 @@ class ContentLayoutAssignmentResolutionTest extends TestCase
     {
         $this->systemConfigService->set(ProductContentLayoutDefinition::CONFIG_KEY_DEFAULT_CONTENT_LAYOUT, $this->ids->get('product-layout'));
 
-        $this->assertRendersLegacyCmsLayout($this->requestCategory());
+        $this->assertRendersContentLayout($this->requestCategory(), 'default-category-layout');
     }
 
-    #[TestDox('renders the legacy CMS product layout when Experience Studio has no assignment')]
-    public function testProductFallsBackToLegacyCmsLayout(): void
+    #[TestDox('renders the default product layout without an explicit assignment')]
+    public function testProductUsesDefaultLayoutWithoutAssignment(): void
     {
-        $this->assertRendersLegacyCmsLayout($this->requestProduct());
+        $this->assertRendersContentLayout($this->requestProduct(), 'default-product-layout');
     }
 
-    #[TestDox('renders the explicitly assigned Experience Studio layout instead of the legacy CMS product layout')]
-    public function testExplicitProductAssignmentOverridesLegacyCmsLayout(): void
+    #[TestDox('renders an explicit product layout without a configured default')]
+    public function testExplicitProductAssignmentWithoutDefault(): void
     {
+        $this->systemConfigService->delete(ProductContentLayoutDefinition::CONFIG_KEY_DEFAULT_CONTENT_LAYOUT);
         $this->assignLayout('product_content_layout.repository', 'productId', 'product', 'product-layout');
 
         $this->assertRendersContentLayout($this->requestProduct(), 'product-layout');
     }
 
-    #[TestDox('renders the default Experience Studio product layout instead of the legacy CMS product layout')]
-    public function testDefaultProductLayoutOverridesLegacyCmsLayout(): void
+    #[TestDox('renders a replacement product default')]
+    public function testProductUsesReplacementDefault(): void
     {
         $this->systemConfigService->set(ProductContentLayoutDefinition::CONFIG_KEY_DEFAULT_CONTENT_LAYOUT, $this->ids->get('product-layout'));
 
         $this->assertRendersContentLayout($this->requestProduct(), 'product-layout');
     }
 
-    #[TestDox('renders the legacy CMS product layout again once the Experience Studio assignment is removed')]
-    public function testRemovedProductAssignmentRestoresLegacyCmsLayout(): void
+    #[TestDox('restores the product default after removing an explicit assignment')]
+    public function testRemovedProductAssignmentRestoresDefaultLayout(): void
     {
         $assignmentId = $this->assignLayout('product_content_layout.repository', 'productId', 'product', 'product-layout');
         $this->assertRendersContentLayout($this->requestProduct(), 'product-layout');
 
         $this->repository('product_content_layout.repository')->delete([['id' => $assignmentId]], Context::createDefaultContext());
 
-        $this->assertRendersLegacyCmsLayout($this->requestProduct());
+        $this->assertRendersContentLayout($this->requestProduct(), 'default-product-layout');
     }
 
     #[TestDox('does not resolve the default Experience Studio category layout for a product')]
@@ -153,11 +151,11 @@ class ContentLayoutAssignmentResolutionTest extends TestCase
     {
         $this->systemConfigService->set(CategoryContentLayoutDefinition::CONFIG_KEY_DEFAULT_CONTENT_LAYOUT, $this->ids->get('category-layout'));
 
-        $this->assertRendersLegacyCmsLayout($this->requestProduct());
+        $this->assertRendersContentLayout($this->requestProduct(), 'default-product-layout');
     }
 
     #[TestDox('renders the Experience Studio layout assigned to a variant on the variant detail page')]
-    public function testVariantAssignmentOverridesLegacyCmsLayout(): void
+    public function testVariantAssignmentOverridesDefaultLayout(): void
     {
         $this->createVariantProduct();
         $this->assignLayout('product_content_layout.repository', 'productId', 'variant', 'product-layout');
@@ -188,13 +186,6 @@ class ContentLayoutAssignmentResolutionTest extends TestCase
     private function assertRendersContentLayout(string $html, string $layoutKey): void
     {
         static::assertStringContainsString('data-element-id="' . $this->ids->get($layoutKey . '-root') . '"', $html);
-        static::assertStringNotContainsString(self::LEGACY_CMS_MARKER, $html);
-    }
-
-    private function assertRendersLegacyCmsLayout(string $html): void
-    {
-        static::assertStringContainsString(self::LEGACY_CMS_MARKER, $html);
-        static::assertStringNotContainsString('data-element-id="', $html);
     }
 
     private function requestCategory(): string
@@ -254,29 +245,6 @@ class ContentLayoutAssignmentResolutionTest extends TestCase
         ]], Context::createDefaultContext());
     }
 
-    private function createLegacyCmsPage(string $pageKey, string $type): void
-    {
-        $this->repository('cms_page.repository')->create([[
-            'id' => $this->ids->create($pageKey),
-            'name' => $pageKey,
-            'type' => $type,
-            'sections' => [[
-                'position' => 0,
-                'type' => 'default',
-                'blocks' => [[
-                    'position' => 0,
-                    'type' => 'text',
-                    'sectionPosition' => 'main',
-                    'slots' => [[
-                        'type' => 'text',
-                        'slot' => 'content',
-                        'config' => ['content' => ['source' => 'static', 'value' => self::LEGACY_CMS_MARKER]],
-                    ]],
-                ]],
-            ]],
-        ]], Context::createDefaultContext());
-    }
-
     private function createCategory(): void
     {
         $navigationCategoryId = static::getContainer()->get(Connection::class)->fetchOne(
@@ -289,7 +257,6 @@ class ContentLayoutAssignmentResolutionTest extends TestCase
             'parentId' => $navigationCategoryId,
             'name' => 'Layout assignment category',
             'active' => true,
-            'cmsPageId' => $this->ids->get('legacy-category-page'),
         ]], Context::createDefaultContext());
     }
 
@@ -299,8 +266,6 @@ class ContentLayoutAssignmentResolutionTest extends TestCase
             ->price(10)
             ->visibility($this->getSalesChannelId())
             ->build();
-
-        $product['cmsPageId'] = $this->ids->get('legacy-product-page');
 
         $this->repository('product.repository')->create([$product], Context::createDefaultContext());
     }
@@ -317,8 +282,6 @@ class ContentLayoutAssignmentResolutionTest extends TestCase
                     ->build()
             )
             ->build();
-
-        $product['cmsPageId'] = $this->ids->get('legacy-product-page');
 
         $this->repository('product.repository')->create([$product], Context::createDefaultContext());
     }

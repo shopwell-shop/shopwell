@@ -27,6 +27,7 @@ use Shopwell\Core\System\Currency\ContentSystem\DataLoader\CurrencyDataLoader;
 use Shopwell\Core\System\Language\ContentSystem\DataLoader\LanguageDataLoader;
 use Shopwell\Core\Test\Stub\ContentSystem\TestMultiReferenceGatingLoader;
 use Shopwell\Core\Test\Stub\ContentSystem\TestNavigationShapedLoader;
+use Shopwell\Storefront\ContentSystem\Hydration\DataLoader\FormGendersDataLoader;
 use Symfony\Component\DependencyInjection\ServiceLocator;
 
 /**
@@ -94,6 +95,10 @@ class DataLoaderConfigSerializerContractTest extends TestCase
      */
     public static function provideConfigsPerSource(): iterable
     {
+        yield FormGendersDataLoader::SOURCE => [
+            'source' => FormGendersDataLoader::SOURCE,
+            'config' => [],
+        ];
         yield NavigationDataLoader::SOURCE => [
             'source' => NavigationDataLoader::SOURCE,
             'config' => ['rootId' => 'main-navigation', 'depth' => 3, 'activeProperty' => 'customActiveId'],
