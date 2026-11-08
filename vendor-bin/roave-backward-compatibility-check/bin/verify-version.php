@@ -13,3 +13,11 @@ if (version_compare(Composer::getVersion(), '2.2.0', '<')) {
     echo 'The BC Checker requires at least Composer 2.2.0, please update your composer version to run the BC Checker locally.';
     exit(1);
 }
+
+require_once __DIR__ . '/verify-patches.php';
+
+$patchFailures = verifyRoavePatches();
+if ($patchFailures !== []) {
+    fwrite(\STDERR, "Roave patch verification failed:\n- " . implode("\n- ", $patchFailures) . "\n");
+    exit(1);
+}

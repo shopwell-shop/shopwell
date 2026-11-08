@@ -5,7 +5,7 @@ import NativeEventEmitter from 'src/helper/emitter.helper';
  * @jest-environment jsdom
  */
 describe('ProductSliderPlugin tests', () => {
-    function createSlider(width, { withCmsWrapper = true } = {}) {
+    function createSlider(width, { withContainer = true } = {}) {
         const slider = `
             <div class="base-slider product-slider js-slider-initialized" data-product-slider="true" data-product-slider-options="">
                 <div class="product-slider-container" data-product-slider-container="true"></div>
@@ -13,15 +13,15 @@ describe('ProductSliderPlugin tests', () => {
         `;
 
         // 'js-slider-initialized' skips the real tiny-slider boot
-        document.body.innerHTML = withCmsWrapper
-            ? `<div class="cms-element-product-slider has-vertical-alignment"><div class="cms-element-alignment">${slider}</div></div>`
+        document.body.innerHTML = withContainer
+            ? `<div class="product-slider-viewport has-vertical-alignment"><div class="product-slider-alignment">${slider}</div></div>`
             : slider;
 
         const element = document.querySelector('.base-slider');
 
         // jsdom has no layout engine, fake the resolved width on the element used as width source
         element.style.padding = '0px';
-        const widthSource = document.querySelector('.cms-element-product-slider') ?? element;
+        const widthSource = document.querySelector('.product-slider-viewport') ?? element;
         jest.spyOn(widthSource, 'clientWidth', 'get').mockReturnValue(width);
 
         return new ProductSliderPlugin(element);
@@ -75,7 +75,7 @@ describe('ProductSliderPlugin tests', () => {
         expect(plugin._sliderSettings.items).toBe(1);
     });
 
-    test('_getInnerWidth measures the surrounding cms element, not the content-sized slider', () => {
+    test('_getInnerWidth measures the surrounding viewport, not the content-sized slider', () => {
         const plugin = createSlider(1360);
 
         // the slider element itself would report a different (content-based) width
@@ -84,8 +84,8 @@ describe('ProductSliderPlugin tests', () => {
         expect(plugin._getInnerWidth()).toBe(1360);
     });
 
-    test('_getInnerWidth falls back to the slider element when no cms wrapper exists', () => {
-        const plugin = createSlider(800, { withCmsWrapper: false });
+    test('_getInnerWidth falls back to the slider element when no surrounding viewport exists', () => {
+        const plugin = createSlider(800, { withContainer: false });
 
         expect(plugin._getInnerWidth()).toBe(800);
     });

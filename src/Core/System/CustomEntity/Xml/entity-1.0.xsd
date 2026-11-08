@@ -29,8 +29,6 @@
         </xs:choice>
 
         <xs:attribute name="name" type="custom_entity_identifier" use="required"/>
-        <!-- @todo NEXT-22697 - Re-implement, when re-enabling cms-aware -->
-        <!--<xs:attribute name="cms-aware" type="xs:boolean"/>-->
         <xs:attribute name="custom-fields-aware" type="xs:boolean"/>
         <xs:attribute name="label-property" type="xs:string"/>
     </xs:complexType>

@@ -27,7 +27,7 @@
         {# TODO: Replace this temporary banner with MtTabs item tooltip metadata once Meteor supports badge/disabled tab tooltips. #}
         <mt-banner
             v-if="!acl.can('landing_page.editor')"
-            class="sw-landing-page-view__cms-permission-warning"
+            class="sw-landing-page-view__layout-permission-warning"
             variant="attention"
         >
             {{ $t('sw-privileges.tooltip.warning') }}
@@ -52,7 +52,7 @@
             </sw-tabs-item>
             {% endblock %}
 
-            {% block sw_landing_page_view_tabs_cms %}
+            {% block sw_landing_page_view_tabs_layout %}
             <sw-tabs-item
                 v-tooltip="{
                     message: $t('sw-privileges.tooltip.warning'),
@@ -60,11 +60,11 @@
                     showOnDisabledElements: true
                 }"
                 :disabled="!acl.can('landing_page.editor')"
-                class="sw-landing-page-detail__tab-cms"
-                :route="{ name: 'sw.category.landingPageDetail.cms' }"
-                :title="$t('sw-landing-page.view.cms')"
+                class="sw-landing-page-detail__tab-layout"
+                :route="{ name: 'sw.category.landingPageDetail.layout' }"
+                :title="$t('sw-landing-page.view.layout')"
             >
-                {{ $t('sw-landing-page.view.cms') }}
+                {{ $t('sw-landing-page.view.layout') }}
             </sw-tabs-item>
             {% endblock %}
 

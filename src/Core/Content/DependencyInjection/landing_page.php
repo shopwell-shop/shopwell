@@ -2,8 +2,9 @@
 
 namespace Shopwell\Core\Content\DependencyInjection;
 
-use Shopwell\Core\Content\Cms\SalesChannel\SalesChannelCmsPageLoader;
-use Shopwell\Core\Content\Cms\Service\EntityCmsSlotConfigInheritanceBuilder;
+use Shopwell\Core\Content\LandingPage\Aggregate\LandingPageContentLayout\LandingPageContentLayoutDefinition;
+use Shopwell\Core\Content\LandingPage\Aggregate\LandingPageContentLayout\LandingPageMappingCandidateProvider;
+use Shopwell\Core\Content\LandingPage\Aggregate\LandingPageContentLayout\LandingPageSpecificationSource;
 use Shopwell\Core\Content\LandingPage\Aggregate\LandingPageSalesChannel\LandingPageSalesChannelDefinition;
 use Shopwell\Core\Content\LandingPage\Aggregate\LandingPageTag\LandingPageTagDefinition;
 use Shopwell\Core\Content\LandingPage\Aggregate\LandingPageTranslation\LandingPageTranslationDefinition;
@@ -13,6 +14,8 @@ use Shopwell\Core\Content\LandingPage\LandingPageValidator;
 use Shopwell\Core\Content\LandingPage\SalesChannel\LandingPageRoute;
 use Shopwell\Core\Content\LandingPage\SalesChannel\SalesChannelLandingPageDefinition;
 use Shopwell\Core\Framework\Adapter\Cache\CacheTagCollector;
+use Shopwell\Core\Framework\ContentSystem\Adapter\FactoryHelper\EntityLayoutContextFactory;
+use Shopwell\Core\Framework\ContentSystem\Helper\ContentLayoutMetadataDeriver;
 use Shopwell\Core\Framework\DataAbstractionLayer\Dbal\Common\IteratorFactory;
 use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
@@ -49,9 +52,6 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->public()
         ->args([
             service('sales_channel.landing_page.repository'),
-            service(SalesChannelCmsPageLoader::class),
-            service(EntityCmsSlotConfigInheritanceBuilder::class),
-            service(SalesChannelLandingPageDefinition::class),
             service(CacheTagCollector::class),
             service(ExtensionDispatcher::class),
         ]);
@@ -61,4 +61,25 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('validator'),
         ])
         ->tag('kernel.event_subscriber');
+
+    // Content System
+    $services->set(LandingPageContentLayoutDefinition::class)
+        ->args([
+            service(ContentLayoutMetadataDeriver::class),
+        ])
+        ->tag('shopwell.entity.definition');
+
+    $services->set(LandingPageSpecificationSource::class)
+        ->args([
+            service('landing_page_content_layout.repository'),
+            service(LandingPageContentLayoutDefinition::class),
+            service(EntityLayoutContextFactory::class),
+        ])
+        ->tag('content_system.entity_specification_source', ['priority' => 100]);
+
+    $services->set(LandingPageMappingCandidateProvider::class)
+        ->args([
+            service(LandingPageContentLayoutDefinition::class),
+        ])
+        ->tag('content_system.mapping_candidate_provider', ['priority' => 100]);
 };

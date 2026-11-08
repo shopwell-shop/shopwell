@@ -1,0 +1,294 @@
+{
+  "sw-experience-studio": {
+    "general": {
+      "mainMenuItemGeneral": "体验工作室",
+      "descriptionTextModule": "创建和管理店铺内容布局。",
+      "placeholderSearchBar": "搜索布局…",
+      "moduleTitle": "体验工作室",
+      "createNewLayout": "新建布局"
+    },
+    "mapping": {
+      "category": {
+        "name": {
+          "label": "分类名称",
+          "description": "当前页面所属分类的名称。"
+        },
+        "description": {
+          "label": "分类描述",
+          "description": "分类的介绍内容。"
+        },
+        "metaTitle": {
+          "label": "SEO 标题",
+          "description": "分类页面的搜索引擎标题。"
+        },
+        "metaDescription": {
+          "label": "SEO 描述",
+          "description": "分类页面的搜索引擎描述。"
+        },
+        "keywords": {
+          "label": "关键词",
+          "description": "分类页面的搜索关键词。"
+        },
+        "media": {
+          "label": "分类图片",
+          "description": "该分类设置的图片。"
+        }
+      },
+      "product": {
+        "entity": {
+          "label": "商品",
+          "description": "当前页面展示的完整商品数据。"
+        },
+        "name": {
+          "label": "商品名称",
+          "description": "当前页面展示的商品名称。"
+        },
+        "description": {
+          "label": "商品描述",
+          "description": "商品的详细介绍。"
+        },
+        "productNumber": {
+          "label": "商品编号",
+          "description": "商品的货号。"
+        },
+        "metaTitle": {
+          "label": "SEO 标题",
+          "description": "商品页面的搜索引擎标题。"
+        },
+        "metaDescription": {
+          "label": "SEO 描述",
+          "description": "商品页面的搜索引擎描述。"
+        },
+        "keywords": {
+          "label": "关键词",
+          "description": "商品页面的搜索关键词。"
+        },
+        "cover": {
+          "label": "商品主图",
+          "description": "商品的封面图片。"
+        },
+        "media": {
+          "label": "商品图片",
+          "description": "按商品设置的顺序展示全部图片。"
+        }
+      },
+      "landingPage": {
+        "name": {
+          "label": "落地页名称",
+          "description": "当前展示的落地页名称。"
+        },
+        "url": {
+          "label": "落地页地址",
+          "description": "落地页设置的网址路径。"
+        },
+        "metaTitle": {
+          "label": "SEO 标题",
+          "description": "落地页的搜索引擎标题。"
+        },
+        "metaDescription": {
+          "label": "SEO 描述",
+          "description": "落地页的搜索引擎描述。"
+        },
+        "keywords": {
+          "label": "关键词",
+          "description": "落地页的搜索关键词。"
+        }
+      }
+    },
+    "elements": {
+      "sw-grid-container": {
+        "panels": {
+          "general": "常规",
+          "spacing": "间距",
+          "alignment": "对齐",
+          "border": "边框",
+          "corners": "圆角",
+          "shadow": "阴影",
+          "background": "背景"
+        }
+      },
+      "sw-media-gallery": {
+        "panels": {
+          "general": "常规",
+          "thumbnails": "缩略图导航",
+          "behaviour": "交互"
+        }
+      },
+      "sw-product-listing": {
+        "panels": {
+          "sorting": "排序"
+        }
+      },
+      "sw-tabs-panel": {
+        "panels": {
+          "general": "常规"
+        }
+      },
+      "sw-tabs-tab": {
+        "panels": {
+          "general": "常规"
+        }
+      }
+    },
+    "list": {
+      "columnName": "名称",
+      "columnVersion": "版本",
+      "columnCreatedAt": "创建时间",
+      "columnUpdatedAt": "更新时间",
+      "emptyStateTitle": "暂无内容布局",
+      "emptyStateSubline": "创建第一个内容布局，开始设计店铺。"
+    },
+    "createWizard": {
+      "title": "创建内容布局",
+      "description": "设置布局名称和类型后，即可开始编辑。",
+      "nameLabel": "布局名称",
+      "namePlaceholder": "请输入布局名称…",
+      "typeLabel": "布局类型",
+      "typePlaceholder": "请选择布局类型…",
+      "loadingTypes": "正在加载布局类型…",
+      "typeLoadError": "无法加载布局类型。",
+      "noTypes": "暂无可用的布局类型。",
+      "start": "开始编辑",
+      "missingFields": "请先填写布局名称并选择布局类型，再保存。",
+      "layoutTypes": {
+        "product": "商品",
+        "category": "分类",
+        "landing_page": "落地页"
+      }
+    },
+    "detail": {
+      "toolbar": {
+        "undo": "撤销",
+        "redo": "重做",
+        "viewportMobile": "手机",
+        "viewportTablet": "平板",
+        "viewportDesktop": "桌面",
+        "previewEntity": "预览对象",
+        "previewEntityPlaceholder": "请选择预览对象",
+        "previewSalesChannel": "销售渠道",
+        "previewSalesChannelPlaceholder": "请选择预览销售渠道",
+        "assignments": "布局分配",
+        "save": "保存布局"
+      },
+      "assignmentModal": {
+        "title": "布局分配",
+        "description": "优先使用已分配的体验工作室布局。未分配布局的对象使用对应类型的默认布局；未设置默认布局时，使用原有内容布局。",
+        "defaultLabel": {
+          "product": "商品默认布局",
+          "category": "分类默认布局"
+        },
+        "entitiesLabel": {
+          "product": "商品",
+          "category": "分类"
+        },
+        "entitiesHelpText": "已分配到其他布局的对象将改为使用此布局。",
+        "messageSaved": "布局分配已保存。",
+        "messageLoadError": "无法加载布局分配。",
+        "messageSaveError": "无法保存布局分配。"
+      },
+      "sidebarTree": {
+        "title": "页面结构",
+        "emptyState": "此布局还没有元素。",
+        "addElement": "添加元素",
+        "addElementNoTypeAvailable": "暂无可添加的元素类型。",
+        "addElementNotAllowed": "此元素无法插入选中的插槽。",
+        "configureElement": "配置元素",
+        "duplicateElement": "复制元素",
+        "deleteElement": "删除元素"
+      },
+      "preview": {
+        "title": "预览",
+        "placeholder": "店铺预览将在此显示。",
+        "missingSalesChannel": "请选择销售渠道以加载预览。",
+        "missingEntityContext": "此布局尚未分配给商品、分类或落地页。",
+        "noElements": "预览已加载，但未返回顶层元素。",
+        "emptySlot": "此插槽暂无元素。",
+        "errorLoad": "无法加载预览。"
+      },
+      "elementSettings": {
+        "title": "元素设置",
+        "tabElement": "元素",
+        "tabLayout": "布局",
+        "emptyState": "请选择一个元素以编辑设置。",
+        "loading": "正在加载元素设置…",
+        "typeLoadError": "无法加载元素设置。",
+        "styleLoadError": "无法加载布局设置。",
+        "typeMissing": "尚未找到此组件对应的元素类型。",
+        "noEditableProperties": "此元素没有可编辑的基础属性。",
+        "noEditableStyleOptions": "暂无可用的布局样式选项。",
+        "panelGeneral": "常规",
+        "viewportSettings": "屏幕尺寸设置",
+        "boxSpacingTop": "上",
+        "boxSpacingRight": "右",
+        "boxSpacingBottom": "下",
+        "boxSpacingLeft": "左",
+        "boxSpacingLinkSides": "同时调整四边",
+        "boxSpacingUnlinkSides": "分别调整各边",
+        "mapping": {
+          "mapAction": "动态数据",
+          "insertAction": "插入动态数据",
+          "unmapAction": "移除动态数据",
+          "modalTitle": "选择动态数据",
+          "modalIntro": "选择页面展示时用于填充“{property}”的数据。",
+          "sourceIntro": "请选择此字段使用的属性。",
+          "searchLabel": "搜索",
+          "searchPlaceholder": "搜索数据字段",
+          "noCandidates": "此字段暂无可用的动态数据。",
+          "noSearchResults": "未找到匹配的数据字段。",
+          "loadingCandidates": "正在加载动态数据…",
+          "loadError": "无法加载动态数据。",
+          "loadingText": "正在准备文本编辑…",
+          "parseError": "无法检查动态数据占位符。文本已保留，请重试检查。",
+          "retryAction": "重试",
+          "groups": {
+            "basic": "基本信息",
+            "seo": "SEO",
+            "media": "媒体",
+            "customFields": "自定义字段"
+          },
+          "sources": {
+            "rootEntity": "主体对象",
+            "navigationLabel": "数据源"
+          }
+        }
+      },
+      "elementPicker": {
+        "title": "添加元素",
+        "tabElements": "元素",
+        "tabPresets": "预设",
+        "searchElementsPlaceholder": "搜索元素",
+        "searchPresetsPlaceholder": "搜索预设",
+        "noSearchResults": "未找到结果，请尝试其他关键词。",
+        "noElements": "此位置暂无可用的元素类型。",
+        "noPresets": "此位置暂无可用的预设。",
+        "categoryHeadlines": {
+          "content": "内容",
+          "commerce": "商品交易",
+          "layout": "布局",
+          "presets": "预设",
+          "other": "其他"
+        }
+      },
+      "mappingMutationErrors": {
+        "propertyNotMappable": "此属性不支持动态数据，请选择支持动态数据的属性。",
+        "unknownMappingPath": "此数据源已不可用，请为该属性选择其他来源。",
+        "mappingTypeMismatch": "此数据源与属性不匹配，请选择兼容的数据源。",
+        "propertyAliasCollision": "此属性已绑定其他数据源，请选择其他属性或修改现有绑定。",
+        "invalidMappingSource": "所选动态数据来源无效，请从可用列表中选择。",
+        "missingRootSource": "此布局尚未设置数据源，无法添加动态数据。"
+      },
+      "mutationErrors": {
+        "unknownRootSource": "布局的数据源不可用。",
+        "targetNotFound": "所选元素已不可用，请选择现有元素再编辑。",
+        "unknownElementType": "此元素类型已不可用，请选择可用的类型。",
+        "invalidStructure": "当前布局结构不支持此操作，请检查所选元素及其位置。",
+        "generic": "无法应用布局修改，请检查修改内容或联系管理员。"
+      },
+      "messageSaved": "内容布局已保存。",
+      "messageSaveError": "无法保存内容布局。",
+      "messageSaveErrorDetail": "无法保存内容布局：{detail}",
+      "messageReloadError": "内容布局已保存，但无法重新加载。",
+      "messageDiagnoseError": "无法检查布局，暂时无法提供诊断结果。"
+    }
+  }
+}

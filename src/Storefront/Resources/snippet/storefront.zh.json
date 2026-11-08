@@ -66,7 +66,8 @@
             "activate": "启用",
             "deactivate": "停用",
             "confirm": "确认",
-            "noteRequiredFields": "带星号(*)的字段为必填项"
+            "noteRequiredFields": "带星号(*)的字段为必填项",
+            "loading": "加载中…"
         }
     },
     "general": {
@@ -125,7 +126,12 @@
             "last": "末页",
             "page": "页",
             "title": "分页"
-        }
+        },
+        "breadcrumbPlaceholder": "暂无导航路径",
+        "breadcrumbLabel": "当前位置",
+        "grossTaxInformationShort": "含税，另计运费",
+        "netTaxInformationShort": "未含税，另计运费",
+        "toggleSubcategories": "展开或收起 %category% 的子分类"
     },
     "header": {
         "logoLink": "返回首页",
@@ -848,7 +854,17 @@
         "regularPriceLabel": "原价：",
         "listPriceLabel": "现价：",
         "addToWishlist": "加入收藏",
-        "removeFromWishlist": "移出收藏"
+        "removeFromWishlist": "移出收藏",
+        "filterTitle": "筛选",
+        "resultCount": "%count% 件商品",
+        "layoutSwitchList": "列表视图",
+        "layoutSwitchGrid": "网格视图",
+        "filterButtonMore": "更多筛选",
+        "filterButtonLess": "收起筛选",
+        "filterSearchPlaceholder": "搜索%displayName%",
+        "productSliderAriaLabel": "商品轮播，共 %total% 件商品",
+        "productSliderScrollBackward": "上一组商品",
+        "productSliderScrollForward": "下一组商品"
     },
     "newsletter": {
         "headline": "订阅资讯",
@@ -959,7 +975,9 @@
         "unavailable": "不可用",
         "unavailableTooltip": "此选项暂不可用。",
         "reviewTitleMinLengthHint": "请至少输入 5 个字符。",
-        "reviewTextMinLengthHint": "请至少输入 40 个字符。"
+        "reviewTextMinLengthHint": "请至少输入 40 个字符。",
+        "priceUnavailable": "暂无价格",
+        "manufacturerUnavailable": "暂无品牌信息"
     },
     "spatial": {
         "ar": {
@@ -1113,10 +1131,12 @@
                 "decrease": "减少数量",
                 "decreaseOfProduct": "减少 %product% 数量",
                 "stockAdjusted": "数量已更新为 %quantity%。",
-                "outOfStock": "该商品已售罄。"
+                "outOfStock": "该商品已售罄。",
+                "notAvailable": "暂时无法选择数量。"
             },
             "configurator": {
-                "legend": "%group_name%<span class=\"%hidden_cls%\">&nbsp;选择</span>"
+                "legend": "%group_name%<span class=\"%hidden_cls%\">&nbsp;选择</span>",
+                "unavailable": "暂时无法选择规格"
             }
         },
         "cms": {
@@ -1176,6 +1196,21 @@
                     "title": "植物",
                     "alt": "浅蓝背景前白盆中的多肉植物"
                 }
+            },
+            "mediaGallery": {
+                "ariaLabel": "媒体图库，共 %total% 项",
+                "lightboxTitle": "全屏媒体图库",
+                "openLightboxAriaLabel": "全屏查看第 %index% 项媒体",
+                "counterDeviderLabel": "/",
+                "counterLabel": "当前显示",
+                "thumbnailNavAriaLabel": "媒体图库缩略图导航",
+                "thumbnailNavScrollDown": "向下滚动",
+                "thumbnailNavScrollUp": "向上滚动",
+                "thumbnailNavScrollLeft": "向左滚动",
+                "thumbnailNavScrollRight": "向右滚动",
+                "thumbnailNavButtonAriaLabel": "第 %index% 项媒体，共 %total% 项",
+                "previousMedia": "上一项媒体",
+                "nextMedia": "下一项媒体"
             }
         }
     },

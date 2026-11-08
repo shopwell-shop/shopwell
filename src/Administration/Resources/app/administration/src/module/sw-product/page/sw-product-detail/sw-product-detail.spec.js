@@ -218,15 +218,7 @@ describe('module/sw-product/page/sw-product-detail', () => {
 
     let wrapper;
 
-    beforeAll(() => {
-        Shopwell.Store.unregister('cmsPage');
-        Shopwell.Store.register({
-            id: 'cmsPage',
-            actions: {
-                resetCmsPageState: () => {},
-            },
-        });
-    });
+    beforeAll(() => {});
 
     beforeEach(async () => {
         jest.restoreAllMocks();
@@ -634,9 +626,6 @@ describe('module/sw-product/page/sw-product-detail', () => {
     });
 
     it('should validate and clear listPrices/regulationPrices on save', async () => {
-        wrapper.vm.getCmsPageOverrides = jest.fn(() => {
-            return null;
-        });
         wrapper.vm.product.isNew = jest.fn(() => {
             return false;
         });
@@ -732,9 +721,6 @@ describe('module/sw-product/page/sw-product-detail', () => {
     });
 
     it('should run custom validation service and handle errors', async () => {
-        wrapper.vm.getCmsPageOverrides = jest.fn(() => {
-            return null;
-        });
         Shopwell.Store.get('swProductDetail').product = {
             isNew: jest.fn(() => true),
             prices: [],
@@ -793,6 +779,7 @@ describe('module/sw-product/page/sw-product-detail', () => {
         await wrapper.vm.onSave();
 
         expect(wrapper.vm.saveProduct).toHaveBeenCalledTimes(1);
+        expect(store.product).not.toHaveProperty('slotConfig');
     });
 
     it('should initialize with default units when no preferences exist', async () => {
@@ -1093,9 +1080,6 @@ describe('module/sw-product/page/sw-product-detail', () => {
     it('should not validate fields when language is inherited', async () => {
         const spyValidationService = jest.spyOn(wrapper.vm.entityValidationService, 'validate');
 
-        wrapper.vm.getCmsPageOverrides = jest.fn(() => {
-            return null;
-        });
         wrapper.vm.product.isNew = jest.fn(() => {
             return false;
         });
@@ -1157,9 +1141,6 @@ describe('module/sw-product/page/sw-product-detail', () => {
     it('should validate fields when language is not inherited', async () => {
         const spyValidationService = jest.spyOn(wrapper.vm.entityValidationService, 'validate');
 
-        wrapper.vm.getCmsPageOverrides = jest.fn(() => {
-            return null;
-        });
         wrapper.vm.product.isNew = jest.fn(() => {
             return false;
         });

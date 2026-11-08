@@ -8,7 +8,7 @@ import './sw-category-entry-point-modal.scss';
 export default {
     template,
 
-    inject: ['acl', 'cmsPageTypeService'],
+    inject: ['acl'],
 
     emits: ['modal-close'],
 
@@ -24,8 +24,7 @@ export default {
             temporaryCollection: [],
             salesChannelOptions: [],
             selectedSalesChannelId: '',
-            showLayoutSelectionModal: false,
-            pageTypes: ['page', 'landingpage', 'product_list'],
+
             nextRoute: null,
             isDisplayingLeavePageWarning: false,
         };
@@ -52,8 +51,6 @@ export default {
                     homeMetaTitle: salesChannel.homeMetaTitle,
                     homeMetaDescription: salesChannel.homeMetaDescription,
                     homeKeywords: salesChannel.homeKeywords,
-                    homeCmsPageId: salesChannel.homeCmsPageId,
-                    homeCmsPage: salesChannel.homeCmsPage ? { ...salesChannel.homeCmsPage } : null,
                     translated: salesChannel.translated ? { ...salesChannel.translated } : null,
                 });
 
@@ -72,34 +69,8 @@ export default {
             this.$emit('modal-close');
         },
 
-        getCmsPageTypeName(name) {
-            const fallback = this.$t('sw-category.base.cms.defaultDesc');
-
-            if (!name) {
-                return fallback;
-            }
-
-            const nameSnippetKey = this.cmsPageTypeService.getType(name)?.title;
-            return nameSnippetKey ? this.$t(nameSnippetKey) : fallback;
-        },
-
-        onLayoutSelect(layoutId, layout) {
-            this.selectedSalesChannel.homeCmsPage = layout;
-            this.selectedSalesChannel.homeCmsPageId = layoutId;
-        },
-
-        onLayoutReset() {
-            this.onLayoutSelect(null, null);
-        },
-
         openInPagebuilder() {
-            let to = { name: 'sw.cms.create' };
-            if (this.selectedSalesChannel.homeCmsPage) {
-                to = {
-                    name: 'sw.cms.detail',
-                    params: { id: this.selectedSalesChannel.homeCmsPageId },
-                };
-            }
+            const to = { name: 'sw.experience.studio.index' };
 
             if (this.hasNotAppliedChanges()) {
                 this.isDisplayingLeavePageWarning = true;
@@ -114,18 +85,6 @@ export default {
             });
         },
 
-        openLayoutModal() {
-            if (!this.acl.can('category.editor')) {
-                return;
-            }
-
-            this.showLayoutSelectionModal = true;
-        },
-
-        closeLayoutModal() {
-            this.showLayoutSelectionModal = false;
-        },
-
         applyChanges() {
             for (let i = 0; i < this.temporaryCollection.length; i += 1) {
                 const tempSalesChannel = this.temporaryCollection[i];
@@ -137,8 +96,6 @@ export default {
                 realSalesChannel.homeMetaTitle = tempSalesChannel.homeMetaTitle;
                 realSalesChannel.homeMetaDescription = tempSalesChannel.homeMetaDescription;
                 realSalesChannel.homeKeywords = tempSalesChannel.homeKeywords;
-                realSalesChannel.homeCmsPageId = tempSalesChannel.homeCmsPageId;
-                realSalesChannel.homeCmsPage = tempSalesChannel.homeCmsPage;
             }
 
             this.closeModal();
@@ -155,8 +112,7 @@ export default {
                     this.isAttributeEqual(copy.homeName, original.homeName) ||
                     this.isAttributeEqual(copy.homeMetaTitle, original.homeMetaTitle) ||
                     this.isAttributeEqual(copy.homeMetaDescription, original.homeMetaDescription) ||
-                    this.isAttributeEqual(copy.homeKeywords, original.homeKeywords) ||
-                    this.isAttributeEqual(copy.homeCmsPageId, original.homeCmsPageId)
+                    this.isAttributeEqual(copy.homeKeywords, original.homeKeywords)
                 ) {
                     return true;
                 }

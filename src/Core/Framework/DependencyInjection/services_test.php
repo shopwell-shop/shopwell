@@ -47,6 +47,12 @@ use Shopwell\Core\Test\Integration\App\GuzzleHistoryCollector;
 use Shopwell\Core\Test\Integration\App\TestAppServer;
 use Shopwell\Core\Test\Integration\EventDispatcher\EventHookDispatcher;
 use Shopwell\Core\Test\Integration\PaymentHandler\TestPaymentHandler;
+use Shopwell\Core\Test\Stub\ContentSystem\TestElementTypeLoader;
+use Shopwell\Core\Test\Stub\ContentSystem\TestMultiReferenceGatingLoader;
+use Shopwell\Core\Test\Stub\ContentSystem\TestMultiReferenceGatingLoaderConfigSerializer;
+use Shopwell\Core\Test\Stub\ContentSystem\TestNavigationShapedLoader;
+use Shopwell\Core\Test\Stub\ContentSystem\TestNavigationShapedLoaderConfigSerializer;
+use Shopwell\Core\Test\Stub\ContentSystem\TestStyleOptionLoader;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 use Symfony\Component\Mailer\Mailer;
 use Symfony\Component\Messenger\TraceableMessageBus;
@@ -71,6 +77,24 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->defaults()
         ->public();
+
+    $services->set(TestElementTypeLoader::class)
+        ->tag('content_system.type_loader');
+
+    $services->set(TestStyleOptionLoader::class)
+        ->tag('content_system.style_option_loader');
+
+    $services->set(TestMultiReferenceGatingLoader::class)
+        ->tag('content_system.data_loader');
+
+    $services->set(TestMultiReferenceGatingLoaderConfigSerializer::class)
+        ->tag('content_system.config_serializer');
+
+    $services->set(TestNavigationShapedLoader::class)
+        ->tag('content_system.data_loader');
+
+    $services->set(TestNavigationShapedLoaderConfigSerializer::class)
+        ->tag('content_system.config_serializer');
 
     $services->set(TestPaymentHandler::class)
         ->args([

@@ -13,6 +13,7 @@ use Shopwell\Core\Content\MailTemplate\Aggregate\MailHeaderFooter\MailHeaderFoot
 use Shopwell\Core\Content\MailTemplate\MailTemplateDefinition;
 use Shopwell\Core\Content\Media\MediaDefinition;
 use Shopwell\Core\Content\Newsletter\Aggregate\NewsletterRecipient\NewsletterRecipientDefinition;
+use Shopwell\Core\Content\Product\Aggregate\ProductContentLayout\ProductContentLayoutDefinition;
 use Shopwell\Core\Content\Product\Aggregate\ProductManufacturer\ProductManufacturerDefinition;
 use Shopwell\Core\Content\Product\Aggregate\ProductReview\ProductReviewDefinition;
 use Shopwell\Core\Content\Product\ProductDefinition;
@@ -113,6 +114,7 @@ class DemodataCommand extends Command
         $request->add(PromotionDefinition::class, $this->getCount($input, 'promotions'));
         $request->add(OrderDefinition::class, $this->getCount($input, 'orders'));
         $request->add(ProductReviewDefinition::class, $this->getCount($input, 'reviews'));
+        $request->add(ProductContentLayoutDefinition::class, $this->getCount($input, 'product-content-layouts'));
         $request->add(UserDefinition::class, $this->getCount($input, 'users'));
         $request->add(FlowDefinition::class, $this->getCount($input, 'flows'));
 

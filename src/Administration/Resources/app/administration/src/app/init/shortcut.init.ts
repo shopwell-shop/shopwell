@@ -58,7 +58,7 @@ function defaultShortcutMap() {
         { combination: 'GM', path: '/sw/manufacturer/index' },
         { combination: 'GO', path: '/sw/order/index' },
         { combination: 'GU', path: '/sw/customer/index' },
-        { combination: 'GE', path: '/sw/cms/index' },
+        { combination: 'GE', path: '/sw/experience/studio/index' },
         { combination: 'GME', path: '/sw/media/index' },
         { combination: 'GPO', path: '/sw/promotion/v2/index' },
         { combination: 'GN', path: '/sw/newsletter/recipient/index' },

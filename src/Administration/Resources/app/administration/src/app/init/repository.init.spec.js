@@ -17,17 +17,6 @@ const customEntityDefinitionBare = {
     'read-protected': false,
     flags: {},
 };
-const customEntityCmsAwareTypes = [
-    {
-        name: 'custom_entity_detail',
-        icon: 'regular-image-text',
-        // eslint-disable-next-line no-warning-comments
-        // ToDo NEXT-22655 - Re-implement, when custom_entity_list page is available
-        // }, {
-        //     name: 'custom_entity_list',
-        //     icon: 'regular-list',
-    },
-];
 
 const withAdminUiName = 'custom_entity_with_admin_ui';
 const customEntityDefinitionWithAdminUi = {
@@ -36,7 +25,6 @@ const customEntityDefinitionWithAdminUi = {
     'write-protected': false,
     'read-protected': false,
     flags: {
-        'cms-aware': {},
         'admin-ui': {},
     },
 };
@@ -48,12 +36,11 @@ const shortHandCustomEntityDefinitionWithAdminUi = {
     'write-protected': false,
     'read-protected': false,
     flags: {
-        'cms-aware': {},
         'admin-ui': {},
     },
 };
 
-const containerWithCmsAware = {
+const containerWithCustomEntities = {
     httpClient: {
         get() {
             return Promise.resolve({
@@ -68,19 +55,6 @@ const containerWithCmsAware = {
     },
 };
 
-const containerWithoutCmsAware = {
-    httpClient: {
-        get() {
-            return Promise.resolve({
-                data: {
-                    [bareConfigName]: customEntityDefinitionBare,
-                    [coreEntityName]: coreEntityConfig,
-                },
-            });
-        },
-    },
-};
-
 const factory = {
     entityDefinition: {
         add() {},
@@ -88,7 +62,6 @@ const factory = {
 };
 
 let customEntityDefinitionStore = [];
-let cmsPageTypeDefinitionStore = [];
 
 const service = {
     customEntityDefinitionService: {
@@ -96,11 +69,7 @@ const service = {
             customEntityDefinitionStore.push(config);
         },
     },
-    cmsPageTypeService: {
-        register(pageType) {
-            cmsPageTypeDefinitionStore.push(pageType);
-        },
-    },
+
     loginService: {
         getToken: () => '',
     },
@@ -123,29 +92,17 @@ const thisMock = {
 describe('init/repository', () => {
     beforeEach(() => {
         customEntityDefinitionStore = [];
-        cmsPageTypeDefinitionStore = [];
+
         Shopwell.Application = thisMock;
     });
 
     it('should register custom entities to the customEntityDefinitionService', async () => {
-        await initializeRepositoryFactory.apply(thisMock, [containerWithCmsAware]);
+        await initializeRepositoryFactory.apply(thisMock, [containerWithCustomEntities]);
 
         expect(customEntityDefinitionStore).toStrictEqual([
             customEntityDefinitionBare,
             customEntityDefinitionWithAdminUi,
             shortHandCustomEntityDefinitionWithAdminUi,
         ]);
-    });
-
-    it('should register page types to the cmsPageTypeService if an entity is cms-aware', async () => {
-        await initializeRepositoryFactory.apply(thisMock, [containerWithCmsAware]);
-
-        expect(cmsPageTypeDefinitionStore).toStrictEqual(customEntityCmsAwareTypes);
-    });
-
-    it('should register np page types to the cmsPageTypeService if no entities are cms-aware', async () => {
-        await initializeRepositoryFactory.apply(thisMock, [containerWithoutCmsAware]);
-
-        expect(cmsPageTypeDefinitionStore).toStrictEqual([]);
     });
 });

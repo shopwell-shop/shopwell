@@ -18,8 +18,6 @@ class Entity extends XmlElement
 {
     protected string $name;
 
-    protected ?bool $cmsAware = null;
-
     protected bool $customFieldsAware = false;
 
     protected ?string $labelProperty = null;
@@ -93,11 +91,6 @@ class Entity extends XmlElement
     public function getName(): string
     {
         return $this->name;
-    }
-
-    public function isCmsAware(): ?bool
-    {
-        return $this->cmsAware;
     }
 
     public function isCustomFieldsAware(): bool

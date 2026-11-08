@@ -69,8 +69,6 @@ class Migration1585816139FixMediaMapping extends MigrationStep
             ['key' => 'media.mediaType', 'mappedKey' => 'media_type'],
             ['key' => 'media.translations.DEFAULT.title', 'mappedKey' => 'media_title'],
             ['key' => 'media.translations.DEFAULT.alt', 'mappedKey' => 'media_alt'],
-
-            ['key' => 'cmsPageId', 'mappedKey' => 'cms_page_id'],
         ];
     }
 

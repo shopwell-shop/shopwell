@@ -144,10 +144,10 @@ export default class BasicCaptchaPlugin extends Plugin {
         const validForm = this._form.checkValidity();
 
         if (validCaptcha && validForm) {
-            if (this._isCmsForm()) {
-                // Compatibility with the CMS form handler plugin which does an async form submit.
-                const formCmsHandlerPlugin = this.formPluginInstances.get('FormCmsHandler');
-                formCmsHandlerPlugin._submitForm();
+            if (this._isContentForm()) {
+                // Continue through the content form handler plugin which does an async form submit.
+                const contentFormHandlerPlugin = this.formPluginInstances.get('ContentFormHandler');
+                contentFormHandlerPlugin._submitForm();
             } else {
                 // Normal form submit.
                 this._form.submit();
@@ -156,14 +156,14 @@ export default class BasicCaptchaPlugin extends Plugin {
     }
 
     /**
-     * Checks if the form is the CMS contact form.
-     * This is used to work in association with the form CMS handler.
+     * Checks if the form is the content form.
+     * This is used to work in association with the content form handler.
      *
      * @return {boolean}
      * @private
      */
-    _isCmsForm() {
-        return this.formPluginInstances.has('FormCmsHandler');
+    _isContentForm() {
+        return this.formPluginInstances.has('ContentFormHandler');
     }
 
     /**

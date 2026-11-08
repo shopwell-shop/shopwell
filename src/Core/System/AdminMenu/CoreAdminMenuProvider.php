@@ -188,12 +188,12 @@ class CoreAdminMenuProvider implements AdminMenuDefinitionProviderInterface
                 position: 50,
             ),
             new AdminMenuDefinitionStruct(
-                internalKey: 'sw-cms',
-                title: 'sw-cms.general.mainMenuItemGeneral',
-                icon: 'regular-image-text',
+                internalKey: 'sw-experience-studio',
+                title: 'sw-experience-studio.general.mainMenuItemGeneral',
+                icon: 'regular-palette',
                 parent: 'sw-content',
                 position: 10,
-                privilege: 'cms.viewer',
+                privilege: 'experience_studio.viewer',
             ),
             new AdminMenuDefinitionStruct(
                 internalKey: 'sw-media',

@@ -7,11 +7,6 @@ use Shopwell\Core\Content\Category\Aggregate\CategoryTranslation\CategoryTransla
 use Shopwell\Core\Content\Category\Aggregate\CategoryTranslation\CategoryTranslationEntity;
 use Shopwell\Core\Content\Category\CategoryCollection;
 use Shopwell\Core\Content\Category\CategoryEntity;
-use Shopwell\Core\Content\Cms\Aggregate\CmsSlot\CmsSlotCollection;
-use Shopwell\Core\Content\Cms\Aggregate\CmsSlot\CmsSlotDefinition;
-use Shopwell\Core\Content\Cms\Aggregate\CmsSlot\CmsSlotEntity;
-use Shopwell\Core\Content\Cms\CmsPageCollection;
-use Shopwell\Core\Content\Cms\DataResolver\FieldConfig;
 use Shopwell\Core\Content\Media\MediaDefinition;
 use Shopwell\Core\Content\Product\Aggregate\ProductManufacturer\ProductManufacturerDefinition;
 use Shopwell\Core\Content\Product\Aggregate\ProductManufacturerTranslation\ProductManufacturerTranslationDefinition;
@@ -67,16 +62,6 @@ class TranslationTest extends TestCase
      */
     private EntityRepository $categoryRepository;
 
-    /**
-     * @var EntityRepository<CmsPageCollection>
-     */
-    private EntityRepository $pageRepository;
-
-    /**
-     * @var EntityRepository<CmsSlotCollection>
-     */
-    private EntityRepository $slotRepository;
-
     private Context $context;
 
     private IdsCollection $ids;
@@ -89,8 +74,6 @@ class TranslationTest extends TestCase
         $this->currencyRepository = static::getContainer()->get('currency.repository');
         $this->languageRepository = static::getContainer()->get('language.repository');
         $this->categoryRepository = static::getContainer()->get('category.repository');
-        $this->pageRepository = static::getContainer()->get('cms_page.repository');
-        $this->slotRepository = static::getContainer()->get('cms_slot.repository');
 
         $this->context = Context::createDefaultContext();
         $this->ids = new IdsCollection();
@@ -725,152 +708,38 @@ sors capulus se Quies, mox qui Sentus dum confirmo do iam. Iunceus postulator in
 
     public function testJsonFieldOnRootEntity(): void
     {
-        $page = [
-            'type' => 'landing_page',
-            'sections' => [
-                [
-                    'type' => 'default',
-                    'position' => 0,
-                    'blocks' => [
-                        [
-                            'type' => 'foo',
-                            'position' => 1,
-                            'slots' => [
-                                [
-                                    'id' => Uuid::randomHex(),
-                                    'type' => 'foo',
-                                    'slot' => 'bar',
-                                    'config' => [],
-                                ],
-                                [
-                                    'id' => Uuid::randomHex(),
-                                    'type' => 'foo',
-                                    'slot' => 'bar',
-                                    'config' => [
-                                        'var1' => [
-                                            'source' => FieldConfig::SOURCE_MAPPED,
-                                            'value' => 'foo',
-                                        ],
-                                    ],
-                                ],
-                                [
-                                    'id' => Uuid::randomHex(),
-                                    'type' => 'foo',
-                                    'slot' => 'bar',
-                                ],
-                            ],
-                        ],
-                    ],
-                ],
-            ],
-        ];
-
-        $result = $this->pageRepository->create([$page], $this->context);
-
-        $events = $result->getEventByEntityName(CmsSlotDefinition::ENTITY_NAME);
-        static::assertInstanceOf(EntityWrittenEvent::class, $events);
-        $ids = $events->getIds();
-
-        static::assertCount(3, $ids);
-
-        $searchResult = $this->slotRepository->search(new Criteria($ids), $this->context);
-
-        $slot = $searchResult->getEntities()->get($page['sections'][0]['blocks'][0]['slots'][0]['id']);
-        static::assertInstanceOf(CmsSlotEntity::class, $slot);
-        static::assertSame([], $slot->getConfig());
-
-        $slot = $searchResult->getEntities()->get($page['sections'][0]['blocks'][0]['slots'][1]['id']);
-        static::assertInstanceOf(CmsSlotEntity::class, $slot);
-        static::assertEquals(['var1' => ['source' => FieldConfig::SOURCE_MAPPED, 'value' => 'foo']], $slot->getConfig());
-
-        $slot = $searchResult->getEntities()->get($page['sections'][0]['blocks'][0]['slots'][2]['id']);
-        static::assertInstanceOf(CmsSlotEntity::class, $slot);
-        static::assertNull($slot->getConfig());
+        $ids = [Uuid::randomHex(), Uuid::randomHex(), Uuid::randomHex()];
+        $this->categoryRepository->create([
+            ['id' => $ids[0], 'name' => 'Empty JSON', 'customFields' => []],
+            ['id' => $ids[1], 'name' => 'Filled JSON', 'customFields' => ['translated_value' => 'foo']],
+            ['id' => $ids[2], 'name' => 'Absent JSON'],
+        ], $this->context);
+        $categories = $this->categoryRepository->search(new Criteria($ids), $this->context)->getEntities();
+        static::assertSame([], $categories->get($ids[0])?->getCustomFields());
+        static::assertSame(['translated_value' => 'foo'], $categories->get($ids[1])?->getCustomFields());
+        static::assertNull($categories->get($ids[2])?->getCustomFields());
     }
 
     public function testJsonFieldWithDifferentLanguages(): void
     {
-        $page = [
-            'type' => 'landing_page',
-            'sections' => [
-                [
-                    'type' => 'default',
-                    'position' => 0,
-                    'blocks' => [
-                        [
-                            'type' => 'foo',
-                            'position' => 1,
-                            'slots' => [
-                                [
-                                    'id' => Uuid::randomHex(),
-                                    'type' => 'foo',
-                                    'slot' => 'bar',
-                                    'translations' => [
-                                        Defaults::LANGUAGE_SYSTEM => ['config' => []],
-                                        $this->zhLanguageId => ['config' => []],
-                                    ],
-                                ],
-                                [
-                                    'id' => Uuid::randomHex(),
-                                    'type' => 'foo',
-                                    'slot' => 'bar',
-                                    'translations' => [
-                                        Defaults::LANGUAGE_SYSTEM => ['config' => ['var1' => ['source' => FieldConfig::SOURCE_MAPPED, 'value' => 'en']]],
-                                        $this->zhLanguageId => ['config' => ['var1' => ['source' => FieldConfig::SOURCE_MAPPED, 'value' => 'zh']]],
-                                    ],
-                                ],
-                                [
-                                    'id' => Uuid::randomHex(),
-                                    'type' => 'foo',
-                                    'slot' => 'bar',
-                                ],
-                            ],
-                        ],
-                    ],
-                ],
-            ],
-        ];
-
-        $result = $this->pageRepository->create([$page], $this->context);
-
-        $events = $result->getEventByEntityName(CmsSlotDefinition::ENTITY_NAME);
-        static::assertInstanceOf(EntityWrittenEvent::class, $events);
-        $ids = $events->getIds();
-
-        static::assertCount(3, $ids);
-
-        // validate english translations
-
-        $searchResult = $this->slotRepository->search(new Criteria($ids), $this->context);
-
-        $slot = $searchResult->getEntities()->get($page['sections'][0]['blocks'][0]['slots'][0]['id']);
-        static::assertInstanceOf(CmsSlotEntity::class, $slot);
-        static::assertSame([], $slot->getConfig());
-
-        $slot = $searchResult->getEntities()->get($page['sections'][0]['blocks'][0]['slots'][1]['id']);
-        static::assertInstanceOf(CmsSlotEntity::class, $slot);
-        static::assertEquals(['var1' => ['source' => FieldConfig::SOURCE_MAPPED, 'value' => 'en']], $slot->getConfig());
-
-        $slot = $searchResult->getEntities()->get($page['sections'][0]['blocks'][0]['slots'][2]['id']);
-        static::assertInstanceOf(CmsSlotEntity::class, $slot);
-        static::assertNull($slot->getConfig());
-
-        // validate chinese translations
-
-        $chineseContext = new Context(new SystemSource(), [], Defaults::CURRENCY, [$this->zhLanguageId, Defaults::LANGUAGE_SYSTEM]);
-        $searchResult = $this->slotRepository->search(new Criteria($ids), $chineseContext);
-
-        $slot = $searchResult->getEntities()->get($page['sections'][0]['blocks'][0]['slots'][0]['id']);
-        static::assertInstanceOf(CmsSlotEntity::class, $slot);
-        static::assertSame([], $slot->getConfig());
-
-        $slot = $searchResult->getEntities()->get($page['sections'][0]['blocks'][0]['slots'][1]['id']);
-        static::assertInstanceOf(CmsSlotEntity::class, $slot);
-        static::assertEquals(['var1' => ['source' => FieldConfig::SOURCE_MAPPED, 'value' => 'zh']], $slot->getConfig());
-
-        $slot = $searchResult->getEntities()->get($page['sections'][0]['blocks'][0]['slots'][2]['id']);
-        static::assertInstanceOf(CmsSlotEntity::class, $slot);
-        static::assertNull($slot->getConfig());
+        $ids = [Uuid::randomHex(), Uuid::randomHex(), Uuid::randomHex()];
+        $this->categoryRepository->create([
+            ['id' => $ids[0], 'name' => 'Empty JSON', 'translations' => [
+                Defaults::LANGUAGE_SYSTEM => ['customFields' => []],
+                $this->zhLanguageId => ['customFields' => []],
+            ]],
+            ['id' => $ids[1], 'name' => 'Filled JSON', 'translations' => [
+                Defaults::LANGUAGE_SYSTEM => ['customFields' => ['translated_value' => 'en']],
+                $this->zhLanguageId => ['customFields' => ['translated_value' => 'zh']],
+            ]],
+            ['id' => $ids[2], 'name' => 'Absent JSON'],
+        ], $this->context);
+        foreach ([[$this->context, 'en'], [new Context(new SystemSource(), [], Defaults::CURRENCY, [$this->zhLanguageId, Defaults::LANGUAGE_SYSTEM]), 'zh']] as [$context, $value]) {
+            $categories = $this->categoryRepository->search(new Criteria($ids), $context)->getEntities();
+            static::assertSame([], $categories->get($ids[0])?->getCustomFields());
+            static::assertSame(['translated_value' => $value], $categories->get($ids[1])?->getCustomFields());
+            static::assertNull($categories->get($ids[2])?->getCustomFields());
+        }
     }
 
     public function testTranslationValuesHavePriorityOverDefaultValueWithIsoCodes(): void

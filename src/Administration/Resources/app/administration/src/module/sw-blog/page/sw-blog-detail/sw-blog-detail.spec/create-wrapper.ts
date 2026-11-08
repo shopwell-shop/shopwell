@@ -112,9 +112,9 @@ export async function createWrapper(
         },
     };
 
-    const cmsPageRepository = {
+    const contentLayoutRepository = {
         get: jest.fn(() => Promise.resolve({ id: 'page-1', versionId: 'version-1' })),
-        search: jest.fn(() => Promise.resolve(collection<EntityCollection<'cms_page'>>([]))),
+        search: jest.fn(() => Promise.resolve(collection<EntityCollection<'content_layout'>>([]))),
     };
 
     const categories: Array<Record<string, unknown>> = [
@@ -175,7 +175,10 @@ export async function createWrapper(
                         '<input :value="value" :disabled="disabled" @input="$emit(\'update:value\', $event.target.value)">',
                 },
                 'sw-entity-multi-id-select': true,
-                'sw-cms-page-form': { props: ['page'], template: '<output class="cms-page-id">{{ page.id }}</output>' },
+                'sw-content-layout-form': {
+                    props: ['page'],
+                    template: '<output class="content-layout-id">{{ page.id }}</output>',
+                },
                 'sw-blog-detail-content': {
                     props: ['blog', 'video'],
                     template:
@@ -214,8 +217,8 @@ export async function createWrapper(
                             return assignmentRepository;
                         }
 
-                        if (entityName === 'cms_page') {
-                            return cmsPageRepository;
+                        if (entityName === 'content_layout') {
+                            return contentLayoutRepository;
                         }
 
                         if (entityName === 'blog_category') {

@@ -88,7 +88,7 @@ class Migration1792700200CreateBlogTables extends MigrationStep
     }
 
     /**
-     * The cms page references stay restricted: a layout that is still attached to a blog or a
+     * The content layout references stay restricted: a layout that is still attached to a blog or a
      * category can not be deleted without breaking the page it renders.
      */
     private function createBlogTable(Connection $connection): void
@@ -100,8 +100,7 @@ class Migration1792700200CreateBlogTables extends MigrationStep
                 `published_at` DATETIME(3) NULL,
                 `author_id` BINARY(16) NULL,
                 `cover_media_id` BINARY(16) NULL,
-                `cms_page_id` BINARY(16) NULL,
-                `cms_page_version_id` BINARY(16) NULL,
+                `content_layout_id` BINARY(16) NULL,
                 `custom_fields` JSON NULL,
                 `created_at` DATETIME(3) NOT NULL,
                 `updated_at` DATETIME(3) NULL,
@@ -110,10 +109,10 @@ class Migration1792700200CreateBlogTables extends MigrationStep
                 KEY `idx.blog.published_at` (`published_at`),
                 KEY `idx.blog.author_id` (`author_id`),
                 KEY `idx.blog.cover_media_id` (`cover_media_id`),
-                KEY `idx.blog.cms_page_id` (`cms_page_id`, `cms_page_version_id`),
+                KEY `idx.blog.content_layout_id` (`content_layout_id`),
                 CONSTRAINT `fk.blog.author_id` FOREIGN KEY (`author_id`) REFERENCES `blog_author` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
                 CONSTRAINT `fk.blog.cover_media_id` FOREIGN KEY (`cover_media_id`) REFERENCES `media` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
-                CONSTRAINT `fk.blog.cms_page_id` FOREIGN KEY (`cms_page_id`, `cms_page_version_id`) REFERENCES `cms_page` (`id`, `version_id`) ON UPDATE CASCADE,
+                CONSTRAINT `fk.blog.content_layout_id` FOREIGN KEY (`content_layout_id`) REFERENCES `content_layout` (`id`) ON UPDATE CASCADE,
                 CONSTRAINT `json.blog.custom_fields` CHECK (json_valid(`custom_fields`))
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;'
         );
@@ -149,14 +148,13 @@ class Migration1792700200CreateBlogTables extends MigrationStep
             'CREATE TABLE IF NOT EXISTS `blog_category` (
                 `id` BINARY(16) NOT NULL,
                 `active` TINYINT(1) NOT NULL DEFAULT 1,
-                `cms_page_id` BINARY(16) NULL,
-                `cms_page_version_id` BINARY(16) NULL,
+                `content_layout_id` BINARY(16) NULL,
                 `custom_fields` JSON NULL,
                 `created_at` DATETIME(3) NOT NULL,
                 `updated_at` DATETIME(3) NULL,
                 PRIMARY KEY (`id`),
-                KEY `idx.blog_category.cms_page_id` (`cms_page_id`, `cms_page_version_id`),
-                CONSTRAINT `fk.blog_category.cms_page_id` FOREIGN KEY (`cms_page_id`, `cms_page_version_id`) REFERENCES `cms_page` (`id`, `version_id`) ON UPDATE CASCADE,
+                KEY `idx.blog_category.content_layout_id` (`content_layout_id`),
+                CONSTRAINT `fk.blog_category.content_layout_id` FOREIGN KEY (`content_layout_id`) REFERENCES `content_layout` (`id`) ON UPDATE CASCADE,
                 CONSTRAINT `json.blog_category.custom_fields` CHECK (json_valid(`custom_fields`))
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;'
         );

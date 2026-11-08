@@ -19,13 +19,6 @@ use Shopwell\Core\Content\Media\Api\MediaUploadController;
 use Shopwell\Core\Content\Media\Api\MediaUploadV2Controller;
 use Shopwell\Core\Content\Media\Api\MediaVideoCoverController;
 use Shopwell\Core\Content\Media\Api\PresignedUploadController;
-use Shopwell\Core\Content\Media\Cms\DefaultMediaResolver;
-use Shopwell\Core\Content\Media\Cms\ImageCmsElementResolver;
-use Shopwell\Core\Content\Media\Cms\Type\ImageGalleryTypeDataResolver;
-use Shopwell\Core\Content\Media\Cms\Type\ImageSliderTypeDataResolver;
-use Shopwell\Core\Content\Media\Cms\VideoCmsElementResolver;
-use Shopwell\Core\Content\Media\Cms\VimeoVideoCmsElementResolver;
-use Shopwell\Core\Content\Media\Cms\YoutubeVideoCmsElementResolver;
 use Shopwell\Core\Content\Media\Commands\DeleteNotUsedMediaCommand;
 use Shopwell\Core\Content\Media\Commands\DeleteThumbnailsCommand;
 use Shopwell\Core\Content\Media\Commands\GenerateMediaTypesCommand;
@@ -546,40 +539,6 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ]);
 
     // region Resolver
-    $services->set(DefaultMediaResolver::class)
-        ->args([
-            service('shopwell.filesystem.public'),
-        ]);
-
-    $services->set(ImageCmsElementResolver::class)
-        ->args([
-            service(DefaultMediaResolver::class),
-        ])
-        ->tag('shopwell.cms.data_resolver');
-
-    $services->set(ImageSliderTypeDataResolver::class)
-        ->args([
-            service(DefaultMediaResolver::class),
-        ])
-        ->tag('shopwell.cms.data_resolver');
-
-    $services->set(ImageGalleryTypeDataResolver::class)
-        ->args([
-            service(DefaultMediaResolver::class),
-        ])
-        ->tag('shopwell.cms.data_resolver');
-
-    $services->set(VideoCmsElementResolver::class)
-        ->args([
-            service(DefaultMediaResolver::class),
-        ])
-        ->tag('shopwell.cms.data_resolver');
-
-    $services->set(YoutubeVideoCmsElementResolver::class)
-        ->tag('shopwell.cms.data_resolver');
-
-    $services->set(VimeoVideoCmsElementResolver::class)
-        ->tag('shopwell.cms.data_resolver');
     // endregion Resolver
 
     // region DBAL

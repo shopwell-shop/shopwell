@@ -28,7 +28,7 @@ class NavigationPageLoader implements NavigationPageLoaderInterface
     public function __construct(
         private readonly GenericPageLoaderInterface $genericLoader,
         private readonly EventDispatcherInterface $eventDispatcher,
-        private readonly AbstractCategoryRoute $cmsPageRoute,
+        private readonly AbstractCategoryRoute $categoryRoute,
         private readonly SeoUrlPlaceholderHandlerInterface $seoUrlReplacer,
         private readonly CategoryBreadcrumbBuilder $breadcrumbBuilder
     ) {
@@ -41,7 +41,7 @@ class NavigationPageLoader implements NavigationPageLoaderInterface
 
         $navigationId = $request->attributes->get('navigationId', $context->getSalesChannel()->getNavigationCategoryId());
 
-        $category = $this->cmsPageRoute
+        $category = $this->categoryRoute
             ->load($navigationId, $request, $context)
             ->getCategory();
 
@@ -55,10 +55,6 @@ class NavigationPageLoader implements NavigationPageLoaderInterface
 
         if (Feature::isActive('BREADCRUMB_REWORK')) {
             $page->setBreadcrumb($this->breadcrumbBuilder->getCategoryBreadcrumbUrls($category, $context->getContext(), $context->getSalesChannel()));
-        }
-
-        if ($category->getCmsPage()) {
-            $page->setCmsPage($category->getCmsPage());
         }
 
         if ($page->getMetaInformation()) {

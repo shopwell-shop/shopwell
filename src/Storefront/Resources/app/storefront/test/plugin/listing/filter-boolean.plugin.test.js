@@ -15,7 +15,7 @@ describe('FilterBoolean tests', () => {
             </div>
         </div>
 
-        <div class="cms-element-product-listing-wrapper"></div>
+        <div class="product-listing-wrapper"></div>
         `;
 
         // Mock the instance call of the listing plugin

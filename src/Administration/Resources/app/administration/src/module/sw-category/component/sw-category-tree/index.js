@@ -108,10 +108,6 @@ export default {
             return parentCriteria;
         },
 
-        cmsPageRepository() {
-            return this.repositoryFactory.create('cms_page');
-        },
-
         productRepository() {
             return this.repositoryFactory.create('product');
         },

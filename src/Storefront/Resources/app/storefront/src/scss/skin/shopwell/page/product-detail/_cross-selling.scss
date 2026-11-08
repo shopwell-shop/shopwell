@@ -12,22 +12,10 @@
             margin-top: $spacer-lg;
             display: block;
             opacity: 1;
-
-            .cms-element-title {
-                display: block;
-            }
-
-            .cms-element-title-paragraph {
-                margin: 0;
-            }
         }
     }
 
     .card {
         margin-top: $spacer-lg;
-    }
-
-    .cms-element-title {
-        display: none;
     }
 }

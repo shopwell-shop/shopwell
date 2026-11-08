@@ -15,7 +15,6 @@ use Shopwell\Core\Content\Category\CategoryDefinition;
 use Shopwell\Core\Content\Category\Event\CategoryIndexerEvent;
 use Shopwell\Core\Content\Category\SalesChannel\CategoryRoute;
 use Shopwell\Core\Content\Category\SalesChannel\NavigationRoute;
-use Shopwell\Core\Content\Cms\CmsPageDefinition;
 use Shopwell\Core\Content\LandingPage\Event\LandingPageIndexerEvent;
 use Shopwell\Core\Content\LandingPage\SalesChannel\LandingPageRoute;
 use Shopwell\Core\Content\Media\Event\MediaIndexerEvent;
@@ -150,39 +149,6 @@ class CacheInvalidationSubscriber
     {
         // immediately invalidates the rule loader each time a rule changed or a plugin install state changed
         $this->cacheInvalidator->invalidate([CachedRuleLoader::CACHE_KEY], true);
-    }
-
-    public function invalidateCmsPageIds(EntityWrittenContainerEvent $event): void
-    {
-        // invalidates all routes and http cache pages where a cms page was loaded, the id is assigned as tag
-        $ids = array_map(EntityCacheKeyGenerator::buildCmsTag(...), $event->getPrimaryKeys(CmsPageDefinition::ENTITY_NAME));
-        $this->cacheInvalidator->invalidate($ids);
-    }
-
-    public function invalidateCategoryRouteByCategoryTranslationChanges(EntityWrittenContainerEvent $event): void
-    {
-        $changedCategoryTranslations = $event->getPrimaryKeysWithPropertyChange(
-            CategoryTranslationDefinition::ENTITY_NAME,
-            ['slotConfig']
-        );
-
-        if ($changedCategoryTranslations === []) {
-            return;
-        }
-
-        /** @var array<string, true> $categoryIds */
-        $categoryIds = [];
-        foreach ($changedCategoryTranslations as $primaryKey) {
-            if (isset($primaryKey['categoryId']) && \is_string($primaryKey['categoryId'])) {
-                $categoryIds[$primaryKey['categoryId']] = true;
-            }
-        }
-
-        if ($categoryIds === []) {
-            return;
-        }
-
-        $this->cacheInvalidator->invalidate(array_map(CategoryRoute::buildName(...), array_keys($categoryIds)));
     }
 
     public function invalidateProduct(InvalidateProductCache $event): void

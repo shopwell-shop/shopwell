@@ -94,7 +94,7 @@ export default class WishlistPersistStoragePlugin extends BaseWishlistStoragePlu
                 return;
             }
 
-            this._block = document.querySelector('.cms-listing-row');
+            this._block = document.querySelector('.product-listing-row');
             this._block.innerHTML = response;
         } catch (error) {
             this._handleRequestError(error);

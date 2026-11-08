@@ -2,10 +2,7 @@
 
 namespace Shopwell\Storefront\Page\LandingPage;
 
-use Shopwell\Core\Content\Cms\Exception\PageNotFoundException;
-use Shopwell\Core\Content\LandingPage\LandingPageException;
 use Shopwell\Core\Content\LandingPage\SalesChannel\AbstractLandingPageRoute;
-use Shopwell\Core\Framework\Feature;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Routing\RoutingException;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
@@ -38,15 +35,6 @@ class LandingPageLoader
         }
 
         $landingPage = $this->landingPageRoute->load($landingPageId, $request, $context)->getLandingPage();
-
-        if ($landingPage->getCmsPage() === null) {
-            // @deprecated tag:v6.8.0 - remove this if block
-            if (!Feature::isActive('v6.8.0.0')) {
-                throw new PageNotFoundException($landingPageId); // @phpstan-ignore shopwell.domainException
-            }
-
-            throw LandingPageException::notFound($landingPageId);
-        }
 
         $page = $this->genericPageLoader->load($request, $context);
         $page = LandingPage::createFrom($page);

@@ -13,7 +13,6 @@ Shopwell.Service('privileges').addPrivilegeMappingEntry({
                 'system_config:create',
                 'system_config:delete',
                 'sales_channel:read',
-                'cms_page:read',
                 'product_sorting:read',
                 'custom_field:read',
                 'custom_field_set:read',

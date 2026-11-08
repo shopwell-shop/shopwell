@@ -9,7 +9,6 @@ use Shopwell\Core\Framework\App\Aggregate\ActionButton\ActionButtonCollection;
 use Shopwell\Core\Framework\App\Aggregate\AppPaymentMethod\AppPaymentMethodCollection;
 use Shopwell\Core\Framework\App\Aggregate\AppScriptCondition\AppScriptConditionCollection;
 use Shopwell\Core\Framework\App\Aggregate\AppTranslation\AppTranslationCollection;
-use Shopwell\Core\Framework\App\Aggregate\CmsBlock\AppCmsBlockCollection;
 use Shopwell\Core\Framework\App\Aggregate\FlowAction\AppFlowActionCollection;
 use Shopwell\Core\Framework\App\Aggregate\FlowEvent\AppFlowEventCollection;
 use Shopwell\Core\Framework\App\AppEntity;
@@ -111,7 +110,6 @@ class AppEntityTest extends TestCase
         $paymentMethods = new AppPaymentMethodCollection();
         $taxProviders = new TaxProviderCollection();
         $scriptConditions = new AppScriptConditionCollection();
-        $cmsBlocks = new AppCmsBlockCollection();
         $flowActions = new AppFlowActionCollection();
         $flowEvents = new AppFlowEventCollection();
         $appShippingMethods = new EntityCollection();
@@ -127,7 +125,6 @@ class AppEntityTest extends TestCase
         $app->setPaymentMethods($paymentMethods);
         $app->setTaxProviders($taxProviders);
         $app->setScriptConditions($scriptConditions);
-        $app->setCmsBlocks($cmsBlocks);
         $app->setFlowActions($flowActions);
         $app->setFlowEvents($flowEvents);
         $app->setAppShippingMethods($appShippingMethods);
@@ -143,7 +140,6 @@ class AppEntityTest extends TestCase
         static::assertSame($paymentMethods, $app->getPaymentMethods());
         static::assertSame($taxProviders, $app->getTaxProviders());
         static::assertSame($scriptConditions, $app->getScriptConditions());
-        static::assertSame($cmsBlocks, $app->getCmsBlocks());
         static::assertSame($flowActions, $app->getFlowActions());
         static::assertSame($flowEvents, $app->getFlowEvents());
         static::assertSame($appShippingMethods, $app->getAppShippingMethods());

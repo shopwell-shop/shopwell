@@ -7,10 +7,6 @@ use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Checkout\Customer\CustomerDefinition;
 use Shopwell\Core\Checkout\Promotion\Aggregate\PromotionTranslation\PromotionTranslationDefinition;
 use Shopwell\Core\Checkout\Promotion\PromotionDefinition;
-use Shopwell\Core\Content\Cms\Aggregate\CmsPageTranslation\CmsPageTranslationDefinition;
-use Shopwell\Core\Content\Cms\Aggregate\CmsSlot\CmsSlotDefinition;
-use Shopwell\Core\Content\Cms\Aggregate\CmsSlotTranslation\CmsSlotTranslationDefinition;
-use Shopwell\Core\Content\Cms\CmsPageDefinition;
 use Shopwell\Core\Content\Product\Aggregate\ProductManufacturer\ProductManufacturerDefinition;
 use Shopwell\Core\Content\Product\Aggregate\ProductTranslation\ProductTranslationDefinition;
 use Shopwell\Core\Content\Product\ProductDefinition;
@@ -80,8 +76,6 @@ class EntityDefinitionTest extends TestCase
     public static function provideTranslatedDefinitions(): array
     {
         return [
-            [CmsPageDefinition::class, CmsPageTranslationDefinition::class],
-            [CmsSlotDefinition::class, CmsSlotTranslationDefinition::class],
             [PropertyGroupDefinition::class, PropertyGroupTranslationDefinition::class],
             [StateMachineDefinition::class, StateMachineTranslationDefinition::class],
             [StateMachineStateDefinition::class, StateMachineStateTranslationDefinition::class],

@@ -18,10 +18,10 @@
         <div class="offcanvas-cookie-description">
             <p>
                 {% set privacySnippetKey = 'cookie.messageTextPage' %}
-                {% set cmsPath = 'frontend.cms.page.full' %}
+                {% set contentPath = 'frontend.content.page.full' %}
 
                 {{ privacySnippetKey|trans({
-                    '%url%': path(cmsPath, { id: config('core.basicInformation.privacyPage') })
+                    '%url%': path(contentPath, { id: config('core.basicInformation.privacyPage') })
                 })|raw }}
             </p>
 

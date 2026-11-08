@@ -50,9 +50,6 @@ class ProductHydrator extends EntityHydrator
         if (isset($row[$root . '.canonicalProductId'])) {
             $entity->canonicalProductId = Uuid::fromBytesToHex($row[$root . '.canonicalProductId']);
         }
-        if (isset($row[$root . '.cmsPageId'])) {
-            $entity->cmsPageId = Uuid::fromBytesToHex($row[$root . '.cmsPageId']);
-        }
         if (isset($row[$root . '.openGraphMediaId'])) {
             $entity->openGraphMediaId = Uuid::fromBytesToHex($row[$root . '.openGraphMediaId']);
         }
@@ -200,7 +197,6 @@ class ProductHydrator extends EntityHydrator
         $entity->unit = $this->manyToOne($row, $root, $definition->getField('unit'), $context);
         $entity->cover = $this->manyToOne($row, $root, $definition->getField('cover'), $context);
         $entity->featureSet = $this->manyToOne($row, $root, $definition->getField('featureSet'), $context);
-        $entity->cmsPage = $this->manyToOne($row, $root, $definition->getField('cmsPage'), $context);
         $entity->canonicalProduct = $this->manyToOne($row, $root, $definition->getField('canonicalProduct'), $context);
         $entity->openGraphMedia = $this->manyToOne($row, $root, $definition->getField('openGraphMedia'), $context);
         $entity->guaranteeTermsMedia = $this->manyToOne($row, $root, $definition->getField('guaranteeTermsMedia'), $context);

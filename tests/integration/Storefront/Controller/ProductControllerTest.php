@@ -258,34 +258,34 @@ class ProductControllerTest extends TestCase
         $lFound = false;
         $mFound = false;
 
-        $crawler->filter('.product-detail-configurator .product-detail-configurator-option-label')
+        $crawler->filter('.sw-product-variant-selection__option-label')
             ->each(static function (Crawler $option) use ($blue, $green, $red, $xl, $l, &$blueFound, &$greenFound, &$redFound, &$xlFound, &$lFound, &$mFound): void {
-                if ($option->innerText() === 'blue') {
-                    static::assertSame($blue, $option->matches('.is-combinable'));
+                if ($option->filter('span')->first()->text() === 'blue') {
+                    static::assertSame($blue, !$option->matches('.is--unavailable'));
                     $blueFound = true;
                 }
 
-                if ($option->innerText() === 'green') {
-                    static::assertSame($green, $option->matches('.is-combinable'));
+                if ($option->filter('span')->first()->text() === 'green') {
+                    static::assertSame($green, !$option->matches('.is--unavailable'));
                     $greenFound = true;
                 }
 
-                if ($option->innerText() === 'red') {
-                    static::assertSame($red, $option->matches('.is-combinable'));
+                if ($option->filter('span')->first()->text() === 'red') {
+                    static::assertSame($red, !$option->matches('.is--unavailable'));
                     $redFound = true;
                 }
 
-                if ($option->innerText() === 'xl') {
-                    static::assertSame($xl, $option->matches('.is-combinable'));
+                if ($option->filter('span')->first()->text() === 'xl') {
+                    static::assertSame($xl, !$option->matches('.is--unavailable'));
                     $xlFound = true;
                 }
 
-                if ($option->innerText() === 'l') {
-                    static::assertSame($l, $option->matches('.is-combinable'));
+                if ($option->filter('span')->first()->text() === 'l') {
+                    static::assertSame($l, !$option->matches('.is--unavailable'));
                     $lFound = true;
                 }
 
-                if ($option->innerText() === 'm') {
+                if ($option->filter('span')->first()->text() === 'm') {
                     $mFound = true;
                 }
             });
@@ -329,6 +329,64 @@ class ProductControllerTest extends TestCase
         $traces = $this->getStorefrontRequestContainer()->get(ScriptTraces::class)->getTraces();
 
         static::assertArrayHasKey('product-page-loaded', $traces);
+    }
+
+    public function testDefaultProductLayoutHasASubmitButton(): void
+    {
+        $productId = $this->createProduct();
+        $response = $this->request('GET', '/my-product/' . $productId, []);
+        $this->checkStatusCode($response);
+
+        $form = (new Crawler((string) $response->getContent()))->filter('form.sw-buy-widget');
+
+        static::assertCount(1, $form);
+        static::assertCount(1, $form->filter('button[type="submit"]'));
+    }
+
+    public function testDefaultProductLayoutExposesEditablePurchaseQuantity(): void
+    {
+        $productId = $this->createProduct([
+            'minPurchase' => 2,
+            'purchaseSteps' => 2,
+            'maxPurchase' => 6,
+            'stock' => 10,
+        ]);
+        $response = $this->request('GET', '/my-product/' . $productId, []);
+        $this->checkStatusCode($response);
+
+        $form = (new Crawler((string) $response->getContent()))->filter('form.sw-buy-widget');
+        $quantityName = 'lineItems[' . $productId . '][quantity]';
+        $quantity = $form->filter('input[name="' . $quantityName . '"]');
+
+        static::assertCount(1, $quantity);
+        static::assertSame('number', $quantity->attr('type'));
+        static::assertNull($quantity->attr('disabled'));
+        static::assertSame('2', $quantity->attr('min'));
+        static::assertSame('2', $quantity->attr('step'));
+        static::assertSame('6', $quantity->attr('max'));
+        static::assertSame('2', $quantity->attr('value'));
+    }
+
+    public function testDefaultProductLayoutSubmitsSelectedQuantityToCart(): void
+    {
+        $productId = $this->createProduct();
+        $browser = KernelLifecycleManager::createBrowser(static::getKernel());
+        $baseUrl = EnvironmentHelper::getVariable('APP_URL');
+        $crawler = $browser->request('GET', $baseUrl . '/my-product/' . $productId);
+        $this->checkStatusCode($browser->getResponse());
+
+        $form = $crawler->filter('form.sw-buy-widget')->form();
+        $form['lineItems[' . $productId . '][quantity]'] = '2';
+        $browser->submit($form);
+
+        static::assertSame(Response::HTTP_FOUND, $browser->getResponse()->getStatusCode());
+
+        $crawler = $browser->request('GET', $baseUrl . '/checkout/cart');
+        $this->checkStatusCode($browser->getResponse());
+
+        $quantity = $crawler->filter('input.quantity-input-' . $productId);
+        static::assertCount(1, $quantity);
+        static::assertSame('2', $quantity->attr('value'));
     }
 
     public function testBuyWidgetIncludesCategoryNames(): void
@@ -375,7 +433,7 @@ class ProductControllerTest extends TestCase
 
         $crawler = new Crawler((string) $response->getContent());
 
-        $manufacturerLink = $crawler->filter('a.product-detail-manufacturer-link');
+        $manufacturerLink = $crawler->filter('a.sw-product-manufacturer__link');
         static::assertCount(1, $manufacturerLink);
         static::assertSame('/manufacturer-test/', $manufacturerLink->attr('href'));
     }
@@ -517,74 +575,6 @@ class ProductControllerTest extends TestCase
         static::assertStringNotContainsString('itemprop="length"', $content);
     }
 
-    public function testSeparateProductGalleryCmsElementRendersImageMicrodata(): void
-    {
-        Feature::skipTestIfActive('JSON_LD_DATA', $this);
-
-        $cmsPageId = Uuid::randomHex();
-
-        static::getContainer()->get('cms_page.repository')->create([
-            [
-                'id' => $cmsPageId,
-                'type' => 'product_detail',
-                'sections' => [
-                    [
-                        'id' => Uuid::randomHex(),
-                        'type' => 'default',
-                        'position' => 0,
-                        'blocks' => [
-                            [
-                                'id' => Uuid::randomHex(),
-                                'type' => 'image-gallery',
-                                'position' => 0,
-                                'sectionPosition' => 'main',
-                                'slots' => [
-                                    [
-                                        'id' => Uuid::randomHex(),
-                                        'type' => 'image-gallery',
-                                        'slot' => 'imageGallery',
-                                        'config' => [
-                                            'sliderItems' => ['source' => 'mapped', 'value' => 'product.media'],
-                                        ],
-                                    ],
-                                ],
-                            ],
-                        ],
-                    ],
-                ],
-            ],
-        ], Context::createDefaultContext());
-
-        $productId = $this->createProduct([
-            'cmsPageId' => $cmsPageId,
-            'media' => [
-                [
-                    'id' => Uuid::randomHex(),
-                    'position' => 0,
-                    'media' => [
-                        'fileName' => 'gallery-image',
-                    ],
-                ],
-            ],
-        ]);
-
-        $response = $this->request(
-            'GET',
-            '/my-product/' . $productId,
-            []
-        );
-
-        $this->checkStatusCode($response);
-
-        $content = $response->getContent();
-        static::assertIsString($content);
-
-        $crawler = new Crawler();
-        $crawler->addHtmlContent($content);
-
-        static::assertCount(1, $crawler->filter('img.gallery-slider-image[itemprop="image"]'));
-    }
-
     public function testReferencePriceIsRenderedWithSingleCalculatedPrice(): void
     {
         $unitId = Uuid::randomHex();
@@ -639,7 +629,7 @@ class ProductControllerTest extends TestCase
         $crawler = new Crawler();
         $crawler->addHtmlContent((string) $response->getContent());
 
-        $referencePrice = $crawler->filter('.price-unit-reference-content');
+        $referencePrice = $crawler->filter('.sw-product-price-display__reference-price-unit');
 
         static::assertCount(1, $referencePrice);
         static::assertStringContainsString('/ 1000 Milliliter', $referencePrice->text());

@@ -32,7 +32,6 @@ class LandingPageCloneTest extends TestCase
     {
         $context = Context::createDefaultContext();
         $landingPageId = Uuid::randomHex();
-        $cmsPageId = Uuid::randomHex();
         $tagId = Uuid::randomHex();
 
         /** @var EntityRepository<LandingPageCollection> $landingPageRepository */
@@ -44,7 +43,6 @@ class LandingPageCloneTest extends TestCase
             'active' => true,
             'salesChannels' => [['id' => TestDefaults::SALES_CHANNEL]],
             'tags' => [['id' => $tagId, 'name' => 'Campaign']],
-            'cmsPage' => ['id' => $cmsPageId, 'type' => 'landingpage'],
         ]], $context);
 
         $browser = $this->getBrowser();
@@ -73,7 +71,6 @@ class LandingPageCloneTest extends TestCase
         static::assertSame('Summer sale Copy', $clone->getName());
         static::assertSame('summer-sale-Copy', $clone->getUrl());
         static::assertFalse($clone->isActive());
-        static::assertSame($cmsPageId, $clone->getCmsPageId());
         static::assertSame([TestDefaults::SALES_CHANNEL], array_values($clone->getSalesChannels()?->getIds() ?? []));
         static::assertSame([$tagId], array_values($clone->getTags()?->getIds() ?? []));
 

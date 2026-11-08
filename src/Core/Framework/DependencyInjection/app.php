@@ -25,18 +25,19 @@ use Shopwell\Core\Framework\App\ActionButton\Response\ReloadDataResponseFactory;
 use Shopwell\Core\Framework\App\ActiveAppsLoader;
 use Shopwell\Core\Framework\App\Aggregate\ActionButton\ActionButtonDefinition;
 use Shopwell\Core\Framework\App\Aggregate\ActionButtonTranslation\ActionButtonTranslationDefinition;
+use Shopwell\Core\Framework\App\Aggregate\AppContentSystemBindingSpecification\AppContentSystemBindingSpecificationDefinition;
+use Shopwell\Core\Framework\App\Aggregate\AppContentSystemElementType\AppContentSystemElementTypeDefinition;
+use Shopwell\Core\Framework\App\Aggregate\AppContentSystemLayoutPreset\AppContentSystemLayoutPresetDefinition;
+use Shopwell\Core\Framework\App\Aggregate\AppContentSystemStyleOption\AppContentSystemStyleOptionDefinition;
 use Shopwell\Core\Framework\App\Aggregate\AppPaymentMethod\AppPaymentMethodDefinition;
 use Shopwell\Core\Framework\App\Aggregate\AppScriptCondition\AppScriptConditionDefinition;
 use Shopwell\Core\Framework\App\Aggregate\AppScriptConditionTranslation\AppScriptConditionTranslationDefinition;
 use Shopwell\Core\Framework\App\Aggregate\AppShippingMethod\AppShippingMethodDefinition;
 use Shopwell\Core\Framework\App\Aggregate\AppTranslation\AppTranslationDefinition;
-use Shopwell\Core\Framework\App\Aggregate\CmsBlock\AppCmsBlockDefinition;
-use Shopwell\Core\Framework\App\Aggregate\CmsBlockTranslation\AppCmsBlockTranslationDefinition;
 use Shopwell\Core\Framework\App\Aggregate\FlowAction\AppFlowActionDefinition;
 use Shopwell\Core\Framework\App\Aggregate\FlowActionTranslation\AppFlowActionTranslationDefinition;
 use Shopwell\Core\Framework\App\Aggregate\FlowEvent\AppFlowEventDefinition;
 use Shopwell\Core\Framework\App\Api\AppActionController;
-use Shopwell\Core\Framework\App\Api\AppCmsController;
 use Shopwell\Core\Framework\App\Api\AppJWTGenerateRoute;
 use Shopwell\Core\Framework\App\Api\AppPrivilegeController;
 use Shopwell\Core\Framework\App\Api\AppSecretRotationController;
@@ -52,7 +53,6 @@ use Shopwell\Core\Framework\App\AppService;
 use Shopwell\Core\Framework\App\AppStorage;
 use Shopwell\Core\Framework\App\Checkout\Gateway\AppCheckoutGateway;
 use Shopwell\Core\Framework\App\Checkout\Payload\AppCheckoutGatewayPayloadService;
-use Shopwell\Core\Framework\App\Cms\BlockTemplateLoader;
 use Shopwell\Core\Framework\App\Command\ActivateAppCommand;
 use Shopwell\Core\Framework\App\Command\AppListCommand;
 use Shopwell\Core\Framework\App\Command\AppPrinter;
@@ -90,7 +90,10 @@ use Shopwell\Core\Framework\App\Lifecycle\AppLoader;
 use Shopwell\Core\Framework\App\Lifecycle\AppManager;
 use Shopwell\Core\Framework\App\Lifecycle\AppSecretRotationService;
 use Shopwell\Core\Framework\App\Lifecycle\Handler\ActionButtonLifecycleHandler;
-use Shopwell\Core\Framework\App\Lifecycle\Handler\CmsBlockLifecycleHandler;
+use Shopwell\Core\Framework\App\Lifecycle\Handler\ContentSystemBindingSpecificationLifecycleHandler;
+use Shopwell\Core\Framework\App\Lifecycle\Handler\ContentSystemElementTypeLifecycleHandler;
+use Shopwell\Core\Framework\App\Lifecycle\Handler\ContentSystemLayoutPresetLifecycleHandler;
+use Shopwell\Core\Framework\App\Lifecycle\Handler\ContentSystemStyleOptionLifecycleHandler;
 use Shopwell\Core\Framework\App\Lifecycle\Handler\CustomFieldLifecycleHandler;
 use Shopwell\Core\Framework\App\Lifecycle\Handler\FlowActionLifecycleHandler;
 use Shopwell\Core\Framework\App\Lifecycle\Handler\FlowEventLifecycleHandler;
@@ -103,6 +106,10 @@ use Shopwell\Core\Framework\App\Lifecycle\Handler\TaxProviderLifecycleHandler;
 use Shopwell\Core\Framework\App\Lifecycle\Handler\TemplateLifecycleHandler;
 use Shopwell\Core\Framework\App\Lifecycle\Handler\WebhookLifecycleHandler;
 use Shopwell\Core\Framework\App\Lifecycle\PermissionLifecycleService;
+use Shopwell\Core\Framework\App\Lifecycle\Persister\ContentSystemBindingSpecificationPersister;
+use Shopwell\Core\Framework\App\Lifecycle\Persister\ContentSystemElementTypePersister;
+use Shopwell\Core\Framework\App\Lifecycle\Persister\ContentSystemLayoutPresetPersister;
+use Shopwell\Core\Framework\App\Lifecycle\Persister\ContentSystemStyleOptionPersister;
 use Shopwell\Core\Framework\App\Lifecycle\Registration\AppRegistrationService;
 use Shopwell\Core\Framework\App\Lifecycle\Registration\HandshakeFactory;
 use Shopwell\Core\Framework\App\Lifecycle\ScriptFileReader;
@@ -150,11 +157,29 @@ use Shopwell\Core\Framework\App\Url\AppUrlVerifier;
 use Shopwell\Core\Framework\App\Validation\AppNameValidator;
 use Shopwell\Core\Framework\App\Validation\AppRequirementsValidator;
 use Shopwell\Core\Framework\App\Validation\ConfigValidator;
+use Shopwell\Core\Framework\App\Validation\ContentSystemBindingSpecificationAppValidator;
+use Shopwell\Core\Framework\App\Validation\ContentSystemElementTypeAppValidator;
+use Shopwell\Core\Framework\App\Validation\ContentSystemLayoutPresetAppValidator;
+use Shopwell\Core\Framework\App\Validation\ContentSystemStyleOptionAppValidator;
 use Shopwell\Core\Framework\App\Validation\HookableValidator;
 use Shopwell\Core\Framework\App\Validation\ManifestValidator;
 use Shopwell\Core\Framework\App\Validation\Requirements\PublicAccess;
 use Shopwell\Core\Framework\App\Validation\Requirements\SecureUrlValidator;
 use Shopwell\Core\Framework\App\Validation\TranslationValidator;
+use Shopwell\Core\Framework\ContentSystem\Binding\Loader\YamlBindingSpecificationLoader;
+use Shopwell\Core\Framework\ContentSystem\Binding\Registry\ContentSystemBindingSpecificationRegistry;
+use Shopwell\Core\Framework\ContentSystem\Binding\Serialization\BindingSpecificationSerializer;
+use Shopwell\Core\Framework\ContentSystem\Layout\Element\Style\Loader\YamlStyleOptionLoader;
+use Shopwell\Core\Framework\ContentSystem\Layout\Element\Style\Registry\ContentSystemStyleOptionRegistry;
+use Shopwell\Core\Framework\ContentSystem\Layout\Element\Style\Serialization\StyleOptionSpecificationSerializer;
+use Shopwell\Core\Framework\ContentSystem\Layout\Element\Style\Validation\StyleOptionCollisionDetector;
+use Shopwell\Core\Framework\ContentSystem\Layout\Preset\Loader\ContentSystemLayoutPresetAppLoader;
+use Shopwell\Core\Framework\ContentSystem\Layout\Preset\Registry\ContentSystemLayoutPresetRegistry;
+use Shopwell\Core\Framework\ContentSystem\Layout\Preset\Serialization\LayoutPresetSpecificationSerializer;
+use Shopwell\Core\Framework\ContentSystem\Layout\Type\Loader\YamlTypeLoader;
+use Shopwell\Core\Framework\ContentSystem\Layout\Type\Registry\ContentSystemElementTypeRegistry;
+use Shopwell\Core\Framework\ContentSystem\Layout\Type\Serialization\ElementTypeSpecificationSerializer;
+use Shopwell\Core\Framework\ContentSystem\Layout\Type\Validation\ElementTypeCollisionDetector;
 use Shopwell\Core\Framework\DataAbstractionLayer\DefinitionInstanceRegistry;
 use Shopwell\Core\Framework\Gateway\Context\Command\Executor\ContextGatewayCommandExecutor;
 use Shopwell\Core\Framework\Gateway\Context\Command\Registry\ContextGatewayCommandRegistry;
@@ -370,13 +395,6 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ])
         ->tag('shopwell.app_lifecycle.handler', ['priority' => -1100]);
 
-    $services->set(CmsBlockLifecycleHandler::class)
-        ->args([
-            service('app_cms_block.repository'),
-            service(BlockTemplateLoader::class),
-        ])
-        ->tag('shopwell.app_lifecycle.handler', ['priority' => -1200]);
-
     $services->set(AppFeatureLifecycleHandler::class)
         ->args([
             service(AppFeatureDefinitionRegistry::class),
@@ -405,6 +423,102 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service(SourceResolver::class),
         ]);
+
+    $services->set(ContentSystemElementTypePersister::class)
+        ->args([
+            service('app_content_system_element_type.repository'),
+            service(YamlTypeLoader::class),
+            service(ElementTypeCollisionDetector::class),
+            service(ContentSystemElementTypeRegistry::class),
+            service(ElementTypeSpecificationSerializer::class),
+            service(Connection::class),
+            service('lock.factory'),
+        ]);
+
+    $services->set(ContentSystemElementTypeLifecycleHandler::class)
+        ->args([
+            service(ContentSystemElementTypePersister::class),
+            service(ContentSystemElementTypeRegistry::class),
+        ])
+        ->tag('shopwell.app_lifecycle.handler', ['priority' => -1400]);
+
+    $services->set(ContentSystemElementTypeAppValidator::class)
+        ->args([
+            service(YamlTypeLoader::class),
+        ])
+        ->tag('shopwell.app_manifest.validator');
+
+    $services->set(ContentSystemStyleOptionPersister::class)
+        ->args([
+            service('app_content_system_style_option.repository'),
+            service(YamlStyleOptionLoader::class),
+            service(StyleOptionCollisionDetector::class),
+            service(ContentSystemStyleOptionRegistry::class),
+            service(StyleOptionSpecificationSerializer::class),
+            service(Connection::class),
+            service('lock.factory'),
+        ]);
+
+    $services->set(ContentSystemStyleOptionLifecycleHandler::class)
+        ->args([
+            service(ContentSystemStyleOptionPersister::class),
+            service(ContentSystemStyleOptionRegistry::class),
+        ])
+        ->tag('shopwell.app_lifecycle.handler', ['priority' => -1401]);
+
+    $services->set(ContentSystemStyleOptionAppValidator::class)
+        ->args([
+            service(YamlStyleOptionLoader::class),
+        ])
+        ->tag('shopwell.app_manifest.validator');
+
+    $services->set(ContentSystemBindingSpecificationPersister::class)
+        ->args([
+            service(YamlBindingSpecificationLoader::class),
+            service(YamlTypeLoader::class),
+            service('app_content_system_binding_specification.repository'),
+            service(BindingSpecificationSerializer::class),
+            service(Connection::class),
+            service(ContentSystemBindingSpecificationRegistry::class),
+            service('lock.factory'),
+        ]);
+
+    $services->set(ContentSystemBindingSpecificationLifecycleHandler::class)
+        ->args([
+            service(ContentSystemBindingSpecificationPersister::class),
+            service(ContentSystemBindingSpecificationRegistry::class),
+        ])
+        ->tag('shopwell.app_lifecycle.handler', ['priority' => -1402]);
+
+    $services->set(ContentSystemBindingSpecificationAppValidator::class)
+        ->args([
+            service(YamlBindingSpecificationLoader::class),
+            service(YamlTypeLoader::class),
+        ])
+        ->tag('shopwell.app_manifest.validator');
+
+    $services->set(ContentSystemLayoutPresetPersister::class)
+        ->args([
+            service('app_content_system_layout_preset.repository'),
+            service(ContentSystemLayoutPresetAppLoader::class),
+            service(LayoutPresetSpecificationSerializer::class),
+            service(ContentSystemLayoutPresetRegistry::class),
+            service(Connection::class),
+            service('lock.factory'),
+        ]);
+
+    $services->set(ContentSystemLayoutPresetLifecycleHandler::class)
+        ->args([
+            service(ContentSystemLayoutPresetPersister::class),
+            service(ContentSystemLayoutPresetRegistry::class),
+        ])
+        ->tag('shopwell.app_lifecycle.handler', ['priority' => -1403]);
+
+    $services->set(ContentSystemLayoutPresetAppValidator::class)
+        ->args([
+            service(ContentSystemLayoutPresetAppLoader::class),
+        ])
+        ->tag('shopwell.app_manifest.validator');
 
     $services->set(AppService::class)
         ->args([
@@ -742,15 +856,6 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('service_container'),
         ]);
 
-    $services->set(AppCmsController::class)
-        ->public()
-        ->args([
-            service('app_cms_block.repository'),
-        ])
-        ->call('setContainer', [
-            service('service_container'),
-        ]);
-
     $services->set(AppJWTGenerateRoute::class)
         ->public()
         ->args([
@@ -929,12 +1034,6 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(AppScriptConditionTranslationDefinition::class)
         ->tag('shopwell.entity.definition');
 
-    $services->set(AppCmsBlockDefinition::class)
-        ->tag('shopwell.entity.definition');
-
-    $services->set(AppCmsBlockTranslationDefinition::class)
-        ->tag('shopwell.entity.definition');
-
     $services->set(AppFlowActionDefinition::class)
         ->tag('shopwell.entity.definition');
 
@@ -947,10 +1046,20 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(AppShippingMethodDefinition::class)
         ->tag('shopwell.entity.definition');
 
+    $services->set(AppContentSystemElementTypeDefinition::class)
+        ->tag('shopwell.entity.definition');
+
+    $services->set(AppContentSystemStyleOptionDefinition::class)
+        ->tag('shopwell.entity.definition');
+
+    $services->set(AppContentSystemBindingSpecificationDefinition::class)
+        ->tag('shopwell.entity.definition');
+
+    $services->set(AppContentSystemLayoutPresetDefinition::class)
+        ->tag('shopwell.entity.definition');
+
     $services->set(AppFlowActionLoadedSubscriber::class)
         ->tag('kernel.event_subscriber');
-
-    $services->set(BlockTemplateLoader::class);
 
     $services->set(AppFlowActionProvider::class)
         ->public()

@@ -90,6 +90,29 @@ describe('src/core/data/error-resolver.data', () => {
             );
         });
 
+        it('routes an error whose pointer segment is not a field to the system errors', () => {
+            const entity = entityFactory.create('customer');
+            const errors = [
+                {
+                    source: { pointer: `/0/${entity.id}/media` },
+                    code: 'unfilled_required_input',
+                    detail: 'Required property "media" is wired from "mediaId", which has no value.',
+                },
+            ];
+            const changeset = [{ entity, changes: [{ name: 'a' }] }];
+
+            expect(() => errorResolver.handleWriteErrors(changeset, { errors })).not.toThrow();
+
+            expect(Shopwell.Store.get('error').addApiError).not.toHaveBeenCalled();
+            expect(Shopwell.Store.get('error').addSystemError).toHaveBeenCalledTimes(1);
+            expect(Shopwell.Store.get('error').addSystemError).toHaveBeenCalledWith({
+                error: expect.any(Shopwell.Classes.ShopwellError),
+            });
+            expect(Shopwell.Store.get('error').addSystemError.mock.calls[0][0].error.detail).toBe(
+                'Required property "media" is wired from "mediaId", which has no value.',
+            );
+        });
+
         it('should convert to ShopwellError', () => {
             const errors = [{ source: { pointer: '/0/name' }, code: 'CODE1' }];
 

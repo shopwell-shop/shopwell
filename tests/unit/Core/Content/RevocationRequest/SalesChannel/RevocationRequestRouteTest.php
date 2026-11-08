@@ -6,7 +6,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Psr\Clock\ClockInterface;
-use Shopwell\Core\Content\Cms\Service\CmsFormSlotConfigResolver;
+use Shopwell\Core\Content\ContactForm\Service\FormConfigResolver;
 use Shopwell\Core\Content\RevocationRequest\Extension\RevocationRequestRouteExtension;
 use Shopwell\Core\Content\RevocationRequest\SalesChannel\RevocationRequestRoute;
 use Shopwell\Core\Content\RevocationRequest\SalesChannel\RevocationRequestRouteResponse;
@@ -110,7 +110,7 @@ class RevocationRequestRouteTest extends TestCase
             static::createStub(RateLimiter::class),
             static::createStub(EventDispatcherInterface::class),
             static::createStub(ClockInterface::class),
-            static::createStub(CmsFormSlotConfigResolver::class),
+            static::createStub(FormConfigResolver::class),
             new ExtensionDispatcher($dispatcher),
         );
 
@@ -133,8 +133,8 @@ class RevocationRequestRouteTest extends TestCase
         $validatorFactory ??= static::createStub(DataValidationFactoryInterface::class);
         $validator ??= static::createStub(DataValidator::class);
 
-        $slotConfigResolver = static::createStub(CmsFormSlotConfigResolver::class);
-        $slotConfigResolver->method('resolve')->willReturn([
+        $formConfigResolver = static::createStub(FormConfigResolver::class);
+        $formConfigResolver->method('resolve')->willReturn([
             'receivers' => ['foo' => 'bar'],
             'message' => 'baz',
         ]);
@@ -146,7 +146,7 @@ class RevocationRequestRouteTest extends TestCase
             static::createStub(RateLimiter::class),
             $eventDispatcher ?? static::createStub(EventDispatcherInterface::class),
             new NativeClock(),
-            $slotConfigResolver,
+            $formConfigResolver,
             new ExtensionDispatcher(new EventDispatcher()),
         );
     }

@@ -9,7 +9,7 @@ import './sw-product-detail.scss';
 import '../../page/sw-product-detail/store';
 
 const { Context, Mixin, EntityDefinition } = Shopwell;
-const { Criteria, ChangesetGenerator } = Shopwell.Data;
+const { Criteria } = Shopwell.Data;
 const { cloneDeep } = Shopwell.Utils.object;
 const { mapPageErrors } = Shopwell.Component.getComponentHelper();
 const type = Shopwell.Utils.types;
@@ -302,7 +302,6 @@ export default {
                 .addAssociation('options.group')
                 .addAssociation('customFieldSets')
                 .addAssociation('featureSet')
-                .addAssociation('cmsPage')
                 .addAssociation('translations')
                 .addAssociation('downloads.media');
 
@@ -432,14 +431,6 @@ export default {
             return routes.includes(this.$route.name);
         },
 
-        cmsPageState() {
-            return Shopwell.Store.get('cmsPage');
-        },
-
-        currentPage() {
-            return Shopwell.Store.get('cmsPage').currentPage;
-        },
-
         languageRepository() {
             return this.repositoryFactory.create('language');
         },
@@ -517,14 +508,6 @@ export default {
                 path: 'product',
                 scope: this,
             });
-
-            Shopwell.ExtensionAPI.publishData({
-                id: 'sw-product-detail__cmsPage',
-                path: 'currentPage',
-                scope: this,
-            });
-
-            this.cmsPageState.resetCmsPageState();
 
             // when create
             if (!this.productId) {
@@ -1104,10 +1087,6 @@ export default {
 
             this.isSaveSuccessful = false;
 
-            if (type.isEmpty(this.product.slotConfig)) {
-                this.product.slotConfig = null;
-            }
-
             if (!this.entityValidationService.validate(this.product, this.customValidate, this.ignoreFieldsValidation)) {
                 const titleSaveError = this.$t('global.default.error');
                 const messageSaveError = this.$t('global.notification.notificationSaveErrorMessageRequiredFieldsInvalid');
@@ -1383,80 +1362,6 @@ export default {
             }
 
             return true;
-        },
-
-        /**
-         * @deprecated tag:v6.8.0 - will be removed without replacement
-         */
-        getCmsPageOverrides() {
-            if (this.currentPage === null) {
-                return null;
-            }
-
-            this.deleteSpecifcKeys(this.currentPage.sections);
-
-            const changesetGenerator = new ChangesetGenerator();
-            const { changes } = changesetGenerator.generate(this.currentPage);
-
-            const slotOverrides = {};
-            if (changes === null) {
-                return slotOverrides;
-            }
-
-            if (type.isArray(changes.sections)) {
-                changes.sections.forEach((section) => {
-                    if (type.isArray(section.blocks)) {
-                        section.blocks.forEach((block) => {
-                            if (type.isArray(block.slots)) {
-                                block.slots.forEach((slot) => {
-                                    slotOverrides[slot.id] = slot.config;
-                                });
-                            }
-                        });
-                    }
-                });
-            }
-
-            return slotOverrides;
-        },
-
-        /**
-         * @deprecated tag:v6.8.0 - will be removed without replacement
-         */
-        deleteSpecifcKeys(sections) {
-            if (!sections) {
-                return;
-            }
-
-            sections.forEach((section) => {
-                if (!section.blocks) {
-                    return;
-                }
-
-                section.blocks.forEach((block) => {
-                    if (!block.slots) {
-                        return;
-                    }
-
-                    block.slots.forEach((slot) => {
-                        if (!slot.config) {
-                            return;
-                        }
-
-                        Object.values(slot.config).forEach((configField) => {
-                            if (configField.entity) {
-                                delete configField.entity;
-                            }
-                            if (configField.hasOwnProperty('required')) {
-                                delete configField.required;
-                            }
-                            if (configField.type) {
-                                delete configField.type;
-                            }
-                        });
-                    });
-                });
-            });
         },
 
         async loadLanguage(newLanguageId) {

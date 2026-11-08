@@ -33,7 +33,7 @@ describe('BasicCaptchaPlugin tests', () => {
         global.fetch = jest.fn(() =>
             Promise.resolve({
                 text: () => Promise.resolve('captcha_img'),
-            })
+            }),
         );
 
         captchaElement = document.getElementById('basic-captcha');
@@ -84,7 +84,7 @@ describe('BasicCaptchaPlugin tests', () => {
                     type: 'danger',
                     error: 'invalid_captcha',
                 }),
-            })
+            }),
         );
 
         basicCaptchaPlugin = new BasicCaptchaPlugin(captchaElement);
@@ -114,7 +114,7 @@ describe('BasicCaptchaPlugin tests', () => {
                 json: () => Promise.resolve({
                     session: {},
                 }),
-            })
+            }),
         );
 
         basicCaptchaPlugin = new BasicCaptchaPlugin(captchaElement);

@@ -68,14 +68,6 @@
         :title="$t('sw-landing-page.base.seo.title')"
         :is-loading="isLoading"
     >
-        <mt-banner
-            v-if="!isLayoutSet"
-            variant="attention"
-            :title="$t('sw-landing-page.base.seo.notification.noLayoutAssigned')"
-        >
-            {{ $t('sw-landing-page.base.seo.notification.noLayoutAssigned') }}
-        </mt-banner>
-
         {% block sw_landing_page_detail_base_seo_form %}
         <div class="sw-landing-page-detail-base__seo-form">
 

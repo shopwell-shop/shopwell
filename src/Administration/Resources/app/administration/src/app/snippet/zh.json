@@ -677,7 +677,6 @@
       "typeLabelOrder": "订单",
       "typeLabelMedia": "媒体",
       "typeLabelCategory": "分类",
-      "typeLabelCms": "CMS",
       "typeLabelModule": "模块",
       "typeLabelAction": "操作",
       "addNewEntity": "添加新 {entity}",
@@ -689,7 +688,7 @@
         "manufacturer": "G M | A M",
         "settings-rule": "G S R | A R",
         "sales-channel": "&nbsp; | A S",
-        "cms": "G E | A E",
+        "experience-studio": "G E | &nbsp;",
         "dashboard": "G H | &nbsp;",
         "product-stream": "G D | &nbsp;",
         "order": "G O | &nbsp;",
@@ -1065,7 +1064,6 @@
       "custom_field": "自定义字段 | 自定义字段",
       "cart": "购物车 | 购物车",
       "category": "分类 | 分类",
-      "cms_page": "布局 | 布局",
       "document": "单据 | 单据",
       "property": "属性 | 属性",
       "country": "国家 | 国家",
@@ -1155,7 +1153,8 @@
       "blog_category": "文章分类 | 文章分类",
       "blog_author": "作者 | 作者",
       "blog_comment": "评论 | 评论",
-      "blog_video": "视频 | 视频"
+      "blog_video": "视频 | 视频",
+      "content_layout": "布局 | 布局"
     },
     "day-of-week": {
       "monday": "星期一",
@@ -1270,7 +1269,8 @@
     },
     "sw-page": {
       "backButton": "返回"
-    }
+    },
+    "mediaUploadCaption": "上传图片"
   },
   "mt-text-editor-toolbar-button-link": {
     "label": "链接"
@@ -1303,9 +1303,6 @@
     "buttonVariantSecondary": "次要",
     "buttonVariantPrimarySmall": "主要（小）",
     "buttonVariantSecondarySmall": "次要（小）"
-  },
-  "sw-text-editor-toolbar-button-cms-data-mapping": {
-    "label": "插入变量"
   },
   "sw-text-editor-toolbar": {
     "link": {
@@ -1536,8 +1533,6 @@
     "keyboardShortcutAddProduct": "A P",
     "functionAddCategory": "添加分类",
     "keyboardShortcutAddCategory": "A C",
-    "functionAddShoppingExperienceLayout": "添加购物体验布局",
-    "keyboardShortcutAddShoppingExperienceLayout": "A E",
     "functionAddCustomer": "添加客户",
     "keyboardShortcutAddCustomer": "A U",
     "functionAddProperties": "添加属性",
@@ -1564,7 +1559,7 @@
     "keyboardShortcutGoToOrders": "G O",
     "functionGoToCustomers": "打开客户",
     "keyboardShortcutGoToCustomers": "G U",
-    "functionGoToShoppingExperience": "打开购物体验",
+    "functionGoToShoppingExperience": "打开体验工作室",
     "keyboardShortcutGoToShoppingExperience": "G E",
     "functionGoToMedia": "打开媒体",
     "keyboardShortcutGoToMedia": "G M E",
@@ -1887,5 +1882,15 @@
         "themeSaveError": "外观无法保存。"
       }
     }
+  },
+  "sw-sorting-select": {
+    "labelSort": "排序方式：",
+    "labelSortByNameAsc": "名称，升序",
+    "labelSortByNameDesc": "名称，降序",
+    "labelSortByCreatedAsc": "创建日期，升序",
+    "labelSortByCreatedDsc": "创建日期，降序",
+    "labelSortByUpdatedAsc": "修改日期，升序",
+    "labelSortByUpdatedDsc": "修改日期，降序",
+    "labelSortByAllPages": "全部类型"
   }
 }

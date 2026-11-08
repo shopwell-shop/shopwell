@@ -29,10 +29,9 @@ Shopwell.Component.extend(
 );
 Shopwell.Component.register('sw-category-detail', () => import('./page/sw-category-detail'));
 Shopwell.Component.register('sw-category-detail-base', () => import('./view/sw-category-detail-base'));
-Shopwell.Component.register('sw-category-detail-cms', () => import('./view/sw-category-detail-cms'));
-Shopwell.Component.register('sw-category-detail-custom-entity', () => import('./view/sw-category-detail-custom-entity'));
+Shopwell.Component.register('sw-category-detail-layout', () => import('./view/sw-category-detail-layout'));
 Shopwell.Component.register('sw-landing-page-detail-base', () => import('./view/sw-landing-page-detail-base'));
-Shopwell.Component.register('sw-landing-page-detail-cms', () => import('./view/sw-landing-page-detail-cms'));
+Shopwell.Component.register('sw-landing-page-detail-layout', () => import('./view/sw-landing-page-detail-layout'));
 Shopwell.Component.register('sw-category-detail-products', () => import('./view/sw-category-detail-products'));
 Shopwell.Component.register('sw-category-detail-seo', () => import('./view/sw-category-detail-seo'));
 /* eslint-enable sw-deprecation-rules/private-feature-declarations */
@@ -114,12 +113,12 @@ Module.register('sw-category', {
                         privilege: 'category.viewer',
                     },
                 },
-                cms: {
-                    component: 'sw-category-detail-cms',
-                    path: 'cms',
+                layout: {
+                    component: 'sw-category-detail-layout',
+                    path: 'layout',
                     meta: {
                         parentPath: 'sw.category.index',
-                        privilege: 'category.viewer', // change in NEXT-8921 to CMS rights
+                        privilege: 'category.viewer',
                     },
                 },
                 products: {
@@ -130,14 +129,7 @@ Module.register('sw-category', {
                         privilege: 'category.viewer',
                     },
                 },
-                customEntity: {
-                    component: 'sw-category-detail-custom-entity',
-                    path: 'customEntity',
-                    meta: {
-                        parentPath: 'sw.category.index',
-                        privilege: 'category.viewer',
-                    },
-                },
+
                 seo: {
                     component: 'sw-category-detail-seo',
                     path: 'seo',
@@ -176,12 +168,12 @@ Module.register('sw-category', {
                         privilege: 'category.viewer',
                     },
                 },
-                cms: {
-                    component: 'sw-landing-page-detail-cms',
-                    path: 'cms',
+                layout: {
+                    component: 'sw-landing-page-detail-layout',
+                    path: 'layout',
                     meta: {
                         parentPath: 'sw.category.index',
-                        privilege: 'category.viewer', // change in NEXT-8921 to CMS rights
+                        privilege: 'category.viewer',
                     },
                 },
             },

@@ -78,15 +78,6 @@
                         "type": "string",
                         "pattern": "^[0-9a-f]{32}$"
                     },
-                    "cmsPageId": {
-                        "description": "Unique identity of CMS page.",
-                        "type": "string",
-                        "pattern": "^[0-9a-f]{32}$"
-                    },
-                    "cmsPageVersionId": {
-                        "type": "string",
-                        "pattern": "^[0-9a-f]{32}$"
-                    },
                     "openGraphMediaId": {
                         "description": "Media used as Open Graph image for social media sharing.",
                         "type": "string",
@@ -468,10 +459,6 @@
                     "openGraphMedia": {
                         "$ref": "#/components/schemas/Media",
                         "description": "Open Graph image for social media sharing"
-                    },
-                    "cmsPage": {
-                        "$ref": "#/components/schemas/CmsPage",
-                        "description": "Custom CMS page layout for the product detail page"
                     },
                     "canonicalProduct": {
                         "$ref": "#/components/schemas/Product",

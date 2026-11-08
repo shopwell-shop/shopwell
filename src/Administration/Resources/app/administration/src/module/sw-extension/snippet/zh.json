@@ -405,17 +405,6 @@
         "category_tag": "分类标签"
       }
     },
-    "cms": {
-      "title": "CMS",
-      "entities": {
-        "cms_block": "区块",
-        "cms_page": "页面 (布局)",
-        "cms_page_translation": "页面翻译",
-        "cms_section": "区域",
-        "cms_slot": "插槽",
-        "cms_slot_translation": "插槽翻译"
-      }
-    },
     "customer": {
       "title": "客户",
       "entities": {
@@ -661,6 +650,15 @@
         "api_feature_flag_toggle": "用于切换特性标志的 API",
         "api_service_toggle": "用于切换服务的 API",
         "api_service_list": "服务目录 API"
+      }
+    },
+    "content_system": {
+      "title": "内容系统",
+      "entities": {
+        "content_layout": "内容布局",
+        "category_content_layout": "分类布局分配",
+        "product_content_layout": "商品布局分配",
+        "landing_page_content_layout": "落地页布局分配"
       }
     }
   },

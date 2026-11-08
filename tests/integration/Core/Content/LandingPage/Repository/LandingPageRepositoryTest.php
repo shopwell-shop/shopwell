@@ -5,7 +5,6 @@ namespace Shopwell\Tests\Integration\Core\Content\LandingPage\Repository;
 use Doctrine\DBAL\Connection;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
-use Shopwell\Core\Content\Cms\CmsPageCollection;
 use Shopwell\Core\Content\LandingPage\LandingPageCollection;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
@@ -37,16 +36,10 @@ class LandingPageRepositoryTest extends TestCase
      */
     private EntityRepository $salesChannelRepo;
 
-    /**
-     * @var EntityRepository<CmsPageCollection>
-     */
-    private EntityRepository $cmsPageRepo;
-
     protected function setUp(): void
     {
         $this->repository = static::getContainer()->get('landing_page.repository');
         $this->salesChannelRepo = static::getContainer()->get('sales_channel.repository');
-        $this->cmsPageRepo = static::getContainer()->get('cms_page.repository');
         $this->connection = static::getContainer()->get(Connection::class);
     }
 
@@ -134,7 +127,6 @@ class LandingPageRepositoryTest extends TestCase
     private function createLandingPage(string $uuid): void
     {
         $salesChannelIds = $this->salesChannelRepo->searchIds(new Criteria(), Context::createDefaultContext())->getIds();
-        $cmsPageId = $this->cmsPageRepo->searchIds(new Criteria(), Context::createDefaultContext())->firstId();
 
         $saleChannels = [];
         foreach ($salesChannelIds as $id) {
@@ -152,7 +144,6 @@ class LandingPageRepositoryTest extends TestCase
             'keywords' => 'landing, page, title',
             'url' => 'coolUrl',
             'salesChannels' => $saleChannels,
-            'cmsPageId' => $cmsPageId,
             'tags' => [
                 [
                     'name' => 'Cooler Tag',

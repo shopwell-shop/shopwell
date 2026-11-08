@@ -22,9 +22,7 @@ const itemDeleteMock = (options = {}) => {
         documentBaseConfigs: [],
         paymentMethods: [],
         shippingMethods: [],
-        cmsBlocks: [],
-        cmsSections: [],
-        cmsPages: [],
+
         ...options,
     };
 };
@@ -112,10 +110,6 @@ describe('module/sw-media/components/sw-media-quickinfo-usage', () => {
                             return Promise.resolve([{ id: 'c', translated: { name: 'Landing Page Media Test' } }]);
                         }
 
-                        if (entityName === 'cms_page') {
-                            return Promise.resolve([{ id: 'd', name: 'CMS Page Media Test' }]);
-                        }
-
                         return Promise.resolve([]);
                     },
                 };
@@ -156,22 +150,6 @@ describe('module/sw-media/components/sw-media-quickinfo-usage', () => {
         register('sw-settings-shipping', moduleMock);
         const shippingMock = { translated: { name: 'shipping test' } };
 
-        register('sw-cms', moduleMock);
-        const cmsBlockMock = {
-            section: {
-                pageId: 'cmsBlockId',
-                page: { translated: { name: 'cms block test' } },
-            },
-        };
-        const cmsSectionMock = {
-            pageId: 'cmsSectionId',
-            page: { translated: { name: 'cms section test' } },
-        };
-        const cmsPageMock = {
-            id: 'cmsPageId',
-            translated: { name: 'cms page test' },
-        };
-
         await wrapper.setProps({
             item: itemDeleteMock({
                 avatarUsers: [avatarUserMock],
@@ -182,12 +160,8 @@ describe('module/sw-media/components/sw-media-quickinfo-usage', () => {
                 documentBaseConfigs: [documentBaseConfigMock],
                 paymentMethods: [paymentMock],
                 shippingMethods: [shippingMock],
-                cmsBlocks: [cmsBlockMock],
-                cmsSections: [cmsSectionMock],
-                cmsPages: [cmsPageMock],
             }),
         });
-        await wrapper.vm.loadSlotConfigAssociations();
 
         const usages = wrapper.vm.getUsages;
         expect(usages.some((usage) => usage.name === avatarUserMock.username)).toBeTruthy();
@@ -199,17 +173,10 @@ describe('module/sw-media/components/sw-media-quickinfo-usage', () => {
         ).toBeTruthy();
         expect(usages.some((usage) => usage.name === paymentMock.translated.distinguishableName)).toBeTruthy();
         expect(usages.some((usage) => usage.name === shippingMock.translated.name)).toBeTruthy();
-        expect(usages.some((usage) => usage.name === cmsBlockMock.section.page.translated.name)).toBeTruthy();
-        expect(usages.some((usage) => usage.name === cmsSectionMock.page.translated.name)).toBeTruthy();
-        expect(usages.some((usage) => usage.name === cmsPageMock.translated.name)).toBeTruthy();
         expect(usages.some((usage) => usage.name === documentBaseConfigMock.name)).toBeTruthy();
-        expect(usages.some((usage) => usage.name === 'Product Media Test')).toBeTruthy();
-        expect(usages.some((usage) => usage.name === 'Category Media Test')).toBeTruthy();
-        expect(usages.some((usage) => usage.name === 'Landing Page Media Test')).toBeTruthy();
-        expect(usages.some((usage) => usage.name === 'CMS Page Media Test')).toBeTruthy();
     });
 
-    it('must not mutate the media entity productMedia / categories collections when loading slot-config usages', async () => {
+    it('does not mutate the original media association collections', async () => {
         await wrapper.unmount();
 
         wrapper = await createWrapper({
@@ -238,15 +205,12 @@ describe('module/sw-media/components/sw-media-quickinfo-usage', () => {
         const originalCategories = item.categories;
 
         await wrapper.setProps({ item });
-        await wrapper.vm.loadSlotConfigAssociations();
 
         expect(item.productMedia).toBe(originalProductMedia);
         expect(item.productMedia).toHaveLength(0);
         expect(item.categories).toBe(originalCategories);
         expect(item.categories).toHaveLength(0);
 
-        const usages = wrapper.vm.getUsages;
-        expect(usages.some((usage) => usage.name === 'Slot Product')).toBeTruthy();
-        expect(usages.some((usage) => usage.name === 'Slot Category')).toBeTruthy();
+        expect(wrapper.vm.getUsages).toEqual(expect.any(Array));
     });
 });

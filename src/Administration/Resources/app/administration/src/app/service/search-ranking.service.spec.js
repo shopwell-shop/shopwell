@@ -323,7 +323,7 @@ describe('app/service/search-ranking.service.js', () => {
                 'property_group.name': searchRankingPoint.HIGH_SEARCH_RANKING,
             },
             order: {},
-            cms_page: {},
+            content_layout: {},
         };
 
         expect(actual).toEqual(expected);

@@ -7,11 +7,14 @@ use Shopwell\Core\Framework\Adapter\Cache\CacheTagCollector;
 use Shopwell\Core\Framework\DataAbstractionLayer\DefinitionInstanceRegistry;
 use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\System\Language\CachedLanguageLoader;
+use Shopwell\Core\System\Language\ContentSystem\DataLoader\LanguageDataLoader;
+use Shopwell\Core\System\Language\ContentSystem\DataLoader\LanguageLoaderConfigSerializer;
 use Shopwell\Core\System\Language\LanguageDefinition;
 use Shopwell\Core\System\Language\LanguageExceptionHandler;
 use Shopwell\Core\System\Language\LanguageLoader;
 use Shopwell\Core\System\Language\LanguageValidator;
 use Shopwell\Core\System\Language\Rule\LanguageRule;
+use Shopwell\Core\System\Language\SalesChannel\AbstractLanguageRoute;
 use Shopwell\Core\System\Language\SalesChannel\LanguageRoute;
 use Shopwell\Core\System\Language\SalesChannel\SalesChannelLanguageDefinition;
 use Shopwell\Core\System\Language\SalesChannelLanguageLoader;
@@ -72,4 +75,16 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(LanguageRule::class)
         ->tag('shopwell.rule.definition');
+
+    // Content System
+    $services->alias(AbstractLanguageRoute::class, LanguageRoute::class);
+
+    $services->set(LanguageDataLoader::class)
+        ->args([
+            service(AbstractLanguageRoute::class),
+        ])
+        ->tag('content_system.data_loader');
+
+    $services->set(LanguageLoaderConfigSerializer::class)
+        ->tag('content_system.config_serializer');
 };

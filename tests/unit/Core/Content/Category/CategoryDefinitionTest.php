@@ -8,9 +8,7 @@ use Shopwell\Core\Content\Category\CategoryCollection;
 use Shopwell\Core\Content\Category\CategoryDefinition;
 use Shopwell\Core\Content\Category\CategoryEntity;
 use Shopwell\Core\Framework\DataAbstractionLayer\Dbal\EntityWriteGateway;
-use Shopwell\Core\Framework\DataAbstractionLayer\Field\BoolField;
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\Test\Annotation\DisabledFeatures;
 use Shopwell\Core\Test\Stub\DataAbstractionLayer\StaticDefinitionInstanceRegistry;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
@@ -29,19 +27,6 @@ class CategoryDefinitionTest extends TestCase
         static::assertSame(CategoryEntity::class, $definition->getEntityClass());
         static::assertSame(CategoryCollection::class, $definition->getCollectionClass());
         static::assertSame('6.0.0.0', $definition->since());
-    }
-
-    public function testDeprecatedCmsPageIdSwitchedFieldIsGone(): void
-    {
-        static::assertNull($this->createDefinition()->getFields()->get('cmsPageIdSwitched'));
-    }
-
-    #[DisabledFeatures(['v6.8.0.0'])]
-    public function testDeprecatedCmsPageIdSwitchedFieldStillExistsInTheLegacyMajor(): void
-    {
-        $field = $this->createDefinition()->getFields()->get('cmsPageIdSwitched');
-
-        static::assertInstanceOf(BoolField::class, $field);
     }
 
     private function createDefinition(): CategoryDefinition

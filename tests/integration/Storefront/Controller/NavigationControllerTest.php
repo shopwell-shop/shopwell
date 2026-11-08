@@ -175,7 +175,7 @@ class NavigationControllerTest extends TestCase
     }
 
     /**
-     * Creates a category with a product-listing CMS page and $count simple products.
+     * Creates a category with a default category content layout and $count simple products.
      * Returns the SEO path for the category (e.g. `listing-test-category/`).
      *
      * The SEO URL is queried from the database after creation so the path is always accurate.
@@ -215,21 +215,6 @@ class NavigationControllerTest extends TestCase
             'name' => 'Out-of-range test category',
             'type' => 'page',
             'parentId' => $salesChannel->getNavigationCategoryId(),
-            'cmsPage' => [
-                'id' => $this->ids->create('out-of-range-cms-page'),
-                'type' => 'product_list',
-                'sections' => [[
-                    'position' => 0,
-                    'type' => 'sidebar',
-                    'blocks' => [[
-                        'type' => 'product-listing',
-                        'position' => 1,
-                        'slots' => [
-                            ['type' => 'product-listing', 'slot' => 'content'],
-                        ],
-                    ]],
-                ]],
-            ],
         ]], Context::createDefaultContext());
 
         static::getContainer()->get('product.repository')->create($products, Context::createDefaultContext());

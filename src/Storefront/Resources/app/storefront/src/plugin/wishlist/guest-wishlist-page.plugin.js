@@ -80,7 +80,7 @@ export default class GuestWishlistPagePlugin extends Plugin {
             const productId = actionUrlParts[actionUrlParts.length - 1];
 
             if (productId) {
-                const parentEl = form.closest('.cms-listing-col');
+                const parentEl = form.closest('.product-listing-col');
                 this._wishlistStorage.remove(productId);
                 parentEl.remove();
 

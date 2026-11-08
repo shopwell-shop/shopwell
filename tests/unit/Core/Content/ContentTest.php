@@ -48,7 +48,6 @@ class ContentTest extends TestCase
             'product_stream.php',
             'product_export.php',
             'property.php',
-            'cms.php',
             'mail.php',
             'mail_template.php',
             'delivery_time.php',

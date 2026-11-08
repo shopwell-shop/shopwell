@@ -5,7 +5,6 @@ namespace Shopwell\Core\Content\Product;
 use Shopwell\Core\Checkout\Customer\Aggregate\CustomerWishlistProduct\CustomerWishlistProductDefinition;
 use Shopwell\Core\Checkout\Order\Aggregate\OrderLineItem\OrderLineItemDefinition;
 use Shopwell\Core\Content\Category\CategoryDefinition;
-use Shopwell\Core\Content\Cms\CmsPageDefinition;
 use Shopwell\Core\Content\Media\MediaDefinition;
 use Shopwell\Core\Content\Product\Aggregate\ProductCategory\ProductCategoryDefinition;
 use Shopwell\Core\Content\Product\Aggregate\ProductCategoryTree\ProductCategoryTreeDefinition;
@@ -83,8 +82,6 @@ use Shopwell\Core\System\Unit\UnitDefinition;
 class ProductDefinition extends EntityDefinition
 {
     final public const ENTITY_NAME = 'product';
-
-    final public const CONFIG_KEY_DEFAULT_CMS_PAGE_PRODUCT = 'core.cms.default_product_cms_page';
 
     final public const TYPE_PHYSICAL = 'physical';
 
@@ -165,8 +162,6 @@ class ProductDefinition extends EntityDefinition
             (new FkField('product_feature_set_id', 'featureSetId', ProductFeatureSetDefinition::class))->addFlags(new Inherited())->setDescription('Unique identity of feature set.'),
             (new FkField('canonical_product_id', 'canonicalProductId', self::class))->addFlags(new ApiAware(), new Inherited())->setDescription('Unique identity of canonical product.'),
             (new ReferenceVersionField(self::class, 'canonical_product_version_id'))->addFlags(new ApiAware(), new Inherited(), new Required()),
-            (new FkField('cms_page_id', 'cmsPageId', CmsPageDefinition::class))->addFlags(new ApiAware(), new Inherited())->setDescription('Unique identity of CMS page.'),
-            (new ReferenceVersionField(CmsPageDefinition::class))->addFlags(new Inherited(), new Required(), new ApiAware()),
             (new FkField('open_graph_media_id', 'openGraphMediaId', MediaDefinition::class))->addFlags(new ApiAware(), new Inherited())->setDescription('Media used as Open Graph image for social media sharing.'),
             (new FkField('guarantee_terms_media_id', 'guaranteeTermsMediaId', MediaDefinition::class))->addFlags(new ApiAware(), new Inherited())->setDescription('Unique identity of the document with the producer commercial durability guarantee terms.'),
 
@@ -224,7 +219,6 @@ class ProductDefinition extends EntityDefinition
             (new TranslatedField('packUnit'))->addFlags(new ApiAware(), new Inherited()),
             (new TranslatedField('packUnitPlural'))->addFlags(new ApiAware(), new Inherited()),
             (new TranslatedField('customFields'))->addFlags(new ApiAware(), new Inherited()),
-            (new TranslatedField('slotConfig'))->addFlags(new Inherited()),
             (new TranslatedField('customSearchKeywords'))->addFlags(new Inherited(), new SearchRanking(SearchRanking::HIGH_SEARCH_RANKING)),
             (new TranslatedField('ogTitle'))->addFlags(new ApiAware(), new Inherited()),
             (new TranslatedField('ogDescription'))->addFlags(new ApiAware(), new Inherited()),
@@ -248,8 +242,6 @@ class ProductDefinition extends EntityDefinition
             (new ManyToOneAssociationField('guaranteeTermsMedia', 'guarantee_terms_media_id', MediaDefinition::class, 'id', false))->addFlags(new ApiAware(), new Inherited())->setDescription('Document with the producer commercial durability guarantee terms'),
 
             (new ManyToOneAssociationField('featureSet', 'product_feature_set_id', ProductFeatureSetDefinition::class, 'id'))->addFlags(new Inherited()),
-
-            (new ManyToOneAssociationField('cmsPage', 'cms_page_id', CmsPageDefinition::class, 'id', false))->addFlags(new ApiAware(), new Inherited())->setDescription('Custom CMS page layout for the product detail page'),
 
             (new ManyToOneAssociationField('canonicalProduct', 'canonical_product_id', ProductDefinition::class, 'id'))->addFlags(new ApiAware(), new Inherited())->setDescription('Canonical product reference for variant consolidation and SEO purposes'),
 

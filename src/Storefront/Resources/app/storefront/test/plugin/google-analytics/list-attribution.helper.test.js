@@ -26,7 +26,7 @@ describe('plugin/google-analytics/list-attribution.helper', () => {
 
         test('prefers an identified list over the shopping experience element around it', () => {
             document.body.innerHTML = `
-                <div data-cms-element-id="element-1">
+                <div data-element-id="element-1">
                     <div data-list-id="slider:1"><div class="product-box"></div></div>
                 </div>
             `;
@@ -38,10 +38,10 @@ describe('plugin/google-analytics/list-attribution.helper', () => {
         });
 
         test('falls back to the shopping experience element of an extension', () => {
-            document.body.innerHTML = '<div data-cms-element-id="element-1"><div class="acme-teaser"></div></div>';
+            document.body.innerHTML = '<div data-element-id="element-1"><div class="acme-teaser"></div></div>';
 
             expect(ListAttributionHelper.getListFromElement(document.querySelector('.acme-teaser'))).toEqual({
-                item_list_id: 'cms:element-1',
+                item_list_id: 'content:element-1',
             });
         });
 

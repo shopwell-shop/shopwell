@@ -2,32 +2,22 @@
 
 namespace Shopwell\Tests\Unit\Core\Content\LandingPage\SalesChannel;
 
-use Doctrine\DBAL\Connection;
 use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\Attributes\TestDox;
-use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
-use Shopwell\Core\Content\Cms\CmsPageCollection;
-use Shopwell\Core\Content\Cms\CmsPageEntity;
-use Shopwell\Core\Content\Cms\SalesChannel\SalesChannelCmsPageLoaderInterface;
-use Shopwell\Core\Content\Cms\Service\EntityCmsSlotConfigInheritanceBuilder;
 use Shopwell\Core\Content\LandingPage\Extension\LandingPageRouteExtension;
 use Shopwell\Core\Content\LandingPage\LandingPageCollection;
-use Shopwell\Core\Content\LandingPage\LandingPageDefinition;
 use Shopwell\Core\Content\LandingPage\LandingPageEntity;
 use Shopwell\Core\Content\LandingPage\LandingPageException;
 use Shopwell\Core\Content\LandingPage\SalesChannel\LandingPageRoute;
 use Shopwell\Core\Content\LandingPage\SalesChannel\LandingPageRouteResponse;
 use Shopwell\Core\Framework\Adapter\Cache\CacheTagCollector;
-use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
 use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\System\SalesChannel\Entity\SalesChannelRepository;
-use Shopwell\Core\System\SalesChannel\SalesChannelContext;
-use Shopwell\Core\Test\Stub\DataAbstractionLayer\StaticSalesChannelRepository;
+use Shopwell\Core\Test\Generator;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\HttpFoundation\Request;
 
@@ -38,158 +28,43 @@ use Symfony\Component\HttpFoundation\Request;
 #[CoversClass(LandingPageRoute::class)]
 class LandingPageRouteTest extends TestCase
 {
-    private MockObject&SalesChannelCmsPageLoaderInterface $cmsPageLoader;
-
-    private SalesChannelContext $salesChannelContext;
-
-    protected function setUp(): void
+    public function testLoadsLandingPageDataAndCollectsCacheTag(): void
     {
-        $this->cmsPageLoader = $this->createMock(SalesChannelCmsPageLoaderInterface::class);
+        $context = Generator::generateSalesChannelContext();
+        $page = new LandingPageEntity();
+        $page->setId(Uuid::randomHex());
+        $repository = static::createStub(SalesChannelRepository::class);
+        $repository->method('search')->willReturn(new EntitySearchResult('landing_page', 1, new LandingPageCollection([$page]), null, new Criteria(), $context->getContext()));
+        $collector = $this->createMock(CacheTagCollector::class);
+        $collector->expects($this->once())->method('addTag')->with(LandingPageRoute::buildName($page->getId()));
+        $route = new LandingPageRoute($repository, $collector, new ExtensionDispatcher(new EventDispatcher()));
 
-        $salesChannelContext = static::createStub(SalesChannelContext::class);
-        $salesChannelContext->method('getSalesChannelId')->willReturn(Uuid::randomHex());
-        $salesChannelContext->method('getLanguageId')->willReturn(Uuid::randomHex());
-        $salesChannelContext->method('getContext')->willReturn(Context::createDefaultContext());
-        $this->salesChannelContext = $salesChannelContext;
+        static::assertSame($page, $route->load($page->getId(), new Request(), $context)->getLandingPage());
     }
 
-    #[TestDox('The resolved cms page is loaded onto the landing page')]
-    public function testLoadsLandingPageWithCmsPage(): void
+    public function testRejectsMissingLandingPage(): void
     {
-        $landingPage = $this->createLandingPage(withCmsPage: true);
-        $cmsPage = new CmsPageEntity();
-        $cmsPage->setId($landingPage->getCmsPageId() ?? '');
-
-        $this->cmsPageLoader
-            ->expects($this->once())
-            ->method('load')
-            ->willReturn($this->createCmsPageResult(new CmsPageCollection([$cmsPage])));
-
-        $response = $this->createRoute($landingPage)->load($landingPage->getId(), new Request(), $this->salesChannelContext);
-
-        static::assertSame($landingPage, $response->getLandingPage());
-        static::assertSame($cmsPage, $response->getLandingPage()->getCmsPage());
-    }
-
-    #[TestDox('A landing page without an assigned cms page is returned without loading one')]
-    public function testLoadsLandingPageWithoutCmsPageId(): void
-    {
-        $landingPage = $this->createLandingPage(withCmsPage: false);
-
-        $this->cmsPageLoader->expects($this->never())->method('load');
-
-        $response = $this->createRoute($landingPage)->load($landingPage->getId(), new Request(), $this->salesChannelContext);
-
-        static::assertSame($landingPage, $response->getLandingPage());
-        static::assertNull($response->getLandingPage()->getCmsPage());
-    }
-
-    #[TestDox('An unresolvable cms page fails the route')]
-    public function testThrowsWhenCmsPageCannotBeLoaded(): void
-    {
-        $landingPage = $this->createLandingPage(withCmsPage: true);
-
-        $this->cmsPageLoader
-            ->expects($this->once())
-            ->method('load')
-            ->willReturn($this->createCmsPageResult(new CmsPageCollection()));
-
-        $this->expectExceptionObject(LandingPageException::notFound($landingPage->getCmsPageId() ?? ''));
-
-        $this->createRoute($landingPage)->load($landingPage->getId(), new Request(), $this->salesChannelContext);
-    }
-
-    #[TestDox('An unknown landing page id fails the route')]
-    public function testThrowsWhenLandingPageIsNotFound(): void
-    {
-        $missingId = Uuid::randomHex();
-
-        $this->cmsPageLoader->expects($this->never())->method('load');
-
-        /** @var StaticSalesChannelRepository<LandingPageCollection> $repository */
-        $repository = new StaticSalesChannelRepository([new LandingPageCollection()]);
-
-        $route = new LandingPageRoute(
-            $repository,
-            $this->cmsPageLoader,
-            new EntityCmsSlotConfigInheritanceBuilder(static::createStub(Connection::class)),
-            static::createStub(LandingPageDefinition::class),
-            static::createStub(CacheTagCollector::class),
-            new ExtensionDispatcher(new EventDispatcher())
-        );
-
-        $this->expectExceptionObject(LandingPageException::notFound($missingId));
-
-        $route->load($missingId, new Request(), $this->salesChannelContext);
+        $context = Generator::generateSalesChannelContext();
+        $id = Uuid::randomHex();
+        $repository = static::createStub(SalesChannelRepository::class);
+        $repository->method('search')->willReturn(new EntitySearchResult('landing_page', 0, new LandingPageCollection(), null, new Criteria(), $context->getContext()));
+        $route = new LandingPageRoute($repository, static::createStub(CacheTagCollector::class), new ExtensionDispatcher(new EventDispatcher()));
+        $this->expectExceptionObject(LandingPageException::notFound($id));
+        $route->load($id, new Request(), $context);
     }
 
     public function testPublishesExtension(): void
     {
-        $landingPageId = Uuid::randomHex();
-        $request = new Request();
-        $response = static::createStub(LandingPageRouteResponse::class);
-
+        $context = Generator::generateSalesChannelContext();
+        $page = new LandingPageEntity();
+        $response = new LandingPageRouteResponse($page);
         $dispatcher = new EventDispatcher();
-        $dispatcher->addListener('landing-page-route.load.pre', function (LandingPageRouteExtension $extension) use ($landingPageId, $request, $response): void {
-            static::assertSame(['landingPageId' => $landingPageId, 'request' => $request, 'context' => $this->salesChannelContext], $extension->getParams());
-
+        $dispatcher->addListener(LandingPageRouteExtension::NAME . '.pre', static function (LandingPageRouteExtension $extension) use ($response): void {
             $extension->result = $response;
             $extension->stopPropagation();
         });
+        $route = new LandingPageRoute(static::createStub(SalesChannelRepository::class), static::createStub(CacheTagCollector::class), new ExtensionDispatcher($dispatcher));
 
-        $this->cmsPageLoader->expects($this->never())->method('load');
-
-        $route = new LandingPageRoute(
-            static::createStub(SalesChannelRepository::class),
-            $this->cmsPageLoader,
-            static::createStub(EntityCmsSlotConfigInheritanceBuilder::class),
-            static::createStub(LandingPageDefinition::class),
-            static::createStub(CacheTagCollector::class),
-            new ExtensionDispatcher($dispatcher),
-        );
-
-        static::assertSame($response, $route->load($landingPageId, $request, $this->salesChannelContext));
-    }
-
-    private function createRoute(LandingPageEntity $landingPage): LandingPageRoute
-    {
-        /** @var StaticSalesChannelRepository<LandingPageCollection> $repository */
-        $repository = new StaticSalesChannelRepository([new LandingPageCollection([$landingPage])]);
-
-        return new LandingPageRoute(
-            $repository,
-            $this->cmsPageLoader,
-            new EntityCmsSlotConfigInheritanceBuilder(static::createStub(Connection::class)),
-            static::createStub(LandingPageDefinition::class),
-            static::createStub(CacheTagCollector::class),
-            new ExtensionDispatcher(new EventDispatcher())
-        );
-    }
-
-    /**
-     * @return EntitySearchResult<CmsPageCollection>
-     */
-    private function createCmsPageResult(CmsPageCollection $pages): EntitySearchResult
-    {
-        return new EntitySearchResult(
-            'cms_page',
-            $pages->count(),
-            $pages,
-            null,
-            new Criteria(),
-            Context::createDefaultContext()
-        );
-    }
-
-    private function createLandingPage(bool $withCmsPage): LandingPageEntity
-    {
-        $landingPage = new LandingPageEntity();
-        $landingPage->setId(Uuid::randomHex());
-        $landingPage->setUniqueIdentifier($landingPage->getId());
-        if ($withCmsPage) {
-            $landingPage->setCmsPageId(Uuid::randomHex());
-        }
-
-        return $landingPage;
+        static::assertSame($response, $route->load(Uuid::randomHex(), new Request(), $context));
     }
 }

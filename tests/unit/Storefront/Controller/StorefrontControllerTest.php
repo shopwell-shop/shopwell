@@ -12,6 +12,9 @@ use Shopwell\Core\Checkout\Cart\Error\GenericCartError;
 use Shopwell\Core\Content\Media\MediaUrlPlaceholderHandlerInterface;
 use Shopwell\Core\Content\Seo\SeoUrlPlaceholderHandlerInterface;
 use Shopwell\Core\Framework\Adapter\Twig\TemplateFinder;
+use Shopwell\Core\Framework\ContentSystem\Output\Struct\ContentPage;
+use Shopwell\Core\Framework\ContentSystem\SalesChannel\AbstractContentRoute;
+use Shopwell\Core\Framework\ContentSystem\SalesChannel\AbstractContentRouteResponse;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Routing\RequestTransformerInterface;
@@ -57,6 +60,49 @@ class StorefrontControllerTest extends TestCase
     {
         $this->controller = new TestStorefrontController();
         (new TestSessionStorage())->clear();
+    }
+
+    public function testContentRenderingFailuresPropagate(): void
+    {
+        $controller = new /**
+         * @internal
+         */ class extends StorefrontController {
+            public function loadLayout(string $path, Request $request, SalesChannelContext $context): ?ContentPage
+            {
+                return $this->loadContentPage($path, $request, $context);
+            }
+        };
+        $exception = new \RuntimeException('The assigned content layout cannot be rendered.');
+        $route = $this->createMock(AbstractContentRoute::class);
+        $route->expects($this->once())->method('load')->willThrowException($exception);
+        $container = new ContainerBuilder();
+        $container->set(AbstractContentRoute::class, $route);
+        $controller->setContainer($container);
+
+        $this->expectExceptionObject($exception);
+
+        $controller->loadLayout('/category/category-id', new Request(), static::createStub(SalesChannelContext::class));
+    }
+
+    public function testContentRejectsAnOutputFormatWithoutATwigPage(): void
+    {
+        $controller = new /**
+         * @internal
+         */ class extends StorefrontController {
+            public function loadLayout(string $path, Request $request, SalesChannelContext $context): ?ContentPage
+            {
+                return $this->loadContentPage($path, $request, $context);
+            }
+        };
+        $route = $this->createMock(AbstractContentRoute::class);
+        $route->expects($this->once())->method('load')->willReturn(static::createStub(AbstractContentRouteResponse::class));
+        $container = new ContainerBuilder();
+        $container->set(AbstractContentRoute::class, $route);
+        $controller->setContainer($container);
+
+        $this->expectExceptionObject(StorefrontException::contentRequiresTwigOutput());
+
+        $controller->loadLayout('/layout/layout-id', new Request(), static::createStub(SalesChannelContext::class));
     }
 
     public function testRenderStorefront(): void

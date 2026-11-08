@@ -8,8 +8,6 @@ use Shopwell\Core\Checkout\Cart\Facade\ScriptPriceStubs;
 use Shopwell\Core\Checkout\Cart\Price\PriceSelector;
 use Shopwell\Core\Checkout\Cart\Price\QuantityPriceCalculator;
 use Shopwell\Core\Content\Category\Service\CategoryBreadcrumbBuilder;
-use Shopwell\Core\Content\Cms\SalesChannel\SalesChannelCmsPageLoader;
-use Shopwell\Core\Content\Cms\Service\EntityCmsSlotConfigInheritanceBuilder;
 use Shopwell\Core\Content\MeasurementSystem\ProductMeasurement\ProductMeasurementUnitBuilder;
 use Shopwell\Core\Content\MeasurementSystem\Unit\MeasurementUnitConverter;
 use Shopwell\Core\Content\Media\UnusedMediaPurger;
@@ -20,6 +18,9 @@ use Shopwell\Core\Content\Product\Aggregate\ProductCategory\ProductCategoryDefin
 use Shopwell\Core\Content\Product\Aggregate\ProductCategoryTree\ProductCategoryTreeDefinition;
 use Shopwell\Core\Content\Product\Aggregate\ProductConfiguratorSetting\ProductConfiguratorSettingDefinition;
 use Shopwell\Core\Content\Product\Aggregate\ProductConfiguratorSetting\ProductConfiguratorSettingExceptionHandler;
+use Shopwell\Core\Content\Product\Aggregate\ProductContentLayout\ProductContentLayoutDefinition;
+use Shopwell\Core\Content\Product\Aggregate\ProductContentLayout\ProductMappingCandidateProvider;
+use Shopwell\Core\Content\Product\Aggregate\ProductContentLayout\ProductSpecificationSource;
 use Shopwell\Core\Content\Product\Aggregate\ProductCrossSelling\ProductCrossSellingDefinition;
 use Shopwell\Core\Content\Product\Aggregate\ProductCrossSellingAssignedProducts\ProductCrossSellingAssignedProductsDefinition;
 use Shopwell\Core\Content\Product\Aggregate\ProductCrossSellingTranslation\ProductCrossSellingTranslationDefinition;
@@ -52,16 +53,19 @@ use Shopwell\Core\Content\Product\Cleanup\CleanupProductKeywordDictionaryTask;
 use Shopwell\Core\Content\Product\Cleanup\CleanupProductKeywordDictionaryTaskHandler;
 use Shopwell\Core\Content\Product\Cleanup\CleanupUnusedDownloadMediaTask;
 use Shopwell\Core\Content\Product\Cleanup\CleanupUnusedDownloadMediaTaskHandler;
-use Shopwell\Core\Content\Product\Cms\BuyBoxCmsElementResolver;
-use Shopwell\Core\Content\Product\Cms\CrossSellingCmsElementResolver;
-use Shopwell\Core\Content\Product\Cms\ManufacturerLogoCmsElementResolver;
-use Shopwell\Core\Content\Product\Cms\ProductBoxCmsElementResolver;
-use Shopwell\Core\Content\Product\Cms\ProductDescriptionReviewsCmsElementResolver;
-use Shopwell\Core\Content\Product\Cms\ProductListingCmsElementResolver;
-use Shopwell\Core\Content\Product\Cms\ProductNameCmsElementResolver;
-use Shopwell\Core\Content\Product\Cms\ProductSlider\ProductStreamProcessor;
-use Shopwell\Core\Content\Product\Cms\ProductSlider\StaticProductProcessor;
-use Shopwell\Core\Content\Product\Cms\ProductSliderCmsElementResolver;
+use Shopwell\Core\Content\Product\ContentSystem\DataLoader\CrossSellingDataLoader;
+use Shopwell\Core\Content\Product\ContentSystem\DataLoader\CrossSellingLoaderConfigSerializer;
+use Shopwell\Core\Content\Product\ContentSystem\DataLoader\ProductConfiguratorDataLoader;
+use Shopwell\Core\Content\Product\ContentSystem\DataLoader\ProductConfiguratorLoaderConfigSerializer;
+use Shopwell\Core\Content\Product\ContentSystem\DataLoader\ProductListingDataLoader;
+use Shopwell\Core\Content\Product\ContentSystem\DataLoader\ProductListingLoaderConfigSerializer;
+use Shopwell\Core\Content\Product\ContentSystem\DataLoader\ProductReviewDataLoader;
+use Shopwell\Core\Content\Product\ContentSystem\DataLoader\ProductReviewLoaderConfigSerializer;
+use Shopwell\Core\Content\Product\ContentSystem\DataLoader\ProductSearchDataLoader;
+use Shopwell\Core\Content\Product\ContentSystem\DataLoader\ProductSearchLoaderConfigSerializer;
+use Shopwell\Core\Content\Product\ContentSystem\DataLoader\ProductSuggestDataLoader;
+use Shopwell\Core\Content\Product\ContentSystem\DataLoader\ProductSuggestLoaderConfigSerializer;
+use Shopwell\Core\Content\Product\ContentSystem\ProductVariantSelectionSubscriber;
 use Shopwell\Core\Content\Product\DataAbstractionLayer\CheapestPrice\CheapestPriceAccessorBuilder;
 use Shopwell\Core\Content\Product\DataAbstractionLayer\CheapestPriceQuantitySelector;
 use Shopwell\Core\Content\Product\DataAbstractionLayer\CheapestPriceUpdater;
@@ -92,6 +96,7 @@ use Shopwell\Core\Content\Product\ProductVariationBuilder;
 use Shopwell\Core\Content\Product\PropertyGroupSorter;
 use Shopwell\Core\Content\Product\SalesChannel\CrossSelling\ProductCrossSellingRoute;
 use Shopwell\Core\Content\Product\SalesChannel\Detail\AvailableCombinationLoader;
+use Shopwell\Core\Content\Product\SalesChannel\Detail\PartialProductConfiguratorLoader;
 use Shopwell\Core\Content\Product\SalesChannel\Detail\ProductConfiguratorLoader;
 use Shopwell\Core\Content\Product\SalesChannel\Detail\ProductDetailRoute;
 use Shopwell\Core\Content\Product\SalesChannel\FindVariant\FindProductVariantRoute;
@@ -146,6 +151,8 @@ use Shopwell\Core\Content\ProductStream\Service\ProductStreamBuilder;
 use Shopwell\Core\Content\Shared\MailFlow\DataProvider\ProductProvider;
 use Shopwell\Core\Framework\Adapter\Cache\CacheTagCollector;
 use Shopwell\Core\Framework\Adapter\Storage\AbstractKeyValueStorage;
+use Shopwell\Core\Framework\ContentSystem\Adapter\FactoryHelper\EntityLayoutContextFactory;
+use Shopwell\Core\Framework\ContentSystem\Helper\ContentLayoutMetadataDeriver;
 use Shopwell\Core\Framework\DataAbstractionLayer\Dbal\Common\IteratorFactory;
 use Shopwell\Core\Framework\DataAbstractionLayer\Indexing\ChildCountUpdater;
 use Shopwell\Core\Framework\DataAbstractionLayer\Indexing\InheritanceUpdater;
@@ -361,7 +368,6 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(AbstractPropertyGroupSorter::class),
             service(AbstractProductMaxPurchaseCalculator::class),
             service(AbstractIsNewDetector::class),
-            service(SystemConfigService::class),
             service(ProductMeasurementUnitBuilder::class),
             service(MeasurementUnitConverter::class),
             service('request_stack'),
@@ -432,64 +438,6 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(DeliveryTimeDefinition::class)
         ->tag('shopwell.entity.definition');
-
-    $services->set(ProductBoxCmsElementResolver::class)
-        ->args([
-            service(SystemConfigService::class),
-        ])
-        ->tag('shopwell.cms.data_resolver');
-
-    $services->set(ProductListingCmsElementResolver::class)
-        ->args([
-            service(ProductListingRoute::class),
-            service('product_sorting.repository'),
-        ])
-        ->tag('shopwell.cms.data_resolver');
-
-    $services->set(ProductSliderCmsElementResolver::class)
-        ->args([
-            tagged_iterator('shopwell.cms.product_slider.processor'),
-            service('logger'),
-        ])
-        ->tag('shopwell.cms.data_resolver');
-
-    $services->set(StaticProductProcessor::class)
-        ->args([
-            service(SystemConfigService::class),
-            service('event_dispatcher'),
-        ])
-        ->tag('shopwell.cms.product_slider.processor');
-
-    $services->set(ProductStreamProcessor::class)
-        ->args([
-            service(ProductStreamBuilder::class),
-            service('sales_channel.product.repository'),
-            service('event_dispatcher'),
-            service('logger'),
-            service(SystemConfigService::class),
-            service(ProductCloseoutFilterFactory::class),
-        ])
-        ->tag('shopwell.cms.product_slider.processor');
-
-    $services->set(ProductNameCmsElementResolver::class)
-        ->tag('shopwell.cms.data_resolver');
-
-    $services->set(ManufacturerLogoCmsElementResolver::class)
-        ->tag('shopwell.cms.data_resolver');
-
-    $services->set(CrossSellingCmsElementResolver::class)
-        ->args([
-            service(ProductCrossSellingRoute::class),
-        ])
-        ->tag('shopwell.cms.data_resolver');
-
-    $services->set(ProductDescriptionReviewsCmsElementResolver::class)
-        ->args([
-            service(ProductReviewLoader::class),
-            service(ScriptExecutor::class),
-            service(SystemConfigService::class),
-        ])
-        ->tag('shopwell.cms.data_resolver');
 
     $services->set(ProductPriceCalculator::class)
         ->args([
@@ -753,14 +701,10 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->public()
         ->args([
             service('sales_channel.product.repository'),
-            service('product_translation.repository'),
             service(SystemConfigService::class),
             service(Connection::class),
             service(ProductConfiguratorLoader::class),
             service(CategoryBreadcrumbBuilder::class),
-            service(SalesChannelCmsPageLoader::class),
-            service(EntityCmsSlotConfigInheritanceBuilder::class),
-            service(SalesChannelProductDefinition::class),
             service(ProductCloseoutFilterFactory::class),
             service('event_dispatcher'),
             service(CacheTagCollector::class),
@@ -850,13 +794,6 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->alias(AbstractGaranLabelRoute::class, GaranLabelRoute::class);
 
-    $services->set(BuyBoxCmsElementResolver::class)
-        ->args([
-            service(ProductConfiguratorLoader::class),
-            service('product_review.repository'),
-        ])
-        ->tag('shopwell.cms.data_resolver');
-
     $services->set(TokenFilter::class)
         ->args([
             service(SearchConfigLoader::class),
@@ -899,4 +836,92 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(Connection::class),
         ])
         ->tag('shopwell.sync.fk_resolver');
+
+    // Content System
+    $services->set(ProductContentLayoutDefinition::class)
+        ->args([
+            service(ContentLayoutMetadataDeriver::class),
+        ])
+        ->tag('shopwell.entity.definition');
+
+    $services->set(ProductListingDataLoader::class)
+        ->args([
+            service(ProductListingRoute::class),
+        ])
+        ->tag('content_system.data_loader');
+
+    $services->set(ProductListingLoaderConfigSerializer::class)
+        ->tag('content_system.config_serializer');
+
+    $services->set(ProductConfiguratorDataLoader::class)
+        ->args([
+            service(PartialProductConfiguratorLoader::class),
+            service('sales_channel.product.repository'),
+        ])
+        ->tag('content_system.data_loader');
+
+    $services->set(PartialProductConfiguratorLoader::class)
+        ->args([
+            service(ProductConfiguratorLoader::class),
+        ]);
+
+    $services->set(ProductVariantSelectionSubscriber::class)
+        ->args([
+            service(PartialProductConfiguratorLoader::class),
+        ])
+        ->tag('kernel.event_subscriber');
+
+    $services->set(ProductConfiguratorLoaderConfigSerializer::class)
+        ->tag('content_system.config_serializer');
+
+    $services->set(CrossSellingDataLoader::class)
+        ->args([
+            service(ProductCrossSellingRoute::class),
+        ])
+        ->tag('content_system.data_loader');
+
+    $services->set(CrossSellingLoaderConfigSerializer::class)
+        ->tag('content_system.config_serializer');
+
+    $services->set(ProductReviewDataLoader::class)
+        ->args([
+            service(ProductReviewLoader::class),
+        ])
+        ->tag('content_system.data_loader');
+
+    $services->set(ProductReviewLoaderConfigSerializer::class)
+        ->tag('content_system.config_serializer');
+
+    $services->set(ProductSearchDataLoader::class)
+        ->args([
+            service(ProductSearchRoute::class),
+        ])
+        ->tag('content_system.data_loader');
+
+    $services->set(ProductSearchLoaderConfigSerializer::class)
+        ->tag('content_system.config_serializer');
+
+    $services->set(ProductSuggestDataLoader::class)
+        ->args([
+            service(ProductSuggestRoute::class),
+        ])
+        ->tag('content_system.data_loader');
+
+    $services->set(ProductSuggestLoaderConfigSerializer::class)
+        ->tag('content_system.config_serializer');
+
+    $services->set(ProductSpecificationSource::class)
+        ->args([
+            service('product_content_layout.repository'),
+            service(ProductContentLayoutDefinition::class),
+            service(EntityLayoutContextFactory::class),
+            service('sales_channel.product.repository'),
+        ])
+        ->tag('content_system.entity_specification_source', ['priority' => 100]);
+
+    $services->set(ProductMappingCandidateProvider::class)
+        ->args([
+            service(ProductContentLayoutDefinition::class),
+        ])
+        ->tag('content_system.mapping_candidate_provider', ['priority' => 100]);
 };

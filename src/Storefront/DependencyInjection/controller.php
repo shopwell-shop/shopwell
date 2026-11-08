@@ -2,6 +2,7 @@
 
 namespace Shopwell\Storefront\DependencyInjection;
 
+use Doctrine\DBAL\Connection;
 use Psr\Clock\ClockInterface;
 use Shopwell\Core\Checkout\Cart\LineItemFactoryHandler\ProductLineItemFactory;
 use Shopwell\Core\Checkout\Cart\LineItemFactoryRegistry;
@@ -51,9 +52,7 @@ use Shopwell\Core\Checkout\Wallet\Service\WalletSettings;
 use Shopwell\Core\Content\Blog\SalesChannel\Review\BlogCommentRoute;
 use Shopwell\Core\Content\Blog\Service\BlogTypeRegistry;
 use Shopwell\Core\Content\Breadcrumb\SalesChannel\BreadcrumbRoute;
-use Shopwell\Core\Content\Category\SalesChannel\CategoryRoute;
 use Shopwell\Core\Content\Category\Service\CategoryUrlGenerator;
-use Shopwell\Core\Content\Cms\SalesChannel\CmsRoute;
 use Shopwell\Core\Content\ContactForm\SalesChannel\ContactFormRoute;
 use Shopwell\Core\Content\Cookie\SalesChannel\CookieRoute;
 use Shopwell\Core\Content\Newsletter\SalesChannel\NewsletterConfirmRoute;
@@ -73,6 +72,8 @@ use Shopwell\Core\Content\Seo\SeoUrlPlaceholderHandlerInterface;
 use Shopwell\Core\Content\Sitemap\SalesChannel\SitemapFileRoute;
 use Shopwell\Core\Framework\Adapter\Translation\ConstraintViolationTranslator;
 use Shopwell\Core\Framework\App\Api\AppJWTGenerateRoute;
+use Shopwell\Core\Framework\ContentSystem\Api\ContentPreviewPageBuilder;
+use Shopwell\Core\Framework\ContentSystem\Api\ContentPreviewPayloadStore;
 use Shopwell\Core\Framework\Gateway\Context\SalesChannel\ContextGatewayRoute;
 use Shopwell\Core\Framework\RateLimiter\RateLimiter;
 use Shopwell\Core\Framework\Script\Api\ScriptResponseEncoder;
@@ -98,7 +99,8 @@ use Shopwell\Storefront\Controller\BlogController;
 use Shopwell\Storefront\Controller\CaptchaController;
 use Shopwell\Storefront\Controller\CartLineItemController;
 use Shopwell\Storefront\Controller\CheckoutController;
-use Shopwell\Storefront\Controller\CmsController;
+use Shopwell\Storefront\Controller\ContentController;
+use Shopwell\Storefront\Controller\ContentSystemPreviewController;
 use Shopwell\Storefront\Controller\ContextController;
 use Shopwell\Storefront\Controller\ContextGatewayController;
 use Shopwell\Storefront\Controller\CookieController;
@@ -356,10 +358,8 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ])
         ->call('setContainer', [service('service_container')]);
 
-    $services->set(CmsController::class)
+    $services->set(ContentController::class)
         ->args([
-            service(CmsRoute::class),
-            service(CategoryRoute::class),
             service(ProductListingRoute::class),
             service(ProductDetailRoute::class),
             service(ProductReviewLoader::class),
@@ -375,6 +375,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(NewsletterSubscribeRoute::class),
             service(NewsletterUnsubscribeRoute::class),
             service(RevocationRequestRoute::class),
+            service(ProductReviewSaveRoute::class),
             service(ConstraintViolationTranslator::class),
         ])
         ->call('setContainer', [service('service_container')]);
@@ -579,6 +580,15 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ->args([
             service(OAuth2LoginService::class),
             service(AccountService::class),
+        ])
+        ->call('setContainer', [service('service_container')]);
+
+    $services->set(ContentSystemPreviewController::class)
+        ->public()
+        ->args([
+            service(ContentPreviewPayloadStore::class),
+            service(ContentPreviewPageBuilder::class),
+            service(Connection::class),
         ])
         ->call('setContainer', [service('service_container')]);
 };

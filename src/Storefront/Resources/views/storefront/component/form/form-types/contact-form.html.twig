@@ -1,0 +1,123 @@
+{% block content_form_contact %}
+    {% set formPrefix = 'content-form-contact' %}
+    <form action="{{ path(action) }}"
+          method="post"
+          data-form-handler="true"
+          data-content-form-handler="true"
+          data-form-preserver="true"
+          id="{{ formPrefix }}"
+          aria-label="{{ formTitle ? formTitle : 'contact.headline'|trans }}">
+        <div class="form-content">
+        <div class="row g-2">
+            {% block content_form_contact_select_gender %}
+                {% sw_include '@Storefront/storefront/component/form/form-components/form-select-gender.html.twig'
+                    with {
+                    additionalClass: 'col-md-4',
+                    required: true
+                }
+                %}
+            {% endblock %}
+
+            {% block content_form_contact_input_name %}
+                {% set nameFieldRequired = config('core.basicInformation.nameFieldRequired') == true %}
+                {% sw_include '@Storefront/storefront/component/form/form-components/form-input.html.twig'
+                    with {
+                    fieldName: 'name',
+                    autocomplete: 'section-personal name',
+                    required: nameFieldRequired,
+                    additionalClass: 'col-md-8',
+                    label: 'account.personalNameLabel',
+                }
+                %}
+            {% endblock %}
+        </div>
+
+        <div class="row g-2">
+            {% block content_form_contact_input_email %}
+                {% sw_include '@Storefront/storefront/component/form/form-components/form-input.html.twig'
+                    with {
+                    fieldName: 'email',
+                    autocomplete: 'email',
+                    type: 'email',
+                    required: true,
+                    additionalClass: 'col-md-6',
+                    label: 'account.loginMailLabel',
+                }
+                %}
+            {% endblock %}
+
+            {% block content_form_contact_input_phone %}
+                {% set phoneNumberFieldRequired = config('core.basicInformation.phoneNumberFieldRequired') == true %}
+                {% sw_include '@Storefront/storefront/component/form/form-components/form-input.html.twig'
+                    with {
+                    fieldName: 'phone',
+                    autocomplete: 'tel',
+                    required: phoneNumberFieldRequired,
+                    additionalClass: 'col-md-6',
+                    label: 'account.personalPhoneLabel',
+                }
+                %}
+            {% endblock %}
+        </div>
+
+        <div class="row g-2">
+            {% block content_form_contact_input_subject %}
+                {% sw_include '@Storefront/storefront/component/form/form-components/form-input.html.twig'
+                    with {
+                    required: true,
+                    fieldName: 'subject',
+                    additionalClass: 'col-12',
+                    label: 'contact.subjectLabel',
+                }
+                %}
+            {% endblock %}
+        </div>
+
+        <div class="row g-2">
+            {% block content_form_contact_comment_textarea %}
+                {% sw_include '@Storefront/storefront/component/form/form-components/form-textarea.html.twig'
+                    with {
+                    rows: 5,
+                    required: true,
+                    fieldName: 'comment',
+                    additionalClass: 'col-12',
+                    label: 'contact.commentLabel',
+                }
+                %}
+            {% endblock %}
+        </div>
+
+        {% block content_form_contact_captcha %}
+            {% sw_include '@Storefront/storefront/component/captcha/base.html.twig' with { additionalClass : 'col-md-12' } %}
+        {% endblock %}
+
+        {% block content_form_contact_privacy %}
+            {% sw_include '@Storefront/storefront/component/privacy-notice.html.twig' with {
+                requiresTermsOfService: false,
+            } %}
+        {% endblock %}
+
+        {% block content_form_contact_required_fields_info %}
+            {% sw_include '@Storefront/storefront/component/form/form-components/form-info-required.html.twig' %}
+        {% endblock %}
+
+        {% block content_form_contact_submit %}
+            {% sw_include '@Storefront/storefront/component/form/form-components/form-submit.html.twig' %}
+        {% endblock %}
+        </div>
+
+        {% block content_form_contact_hidden_fields %}
+            <div class="form-hidden-fields">
+                {% if page.navigationId and page.entityName %}
+                    <input type="hidden" id="{{ formPrefix }}-navigationId" name="navigationId" value="{{ page.navigationId }}">
+                    <input type="hidden" id="{{ formPrefix }}-entityName" name="entityName" value="{{ page.entityName }}">
+                {% else %}
+                    <input type="hidden" id="{{ formPrefix }}-navigationId" name="navigationId" value="{{ shopwell.navigation.id }}">
+                {% endif %}
+
+
+                <input type="submit" class="submit--hidden d-none">
+            </div>
+        {% endblock %}
+    </form>
+{% endblock %}

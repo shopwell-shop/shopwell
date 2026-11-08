@@ -184,7 +184,7 @@ describe('src/module/sw-custom-entity/component/sw-generic-social-media-card', (
         const mediaUpload = wrapper.getComponent('.sw-generic-social-media-card__og-image-upload');
         expect(mediaUpload.props()).toStrictEqual({
             allowMultiSelect: false,
-            caption: 'sw-cms.elements.general.config.caption.mediaUpload',
+            caption: 'global.mediaUploadCaption',
             source: null,
             uploadTag: uploadTag,
             variant: 'regular',
@@ -197,7 +197,7 @@ describe('src/module/sw-custom-entity/component/sw-generic-social-media-card', (
         const mediaModal = wrapper.getComponent('.sw-generic-social-media-card__media-modal');
         expect(mediaModal.props()).toEqual({
             allowMultiSelect: false,
-            caption: 'sw-cms.elements.general.config.caption.mediaUpload',
+            caption: 'global.mediaUploadCaption',
             variant: 'regular',
         });
 

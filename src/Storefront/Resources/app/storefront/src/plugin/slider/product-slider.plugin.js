@@ -55,9 +55,9 @@ export default class ProductSliderPlugin extends BaseSliderPlugin {
         /**
          * The slider element sits in a content-sized flex item, so its width depends on the
          * product-box content (e.g. the minimal layout without a description) and is not settled
-         * during initialization. Measure the surrounding full-width CMS element instead.
+         * during initialization. Measure the surrounding full-width slider viewport instead.
          */
-        const widthSource = this.el.closest('.cms-element-product-slider') ?? this.el;
+        const widthSource = this.el.closest('.product-slider-viewport') ?? this.el;
 
         // width with padding
         let width = widthSource.clientWidth;

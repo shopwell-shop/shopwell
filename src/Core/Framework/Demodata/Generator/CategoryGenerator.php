@@ -6,7 +6,6 @@ use Doctrine\DBAL\Connection;
 use Faker\Generator;
 use Shopwell\Core\Content\Category\CategoryCollection;
 use Shopwell\Core\Content\Category\CategoryDefinition;
-use Shopwell\Core\Content\Cms\CmsPageCollection;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Indexing\EntityIndexerRegistry;
@@ -36,11 +35,9 @@ class CategoryGenerator implements DemodataGeneratorInterface
      * @internal
      *
      * @param EntityRepository<CategoryCollection> $categoryRepository
-     * @param EntityRepository<CmsPageCollection> $cmsPageRepository
      */
     public function __construct(
         private readonly EntityRepository $categoryRepository,
-        private readonly EntityRepository $cmsPageRepository,
         private readonly Connection $connection
     ) {
     }
@@ -54,13 +51,12 @@ class CategoryGenerator implements DemodataGeneratorInterface
     {
         $this->faker = $context->getFaker();
         $rootCategoryId = $this->getRootCategoryId($context->getContext());
-        $pageIds = $this->getCmsPageIds($context->getContext());
         $tags = $this->getIds('tag');
 
         $payload = [];
         $lastId = null;
         for ($i = 0; $i < $numberOfItems; ++$i) {
-            $cat = $this->createCategory($context, $pageIds, $tags, $rootCategoryId, $lastId, random_int(3, 5), 1);
+            $cat = $this->createCategory($context, $tags, $rootCategoryId, $lastId, random_int(3, 5), 1);
             $payload[] = $cat;
             $lastId = $cat['id'];
         }
@@ -82,12 +78,11 @@ class CategoryGenerator implements DemodataGeneratorInterface
     }
 
     /**
-     * @param list<string> $pageIds
      * @param array<string> $tags
      *
      * @return array<string, mixed>
      */
-    private function createCategory(DemodataContext $context, array $pageIds, array $tags, string $parentId, ?string $afterId, int $max, int $current): array
+    private function createCategory(DemodataContext $context, array $tags, string $parentId, ?string $afterId, int $max, int $current): array
     {
         $id = Uuid::randomHex();
 
@@ -97,7 +92,6 @@ class CategoryGenerator implements DemodataGeneratorInterface
             'afterCategoryId' => $afterId,
             'name' => $this->randomDepartment($context->getFaker()),
             'active' => true,
-            'cmsPageId' => $context->getFaker()->randomElement($pageIds),
             'mediaId' => $context->getRandomId('media'),
             'description' => $context->getFaker()->text(),
             'tags' => $this->getTags($tags),
@@ -108,7 +102,7 @@ class CategoryGenerator implements DemodataGeneratorInterface
             return $cat;
         }
 
-        $cat['children'] = $this->createCategories($context, $pageIds, $tags, random_int(2, 5), $id, $max, $current);
+        $cat['children'] = $this->createCategories($context, $tags, random_int(2, 5), $id, $max, $current);
 
         return array_filter($cat);
     }
@@ -189,30 +183,17 @@ class CategoryGenerator implements DemodataGeneratorInterface
     }
 
     /**
-     * @return list<string>
-     */
-    private function getCmsPageIds(Context $getContext): array
-    {
-        $criteria = new Criteria();
-        $criteria->addFilter(new EqualsFilter('type', 'product_list'));
-        $criteria->setLimit(500);
-
-        return $this->cmsPageRepository->searchIds($criteria, $getContext)->getIds();
-    }
-
-    /**
-     * @param list<string> $pageIds
      * @param array<string> $tags
      *
      * @return list<array<string, mixed>>
      */
-    private function createCategories(DemodataContext $context, array $pageIds, array $tags, int $count, string $id, int $max, int $current): array
+    private function createCategories(DemodataContext $context, array $tags, int $count, string $id, int $max, int $current): array
     {
         $children = [];
         $prev = null;
 
         for ($i = 1; $i <= $count; ++$i) {
-            $child = $this->createCategory($context, $pageIds, $tags, $id, $prev, $max, $current + 1);
+            $child = $this->createCategory($context, $tags, $id, $prev, $max, $current + 1);
             $prev = $child['id'];
             $children[] = $child;
         }

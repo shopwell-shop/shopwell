@@ -41,6 +41,7 @@ class InternalClassRule implements Rule
     private const INTERNAL_NAMESPACES = [
         '\\DevOps\\StaticAnalyze',
         '\\Core\\Maintenance',
+        '\\ContentSystem\\',
     ];
     private const SUBSCRIBER_EXCEPTIONS = [
         RefreshIndexCommand::class,
@@ -55,6 +56,85 @@ class InternalClassRule implements Rule
         DemodataService::class,
         DemodataCommand::class,
         DemodataRequestCreatedEvent::class,
+    ];
+    /**
+     * The content-system module's public extension surface: every class a plugin must reach to use it.
+     * These carry no `@internal`; every other class in the module still must. Held as plain strings so
+     * this rule takes on no dependency on the module's namespace.
+     *
+     * The test is whether a plugin imports the class, not whether its data reaches a client. A response
+     * body's shape is a wire contract and needs no PHP one beside it, so the classes the encoders serialize
+     * stay internal; a class named in a signature a plugin can reach does not.
+     */
+    private const CONTENT_SYSTEM_PUBLIC_SURFACE = [
+        'Shopwell\\Core\\Framework\\ContentSystem\\Event\\ContentTreePreparationEvent',
+        'Shopwell\\Core\\Framework\\ContentSystem\\Event\\RenderedTreeFinalizationEvent',
+        'Shopwell\\Core\\Framework\\ContentSystem\\Hydration\\DataLoader\\AbstractContentDataLoader',
+        'Shopwell\\Core\\Framework\\ContentSystem\\Hydration\\DataLoader\\AbstractContentDataLoaderConfigSerializer',
+        'Shopwell\\Core\\Framework\\ContentSystem\\Mapping\\Provider\\AbstractMappingCandidateProvider',
+        'Shopwell\\Core\\Framework\\ContentSystem\\Mapping\\MappingSourceReference',
+        'Shopwell\\Core\\Framework\\ContentSystem\\Mapping\\MappingSourceResolution',
+        'Shopwell\\Core\\Framework\\ContentSystem\\Mapping\\MappingSourceResolutionContext',
+        'Shopwell\\Core\\Framework\\ContentSystem\\Output\\Format\\AbstractResponseFactory',
+        'Shopwell\\Core\\Framework\\ContentSystem\\Adapter\\AbstractSpecificationSource',
+        'Shopwell\\Core\\Framework\\ContentSystem\\Layout\\Type\\Loader\\AbstractContentSystemElementTypeLoader',
+        'Shopwell\\Core\\Framework\\ContentSystem\\Layout\\Element\\Style\\Loader\\AbstractContentSystemStyleOptionLoader',
+        'Shopwell\\Core\\Framework\\ContentSystem\\Binding\\Loader\\AbstractContentSystemBindingSpecificationLoader',
+        'Shopwell\\Core\\Framework\\ContentSystem\\Layout\\Element\\StoredElement',
+        'Shopwell\\Core\\Framework\\ContentSystem\\Layout\\Element\\StoredValue',
+        'Shopwell\\Core\\Framework\\ContentSystem\\Layout\\StoredTree',
+        'Shopwell\\Core\\Framework\\ContentSystem\\Layout\\Element\\Context\\ContextDefinitions',
+        'Shopwell\\Core\\Framework\\ContentSystem\\Layout\\Element\\Context\\ContextProvider',
+        'Shopwell\\Core\\Framework\\ContentSystem\\Layout\\Element\\Context\\ContextConsumer',
+        'Shopwell\\Core\\Framework\\ContentSystem\\Layout\\Element\\Context\\ConsumerScope',
+        'Shopwell\\Core\\Framework\\ContentSystem\\Hydration\\DataContext\\ContextType',
+        'Shopwell\\Core\\Framework\\ContentSystem\\Layout\\Element\\Context\\Distribution\\DistributionConfig',
+        'Shopwell\\Core\\Framework\\ContentSystem\\Layout\\Element\\Context\\Distribution\\DistributionStrategy',
+        'Shopwell\\Core\\Framework\\ContentSystem\\Layout\\Element\\DataRequirement\\DataRequirement',
+        'Shopwell\\Core\\Framework\\ContentSystem\\Layout\\Element\\Style\\ElementStyle',
+        'Shopwell\\Core\\Framework\\ContentSystem\\Rendering\\RenderedElement',
+        'Shopwell\\Core\\Framework\\ContentSystem\\Layout\\Element\\RenderedTreeEditor',
+        'Shopwell\\Core\\Framework\\ContentSystem\\Cache\\RenderingCacheContext',
+        'Shopwell\\Core\\Framework\\ContentSystem\\LayoutReference',
+        'Shopwell\\Core\\Framework\\ContentSystem\\Layout\\Entity\\ContentLayoutEntity',
+        'Shopwell\\Core\\Framework\\ContentSystem\\Layout\\Entity\\ContentLayoutCollection',
+        'Shopwell\\Core\\Framework\\ContentSystem\\Output\\Struct\\ContentPage',
+        'Shopwell\\Core\\Framework\\ContentSystem\\Adapter\\Entity\\AbstractContentLayoutAssignmentEntity',
+        'Shopwell\\Storefront\\ContentSystem\\HeaderContentLayout\\HeaderContentLayoutEntity',
+        'Shopwell\\Storefront\\ContentSystem\\HeaderContentLayout\\HeaderContentLayoutCollection',
+        'Shopwell\\Storefront\\ContentSystem\\FooterContentLayout\\FooterContentLayoutEntity',
+        'Shopwell\\Storefront\\ContentSystem\\FooterContentLayout\\FooterContentLayoutCollection',
+        'Shopwell\\Core\\Framework\\ContentSystem\\RenderableLayout',
+        'Shopwell\\Core\\Framework\\ContentSystem\\ResolvedContentLayout',
+        'Shopwell\\Core\\Framework\\ContentSystem\\ContentSection',
+        'Shopwell\\Core\\Framework\\ContentSystem\\RenderingSpecification',
+        'Shopwell\\Core\\Framework\\ContentSystem\\PlaceholderValues',
+        'Shopwell\\Core\\Framework\\ContentSystem\\Hydration\\DataLoader\\AbstractContentDataLoaderConfig',
+        'Shopwell\\Core\\Framework\\ContentSystem\\Hydration\\DataLoader\\LoaderInputs',
+        'Shopwell\\Core\\Framework\\ContentSystem\\Hydration\\DataLoader\\ContentDataLoaderResult',
+        'Shopwell\\Core\\Framework\\ContentSystem\\Hydration\\DataLoader\\LoaderConfigSpecification',
+        'Shopwell\\Core\\Framework\\ContentSystem\\Hydration\\DataLoader\\ConfigKeySpecification',
+        'Shopwell\\Core\\Framework\\ContentSystem\\Hydration\\DataLoader\\ConfigKeyKind',
+        'Shopwell\\Core\\Framework\\ContentSystem\\Hydration\\DataLoader\\LoaderTypeCapability',
+        'Shopwell\\Core\\Framework\\ContentSystem\\Output\\RenderResult',
+        'Shopwell\\Core\\Framework\\ContentSystem\\Output\\Index\\ResolvedValueIndex',
+        'Shopwell\\Core\\Framework\\ContentSystem\\RenderingMode',
+        'Shopwell\\Core\\Framework\\ContentSystem\\SalesChannel\\AbstractContentRouteResponse',
+        'Shopwell\\Core\\Framework\\ContentSystem\\Resolution\\ProvidedContext',
+        'Shopwell\\Core\\Framework\\ContentSystem\\SpecificationData',
+        'Shopwell\\Core\\Framework\\ContentSystem\\Layout\\Type\\Specification\\ContentSystemElementTypeSpecification',
+        'Shopwell\\Core\\Framework\\ContentSystem\\Layout\\Type\\Specification\\PropertySpecification',
+        'Shopwell\\Core\\Framework\\ContentSystem\\Layout\\Type\\Specification\\PropertyType',
+        'Shopwell\\Core\\Framework\\ContentSystem\\Layout\\Type\\Specification\\SlotSpecification',
+        'Shopwell\\Core\\Framework\\ContentSystem\\Layout\\Type\\Specification\\CopilotSpecification',
+        'Shopwell\\Core\\Framework\\ContentSystem\\Layout\\Element\\Style\\Specification\\StyleOptionSpecification',
+        'Shopwell\\Core\\Framework\\ContentSystem\\Layout\\Element\\Style\\Specification\\StyleOptionValueType',
+        'Shopwell\\Core\\Framework\\ContentSystem\\Binding\\Specification\\BindingSpecification',
+        'Shopwell\\Core\\Framework\\ContentSystem\\Binding\\Specification\\LoaderBinding',
+        'Shopwell\\Core\\Framework\\ContentSystem\\Binding\\Specification\\BindingInput',
+        'Shopwell\\Core\\Framework\\ContentSystem\\Mapping\\MappingCandidate',
+        'Shopwell\\Core\\Framework\\ContentSystem\\Mapping\\Registry\\AbstractContentSystemMappingCandidateRegistry',
+        'Shopwell\\Core\\Framework\\ContentSystem\\ContentSystemException',
     ];
 
     public function getNodeType(): string
@@ -123,7 +203,7 @@ class InternalClassRule implements Rule
             ];
         }
 
-        if ($namespace = $this->isInInternalNamespace($node)) {
+        if (($namespace = $this->isInInternalNamespace($node)) && !\in_array($class, self::CONTENT_SYSTEM_PUBLIC_SURFACE, true)) {
             return [
                 RuleErrorBuilder::message('Classes in `' . $namespace . '` namespace must be flagged @internal to not be captured by the BC checker.')
                     ->identifier('shopwell.internalClass')
@@ -241,6 +321,13 @@ class InternalClassRule implements Rule
     private function isInInternalNamespace(InClassNode $node): ?string
     {
         $namespace = $node->getClassReflection()->getName();
+
+        if (\str_contains($namespace, 'Shopwell\\Core\\Test\\Stub\\')) {
+            // Test stub classes are public builders by design, as isTestClass() already encodes.
+            // This exempts them from the namespace requirement only; a stub extending an
+            // @internal abstract still has to be @internal or @final.
+            return null;
+        }
 
         foreach (self::INTERNAL_NAMESPACES as $internalNamespace) {
             if (\str_contains($namespace, $internalNamespace)) {

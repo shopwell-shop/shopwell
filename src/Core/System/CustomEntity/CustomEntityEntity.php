@@ -13,8 +13,6 @@ class CustomEntityEntity extends Entity
 
     protected string $name;
 
-    protected bool $cmsAware;
-
     protected bool $storeApiAware;
 
     protected ?string $appId = null;
@@ -55,11 +53,6 @@ class CustomEntityEntity extends Entity
     public function setStoreApiAware(bool $storeApiAware): void
     {
         $this->storeApiAware = $storeApiAware;
-    }
-
-    public function getCmsAware(): bool
-    {
-        return $this->cmsAware;
     }
 
     public function getAppId(): ?string

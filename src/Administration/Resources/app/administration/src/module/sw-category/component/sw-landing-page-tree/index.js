@@ -69,7 +69,7 @@ export default {
             return Shopwell.Store.get('swCategoryDetail').landingPagesToDelete;
         },
 
-        cmsLandingPageCriteria() {
+        landingPageCriteria() {
             const criteria = new Criteria(this.page, PAGE_SIZE);
             criteria.addSorting(Criteria.sort('name'));
             // Names are not unique, so paging without a stable tiebreaker can skip or repeat entries.
@@ -170,7 +170,7 @@ export default {
         },
 
         loadLandingPages() {
-            return this.landingPageRepository.search(this.cmsLandingPageCriteria).then((result) => {
+            return this.landingPageRepository.search(this.landingPageCriteria).then((result) => {
                 this.total = result.total ?? result.length;
                 this.addLandingPages(result);
             });
@@ -209,7 +209,7 @@ export default {
             for (let page = 1; page <= loadedPages; page += 1) {
                 this.page = page;
 
-                const result = await this.landingPageRepository.search(this.cmsLandingPageCriteria);
+                const result = await this.landingPageRepository.search(this.landingPageCriteria);
 
                 total = result.total ?? result.length;
                 result.forEach((landingPage) => {

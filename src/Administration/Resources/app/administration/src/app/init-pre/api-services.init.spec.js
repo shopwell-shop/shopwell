@@ -30,7 +30,6 @@ describe('src/app/init-pre/api-services.init.ts', () => {
             const serviceNames = [
                 'aclApiService',
                 'appActionButtonService',
-                'appCmsBlocks',
                 'appModulesService',
                 'appUrlChangeService',
                 'businessEventService',
@@ -110,7 +109,6 @@ describe('src/app/init-pre/api-services.init.ts', () => {
     it('should initialize the api services', async () => {
         expect(Shopwell.Service('aclApiService')).toBeUndefined();
         expect(Shopwell.Service('appActionButtonService')).toBeUndefined();
-        expect(Shopwell.Service('appCmsBlocks')).toBeUndefined();
         expect(Shopwell.Service('appModulesService')).toBeUndefined();
         expect(Shopwell.Service('appUrlChangeService')).toBeUndefined();
         expect(Shopwell.Service('businessEventService')).toBeUndefined();
@@ -172,7 +170,6 @@ describe('src/app/init-pre/api-services.init.ts', () => {
 
         expect(Shopwell.Service('aclApiService')).toBeDefined();
         expect(Shopwell.Service('appActionButtonService')).toBeDefined();
-        expect(Shopwell.Service('appCmsBlocks')).toBeDefined();
         expect(Shopwell.Service('appModulesService')).toBeDefined();
         expect(Shopwell.Service('appUrlChangeService')).toBeDefined();
         expect(Shopwell.Service('businessEventService')).toBeDefined();

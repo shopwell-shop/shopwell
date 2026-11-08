@@ -1,0 +1,87 @@
+<?php declare(strict_types=1);
+
+namespace Shopwell\Core\Content\Product\ContentSystem\DataLoader;
+
+use Shopwell\Core\Content\Product\SalesChannel\Review\AbstractProductReviewLoader;
+use Shopwell\Core\Content\Product\SalesChannel\Review\ProductReviewResult;
+use Shopwell\Core\Framework\ContentSystem\Hydration\DataLoader\AbstractContentDataLoader;
+use Shopwell\Core\Framework\ContentSystem\Hydration\DataLoader\ConfigKeyKind;
+use Shopwell\Core\Framework\ContentSystem\Hydration\DataLoader\ConfigKeySpecification;
+use Shopwell\Core\Framework\ContentSystem\Hydration\DataLoader\ContentDataLoaderResult;
+use Shopwell\Core\Framework\ContentSystem\Hydration\DataLoader\LoaderConfigSpecification;
+use Shopwell\Core\Framework\ContentSystem\Hydration\DataLoader\LoaderInputs;
+use Shopwell\Core\Framework\ContentSystem\Layout\Element\DataRequirement\DataRequirement;
+use Shopwell\Core\Framework\Log\Package;
+use Shopwell\Core\Framework\ShopwellHttpException;
+use Shopwell\Core\Framework\Uuid\Uuid;
+use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+use Symfony\Component\HttpFoundation\Request;
+
+use function Symfony\Component\String\u;
+
+/**
+ * @internal
+ *
+ * @final
+ *
+ * @extends AbstractContentDataLoader<ProductReviewResult>
+ */
+#[Package('after-sales')]
+class ProductReviewDataLoader extends AbstractContentDataLoader
+{
+    public const SOURCE = 'product_review';
+
+    public function __construct(
+        private readonly AbstractProductReviewLoader $productReviewLoader
+    ) {
+    }
+
+    public static function getRequirementType(): string
+    {
+        return self::SOURCE;
+    }
+
+    public function configSpecification(): LoaderConfigSpecification
+    {
+        return new LoaderConfigSpecification([
+            new ConfigKeySpecification('property', ConfigKeyKind::PropertyReference, 'string', required: false, hasDefault: true, default: 'productId'),
+        ]);
+    }
+
+    public function load(
+        LoaderInputs $inputs,
+        DataRequirement $requirement,
+        SalesChannelContext $context,
+        Request $request
+    ): ContentDataLoaderResult {
+        $productId = $inputs->stringOrNull('property');
+
+        if ($productId === null) {
+            return ContentDataLoaderResult::notFound();
+        }
+
+        $productId = u($productId)->lower()->toString();
+
+        // An unsubstituted placeholder such as "{{productId}}" passes LoaderInputResolver::dereference()
+        // untouched; guard after the lowercase (Uuid::VALID_PATTERN is lowercase-only) before it reaches the
+        // review loader's `product.id` equals filter.
+        if (!Uuid::isValid($productId)) {
+            return ContentDataLoaderResult::notFound();
+        }
+
+        // Any ShopwellHttpException (e.g. reviews switched off for the sales channel) degrades the element to
+        // notFound(); anything else propagates, matching the degradation boundary in
+        // Framework/ContentSystem/Hydration/DataLoader/README.md.
+        try {
+            $result = $this->productReviewLoader->load($request, $context, $productId);
+        } catch (ShopwellHttpException) {
+            return ContentDataLoaderResult::notFound();
+        }
+
+        if ($context->getCustomer() !== null) {
+            return ContentDataLoaderResult::uncacheable($result);
+        }
+
+        return ContentDataLoaderResult::cachedExternally($result);
+    }
+}

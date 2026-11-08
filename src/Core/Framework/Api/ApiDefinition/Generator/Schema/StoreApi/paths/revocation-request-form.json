@@ -41,24 +41,6 @@
                                     "comment": {
                                         "description": "The message of the revocation request form.",
                                         "type": "string"
-                                    },
-                                    "navigationId": {
-                                        "description": "Identifier of the navigation page. Can be used to override the configuration.\nTake a look at the settings of a category containing a revocation form in the administration.",
-                                        "type": "string",
-                                        "pattern": "^[0-9a-f]{32}$"
-                                    },
-                                    "slotId": {
-                                        "description": "Identifier of the cms element.",
-                                        "type": "string",
-                                        "pattern": "^[0-9a-f]{32}$"
-                                    },
-                                    "cmsPageType": {
-                                        "description": "Type of the content management page.",
-                                        "type": "string"
-                                    },
-                                    "entityName": {
-                                        "description": "Entity name for slot config.",
-                                        "type": "string"
                                     }
                                 },
                                 "type": "object"

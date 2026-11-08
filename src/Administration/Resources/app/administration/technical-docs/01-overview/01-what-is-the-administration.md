@@ -44,7 +44,7 @@ The Administration is the headless merchant & operator facing single-page applic
 1. Entity Management (create, read, update, delete) with validation & versioning aids
 2. Cross-domain workflows (Bulk Edit, Import/Export, Rule Builder integration)
 3. Configuration surfaces (system config, sales channel config, plugin/app config)
-4. Shopping experiences, content management (CMS pages, layouts, categories, navigation)
+4. Experience Studio content layouts, categories, and navigation
 5. Operational tooling (Order fulfilment statuses, Customer service, Media handling)
 6. Observability & feedback (notifications, activity indicators, error & deprecation surfacing)
 

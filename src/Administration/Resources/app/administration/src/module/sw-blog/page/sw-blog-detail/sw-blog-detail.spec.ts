@@ -18,7 +18,7 @@ describe('src/module/sw-blog/page/sw-blog-detail', () => {
         jest.restoreAllMocks();
     });
 
-    it('loads the entry, selected categories and its rendered CMS layout', async () => {
+    it('loads the entry, selected categories and its selected content layout', async () => {
         const { wrapper, getBlog } = await createWrapper();
         await flushPromises();
         const criteria = (getBlog.mock.calls as unknown as Array<[string, unknown, { associations: unknown[] }]>)[0][2];
@@ -36,7 +36,7 @@ describe('src/module/sw-blog/page/sw-blog-detail', () => {
                 .findAll('.sw-blog-detail__category-option input')
                 .map((input) => (input.element as HTMLInputElement).checked),
         ).toEqual([true, false]);
-        expect(wrapper.get('.cms-page-id').text()).toBe('page-1');
+        expect((wrapper.get('.sw-blog-detail__content-layout').element as HTMLInputElement).value).toBe('page-1');
         expect(wrapper.find('.sw-blog-detail__loading').exists()).toBe(false);
     });
 

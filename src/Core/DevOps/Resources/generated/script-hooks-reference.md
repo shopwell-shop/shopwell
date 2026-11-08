@@ -384,18 +384,6 @@ All available Hooks that can be used to load additional data.
 | **Available Services** | [repository](./data-loading-script-services-reference#RepositoryFacade)<br>[config](./miscellaneous-script-services-reference#SystemConfigFacade)<br>[store](./data-loading-script-services-reference#SalesChannelRepositoryFacade)<br>[request](./miscellaneous-script-services-reference#RequestFacade)<br>[acl](./miscellaneous-script-services-reference#AclFacade)<br> |
 | **Stoppable**          | `false`                  |
 
-### cms-page-loaded
-
-| <!-- -->               | <!-- -->                                |
-|:-----------------------|:----------------------------------------|
-| **Name**               | cms-page-loaded                         |
-| **Since**              | 6.4.8.0                        |
-| **Class**              | `Shopwell\Storefront\Page\Cms\CmsPageLoadedHook`                      |
-| **Description**        | Triggered when a CmsPage is loaded<br>                  |
-| **Available Data**     | context: [`Shopwell\Core\Framework\Context`](https://github.com/shopwell-shop/shopwell/blob/trunk/src/Core/Framework/Context.php)<br>page: [`Shopwell\Core\Content\Cms\CmsPageEntity`](https://github.com/shopwell-shop/shopwell/blob/trunk/src/Core/Content/Cms/CmsPageEntity.php)<br>salesChannelContext: [`Shopwell\Core\System\SalesChannel\SalesChannelContext`](https://github.com/shopwell-shop/shopwell/blob/trunk/src/Core/System/SalesChannel/SalesChannelContext.php)<br>        |
-| **Available Services** | [repository](./data-loading-script-services-reference#RepositoryFacade)<br>[config](./miscellaneous-script-services-reference#SystemConfigFacade)<br>[store](./data-loading-script-services-reference#SalesChannelRepositoryFacade)<br>[request](./miscellaneous-script-services-reference#RequestFacade)<br>[acl](./miscellaneous-script-services-reference#AclFacade)<br> |
-| **Stoppable**          | `false`                  |
-
 ### landing-page-loaded
 
 | <!-- -->               | <!-- -->                                |

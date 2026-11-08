@@ -5,11 +5,6 @@ namespace Shopwell\Core\Content\Product\SalesChannel\Detail;
 use Doctrine\DBAL\Connection;
 use Shopwell\Core\Content\Category\CategoryEntity;
 use Shopwell\Core\Content\Category\Service\CategoryBreadcrumbBuilder;
-use Shopwell\Core\Content\Cms\CmsPageEntity;
-use Shopwell\Core\Content\Cms\DataResolver\ResolverContext\EntityResolverContext;
-use Shopwell\Core\Content\Cms\SalesChannel\SalesChannelCmsPageLoaderInterface;
-use Shopwell\Core\Content\Cms\Service\EntityCmsSlotConfigInheritanceBuilder;
-use Shopwell\Core\Content\Product\Aggregate\ProductTranslation\ProductTranslationCollection;
 use Shopwell\Core\Content\Product\Aggregate\ProductVisibility\ProductVisibilityDefinition;
 use Shopwell\Core\Content\Product\Extension\ProductDetailRouteExtension;
 use Shopwell\Core\Content\Product\ProductDefinition;
@@ -18,15 +13,11 @@ use Shopwell\Core\Content\Product\SalesChannel\AbstractProductCloseoutFilterFact
 use Shopwell\Core\Content\Product\SalesChannel\Detail\Event\ResolveVariantIdEvent;
 use Shopwell\Core\Content\Product\SalesChannel\ProductAvailableFilter;
 use Shopwell\Core\Content\Product\SalesChannel\SalesChannelProductCollection;
-use Shopwell\Core\Content\Product\SalesChannel\SalesChannelProductDefinition;
 use Shopwell\Core\Content\Product\SalesChannel\SalesChannelProductEntity;
 use Shopwell\Core\Framework\Adapter\Cache\CacheTagCollector;
-use Shopwell\Core\Framework\Adapter\Request\RequestParamHelper;
 use Shopwell\Core\Framework\DataAbstractionLayer\Cache\EntityCacheKeyGenerator;
-use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
-use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsAnyFilter;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
 use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
@@ -49,24 +40,18 @@ use Symfony\Component\Routing\Attribute\Route;
 class ProductDetailRoute extends AbstractProductDetailRoute
 {
     private const SKIP_CONFIGURATOR = 'skipConfigurator';
-    private const SKIP_CMS_PAGE = 'skipCmsPage';
 
     /**
      * @internal
      *
      * @param SalesChannelRepository<SalesChannelProductCollection> $productRepository
-     * @param EntityRepository<ProductTranslationCollection> $productTranslationRepository
      */
     public function __construct(
         private readonly SalesChannelRepository $productRepository,
-        private readonly EntityRepository $productTranslationRepository,
         private readonly SystemConfigService $config,
         private readonly Connection $connection,
         private readonly ProductConfiguratorLoader $configuratorLoader,
         private readonly CategoryBreadcrumbBuilder $breadcrumbBuilder,
-        private readonly SalesChannelCmsPageLoaderInterface $cmsPageLoader,
-        private readonly EntityCmsSlotConfigInheritanceBuilder $cmsSlotConfigInheritanceBuilder,
-        private readonly SalesChannelProductDefinition $productDefinition,
         private readonly AbstractProductCloseoutFilterFactory $productCloseoutFilterFactory,
         private readonly EventDispatcherInterface $dispatcher,
         private readonly CacheTagCollector $cacheTagCollector,
@@ -133,7 +118,6 @@ class ProductDetailRoute extends AbstractProductDetailRoute
             $criteria->setIds([$productId]);
             $criteria->setTitle('product-detail-route');
 
-            $loadCmsPage = !$request->query->getBoolean(self::SKIP_CMS_PAGE);
             $product = $this->productRepository->search($criteria, $context)->getEntities()->first();
 
             if (!$product instanceof SalesChannelProductEntity && $mainVariantId !== null && $this->isParentProductRequest($requestedProductId, $parentProductId)) {
@@ -157,27 +141,6 @@ class ProductDetailRoute extends AbstractProductDetailRoute
             $loadConfigurator = !$request->query->getBoolean(self::SKIP_CONFIGURATOR);
             $configurator = $loadConfigurator ? $this->configuratorLoader->load($product, $context) : null;
 
-            $pageId = $product->getCmsPageId();
-            if ($loadCmsPage && $pageId) {
-                $slotConfig = $this->buildMergedCmsSlotConfig($product, $context);
-
-                // clone product to prevent recursion encoding (see NEXT-17603)
-                $resolverContext = new EntityResolverContext($context, $request, $this->productDefinition, clone $product);
-
-                $pages = $this->cmsPageLoader->load(
-                    $request,
-                    $this->createCriteria($pageId, $request),
-                    $context,
-                    $slotConfig,
-                    $resolverContext
-                );
-
-                $cmsPage = $pages->getEntities()->first();
-                if ($cmsPage instanceof CmsPageEntity) {
-                    $product->setCmsPage($cmsPage);
-                }
-            }
-
             return new ProductDetailRouteResponse($product, $configurator);
         });
     }
@@ -189,60 +152,6 @@ class ProductDetailRoute extends AbstractProductDetailRoute
         );
 
         $this->addCloseoutFilter($context, $criteria);
-    }
-
-    /**
-     * @return array<string, array<string, mixed>>|null
-     */
-    private function buildMergedCmsSlotConfig(SalesChannelProductEntity $product, SalesChannelContext $context): ?array
-    {
-        return $this->cmsSlotConfigInheritanceBuilder->build(
-            $this->loadProductTranslations($product, $context),
-            $context,
-        );
-    }
-
-    private function loadProductTranslations(SalesChannelProductEntity $product, SalesChannelContext $context): ?ProductTranslationCollection
-    {
-        $productIds = array_filter([$product->getParentId(), $product->getId()]);
-
-        $criteria = new Criteria();
-        $criteria->addFilter(new EqualsAnyFilter('productId', $productIds));
-        $criteria->addFilter(new EqualsFilter('productVersionId', $context->getVersionId()));
-
-        $translations = $this->productTranslationRepository->search($criteria, $context->getContext())->getEntities();
-
-        if ($translations->count() === 0) {
-            return null;
-        }
-
-        return $this->buildInheritedProductTranslations($translations, $product);
-    }
-
-    private function buildInheritedProductTranslations(ProductTranslationCollection $translations, SalesChannelProductEntity $product): ProductTranslationCollection
-    {
-        $effectiveTranslations = [];
-        $parentId = $product->getParentId();
-
-        foreach ($translations as $translation) {
-            if ($translation->getSlotConfig() === null) {
-                continue;
-            }
-
-            $languageId = $translation->getLanguageId();
-
-            if ($translation->getProductId() === $parentId) {
-                $effectiveTranslations[$languageId] ??= $translation;
-
-                continue;
-            }
-
-            if ($translation->getProductId() === $product->getId()) {
-                $effectiveTranslations[$languageId] = $translation;
-            }
-        }
-
-        return new ProductTranslationCollection(array_values($effectiveTranslations));
     }
 
     /**
@@ -391,26 +300,6 @@ class ProductDetailRoute extends AbstractProductDetailRoute
     private function isParentProductRequest(string $requestedProductId, ?string $parentProductId): bool
     {
         return $parentProductId !== null && $requestedProductId === $parentProductId;
-    }
-
-    private function createCriteria(string $pageId, Request $request): Criteria
-    {
-        $criteria = new Criteria([$pageId]);
-        $criteria->setTitle('product::cms-page');
-
-        $slots = RequestParamHelper::get($request, 'slots');
-
-        if (\is_string($slots)) {
-            $slots = explode('|', $slots);
-        }
-
-        if (\is_array($slots) && $slots !== []) {
-            $criteria
-                ->getAssociation('sections.blocks')
-                ->addFilter(new EqualsAnyFilter('slots.id', $slots));
-        }
-
-        return $criteria;
     }
 
     private function getBreadcrumbCategory(Request $request, SalesChannelProductEntity $product, SalesChannelContext $context): ?CategoryEntity

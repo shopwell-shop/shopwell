@@ -29,14 +29,14 @@ describe('src/core/data/changeset-generator.data.js', () => {
     [
         {
             description: 'Change property name',
-            entityName: 'cms_page',
+            entityName: 'custom_field_set',
             originChanges: { name: 'Microsoft' },
             entityChanges: { name: 'Shopwell AG' },
             expected: { name: 'Shopwell AG' },
         },
         {
             description: 'Should create full changeset',
-            entityName: 'cms_page',
+            entityName: 'custom_field_set',
             originChanges: { name: 'Microsoft' },
             entityChanges: {
                 config: {
@@ -55,7 +55,7 @@ describe('src/core/data/changeset-generator.data.js', () => {
         },
         {
             description: 'should not return an changeset when origin and draft are identical',
-            entityName: 'cms_page',
+            entityName: 'custom_field_set',
             originChanges: {
                 config: {
                     a: 'foo',
@@ -75,7 +75,7 @@ describe('src/core/data/changeset-generator.data.js', () => {
         {
             description:
                 'should not return an changeset when origin and draft are identical except the key order in objects',
-            entityName: 'cms_page',
+            entityName: 'custom_field_set',
             originChanges: {
                 config: {
                     a: 'foo',
@@ -94,7 +94,7 @@ describe('src/core/data/changeset-generator.data.js', () => {
         },
         {
             description: 'Should create a changeset when the order in arrays are changing',
-            entityName: 'cms_page',
+            entityName: 'custom_field_set',
             originChanges: {
                 config: {
                     numbers: [1, 2, 3],
@@ -114,7 +114,7 @@ describe('src/core/data/changeset-generator.data.js', () => {
         {
             description:
                 'Should create a changeset when the order in arrays are changing. In combination with object key order changes.',
-            entityName: 'cms_page',
+            entityName: 'custom_field_set',
             originChanges: {
                 config: {
                     a: 'foo',
@@ -139,7 +139,7 @@ describe('src/core/data/changeset-generator.data.js', () => {
         },
         {
             description: 'Should be able to null an array value',
-            entityName: 'cms_page',
+            entityName: 'custom_field_set',
             originChanges: {
                 config: {
                     numbers: [1, 2, 3],
@@ -158,7 +158,7 @@ describe('src/core/data/changeset-generator.data.js', () => {
         },
         {
             description: 'Should be able to null some scalar value',
-            entityName: 'cms_page',
+            entityName: 'custom_field_set',
             originChanges: {
                 config: {
                     test: {
@@ -195,7 +195,7 @@ describe('src/core/data/changeset-generator.data.js', () => {
         },
         {
             description: 'Should create a changeset the json field when a field was removed completely',
-            entityName: 'cms_page',
+            entityName: 'custom_field_set',
             originChanges: {
                 config: {
                     test: {
@@ -230,7 +230,7 @@ describe('src/core/data/changeset-generator.data.js', () => {
         },
         {
             description: 'Should create a changeset when the json root is an object which is resetted to null',
-            entityName: 'cms_page',
+            entityName: 'custom_field_set',
             originChanges: {
                 config: {},
             },
@@ -243,7 +243,7 @@ describe('src/core/data/changeset-generator.data.js', () => {
         },
         {
             description: 'Should create a changeset when the json root is an array which is resetted to null',
-            entityName: 'cms_page',
+            entityName: 'custom_field_set',
             originChanges: {
                 config: [],
             },
@@ -256,7 +256,7 @@ describe('src/core/data/changeset-generator.data.js', () => {
         },
         {
             description: 'Should create a changeset when the json root is an array and the order changes',
-            entityName: 'cms_page',
+            entityName: 'custom_field_set',
             originChanges: {
                 config: [1, 2, 3],
             },
@@ -269,7 +269,7 @@ describe('src/core/data/changeset-generator.data.js', () => {
         },
         {
             description: 'Should not create a changeset when the json root is an object and the order changes',
-            entityName: 'cms_page',
+            entityName: 'custom_field_set',
             originChanges: {
                 config: {
                     a: 'a',

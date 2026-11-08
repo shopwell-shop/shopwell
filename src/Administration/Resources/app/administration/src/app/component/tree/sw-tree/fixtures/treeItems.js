@@ -28,7 +28,7 @@ export default function getTreeItems() {
             active: true,
             name: 'Home',
             customFields: null,
-            slotConfig: null,
+
             linkType: null,
             internalLink: null,
             externalLink: null,
@@ -37,8 +37,7 @@ export default function getTreeItems() {
             metaTitle: null,
             metaDescription: null,
             keywords: null,
-            cmsPageId: 'a4aaaa76a546453da734a3f0cee2f9d4',
-            cmsPageVersionId: '0fa91ce3e96a4bc2be4bd9ce752c3425',
+
             productStreamId: null,
             createdAt: '2021-06-17T06:26:01.950+00:00',
             updatedAt: null,
@@ -46,7 +45,7 @@ export default function getTreeItems() {
                 breadcrumb: ['Home'],
                 name: 'Home',
                 customFields: [],
-                slotConfig: null,
+
                 linkType: null,
                 internalLink: null,
                 externalLink: null,
@@ -82,7 +81,7 @@ export default function getTreeItems() {
                     active: true,
                     name: 'Health & Games',
                     customFields: null,
-                    slotConfig: null,
+
                     linkType: null,
                     internalLink: null,
                     externalLink: null,
@@ -92,8 +91,7 @@ export default function getTreeItems() {
                     metaTitle: null,
                     metaDescription: null,
                     keywords: null,
-                    cmsPageId: 'a4aaaa76a546453da734a3f0cee2f9d4',
-                    cmsPageVersionId: '0fa91ce3e96a4bc2be4bd9ce752c3425',
+
                     productStreamId: null,
                     createdAt: '2021-06-17T06:27:07.267+00:00',
                     updatedAt: null,
@@ -101,7 +99,7 @@ export default function getTreeItems() {
                         breadcrumb: ['Home', 'Health & Games'],
                         name: 'Health & Games',
                         customFields: [],
-                        slotConfig: null,
+
                         linkType: null,
                         internalLink: null,
                         externalLink: null,
@@ -148,7 +146,7 @@ export default function getTreeItems() {
                     active: true,
                     name: 'Shoes',
                     customFields: null,
-                    slotConfig: null,
+
                     linkType: null,
                     internalLink: null,
                     externalLink: null,
@@ -158,8 +156,7 @@ export default function getTreeItems() {
                     metaTitle: null,
                     metaDescription: null,
                     keywords: null,
-                    cmsPageId: 'eef7acaf69f547b0a27fbc239a75ee4b',
-                    cmsPageVersionId: '0fa91ce3e96a4bc2be4bd9ce752c3425',
+
                     productStreamId: null,
                     createdAt: '2021-06-17T06:27:07.268+00:00',
                     updatedAt: null,
@@ -167,7 +164,7 @@ export default function getTreeItems() {
                         breadcrumb: ['Home', 'Shoes'],
                         name: 'Shoes',
                         customFields: [],
-                        slotConfig: null,
+
                         linkType: null,
                         internalLink: null,
                         externalLink: null,
@@ -230,9 +227,7 @@ export default function getTreeItems() {
                         '5c480716167f45daa0ca43b15f2b1f1d',
                         'ea3009f552794bd2b73bcb4e2970a910',
                     ],
-                    homeCmsPageId: null,
-                    homeCmsPageVersionId: null,
-                    homeSlotConfig: null,
+
                     homeEnabled: true,
                     homeName: null,
                     homeMetaTitle: null,
@@ -243,7 +238,7 @@ export default function getTreeItems() {
                     translated: {
                         name: 'Headless',
                         customFields: [],
-                        homeSlotConfig: null,
+
                         homeEnabled: true,
                         homeName: null,
                         homeMetaTitle: null,
@@ -312,9 +307,7 @@ export default function getTreeItems() {
                         '5c480716167f45daa0ca43b15f2b1f1d',
                         'ea3009f552794bd2b73bcb4e2970a910',
                     ],
-                    homeCmsPageId: null,
-                    homeCmsPageVersionId: '0fa91ce3e96a4bc2be4bd9ce752c3425',
-                    homeSlotConfig: null,
+
                     homeEnabled: true,
                     homeName: null,
                     homeMetaTitle: null,
@@ -325,7 +318,7 @@ export default function getTreeItems() {
                     translated: {
                         name: 'Storefront',
                         customFields: [],
-                        homeSlotConfig: null,
+
                         homeEnabled: true,
                         homeName: null,
                         homeMetaTitle: null,
@@ -390,7 +383,7 @@ export default function getTreeItems() {
             active: true,
             name: 'Health & Games',
             customFields: null,
-            slotConfig: null,
+
             linkType: null,
             internalLink: null,
             externalLink: null,
@@ -400,8 +393,7 @@ export default function getTreeItems() {
             metaTitle: null,
             metaDescription: null,
             keywords: null,
-            cmsPageId: 'a4aaaa76a546453da734a3f0cee2f9d4',
-            cmsPageVersionId: '0fa91ce3e96a4bc2be4bd9ce752c3425',
+
             productStreamId: null,
             createdAt: '2021-06-17T06:27:07.267+00:00',
             updatedAt: null,
@@ -409,7 +401,7 @@ export default function getTreeItems() {
                 breadcrumb: ['Home', 'Health & Games'],
                 name: 'Health & Games',
                 customFields: [],
-                slotConfig: null,
+
                 linkType: null,
                 internalLink: null,
                 externalLink: null,
@@ -456,7 +448,7 @@ export default function getTreeItems() {
             active: true,
             name: 'Electronics & Games',
             customFields: null,
-            slotConfig: null,
+
             linkType: null,
             internalLink: null,
             externalLink: null,
@@ -466,8 +458,7 @@ export default function getTreeItems() {
             metaTitle: null,
             metaDescription: null,
             keywords: null,
-            cmsPageId: 'eef7acaf69f547b0a27fbc239a75ee4b',
-            cmsPageVersionId: '0fa91ce3e96a4bc2be4bd9ce752c3425',
+
             productStreamId: null,
             createdAt: '2021-06-17T06:27:07.271+00:00',
             updatedAt: null,
@@ -475,7 +466,7 @@ export default function getTreeItems() {
                 breadcrumb: ['Home', 'Health & Games', 'Electronics & Games'],
                 name: 'Electronics & Games',
                 customFields: [],
-                slotConfig: null,
+
                 linkType: null,
                 internalLink: null,
                 externalLink: null,
@@ -522,7 +513,7 @@ export default function getTreeItems() {
             active: true,
             name: 'Clothing & Grocery',
             customFields: null,
-            slotConfig: null,
+
             linkType: null,
             internalLink: null,
             externalLink: null,
@@ -532,8 +523,7 @@ export default function getTreeItems() {
             metaTitle: null,
             metaDescription: null,
             keywords: null,
-            cmsPageId: 'a4aaaa76a546453da734a3f0cee2f9d4',
-            cmsPageVersionId: '0fa91ce3e96a4bc2be4bd9ce752c3425',
+
             productStreamId: null,
             createdAt: '2021-06-17T06:27:07.272+00:00',
             updatedAt: null,
@@ -541,7 +531,7 @@ export default function getTreeItems() {
                 breadcrumb: ['Home', 'Health & Games', 'Clothing & Grocery'],
                 name: 'Clothing & Grocery',
                 customFields: [],
-                slotConfig: null,
+
                 linkType: null,
                 internalLink: null,
                 externalLink: null,
@@ -588,7 +578,7 @@ export default function getTreeItems() {
             active: true,
             name: 'Baby, Health & Garden',
             customFields: null,
-            slotConfig: null,
+
             linkType: null,
             internalLink: null,
             externalLink: null,
@@ -598,8 +588,7 @@ export default function getTreeItems() {
             metaTitle: null,
             metaDescription: null,
             keywords: null,
-            cmsPageId: 'a4aaaa76a546453da734a3f0cee2f9d4',
-            cmsPageVersionId: '0fa91ce3e96a4bc2be4bd9ce752c3425',
+
             productStreamId: null,
             createdAt: '2021-06-17T06:27:07.271+00:00',
             updatedAt: null,
@@ -607,7 +596,7 @@ export default function getTreeItems() {
                 breadcrumb: ['Home', 'Health & Games', 'Baby, Health & Garden'],
                 name: 'Baby, Health & Garden',
                 customFields: [],
-                slotConfig: null,
+
                 linkType: null,
                 internalLink: null,
                 externalLink: null,
@@ -654,7 +643,7 @@ export default function getTreeItems() {
             active: true,
             name: 'Automotive',
             customFields: null,
-            slotConfig: null,
+
             linkType: null,
             internalLink: null,
             externalLink: null,
@@ -664,8 +653,7 @@ export default function getTreeItems() {
             metaTitle: null,
             metaDescription: null,
             keywords: null,
-            cmsPageId: 'a4aaaa76a546453da734a3f0cee2f9d4',
-            cmsPageVersionId: '0fa91ce3e96a4bc2be4bd9ce752c3425',
+
             productStreamId: null,
             createdAt: '2021-06-17T06:27:07.270+00:00',
             updatedAt: null,
@@ -673,7 +661,7 @@ export default function getTreeItems() {
                 breadcrumb: ['Home', 'Health & Games', 'Automotive'],
                 name: 'Automotive',
                 customFields: [],
-                slotConfig: null,
+
                 linkType: null,
                 internalLink: null,
                 externalLink: null,
@@ -720,7 +708,7 @@ export default function getTreeItems() {
             active: true,
             name: 'Toys, Health & Music',
             customFields: null,
-            slotConfig: null,
+
             linkType: null,
             internalLink: null,
             externalLink: null,
@@ -730,8 +718,7 @@ export default function getTreeItems() {
             metaTitle: null,
             metaDescription: null,
             keywords: null,
-            cmsPageId: 'a4aaaa76a546453da734a3f0cee2f9d4',
-            cmsPageVersionId: '0fa91ce3e96a4bc2be4bd9ce752c3425',
+
             productStreamId: null,
             createdAt: '2021-06-17T06:27:07.272+00:00',
             updatedAt: null,
@@ -739,7 +726,7 @@ export default function getTreeItems() {
                 breadcrumb: ['Home', 'Health & Games', 'Toys, Health & Music'],
                 name: 'Toys, Health & Music',
                 customFields: [],
-                slotConfig: null,
+
                 linkType: null,
                 internalLink: null,
                 externalLink: null,
@@ -786,7 +773,7 @@ export default function getTreeItems() {
             active: true,
             name: 'Shoes',
             customFields: null,
-            slotConfig: null,
+
             linkType: null,
             internalLink: null,
             externalLink: null,
@@ -796,8 +783,7 @@ export default function getTreeItems() {
             metaTitle: null,
             metaDescription: null,
             keywords: null,
-            cmsPageId: 'eef7acaf69f547b0a27fbc239a75ee4b',
-            cmsPageVersionId: '0fa91ce3e96a4bc2be4bd9ce752c3425',
+
             productStreamId: null,
             createdAt: '2021-06-17T06:27:07.268+00:00',
             updatedAt: null,
@@ -805,7 +791,7 @@ export default function getTreeItems() {
                 breadcrumb: ['Home', 'Shoes'],
                 name: 'Shoes',
                 customFields: [],
-                slotConfig: null,
+
                 linkType: null,
                 internalLink: null,
                 externalLink: null,
@@ -852,7 +838,7 @@ export default function getTreeItems() {
             active: true,
             name: 'Kids, Tools & Shoes',
             customFields: null,
-            slotConfig: null,
+
             linkType: null,
             internalLink: null,
             externalLink: null,
@@ -862,8 +848,7 @@ export default function getTreeItems() {
             metaTitle: null,
             metaDescription: null,
             keywords: null,
-            cmsPageId: 'eef7acaf69f547b0a27fbc239a75ee4b',
-            cmsPageVersionId: '0fa91ce3e96a4bc2be4bd9ce752c3425',
+
             productStreamId: null,
             createdAt: '2021-06-17T06:27:07.273+00:00',
             updatedAt: null,
@@ -871,7 +856,7 @@ export default function getTreeItems() {
                 breadcrumb: ['Home', 'Shoes', 'Kids, Tools & Shoes'],
                 name: 'Kids, Tools & Shoes',
                 customFields: [],
-                slotConfig: null,
+
                 linkType: null,
                 internalLink: null,
                 externalLink: null,
@@ -918,7 +903,7 @@ export default function getTreeItems() {
             active: true,
             name: 'Sports, Electronics & Jewelry',
             customFields: null,
-            slotConfig: null,
+
             linkType: null,
             internalLink: null,
             externalLink: null,
@@ -928,8 +913,7 @@ export default function getTreeItems() {
             metaTitle: null,
             metaDescription: null,
             keywords: null,
-            cmsPageId: 'eef7acaf69f547b0a27fbc239a75ee4b',
-            cmsPageVersionId: '0fa91ce3e96a4bc2be4bd9ce752c3425',
+
             productStreamId: null,
             createdAt: '2021-06-17T06:27:07.275+00:00',
             updatedAt: null,
@@ -937,7 +921,7 @@ export default function getTreeItems() {
                 breadcrumb: ['Home', 'Shoes', 'Sports, Electronics & Jewelry'],
                 name: 'Sports, Electronics & Jewelry',
                 customFields: [],
-                slotConfig: null,
+
                 linkType: null,
                 internalLink: null,
                 externalLink: null,
@@ -984,7 +968,7 @@ export default function getTreeItems() {
             active: true,
             name: 'Grocery, Electronics & Clothing',
             customFields: null,
-            slotConfig: null,
+
             linkType: null,
             internalLink: null,
             externalLink: null,
@@ -994,8 +978,7 @@ export default function getTreeItems() {
             metaTitle: null,
             metaDescription: null,
             keywords: null,
-            cmsPageId: 'eef7acaf69f547b0a27fbc239a75ee4b',
-            cmsPageVersionId: '0fa91ce3e96a4bc2be4bd9ce752c3425',
+
             productStreamId: null,
             createdAt: '2021-06-17T06:27:07.274+00:00',
             updatedAt: null,
@@ -1003,7 +986,7 @@ export default function getTreeItems() {
                 breadcrumb: ['Home', 'Shoes', 'Grocery, Electronics & Clothing'],
                 name: 'Grocery, Electronics & Clothing',
                 customFields: [],
-                slotConfig: null,
+
                 linkType: null,
                 internalLink: null,
                 externalLink: null,
@@ -1050,7 +1033,7 @@ export default function getTreeItems() {
             active: true,
             name: 'Computers',
             customFields: null,
-            slotConfig: null,
+
             linkType: null,
             internalLink: null,
             externalLink: null,
@@ -1060,8 +1043,7 @@ export default function getTreeItems() {
             metaTitle: null,
             metaDescription: null,
             keywords: null,
-            cmsPageId: 'a4aaaa76a546453da734a3f0cee2f9d4',
-            cmsPageVersionId: '0fa91ce3e96a4bc2be4bd9ce752c3425',
+
             productStreamId: null,
             createdAt: '2021-06-17T06:27:07.277+00:00',
             updatedAt: null,
@@ -1069,7 +1051,7 @@ export default function getTreeItems() {
                 breadcrumb: ['Home', 'Shoes', 'Computers'],
                 name: 'Computers',
                 customFields: [],
-                slotConfig: null,
+
                 linkType: null,
                 internalLink: null,
                 externalLink: null,
@@ -1116,7 +1098,7 @@ export default function getTreeItems() {
             active: true,
             name: 'Sports',
             customFields: null,
-            slotConfig: null,
+
             linkType: null,
             internalLink: null,
             externalLink: null,
@@ -1126,8 +1108,7 @@ export default function getTreeItems() {
             metaTitle: null,
             metaDescription: null,
             keywords: null,
-            cmsPageId: 'a4aaaa76a546453da734a3f0cee2f9d4',
-            cmsPageVersionId: '0fa91ce3e96a4bc2be4bd9ce752c3425',
+
             productStreamId: null,
             createdAt: '2021-06-17T06:27:07.273+00:00',
             updatedAt: null,
@@ -1135,7 +1116,7 @@ export default function getTreeItems() {
                 breadcrumb: ['Home', 'Shoes', 'Sports'],
                 name: 'Sports',
                 customFields: [],
-                slotConfig: null,
+
                 linkType: null,
                 internalLink: null,
                 externalLink: null,
@@ -1182,7 +1163,7 @@ export default function getTreeItems() {
             active: true,
             name: 'Grocery',
             customFields: null,
-            slotConfig: null,
+
             linkType: null,
             internalLink: null,
             externalLink: null,
@@ -1192,8 +1173,7 @@ export default function getTreeItems() {
             metaTitle: null,
             metaDescription: null,
             keywords: null,
-            cmsPageId: 'a4aaaa76a546453da734a3f0cee2f9d4',
-            cmsPageVersionId: '0fa91ce3e96a4bc2be4bd9ce752c3425',
+
             productStreamId: null,
             createdAt: '2021-06-17T06:27:07.277+00:00',
             updatedAt: null,
@@ -1201,7 +1181,7 @@ export default function getTreeItems() {
                 breadcrumb: ['Home', 'Shoes', 'Grocery'],
                 name: 'Grocery',
                 customFields: [],
-                slotConfig: null,
+
                 linkType: null,
                 internalLink: null,
                 externalLink: null,
@@ -1248,7 +1228,7 @@ export default function getTreeItems() {
             active: true,
             name: 'Movies, Computers & Tools',
             customFields: null,
-            slotConfig: null,
+
             linkType: null,
             internalLink: null,
             externalLink: null,
@@ -1258,8 +1238,7 @@ export default function getTreeItems() {
             metaTitle: null,
             metaDescription: null,
             keywords: null,
-            cmsPageId: 'a4aaaa76a546453da734a3f0cee2f9d4',
-            cmsPageVersionId: '0fa91ce3e96a4bc2be4bd9ce752c3425',
+
             productStreamId: null,
             createdAt: '2021-06-17T06:27:07.276+00:00',
             updatedAt: null,
@@ -1267,7 +1246,7 @@ export default function getTreeItems() {
                 breadcrumb: ['Home', 'Shoes', 'Movies, Computers & Tools'],
                 name: 'Movies, Computers & Tools',
                 customFields: [],
-                slotConfig: null,
+
                 linkType: null,
                 internalLink: null,
                 externalLink: null,
@@ -1314,7 +1293,7 @@ export default function getTreeItems() {
             active: true,
             name: 'Tools & Home',
             customFields: null,
-            slotConfig: null,
+
             linkType: null,
             internalLink: null,
             externalLink: null,
@@ -1323,8 +1302,7 @@ export default function getTreeItems() {
             metaTitle: null,
             metaDescription: null,
             keywords: null,
-            cmsPageId: 'eef7acaf69f547b0a27fbc239a75ee4b',
-            cmsPageVersionId: '0fa91ce3e96a4bc2be4bd9ce752c3425',
+
             productStreamId: null,
             createdAt: '2021-06-17T06:27:07.275+00:00',
             updatedAt: null,
@@ -1332,7 +1310,7 @@ export default function getTreeItems() {
                 breadcrumb: ['Home', 'Shoes', 'Tools & Home'],
                 name: 'Tools & Home',
                 customFields: [],
-                slotConfig: null,
+
                 linkType: null,
                 internalLink: null,
                 externalLink: null,
@@ -1378,7 +1356,7 @@ export default function getTreeItems() {
             active: true,
             name: 'Music, Grocery & Computers',
             customFields: null,
-            slotConfig: null,
+
             linkType: null,
             internalLink: null,
             externalLink: null,
@@ -1388,8 +1366,7 @@ export default function getTreeItems() {
             metaTitle: null,
             metaDescription: null,
             keywords: null,
-            cmsPageId: 'eef7acaf69f547b0a27fbc239a75ee4b',
-            cmsPageVersionId: '0fa91ce3e96a4bc2be4bd9ce752c3425',
+
             productStreamId: null,
             createdAt: '2021-06-17T06:27:07.274+00:00',
             updatedAt: null,
@@ -1397,7 +1374,7 @@ export default function getTreeItems() {
                 breadcrumb: ['Home', 'Shoes', 'Music, Grocery & Computers'],
                 name: 'Music, Grocery & Computers',
                 customFields: [],
-                slotConfig: null,
+
                 linkType: null,
                 internalLink: null,
                 externalLink: null,
@@ -1444,7 +1421,7 @@ export default function getTreeItems() {
             active: true,
             name: 'Home',
             customFields: null,
-            slotConfig: null,
+
             linkType: null,
             internalLink: null,
             externalLink: null,
@@ -1454,8 +1431,7 @@ export default function getTreeItems() {
             metaTitle: null,
             metaDescription: null,
             keywords: null,
-            cmsPageId: 'a4aaaa76a546453da734a3f0cee2f9d4',
-            cmsPageVersionId: '0fa91ce3e96a4bc2be4bd9ce752c3425',
+
             productStreamId: null,
             createdAt: '2021-06-17T06:27:07.276+00:00',
             updatedAt: null,
@@ -1463,7 +1439,7 @@ export default function getTreeItems() {
                 breadcrumb: ['Home', 'Shoes', 'Home'],
                 name: 'Home',
                 customFields: [],
-                slotConfig: null,
+
                 linkType: null,
                 internalLink: null,
                 externalLink: null,
@@ -1510,7 +1486,7 @@ export default function getTreeItems() {
             active: true,
             name: 'Movies',
             customFields: null,
-            slotConfig: null,
+
             linkType: null,
             internalLink: null,
             externalLink: null,
@@ -1520,8 +1496,7 @@ export default function getTreeItems() {
             metaTitle: null,
             metaDescription: null,
             keywords: null,
-            cmsPageId: 'a4aaaa76a546453da734a3f0cee2f9d4',
-            cmsPageVersionId: '0fa91ce3e96a4bc2be4bd9ce752c3425',
+
             productStreamId: null,
             createdAt: '2021-06-17T06:27:07.275+00:00',
             updatedAt: null,
@@ -1529,7 +1504,7 @@ export default function getTreeItems() {
                 breadcrumb: ['Home', 'Shoes', 'Movies'],
                 name: 'Movies',
                 customFields: [],
-                slotConfig: null,
+
                 linkType: null,
                 internalLink: null,
                 externalLink: null,
@@ -1576,7 +1551,7 @@ export default function getTreeItems() {
             active: true,
             name: 'Movies & Shoes',
             customFields: null,
-            slotConfig: null,
+
             linkType: null,
             internalLink: null,
             externalLink: null,
@@ -1586,8 +1561,7 @@ export default function getTreeItems() {
             metaTitle: null,
             metaDescription: null,
             keywords: null,
-            cmsPageId: 'eef7acaf69f547b0a27fbc239a75ee4b',
-            cmsPageVersionId: '0fa91ce3e96a4bc2be4bd9ce752c3425',
+
             productStreamId: null,
             createdAt: '2021-06-17T06:27:07.277+00:00',
             updatedAt: null,
@@ -1595,7 +1569,7 @@ export default function getTreeItems() {
                 breadcrumb: ['Home', 'Shoes', 'Movies & Shoes'],
                 name: 'Movies & Shoes',
                 customFields: [],
-                slotConfig: null,
+
                 linkType: null,
                 internalLink: null,
                 externalLink: null,

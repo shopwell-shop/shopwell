@@ -5,7 +5,6 @@ namespace Shopwell\Tests\Unit\Storefront\Controller;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\MockObject\Stub;
 use PHPUnit\Framework\TestCase;
-use Shopwell\Core\Content\Cms\CmsPageEntity;
 use Shopwell\Core\Content\Product\Aggregate\ProductReview\ProductReviewCollection;
 use Shopwell\Core\Content\Product\Aggregate\ProductReview\ProductReviewEntity;
 use Shopwell\Core\Content\Product\Exception\VariantNotFoundException;
@@ -27,6 +26,9 @@ use Shopwell\Core\Content\Product\SalesChannel\Review\ProductReviewsWidgetLoaded
 use Shopwell\Core\Content\Product\SalesChannel\Review\RatingMatrix;
 use Shopwell\Core\Content\Product\SalesChannel\SalesChannelProductEntity;
 use Shopwell\Core\Content\Seo\SeoUrlPlaceholderHandlerInterface;
+use Shopwell\Core\Framework\ContentSystem\LayoutReference;
+use Shopwell\Core\Framework\ContentSystem\Output\RenderResult;
+use Shopwell\Core\Framework\ContentSystem\Output\Struct\ContentPage;
 use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
@@ -96,22 +98,28 @@ class ProductControllerTest extends TestCase
         );
     }
 
-    public function testIndexCmsPage(): void
+    public function testIndexRendersContentPageWhenLayoutAssigned(): void
     {
         $productEntity = new SalesChannelProductEntity();
         $productEntity->setId('test');
         $productPage = new ProductPage();
         $productPage->setProduct($productEntity);
-        $productPage->setCmsPage(new CmsPageEntity());
 
         $this->productPageLoaderMock->method('load')->willReturn($productPage);
+
+        $contentPage = ContentPage::fromRenderResult(
+            new RenderResult([], LayoutReference::create('layout-id', 'PDP layout', null), null)
+        );
+        $this->controller->recorder()->contentPage = $contentPage;
 
         $response = $this->controller->index(static::createStub(SalesChannelContext::class), new Request());
 
         static::assertSame(Response::HTTP_OK, $response->getStatusCode());
+        static::assertSame('/product/test', $this->controller->recorder()->loadedContentPath);
+        static::assertSame('@Storefront/storefront/page/content/page.html.twig', $this->controller->recorder()->renderStorefrontView);
+        static::assertSame($contentPage, $this->controller->recorder()->renderStorefrontParameters['contentPage']);
+        static::assertTrue($this->controller->recorder()->renderStorefrontParameters['isNewContentStructure']);
         static::assertInstanceOf(ProductPage::class, $this->controller->recorder()->renderStorefrontParameters['page']);
-        static::assertSame('test', $this->controller->recorder()->renderStorefrontParameters['page']->getProduct()->getId());
-        static::assertSame('@Storefront/storefront/page/content/product-detail.html.twig', $this->controller->recorder()->renderStorefrontView);
     }
 
     public function testSwitchNoVariantReturn(): void

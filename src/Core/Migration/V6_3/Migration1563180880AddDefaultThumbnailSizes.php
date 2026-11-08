@@ -23,7 +23,7 @@ class Migration1563180880AddDefaultThumbnailSizes extends MigrationStep
     {
         $thumbnailSizes = $this->upsertThumbnailSizes($connection);
 
-        $foldersWithDefaultThumbnails = ['Product Media', 'Category Media', 'Cms Page Media'];
+        $foldersWithDefaultThumbnails = ['Product Media', 'Category Media'];
 
         foreach ($foldersWithDefaultThumbnails as $folderName) {
             $configurationId = $connection->fetchOne(

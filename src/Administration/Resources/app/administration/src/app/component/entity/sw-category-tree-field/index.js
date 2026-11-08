@@ -54,12 +54,6 @@ export default {
             default: false,
         },
 
-        pageId: {
-            type: String,
-            required: false,
-            default: null,
-        },
-
         isCategoriesLoading: {
             type: Boolean,
             required: false,
@@ -77,7 +71,7 @@ export default {
             isFetching: false,
             isComponentReady: false,
             categories: [],
-            selectedCategories: [],
+
             isExpanded: false,
             term: '',
             searchResult: [],
@@ -85,7 +79,6 @@ export default {
             setInputFocusClass: null,
             removeInputFocusClass: null,
             selectedTreeItem: '',
-            selectedCategoriesTotal: 0,
         };
     },
 
@@ -109,11 +102,11 @@ export default {
         },
 
         selectedCategoriesItemsIds() {
-            return this.pageId ? this.selectedCategories : this.categoriesCollection.getIds();
+            return this.categoriesCollection.getIds();
         },
 
         selectedCategoriesItemsTotal() {
-            return this.pageId ? this.selectedCategoriesTotal : this.categoriesCollection.length;
+            return this.categoriesCollection.total ?? this.categoriesCollection.length;
         },
 
         selectedCategoriesPathIds() {
@@ -124,14 +117,6 @@ export default {
                 // add parent id to accumulator
                 return [...acc, ...pathIds];
             }, []);
-        },
-
-        pageCategoryCriteria() {
-            const categoryCriteria = new Criteria();
-
-            categoryCriteria.addFilter(Criteria.equals('cmsPageId', this.pageId));
-
-            return categoryCriteria;
         },
     },
 
@@ -212,13 +197,6 @@ export default {
         createdComponent() {
             document.addEventListener('click', this.closeDropdownOnClickOutside);
             document.addEventListener('keydown', this.handleGeneralKeyEvents);
-
-            if (this.pageId) {
-                this.globalCategoryRepository.searchIds(this.pageCategoryCriteria).then((result) => {
-                    this.selectedCategories = result.data;
-                    this.selectedCategoriesTotal = result.total;
-                });
-            }
         },
 
         destroyedComponent() {
@@ -242,28 +220,12 @@ export default {
                     this.categories = searchResult;
                     this.isFetching = false;
 
-                    if (
-                        this.pageId &&
-                        searchResult[0].cmsPageId === this.pageId &&
-                        !this.selectedCategories.includes(searchResult[0].id)
-                    ) {
-                        this.selectedCategories.push(searchResult[0].id);
-                    }
-
                     return Promise.resolve();
                 }
 
                 // add new categories
                 searchResult.forEach((category) => {
                     this.categories.add(category);
-
-                    if (
-                        this.pageId &&
-                        category.cmsPageId === this.pageId &&
-                        !this.selectedCategories.includes(category.id)
-                    ) {
-                        this.selectedCategories.push(category.id);
-                    }
                 });
 
                 return Promise.resolve();
@@ -311,11 +273,6 @@ export default {
                     this.isExpanded = false;
                 }
 
-                if (this.pageId) {
-                    this.selectedCategories.push(item.id);
-                    this.selectedCategoriesTotal += 1;
-                }
-
                 return true;
             }
 
@@ -325,12 +282,6 @@ export default {
 
         removeItem(item) {
             this.categoriesCollection.remove(item.id);
-
-            if (this.pageId) {
-                const itemIndex = this.selectedCategories.findIndex((id) => id === item.id);
-                this.selectedCategories.splice(itemIndex, 1);
-                this.selectedCategoriesTotal -= 1;
-            }
 
             const removedItem = item.data ?? item;
 

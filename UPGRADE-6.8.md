@@ -3375,3 +3375,13 @@ If your extension relied on a restored `SalesChannelContext` (for example, custo
 `\Shopwell\Core\Content\ProductStream\Service\ProductStreamBuilderInterface` and its `buildFilters()` method have been removed. Use `\Shopwell\Core\Content\ProductStream\Service\AbstractProductStreamBuilder::enrichCriteria()` instead, which applies both the stream filters and the grouping state to the passed `Criteria`.
 
 If your extension decorates the `ProductStreamBuilder` service or applies variant grouping manually, `extends AbstractProductStreamBuilder` and respect `\Shopwell\Core\Content\Product\SalesChannel\Listing\ProductListingLoader::STATE_SKIP_ADD_GROUPING` on the `Criteria` to keep matching variants ungrouped.
+
+## Legacy CMS was removed
+
+`Shopwell\Core\Content\Cms`, the `sw-cms` editor, app CMS blocks, CMS Store API routes and the old block/section/element Twig templates were removed.
+Replace CMS extensions with Content System type declarations, bindings and `content_layout` assignments.
+Category, product and landing-page responses no longer expose `cmsPage` or `slotConfig`; sales channels no longer expose `homeCmsPage` or `homeSlotConfig`.
+Blog and blog-category assignments now use the nonversioned `contentLayoutId` field.
+Static layout links use `frontend.content.page` and the `/layout/{id}` specification source.
+The development baseline installs Content System directly and has no legacy CMS schema or upgrade migration.
+Recreate authored pages and review all legal page content before using this development baseline.

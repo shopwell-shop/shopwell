@@ -227,7 +227,7 @@ class ThemeLifecycleServiceTest extends TestCase
         $this->themeLifecycleService->refreshTheme($bundle, $this->context);
 
         $shopwellLogo = $this->getMedia('shopwell_logo');
-        $this->createCmsPage($shopwellLogo->getId());
+        $this->createProductDownload($shopwellLogo->getId());
 
         $this->themeLifecycleService->refreshTheme($bundle, $this->context);
 
@@ -243,7 +243,7 @@ class ThemeLifecycleServiceTest extends TestCase
         $this->themeLifecycleService->refreshTheme($bundle, $this->context);
 
         $shopwellLogoId = $this->getMedia('shopwell_logo');
-        $this->createCmsPage($shopwellLogoId->getId());
+        $this->createProductDownload($shopwellLogoId->getId());
 
         $this->themeLifecycleService->refreshTheme($bundle, $this->context);
 
@@ -262,7 +262,7 @@ class ThemeLifecycleServiceTest extends TestCase
         $this->themeLifecycleService->refreshTheme($bundle, $this->context);
 
         $shopwellLogoId = $this->getMedia('shopwell_logo');
-        $this->createCmsPage($shopwellLogoId->getId());
+        $this->createProductDownload($shopwellLogoId->getId());
 
         $this->themeLifecycleService->refreshTheme($bundle, $this->context);
 
@@ -281,7 +281,7 @@ class ThemeLifecycleServiceTest extends TestCase
         $this->themeLifecycleService->refreshTheme($bundle, $this->context);
 
         $shopwellLogoId = $this->getMedia('shopwell_logo');
-        $this->createCmsPage($shopwellLogoId->getId());
+        $this->createProductDownload($shopwellLogoId->getId());
 
         $this->themeLifecycleService->refreshTheme($bundle, $this->context);
 
@@ -588,15 +588,15 @@ class ThemeLifecycleServiceTest extends TestCase
         static::assertNull($media);
     }
 
-    // we create a cms-page because it has has the DeleteRestricted flag in media definition
-    private function createCmsPage(string $logoId): void
+    private function createProductDownload(string $logoId): void
     {
-        $manufacturerRepository = static::getContainer()->get('cms_page.repository');
-        $manufacturerRepository->create([[
-            'name' => 'dummy cms page',
-            'previewMediaId' => $logoId,
-            'type' => 'page',
-            'config' => [],
+        static::getContainer()->get('product.repository')->create([[
+            'name' => 'Download fixture',
+            'productNumber' => Uuid::randomHex(),
+            'stock' => 1,
+            'tax' => ['name' => 'Standard rate', 'taxRate' => 19],
+            'price' => [['currencyId' => Defaults::CURRENCY, 'gross' => 10, 'net' => 10, 'linked' => false]],
+            'downloads' => [['mediaId' => $logoId]],
         ]], $this->context);
     }
 

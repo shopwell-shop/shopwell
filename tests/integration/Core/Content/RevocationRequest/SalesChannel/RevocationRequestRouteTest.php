@@ -5,12 +5,11 @@ namespace Shopwell\Tests\Integration\Core\Content\RevocationRequest\SalesChannel
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Content\MailTemplate\Service\Event\MailSentEvent;
-use Shopwell\Core\Defaults;
-use Shopwell\Core\Framework\Context;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopwell\Core\Framework\Test\TestCaseBase\MailTemplateTestBehaviour;
 use Shopwell\Core\Framework\Test\TestCaseBase\SalesChannelApiTestBehaviour;
+use Shopwell\Core\System\SystemConfig\SystemConfigService;
 use Shopwell\Core\Test\Stub\Framework\IdsCollection;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Component\HttpFoundation\Request;
@@ -64,36 +63,10 @@ class RevocationRequestRouteTest extends TestCase
         static::assertSame('Revocation request received', $mail->getSubject());
     }
 
-    public function testRequestUsesEntitySpecificSlotConfig(): void
+    public function testRequestUsesSalesChannelRecipient(): void
     {
-        $categoryId = $this->ids->create('revocation-category');
-        $slotId = $this->ids->create('revocation-form-slot');
         $recipient = 'revocation@example.com';
-        $successMessage = 'Revocation request configured message';
-
-        static::getContainer()->get('category.repository')->create([
-            [
-                'id' => $categoryId,
-                'translations' => [
-                    [
-                        'name' => 'Revocation category',
-                        'languageId' => Defaults::LANGUAGE_SYSTEM,
-                        'slotConfig' => [
-                            $slotId => [
-                                'mailReceiver' => [
-                                    'source' => 'static',
-                                    'value' => [$recipient],
-                                ],
-                                'confirmationText' => [
-                                    'source' => 'static',
-                                    'value' => $successMessage,
-                                ],
-                            ],
-                        ],
-                    ],
-                ],
-            ],
-        ], Context::createDefaultContext());
+        static::getContainer()->get(SystemConfigService::class)->set('core.basicInformation.email', $recipient, $this->ids->get('sales-channel'));
 
         $mail = null;
         $this->catchEvent(MailSentEvent::class, $mail);
@@ -106,15 +79,12 @@ class RevocationRequestRouteTest extends TestCase
                 'email' => 'test@example.com',
                 'contractNumber' => 'SW123456789',
                 'comment' => 'Lorem ipsum dolor sit amet',
-                'slotId' => $slotId,
-                'navigationId' => $categoryId,
-                'entityName' => 'category',
             ]
         );
 
         $response = json_decode((string) $this->browser->getResponse()->getContent(), true, 512, \JSON_THROW_ON_ERROR);
 
-        static::assertSame($successMessage, $response['individualSuccessMessage']);
+        static::assertSame('', $response['individualSuccessMessage']);
         static::assertInstanceOf(MailSentEvent::class, $mail);
         static::assertArrayHasKey($recipient, $mail->getRecipients());
     }

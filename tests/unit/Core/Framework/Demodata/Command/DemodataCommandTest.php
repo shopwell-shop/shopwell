@@ -13,6 +13,7 @@ use Shopwell\Core\Content\MailTemplate\Aggregate\MailHeaderFooter\MailHeaderFoot
 use Shopwell\Core\Content\MailTemplate\MailTemplateDefinition;
 use Shopwell\Core\Content\Media\MediaDefinition;
 use Shopwell\Core\Content\Newsletter\Aggregate\NewsletterRecipient\NewsletterRecipientDefinition;
+use Shopwell\Core\Content\Product\Aggregate\ProductContentLayout\ProductContentLayoutDefinition;
 use Shopwell\Core\Content\Product\Aggregate\ProductManufacturer\ProductManufacturerDefinition;
 use Shopwell\Core\Content\Product\Aggregate\ProductReview\ProductReviewDefinition;
 use Shopwell\Core\Content\Product\ProductDefinition;
@@ -52,6 +53,7 @@ class DemodataCommandTest extends TestCase
         PromotionDefinition::class,
         OrderDefinition::class,
         ProductReviewDefinition::class,
+        ProductContentLayoutDefinition::class,
         UserDefinition::class,
         FlowDefinition::class,
         CustomFieldSetDefinition::class,

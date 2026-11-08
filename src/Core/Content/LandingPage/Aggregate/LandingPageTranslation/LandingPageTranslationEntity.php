@@ -5,8 +5,6 @@ namespace Shopwell\Core\Content\LandingPage\Aggregate\LandingPageTranslation;
 use Shopwell\Core\Content\LandingPage\LandingPageEntity;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityCustomFieldsTrait;
 use Shopwell\Core\Framework\DataAbstractionLayer\TranslationEntity;
-use Shopwell\Core\Framework\Deprecation\BCChange\ParameterTypeNarrowing;
-use Shopwell\Core\Framework\Feature;
 use Shopwell\Core\Framework\Log\Package;
 
 #[Package('discovery')]
@@ -27,11 +25,6 @@ class LandingPageTranslationEntity extends TranslationEntity
     protected ?string $metaDescription = null;
 
     protected ?string $keywords = null;
-
-    /**
-     * @var array<string, array<string, array<string, mixed>>|null>|null
-     */
-    protected ?array $slotConfig = null;
 
     public function getLandingPageId(): string
     {
@@ -101,29 +94,5 @@ class LandingPageTranslationEntity extends TranslationEntity
     public function setKeywords(?string $keywords): void
     {
         $this->keywords = $keywords;
-    }
-
-    /**
-     * @return array<string, array<string, array<string, mixed>>|null>|null
-     */
-    public function getSlotConfig(): ?array
-    {
-        return $this->slotConfig;
-    }
-
-    /**
-     * @param array<string, array<string, array<string, mixed>>|null>|null $slotConfig
-     */
-    #[ParameterTypeNarrowing(version: 'v6.8.0', parameterName: 'slotConfig', newType: 'array', description: 'The parameter becomes required and non-nullable.')]
-    public function setSlotConfig(?array $slotConfig): void
-    {
-        if ($slotConfig === null) {
-            Feature::triggerDeprecationOrThrow(
-                'v6.8.0.0',
-                '$slotConfig will be mandatory in future implementation'
-            );
-        }
-
-        $this->slotConfig = $slotConfig;
     }
 }

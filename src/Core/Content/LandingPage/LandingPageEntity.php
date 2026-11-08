@@ -2,14 +2,11 @@
 
 namespace Shopwell\Core\Content\LandingPage;
 
-use Shopwell\Core\Content\Cms\CmsPageEntity;
 use Shopwell\Core\Content\LandingPage\Aggregate\LandingPageTranslation\LandingPageTranslationCollection;
 use Shopwell\Core\Content\Seo\SeoUrl\SeoUrlCollection;
 use Shopwell\Core\Framework\DataAbstractionLayer\Entity;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityCustomFieldsTrait;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityIdTrait;
-use Shopwell\Core\Framework\Deprecation\BCChange\ParameterTypeNarrowing;
-use Shopwell\Core\Framework\Feature;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\SalesChannel\SalesChannelCollection;
 use Shopwell\Core\System\Tag\TagCollection;
@@ -26,12 +23,6 @@ class LandingPageEntity extends Entity
 
     protected ?TagCollection $tags = null;
 
-    protected ?string $cmsPageId = null;
-
-    protected ?string $cmsPageVersionId = null;
-
-    protected ?CmsPageEntity $cmsPage = null;
-
     protected ?SalesChannelCollection $salesChannels = null;
 
     protected ?string $name = null;
@@ -43,11 +34,6 @@ class LandingPageEntity extends Entity
     protected ?string $keywords = null;
 
     protected ?string $url = null;
-
-    /**
-     * @var array<string, array<string, array<string, mixed>>|null>|null
-     */
-    protected ?array $slotConfig = null;
 
     protected ?SeoUrlCollection $seoUrls = null;
 
@@ -79,26 +65,6 @@ class LandingPageEntity extends Entity
     public function setTags(TagCollection $tags): void
     {
         $this->tags = $tags;
-    }
-
-    public function getCmsPageId(): ?string
-    {
-        return $this->cmsPageId;
-    }
-
-    public function setCmsPageId(?string $cmsPageId): void
-    {
-        $this->cmsPageId = $cmsPageId;
-    }
-
-    public function getCmsPage(): ?CmsPageEntity
-    {
-        return $this->cmsPage;
-    }
-
-    public function setCmsPage(CmsPageEntity $cmsPage): void
-    {
-        $this->cmsPage = $cmsPage;
     }
 
     public function getSalesChannels(): ?SalesChannelCollection
@@ -161,30 +127,6 @@ class LandingPageEntity extends Entity
         $this->url = $url;
     }
 
-    /**
-     * @return array<string, array<string, array<string, mixed>>|null>|null
-     */
-    public function getSlotConfig(): ?array
-    {
-        return $this->slotConfig;
-    }
-
-    /**
-     * @param array<string, array<string, array<string, mixed>>|null>|null $slotConfig
-     */
-    #[ParameterTypeNarrowing(version: 'v6.8.0', parameterName: 'slotConfig', newType: 'array', description: 'The parameter becomes required and non-nullable.')]
-    public function setSlotConfig(?array $slotConfig): void
-    {
-        if ($slotConfig === null) {
-            Feature::triggerDeprecationOrThrow(
-                'v6.8.0.0',
-                '$slotConfig will be mandatory in future implementation'
-            );
-        }
-
-        $this->slotConfig = $slotConfig;
-    }
-
     public function getSeoUrls(): ?SeoUrlCollection
     {
         return $this->seoUrls;
@@ -193,15 +135,5 @@ class LandingPageEntity extends Entity
     public function setSeoUrls(SeoUrlCollection $seoUrls): void
     {
         $this->seoUrls = $seoUrls;
-    }
-
-    public function getCmsPageVersionId(): ?string
-    {
-        return $this->cmsPageVersionId;
-    }
-
-    public function setCmsPageVersionId(?string $cmsPageVersionId): void
-    {
-        $this->cmsPageVersionId = $cmsPageVersionId;
     }
 }

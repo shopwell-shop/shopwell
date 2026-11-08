@@ -251,7 +251,7 @@ class BlogListingReaderTest extends TestCase
     public function testTheLayoutComesFromTheFilteredCategoryOnly(): void
     {
         $category = $this->category('category-a', 'Guides');
-        $category->cmsPageId = 'cms-page-id';
+        $category->contentLayoutId = 'cms-page-id';
 
         $categories = new BlogCategoryCollection([$category]);
 

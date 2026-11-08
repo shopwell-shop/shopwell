@@ -150,14 +150,13 @@
             >
                 {% block sw_blog_category_detail_content_layout_select %}
                 <sw-entity-single-select
-                    v-model:value="category.cmsPageId"
-                    class="sw-blog-category-detail__cms-page"
-                    entity="cms_page"
-                    :criteria="cmsPageOptionsCriteria"
+                    v-model:value="category.contentLayoutId"
+                    class="sw-blog-category-detail__content-layout"
+                    entity="content_layout"
+                    :criteria="contentLayoutOptionsCriteria"
                     :disabled="!canEdit"
-                    :label="$t('sw-blog.detail.labelCmsPage')"
-                    :placeholder="$t('sw-blog.detail.placeholderCmsPage')"
-                    @update:value="onCmsPageChanged"
+                    :label="$t('sw-blog.detail.labelContentLayout')"
+                    :placeholder="$t('sw-blog.detail.placeholderContentLayout')"
                 />
                 {% endblock %}
             </mt-card>

@@ -42,7 +42,7 @@
             v-model="sortingOption.active"
             v-tooltip="{
                 showDelay: 300,
-                message: $t('sw-cms.elements.productListing.config.sorting.defaultSortingCantBeDisabled'),
+                message: $t('sw-settings-listing.general.defaultSortingCantBeDisabled'),
                 disabled: !isDefaultSorting
             }"
             :disabled="isDefaultSorting || sortingOption.locked"

@@ -148,16 +148,6 @@ describe('scripts/codemods/sfc-migration mixin composables', () => {
         expect(result.sfc).not.toContain('createNotificationError');
     });
 
-    it('imports a composable shopwell:composables does not publish from its Administration file', async () => {
-        const result = await convertFixture('sw-mixin-cms-element-scaffold');
-
-        expect(result.outcome).toBe('partial');
-        expect(result.sfc).toContain(
-            "import useCmsElementDeprecated from 'src/app/composables/use-cms-element-deprecated';",
-        );
-        expect(result.sfc).not.toContain('shopwell:composables');
-    });
-
     describe('extension targets', () => {
         it('imports the composables the same way the Administration does', async () => {
             const administration = await convertFixture('sw-mixin-composable');
@@ -165,16 +155,6 @@ describe('scripts/codemods/sfc-migration mixin composables', () => {
 
             expect(extension.outcome).toBe('full');
             expect(extension.sfc).toBe(administration.sfc);
-        });
-
-        it('refuses a mixin whose composable is not published to extensions', async () => {
-            const result = await convertFixture('sw-mixin-cms-element-scaffold', { extensionTarget: true });
-
-            expect(result.outcome).toBe('skipped');
-            expect(result.reasons).toContain(
-                "useCmsElementDeprecated() replaces the 'cms-element' mixin but is not published to extensions through shopwell:composables",
-            );
-            expect(result.sfc).toBeNull();
         });
     });
 
@@ -224,7 +204,6 @@ describe('scripts/codemods/sfc-migration mixin composables', () => {
             "component redefines 'createNotification', which the 'notification' composable calls internally",
         ],
         ['sw-mixin-unmapped', "'swInlineSnippetLocale' is read but the 'sw-inline-snippet' composable does not provide it"],
-        ['sw-mixin-cms-element-service', "'cmsService' is read but the 'cms-element' composable does not provide it"],
         ['sw-mixin-template-collision', "'placeholder' is read in the template and its binding name is already taken"],
     ])('skips %s, whose mixin members the composable cannot stand in for', async (name, reason) => {
         const result = await convertFixture(name);
@@ -406,33 +385,6 @@ describe('scripts/codemods/sfc-migration mixin composables', () => {
 
             // The component's `filters` override reaches the composable as the getter it takes.
             expect(result.sfc).toContain('filters: () => filters.value');
-        });
-
-        it('wires a cms element component up to the deprecated composable and leaves it as a draft', async () => {
-            const result = await convertFixture('sw-mixin-cms-element-scaffold');
-
-            expect(result.outcome).toBe('partial');
-            expect(result.reasons).toEqual(["useCmsElementDeprecated() replaces the 'cms-element' mixin"]);
-
-            expect(result.sfc).toContain(
-                "// TODO(sfc-migration) VERIFY: useCmsElementDeprecated() replaces the 'cms-element' mixin",
-            );
-            expect(result.sfc).toContain('// - the config writes still reach the element object itself');
-
-            // The props the mixin declared are merged in, and the two the composable reads are handed
-            // back to it as getters.
-            expect(result.sfc).toContain('element: {');
-            expect(result.sfc).toContain('defaultConfig: {');
-            expect(result.sfc).toContain('disabled: {');
-            expect(result.sfc).toContain('useCmsElementDeprecated({\n    element: () => props.element,');
-            expect(result.sfc).toContain('defaultConfig: () => props.defaultConfig,');
-
-            // The in-place write the CMS editor depends on stays exactly that.
-            expect(result.sfc).toContain('props.element.config.content.value = content;');
-
-            // A component that names only `cms-element` reads the cms state through it.
-            expect(result.sfc).toContain('cmsPageState,');
-            expect(result.sfc).toContain('() => cmsPageState.value.currentDemoEntity,');
         });
 
         it.each([

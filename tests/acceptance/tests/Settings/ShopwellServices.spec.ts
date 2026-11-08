@@ -114,7 +114,7 @@ test.describe('Shopwell Services', () => {
                 // eslint-disable-next-line playwright/no-conditional-in-test
                 if (InstanceMeta.isSaaS) {
                     const privileges = [
-                        'cms_page:read',
+                        'content_layout:read',
                         'custom_field:read',
                         'custom_field_set_relation:read',
                         'product_sorting:create',
@@ -149,7 +149,7 @@ test.describe('Shopwell Services', () => {
                 // eslint-disable-next-line playwright/no-conditional-in-test
                 if (InstanceMeta.isSaaS) {
                     const privileges = [
-                        'cms_page:read',
+                        'content_layout:read',
                         'custom_field:read',
                         'custom_field_set_relation:read',
                         'plugin:update',
@@ -175,7 +175,7 @@ test.describe('Shopwell Services', () => {
                     aclRole = await TestDataService.createAclRole({ privileges: privileges });
                 } else {
                     const privileges = [
-                        'cms_page:read',
+                        'content_layout:read',
                         'custom_field:read',
                         'custom_field_set_relation:read',
                         'plugin:update',

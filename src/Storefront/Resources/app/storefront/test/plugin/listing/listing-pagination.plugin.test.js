@@ -1,7 +1,7 @@
 import ListingPlugin from 'src/plugin/listing/listing.plugin';
 
 const template = `
-    <div class="cms-element-product-listing-wrapper" data-listing-pagination="true">
+    <div class="product-listing-wrapper" data-listing-pagination="true">
         <!-- Pagination -->
         <nav aria-label="pagination" class="pagination-nav" data-pagination-position="top">
             <ul class="pagination">
@@ -19,8 +19,8 @@ const template = `
         </nav>
 
         <!-- Listing product results -->
-        <div class="cms-element-product-listing">
-            <div class="row cms-listing-row js-listing-wrapper">
+        <div class="product-listing-content">
+            <div class="row product-listing-row js-listing-wrapper">
                 <div class="card product-box box-standard"></div>
                 <div class="card product-box box-standard"></div>
                 <div class="card product-box box-standard"></div>
@@ -70,9 +70,9 @@ describe('listing-pagination.plugin', () => {
             Promise.resolve({
                 ok: true,
                 text: () => Promise.resolve(`
-                <div class="cms-element-product-listing-wrapper" data-listing="true">
-                    <div class="cms-element-product-listing">
-                        <div class="row cms-listing-row js-listing-wrapper">
+                <div class="product-listing-wrapper" data-listing="true">
+                    <div class="product-listing-content">
+                        <div class="row product-listing-row js-listing-wrapper">
                             <div class="card product-box box-standard"></div>
                             <div class="card product-box box-standard"></div>
                         </div>

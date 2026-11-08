@@ -31,8 +31,7 @@ function registerProperties(state: FullState, store: Store<VuexRootState>) {
     /* eslint-disable @typescript-eslint/no-unsafe-return */
     state._registerPrivateProperty('_store', store);
     state._registerProperty('list', () => Object.keys(store.state));
-    state._registerProperty('get', <N extends keyof VuexRootState | 'cmsPage'>(name: N) => {
-        // @ts-expect-error
+    state._registerProperty('get', <N extends keyof VuexRootState>(name: N) => {
         return store.state[name];
     });
     state._registerGetterMethod('getters', () => store.getters);

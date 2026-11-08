@@ -4,11 +4,14 @@ namespace Shopwell\Core\Framework\App;
 
 use Shopwell\Core\Framework\Api\Acl\Role\AclRoleDefinition;
 use Shopwell\Core\Framework\App\Aggregate\ActionButton\ActionButtonDefinition;
+use Shopwell\Core\Framework\App\Aggregate\AppContentSystemBindingSpecification\AppContentSystemBindingSpecificationDefinition;
+use Shopwell\Core\Framework\App\Aggregate\AppContentSystemElementType\AppContentSystemElementTypeDefinition;
+use Shopwell\Core\Framework\App\Aggregate\AppContentSystemLayoutPreset\AppContentSystemLayoutPresetDefinition;
+use Shopwell\Core\Framework\App\Aggregate\AppContentSystemStyleOption\AppContentSystemStyleOptionDefinition;
 use Shopwell\Core\Framework\App\Aggregate\AppPaymentMethod\AppPaymentMethodDefinition;
 use Shopwell\Core\Framework\App\Aggregate\AppScriptCondition\AppScriptConditionDefinition;
 use Shopwell\Core\Framework\App\Aggregate\AppShippingMethod\AppShippingMethodDefinition;
 use Shopwell\Core\Framework\App\Aggregate\AppTranslation\AppTranslationDefinition;
-use Shopwell\Core\Framework\App\Aggregate\CmsBlock\AppCmsBlockDefinition;
 use Shopwell\Core\Framework\App\Aggregate\FlowAction\AppFlowActionDefinition;
 use Shopwell\Core\Framework\App\Aggregate\FlowEvent\AppFlowEventDefinition;
 use Shopwell\Core\Framework\App\Template\TemplateDefinition;
@@ -140,7 +143,10 @@ class AppDefinition extends EntityDefinition
             (new OneToManyAssociationField('paymentMethods', AppPaymentMethodDefinition::class, 'app_id'))->addFlags(new SetNullOnDelete()),
             (new OneToManyAssociationField('taxProviders', TaxProviderDefinition::class, 'app_id'))->addFlags(new CascadeDelete()),
             (new OneToManyAssociationField('scriptConditions', AppScriptConditionDefinition::class, 'app_id'))->addFlags(new CascadeDelete())->removeFlag(ApiAware::class),
-            (new OneToManyAssociationField('cmsBlocks', AppCmsBlockDefinition::class, 'app_id'))->addFlags(new CascadeDelete()),
+            (new OneToManyAssociationField('contentElementTypes', AppContentSystemElementTypeDefinition::class, 'app_id'))->addFlags(new CascadeDelete()),
+            (new OneToManyAssociationField('styleOptions', AppContentSystemStyleOptionDefinition::class, 'app_id'))->addFlags(new CascadeDelete()),
+            (new OneToManyAssociationField('bindingSpecifications', AppContentSystemBindingSpecificationDefinition::class, 'app_id'))->addFlags(new CascadeDelete()),
+            (new OneToManyAssociationField('layoutPresets', AppContentSystemLayoutPresetDefinition::class, 'app_id'))->addFlags(new CascadeDelete()),
             (new OneToManyAssociationField('flowActions', AppFlowActionDefinition::class, 'app_id'))->addFlags(new CascadeDelete()),
             (new OneToManyAssociationField('flowEvents', AppFlowEventDefinition::class, 'app_id'))->addFlags(new CascadeDelete()),
             (new OneToManyAssociationField('appShippingMethods', AppShippingMethodDefinition::class, 'app_id'))->addFlags(new SetNullOnDelete()),

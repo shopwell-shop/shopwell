@@ -15,7 +15,6 @@ use Shopwell\Core\Framework\Api\Context\AdminApiSource;
 use Shopwell\Core\Framework\App\Aggregate\ActionButton\ActionButtonCollection;
 use Shopwell\Core\Framework\App\Aggregate\ActionButton\ActionButtonEntity;
 use Shopwell\Core\Framework\App\Aggregate\AppShippingMethod\AppShippingMethodEntity;
-use Shopwell\Core\Framework\App\Aggregate\CmsBlock\AppCmsBlockCollection;
 use Shopwell\Core\Framework\App\Aggregate\FlowAction\AppFlowActionCollection;
 use Shopwell\Core\Framework\App\AppCollection;
 use Shopwell\Core\Framework\App\AppEntity;
@@ -150,7 +149,6 @@ class AppManagerTest extends TestCase
         $this->assertDefaultTemplate($appEntity->getId());
         $this->assertDefaultScript($appEntity->getId());
         $this->assertDefaultPaymentMethods($appEntity->getId());
-        $this->assertDefaultCmsBlocks($appEntity->getId());
         $this->assertAssetExists($appEntity->getName());
         $this->assertFlowActionExists($appEntity->getId());
         $this->assertDefaultHosts($appEntity);
@@ -1356,57 +1354,6 @@ class AppManagerTest extends TestCase
         static::assertSame('myMethod', $appPaymentMethod->getIdentifier());
         static::assertSame('https://payment.app/payment/process', $appPaymentMethod->getPayUrl());
         static::assertSame('https://payment.app/payment/finalize', $appPaymentMethod->getFinalizeUrl());
-    }
-
-    private function assertDefaultCmsBlocks(string $appId): void
-    {
-        /** @var EntityRepository<AppCmsBlockCollection> $cmsBlockRepository */
-        $cmsBlockRepository = static::getContainer()->get('app_cms_block.repository');
-
-        $criteria = new Criteria();
-        $criteria->addFilter(
-            new EqualsFilter('appId', $appId)
-        );
-
-        $cmsBlocks = $cmsBlockRepository->search($criteria, $this->context)->getEntities();
-        static::assertCount(2, $cmsBlocks);
-
-        $firstCmsBlock = $cmsBlocks->filterByProperty('name', 'my-first-block')->first();
-        static::assertNotNull($firstCmsBlock);
-        static::assertSame('my-first-block', $firstCmsBlock->getName());
-        static::assertSame('First block from app', $firstCmsBlock->getLabel());
-        $firstBlockJson = json_encode($firstCmsBlock->getBlock(), \JSON_THROW_ON_ERROR);
-        static::assertIsString($firstBlockJson);
-        static::assertJsonStringEqualsJsonFile(__DIR__ . '/_fixtures/cms/expectedFirstCmsBlock.json', $firstBlockJson);
-        static::assertSame(
-            $this->stripWhitespace((string) file_get_contents(__DIR__ . '/../Manifest/_fixtures/test/Resources/cms/blocks/my-first-block/preview.html')),
-            $this->stripWhitespace($firstCmsBlock->getTemplate())
-        );
-        static::assertStringEqualsFile(
-            __DIR__ . '/../Manifest/_fixtures/test/Resources/cms/blocks/my-first-block/styles.css',
-            $firstCmsBlock->getStyles()
-        );
-
-        $secondCmsBlock = $cmsBlocks->filterByProperty('name', 'my-second-block')->first();
-        static::assertNotNull($secondCmsBlock);
-        static::assertSame('my-second-block', $secondCmsBlock->getName());
-        static::assertSame('Second block from app', $secondCmsBlock->getLabel());
-        $cmsBlockJson = json_encode($secondCmsBlock->getBlock(), \JSON_THROW_ON_ERROR);
-        static::assertIsString($cmsBlockJson);
-        static::assertJsonStringEqualsJsonFile(__DIR__ . '/_fixtures/cms/expectedSecondCmsBlock.json', $cmsBlockJson);
-        static::assertSame(
-            $this->stripWhitespace((string) file_get_contents(__DIR__ . '/../Manifest/_fixtures/test/Resources/cms/blocks/my-second-block/previewExpected.html')),
-            $this->stripWhitespace($secondCmsBlock->getTemplate())
-        );
-        static::assertSame(
-            $this->stripWhitespace((string) file_get_contents(__DIR__ . '/../Manifest/_fixtures/test/Resources/cms/blocks/my-second-block/styles.css')),
-            $this->stripWhitespace($secondCmsBlock->getStyles())
-        );
-    }
-
-    private function stripWhitespace(string $text): string
-    {
-        return (string) \preg_replace('/\s/m', '', $text);
     }
 
     private function setNewSystemLanguage(string $iso): void

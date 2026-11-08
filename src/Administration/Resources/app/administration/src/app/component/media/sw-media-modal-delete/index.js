@@ -252,9 +252,6 @@ export default {
                 'documentBaseConfigs',
                 'paymentMethods',
                 'shippingMethods',
-                'cmsBlocks',
-                'cmsSections',
-                'cmsPages',
             ];
 
             return mediaAssociations.some((association) => {

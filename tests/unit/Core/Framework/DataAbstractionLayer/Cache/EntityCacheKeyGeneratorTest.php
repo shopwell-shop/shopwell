@@ -43,11 +43,6 @@ class EntityCacheKeyGeneratorTest extends TestCase
     private const TAX_ID = '0191b0e4b7a97243b0f2fca1f9b0d2a1';
     private const TAX_RULE_ID = '0191b0e4b7a97243b0f2fca1f9b0d2a2';
 
-    public function testBuildCmsTag(): void
-    {
-        static::assertSame('cms-page-foo', EntityCacheKeyGenerator::buildCmsTag('foo'));
-    }
-
     public function testBuildProductTag(): void
     {
         static::assertSame('product-foo', EntityCacheKeyGenerator::buildProductTag('foo'));

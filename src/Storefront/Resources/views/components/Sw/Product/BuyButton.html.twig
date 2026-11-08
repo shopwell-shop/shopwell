@@ -1,0 +1,89 @@
+{# ludtwig-ignore-file #}
+{# @sw-package framework #}
+{# @internal #}
+
+{% props
+    product = null,
+    extraFormData = {},
+    jsOptions = {},
+    showQuantitySelect = false,
+%}
+
+{% set buyButtonCVA = cva({
+    base: 'sw-buy-widget d-grid',
+}) %}
+
+{% set attributeDefaults = {
+    class: buyButtonCVA.apply({}),
+    method: 'post',
+    action: path('frontend.checkout.line-item.add'),
+    'data-component': 'Sw:Product:BuyButton',
+    'data-component-options': jsOptions|json_encode,
+} %}
+
+{% set formData = {
+    redirectTo: 'frontend.detail.page',
+    redirectParameters: { productId: product.id }|json_encode,
+    ("lineItems[#{product.id}][id]"): product.id,
+    ("lineItems[#{product.id}][referencedId]"): product.id,
+    ("lineItems[#{product.id}][type]"): 'product',
+    ("lineItems[#{product.id}][stackable]"): '1',
+    ("lineItems[#{product.id}][removable]"): '1',
+    ("lineItems[#{product.id}][quantity]"): product.minPurchase,
+    ("lineItems[#{product.id}][product-name]"): product.translated.name,
+    ("lineItems[#{product.id}][payload][manufacturerName]"): product.manufacturer ? product.manufacturer.name : '',
+    'product-name': product.translated.name,
+    'brand-name': product.manufacturer ? product.manufacturer.name : '',
+} %}
+
+{% set seoCategory = product.seoCategory %}
+{% if seoCategory is null %}
+    {% set mainCategories = product.mainCategories|default([])|filter(mainCategory => mainCategory.salesChannelId == context.salesChannelId) %}
+    {% set mainCategory = mainCategories|first %}
+    {% set seoCategory = mainCategory ? mainCategory.category : null %}
+{% endif %}
+{% set categories = seoCategory ? sw_breadcrumb_full(seoCategory, context)|slice(0, 5) : [] %}
+{% for categoryId, category in categories %}
+    {% set formData = formData|merge({
+        ("lineItems[#{product.id}][payload][categoryNames][#{categoryId}]"): category.translated.name,
+    }) %}
+{% endfor %}
+
+{% if extraFormData %}
+    {% set formData = formData|merge(extraFormData) %}
+{% endif %}
+
+{% set quantityInputName = "lineItems[#{product.id}][quantity]" %}
+
+<form {{ attributes.defaults(attributeDefaults) }}>
+    {% block form_data_inputs %}
+        {% for name, value in formData %}
+            {% if not showQuantitySelect or name != quantityInputName %}
+            <input
+                type="hidden"
+                name="{{ name }}"
+                value="{{ value }}"
+                {% if name == 'redirectParameters' %}
+                    data-redirect-parameters="true"
+                {% endif %}
+                >
+            {% endif %}
+        {% endfor %}
+    {% endblock %}
+
+    {% if showQuantitySelect %}
+        <twig:Sw:Product:QuantitySelector
+            :product="product"
+            :value="formData[quantityInputName]"
+            :disabled="not product.available"
+        />
+    {% endif %}
+
+    {% block buy_button %}
+        <twig:Slot name="buy-button">
+            <twig:Sw:Button variant="buy" type="submit" :disabled="not product.available">
+                {{ 'listing.boxAddProduct'|trans|sw_sanitize }}
+            </twig:Sw:Button>
+        </twig:Slot>
+    {% endblock %}
+</form>

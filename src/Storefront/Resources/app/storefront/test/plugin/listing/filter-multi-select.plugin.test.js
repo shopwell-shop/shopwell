@@ -14,7 +14,7 @@ describe('FilterMultiSelect tests', () => {
         mockElement.setAttribute('aria-busy', 'true');
 
         const cmsElementProductListingWrapper = document.createElement('div');
-        cmsElementProductListingWrapper.classList.add('cms-element-product-listing-wrapper');
+        cmsElementProductListingWrapper.classList.add('product-listing-wrapper');
 
         const mockElementSpan = document.createElement('span');
         mockElementSpan.classList.add('filter-multi-select-count');
@@ -152,7 +152,7 @@ describe('FilterMultiSelect tests', () => {
                     </ul>
                 </div>
             </div>
-            <div class="cms-element-product-listing-wrapper"></div>
+            <div class="product-listing-wrapper"></div>
         `;
 
         filterMultiSelectPlugin = new FilterMultiSelectPlugin(document.querySelector('[data-filter-multi-select="true"]'), {

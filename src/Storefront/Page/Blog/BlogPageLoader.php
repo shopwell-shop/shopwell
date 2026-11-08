@@ -11,12 +11,13 @@ use Shopwell\Core\Content\Blog\SalesChannel\BlogListingStruct;
 use Shopwell\Core\Content\Blog\Service\BlogDetailReader;
 use Shopwell\Core\Content\Blog\Service\BlogListingReader;
 use Shopwell\Core\Content\Blog\Service\BlogSettings;
-use Shopwell\Core\Content\Cms\CmsPageEntity;
-use Shopwell\Core\Content\Cms\SalesChannel\SalesChannelCmsPageLoader;
 use Shopwell\Core\Content\Media\MediaCollection;
-use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopwell\Core\Framework\ContentSystem\Output\Struct\ContentPage;
+use Shopwell\Core\Framework\ContentSystem\SalesChannel\AbstractContentRoute;
+use Shopwell\Core\Framework\ContentSystem\SalesChannel\ContentRouteResponse;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
+use Shopwell\Storefront\Controller\Exception\StorefrontException;
 use Shopwell\Storefront\Page\MetaInformation;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
@@ -42,7 +43,7 @@ class BlogPageLoader
         private readonly BlogListingReader $listingReader,
         private readonly BlogDetailReader $detailReader,
         private readonly BlogSettings $settings,
-        private readonly SalesChannelCmsPageLoader $cmsPageLoader,
+        private readonly AbstractContentRoute $contentRoute,
         private readonly EventDispatcherInterface $eventDispatcher,
     ) {
     }
@@ -56,7 +57,7 @@ class BlogPageLoader
         $categoryId ??= $this->listingReader->categoryId($request);
 
         // the density of the listing page is the shop setting; which entries it shows is the reader's
-        // answer, so the page and the cms element cannot order them differently
+        // answer, so the page and the content element cannot order them differently
         $listing = $this->listingReader->listing(
             BlogListingStruct::LAYOUT_CLASSIC,
             $categoryId,
@@ -65,7 +66,7 @@ class BlogPageLoader
         );
 
         $categories = $this->listingReader->categoriesInUse($salesChannelContext->getContext());
-        $cmsPageId = $this->listingReader->layoutOf($categoryId, $categories);
+        $contentLayoutId = $this->listingReader->layoutOf($categoryId, $categories);
 
         $page = new BlogPage();
         $page->setBlogs($listing->getBlogs() ?? new BlogCollection());
@@ -73,8 +74,8 @@ class BlogPageLoader
         $page->setCoverMedia($listing->getCoverMedia() ?? new MediaCollection());
         $page->setReadingTimes($listing->getReadingTimes());
         $page->setActiveCategoryId($categoryId);
-        $page->setCmsPageId($cmsPageId);
-        $page->setCmsPage($this->cmsPage($cmsPageId, $request, $salesChannelContext));
+        $page->setContentLayoutId($contentLayoutId);
+        $page->setContentPage($this->contentPage($contentLayoutId, $request, $salesChannelContext));
         $page->setLimit($this->settings->getPostsPerPage($salesChannelContext->getSalesChannelId()));
         $page->setPageNumber($listing->getPage());
         $page->setTotal($listing->getTotal());
@@ -100,7 +101,7 @@ class BlogPageLoader
 
         if ($blog instanceof BlogEntity) {
             $page->setBlog($blog);
-            $page->setCmsPage($this->cmsPage($blog->cmsPageId, $request, $salesChannelContext));
+            $page->setContentPage($this->contentPage($blog->contentLayoutId, $request, $salesChannelContext));
         }
 
         $page->setAuthor($detail->getAuthor());
@@ -132,33 +133,21 @@ class BlogPageLoader
         return $page;
     }
 
-    /**
-     * The layout a merchant built in the administration, resolved to a rendered cms page.
-     *
-     * Null is the normal case and not an error: an installation that never opened the cms editor has
-     * no layout for a blog, and the twig template is then the page. That is also why the storefront
-     * does not throw when the reference points at a layout that was deleted - it falls back to the
-     * template rather than answering 500 for an entry whose content is perfectly fine.
-     *
-     * The page loader owns this and not the listing reader: the reader is the query layer of the blog
-     * and must stay free of the cms pipeline, because the `blog-listing` cms element reads through
-     * the reader too and the pipeline would then construct itself out of itself.
-     */
-    private function cmsPage(
-        ?string $cmsPageId,
+    private function contentPage(
+        ?string $layoutId,
         Request $request,
         SalesChannelContext $salesChannelContext,
-    ): ?CmsPageEntity {
-        if ($cmsPageId === null) {
+    ): ?ContentPage {
+        if ($layoutId === null) {
             return null;
         }
 
-        $cmsPage = $this->cmsPageLoader
-            ->load($request, new Criteria([$cmsPageId]), $salesChannelContext)
-            ->getEntities()
-            ->first();
+        $response = $this->contentRoute->load('/layout/' . $layoutId, $request, $salesChannelContext);
+        if (!$response instanceof ContentRouteResponse) {
+            throw StorefrontException::contentRequiresTwigOutput();
+        }
 
-        return $cmsPage instanceof CmsPageEntity ? $cmsPage : null;
+        return $response->getContentPage();
     }
 
     /**

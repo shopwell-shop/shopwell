@@ -4,12 +4,6 @@ $ignoreErrors = [];
 $ignoreErrors[] = [
     'rawMessage' => 'Construct empty() is not allowed. Use more strict comparison.',
     'identifier' => 'empty.notAllowed',
-    'count' => 3,
-    'path' => __DIR__ . '/src/Core/Content/Cms/Subscriber/CmsVersionMergeSubscriber.php',
-];
-$ignoreErrors[] = [
-    'rawMessage' => 'Construct empty() is not allowed. Use more strict comparison.',
-    'identifier' => 'empty.notAllowed',
     'count' => 2,
     'path' => __DIR__ . '/src/Core/Content/ImportExport/DataAbstractionLayer/Serializer/Entity/OrderSerializer.php',
 ];
@@ -84,12 +78,6 @@ $ignoreErrors[] = [
     'identifier' => 'empty.notAllowed',
     'count' => 1,
     'path' => __DIR__ . '/src/Core/Content/MeasurementSystem/Field/MeasurementUnitsFieldSerializer.php',
-];
-$ignoreErrors[] = [
-    'rawMessage' => 'Construct empty() is not allowed. Use more strict comparison.',
-    'identifier' => 'empty.notAllowed',
-    'count' => 1,
-    'path' => __DIR__ . '/src/Core/Content/Media/Cms/Type/ImageSliderTypeDataResolver.php',
 ];
 $ignoreErrors[] = [
     'rawMessage' => 'Method Shopwell\\Core\\Content\\Media\\TypeDetector\\TypeDetector::detect() should return Shopwell\\Core\\Content\\Media\\MediaType\\MediaType but returns Shopwell\\Core\\Content\\Media\\MediaType\\MediaType|null.',
@@ -192,12 +180,6 @@ $ignoreErrors[] = [
     'identifier' => 'shopwell.domainException',
     'count' => 1,
     'path' => __DIR__ . '/src/Core/Framework/App/AppLocaleProvider.php',
-];
-$ignoreErrors[] = [
-    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopwell-shop/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
-    'identifier' => 'shopwell.domainException',
-    'count' => 2,
-    'path' => __DIR__ . '/src/Core/Framework/App/Cms/BlockTemplateLoader.php',
 ];
 $ignoreErrors[] = [
     'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopwell-shop/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
@@ -648,12 +630,6 @@ $ignoreErrors[] = [
     'identifier' => 'empty.notAllowed',
     'count' => 1,
     'path' => __DIR__ . '/src/Core/Migration/V6_6/Migration1700746995ReplaceSortingOptionKeysWithSortingOptionIds.php',
-];
-$ignoreErrors[] = [
-    'rawMessage' => 'Construct empty() is not allowed. Use more strict comparison.',
-    'identifier' => 'empty.notAllowed',
-    'count' => 1,
-    'path' => __DIR__ . '/src/Core/Migration/V6_6/Migration1711461572ReplaceSortingOptionKeysWithSortingOptionIds.php',
 ];
 $ignoreErrors[] = [
     'rawMessage' => 'Method Shopwell\\Core\\Profiling\\Integration\\Datadog::start() has parameter $tags with no value type specified in iterable type array.',

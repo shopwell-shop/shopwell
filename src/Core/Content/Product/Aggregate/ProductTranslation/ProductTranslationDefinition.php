@@ -10,7 +10,6 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\AllowHtml;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\ApiAware;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\Required;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\Flag\WriteProtected;
-use Shopwell\Core\Framework\DataAbstractionLayer\Field\JsonField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\ListField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\LongTextField;
 use Shopwell\Core\Framework\DataAbstractionLayer\Field\StringField;
@@ -67,7 +66,6 @@ class ProductTranslationDefinition extends EntityTranslationDefinition
             (new StringField('pack_unit', 'packUnit'))->addFlags(new ApiAware()),
             (new StringField('pack_unit_plural', 'packUnitPlural'))->addFlags(new ApiAware()),
             new ListField('custom_search_keywords', 'customSearchKeywords'),
-            (new JsonField('slot_config', 'slotConfig'))->addFlags(new ApiAware()),
             (new StringField('og_title', 'ogTitle'))->addFlags(new ApiAware()),
             (new StringField('og_description', 'ogDescription'))->addFlags(new ApiAware()),
             (new CustomFields())->addFlags(new ApiAware()),

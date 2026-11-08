@@ -663,10 +663,6 @@ describe('module/sw-import-export/components/sw-import-export-entity-path-select
                     value: 'translations.DEFAULT.customSearchKeywords',
                 },
                 {
-                    label: 'translations.DEFAULT.slotConfig',
-                    value: 'translations.DEFAULT.slotConfig',
-                },
-                {
                     label: 'translations.DEFAULT.ogTitle',
                     value: 'translations.DEFAULT.ogTitle',
                 },
@@ -709,7 +705,7 @@ describe('module/sw-import-export/components/sw-import-export-entity-path-select
                 },
             ]),
         );
-        expect(data.options).toHaveLength(20);
+        expect(data.options).toHaveLength(19);
 
         data = wrapper.vm.processVisibilities(data);
 
@@ -757,10 +753,7 @@ describe('module/sw-import-export/components/sw-import-export-entity-path-select
                 label: 'translations.DEFAULT.customSearchKeywords',
                 value: 'translations.DEFAULT.customSearchKeywords',
             },
-            {
-                label: 'translations.DEFAULT.slotConfig',
-                value: 'translations.DEFAULT.slotConfig',
-            },
+
             {
                 label: 'translations.DEFAULT.ogTitle',
                 value: 'translations.DEFAULT.ogTitle',
@@ -852,10 +845,7 @@ describe('module/sw-import-export/components/sw-import-export-entity-path-select
                 label: 'translations.DEFAULT.customSearchKeywords',
                 value: 'translations.DEFAULT.customSearchKeywords',
             },
-            {
-                label: 'translations.DEFAULT.slotConfig',
-                value: 'translations.DEFAULT.slotConfig',
-            },
+
             {
                 label: 'translations.DEFAULT.ogTitle',
                 value: 'translations.DEFAULT.ogTitle',

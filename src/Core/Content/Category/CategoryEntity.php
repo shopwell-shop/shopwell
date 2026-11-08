@@ -3,7 +3,6 @@
 namespace Shopwell\Core\Content\Category;
 
 use Shopwell\Core\Content\Category\Aggregate\CategoryTranslation\CategoryTranslationCollection;
-use Shopwell\Core\Content\Cms\CmsPageEntity;
 use Shopwell\Core\Content\Media\MediaEntity;
 use Shopwell\Core\Content\Product\ProductCollection;
 use Shopwell\Core\Content\ProductStream\ProductStreamEntity;
@@ -12,7 +11,6 @@ use Shopwell\Core\Content\Seo\SeoUrl\SeoUrlCollection;
 use Shopwell\Core\Framework\DataAbstractionLayer\Entity;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityCustomFieldsTrait;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityIdTrait;
-use Shopwell\Core\Framework\Feature;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\System\SalesChannel\SalesChannelCollection;
 use Shopwell\Core\System\Tag\TagCollection;
@@ -64,23 +62,9 @@ class CategoryEntity extends Entity
 
     protected ?TagCollection $tags = null;
 
-    protected ?string $cmsPageId = null;
-
-    /**
-     * @deprecated tag:v6.8.0 - Will be removed without replacement
-     */
-    protected bool $cmsPageIdSwitched = false;
-
-    protected ?CmsPageEntity $cmsPage = null;
-
     protected ?string $productStreamId = null;
 
     protected ?ProductStreamEntity $productStream = null;
-
-    /**
-     * @var array<string, array<string, array<string, mixed>>|null>|null
-     */
-    protected ?array $slotConfig = null;
 
     protected ?SalesChannelCollection $navigationSalesChannels = null;
 
@@ -296,52 +280,6 @@ class CategoryEntity extends Entity
         $this->tags = $tags;
     }
 
-    public function getCmsPage(): ?CmsPageEntity
-    {
-        return $this->cmsPage;
-    }
-
-    public function setCmsPage(CmsPageEntity $cmsPage): void
-    {
-        $this->cmsPage = $cmsPage;
-    }
-
-    public function getCmsPageId(): ?string
-    {
-        return $this->cmsPageId;
-    }
-
-    public function setCmsPageId(string $cmsPageId): void
-    {
-        $this->cmsPageId = $cmsPageId;
-    }
-
-    /**
-     * @deprecated tag:v6.8.0 - Will be removed without replacement
-     */
-    public function getCmsPageIdSwitched(): bool
-    {
-        Feature::triggerDeprecationOrThrow(
-            'v6.8.0.0',
-            Feature::deprecatedMethodMessage(self::class, __METHOD__, 'v6.8.0.0')
-        );
-
-        return $this->cmsPageIdSwitched;
-    }
-
-    /**
-     * @deprecated tag:v6.8.0 - Will be removed without replacement
-     */
-    public function setCmsPageIdSwitched(bool $switched): void
-    {
-        Feature::triggerDeprecationOrThrow(
-            'v6.8.0.0',
-            Feature::deprecatedMethodMessage(self::class, __METHOD__, 'v6.8.0.0')
-        );
-
-        $this->cmsPageIdSwitched = $switched;
-    }
-
     public function getProductStream(): ?ProductStreamEntity
     {
         return $this->productStream;
@@ -360,22 +298,6 @@ class CategoryEntity extends Entity
     public function setProductStreamId(string $productStreamId): void
     {
         $this->productStreamId = $productStreamId;
-    }
-
-    /**
-     * @return array<string, array<string, array<string, mixed>>|null>|null
-     */
-    public function getSlotConfig(): ?array
-    {
-        return $this->slotConfig;
-    }
-
-    /**
-     * @param array<string, array<string, array<string, mixed>>|null> $slotConfig
-     */
-    public function setSlotConfig(array $slotConfig): void
-    {
-        $this->slotConfig = $slotConfig;
     }
 
     public function getNavigationSalesChannels(): ?SalesChannelCollection

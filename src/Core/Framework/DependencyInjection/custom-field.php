@@ -3,10 +3,13 @@
 namespace Shopwell\Core\Framework\DependencyInjection;
 
 use Doctrine\DBAL\Connection;
+use Shopwell\Core\Framework\Adapter\Cache\CacheInvalidator;
 use Shopwell\Core\Framework\DataAbstractionLayer\DefinitionInstanceRegistry;
 use Shopwell\Core\System\CustomField\Aggregate\CustomFieldSet\CustomFieldSetDefinition;
 use Shopwell\Core\System\CustomField\Aggregate\CustomFieldSetRelation\CustomFieldSetRelationDefinition;
 use Shopwell\Core\System\CustomField\Api\CustomFieldSetActionController;
+use Shopwell\Core\System\CustomField\ContentSystem\Mapping\CustomFieldMappingCandidateCacheInvalidator;
+use Shopwell\Core\System\CustomField\ContentSystem\Mapping\CustomFieldMappingCandidateProvider;
 use Shopwell\Core\System\CustomField\CustomFieldDefinition;
 use Shopwell\Core\System\CustomField\CustomFieldService;
 use Shopwell\Core\System\CustomField\CustomFieldSetPersister;
@@ -49,4 +52,18 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('custom_field_set_relation.repository'),
             service('custom_field.repository'),
         ]);
+
+    $services->set(CustomFieldMappingCandidateProvider::class)
+        ->args([
+            service('custom_field.repository'),
+            service('cache.object'),
+        ])
+        ->tag('content_system.mapping_candidate_provider');
+
+    $services->set(CustomFieldMappingCandidateCacheInvalidator::class)
+        ->args([
+            service(CacheInvalidator::class),
+            service('cache.object'),
+        ])
+        ->tag('kernel.event_subscriber');
 };

@@ -143,8 +143,6 @@
     },
     "shopwell:composables": {
         "exports": [
-            "useCmsElement",
-            "useCmsState",
             "useInlineSnippet",
             "useListing",
             "useMediaGridListener",
@@ -161,8 +159,6 @@
             "useVideoCover"
         ],
         "subpaths": {
-            "useCmsElement": [],
-            "useCmsState": [],
             "useInlineSnippet": [],
             "useListing": [],
             "useMediaGridListener": [],
@@ -202,7 +198,6 @@
     "shopwell:stores": {
         "exports": [],
         "subpaths": {
-            "cmsPage": [],
             "topBarButton": [],
             "teaserPopover": [],
             "adminMenu": [],
@@ -214,6 +209,7 @@
             "extensionSdkModules": [],
             "extensions": [],
             "error": [],
+            "experienceStudioEditor": [],
             "context": [],
             "adminHelpCenter": [],
             "actionButtons": [],

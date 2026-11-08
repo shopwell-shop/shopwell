@@ -6,12 +6,14 @@ use Shopwell\Core\Content\Category\CategoryDefinition;
 use Shopwell\Core\Content\Category\CategoryException;
 use Shopwell\Core\Content\Category\Service\AbstractCategoryUrlGenerator;
 use Shopwell\Core\Content\Seo\SeoUrlPlaceholderHandlerInterface;
+use Shopwell\Core\Framework\ContentSystem\Output\Struct\ContentPage;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\PlatformRequest;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
 use Shopwell\Storefront\Framework\Routing\RequestTransformer;
 use Shopwell\Storefront\Framework\Routing\StorefrontRouteScope;
 use Shopwell\Storefront\Framework\Seo\SeoUrlRoute\NavigationPageSeoUrlRoute;
+use Shopwell\Storefront\Page\Navigation\NavigationPage;
 use Shopwell\Storefront\Page\Navigation\NavigationPageLoadedHook;
 use Shopwell\Storefront\Page\Navigation\NavigationPageLoaderInterface;
 use Shopwell\Storefront\Pagelet\Footer\FooterPageletLoadedHook;
@@ -59,7 +61,16 @@ class NavigationController extends StorefrontController
 
         $this->hook(new NavigationPageLoadedHook($page, $context));
 
-        return $this->renderStorefront('@Storefront/storefront/page/content/index.html.twig', ['page' => $page]);
+        $contentPage = $this->loadCategoryContentPage($page, $request, $context);
+
+        return $this->renderStorefront(
+            '@Storefront/storefront/page/content/page.html.twig',
+            [
+                'page' => $page,
+                'contentPage' => $contentPage,
+                'isNewContentStructure' => true,
+            ]
+        );
     }
 
     #[Route(
@@ -89,7 +100,39 @@ class NavigationController extends StorefrontController
             return new RedirectResponse($this->seoUrlReplacer->replace($urlPlaceholder, $host, $context));
         }
 
-        return $this->renderStorefront('@Storefront/storefront/page/content/index.html.twig', ['page' => $page]);
+        $contentPage = $this->loadCategoryContentPage($page, $request, $context);
+
+        return $this->renderStorefront(
+            '@Storefront/storefront/page/content/page.html.twig',
+            [
+                'page' => $page,
+                'contentPage' => $contentPage,
+                'isNewContentStructure' => true,
+            ]
+        );
+    }
+
+    #[Route(
+        path: '/content/{path}',
+        name: 'frontend.content.layout',
+        options: ['seo' => false],
+        defaults: ['_httpCache' => true],
+        requirements: ['path' => '.+'],
+        methods: ['GET'],
+    )]
+    public function content(string $path, Request $request, SalesChannelContext $context): Response
+    {
+        $page = $this->navigationPageLoader->load($request, $context);
+        $contentPage = $this->loadContentPage('/' . ltrim($path, '/'), $request, $context);
+
+        return $this->renderStorefront(
+            '@Storefront/storefront/page/content/raw.html.twig',
+            [
+                'page' => $page,
+                'contentPage' => $contentPage,
+                'isNewContentStructure' => true,
+            ]
+        );
     }
 
     #[Route(
@@ -133,9 +176,19 @@ class NavigationController extends StorefrontController
 
         $this->hook(new HeaderPageletLoadedHook($header, $context));
 
+        $headerParameters = $request->query->all('headerParameters');
+
+        if (\array_key_exists('isNewContentStructure', $headerParameters)) {
+            return $this->renderStorefront('@Storefront/storefront/page/content/header.html.twig', [
+                'header' => $header,
+                'headerParameters' => $headerParameters,
+                'isNewContentStructure' => true,
+            ]);
+        }
+
         return $this->renderStorefront('@Storefront/storefront/layout/header.html.twig', [
             'header' => $header,
-            'headerParameters' => $request->query->all()['headerParameters'] ?? [],
+            'headerParameters' => $headerParameters,
         ]);
     }
 
@@ -159,5 +212,16 @@ class NavigationController extends StorefrontController
             'footer' => $footer,
             'footerParameters' => $request->query->all()['footerParameters'] ?? [],
         ]);
+    }
+
+    private function loadCategoryContentPage(NavigationPage $page, Request $request, SalesChannelContext $context): ?ContentPage
+    {
+        $category = $page->getCategory();
+        \assert($category !== null);
+
+        $categoryId = $category->getId();
+        $path = '/category/' . $categoryId;
+
+        return $this->loadContentPage('/' . ltrim($path, '/'), $request, $context);
     }
 }

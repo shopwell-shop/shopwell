@@ -46,9 +46,7 @@ describe('src/module/sw-category/page/sw-category-detail', () => {
                 },
                 provide: {
                     customFieldDataProviderService: { getCustomFieldSets: () => Promise.resolve([]) },
-                    cmsService: {
-                        getEntityMappingTypes: () => {},
-                    },
+
                     repositoryFactory: {
                         create: () => ({
                             search: () =>
@@ -58,7 +56,6 @@ describe('src/module/sw-category/page/sw-category-detail', () => {
                             save: saveMock,
                             get: () =>
                                 Promise.resolve({
-                                    slotConfig: '',
                                     navigationSalesChannels: [],
                                     footerSalesChannels: [],
                                     serviceSalesChannels: [],
@@ -66,12 +63,6 @@ describe('src/module/sw-category/page/sw-category-detail', () => {
                         }),
                     },
                     seoUrlService: {},
-                    systemConfigApiService: {
-                        getValues: () =>
-                            Promise.resolve({
-                                'core.cms.default_category_cms_page': 'foo',
-                            }),
-                    },
                 },
             },
         });
@@ -79,29 +70,12 @@ describe('src/module/sw-category/page/sw-category-detail', () => {
 
     beforeEach(() => {
         global.activeAclRoles = [];
-
-        Shopwell.Store.unregister('cmsPage');
-        Shopwell.Store.register({
-            id: 'cmsPage',
-            state: () => ({
-                currentPage: null,
-            }),
-            actions: {
-                resetCmsPageState: () => {},
-                setCurrentMappingEntity: () => {},
-                setCurrentMappingTypes: () => {},
-                setCurrentDemoEntity: () => {},
-                setCurrentPage: () => {},
-            },
-        });
     });
 
     it('should not allow to modify', async () => {
         const wrapper = await createWrapper();
 
-        Shopwell.Store.get('swCategoryDetail').category = {
-            slotConfig: '',
-        };
+        Shopwell.Store.get('swCategoryDetail').category = {};
 
         await wrapper.setData({
             isLoading: false,
@@ -123,9 +97,7 @@ describe('src/module/sw-category/page/sw-category-detail', () => {
 
         const wrapper = await createWrapper();
 
-        Shopwell.Store.get('swCategoryDetail').category = {
-            slotConfig: '',
-        };
+        Shopwell.Store.get('swCategoryDetail').category = {};
 
         await wrapper.setData({
             isLoading: false,
@@ -147,9 +119,7 @@ describe('src/module/sw-category/page/sw-category-detail', () => {
 
         const wrapper = await createWrapper();
 
-        Shopwell.Store.get('swCategoryDetail').category = {
-            slotConfig: '',
-        };
+        Shopwell.Store.get('swCategoryDetail').category = {};
 
         await wrapper.setData({
             isLoading: false,
@@ -171,9 +141,7 @@ describe('src/module/sw-category/page/sw-category-detail', () => {
 
         const wrapper = await createWrapper();
 
-        Shopwell.Store.get('swCategoryDetail').category = {
-            slotConfig: '',
-        };
+        Shopwell.Store.get('swCategoryDetail').category = {};
 
         await wrapper.setData({
             isLoading: false,
@@ -190,85 +158,7 @@ describe('src/module/sw-category/page/sw-category-detail', () => {
         expect(categoryTree.props('allowDelete')).toBe(true);
     });
 
-    it('should set default layout', async () => {
-        global.activeAclRoles = ['category.creator', 'category.editor', 'category.deleter'];
-
-        const wrapper = await createWrapper();
-
-        Shopwell.Store.get('swCategoryDetail').category = {
-            slotConfig: '',
-            cmsPageId: 'foo',
-            navigationSalesChannels: [],
-            footerSalesChannels: [],
-            serviceSalesChannels: [],
-        };
-
-        await wrapper.setData({
-            isLoading: false,
-            cmsPage: null,
-        });
-
-        await wrapper.setProps({
-            categoryId: 'foo',
-        });
-
-        await wrapper.vm.onSave();
-
-        const lastCallParameters = saveMock.mock.lastCall;
-        expect(lastCallParameters[0].cmsPageId).toBeUndefined();
-    });
-
-    it('should save changed slot config fields only', async () => {
-        const wrapper = await createWrapper();
-
-        const origin = {
-            sections: [
-                {
-                    id: 'section1',
-                    blocks: [
-                        {
-                            id: 'block1',
-                            slots: [
-                                {
-                                    id: 'slot1',
-                                    translated: { config: { key1: { value: 'value1' }, key2: { value: 'value2' } } },
-                                },
-                                { id: 'slot2', translated: { config: { key1: { value: 'value1' } } } },
-                            ],
-                        },
-                    ],
-                },
-            ],
-        };
-
-        const changes = {
-            sections: [
-                {
-                    id: 'section1',
-                    blocks: [
-                        {
-                            id: 'block1',
-                            slots: [
-                                { id: 'slot1', config: { key1: { value: 'newValue1' }, key2: { value: 'value2' } } },
-                                { id: 'slot2', config: { key1: { value: 'newValue1' } } },
-                            ],
-                        },
-                    ],
-                },
-            ],
-        };
-
-        const expectedSlotOverrides = {
-            slot1: { key1: { value: 'newValue1' } },
-            slot2: { key1: { value: 'newValue1' } },
-        };
-
-        const result = wrapper.vm.extractSlotOverrides(origin, changes);
-
-        expect(result).toEqual(expectedSlotOverrides);
-    });
-
-    it('should load landing page translations for CMS inheritance handling', async () => {
+    it('should load landing page translations', async () => {
         const wrapper = await createWrapper();
 
         expect(wrapper.vm.landingPageCriteria.associations.some(({ association }) => association === 'translations')).toBe(

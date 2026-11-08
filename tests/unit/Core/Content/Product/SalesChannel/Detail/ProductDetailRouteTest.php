@@ -12,11 +12,6 @@ use PHPUnit\Framework\MockObject\Stub;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Content\Category\CategoryEntity;
 use Shopwell\Core\Content\Category\Service\CategoryBreadcrumbBuilder;
-use Shopwell\Core\Content\Cms\CmsPageCollection;
-use Shopwell\Core\Content\Cms\CmsPageEntity;
-use Shopwell\Core\Content\Cms\SalesChannel\SalesChannelCmsPageLoader;
-use Shopwell\Core\Content\Cms\Service\EntityCmsSlotConfigInheritanceBuilder;
-use Shopwell\Core\Content\Product\Aggregate\ProductTranslation\ProductTranslationCollection;
 use Shopwell\Core\Content\Product\Aggregate\ProductVisibility\ProductVisibilityDefinition;
 use Shopwell\Core\Content\Product\Exception\ProductNotFoundException;
 use Shopwell\Core\Content\Product\Extension\ProductDetailRouteExtension;
@@ -30,10 +25,8 @@ use Shopwell\Core\Content\Product\SalesChannel\Detail\ProductDetailRouteResponse
 use Shopwell\Core\Content\Product\SalesChannel\ProductAvailableFilter;
 use Shopwell\Core\Content\Product\SalesChannel\ProductCloseoutFilterFactory;
 use Shopwell\Core\Content\Product\SalesChannel\SalesChannelProductCollection;
-use Shopwell\Core\Content\Product\SalesChannel\SalesChannelProductDefinition;
 use Shopwell\Core\Content\Product\SalesChannel\SalesChannelProductEntity;
 use Shopwell\Core\Framework\Adapter\Cache\CacheTagCollector;
-use Shopwell\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopwell\Core\Framework\DataAbstractionLayer\FieldVisibility;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
@@ -70,11 +63,6 @@ class ProductDetailRouteTest extends TestCase
      */
     private SystemConfigService $systemConfig;
 
-    /**
-     * @var Stub&EntityRepository<ProductTranslationCollection>
-     */
-    private Stub&EntityRepository $productTranslationRepository;
-
     private Connection&Stub $connection;
 
     private ProductDetailRoute $route;
@@ -84,8 +72,6 @@ class ProductDetailRouteTest extends TestCase
     private IdsCollection $idsCollection;
 
     private CategoryBreadcrumbBuilder&Stub $breadcrumbBuilder;
-
-    private SalesChannelCmsPageLoader&Stub $cmsPageLoader;
 
     private AbstractProductCloseoutFilterFactory $productCloseoutFilterFactory;
 
@@ -97,11 +83,9 @@ class ProductDetailRouteTest extends TestCase
         $this->context = Generator::generateSalesChannelContext();
         $this->idsCollection = new IdsCollection();
         $this->productRepository = static::createStub(SalesChannelRepository::class);
-        $this->productTranslationRepository = static::createStub(EntityRepository::class);
         $this->systemConfig = static::createStub(SystemConfigService::class);
         $this->connection = static::createStub(Connection::class);
         $this->breadcrumbBuilder = static::createStub(CategoryBreadcrumbBuilder::class);
-        $this->cmsPageLoader = static::createStub(SalesChannelCmsPageLoader::class);
         $this->productCloseoutFilterFactory = new ProductCloseoutFilterFactory();
         $this->eventDispatcher = new EventDispatcher();
 
@@ -112,7 +96,6 @@ class ProductDetailRouteTest extends TestCase
     {
         $productEntity = new SalesChannelProductEntity();
         $productEntity->setId(Uuid::randomHex());
-        $productEntity->setCmsPageId('4');
         $productEntity->setUniqueIdentifier('mainVariant');
         $productEntity->internalSetEntityData('product', new FieldVisibility([]));
         $productRepository = $this->createMock(SalesChannelRepository::class);
@@ -132,14 +115,12 @@ class ProductDetailRouteTest extends TestCase
 
         $result = $route->load('1', new Request(), $this->context, new Criteria());
 
-        static::assertSame('4', $result->getProduct()->getCmsPageId());
         static::assertSame('mainVariant', $result->getProduct()->getUniqueIdentifier());
     }
 
     public function testLoadBestVariant(): void
     {
         $productEntity = new SalesChannelProductEntity();
-        $productEntity->setCmsPageId('4');
         $productEntity->setId($this->idsCollection->create('product1'));
         $productEntity->setAvailable(true);
         $productEntity->setUniqueIdentifier('BestVariant');
@@ -171,7 +152,6 @@ class ProductDetailRouteTest extends TestCase
 
         $result = $route->load($product1Id, new Request(), $this->context, new Criteria());
 
-        static::assertSame('4', $result->getProduct()->getCmsPageId());
         static::assertSame('BestVariant', $result->getProduct()->getUniqueIdentifier());
         static::assertTrue($result->getProduct()->getAvailable());
     }
@@ -191,7 +171,6 @@ class ProductDetailRouteTest extends TestCase
             ->willReturnCallback(static fn (string $key, ?string $_salesChannelId = null): bool => $key === 'core.listing.findBestVariant');
 
         $productTerm = new SalesChannelProductEntity();
-        $productTerm->setCmsPageId('term');
         $productTerm->setId($this->idsCollection->create('term'));
         $productTerm->setUniqueIdentifier('term');
         $productTerm->setName('term');
@@ -230,7 +209,6 @@ class ProductDetailRouteTest extends TestCase
         $route = $this->buildRoute($productRepository, $connection);
         $result = $route->load($product1Id, $request, $this->context, new Criteria());
 
-        static::assertSame('term', $result->getProduct()->getCmsPageId());
         static::assertSame('term', $result->getProduct()->getUniqueIdentifier());
     }
 
@@ -250,7 +228,6 @@ class ProductDetailRouteTest extends TestCase
 
         $productEntity = new SalesChannelProductEntity();
         $productEntity->setId($mainVariantId);
-        $productEntity->setCmsPageId('4');
         $productEntity->setUniqueIdentifier('mainVariant');
         $productEntity->internalSetEntityData('product', new FieldVisibility([]));
 
@@ -296,7 +273,6 @@ class ProductDetailRouteTest extends TestCase
         $productId = Uuid::randomHex();
         $productEntity = new SalesChannelProductEntity();
         $productEntity->setId($productId);
-        $productEntity->setCmsPageId('4');
         $productEntity->setUniqueIdentifier('2');
         $productEntity->setAvailable(true);
         $productEntity->internalSetEntityData('product', new FieldVisibility([]));
@@ -341,7 +317,6 @@ class ProductDetailRouteTest extends TestCase
 
         $productEntity = new SalesChannelProductEntity();
         $productEntity->setId($bestVariantId);
-        $productEntity->setCmsPageId('4');
         $productEntity->setUniqueIdentifier('best-variant');
         $productEntity->setAvailable(true);
         $productEntity->internalSetEntityData('product', new FieldVisibility([]));
@@ -406,7 +381,6 @@ class ProductDetailRouteTest extends TestCase
         $variantId = Uuid::randomHex();
         $productEntity = new SalesChannelProductEntity();
         $productEntity->setId($variantId);
-        $productEntity->setCmsPageId('4');
         $productEntity->setAvailable(true);
         $productEntity->internalSetEntityData('product', new FieldVisibility([]));
         $productRepository = $this->createMock(SalesChannelRepository::class);
@@ -454,7 +428,6 @@ class ProductDetailRouteTest extends TestCase
         $productId = Uuid::randomHex();
         $productEntity = new SalesChannelProductEntity();
         $productEntity->setId($productId);
-        $productEntity->setCmsPageId('4');
         $productEntity->setUniqueIdentifier('2');
         $productEntity->setAvailable(true);
         $productEntity->internalSetEntityData('product', new FieldVisibility([]));
@@ -498,7 +471,6 @@ class ProductDetailRouteTest extends TestCase
         $productId = Uuid::randomHex();
         $productEntity = new SalesChannelProductEntity();
         $productEntity->setId($productId);
-        $productEntity->setCmsPageId('4');
         $productEntity->setUniqueIdentifier('2');
         $productEntity->setAvailable(true);
         $productEntity->internalSetEntityData('product', new FieldVisibility([]));
@@ -532,7 +504,6 @@ class ProductDetailRouteTest extends TestCase
     {
         $productEntity = new SalesChannelProductEntity();
         $productEntity->setId(Uuid::randomHex());
-        $productEntity->setCmsPageId('4');
         $productEntity->setUniqueIdentifier('BestVariant');
         $productEntity->internalSetEntityData('product', new FieldVisibility([]));
 
@@ -558,7 +529,6 @@ class ProductDetailRouteTest extends TestCase
 
         $result = $this->buildRoute($productRepository)->load($this->idsCollection->get('product2'), new Request(), $this->context, new Criteria());
 
-        static::assertSame('4', $result->getProduct()->getCmsPageId());
         static::assertSame('BestVariant', $result->getProduct()->getUniqueIdentifier());
     }
 
@@ -566,7 +536,6 @@ class ProductDetailRouteTest extends TestCase
     {
         $productEntity = new SalesChannelProductEntity();
         $productEntity->setId(Uuid::randomHex());
-        $productEntity->setCmsPageId('4');
         $productEntity->setUniqueIdentifier('mainVariant');
         $productEntity->internalSetEntityData('product', new FieldVisibility([]));
         $productRepository = $this->createMock(SalesChannelRepository::class);
@@ -588,7 +557,6 @@ class ProductDetailRouteTest extends TestCase
 
         $result = $route->load('1', $request, $this->context, new Criteria());
 
-        static::assertSame('4', $result->getProduct()->getCmsPageId());
         static::assertSame('mainVariant', $result->getProduct()->getUniqueIdentifier());
         static::assertNotNull($result->getConfigurator());
 
@@ -596,71 +564,8 @@ class ProductDetailRouteTest extends TestCase
 
         $result = $route->load('1', $request, $this->context, new Criteria());
 
-        static::assertSame('4', $result->getProduct()->getCmsPageId());
         static::assertSame('mainVariant', $result->getProduct()->getUniqueIdentifier());
         static::assertNull($result->getConfigurator());
-    }
-
-    public function testSkipCmsPageQueryParameterExcludingCmsPage(): void
-    {
-        $productEntity = new SalesChannelProductEntity();
-        $productEntity->setId(Uuid::randomHex());
-        $productEntity->setCmsPageId('4');
-        $productEntity->setUniqueIdentifier('mainVariant');
-        $productEntity->internalSetEntityData('product', new FieldVisibility([]));
-
-        $productRepository = $this->createMock(SalesChannelRepository::class);
-        $productRepository->expects($this->exactly(2))
-            ->method('search')
-            ->willReturn(
-                new EntitySearchResult(
-                    'product',
-                    1,
-                    new ProductCollection([$productEntity]),
-                    null,
-                    new Criteria(),
-                    $this->context->getContext()
-                )
-            );
-
-        $cmsPage = new CmsPageEntity();
-        $cmsPage->setId('4');
-
-        $cmsPageLoader = $this->createMock(SalesChannelCmsPageLoader::class);
-        $cmsPageLoader->expects($this->once())
-            ->method('load')
-            ->willReturn(new EntitySearchResult(
-                'cms_page',
-                1,
-                new CmsPageCollection([$cmsPage]),
-                null,
-                new Criteria(),
-                $this->context->getContext()
-            ));
-
-        $route = $this->buildRoute($productRepository, cmsPageLoader: $cmsPageLoader);
-
-        // Reset cmsPage of product
-        $productEntity->assign(['cmsPage' => null]);
-
-        $request = new Request();
-
-        $result = $route->load('1', $request, $this->context, new Criteria());
-
-        static::assertSame('4', $result->getProduct()->getCmsPageId());
-        static::assertSame('mainVariant', $result->getProduct()->getUniqueIdentifier());
-        static::assertSame($cmsPage, $result->getProduct()->getCmsPage());
-
-        // Reset cmsPage of product
-        $productEntity->assign(['cmsPage' => null]);
-
-        $request->query->set('skipCmsPage', true);
-
-        $result = $route->load('1', $request, $this->context, new Criteria());
-
-        static::assertSame('4', $result->getProduct()->getCmsPageId());
-        static::assertSame('mainVariant', $result->getProduct()->getUniqueIdentifier());
-        static::assertNull($result->getProduct()->getCmsPage());
     }
 
     public function testLoadProductNotFound(): void
@@ -756,14 +661,10 @@ class ProductDetailRouteTest extends TestCase
 
         $route = new ProductDetailRoute(
             static::createStub(SalesChannelRepository::class),
-            static::createStub(EntityRepository::class),
             static::createStub(SystemConfigService::class),
             static::createStub(Connection::class),
             static::createStub(ProductConfiguratorLoader::class),
             static::createStub(CategoryBreadcrumbBuilder::class),
-            static::createStub(SalesChannelCmsPageLoader::class),
-            static::createStub(EntityCmsSlotConfigInheritanceBuilder::class),
-            static::createStub(SalesChannelProductDefinition::class),
             static::createStub(AbstractProductCloseoutFilterFactory::class),
             static::createStub(EventDispatcherInterface::class),
             static::createStub(CacheTagCollector::class),
@@ -897,18 +798,13 @@ class ProductDetailRouteTest extends TestCase
         ?SalesChannelRepository $productRepository = null,
         ?Connection $connection = null,
         ?CategoryBreadcrumbBuilder $breadcrumbBuilder = null,
-        ?SalesChannelCmsPageLoader $cmsPageLoader = null,
     ): ProductDetailRoute {
         return new ProductDetailRoute(
             $productRepository ?? $this->productRepository,
-            $this->productTranslationRepository,
             $this->systemConfig,
             $connection ?? $this->connection,
             static::createStub(ProductConfiguratorLoader::class),
             $breadcrumbBuilder ?? $this->breadcrumbBuilder,
-            $cmsPageLoader ?? $this->cmsPageLoader,
-            static::createStub(EntityCmsSlotConfigInheritanceBuilder::class),
-            new SalesChannelProductDefinition(),
             $this->productCloseoutFilterFactory,
             $this->eventDispatcher,
             static::createStub(CacheTagCollector::class),

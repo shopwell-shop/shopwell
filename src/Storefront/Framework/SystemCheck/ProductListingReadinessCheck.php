@@ -162,7 +162,7 @@ class ProductListingReadinessCheck extends BaseCheck
     /**
      * @description This query is necessary to determine the categories that are configured for storefront listing
      * pages per sales channel. It covers cases where the navigation category itself or one of its direct child
-     * categories is assigned a CMS page of type 'product_list', and only considers active categories and sales
+     * categories is rendered through ContentSystem, and only considers active categories and sales
      * channels. All matching categories are returned, child categories first, so the check can fall back to the
      * next candidate if a category cannot be rendered for an anonymous visitor.
      *
@@ -184,11 +184,9 @@ class ProductListingReadinessCheck extends BaseCheck
                 ON `category_root`.`id` = `category_child`.`parent_id`
                 AND `category_root`.`version_id` = `category_child`.`version_id`
                 AND `category_child`.`active` = 1
-            INNER JOIN `cms_page` `cms_page_child`
-                ON `category_child`.`cms_page_id` = `cms_page_child`.`id`
-                AND `category_child`.`version_id` = `cms_page_child`.`version_id`
-                AND `cms_page_child`.`type` = 'product_list'
+                AND `category_child`.`type` = 'page'
             WHERE `category_root`.`active` = 1
+                AND `category_root`.`type` = 'page'
                 AND `sales_channel`.`id` IN (:salesChannelIds)
             UNION ALL
             SELECT LOWER(HEX(`sales_channel`.`id`)) AS `sales_channel_id`,
@@ -198,11 +196,8 @@ class ProductListingReadinessCheck extends BaseCheck
             INNER JOIN `sales_channel`
                 ON `sales_channel`.`navigation_category_id` = `category_root`.`id`
                 AND `sales_channel`.`navigation_category_version_id` = `category_root`.`version_id`
-            INNER JOIN `cms_page` `cms_page_root`
-                ON `category_root`.`cms_page_id` = `cms_page_root`.`id`
-                AND `category_root`.`version_id` = `cms_page_root`.`version_id`
-                AND `cms_page_root`.`type` = 'product_list'
             WHERE `category_root`.`active` = 1
+                AND `category_root`.`type` = 'page'
                 AND `sales_channel`.`id` IN (:salesChannelIds)
             ORDER BY `sales_channel_id`, `is_navigation_category`, `category_id`
         SQL;

@@ -26,10 +26,6 @@ export default {
             return Shopwell.Store.get('swCategoryDetail').landingPage;
         },
 
-        cmsPage() {
-            return Shopwell.Store.get('cmsPage').currentPage;
-        },
-
         landingPageViewTabs() {
             const createRouteTab = (label, routeName, additionalProperties = {}) => {
                 return {
@@ -44,7 +40,7 @@ export default {
 
             return [
                 createRouteTab('sw-landing-page.view.general', 'sw.category.landingPageDetail.base'),
-                createRouteTab('sw-landing-page.view.cms', 'sw.category.landingPageDetail.cms', {
+                createRouteTab('sw-landing-page.view.layout', 'sw.category.landingPageDetail.layout', {
                     disabled: !this.acl.can('landing_page.editor'),
                 }),
             ];

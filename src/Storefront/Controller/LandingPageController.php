@@ -2,6 +2,7 @@
 
 namespace Shopwell\Storefront\Controller;
 
+use Shopwell\Core\Content\LandingPage\LandingPageException;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\PlatformRequest;
 use Shopwell\Core\System\SalesChannel\SalesChannelContext;
@@ -37,8 +38,17 @@ class LandingPageController extends StorefrontController
     {
         $page = $this->landingPageLoader->load($request, $context);
 
+        $landingPage = $page->getLandingPage();
+        if ($landingPage === null) {
+            throw LandingPageException::notFound($request->attributes->getString('landingPageId'));
+        }
+
         $this->hook(new LandingPageLoadedHook($page, $context));
 
-        return $this->renderStorefront('@Storefront/storefront/page/content/index.html.twig', ['page' => $page]);
+        return $this->renderStorefront('@Storefront/storefront/page/content/page.html.twig', [
+            'page' => $page,
+            'contentPage' => $this->loadContentPage('/landing-page/' . $landingPage->getId(), $request, $context),
+            'isNewContentStructure' => true,
+        ]);
     }
 }

@@ -19,6 +19,7 @@ class StorefrontException extends HttpException
     final public const CAN_NOT_RENDER_CUSTOM_APP_VIEW = 'STOREFRONT__CAN_NOT_RENDER_CUSTOM_APP_VIEW';
     final public const UN_SUPPORT_STOREFRONT_RESPONSE = 'STOREFRONT__UN_SUPPORT_STOREFRONT_RESPONSE';
     final public const CLASS_DONT_HAVE_TWIG_INJECTED = 'STOREFRONT__CLASS_DONT_HAVE_TWIG_INJECTED';
+    final public const CONTENT_REQUIRES_TWIG_OUTPUT = 'STOREFRONT__CONTENT_REQUIRES_TWIG_OUTPUT';
     final public const NO_REQUEST_PROVIDED = 'STOREFRONT__NO_REQUEST_PROVIDED';
     final public const ANALYTICS_NOT_ACTIVE = 'STOREFRONT__ANALYTICS_NOT_ACTIVE';
     /**
@@ -91,6 +92,15 @@ class StorefrontException extends HttpException
             self::CLASS_DONT_HAVE_TWIG_INJECTED,
             'Class {{ class }} does not have twig injected. Add to your service definition a method call to setTwig with the twig instance',
             ['class' => $class]
+        );
+    }
+
+    public static function contentRequiresTwigOutput(): self
+    {
+        return new self(
+            Response::HTTP_INTERNAL_SERVER_ERROR,
+            self::CONTENT_REQUIRES_TWIG_OUTPUT,
+            'Storefront content requires the Twig output format.'
         );
     }
 

@@ -51,8 +51,8 @@
     }
   },
   {
-    "name": "cms-module",
-    "entity": "cms_page",
+    "name": "content-layout-module",
+    "entity": "content_layout",
     "routes": {
       "index": {
         "path": "index",

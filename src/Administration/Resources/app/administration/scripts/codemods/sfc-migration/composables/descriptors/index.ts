@@ -11,8 +11,6 @@
  */
 
 import { type ComposableDescriptor } from '../types';
-import CMS_ELEMENT_DESCRIPTOR from './cms-element';
-import CMS_STATE_DESCRIPTOR from './cms-state';
 import LISTING_DESCRIPTOR from './listing';
 import MEDIA_GRID_LISTENER_DESCRIPTOR from './media-grid-listener';
 import MEDIA_SIDEBAR_MODAL_DESCRIPTOR from './media-sidebar-modal';
@@ -29,8 +27,6 @@ import VALIDATION_DESCRIPTOR from './validation';
 import VIDEO_COVER_DESCRIPTOR from './video-cover';
 
 const COMPOSABLE_DESCRIPTORS: ComposableDescriptor[] = [
-    CMS_ELEMENT_DESCRIPTOR,
-    CMS_STATE_DESCRIPTOR,
     LISTING_DESCRIPTOR,
     MEDIA_GRID_LISTENER_DESCRIPTOR,
     MEDIA_SIDEBAR_MODAL_DESCRIPTOR,

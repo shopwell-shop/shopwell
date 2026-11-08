@@ -8,7 +8,6 @@ use Shopwell\Core\Checkout\Order\OrderDefinition;
 use Shopwell\Core\Checkout\Payment\PaymentMethodDefinition;
 use Shopwell\Core\Checkout\Promotion\PromotionDefinition;
 use Shopwell\Core\Checkout\Shipping\ShippingMethodDefinition;
-use Shopwell\Core\Content\Cms\CmsPageDefinition;
 use Shopwell\Core\Content\LandingPage\LandingPageDefinition;
 use Shopwell\Core\Content\Media\MediaDefinition;
 use Shopwell\Core\Content\Product\Aggregate\ProductManufacturer\ProductManufacturerDefinition;
@@ -59,7 +58,6 @@ final class ElasticsearchAdminTestCommand extends Command
 
         $term = $input->getArgument('term');
         $entities = [
-            CmsPageDefinition::ENTITY_NAME,
             CustomerDefinition::ENTITY_NAME,
             CustomerGroupDefinition::ENTITY_NAME,
             LandingPageDefinition::ENTITY_NAME,

@@ -43,10 +43,10 @@
                         the administration for exactly this page, so rendering the default next to it
                         would make the setting look broken.
                     #}
-                    {% if page.cmsPage %}
-                        {% block sw_blog_index_cms %}
-                            <div class="cms-page blog-index__cms">
-                                {% sw_include '@Storefront/storefront/page/content/detail.html.twig' with { cmsPage: page.cmsPage } only %}
+                    {% if page.contentPage %}
+                        {% block sw_blog_index_content %}
+                            <div class="content-page blog-index__content">
+                                <twig:Sw:Content:Page :page="page.contentPage" />
                             </div>
                         {% endblock %}
                     {% else %}
@@ -55,7 +55,7 @@
                 {% endblock %}
 
                 {% block sw_blog_index_pagination %}
-                    {% if not page.cmsPage %}
+                    {% if not page.contentPage %}
                         {% sw_include '@Storefront/storefront/component/blog/blog-pagination.html.twig' with { page: page } only %}
                     {% endif %}
                 {% endblock %}

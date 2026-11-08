@@ -6,8 +6,6 @@
  * The composables published as `Shopwell.Composables` and `shopwell:composables`: every composable that
  * replaces a mixin. The generator reads this literal, so it has to stay a plain `export default { … }`.
  */
-import useCmsElement from './use-cms-element';
-import useCmsState from './use-cms-state';
 import useInlineSnippet from './use-inline-snippet';
 import useListing from './use-listing';
 import useMediaGridListener from './use-media-grid-listener';
@@ -25,8 +23,6 @@ import useVideoCover from './use-video-cover';
 
 // eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
 export default {
-    useCmsElement,
-    useCmsState,
     useInlineSnippet,
     useListing,
     useMediaGridListener,

@@ -231,7 +231,6 @@ class DefaultMappingsTest extends TestCase
                     ],
                 ],
             ],
-            'cmsPageId' => Uuid::randomHex(),
         ];
 
         $mapping = $this->getDefaultMapping(CategoryDefinition::ENTITY_NAME);
@@ -261,8 +260,6 @@ class DefaultMappingsTest extends TestCase
         static::assertSame($category['media']['translations']['DEFAULT']['title'], $mappedCategory['media_title']);
         static::assertSame($category['media']['translations']['DEFAULT']['alt'], $mappedCategory['media_alt']);
 
-        static::assertSame($category['cmsPageId'], $mappedCategory['cms_page_id']);
-
         $pipeOutResult = $mappingPipe->out($config, $mappedCategory);
         static::assertInstanceOf(\Traversable::class, $pipeOutResult);
         $unmappedCategory = iterator_to_array($pipeOutResult);
@@ -285,8 +282,6 @@ class DefaultMappingsTest extends TestCase
         static::assertSame($category['media']['mediaType'], $unmappedCategory['media']['mediaType']);
         static::assertSame($category['media']['translations']['DEFAULT']['title'], $unmappedCategory['media']['translations']['DEFAULT']['title']);
         static::assertSame($category['media']['translations']['DEFAULT']['alt'], $unmappedCategory['media']['translations']['DEFAULT']['alt']);
-
-        static::assertSame($category['cmsPageId'], $unmappedCategory['cmsPageId']);
     }
 
     public function testNewsletterRecipient(): void

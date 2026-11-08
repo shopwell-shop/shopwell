@@ -13,6 +13,7 @@ use Shopwell\Core\Content\Product\SalesChannel\Review\AbstractProductReviewSaveR
 use Shopwell\Core\Content\Product\SalesChannel\Review\ProductReviewsWidgetLoadedHook;
 use Shopwell\Core\Content\Seo\SeoUrlPlaceholderHandlerInterface;
 use Shopwell\Core\Framework\Adapter\Request\RequestParamHelper;
+use Shopwell\Core\Framework\ContentSystem\Output\Struct\ContentPage;
 use Shopwell\Core\Framework\Feature;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Validation\DataBag\RequestDataBag;
@@ -23,6 +24,7 @@ use Shopwell\Storefront\Controller\Exception\StorefrontException;
 use Shopwell\Storefront\Framework\Routing\RequestTransformer;
 use Shopwell\Storefront\Framework\Routing\StorefrontRouteScope;
 use Shopwell\Storefront\Framework\Seo\SeoUrlRoute\ProductPageSeoUrlRoute;
+use Shopwell\Storefront\Page\Product\ProductPage;
 use Shopwell\Storefront\Page\Product\ProductPageLoadedHook;
 use Shopwell\Storefront\Page\Product\ProductPageLoader;
 use Shopwell\Storefront\Page\Product\QuickView\MinimalQuickViewPageLoader;
@@ -67,10 +69,14 @@ class ProductController extends StorefrontController
 
         $this->hook(new ProductPageLoadedHook($page, $context));
 
+        $contentPage = $this->loadProductContentPage($page, $request, $context);
+
         return $this->renderStorefront(
-            '@Storefront/storefront/page/content/product-detail.html.twig',
+            '@Storefront/storefront/page/content/page.html.twig',
             [
                 'page' => $page,
+                'contentPage' => $contentPage,
+                'isNewContentStructure' => true,
                 'redirectTo' => ProductPageSeoUrlRoute::ROUTE_NAME,
             ]
         );
@@ -272,5 +278,12 @@ class ProductController extends StorefrontController
         }
 
         return $this->renderStorefront('@Storefront/storefront/component/product/garan-label-modal.html.twig', ['garanLabel' => $garanLabel]);
+    }
+
+    private function loadProductContentPage(ProductPage $page, Request $request, SalesChannelContext $context): ?ContentPage
+    {
+        $path = '/product/' . $page->getProduct()->getId();
+
+        return $this->loadContentPage($path, $request, $context);
     }
 }

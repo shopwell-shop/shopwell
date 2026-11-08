@@ -31,13 +31,5 @@ export default {
         landingPage() {
             return Shopwell.Store.get('swCategoryDetail').landingPage;
         },
-
-        cmsPage() {
-            return Shopwell.Store.get('cmsPage').currentPage;
-        },
-
-        isLayoutSet() {
-            return this.landingPage.cmsPageId !== null;
-        },
     },
 };

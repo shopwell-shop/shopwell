@@ -22,6 +22,7 @@ use Shopwell\Core\Content\Product\Aggregate\ProductReview\ProductReviewDefinitio
 use Shopwell\Core\Content\Product\DataAbstractionLayer\StatesUpdater;
 use Shopwell\Core\Content\ProductStream\ProductStreamDefinition;
 use Shopwell\Core\Content\Rule\RuleDefinition;
+use Shopwell\Core\Framework\ContentSystem\Layout\Preset\ContentSystemLayoutProvisioner;
 use Shopwell\Core\Framework\DataAbstractionLayer\DefinitionInstanceRegistry;
 use Shopwell\Core\Framework\DataAbstractionLayer\Indexing\InheritanceUpdater;
 use Shopwell\Core\Framework\DataAbstractionLayer\Write\EntityWriter;
@@ -36,6 +37,7 @@ use Shopwell\Core\Framework\Demodata\Generator\MailTemplateGenerator;
 use Shopwell\Core\Framework\Demodata\Generator\MediaGenerator;
 use Shopwell\Core\Framework\Demodata\Generator\NewsletterRecipientGenerator;
 use Shopwell\Core\Framework\Demodata\Generator\OrderGenerator;
+use Shopwell\Core\Framework\Demodata\Generator\ProductContentLayoutGenerator;
 use Shopwell\Core\Framework\Demodata\Generator\ProductGenerator;
 use Shopwell\Core\Framework\Demodata\Generator\ProductManufacturerGenerator;
 use Shopwell\Core\Framework\Demodata\Generator\ProductReviewGenerator;
@@ -109,7 +111,6 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services->set(CategoryGenerator::class)
         ->args([
             service('category.repository'),
-            service('cms_page.repository'),
             service(Connection::class),
         ])
         ->tag('shopwell.demodata_generator', ['option-name' => 'categories', 'option-default' => 10, 'option_name' => 'categories', 'option_default' => 10]);
@@ -136,6 +137,13 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(ProductReviewCountService::class),
         ])
         ->tag('shopwell.demodata_generator', ['option-name' => 'reviews', 'option-default' => 20, 'option_name' => 'reviews', 'option_default' => 20]);
+
+    $services->set(ProductContentLayoutGenerator::class)
+        ->args([
+            service(ContentSystemLayoutProvisioner::class),
+            service(Connection::class),
+        ])
+        ->tag('shopwell.demodata_generator', ['option-name' => 'product-content-layouts', 'option-default' => 1, 'option-description' => 'Product detail page content layouts (assigned to products)', 'option_name' => 'product-content-layouts', 'option_default' => 1, 'option_description' => 'Product detail page content layouts (assigned to products)']);
 
     $services->set(ProductGenerator::class)
         ->args([

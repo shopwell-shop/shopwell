@@ -1,5 +1,5 @@
---- /dev/null
-+++ ../src/Factory/ComposerInstallationReflectorFactory.php
+--- a/src/Factory/ComposerInstallationReflectorFactory.php
++++ b/src/Factory/ComposerInstallationReflectorFactory.php
 @@ -5,6 +5,9 @@
  namespace Roave\BackwardCompatibility\Factory;
  

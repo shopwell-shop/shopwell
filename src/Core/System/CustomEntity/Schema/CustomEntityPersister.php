@@ -60,8 +60,6 @@ class CustomEntityPersister
 
         $inserts = new MultiInsertQueryQueue($this->connection, 25, false, true);
         foreach ($customEntities as $customEntity) {
-            unset($customEntity['cmsAware']);
-
             $customEntity['plugin_id'] = $extensionEntityType === PluginEntity::class && $extensionId ? Uuid::fromHexToBytes($extensionId) : null;
             $customEntity['app_id'] = $extensionEntityType === AppEntity::class && $extensionId ? Uuid::fromHexToBytes($extensionId) : null;
 

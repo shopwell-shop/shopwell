@@ -54,7 +54,6 @@ Shopwell.Service('privileges').addPrivilegeMappingEntry({
                 'user_config:update',
                 'number_range:read',
                 'number_range_type:read',
-                Shopwell.Service('privileges').getPrivileges('cms.viewer'),
                 Shopwell.Service('privileges').getPrivileges('measurement.viewer'),
                 'user_config:read',
             ],

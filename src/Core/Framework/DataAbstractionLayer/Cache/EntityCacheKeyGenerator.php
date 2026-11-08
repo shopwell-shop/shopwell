@@ -12,11 +12,6 @@ use Shopwell\Core\System\SalesChannel\SalesChannelContext;
 #[Package('framework')]
 class EntityCacheKeyGenerator
 {
-    public static function buildCmsTag(string $id): string
-    {
-        return 'cms-page-' . $id;
-    }
-
     public static function buildProductTag(string $id): string
     {
         return 'product-' . $id;

@@ -5,10 +5,10 @@ namespace Shopwell\Tests\Unit\Core\Content\ContactForm\SalesChannel;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
-use Shopwell\Core\Content\Cms\Service\CmsFormSlotConfigResolver;
 use Shopwell\Core\Content\ContactForm\Extension\ContactFormRouteExtension;
 use Shopwell\Core\Content\ContactForm\SalesChannel\ContactFormRoute;
 use Shopwell\Core\Content\ContactForm\SalesChannel\ContactFormRouteResponse;
+use Shopwell\Core\Content\ContactForm\Service\FormConfigResolver;
 use Shopwell\Core\Content\ContactForm\Validation\ContactFormValidationFactory;
 use Shopwell\Core\Content\Newsletter\Aggregate\NewsletterRecipient\NewsletterRecipientEntity;
 use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
@@ -76,8 +76,8 @@ class ContactFormRouteTest extends TestCase
             return new ConstraintViolationList();
         });
 
-        $slotConfigResolverMock = static::createStub(CmsFormSlotConfigResolver::class);
-        $slotConfigResolverMock->method('resolve')->willReturn([
+        $formConfigResolverMock = static::createStub(FormConfigResolver::class);
+        $formConfigResolverMock->method('resolve')->willReturn([
             'receivers' => ['foo' => 'bar'],
             'message' => 'baz',
         ]);
@@ -88,7 +88,7 @@ class ContactFormRouteTest extends TestCase
             static::createStub(EventDispatcherInterface::class),
             static::createStub(RequestStack::class),
             static::createStub(RateLimiter::class),
-            $slotConfigResolverMock,
+            $formConfigResolverMock,
             new ExtensionDispatcher(new EventDispatcher()),
         );
 
@@ -147,7 +147,7 @@ class ContactFormRouteTest extends TestCase
             static::createStub(EventDispatcherInterface::class),
             static::createStub(RequestStack::class),
             static::createStub(RateLimiter::class),
-            static::createStub(CmsFormSlotConfigResolver::class),
+            static::createStub(FormConfigResolver::class),
             new ExtensionDispatcher($dispatcher),
         );
 

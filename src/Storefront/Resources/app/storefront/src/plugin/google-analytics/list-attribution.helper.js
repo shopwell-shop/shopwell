@@ -45,9 +45,9 @@ export default class ListAttributionHelper
             };
         }
 
-        const cmsElementId = element?.closest('[data-cms-element-id]')?.getAttribute('data-cms-element-id');
-        if (cmsElementId) {
-            return { item_list_id: `cms:${cmsElementId}` };
+        const contentElementId = element?.closest('[data-element-id]')?.getAttribute('data-element-id');
+        if (contentElementId) {
+            return { item_list_id: `content:${contentElementId}` };
         }
 
         return {};
@@ -60,7 +60,7 @@ export default class ListAttributionHelper
      * @returns {HTMLElement|null}
      */
     static getListElement(element) {
-        return element?.closest('[data-list-id]') ?? element?.closest('[data-cms-element-id]') ?? null;
+        return element?.closest('[data-list-id]') ?? element?.closest('[data-element-id]') ?? null;
     }
 
     /**

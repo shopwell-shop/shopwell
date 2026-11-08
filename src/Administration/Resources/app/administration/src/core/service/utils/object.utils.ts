@@ -13,22 +13,6 @@ import type from 'src/core/service/utils/types.utils';
  *
  * @module core/service/utils/object
  */
-// eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
-export default {
-    deepCopyObject,
-    hasOwnProperty,
-    getObjectDiff,
-    getArrayChanges,
-    merge: objectMerge,
-    mergeWith: objectMerge,
-    cloneDeep: objectCopy,
-    get: objectGet,
-    set: objectSet,
-    pick: objectPick,
-    unset: objectUnset,
-    has: objectHas,
-};
-
 /**
  * Lodash import for object merges.
  */

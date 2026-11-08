@@ -7,7 +7,6 @@ use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Content\Category\CategoryDefinition;
 use Shopwell\Core\Content\Category\CategoryEntity;
 use Shopwell\Core\Framework\Log\Package;
-use Shopwell\Core\Test\Annotation\DisabledFeatures;
 
 /**
  * @internal
@@ -80,14 +79,5 @@ class CategoryEntityTest extends TestCase
         $page->setType(CategoryDefinition::TYPE_PAGE);
         $page->setTranslated(['linkNewTab' => true]);
         static::assertFalse($page->shouldOpenInNewTab());
-    }
-
-    #[DisabledFeatures(['v6.8.0.0'])]
-    public function testDeprecatedCmsPageIdSwitchedRoundTrip(): void
-    {
-        $category = new CategoryEntity();
-        $category->setCmsPageIdSwitched(true);
-
-        static::assertTrue($category->getCmsPageIdSwitched());
     }
 }

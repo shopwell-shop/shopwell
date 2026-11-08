@@ -2,8 +2,6 @@
 
 namespace Shopwell\Core\Content\Test\Category;
 
-use Shopwell\Core\Content\Test\Cms\LayoutBuilder;
-use Shopwell\Core\Defaults;
 use Shopwell\Core\Test\Stub\Framework\IdsCollection;
 use Shopwell\Core\Test\TestBuilderTrait;
 
@@ -25,11 +23,6 @@ class CategoryBuilder
     protected ?string $parentId = null;
 
     protected ?string $name;
-
-    /**
-     * @var array{id: string}|array<mixed>|null
-     */
-    protected ?array $cmsPage = null;
 
     /**
      * @var array<string, mixed>
@@ -70,42 +63,6 @@ class CategoryBuilder
     public function translation(string $languageId, string $key, mixed $value): self
     {
         $this->translations[$languageId][$key] = $value;
-
-        return $this;
-    }
-
-    public function layout(string $key): self
-    {
-        if ($this->ids->has($key)) {
-            $this->cmsPage = ['id' => $this->ids->get($key)];
-
-            return $this;
-        }
-
-        $this->cmsPage = (new LayoutBuilder($this->ids, $key, 'categorypage'))
-            ->build();
-
-        return $this;
-    }
-
-    /**
-     * @param array<mixed> $value
-     */
-    public function slot(string $key, array $value, string $languageId = Defaults::LANGUAGE_SYSTEM): self
-    {
-        if (isset($this->translations[$languageId]['slotConfig']) && \is_array($this->translations[$languageId]['slotConfig'])) {
-            $slotConfig = $this->translations[$languageId]['slotConfig'];
-        } else {
-            $slotConfig = [];
-        }
-
-        $slotConfig[$this->ids->get($key)] = $value;
-
-        $this->translation(
-            $languageId,
-            'slotConfig',
-            $slotConfig
-        );
 
         return $this;
     }

@@ -6,7 +6,7 @@
 
 {% block base_content %}
     {% block page_wishlist %}
-        <div class="cms-page wishlist-page">
+        <div class="wishlist-page">
             {% set searchResult = page.wishlist.productListing %}
 
             {% if context.customer and not context.customer.guest %}

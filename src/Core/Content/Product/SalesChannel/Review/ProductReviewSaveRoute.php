@@ -20,6 +20,7 @@ use Shopwell\Core\Framework\Feature;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
 use Shopwell\Core\Framework\Routing\StoreApiRouteScope;
+use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\Framework\Validation\DataBag\DataBag;
 use Shopwell\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopwell\Core\Framework\Validation\DataValidationDefinition;
@@ -101,7 +102,9 @@ class ProductReviewSaveRoute extends AbstractProductReviewSaveRoute
         $data->set('productId', $productId);
         $this->validate($data, $context->getContext());
 
+        $reviewId = $data->get('id') ?: Uuid::randomHex();
         $review = [
+            'id' => $reviewId,
             'productId' => $productId,
             'customerId' => $customerId,
             'salesChannelId' => $salesChannelId,
@@ -113,10 +116,6 @@ class ProductReviewSaveRoute extends AbstractProductReviewSaveRoute
             'points' => $data->get('points'),
             'status' => false,
         ];
-
-        if ($data->get('id')) {
-            $review['id'] = $data->get('id');
-        }
 
         $product = $this->productProvider->getData($productId, $context->getContext());
         if ($product === null) {
@@ -142,7 +141,10 @@ class ProductReviewSaveRoute extends AbstractProductReviewSaveRoute
             ReviewFormEvent::EVENT_NAME
         );
 
-        return new NoContentResponse();
+        $response = new NoContentResponse();
+        $response->getObject()->set(self::REVIEW_ID, $reviewId);
+
+        return $response;
     }
 
     private function validate(DataBag $data, Context $context): void

@@ -16,6 +16,11 @@ use Shopwell\Core\DevOps\StaticAnalyze\PHPStan\Rules\Deprecation\BCChangeMarkers
 use Shopwell\Core\Framework\App\Lifecycle\AbstractAppLifecycle;
 use Shopwell\Core\Framework\App\Lifecycle\RefreshableAppDryRun;
 use Shopwell\Core\Framework\App\Lifecycle\Update\AbstractAppUpdater;
+use Shopwell\Core\Framework\ContentSystem\Binding\Registry\AbstractContentSystemBindingSpecificationRegistry;
+use Shopwell\Core\Framework\ContentSystem\Layout\Element\Style\Registry\AbstractContentSystemStyleOptionRegistry;
+use Shopwell\Core\Framework\ContentSystem\Layout\Preset\Registry\AbstractContentSystemLayoutPresetRegistry;
+use Shopwell\Core\Framework\ContentSystem\Layout\Type\Registry\AbstractContentSystemElementTypeRegistry;
+use Shopwell\Core\Framework\ContentSystem\SalesChannel\AbstractContentRoute;
 use Shopwell\Core\Framework\Deprecation\BCChange\BecomesFinal;
 use Shopwell\Core\Framework\Deprecation\BCChange\BecomesInternal;
 use Shopwell\Core\Framework\Deprecation\BCChange\VisibilityChange;
@@ -45,6 +50,14 @@ class DecorationPatternRule implements Rule
         RefreshableAppDryRun::class,
         RefreshableAppDryRun::class,
         AbstractAppLifecycle::class,
+        // The content system is enrolled in InternalClassRule::INTERNAL_NAMESPACES as '\ContentSystem\', so
+        // these abstracts carry @internal while keeping getDecorated for internal decoration only. One unit
+        // with that enrollment: de-internalizing the module removes both together.
+        AbstractContentSystemBindingSpecificationRegistry::class,
+        AbstractContentSystemStyleOptionRegistry::class,
+        AbstractContentSystemElementTypeRegistry::class,
+        AbstractContentSystemLayoutPresetRegistry::class,
+        AbstractContentRoute::class,
     ];
 
     public function getNodeType(): string

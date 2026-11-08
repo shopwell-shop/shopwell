@@ -3,12 +3,9 @@
 namespace Shopwell\Tests\Integration\Storefront\Page\LandingPage;
 
 use PHPUnit\Framework\TestCase;
-use Shopwell\Core\Content\Cms\CmsPageEntity;
-use Shopwell\Core\Content\Cms\Exception\PageNotFoundException;
 use Shopwell\Core\Content\LandingPage\LandingPageEntity;
 use Shopwell\Core\Content\LandingPage\LandingPageException;
 use Shopwell\Core\Framework\Context;
-use Shopwell\Core\Framework\Feature;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Routing\RoutingException;
 use Shopwell\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
@@ -58,8 +55,6 @@ class LandingPageLoaderTest extends TestCase
         static::assertInstanceOf(LandingPage::class, $page);
 
         static::assertInstanceOf(LandingPageEntity::class, $page->getLandingPage());
-        static::assertInstanceOf(CmsPageEntity::class, $page->getLandingPage()->getCmsPage());
-        static::assertSame($this->ids->get('cms-page'), $page->getLandingPage()->getCmsPage()->getId());
 
         self::assertPageEvent(LandingPageLoadedEvent::class, $event, $context, $request, $page);
     }
@@ -80,31 +75,6 @@ class LandingPageLoaderTest extends TestCase
         $this->getPageLoader()->load($request, $context);
     }
 
-    public function testLoadWithoutCmsPage(): void
-    {
-        $this->ids = new IdsCollection();
-        $landingPageId = $this->ids->create('landing-page');
-
-        $request = new Request([], [], [
-            'landingPageId' => $landingPageId,
-        ]);
-
-        $expectedException = LandingPageException::notFound($landingPageId);
-
-        // @deprecated tag:v6.8.0 - remove this if block
-        if (!Feature::isActive('v6.8.0.0')) {
-            $expectedException = new PageNotFoundException($landingPageId);
-        }
-
-        $this->expectExceptionObject($expectedException);
-
-        $context = $this->createSalesChannelContextWithNavigation();
-        $this->ids->set('sales-channel', $context->getSalesChannelId());
-        $this->createData(true, false);
-
-        $this->getPageLoader()->load($request, $context);
-    }
-
     /**
      * @return LandingPageLoader
      */
@@ -113,7 +83,7 @@ class LandingPageLoaderTest extends TestCase
         return static::getContainer()->get(LandingPageLoader::class);
     }
 
-    private function createData(bool $isActive = true, bool $withCmsPage = true): void
+    private function createData(bool $isActive = true): void
     {
         $data = [
             'id' => $this->ids->create('landing-page'),
@@ -125,30 +95,7 @@ class LandingPageLoaderTest extends TestCase
                     'id' => $this->ids->get('sales-channel'),
                 ],
             ],
-            'cmsPage' => [
-                'id' => $this->ids->create('cms-page'),
-                'type' => 'product_list',
-                'sections' => [
-                    [
-                        'position' => 0,
-                        'type' => 'sidebar',
-                        'blocks' => [
-                            [
-                                'type' => 'product-listing',
-                                'position' => 1,
-                                'slots' => [
-                                    ['type' => 'product-listing', 'slot' => 'content'],
-                                ],
-                            ],
-                        ],
-                    ],
-                ],
-            ],
         ];
-
-        if (!$withCmsPage) {
-            unset($data['cmsPage']);
-        }
 
         static::getContainer()->get('landing_page.repository')
             ->create([$data], Context::createDefaultContext());

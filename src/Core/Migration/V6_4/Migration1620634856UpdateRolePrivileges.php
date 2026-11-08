@@ -28,14 +28,6 @@ class Migration1620634856UpdateRolePrivileges extends MigrationStep
             'custom_field:read',
             'custom_field_set_relation:read',
         ],
-        'cms.viewer' => [
-            'landing_page:read',
-            'product_cross_selling_assigned_products:read',
-            'product_manufacturer:read',
-        ],
-        'cms.editor' => [
-            'landing_page:update',
-        ],
         'delivery_times.viewer' => [
             'custom_field_set:read',
             'custom_field:read',
@@ -76,17 +68,13 @@ class Migration1620634856UpdateRolePrivileges extends MigrationStep
             'user_config:update',
             'number_range:read',
             'number_range_type:read',
-            // cms.viewer permissions
-            'cms_page:read',
+            'content_layout:read',
             'media:read',
-            'cms_section:read',
             'category:read',
             'landing_page:read',
             'media_default_folder:read',
             'media_folder:read',
             'sales_channel:read',
-            'cms_block:read',
-            'cms_slot:read',
             'product_sorting:read',
             'product:read',
             'property_group:read',

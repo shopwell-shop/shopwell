@@ -66,7 +66,7 @@
                         {% endblock %}
 
                         {% block layout_footer_navigation_hotline_content %}
-                            {% set cmsPath = 'frontend.cms.page.full' %}
+                            {% set contentPath = 'frontend.content.page.full' %}
 
                             <div id="collapseFooterHotline"
                                  class="footer-column-content collapse js-footer-column-content footer-contact mb-4 mb-md-0"
@@ -80,30 +80,10 @@
 
                                 <div class="footer-contact-form">
                                     {% set contactSnippetKey = 'footer.serviceContactTextPage' %}
-                                    {% set contactCmsPageId = config('core.basicInformation.contactPage') %}
-                                    {% set contactUrl = contactCmsPageId ? path(cmsPath, { id: contactCmsPageId }) : '#' %}
+                                    {% set contactContentLayoutId = config('core.basicInformation.contactPage') %}
+                                    {% set contactUrl = contactContentLayoutId ? path(contentPath, { id: contactContentLayoutId }) : '#' %}
 
-                                    {# Check for seoUrl and use it if present #}
-                                    {% for serviceMenuItem in footer.serviceMenu %}
-                                        {% if serviceMenuItem.cmsPageId == contactCmsPageId and serviceMenuItem.seoUrl %}
-                                            {% set contactUrl = serviceMenuItem.seoUrl %}
-                                        {% endif %}
-                                    {% endfor %}
 
-                                    {# Check footer navigation #}
-                                    {% if footer.navigation and footer.navigation.tree %}
-                                        {% for root in footer.navigation.tree %}
-                                            {% if root.category.cmsPageId == contactCmsPageId and root.category.seoUrl %}
-                                                {% set contactUrl = root.category.seoUrl %}
-                                            {% endif %}
-
-                                            {% for footerItem in root.children %}
-                                                {% if footerItem.category.cmsPageId == contactCmsPageId and footerItem.category.seoUrl %}
-                                                    {% set contactUrl = footerItem.category.seoUrl %}
-                                                {% endif %}
-                                            {% endfor %}
-                                        {% endfor %}
-                                    {% endif %}
 
                                     {{ contactSnippetKey|trans({
                                         '%url%': contactUrl
@@ -113,33 +93,13 @@
 
                             {% block layout_footer_navigation_revocation_button %}
                                 {% set revocationRequestSnippetKey = 'footer.serviceRevocationRequestTextPage' %}
-                                {% set revocationRequestCmsPageId = config('core.basicInformation.revocationRequestPage') %}
+                                {% set revocationRequestContentLayoutId = config('core.basicInformation.revocationRequestPage') %}
                                 {% set showRevocationButton = config('core.basicInformation.showRevocationButton') %}
 
-                                {% if revocationRequestCmsPageId and showRevocationButton %}
-                                    {% set revocationRequestUrl = revocationRequestCmsPageId ? path(cmsPath, { id: revocationRequestCmsPageId }) : '#' %}
+                                {% if revocationRequestContentLayoutId and showRevocationButton %}
+                                    {% set revocationRequestUrl = revocationRequestContentLayoutId ? path(contentPath, { id: revocationRequestContentLayoutId }) : '#' %}
 
-                                    {# Check for seoUrl and use it if present #}
-                                    {% for serviceMenuItem in footer.serviceMenu %}
-                                        {% if serviceMenuItem.cmsPageId == revocationRequestCmsPageId and serviceMenuItem.seoUrl %}
-                                            {% set revocationRequestUrl = serviceMenuItem.seoUrl %}
-                                        {% endif %}
-                                    {% endfor %}
 
-                                    {# Check footer navigation #}
-                                    {% if footer.navigation and footer.navigation.tree %}
-                                        {% for root in footer.navigation.tree %}
-                                            {% if root.category.cmsPageId == revocationRequestCmsPageId and root.category.seoUrl %}
-                                                {% set revocationRequestUrl = root.category.seoUrl %}
-                                            {% endif %}
-
-                                            {% for footerItem in root.children %}
-                                                {% if footerItem.category.cmsPageId == revocationRequestCmsPageId and footerItem.category.seoUrl %}
-                                                    {% set revocationRequestUrl = footerItem.category.seoUrl %}
-                                                {% endif %}
-                                            {% endfor %}
-                                        {% endfor %}
-                                    {% endif %}
 
                                     <div class="footer-revocation-button mt-4">
                                         {{ revocationRequestSnippetKey|trans({
@@ -340,36 +300,16 @@
             {% endblock %}
 
             {% block layout_footer_vat %}
-                {% set cmsPath = 'frontend.cms.page.full' %}
+                {% set contentPath = 'frontend.content.page.full' %}
 
                 {% if showVatNotice or showVatNotice is not defined %}
                     <div class="footer-vat">
                         {% set shippingSnippetKey = context.taxState == 'gross' ? 'footer.includeVatTextPage' : 'footer.excludeVatTextPage' %}
 
-                        {% set shippingCmsPageId = config('core.basicInformation.shippingPaymentInfoPage') %}
-                        {% set shippingUrl = shippingCmsPageId ? path(cmsPath, { id: shippingCmsPageId }) : '#' %}
+                        {% set shippingContentLayoutId = config('core.basicInformation.shippingPaymentInfoPage') %}
+                        {% set shippingUrl = shippingContentLayoutId ? path(contentPath, { id: shippingContentLayoutId }) : '#' %}
 
-                        {# Check for seoUrl and use it if present #}
-                        {% for serviceMenuItem in footer.serviceMenu %}
-                            {% if serviceMenuItem.cmsPageId == shippingCmsPageId and serviceMenuItem.seoUrl %}
-                                {% set shippingUrl = serviceMenuItem.seoUrl %}
-                            {% endif %}
-                        {% endfor %}
 
-                        {# Check footer navigation #}
-                        {% if footer.navigation and footer.navigation.tree %}
-                            {% for root in footer.navigation.tree %}
-                                {% if root.category.cmsPageId == shippingCmsPageId and root.category.seoUrl %}
-                                    {% set shippingUrl = root.category.seoUrl %}
-                                {% endif %}
-
-                                {% for footerItem in root.children %}
-                                    {% if footerItem.category.cmsPageId == shippingCmsPageId and footerItem.category.seoUrl %}
-                                        {% set shippingUrl = footerItem.category.seoUrl %}
-                                    {% endif %}
-                                {% endfor %}
-                            {% endfor %}
-                        {% endif %}
 
                         <p>
                             {{ shippingSnippetKey|trans({

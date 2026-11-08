@@ -7,8 +7,8 @@ use Shopwell\Core\Content\Blog\Aggregate\BlogVideo\BlogVideoEntity;
 use Shopwell\Core\Content\Blog\BlogCollection;
 use Shopwell\Core\Content\Blog\BlogEntity;
 use Shopwell\Core\Content\Blog\Service\BlogCommentTreeResult;
-use Shopwell\Core\Content\Cms\CmsPageEntity;
 use Shopwell\Core\Content\Media\MediaEntity;
+use Shopwell\Core\Framework\ContentSystem\Output\Struct\ContentPage;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Storefront\Page\Page;
 
@@ -17,7 +17,7 @@ use Shopwell\Storefront\Page\Page;
  *
  * The data comes from {@see \Shopwell\Core\Content\Blog\Service\BlogDetailReader}, which resolves the
  * cover image, the table of contents, the reading time, the related entries and the comment thread.
- * What the page adds is what belongs to a rendered page and not to the article: the cms layout of the
+ * What the page adds is what belongs to a rendered page and not to the article: the content layout of the
  * body and the meta information.
  *
  * The related entries are part of the page and not a second request: without javascript they would
@@ -96,7 +96,7 @@ class BlogDetailPage extends Page
      * the table of contents and the comment thread stay where they are. A merchant who builds an
      * article layout decides how the article is presented, not whether readers may comment on it.
      */
-    protected ?CmsPageEntity $cmsPage = null;
+    protected ?ContentPage $contentPage = null;
 
     public function getBlog(): ?BlogEntity
     {
@@ -280,14 +280,14 @@ class BlogDetailPage extends Page
     /**
      * The layout of the article body, null when the entry renders through twig.
      */
-    public function getCmsPage(): ?CmsPageEntity
+    public function getContentPage(): ?ContentPage
     {
-        return $this->cmsPage;
+        return $this->contentPage;
     }
 
-    public function setCmsPage(?CmsPageEntity $cmsPage): void
+    public function setContentPage(?ContentPage $contentPage): void
     {
-        $this->cmsPage = $cmsPage;
+        $this->contentPage = $contentPage;
     }
 
     public function getEntityName(): string

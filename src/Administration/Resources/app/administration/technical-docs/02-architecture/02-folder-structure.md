@@ -117,8 +117,8 @@ The `module/` directory contains business domain modules representing different 
 - **`sw-manufacturer/`** - Manufacturer management
 
 #### Content Management:
-- **`sw-cms/`** - Content Management System
-- **`sw-landing-page/`** - Landing page builder
+- **`sw-experience-studio/`** - Content layout editing and assignment
+- **`sw-category/`** - Category and landing page management
 - **`sw-mail-template/`** - Email template editor
 
 #### Sales & Marketing:

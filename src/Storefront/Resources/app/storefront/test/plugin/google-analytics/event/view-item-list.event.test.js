@@ -16,7 +16,7 @@ describe('plugin/google-analytics/events/view-item-list.event', () => {
     });
 
     test('event is supported when listing wrapper is in the HTML', () => {
-        document.body.innerHTML = '<div class="cms-element-product-listing-wrapper"></div>';
+        document.body.innerHTML = '<div class="product-listing-wrapper"></div>';
         expect(new ViewItemListEvent().supports()).toBe(true);
     });
 
@@ -31,7 +31,7 @@ describe('plugin/google-analytics/events/view-item-list.event', () => {
                 <span class="breadcrumb-title">Electronics</span>
                 <span class="breadcrumb-title">Computers</span>
             </nav>
-            <div class="cms-element-product-listing-wrapper">
+            <div class="product-listing-wrapper">
                 <div class="product-box" data-product-information='{ "id": "1", "name": "Laptop", "price": 999.99, "sku": "product-1" }'></div>
                 <div class="product-box" data-product-information='{ "id": "2", "name": "Desktop", "price": 1499.99, "sku": "product-2" }'></div>
             </div>
@@ -55,7 +55,7 @@ describe('plugin/google-analytics/events/view-item-list.event', () => {
             <div class="cms-element-product-slider">
                 <div class="product-box" data-product-information='{ "id": "1", "name": "Mug", "price": 9.5, "sku": "slider-1" }'></div>
             </div>
-            <div class="cms-element-product-listing-wrapper">
+            <div class="product-listing-wrapper">
                 <div class="product-box" data-product-information='{ "id": "2", "name": "Laptop", "price": 999.99, "sku": "listing-1" }'></div>
             </div>
         `;
@@ -71,7 +71,7 @@ describe('plugin/google-analytics/events/view-item-list.event', () => {
 
     test('reports product elements of extensions that do not use the product box class', () => {
         document.body.innerHTML = `
-            <div class="cms-element-product-listing-wrapper">
+            <div class="product-listing-wrapper">
                 <article class="custom-teaser" data-product-information='{ "id": "1", "name": "Teaser", "price": 49.5, "sku": "custom-1" }'></article>
             </div>
         `;
@@ -89,8 +89,8 @@ describe('plugin/google-analytics/events/view-item-list.event', () => {
 
     test('reports the list the products were presented in', () => {
         document.body.innerHTML = `
-            <div class="cms-element-product-listing-wrapper" data-list-id="category:1" data-list-name="Shirts">
-                <div class="cms-element-product-listing">
+            <div class="product-listing-wrapper" data-list-id="category:1" data-list-name="Shirts">
+                <div class="product-listing-content">
                     <div class="js-listing-wrapper" data-list-start="24">
                         <div class="product-box" data-product-information='{ "id": "1", "name": "Shirt", "price": 20, "sku": "SW10000" }'></div>
                     </div>
@@ -110,7 +110,7 @@ describe('plugin/google-analytics/events/view-item-list.event', () => {
     // GA4 shows which products a query found
     test('reports the search term of the search result', () => {
         document.body.innerHTML = `
-            <div class="cms-element-product-listing-wrapper" data-list-id="search" data-list-name="Search results" data-list-search-term="guitar">
+            <div class="product-listing-wrapper" data-list-id="search" data-list-name="Search results" data-list-search-term="guitar">
                 <div class="product-box" data-product-information='{ "id": "1", "name": "Guitar", "price": 200, "sku": "SW10000" }'></div>
             </div>
         `;
@@ -125,7 +125,7 @@ describe('plugin/google-analytics/events/view-item-list.event', () => {
 
     test('reports no search term for a list without one', () => {
         document.body.innerHTML = `
-            <div class="cms-element-product-listing-wrapper" data-list-id="category:1" data-list-name="Shirts">
+            <div class="product-listing-wrapper" data-list-id="category:1" data-list-name="Shirts">
                 <div class="product-box" data-product-information='{ "id": "1", "name": "Shirt", "price": 20, "sku": "SW10000" }'></div>
             </div>
         `;
@@ -138,7 +138,7 @@ describe('plugin/google-analytics/events/view-item-list.event', () => {
     // a page can render a listing and a slider, whose products belong to their own list
     test('reports only the products of the listing', () => {
         document.body.innerHTML = `
-            <div class="cms-element-product-listing-wrapper">
+            <div class="product-listing-wrapper">
                 <div class="product-box" data-product-information='{ "id": "1", "name": "Shirt", "price": 20, "sku": "SW10000" }'></div>
             </div>
             <div class="cms-element-product-slider">
@@ -162,7 +162,7 @@ describe('plugin/google-analytics/events/view-item-list.event', () => {
 
     test('does not fire event when no product items are found', () => {
         document.body.innerHTML = `
-            <div class="cms-element-product-listing-wrapper">
+            <div class="product-listing-wrapper">
                 <!-- No product items -->
             </div>
         `;
@@ -174,7 +174,7 @@ describe('plugin/google-analytics/events/view-item-list.event', () => {
 
     test('subscribes to Listing plugin for AJAX updates and fires event on listing change', () => {
         document.body.innerHTML = `
-            <div class="cms-element-product-listing-wrapper">
+            <div class="product-listing-wrapper">
                 <div class="product-box" data-product-information='{ "id": "product-1", "name": "Laptop", "price": 999.99 }'></div>
             </div>
         `;
@@ -218,7 +218,7 @@ describe('plugin/google-analytics/events/view-item-list.event', () => {
 
     test('skips product elements without readable product information', () => {
         document.body.innerHTML = `
-            <div class="cms-element-product-listing-wrapper">
+            <div class="product-listing-wrapper">
                 <div class="product-box"></div>
                 <div class="product-box" data-product-information=""></div>
                 <div class="product-box" data-product-information='{"broken'></div>

@@ -13,6 +13,7 @@ use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Script\Debugging\ScriptTraces;
 use Shopwell\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopwell\Core\Framework\Test\TestCaseBase\KernelLifecycleManager;
+use Shopwell\Core\Framework\Uuid\Uuid;
 use Shopwell\Core\System\SalesChannel\SalesChannelCollection;
 use Shopwell\Core\System\SystemConfig\SystemConfigService;
 use Shopwell\Core\Test\Stub\Framework\IdsCollection;
@@ -83,42 +84,16 @@ class MaintenanceControllerTest extends TestCase
         $page = [
             'id' => $this->ids->create('page'),
             'name' => 'test page',
-            'type' => 'landingpage',
-            'sections' => [
-                [
-                    'id' => $this->ids->create('section'),
-                    'type' => 'default',
-                    'position' => 0,
-                    'blocks' => [
-                        [
-                            'type' => 'text',
-                            'position' => 0,
-                            'slots' => [
-                                [
-                                    'id' => $this->ids->create('slot1'),
-                                    'type' => 'text',
-                                    'slot' => 'content',
-                                    'config' => [
-                                        'content' => [
-                                            'source' => 'static',
-                                            'value' => 'initial',
-                                        ],
-                                    ],
-                                ],
-                                [
-                                    'id' => $this->ids->create('slot2'),
-                                    'type' => 'text',
-                                    'slot' => 'content',
-                                    'config' => null,
-                                ],
-                            ],
-                        ],
-                    ],
-                ],
-            ],
+            'version' => '1.0.0',
+            'rootSource' => 'none',
+            'layout' => [[
+                'id' => Uuid::randomHex(),
+                'component' => 'Sw:Content:Text',
+                'properties' => ['text' => '<p>Maintenance</p>'],
+            ]],
         ];
 
-        static::getContainer()->get('cms_page.repository')->create([$page], Context::createDefaultContext());
+        static::getContainer()->get('content_layout.repository')->create([$page], Context::createDefaultContext());
     }
 
     /**

@@ -10,9 +10,6 @@ use Shopwell\Core\Checkout\Order\Aggregate\OrderLineItemDownload\OrderLineItemDo
 use Shopwell\Core\Checkout\Payment\PaymentMethodCollection;
 use Shopwell\Core\Checkout\Shipping\ShippingMethodCollection;
 use Shopwell\Core\Content\Category\CategoryCollection;
-use Shopwell\Core\Content\Cms\Aggregate\CmsBlock\CmsBlockCollection;
-use Shopwell\Core\Content\Cms\Aggregate\CmsSection\CmsSectionCollection;
-use Shopwell\Core\Content\Cms\CmsPageCollection;
 use Shopwell\Core\Content\MailTemplate\Aggregate\MailTemplateMedia\MailTemplateMediaCollection;
 use Shopwell\Core\Content\Media\Aggregate\MediaFolder\MediaFolderEntity;
 use Shopwell\Core\Content\Media\Aggregate\MediaThumbnail\MediaThumbnailCollection;
@@ -126,12 +123,6 @@ class MediaEntity extends Entity
     protected ?ProductConfiguratorSettingCollection $productConfiguratorSettings = null;
 
     protected ?OrderLineItemCollection $orderLineItems = null;
-
-    protected ?CmsBlockCollection $cmsBlocks = null;
-
-    protected ?CmsSectionCollection $cmsSections = null;
-
-    protected ?CmsPageCollection $cmsPages = null;
 
     protected ?DocumentCollection $documents = null;
 
@@ -568,36 +559,6 @@ class MediaEntity extends Entity
     public function setOrderLineItems(OrderLineItemCollection $orderLineItems): void
     {
         $this->orderLineItems = $orderLineItems;
-    }
-
-    public function getCmsBlocks(): ?CmsBlockCollection
-    {
-        return $this->cmsBlocks;
-    }
-
-    public function setCmsBlocks(CmsBlockCollection $cmsBlocks): void
-    {
-        $this->cmsBlocks = $cmsBlocks;
-    }
-
-    public function getCmsSections(): ?CmsSectionCollection
-    {
-        return $this->cmsSections;
-    }
-
-    public function setCmsSections(CmsSectionCollection $cmsSections): void
-    {
-        $this->cmsSections = $cmsSections;
-    }
-
-    public function getCmsPages(): ?CmsPageCollection
-    {
-        return $this->cmsPages;
-    }
-
-    public function setCmsPages(CmsPageCollection $cmsPages): void
-    {
-        $this->cmsPages = $cmsPages;
     }
 
     public function isPrivate(): bool

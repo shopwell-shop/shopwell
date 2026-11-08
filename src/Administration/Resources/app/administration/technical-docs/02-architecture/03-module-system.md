@@ -160,51 +160,30 @@ Shopwell.Component.extend('sw-product-visibility-select', 'sw-entity-multi-selec
 
 Modules can define their own state stores for managing application state using Shopwell's custom store system based on Pinia:
 
-```javascript
-// Shopwell Store registration (actual pattern used in codebase)
-const cmsPageStore = Shopwell.Store.register({
-    id: 'cmsPageState',
-    
-    state: (): CmsPageState => ({
-        currentPage: null,
-        currentPageType: null,
-        currentMappingEntity: null,
-        currentMappingTypes: {},
-        currentDemoEntity: null,
-        currentDemoProducts: [],
-        pageEntityName: 'cms_page',
-        defaultMediaFolderId: null,
-        currentCmsDeviceView: 'desktop',
-        selectedSection: null,
-        selectedBlock: null,
-        isSystemDefaultLanguage: true
+```typescript
+// Simplified layout editor store registration
+const layoutEditorStore = Shopwell.Store.register({
+    id: 'layoutEditor',
+
+    state: () => ({
+        layoutId: null as string | null,
     }),
-    
+
     actions: {
-        setCurrentPage(page) {
-            this.currentPage = page;
+        initialize(layoutId: string) {
+            this.layoutId = layoutId;
         },
-        
-        setCurrentPageType(pageType) {
-            this.currentPageType = pageType;
+
+        reset() {
+            this.layoutId = null;
         },
-        
-        resetCmsPageState() {
-            this.currentPage = null;
-            this.selectedSection = null;
-            this.selectedBlock = null;
-        }
     },
-    
-    getters: {
-        getCurrentPage: (state) => state.currentPage,
-        isSystemDefaultLanguage: (state) => state.isSystemDefaultLanguage
-    }
 });
 
-// Usage in components:
-// Access state: Shopwell.Store.get('cmsPageState')
-// Call actions: cmsPageStore.setCurrentPage(page)
+// Access state after the module registers its store:
+const layoutId = Shopwell.Store.get('layoutEditor').layoutId;
+// The registration returns a store composable:
+layoutEditorStore().initialize('layout-id');
 ```
 
 ### 4. Service Registration

@@ -42,9 +42,6 @@ class ConfigExtensionTest extends TestCase
         $extension = new ConfigExtension($systemConfigService);
 
         static::assertSame(255, $extension->config([], 'seo.descriptionMaxLength'));
-        static::assertSame('00B9A8636F954277AE424E6C1C36A1F5', $extension->config([], 'cms.revocationNoticeCmsPageId'));
-        static::assertSame('00B9A8636F954277AE424E6C1C36A1F5', $extension->config([], 'cms.taxCmsPageId'));
-        static::assertSame('00B9A8636F954277AE424E6C1C36A1F5', $extension->config([], 'cms.tosCmsPageId'));
         static::assertTrue($extension->config([], 'confirm.revocationNotice'));
     }
 

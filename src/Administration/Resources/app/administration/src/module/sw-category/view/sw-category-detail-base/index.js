@@ -38,12 +38,6 @@ export default {
                     value: 'folder',
                     label: this.$t('sw-category.base.general.types.folder'),
                 },
-                // eslint-disable-next-line no-warning-comments
-                // @todo NEXT-22697 - Re-implement, when re-enabling cms-aware
-                // {
-                //     value: 'custom_entity',
-                //     label: this.$t('sw-category.base.general.types.customEntity'),
-                // },
                 {
                     value: 'link',
                     label: this.typeLinkLabel,

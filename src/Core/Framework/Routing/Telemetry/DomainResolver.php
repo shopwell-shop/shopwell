@@ -51,11 +51,11 @@ class DomainResolver
         'store-api.navigation' => 'category',
         'store-api.category' => 'category',
 
-        // content (home + cms + landing pages)
+        // content (home + content + landing pages)
         'frontend.home' => 'content',
-        'frontend.cms' => 'content',
+        'frontend.content' => 'content',
         'frontend.landing' => 'content',
-        'store-api.cms' => 'content',
+        'store-api.content' => 'content',
         'store-api.landing-page' => 'content',
 
         // search

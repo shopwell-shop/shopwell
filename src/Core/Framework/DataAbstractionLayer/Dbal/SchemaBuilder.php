@@ -6,10 +6,10 @@ use Doctrine\DBAL\Schema\PrimaryKeyConstraint;
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\DBAL\Schema\Table;
 use Doctrine\DBAL\Types\Types;
-use Shopwell\Core\Content\Cms\DataAbstractionLayer\Field\SlotConfigField;
 use Shopwell\Core\Content\Flow\DataAbstractionLayer\Field\FlowTemplateConfigField;
 use Shopwell\Core\Content\MeasurementSystem\Field\MeasurementUnitsField;
 use Shopwell\Core\Content\Product\DataAbstractionLayer\CheapestPrice\CheapestPriceField;
+use Shopwell\Core\Framework\ContentSystem\Layout\Field\StoredElementListField;
 use Shopwell\Core\Framework\DataAbstractionLayer\DataAbstractionLayerException;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityDefinition;
 use Shopwell\Core\Framework\DataAbstractionLayer\EntityTranslationDefinition;
@@ -118,10 +118,11 @@ class SchemaBuilder
         VariantListingConfigField::class => Types::JSON,
         VersionDataPayloadField::class => Types::JSON,
         ManyToManyIdField::class => Types::JSON,
-        SlotConfigField::class => Types::JSON,
         FlowTemplateConfigField::class => Types::JSON,
         CheapestPriceField::class => Types::JSON,
         MeasurementUnitsField::class => Types::JSON,
+
+        StoredElementListField::class => Types::JSON,
 
         ChildCountField::class => Types::INTEGER,
         IntField::class => Types::INTEGER,

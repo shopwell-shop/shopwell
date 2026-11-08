@@ -12,6 +12,11 @@ use Shopwell\Core\Framework\DependencyInjection\CompilerPass\AssetBundleRegistra
 use Shopwell\Core\Framework\DependencyInjection\CompilerPass\AssetRegistrationCompilerPass;
 use Shopwell\Core\Framework\DependencyInjection\CompilerPass\AttributeEntityCompilerPass;
 use Shopwell\Core\Framework\DependencyInjection\CompilerPass\AutoconfigureCompilerPass;
+use Shopwell\Core\Framework\DependencyInjection\CompilerPass\ContentLayoutAssignableCompilerPass;
+use Shopwell\Core\Framework\DependencyInjection\CompilerPass\ContentRouteCompilerPass;
+use Shopwell\Core\Framework\DependencyInjection\CompilerPass\ContentSystemCompilerPass;
+use Shopwell\Core\Framework\DependencyInjection\CompilerPass\ContentSystemDataLoaderCompilerPass;
+use Shopwell\Core\Framework\DependencyInjection\CompilerPass\ContentSystemStyleOptionCompilerPass;
 use Shopwell\Core\Framework\DependencyInjection\CompilerPass\CreateGeneratorScaffoldingCommandPass;
 use Shopwell\Core\Framework\DependencyInjection\CompilerPass\DefaultTransportCompilerPass;
 use Shopwell\Core\Framework\DependencyInjection\CompilerPass\DemodataCompilerPass;
@@ -21,6 +26,7 @@ use Shopwell\Core\Framework\DependencyInjection\CompilerPass\FeatureFlagCompiler
 use Shopwell\Core\Framework\DependencyInjection\CompilerPass\FilesystemConfigMigrationCompilerPass;
 use Shopwell\Core\Framework\DependencyInjection\CompilerPass\FrameworkMigrationReplacementCompilerPass;
 use Shopwell\Core\Framework\DependencyInjection\CompilerPass\HttpCacheConfigCompilerPass;
+use Shopwell\Core\Framework\DependencyInjection\CompilerPass\MappingCandidateProviderCompilerPass;
 use Shopwell\Core\Framework\DependencyInjection\CompilerPass\McpDebugCommandCompilerPass;
 use Shopwell\Core\Framework\DependencyInjection\CompilerPass\McpServerBuilderCompilerPass;
 use Shopwell\Core\Framework\DependencyInjection\CompilerPass\McpToolAnalysisCompilerPass;
@@ -68,15 +74,13 @@ class Framework extends Bundle
         return new FrameworkExtension();
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function build(ContainerBuilder $container): void
     {
         $container->setParameter('locale', 'en-GB');
 
         $phpLoader = new PhpFileLoader($container, new FileLocator(__DIR__ . '/DependencyInjection/'));
 
+        $phpLoader->load('content-system.php');
         $phpLoader->load('http_discovery.php');
         $phpLoader->load('acl.php');
         $phpLoader->load('api.php');
@@ -140,6 +144,12 @@ class Framework extends Bundle
         $container->addCompilerPass(new AutoconfigureCompilerPass(), PassConfig::TYPE_BEFORE_OPTIMIZATION, 1000);
         $container->addCompilerPass(new HttpCacheConfigCompilerPass());
         $container->addCompilerPass(new MessageHandlerCompilerPass(), PassConfig::TYPE_BEFORE_OPTIMIZATION, 1000);
+        $container->addCompilerPass(new ContentRouteCompilerPass());
+        $container->addCompilerPass(new ContentSystemDataLoaderCompilerPass());
+        $container->addCompilerPass(new MappingCandidateProviderCompilerPass());
+        $container->addCompilerPass(new ContentSystemCompilerPass());
+        $container->addCompilerPass(new ContentSystemStyleOptionCompilerPass());
+        $container->addCompilerPass(new ContentLayoutAssignableCompilerPass());
         $container->addCompilerPass(new ScheduledTaskExecutorCompilerPass());
         $container->addCompilerPass(new CreateGeneratorScaffoldingCommandPass());
         $container->addCompilerPass(new RedisConnectionsCompilerPass());

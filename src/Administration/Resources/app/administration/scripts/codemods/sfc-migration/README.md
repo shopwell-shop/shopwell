@@ -91,12 +91,12 @@ cannot convert them.
 ## Component names
 
 The name a component is generated under comes from its registration, not from its directory — that
-is what unlocks the CMS blocks/elements (`blocks/text/text/component` registers `sw-cms-block-text`)
+supports nested components (`blocks/text/component` registers `sw-demo-block-text`)
 and the `page/index` pages. Directories no registration resolves to keep their basename. The name
 becomes the `.vue` filename, from which the build transform derives the runtime component name.
 
 Two gates guard the derivation: a name the directory does not carry must be confirmed by the
-template filename (`sw-cms-block-text.html.twig`), and a name registered for more than one directory
+template filename (`sw-demo-block-text.html.twig`), and a name registered for more than one directory
 is never used. Either mismatch skips the component instead of guessing.
 
 Registrations are collected from the whole Administration `src/` whenever the target is contained by it,
@@ -155,8 +155,6 @@ A component outside the Administration's `src/` is migrated as an extension, eve
 target also contains Administration components. There, a mixin whose composable is not published keeps
 the component on the Options API with
 `useX() replaces the 'y' mixin but is not published to extensions through shopwell:composables`.
-Today that is `cms-element`, whose `useCmsElementDeprecated` stays internal; an extension moves to
-`useCmsElement` by hand, which routes config writes through the `cmsPage` store.
 
 A rename is emitted, not refused, but the generated name is the codemod's own and it costs the member
 its `swDefinePublic` entry. So the draft carries a `VERIFY` TODO directly above the destructure, and
@@ -231,15 +229,7 @@ makes the outcome `partial`:
   move into the composable's options object instead of staying local refs, and stop counting as the
   component redefining a mixin member.
 
-Two mixins are scaffolded today. `listing` owns its state and drives `getList`. `cms-element` owns no
-state of its own: it writes to the `element` prop, which is the slot the `cmsPage` store shares with
-the rest of the CMS editor, so the codemod emits `useCmsElementDeprecated` — faithful to that
-in-place mutation, and deprecated in its name because `useCmsElement` routes the same writes through
-the store. The codemod never emits the clean one; that migration is a human's call.
-
-`cms-element` also declared `cms-state` as its own mixin, so a component naming only `cms-element` read
-the CMS editor state through it. Its descriptor therefore answers those members as well, which is why
-both descriptors share one member list.
+The `listing` mixin is scaffolded: it owns its state and drives `getList`.
 
 ## What is skipped on purpose
 

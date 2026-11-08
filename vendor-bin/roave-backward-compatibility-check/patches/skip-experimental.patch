@@ -1,5 +1,5 @@
---- /dev/null
-+++ ../bin/roave-backward-compatibility-check.php
+--- a/bin/roave-backward-compatibility-check.php
++++ b/bin/roave-backward-compatibility-check.php
 @@ -54,6 +54,28 @@
          throw new RuntimeException('Could not find Composer autoload.php');
      })();

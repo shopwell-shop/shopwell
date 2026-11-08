@@ -92,8 +92,8 @@ boots first, and part of it is bundled into the admin worker, where there is no 
 Files under `src/app/mixin` keep it too, because a generated mixin module imports that directory and the
 reverse would be a cycle.
 
-A mixin a feature module registers as it loads — `cms-element` and `cms-state` from `sw-cms`, for
-instance — has no subpath, because nothing can guarantee it is registered when an importer evaluates.
+A mixin a feature module registers as it loads has no subpath, because nothing can guarantee it is
+registered when an importer evaluates.
 Those keep `Shopwell.Mixin.getByName()`.
 
 The checked-in registry only contains Administration registrations. An extension cannot import a store

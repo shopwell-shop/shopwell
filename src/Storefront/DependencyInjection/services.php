@@ -36,9 +36,7 @@ use Shopwell\Core\Content\Blog\Service\BlogSettings;
 use Shopwell\Core\Content\Category\SalesChannel\CategoryRoute;
 use Shopwell\Core\Content\Category\Service\CategoryBreadcrumbBuilder;
 use Shopwell\Core\Content\Category\Service\NavigationLoader;
-use Shopwell\Core\Content\Cms\SalesChannel\SalesChannelCmsPageLoader;
 use Shopwell\Core\Content\LandingPage\SalesChannel\LandingPageRoute;
-use Shopwell\Core\Content\Media\Cms\DefaultMediaResolver as CoreDefaultMediaResolver;
 use Shopwell\Core\Content\Media\File\FileSaver;
 use Shopwell\Core\Content\Media\MediaService;
 use Shopwell\Core\Content\Newsletter\SalesChannel\NewsletterSubscribeRoute;
@@ -62,6 +60,7 @@ use Shopwell\Core\Framework\App\ActiveAppsLoader;
 use Shopwell\Core\Framework\App\ShopId\ShopIdProvider;
 use Shopwell\Core\Framework\App\Source\SourceResolver;
 use Shopwell\Core\Framework\App\Template\TemplateLoader;
+use Shopwell\Core\Framework\ContentSystem\SalesChannel\AbstractContentRoute;
 use Shopwell\Core\Framework\DataAbstractionLayer\Cache\EntityCacheKeyGenerator;
 use Shopwell\Core\Framework\Event\BeforeSendResponseEvent;
 use Shopwell\Core\Framework\Routing\MaintenanceModeResolver as CoreMaintenanceModeResolver;
@@ -104,6 +103,7 @@ use Shopwell\Storefront\Framework\Routing\CachedDomainLoader;
 use Shopwell\Storefront\Framework\Routing\CachedDomainLoaderInvalidator;
 use Shopwell\Storefront\Framework\Routing\CanonicalLinkListener;
 use Shopwell\Storefront\Framework\Routing\ClearSiteDataListener;
+use Shopwell\Storefront\Framework\Routing\ContentSystemPreviewToolbarSubscriber;
 use Shopwell\Storefront\Framework\Routing\DomainLoader;
 use Shopwell\Storefront\Framework\Routing\DomainNotMappedListener;
 use Shopwell\Storefront\Framework\Routing\MaintenanceModeResolver;
@@ -161,7 +161,6 @@ use Shopwell\Storefront\Page\Checkout\Confirm\CheckoutConfirmPageLoader;
 use Shopwell\Storefront\Page\Checkout\Finish\CheckoutFinishPageLoader;
 use Shopwell\Storefront\Page\Checkout\Offcanvas\OffcanvasCartPageLoader;
 use Shopwell\Storefront\Page\Checkout\Register\CheckoutRegisterPageLoader;
-use Shopwell\Storefront\Page\Cms\DefaultMediaResolver;
 use Shopwell\Storefront\Page\GenericPageLoader;
 use Shopwell\Storefront\Page\LandingPage\LandingPageLoader;
 use Shopwell\Storefront\Page\Maintenance\MaintenancePageLoader;
@@ -488,14 +487,14 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(ErrorPageLoader::class)
         ->args([
-            service(SalesChannelCmsPageLoader::class),
+            service(AbstractContentRoute::class),
             service(GenericPageLoader::class),
             service('event_dispatcher'),
         ]);
 
     $services->set(MaintenancePageLoader::class)
         ->args([
-            service(SalesChannelCmsPageLoader::class),
+            service(AbstractContentRoute::class),
             service(GenericPageLoader::class),
             service('event_dispatcher'),
         ]);
@@ -578,7 +577,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(BlogListingReader::class),
             service(BlogDetailReader::class),
             service(BlogSettings::class),
-            service(SalesChannelCmsPageLoader::class),
+            service(AbstractContentRoute::class),
             service('event_dispatcher'),
         ]);
 
@@ -836,14 +835,6 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service(SitemapRoute::class),
         ]);
 
-    $services->set(DefaultMediaResolver::class)
-        ->decorate(CoreDefaultMediaResolver::class)
-        ->args([
-            service(DefaultMediaResolver::class . '.inner'),
-            service(Translator::class),
-            service('assets.packages'),
-        ]);
-
     $services->set(SalesChannelCreateStorefrontCommand::class)
         ->args([
             service('snippet_set.repository'),
@@ -1014,4 +1005,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
 
     $services->set(StorybookRouteScopeAllowList::class)
         ->tag('shopwell.route_scope_whitelist');
+
+    $services->set(ContentSystemPreviewToolbarSubscriber::class)
+        ->tag('kernel.event_subscriber');
 };

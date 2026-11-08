@@ -259,24 +259,6 @@ class TestBasicWithToManyRelationships extends SerializationFixture
                                 'related' => \sprintf('%s/media/%s/order-line-items', $baseUrl, self::MEDIA_ID),
                             ],
                         ],
-                        'cmsBlocks' => [
-                            'data' => [],
-                            'links' => [
-                                'related' => \sprintf('%s/media/%s/cms-blocks', $baseUrl, self::MEDIA_ID),
-                            ],
-                        ],
-                        'cmsSections' => [
-                            'data' => [],
-                            'links' => [
-                                'related' => \sprintf('%s/media/%s/cms-sections', $baseUrl, self::MEDIA_ID),
-                            ],
-                        ],
-                        'cmsPages' => [
-                            'data' => [],
-                            'links' => [
-                                'related' => \sprintf('%s/media/%s/cms-pages', $baseUrl, self::MEDIA_ID),
-                            ],
-                        ],
                         'documents' => [
                             'data' => [],
                             'links' => [
@@ -368,9 +350,6 @@ class TestBasicWithToManyRelationships extends SerializationFixture
                     'paymentMethods' => null,
                     'productConfiguratorSettings' => null,
                     'orderLineItems' => null,
-                    'cmsBlocks' => null,
-                    'cmsSections' => null,
-                    'cmsPages' => null,
                     'documents' => null,
                     '_uniqueIdentifier' => self::MEDIA_ID,
                     'versionId' => null,
@@ -420,9 +399,6 @@ class TestBasicWithToManyRelationships extends SerializationFixture
             $fixtures['included'][0]['relationships']['paymentMethods'],
             $fixtures['included'][0]['relationships']['productConfiguratorSettings'],
             $fixtures['included'][0]['relationships']['orderLineItems'],
-            $fixtures['included'][0]['relationships']['cmsBlocks'],
-            $fixtures['included'][0]['relationships']['cmsSections'],
-            $fixtures['included'][0]['relationships']['cmsPages'],
             $fixtures['included'][0]['relationships']['documents']
         );
 
@@ -455,9 +431,6 @@ class TestBasicWithToManyRelationships extends SerializationFixture
             $fixtures['media'][0]['paymentMethods'],
             $fixtures['media'][0]['productConfiguratorSettings'],
             $fixtures['media'][0]['orderLineItems'],
-            $fixtures['media'][0]['cmsBlocks'],
-            $fixtures['media'][0]['cmsSections'],
-            $fixtures['media'][0]['cmsPages'],
             $fixtures['media'][0]['documents']
         );
 

@@ -22,7 +22,6 @@ import initializeContext from 'src/app/init/context.init';
 import initializeWindow from 'src/app/init/window.init';
 import initializeExtensionComponentSections from 'src/app/init/extension-component-sections.init';
 import initTabs from 'src/app/init/tabs.init';
-import initCms from './cms.init';
 import initMenu from './menu-item.init';
 import initModals from './modals.init';
 import initializeSidebar from './sidebar.init';
@@ -59,7 +58,7 @@ export default {
     window: initializeWindow,
     extensionComponentSections: initializeExtensionComponentSections,
     tabs: initTabs,
-    cms: initCms,
+
     menu: initMenu,
     settingItems: initSettingItems,
     modals: initModals,

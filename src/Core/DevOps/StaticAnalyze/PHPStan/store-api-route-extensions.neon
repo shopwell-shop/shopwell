@@ -62,7 +62,6 @@ parameters:
         - Shopwell\Core\Content\Category\SalesChannel\CategoryListRoute::load
         - Shopwell\Core\Content\Category\SalesChannel\CategoryRoute::load
         - Shopwell\Core\Content\Category\SalesChannel\NavigationRoute::load
-        - Shopwell\Core\Content\Cms\SalesChannel\CmsRoute::load
         - Shopwell\Core\Content\ContactForm\SalesChannel\ContactFormRoute::load
         - Shopwell\Core\Content\Cookie\SalesChannel\CookieRoute::getCookieGroups
         - Shopwell\Core\Content\LandingPage\SalesChannel\LandingPageRoute::load

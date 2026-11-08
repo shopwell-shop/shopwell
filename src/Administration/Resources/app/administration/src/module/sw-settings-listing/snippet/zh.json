@@ -38,7 +38,8 @@
             "_score": "相关度"
           }
         }
-      }
+      },
+      "defaultSortingCantBeDisabled": "此排序为默认排序。必须保持启用，以免影响商品列表。"
     },
     "index": {
       "defaultSalesChannel": {

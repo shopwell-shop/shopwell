@@ -4,7 +4,7 @@
  * The privileges of the blog.
  *
  * The group hangs below `content` and not below `settings`: an article, the categories it is filed
- * under and the comments below it are content, exactly like a landing page or a cms layout. A role
+ * under and the comments below it are content, exactly like a landing page or a content layout. A role
  * that may maintain content but not the blog would be able to build pages nobody can read.
  *
  * The blog category has no privilege group of its own - it is reused through the four blog roles.
@@ -44,9 +44,9 @@ Shopwell.Service('privileges').addPrivilegeMappingEntry({
                 'blog_comment:read',
                 'blog_video:read',
                 'blog_category_assignment:read',
-                // the layout tab offers the cms pages of the blog, so their names have to be
+                // the layout tab offers the content layouts of the blog, so their names have to be
                 // readable to whoever may read a blog entry
-                'cms_page:read',
+                'content_layout:read',
             ],
             dependencies: [],
         },

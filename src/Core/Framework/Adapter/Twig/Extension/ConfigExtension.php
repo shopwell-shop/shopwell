@@ -26,9 +26,6 @@ class ConfigExtension extends AbstractExtension
     // @deprecated tag:v6.8.0 - Static template config values will be removed.
     private const STATIC_CONFIG_VALUES = [
         'seo.descriptionMaxLength' => 255,
-        'cms.revocationNoticeCmsPageId' => '00B9A8636F954277AE424E6C1C36A1F5',
-        'cms.taxCmsPageId' => '00B9A8636F954277AE424E6C1C36A1F5',
-        'cms.tosCmsPageId' => '00B9A8636F954277AE424E6C1C36A1F5',
         'confirm.revocationNotice' => true,
     ];
 
@@ -38,9 +35,6 @@ class ConfigExtension extends AbstractExtension
     // @deprecated tag:v6.8.0 - Static template config values will be removed.
     private const STATIC_CONFIG_REPLACEMENTS = [
         'seo.descriptionMaxLength' => 'Use a template-local value instead.',
-        'cms.revocationNoticeCmsPageId' => 'Use core.basicInformation.revocationPage instead.',
-        'cms.taxCmsPageId' => 'No direct replacement exists.',
-        'cms.tosCmsPageId' => 'Use core.basicInformation.tosPage instead.',
         'confirm.revocationNotice' => 'No direct replacement exists.',
     ];
 

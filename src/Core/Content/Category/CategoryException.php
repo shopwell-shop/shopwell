@@ -3,9 +3,6 @@
 namespace Shopwell\Core\Content\Category;
 
 use Shopwell\Core\Content\Category\Exception\CategoryNotFoundException;
-use Shopwell\Core\Content\Cms\Exception\PageNotFoundException;
-use Shopwell\Core\Framework\Deprecation\BCChange\ReturnTypeNarrowing;
-use Shopwell\Core\Framework\Feature;
 use Shopwell\Core\Framework\HttpException;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\ShopwellHttpException;
@@ -17,22 +14,7 @@ class CategoryException extends HttpException
     public const SERVICE_CATEGORY_NOT_FOUND = 'CHECKOUT__SERVICE_CATEGORY_NOT_FOUND';
     public const FOOTER_CATEGORY_NOT_FOUND = 'CHECKOUT__FOOTER_CATEGORY_NOT_FOUND';
     public const AFTER_CATEGORY_NOT_FOUND = 'CONTENT__AFTER_CATEGORY_NOT_FOUND';
-    public const CMS_PAGE_NOT_FOUND = 'CONTENT__CMS_PAGE_NOT_FOUND';
-
-    #[ReturnTypeNarrowing(version: 'v6.8.0', newType: 'self')]
-    public static function pageNotFound(string $pageId): ShopwellHttpException
-    {
-        if (!Feature::isActive('v6.8.0.0')) {
-            return new PageNotFoundException($pageId);
-        }
-
-        return new self(
-            Response::HTTP_NOT_FOUND,
-            self::CMS_PAGE_NOT_FOUND,
-            self::$couldNotFindMessage,
-            ['entity' => 'page', 'field' => 'ID', 'value' => $pageId]
-        );
-    }
+    final public const INVALID_FIELD_VALUE_TYPE = 'CONTENT__CATEGORY_INVALID_FIELD_VALUE_TYPE';
 
     public static function categoryNotFound(string $id): ShopwellHttpException
     {
@@ -65,6 +47,16 @@ class CategoryException extends HttpException
             Response::HTTP_BAD_REQUEST,
             self::AFTER_CATEGORY_NOT_FOUND,
             'Category to insert after not found.',
+        );
+    }
+
+    public static function invalidFieldValueType(string $fieldName, string $expectedType, string $actualType): self
+    {
+        return new self(
+            Response::HTTP_INTERNAL_SERVER_ERROR,
+            self::INVALID_FIELD_VALUE_TYPE,
+            'Field {{ fieldName }} expected {{ expectedType }}, got {{ actualType }}',
+            ['fieldName' => $fieldName, 'expectedType' => $expectedType, 'actualType' => $actualType]
         );
     }
 }

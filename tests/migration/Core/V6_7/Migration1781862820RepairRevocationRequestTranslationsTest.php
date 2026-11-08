@@ -10,8 +10,6 @@ use Shopwell\Core\Defaults;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Test\TestCaseBase\KernelLifecycleManager;
 use Shopwell\Core\Framework\Uuid\Uuid;
-use Shopwell\Core\Migration\V6_7\Migration1768545320RevocationRequestCmsForm;
-use Shopwell\Core\Migration\V6_7\Migration1768545322AssignRevocationPageToSystemConfigSetting;
 use Shopwell\Core\Migration\V6_7\Migration1781862820RepairRevocationRequestTranslations;
 
 /**
@@ -38,8 +36,6 @@ class Migration1781862820RepairRevocationRequestTranslationsTest extends TestCas
         $this->connection->beginTransaction();
 
         try {
-            $this->deleteRevocationSystemConfig();
-            $this->deleteRevocationCmsPages();
             $this->deleteRevocationMailTemplates();
 
             $zhHkLanguageByteId = $this->createLanguage('zh-HK');
@@ -76,65 +72,8 @@ class Migration1781862820RepairRevocationRequestTranslationsTest extends TestCas
                 $frChLanguageByteId,
                 'Revocation request sent'
             );
-
-            $cmsPageByteId = $this->getRevocationCmsPageId();
-            static::assertIsString($cmsPageByteId);
-
-            $zhHkPageTranslationName = $this->getCmsPageTranslationName($cmsPageByteId, $zhHkLanguageByteId);
-            static::assertSame(Migration1768545320RevocationRequestCmsForm::CMS_PAGE_TRANSLATIONS['zh_name'], $zhHkPageTranslationName);
-
-            $frChPageTranslationName = $this->getCmsPageTranslationName($cmsPageByteId, $frChLanguageByteId);
-            static::assertSame(Migration1768545320RevocationRequestCmsForm::CMS_PAGE_TRANSLATIONS['en_name'], $frChPageTranslationName);
-
-            $cmsSlotByteId = $this->getRevocationCmsSlotId();
-            static::assertIsString($cmsSlotByteId);
-            static::assertSame(1, $this->countCmsSlotTranslations($cmsSlotByteId, $zhHkLanguageByteId));
-            static::assertSame(1, $this->countCmsSlotTranslations($cmsSlotByteId, $frChLanguageByteId));
-
-            $configuredPageId = $this->getGlobalRevocationPageConfigValue();
-            static::assertSame(Uuid::fromBytesToHex($cmsPageByteId), $configuredPageId);
-            static::assertFalse($this->getGlobalRevocationButtonConfigValue());
         } finally {
             $this->connection->rollBack();
-        }
-    }
-
-    private function deleteRevocationSystemConfig(): void
-    {
-        $this->connection->executeStatement(
-            'DELETE FROM `system_config` WHERE `configuration_key` IN (:pageConfigKey, :buttonConfigKey)',
-            [
-                'buttonConfigKey' => Migration1768545322AssignRevocationPageToSystemConfigSetting::REVOCATION_BUTTON_CONFIG_KEY,
-                'pageConfigKey' => Migration1768545322AssignRevocationPageToSystemConfigSetting::REVOCATION_PAGE_CONFIG_KEY,
-            ]
-        );
-    }
-
-    private function deleteRevocationCmsPages(): void
-    {
-        $pageRows = $this->connection->fetchAllAssociative(
-            <<<'SQL'
-SELECT DISTINCT `page`.`id`, `page`.`version_id`
-FROM `cms_page` AS `page`
-INNER JOIN `cms_page_translation` AS `page_translation`
-    ON `page_translation`.`cms_page_id` = `page`.`id`
-    AND `page_translation`.`cms_page_version_id` = `page`.`version_id`
-WHERE `page_translation`.`name` = :enName OR `page_translation`.`name` = :zhName
-SQL,
-            [
-                'zhName' => Migration1768545320RevocationRequestCmsForm::CMS_PAGE_TRANSLATIONS['zh_name'],
-                'enName' => Migration1768545320RevocationRequestCmsForm::CMS_PAGE_TRANSLATIONS['en_name'],
-            ]
-        );
-
-        foreach ($pageRows as $pageRow) {
-            static::assertIsString($pageRow['id']);
-            static::assertIsString($pageRow['version_id']);
-
-            $this->connection->delete('cms_page', [
-                'id' => $pageRow['id'],
-                'version_id' => $pageRow['version_id'],
-            ]);
         }
     }
 
@@ -191,130 +130,6 @@ SQL,
         );
 
         static::assertSame($expectedSubject, $subject);
-    }
-
-    private function getRevocationCmsPageId(): ?string
-    {
-        $cmsPageByteId = $this->connection->fetchOne(
-            <<<'SQL'
-SELECT `page`.`id`
-FROM `cms_page` AS `page`
-INNER JOIN `cms_section` AS `section`
-    ON `section`.`cms_page_id` = `page`.`id`
-    AND `section`.`cms_page_version_id` = `page`.`version_id`
-    AND `section`.`version_id` = `page`.`version_id`
-INNER JOIN `cms_block` AS `block`
-    ON `block`.`cms_section_id` = `section`.`id`
-    AND `block`.`cms_section_version_id` = `section`.`version_id`
-    AND `block`.`version_id` = `section`.`version_id`
-INNER JOIN `cms_slot` AS `slot`
-    ON `slot`.`cms_block_id` = `block`.`id`
-    AND `slot`.`cms_block_version_id` = `block`.`version_id`
-    AND `slot`.`version_id` = `block`.`version_id`
-INNER JOIN `cms_slot_translation` AS `slot_translation`
-    ON `slot_translation`.`cms_slot_id` = `slot`.`id`
-    AND `slot_translation`.`cms_slot_version_id` = `slot`.`version_id`
-WHERE `page`.`version_id` = :versionId
-    AND `block`.`name` = :cmsBlockName
-    AND JSON_UNQUOTE(JSON_EXTRACT(`slot_translation`.`config`, '$.type.value')) = :slotType
-LIMIT 1
-SQL,
-            [
-                'cmsBlockName' => Migration1768545320RevocationRequestCmsForm::CMS_BLOCK_NAME,
-                'slotType' => Migration1768545320RevocationRequestCmsForm::CMS_SLOT_TYPE,
-                'versionId' => Uuid::fromHexToBytes(Defaults::LIVE_VERSION),
-            ]
-        );
-
-        if (!\is_string($cmsPageByteId)) {
-            return null;
-        }
-
-        return $cmsPageByteId;
-    }
-
-    private function getRevocationCmsSlotId(): ?string
-    {
-        $cmsSlotByteId = $this->connection->fetchOne(
-            <<<'SQL'
-SELECT `slot`.`id`
-FROM `cms_slot` AS `slot`
-INNER JOIN `cms_slot_translation` AS `slot_translation`
-    ON `slot_translation`.`cms_slot_id` = `slot`.`id`
-    AND `slot_translation`.`cms_slot_version_id` = `slot`.`version_id`
-WHERE JSON_UNQUOTE(JSON_EXTRACT(`slot_translation`.`config`, '$.type.value')) = :slotType
-LIMIT 1
-SQL,
-            ['slotType' => Migration1768545320RevocationRequestCmsForm::CMS_SLOT_TYPE]
-        );
-
-        if (!\is_string($cmsSlotByteId)) {
-            return null;
-        }
-
-        return $cmsSlotByteId;
-    }
-
-    private function getCmsPageTranslationName(string $cmsPageByteId, string $languageByteId): ?string
-    {
-        $name = $this->connection->fetchOne(
-            'SELECT `name` FROM `cms_page_translation` WHERE `cms_page_id` = :cmsPageId AND `language_id` = :languageId LIMIT 1',
-            [
-                'cmsPageId' => $cmsPageByteId,
-                'languageId' => $languageByteId,
-            ]
-        );
-
-        if (!\is_string($name)) {
-            return null;
-        }
-
-        return $name;
-    }
-
-    private function countCmsSlotTranslations(string $cmsSlotByteId, string $languageByteId): int
-    {
-        return (int) $this->connection->fetchOne(
-            'SELECT COUNT(*) FROM `cms_slot_translation` WHERE `cms_slot_id` = :cmsSlotId AND `language_id` = :languageId',
-            [
-                'cmsSlotId' => $cmsSlotByteId,
-                'languageId' => $languageByteId,
-            ]
-        );
-    }
-
-    private function getGlobalRevocationPageConfigValue(): mixed
-    {
-        $configurationValue = $this->connection->fetchOne(
-            'SELECT `configuration_value` FROM `system_config` WHERE `configuration_key` = :configKey AND `sales_channel_id` IS NULL LIMIT 1',
-            ['configKey' => Migration1768545322AssignRevocationPageToSystemConfigSetting::REVOCATION_PAGE_CONFIG_KEY]
-        );
-
-        if (!\is_string($configurationValue)) {
-            return null;
-        }
-
-        $decoded = json_decode($configurationValue, true, 512, \JSON_THROW_ON_ERROR);
-        static::assertIsArray($decoded);
-
-        return $decoded['_value'] ?? null;
-    }
-
-    private function getGlobalRevocationButtonConfigValue(): mixed
-    {
-        $configurationValue = $this->connection->fetchOne(
-            'SELECT `configuration_value` FROM `system_config` WHERE `configuration_key` = :configKey AND `sales_channel_id` IS NULL LIMIT 1',
-            ['configKey' => Migration1768545322AssignRevocationPageToSystemConfigSetting::REVOCATION_BUTTON_CONFIG_KEY]
-        );
-
-        if (!\is_string($configurationValue)) {
-            return null;
-        }
-
-        $decoded = json_decode($configurationValue, true, 512, \JSON_THROW_ON_ERROR);
-        static::assertIsArray($decoded);
-
-        return $decoded['_value'] ?? null;
     }
 
     private function createLanguage(string $localeCode, ?string $translationCode = null): string

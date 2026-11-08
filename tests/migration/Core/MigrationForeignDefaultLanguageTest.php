@@ -151,40 +151,17 @@ class MigrationForeignDefaultLanguageTest extends TestCase
         static::assertArrayHasKey('en-GB', $languageIds);
         static::assertArrayHasKey('zh-CN', $languageIds);
 
-        // Built-in CMS layouts are shipped in both languages. A slot that was only written
-        // for the system language loses its config in the other language, which makes the
-        // element render unconfigured.
-        static::assertSame(0, (int) $connection->fetchOne(
-            'SELECT COUNT(*)
-             FROM cms_slot_translation english
-             LEFT JOIN cms_slot_translation chinese
-                ON chinese.cms_slot_id = english.cms_slot_id
-                AND chinese.cms_slot_version_id <=> english.cms_slot_version_id
-                AND chinese.language_id = :zhCnLanguageId
-             WHERE english.language_id = :enGbLanguageId
-               AND chinese.cms_slot_id IS NULL',
-            [
-                'zhCnLanguageId' => $languageIds['zh-CN'],
-                'enGbLanguageId' => $languageIds['en-GB'],
-            ]
-        ));
-
-        // The sidebar listing layout must not fall back to the second language's original name.
-        static::assertSame('含侧栏的默认分类布局', $connection->fetchOne(
-            'SELECT chinese.name
-             FROM cms_page_translation english
-             INNER JOIN cms_page_translation chinese
-                ON chinese.cms_page_id = english.cms_page_id
-                AND chinese.cms_page_version_id <=> english.cms_page_version_id
-                AND chinese.language_id = :zhCnLanguageId
-             WHERE english.language_id = :enGbLanguageId
-               AND english.name = :name',
-            [
-                'zhCnLanguageId' => $languageIds['zh-CN'],
-                'enGbLanguageId' => $languageIds['en-GB'],
-                'name' => 'Default listing layout with sidebar',
-            ]
-        ));
+        $schema = $connection->createSchemaManager();
+        foreach ($schema->introspectTableNames() as $table) {
+            $tableName = $table->getUnqualifiedName()->getValue();
+            static::assertFalse(str_starts_with($tableName, 'cms_') || str_starts_with($tableName, 'app_cms_'), $tableName);
+        }
+        foreach (['category', 'product', 'landing_page', 'sales_channel', 'blog', 'blog_category'] as $table) {
+            foreach ($schema->introspectTableColumnsByUnquotedName($table) as $column) {
+                $columnName = $column->getObjectName()->toString();
+                static::assertStringNotContainsString('cms_', $columnName, $table . '.' . $columnName);
+            }
+        }
 
         static::assertSame(1, (int) $connection->fetchOne(
             'SELECT COUNT(*) FROM tax WHERE name = :name AND tax_rate = 0',

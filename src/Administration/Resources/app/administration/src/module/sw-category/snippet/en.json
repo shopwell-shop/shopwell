@@ -24,12 +24,12 @@
     },
     "view": {
       "general": "General",
-      "cms": "Layout",
       "products": "Products",
       "customEntity": "Custom Entities",
       "seo": "SEO",
       "columnInfoHeader": "Footer element",
-      "columnInfo": "This category sets up a designated column in the footer. The category name will be displayed as a headline for the column. All categories on the first level below this category are displayed as rows below the column headline."
+      "columnInfo": "This category sets up a designated column in the footer. The category name will be displayed as a headline for the column. All categories on the first level below this category are displayed as rows below the column headline.",
+      "layout": "Layout"
     },
     "base": {
       "general": {
@@ -102,7 +102,7 @@
         "visible": "Hide in navigation",
         "imageLabel": "Display image",
         "descriptionLabel": "Description",
-                "descriptionPlaceholder": "Enter description..."
+        "descriptionPlaceholder": "Enter description..."
       },
       "customEntity": {
         "cardTitle": "Assigned articles",
@@ -118,16 +118,6 @@
             "title": "No entries assigned"
           }
         }
-      },
-      "cms": {
-        "title": "Layout assignment",
-        "changeLayout": "Change layout",
-        "changeLayoutEmpty": "Assign layout",
-        "editInPagebuilder": "Edit in designer",
-        "editInPagebuilderEmpty": "Create new layout",
-        "editContent": "Edit content",
-        "defaultTitle": "Default layout",
-        "defaultDesc": "Category page"
       },
       "link": {
         "title": "Customisable link",
@@ -187,7 +177,7 @@
   "sw-landing-page": {
     "view": {
       "general": "General",
-      "cms": "Layout"
+      "layout": "Layout"
     },
     "general": {
       "placeholderSearchBar": "Search landing pages...",
@@ -233,17 +223,6 @@
         "notification": {
           "noLayoutAssigned": "For this landing page, no layout has been assigned. Without a layout, the landing page is not accessible via SEO."
         }
-      },
-      "cms": {
-        "title": "Layout assignment",
-        "changeLayout": "Change layout",
-        "changeLayoutEmpty": "Assign layout",
-        "editInPagebuilder": "Edit in designer",
-        "editInPagebuilderEmpty": "Create new layout",
-        "editContent": "Edit content",
-        "defaultTitle": "Default layout",
-        "defaultDesc": "Category page",
-        "cmsLayoutModalHeadline": "Landing page"
       }
     },
     "modal": {

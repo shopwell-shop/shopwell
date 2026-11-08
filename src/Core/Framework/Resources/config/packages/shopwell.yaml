@@ -566,8 +566,6 @@ shopwell:
               sets: ["basic", "media", "HTML5"]
             - name: product_translation.descriptionTeaser
               sets: []
-            - name: app_cms_block.template
-              sets: ["basic", "media", "tidy", "HTML5"]
             - name: snippet.value
               sets: ["basic", "media", "bootstrap", "snippet", "HTML5"]
 
@@ -622,8 +620,6 @@ shopwell:
             DOCUMENT__ORDER_NOT_FOUND: notice
             CHECKOUT__PROMOTION__NOT_FOUND: notice
             CHECKOUT__PROMOTION_DISCOUNT_NOT_FOUND: notice
-            CONTENT__DELETION_DEFAULT_CMS_PAGE: notice
-            CONTENT__DELETION_OVERALL_DEFAULT_CMS_PAGE: notice
             CONTENT__INVALID_FIELD_CONFIG_SOURCE: notice
             CONTENT__MEDIA_INVALID_CONTENT_LENGTH: notice
             CONTENT__MEDIA_INVALID_URL: notice

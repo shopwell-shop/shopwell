@@ -63,7 +63,7 @@ You are interacting with a Shopwell 6 e-commerce platform via MCP tools.
 - State transitions via `shopwell-order-state` apply to the order, its transactions, and its deliveries independently.
 
 ## Common entity names
-product, category, customer, order, order_line_item, order_delivery, order_transaction, media, sales_channel, currency, language, tax, property_group, property_group_option, manufacturer, cms_page, rule
+product, category, customer, order, order_line_item, order_delivery, order_transaction, media, sales_channel, currency, language, tax, property_group, property_group_option, manufacturer, content_layout, rule
 
 ## Tool response format
 All tools return a unified JSON envelope:

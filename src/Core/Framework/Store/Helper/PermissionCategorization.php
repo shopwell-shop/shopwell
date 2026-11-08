@@ -40,12 +40,6 @@ use Shopwell\Core\Checkout\Promotion\PromotionDefinition;
 use Shopwell\Core\Content\Category\Aggregate\CategoryTag\CategoryTagDefinition;
 use Shopwell\Core\Content\Category\Aggregate\CategoryTranslation\CategoryTranslationDefinition;
 use Shopwell\Core\Content\Category\CategoryDefinition;
-use Shopwell\Core\Content\Cms\Aggregate\CmsBlock\CmsBlockDefinition;
-use Shopwell\Core\Content\Cms\Aggregate\CmsPageTranslation\CmsPageTranslationDefinition;
-use Shopwell\Core\Content\Cms\Aggregate\CmsSection\CmsSectionDefinition;
-use Shopwell\Core\Content\Cms\Aggregate\CmsSlot\CmsSlotDefinition;
-use Shopwell\Core\Content\Cms\Aggregate\CmsSlotTranslation\CmsSlotTranslationDefinition;
-use Shopwell\Core\Content\Cms\CmsPageDefinition;
 use Shopwell\Core\Content\ImportExport\Aggregate\ImportExportFile\ImportExportFileDefinition;
 use Shopwell\Core\Content\ImportExport\Aggregate\ImportExportLog\ImportExportLogDefinition;
 use Shopwell\Core\Content\ImportExport\ImportExportProfileDefinition;
@@ -168,7 +162,7 @@ class PermissionCategorization
     private const CATEGORY_APP = 'app';
     private const CATEGORY_ADMIN_USER = 'admin_user';
     private const CATEGORY_CATEGORY = 'category';
-    private const CATEGORY_CMS = 'cms';
+    private const CATEGORY_CONTENT_SYSTEM = 'content_system';
     private const CATEGORY_CUSTOMER = 'customer';
     private const CATEGORY_CUSTOM_FIELDS = 'custom_fields';
     private const CATEGORY_DOCUMENTS = 'documents';
@@ -226,13 +220,11 @@ class PermissionCategorization
             CategoryTranslationDefinition::ENTITY_NAME,
             CategoryTagDefinition::ENTITY_NAME,
         ],
-        self::CATEGORY_CMS => [
-            CmsBlockDefinition::ENTITY_NAME,
-            CmsPageDefinition::ENTITY_NAME,
-            CmsPageTranslationDefinition::ENTITY_NAME,
-            CmsSectionDefinition::ENTITY_NAME,
-            CmsSlotDefinition::ENTITY_NAME,
-            CmsSlotTranslationDefinition::ENTITY_NAME,
+        self::CATEGORY_CONTENT_SYSTEM => [
+            'content_layout',
+            'category_content_layout',
+            'product_content_layout',
+            'landing_page_content_layout',
         ],
         self::CATEGORY_CUSTOMER => [
             CustomerDefinition::ENTITY_NAME,

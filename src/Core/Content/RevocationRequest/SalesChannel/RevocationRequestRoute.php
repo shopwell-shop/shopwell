@@ -4,7 +4,7 @@ namespace Shopwell\Core\Content\RevocationRequest\SalesChannel;
 
 use Psr\Clock\ClockInterface;
 use Shopwell\Core\Checkout\Customer\Service\EmailIdnConverter;
-use Shopwell\Core\Content\Cms\Service\CmsFormSlotConfigResolver;
+use Shopwell\Core\Content\ContactForm\Service\FormConfigResolver;
 use Shopwell\Core\Content\RevocationRequest\Event\RevocationRequestEvent;
 use Shopwell\Core\Content\RevocationRequest\Extension\RevocationRequestRouteExtension;
 use Shopwell\Core\Framework\Event\EventData\MailRecipientStruct;
@@ -39,7 +39,7 @@ class RevocationRequestRoute extends AbstractRevocationRequestRoute
         private readonly RateLimiter $rateLimiter,
         private readonly EventDispatcherInterface $eventDispatcher,
         private readonly ClockInterface $clock,
-        private readonly CmsFormSlotConfigResolver $cmsFormSlotConfigResolver,
+        private readonly FormConfigResolver $formConfigResolver,
         private readonly ExtensionDispatcher $extensions,
     ) {
     }
@@ -70,7 +70,7 @@ class RevocationRequestRoute extends AbstractRevocationRequestRoute
 
         $this->validateRevocationRequestForm($dataBag, $context);
 
-        $mailConfig = $this->cmsFormSlotConfigResolver->resolve($context, $dataBag->get('slotId'), $dataBag->get('navigationId'), $dataBag->get('entityName'));
+        $mailConfig = $this->formConfigResolver->resolve($context);
 
         $merchantMailRecipientStruct = new MailRecipientStruct($mailConfig['receivers']);
         $merchantEvent = new RevocationRequestEvent($context->getContext(), $context->getSalesChannelId(), $merchantMailRecipientStruct, $dataBag);

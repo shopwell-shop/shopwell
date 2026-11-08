@@ -24,9 +24,9 @@ describe('ListingPlugin tests', () => {
             </div>
 
             <!-- Product results -->
-            <div class="cms-element-product-listing-wrapper" data-listing="true">
-                <div class="cms-element-product-listing">
-                    <div class="row cms-listing-row js-listing-wrapper" data-aria-live-text="Showing 24 out of 1000 products.">
+            <div class="product-listing-wrapper" data-listing="true">
+                <div class="product-listing-content">
+                    <div class="row product-listing-row js-listing-wrapper" data-aria-live-text="Showing 24 out of 1000 products.">
                         <div class="card product-box box-standard"></div>
                         <div class="card product-box box-standard"></div>
                         <div class="card product-box box-standard"></div>
@@ -599,7 +599,7 @@ describe('ListingPlugin tests', () => {
         window.scrollTo = jest.fn();
         window.scrollY = 500;
 
-        listingPlugin._cmsProductListingWrapper.getBoundingClientRect = () => ({
+        listingPlugin._productListingWrapper.getBoundingClientRect = () => ({
             top: -500,
         });
 
@@ -630,7 +630,7 @@ describe('ListingPlugin tests', () => {
         window.scrollTo = jest.fn();
         window.scrollY = 500;
 
-        listingPlugin._cmsProductListingWrapper.getBoundingClientRect = () => ({
+        listingPlugin._productListingWrapper.getBoundingClientRect = () => ({
             top: -1 * distanceToTop,
         });
 
@@ -671,7 +671,7 @@ describe('ListingPlugin tests', () => {
 
         const mockElement = document.createElement('div');
         const cmsElementProductListingWrapper = document.createElement('div');
-        cmsElementProductListingWrapper.classList.add('cms-element-product-listing-wrapper');
+        cmsElementProductListingWrapper.classList.add('product-listing-wrapper');
 
         document.body.append(cmsElementProductListingWrapper);
 
@@ -695,9 +695,9 @@ describe('ListingPlugin tests', () => {
             Promise.resolve({
                 ok: true,
                 text: () => Promise.resolve(`
-                <div class="cms-element-product-listing-wrapper" data-listing="true">
-                    <div class="cms-element-product-listing">
-                        <div class="row cms-listing-row js-listing-wrapper" data-aria-live-text="Showing 2 products.">
+                <div class="product-listing-wrapper" data-listing="true">
+                    <div class="product-listing-content">
+                        <div class="row product-listing-row js-listing-wrapper" data-aria-live-text="Showing 2 products.">
                             <div class="card product-box box-standard"></div>
                             <div class="card product-box box-standard"></div>
                         </div>
@@ -1345,9 +1345,9 @@ describe('ListingPlugin tests', () => {
             Promise.resolve({
                 ok: true,
                 text: () => Promise.resolve(`
-                <div class="cms-element-product-listing-wrapper" data-listing="true">
-                    <div class="cms-element-product-listing">
-                        <div class="row cms-listing-row js-listing-wrapper" data-aria-live-text="Showing 2 products.">
+                <div class="product-listing-wrapper" data-listing="true">
+                    <div class="product-listing-content">
+                        <div class="row product-listing-row js-listing-wrapper" data-aria-live-text="Showing 2 products.">
                             <div class="card product-box box-standard"></div>
                             <div class="card product-box box-standard"></div>
                         </div>

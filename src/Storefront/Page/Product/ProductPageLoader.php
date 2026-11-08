@@ -114,10 +114,6 @@ class ProductPageLoader
             }
         }
 
-        if ($cmsPage = $product->getCmsPage()) {
-            $page->setCmsPage($cmsPage);
-        }
-
         $this->loadOptions($page);
         $this->loadMetaData($page);
 

@@ -66,7 +66,8 @@
             "activate": "Activate",
             "deactivate": "Deactivate",
             "confirm": "Confirm",
-            "noteRequiredFields": "Fields marked with asterisks (*) are required."
+            "noteRequiredFields": "Fields marked with asterisks (*) are required.",
+            "loading": "Loading..."
         }
     },
     "general": {
@@ -125,7 +126,12 @@
             "last": "Last page",
             "page": "Page",
             "title": "Pagination"
-        }
+        },
+        "breadcrumbPlaceholder": "Breadcrumb not available",
+        "breadcrumbLabel": "Breadcrumb",
+        "grossTaxInformationShort": "incl. VAT plus shipping costs",
+        "netTaxInformationShort": "excl. VAT plus shipping costs",
+        "toggleSubcategories": "Show or hide the subcategories of %category%"
     },
     "header": {
         "logoLink": "Go to homepage",
@@ -848,7 +854,17 @@
         "regularPriceLabel": "Regular price:",
         "listPriceLabel": "Sale price:",
         "addToWishlist": "Add to wishlist",
-        "removeFromWishlist": "Remove from wishlist"
+        "removeFromWishlist": "Remove from wishlist",
+        "filterTitle": "Filter",
+        "resultCount": "{1} %count% Item|[0,Inf[ %count% Items",
+        "layoutSwitchList": "List view",
+        "layoutSwitchGrid": "Grid view",
+        "filterButtonMore": "More filters",
+        "filterButtonLess": "Less filters",
+        "filterSearchPlaceholder": "Search %displayName%",
+        "productSliderAriaLabel": "Product slider with %total% products",
+        "productSliderScrollBackward": "Previous products",
+        "productSliderScrollForward": "Next products"
     },
     "newsletter": {
         "headline": "Subscribe to newsletter",
@@ -959,7 +975,9 @@
         "unavailable": "Unavailable",
         "unavailableTooltip": "This option is currently unavailable.",
         "reviewTitleMinLengthHint": "Please enter at least 5 characters.",
-        "reviewTextMinLengthHint": "Please enter at least 40 characters."
+        "reviewTextMinLengthHint": "Please enter at least 40 characters.",
+        "priceUnavailable": "Price not available",
+        "manufacturerUnavailable": "Manufacturer not available"
     },
     "spatial": {
         "ar": {
@@ -1113,10 +1131,12 @@
                 "decrease": "Decrease quantity",
                 "decreaseOfProduct": "Decrease quantity of %product%",
                 "stockAdjusted": "Your quantity has been updated to %quantity%.",
-                "outOfStock": "The product is no longer available."
+                "outOfStock": "The product is no longer available.",
+                "notAvailable": "Quantity selector not available."
             },
             "configurator": {
-                "legend": "<span class=\"%hidden_cls%\">Select&nbsp;</span>%group_name%"
+                "legend": "<span class=\"%hidden_cls%\">Select&nbsp;</span>%group_name%",
+                "unavailable": "Variant selection unavailable"
             }
         },
         "cms": {
@@ -1176,6 +1196,21 @@
                     "title": "Plant",
                     "alt": "Succulent in a white pot in front of light blue background"
                 }
+            },
+            "mediaGallery": {
+                "ariaLabel": "Media gallery containing %total% items",
+                "lightboxTitle": "Fullscreen media gallery",
+                "openLightboxAriaLabel": "Open media %index% in fullscreen gallery",
+                "counterDeviderLabel": "of",
+                "counterLabel": "Showing",
+                "thumbnailNavAriaLabel": "Media gallery thumbnail navigation",
+                "thumbnailNavScrollDown": "Scroll down",
+                "thumbnailNavScrollUp": "Scroll up",
+                "thumbnailNavScrollLeft": "Scroll left",
+                "thumbnailNavScrollRight": "Scroll right",
+                "thumbnailNavButtonAriaLabel": "Media %index% of %total%",
+                "previousMedia": "Previous media",
+                "nextMedia": "Next media"
             }
         }
     },

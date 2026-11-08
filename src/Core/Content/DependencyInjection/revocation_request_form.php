@@ -3,7 +3,7 @@
 namespace Shopwell\Core\Content\DependencyInjection;
 
 use Psr\Clock\ClockInterface;
-use Shopwell\Core\Content\Cms\Service\CmsFormSlotConfigResolver;
+use Shopwell\Core\Content\ContactForm\Service\FormConfigResolver;
 use Shopwell\Core\Content\RevocationRequest\SalesChannel\RevocationRequestRoute;
 use Shopwell\Core\Content\RevocationRequest\Validation\RevocationRequestFormValidationFactory;
 use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
@@ -31,7 +31,7 @@ return static function (ContainerConfigurator $containerConfigurator): void {
             service('shopwell.rate_limiter'),
             service('event_dispatcher'),
             service(ClockInterface::class),
-            service(CmsFormSlotConfigResolver::class),
+            service(FormConfigResolver::class),
             service(ExtensionDispatcher::class),
         ]);
 };

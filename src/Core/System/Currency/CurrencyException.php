@@ -9,6 +9,7 @@ use Symfony\Component\HttpFoundation\Response;
 #[Package('fundamentals@framework')]
 class CurrencyException extends HttpException
 {
+    final public const INVALID_FIELD_VALUE_TYPE = 'SYSTEM__CURRENCY_INVALID_FIELD_VALUE_TYPE';
     final public const ISO_CODE_NOT_UNIQUE = 'SYSTEM__CURRENCY_ISO_CODE_NOT_UNIQUE';
     final public const UNSUPPORTED_CURRENCY = 'SYSTEM__CURRENCY_UNSUPPORTED';
     final public const INVALID_AMOUNT = 'SYSTEM__CURRENCY_INVALID_AMOUNT';
@@ -30,6 +31,16 @@ class CurrencyException extends HttpException
             self::INVALID_AMOUNT,
             'The amount "{{ amount }}" cannot be represented in integer minor units of {{ currency }}.',
             ['amount' => $amount, 'currency' => $currency],
+        );
+    }
+
+    public static function invalidFieldValueType(string $fieldName, string $expectedType, string $actualType): self
+    {
+        return new self(
+            Response::HTTP_INTERNAL_SERVER_ERROR,
+            self::INVALID_FIELD_VALUE_TYPE,
+            'Field {{ fieldName }} expected {{ expectedType }}, got {{ actualType }}',
+            ['fieldName' => $fieldName, 'expectedType' => $expectedType, 'actualType' => $actualType]
         );
     }
 

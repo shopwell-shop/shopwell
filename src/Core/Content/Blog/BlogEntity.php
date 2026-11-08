@@ -15,7 +15,6 @@ use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\ManyToOne;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\OnDelete;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\OneToMany;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\PrimaryKey;
-use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\ReferenceVersion;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\Required;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\SearchRanking;
 use Shopwell\Core\Framework\DataAbstractionLayer\Attribute\Translations;
@@ -172,20 +171,12 @@ class BlogEntity extends EntityStruct
     public ?string $coverMediaId = null;
 
     /**
-     * The layout of the detail page. An entry without a cms page falls back to the twig template of
+     * The layout of the detail page. An entry without a content layout falls back to the twig template of
      * its type, which is what an installation without the administration editor expects; a merchant
      * that builds a layout wins.
      */
-    #[ForeignKey(entity: 'cms_page', api: ['admin-api' => true, 'store-api' => true])]
-    public ?string $cmsPageId = null;
-
-    /**
-     * The layout is version aware, so a reference into it always spans id and version. Without the
-     * version the foreign key can not be created at all - `cms_page` is keyed by (id, version_id) and
-     * MySQL 8.4 rejects a foreign key that references only part of it.
-     */
-    #[ReferenceVersion(entity: 'cms_page')]
-    public ?string $cmsPageVersionId = null;
+    #[ForeignKey(entity: 'content_layout', api: ['admin-api' => true, 'store-api' => true])]
+    public ?string $contentLayoutId = null;
 
     /**
      * The translated columns of the entry, one row per language.

@@ -25,9 +25,6 @@ class Migration1698682149MakeTranslatableFieldsNullable extends MigrationStep
         'app_script_condition_translation' => [
             'name',
         ],
-        'app_cms_block_translation' => [
-            'label',
-        ],
         'app_flow_action_translation' => [
             'label',
         ],

@@ -31,11 +31,6 @@ class CategoryTranslationEntity extends TranslationEntity
 
     protected ?LanguageEntity $language = null;
 
-    /**
-     * @var array<string, array<string, array<string, mixed>>|null>|null
-     */
-    protected ?array $slotConfig = null;
-
     protected ?string $linkType = null;
 
     protected ?bool $linkNewTab = null;
@@ -80,22 +75,6 @@ class CategoryTranslationEntity extends TranslationEntity
     public function setCategory(CategoryEntity $category): void
     {
         $this->category = $category;
-    }
-
-    /**
-     * @return array<string, array<string, array<string, mixed>>|null>|null
-     */
-    public function getSlotConfig(): ?array
-    {
-        return $this->slotConfig;
-    }
-
-    /**
-     * @param array<string, array<string, array<string, mixed>>|null> $slotConfig
-     */
-    public function setSlotConfig(array $slotConfig): void
-    {
-        $this->slotConfig = $slotConfig;
     }
 
     public function getLinkType(): ?string

@@ -24,12 +24,12 @@
     },
     "view": {
       "general": "通用",
-      "cms": "布局",
       "products": "商品",
       "customEntity": "自定义实体",
       "seo": "SEO",
       "columnInfoHeader": "页脚元素",
-      "columnInfo": "该分类会在页脚中形成独立一列。分类名称将作为该列的标题显示。该分类下一级的全部分类将以行的形式显示在列标题下方。"
+      "columnInfo": "该分类会在页脚中形成独立一列。分类名称将作为该列的标题显示。该分类下一级的全部分类将以行的形式显示在列标题下方。",
+      "layout": "布局"
     },
     "base": {
       "general": {
@@ -119,16 +119,6 @@
           }
         }
       },
-      "cms": {
-        "title": "布局分配",
-        "changeLayout": "修改布局",
-        "changeLayoutEmpty": "分配布局",
-        "editInPagebuilder": "在设计器中编辑",
-        "editInPagebuilderEmpty": "新建布局",
-        "editContent": "编辑内容",
-        "defaultTitle": "默认布局",
-        "defaultDesc": "分类页"
-      },
       "link": {
         "title": "自定义链接",
         "mainTypeLabel": "链接类型",
@@ -187,7 +177,7 @@
   "sw-landing-page": {
     "view": {
       "general": "通用",
-      "cms": "布局"
+      "layout": "布局"
     },
     "general": {
       "placeholderSearchBar": "搜索落地页…",
@@ -233,17 +223,6 @@
         "notification": {
           "noLayoutAssigned": "此着陆页未设置布局。没有布局则无法通过 SEO 访问。"
         }
-      },
-      "cms": {
-        "title": "布局分配",
-        "changeLayout": "修改布局",
-        "changeLayoutEmpty": "分配布局",
-        "editInPagebuilder": "在设计器中编辑",
-        "editInPagebuilderEmpty": "新建布局",
-        "editContent": "编辑内容",
-        "defaultTitle": "默认布局",
-        "defaultDesc": "分类页",
-        "cmsLayoutModalHeadline": "落地页"
       }
     },
     "modal": {

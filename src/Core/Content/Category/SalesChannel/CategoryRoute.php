@@ -7,13 +7,8 @@ use Shopwell\Core\Content\Category\CategoryDefinition;
 use Shopwell\Core\Content\Category\CategoryEntity;
 use Shopwell\Core\Content\Category\CategoryException;
 use Shopwell\Core\Content\Category\Extension\CategoryRouteExtension;
-use Shopwell\Core\Content\Cms\DataResolver\ResolverContext\EntityResolverContext;
-use Shopwell\Core\Content\Cms\SalesChannel\SalesChannelCmsPageLoaderInterface;
-use Shopwell\Core\Content\Cms\Service\EntityCmsSlotConfigInheritanceBuilder;
 use Shopwell\Core\Framework\Adapter\Cache\CacheTagCollector;
-use Shopwell\Core\Framework\Adapter\Request\RequestParamHelper;
 use Shopwell\Core\Framework\DataAbstractionLayer\Search\Criteria;
-use Shopwell\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsAnyFilter;
 use Shopwell\Core\Framework\Extensions\ExtensionDispatcher;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\Plugin\Exception\DecorationPatternException;
@@ -37,9 +32,6 @@ class CategoryRoute extends AbstractCategoryRoute
      */
     public function __construct(
         private readonly SalesChannelRepository $categoryRepository,
-        private readonly SalesChannelCmsPageLoaderInterface $cmsPageLoader,
-        private readonly EntityCmsSlotConfigInheritanceBuilder $cmsSlotConfigInheritanceBuilder,
-        private readonly CategoryDefinition $categoryDefinition,
         private readonly CacheTagCollector $cacheTagCollector,
         private readonly ExtensionDispatcher $extensions,
     ) {
@@ -94,38 +86,6 @@ class CategoryRoute extends AbstractCategoryRoute
             throw CategoryException::categoryNotFound($navigationId);
         }
 
-        $pageId = $category->getCmsPageId();
-        $salesChannel = $context->getSalesChannel();
-
-        if ($category->getId() === $salesChannel->getNavigationCategoryId() && $salesChannel->getHomeCmsPageId()) {
-            $pageId = $salesChannel->getHomeCmsPageId();
-            $slotConfig = $salesChannel->getTranslation('homeSlotConfig');
-        } else {
-            $slotConfig = $this->buildMergedCmsSlotConfig($category, $context);
-        }
-
-        if (!$pageId) {
-            return new CategoryRouteResponse($category);
-        }
-
-        $resolverContext = new EntityResolverContext($context, $request, $this->categoryDefinition, $category);
-
-        $pages = $this->cmsPageLoader->load(
-            $request,
-            $this->createCriteria($pageId, $request),
-            $context,
-            $slotConfig,
-            $resolverContext,
-        );
-
-        $cmsPage = $pages->getEntities()->first();
-        if ($cmsPage === null) {
-            throw CategoryException::pageNotFound($pageId);
-        }
-
-        $category->setCmsPage($cmsPage);
-        $category->setCmsPageId($pageId);
-
         return new CategoryRouteResponse($category);
     }
 
@@ -143,36 +103,5 @@ class CategoryRoute extends AbstractCategoryRoute
         }
 
         return $category;
-    }
-
-    private function createCriteria(string $pageId, Request $request): Criteria
-    {
-        $criteria = new Criteria([$pageId]);
-        $criteria->setTitle('category::cms-page');
-
-        $slots = RequestParamHelper::get($request, 'slots');
-
-        if (\is_string($slots)) {
-            $slots = explode('|', $slots);
-        }
-
-        if (\is_array($slots) && $slots !== []) {
-            $criteria
-                ->getAssociation('sections.blocks')
-                ->addFilter(new EqualsAnyFilter('slots.id', $slots));
-        }
-
-        return $criteria;
-    }
-
-    /**
-     * @return array<string, array<string, mixed>>|null
-     */
-    private function buildMergedCmsSlotConfig(CategoryEntity $category, SalesChannelContext $context): ?array
-    {
-        return $this->cmsSlotConfigInheritanceBuilder->build(
-            $category->getTranslations(),
-            $context,
-        );
     }
 }
