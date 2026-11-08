@@ -3551,7 +3551,7 @@
       "count": 1
     },
     "sw-deprecation-rules/private-feature-declarations": {
-      "count": 6
+      "count": 1
     }
   },
   "src/app/store/admin-menu.store.spec.ts": {

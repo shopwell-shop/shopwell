@@ -6,3 +6,5 @@ framework:
         pools:
             cache.app_url_verification:
                 adapter: cache.adapter.filesystem
+            cache.sms_login:
+                adapter: cache.adapter.filesystem
