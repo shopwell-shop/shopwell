@@ -15,8 +15,6 @@ use Shopwell\Core\Framework\Log\Package;
 #[CoversClass(ContentRouteCompilerPass::class)]
 class ContentRouteCompilerPassTest extends TestCase
 {
-    use GeneratedContentRouteAssertion;
-
     /**
      * Core registers exactly one section resolver, `main`, and all four output formats, so the
      * pass generates four store-api routes. The names below are written out by hand; adding or
@@ -29,7 +27,7 @@ class ContentRouteCompilerPassTest extends TestCase
     #[TestDox('generates exactly the four pinned store-api routes for the main section')]
     public function testGeneratesThePinnedMainSectionRoutes(): void
     {
-        $this->assertGeneratedContentRouteNames(
+        GeneratedContentRouteAssertion::assertGeneratedContentRouteNames(
             [
                 'store-api.content.detail',
                 'store-api.content.skeleton',

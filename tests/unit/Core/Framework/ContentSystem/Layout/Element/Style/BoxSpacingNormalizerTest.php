@@ -4,8 +4,6 @@ namespace Shopwell\Tests\Unit\Core\Framework\ContentSystem\Layout\Element\Style;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
-use PHPUnit\Framework\Attributes\PreserveGlobalState;
-use PHPUnit\Framework\Attributes\RunInSeparateProcess;
 use PHPUnit\Framework\Attributes\TestDox;
 use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\ContentSystem\ContentSystemException;
@@ -129,11 +127,9 @@ class BoxSpacingNormalizerTest extends TestCase
     }
 
     #[DataProvider('matchLimitProvider')]
-    #[RunInSeparateProcess]
-    #[PreserveGlobalState(false)]
     public function testMatchLimitFailureIsRejectedInsteadOfTreatedAsANonMatch(string $value, int $backtrackLimit): void
     {
-        // Disable JIT before any pattern is cached so the interpreter's limit is deterministic.
+        // Temporarily disable JIT so the interpreter's match limit is deterministic in the shared process.
         $jit = ini_get('pcre.jit');
         $limit = ini_get('pcre.backtrack_limit');
         static::assertNotFalse($jit);

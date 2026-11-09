@@ -686,12 +686,6 @@ $ignoreErrors[] = [
     'path' => __DIR__ . '/src/Core/System/Language/TranslationValidator.php',
 ];
 $ignoreErrors[] = [
-    'rawMessage' => 'Throwing new exceptions within classes are not allowed. Please use domain exception pattern. See https://github.com/shopwell-shop/platform/blob/v6.4.20.0/adr/2022-02-24-domain-exceptions.md',
-    'identifier' => 'shopwell.domainException',
-    'count' => 1,
-    'path' => __DIR__ . '/src/Core/System/SalesChannel/Entity/SalesChannelDefinitionInstanceRegistry.php',
-];
-$ignoreErrors[] = [
     'rawMessage' => 'Expected domain exception class Shopwell\\Core\\System\\SalesChannel\\SalesChannelException, got Shopwell\\Core\\Framework\\Routing\\RoutingException',
     'identifier' => 'shopwell.domainException',
     'count' => 1,

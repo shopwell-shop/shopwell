@@ -16,8 +16,6 @@ use Shopwell\Tests\Unit\Core\Framework\DependencyInjection\CompilerPass\Generate
 #[CoversClass(ContentRouteCompilerPass::class)]
 class StorefrontContentRouteCompilerPassTest extends TestCase
 {
-    use GeneratedContentRouteAssertion;
-
     /**
      * The Storefront registers the `header` and `footer` section resolvers in its own DI file;
      * the four output formats come from Core. The eight names below are written out by hand;
@@ -30,7 +28,7 @@ class StorefrontContentRouteCompilerPassTest extends TestCase
     {
         $projectRoot = \dirname(__DIR__, 4);
 
-        $this->assertGeneratedContentRouteNames(
+        GeneratedContentRouteAssertion::assertGeneratedContentRouteNames(
             [
                 'store-api.content-header',
                 'store-api.content-header.skeleton',

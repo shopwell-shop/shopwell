@@ -2,6 +2,7 @@
 
 namespace Shopwell\Tests\Unit\Core\Framework\DependencyInjection\CompilerPass;
 
+use PHPUnit\Framework\Assert;
 use Shopwell\Core\Framework\ContentSystem\SalesChannel\ContentRoute;
 use Shopwell\Core\Framework\ContentSystem\SalesChannel\Routing\ContentRouteLoader;
 use Shopwell\Core\Framework\DependencyInjection\CompilerPass\ContentRouteCompilerPass;
@@ -25,14 +26,14 @@ use Symfony\Component\DependencyInjection\Loader\PhpFileLoader;
  * @internal
  */
 #[Package('framework')]
-trait GeneratedContentRouteAssertion
+final class GeneratedContentRouteAssertion
 {
     /**
      * @param list<string> $expectedRouteNames literal route names, written out by hand
      * @param list<string> $sectionKeys the `content_system.section_resolver` section keys owned by the calling bundle
      * @param string ...$diFiles absolute paths of the DI files that register those resolvers, plus everything they need
      */
-    protected function assertGeneratedContentRouteNames(array $expectedRouteNames, array $sectionKeys, string ...$diFiles): void
+    public static function assertGeneratedContentRouteNames(array $expectedRouteNames, array $sectionKeys, string ...$diFiles): void
     {
         $container = new ContainerBuilder();
         $loader = new PhpFileLoader($container, new FileLocator());
@@ -43,7 +44,7 @@ trait GeneratedContentRouteAssertion
 
         (new ContentRouteCompilerPass())->process($container);
 
-        $generatedRouteNames = $this->collectGeneratedRouteNames($container, $sectionKeys);
+        $generatedRouteNames = self::collectGeneratedRouteNames($container, $sectionKeys);
 
         $expectedSorted = $expectedRouteNames;
         sort($expectedSorted);
@@ -51,11 +52,11 @@ trait GeneratedContentRouteAssertion
         $missing = array_values(array_diff($expectedSorted, $generatedRouteNames));
         $unexpected = array_values(array_diff($generatedRouteNames, $expectedSorted));
 
-        static::assertSame($expectedSorted, $generatedRouteNames, \sprintf(
+        Assert::assertSame($expectedSorted, $generatedRouteNames, \sprintf(
             'The store-api content routes generated for section(s) "%s" do not match the pinned set. Expected but not generated: %s. Generated but not expected: %s.',
             implode('", "', $sectionKeys),
-            $this->describeRouteNames($missing),
-            $this->describeRouteNames($unexpected),
+            self::describeRouteNames($missing),
+            self::describeRouteNames($unexpected),
         ));
     }
 
@@ -71,25 +72,25 @@ trait GeneratedContentRouteAssertion
      *
      * @return list<string>
      */
-    private function collectGeneratedRouteNames(ContainerBuilder $container, array $sectionKeys): array
+    private static function collectGeneratedRouteNames(ContainerBuilder $container, array $sectionKeys): array
     {
         $routeDefinitions = $container->getDefinition(ContentRouteLoader::class)->getArgument(0);
-        static::assertIsArray($routeDefinitions);
+        Assert::assertIsArray($routeDefinitions);
 
         $routeNames = [];
 
         foreach ($routeDefinitions as $routeDefinition) {
-            static::assertInstanceOf(Definition::class, $routeDefinition);
+            Assert::assertInstanceOf(Definition::class, $routeDefinition);
 
             $routeName = $routeDefinition->getArgument(1);
-            static::assertIsString($routeName);
+            Assert::assertIsString($routeName);
 
             $defaults = $routeDefinition->getArgument(3);
-            static::assertIsArray($defaults);
-            static::assertArrayHasKey('_controller', $defaults);
+            Assert::assertIsArray($defaults);
+            Assert::assertArrayHasKey('_controller', $defaults);
 
             $controller = $defaults['_controller'];
-            static::assertIsString($controller);
+            Assert::assertIsString($controller);
 
             foreach ($sectionKeys as $sectionKey) {
                 if (!str_starts_with($controller, ContentRoute::class . '.' . $sectionKey . '.')) {
@@ -110,7 +111,7 @@ trait GeneratedContentRouteAssertion
     /**
      * @param list<string> $routeNames
      */
-    private function describeRouteNames(array $routeNames): string
+    private static function describeRouteNames(array $routeNames): string
     {
         if ($routeNames === []) {
             return '<none>';

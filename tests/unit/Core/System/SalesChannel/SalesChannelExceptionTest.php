@@ -8,6 +8,7 @@ use PHPUnit\Framework\TestCase;
 use Shopwell\Core\Framework\Api\Exception\MissingPrivilegeException;
 use Shopwell\Core\Framework\Log\Package;
 use Shopwell\Core\Framework\ShopwellHttpException;
+use Shopwell\Core\System\SalesChannel\Exception\SalesChannelRepositoryNotFoundException;
 use Shopwell\Core\System\SalesChannel\SalesChannelException;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -23,6 +24,17 @@ class SalesChannelExceptionTest extends TestCase
         $e = SalesChannelException::mcpToolResultNotFound('abc');
 
         static::assertSame('Tool result "abc" not found. It may have expired or been stored by another caller.', $e->uri);
+    }
+
+    public function testSalesChannelRepositoryNotFoundPreservesTheExceptionContract(): void
+    {
+        $exception = SalesChannelException::salesChannelRepositoryNotFound('fooBar');
+
+        static::assertSame(SalesChannelRepositoryNotFoundException::class, $exception::class);
+        static::assertSame(Response::HTTP_INTERNAL_SERVER_ERROR, $exception->getStatusCode());
+        static::assertSame('FRAMEWORK__SALES_CHANNEL_REPOSITORY_NOT_FOUND', $exception->getErrorCode());
+        static::assertSame('SalesChannelRepository for entity "fooBar" does not exist.', $exception->getMessage());
+        static::assertSame(['entityName' => 'fooBar'], $exception->getParameters());
     }
 
     #[DataProvider('exceptionDataProvider')]
