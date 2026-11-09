@@ -2,6 +2,7 @@
 
 use Danger\Config;
 use Shopwell\Core\DevOps\StaticAnalyze\Danger\Rules\AgenticCommercePluginHint;
+use Shopwell\Core\DevOps\StaticAnalyze\Danger\Rules\CompletePullRequestFiles;
 use Shopwell\Core\DevOps\StaticAnalyze\Danger\Rules\ComposerVersionConstraints;
 use Shopwell\Core\DevOps\StaticAnalyze\Danger\Rules\DangerConfigChanged;
 use Shopwell\Core\DevOps\StaticAnalyze\Danger\Rules\DeprecatedChangelogFormat;
@@ -28,12 +29,16 @@ use Shopwell\Core\DevOps\StaticAnalyze\Danger\Rules\TraitUsageInNewUnitTests;
 
 // danger runs on its own vendor-bin autoloader (vendor-bin/danger-php), which does not know the
 // Shopwell namespaces — load the rule classes directly instead
-foreach (glob(__DIR__ . '/src/Core/DevOps/StaticAnalyze/Danger/Rules/*.php') ?: [] as $ruleFile) {
+foreach ([
+    ...(glob(__DIR__ . '/src/Core/DevOps/StaticAnalyze/Danger/*.php') ?: []),
+    ...(glob(__DIR__ . '/src/Core/DevOps/StaticAnalyze/Danger/Rules/*.php') ?: []),
+] as $ruleFile) {
     require_once $ruleFile;
 }
 
 return (new Config())
     ->useThreadOn(Config::REPORT_LEVEL_WARNING)
+    ->useRule(new CompletePullRequestFiles())
     ->useRule(new DangerConfigChanged())
     ->useRule(new InlineRuleInDangerConfig())
     ->useRule(new MissingPullRequestDescription())

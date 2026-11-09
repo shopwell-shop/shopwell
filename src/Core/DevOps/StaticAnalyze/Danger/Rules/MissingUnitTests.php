@@ -4,6 +4,7 @@ namespace Shopwell\Core\DevOps\StaticAnalyze\Danger\Rules;
 
 use Danger\Context;
 use Danger\Struct\File;
+use Danger\Struct\PullRequest;
 use Shopwell\Core\Framework\Log\Package;
 
 /**
@@ -20,6 +21,11 @@ class MissingUnitTests
         'RuleTestCase',
         'TestCase',
         'MiddlewareTestCase',
+    ];
+
+    private const PROJECT_TEST_BASES = [
+        'Shopwell\\Tests\\Unit\\Core\\Framework\\ContentSystem\\Layout\\Codec\\StoredElementCodecTestCase' => 'tests/unit/Core/Framework/ContentSystem/Layout/Codec/StoredElementCodecTestCase.php',
+        'Shopwell\\Tests\\Unit\\Core\\Framework\\ContentSystem\\Layout\\Codec\\StoredTreeConstraintsTestCase' => 'tests/unit/Core/Framework/ContentSystem/Layout/Codec/StoredTreeConstraintsTestCase.php',
     ];
 
     private const IGNORE_SUFFIXES = [
@@ -84,7 +90,9 @@ class MissingUnitTests
 
             preg_match('/\s+extends\s+(?<class>\w+)/', $content, $matches);
 
-            if (isset($matches['class']) && \in_array($matches['class'], self::BASE_TEST_CLASSES, true)) {
+            if ((isset($matches['class']) && \in_array($matches['class'], self::BASE_TEST_CLASSES, true))
+                || $this->hasVerifiedProjectTestBase($file, $context->platform->pullRequest)
+            ) {
                 $fqcn = str_replace('.php', '', $file->name);
                 $className = explode('/', $fqcn);
 
@@ -113,6 +121,85 @@ class MissingUnitTests
                 . '<br/> You can run `composer make:coverage` to generate dummy unit tests for files that are not covered'
             );
         }
+    }
+
+    private function hasVerifiedProjectTestBase(File $file, PullRequest $pullRequest): bool
+    {
+        $class = 'Shopwell\\Tests\\Unit\\' . str_replace('/', '\\', substr($file->name, \strlen('tests/unit/'), -4));
+        $parent = $this->classParent($file->getContent(), $class);
+        $basePath = self::PROJECT_TEST_BASES[$parent ?? ''] ?? null;
+        if ($parent === null || $basePath === null) {
+            return false;
+        }
+
+        $base = $pullRequest->getFile($basePath);
+
+        return $base->status !== File::STATUS_REMOVED
+            && $this->classParent($base->getContent(), $parent) === 'PHPUnit\\Framework\\TestCase';
+    }
+
+    private function classParent(string $content, string $class): ?string
+    {
+        try {
+            $tokens = array_values(array_filter(\PhpToken::tokenize($content, \TOKEN_PARSE), static fn (\PhpToken $token): bool => !$token->isIgnorable()));
+        } catch (\ParseError) {
+            return null;
+        }
+
+        $namespace = '';
+        $imports = [];
+        $depth = 0;
+        foreach ($tokens as $index => $token) {
+            if ($token->text === '{') {
+                ++$depth;
+            } elseif ($token->text === '}') {
+                --$depth;
+            }
+            if ($depth !== 0) {
+                continue;
+            }
+
+            if ($token->id === \T_NAMESPACE) {
+                if (($tokens[$index + 2]->text ?? '') !== ';') {
+                    return null;
+                }
+                $namespace = $tokens[$index + 1]->text;
+                $imports = [];
+            }
+            if ($token->id === \T_USE && isset($tokens[$index + 1])) {
+                $name = $tokens[$index + 1]->text;
+                $alias = substr($name, (int) strrpos($name, '\\') + 1);
+                $end = $index + 2;
+                if (($tokens[$end]->id ?? null) === \T_AS) {
+                    $alias = $tokens[$end + 1]->text ?? '';
+                    $end += 2;
+                }
+                if (($tokens[$end]->text ?? '') === ';') {
+                    $imports[$alias] = ltrim($name, '\\');
+                }
+            }
+            if ($token->id !== \T_CLASS
+                || ($tokens[$index + 1]->id ?? null) !== \T_STRING
+                || ltrim($namespace . '\\' . $tokens[$index + 1]->text, '\\') !== $class
+                || ($tokens[$index + 2]->id ?? null) !== \T_EXTENDS
+                || !isset($tokens[$index + 3])
+            ) {
+                continue;
+            }
+
+            $parent = $tokens[$index + 3]->text;
+            if (str_starts_with($parent, '\\')) {
+                return ltrim($parent, '\\');
+            }
+            $parts = explode('\\', $parent, 2);
+            if (isset($imports[$parts[0]])) {
+                return $imports[$parts[0]] . (isset($parts[1]) ? '\\' . $parts[1] : '');
+            }
+
+            return ltrim($namespace . '\\' . $parent, '\\');
+        }
+
+        return null;
     }
 
     /**

@@ -126,6 +126,103 @@ class MissingUnitTestsTest extends TestCase
         static::assertCount(1, $context->getFailures());
     }
 
+    #[DataProvider('projectTestBaseProvider')]
+    public function testRecognizesVerifiedProjectTestBase(string $testBase): void
+    {
+        $namespace = 'Shopwell\\Tests\\Unit\\Core\\Framework\\ContentSystem\\Layout\\Codec';
+        $context = new Context(new StubPlatform(new StubPullRequest([
+            new StubFile('src/Core/Framework/ContentSystem/Layout/Codec/Codec.php', File::STATUS_ADDED, '<?php class Codec {}'),
+            new StubFile(
+                'tests/unit/Core/Framework/ContentSystem/Layout/Codec/CodecTest.php',
+                File::STATUS_ADDED,
+                '<?php namespace ' . $namespace . '; class CodecTest extends ' . $testBase . ' {}',
+            ),
+        ], [
+            'tests/unit/Core/Framework/ContentSystem/Layout/Codec/' . $testBase . '.php' => '<?php namespace ' . $namespace . '; use PHPUnit\\Framework\\TestCase; abstract class ' . $testBase . ' extends TestCase {}',
+        ])));
+
+        (new MissingUnitTests(self::FIXTURE_CONFIG))($context);
+
+        static::assertFalse($context->hasReports());
+    }
+
+    public static function projectTestBaseProvider(): \Generator
+    {
+        yield 'element codec base' => ['StoredElementCodecTestCase'];
+        yield 'tree constraints base' => ['StoredTreeConstraintsTestCase'];
+    }
+
+    public function testRecognizesAliasesWithoutExecutingPullRequestCode(): void
+    {
+        $context = new Context(new StubPlatform(new StubPullRequest([
+            new StubFile('src/Core/Framework/ContentSystem/Layout/Codec/Codec.php', File::STATUS_ADDED, '<?php class Codec {}'),
+            new StubFile(
+                'tests/unit/Core/Framework/ContentSystem/Layout/Codec/CodecTest.php',
+                File::STATUS_ADDED,
+                '<?php namespace Shopwell\\Tests\\Unit\\Core\\Framework\\ContentSystem\\Layout\\Codec;'
+                . ' use Shopwell\\Tests\\Unit\\Core\\Framework\\ContentSystem\\Layout\\Codec\\StoredElementCodecTestCase as CodecBase;'
+                . ' throw new \\RuntimeException("Must not execute test source"); class CodecTest extends CodecBase {}',
+            ),
+        ], [
+            'tests/unit/Core/Framework/ContentSystem/Layout/Codec/StoredElementCodecTestCase.php' => '<?php namespace Shopwell\\Tests\\Unit\\Core\\Framework\\ContentSystem\\Layout\\Codec;'
+                . ' throw new \\RuntimeException("Must not execute base source");'
+                . ' abstract class StoredElementCodecTestCase extends \\PHPUnit\\Framework\\TestCase {}',
+        ])));
+
+        (new MissingUnitTests(self::FIXTURE_CONFIG))($context);
+
+        static::assertFalse($context->hasReports());
+    }
+
+    public function testRemovedProjectTestBaseDoesNotCount(): void
+    {
+        $pullRequest = new class([new StubFile('src/Core/Framework/ContentSystem/Layout/Codec/Codec.php', File::STATUS_ADDED, '<?php class Codec {}'), new StubFile('tests/unit/Core/Framework/ContentSystem/Layout/Codec/CodecTest.php', File::STATUS_ADDED, '<?php namespace Shopwell\\Tests\\Unit\\Core\\Framework\\ContentSystem\\Layout\\Codec; class CodecTest extends StoredElementCodecTestCase {}')], ['tests/unit/Core/Framework/ContentSystem/Layout/Codec/StoredElementCodecTestCase.php' => '<?php namespace Shopwell\\Tests\\Unit\\Core\\Framework\\ContentSystem\\Layout\\Codec; abstract class StoredElementCodecTestCase extends \\PHPUnit\\Framework\\TestCase {}']) extends StubPullRequest {
+            public function getFile(string $fileName): File
+            {
+                $file = parent::getFile($fileName);
+                $file->status = File::STATUS_REMOVED;
+
+                return $file;
+            }
+        };
+        $context = new Context(new StubPlatform($pullRequest));
+
+        (new MissingUnitTests(self::FIXTURE_CONFIG))($context);
+
+        static::assertCount(1, $context->getFailures());
+    }
+
+    #[DataProvider('invalidProjectTestBaseProvider')]
+    public function testRejectsUnverifiedProjectTestBases(string $testContent, string $baseContent): void
+    {
+        $context = new Context(new StubPlatform(new StubPullRequest([
+            new StubFile('src/Core/Framework/ContentSystem/Layout/Codec/Codec.php', File::STATUS_ADDED, '<?php class Codec {}'),
+            new StubFile('tests/unit/Core/Framework/ContentSystem/Layout/Codec/CodecTest.php', File::STATUS_ADDED, $testContent),
+        ], [
+            'tests/unit/Core/Framework/ContentSystem/Layout/Codec/StoredElementCodecTestCase.php' => $baseContent,
+        ])));
+
+        (new MissingUnitTests(self::FIXTURE_CONFIG))($context);
+
+        static::assertCount(1, $context->getFailures());
+        static::assertStringContainsString('src/Core/Framework/ContentSystem/Layout/Codec/Codec.php', $context->getFailures()[0]);
+    }
+
+    public static function invalidProjectTestBaseProvider(): \Generator
+    {
+        $test = '<?php namespace Shopwell\\Tests\\Unit\\Core\\Framework\\ContentSystem\\Layout\\Codec; class CodecTest extends StoredElementCodecTestCase {}';
+        $base = '<?php namespace Shopwell\\Tests\\Unit\\Core\\Framework\\ContentSystem\\Layout\\Codec; use PHPUnit\\Framework\\TestCase; abstract class StoredElementCodecTestCase extends TestCase {}';
+
+        yield 'missing base file' => [$test, ''];
+        yield 'base has no PHPUnit inheritance' => [$test, str_replace('extends TestCase', 'extends OtherBase', $base)];
+        yield 'lookalike TestCase import' => [$test, str_replace('PHPUnit\\Framework\\TestCase', 'Unrelated\\TestCase', $base)];
+        yield 'lookalike project namespace' => [str_replace('Shopwell\\Tests\\Unit', 'Unrelated', $test), $base];
+        yield 'wrong base declaration' => [$test, str_replace('class StoredElementCodecTestCase', 'class OtherTestCase', $base)];
+        yield 'inheritance mentioned only in a string' => [str_replace('extends StoredElementCodecTestCase', '', $test) . ' $hint = "extends StoredElementCodecTestCase";', $base];
+        yield 'inheritance mentioned only in a comment' => [$test, '<?php /* ' . substr($base, 6) . ' */'];
+        yield 'invalid base syntax' => [$test, $base . ' !'];
+    }
+
     #[TestDox('Warns when the phpunit config cannot be loaded and keeps checking without excludes')]
     public function testWarnsForUnloadablePhpunitConfig(): void
     {
