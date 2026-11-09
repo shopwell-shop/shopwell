@@ -167,8 +167,6 @@ The following ADRs document important extensibility decisions:
 - **[Native Block System](../../../../../adr/2024-09-26-native-block-system.md)** (2024-09-26): Migration from TwigJS to Vue-native blocks
 - **[Native Extension System with Vue](../../../../../adr/2023-02-27-native-extension-system-with-vue.md)** (2023-02-27): Introduction of Composition API extensions
 - **[Admin Extension API Standards](../../../../../adr/2021-12-07-admin-extension-api-standards.md)** (2021-12-07): Standardization of extension interfaces
-- **[Vue 2.7 Update](../../../../../adr/2022-09-27-vue-2.7-update.md)** (2022-09-27): Preparation for Vue 3 migration
-- **[Disable Vue Compat Mode](../../../../../adr/2024-03-11-disable-vue-compat-mode-per-component-level.md)** (2024-03-11): Component-level Vue 3 compatibility
 
 ## Next Steps
 

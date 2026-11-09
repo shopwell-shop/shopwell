@@ -38,9 +38,7 @@ return [
 
         // swagger-php 6.4 is required for OpenAPI 3.2 generation. The reported
         // BC changes are in the third-party OpenApi\Analysis API. Extensions
-        // that only define OpenAPI annotations/attributes continue to work; code
-        // using swagger-php programmatically has a documented migration path in
-        // RELEASE_INFO-6.7.md / UPGRADE-6.7.md.
+        // that only define OpenAPI annotations/attributes continue to work.
         preg_quote('REMOVED: Method OpenApi\Analysis#getSchemaForSource() was removed', '/'),
         preg_quote('REMOVED: Method OpenApi\Analysis#getContext() was removed', '/'),
         preg_quote('REMOVED: Method OpenApi\Analysis#process() was removed', '/'),
@@ -157,16 +155,15 @@ return [
         // The first and last name of customers, customer addresses, order customers, order
         // addresses, users and newsletter recipients are merged into a single `name` attribute.
         // The removed properties, accessors, constants, the LastNameRule and the split contact
-        // form settings are intentional. Migration for extensions is documented in
-        // UPGRADE-6.7.md and RELEASE_INFO-6.7.md.
+        // form settings are intentional.
         preg_quote('REMOVED: Class Shopwell\Core\Checkout\Customer\Rule\LastNameRule has been deleted', '/'),
         'REMOVED: Constant Shopwell\\\\Core\\\\.*::(MAX_LENGTH_FIRST_NAME|MAX_LENGTH_LAST_NAME|FIRST_NAME_FIELD|LAST_NAME_FIELD) was removed',
         'REMOVED: Property Shopwell\\\\Core\\\\.*(CustomerEntity|CustomerAddressEntity|OrderCustomerEntity|OrderAddressEntity|UserEntity|NewsletterRecipientEntity|ShopContactFormSettings)#\$(firstName|lastName|firstNameFieldRequired|lastNameFieldRequired) was removed',
         'REMOVED: Method Shopwell\\\\Core\\\\.*(CustomerEntity|CustomerAddressEntity|OrderCustomerEntity|OrderAddressEntity|UserEntity|NewsletterRecipientEntity)#(get|set)(FirstName|LastName)\(\) was removed',
         'CHANGED: Value of constant Shopwell\\\\Core\\\\System\\\\Country\\\\CountryDefinition::DEFAULT_ADDRESS_FORMAT changed',
 
-        // A customer no longer needs an address to be created (registration without name and address,
-        // see RELEASE_INFO-6.7.md), so a customer that has none has no default address either. The
+        // A customer no longer needs a name or address to be created,
+        // so a customer that has none has no default address either. The
         // columns are nullable, the accessors only widen their type and every caller that read the id
         // of a customer with an address sees the same value as before.
         preg_quote('CHANGED: Type of property Shopwell\Core\Checkout\Customer\CustomerEntity#$defaultBillingAddressId changed from string to string|null', '/'),
@@ -179,7 +176,7 @@ return [
         preg_quote('CHANGED: The parameter $defaultShippingAddressId of Shopwell\Core\Checkout\Customer\CustomerEntity#setDefaultShippingAddressId() changed from string to string|null', '/'),
 
         // The wallet, loyalty membership, sms and payout gateway features are still being shaped
-        // before their release (see RELEASE_INFO-6.7.md). Their configuration moved out of constants
+        // before their release. Their configuration moved out of constants
         // on the services into WalletSettings and the loyalty settings, the top-up simulate route was
         // replaced by the create/status pair, and the strategy/mode/audit markers of the sms and
         // payment gateway were replaced by the state machines, enums and provider registry of those
@@ -204,7 +201,7 @@ return [
 
         // A membership plan may now be created before its name is typed in (the merchant fills it
         // afterwards), so the name of its translation is nullable. The loyalty domain is still
-        // unreleased (see RELEASE_INFO-6.7.md), the accessors only widen their type, and every
+        // unreleased, the accessors only widen their type, and every
         // caller that reads a plan with a name sees the same value as before.
         preg_quote('CHANGED: Type of property Shopwell\Core\Checkout\Loyalty\Entity\MembershipPlan\Aggregate\MembershipPlanTranslation\MembershipPlanTranslationEntity#$name changed from string to string|null', '/'),
         preg_quote('CHANGED: The return type of Shopwell\Core\Checkout\Loyalty\Entity\MembershipPlan\Aggregate\MembershipPlanTranslation\MembershipPlanTranslationEntity#getName() changed from string to the non-covariant string|null', '/'),
@@ -215,8 +212,7 @@ return [
         // customer, address, order and newsletter recipient rows now store the technical name of a
         // dictionary entry (male/female/not_specified) in their `gender` column, which the V6_3
         // baseline creates and seeds. The removed entity, route, serializer, cart error classes,
-        // rule, storefront page bindings and accessors are intentional; migration for extensions is
-        // documented in UPGRADE-6.7.md.
+        // rule, storefront page bindings and accessors are intentional.
         'REMOVED: Class Shopwell\\\\.*\\\\\w*Salutation\w* has been deleted',
         'REMOVED: Constant Shopwell\\\\Core\\\\\w+\\\\.*::MAX_LENGTH_TITLE was removed',
         'REMOVED: Property Shopwell\\\\Core\\\\.*(CustomerEntity|CustomerAddressEntity|OrderAddressEntity|OrderCustomerEntity|NewsletterRecipientEntity)#\$(title|salutation|salutationId) was removed',

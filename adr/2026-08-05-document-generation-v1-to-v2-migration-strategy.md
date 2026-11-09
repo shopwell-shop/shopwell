@@ -151,7 +151,8 @@ accessible after 6.9 without any need for regeneration, as the backfills simply 
 
 To stay compatible, such extensions must be ported to v2 (a data provider, a renderer, and a type, or an app manifest
 entry). During the transition an extension may register its v2 and v1 variants side by side to work in either flag
-state. Step-by-step guidance lives in `UPGRADE-6.7.md` and `UPGRADE-6.8.md`.
+state.
+The [extension points ADR](2026-03-19-new-document-generation-extension-points.md) describes the v2 provider, renderer, type, and app contracts.
 
 ### For merchants and partners
 

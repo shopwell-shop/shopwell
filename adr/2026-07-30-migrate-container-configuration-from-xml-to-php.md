@@ -24,5 +24,6 @@ All platform service and route definitions are migrated to PHP configuration fil
 ## Consequences
 
 - The platform contains no XML container or route configuration. New services are registered in the existing `DependencyInjection/*.php` files, following their style.
-- Plugin and app-server developers must migrate XML configuration to PHP before 6.8; `UPGRADE-6.8.md` documents the mapping. Until then every XML config load is logged as a deprecation.
+- Plugin and app-server developers must migrate XML configuration to PHP before 6.8, using Symfony's `ContainerConfigurator` and `RoutingConfigurator`.
+  Until then every XML config load is logged as a deprecation.
 - The Symfony 8 upgrade is no longer blocked by configuration format.

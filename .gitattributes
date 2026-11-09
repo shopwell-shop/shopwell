@@ -2,7 +2,6 @@
 /.run export-ignore
 /.vscode export-ignore
 /adr export-ignore
-/changelog export-ignore
 /coding-guidelines export-ignore
 /tests export-ignore
 /vendor-bin export-ignore
