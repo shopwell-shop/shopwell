@@ -48,6 +48,7 @@ $dangerSrc = TEST_PROJECT_DIR . '/vendor-bin/danger-php/vendor/shyim/danger-php/
 if (is_dir($dangerSrc)) {
     $dangerClassLoader = new ClassLoader();
     $dangerClassLoader->addPsr4('Danger\\', $dangerSrc);
+    $dangerClassLoader->addPsr4('Github\\', TEST_PROJECT_DIR . '/vendor-bin/danger-php/vendor/knplabs/github-api/lib/Github');
     $dangerClassLoader->register();
 }
 
