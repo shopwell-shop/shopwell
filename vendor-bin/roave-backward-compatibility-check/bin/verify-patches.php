@@ -202,6 +202,28 @@ function verifyRoavePatches(): array
             }
             $assertChanges('/** @final */ class FinalPatchProbe {}', 'final class FinalPatchProbe {}', 0, 'Documented final class becomes native final');
             $assertChanges('class FinalPatchProbe {}', 'final class FinalPatchProbe {}', 1, 'Open class becomes final');
+
+            foreach (['class', 'interface', 'trait'] as $kind) {
+                $body = $kind === 'interface' ? ';' : ' { return 1; }';
+                $from = $kind . ' ExperimentalApiProbe { public function probe(): int|string' . $body . ' }';
+                $to = $kind . ' ExperimentalApiProbe { public function probe(): int' . $body . ' }';
+                $assertChanges('/** @experimental */ ' . $from, $to, 0, 'Experimental ' . $kind);
+                $assertChanges($from, $to, 1, 'Stable ' . $kind);
+                $assertChanges('/** @experimentalized */ ' . $from, $to, 1, 'Unrelated annotation on ' . $kind);
+                $assertChanges($from, '/** @experimental */ ' . $to, 1, 'Future-only experimental ' . $kind);
+            }
+            foreach (['public', 'protected'] as $visibility) {
+                foreach (['/** @experimental */' => 0, '' => 1, '/** @experimentalized */' => 1] as $annotation => $expected) {
+                    $assertChanges('class ExperimentalApiProbe { ' . $annotation . ' ' . $visibility . ' function probe(): int|string { return 1; } }', 'class ExperimentalApiProbe { ' . $visibility . ' function probe(): int { return 1; } }', $expected, $annotation . ' ' . $visibility . ' method');
+                }
+                $assertChanges('class ExperimentalApiProbe { ' . $visibility . ' function probe(): int|string { return 1; } }', 'class ExperimentalApiProbe { /** @experimental */ ' . $visibility . ' function probe(): int { return 1; } }', 1, 'Future-only experimental ' . $visibility . ' method');
+            }
+            foreach (['/** @experimental */' => 0, '' => 1, '/** @experimentalized */' => 1] as $annotation => $expected) {
+                $assertChanges('class ExperimentalApiProbe { ' . $annotation . ' public int $probe; }', 'class ExperimentalApiProbe { public string $probe; }', $expected, $annotation . ' property');
+                $assertChanges('final class ExperimentalApiProbe { ' . $annotation . ' public function probe(int|string $value): void {} }', 'final class ExperimentalApiProbe { public function probe(int $value): void {} }', $expected, $annotation . ' final-class method');
+            }
+            $assertChanges('class ExperimentalApiProbe { public int $probe; }', 'class ExperimentalApiProbe { /** @experimental */ public string $probe; }', 1, 'Future-only experimental property');
+            $assertChanges('final class ExperimentalApiProbe { public function probe(int|string $value): void {} }', 'final class ExperimentalApiProbe { /** @experimental */ public function probe(int $value): void {} }', 1, 'Future-only experimental final-class method');
         });
     } finally {
         if ($originalDirectory !== false) {

@@ -187,6 +187,53 @@
             <directory suffix="LoaderConfig.php">src/Core/System/Currency/ContentSystem/DataLoader/</directory>
             <directory suffix="LoaderConfig.php">src/Core/System/Language/ContentSystem/DataLoader/</directory>
 
+            <file>src/Core/Content/Product/SalesChannel/Detail/ProductConfiguratorProductData.php</file>
+            <file>src/Core/Framework/ContentSystem/Api/AttachElementRequest.php</file>
+            <file>src/Core/Framework/ContentSystem/Api/BindElementRequest.php</file>
+            <file>src/Core/Framework/ContentSystem/Api/ContentDiagnoseRequest.php</file>
+            <file>src/Core/Framework/ContentSystem/Api/ContentLayoutAttachRequest.php</file>
+            <file>src/Core/Framework/ContentSystem/Api/ContentLayoutBindRequest.php</file>
+            <file>src/Core/Framework/ContentSystem/Api/ContentLayoutDuplicateRequest.php</file>
+            <file>src/Core/Framework/ContentSystem/Api/ContentLayoutInsertRequest.php</file>
+            <file>src/Core/Framework/ContentSystem/Api/ContentLayoutMoveRequest.php</file>
+            <file>src/Core/Framework/ContentSystem/Api/ContentLayoutRemoveRequest.php</file>
+            <file>src/Core/Framework/ContentSystem/Api/ContentLayoutReplaceRequest.php</file>
+            <file>src/Core/Framework/ContentSystem/Api/ContentLayoutUnwrapRequest.php</file>
+            <file>src/Core/Framework/ContentSystem/Api/ContentLayoutWrapElementsRequest.php</file>
+            <file>src/Core/Framework/ContentSystem/Api/DuplicateElementRequest.php</file>
+            <file>src/Core/Framework/ContentSystem/Api/InsertElementRequest.php</file>
+            <file>src/Core/Framework/ContentSystem/Api/MoveElementRequest.php</file>
+            <file>src/Core/Framework/ContentSystem/Api/RemoveElementRequest.php</file>
+            <file>src/Core/Framework/ContentSystem/Api/ReplaceElementRequest.php</file>
+            <file>src/Core/Framework/ContentSystem/Api/UnwrapElementRequest.php</file>
+            <file>src/Core/Framework/ContentSystem/Api/WrapElementsRequest.php</file>
+            <file>src/Core/Framework/ContentSystem/Binding/Specification/BindingInput.php</file>
+            <file>src/Core/Framework/ContentSystem/Binding/Specification/LoaderBinding.php</file>
+            <file>src/Core/Framework/ContentSystem/Diagnostics/LayoutAnalysis.php</file>
+            <file>src/Core/Framework/ContentSystem/Diagnostics/ViolationScope.php</file>
+            <file>src/Core/Framework/ContentSystem/Diagnostics/ViolationSeverity.php</file>
+            <file>src/Core/Framework/ContentSystem/Hydration/DataLoader/ConfigKeyKind.php</file>
+            <file>src/Core/Framework/ContentSystem/Hydration/DataLoader/ConfigKeySpecification.php</file>
+            <file>src/Core/Framework/ContentSystem/Hydration/DataLoader/LoaderTypeCapability.php</file>
+            <file>src/Core/Framework/ContentSystem/Layout/Codec/PropertyTypeConformance.php</file>
+            <file>src/Core/Framework/ContentSystem/Layout/Element/Style/Loader/StyleOptionSourceDirectory.php</file>
+            <file>src/Core/Framework/ContentSystem/Layout/Type/Loader/ElementTypeSourceDirectory.php</file>
+            <file>src/Core/Framework/ContentSystem/Mutation/ElementLocation.php</file>
+            <file>src/Core/Framework/ContentSystem/Mutation/ParentSlot.php</file>
+            <file>src/Core/Framework/ContentSystem/Output/Index/LoaderValueIdentity.php</file>
+            <file>src/Core/Framework/ContentSystem/Output/Index/ValueOrigin.php</file>
+            <file>src/Core/Framework/ContentSystem/Output/RenderResult.php</file>
+            <file>src/Core/Framework/ContentSystem/Rendering/ContextDelivery.php</file>
+            <file>src/Core/Framework/ContentSystem/Rendering/ElementMintResult.php</file>
+            <file>src/Core/Framework/ContentSystem/Rendering/LoweringResult.php</file>
+            <file>src/Core/Framework/ContentSystem/Rendering/ResolvedLoaderValue.php</file>
+            <file>src/Core/Framework/ContentSystem/RenderingMode.php</file>
+            <file>src/Core/Framework/ContentSystem/Resolution/PropertyKind.php</file>
+            <file>src/Core/Framework/ContentSystem/Resolution/PropertyResolution.php</file>
+            <file>src/Core/Framework/ContentSystem/Resolution/ProvidedContext.php</file>
+            <file>src/Core/Framework/ContentSystem/Resolution/ResolutionCandidate.php</file>
+            <file>src/Core/Framework/ContentSystem/Resolution/ResolutionContext.php</file>
+
             <!-- BC-change attributes are data-only markers without behavior to test -->
             <directory suffix=".php">src/Core/Framework/Deprecation/BCChange</directory>
         </exclude>

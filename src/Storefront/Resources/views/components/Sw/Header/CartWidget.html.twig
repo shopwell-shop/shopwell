@@ -12,6 +12,7 @@
 {% set attributeDefaults = {
     class: 'sw-cart-widget',
     icon: 'cart',
+    'aria-label': 'checkout.cartTitle'|trans|striptags,
     'data-component': 'Sw:Header:CartWidget',
     'data-component-options': jsOptions|json_encode,
     'data-off-canvas-cart': 'true',
